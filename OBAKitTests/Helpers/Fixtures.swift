@@ -80,7 +80,8 @@ class Fixtures {
         stopSequence: Int = 5,
         stopID: String = "stop_1",
         routeID: String = "route_1",
-        tripID: String = "trip_1"
+        tripID: String = "trip_1",
+        vehicleID: String = "vehicle_1"
     ) throws -> ArrivalDeparture {
         var dictionary: [String: Any] = [
             "arrivalEnabled": true,
@@ -99,7 +100,7 @@ class Fixtures {
             "stopId": stopID,
             "stopSequence": stopSequence,
             "tripId": tripID,
-            "vehicleId": "vehicle_1"
+            "vehicleId": vehicleID
         ]
         if let predictedArrival { dictionary["predictedArrivalTime"] = predictedArrival }
         if let predictedDeparture { dictionary["predictedDepartureTime"] = predictedDeparture }

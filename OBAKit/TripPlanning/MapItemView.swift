@@ -60,7 +60,7 @@ public struct MapItemView: View {
                                 },
                                 label: {
                                     HStack {
-                                        Text(OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button to view nearby stops"))
+                                        Text(OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button that shows the stops near this map item."))
                                             .bold()
                                         Spacer()
                                         Image(systemName: "chevron.right")
@@ -212,7 +212,7 @@ public struct MapItemView: View {
             // Nearby Stops - show next to Plan Trip when call/website buttons are absent
             if viewModel.phoneNumber == nil && viewModel.url == nil {
                 actionButton(
-                    title: OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Nearby stops button"),
+                    title: OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button that shows the stops near this map item."),
                     icon: "mappin.and.ellipse",
                     backgroundColor: Color(uiColor: .secondarySystemBackground),
                     foregroundColor: Color(uiColor: ThemeColors.shared.brand),

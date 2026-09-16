@@ -243,6 +243,20 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     /// Guarded by `stateLock`.
     private var suppressLiveFetchesForTesting = false
 
+    /// Stops ``checkForUpdates()`` from refilling the store after a test-driven
+    /// region change. Without this, a delete is immediately overwritten and a
+    /// test cannot tell whether `removeAll()` ran.
+    func suppressLiveAlertFetchesForTesting() {
+        stateLock.withLock { suppressLiveFetchesForTesting = true }
+    }
+
+    /// Blocks until queued deletes have run. `updatedRegion` cancels a
+    /// still-pending delete; tests must wait so the next change does not
+    /// cancel the one they just queued.
+    func finishQueuedMutationsForTesting() {
+        queue.waitUntilAllOperationsAreFinished()
+    }
+
     /// Seeds a synthetic, unread, high-severity region-wide alert and notifies delegates,
     /// exactly as a live alerts fetch would. Lets UI tests exercise the modal
     /// `AgencyAlertBulletin` presentation without depending on live alert data.

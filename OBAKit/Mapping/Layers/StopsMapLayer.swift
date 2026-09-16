@@ -33,7 +33,7 @@ import OBAKitCore
     var id: String { Self.layerID }
 
     var title: String {
-        OBALoc("map_layers.bus_stops", value: "Bus stops", comment: "Map sheet row for the transit stops layer")
+        OBALoc("map_layers.bus_stops", value: "Transit stops", comment: "Map sheet row for the transit stops layer")
     }
 
     var iconName: String { "bus.fill" }
