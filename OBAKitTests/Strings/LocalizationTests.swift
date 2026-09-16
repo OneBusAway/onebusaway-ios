@@ -163,7 +163,6 @@ final class LocalizationTests {
         }
     }
 
-<<<<<<< HEAD
     /// One sheet serves both rental layers: `RentalDetailViewController` branches on
     /// `vehicle.vehicleType?.formFactor?.isScooter` and `RentalMapLayer` declares both a
     /// bikes and a scooters layer. So the sheet's own copy must not name a vehicle type —
