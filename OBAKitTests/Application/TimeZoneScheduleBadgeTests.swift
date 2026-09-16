@@ -229,8 +229,8 @@ struct TimeZoneScheduleBadgeTests {
 }
 
 /// Pins Aaron's #1308 follow-up: a failed / empty agencies-with-coverage
-/// lookup must reset `formatters.timeZone` to the device zone, not leave the
-/// previous region's zone stuck (and mis-badged) for the session.
+/// lookup must reset `formatters.timeZone` to `.autoupdatingCurrent`, not leave
+/// the previous region's zone stuck (and mis-badged) for the session.
 @Suite(.serialized)
 final class FormattersTimeZoneRefreshTests: OBATestCase {
     var queue: OperationQueue!
@@ -288,10 +288,12 @@ final class FormattersTimeZoneRefreshTests: OBATestCase {
 
         // Reset must happen up front — not only on successful resolution —
         // otherwise a nil/failed lookup leaves the previous zone stuck.
-        #expect(app.formatters.timeZone == .current)
+        // `.autoupdatingCurrent` (not `.current`) so a mid-session device zone
+        // change cannot leave stale clocks when the feature is off / unresolved.
+        #expect(app.formatters.timeZone == .autoupdatingCurrent)
 
         // Let the unstructured Task settle; empty coverage must not re-stick LA.
         try await Task.sleep(nanoseconds: 250_000_000)
-        #expect(app.formatters.timeZone == .current)
+        #expect(app.formatters.timeZone == .autoupdatingCurrent)
     }
 }
