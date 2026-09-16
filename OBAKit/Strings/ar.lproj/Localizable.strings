@@ -292,6 +292,17 @@
 /* Title of the Bookmark Name header. */
 "edit_bookmark_controller.name_section.header_title" = "اسم الإشارة المرجعية";
 
+
+/* Header above the read-only Stop ID on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.header_title" = "معرّف المحطة";
+
+/* Footer under the Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.footer" = "يُستخدم عند تحميل أوقات الوصول لهذه الإشارة المرجعية. اضغط للنسخ.";
+
+/* Title of the read-only Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_row.title" = "معرّف المحطة";
+
+
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(بدون مجموعة)";
 

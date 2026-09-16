@@ -292,6 +292,17 @@
 /* Title of the Bookmark Name header. */
 "edit_bookmark_controller.name_section.header_title" = "Nome do Favorito";
 
+
+/* Header above the read-only Stop ID on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.header_title" = "ID da parada";
+
+/* Footer under the Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.footer" = "Usado ao carregar chegadas deste favorito. Toque para copiar.";
+
+/* Title of the read-only Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_row.title" = "ID da parada";
+
+
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Sem Grupo)";
 

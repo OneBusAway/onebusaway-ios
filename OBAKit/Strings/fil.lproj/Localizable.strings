@@ -292,6 +292,17 @@
 /* Title of the Bookmark Name header. */
 "edit_bookmark_controller.name_section.header_title" = "Pangalan ng Bookmark";
 
+
+/* Header above the read-only Stop ID on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.header_title" = "Stop ID";
+
+/* Footer under the Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.footer" = "Ginagamit kapag naglo-load ng arrivals para sa bookmark na ito. I-tap para kopyahin.";
+
+/* Title of the read-only Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_row.title" = "Stop ID";
+
+
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Walang Grupo)";
 

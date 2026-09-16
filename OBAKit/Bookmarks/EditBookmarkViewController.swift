@@ -62,17 +62,20 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     private let selectedGroupTag = "groupTag"
     private let bookmarkNameTag = "name"
     private let showInTodayViewTag = "todayView"
+    private let stopIDTag = "stopID"
 
     /// Creates, loads, and populates data in the Eureka Form object.
     private func loadForm() {
         form
             +++ bookmarkNameSection
+            +++ stopIDSection
             +++ showInTodayViewSection
             +++ selectedBookmarkGroupSection
             +++ addGroupSection
 
         form.setValues([
             bookmarkNameTag: viewModel.initialName,
+            stopIDTag: viewModel.stopID,
             selectedGroupTag: viewModel.initialGroupID?.uuidString ?? "",
             showInTodayViewTag: viewModel.initialIsFavorite
         ])
@@ -84,6 +87,52 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         let section = Section(title)
         section <<< TextRow {
             $0.tag = bookmarkNameTag
+        }
+
+        return section
+    }()
+
+    /// Read-only stop ID so a failing bookmark can be matched to the API path (#1421).
+    private lazy var stopIDSection: Section = {
+        let footer = OBALoc(
+            "edit_bookmark_controller.stop_id_section.footer",
+            value: "Used when loading arrivals for this bookmark. Tap to copy.",
+            comment: "Footer under the Stop ID row on the Edit Bookmark screen."
+        )
+        let section = Section(
+            header: OBALoc(
+                "edit_bookmark_controller.stop_id_section.header_title",
+                value: "Stop ID",
+                comment: "Header above the read-only Stop ID on the Edit Bookmark screen."
+            ),
+            footer: footer
+        )
+
+        section <<< TextRow {
+            $0.tag = stopIDTag
+            $0.title = OBALoc(
+                "edit_bookmark_controller.stop_id_row.title",
+                value: "Stop ID",
+                comment: "Title of the read-only Stop ID row on the Edit Bookmark screen."
+            )
+            $0.value = viewModel.stopID
+            $0.disabled = true
+            $0.onCellSelection { [weak self] _, row in
+                guard let self else { return }
+                UIPasteboard.general.string = self.viewModel.stopID
+                row.value = OBALoc(
+                    "clipboard.copied_text_confirmation",
+                    value: "Copied to clipboard",
+                    comment: "This is displayed to confirm that something has been copied to clipboard."
+                )
+                row.reload()
+
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(2))
+                    row.value = self.viewModel.stopID
+                    row.reload()
+                }
+            }
         }
 
         return section
