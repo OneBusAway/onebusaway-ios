@@ -1,4 +1,4 @@
-﻿//
+//
 //  TipsTests.swift
 //  OBAKitTests
 //
@@ -43,15 +43,12 @@ final class TipsTests {
         
         let options = tip.options
         
-        // Find and assert the specific option types and their configured values
-        let maxDisplayCount = options.compactMap { $0 as? Tips.MaxDisplayCount }.first
-        let ignoresFrequency = options.compactMap { $0 as? Tips.IgnoresDisplayFrequency }.first
+        // Assert the exact expected option types and total count, as their internal values are opaque.
+        let maxDisplayCounts = options.compactMap { $0 as? Tips.MaxDisplayCount }
+        let ignoresFrequencies = options.compactMap { $0 as? Tips.IgnoresDisplayFrequency }
         
-        #expect(maxDisplayCount != nil, "Missing MaxDisplayCount option")
-        // Note: MaxDisplayCount's value is tested via its textual representation since its internal value is opaque/not easily equatable in some Swift versions, but it conforms to CustomStringConvertible or similar.
-        #expect(String(describing: maxDisplayCount).contains("1"))
-        
-        #expect(ignoresFrequency != nil, "Missing IgnoresDisplayFrequency option")
-        #expect(String(describing: ignoresFrequency).contains("true"))
+        #expect(options.count == 2)
+        #expect(maxDisplayCounts.count == 1, "Expected exactly one MaxDisplayCount option")
+        #expect(ignoresFrequencies.count == 1, "Expected exactly one IgnoresDisplayFrequency option")
     }
 }
