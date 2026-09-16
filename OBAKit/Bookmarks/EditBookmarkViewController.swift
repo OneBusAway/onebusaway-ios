@@ -127,9 +127,14 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
                 )
                 row.reload()
 
-                Task { @MainActor in
+                // Look up by tag after sleep — capturing Eureka's `row` across
+                // the await trips Swift 6 "sending risks data races".
+                let tag = self.stopIDTag
+                let stopID = self.viewModel.stopID
+                Task { @MainActor [weak self] in
                     try? await Task.sleep(for: .seconds(2))
-                    row.value = self.viewModel.stopID
+                    guard let row = self?.form.rowBy(tag: tag) as? TextRow else { return }
+                    row.value = stopID
                     row.reload()
                 }
             }
