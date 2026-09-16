@@ -213,7 +213,7 @@ struct StopPageListHeaderRow: View {
         // say what activating actually does.
         .accessibilityLabel(showPast
             ? OBALoc("stop_page.past_toggle_hide_a11y", value: "Hide past departures", comment: "VoiceOver label for the button hiding recently departed trips")
-            : CountPlural.format("stop_page.past_toggle_show_a11y_fmt", value: "Show %d past departures", comment: "VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.", count: pastCount))
+            : CountPlural.format(OBALoc("stop_page.past_toggle_show_a11y_fmt", value: "Show %d past departures", comment: "VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), count: pastCount))
     }
 
     /// Toggling the disclosure inserts or removes rows well below this button,
@@ -224,7 +224,7 @@ struct StopPageListHeaderRow: View {
         onTogglePast()
         let message = showPast
             ? OBALoc("stop_page.a11y.past_hidden", value: "Past departures hidden", comment: "VoiceOver announcement when the Past disclosure is closed.")
-            : CountPlural.format("stop_page.a11y.past_shown_fmt", value: "Showing %d past departures", comment: "VoiceOver announcement when the Past disclosure is opened. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.", count: pastCount)
+            : CountPlural.format(OBALoc("stop_page.a11y.past_shown_fmt", value: "Showing %d past departures", comment: "VoiceOver announcement when the Past disclosure is opened. %d is the count. English has a stringsdict entry; other locales still use the flat .strings form."), count: pastCount)
         AccessibilityNotification.Announcement(message).post()
     }
 }

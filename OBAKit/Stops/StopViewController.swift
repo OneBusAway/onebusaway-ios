@@ -1471,9 +1471,11 @@ private extension StopViewController {
 
     func showEarlierDeparturesItem(hiddenCount: Int) -> MessageButtonItem {
         let buttonText = CountPlural.format(
-            "stop_controller.transfer_show_earlier_departures_fmt",
-            value: "Show %d earlier departures",
-            comment: "Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback.",
+            OBALoc(
+                "stop_controller.transfer_show_earlier_departures_fmt",
+                value: "Show %d earlier departures",
+                comment: "Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
+            ),
             count: hiddenCount
         )
         return MessageButtonItem(

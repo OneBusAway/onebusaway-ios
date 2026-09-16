@@ -72,15 +72,16 @@ final class LocalizationTests {
         return NSDictionary(contentsOf: url) as? [String: String]
     }
 
-    /// A named locale's own copy of a key, loaded by treating its `.lproj` as a bundle —
-    /// the only way to read a localization the test host doesn't prefer. Going through
-    /// `localizedString(forKey:)` matters: it keeps the `Localizable.stringsdict` rules
-    /// attached to the returned format, which parsing the plist by hand would not.
+    /// Treats a named locale's `.lproj` as its own bundle so a test can load a
+    /// localization the host does not prefer.
     private func lprojBundle(_ localization: String) -> Bundle? {
         guard let path = Bundle(for: DonationCell.self).path(forResource: localization, ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
+    /// A named locale's own copy of a key. Going through `localizedString(forKey:)`
+    /// keeps the `Localizable.stringsdict` rules attached to the returned format,
+    /// which parsing the plist by hand would not.
     private func localizedFormat(forKey key: String, localization: String) -> String? {
         guard let bundle = lprojBundle(localization) else { return nil }
 
@@ -425,33 +426,33 @@ final class LocalizationTests {
     /// `other` ("minionego") instead of `many` ("minionych"). `CountPlural` is the
     /// call-site path; the Polish bundle is how the test sees a language the host
     /// does not prefer. Dropping `locale:` from `CountPlural` fails this.
+    /// Call sites still wrap `OBALoc(...)` so `genstrings -s OBALoc` keeps extracting.
     @Test func `Count plural call sites reach Polish few and many`() throws {
         let polish = Locale(identifier: "pl")
         let bundle = try #require(lprojBundle("pl"))
 
-        let many: [(key: String, fallback: String, comment: String, expected: String)] = [
-            ("stop_page.past_toggle_show_a11y_fmt", "Show %d past departures", "VoiceOver label for the button revealing recently departed trips.", "Pokaż 5 minionych odjazdów"),
-            ("stop_page.service_alerts.show_all_fmt", "Show all %d alerts", "Row that expands the service alerts section.", "Pokaż wszystkie 5 alertów"),
-            ("stop_page.service_alerts.summary_fmt", "%d service alerts", "Collapsed summary row for the service alerts section.", "5 alertów funkcjonowania komunikacji"),
-            ("stop_page.empty.no_departures_fmt", "No departures in the next %d minutes", "Empty state when the stop has no upcoming departures.", "Brak odjazdów w ciągu najbliższych 5 minut"),
-            ("stop_controller.transfer_show_earlier_departures_fmt", "Show %d earlier departures", "Button to reveal departures that leave before a transfer arrival.", "Pokaż 5 wcześniejszych odjazdów"),
-            ("data_migration_bulletin.report_summary_number_of_failures", "%d failures", "Data migration report label for failed tasks.", "5 nieudanych zadań"),
-            ("data_migration_bulletin.report_summary_number_of_successes", "%d successful", "Data migration report label for successful tasks.", "5 udanych zadań")
+        let many: [(key: String, fallback: String, expected: String)] = [
+            ("stop_page.past_toggle_show_a11y_fmt", "Show %d past departures", "Pokaż 5 minionych odjazdów"),
+            ("stop_page.service_alerts.show_all_fmt", "Show all %d alerts", "Pokaż wszystkie 5 alertów"),
+            ("stop_page.service_alerts.summary_fmt", "%d service alerts", "5 alertów funkcjonowania komunikacji"),
+            ("stop_page.empty.no_departures_fmt", "No departures in the next %d minutes", "Brak odjazdów w ciągu najbliższych 5 minut"),
+            ("stop_controller.transfer_show_earlier_departures_fmt", "Show %d earlier departures", "Pokaż 5 wcześniejszych odjazdów"),
+            ("data_migration_bulletin.report_summary_number_of_failures", "%d failures", "5 nieudanych zadań"),
+            ("data_migration_bulletin.report_summary_number_of_successes", "%d successful", "5 udanych zadań")
         ]
 
         for entry in many {
-            let rendered = CountPlural.format(entry.key, value: entry.fallback, comment: entry.comment, count: 5, locale: polish, bundle: bundle)
+            let format = bundle.localizedString(forKey: entry.key, value: entry.fallback, table: nil)
+            let rendered = CountPlural.format(format, count: 5, locale: polish)
             #expect(rendered == entry.expected, "\(entry.key) many: \(rendered)")
         }
 
-        let few = CountPlural.format(
-            "stop_page.past_toggle_show_a11y_fmt",
+        let fewFormat = bundle.localizedString(
+            forKey: "stop_page.past_toggle_show_a11y_fmt",
             value: "Show %d past departures",
-            comment: "VoiceOver label for the button revealing recently departed trips.",
-            count: 3,
-            locale: polish,
-            bundle: bundle
+            table: nil
         )
+        let few = CountPlural.format(fewFormat, count: 3, locale: polish)
         #expect(few == "Pokaż 3 minione odjazdy", "pl few: \(few)")
     }
 
