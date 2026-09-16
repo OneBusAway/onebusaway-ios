@@ -296,6 +296,32 @@ final class NearbyTripMatcherTests: OBATestCase {
         #expect(Set(vehicleIDs).count == 2)
     }
 
+    // MARK: - List identity
+
+    /// The SwiftUI disambiguation list used to key rows on `tripID`. A feed can
+    /// assign two vehicles to one trip; the matcher already keeps both (keyed on
+    /// vehicle id). The list id has to do the same, or one coach is dropped.
+    @Test func `List id distinguishes two vehicles on one trip`() throws {
+        let first = try Fixtures.arrivalDeparture(tripID: "trip_1", vehicleID: "coach_a")
+        let second = try Fixtures.arrivalDeparture(tripID: "trip_1", vehicleID: "coach_b")
+        let rows = [
+            NearbyTripMatcher.MatchResult(arrivalDeparture: first, distanceFromUser: 10),
+            NearbyTripMatcher.MatchResult(arrivalDeparture: second, distanceFromUser: 40)
+        ]
+
+        #expect(Set(rows.map(\.arrivalDeparture.tripID)).count == 1)
+        #expect(rows.map(\.listID) == ["coach_a", "coach_b"])
+    }
+
+    /// Same fallback the matcher uses when the feed omits a vehicle id.
+    @Test func `List id falls back to the trip when the vehicle id is blank`() throws {
+        let arrival = try Fixtures.arrivalDeparture(tripID: "trip_1", vehicleID: "")
+        let row = NearbyTripMatcher.MatchResult(arrivalDeparture: arrival, distanceFromUser: 10)
+
+        #expect(row.arrivalDeparture.vehicleID == nil)
+        #expect(row.listID == "trip_1")
+    }
+
     // MARK: - MatchError
 
     @Test func `Match error no stops nearby localized description`() {

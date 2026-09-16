@@ -35,7 +35,7 @@ public class MoreViewController: UIViewController,
         self.application = application
         super.init(nibName: nil, bundle: nil)
 
-        title = OBALoc("more_controller.title", value: "More", comment: "Title of the More tab")
+        title = OBALoc("more_controller.title", value: "More", comment: "Title of the More tab / accessibility label for the map-panel more button.")
         tabBarItem.image = Icons.moreTabIcon
         tabBarItem.selectedImage = Icons.moreSelectedTabIcon
 
@@ -332,8 +332,8 @@ public class MoreViewController: UIViewController,
             contents.append(OBAListRowView.DefaultViewModel(
                 title: OBALoc(
                     "more_controller.text_agency",
-                    value: "Text Agency",
-                    comment: "Opens an sms: (or web) link for the agency's text information service."),
+                    value: "Message Agency",
+                    comment: "Opens the agency's text information service, which may be an sms: link or a web page — so the label names neither."),
                 onSelectAction: { [weak self] _ in
                     self?.application.open(textURL, options: [:], completionHandler: nil)
                 }
