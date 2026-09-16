@@ -35,7 +35,7 @@ enum VoiceSearchQueryClassifier {
 
     // English first; a few locale cues for the languages the app ships.
     private static let routeCues = [
-        "route", "bus",
+        "route", "bus", "line",
         "linia", "ligne", "linea", "línea",
         "маршрут", "линия",
         "노선", "路線", "线路", "tuyến"

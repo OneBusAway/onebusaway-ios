@@ -47,6 +47,14 @@ struct VoiceSearchQueryClassifierTests {
     }
 
     @Test
+    func `English line cue searches by route`() {
+        let request = VoiceSearchQueryClassifier.request(from: "line 40")
+
+        #expect(request.searchType == .route)
+        #expect(request.query == "40")
+    }
+
+    @Test
     func `Vehicle cue searches by vehicle ID`() {
         let request = VoiceSearchQueryClassifier.request(from: "vehicle 4351")
 
