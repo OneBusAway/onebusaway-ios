@@ -813,9 +813,12 @@ final class ApplicationTests: OBATestCase {
         // Should not crash when delegate is nil
     }
 
-    /// #1421: each `ErrorBulletin` owns its own `BLTNItemManager`. Presenting a
-    /// second while the first is up stacks managers on the shared overlay window
-    /// and leaves Dismiss unable to clear the card (force-kill required).
+    /// #1421: each `ErrorBulletin` owns its own `BLTNItemManager`, so a second
+    /// one presented while the first is up stacks a second card on top of it —
+    /// a burst of identical errors (one `displayError` per bookmark) becomes a
+    /// pile of cards. This gate is about that noise only; keeping a stacked
+    /// card dismissable is `ErrorBulletin.present(_:)`'s job (#1429), and
+    /// `ErrorBulletinLifetimeTests` covers it.
     @Test func `Should not present a second error bulletin while one is showing`() {
         #expect(Application.shouldPresentErrorBulletin(alreadyShowing: true) == false)
         #expect(Application.shouldPresentErrorBulletin(alreadyShowing: false) == true)

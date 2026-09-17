@@ -911,9 +911,16 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// Whether a new error bulletin should be presented.
     ///
-    /// Each `ErrorBulletin` owns its own `BLTNItemManager`. Presenting a second
-    /// one while the first is up stacks managers on `BulletinOverlayWindow` and
-    /// leaves Dismiss unable to clear the card (#1421).
+    /// Each `ErrorBulletin` owns its own `BLTNItemManager`, so a second one
+    /// presented while the first is up stacks a second card on top of it. The
+    /// Bookmarks screen makes that easy to hit: `BookmarkDataLoader` runs one
+    /// fetch, and one `displayError`, per bookmark, so a single dead stop
+    /// produces a burst of identical errors (#1421).
+    ///
+    /// This suppresses the stack. It is *not* what keeps the cards dismissable
+    /// — that's `ErrorBulletin.present(_:)`, which stops a stacked card's owner
+    /// from being deallocated out from under it (#1429). The two are
+    /// independent: this one is about noise, that one about not wedging.
     static func shouldPresentErrorBulletin(alreadyShowing: Bool) -> Bool {
         !alreadyShowing
     }
