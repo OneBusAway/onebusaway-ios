@@ -2,6 +2,6 @@
 
 "NSLocationWhenInUseUsageDescription" = "Показывает, где вы находитесь относительно общественного транспорта, и помогает вам проще ориентироваться.";
 
-/* Purpose string shown when the app requests HealthKit access to your walking speed. */
-"NSHealthShareUsageDescription" = "Использует вашу скорость ходьбы из приложения «Здоровье», чтобы точнее прогнозировать время прибытия.";
-"NSHealthUpdateUsageDescription" = "Использует вашу скорость ходьбы из приложения «Здоровье», чтобы точнее прогнозировать время прибытия.";
+/* Purpose string shown when the app requests HealthKit access to your walking and cycling speed. */
+"NSHealthShareUsageDescription" = "Использует вашу скорость ходьбы или езды на велосипеде из приложения «Здоровье», чтобы точнее прогнозировать время прибытия.";
+"NSHealthUpdateUsageDescription" = "Использует вашу скорость ходьбы или езды на велосипеде из приложения «Здоровье», чтобы точнее прогнозировать время прибытия.";
