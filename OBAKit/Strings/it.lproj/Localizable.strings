@@ -292,6 +292,17 @@
 /* Title of the Bookmark Name header. */
 "edit_bookmark_controller.name_section.header_title" = "Nome del gruppo";
 
+
+/* Header above the read-only Stop ID on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.header_title" = "ID fermata";
+
+/* Footer under the Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.footer" = "Usato per caricare gli arrivi di questo segnalibro. Tocca per copiare.";
+
+/* Title of the read-only Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_row.title" = "ID fermata";
+
+
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Nessun gruppo)";
 

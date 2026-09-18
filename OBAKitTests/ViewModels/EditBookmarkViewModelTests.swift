@@ -115,6 +115,33 @@ final class EditBookmarkViewModelTests: OBATestCase {
         #expect(vm.initialName == Formatters.formattedTitle(stop: stop))
         #expect(vm.initialGroupID == nil)
         #expect(vm.initialIsFavorite)
+        #expect(vm.stopID == stop.id)
+    }
+
+    /// #1421: Edit UI must surface the stop ID so a dead bookmark (e.g. `1_375`)
+    /// is identifiable without deleting bookmarks at random.
+    @Test @MainActor
+    func `Edit mode exposes the bookmark stop ID`() throws {
+        let stop = try makeStop()
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let bookmark = Bookmark(name: "Dead Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
+
+        #expect(vm.stopID == bookmark.stopID)
+        #expect(vm.stopID == stop.id)
+    }
+
+    @Test @MainActor
+    func `Add mode trip bookmark exposes arrival departure stop ID`() throws {
+        let arrivalDep = try makeArrivalDeparture()
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrivalDep), bookmark: nil)
+
+        #expect(vm.stopID == arrivalDep.stopID)
     }
 
     @Test @MainActor

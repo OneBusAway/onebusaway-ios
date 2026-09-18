@@ -25,6 +25,16 @@ enum BookmarkSource {
             return arrival.routeAndHeadsign
         }
     }
+
+    /// Stop ID the bookmark will (or already does) request arrivals for.
+    var stopID: StopID {
+        switch self {
+        case .stop(let stop):
+            return stop.id
+        case .arrivalDeparture(let arrival):
+            return arrival.stopID
+        }
+    }
 }
 
 /// Outcome of validating a save. New vs existing is a separate case so a
@@ -72,6 +82,10 @@ final class EditBookmarkViewModel {
     /// Initial value for the "Show in Today View" toggle.
     let initialIsFavorite: Bool
 
+    /// Stop ID used for arrivals-and-departures requests. Shown in the editor
+    /// so a broken bookmark can be identified without trial-and-error deletes (#1421).
+    let stopID: StopID
+
     // MARK: - Live Data Access
 
     /// The current list of bookmark groups from the data store. Re-read on every call.
@@ -100,6 +114,7 @@ final class EditBookmarkViewModel {
         self.initialName = bookmark?.name ?? source.dataObjectName
         self.initialIsFavorite = bookmark?.isFavorite ?? true
         self.initialGroupID = bookmark?.groupID
+        self.stopID = bookmark?.stopID ?? source.stopID
     }
 
     // MARK: - Group Selection

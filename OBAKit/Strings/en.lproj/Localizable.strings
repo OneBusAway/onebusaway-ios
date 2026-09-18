@@ -307,6 +307,17 @@
 /* Title of the Bookmark Name header. */
 "edit_bookmark_controller.name_section.header_title" = "Bookmark Name";
 
+
+/* Header above the read-only Stop ID on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.header_title" = "Stop ID";
+
+/* Footer under the Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_section.footer" = "Used when loading arrivals for this bookmark. Tap to copy.";
+
+/* Title of the read-only Stop ID row on the Edit Bookmark screen. */
+"edit_bookmark_controller.stop_id_row.title" = "Stop ID";
+
+
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(No Group)";
 
