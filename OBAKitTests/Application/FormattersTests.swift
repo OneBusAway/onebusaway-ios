@@ -309,17 +309,20 @@ final class FormattersTests: OBATestCase {
 
     @Test func `Contextual date time string for today returns just time`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let date = Date()
-        let contextualString = formatters.contextualDateTimeString(date)
-        let timeString = formatters.timeFormatter.string(from: date)
+        let fixedNow = Date(timeIntervalSince1970: 1672531200) // 2023-01-01
+        formatters.now = { fixedNow }
+        let contextualString = formatters.contextualDateTimeString(fixedNow)
+        let timeString = formatters.timeFormatter.string(from: fixedNow)
         #expect(contextualString == timeString)
     }
 
     @Test func `Contextual date time string for other day returns date and time`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let date = calendar.date(byAdding: .day, value: -2, to: Date())!
-        let contextualString = formatters.contextualDateTimeString(date)
-        let expectedString = formatters.shortDateTimeFormatter.string(from: date)
+        let fixedNow = Date(timeIntervalSince1970: 1672531200) // 2023-01-01
+        formatters.now = { fixedNow }
+        let otherDate = calendar.date(byAdding: .day, value: -2, to: fixedNow)!
+        let contextualString = formatters.contextualDateTimeString(otherDate)
+        let expectedString = formatters.shortDateTimeFormatter.string(from: otherDate)
         #expect(contextualString == expectedString)
     }
 
@@ -364,5 +367,78 @@ final class FormattersTests: OBATestCase {
         )
         let timeStr = formatters.timeFormatter.string(from: date)
         #expect(result == "arrived 3 minutes ago at \(timeStr).")
+    }
+
+    @Test func `Accessibility value for past departure`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        formatters.timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = Date(timeIntervalSince1970: 1672531200)
+        let result = formatters.accessibilityValueForArrivalDeparture(
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: -5,
+            arrivalDepartureStatus: .departing,
+            temporalState: .past,
+            scheduleStatus: .onTime
+        )
+        let timeStr = formatters.timeFormatter.string(from: date)
+        #expect(result == "departed 5 minutes ago at \(timeStr).")
+    }
+
+    @Test func `Accessibility value for present arrival`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let date = Date()
+        let result = formatters.accessibilityValueForArrivalDeparture(
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: 0,
+            arrivalDepartureStatus: .arriving,
+            temporalState: .present,
+            scheduleStatus: .onTime
+        )
+        #expect(result == "arriving now!")
+    }
+
+    @Test func `Accessibility value for future departure`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        formatters.timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = Date(timeIntervalSince1970: 1672531200)
+        let result = formatters.accessibilityValueForArrivalDeparture(
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: 10,
+            arrivalDepartureStatus: .departing,
+            temporalState: .future,
+            scheduleStatus: .onTime
+        )
+        let timeStr = formatters.timeFormatter.string(from: date)
+        #expect(result == "departing in 10 minutes at \(timeStr).")
+    }
+
+    @Test func `Accessibility value for scheduled future arrival`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        formatters.timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = Date(timeIntervalSince1970: 1672531200)
+        let result = formatters.accessibilityValueForArrivalDeparture(
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: 15,
+            arrivalDepartureStatus: .arriving,
+            temporalState: .future,
+            scheduleStatus: .unknown
+        )
+        let timeStr = formatters.timeFormatter.string(from: date)
+        #expect(result == "scheduled to arrive in 15 minutes at \(timeStr).")
+    }
+
+    @Test func `Accessibility value for scheduled future departure`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        formatters.timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = Date(timeIntervalSince1970: 1672531200)
+        let result = formatters.accessibilityValueForArrivalDeparture(
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: 20,
+            arrivalDepartureStatus: .departing,
+            temporalState: .future,
+            scheduleStatus: .unknown
+        )
+        let timeStr = formatters.timeFormatter.string(from: date)
+        #expect(result == "scheduled to depart in 20 minutes at \(timeStr).")
     }
 }
