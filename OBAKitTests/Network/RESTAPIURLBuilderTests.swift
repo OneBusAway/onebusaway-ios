@@ -18,8 +18,7 @@ final class RESTAPIURLBuilderTests {
     var builder: RESTAPIURLBuilder!
     
     init() {
-        builder = RESTAPIURLBuilder(baseURL: URL(string: "https://api.pugetsound.onebusaway.org")!, defaultQueryItems: [URLQueryItem(name: "key", value: "TEST")])
-        builder.surveyBaseURL = URL(string: "https://surveys.onebusaway.org")!
+        builder = RESTAPIURLBuilder(baseURL: URL(string: "https://api.pugetsound.onebusaway.org")!, defaultQueryItems: [URLQueryItem(name: "key", value: "TEST")], surveyBaseURL: URL(string: "https://surveys.onebusaway.org")!)
     }
 
     @Test func testGetShape() {
