@@ -334,8 +334,12 @@ struct RentalClusterListView: View {
             // `localizedStringWithFormat`, not `String(format:)`: the latter expands
             // `%#@count@` but always resolves it against the root plural rule, so the
             // `few`/`many`/`zero`/`two` forms in the ar, pl, and ru entries could never
-            // be selected. A cluster always holds at least two, so this is the common
-            // case, not an edge one. Same trap as `SearchResultsSheetView`.
+            // be selected. Same trap as `SearchResultsSheetView`.
+            //
+            // Clusters are formed from two or more, but this view gets whatever
+            // `rentals(withIDs:)` still finds in `visibleRentals` — members that left
+            // the feed are filtered out and the caller only guards `isEmpty`. So `1`
+            // reaches here, which is the count this key exists to get right.
             .navigationTitle(String.localizedStringWithFormat(OBALoc("rental_cluster.title_fmt", value: "%d vehicles here", comment: "Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), rentals.count))
             .navigationBarTitleDisplayMode(.inline)
             .sheet(item: $selectedRental) { rental in
