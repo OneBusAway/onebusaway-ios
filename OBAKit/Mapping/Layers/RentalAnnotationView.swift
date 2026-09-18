@@ -37,11 +37,8 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         label.font = UIFont(descriptor: descriptor, size: 0)
         label.adjustsFontForContentSizeCategory = true
 
-        // A white halo keeps the text legible over satellite basemaps.
-        label.layer.shadowColor = UIColor.white.cgColor
-        label.layer.shadowRadius = 2
-        label.layer.shadowOpacity = 1
-        label.layer.shadowOffset = .zero
+        // Outline contrast comes from attributedText stroke (#1364), not a
+        // CALayer shadow — soft blur fails on the default mutedStandard tiles.
 
         // The view composes its own accessibility label; a second element here
         // would make VoiceOver announce the figure twice.
@@ -49,6 +46,20 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
 
         return label
     }()
+
+    /// White fill + black stroke. Soft `CALayer` shadows are not opaque enough
+    /// on the default `.mutedStandard` basemap; a real outline keeps the figure
+    /// legible on light and dark tiles without appearance switching (#1364).
+    /// Negative `strokeWidth` means fill + stroke (same idiom as
+    /// `StopAnnotationView.strokedText`).
+    static func strokedFuelLabelText(_ text: String, font: UIFont) -> NSAttributedString {
+        NSAttributedString(string: text, attributes: [
+            .font: font,
+            .foregroundColor: UIColor.white,
+            .strokeColor: UIColor.black,
+            .strokeWidth: -4.0
+        ])
+    }
 
     public override var annotation: MKAnnotation? {
         didSet { configure() }
@@ -89,8 +100,17 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         displayPriority = .defaultLow
         // MKAnnotationView's default implementation does nothing, so subclass
         // state that isn't reset here leaks into the next annotation.
-        fuelLabel.text = nil
+        fuelLabel.attributedText = nil
         fuelLabel.isHidden = true
+    }
+
+    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory else {
+            return
+        }
+        // Attributed stroke bakes the font in; rebuild when Dynamic Type changes.
+        configure()
     }
 
     private func configure() {
@@ -114,8 +134,16 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         }
 
         let fuelText = RentalFormat.fuelLabelText(for: rental)
-        fuelLabel.text = fuelText
-        fuelLabel.textColor = rental.isOperative ? .rentalPurple : .systemGray
+        if let fuelText {
+            // Prefer the live preferred font so Dynamic Type weight/size stick.
+            let base = UIFont.preferredFont(forTextStyle: .caption1)
+            let descriptor = base.fontDescriptor.withSymbolicTraits(.traitBold) ?? base.fontDescriptor
+            let font = UIFont(descriptor: descriptor, size: 0)
+            fuelLabel.font = font
+            fuelLabel.attributedText = Self.strokedFuelLabelText(fuelText, font: font)
+        } else {
+            fuelLabel.attributedText = nil
+        }
         fuelLabel.isHidden = fuelText == nil || !rentalAnnotation.showsFuelLabel
 
         // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
@@ -132,9 +160,8 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
     /// full reconfigure per visible annotation would re-resolve SF Symbols and
     /// re-run a distance formatter to change one Bool.
     func setShowsFuelLabel(_ shows: Bool) {
-        fuelLabel.isHidden = !shows || fuelLabel.text == nil
+        fuelLabel.isHidden = !shows || fuelLabel.attributedText == nil
     }
-
     private static func glyphName(for formFactor: VehicleFormFactor?) -> String {
         guard let formFactor else { return "bicycle" }
         if formFactor.isScooter { return "scooter" }

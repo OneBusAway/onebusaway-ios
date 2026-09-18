@@ -44,13 +44,17 @@ struct RentalMapMarker: View {
         // bottom, reproducing the 1pt spacing the stack used to provide.
         .overlay(alignment: .bottom) {
             if showsFuelLabel, let fuelText = RentalFormat.fuelLabelText(for: rental) {
-                Text(fuelText)
-                    .font(.caption.bold())
-                    .foregroundStyle(markerColor)
-                    // A light halo keeps the figure legible over satellite.
-                    .shadow(color: Color(uiColor: .systemBackground), radius: 2)
-                    .fixedSize()
-                    .alignmentGuide(.bottom) { $0[.top] - 1 }
+                // White fill + black outline — same contrast model as
+                // `RentalAnnotationView.strokedFuelLabelText` (#1364). `Text`
+                // can't stroke glyphs, so `MapLabelOutline` approximates the
+                // UIKit `NSAttributedString` stroke (same helper as stop labels).
+                MapLabelOutline(color: .black) {
+                    Text(fuelText)
+                        .font(.caption.bold())
+                        .foregroundStyle(.white)
+                        .fixedSize()
+                }
+                .alignmentGuide(.bottom) { $0[.top] - 1 }
             }
         }
         // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
