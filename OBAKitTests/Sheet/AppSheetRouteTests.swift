@@ -26,7 +26,6 @@ final class AppSheetRouteTests {
         #expect(AppSheetRoute.nearbyAll.id == "nearbyAll")
         #expect(AppSheetRoute.recentStopsAll.id == "recentStopsAll")
         #expect(AppSheetRoute.bookmarksAll.id == "bookmarksAll")
-        #expect(AppSheetRoute.tripPlanner.id == "tripPlanner")
         #expect(AppSheetRoute.routePicker.id == "routePicker")
         #expect(AppSheetRoute.more.id == "more")
         #expect(AppSheetRoute.settings.id == "settings")
@@ -56,7 +55,7 @@ final class AppSheetRouteTests {
 
     @Test func `Prefers stacking stacked layer routes`() throws {
         #expect(AppSheetRoute.stopDetails(stopID: "1").prefersStacking == true)
-        #expect(AppSheetRoute.tripPlanner.prefersStacking == true)
+        #expect(AppSheetRoute.tripPlanner(TripPlannerRequest()).prefersStacking == true)
         #expect(AppSheetRoute.tripDetails(tripID: "t").prefersStacking == true)
         let route = try Fixtures.createRoute(id: "r")
         #expect(AppSheetRoute.currentTrip(route: route).prefersStacking == true)
@@ -117,10 +116,21 @@ final class AppSheetRouteTests {
         #expect(config.fullScreenDetent == nil)
     }
 
+    /// Opens at `.medium`, not `.large`: the planner draws its route on the map behind
+    /// it, and a full-height sheet would cover the answer. `.medium` is also the rung
+    /// the sheet returns to when OTPKit's directions sheet opens over it.
+    @Test func `Trip planner opens at medium and includes tip rung`() {
+        let config = AppSheetRoute.tripPlanner(TripPlannerRequest()).detentConfiguration
+        #expect(config.detents == [.height(AppSheetRoute.tripPlannerTipHeight), .medium, .large])
+        #expect(config.initialDetent == .medium)
+        #expect(config.detents.contains(config.initialDetent))
+        #expect(config.isDismissDisabled == false)
+        #expect(config.fullScreenDetent == nil)
+    }
+
     @Test func `Stacked detail routes share large start and allow dismiss`() throws {
         let currentTripRoute = try Fixtures.createRoute(id: "r")
         let routes: [AppSheetRoute] = [
-            .tripPlanner,
             .tripDetails(tripID: "t"),
             .routePicker,
             .currentTrip(route: currentTripRoute),
@@ -144,7 +154,7 @@ final class AppSheetRouteTests {
         let currentTripRoute = try Fixtures.createRoute(id: "r")
         let routes: [AppSheetRoute] = [
             .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-            .stopDetails(stopID: "1"), .tripPlanner, .tripDetails(tripID: "t"),
+            .stopDetails(stopID: "1"), .tripPlanner(TripPlannerRequest()), .tripDetails(tripID: "t"),
             .routePicker, .currentTrip(route: currentTripRoute), .transitAlert(alertID: "a"),
             .more, .settings
         ]
@@ -222,6 +232,55 @@ final class AppSheetRouteTests {
         let sheetRoute2 = AppSheetRoute.currentTrip(route: route2)
         // Two routes with the same ID should hash to the same value
         #expect(sheetRoute1.hashValue == sheetRoute2.hashValue)
+    }
+
+    // MARK: - TripPlannerRequest
+
+    @Test func `TripPlannerRequest with equal fields are equal and hash equally`() {
+        let req1 = TripPlannerRequest()
+        let req2 = TripPlannerRequest()
+        #expect(req1 == req2)
+        #expect(req1.hashValue == req2.hashValue)
+    }
+
+    @Test func `TripPlannerRequest with different coordinates are unequal`() {
+        let coord1 = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        let coord2 = CLLocationCoordinate2D(latitude: 47.7, longitude: -122.4)
+        let req1 = TripPlannerRequest(viaPoint: coord1)
+        let req2 = TripPlannerRequest(viaPoint: coord2)
+        #expect(req1 != req2)
+    }
+
+    @Test func `Trip planner analytics key differs between destination, via-point, and empty requests`() {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
+        let coord = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+
+        let destinationRequest = AppSheetRoute.tripPlanner(TripPlannerRequest(destination: item))
+        let viaPointRequest = AppSheetRoute.tripPlanner(TripPlannerRequest(viaPoint: coord))
+        let emptyRequest = AppSheetRoute.tripPlanner(TripPlannerRequest())
+
+        #expect(destinationRequest.id == "tripPlanner_destination")
+        #expect(viaPointRequest.id == "tripPlanner_viaPoint")
+        #expect(emptyRequest.id == "tripPlanner_blank")
+
+        // Verify IDs differ
+        #expect(destinationRequest.id != viaPointRequest.id)
+        #expect(destinationRequest.id != emptyRequest.id)
+        #expect(viaPointRequest.id != emptyRequest.id)
+    }
+
+    @Test func `Trip planner analytics key contains no coordinate digits`() {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6123456, longitude: -122.3456789)))
+        let coord = CLLocationCoordinate2D(latitude: 47.6123456, longitude: -122.3456789)
+
+        let destinationRequest = AppSheetRoute.tripPlanner(TripPlannerRequest(destination: item))
+        let viaPointRequest = AppSheetRoute.tripPlanner(TripPlannerRequest(viaPoint: coord))
+
+        // Analytics keys should not contain coordinate numbers (privacy guard)
+        #expect(!destinationRequest.id.contains("47."))
+        #expect(!destinationRequest.id.contains("122."))
+        #expect(!viaPointRequest.id.contains("47."))
+        #expect(!viaPointRequest.id.contains("122."))
     }
 
     @Test func `Map settings route has a stable id`() {

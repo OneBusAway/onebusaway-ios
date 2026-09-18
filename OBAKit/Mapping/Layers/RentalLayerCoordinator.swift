@@ -101,6 +101,16 @@ import OTPKit
 
     var hasEnabledLayers: Bool { !enabledLayerFactors.isEmpty }
 
+    /// Whether the layer is currently in a position to say anything about vehicles.
+    ///
+    /// False when nothing is enabled, and false when the zoom gate is closed —
+    /// `MapRegionManager.forwardViewport(to:)` hands this coordinator a nil viewport
+    /// once the map is zoomed out past the layer's `zoomWindow`, which empties
+    /// `visibleRentals` wholesale. An empty list then means "not looking", not "none
+    /// there", and callers resolving a specific vehicle by id must not read the two the
+    /// same way.
+    var isReportingVehicles: Bool { hasEnabledLayers && lastMapRect != nil }
+
     private var combinedFormFactors: Set<VehicleFormFactor> {
         enabledLayerFactors.values.reduce(into: Set<VehicleFormFactor>()) { $0.formUnion($1) }
     }

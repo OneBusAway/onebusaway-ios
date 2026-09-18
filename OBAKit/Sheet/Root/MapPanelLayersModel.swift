@@ -128,8 +128,14 @@ import OTPKit
 
         rentalCancellables.removeAll()
 
+        // A rebind means a new region's coordinator, so anything held for the old
+        // region's sheets is now wrong rather than merely stale.
+        pinnedRentals.removeAll()
+        pinOrder.removeAll()
+
         guard let coordinator else {
             visibleRentals = []
+            lastReportedRentals = []
             rentalItems = []
             showsFuelLabels = false
             return
@@ -137,8 +143,12 @@ import OTPKit
 
         coordinator.$visibleRentals
             .sink { [weak self] rentals in
-                self?.visibleRentals = rentals
-                self?.recomputeClusters()
+                guard let self else { return }
+                self.visibleRentals = rentals
+                if !rentals.isEmpty {
+                    self.lastReportedRentals = rentals
+                }
+                self.recomputeClusters()
             }
             .store(in: &rentalCancellables)
 
@@ -198,16 +208,85 @@ import OTPKit
     /// The rider's location, for walk-time estimates in detail sheets.
     var rentalUserLocation: CLLocation? { registrar.rentalCoordinator?.userLocation }
 
-    /// Resolves a route's id back to a live model. Returns nil once the vehicle
-    /// has left the feed, so an open sheet reflects reality rather than a
-    /// snapshot taken at push time.
+    /// The last non-empty vehicle list the feed produced, retained for id resolution.
+    ///
+    /// Never drawn — `rentalItems` is computed from `visibleRentals` alone, so nothing
+    /// stale reaches the map. This exists only so an open sheet can still name the vehicle
+    /// it was opened for while the feed has nothing to say. See `resolutionSource`.
+    private var lastReportedRentals: [VehicleRental] = []
+
+    /// Vehicles an open sheet is about, held until the coordinator is rebuilt.
+    ///
+    /// `lastReportedRentals` covers the feed going silent *wholesale*. It cannot cover the
+    /// other half: the feed still reporting, from a viewport that no longer contains this
+    /// vehicle. Framing a planned trip re-fetches for the itinerary's bounding box, and
+    /// every bike outside it arrives back as a removal — indistinguishable, in the
+    /// snapshot, from one a rider just rode away. So a sheet two layers down watched its
+    /// own vehicle vanish and flipped to "Not available right now".
+    ///
+    /// Pinning happens where the sheet is opened — a map tap or a cluster row — which is
+    /// the one moment the vehicle is unambiguously live: the rider just touched it. From
+    /// then on the sheet keeps naming what it was opened for, and freshness is reported by
+    /// the sheet's own `fetchedAt` / `staleAfter` footer, which exists for exactly this.
+    private var pinnedRentals: [VehicleRental.ID: VehicleRental] = [:]
+
+    /// Insertion order for `pinnedRentals`, so the cap below evicts oldest-first.
+    private var pinOrder: [VehicleRental.ID] = []
+
+    /// Pins are only released wholesale, on a region change, so this bounds a long
+    /// session. A rider opening more than this many rental sheets without changing region
+    /// has long since stopped looking at the first one.
+    private static let pinnedRentalLimit = 64
+
+    /// Holds onto the vehicles a sheet is being opened for. Call from the push site.
+    func pinForOpenSheet(_ rentals: [VehicleRental]) {
+        for rental in rentals where pinnedRentals.updateValue(rental, forKey: rental.id) == nil {
+            pinOrder.append(rental.id)
+        }
+
+        while pinOrder.count > Self.pinnedRentalLimit {
+            pinnedRentals.removeValue(forKey: pinOrder.removeFirst())
+        }
+    }
+
+    /// What `rental(withID:)` and `rentals(withIDs:)` resolve against.
+    ///
+    /// `visibleRentals` is viewport-scoped and zoom-gated: pan away or zoom out past the
+    /// layer's window and `MapRegionManager.forwardViewport(to:)` hands the coordinator a
+    /// nil viewport, emptying it. That is the feed falling silent, not every vehicle
+    /// disappearing — but a sheet resolving against it reads the two identically and flips
+    /// to its "not available" state. Framing a planned trip zooms out far enough to do
+    /// this every time, which is how ending a trip left two dead rental sheets underneath
+    /// the planner; a rider pinching out with a rental sheet open hit the same thing.
+    ///
+    /// The fallback is deliberately narrow: only when the feed is *not* reporting and has
+    /// therefore emptied the list wholesale. While it is reporting, the live list is the
+    /// only truth — a vehicle missing from it really is gone, and saying so is the point of
+    /// resolving by id rather than carrying the model in the route. An area that genuinely
+    /// holds no vehicles still reads as empty.
+    private var resolutionSource: [VehicleRental] {
+        let isReporting = registrar.rentalCoordinator?.isReportingVehicles ?? false
+        guard !isReporting, visibleRentals.isEmpty else { return visibleRentals }
+        return lastReportedRentals
+    }
+
+    /// Resolves a route's id back to a model: the live list first, then anything pinned
+    /// for an open sheet, then the last report the feed made.
+    ///
+    /// Resolving live-first is what keeps an open sheet current — a vehicle's range and
+    /// position update under it as the feed refreshes. The fallbacks only answer when the
+    /// live list cannot, and each covers a different way of "cannot": see `pinnedRentals`
+    /// and `resolutionSource`. Nil still means nil for a vehicle the panel has never seen.
     func rental(withID id: VehicleRental.ID) -> VehicleRental? {
-        visibleRentals.first { $0.id == id }
+        resolutionSource.first { $0.id == id } ?? pinnedRentals[id]
     }
 
     func rentals(withIDs ids: [VehicleRental.ID]) -> [VehicleRental] {
-        let wanted = Set(ids)
-        return visibleRentals.filter { wanted.contains($0.id) }
+        let live = resolutionSource.filter { ids.contains($0.id) }
+        let liveIDs = Set(live.map(\.id))
+        // Order follows `ids` for the members the live list did not answer, so a cluster
+        // list does not reshuffle as vehicles drop in and out of the viewport.
+        return live + ids.compactMap { liveIDs.contains($0) ? nil : pinnedRentals[$0] }
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this
