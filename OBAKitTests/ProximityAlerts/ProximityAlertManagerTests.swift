@@ -603,9 +603,13 @@ final class ProximityAlertManagerTests: OBATestCase {
         // this manager observes with the selector form — `NotificationCenter`
         // invokes that inline, so reconciliation reaps the alert before the
         // crossing arrives and the test passes through the no-longer-stored
-        // branch instead of the expiry guard it names.
+        // branch instead of the expiry guard it names (#1347).
         store.proximityAlerts = [expired]
         #expect(locationService.startMonitoringProximity(for: expired) == .started)
+        // Still stored when we cross — otherwise we'd be covering the "gone"
+        // branch, not `guard !alert.isExpired`.
+        #expect(store.proximityAlerts.contains { $0.id == expired.id })
+        #expect(expired.isExpired)
 
         enterRegion(for: expired)
 
