@@ -11,11 +11,12 @@ import Testing
 @testable import OBAKit
 
 /// `NSDiffableDataSource` uses `Hashable` as identity. `hash(into:)` already
-/// combines `id`; `==` used not to, so two agency-alert sections with the same
-/// title and an empty row list compared equal while hashing differently —
-/// undefined behavior, and the source of
-/// "Failed to find index of item OBAListViewHeader".
-/// See: https://github.com/OneBusAway/onebusaway-ios/issues/421
+/// combines `id`; `==` used not to — undefined behavior under the Hashable
+/// contract (#421 / #1327).
+///
+/// #1338: a causal link from that mismatch to the historical
+/// "Failed to find index of item OBAListViewHeader" spam is unproven; these
+/// tests only lock the contract.
 @Suite(.serialized)
 struct OBAListViewSectionTests {
 
