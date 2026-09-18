@@ -29,7 +29,7 @@ final class LoggerTests {
                 logsFound = true
                 break
             }
-            Thread.sleep(forTimeInterval: 0.1)
+            try? await Task.sleep(nanoseconds: 100_000_000)
         }
         
         #expect(logsFound == true, "Log message was not found in OSLogStore after polling")
