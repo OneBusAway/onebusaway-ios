@@ -326,6 +326,32 @@ final class LocalizationTests {
         }
     }
 
+    /// The section footer and region time zone switch title must be translated.
+    /// Leaving English in a non-en locale regresses Settings for that language.
+    @Test func `Arrival display section footer and region time zone are localized`() {
+        let bundle = Bundle(for: DonationCell.self)
+        let footerKey = "settings_controller.arrival_display_section.footer"
+        let regionTimeZoneKey = "settings_controller.arrival_display_section.region_time_zone"
+
+        guard let english = strings(in: bundle, localization: "en"),
+              let englishFooter = english[footerKey],
+              let englishRegionTimeZone = english[regionTimeZoneKey] else {
+            Issue.record("en: missing arrival display section strings")
+            return
+        }
+
+        for localization in bundle.localizations where localization != "en" && localization != "Base" {
+            guard let table = strings(in: bundle, localization: localization),
+                  let footer = table[footerKey],
+                  let regionTimeZone = table[regionTimeZoneKey] else {
+                Issue.record("\(localization): missing arrival display section strings")
+                continue
+            }
+            #expect(footer != englishFooter, "\(localization): footer is still English")
+            #expect(regionTimeZone != englishRegionTimeZone, "\(localization): region time zone title is still English")
+        }
+    }
+
     /// The plural keys exist in *both* `Localizable.strings` (as the `value:` fallback) and
     /// `Localizable.stringsdict`. If the stringsdict resource ever stops being bundled, lookup
     /// silently falls back to the bare `%d` form and English renders "1 stops". Assert the

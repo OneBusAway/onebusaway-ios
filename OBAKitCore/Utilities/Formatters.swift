@@ -10,10 +10,29 @@
 import Foundation
 import MapKit
 
+public extension Notification.Name {
+    /// Posted after `Formatters.timeZone` changes so on-screen clock rows can
+    /// redraw when the region zone lands asynchronously.
+    static let formattersTimeZoneDidChange = Notification.Name("OBAFormattersTimeZoneDidChange")
+}
+
 public class Formatters: NSObject {
     private let locale: Locale
     private let themeColors: ThemeColors
     private let calendar: Calendar
+
+    /// Zone used for clock times (arrivals, trip times, transfer banners).
+    ///
+    /// Defaults to the device zone so existing tests and pre-region-load UI stay
+    /// stable. When the rider opts in, `CoreApplication` replaces this with the
+    /// region's dominant agency zone once `agencies-with-coverage` returns.
+    public var timeZone: TimeZone = .autoupdatingCurrent {
+        didSet {
+            guard oldValue != timeZone else { return }
+            applyTimeZoneToFormatters()
+            NotificationCenter.default.post(name: .formattersTimeZoneDidChange, object: self)
+        }
+    }
 
     /// Creates a new `Formatters` object that will use the provided `Calendar` and `Locale` for locale-specific customization.
     ///
@@ -44,11 +63,38 @@ public class Formatters: NSObject {
     /// - Parameter date: The date from which the return value will be created.
     public func contextualDateTimeString(_ date: Date) -> String {
         if calendar.isDateInToday(date) {
-            return timeFormatter.string(from: date)
+            return formattedClockTime(date)
         }
         else {
-            return shortDateTimeFormatter.string(from: date)
+            return appendingScheduleBadge(to: shortDateTimeFormatter.string(from: date), at: date)
         }
+    }
+
+    /// Clock time in `timeZone`, with a parenthetical badge when the device
+    /// offset differs. Same-offset riders see a bare time — issue #332.
+    public func formattedClockTime(_ date: Date, deviceTimeZone: TimeZone = .current) -> String {
+        appendingScheduleBadge(to: timeFormatter.string(from: date), at: date, deviceTimeZone: deviceTimeZone)
+    }
+
+    public func appendingScheduleBadge(to clock: String, at date: Date, deviceTimeZone: TimeZone = .current) -> String {
+        guard let badge = timeZone.scheduleBadge(at: date, versus: deviceTimeZone) else {
+            return clock
+        }
+        return String(
+            format: OBALoc(
+                "timezone.clock_with_badge_fmt",
+                value: "%1$@ (%2$@)",
+                comment: "Clock time with a timezone badge, e.g. 4:00 PM (PST). First argument is the clock. Second is the badge."
+            ),
+            clock,
+            badge
+        )
+    }
+
+    private func applyTimeZoneToFormatters() {
+        timeFormatter.timeZone = timeZone
+        shortDateTimeFormatter.timeZone = timeZone
+        dateIntervalFormatter.timeZone = timeZone
     }
 
     /// Converts a date into a human-readable date/time string that conforms to the user's locale.
@@ -57,6 +103,7 @@ public class Formatters: NSObject {
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         formatter.locale = locale
+        formatter.timeZone = timeZone
 
         return formatter
     }()
@@ -67,6 +114,7 @@ public class Formatters: NSObject {
         timeFormatter.dateStyle = .none
         timeFormatter.timeStyle = .short
         timeFormatter.locale = locale
+        timeFormatter.timeZone = timeZone
 
         return timeFormatter
     }()
@@ -75,6 +123,7 @@ public class Formatters: NSObject {
         let formatter = DateIntervalFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
+        formatter.timeZone = timeZone
         return formatter
     }()
 
@@ -124,7 +173,7 @@ public class Formatters: NSObject {
         arrivalDepartureStatus: ArrivalDepartureStatus,
         scheduleDeviationInMinutes: Int) -> NSAttributedString {
 
-        let arrDepTime = timeFormatter.string(from: arrivalDepartureDate)
+        let arrDepTime = formattedClockTime(arrivalDepartureDate)
 
         let explanationText = deviationLabel(
             scheduleStatus: scheduleStatus,
@@ -180,7 +229,7 @@ public class Formatters: NSObject {
     /// - "arriving in 3 minutes at 9:57pm"
     /// - "scheduled to arrive in 3 minutes at 9:57pm"
     public func accessibilityValueForArrivalDeparture(arrivalDepartureDate: Date, arrivalDepartureMinutes: Int, arrivalDepartureStatus: ArrivalDepartureStatus, temporalState: TemporalState, scheduleStatus: ScheduleStatus) -> String {
-        let arrDepTime = timeFormatter.string(from: arrivalDepartureDate)
+        let arrDepTime = formattedClockTime(arrivalDepartureDate)
 
         let apply: (String) -> String = { String(format: $0, abs(arrivalDepartureMinutes), arrDepTime) }
 
@@ -777,7 +826,7 @@ public class Formatters: NSObject {
 
     /// Formats a transfer arrival banner string. e.g., "Arriving at 4:10 PM via 10 - Capitol Hill"
     public func transferArrivalBannerText(arrivalTime: Date, routeDisplay: String) -> String {
-        let formattedTime = timeFormatter.string(from: arrivalTime)
+        let formattedTime = formattedClockTime(arrivalTime)
         let fmt = OBALoc(
             "formatters.transfer.arrival_banner_fmt",
             value: "Arriving at %@ via %@",
