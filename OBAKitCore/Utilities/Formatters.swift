@@ -15,6 +15,9 @@ public class Formatters: NSObject {
     private let themeColors: ThemeColors
     private let calendar: Calendar
 
+    /// A closure returning the current date, used for resolving "today" in date formatting. Defaults to `Date.init`.
+    public var now: () -> Date = Date.init
+
     /// Creates a new `Formatters` object that will use the provided `Calendar` and `Locale` for locale-specific customization.
     ///
     /// - Note: You probably should pass in the `autoupdatingCurrent` instances of `Locale` and `Calendar` to this method.
@@ -43,7 +46,7 @@ public class Formatters: NSObject {
     /// the `String` returned will look something like "Formatted short date, 9:41".
     /// - Parameter date: The date from which the return value will be created.
     public func contextualDateTimeString(_ date: Date) -> String {
-        if calendar.isDateInToday(date) {
+        if calendar.isDate(date, inSameDayAs: now()) {
             return timeFormatter.string(from: date)
         }
         else {
