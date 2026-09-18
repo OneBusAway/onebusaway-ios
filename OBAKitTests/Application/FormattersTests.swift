@@ -301,7 +301,7 @@ final class FormattersTests: OBATestCase {
         let date = Date(timeIntervalSince1970: 1672531200) // 2023-01-01 00:00:00 UTC
         let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: calendar, themeColors: ThemeColors())
         formatters.timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
-        
+
         let timeString = formatters.timeFormatter.string(from: date)
         let normalizedString = timeString.replacingOccurrences(of: "\u{202F}", with: " ")
         #expect(normalizedString == "12:00 AM")
@@ -328,10 +328,10 @@ final class FormattersTests: OBATestCase {
         formatters.timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
         let date = Date(timeIntervalSince1970: 1672531200) // 12:00 AM
         let result = formatters.accessibilityValueForArrivalDeparture(
-            arrivalDepartureDate: date, 
-            arrivalDepartureMinutes: 5, 
-            arrivalDepartureStatus: .arriving, 
-            temporalState: .future, 
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: 5,
+            arrivalDepartureStatus: .arriving,
+            temporalState: .future,
             scheduleStatus: .onTime
         )
         let timeStr = formatters.timeFormatter.string(from: date)
@@ -342,10 +342,10 @@ final class FormattersTests: OBATestCase {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let date = Date()
         let result = formatters.accessibilityValueForArrivalDeparture(
-            arrivalDepartureDate: date, 
-            arrivalDepartureMinutes: 0, 
-            arrivalDepartureStatus: .departing, 
-            temporalState: .present, 
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: 0,
+            arrivalDepartureStatus: .departing,
+            temporalState: .present,
             scheduleStatus: .onTime
         )
         #expect(result == "departing now!")
@@ -356,10 +356,10 @@ final class FormattersTests: OBATestCase {
         formatters.timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)!
         let date = Date(timeIntervalSince1970: 1672531200)
         let result = formatters.accessibilityValueForArrivalDeparture(
-            arrivalDepartureDate: date, 
-            arrivalDepartureMinutes: -3, 
-            arrivalDepartureStatus: .arriving, 
-            temporalState: .past, 
+            arrivalDepartureDate: date,
+            arrivalDepartureMinutes: -3,
+            arrivalDepartureStatus: .arriving,
+            temporalState: .past,
             scheduleStatus: .late
         )
         let timeStr = formatters.timeFormatter.string(from: date)

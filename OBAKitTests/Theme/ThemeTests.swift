@@ -14,7 +14,7 @@ import UIKit
 
 @Suite(.serialized)
 final class ThemeTests {
-    
+
     @Test func `ThemeMetrics constants are correct`() {
         #expect(ThemeMetrics.accessibilityPadding == 16.0)
         #expect(ThemeMetrics.padding == 8.0)
@@ -26,7 +26,7 @@ final class ThemeTests {
 
     @Test func `ThemeColors initializes successfully`() {
         let colors = ThemeColors.shared
-        #expect(colors.brand != nil)
+
         #expect(colors.errorColor == .systemRed)
         #expect(colors.departureEarly == .systemRed)
         #expect(colors.departureLate == .systemBlue)
