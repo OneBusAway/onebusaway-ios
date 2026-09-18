@@ -51,7 +51,18 @@ jobs:
         # promote a new error-severity rule and turn main red with no app change
         # (#1340). Bump SWIFTLINT_PIN deliberately after reviewing new rules.
         SWIFTLINT_PIN="0.65.1"
-        curl -sL "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_PIN}/portable_swiftlint.zip" -o /tmp/swiftlint.zip
+        # GitHub release asset downloads occasionally return a truncated/HTML body
+        # (unzip exit 9: "End-of-central-directory signature not found"). Retry
+        # and refuse to unzip until the payload looks like a zip.
+        for attempt in 1 2 3; do
+          curl -fL --retry 3 --retry-delay 2             "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_PIN}/portable_swiftlint.zip"             -o /tmp/swiftlint.zip
+          if file /tmp/swiftlint.zip | grep -qi 'Zip archive'; then
+            break
+          fi
+          echo "SwiftLint zip download looked corrupt (attempt ${attempt}); retrying…" >&2
+          sleep $((attempt * 2))
+        done
+        file /tmp/swiftlint.zip | grep -qi 'Zip archive'
         unzip -qo /tmp/swiftlint.zip -d /tmp/swiftlint
         /tmp/swiftlint/swiftlint version | grep -qx "$SWIFTLINT_PIN"
         /tmp/swiftlint/swiftlint lint --reporter github-actions-logging

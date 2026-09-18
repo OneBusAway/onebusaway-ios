@@ -41,8 +41,11 @@ enum RentalFormat {
         return String(format: OBALoc("rental_detail.walk_time_fmt", value: "%d min walk", comment: "Estimated walking time to a rental vehicle"), minutes)
     }
 
+    /// Feeds do send values outside 0...1. Clamp rather than render "120%" or "-10%".
+    /// The pin, the detail sheet, and the cluster list all go through here.
     static func batteryText(_ percent: Double) -> String {
-        "\(Int((percent * 100).rounded()))%"
+        let clamped = min(max(percent, 0), 1)
+        return "\(Int((clamped * 100).rounded()))%"
     }
 
     /// The text rendered beneath a rental map pin: battery percent when the feed
@@ -55,8 +58,7 @@ enum RentalFormat {
         guard case .vehicle(let vehicle) = rental, let fuel = vehicle.fuel else { return nil }
 
         if let percent = fuel.percent {
-            // Feeds do send values outside 0...1; clamp rather than render "120%".
-            return batteryText(min(max(percent, 0), 1))
+            return batteryText(percent)
         }
 
         if let range = fuel.range {

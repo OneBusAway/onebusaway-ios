@@ -36,6 +36,14 @@ final class RentalFormatTests {
         #expect(RentalFormat.fuelLabelText(for: rental) == "100%")
     }
 
+    /// The detail sheet and the cluster list call `batteryText` directly, not
+    /// `fuelLabelText`. A feed value of 1.2 must not render "120%" there either.
+    @Test func batteryTextClampsOutOfRangePercent() {
+        #expect(RentalFormat.batteryText(1.2) == "100%")
+        #expect(RentalFormat.batteryText(-0.1) == "0%")
+        #expect(RentalFormat.batteryText(0.62) == "62%")
+    }
+
     @Test func negativePercentClampsToZero() throws {
         let rental = try RentalFixtures.vehicle(batteryPercent: -0.1)
         #expect(RentalFormat.fuelLabelText(for: rental) == "0%")
