@@ -67,13 +67,13 @@ struct TripLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if let primary {
-                        let primaryMinuteText = presenter.minuteText(for: primary)
-                        Text(primaryMinuteText)
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(presenter.color(for: primary)))
-                            .contentTransition(.numericText(value: Double(primaryMinuteText.filter("0123456789".contains)) ?? 0))
-                            .opacity(staleOpacity)
-                            .padding(.trailing, 6)
+                        TickingCountdownText(
+                            departure: primary.departureDate,
+                            font: .system(size: 32, weight: .bold, design: .rounded),
+                            color: Color(presenter.color(for: primary)),
+                            opacity: staleOpacity
+                        )
+                        .padding(.trailing, 6)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -108,10 +108,11 @@ struct TripLiveActivity: Widget {
                             VStack(alignment: .trailing, spacing: 4) {
                                 let nextDepartures = upcoming.dropFirst().prefix(2)
                                 ForEach(Array(nextDepartures.enumerated()), id: \.offset) { _, arrivalInfo in
-                                    Text(presenter.minuteText(for: arrivalInfo))
-                                        .font(.system(.callout, design: .rounded))
-                                        .fontWeight(.bold)
-                                        .foregroundColor(Color(presenter.color(for: arrivalInfo)))
+                                    TickingCountdownText(
+                                        departure: arrivalInfo.departureDate,
+                                        font: .system(.callout, design: .rounded, weight: .bold),
+                                        color: Color(presenter.color(for: arrivalInfo))
+                                    )
                                 }
                             }
                             .padding(.trailing, 6)
@@ -147,12 +148,13 @@ struct TripLiveActivity: Widget {
                 .padding(.leading, 4)
             } compactTrailing: {
                 if let primary {
-                    Text(presenter.minuteText(for: primary))
-                        .font(.system(.body, design: .rounded))
-                        .fontWeight(.bold)
-                        .foregroundColor(Color(presenter.color(for: primary)))
-                        .opacity(staleOpacity)
-                        .frame(minWidth: 20)
+                    TickingCountdownText(
+                        departure: primary.departureDate,
+                        font: .system(.body, design: .rounded, weight: .bold),
+                        color: Color(presenter.color(for: primary)),
+                        opacity: staleOpacity
+                    )
+                    .frame(minWidth: 20)
                 }
             } minimal: {
                 // Keep the countdown when stale — minimal has no room for both
@@ -160,20 +162,18 @@ struct TripLiveActivity: Widget {
                 // rider gets here. Compact and minimal are mutually exclusive
                 // presentations, so there is no compact leading triangle to lean on.
                 if let primary {
-                    Text(presenter.minuteText(for: primary))
-                        .font(.system(.callout, design: .rounded))
-                        .fontWeight(.heavy)
-                        .foregroundColor(
-                            context.isStale
-                                ? .orange
-                                : Color(presenter.color(for: primary))
-                        )
-                        .opacity(staleOpacity)
-                        .accessibilityLabel(
-                            context.isStale
-                                ? "\(LiveActivityStaleChrome.warningText), \(presenter.minuteText(for: primary))"
-                                : presenter.minuteText(for: primary)
-                        )
+                    let minuteText = TripCountdownFormatStyle(departure: primary.departureDate).format(Date())
+                    TickingCountdownText(
+                        departure: primary.departureDate,
+                        font: .system(.callout, design: .rounded, weight: .heavy),
+                        color: context.isStale
+                            ? .orange
+                            : Color(presenter.color(for: primary)),
+                        opacity: staleOpacity,
+                        accessibilityLabel: context.isStale
+                            ? "\(LiveActivityStaleChrome.warningText), \(minuteText)"
+                            : minuteText
+                    )
                 }
             }
         }
