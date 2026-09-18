@@ -118,7 +118,7 @@ struct ServiceAlertsSection: View {
         Button {
             withAnimation { showAllAlerts = true }
         } label: {
-            Text(String(format: OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), alerts.count))
+            Text(CountPlural.format(OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), count: alerts.count))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -130,7 +130,7 @@ struct ServiceAlertsSection: View {
     }
 
     private var headerAccessibilityLabel: String {
-        String(format: OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), alerts.count)
+        CountPlural.format(OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), count: alerts.count)
     }
 
     private func alertRow(_ alert: ServiceAlert) -> some View {
