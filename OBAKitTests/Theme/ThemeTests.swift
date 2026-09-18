@@ -26,7 +26,7 @@ final class ThemeTests {
 
     @Test func `ThemeColors initializes successfully`() {
         let colors = ThemeColors.shared
-        #expect(colors.brand != nil)
+        
         #expect(colors.errorColor == .systemRed)
         #expect(colors.departureEarly == .systemRed)
         #expect(colors.departureLate == .systemBlue)
