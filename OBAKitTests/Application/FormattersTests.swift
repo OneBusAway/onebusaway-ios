@@ -360,7 +360,7 @@ final class FormattersTests: OBATestCase {
             arrivalDepartureMinutes: -3, 
             arrivalDepartureStatus: .arriving, 
             temporalState: .past, 
-            scheduleStatus: .late
+            scheduleStatus: .delayed
         )
         let timeStr = formatters.timeFormatter.string(from: date)
         #expect(result == "arrived 3 minutes ago at \(timeStr).")
