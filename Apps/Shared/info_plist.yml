@@ -16,3 +16,5 @@ targets:
       properties:
         NSHealthShareUsageDescription: Uses your walking speed from the Health app to give you more accurate arrival time estimates.
         NSHealthUpdateUsageDescription: Uses your walking speed from the Health app to give you more accurate arrival time estimates.
+        NSSpeechRecognitionUsageDescription: Voice search converts what you say into a transit search query.
+        NSMicrophoneUsageDescription: Voice search listens so you can search for stops, routes, and places by speaking.

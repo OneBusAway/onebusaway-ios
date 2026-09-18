@@ -1888,3 +1888,12 @@
 "trip_progress.stop_count_fmt" = "Hintuan %1$d sa %2$d";
 /* Voiceover text explaining that the vehicle has already passed this stop */
 "trip_stop.passed_stop.accessibility_label" = "Nadaanang hintuan";
+
+/* Accessibility label for the mic button that starts voice search. */
+"search_sheet.voice_search.start" = "Voice search";
+/* Accessibility label for the mic button while voice search is listening. */
+"search_sheet.voice_search.stop" = "Ihinto ang pakikinig";
+/* Shown when the user denies speech/mic permission for voice search. */
+"voice_search.permission_denied" = "Kailangan ang access sa microphone o speech recognition para sa voice search.";
+/* Shown when SFSpeechRecognizer cannot run. */
+"voice_search.unavailable" = "Hindi available ang voice search sa device na ito.";

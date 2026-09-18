@@ -13,3 +13,7 @@
 /* Purpose string shown when the app requests HealthKit access to your walking speed. */
 "NSHealthShareUsageDescription" = "Wykorzystuje Twoją prędkość chodzenia z aplikacji Zdrowie, aby dokładniej szacować godziny przyjazdu.";
 "NSHealthUpdateUsageDescription" = "Wykorzystuje Twoją prędkość chodzenia z aplikacji Zdrowie, aby dokładniej szacować godziny przyjazdu.";
+
+/* Purpose strings shown when the app requests speech recognition / microphone for voice search. */
+"NSSpeechRecognitionUsageDescription" = "Wyszukiwanie głosowe zamienia to, co mówisz, w zapytanie o transport.";
+"NSMicrophoneUsageDescription" = "Wyszukiwanie głosowe nasłuchuje, abyś mógł wyszukiwać przystanki, linie i miejsca mówiąc.";

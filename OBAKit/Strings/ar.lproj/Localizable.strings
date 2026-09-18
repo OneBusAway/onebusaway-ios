@@ -1888,3 +1888,12 @@
 "trip_progress.stop_count_fmt" = "الموقف %1$d من %2$d";
 /* Voiceover text explaining that the vehicle has already passed this stop */
 "trip_stop.passed_stop.accessibility_label" = "موقف تم تجاوزه";
+
+/* Accessibility label for the mic button that starts voice search. */
+"search_sheet.voice_search.start" = "البحث الصوتي";
+/* Accessibility label for the mic button while voice search is listening. */
+"search_sheet.voice_search.stop" = "إيقاف الاستماع";
+/* Shown when the user denies speech/mic permission for voice search. */
+"voice_search.permission_denied" = "يلزم الوصول إلى الميكروفون أو التعرف على الكلام للبحث الصوتي.";
+/* Shown when SFSpeechRecognizer cannot run. */
+"voice_search.unavailable" = "البحث الصوتي غير متاح على هذا الجهاز.";

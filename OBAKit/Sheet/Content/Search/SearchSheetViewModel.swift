@@ -49,18 +49,36 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     private let application: Application
     private let coordinator: SheetCoordinator<AppSheetRoute>
     private let router: SearchResultRouter
+    private let voiceSearch: VoiceSearchControlling
     private var searchTask: Task<Void, Never>?
+    private var voiceTask: Task<Void, Never>?
 
-    init(application: Application, coordinator: SheetCoordinator<AppSheetRoute>, router: SearchResultRouter) {
+    /// `true` while the mic is open and partial transcripts may rewrite `query`.
+    @Published private(set) var isListening = false
+
+    init(
+        application: Application,
+        coordinator: SheetCoordinator<AppSheetRoute>,
+        router: SearchResultRouter,
+        voiceSearch: VoiceSearchControlling = SpeechVoiceSearchController()
+    ) {
         self.application = application
         self.coordinator = coordinator
         self.router = router
+        self.voiceSearch = voiceSearch
         super.init()
     }
 
     isolated deinit {
         searchTask?.cancel()
+        voiceTask?.cancel()
+        voiceSearch.stop()
         pendingPresentation?.cancel()
+    }
+
+    /// Hidden when speech or the microphone cannot run (or was permanently denied).
+    var isVoiceSearchAvailable: Bool {
+        voiceSearch.isAvailable
     }
 
     // MARK: - Session
@@ -89,6 +107,11 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         query = text
         message = nil
         searchInteractor.searchModeObjects(text: text)
+        // Any UI edit (clear or type) stops the mic — otherwise the next partial
+        // overwrites what the rider just typed.
+        if isListening {
+            stopVoiceSearch()
+        }
     }
 
     /// Called when the view dismisses the alert, so a repeat of the same failing
@@ -99,6 +122,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
     /// Leaves search and returns the base sheet to home.
     func close() {
+        stopVoiceSearch()
         searchTask?.cancel()
         searchTask = nil
         // A resolving stop or map item has to go too. Without this it lands after the
@@ -109,9 +133,72 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         coordinator.pop()
     }
 
+    // MARK: - Voice search (#1129)
+
+    /// Toggles the mic. Partial results fill the field; a final result runs search.
+    func toggleVoiceSearch() {
+        if isListening {
+            stopVoiceSearch()
+        } else {
+            startVoiceSearch()
+        }
+    }
+
+    func startVoiceSearch() {
+        stopVoiceSearch()
+        isListening = true
+        message = nil
+
+        voiceTask = Task { [weak self] in
+            guard let self else { return }
+            // `stopVoiceSearch()` may have cancelled us before we first ran — same
+            // race `pendingPresentation` guards against in `close()`.
+            guard !Task.isCancelled else { return }
+            for await event in self.voiceSearch.start() {
+                guard !Task.isCancelled else { break }
+                switch event {
+                case .partial(let text):
+                    self.updateQueryPreservingListen(text)
+                case .final(let text):
+                    self.isListening = false
+                    self.updateQueryPreservingListen(text)
+                    let request = VoiceSearchQueryClassifier.request(from: text)
+                    guard !request.query.isEmpty else { return }
+                    // Go through `performSearch` so an in-flight keyboard `searchTask`
+                    // is cancelled instead of presenting stale results over voice.
+                    self.performSearch(request: request)
+                case .failed(let text):
+                    self.isListening = false
+                    self.message = SearchSheetMessage(kind: .error, text: text)
+                }
+            }
+            if !Task.isCancelled {
+                self.isListening = false
+            }
+        }
+    }
+
+    func stopVoiceSearch() {
+        voiceTask?.cancel()
+        voiceTask = nil
+        voiceSearch.stop()
+        isListening = false
+    }
+
+    /// Same as `updateQuery` without cancelling an in-flight listen (partials rewrite
+    /// the field while the mic is still open).
+    private func updateQueryPreservingListen(_ text: String) {
+        query = text
+        message = nil
+        searchInteractor.searchModeObjects(text: text)
+    }
+
     // MARK: - SearchDelegate
 
     func performSearch(request: SearchRequest) {
+        // A quick-search row leaves through this path. Stop before the fetch so
+        // a later `.final` cannot search a sheet the rider already left.
+        stopVoiceSearch()
         searchTask?.cancel()
         searchTask = Task { [weak self] in
             await self?.performSearchAndWait(request: request)
@@ -193,6 +280,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             message = SearchSheetMessage(kind: .noResults, text: Self.noResultsText)
 
         case .disambiguate(let response):
+            stopVoiceSearch()
             coordinator.push(.searchResults(response))
 
         case .single(let response):
@@ -210,6 +298,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             guard !Task.isCancelled else { return }
             // Leave search before opening the result, so Close on the detail sheet
             // lands back on home rather than on a stale search screen.
+            stopVoiceSearch()
             coordinator.pop()
             router.present(resolved)
         }
@@ -238,6 +327,9 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     /// Same order as the single-result path: resolve, then unwind, then present — so
     /// search is only left once there's something to show.
     private func leaveSearchAndPresent(_ result: Any) async {
+        // Tap-to-leave. Stop before the resolve await so a `.final` in flight
+        // cannot `performSearch` onto the sheet the rider just opened.
+        stopVoiceSearch()
         let resolved = await router.resolve(result: result)
         // Cancelling the task doesn't stop the resolve already in flight, so check
         // before touching the screen: `close()` has already popped search, and
