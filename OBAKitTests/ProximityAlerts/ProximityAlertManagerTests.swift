@@ -107,6 +107,47 @@ final class ProximityAlertManagerTests: OBATestCase {
         }
     }
 
+    // MARK: - Authorization Step
+
+    @Test func `Authorization step is ready when both permissions are held`() async {
+        let manager = makeManager(notificationStatus: .authorized)
+
+        #expect(await manager.authorizationStep() == .ready)
+    }
+
+    @Test func `Authorization step asks for location before notifications`() async {
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+        let manager = makeManager(notificationStatus: .notDetermined)
+
+        // Both are missing; location is what gets asked about first.
+        #expect(await manager.authorizationStep() == .promptForLocation)
+    }
+
+    @Test func `Authorization step asks for notifications once location is granted`() async {
+        let manager = makeManager(notificationStatus: .notDetermined)
+
+        #expect(await manager.authorizationStep() == .promptForNotifications)
+    }
+
+    @Test func `Authorization step reports location blocked once the prompt is spent`() async {
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+        locationService.requestAlwaysAuthorization()
+        // The rider dismissed the prompt, so the status is back where it started
+        // while the one-shot is now gone.
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+        let manager = makeManager(notificationStatus: .authorized)
+
+        // End to end: the flag `LocationService` persisted is what turns an
+        // otherwise promptable status into a trip to Settings.
+        #expect(await manager.authorizationStep() == .locationBlocked(.authorizedWhenInUse))
+    }
+
+    @Test func `Authorization step reports notifications blocked`() async {
+        let manager = makeManager(notificationStatus: .denied)
+
+        #expect(await manager.authorizationStep() == .notificationsBlocked)
+    }
+
     // MARK: - Creating Alerts
 
     @Test func `Create stores the alert and arms its geofence`() async {

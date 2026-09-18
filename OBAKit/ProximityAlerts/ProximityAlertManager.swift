@@ -188,6 +188,24 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
         userDataStore.proximityAlerts.first { $0.stopID == stopID && !$0.isExpired }
     }
 
+    // MARK: - Authorization
+
+    /// What has to happen before ``createProximityAlert(for:radiusMeters:)`` can
+    /// return `.activated`.
+    ///
+    /// Worth asking *before* offering the action, not only after a refusal.
+    /// `createProximityAlert` reports the same shortfall, but only once the rider
+    /// has committed to setting an alert — and it deliberately reports raw
+    /// statuses, which do not say whether asking again would raise a prompt or
+    /// silently do nothing. This does.
+    public func authorizationStep() async -> ProximityAlertAuthorizationStep {
+        ProximityAlertAuthorizationStep.resolve(
+            locationStatus: locationService.authorizationStatus,
+            canPromptForAlways: locationService.canPromptForAlwaysAuthorization,
+            notificationStatus: await authorizationStatusProvider()
+        )
+    }
+
     // MARK: - Creating and Cancelling
 
     /// Stores and arms an alert on `stop`, or explains why it couldn't.
