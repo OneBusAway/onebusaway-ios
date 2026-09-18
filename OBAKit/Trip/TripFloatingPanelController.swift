@@ -292,9 +292,15 @@ class TripFloatingPanelController: UIViewController,
     // MARK: - Helpers
 
     /// Returns the index of the vehicle's closest stop within the trip's stop list, or nil if unavailable.
+    ///
+    /// Uses the same loop-aware resolution as the SwiftUI trip page (#1425) —
+    /// not bare `firstIndex` on `closestStopID`.
     private func closestStopIndex(in tripDetails: TripDetails) -> Int? {
-        guard let closestStopID = tripDetails.status?.closestStopID else { return nil }
-        return tripDetails.stopTimes.firstIndex { $0.stopID == closestStopID }
+        TripStopListModel.vehicleStopIndex(
+            in: tripDetails.stopTimes,
+            closestStopID: tripDetails.status?.closestStopID,
+            arrivalDeparture: tripConvertible?.arrivalDeparture
+        )
     }
 
     // MARK: - ListAdapterDataSource (Data Loading)

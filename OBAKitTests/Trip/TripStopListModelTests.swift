@@ -111,6 +111,21 @@ struct TripStopListModelTests {
         #expect(model.vehicleIndex == 2)
     }
 
+    /// #1425: UIKit's trip panel must call this entry point instead of
+    /// `firstIndex` on `closestStopID`, or loops keep marking the first visit.
+    @Test func `Vehicle stop index API matches make on a loop`() {
+        let stops = line(["A", "B", "A", "C"])
+        let index = TripStopListModel.vehicleStopIndex(
+            in: stops,
+            closestStopID: "A",
+            userStopID: "C",
+            userStopSequence: nil
+        )
+
+        #expect(index == 2)
+        #expect(make(stops, userStopID: "C", closestStopID: "A").vehicleIndex == index)
+    }
+
     @Test func `Without a rider's stop, the vehicle resolves to its first visit`() {
         let model = make(line(["A", "B", "A", "C"]), closestStopID: "A")
 
