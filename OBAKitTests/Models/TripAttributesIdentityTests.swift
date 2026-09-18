@@ -24,14 +24,16 @@ final class TripAttributesIdentityTests {
         routeHeadsign: String = "Downtown",
         stopID: String = "1_75403",
         routeColorHex: String? = nil,
-        regionID: Int = 1
+        regionID: Int = 1,
+        tripID: String = "trip_1"
     ) -> TripAttributes.StaticData {
         TripAttributes.StaticData(
             routeShortName: routeShortName,
             routeHeadsign: routeHeadsign,
             stopID: stopID,
             routeColorHex: routeColorHex,
-            regionID: regionID
+            regionID: regionID,
+            tripID: tripID
         )
     }
 
@@ -51,6 +53,26 @@ final class TripAttributesIdentityTests {
     /// tracking one must not suppress starting the other.
     @Test func `Does not match on different headsign`() {
         #expect(!staticData().tracksSameTrip(as: staticData(routeHeadsign: "University District")))
+    }
+
+    /// Two vehicles on the same route and headsign at one stop are different
+    /// trips, so tracking one must not suppress or promote the other (#1334).
+    @Test func `Does not match on different trip ID`() {
+        #expect(!staticData(tripID: "trip_a").tracksSameTrip(as: staticData(tripID: "trip_b")))
+    }
+
+    /// Legacy / bookmark activities without a stored trip ID still compare equal
+    /// when both sides are empty.
+    @Test func `Matches when both trip IDs are empty`() {
+        #expect(staticData(tripID: "").tracksSameTrip(as: staticData(tripID: "")))
+    }
+
+    /// Empty tripID is a wildcard so bookmark Track (`""`) reconciles with a
+    /// stop-page activity that carries a concrete trip — restoring the
+    /// cross-path duplicate guard without pinning bookmark identity.
+    @Test func `Matches when only one trip ID is empty`() {
+        #expect(staticData(tripID: "").tracksSameTrip(as: staticData(tripID: "trip_a")))
+        #expect(staticData(tripID: "trip_a").tracksSameTrip(as: staticData(tripID: "")))
     }
 
     /// The route colour arrives with the first arrivals payload and is nil until
@@ -81,6 +103,11 @@ final class TripAttributesIdentityTests {
         let colored = staticData(routeColorHex: "FF0000")
         #expect(plain.tracksSameTrip(as: colored))
         #expect(colored.tracksSameTrip(as: plain))
+
+        let empty = staticData(tripID: "")
+        let pinned = staticData(tripID: "trip_a")
+        #expect(empty.tracksSameTrip(as: pinned))
+        #expect(pinned.tracksSameTrip(as: empty))
     }
 
     /// Empty headsign is the fallback both start paths use when a bookmark or

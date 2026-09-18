@@ -11,13 +11,19 @@ import ActivityKit
 
 extension TripAttributes.StaticData {
 
-    /// Whether two `StaticData` describe the same tracked trip: the same route,
-    /// with the same headsign, arriving at the same stop.
+    /// Whether two `StaticData` describe the same tracked trip: the same route
+    /// and headsign arriving at the same stop, with compatible trip IDs.
     ///
     /// This is the single definition of Live Activity identity — the start
     /// paths' duplicate guards and the bookmark-reconciliation match all
     /// delegate to it, so "the same tracked trip" can't quietly come to mean
     /// two different things.
+    ///
+    /// An empty `tripID` is a wildcard. Bookmark Track leaves it blank so
+    /// identity stays stop + route + headsign; stop-page / trip-page Track
+    /// store a concrete `tripID`. Wildcarding empty lets those paths reconcile
+    /// with each other (and with legacy cards) without pinning bookmark
+    /// identity to whichever bus was soonest when Track was tapped.
     ///
     /// `routeColorHex` and `regionID` are excluded on purpose. Both are
     /// presentation/routing metadata rather than identity, and the colour in
@@ -25,15 +31,24 @@ extension TripAttributes.StaticData {
     /// arrivals load. Folding it into identity would let a duplicate through in
     /// exactly the case this guards against: a second tap before data arrives.
     public func tracksSameTrip(as other: TripAttributes.StaticData) -> Bool {
-        stopID == other.stopID
+        guard stopID == other.stopID
             && routeShortName == other.routeShortName
             && routeHeadsign == other.routeHeadsign
+        else {
+            return false
+        }
+
+        if tripID.isEmpty || other.tripID.isEmpty {
+            return true
+        }
+        return tripID == other.tripID
     }
 }
 
 extension Activity where Attributes == TripAttributes {
 
-    /// The Live Activity already running for `staticData`'s stop and route, if any.
+    /// The Live Activity already running for `staticData`'s stop, route,
+    /// headsign, and (when set) trip, if any.
     ///
     /// Every `Activity.request` mints a brand-new activity with a fresh id, and
     /// nothing downstream dedupes by content: `LiveActivityTracker` and

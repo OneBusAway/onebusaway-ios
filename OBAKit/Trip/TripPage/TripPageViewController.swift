@@ -441,7 +441,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             routeHeadsign: departure.tripHeadsign ?? "",
             stopID: departure.stopID,
             routeColorHex: departure.route.color?.toHex(),
-            regionID: application.currentRegion?.regionIdentifier ?? 0
+            regionID: application.currentRegion?.regionIdentifier ?? 0,
+            tripID: departure.tripID
         )
 
         // Shares the mapping with the bookmark and stop paths rather than

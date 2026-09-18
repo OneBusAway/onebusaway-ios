@@ -31,9 +31,13 @@ public struct TripAttributes: ActivityAttributes, Sendable {
         /// The region that hosts this stop, encoded in the widget URL so tapping
         /// the Live Activity opens the correct stop page.
         public let regionID: Int
+        /// The tracked trip. Distinguishes two vehicles on the same route and
+        /// headsign at one stop (#1334). Empty for activities started before
+        /// this field existed.
+        public let tripID: String
 
         enum CodingKeys: String, CodingKey {
-            case routeShortName, routeHeadsign, stopID, routeColorHex, regionID
+            case routeShortName, routeHeadsign, stopID, routeColorHex, regionID, tripID
         }
 
         public init(from decoder: Decoder) throws {
@@ -43,14 +47,23 @@ public struct TripAttributes: ActivityAttributes, Sendable {
             stopID = try c.decode(String.self, forKey: .stopID)
             routeColorHex = try c.decodeIfPresent(String.self, forKey: .routeColorHex)
             regionID = (try? c.decode(Int.self, forKey: .regionID)) ?? 0
+            tripID = (try? c.decode(String.self, forKey: .tripID)) ?? ""
         }
 
-        public init(routeShortName: String, routeHeadsign: String, stopID: String, routeColorHex: String? = nil, regionID: Int = 0) {
+        public init(
+            routeShortName: String,
+            routeHeadsign: String,
+            stopID: String,
+            routeColorHex: String? = nil,
+            regionID: Int = 0,
+            tripID: String = ""
+        ) {
             self.routeShortName = routeShortName
             self.routeHeadsign = routeHeadsign
             self.stopID = stopID
             self.routeColorHex = routeColorHex
             self.regionID = regionID
+            self.tripID = tripID
         }
     }
 
