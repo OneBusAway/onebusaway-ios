@@ -64,6 +64,43 @@ final class SearchManagerTests: OBATestCase {
         #expect(response.results.allSatisfy { $0 is Stop })
     }
 
+    /// #1432: stop-number lookup must cover the region's full service rect (span),
+    /// not a 15 km radius bubble that silently drops same-code stops at other agencies.
+    @Test @MainActor
+    func `Stop number search queries the region service span with the stop code`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let capturedRequest = SendableBox<URLRequest?>(nil)
+
+        let data = Fixtures.loadData(file: "stops_for_location_seattle.json")
+        dataLoader.mock(data: data) { request in
+            if request.url?.path.contains("/api/where/stops-for-location.json") ?? false {
+                capturedRequest.value = request
+                return true
+            }
+            return false
+        }
+
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let manager = SearchManager(application: application)
+
+        _ = try #require(await manager.fetchResults(for: SearchRequest(query: "1000", type: .stopNumber)))
+
+        let url = try #require(capturedRequest.value?.url)
+        let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let items = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+
+        #expect(items["query"] == "1000")
+        #expect(items["latSpan"] != nil)
+        #expect(items["lonSpan"] != nil)
+        #expect(items["radius"] == nil)
+
+        // Puget Sound's service rect is far larger than the old 15 km radius cap.
+        let latSpan = try #require(Double(items["latSpan"]!))
+        let lonSpan = try #require(Double(items["lonSpan"]!))
+        #expect(latSpan > 0.1)
+        #expect(lonSpan > 0.1)
+    }
+
     // MARK: - Route
 
     @Test @MainActor

@@ -112,6 +112,28 @@ final class NetworkHelperTests: OBATestCase {
         #expect(urlString.contains("lonSpan=0.008"))
     }
 
+    /// Stop-number search must cover the whole region via latSpan/lonSpan + query.
+    /// A radius capped at 15 km (used by the circular-region overload) drops remote
+    /// agencies that share the same stop code — see #1432.
+    @Test func `RESTAPIURL builder stops for location with query uses span not radius`() {
+        let baseURL = URL(string: "https://api.example.com")!
+        let queryItems = [URLQueryItem(name: "key", value: "test")]
+        let urlBuilder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.5, longitude: -122.3),
+            span: MKCoordinateSpan(latitudeDelta: 1.2, longitudeDelta: 1.0)
+        )
+
+        let url = urlBuilder.getStops(region: region, query: "1000")
+        let urlString = url.absoluteString
+
+        #expect(urlString.contains("query=1000"))
+        #expect(urlString.contains("latSpan=1.2"))
+        #expect(urlString.contains("lonSpan=1.0"))
+        #expect(!urlString.contains("radius="))
+    }
+
     @Test func `Dictionary to HTTP body data`() {
         let dict: [String: Any] = ["one": 2, "three": "four"]
         let data = NetworkHelpers.dictionary(toHTTPBodyData: dict)
