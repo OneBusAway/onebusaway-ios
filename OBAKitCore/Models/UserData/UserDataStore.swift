@@ -50,6 +50,11 @@ public protocol UserDataStore: NSObjectProtocol {
     /// riders keep current behavior; Settings > Arrival & Departure Display can turn it off.
     var showTransferArrivalBanner: Bool { get set }
 
+    /// Whether arrival/departure clock times use the transit region's time
+    /// zone (with a short offset badge when the phone differs). Default
+    /// `false` — opt-in per #1102 / #332; Settings > Arrival & Departure Display.
+    var showRegionTimeZone: Bool { get set }
+
     // MARK: - Bookmark Groups
 
     /// Retrieves a list of `BookmarkGroup` objects.
@@ -447,6 +452,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let stopUIReducedColors = UserDefaultsStore.stopUIReducedColorsKey
         static let stopTripCompactMode = UserDefaultsStore.stopTripCompactModeKey
         static let showTransferArrivalBanner = UserDefaultsStore.showTransferArrivalBannerKey
+        static let showRegionTimeZone = UserDefaultsStore.showRegionTimeZoneKey
     }
 
     /// The defaults key backing `stopUIReducedColors`, public so the stop
@@ -465,6 +471,9 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// `@AppStorage` reader can observe it; see `stopUIReducedColorsKey`.
     public static let showTransferArrivalBannerKey = "showTransferArrivalBanner"
 
+    /// Defaults key for `showRegionTimeZone`. Dot-free; see `stopUIReducedColorsKey`.
+    public static let showRegionTimeZoneKey = "showRegionTimeZone"
+
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
@@ -473,6 +482,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             UserDefaultsKeys.stopUIReducedColors: false,
             UserDefaultsKeys.stopTripCompactMode: false,
             UserDefaultsKeys.showTransferArrivalBanner: true,
+            UserDefaultsKeys.showRegionTimeZone: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
         ])
@@ -523,6 +533,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.showTransferArrivalBanner)
+        }
+    }
+
+    // MARK: - Region Time Zone Display
+
+    public var showRegionTimeZone: Bool {
+        get {
+            return userDefaults.bool(forKey: UserDefaultsKeys.showRegionTimeZone)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.showRegionTimeZone)
         }
     }
 
