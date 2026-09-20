@@ -312,13 +312,21 @@ final class MapPanelLayersModelTests: OBATestCase {
         coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: true, formFactors: [.bicycle])
         coordinator.viewportDidChange(TestData.seattleMapRect)
         coordinator.apply(RentalFixtures.snapshot(added: [
-            try RentalFixtures.vehicle(id: "b7", formFactor: "BICYCLE")
+            try RentalFixtures.vehicle(
+                id: "b7",
+                formFactor: "BICYCLE",
+                lat: TestData.seattleMapRectCenter.latitude,
+                lon: TestData.seattleMapRectCenter.longitude
+            )
         ]))
 
         let opened = try #require(model.rental(withID: "b7"))
         model.pinForOpenSheet([opened])
 
         // The map moves; the re-fetch reports a different set entirely.
+        var movedRect = TestData.seattleMapRect
+        movedRect.origin.x += movedRect.width * 2
+        coordinator.viewportDidChange(movedRect)
         coordinator.apply(RentalFixtures.snapshot(
             added: [try RentalFixtures.vehicle(id: "elsewhere", formFactor: "BICYCLE")],
             removed: ["b7"]
@@ -328,6 +336,90 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(coordinator.visibleRentals.map(\.id) == ["elsewhere"])
         #expect(model.rental(withID: "b7")?.id == "b7")
         #expect(model.rentals(withIDs: ["b7"]).map(\.id) == ["b7"])
+    }
+
+    /// A pin only protects a sheet from viewport-driven removals. If the current fetch
+    /// still covers the vehicle's coordinate, its absence means the vehicle is gone.
+    @Test func `A pinned vehicle removed inside the fetched viewport resolves to nil`() throws {
+        let coordinator = try #require(model.registrar.rentalCoordinator)
+        coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: true, formFactors: [.bicycle])
+        coordinator.viewportDidChange(TestData.seattleMapRect)
+        coordinator.acceptCurrentCoverage()
+        coordinator.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(
+                id: "b7",
+                formFactor: "BICYCLE",
+                lat: TestData.seattleMapRectCenter.latitude,
+                lon: TestData.seattleMapRectCenter.longitude
+            )
+        ], fetchedAt: Date()))
+        model.pinForOpenSheet([try #require(model.rental(withID: "b7"))])
+
+        coordinator.apply(RentalFixtures.snapshot(removed: ["b7"], fetchedAt: Date()))
+
+        #expect(model.rental(withID: "b7") == nil)
+        #expect(model.rentals(withIDs: ["b7"]).isEmpty)
+    }
+
+    /// Moving the camera starts a fetch; it does not make the previous snapshot evidence
+    /// about the new viewport. Keep the pin until a successful covering snapshot arrives.
+    @Test func `A pending covering fetch does not invalidate a pinned vehicle`() throws {
+        let coordinator = try #require(model.registrar.rentalCoordinator)
+        coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: true, formFactors: [.bicycle])
+        coordinator.viewportDidChange(TestData.seattleMapRect)
+        coordinator.acceptCurrentCoverage()
+        coordinator.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(
+                id: "b7",
+                formFactor: "BICYCLE",
+                lat: TestData.seattleMapRectCenter.latitude,
+                lon: TestData.seattleMapRectCenter.longitude
+            )
+        ], fetchedAt: Date()))
+        model.pinForOpenSheet([try #require(model.rental(withID: "b7"))])
+
+        var movedRect = TestData.seattleMapRect
+        movedRect.origin.x += movedRect.width * 2
+        coordinator.viewportDidChange(movedRect)
+        coordinator.acceptCurrentCoverage()
+        let movedSnapshotAt = Date()
+        coordinator.apply(RentalFixtures.snapshot(removed: ["b7"], fetchedAt: movedSnapshotAt))
+        #expect(model.rental(withID: "b7") != nil)
+
+        coordinator.viewportDidChange(TestData.seattleMapRect)
+        coordinator.acceptCurrentCoverage()
+        coordinator.apply(RentalFixtures.snapshot(fetchedAt: movedSnapshotAt))
+
+        #expect(model.rental(withID: "b7") != nil)
+        coordinator.apply(RentalFixtures.snapshot(fetchedAt: Date()))
+        #expect(model.rental(withID: "b7") == nil)
+    }
+
+    /// Turning every rental layer off emits a reset snapshot, not a successful fetch.
+    /// Re-enabling must keep the pin until the next covering fetch actually reports.
+    @Test func `A layer reset does not invalidate a pinned vehicle after re-enabling`() throws {
+        let coordinator = try #require(model.registrar.rentalCoordinator)
+        coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: true, formFactors: [.bicycle])
+        coordinator.viewportDidChange(TestData.seattleMapRect)
+        coordinator.acceptCurrentCoverage()
+        coordinator.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(
+                id: "b7",
+                formFactor: "BICYCLE",
+                lat: TestData.seattleMapRectCenter.latitude,
+                lon: TestData.seattleMapRectCenter.longitude
+            )
+        ], fetchedAt: Date()))
+        model.pinForOpenSheet([try #require(model.rental(withID: "b7"))])
+
+        coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: false, formFactors: [.bicycle])
+        coordinator.apply(RentalFixtures.snapshot(removed: ["b7"], fetchedAt: Date()))
+        coordinator.setLayer(id: RentalMapLayer.bikesLayerID, enabled: true, formFactors: [.bicycle])
+
+        #expect(model.rental(withID: "b7") != nil)
+        coordinator.acceptCurrentCoverage()
+        coordinator.apply(RentalFixtures.snapshot(fetchedAt: Date()))
+        #expect(model.rental(withID: "b7") == nil)
     }
 
     /// Pinning must not freeze the sheet: the live list still answers first, so range and

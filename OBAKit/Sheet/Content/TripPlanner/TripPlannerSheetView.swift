@@ -86,9 +86,8 @@ struct TripPlannerSheetView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle(Text(OBALoc(
+                .navigationTitle(Text(OTPLoc(
                     "trip_planner.title",
-                    value: "Trip Planner",
                     comment: "Title for the trip planner sheet"
                 )))
                 .navigationBarTitleDisplayMode(.inline)
@@ -120,14 +119,12 @@ struct TripPlannerSheetView: View {
     @ViewBuilder
     private var unavailableStateView: some View {
         EmptyStateView(
-            title: OBALoc(
-                "trip_planner.unavailable.title",
-                value: "Trip Planner Not Available",
-                comment: "Title shown when trip planning is not available for the current region"
+            title: OTPLoc(
+                "trip_planner.title",
+                comment: "Title for the trip planner sheet"
             ),
-            description: OBALoc(
-                "trip_planner.unavailable.body",
-                value: "This region does not support trip planning.",
+            description: OTPLoc(
+                "error.graph_unavailable",
                 comment: "Body text shown when trip planning is not available for the current region"
             ),
             systemImage: AppSymbol.search
@@ -223,9 +220,8 @@ private struct TripPlannerSheetContent: View {
     private func mapItemToLocation(_ mapItem: MKMapItem?) -> Location? {
         guard let mapItem else { return nil }
         return Location(
-            title: mapItem.name ?? OBALoc(
-                "trip_planner.destination.default_title",
-                value: "Destination",
+            title: mapItem.name ?? OTPLoc(
+                "map.destination",
                 comment: "Default title for a trip planner destination"
             ),
             subTitle: mapItem.placemark.title ?? "",

@@ -225,9 +225,8 @@ import OTPKit
     /// own vehicle vanish and flipped to "Not available right now".
     ///
     /// Pinning happens where the sheet is opened — a map tap or a cluster row — which is
-    /// the one moment the vehicle is unambiguously live: the rider just touched it. From
-    /// then on the sheet keeps naming what it was opened for, and freshness is reported by
-    /// the sheet's own `fetchedAt` / `staleAfter` footer, which exists for exactly this.
+    /// the one moment the vehicle is unambiguously live. A pin is trusted only while its
+    /// coordinate is outside the current fetched viewport; inside it, the live feed wins.
     private var pinnedRentals: [VehicleRental.ID: VehicleRental] = [:]
 
     /// Insertion order for `pinnedRentals`, so the cap below evicts oldest-first.
@@ -270,15 +269,14 @@ import OTPKit
         return lastReportedRentals
     }
 
-    /// Resolves a route's id back to a model: the live list first, then anything pinned
-    /// for an open sheet, then the last report the feed made.
+    /// Resolves a route's id back to a model: the live list first, then an off-viewport
+    /// pin or the last report the feed made while reporting is suspended.
     ///
     /// Resolving live-first is what keeps an open sheet current — a vehicle's range and
-    /// position update under it as the feed refreshes. The fallbacks only answer when the
-    /// live list cannot, and each covers a different way of "cannot": see `pinnedRentals`
-    /// and `resolutionSource`. Nil still means nil for a vehicle the panel has never seen.
+    /// position update under it as the feed refreshes. Nil still means nil for a vehicle
+    /// removed from a fetch that covered its coordinate.
     func rental(withID id: VehicleRental.ID) -> VehicleRental? {
-        resolutionSource.first { $0.id == id } ?? pinnedRentals[id]
+        resolutionSource.first { $0.id == id } ?? offViewportPin(withID: id)
     }
 
     func rentals(withIDs ids: [VehicleRental.ID]) -> [VehicleRental] {
@@ -286,7 +284,12 @@ import OTPKit
         let liveIDs = Set(live.map(\.id))
         // Order follows `ids` for the members the live list did not answer, so a cluster
         // list does not reshuffle as vehicles drop in and out of the viewport.
-        return live + ids.compactMap { liveIDs.contains($0) ? nil : pinnedRentals[$0] }
+        return live + ids.compactMap { liveIDs.contains($0) ? nil : offViewportPin(withID: $0) }
+    }
+
+    private func offViewportPin(withID id: VehicleRental.ID) -> VehicleRental? {
+        guard let rental = pinnedRentals[id] else { return nil }
+        return registrar.rentalCoordinator?.isReportingVehicle(at: rental.coordinate) == true ? nil : rental
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this

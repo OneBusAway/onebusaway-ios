@@ -72,6 +72,9 @@ import OTPKit
     private var snapshotTask: Task<Void, Never>?
     private var failureTask: Task<Void, Never>?
     private var lastMapRect: MKMapRect?
+    private var lastReportedMapRect: MKMapRect?
+    private var coverageGeneration = 0
+    private var coverageAcceptedAt = Date.distantFuture
 
     init(service: VehicleRentalService, locationService: LocationService) {
         self.source = VehicleRentalSource(service: service)
@@ -111,11 +114,18 @@ import OTPKit
     /// same way.
     var isReportingVehicles: Bool { hasEnabledLayers && lastMapRect != nil }
 
+    /// Whether the current fetch covers a coordinate, so callers can distinguish a
+    /// viewport-driven omission from a vehicle disappearing inside the fetched area.
+    func isReportingVehicle(at coordinate: CLLocationCoordinate2D) -> Bool {
+        isReportingVehicles && lastReportedMapRect?.contains(MKMapPoint(coordinate)) == true
+    }
+
     private var combinedFormFactors: Set<VehicleFormFactor> {
         enabledLayerFactors.values.reduce(into: Set<VehicleFormFactor>()) { $0.formUnion($1) }
     }
 
     func setLayer(id: String, enabled: Bool, formFactors: Set<VehicleFormFactor>) {
+        let previousFactors = combinedFormFactors
         if enabled {
             enabledLayerFactors[id] = formFactors
         } else {
@@ -123,19 +133,29 @@ import OTPKit
         }
 
         let factors = combinedFormFactors
+        let acceptsCoverage = factors != previousFactors
+        if acceptsCoverage {
+            invalidateCoverage()
+        }
+        let generation = coverageGeneration
         applyChanges(visibility.setFormFactors(factors))
 
         let mapRect = lastMapRect
         Task {
+            guard generation == coverageGeneration else { return }
             if factors.isEmpty {
                 await source.reset()
             } else {
                 await source.setFormFactors(factors)
+                guard generation == coverageGeneration else { return }
                 // Re-prime the viewport: after a reset (all layers off) the source
                 // has no viewport to refetch with. Redundant calls coalesce into
                 // one fetch, so this is safe to do unconditionally.
                 if let mapRect {
                     await source.setViewport(Self.boundingBox(for: mapRect))
+                    if acceptsCoverage, generation == coverageGeneration {
+                        acceptCurrentCoverage()
+                    }
                 }
             }
         }
@@ -149,6 +169,15 @@ import OTPKit
 
     /// `mapRect` is nil when the zoom gate is closed — everything is removed.
     func viewportDidChange(_ mapRect: MKMapRect?) {
+        let viewportChanged = switch (mapRect, lastMapRect) {
+        case (nil, nil): false
+        case let (new?, old?): !MKMapRectEqualToRect(new, old)
+        default: true
+        }
+        if viewportChanged {
+            invalidateCoverage()
+        }
+        let generation = coverageGeneration
         lastMapRect = mapRect
         updateFuelLabelVisibility(for: mapRect)
         guard hasEnabledLayers else { return }
@@ -157,8 +186,24 @@ import OTPKit
         // is the retry trigger, so let the next fetch decide again.
         let boundingBox = mapRect.map(Self.boundingBox(for:))
         Task {
+            guard generation == coverageGeneration else { return }
             await source.setViewport(boundingBox)
+            if viewportChanged, boundingBox != nil, generation == coverageGeneration {
+                acceptCurrentCoverage()
+            }
         }
+    }
+
+    private func invalidateCoverage() {
+        lastReportedMapRect = nil
+        coverageAcceptedAt = .distantFuture
+        coverageGeneration += 1
+    }
+
+    // Exposed (not `private`) so tests feeding snapshots directly can also model
+    // the source accepting the viewport that produced them.
+    func acceptCurrentCoverage() {
+        coverageAcceptedAt = Date()
     }
 
     /// Publishes the current zoom's label decision. Cheap: `@Published` still
@@ -176,6 +221,7 @@ import OTPKit
     // async `AsyncStream`/debounce plumbing.
     func apply(_ snapshot: VehicleRentalSnapshot) {
         lastSnapshotAt = snapshot.fetchedAt
+        lastReportedMapRect = hasEnabledLayers && snapshot.fetchedAt >= coverageAcceptedAt ? lastMapRect : nil
         setAvailability(.available)
 
         if !snapshot.partialErrors.isEmpty {
