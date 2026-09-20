@@ -16,8 +16,14 @@ import Testing
 @MainActor
 final class CoreAppConfigTests {
 
+    let suiteName = "org.opentransit.onebusaway-ios.CoreAppConfigTests"
+
+    deinit {
+        UserDefaults.standard.removePersistentDomain(forName: suiteName)
+    }
+
     @Test func `Initialization sets properties correctly`() {
-        let userDefaults = UserDefaults(suiteName: "org.opentransit.onebusaway-ios.CoreAppConfigTests")!
+        let userDefaults = UserDefaults(suiteName: suiteName)!
         let queue = OperationQueue()
         let locService = LocationService(userDefaults: userDefaults, locationManager: CLLocationManager())
         let dataLoader = URLSession.shared
@@ -47,5 +53,11 @@ final class CoreAppConfigTests {
         #expect(config.fixedRegionName == "Puget Sound")
         #expect(config.fixedRegionOBABaseURL?.absoluteString == "https://api.pugetsound.onebusaway.org")
         #expect(config.defaultArrivalDepartureFilter == .all)
+        
+        // Additional assertions for previously unverified parameters
+        #expect(config.userDefaults == userDefaults)
+        #expect(config.queue == queue)
+        #expect(config.locationService === locService)
+        #expect(config.dataLoader as? URLSession === dataLoader)
     }
 }

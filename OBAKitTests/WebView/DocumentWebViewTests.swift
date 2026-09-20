@@ -16,19 +16,20 @@ import WebKit
 @MainActor
 final class DocumentWebViewTests {
     
-    @Test func `Initialization succeeds`() {
-        // DocumentWebView is an internal class, but we have @testable import
+    @Test func `buildPageContent replaces tokens with HTML fragment and action button`() {
         let webView = DocumentWebView(frame: .zero, configuration: WKWebViewConfiguration())
-        #expect(webView != nil)
-    }
-
-    // A real loadHTMLString is asynchronous and WKWebView requires a lot of setup to inspect DOM in tests,
-    // so we just verify that it doesn't crash when setPageContent is called.
-    @Test func `setPageContent with HTML fragment completes without error`() {
-        let webView = DocumentWebView(frame: .zero, configuration: WKWebViewConfiguration())
-        webView.setPageContent("<h1>Hello World</h1>", actionButtonTitle: "Dismiss")
+        let result = webView.buildPageContent("<h1>Hello World</h1>", actionButtonTitle: "Dismiss")
         
-        // At minimum, we expect it to not crash and to exist.
-        #expect(webView != nil)
+        #expect(result.contains("<h1>Hello World</h1>"))
+        #expect(result.contains("Dismiss"))
+        #expect(result.contains("actionButtonClicked"))
+    }
+    
+    @Test func `buildPageContent replaces tokens without action button when title is nil`() {
+        let webView = DocumentWebView(frame: .zero, configuration: WKWebViewConfiguration())
+        let result = webView.buildPageContent("<h1>Hello World</h1>", actionButtonTitle: nil)
+        
+        #expect(result.contains("<h1>Hello World</h1>"))
+        #expect(!result.contains("actionButtonClicked"))
     }
 }
