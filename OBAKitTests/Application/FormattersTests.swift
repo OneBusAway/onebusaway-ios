@@ -248,7 +248,7 @@ final class FormattersTests: OBATestCase {
     @Test func `Formatted map routes over the limit appends ellipsis`() throws {
         let routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
         let label = try #require(Formatters.formattedMapRoutes(routes, limit: 3))
-        #expect(label == "10, 20, 30â€¦")
+        #expect(label == "10, 20, 30\u{2026}")
         #expect(label.contains("\u{2026}"))
         #expect(!label.contains("..."))
         #expect(!label.hasPrefix("Routes:"))
@@ -262,7 +262,7 @@ final class FormattersTests: OBATestCase {
         stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
 
         let callout = stop.mapCalloutText
-        #expect(callout == "#\(stop.code)\n10, 20, 30â€¦")
+        #expect(callout == "#\(stop.code)\n10, 20, 30\u{2026}")
         #expect(!callout.contains("Routes:"))
 
         let subtitle = try #require(stop.subtitle)

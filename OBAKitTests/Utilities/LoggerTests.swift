@@ -14,7 +14,7 @@ import Testing
 @Suite(.serialized)
 final class LoggerTests {
     
-    @Test func `Logger correctly writes and retrieves logs`() throws {
+    @Test func `Logger correctly writes and retrieves logs`() async throws {
         // Given
         let testMessage = "Test log message \(UUID().uuidString)"
         
