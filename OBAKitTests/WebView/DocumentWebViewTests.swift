@@ -31,5 +31,6 @@ final class DocumentWebViewTests {
         
         #expect(result.contains("<h1>Hello World</h1>"))
         #expect(!result.contains("actionButtonClicked"))
+        #expect(!result.contains("{{{oba_page_actions}}}"))
     }
 }

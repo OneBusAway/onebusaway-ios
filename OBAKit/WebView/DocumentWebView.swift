@@ -48,7 +48,7 @@ class DocumentWebView: WKWebView {
         // Use coalescing operator to remove action button placeholder if buttonText is nil
         content = content.replacingOccurrences(of: "{{{oba_page_actions}}}", with: buttonText ?? "")
 
-        loadHTMLString(content, baseURL: nil)
+        return content
     }
 
     private var accentForegroundColor: String {
