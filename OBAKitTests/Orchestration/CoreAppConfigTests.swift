@@ -16,14 +16,12 @@ import Testing
 @MainActor
 final class CoreAppConfigTests {
 
-    let suiteName = "org.opentransit.onebusaway-ios.CoreAppConfigTests"
-
     deinit {
-        UserDefaults.standard.removePersistentDomain(forName: suiteName)
+        UserDefaults.standard.removePersistentDomain(forName: "org.opentransit.onebusaway-ios.CoreAppConfigTests")
     }
 
     @Test func `Initialization sets properties correctly`() {
-        let userDefaults = UserDefaults(suiteName: suiteName)!
+        let userDefaults = UserDefaults(suiteName: "org.opentransit.onebusaway-ios.CoreAppConfigTests")!
         let queue = OperationQueue()
         let locService = LocationService(userDefaults: userDefaults, locationManager: CLLocationManager())
         let dataLoader = URLSession.shared
@@ -58,6 +56,7 @@ final class CoreAppConfigTests {
         #expect(config.userDefaults == userDefaults)
         #expect(config.queue == queue)
         #expect(config.locationService === locService)
-        #expect(config.dataLoader as? URLSession === dataLoader)
+        let session = config.dataLoader as? URLSession
+        #expect(session === dataLoader)
     }
 }
