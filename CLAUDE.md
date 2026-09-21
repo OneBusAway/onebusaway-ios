@@ -160,7 +160,9 @@ scripts/extract_strings               # Extract strings for localization
 ## Architecture
 
 ### Framework Structure
-- **OBAKitCore**: Core business logic, networking, data models (application extension safe)
+- **OBAKitCore**: Core business logic, networking, data models (application extension safe). One module, two directories:
+  - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region monitoring.
+  - `OBAKitCoreiOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. It is an XcodeGen `group`, so run `scripts/generate_project` after adding a file here.
 - **OBAKit**: UI framework with view controllers and user interface components
 - **App**: Main application target that combines the frameworks
 
@@ -269,3 +271,4 @@ onebusaway://add-region?name=REGION_NAME
 - Core framework (OBAKitCore) must remain application extension safe
 - UI tests are minimal - focus is on unit tests
 - Documentation is generated with DocC via `scripts/docs`
+- **`Int` is 32 bits on most Apple Watches** (`arm64_32`), and watch simulators hide it. In `OBAKitCore/`, never decode an epoch value as `Int` — use `Int64` or `Date`. Check with `xcodebuild build -scheme OBAKitCore -destination 'generic/platform=watchOS' CODE_SIGNING_ALLOWED=NO`; CI runs the same build.

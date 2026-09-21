@@ -220,6 +220,35 @@ jobs:
     - name: Concurrency warning ratchet
       run: scripts/concurrency_ratchet xcodebuild-build.log
 
+    # watchOS device-architecture compile (docs/superpowers/specs/2026-09-20-watchos-architecture-design.md, §5).
+    # Permanent, and deliberately a DEVICE build: `Int` is 32 bits on arm64_32
+    # Apple Watches, watch simulators on Apple silicon are 64-bit, and an
+    # overflowing literal builds green for the simulator and red here. This is
+    # the only check in the repo that compiles for a 32-bit Int. It also stops a
+    # UIView landing in the portable OBAKitCore/ tree on green iOS CI.
+    # The iOS App build never replaces it: that compiles simulator slices only.
+    - name: Check watchOS SDK
+      run: |
+        if xcodebuild -showsdks | grep -q "watchos"; then
+          echo "watchOS device SDK present:"; xcodebuild -showsdks | grep -i watch
+        else
+          echo "No watchOS SDK on this image; downloading…"
+          xcodebuild -downloadPlatform watchOS
+        fi
+
+    - name: Build OBAKitCore for watchOS (arm64 + arm64_32)
+      timeout-minutes: 20
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -project 'OBAKit.xcodeproj' \
+          -scheme 'OBAKitCore' \
+          -destination 'generic/platform=watchOS' \
+          -derivedDataPath DerivedData \
+          CODE_SIGNING_ALLOWED=NO \
+          -quiet \
+          | tee xcodebuild-watchos.log
+
     # Unit Test. Output is teed to a log so the "Report slowest tests" step can
     # surface per-test timing. `set -o pipefail` keeps xcodebuild's exit code
     # through the pipe so a test failure still fails the step.
