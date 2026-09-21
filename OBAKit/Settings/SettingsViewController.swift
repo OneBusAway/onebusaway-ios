@@ -499,8 +499,7 @@ class SettingsViewController: FormViewController {
         return section
     }()
 
-
-   // MARK: - Privacy
+    // MARK: - Privacy
 
     private let privacySectionReportingEnabled = "privacySectionReportingEnabled"
 

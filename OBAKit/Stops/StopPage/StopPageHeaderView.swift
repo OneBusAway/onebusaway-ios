@@ -97,14 +97,20 @@ struct StopPageHeaderView: View {
             // FlowLayout, not HStack: the subtitle/route chips above never
             // compress or drop at accessibility sizes, and two side-by-side
             // pills with no wrap would be the one thing on this card that does.
+            //
+            // `FlowLayout` sizes subviews with an unspecified proposal, which a
+            // `Button` answers with a greedy height — that is what once stretched
+            // the sheet header's walk pill down the whole sheet (5a95d4fe), and
+            // neither `.buttonStyle(.plain)` nor `.fixedSize()` on the `Button`
+            // held. So nothing in this row is a `Button`: the walk chip is a
+            // `Text`-shaped tappable view, like `StopPageSheetHeaderView.walkPill`.
             if walkTime != nil || bikeTime != nil {
                 FlowLayout(hSpacing: 8, vSpacing: 8) {
                     if let walkTime {
-                        Button(action: onWalkingDirections) {
-                            travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTime)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
+                        travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTime)
+                            .onTapGesture(perform: onWalkingDirections)
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
                     }
                     if let bikeTime {
                         travelChip(bikeChipText(bikeTime), systemImage: "bicycle", background: ThemeColors.shared.blue)
@@ -167,9 +173,18 @@ struct StopPageHeaderView: View {
         Label(text, systemImage: systemImage)
             .font(.footnote.weight(.heavy))
             .foregroundStyle(.white)
+            // One unwrappable line so the chip's size is a function of its content
+            // under `FlowLayout`'s unspecified proposal (see the sheet's `walkPill`).
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 12).padding(.vertical, 6)
             .background(Color(uiColor: background), in: Capsule())
             .contentShape(Capsule())
+            // The `Button` this replaced used to fold the glyph and text into one
+            // VoiceOver element; do that explicitly now so the SF Symbol doesn't
+            // surface as its own stop with only its stock name.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
     }
 
     private func walkChipText(_ info: WalkTimeInfo) -> String {
@@ -323,8 +338,13 @@ private struct HeaderStatusLine: View {
 
 /// Minimal leading-aligned wrapping layout: subviews flow left-to-right at
 /// their ideal sizes and break onto new lines as needed, so chips wrap instead
-/// of compressing or truncating. Shared by the header's subtitle + route chips
-/// and the grouped card's upcoming-trip chips at accessibility sizes.
+/// of compressing or truncating. Shared by the header's subtitle + route chips,
+/// its walk/bike travel-pill row, the sheet header's pills + chips row, and the
+/// grouped card's upcoming-trip chips at accessibility sizes.
+///
+/// Subviews are sized with an unspecified proposal, which a `Button` answers with
+/// a greedy height — so callers put `Text`-shaped tappable views in here, never
+/// a `Button` (see `StopPageSheetHeaderView.walkPill`).
 struct FlowLayout: Layout {
     var hSpacing: CGFloat = 4
     var vSpacing: CGFloat = 4

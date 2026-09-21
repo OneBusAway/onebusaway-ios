@@ -1694,7 +1694,7 @@
 /* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
 "walk_time_view.accessibility_value_bike" = "%1$@. Ехать на велосипеде %2$@, прибытие в %3$@";
 
-/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: прибытие в %3$@";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
