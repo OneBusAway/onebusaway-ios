@@ -192,8 +192,14 @@ nonisolated struct ArrivalDepartureContentConfiguration: OBAContentConfiguration
         return formatters?.colorForScheduleStatus(viewModel.scheduleStatus)
     }
 
+    /// Goes through `formattedClockTime` rather than `timeFormatter` directly so
+    /// this carries the timezone badge (#332). `StopArrivalView` populates one
+    /// `accessibilityTimeLabel` from two places — the `arrivalDeparture` didSet
+    /// and this configuration — and at accessibility sizes that label is the only
+    /// clock on screen, so a bare region-zone time would read as local (#1438).
     var accessibilityTimeLabelText: String? {
-        return formatters?.timeFormatter.string(from: viewModel.arrivalDepartureDate)
+        guard let formatters else { return nil }
+        return formatters.formattedClockTime(viewModel.arrivalDepartureDate)
     }
 
     var accessibilityScheduleDeviationText: String? {

@@ -33,6 +33,11 @@ public struct TripActivityPresenter {
 
     /// e.g. "3:26 PM - arrives on time" / "3:26 PM - Scheduled/not real-time".
     public func statusText(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date = Date()) -> String {
+        // Unbadged on purpose, and the least obvious of the calls audited for #1438:
+        // this clock does stand alone on a Lock Screen. It stays bare because a
+        // Live Activity tracks a trip the rider is currently taking, so they are in
+        // the region whose zone this is, and the card has no room to spare. Revisit
+        // if Track ever survives leaving the region.
         let timeString = formatters.timeFormatter.string(from: arrival.departureDate)
 
         let deviationText: String
