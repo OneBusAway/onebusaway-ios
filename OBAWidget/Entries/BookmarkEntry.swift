@@ -34,6 +34,14 @@ struct BookmarkEntry: TimelineEntry {
         self.fetchedAt = fetchedAt
     }
 
+    /// How many bookmarks a widget of `family` can show. The one source of
+    /// truth for it: the view renders this many rows, and the provider fetches
+    /// arrivals for exactly this many bookmarks, so a reload never pays for a
+    /// stop nobody will see.
+    static func maximumBookmarks(for family: WidgetFamily) -> Int {
+        family == .systemLarge ? 7 : 2
+    }
+
     /// Returns a formatted string representing the last updated time.
     public func lastUpdatedAt(with formatters: Formatters) -> String {
         guard let fetchedAt, !bookmarks.isEmpty else { return "--" }

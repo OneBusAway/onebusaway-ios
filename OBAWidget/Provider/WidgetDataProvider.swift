@@ -37,20 +37,23 @@ final class WidgetDataProvider {
         themeColors: ThemeColors.shared
     )
 
-    /// Favorited bookmarks in `region`, in the user's order.
+    /// Favorited bookmarks in `region`, in stored order.
     private func bookmarks(in region: Region) -> [Bookmark] {
         UserDefaultsStore(userDefaults: userDefaults).favoritedBookmarks
             .filter { $0.regionIdentifier == region.regionIdentifier }
     }
 
-    func load() async -> WidgetContent {
+    /// - Parameter maximumBookmarks: How many bookmarks the widget can show
+    ///   (`BookmarkEntry.maximumBookmarks(for:)`). Fetching more is wasted
+    ///   network on every reload, and reloads now run up to 48 times a day.
+    func load(maximumBookmarks: Int) async -> WidgetContent {
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         guard let region = store.region(bundledRegionsFilePath: Bundle.main.path(forResource: "regions", ofType: "json")) else {
             Logger.error("Widget: no region available.")
             return .empty
         }
 
-        let bookmarks = bookmarks(in: region)
+        let bookmarks = Array(bookmarks(in: region).prefix(maximumBookmarks))
         guard !bookmarks.isEmpty else {
             Logger.info("Widget: no bookmarks to load data for.")
             return .empty
@@ -68,7 +71,10 @@ final class WidgetDataProvider {
             uuid: UserUUID.value(in: userDefaults)
         )
 
-        let departures = await BookmarkArrivalsLoader().departuresByBookmark(for: bookmarks, using: service)
+        // 90, not the default 60: entries run up to 30 minutes past the fetch,
+        // so every one of them still knows a full hour ahead — which is what a
+        // row's "no departures in the next 60 minutes" fallback claims.
+        let departures = await BookmarkArrivalsLoader(minutesAfter: 90).departuresByBookmark(for: bookmarks, using: service)
         return WidgetContent(bookmarks: bookmarks, departures: departures, fetchedAt: departures.isEmpty ? nil : Date())
     }
 }

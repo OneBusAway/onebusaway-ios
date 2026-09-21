@@ -18,7 +18,7 @@ struct OBAWidgetEntryView: View {
     @Environment(\.widgetFamily) var widgetFamily
 
     private var maxBookmarkCount: Int {
-        widgetFamily == .systemLarge ? 7 : 2
+        BookmarkEntry.maximumBookmarks(for: widgetFamily)
     }
 
     var body: some View {

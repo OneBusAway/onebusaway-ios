@@ -198,10 +198,19 @@ public class BookmarkDataLoader: NSObject {
         let requests = slots.keys.map { BookmarkArrivalsRequest(stopID: $0) }
         Task(priority: .userInitiated) {
             for await (stopID, result) in BookmarkArrivalsLoader().arrivals(for: requests, using: apiService) {
+                // The loader only ever reports stops it was asked about, so a
+                // miss here means the invariant broke. Settling 0 slots would
+                // leave the batch short a release and hang `loadDataAndWait`
+                // silently; say so in debug instead.
+                guard let stopSlots = slots[stopID] else {
+                    assertionFailure("BookmarkArrivalsLoader delivered a stop (\(stopID)) this batch never requested.")
+                    continue
+                }
+
                 // One task per stop, so a slow `displayError` for one stop
                 // does not hold up delivery of the next stop's arrivals.
                 Task { @MainActor in
-                    await self.settle(result, stopID: stopID, slots: slots[stopID] ?? 0, batchID: batchID)
+                    await self.settle(result, stopID: stopID, slots: stopSlots, batchID: batchID)
                 }
             }
         }

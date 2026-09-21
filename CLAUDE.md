@@ -277,3 +277,4 @@ onebusaway://add-region?name=REGION_NAME
 - UI tests are minimal - focus is on unit tests
 - Documentation is generated with DocC via `scripts/docs`
 - **`Int` is 32 bits on most Apple Watches** (`arm64_32`), and watch simulators hide it. In `OBAKitCore/`, never decode an epoch value as `Int` — use `Int64` or `Date`. Check with `xcodebuild build -scheme OBAKitCore -destination 'generic/platform=watchOS' CODE_SIGNING_ALLOWED=NO`; CI runs the same build.
+- **Extensions do not build a `CoreApplication`.** It starts a regions fetch, opens the stop cache, and bumps the launch counter. A widget reads the app-group suite instead: `ResolvedRegionStore` for the region (the app writes it via `ResolvedRegionPersister`; extensions only read), `UserUUID` for the client id, `RESTAPIService.standalone(…)` for the API, and `BookmarkArrivalsLoader` for arrivals.

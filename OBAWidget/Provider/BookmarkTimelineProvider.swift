@@ -21,7 +21,13 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
 
     // MARK: Snapshot
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> BookmarkEntry {
-        let content = await dataProvider.load()
+        // The widget gallery asks for a snapshot to draw a preview. It wants it
+        // fast and it is not the user's data, so don't spend a fetch on it.
+        guard !context.isPreview else {
+            return BookmarkEntry(date: .now, bookmarks: [])
+        }
+
+        let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
         return BookmarkEntry(date: .now, bookmarks: content.bookmarks, departures: content.departures, fetchedAt: content.fetchedAt)
     }
 
@@ -33,7 +39,7 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
     /// reload 30 minutes out (60 when nothing is coming). Never reload on the
     /// next departure: WidgetKit budgets 40–70 reloads a day.
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<BookmarkEntry> {
-        let content = await dataProvider.load()
+        let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
         let now = Date()
 
         let plan = WidgetTimelinePlanner().plan(
