@@ -22,6 +22,9 @@ public struct WidgetTimelinePlanner: Sendable {
     public struct Plan: Equatable, Sendable {
         /// When each timeline entry takes effect. Always starts with `now`.
         /// An entry dated `d` should show only departures at or after `d`.
+        /// Entries are at least `minimumEntrySpacing` apart: a departure that
+        /// falls sooner than that after the previous entry is deferred to the
+        /// spacing, not dropped.
         public let entryDates: [Date]
 
         /// When to ask WidgetKit for a reload (`.after(reloadDate)`).
@@ -53,11 +56,19 @@ public struct WidgetTimelinePlanner: Sendable {
         let reloadDate = now.addingTimeInterval(interval)
 
         var entryDates = [now]
-        for boundary in upcoming where boundary < reloadDate {
-            guard entryDates.count < maximumEntries else { break }
-            if let last = entryDates.last, boundary.timeIntervalSince(last) >= minimumEntrySpacing {
-                entryDates.append(boundary)
-            }
+        for boundary in upcoming {
+            guard entryDates.count < maximumEntries, let last = entryDates.last else { break }
+
+            // An entry at or after this departure already drops it.
+            guard boundary > last else { continue }
+
+            // Too soon after the last entry: defer to the spacing rather than
+            // drop the boundary, so a bus that has left lingers for at most
+            // `minimumEntrySpacing` — not until some later departure happens
+            // to clear the threshold.
+            let entry = max(boundary, last.addingTimeInterval(minimumEntrySpacing))
+            guard entry < reloadDate else { break }
+            entryDates.append(entry)
         }
 
         return Plan(entryDates: entryDates, reloadDate: reloadDate)

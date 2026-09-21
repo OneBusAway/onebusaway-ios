@@ -40,11 +40,29 @@ import Testing
         #expect(plan.entryDates == [now, minutes(3), minutes(10), minutes(12)])
     }
 
-    @Test func `Boundaries closer than the minimum spacing are coalesced`() {
+    @Test func `Boundaries closer than the minimum spacing are deferred to it, not dropped`() {
         let plan = WidgetTimelinePlanner().plan(departureDates: [minutes(3), minutes(10), minutes(12), minutes(20)], now: now)
 
-        // +3 is within 5 min of `now`; +12 is within 5 min of +10.
-        #expect(plan.entryDates == [now, minutes(10), minutes(20)])
+        // +3 is within 5 min of `now`, so its entry waits until +5.
+        // +12 is within 5 min of +10, so its entry waits until +15.
+        #expect(plan.entryDates == [now, minutes(5), minutes(10), minutes(15), minutes(20)])
+    }
+
+    /// The defect this rule fixes: dropping close boundaries left buses that
+    /// had departed at +3 and +4 on screen until the +25 entry.
+    @Test func `A burst followed by a long gap still clears the departed buses`() {
+        let plan = WidgetTimelinePlanner().plan(departureDates: [minutes(3), minutes(4), minutes(25)], now: now)
+
+        // One deferred entry at +5 covers both +3 and +4.
+        #expect(plan.entryDates == [now, minutes(5), minutes(25)])
+    }
+
+    @Test func `A deferred entry that would land at or after the reload is left to the reload`() {
+        let plan = WidgetTimelinePlanner().plan(departureDates: [minutes(27), minutes(28)], now: now)
+
+        // +28 would defer to +32, past the +30 reload.
+        #expect(plan.entryDates == [now, minutes(27)])
+        #expect(plan.reloadDate == minutes(30))
     }
 
     @Test func `Departures at or after the reload date add no entries`() {
