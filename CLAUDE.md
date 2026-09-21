@@ -161,8 +161,9 @@ scripts/extract_strings               # Extract strings for localization
 
 ### Framework Structure
 - **OBAKitCore**: Core business logic, networking, data models (application extension safe). One module, two directories:
-  - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region monitoring.
+  - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region-monitoring API calls.
   - `OBAKitCoreiOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. It is an XcodeGen `group`, so run `scripts/generate_project` after adding a file here.
+  - **If a file in `OBAKitCore/` needs a platform `#if`, move the iOS-only part to `OBAKitCoreiOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
 - **OBAKit**: UI framework with view controllers and user interface components
 - **App**: Main application target that combines the frameworks
 
@@ -186,6 +187,10 @@ scripts/extract_strings               # Extract strings for localization
   - `Network/`: API services and networking
   - `Location/`: Location services and region management
   - `Orchestration/`: Application setup and configuration
+- `OBAKitCoreiOS/`: iOS-only files of the OBAKitCore module (same module, no separate import)
+  - `UIKit/`: UIKit view code
+  - `LiveActivities/`: Everything that imports or renders ActivityKit
+  - `Location/`: Region monitoring / geofencing
 - `OBAKit/`: UI framework
   - `Controls/`: Reusable UI components
   - `Mapping/`: Map views and location features
