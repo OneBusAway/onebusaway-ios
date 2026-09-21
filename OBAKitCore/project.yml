@@ -1,7 +1,7 @@
 targets:
   OBAKitCore:
     type: framework
-    platform: iOS
+    supportedDestinations: [iOS, watchOS]
     sources:
       # XcodeGen's synced folders can't mark headers public, so the umbrella
       # header is carved out of the buildable folder and added as an explicit
@@ -38,3 +38,8 @@ targets:
         # override: Core owns actors, networking, and background decode, so it
         # pins against the project-wide MainActor default.
         SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        # A per-target `deploymentTarget: {iOS: …, watchOS: …}` map is silently
+        # dropped on a supportedDestinations target; watchOS would fall to the
+        # SDK default and dependents fail with "minimum deployment target of
+        # watchOS 27.0". 11.0 is the release paired with the iOS 18.0 floor.
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
