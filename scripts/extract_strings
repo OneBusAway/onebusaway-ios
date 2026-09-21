@@ -1,4 +1,4 @@
-find OBAKitCore -name "*.swift" -print0 | xargs -0 genstrings -s OBALoc -o OBAKitCore/Strings/en.lproj
+find OBAKitCore OBAKitCoreiOS -name "*.swift" -print0 | xargs -0 genstrings -s OBALoc -o OBAKitCore/Strings/en.lproj
 iconv -f UTF-16 -t UTF-8 OBAKitCore/Strings/en.lproj/Localizable.strings > OBAKitCore/Strings/en.lproj/Localizable.strings.new
 mv -f OBAKitCore/Strings/en.lproj/Localizable.strings.new OBAKitCore/Strings/en.lproj/Localizable.strings
 

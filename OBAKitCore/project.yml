@@ -9,9 +9,18 @@ targets:
       - path: "."
         # The .proto schema is source material for pre-generated Swift, not a
         # target member; without the exclusion Xcode tries to compile it.
-        excludes: ["OBAKitCore.h", "Models/Protobuf/gtfs-realtime.proto"]
+        # project.yml is excluded so it stops shipping as a bundle resource.
+        excludes: ["OBAKitCore.h", "Models/Protobuf/gtfs-realtime.proto", "project.yml"]
       - path: OBAKitCore.h
         headerVisibility: public
+      # iOS-only half of the same module. It MUST be a sibling directory with
+      # `type: group`: XcodeGen 2.46 silently ignores destinationFilters on a
+      # synced folder, and a group nested inside the synced root dangles its
+      # file reference and breaks the iOS build. Because it is a group, not a
+      # synced folder, files added here need `scripts/generate_project`.
+      - path: ../OBAKitCoreiOS
+        type: group
+        destinationFilters: [iOS]
     dependencies:
       - package: SwiftProtobuf
       - package: GRDB

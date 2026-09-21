@@ -15,6 +15,7 @@ opt_in_rules: # some rules are only opt-in
 included: # paths to include during linting. `--path` is ignored if present.
   - OBAKit
   - OBAKitCore
+  - OBAKitCoreiOS
   - OBAWidget
 
 excluded: # paths to ignore during linting. Takes precedence over `included`.
@@ -31,7 +32,7 @@ type_body_length:
 custom_rules:
   hardcoded_app_name:
     name: "Hardcoded app name"
-    # OBAKit/OBAKitCore/OBAWidget are the white-label frameworks — the same code ships
+    # OBAKit/OBAKitCore/OBAKitCoreiOS/OBAWidget are the white-label frameworks — the same code ships
     # as KiedyBus. A brand name baked into a string literal renders the wrong app name.
     # `included:` above already scopes linting to the frameworks, so the app targets
     # under Apps/ remain free to name themselves.
