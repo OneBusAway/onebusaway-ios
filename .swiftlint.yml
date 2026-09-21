@@ -54,6 +54,11 @@ custom_rules:
     # Decode epoch values as Int64 or Date. A key that merely *sounds* temporal
     # (seconds since midnight, an offset) may suppress this with
     # `// swiftlint:disable:next epoch_decoded_as_int` and a reason.
+    # Known blind spots — this is a tripwire, not a proof: it cannot see synthesized
+    # Codable, it does not match UInt, and it only fires on keys NAMED like a time
+    # (it would not have caught ServiceAlert.TimeWindow's `.from` / `.to`). The
+    # watchOS device build catches overflowing literals; nothing but review catches
+    # an epoch decoded into Int under an innocuous key name.
     included: "OBAKitCore(iOS)?/.*\\.swift"
     regex: 'decode(IfPresent)?\(Int\.self, forKey: \.\w*([Tt]ime|[Dd]ate|[Tt]imestamp)\b'
     message: "Decode epoch values as Int64 or Date — Int is 32 bits on arm64_32 Apple Watches."
@@ -61,6 +66,6 @@ custom_rules:
   epoch_narrowed_to_int:
     name: "timeIntervalSince1970 narrowed to Int"
     included: "OBAKitCore(iOS)?/.*\\.swift"
-    regex: '\bInt\([^)]*timeIntervalSince1970'
-    message: "Use Int64(…) — Int is 32 bits on arm64_32 Apple Watches, and seconds-since-1970 overflows it in 2038."
+    regex: '\bU?Int\((?:[^()]|\([^()]*\))*timeIntervalSince1970'
+    message: "Use Int64(…) or UInt64(…) — Int is 32 bits on arm64_32 Apple Watches, and seconds-since-1970 overflows it in 2038."
     severity: error
