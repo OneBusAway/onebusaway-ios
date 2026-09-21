@@ -34,8 +34,40 @@ struct StopArrivalAccessibilityClockTests {
         return formatters
     }
 
+    /// Carries `routeShortName` deliberately. `ArrivalDepartureItem.init` reads
+    /// `routeAndHeadsign`, which falls through to `route.shortName` — an
+    /// implicitly-unwrapped `Route` that only `loadReferences()` populates — when
+    /// the denormalized name is absent. A fixture without it doesn't fail this
+    /// test, it traps and takes the whole test runner with it.
     private func makeConfiguration(formatters: Formatters) throws -> ArrivalDepartureContentConfiguration {
-        let arrivalDeparture = try Fixtures.arrivalDeparture()
+        let epoch = 1_700_000_480
+        let arrivalDeparture: ArrivalDeparture = try Fixtures.dictionaryToModel(
+            type: ArrivalDeparture.self,
+            dictionary: [
+                "arrivalEnabled": true,
+                "blockTripSequence": 1,
+                "departureEnabled": true,
+                "distanceFromStop": 100.0,
+                "lastUpdateTime": epoch,
+                "numberOfStopsAway": 1,
+                "predicted": true,
+                "predictedArrivalTime": epoch,
+                "predictedDepartureTime": epoch,
+                "routeId": "40_100479",
+                "routeShortName": "1 Line",
+                "scheduledArrivalTime": epoch,
+                "scheduledDepartureTime": epoch,
+                "serviceDate": epoch,
+                "situationIds": [] as [String],
+                "status": "default",
+                "stopId": "stop_1",
+                "stopSequence": 10,
+                "totalStopsInTrip": 20,
+                "tripHeadsign": "Lynnwood City Center",
+                "tripId": "trip_north",
+                "vehicleId": "vehicle_1"
+            ]
+        )
         let item = ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: false)
         return ArrivalDepartureContentConfiguration(viewModel: item, formatters: formatters)
     }
