@@ -113,7 +113,10 @@ extension APIService {
             return true
         }
 
-        if error.domain == (kCFErrorDomainCFNetwork as String) && error.code == NSURLErrorAppTransportSecurityRequiresSecureConnection {
+        // The literal value of `kCFErrorDomainCFNetwork`. watchOS has no
+        // CFNetwork, so the symbol cannot be named in code that builds there;
+        // CaptivePortalDetectionTests pins this string against the real constant.
+        if error.domain == "kCFErrorDomainCFNetwork" && error.code == NSURLErrorAppTransportSecurityRequiresSecureConnection {
             return true
         }
 
