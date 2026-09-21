@@ -46,3 +46,21 @@ custom_rules:
       - string
     message: "Don't hardcode 'OneBusAway' in a string in a shared framework — use %@ with Bundle.main.appName. This code also ships as KiedyBus."
     severity: error
+  epoch_decoded_as_int:
+    name: "Epoch value decoded as Int"
+    # `Int` is 32 bits on arm64_32 Apple Watches (every watch on watchOS 11; Series
+    # 6-8, SE 2, and Ultra 1 on any version). Watch simulators are 64-bit, so a
+    # time-valued `Int` decodes fine everywhere except on a customer's wrist.
+    # Decode epoch values as Int64 or Date. A key that merely *sounds* temporal
+    # (seconds since midnight, an offset) may suppress this with
+    # `// swiftlint:disable:next epoch_decoded_as_int` and a reason.
+    included: "OBAKitCore(iOS)?/.*\\.swift"
+    regex: 'decode(IfPresent)?\(Int\.self, forKey: \.\w*([Tt]ime|[Dd]ate|[Tt]imestamp)\b'
+    message: "Decode epoch values as Int64 or Date — Int is 32 bits on arm64_32 Apple Watches."
+    severity: error
+  epoch_narrowed_to_int:
+    name: "timeIntervalSince1970 narrowed to Int"
+    included: "OBAKitCore(iOS)?/.*\\.swift"
+    regex: '\bInt\([^)]*timeIntervalSince1970'
+    message: "Use Int64(…) — Int is 32 bits on arm64_32 Apple Watches, and seconds-since-1970 overflows it in 2038."
+    severity: error

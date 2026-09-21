@@ -132,7 +132,10 @@ public final class ServiceAlert: NSObject, Identifiable, Decodable, HasReference
 
         /// Decodes a Unix timestamp that may be expressed
         /// in seconds or milliseconds.
-        private static func decodeUnixTimestamp(_ value: Int) -> Date {
+        ///
+        /// Typed over `Int64`: the threshold literal alone overflows a 32-bit
+        /// `Int`, which is what `Int` is on `arm64_32` Apple Watches.
+        private static func decodeUnixTimestamp(_ value: Int64) -> Date {
             let seconds: TimeInterval
 
             if value > 10_000_000_000 {
@@ -145,9 +148,9 @@ public final class ServiceAlert: NSObject, Identifiable, Decodable, HasReference
 
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            let rawFrom = try container.decode(Int.self, forKey: .from)
+            let rawFrom = try container.decode(Int64.self, forKey: .from)
             self.from = Self.decodeUnixTimestamp(rawFrom)
-            if let rawTo = try container.decodeIfPresent(Int.self, forKey: .to) {
+            if let rawTo = try container.decodeIfPresent(Int64.self, forKey: .to) {
                 self.to = Self.decodeUnixTimestamp(rawTo)
             } else {
                 self.to = .distantFuture
