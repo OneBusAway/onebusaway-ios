@@ -311,19 +311,10 @@ open class CoreApplication: NSObject,
 
     // MARK: - UUID
 
-    private let userUUIDDefaultsKey = "userUUIDDefaultsKey"
-
     /// A unique (but not personally-identifying) identifier for the current user that is used
     /// to correlate crash logs and other events to a single person.
     @objc public var userUUID: String {
-        if let uuid = userDefaults.object(forKey: userUUIDDefaultsKey) as? String {
-            return uuid
-        }
-        else {
-            let uuid = UUID().uuidString
-            userDefaults.set(uuid, forKey: userUUIDDefaultsKey)
-            return uuid
-        }
+        UserUUID.value(in: userDefaults)
     }
 
     // MARK: - Regions Service
@@ -355,7 +346,7 @@ open class CoreApplication: NSObject,
     // MARK: - Migration
 
     public func migrate(userID: String) {
-        userDefaults.set(userID, forKey: userUUIDDefaultsKey)
+        userDefaults.set(userID, forKey: UserUUID.defaultsKey)
     }
 
     public func migrate(region: MigrationRegion) {
