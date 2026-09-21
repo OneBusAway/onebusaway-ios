@@ -517,4 +517,18 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(self.delegate.enteredRegionIdentifier == LocationService.proximityRegionIdentifier(for: alert))
         #expect(delegate2.enteredRegionIdentifier == LocationService.proximityRegionIdentifier(for: alert))
     }
+
+    // MARK: - Objective-C Visibility
+
+    /// The two region callbacks live in `LocationService+ProximityAlerts.swift`.
+    /// Core Location finds optional delegate methods by selector, so an
+    /// extension that lost its Objective-C entry points would compile, pass
+    /// every test that calls the Swift method directly, and never fire.
+    @Test func `Region delegate callbacks are visible to Core Location`() {
+        let service = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
+
+        #expect(service.responds(to: #selector(CLLocationManagerDelegate.locationManager(_:didEnterRegion:))))
+        #expect(service.responds(to: #selector(CLLocationManagerDelegate.locationManager(_:monitoringDidFailFor:withError:))))
+        #expect((LocationManagerMock() as LocationManager) is RegionMonitoringLocationManager)
+    }
 }

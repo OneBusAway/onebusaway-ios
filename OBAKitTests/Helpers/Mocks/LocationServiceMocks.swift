@@ -12,7 +12,7 @@ import CoreLocation
 import OBAKit
 import OBAKitCore
 
-public class LocationManagerMock: NSObject, LocationManager {
+public class LocationManagerMock: NSObject, RegionMonitoringLocationManager {
 
     public weak var delegate: CLLocationManagerDelegate?
 

@@ -55,20 +55,6 @@ public protocol LocationManager {
     var isHeadingAvailable: Bool { get }
     func startUpdatingHeading()
     func stopUpdatingHeading()
-
-    // MARK: - Region Monitoring
-    func startMonitoring(for region: CLRegion)
-    func stopMonitoring(for region: CLRegion)
-    var monitoredRegions: Set<CLRegion> { get }
-
-    /// The largest radius, in meters, this device will actually monitor.
-    ///
-    /// An oversize region is not silently clamped: Core Location answers it with
-    /// `CLError.regionMonitoringFailure`, delivered asynchronously through
-    /// `monitoringDidFailFor` and carrying no radius. Reading the limit up front
-    /// is what lets a caller clamp deliberately and report it, rather than learn
-    /// later that something failed without learning what.
-    var maximumRegionMonitoringDistance: CLLocationDistance { get }
 }
 
 extension CLLocationManager: LocationManager {

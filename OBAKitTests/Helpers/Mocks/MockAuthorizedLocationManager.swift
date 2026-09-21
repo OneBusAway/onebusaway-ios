@@ -12,7 +12,7 @@ import CoreLocation
 import OBAKit
 import OBAKitCore
 
-class MockAuthorizedLocationManager: NSObject, LocationManager {
+class MockAuthorizedLocationManager: NSObject, RegionMonitoringLocationManager {
     weak var delegate: CLLocationManagerDelegate?
 
     private let updateLocation: CLLocation
