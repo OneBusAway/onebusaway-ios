@@ -170,6 +170,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// screen went away.
     let bookmarkWidgetRefresher: BookmarkWidgetRefresher
 
+    /// Mirrors the resolved current region into the app-group suite so the
+    /// widget extension — which cannot see this process's custom regions — can
+    /// read it. Retained here because `RegionsService` holds delegates weakly.
+    private var resolvedRegionPersister: ResolvedRegionPersister?
+
     // MARK: - Init
 
     /// Creates a new `Application` object.
@@ -181,6 +186,11 @@ public class Application: CoreApplication, PushServiceDelegate {
         bookmarkWidgetRefresher = BookmarkWidgetRefresher()
 
         super.init(config: config)
+
+        resolvedRegionPersister = ResolvedRegionPersister(
+            regionsService: regionsService,
+            store: ResolvedRegionStore(userDefaults: userDefaults)
+        )
 
         // Force the proximity alert manager now instead of leaving it to a first
         // use that may never come. A geofence crossing relaunches a terminated
