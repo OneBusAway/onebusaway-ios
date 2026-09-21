@@ -47,7 +47,9 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
                 bookmarks: content.bookmarks,
                 // `mapValues` keeps a fetched-but-now-empty bookmark present
                 // (as `[]`), so it reads "no departures", not "no data".
-                departures: content.departures.mapValues { $0.filter { $0.arrivalDepartureDate >= date } },
+                departures: content.departures.mapValues { departures in
+                    WidgetTimelinePlanner.departures(departures, visibleAt: date)
+                },
                 fetchedAt: content.fetchedAt
             )
         }

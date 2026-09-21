@@ -19,7 +19,7 @@ struct BookmarkEntry: TimelineEntry {
     /// bookmarks associated with this `BookmarkEntry`.
     let bookmarks: [Bookmark]
 
-    /// Departures at or after `date`, keyed by `Bookmark.id`. A bookmark that
+    /// Departures strictly after `date`, keyed by `Bookmark.id`. A bookmark that
     /// is **absent** has no data (its fetch failed, or there is no region); one
     /// mapped to `[]` was fetched and has nothing coming.
     let departures: [UUID: [ArrivalDeparture]]

@@ -21,7 +21,8 @@ import Foundation
 public struct WidgetTimelinePlanner: Sendable {
     public struct Plan: Equatable, Sendable {
         /// When each timeline entry takes effect. Always starts with `now`.
-        /// An entry dated `d` should show only departures at or after `d`.
+        /// An entry dated `d` shows only departures strictly after `d` — see
+        /// `departures(_:visibleAt:)`.
         /// Entries are at least `minimumEntrySpacing` apart: a departure that
         /// falls sooner than that after the previous entry is deferred to the
         /// spacing, not dropped.
@@ -72,5 +73,18 @@ public struct WidgetTimelinePlanner: Sendable {
         }
 
         return Plan(entryDates: entryDates, reloadDate: reloadDate)
+    }
+}
+
+extension WidgetTimelinePlanner {
+    /// The departures a timeline entry dated `entryDate` should show: those
+    /// strictly after it.
+    ///
+    /// Strictly, because an undeferred entry is dated exactly at a departure —
+    /// that entry exists to take that bus off the screen. `>=` would keep it
+    /// there until the next boundary, which on a sparse route is the whole
+    /// reload interval.
+    public static func departures(_ departures: [ArrivalDeparture], visibleAt entryDate: Date) -> [ArrivalDeparture] {
+        departures.filter { $0.arrivalDepartureDate > entryDate }
     }
 }

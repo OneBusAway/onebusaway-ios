@@ -96,4 +96,59 @@ import Testing
         let reloadsPerDay = (18 * 60 * 60) / plan.reloadDate.timeIntervalSince(now)
         #expect(reloadsPerDay <= 40)
     }
+
+    // MARK: - departures(_:visibleAt:)
+
+    // The suite's fixed `now` is in 2023, so departures anchored on it have all
+    // gone. Nothing under test reads the clock — both the planner and the slice
+    // take their reference date as a parameter — but a departed bus is a poor
+    // stand-in for one a widget would show, so these anchor on the present.
+    // Whole seconds, because `Fixtures.arrivalDeparture` takes integer
+    // timestamps and its `.deferredToDate` decode reads them as seconds since
+    // the 2001 reference date (see its doc comment).
+    private let upcomingNow = Date(timeIntervalSinceReferenceDate: Double(Int(Date.timeIntervalSinceReferenceDate)))
+    private func upcoming(_ value: Double) -> Date { upcomingNow.addingTimeInterval(value * 60) }
+
+    private func departure(at date: Date, tripID: String) throws -> ArrivalDeparture {
+        let seconds = Int(date.timeIntervalSinceReferenceDate)
+        return try Fixtures.arrivalDeparture(scheduledArrival: seconds, scheduledDeparture: seconds, tripID: tripID)
+    }
+
+    /// The off-by-one this function exists to prevent: an undeferred entry is
+    /// dated exactly at a departure, and it exists to take that bus off screen.
+    @Test func `A departure at the entry date is dropped, one second later is kept`() throws {
+        let entryDate = upcoming(10)
+        let before = try departure(at: entryDate.addingTimeInterval(-1), tripID: "trip_before")
+        let at = try departure(at: entryDate, tripID: "trip_at")
+        let after = try departure(at: entryDate.addingTimeInterval(1), tripID: "trip_after")
+
+        let visible = WidgetTimelinePlanner.departures([before, at, after], visibleAt: entryDate)
+
+        #expect(visible.map(\.tripID) == ["trip_after"])
+    }
+
+    @Test func `Slicing preserves the input order`() throws {
+        let later = try departure(at: upcoming(25), tripID: "trip_later")
+        let soonest = try departure(at: upcoming(11), tripID: "trip_soonest")
+        let soon = try departure(at: upcoming(15), tripID: "trip_soon")
+
+        let visible = WidgetTimelinePlanner.departures([later, soonest, soon], visibleAt: upcoming(10))
+
+        #expect(visible.map(\.tripID) == ["trip_later", "trip_soonest", "trip_soon"])
+    }
+
+    /// End to end: the +10 entry exists because the +10 bus leaves then, so
+    /// that entry must not still be showing it.
+    @Test func `The entry at a departure's own date no longer shows that departure`() throws {
+        let departures = [
+            try departure(at: upcoming(10), tripID: "trip_10"),
+            try departure(at: upcoming(25), tripID: "trip_25")
+        ]
+
+        let plan = WidgetTimelinePlanner().plan(departureDates: departures.map(\.arrivalDepartureDate), now: upcomingNow)
+        #expect(plan.entryDates == [upcomingNow, upcoming(10), upcoming(25)])
+
+        #expect(WidgetTimelinePlanner.departures(departures, visibleAt: plan.entryDates[0]).map(\.tripID) == ["trip_10", "trip_25"])
+        #expect(WidgetTimelinePlanner.departures(departures, visibleAt: plan.entryDates[1]).map(\.tripID) == ["trip_25"])
+    }
 }
