@@ -109,6 +109,16 @@ public class Formatters: NSObject {
     }()
 
     /// Converts a date into a human-readable time string that conforms to the user's locale.
+    ///
+    /// Zoned to the region, and deliberately unbadged. Reach for
+    /// ``formattedClockTime(_:deviceTimeZone:)`` instead whenever a clock stands on
+    /// its own — a single arrival, a row a rider reads without surrounding times —
+    /// because there a region-zone time is indistinguishable from a local one.
+    ///
+    /// Using this directly is right for a run of times that share one context and
+    /// establish the zone between them: the stop lists in `TripStopListItem`,
+    /// `TripStopListView` and `DestinationStopPickerController` are all times along
+    /// a single trip, where a badge on every row would be noise. Audited for #1438.
     public lazy var timeFormatter: DateFormatter = {
         let timeFormatter = DateFormatter()
         timeFormatter.dateStyle = .none
