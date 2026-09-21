@@ -12,7 +12,7 @@ watch app builds on top of it.
 ## Decisions
 
 Made with the maintainer, 2026-09-19/20. Rows marked **(rev.)** were changed
-after the validation pass described below.
+after the first validation pass described below; **(rev. 2)** after the second.
 
 | Decision | Choice |
 |---|---|
@@ -24,13 +24,14 @@ after the validation pass described below.
 | Sync payload **(rev.)** | **A trimmed `WatchBookmark` DTO,** no timestamp, content-hash revision. Was: reuse the full `Bookmark` encoding. |
 | Complication data path **(rev.)** | **A stateless loader; the widget never builds a `CoreApplication`.** Was: mirror `WidgetDataProvider`. |
 | Live Activities on the watch **(rev.)** | **Added as step 0:** `supplementalActivityFamilies` on the existing iOS Live Activity. |
-| CI **(rev.)** | Compile guardrail **plus an install-and-launch smoke test** from step 5. |
+| WatchConnectivity placement **(rev. 2)** | **One shared `WatchSessionBridge` in OBAKitCore,** used by both sides. Was: WatchConnectivity kept out of core, with separate sender and receiver delegates. |
+| CI **(rev., rev. 2)** | A **device-architecture** compile guardrail, kept permanently, **plus an install-and-launch smoke test** from step 5. |
 | Complication content | The top favorited bookmark. Per-complication picker deferred. |
 | Implementation plans | Step 0 gets its own short plan. The first main plan covers steps 1–3 (core portability). Steps 4–6 are follow-on plans. |
 
 ## How this spec was validated
 
-Two rounds, both outside the repo, which was never modified.
+Three rounds, all outside the repo, which was never modified.
 
 **Round 1 (2026-09-19/20)** compiled `OBAKitCore/` for
 `generic/platform=watchOS Simulator` from a throwaway XcodeGen project (watchOS
@@ -49,15 +50,55 @@ against the repo, and the two build-setting defects (§2, "Two XcodeGen defaults
 that must be overridden") were reproduced independently by removing its fixes
 from a copy of its probe and reading the generated build settings.
 
+**Round 3 (2026-09-20)** attacked the revision itself, using Apple's
+documentation, XcodeGen's documentation, XcodeBuildMCP for simulator builds, and
+raw `xcodebuild` for what XcodeBuildMCP cannot do (device architectures, paired
+simulators). It found one new blocker that no simulator-based check can see —
+32-bit `Int` on real watches, below — and several errors the round 2 rewrite
+introduced: a reload policy that overspent its own cited budget, a test placed in
+a target that cannot host it, and a payload field that would break sync across
+the 64-bit/32-bit boundary. Its load-bearing claims were again spot-checked: the
+affected declarations, the `arm64_32` compile error in its build log,
+`ARCHS_STANDARD`, and its decode demonstration, which was re-run. That
+demonstration substitutes `Int32` for `Int` on a 64-bit host, because no 32-bit
+simulator exists; the compile failure is from a real `arm64_32` build.
+
 Evidence tags used below: **[built]** verified by building/running,
 **[doc]** stated in Apple or library documentation, **[code]** established by
 reading this repo, **[recalled]** not verified.
 
-The `xcode` MCP server was unreachable for both rounds; `xcodebuild` and
-`simctl` were used instead.
+Apple's `xcode` MCP server was unreachable for all rounds (a stale
+`DEVELOPER_DIR` pin and a stopped service). XcodeBuildMCP supports watch
+simulators but not device-architecture builds, and its `build_run_sim` reports
+success for an app that dies in dyld, as does `simctl launch`.
 
 ## Where OBAKitCore stands today
 
+- **`Int` is 32 bits on most watches this app will run on, and the simulator
+  hides it.** `ARCHS_STANDARD` for the watchOS device SDK is `arm64 arm64_32`.
+  [built] Only Series 9 and later and Ultra 2 moved to `arm64`, and only on
+  watchOS 26; "the Apple Watch Simulator always uses the arm64 architecture on
+  Apple Silicon." [doc, WWDC25-334] So every watch on watchOS 11, and Series 6–8,
+  SE 2, and Ultra 1 on any version, has a 32-bit `Int`, and nothing run in a
+  simulator can reveal a problem with it.
+  - **OBAKitCore does not compile for `arm64_32` today:**
+    `ServiceAlert.swift:138: integer literal '10000000000' overflows when stored
+    into 'Int'`. [built] GRDB and SwiftProtobuf do link for `arm64_32`. [built]
+  - **Every REST response would fail to decode.** The OBA API sends epoch
+    milliseconds, which overflow 32 bits. `RESTAPIResponse.currentTime` — the
+    base of every response — is `Int?` (`RESTAPIResponse.swift:18,29`);
+    `TripStatus.lastLocationUpdateTime`, carried by every realtime arrival, is
+    `Int` (`TripStatus.swift:64,172`); `ServiceAlert.TimeWindow` decodes `from`
+    and `to` as `Int` (`ServiceAlert.swift:136-150`). [code] Against a real
+    fixture these decode as `Int` and fail as `Int32` with "Number 1589553926433
+    is not representable". [built]
+  - Already safe [code]: `ArrivalDeparture` times decode through the
+    `.millisecondsSince1970` `Date` strategy; `ScheduleForStop`,
+    `RESTAPIURLBuilder`, and `ObacoAPIService` use `Int64`; GTFS-RT uses
+    `UInt64`; GRDB columns and region, survey, and sort identifiers are small.
+  - The audit was grep-based, and files that failed to compile for other reasons
+    may hide further overflowing literals. The device-architecture CI compile in
+    §5 is what finds the rest.
 - **GRDB 7.11 and SwiftProtobuf 1.38.1 both build for watchOS.** [built]
 - **ActivityKit is iOS/iPadOS only** ([doc]: `ActivityAttributes` is "iOS 16.1+,
   iPadOS 16.1+"). `import ActivityKit` fails watchOS dependency scanning
@@ -144,7 +185,10 @@ up, which the workflow already requires before building.
    `RegionMonitoringLocationManager` refinement in the iOS tree. Move
    `LocationService`'s proximity-alert methods and its `didEnterRegion` /
    `monitoringDidFailFor` delegate callbacks into
-   `LocationService+ProximityAlerts.swift` in the iOS tree.
+   `LocationService+ProximityAlerts.swift` in the iOS tree. `LocationService`
+   holds no proximity *stored* state, so the extension split works, but
+   `locationManager` and `delegates` are `private` (`LocationService.swift:44,107`)
+   and must become internal for a cross-file extension to reach them. [code]
 2. **Live Activities.** `CoreApplication.liveActivityRegistry` and
    `.liveActivityTracker` are stored lazy properties, so they cannot move to an
    extension. Guard them with `#if canImport(ActivityKit)`. Apart from a
@@ -163,6 +207,12 @@ up, which the workflow already requires before building.
    Apple's docs list `MKPolyline` as available on watchOS, so first try lifting
    the fence; if the compiler disagrees, fence the two callers instead. The map
    is out of v1 scope either way.
+6. **32-bit `Int`.** Change the epoch-valued `Int` fields listed under "Where
+   OBAKitCore stands today" to `Int64` (or decode them as `Date`), and fix the
+   `10_000_000_000` literal by typing `decodeUnixTimestamp` over `Int64`. These
+   are source-compatible on 64-bit platforms, so iOS behavior is unchanged. Add a
+   SwiftLint custom rule flagging `decode(IfPresent)?(Int.self` under
+   `Models/REST` and `Int(…timeIntervalSince1970`, so the pattern cannot return.
 
 ### Step 2 checklist for the new directory
 
@@ -226,12 +276,29 @@ MainActor-default settings apply to the new targets automatically.
 
 ### Opt-in
 
-An app gets a watch app by adding three includes, a `WatchApp` override block,
-and `- target: WatchApp` to its `App` dependencies. XcodeGen merges included
+An opting-in app keeps all its watch wiring in one file, `Apps/<App>/watch.yml`:
+the three target includes, the `WatchApp` and `OBAWatchWidget` override blocks,
+and `- target: WatchApp` added to `App`'s dependencies. XcodeGen merges included
 arrays **additively** ([built], and [doc]: "merged additively by default…
-`:REPLACE`"), so the app's one line appends to the shared `App` dependency list.
-KiedyBus — and any agency that never wants a watch app — generates exactly the
-project it generates today.
+`:REPLACE`"), so that one line appends to the shared dependency list.
+
+The app's `project.yml` includes it conditionally:
+
+```yaml
+include:
+  - path: Apps/OneBusAway/watch.yml
+    relativePaths: false
+    enable: ${OBA_WATCH}
+```
+
+`scripts/generate_project` exports `OBA_WATCH=true` unless given `--no-watch`.
+An unset variable disables the include. [doc, built: `true` yields six targets
+with the watch app embedded; unset yields three, with `App` depending only on the
+widget and core, and builds green.] XcodeGen has no config-conditional
+dependency form, only platform filters, so an include switch is the mechanism.
+
+KiedyBus — and any agency that never wants a watch app — has no `watch.yml` and
+generates exactly the project it generates today.
 
 ### Per-app overrides
 
@@ -244,6 +311,11 @@ project it generates today.
 - `NSLocationWhenInUseUsageDescription` for the watch app, with
   `InfoPlist.strings` in all 13 locales. Independent watch apps present the
   authorization prompt on the watch itself. [doc]
+- `NSWidgetWantsLocation` on the watch widget, used for Smart Stack relevance
+  only (§4).
+- `WKSupportsLiveActivityLaunchAttributeTypes` on the watch app, so tapping the
+  iPhone's Live Activity in the Smart Stack opens the watch app rather than
+  nothing. [doc]
 - ATS exceptions mirrored from the iOS app (custom regions may be plain HTTP).
 - The `OBAKitConfig` block the iOS widget carries, and a per-app `regions.json`.
   (Today `OBAWidget/Resources/regions.json` is OneBusAway-specific content inside
@@ -261,10 +333,17 @@ equals the `App` bundle ID and that the watch ID is prefixed by it.
 ### A consequence for every iOS build
 
 Once `App` depends on `WatchApp`, building the iOS `App` scheme builds the entire
-watch stack too. [built] So after step 5 the existing CI build already compiles
-the watch targets for OneBusAway, and every local iOS build pays for it. Step 5
-should provide a scheme or configuration without the watch dependency for fast
-local iteration.
+watch stack too [built] — but **only its simulator slices**, which are 64-bit.
+That build therefore does not replace the device-architecture guardrail in §5.
+Every local iOS build pays for the watch stack; `scripts/generate_project
+--no-watch` (above) is the fast path for iOS-only work. In the scratch replica it
+cut a clean build from 11.0 s to 7.0 s, which says little about the real
+project.
+
+**Link OBAKitCore dynamically, once.** Never add `package:` dependencies to the
+watch app or its widget: linking GRDB and SwiftProtobuf statically into both
+binaries costs 10.8 MB against about 5 MB for one embedded dynamic framework
+(§5). [built]
 
 ## §3 How data reaches the watch
 
@@ -281,15 +360,34 @@ region hint cross the device boundary, one way, phone → watch.**
 
 ### Payload
 
-`WatchSyncPayload` lives in OBAKitCore (portable, no WatchConnectivity import):
+`WatchSyncPayload` lives in OBAKitCore:
 
 ```
-WatchSyncPayload { schemaVersion, revision, bookmarks: [WatchBookmark],
-                   groups: [WatchBookmarkGroup], region: Region? }
-WatchBookmark    { id, groupID, name, regionIdentifier, stopID, stopName,
-                   stopDirection, latitude, longitude, isFavorite, sortOrder,
-                   routeID?, routeShortName?, tripHeadsign? }
+WatchSyncPayload   { schemaVersion: Int32, revision, bookmarks: [WatchBookmark],
+                     groups: [WatchBookmarkGroup], region: Region? }
+WatchBookmark      { id, groupID?, name, regionIdentifier: Int32, stopID,
+                     stopName, stopDirection?, latitude, longitude, isFavorite,
+                     routeID?, routeShortName?, tripHeadsign? }
+WatchBookmarkGroup { id, name }
 ```
+
+**Array order is display order.** The phone flattens bookmarks into the order it
+shows them — groups by `BookmarkGroup.sortOrder`, then bookmarks by `sortOrder`,
+ungrouped last — and `groups` likewise. The DTO carries **no `sortOrder`**:
+`Bookmark.sortOrder` defaults to `Int.max` (`Bookmark.swift:56,132`), which a
+64-bit phone would encode and a 32-bit watch could not decode, failing the entire
+sync [built]; and it is a per-group index, not comparable across groups [code],
+so "first by `sortOrder`" was never well defined.
+
+**Every integer in the payload is declared `Int32`,** and **the payload contains
+no `Set`** (see Encoding).
+
+The fields are sufficient [code]: `TripBookmarkKey` keys on `stopID +
+routeShortName + routeID + tripHeadsign` (`TripBookmarkKey.swift:13-18`), all
+present, so the watch matches a trip bookmark to its arrivals exactly as iOS
+does; a bookmark is a trip bookmark when `routeID` is non-nil. `latitude` and
+`longitude` serve Nearby and relevance. Route color for an empty-state badge is
+an optional later addition.
 
 **Why a DTO, reversing the original "no parallel DTO layer."** `Bookmark` embeds
 a full `Stop`, which encodes its `[Route]`, each of which encodes a full
@@ -308,26 +406,68 @@ it enforces nothing and says nothing about hardware. Community figures of
 65–262 KB are [recalled]. The trimmed payload stays under 64 KB to roughly 370
 bookmarks.
 
-**Encoding is binary plist,** which is byte-stable across processes; default
-`JSONEncoder` output is not. [built]
+**Encoding is binary plist,** which is byte-stable across processes for structs,
+arrays, and dictionaries — and **not once a `Set` is encoded**: across four
+processes the plain and dictionary encodings hashed identically while the `Set`
+encoding differed every run, as did default `JSONEncoder`. [built] A test encodes
+the payload in two subprocesses and compares bytes.
+
+**`revision` is SHA-256 over the binary plist of the payload with `revision`
+omitted.** Never Swift's `Hasher`, which is seeded per process. The receiver
+compares revisions and never recomputes one, so byte stability across OS
+versions, or between iOS's and watchOS's Foundation, is not required.
 
 **The payload contains no timestamp.** The system drops an application context
 identical to the previous one: six identical `updateApplicationContext` calls
 across two phone launches produced exactly one watch delivery. [built] A
 `generatedAt` field would make every send unique, turning each phone launch into
-a transfer, a watch background wake, and a complication reload. `revision` is a
-hash of the payload's content. The sender skips the call when `revision` matches
-what `session.applicationContext` already holds; the receiver discards a payload
-whose revision it has already applied.
+a transfer, a watch background wake, and a complication reload. A
+content-derived `revision` inside the payload preserves that dedupe: six separate
+phone processes sending content 1, 1, 1, 2, 2, 1 produced exactly four watch
+deliveries — one per change, none for repeats (one lagged 18 s). [built, paired
+simulators]
+
+The sender skips the call when `revision` matches what
+`session.applicationContext` already holds — the property Apple documents as "a
+copy of your dictionary… so that you can determine what data you last sent", and
+which persists across phone launches [doc, built]; not
+`receivedApplicationContext`. The receiver discards a payload whose revision it
+has already applied.
+
+**Forced re-sends bypass that check.** After re-activation, or when a watch app
+is newly installed, the sender must deliver even though its own revision is
+unchanged, and it is unknown whether `applicationContext` and the system's dedupe
+are tracked per watch. A forced re-send adds a top-level `resendNonce` *outside*
+the hashed blob so the system cannot suppress it; the receiver's revision check
+makes a redundant one free.
 
 Because the watch stores `WatchBookmark`, not `Bookmark`, it does **not** write
 into `UserDataStore.bookmarks`. The receiver persists the payload in the
 on-watch app-group suite; the watch UI and the watch widget both read it there.
 
-### Sender (OBAKit) and receiver (OBAKitWatch)
+### One bridge, two thin clients
 
-The sender observes `.bookmarksDidChange` — following
-`BookmarkWidgetRefresher` — and `RegionsServiceDelegate.updatedRegion`.
+**`WatchSessionBridge` lives in OBAKitCore** and is the only type that imports
+WatchConnectivity or conforms to `WCSessionDelegate`. It owns activation and
+re-activation, the `nonisolated` delegate methods, the `isSupported` / `isPaired`
+/ `isWatchAppInstalled` gating, and one ordered stream of incoming payloads (see
+Concurrency). This reverses the earlier "WatchConnectivity never enters
+OBAKitCore." The reasons: the delegate is the most dangerous code in the design
+— it compiles clean and traps at runtime — so it should exist once; a watch-side
+delegate in OBAKitWatch could not be unit-tested without a watchOS test host,
+whereas core is covered by the existing iOS-hosted suite; and it is the
+least-duplication answer. WatchConnectivity compiles inside an
+`APPLICATION_EXTENSION_API_ONLY` framework on both platforms. [built]
+
+The clients stay where their dependencies are. The **sender** (OBAKit) maps
+`Bookmark` → `WatchBookmark`, debounces, and calls the bridge. The **receiver**
+(OBAKitWatch) consumes the bridge's stream, persists the payload, and reloads
+timelines.
+
+The sender observes four triggers, the same four that write the persisted region
+(see Region rule): `.bookmarksDidChange` — following `BookmarkWidgetRefresher` —
+plus `.bookmarkGroupsDidChange`, `RegionsServiceDelegate.updatedRegion`, and
+`updatedRegionsList`.
 
 **Change plumbing is incomplete today** [code]: `.bookmarksDidChange` is posted
 from only three sites (`add(_:to:index:)`, `setPinned`, `delete(bookmark:)`).
@@ -350,25 +490,37 @@ simulator; `transferFile` is for documents.
 
 ### Concurrency
 
-OBAKit and OBAKitWatch build with `SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor`.
 WatchConnectivity calls its delegate on "a non-main serial queue" [doc], and the
 SDK header carries no Swift concurrency annotations.
 
-**A naive conformance compiles with zero diagnostics — even with this repo's five
-escalated diagnostic groups — and traps at runtime** in
+**In a MainActor-default module, a naive conformance compiles with zero
+diagnostics — even with this repo's five escalated diagnostic groups — and traps
+at runtime** in
 `_checkExpectedExecutor → dispatch_assert_queue_fail`. [built; demonstrated by
 invoking the delegate's `@objc` entry point from a background queue, since an
 unpaired simulator never fires the callback]
 
+OBAKitCore is the one target whose default isolation is `nonisolated`, so the
+bridge does not inherit the trap by default — but the trap was demonstrated in a
+MainActor-default module, which is where a well-meaning refactor or a second
+delegate in OBAKit would land. The rules are therefore explicit rather than
+reliant on the module default.
+
 Required design, verified between paired simulators [built]:
 
-- Every `WCSessionDelegate` method on both sides is declared `nonisolated`.
+- Every `WCSessionDelegate` method is declared `nonisolated` explicitly.
 - Inside the callback, extract the `Data` blob (which is `Sendable`) from the
   `[String: Any]` dictionary (which is not). The dictionary never crosses an
   isolation boundary.
-- Then hop: `Task { @MainActor in … }`.
-- A unit test invokes each delegate method from a background queue, so the trap
-  cannot return unnoticed.
+- Then **yield into one long-lived `AsyncStream<Data>`, consumed by a single
+  main-actor task.** Do not spawn a `Task { @MainActor in … }` per callback:
+  unstructured tasks carry no FIFO guarantee, and a content hash carries no
+  order, so if update B ran before update A the stale A would overwrite B.
+  `revision` protects against duplicates, not reordering. The delegate queue is
+  serial, so the stream's order is the arrival order.
+- A unit test in OBAKitTests invokes each delegate method from a background
+  queue, so the trap cannot return unnoticed; another feeds the stream A then B
+  and asserts B wins.
 
 ### Session lifecycle
 
@@ -380,11 +532,7 @@ Required design, verified between paired simulators [built]:
 | iOS delegate implements `sessionDidBecomeInactive` and `sessionDidDeactivate`, and calls `activate()` again | Otherwise the app opts out of multiple-watch support and the system terminates it on a watch switch. [doc] |
 | Re-send the current payload after re-activation and when `sessionWatchStateDidChange` reports a newly installed watch app | Otherwise a new or switched watch stays empty until the next bookmark edit. |
 | `updateApplicationContext` throws; handle `payloadTooLarge` | Log and surface; do not crash. |
-| The receiver is idempotent and order-safe | On the watch, the pending context arrived via `didReceiveApplicationContext` *before* `activationDidComplete`, and `receivedApplicationContext` read inside `activationDidComplete` was empty in one run. [built] Unstructured main-actor `Task`s do not guarantee FIFO; `revision` makes re-application harmless. |
-
-WatchConnectivity compiles inside an `APPLICATION_EXTENSION_API_ONLY` framework
-on both platforms [built], so keeping it out of OBAKitCore is a choice, not a
-constraint: it keeps core free of a framework only two targets use.
+| The receiver is idempotent **and** order-safe | On the watch, the pending context arrived via `didReceiveApplicationContext` *before* `activationDidComplete`, and `receivedApplicationContext` read inside `activationDidComplete` was empty in one run. [built] `revision` makes duplicates harmless; the single ordered stream (Concurrency) makes reordering impossible. Both are needed. |
 
 ### Region rule
 
@@ -403,10 +551,21 @@ no API service, and renders nothing. **The iOS widget has this same latent gap
 today.** The fix — the app writes the resolved `Region` to the app-group suite,
 and loaders take a region as input — lands in step 3 and repairs both.
 
+**When it is written.** `updatedRegion` alone is not enough: the `currentRegion`
+setter returns early when the identifier is unchanged
+(`RegionsService.swift:207-208`), so a regions-server change to the *current*
+region — a new base URL, say — fires only `updatedRegionsList`, and a persisted
+copy would go stale. [code] The app writes the resolved `Region` on four
+triggers: launch, `updatedRegion`, `updatedRegionsList`, and custom-region add,
+edit, or delete; and clears the key when there is no region. **Readers fall back
+to today's identifier lookup when the key is absent,** which covers the first
+widget reload after the update ships and before the app has launched. An encoded
+`Region` is about 1–2 KB. [built, approximate]
+
 ### Transport seam and known limitation
 
-The sync boundary is a `WatchSyncTransport` protocol in OBAKit/OBAKitWatch, with
-WatchConnectivity as the only v1 implementation. Apple steers independent apps
+The sync boundary is a `WatchSyncTransport` protocol in OBAKitCore, with
+`WatchSessionBridge` as the only v1 implementation. Apple steers independent apps
 toward CloudKit [doc], and the weakness of WatchConnectivity is real: a cellular
 watch whose phone is off never receives bookmark edits, and Family Setup watches
 never sync. But CloudKit needs an iCloud entitlement and container per agency
@@ -433,12 +592,32 @@ still works.
 ### Watch networking and location
 
 - `APIService+GetData` hardcodes `URLRequest(timeoutInterval: 10)` [code], short
-  for a Bluetooth-proxied or cold-LTE path. Make the timeout configurable; the
-  watch uses 20–30 s.
+  for a Bluetooth-proxied or cold-LTE path. Make the timeout configurable: 20–30 s
+  in the **foreground**, and **at most 8 s inside background refresh** (below).
 - `LocationService` does not start updates in `init` [code], but the
-  `LocationManager` protocol exposes only continuous updates. Add
-  `requestLocation()` (watchOS 2.0+ [doc]); the watch takes one-shot fixes at
-  `kCLLocationAccuracyHundredMeters`.
+  `LocationManager` protocol exposes only continuous updates and **has no
+  `desiredAccuracy`** (`LocationManagerProtocol.swift:13-72`). Add both
+  `requestLocation()` (watchOS 2.0+ [doc]; `LocationService` already implements
+  the two delegate callbacks it requires) and `desiredAccuracy`; the watch takes
+  one-shot fixes at `kCLLocationAccuracyHundredMeters`. Both test mocks
+  (`MockAuthorizedLocationManager`, `LocationServiceMocks`) must implement them;
+  do not give the protocol a default implementation, or the mocks would silently
+  no-op. `requestLocation()` is not dated for a delegate-based service;
+  `CLLocationUpdate.liveUpdates` and `CLServiceSession` also compile at the 11.0
+  floor [built] but would mean a second location path.
+- **Background refresh.** A plain `URLSession` data task is permitted inside
+  `backgroundTask(.appRefresh)`, but runtime is "a few seconds", and overrunning
+  it can get the app killed (`EXC_CRASH (SIGKILL)`). [doc] So: a timeout of at
+  most 8 s inside `withTaskCancellationHandler`; schedule the next refresh via
+  `WKApplication.shared().scheduleBackgroundRefresh(…)` before returning; write
+  arrivals to an app-group cache that the widget's provider uses when it is under
+  60 s old, so the app and the widget do not fetch the same thing twice. These
+  APIs compile at the 11.0 floor under MainActor-default isolation. [built]
+- **Client identity.** `userUUID` is an instance property of `CoreApplication`
+  that lazily creates the UUID in `UserDefaults` (`CoreApplication.swift:252-260`).
+  Extract it into a static helper over a suite. The watch gets its own UUID in the
+  on-watch app-group suite, shared by the watch app and its widget; the phone's
+  UUID is not synced.
 - The iOS arrivals cadence is a 30 s timer (`BookmarkDataLoader`). On the watch,
   foreground polling stops when the scene leaves `.active`.
 - The watch app's `CoreApplication` is configured with surveys, Obaco, and
@@ -471,18 +650,41 @@ The first draft proposed sharing the iOS widget's timeline provider. Reading it
 
 ### The loader
 
-**`BookmarkArrivalsLoader`, in OBAKitCore, is a stateless async function:**
+**`BookmarkArrivalsLoader`, in OBAKitCore, is stateless, takes an injected
+service, and streams per-stop results:**
 
 ```
-(region, apiConfiguration, [BookmarkArrivalsRequest]) async -> [Request.ID: [ArrivalDeparture]]
+func arrivals(for: [BookmarkArrivalsRequest], using: RESTAPIService)
+    -> AsyncStream<(StopID, Result<[ArrivalDeparture], Error>)>
 ```
 
-`apiConfiguration` is whatever `RESTAPIService` needs beyond the region's base
-URL (API key and client identity today); the step 3 plan fixes its exact shape
-from `RESTAPIService`'s initializer. `BookmarkArrivalsRequest` is a stop ID plus
-an optional trip key; both `Bookmark` and `WatchBookmark` map to it. Requests are **deduped by stop ID.** It requires no
-`CoreApplication`. It has four callers: the existing `BookmarkDataLoader`, the iOS
-widget, the watch widget, and the watch app's Bookmarks screen.
+`BookmarkArrivalsRequest` is a stop ID plus an optional trip key; both `Bookmark`
+and `WatchBookmark` map to it. Requests are **deduped by stop ID.** Callers that
+want a dictionary collect the stream.
+
+**Why a stream and not `async -> [ID: [ArrivalDeparture]]`,** as first drafted:
+`BookmarkDataLoader` today delivers `dataLoaderDidUpdate` per stop as each fetch
+lands, distinguishes missing-stop errors (settled as "no departures") from others
+(`displayError`, `lastBatchHadError`), tracks `fetchedStopIDs`, and is mocked in
+tests through the injected `dataLoader` on `application.apiService`
+(`BookmarkDataLoader.swift:188-243`). [code] A dictionary-returning function
+would return only after the slowest stop's timeout and would drop the errors —
+changing iOS behavior. The stream preserves all four properties, and **step 3's
+exit criterion is that `BookmarkDataLoaderTests` pass unmodified.**
+
+**Building the service without `CoreApplication` is cheap.** [code]
+`RESTAPIService` is an `actor` whose init only builds a URL builder and a
+decoder; it needs `APIServiceConfiguration(baseURL, apiKey, uuid, appVersion,
+regionIdentifier, surveyBaseURL?)` plus a `dataLoader` (`APIService.swift:21-36`).
+`getArrivalsAndDeparturesForStop(id:minutesBefore:minutesAfter:)` is
+`nonisolated` and every caller already passes `minutesAfter: 60`. In a widget,
+take `apiKey` and `appVersion` from `Bundle` accessors, the UUID from the static
+helper (§3), and the base URL from the persisted region. **Do not use
+`CoreAppConfig(appBundle:)` in a widget:** it constructs a `LocationService` and
+a `CLLocationManager` (`CoreAppConfig.swift:58`).
+
+The loader has four callers: the existing `BookmarkDataLoader`, the iOS widget,
+the watch widget, and the watch app's Bookmarks screen.
 
 **The watch widget never instantiates `CoreApplication`.** It reads bookmarks and
 the resolved region from the app-group suite and calls the loader. The GRDB stop
@@ -521,15 +723,16 @@ improvement that arrives with step 3.
 
 `accessoryCorner` is deferred; it needs its own curved-label design.
 
-**Content.** The top favorited bookmark: the first favorited `WatchBookmark` by
-`sortOrder`, which is the order the user already controls on the phone. A
-per-complication picker is deferred.
+**Content.** The top favorited bookmark: the first `WatchBookmark` in the synced
+array with `isFavorite` set. The array is already in the phone's display order
+(§3), which the user controls. A per-complication picker is deferred.
 
 ### Freshness
 
 Date-relative `Text` keeps a countdown ticking toward a *fixed* predicted time.
-It cannot show a bus getting later, and it counts *up* once the date passes.
-[doc] It is necessary, not sufficient.
+It cannot show a bus getting later, and `style: .timer` counts *up* once the date
+passes. [doc] Render countdowns with `Text(timerInterval:countsDown:)`, which
+stops at zero. It is necessary, not sufficient.
 
 Budgets [doc]: a widget gets "from 40 to 70 refreshes" a day, roughly one every
 15–60 minutes; entries should be "at least about 5 minutes apart"; reloads while
@@ -539,42 +742,90 @@ few seconds" of runtime.
 
 Strategy:
 
-- Each reload fetches about 60 minutes of arrivals for the top bookmark and
-  emits **one entry per departure boundary** — entry N shows the departures that
-  remain after departure N−1 has left — so the display advances with no reload.
-- Reload policy: `.after(min(nextDeparture + 1 min, now + 15 min))`.
+- Each reload fetches 60 minutes of arrivals for the top bookmark and emits
+  **one entry per departure boundary** — entry N shows the departures that remain
+  after departure N−1 has left — so the display advances with no reload.
+- **Reload policy: `.after(now + 30 min)` when departures exist; `now + 60 min`
+  when there are none; overnight, at the first scheduled departure minus 15
+  minutes. Never key the reload to the next departure.** Thirty-minute reloads
+  over 18 waking hours is 36 a day, inside the 40–70 budget with room left for
+  reloads triggered by sync and background refresh.
+
+  The previous draft's `.after(min(nextDeparture + 1 min, now + 15 min))` was
+  wrong twice over: it requested a reload after *every* departure — 15 to 20 an
+  hour on a 3-minute headway, against a budget of 40–70 a *day* — contradicting
+  the "no reload" point of per-departure entries; and even its 15-minute floor
+  is 72 a day.
+- **Entry spacing.** On a frequent route, per-departure entries fall closer than
+  the "about 5 minutes apart" Apple recommends. The documentation states no
+  consequence, and Apple's own Smart Stack sample emits entries one minute apart.
+  [doc] What WidgetKit does with closer entries on watchOS is **unknown**: a probe
+  compiled and installed a dense-timeline widget but could not place it on a face
+  or in the Smart Stack from the command line, so it tested nothing. If closer
+  entries prove to be dropped, coalesce departures under 5 minutes apart into one
+  entry.
 - Entries show scheduled-versus-realtime state and an "as of" time from
   `fetchedAt`; an entry older than a threshold degrades to schedule styling.
-- The watch app schedules `backgroundTask(.appRefresh)` at least 15 minutes
-  apart and calls `reloadTimelines(ofKind:)` **only when fetched data changed.**
+  Empty arrivals, a failed fetch, and a missing region each get a distinct entry
+  rather than a blank complication.
+- The watch app's background refresh (§3) calls `reloadTimelines(ofKind:)` **only
+  when fetched data changed** — the departure set, or any minute value.
 - After a sync, timelines reload only when `revision` changed.
 
-The widget does not request location (`NSWidgetWantsLocation` stays off); it
-relies on the persisted region.
+The widget's *timeline* does not use location; it relies on the persisted
+region.
 
 ### Smart Stack relevance
 
 On watchOS the Smart Stack takes its cue from the provider's `relevance()`
 callback and `RelevantContext`; `TimelineEntryRelevance` scores are not used on
 watchOS. [doc] v1 implements `relevance()` with a `RelevantContext.location`
-around the top bookmark's stop. Date-range relevance for commute times, and
-`RelevanceConfiguration`, are deferred. (Apple's sample annotates
-`RelevanceConfiguration` with `watchOS 12`, a surprising number; treat its
-availability as unverified.)
+around the top bookmark's stop.
+
+Availability, from the SDK's swiftinterface and a compile at the watchOS 11.0
+deployment target [built]: `relevance()`, `WidgetRelevance`, and
+`WidgetRelevanceAttribute` are watchOS 11.0; `RelevantContext` is watchOS 10.0
+and now lives in **RelevanceKit** (`@_originallyDefinedIn(module: "AppIntents",
+watchOS 26.0)`) — write `import RelevanceKit`; the symbols back-deploy.
+`RelevanceConfiguration` and `RelevanceEntriesProvider` are **watchOS 26.0** (the
+"watchOS 12" in Apple's sample is stale) and are deferred. `date(from:to:)` is
+deprecated in 26; use `date(interval:kind:)` behind `#available` when commute-time
+relevance is added.
+
+**Location relevance requires the widget to request location.** Apple: "make sure
+your app **and your widget extension** request a person's permission to access
+location." [doc] So the watch widget sets `NSWidgetWantsLocation`, for relevance
+only. Whether the location clue works without the key is unknown.
 
 ## §5 Testing, CI, and staying watch-clean
 
-**A compile guardrail, then a launch test.**
+**A device-architecture compile guardrail, permanently; plus a launch test.**
 
-- *Steps 2–4:* one step in the existing `build` job, after the iOS build, builds
-  the `OBAKitCore` scheme for `generic/platform=watchOS Simulator`. This is what
-  stops a contributor adding a `UIView` to the portable tree and merging on green
-  iOS CI.
-- *From step 5:* the iOS `App` build already compiles the whole watch stack (§2),
-  so the separate compile step is dropped and replaced by a **smoke test**:
-  `simctl install` and `simctl launch` `WatchApp` on a watch simulator, asserting
-  it stays up. A compile cannot catch dyld, `Info.plist`, or embedding failures;
-  the launch crash in §2 built green.
+- *From step 2, and kept for good:* one step in the existing `build` job, after
+  the iOS build, builds for **`-destination 'generic/platform=watchOS'
+  CODE_SIGNING_ALLOWED=NO`** — device architectures, `arm64` and `arm64_32` — the
+  `OBAKitCore` scheme at first and the `WatchApp` scheme from step 5. It does two
+  jobs: it stops a contributor adding a `UIView` to the portable tree and merging
+  on green iOS CI, and it is the **only** check that compiles for 32-bit `Int`.
+  A simulator build cannot: in the scratch replica an overflowing literal built
+  green for the simulator (exit 0) and failed for the device (exit 65). [built]
+  The iOS `App` build compiles the watch stack from step 5 (§2) but only its
+  64-bit simulator slices, so it never replaces this step. Its CI wall time for
+  the real OBAKitCore is unmeasured.
+- *From step 5:* a **smoke test** on a watch simulator. A compile cannot catch
+  dyld, `Info.plist`, or embedding failures; the launch crash in §2 built green.
+  **`simctl launch` exits 0 and prints a PID even when dyld kills the app, and so
+  does XcodeBuildMCP's `build_run_sim`,** so liveness must be asserted after a
+  delay: `simctl install` and `simctl launch` on an *unpaired* watch simulator,
+  sleep 8 s, then assert `kill -0 $pid` **and** that `simctl spawn … launchctl
+  list` shows the bundle ID; on failure dump `log show` for "Library not loaded".
+  Against the scratch replica this script passed on the fixed build and failed on
+  the one missing `LD_RUNPATH_SEARCH_PATHS`, in about 30 s including a 19 s cold
+  boot. [built] It does not exercise the widget appex.
+
+Neither check covers **runtime on a 32-bit watch**, for which no simulator
+exists. Step 5's exit criteria include a manual pass on a physical Series 6–8,
+SE 2, or Ultra 1.
 
 The runner is a GitHub-hosted image, not self-hosted. Its published manifest
 lists the `watchos27.0` and `watchsimulator27.0` SDKs and installed watchOS 27.0
@@ -586,27 +837,41 @@ holds views and thin observable models; anything with a branch in it goes in
 OBAKitCore, where the existing iOS-hosted Swift Testing suite covers it. New
 suites in OBAKitTests:
 
-- `WatchSyncPayload`: round-trip; byte-stable encoding; `revision` stable for
-  equal content and different for changed content; unknown version ignored;
-  corrupt payload keeps last good data
-- `Bookmark` → `WatchBookmark` mapping
-- `BookmarkArrivalsLoader`, including dedupe by stop
-- Entry generation: one entry per departure boundary; reload-policy arithmetic
-- The region fallback rule, and region resolution from the app-group suite for a
-  custom region
-- Both `WCSessionDelegate` conformances invoked from a background queue
+- `WatchSyncPayload`: round-trip; encoding byte-identical across two
+  subprocesses; `revision` stable for equal content and different for changed
+  content; unknown version ignored; corrupt payload keeps last good data; every
+  integer field is `Int32`, and a payload built from a `Bookmark` whose
+  `sortOrder` is `Int.max` still decodes
+- `Bookmark` → `WatchBookmark` mapping, including flattening to display order
+- `WatchSessionBridge`: each delegate method invoked from a background queue;
+  stream fed A then B applies B; a forced re-send carries a nonce
+- `BookmarkArrivalsLoader`: dedupe by stop; per-stop delivery; missing-stop
+  versus other errors; and `BookmarkDataLoaderTests` passing unmodified
+- Entry generation: one entry per departure boundary; reload-policy arithmetic;
+  distinct entries for empty, failed, and no-region
+- The region fallback rule; the four write triggers; region resolution from the
+  app-group suite for a custom region; fallback to identifier lookup when the key
+  is absent
 - `.bookmarkGroupsDidChange` posted by each group mutator
+- Decoding the REST fixtures with the seam 6 types; the SwiftLint rule
 
-An `OBAKitWatchTests` target is deferred until logic exists that cannot live in
+Because the bridge now lives in core, the earlier problem — a watch-side delegate
+test that no iOS-hosted target could contain — no longer arises. An
+`OBAKitWatchTests` target stays deferred until logic exists that cannot live in
 core.
 
-**Size.** App Store Connect lists a 75 MB maximum uncompressed size for watchOS
-apps ([doc], read via a summarizing fetch; worth a human glance). A debug,
-unstripped simulator build of `OBAKitCore.framework` is 27 MB; all 13 locales of
-strings total about 250 KB, so strings are not the concern. [built] The release,
-thinned size is unknown until the seams are fixed and the module links. Step 5's
-exit criteria record it against a 25 MB budget. Mergeable libraries are not
-needed unless that measurement says so. Separately, every `sources: ["."]` target
+**Size.** App Store Connect's "Maximum uncompressed app size" for watchOS, all
+versions, is **75 MB** ([doc], read from the page's raw HTML). The heavy
+dependencies were measured in release, for device, stripped, per architecture
+(`arm64_32`) [built]: GRDB 2.62 MB, SwiftProtobuf 1.50 MB, the generated
+GTFS-realtime code plus GRDB usage 0.72 MB — **a floor of about 5 MB** with one
+dynamic framework embedded once, against 10.8 MB if linked statically into both
+the app and the widget (dead-stripping barely helps). All 13 locales of strings
+total about 250 KB. OBAKitCore's own release size is unknown until the seams are
+fixed and it links; step 5's exit criteria record the thinned app against a
+**25 MB budget**, which the measured floor makes comfortable. Mergeable libraries
+are not needed. Cold-launch time was not measured: a trivial scratch app in a
+simulator says nothing about OBAKitCore. Separately, every `sources: ["."]` target
 ships its own `project.yml` as a bundle resource today [built]; add it to
 `excludes`.
 
@@ -625,27 +890,40 @@ Each step is one PR that leaves `main` green.
    Since watchOS 11, iPhone Live Activities appear in the paired watch's Smart
    Stack automatically; `ActivityFamily.small` is the watch's size family, and
    the modifier is available from iOS 18.0, this repo's floor. [doc] The repo
-   uses neither API today. [code] This is iOS-widget work only, needs no watch
-   target, depends on nothing below, and gives every paired watch a tracked-trip
-   view before any watch app exists.
-1. The five seam fixes, in place. Pure refactors; iOS behavior unchanged. Files
+   uses neither API today. [code] Both compile in an iOS widget at the iOS 18.0
+   target. [built] **Paired watches already show something today:** without the
+   modifier the Smart Stack shows the Dynamic Island compact leading and trailing
+   views and the app name, so review those first. `.small` swaps in the Lock
+   Screen closure, so `TripLiveActivityCardView` (158 lines) needs an
+   `activityFamily == .small` branch of roughly 40–60 lines, `isLuminanceReduced`
+   handling, and previews. Push updates reach the watch with no extra tokens —
+   "Live Activity updates are synchronized automatically" — though an over-budget
+   update "may not immediately appear when someone's wrist is down." [doc] This
+   is iOS-widget work only, needs no watch target, and depends on nothing below.
+1. The six seam fixes, in place. Pure refactors; iOS behavior unchanged. Files
    that §1 assigns to the iOS tree (`LocationService+ProximityAlerts.swift`, the
    `RegionMonitoringLocationManager` protocol, the non-color half of
    `Theme.swift`) are created inside `OBAKitCore/` here and relocated in step 2,
    so this PR contains no directory moves.
 2. Move files to `OBAKitCoreiOS/`; add `supportedDestinations` and the explicit
    `WATCHOS_DEPLOYMENT_TARGET`; update `extract_strings` and `.swiftlint.yml`;
-   add the CI watch-compile step.
-3. Extract the stateless `BookmarkArrivalsLoader`; `BookmarkDataLoader` and the
-   iOS widget adopt it; entries carry their data; the app persists the resolved
-   `Region` to the app-group suite and the iOS widget reads it. Fixes the iOS
-   widget's six-hour staleness and its custom-region gap.
-4. `WatchSyncPayload` and `WatchBookmark`; the phone-side sender with its
-   lifecycle, debounce, and `nonisolated` delegate; `.bookmarkGroupsDidChange`.
+   add the **device-architecture** CI compile step. This is the step where the
+   second layer of compile errors, and any further 32-bit overflows, surface.
+3. Extract the streaming `BookmarkArrivalsLoader`; `BookmarkDataLoader` and the
+   iOS widget adopt it, with `BookmarkDataLoaderTests` passing unmodified; entries
+   carry their data; extract the `userUUID` helper; the app persists the resolved
+   `Region` to the app-group suite on its four triggers and the iOS widget reads
+   it, falling back to identifier lookup. Fixes the iOS widget's six-hour
+   staleness and its custom-region gap.
+4. `WatchSyncPayload`, `WatchBookmark`, and `WatchSessionBridge` in core; the
+   phone-side sender with its debounce and forced re-sends;
+   `.bookmarkGroupsDidChange`. With no watch app installed the bridge's gating
+   makes this inert, so it is safe to land ahead of step 5.
 5. OBAKitWatch and WatchApp — bookmarks, arrivals, nearby stops — with the
-   receiver, `requestLocation()`, the configurable timeout, the `CoreAppConfig`
-   switches, the identity check, the no-watch local scheme, the launch smoke
-   test, and the size measurement.
+   receiver, `requestLocation()` and `desiredAccuracy`, the configurable timeout,
+   background refresh and its arrivals cache, the `CoreAppConfig` switches,
+   `watch.yml` and `generate_project --no-watch`, the identity check, the launch
+   smoke test, the size measurement, and a manual pass on a 32-bit watch.
 6. OBAWatchWidget: accessory families, entry generation, `relevance()`.
 
 Step 0 is independent and gets its own short plan; it can land first. Steps 1–3
@@ -656,18 +934,24 @@ second layer of compile errors looks like.
 
 ## Still unknown
 
+- **Runtime behavior on a 32-bit watch.** No 32-bit simulator exists. Needs a
+  physical Series 6–8, SE 2, or Ultra 1. The `Int` audit was grep-based, and the
+  decode failure was demonstrated with `Int32` on a 64-bit host.
 - **The real-device size ceiling for `updateApplicationContext`.** Needs a paired
   iPhone and Apple Watch and a size ladder. Design to stay under 64 KB.
 - Whether identical-context suppression and no-coalescing-when-reachable, both
-  observed in the simulator, hold on hardware.
+  observed in the simulator, hold on hardware; and whether `applicationContext`
+  and that suppression are tracked per watch after a watch switch.
+- **What WidgetKit does with timeline entries under 5 minutes apart on watchOS,**
+  and how `Text(timerInterval:)` renders in `accessoryInline` and
+  `accessoryCircular`. Needs a widget placed on a face or in the Smart Stack by
+  hand, or a device.
+- Whether `RelevantContext.location` works without `NSWidgetWantsLocation`.
 - Bundle-ID prefix enforcement at device install and App Store Connect.
-- The release, thinned size of OBAKitCore for watchOS.
+- The release, thinned size of OBAKitCore itself, its cold-launch cost, and the
+  CI wall time of the device-architecture compile.
 - The second layer of watchOS compile errors.
 - The watchOS widget-extension memory ceiling (a ~30 MB figure is [recalled]).
-- Whether a `generic/platform=watchOS Simulator` build needs the simulator
-  runtime or only the SDK. Untestable without uninstalling a runtime, and moot
-  for the current CI image.
-- `RelevanceConfiguration` availability.
 
 ## Alternatives considered
 
@@ -692,6 +976,13 @@ has measured. Rejected.
 **Mirror `WidgetDataProvider` in the watch widget.** Least new code, but every
 timeline reload pays for a regions network call, a GRDB open, and a launch-count
 bump, and custom-region users get an empty complication. Rejected.
+
+**Keep WatchConnectivity out of OBAKitCore,** with a sender delegate in OBAKit
+and a receiver delegate in OBAKitWatch. The original design. It keeps core free
+of a framework only two clients use, but duplicates the one piece of code that
+compiles clean and traps at runtime, and the watch-side copy cannot be
+unit-tested without standing up a watchOS test host. Rejected in favor of one
+shared bridge.
 
 **CloudKit or `NSUbiquitousKeyValueStore` as the sync channel.** Syncs without
 the phone present, but requires an iCloud entitlement and container per agency
