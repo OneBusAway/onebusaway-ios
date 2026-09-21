@@ -156,6 +156,68 @@ final class StopPageActionPresenterTests: OBATestCase {
         #expect(navigation.viewControllers.first is ReportProblemViewController)
     }
 
+    // MARK: - Proximity alert guidance
+
+    /// Each blocked reason has to reach the rider as its own alert. The step
+    /// resolver carries the location status precisely so these four can differ,
+    /// and a shared body would waste that — the whole point of asking before
+    /// offering the action is to say something the rider can act on.
+    @Test(arguments: [
+        ProximityAlertSettingsReason.locationWhenInUse,
+        .locationDenied,
+        .locationRestricted,
+        .notifications
+    ])
+    func `Every proximity alert settings reason presents its own alert`(reason: ProximityAlertSettingsReason) async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+
+        presenter.showProximityAlertSettingsAlert(reason: reason)
+
+        let presented = await waitForPresentation(on: host)
+        let alert = try #require(presented as? UIAlertController)
+        #expect(alert.title?.isEmpty == false)
+        #expect(alert.message?.isEmpty == false)
+        // Cancel plus Open Settings, the same shape the alarm guidance uses.
+        #expect(alert.actions.count == 2)
+        #expect(alert.actions.contains { $0.style == .cancel })
+    }
+
+    /// The restricted body deliberately promises nothing and names no app: a
+    /// device restriction may be one the rider cannot lift, so the copy that
+    /// tells them to go and change it would be a lie.
+    @Test func `The restricted location body makes no promise and names no app`() async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+
+        presenter.showProximityAlertSettingsAlert(reason: .locationRestricted)
+
+        let presented = await waitForPresentation(on: host)
+        let alert = try #require(presented as? UIAlertController)
+        let message = try #require(alert.message)
+        #expect(!message.contains(Bundle.main.appName))
+        // An unsubstituted specifier here would mean the copy took an argument
+        // the call site never passes.
+        #expect(!message.contains("%"))
+    }
+
+    /// The limit alert is informational: there is no screen listing a rider's
+    /// alerts, so there is nowhere for a second button to go. It must still name
+    /// the number, which is the only actionable thing in it.
+    @Test func `The region limit alert names the number and offers only dismissal`() async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+
+        presenter.showProximityAlertLimitAlert(limit: 20)
+
+        let presented = await waitForPresentation(on: host)
+        let alert = try #require(presented as? UIAlertController)
+        let message = try #require(alert.message)
+        #expect(message.contains("20"))
+        #expect(message.contains(Bundle.main.appName))
+        #expect(alert.actions.count == 1)
+    }
+
     @Test func `External survey error presents an alert`() async {
         let host = makeHost()
         let (presenter, _) = makePresenter(host: host)

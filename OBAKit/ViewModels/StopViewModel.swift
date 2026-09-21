@@ -150,14 +150,28 @@ class StopViewModel: ObservableObject {
     /// and then calls `clearAlarmPermissionDenied()`.
     @Published private(set) var alarmPermissionDenied = false
 
-    /// Briefly `true` after a Live Activity is successfully started, consumed by the
-    /// SwiftUI stop page to show a non-blocking toast. Auto-resets after 2 seconds.
-    @Published private(set) var liveActivityStarted = false
+    /// The text of a transient confirmation the SwiftUI stop page shows as a
+    /// non-blocking toast, or `nil` for none. Auto-clears after 2 seconds.
+    ///
+    /// Carries the message rather than naming the occasion: a Live Activity
+    /// starting, a proximity alert being set and the same alert being cancelled
+    /// all want the same capsule with different words, and a `Bool` per occasion
+    /// would be a third copy of one overlay.
+    @Published private(set) var transientToast: String?
 
-    /// The pending auto-dismiss for the Live Activity toast. Each new signal
-    /// supersedes (cancels) it so every confirmation gets its full display
-    /// window — see `signalLiveActivityStarted()`.
-    private var liveActivityToastDismissTask: Task<Void, Never>?
+    /// The pending auto-dismiss for `transientToast`. Each new signal supersedes
+    /// (cancels) it so every confirmation gets its full display window — see
+    /// `signalToast(_:)`.
+    private var transientToastDismissTask: Task<Void, Never>?
+
+    /// The unexpired destination proximity alert set on this stop, or `nil`.
+    ///
+    /// Read from the manager rather than stored: the alerts live in
+    /// `UserDataStore`, which anything holding the store can mutate, and they
+    /// expire 24 hours after they were set. `activeAlert(for:)` already filters
+    /// expired ones out, so the menu falls back to "Alert Me" on its own without
+    /// this class running a timer.
+    @Published private(set) var proximityAlert: ProximityAlert?
 
     /// The in-flight one-shot survey fetch started by `refreshSurveys()`.
     ///
@@ -175,6 +189,7 @@ class StopViewModel: ObservableObject {
     private var alarmFiredCancellable: AnyCancellable?
     private var userDefaultsCancellable: AnyCancellable?
     private var formattersTimeZoneCancellable: AnyCancellable?
+    private var proximityAlertsCancellable: AnyCancellable?
 
     // MARK: - Init Context
 
@@ -252,6 +267,16 @@ class StopViewModel: ObservableObject {
             .publisher(for: .formattersTimeZoneDidChange, object: environment.formatters)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.formattersTimeZoneGeneration += 1 }
+
+        // Posted by `UserDataStore` on every proximity-alert add, delete and
+        // expiry — including the ones this page didn't cause, such as a geofence
+        // firing in the background and cancelling its own one-shot alert.
+        proximityAlertsCancellable = NotificationCenter.default
+            .publisher(for: .proximityAlertsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshProximityAlert() }
+
+        refreshProximityAlert()
     }
 
     /// Backward-compatible entry point for existing callers that pass `Application` directly.
@@ -269,7 +294,7 @@ class StopViewModel: ObservableObject {
         refreshTimer?.invalidate()
         statusTimer?.invalidate()
         surveyRefreshTask?.cancel()
-        liveActivityToastDismissTask?.cancel()
+        transientToastDismissTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -278,6 +303,7 @@ class StopViewModel: ObservableObject {
     func start() async {
         startStatusTimer()
         startAutoRefresh()
+        refreshProximityAlert()
         await refresh()
     }
 
@@ -845,34 +871,49 @@ class StopViewModel: ObservableObject {
         alarmPermissionDenied = false
     }
 
-    /// Briefly raises `liveActivityStarted` so the SwiftUI stop page can show a
-    /// non-blocking toast. Called by `StopPageViewController` after a successful
-    /// `Activity.request()`, and again when a duplicate Track attempt is
-    /// short-circuited — either way the user gets the same confirmation.
+    /// Briefly shows `text` as a non-blocking toast on the SwiftUI stop page.
+    ///
+    /// Called after a successful `Activity.request()`, again when a duplicate
+    /// Track attempt is short-circuited — either way the user gets the same
+    /// confirmation — and by the proximity-alert flow on set and on cancel.
     ///
     /// Each signal supersedes the pending dismiss rather than racing it: without
     /// the cancellation, a signal arriving late in the previous toast's window
     /// would inherit that toast's imminent dismissal and vanish almost
-    /// immediately — leaving the duplicate tap looking like it did nothing.
-    func signalLiveActivityStarted() {
-        liveActivityToastDismissTask?.cancel()
-        liveActivityStarted = true
-        liveActivityToastDismissTask = Task { [weak self] in
+    /// immediately — leaving the second tap looking like it did nothing.
+    func signalToast(_ text: String) {
+        transientToastDismissTask?.cancel()
+        transientToast = text
+        transientToastDismissTask = Task { [weak self] in
             do {
                 try await Task.sleep(for: .seconds(2))
                 // `cancel()` only interrupts the sleep while it is still
                 // suspended. Once it has resumed, this continuation is already
                 // queued on the main actor behind the newer signal that cancelled
-                // it — and that signal has set the flag back to true. Clearing it
-                // here would dismiss the *new* toast a moment after it appeared,
-                // which is the behaviour the cancellation exists to prevent.
+                // it — and that signal has set the text back. Clearing it here
+                // would dismiss the *new* toast a moment after it appeared, which
+                // is the behaviour the cancellation exists to prevent.
                 try Task.checkCancellation()
             } catch {
                 // Superseded by a newer signal; that signal's task owns the dismissal.
                 return
             }
-            self?.liveActivityStarted = false
+            self?.transientToast = nil
         }
+    }
+
+    /// Re-reads this stop's proximity alert from the manager.
+    ///
+    /// Called once at construction, on every `.proximityAlertsDidChange`, and by
+    /// the presenter after an arming attempt reported one was already set.
+    ///
+    /// Also on every `start()`, which is not redundant with the notification:
+    /// an alert reaching its 24-hour expiry mutates nothing and so posts
+    /// nothing, leaving this holding an alert `activeAlert(for:)` has already
+    /// stopped returning. Re-reading on each appearance is what flips the menu
+    /// back to "Alert Me" for a page left open overnight.
+    func refreshProximityAlert() {
+        proximityAlert = environment.activeProximityAlert(for: stopID)
     }
 
     /// Replaces the departure's existing alarm with one created outside the

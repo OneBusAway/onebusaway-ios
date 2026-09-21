@@ -50,6 +50,10 @@ struct StopPageToolbar: View {
     /// Non-nil when OTP trip planning is available for the current region.
     let onDirectionsToHere: (() -> Void)?
     let onDirectionsFromHere: (() -> Void)?
+    /// Drives the nearby-alert item's title and glyph, so a rider reads whether
+    /// one is armed off the menu rather than by tapping to find out.
+    let isProximityAlertActive: Bool
+    let onToggleProximityAlert: () -> Void
     let onReportProblem: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -191,6 +195,17 @@ struct StopPageToolbar: View {
                         Label(StopTripPlannerAction.directionsFromHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond.fill")
                     }
                 }
+                // Last in the Location group, and never disabled. Its siblings
+                // are all "getting to this stop"; this is "tell me when I've got
+                // there". A rider who can't use it yet needs to be told why,
+                // which is what the tap does — a greyed row would reproduce the
+                // silent no-op the authorization step exists to prevent.
+                Button(action: onToggleProximityAlert) {
+                    Label(
+                        ProximityAlertMenuItem.title(isActive: isProximityAlertActive),
+                        systemImage: Icons.proximityAlertSymbolName(isActive: isProximityAlertActive)
+                    )
+                }
             }
 
             Section {
@@ -275,6 +290,7 @@ struct StopPageToolbar: View {
             onBookmark: {}, onSchedule: {},
             onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
             onDirectionsToHere: nil, onDirectionsFromHere: nil,
+            isProximityAlertActive: false, onToggleProximityAlert: {},
             onReportProblem: {}
         )
     }
