@@ -670,7 +670,11 @@ tests through the injected `dataLoader` on `application.apiService`
 (`BookmarkDataLoader.swift:188-243`). [code] A dictionary-returning function
 would return only after the slowest stop's timeout and would drop the errors —
 changing iOS behavior. The stream preserves all four properties, and **step 3's
-exit criterion is that `BookmarkDataLoaderTests` pass unmodified.**
+exit criterion is that every test body and assertion in `BookmarkDataLoaderTests`
+passes unmodified.** Its private bookmark *builder* does change: it built every
+bookmark at one stop and asserted one request per bookmark, which dedupe by stop
+(above) deliberately breaks, so the builder now gives each bookmark its own stop.
+[code; found while writing the implementation plan]
 
 **Building the service without `CoreApplication` is cheap.** [code]
 `RESTAPIService` is an `actor` whose init only builds a URL builder and a
@@ -846,7 +850,7 @@ suites in OBAKitTests:
 - `WatchSessionBridge`: each delegate method invoked from a background queue;
   stream fed A then B applies B; a forced re-send carries a nonce
 - `BookmarkArrivalsLoader`: dedupe by stop; per-stop delivery; missing-stop
-  versus other errors; and `BookmarkDataLoaderTests` passing unmodified
+  versus other errors; and `BookmarkDataLoaderTests`' assertions passing unmodified
 - Entry generation: one entry per departure boundary; reload-policy arithmetic;
   distinct entries for empty, failed, and no-region
 - The region fallback rule; the four write triggers; region resolution from the
@@ -910,7 +914,7 @@ Each step is one PR that leaves `main` green.
    add the **device-architecture** CI compile step. This is the step where the
    second layer of compile errors, and any further 32-bit overflows, surface.
 3. Extract the streaming `BookmarkArrivalsLoader`; `BookmarkDataLoader` and the
-   iOS widget adopt it, with `BookmarkDataLoaderTests` passing unmodified; entries
+   iOS widget adopt it, with `BookmarkDataLoaderTests`' assertions unmodified; entries
    carry their data; extract the `userUUID` helper; the app persists the resolved
    `Region` to the app-group suite on its four triggers and the iOS widget reads
    it, falling back to identifier lookup. Fixes the iOS widget's six-hour
