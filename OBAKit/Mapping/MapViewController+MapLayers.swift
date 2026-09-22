@@ -162,7 +162,7 @@ extension MapViewController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
         }
-        present(controller, animated: true)
+        topmostPresentedController.present(controller, animated: true)
     }
 
     // MARK: - First-Run Layer Tip

@@ -98,12 +98,7 @@ public final class MapPanelRootController: UIViewController {
         /// rather than underneath it — UIKit ignores `present` on a controller
         /// that already has a `presentedViewController`.
         func topmostController() -> UIViewController? {
-            guard let host else { return nil }
-            var presenter: UIViewController = host
-            while let next = presenter.presentedViewController {
-                presenter = next
-            }
-            return presenter
+            host?.topmostPresentedController
         }
 
         func present(_ arrival: ArrivalDeparture) {
