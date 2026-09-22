@@ -1557,6 +1557,14 @@ private extension MapViewController {
                 // the value changes through any path (VM toggle, external
                 // defaults edit, cross-view sync).
                 mapRegionManager.mapView.mapType = mapType.mkMapType
+                // Route mode swaps in `tripPlannerMapView` and hides the main map,
+                // so a change made mid-trip has to reach the map the rider can see
+                // too. Gated on the flag rather than applied unconditionally: the
+                // trip map is lazy, and setting a property on it would build it for
+                // riders who never plan a trip. See #1451.
+                if isShowingTripPlannerMap {
+                    tripPlannerMapView.mapType = mapType.mkMapType
+                }
                 setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
             }
             .store(in: &cancellables)
