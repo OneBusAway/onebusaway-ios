@@ -29,7 +29,7 @@ public struct WatchRootView: View {
                 }
             }
             .navigationDestination(for: Stop.self) { stop in
-                StopArrivalsView(model: StopArrivalsModel(host: host, stop: stop))
+                StopArrivalsScreen(stop: stop)
             }
         }
         .task {
