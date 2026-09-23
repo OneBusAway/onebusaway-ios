@@ -166,17 +166,18 @@ One file holds every line of watch wiring for an app:
   `OBAWidget` carries (`AppGroup`, `BundledRegionsFileName`, `RESTServerAPIKey`,
   `RegionsServerBaseAddress`, `RegionsServerAPIPath`), and two extra sources:
   `Apps/OneBusAway/Resources/regions.json` and
-  `Apps/OneBusAway/WatchAssets.xcassets`.
+  `Apps/OneBusAway/Assets.xcassets`.
 - `targets.App.dependencies: [- target: WatchApp]`. XcodeGen merges included
   arrays additively, so this appends. [doc, built: architecture spec §2, and
   re-reproduced by the review with `relativePaths: false`]
 
-`Apps/OneBusAway/WatchAssets.xcassets` is new and per-app: `AppIcon.appiconset`
-(a single 1024×1024 watchOS icon, copied from the iOS catalog's `big.png`) and
-`brand.colorset` (the same sRGB value as `Apps/OneBusAway/Assets.xcassets/Colors/brand.colorset`).
-A separate catalog, not the iOS one, so the iOS `AppIcon` set is never compiled
-for watchOS and the brand color is found in the watch's main bundle, which is
-the only place `ThemeColors` looks on watchOS.
+The watch app compiles the app's existing `Apps/OneBusAway/Assets.xcassets`
+rather than a separate catalog. Its new `WatchAppIcon.appiconset` (a single
+1024×1024 watchOS icon) is selected by
+`ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon` on the `WatchApp` target, so
+the brand color (`Colors/brand.colorset`) is found once, in the watch's main
+bundle, which is the only place `ThemeColors` looks on watchOS, and the iOS app
+compiles no duplicate icon or color.
 
 `Apps/OneBusAway/project.yml`'s **existing** `include:` list (there must be
 exactly one; `generate_project` splices `local.yml` by matching it) gains:

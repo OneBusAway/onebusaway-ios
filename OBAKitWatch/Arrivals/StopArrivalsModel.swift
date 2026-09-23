@@ -39,14 +39,6 @@ public final class StopArrivalsModel {
         self.phase = .loading
     }
 
-    /// For previews and tests: a fixed phase, no services.
-    public init(stop: Stop, phase: Phase) {
-        self.host = nil
-        self.stop = stop
-        self.interval = .seconds(30)
-        self.phase = phase
-    }
-
     public func startPolling() {
         guard pollTask == nil, let host else { return }
         guard let apiService = host.apiService else {

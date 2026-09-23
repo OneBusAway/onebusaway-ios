@@ -67,6 +67,7 @@ xcodebuild build -project OBAKit.xcodeproj -scheme WatchApp \
 1. **`NearbyStopsLoader` takes `limit` in its initializer**, not per call: `NearbyStopsLoader(limit: 20).stops(near:using:)`. Same behavior; keeps the call site one argument shorter.
 2. **`StandaloneAPIServiceProvider` always rebuilds on `updatedRegionsList`**, not only when the base URL changed. `RESTAPIService.init` only builds a URL builder and a decoder, so the check would cost more than the rebuild. The test asserts a new instance after a list update, which the spec's narrower rule also implies.
 3. **Localization runs after the views exist** (Task 11), because `genstrings` extracts keys from source. The spec's `WatchApp/<locale>.lproj/InfoPlist.strings` files are created in Task 6 with the project, since they are copies.
+4. **Previews exist only for phases constructible without a decoded `Stop`/`ArrivalDeparture`** (Nearby's non-loaded phases and `MessageView`). The `.loaded` phases and the arrivals rows were verified on the simulator with screenshots instead; core has no public fixture builder, and a JSON-decoding preview was judged not worth its weight.
 
 ## English strings (single source for Tasks 9–11)
 
