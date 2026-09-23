@@ -178,6 +178,21 @@ jobs:
         xcrun simctl boot "$UDID" || true
         xcrun simctl bootstatus "$UDID" || true
 
+    # Needed before the iOS build now: App depends on WatchApp, so building the
+    # App scheme compiles the watch stack's simulator slices. Ask the same
+    # question the iOS step above asks — is a platform actually installed and
+    # Ready — and time-box the download the same way.
+    - name: Download watchOS platform (if needed)
+      timeout-minutes: 30
+      run: |
+        if xcrun simctl runtime list 2>/dev/null | grep -qE "watchOS .*\(Ready\)"; then
+          echo "A watchOS platform is already installed; skipping download:"
+          xcrun simctl runtime list | grep -E "watchOS [0-9]" || true
+        else
+          echo "No watchOS platform found; downloading…"
+          xcodebuild -downloadPlatform watchOS
+        fi
+
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
 
@@ -237,8 +252,8 @@ jobs:
           -resultBundlePath OBAKitTests.xcresult \
           | tee xcodebuild-test.log
 
-    # watchOS device-architecture compile (see the watchOS architecture design
-    # spec, §5 "Testing, CI, and staying watch-clean").
+    # watchOS device-architecture compile of every watch target (see the watchOS
+    # architecture design spec, §5 "Testing, CI, and staying watch-clean").
     # Permanent, and deliberately a DEVICE build: `Int` is 32 bits on arm64_32
     # Apple Watches, watch simulators on Apple silicon are 64-bit, and an
     # overflowing literal builds green for the simulator and red here. This is
@@ -251,36 +266,45 @@ jobs:
     # for making lint a separate job. They also run when the tests fail
     # (`if: success() || failure()`), so one run gives a PR both signals.
     #
-    # `xcodebuild -showsdks` is not the check to make here: it lists the SDKs
-    # bundled in Xcode.app whether or not the platform is installed, so it always
-    # passes, while a device build still fails with "watchOS N is not installed".
-    # Ask the same question the iOS step above asks — is a platform actually
-    # installed and Ready — and time-box the download the same way.
-    - name: Download watchOS platform (if needed)
+    - name: Build WatchApp for watchOS devices (arm64 + arm64_32)
       if: success() || failure()
-      timeout-minutes: 30
-      run: |
-        if xcrun simctl runtime list 2>/dev/null | grep -qE "watchOS .*\(Ready\)"; then
-          echo "A watchOS platform is already installed; skipping download:"
-          xcrun simctl runtime list | grep -E "watchOS [0-9]" || true
-        else
-          echo "No watchOS platform found; downloading…"
-          xcodebuild -downloadPlatform watchOS
-        fi
-
-    - name: Build OBAKitCore for watchOS (arm64 + arm64_32)
-      if: success() || failure()
-      timeout-minutes: 20
+      timeout-minutes: 25
       run: |
         set -o pipefail
         xcodebuild build \
           -project 'OBAKit.xcodeproj' \
-          -scheme 'OBAKitCore' \
+          -scheme 'WatchApp' \
           -destination 'generic/platform=watchOS' \
           -derivedDataPath DerivedData \
           CODE_SIGNING_ALLOWED=NO \
           -quiet \
           | tee xcodebuild-watchos.log
+
+    # A compile cannot catch dyld, Info.plist, or embedding failures: the
+    # missing-LD_RUNPATH_SEARCH_PATHS crash builds green. `simctl launch` and
+    # XcodeBuildMCP both report success for an app dyld kills, so the script
+    # asserts liveness after a delay. Unpaired watch simulator; OneBusAway only.
+    - name: Watch app launch smoke test
+      if: success() || failure()
+      timeout-minutes: 15
+      run: scripts/watch_smoke_test DerivedData
+
+    # Last, because generating another app replaces the root project.yml and
+    # OBAKit.xcodeproj. An app with no watch.yml must generate exactly the
+    # project it generated before the watch targets existed.
+    - name: KiedyBus generates no watch targets
+      if: success() || failure()
+      run: |
+        set -euo pipefail
+        scripts/generate_project KiedyBus
+        # The one-liner exits 0 (success) when "WatchApp" IS present in the
+        # resolved spec; the `if` below turns that success into the failure
+        # case, since a KiedyBus generate must resolve with no WatchApp target.
+        if xcodegen dump --type json | python3 -c 'import json,sys; sys.exit(0 if "WatchApp" in json.load(sys.stdin)["targets"] else 1)'; then
+          echo "KiedyBus resolved spec unexpectedly contains WatchApp" >&2
+          exit 1
+        fi
+        echo "KiedyBus: no watch targets"
 
     # Surface the slowest tests in the job summary so a regression in *test*
     # time (vs. infra time) is easy to spot without re-running the investigation.
