@@ -1835,7 +1835,7 @@ def version(runtime):
 for runtime in sorted(devices, key=version, reverse=True):
     if not re.search(r"watchOS-\d+-\d+", runtime):
         continue
-    watches = [d for d in devices[runtime] if d["name"].startswith("Apple Watch")]
+    watches = [d for d in devices[runtime] if "Apple-Watch" in d.get("deviceTypeIdentifier", "")]
     if watches:
         print(watches[0]["udid"])
         break
@@ -1948,6 +1948,9 @@ If `git status` shows stamped `Info.plist` changes under `Apps/`, `OBAKit/`, `OB
 set -euo pipefail
 
 derived=${1:-DerivedData}
+[[ $derived = /* ]] || derived="$PWD/$derived"
+cd "$(dirname "$0")/.."
+
 udid=$(scripts/resolve_watch_simulator_udid)
 
 xcrun simctl boot "$udid" 2>/dev/null || true

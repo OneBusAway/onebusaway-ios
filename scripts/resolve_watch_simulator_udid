@@ -5,6 +5,10 @@
 # type if none exists. Mirrors scripts/resolve_simulator_udid: address devices
 # by id=, never by a name that goes stale every Xcode release.
 #
+# Devices are matched by device type, not by name: the one this script creates
+# is not named "Apple Watch …", and matching on the name would create another
+# on every run.
+#
 # Usage:
 #   WATCH_UDID=$(scripts/resolve_watch_simulator_udid)
 #   xcodebuild ... -destination "platform=watchOS Simulator,id=$WATCH_UDID"
@@ -32,7 +36,7 @@ def version(runtime):
 for runtime in sorted(devices, key=version, reverse=True):
     if not re.search(r"watchOS-\d+-\d+", runtime):
         continue
-    watches = [d for d in devices[runtime] if d["name"].startswith("Apple Watch")]
+    watches = [d for d in devices[runtime] if "Apple-Watch" in d.get("deviceTypeIdentifier", "")]
     if watches:
         print(watches[0]["udid"])
         break

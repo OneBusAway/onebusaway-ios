@@ -71,26 +71,32 @@ struct NearbyStopsView: View {
     }
 }
 
+private extension Formatters {
+    static var preview: Formatters {
+        Formatters(locale: .current, calendar: .current, themeColors: .shared)
+    }
+}
+
 #Preview("Awaiting authorization") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .awaitingAuthorization), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .awaitingAuthorization), formatters: .preview) }
 }
 
 #Preview("Denied") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locationDenied), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locationDenied), formatters: .preview) }
 }
 
 #Preview("Locating") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locating), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locating), formatters: .preview) }
 }
 
 #Preview("No region") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .noRegion), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .noRegion), formatters: .preview) }
 }
 
 #Preview("Failed") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .failed("The request timed out.")), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .failed("The request timed out.")), formatters: .preview) }
 }
 
 #Preview("Empty") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .empty, regionName: "Puget Sound"), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .empty, regionName: "Puget Sound"), formatters: .preview) }
 }

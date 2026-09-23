@@ -2,6 +2,7 @@
 
 require "yaml"
 require "json"
+require "open3"
 
 args = ARGV.dup
 no_watch = args.delete("--no-watch")
@@ -65,15 +66,33 @@ BEGIN {
   #
   # The including project.yml takes precedence over includes, so DEVELOPMENT_TEAM
   # must also be copied into its target settings for local.yml to be authoritative.
+  #
+  # Only targets the resolved spec defines are included. To XcodeGen, a local.yml
+  # entry for a target this generation does not produce (WatchApp under
+  # --no-watch, or a typo) is a new target with no type or platform, and the
+  # whole generation fails with "Unknown Target platform:". When anything has to
+  # be dropped, the filtered copy is written next to the generated project.yml
+  # and gitignored like it; otherwise local.yml is included as-is.
   def append_local_overrides(app)
     local = "Apps/#{app}/local.yml"
     return unless File.exist?(local)
 
-    local_settings = YAML.load_file(local)
+    File.delete(FILTERED_LOCAL_OVERRIDES_PATH) if File.exist?(FILTERED_LOCAL_OVERRIDES_PATH)
+    local_settings = YAML.load_file(local) || {}
+    overrides = local_settings.fetch("targets", {})
+    absent = overrides.keys - spec_target_names
+    unless absent.empty?
+      puts "Skipping local overrides for target(s) this project does not generate: #{absent.join(", ")}"
+      overrides = overrides.reject { |target, _| absent.include?(target) }
+      local_settings["targets"] = overrides
+      File.write(FILTERED_LOCAL_OVERRIDES_PATH, YAML.dump(local_settings))
+      local = FILTERED_LOCAL_OVERRIDES_PATH
+    end
+
     project = File.read("project.yml")
     project = splice_include(project, local)
 
-    local_settings.fetch("targets", {}).each do |target, target_settings|
+    overrides.each do |target, target_settings|
       team = target_settings.dig("settings", "base", "DEVELOPMENT_TEAM")
       next unless team
 
@@ -82,6 +101,22 @@ BEGIN {
 
     File.write("project.yml", project)
     puts "Applying local overrides from #{local}"
+  end
+
+  # The generated project.yml sits at the repo root and is gitignored; so is this.
+  FILTERED_LOCAL_OVERRIDES_PATH = "project.local.yml"
+
+  # The resolved spec (includes and `enable:` flags applied) of the root
+  # project.yml as it stands, as parsed JSON. Aborts with XcodeGen's own
+  # diagnostic when it cannot be parsed.
+  def resolved_spec
+    dump, errors, status = Open3.capture3("xcodegen", "dump", "--type", "json")
+    abort "xcodegen dump failed:\n#{errors}#{dump}" unless status.success?
+    JSON.parse(dump)
+  end
+
+  def spec_target_names
+    resolved_spec.fetch("targets", {}).keys
   end
 
   def splice_include(project, local)
@@ -118,10 +153,7 @@ BEGIN {
   # ID; the mistake surfaces only at device install or App Store validation.
   # Read the resolved spec and refuse to hand back a project that would.
   def check_watch_identity(app)
-    dump = `xcodegen dump --type json 2>/dev/null`
-    abort "xcodegen dump failed; cannot verify the watch app's identity." unless $?.success?
-
-    targets = JSON.parse(dump).fetch("targets", {})
+    targets = resolved_spec.fetch("targets", {})
     watch = targets["WatchApp"]
     return unless watch # this app has no watch.yml
 

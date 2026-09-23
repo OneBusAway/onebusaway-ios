@@ -25,7 +25,12 @@
 
 set -euo pipefail
 
+# Resolve the argument from the caller's directory before moving to the repo
+# root, which the script and project paths below assume.
 derived=${1:-DerivedData}
+[[ $derived = /* ]] || derived="$PWD/$derived"
+cd "$(dirname "$0")/.."
+
 udid=$(scripts/resolve_watch_simulator_udid)
 
 xcrun simctl boot "$udid" 2>/dev/null || true
