@@ -297,13 +297,16 @@ jobs:
       run: |
         set -euo pipefail
         scripts/generate_project KiedyBus
-        # The one-liner exits 0 (success) when "WatchApp" IS present in the
-        # resolved spec; the `if` below turns that success into the failure
-        # case, since a KiedyBus generate must resolve with no WatchApp target.
-        if xcodegen dump --type json | python3 -c 'import json,sys; sys.exit(0 if "WatchApp" in json.load(sys.stdin)["targets"] else 1)'; then
-          echo "KiedyBus resolved spec unexpectedly contains WatchApp" >&2
-          exit 1
-        fi
+        # Read the *generated* project, not `xcodegen dump`: the watch include
+        # is `enable: ${OBA_WATCH}`, which a dump re-evaluates from this
+        # shell's environment, where generate_project never set it, so a dump
+        # never contains WatchApp and the check could not fail.
+        # Capture first, on its own line: a failed listing fails the step
+        # under `set -e` instead of reading as "no WatchApp". The one-liner
+        # exits 1 (message on stderr) only when WatchApp is present; malformed
+        # output makes json.load raise, which also exits non-zero.
+        list=$(xcodebuild -list -json -project OBAKit.xcodeproj)
+        printf '%s' "$list" | python3 -c 'import json,sys; t=json.load(sys.stdin)["project"]["targets"]; sys.exit("generated project unexpectedly contains WatchApp" if "WatchApp" in t else 0)'
         echo "KiedyBus: no watch targets"
 
     # Surface the slowest tests in the job summary so a regression in *test*
