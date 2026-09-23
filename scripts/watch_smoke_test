@@ -52,9 +52,21 @@ alive=0
 if kill -0 "$pid" 2>/dev/null; then
     alive=1
 fi
+
+# `launchctl list` can lag a live process by a few seconds; polling closes
+# the race without weakening the assertion, because a dyld-killed app never
+# registers.
 registered=0
-if xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -q "$bundle_id"; then
-    registered=1
+for _ in 1 2 3 4 5; do
+    if xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -q "$bundle_id"; then
+        registered=1
+        break
+    fi
+    sleep 2
+done
+
+if ! kill -0 "$pid" 2>/dev/null; then
+    alive=0
 fi
 
 if [ "$alive" = 1 ] && [ "$registered" = 1 ]; then
