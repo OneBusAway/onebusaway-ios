@@ -309,6 +309,17 @@ jobs:
         printf '%s' "$list" | python3 -c 'import json,sys; t=json.load(sys.stdin)["project"]["targets"]; sys.exit("generated project unexpectedly contains WatchApp" if "WatchApp" in t else 0)'
         echo "KiedyBus: no watch targets"
 
+    # The release lane (fastlane/Fastfile) generates with --no-watch until the
+    # watch app ships; this is the guard it depends on. Same check as above.
+    - name: OneBusAway --no-watch generates no watch targets
+      if: success() || failure()
+      run: |
+        set -euo pipefail
+        scripts/generate_project OneBusAway --no-watch
+        list=$(xcodebuild -list -json -project OBAKit.xcodeproj)
+        printf '%s' "$list" | python3 -c 'import json,sys; t=json.load(sys.stdin)["project"]["targets"]; sys.exit("generated project unexpectedly contains WatchApp" if "WatchApp" in t else 0)'
+        echo "OneBusAway --no-watch: no watch targets"
+
     # Surface the slowest tests in the job summary so a regression in *test*
     # time (vs. infra time) is easy to spot without re-running the investigation.
     #
