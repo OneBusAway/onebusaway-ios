@@ -26,10 +26,10 @@ public struct NearbyStopsLoader: Sendable {
         let origin = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         let stops = try await apiService.getStops(coordinate: coordinate).list
 
-        return Array(
-            stops
-                .sorted { $0.location.distance(from: origin) < $1.location.distance(from: origin) }
-                .prefix(limit)
-        )
+        return stops
+            .map { (stop: $0, distance: $0.location.distance(from: origin)) }
+            .sorted { $0.distance < $1.distance }
+            .prefix(limit)
+            .map(\.stop)
     }
 }

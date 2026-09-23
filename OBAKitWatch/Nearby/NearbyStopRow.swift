@@ -9,11 +9,13 @@
 
 import SwiftUI
 import CoreLocation
+import MapKit
 import OBAKitCore
 
 struct NearbyStopRow: View {
     let stop: Stop
     let origin: CLLocation?
+    let formatters: Formatters
 
     private var routeNames: [String] {
         (stop.routes ?? []).map(\.shortName)
@@ -22,17 +24,17 @@ struct NearbyStopRow: View {
     private var distanceText: String? {
         guard let origin else { return nil }
         let meters = stop.location.distance(from: origin)
-        return Measurement(value: meters, unit: UnitLength.meters)
-            .formatted(.measurement(width: .abbreviated, usage: .road))
+        return formatters.distanceFormatter.string(fromDistance: meters)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        let names = routeNames
+        return VStack(alignment: .leading, spacing: 2) {
             Text(stop.nameWithLocalizedDirectionAbbreviation)
                 .font(.headline)
                 .lineLimit(2)
-            if !routeNames.isEmpty {
-                Text(routeNames.formatted(.list(type: .and, width: .narrow)))
+            if !names.isEmpty {
+                Text(names.formatted(.list(type: .and, width: .narrow)))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

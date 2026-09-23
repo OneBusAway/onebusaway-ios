@@ -31,12 +31,6 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "Không có khu vực giao thông nào ở đây.";
 
-/* Toolbar button; re-requests location and reloads */
-"nearby.refresh" = "Làm mới";
-
-/* Button after a failure */
-"nearby.retry" = "Thử lại";
-
 /* Screen title before a transit region is known */
 "nearby.title" = "Lân cận";
 

@@ -23,7 +23,7 @@ public struct WatchRootView: View {
         NavigationStack {
             Group {
                 if let nearby {
-                    NearbyStopsView(model: nearby)
+                    NearbyStopsView(model: nearby, formatters: host.formatters)
                 } else {
                     ProgressView()
                 }

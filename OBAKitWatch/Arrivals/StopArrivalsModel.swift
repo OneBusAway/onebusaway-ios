@@ -27,7 +27,7 @@ public final class StopArrivalsModel {
     public let stop: Stop
     public private(set) var phase: Phase
 
-    @ObservationIgnored private let host: WatchAppHost?
+    @ObservationIgnored private let host: WatchAppHost
     @ObservationIgnored private let interval: Duration
     @ObservationIgnored private let poller = StopArrivalsPoller()
     @ObservationIgnored private var pollTask: Task<Void, Never>?
@@ -40,7 +40,7 @@ public final class StopArrivalsModel {
     }
 
     public func startPolling() {
-        guard pollTask == nil, let host else { return }
+        guard pollTask == nil else { return }
         guard let apiService = host.apiService else {
             phase = .failed(OBALoc("arrivals.no_service", value: "No transit region selected.", comment: "Arrivals cannot load without a region"))
             return

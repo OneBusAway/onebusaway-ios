@@ -28,7 +28,7 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
     public let formatters: Formatters
 
     /// Follows `regionsService.currentRegion`; nil until a region is known.
-    public private(set) var apiService: RESTAPIService?
+    public var apiService: RESTAPIService? { apiServiceProvider.apiService }
 
     /// Mirrors `locationService.authorizationStatus` so views can react to a grant.
     public private(set) var authorizationStatus: CLAuthorizationStatus
@@ -74,7 +74,6 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
             dataLoader: dataLoader
         )
         self.apiServiceProvider = provider
-        self.apiService = provider.apiService
 
         // The step 6 watch widget reads the resolved region from the suite.
         self.resolvedRegionPersister = ResolvedRegionPersister(
@@ -86,10 +85,6 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
 
         super.init()
 
-        provider.onChange = { [weak self] in
-            guard let self else { return }
-            self.apiService = self.apiServiceProvider.apiService
-        }
         locationService.addDelegate(self)
     }
 

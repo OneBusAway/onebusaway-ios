@@ -24,9 +24,6 @@ import Foundation
 public final class StandaloneAPIServiceProvider: NSObject, RegionsServiceDelegate {
     public private(set) var apiService: RESTAPIService?
 
-    /// Called after every rebuild, including one that set `apiService` to nil.
-    public var onChange: (() -> Void)?
-
     private let apiKey: String
     private let appVersion: String
     private let uuid: String
@@ -61,7 +58,6 @@ public final class StandaloneAPIServiceProvider: NSObject, RegionsServiceDelegat
         } else {
             apiService = nil
         }
-        onChange?()
     }
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {

@@ -13,6 +13,7 @@ import OBAKitCore
 
 struct NearbyStopsView: View {
     let model: NearbyStopsModel
+    let formatters: Formatters
 
     var body: some View {
         content
@@ -22,7 +23,7 @@ struct NearbyStopsView: View {
                     Button {
                         model.refresh()
                     } label: {
-                        Label(OBALoc("nearby.refresh", value: "Refresh", comment: "Toolbar button; re-requests location and reloads"), systemImage: "arrow.clockwise")
+                        Label(Strings.refresh, systemImage: "arrow.clockwise")
                     }
                 }
             }
@@ -52,7 +53,7 @@ struct NearbyStopsView: View {
             MessageView(
                 text: message,
                 systemImage: "exclamationmark.triangle",
-                actionTitle: OBALoc("nearby.retry", value: "Retry", comment: "Button after a failure"),
+                actionTitle: Strings.retry,
                 action: { model.refresh() }
             )
         case .empty:
@@ -63,7 +64,7 @@ struct NearbyStopsView: View {
         case .loaded(let stops):
             List(stops) { stop in
                 NavigationLink(value: stop) {
-                    NearbyStopRow(stop: stop, origin: model.origin)
+                    NearbyStopRow(stop: stop, origin: model.origin, formatters: formatters)
                 }
             }
         }
@@ -71,25 +72,25 @@ struct NearbyStopsView: View {
 }
 
 #Preview("Awaiting authorization") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .awaitingAuthorization)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .awaitingAuthorization), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
 }
 
 #Preview("Denied") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locationDenied)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locationDenied), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
 }
 
 #Preview("Locating") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locating)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locating), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
 }
 
 #Preview("No region") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .noRegion)) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .noRegion), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
 }
 
 #Preview("Failed") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .failed("The request timed out."))) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .failed("The request timed out.")), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
 }
 
 #Preview("Empty") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .empty, regionName: "Puget Sound")) }
+    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .empty, regionName: "Puget Sound"), formatters: Formatters(locale: .current, calendar: .current, themeColors: .shared)) }
 }

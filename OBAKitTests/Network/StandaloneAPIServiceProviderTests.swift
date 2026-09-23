@@ -62,17 +62,14 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
         #expect(provider.apiService == nil)
     }
 
-    @Test func `Rebuilds on updatedRegion and calls onChange`() throws {
+    @Test func `Rebuilds on updatedRegion`() throws {
         let regionsService = makeRegionsService()
         let provider = makeProvider(regionsService)
-        var changes = 0
-        provider.onChange = { changes += 1 }
 
         let tampa = try #require(regionsService.regions.first { $0.name == "Tampa Bay" })
         regionsService.currentRegion = tampa
 
         #expect(provider.apiService != nil)
-        #expect(changes == 1)
     }
 
     @Test func `Rebuilds on updatedRegionsList`() async throws {

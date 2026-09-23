@@ -46,7 +46,7 @@ struct StopArrivalsView: View {
             MessageView(
                 text: message,
                 systemImage: "exclamationmark.triangle",
-                actionTitle: OBALoc("nearby.retry", value: "Retry", comment: "Button after a failure"),
+                actionTitle: Strings.retry,
                 action: { model.retry() }
             )
         case .loaded(let arrivals, let updatedAt, let stale):

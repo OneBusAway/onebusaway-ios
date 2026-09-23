@@ -31,12 +31,6 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "Aucune région de transport ici.";
 
-/* Toolbar button; re-requests location and reloads */
-"nearby.refresh" = "Actualiser";
-
-/* Button after a failure */
-"nearby.retry" = "Réessayer";
-
 /* Screen title before a transit region is known */
 "nearby.title" = "À proximité";
 

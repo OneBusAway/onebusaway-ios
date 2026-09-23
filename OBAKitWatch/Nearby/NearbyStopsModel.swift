@@ -62,7 +62,7 @@ public final class NearbyStopsModel {
 
     private func performRefresh() async {
         guard !Task.isCancelled else { return }
-        guard let host, isAuthorized(host) else { return }
+        guard let host, ensureAuthorized(host) else { return }
 
         phase = .locating
 
@@ -91,8 +91,8 @@ public final class NearbyStopsModel {
         regionName = region.name
 
         // The fix above set currentLocation → RegionsService selected the
-        // region → StandaloneAPIServiceProvider rebuilt the service → the host
-        // republished it, all synchronously on the main actor.
+        // region → StandaloneAPIServiceProvider rebuilt the service, all
+        // synchronously on the main actor; the host reads the provider directly.
         guard let apiService = host.apiService else {
             phase = .noRegion
             return
@@ -101,9 +101,10 @@ public final class NearbyStopsModel {
         await loadStops(near: fix, using: apiService)
     }
 
-    /// Sets the phase for a status that cannot produce a fix, requesting
-    /// authorization when it has not been asked for yet.
-    private func isAuthorized(_ host: WatchAppHost) -> Bool {
+    /// Returns whether location is authorized. When it is not, sets `phase`
+    /// accordingly and, if authorization has not been asked for yet, triggers
+    /// the system prompt.
+    private func ensureAuthorized(_ host: WatchAppHost) -> Bool {
         switch host.locationService.authorizationStatus {
         case .notDetermined:
             phase = .awaitingAuthorization

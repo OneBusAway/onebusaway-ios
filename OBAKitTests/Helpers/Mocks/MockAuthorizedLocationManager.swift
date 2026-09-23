@@ -37,21 +37,15 @@ class MockAuthorizedLocationManager: NSObject, RegionMonitoringLocationManager {
     /// observable. Real Core Location always delivers asynchronously.
     var deliversOneShotSynchronously = true
 
-    /// Whether a deferred `requestLocation()` is waiting for `deliverPendingOneShot()`.
-    private(set) var hasPendingOneShot = false
-
     func requestLocation() {
         requestLocationCount += 1
         if deliversOneShotSynchronously {
             deliverOneShot()
-        } else {
-            hasPendingOneShot = true
         }
     }
 
     /// Delivers the deferred one-shot the way a synchronous `requestLocation()` would.
     func deliverPendingOneShot() {
-        hasPendingOneShot = false
         deliverOneShot()
     }
 

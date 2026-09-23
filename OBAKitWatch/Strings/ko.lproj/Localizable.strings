@@ -31,12 +31,6 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "이곳에는 대중교통 지역이 없습니다.";
 
-/* Toolbar button; re-requests location and reloads */
-"nearby.refresh" = "새로고침";
-
-/* Button after a failure */
-"nearby.retry" = "다시 시도";
-
 /* Screen title before a transit region is known */
 "nearby.title" = "주변";
 

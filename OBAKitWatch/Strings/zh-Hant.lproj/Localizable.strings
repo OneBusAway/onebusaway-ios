@@ -31,12 +31,6 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "這裡沒有大眾運輸區域。";
 
-/* Toolbar button; re-requests location and reloads */
-"nearby.refresh" = "重新整理";
-
-/* Button after a failure */
-"nearby.retry" = "重試";
-
 /* Screen title before a transit region is known */
 "nearby.title" = "附近";
 
