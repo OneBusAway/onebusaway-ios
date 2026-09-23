@@ -15,7 +15,7 @@ import Foundation
 /// cancellation throws `CancellationError` and unparks only the cancelled
 /// caller. Tests wait for `sleeperCount` to reach the expected value before
 /// advancing, so the sleeper is registered before the clock moves.
-final class TestClock: Clock, @unchecked Sendable {
+nonisolated final class TestClock: Clock, @unchecked Sendable {
     struct Instant: InstantProtocol {
         var offset: Duration
 

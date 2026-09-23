@@ -61,6 +61,7 @@ public final class NearbyStopsModel {
     }
 
     private func performRefresh() async {
+        guard !Task.isCancelled else { return }
         guard let host, isAuthorized(host) else { return }
 
         phase = .locating

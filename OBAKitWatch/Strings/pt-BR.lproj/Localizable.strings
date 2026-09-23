@@ -11,7 +11,7 @@
 "arrivals.row.a11y_fmt" = "%1$@ para %2$@, %3$@";
 
 /* %@ is a short time, e.g. 3:42 PM */
-"arrivals.updated_at_fmt" = "Atualizado às %@";
+"arrivals.updated_at_fmt" = "Atualizado: %@";
 
 /* Shown while the system location prompt is up */
 "nearby.awaiting_authorization" = "Permita o acesso à localização para ver as paradas perto de você.";
