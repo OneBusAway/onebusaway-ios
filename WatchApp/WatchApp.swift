@@ -15,9 +15,12 @@ import OBAKitWatch
 /// `Apps/<App>/watch.yml`.
 @main
 struct WatchApp: App {
+    @State private var host = WatchAppHost.fromMainBundle()
+
     var body: some Scene {
         WindowGroup {
             WatchRootView()
+                .environment(host)
         }
     }
 }
