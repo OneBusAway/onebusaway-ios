@@ -11,10 +11,10 @@
 # Usage: scripts/watch_smoke_test [DERIVED_DATA_PATH]
 #   Assumes OBAKit.xcodeproj was generated with the watch targets enabled.
 #
-# On FAIL, the dyld/library-load query runs first and is printed in full: the
-# daemons that re-announce the dead bundle ID to Spotlight/LaunchServices in
-# the following seconds outnumber the one dyld line that actually explains
-# the crash, so a single tail-ed query buries it.
+# On FAIL, the dyld/library-load query runs first and is printed up to 20
+# lines: the daemons that re-announce the dead bundle ID to Spotlight/
+# LaunchServices in the following seconds outnumber the one dyld line that
+# actually explains the crash, so a single tail-ed query buries it.
 #
 # `launchctl list` was measured to lag a live process by more than 18 s under
 # post-install daemon load, so it cannot gate PASS/FAIL here; it is reported
@@ -29,28 +29,41 @@ derived=${1:-DerivedData}
 udid=$(scripts/resolve_watch_simulator_udid)
 
 xcrun simctl boot "$udid" 2>/dev/null || true
-xcrun simctl bootstatus "$udid" -b >/dev/null
+if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
+    echo "error: simctl bootstatus failed" >&2
+    exit 1
+fi
 
 # `-quiet` prints only warnings and errors; `set -e` fails the script on a
 # failed build, so a broken compile is reported as itself, not as a missing app.
 xcodebuild build \
   -project OBAKit.xcodeproj \
   -scheme WatchApp \
+  -configuration Debug \
   -destination "platform=watchOS Simulator,id=$udid" \
   -derivedDataPath "$derived" \
   -quiet
 
-app=$(find "$derived/Build/Products" -type d -name "WatchApp.app" -path "*watchsimulator*" | head -1)
-if [ -z "$app" ]; then
-    echo "error: WatchApp.app not found under $derived/Build/Products" >&2
+# The exact product path for -configuration Debug, rather than a `find` that
+# could pick a stale WatchApp.app if $derived is a reused/cached path holding
+# more than one matching build.
+app="$derived/Build/Products/Debug-watchsimulator/WatchApp.app"
+if [ ! -d "$app" ]; then
+    echo "error: $app was not produced by the build" >&2
     exit 1
 fi
 
 bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
 
 xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
-xcrun simctl install "$udid" "$app"
-launch_output=$(xcrun simctl launch "$udid" "$bundle_id")
+if ! xcrun simctl install "$udid" "$app"; then
+    echo "error: simctl install failed" >&2
+    exit 1
+fi
+if ! launch_output=$(xcrun simctl launch "$udid" "$bundle_id"); then
+    echo "error: simctl launch failed" >&2
+    exit 1
+fi
 pid=${launch_output##*: }
 echo "launched $bundle_id as pid $pid; waiting 8 s"
 sleep 8
