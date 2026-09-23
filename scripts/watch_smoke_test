@@ -15,6 +15,13 @@
 # daemons that re-announce the dead bundle ID to Spotlight/LaunchServices in
 # the following seconds outnumber the one dyld line that actually explains
 # the crash, so a single tail-ed query buries it.
+#
+# `launchctl list` was measured to lag a live process by more than 18 s under
+# post-install daemon load, so it cannot gate PASS/FAIL here; it is reported
+# for information only. A dyld-killed app never survives the 8 s wait, so
+# `kill -0` plus a check of the process's own name is what keeps the
+# assertion meaningful (the name check guards against another process having
+# reused the PID).
 
 set -euo pipefail
 
@@ -53,9 +60,14 @@ if kill -0 "$pid" 2>/dev/null; then
     alive=1
 fi
 
-# `launchctl list` can lag a live process by a few seconds; polling closes
-# the race without weakening the assertion, because a dyld-killed app never
-# registers.
+comm=$(ps -p "$pid" -o comm= 2>/dev/null || true)
+name_ok=0
+if [ "$(basename "$comm")" = "WatchApp" ]; then
+    name_ok=1
+fi
+
+# Informational only: launchd registration does not gate PASS/FAIL (see the
+# header comment above for why).
 registered=0
 for _ in 1 2 3 4 5; do
     if xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -q "$bundle_id"; then
@@ -64,17 +76,18 @@ for _ in 1 2 3 4 5; do
     fi
     sleep 2
 done
-
-if ! kill -0 "$pid" 2>/dev/null; then
-    alive=0
+if [ "$registered" = 1 ]; then
+    echo "launchd registration: yes"
+else
+    echo "launchd registration: not observed within 10 s (informational)"
 fi
 
-if [ "$alive" = 1 ] && [ "$registered" = 1 ]; then
-    echo "PASS: $bundle_id is running (pid $pid) and registered with launchd"
+if [ "$alive" = 1 ] && [ "$name_ok" = 1 ]; then
+    echo "PASS: $bundle_id is running (pid $pid, comm=$comm)"
     exit 0
 fi
 
-echo "FAIL: alive=$alive registered=$registered" >&2
+echo "FAIL: alive=$alive name_ok=$name_ok (comm=$comm)" >&2
 
 echo "--- dyld / library-load failures ---" >&2
 xcrun simctl spawn "$udid" log show --last 2m --style compact \
