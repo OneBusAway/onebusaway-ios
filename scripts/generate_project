@@ -1,8 +1,11 @@
 #!/usr/bin/env ruby
 
 require "yaml"
+require "json"
 
-app = ARGV[0]
+args = ARGV.dup
+no_watch = args.delete("--no-watch")
+app = args.shift
 
 if app.nil?
   display_usage_information
@@ -14,18 +17,29 @@ end
 
 check_for_project_file(app)
 
+# An unset variable disables the `enable: ${OBA_WATCH}` include in an app's
+# project.yml; any value enables it. Apps without a watch.yml are unaffected.
+# --no-watch must also clear a value inherited from the caller's environment.
+if no_watch
+  ENV.delete("OBA_WATCH")
+else
+  ENV["OBA_WATCH"] = "true"
+end
+
 generate_project(app)
+check_watch_identity(app) unless no_watch
 
 puts `scripts/version`
 
 BEGIN {
   def display_usage_information
-    puts "Usage: scripts/generate_project <APP NAME>"
+    puts "Usage: scripts/generate_project <APP NAME> [--no-watch]"
     puts "Available Apps:"
     apps = (Dir.glob("Apps/*") - ["Apps/Shared"]).sort
     apps.each do |app|
       puts "  #{app.split("/").last}"
     end
+    puts "  --no-watch   skip the watch targets (faster iOS-only builds; no watchOS platform needed)"
   end
 
   def check_for_project_file(app)
@@ -74,13 +88,23 @@ BEGIN {
     include = project.index(/^include:\s*$/)
     abort "Could not find include list in project.yml." unless include
 
-    line_end = project.index("\n", include)
-    project.insert(line_end + 1, "  - path: #{local}\n")
+    # Find the end of the include list: the first line after `include:` that is
+    # not an indented list item or a blank line.
+    cursor = project.index("\n", include) + 1
+    while cursor < project.length
+      line_end = project.index("\n", cursor) || project.length
+      line = project[cursor...line_end]
+      break unless line.empty? || line.start_with?("  ")
+      cursor = line_end + 1
+    end
+    project.insert([cursor, project.length].min, "  - path: #{local}\n")
   end
 
   def replace_development_team(project, target, team)
     target_start = project.index(/^  #{Regexp.escape(target)}:\s*$/)
-    abort "Could not find target #{target} in project.yml." unless target_start
+    # Targets that only exist in an included file (WatchApp, in watch.yml) are
+    # handled by local.yml being the last include.
+    return project unless target_start
 
     next_target = project.index(/^  \S/, target_start + 1) || project.length
     target_spec = project[target_start...next_target]
@@ -88,6 +112,26 @@ BEGIN {
     abort "Could not find DEVELOPMENT_TEAM for target #{target} in project.yml." unless replacement_count
 
     project[0...target_start] + target_spec + project[next_target..]
+  end
+
+  # Simulator builds accept a wrong companion ID and an unprefixed watch bundle
+  # ID; the mistake surfaces only at device install or App Store validation.
+  # Read the resolved spec and refuse to hand back a project that would.
+  def check_watch_identity(app)
+    dump = `xcodegen dump --type json 2>/dev/null`
+    abort "xcodegen dump failed; cannot verify the watch app's identity." unless $?.success?
+
+    targets = JSON.parse(dump).fetch("targets", {})
+    watch = targets["WatchApp"]
+    return unless watch # this app has no watch.yml
+
+    app_id = targets.dig("App", "settings", "base", "PRODUCT_BUNDLE_IDENTIFIER")
+    watch_id = watch.dig("settings", "base", "PRODUCT_BUNDLE_IDENTIFIER")
+    companion = watch.dig("info", "properties", "WKCompanionAppBundleIdentifier")
+
+    abort "#{app}: WatchApp needs PRODUCT_BUNDLE_IDENTIFIER in its watch.yml override." unless watch_id
+    abort "#{app}: WKCompanionAppBundleIdentifier (#{companion.inspect}) must equal the App bundle ID (#{app_id})." unless companion == app_id
+    abort "#{app}: the watch bundle ID (#{watch_id}) must be prefixed by the App bundle ID (#{app_id}.)." unless watch_id.start_with?("#{app_id}.")
   end
 
   def project_yml_path(app)

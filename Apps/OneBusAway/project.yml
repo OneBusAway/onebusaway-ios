@@ -12,8 +12,11 @@ targets:
         name: App
         group: OneBusAway
         # gpx files are simulated-location fixtures for schemes, not app
-        # resources; keep them out of the bundle.
-        excludes: ["gpx_files"]
+        # resources; keep them out of the bundle. watch.yml is project wiring,
+        # not a resource. (WatchAssets.xcassets cannot be excluded this way:
+        # XcodeGen expands the exclude into per-file exceptions, and Xcode
+        # compiles the catalog as one unit regardless.)
+        excludes: ["gpx_files", "watch.yml"]
       - path: Apps/Shared/CommonClient
         name: Common
         group: OneBusAway
@@ -111,4 +114,6 @@ include:
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
   - path: OBAWidget/project.yml
-
+  - path: Apps/OneBusAway/watch.yml
+    relativePaths: false
+    enable: ${OBA_WATCH}

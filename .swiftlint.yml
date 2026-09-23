@@ -17,6 +17,8 @@ included: # paths to include during linting. `--path` is ignored if present.
   - OBAKitCore
   - OBAKitCoreiOS
   - OBAWidget
+  - OBAKitWatch
+  - WatchApp
 
 excluded: # paths to ignore during linting. Takes precedence over `included`.
   - OBAKitCore/Models/Protobuf/gtfs-realtime.pb.swift
@@ -32,7 +34,7 @@ type_body_length:
 custom_rules:
   hardcoded_app_name:
     name: "Hardcoded app name"
-    # OBAKit/OBAKitCore/OBAKitCoreiOS/OBAWidget are the white-label frameworks — the same code ships
+    # OBAKit/OBAKitCore/OBAKitCoreiOS/OBAWidget/OBAKitWatch/WatchApp are the white-label frameworks and shells — the same code ships
     # as KiedyBus. A brand name baked into a string literal renders the wrong app name.
     # `included:` above already scopes linting to the frameworks, so the app targets
     # under Apps/ remain free to name themselves.
