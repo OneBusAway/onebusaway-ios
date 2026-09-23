@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "未来60分钟内没有离站班次。";
+
+/* Progress text */
+"arrivals.loading" = "正在加载班次……";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "未选择公交地区。";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ 开往 %2$@，%3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "更新于 %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "允许访问位置信息，即可查看附近的车站。";
+
+/* The server returned zero stops */
+"nearby.empty" = "附近没有车站。";
+
+/* Progress text */
+"nearby.locating" = "正在查找您的位置……";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "位置访问已关闭。查看附近的车站需要您的位置。";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "此处没有公交地区。";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "刷新";
+
+/* Button after a failure */
+"nearby.retry" = "重试";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "附近";
+

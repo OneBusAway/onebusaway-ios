@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "앞으로 60분 내에 예정된 출발이 없습니다.";
+
+/* Progress text */
+"arrivals.loading" = "출발 정보를 불러오는 중…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "선택된 대중교통 지역이 없습니다.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ %2$@ 방면, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "%@에 업데이트됨";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "주변 정류장을 보려면 위치 접근을 허용하세요.";
+
+/* The server returned zero stops */
+"nearby.empty" = "주변에 정류장이 없습니다.";
+
+/* Progress text */
+"nearby.locating" = "현재 위치를 찾는 중…";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "위치 접근이 꺼져 있습니다. 주변 정류장을 보려면 위치가 필요합니다.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "이곳에는 대중교통 지역이 없습니다.";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "새로고침";
+
+/* Button after a failure */
+"nearby.retry" = "다시 시도";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "주변";
+

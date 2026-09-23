@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "Không có chuyến khởi hành trong 60 phút tới.";
+
+/* Progress text */
+"arrivals.loading" = "Đang tải chuyến khởi hành…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Chưa chọn khu vực giao thông.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ đi %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Đã cập nhật lúc %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Cho phép truy cập vị trí để xem các điểm dừng gần bạn.";
+
+/* The server returned zero stops */
+"nearby.empty" = "Không có điểm dừng nào ở gần.";
+
+/* Progress text */
+"nearby.locating" = "Đang tìm vị trí của bạn…";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "Quyền truy cập vị trí đang tắt. Tính năng điểm dừng lân cận cần vị trí của bạn.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "Không có khu vực giao thông nào ở đây.";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "Làm mới";
+
+/* Button after a failure */
+"nearby.retry" = "Thử lại";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "Lân cận";
+

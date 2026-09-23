@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "Walang pag-alis sa susunod na 60 minuto.";
+
+/* Progress text */
+"arrivals.loading" = "Naglo-load ng mga pag-alis…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Walang napiling rehiyon ng transit.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ papuntang %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Na-update noong %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Payagan ang access sa lokasyon para makita ang mga hintuan malapit sa iyo.";
+
+/* The server returned zero stops */
+"nearby.empty" = "Walang hintuan sa malapit.";
+
+/* Progress text */
+"nearby.locating" = "Hinahanap ang iyong lokasyon…";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "Naka-off ang access sa lokasyon. Kailangan ang iyong lokasyon para makita ang mga kalapit na hintuan.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "Walang rehiyon ng transit dito.";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "I-refresh";
+
+/* Button after a failure */
+"nearby.retry" = "Subukang Muli";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "Malapit";
+

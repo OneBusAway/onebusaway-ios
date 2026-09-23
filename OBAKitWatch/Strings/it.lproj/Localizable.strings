@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "Nessuna partenza nei prossimi 60 minuti.";
+
+/* Progress text */
+"arrivals.loading" = "Caricamento delle partenze…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Nessuna regione di trasporto selezionata.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ per %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Aggiornato alle %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Consenti l’accesso alla posizione per vedere le fermate vicine.";
+
+/* The server returned zero stops */
+"nearby.empty" = "Nessuna fermata nelle vicinanze.";
+
+/* Progress text */
+"nearby.locating" = "Ricerca della tua posizione…";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "L’accesso alla posizione è disattivato. Per le fermate vicine serve la tua posizione.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "Nessuna regione di trasporto qui.";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "Aggiorna";
+
+/* Button after a failure */
+"nearby.retry" = "Riprova";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "Nelle vicinanze";
+

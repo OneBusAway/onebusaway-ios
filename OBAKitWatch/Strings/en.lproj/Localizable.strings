@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "No departures in the next 60 minutes.";
+
+/* Progress text */
+"arrivals.loading" = "Loading departures…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "No transit region selected.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ to %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Updated at %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Allow location access to see stops near you.";
+
+/* The server returned zero stops */
+"nearby.empty" = "No stops nearby.";
+
+/* Progress text */
+"nearby.locating" = "Finding your location…";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "Location access is off. Nearby stops need your location.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "No transit region here.";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "Refresh";
+
+/* Button after a failure */
+"nearby.retry" = "Retry";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "Nearby";
+

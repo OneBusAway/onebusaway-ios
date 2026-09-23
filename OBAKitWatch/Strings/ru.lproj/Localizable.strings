@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "Нет отправлений в ближайшие 60 минут.";
+
+/* Progress text */
+"arrivals.loading" = "Загрузка отправлений…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Транспортный регион не выбран.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ до %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Обновлено в %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Разрешите доступ к геопозиции, чтобы увидеть остановки рядом с вами.";
+
+/* The server returned zero stops */
+"nearby.empty" = "Поблизости нет остановок.";
+
+/* Progress text */
+"nearby.locating" = "Определение вашего местоположения…";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "Доступ к геопозиции отключён. Чтобы показать остановки рядом, нужно ваше местоположение.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "Здесь нет транспортного региона.";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "Обновить";
+
+/* Button after a failure */
+"nearby.retry" = "Повторить";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "Рядом";
+

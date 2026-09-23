@@ -1,0 +1,39 @@
+/* Empty state */
+"arrivals.empty" = "لا توجد مغادرات خلال الـ60 دقيقة القادمة.";
+
+/* Progress text */
+"arrivals.loading" = "جارٍ تحميل المغادرات…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "لم يتم اختيار منطقة نقل.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ إلى %2$@، %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "آخر تحديث: %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "اسمح بالوصول إلى الموقع لعرض المواقف القريبة منك.";
+
+/* The server returned zero stops */
+"nearby.empty" = "لا توجد مواقف قريبة.";
+
+/* Progress text */
+"nearby.locating" = "جارٍ تحديد موقعك…";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "الوصول إلى الموقع متوقف. تحتاج المواقف القريبة إلى معرفة موقعك.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "لا توجد منطقة نقل هنا.";
+
+/* Toolbar button; re-requests location and reloads */
+"nearby.refresh" = "تحديث";
+
+/* Button after a failure */
+"nearby.retry" = "إعادة المحاولة";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "بالقرب منك";
+
