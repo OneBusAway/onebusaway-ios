@@ -29,7 +29,7 @@ public struct WatchRootView: View {
                 }
             }
             .navigationDestination(for: Stop.self) { stop in
-                Text(stop.nameWithLocalizedDirectionAbbreviation)
+                StopArrivalsView(model: StopArrivalsModel(host: host, stop: stop))
             }
         }
         .task {
