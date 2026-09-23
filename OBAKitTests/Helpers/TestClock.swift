@@ -56,20 +56,30 @@ final class TestClock: Clock, @unchecked Sendable {
     }
 
     func sleep(until deadline: Instant, tolerance: Duration?) async throws {
-        try Task.checkCancellation()
         let id = UUID()
 
+        // Cancellation is checked under the lock, not before it: a cancel that
+        // lands before the sleeper is registered finds nothing for `onCancel` to
+        // remove, so registering anyway would park the caller until the next
+        // `advance(by:)`. An already-cancelled caller runs `onCancel` first (a
+        // no-op) and is turned away here.
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                let dueNow = lock.withLock { () -> Bool in
+                enum Outcome { case due, cancelled, parked }
+                let outcome = lock.withLock { () -> Outcome in
+                    if Task.isCancelled {
+                        return .cancelled
+                    }
                     if deadline <= currentInstant {
-                        return true
+                        return .due
                     }
                     sleepers.append(Sleeper(id: id, deadline: deadline, continuation: continuation))
-                    return false
+                    return .parked
                 }
-                if dueNow {
-                    continuation.resume()
+                switch outcome {
+                case .due: continuation.resume()
+                case .cancelled: continuation.resume(throwing: CancellationError())
+                case .parked: break
                 }
             }
         } onCancel: {
