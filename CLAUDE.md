@@ -13,7 +13,10 @@ OneBusAway iOS (OBAKit) is a white-label transit app framework written in Swift.
 scripts/generate_project [APP_NAME]     # Generate Xcode project for specific app
 scripts/generate_project OneBusAway     # Generate default OneBusAway app
 scripts/generate_project                # Defaults to OneBusAway if no app specified
+scripts/generate_project OneBusAway --no-watch   # iOS only; no watchOS platform needed
 ```
+
+The OneBusAway project includes two watchOS targets, `OBAKitWatch` (framework) and `WatchApp` (shell), opted in through `Apps/OneBusAway/watch.yml`. Building the `App` scheme also builds them, so a machine without the watchOS platform must pass `--no-watch`. Build the watch app with `WATCH_UDID=$(scripts/resolve_watch_simulator_udid)` and `-scheme WatchApp -destination "platform=watchOS Simulator,id=$WATCH_UDID"`; `scripts/watch_smoke_test` installs, launches, and asserts it stays alive, which a compile cannot. Watch code never builds a `CoreApplication` and never reads `\.coreApplication`; `OBAKitWatch/Host/WatchAppHost.swift` is the assembly.
 
 **Available Apps**: OneBusAway, KiedyBus
 
@@ -164,6 +167,8 @@ scripts/extract_strings               # Extract strings for localization
   - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region-monitoring API calls.
   - `OBAKitCoreiOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. It is an XcodeGen `group`, so run `scripts/generate_project` after adding a file here.
   - **If a file in `OBAKitCore/` needs a platform `#if`, move the iOS-only part to `OBAKitCoreiOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
+- **OBAKitWatch**: watchOS UI framework (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it.
+- **WatchApp**: watchOS application shell. White-label; per-app identity comes from Apps/<App>/watch.yml.
 - **OBAKit**: UI framework with view controllers and user interface components
 - **App**: Main application target that combines the frameworks
 
