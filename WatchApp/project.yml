@@ -40,4 +40,5 @@ targets:
         # installs and dies in dyld ("Library not loaded: @rpath/OBAKitWatch").
         # A compile cannot catch it — scripts/watch_smoke_test does.
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # White-label convention: each app names its watch icon set WatchAppIcon in its own catalog.
+        ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon

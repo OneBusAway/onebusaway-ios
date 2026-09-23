@@ -24,7 +24,7 @@ targets:
       # file resolves to the repo root ("regions.json couldn't be opened").
       - path: Apps/OneBusAway/Resources/regions.json
         group: OneBusAway
-      - path: Apps/OneBusAway/WatchAssets.xcassets
+      - path: Apps/OneBusAway/Assets.xcassets
     entitlements:
       path: Apps/OneBusAway/WatchApp.entitlements
       properties:
