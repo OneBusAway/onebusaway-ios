@@ -22,6 +22,9 @@
 /* Progress text */
 "nearby.locating" = "正在尋找您的位置…";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "無法找到您的位置。請再試一次。";
+
 /* Shown when location is denied or restricted */
 "nearby.location_denied" = "位置取用已關閉。查看附近站牌需要您的位置。";
 

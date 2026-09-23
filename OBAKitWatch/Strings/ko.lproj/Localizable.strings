@@ -22,6 +22,9 @@
 /* Progress text */
 "nearby.locating" = "현재 위치를 찾는 중…";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "현재 위치를 찾을 수 없습니다. 다시 시도하세요.";
+
 /* Shown when location is denied or restricted */
 "nearby.location_denied" = "위치 접근이 꺼져 있습니다. 주변 정류장을 보려면 위치가 필요합니다.";
 

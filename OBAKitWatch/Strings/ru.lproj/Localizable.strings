@@ -22,6 +22,9 @@
 /* Progress text */
 "nearby.locating" = "Определение вашего местоположения…";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Не удалось определить ваше местоположение. Попробуйте ещё раз.";
+
 /* Shown when location is denied or restricted */
 "nearby.location_denied" = "Доступ к геопозиции отключён. Чтобы показать остановки рядом, нужно ваше местоположение.";
 

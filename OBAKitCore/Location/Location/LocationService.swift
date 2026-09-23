@@ -11,9 +11,16 @@ import Foundation
 import CoreLocation
 
 /// Errors thrown by `LocationService.requestLocation(desiredAccuracy:)`.
-public enum LocationServiceError: Error {
+public enum LocationServiceError: LocalizedError {
     /// The app is not authorized to use location, so no request was made.
     case notAuthorized
+
+    public var errorDescription: String? {
+        switch self {
+        case .notAuthorized:
+            return OBALoc("location_service.error.not_authorized", value: "Location access is not authorized.", comment: "Error shown when a location request is made without authorization")
+        }
+    }
 }
 
 @objc(OBALocationServiceDelegate)

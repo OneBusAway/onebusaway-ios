@@ -22,6 +22,9 @@
 /* Progress text */
 "nearby.locating" = "جارٍ تحديد موقعك…";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "تعذّر تحديد موقعك. حاول مرة أخرى.";
+
 /* Shown when location is denied or restricted */
 "nearby.location_denied" = "الوصول إلى الموقع متوقف. تحتاج المواقف القريبة إلى معرفة موقعك.";
 

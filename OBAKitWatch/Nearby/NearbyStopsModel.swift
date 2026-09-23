@@ -70,7 +70,11 @@ public final class NearbyStopsModel {
             fix = try await host.locationService.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
         } catch {
             guard !Task.isCancelled else { return }
-            phase = .failed(error.localizedDescription)
+            if error is LocationServiceError {
+                phase = .locationDenied
+            } else {
+                phase = .failed(OBALoc("nearby.location_failed", value: "Couldn't find your location. Try again.", comment: "Shown when a location fix fails or times out"))
+            }
             return
         }
         guard !Task.isCancelled else { return }

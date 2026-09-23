@@ -22,6 +22,9 @@
 /* Progress text */
 "nearby.locating" = "Buscando tu ubicación…";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "No se pudo encontrar tu ubicación. Inténtalo de nuevo.";
+
 /* Shown when location is denied or restricted */
 "nearby.location_denied" = "El acceso a la ubicación está desactivado. Las paradas cercanas necesitan tu ubicación.";
 

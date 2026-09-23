@@ -22,6 +22,9 @@
 /* Progress text */
 "nearby.locating" = "Đang tìm vị trí của bạn…";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Không tìm thấy vị trí của bạn. Hãy thử lại.";
+
 /* Shown when location is denied or restricted */
 "nearby.location_denied" = "Quyền truy cập vị trí đang tắt. Tính năng điểm dừng lân cận cần vị trí của bạn.";
 
