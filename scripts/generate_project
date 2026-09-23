@@ -6,6 +6,7 @@ require "json"
 args = ARGV.dup
 no_watch = args.delete("--no-watch")
 app = args.shift
+abort "Unknown argument(s): #{args.join(' ')}. Usage: scripts/generate_project <APP NAME> [--no-watch]" unless args.empty?
 
 if app.nil?
   display_usage_information
@@ -45,8 +46,7 @@ BEGIN {
   def check_for_project_file(app)
     path = project_yml_path(app)
     if !File.exist?(path)
-      puts "#{path} does not exist! Create the file and try again!"
-      exit
+      abort "#{path} does not exist! Create the file and try again!"
     end
   end
 
