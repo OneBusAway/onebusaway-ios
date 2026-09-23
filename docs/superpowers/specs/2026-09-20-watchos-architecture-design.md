@@ -12,7 +12,9 @@ watch app builds on top of it.
 ## Decisions
 
 Made with the maintainer, 2026-09-19/20. Rows marked **(rev.)** were changed
-after the first validation pass described below; **(rev. 2)** after the second.
+after the first validation pass described below; **(rev. 2)** after the second;
+**(rev. 3)** on 2026-09-22, when the step 4 MVP app was designed
+([`2026-09-22-watchos-mvp-app-design.md`](2026-09-22-watchos-mvp-app-design.md)).
 
 | Decision | Choice |
 |---|---|
@@ -28,6 +30,8 @@ after the first validation pass described below; **(rev. 2)** after the second.
 | CI **(rev., rev. 2)** | A **device-architecture** compile guardrail, kept permanently, **plus an install-and-launch smoke test** from step 5. |
 | Complication content | The top favorited bookmark. Per-complication picker deferred. |
 | Implementation plans | Step 0 gets its own short plan. The first main plan covers steps 1–3 (core portability). Steps 4–6 are follow-on plans. |
+| Watch app host **(rev. 3)** | **No `CoreApplication` on the watch.** A `WatchAppHost` in OBAKitWatch assembles the standalone services the step 3 widget path proved. Was: a `CoreApplication` with surveys, Obaco, and alerts switched off. |
+| Order of steps 4 and 5 **(rev. 3)** | **The app comes first.** Step 4 is an MVP watch app — nearby stops and arrivals, no sync. Step 5 is bookmark sync plus the Bookmarks tab. Was: sync (inert) in step 4, the app in step 5. |
 
 ## How this spec was validated
 
@@ -935,6 +939,15 @@ make OBAKitCore watch-ready, improve the iOS widget, and stand on their own even
 if the watch app slips. **The first main implementation plan covers steps 1–3.**
 Steps 4–6 get follow-on plans, written once the core port has shown what the
 second layer of compile errors looks like.
+
+**Revised 2026-09-22 (rev. 3), after steps 1–3 were implemented.** Steps 4 and
+5 above are superseded by the sequencing in
+[`2026-09-22-watchos-mvp-app-design.md`](2026-09-22-watchos-mvp-app-design.md):
+step 4 is an MVP watch app (targets, opt-in, nearby stops and arrivals, launch
+smoke test) that builds no `CoreApplication`; step 5 is the sync work listed
+under step 4 above plus the Bookmarks tab, the synced-region fallback,
+background refresh, the configurable timeout, and the `CoreAppConfig` switches
+if a watch feature ever needs them. Step 6 is unchanged.
 
 ## Still unknown
 
