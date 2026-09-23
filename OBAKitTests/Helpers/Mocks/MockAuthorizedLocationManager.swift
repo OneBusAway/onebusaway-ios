@@ -32,8 +32,30 @@ class MockAuthorizedLocationManager: NSObject, RegionMonitoringLocationManager {
     /// fix, then clears itself.
     var nextRequestLocationError: Error?
 
+    /// When `false`, `requestLocation()` only records the request and
+    /// `deliverPendingOneShot()` delivers it. That makes a pending one-shot
+    /// observable. Real Core Location always delivers asynchronously.
+    var deliversOneShotSynchronously = true
+
+    /// Whether a deferred `requestLocation()` is waiting for `deliverPendingOneShot()`.
+    private(set) var hasPendingOneShot = false
+
     func requestLocation() {
         requestLocationCount += 1
+        if deliversOneShotSynchronously {
+            deliverOneShot()
+        } else {
+            hasPendingOneShot = true
+        }
+    }
+
+    /// Delivers the deferred one-shot the way a synchronous `requestLocation()` would.
+    func deliverPendingOneShot() {
+        hasPendingOneShot = false
+        deliverOneShot()
+    }
+
+    private func deliverOneShot() {
         if let error = nextRequestLocationError {
             nextRequestLocationError = nil
             delegate?.locationManager?(CLLocationManager(), didFailWithError: error)
@@ -41,6 +63,7 @@ class MockAuthorizedLocationManager: NSObject, RegionMonitoringLocationManager {
         }
         location = oneShotLocation ?? updateLocation
     }
+
     private(set) var monitoredRegions = Set<CLRegion>()
 
     init(updateLocation: CLLocation, updateHeading: CLHeading) {

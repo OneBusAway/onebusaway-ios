@@ -390,7 +390,14 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// Unlike its `start` counterpart this is unguarded: stopping is always safe,
     /// and gating it on authorization would make a manager we started before
     /// access was revoked impossible to ever turn off.
+    ///
+    /// Also fails any pending one-shot waiters. Stopping cancels a pending
+    /// `requestLocation()` and Core Location sends no callback afterwards, so
+    /// without this they would stay suspended forever, and so would every later
+    /// caller that queued up behind them. Revocation, the services-off latch
+    /// and external stops all come through here.
     public func stopUpdatingLocation() {
+        failOneShotRequests(with: LocationServiceError.notAuthorized)
         locationManager.stopUpdatingLocation()
     }
 
@@ -398,7 +405,8 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     /// Callers suspended in `requestLocation(desiredAccuracy:)`. All resolve on
     /// the next `didUpdateLocations` / `didFailWithError`, whichever comes first.
-    private var pendingOneShotRequests: [CheckedContinuation<CLLocation, Error>] = []
+    /// Internal read access so tests can wait until every caller is suspended.
+    private(set) var pendingOneShotRequests: [CheckedContinuation<CLLocation, Error>] = []
 
     /// Requests a single fix and suspends until the manager delivers one.
     ///
@@ -406,7 +414,9 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// that continuous updates apply, so `locationChanged` reaches every
     /// delegate (`RegionsService` selects the region from it). A caller asked
     /// for this fix; a coarser-than-last answer is still the answer. Concurrent
-    /// callers share one manager request.
+    /// callers share one manager request. A stop while a request is pending
+    /// (revocation, Location Services turned off, or `stopUpdatingLocation()`)
+    /// fails the waiters with ``LocationServiceError/notAuthorized``.
     ///
     /// - throws: ``LocationServiceError/notAuthorized`` when the app may not use
     ///   location, or the manager's error from `didFailWithError`.

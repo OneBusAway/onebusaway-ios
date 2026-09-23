@@ -72,23 +72,65 @@ final class LocationServiceOneShotTests: OBATestCase {
         let service = LocationService(userDefaults: userDefaults, locationManager: manager, startsUpdatesOnAuthorization: false)
         manager.nextRequestLocationError = CLError(.locationUnknown)
 
-        await #expect(throws: CLError.self) {
+        do {
             _ = try await service.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
+            Issue.record("Expected requestLocation to throw")
+        } catch {
+            #expect((error as? CLError)?.code == .locationUnknown)
         }
     }
 
     @Test func `Concurrent callers share one manager request`() async throws {
         let manager = authorizedManager()
+        manager.deliversOneShotSynchronously = false
         let service = LocationService(userDefaults: userDefaults, locationManager: manager, startsUpdatesOnAuthorization: false)
 
         async let first = service.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
         async let second = service.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
+
+        // Wait for both callers to suspend, not just the first: delivering
+        // between them would resolve only one and let the other issue its own request.
+        await poll(until: { service.pendingOneShotRequests.count == 2 }, "both callers never suspended")
+        #expect(manager.requestLocationCount == 1)
+
+        manager.deliverPendingOneShot()
         let (a, b) = try await (first, second)
 
+        #expect(a === TestData.mockSeattleLocation)
         #expect(a === b)
-        // The mock delivers synchronously inside requestLocation(), so the first
-        // caller is resolved before the second registers; both must still get a fix.
-        #expect(manager.requestLocationCount <= 2)
+        #expect(manager.requestLocationCount == 1)
+    }
+
+    @Test func `Stopping updates while a one-shot is pending fails the waiter with notAuthorized`() async throws {
+        let manager = authorizedManager()
+        manager.deliversOneShotSynchronously = false
+        let service = LocationService(userDefaults: userDefaults, locationManager: manager, startsUpdatesOnAuthorization: false)
+
+        async let fix = service.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
+        await poll(until: { manager.requestLocationCount == 1 }, "the one-shot never reached the manager")
+
+        // Revoke through the real delegate path. This mock's `authorizationStatus`
+        // has no change hook, so fire the callback Core Location would send.
+        manager.authorizationStatus = .denied
+        manager.delegate?.locationManagerDidChangeAuthorization?(CLLocationManager())
+
+        do {
+            _ = try await fix
+            Issue.record("Expected the pending one-shot to fail")
+        } catch {
+            #expect(error as? LocationServiceError == .notAuthorized)
+        }
+
+        // Re-authorize. The next request must reach the manager, proving the
+        // single-flight guard did not get stuck behind the failed waiter.
+        manager.authorizationStatus = .authorizedWhenInUse
+        manager.delegate?.locationManagerDidChangeAuthorization?(CLLocationManager())
+
+        async let second = service.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
+        await poll(until: { manager.requestLocationCount == 2 }, "a later request never reached the manager")
+        manager.deliverPendingOneShot()
+        let secondFix = try await second
+        #expect(secondFix === TestData.mockSeattleLocation)
     }
 
     @Test func `With startsUpdatesOnAuthorization off, a grant starts neither location nor heading`() {
