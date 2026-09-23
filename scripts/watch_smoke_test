@@ -10,6 +10,11 @@
 #
 # Usage: scripts/watch_smoke_test [DERIVED_DATA_PATH]
 #   Assumes OBAKit.xcodeproj was generated with the watch targets enabled.
+#
+# On FAIL, the dyld/library-load query runs first and is printed in full: the
+# daemons that re-announce the dead bundle ID to Spotlight/LaunchServices in
+# the following seconds outnumber the one dyld line that actually explains
+# the crash, so a single tail-ed query buries it.
 
 set -euo pipefail
 
@@ -58,7 +63,12 @@ if [ "$alive" = 1 ] && [ "$registered" = 1 ]; then
 fi
 
 echo "FAIL: alive=$alive registered=$registered" >&2
+
+echo "--- dyld / library-load failures ---" >&2
+xcrun simctl spawn "$udid" log show --last 2m --style compact \
+  --predicate 'eventMessage CONTAINS "Library not loaded" OR eventMessage CONTAINS "OS_REASON_DYLD" OR eventMessage CONTAINS "dyld"' 2>/dev/null | head -20 >&2 || true
+
 echo "--- last minute of simulator log mentioning the app or dyld ---" >&2
 xcrun simctl spawn "$udid" log show --last 2m \
-  --predicate "eventMessage CONTAINS 'Library not loaded' OR process == 'WatchApp' OR eventMessage CONTAINS '$bundle_id'" 2>/dev/null | tail -60 >&2 || true
+  --predicate "process == 'WatchApp' OR eventMessage CONTAINS '$bundle_id'" 2>/dev/null | tail -40 >&2 || true
 exit 1
