@@ -10,6 +10,12 @@
 import Foundation
 import CoreLocation
 
+/// Errors thrown by `LocationService.requestLocation(desiredAccuracy:)`.
+public enum LocationServiceError: Error {
+    /// The app is not authorized to use location, so no request was made.
+    case notAuthorized
+}
+
 @objc(OBALocationServiceDelegate)
 @MainActor
 public protocol LocationServiceDelegate: NSObjectProtocol {
@@ -45,12 +51,22 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     // cross-file extension and needs to reach it.
     var locationManager: LocationManager
 
+    private let startsUpdatesOnAuthorization: Bool
+
     public convenience override init() {
         self.init(userDefaults: UserDefaults.standard, locationManager: CLLocationManager())
     }
 
-    public init(userDefaults: UserDefaults, locationManager: LocationManager) {
+    /// - parameter startsUpdatesOnAuthorization: When `true` (the iOS default),
+    ///   a grant starts continuous location and heading updates immediately —
+    ///   Core Location fires the authorization callback the moment the delegate
+    ///   is assigned, so an already-authorized app starts its first fix from
+    ///   `init`. The watch passes `false`: it takes one-shot fixes through
+    ///   ``requestLocation(desiredAccuracy:)`` and never powers the magnetometer.
+    ///   Revocation stops updates either way.
+    public init(userDefaults: UserDefaults, locationManager: LocationManager, startsUpdatesOnAuthorization: Bool = true) {
         self.locationManager = locationManager
+        self.startsUpdatesOnAuthorization = startsUpdatesOnAuthorization
         rawAuthorizationStatus = locationManager.authorizationStatus
         lastAccuracyAuthorization = locationManager.accuracyAuthorization
         currentLocation = locationManager.location
@@ -212,7 +228,9 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         // `CLLocationManager` left running keeps the location-usage indicator lit
         // and the magnetometer powered for the rest of the process.
         if isLocationUseAuthorized {
-            startUpdates()
+            if startsUpdatesOnAuthorization {
+                startUpdates()
+            }
         } else {
             stopUpdates()
         }
@@ -376,6 +394,52 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         locationManager.stopUpdatingLocation()
     }
 
+    // MARK: - One-shot location
+
+    /// Callers suspended in `requestLocation(desiredAccuracy:)`. All resolve on
+    /// the next `didUpdateLocations` / `didFailWithError`, whichever comes first.
+    private var pendingOneShotRequests: [CheckedContinuation<CLLocation, Error>] = []
+
+    /// Requests a single fix and suspends until the manager delivers one.
+    ///
+    /// The fix **also becomes `currentLocation`, bypassing the accuracy prune**
+    /// that continuous updates apply, so `locationChanged` reaches every
+    /// delegate (`RegionsService` selects the region from it). A caller asked
+    /// for this fix; a coarser-than-last answer is still the answer. Concurrent
+    /// callers share one manager request.
+    ///
+    /// - throws: ``LocationServiceError/notAuthorized`` when the app may not use
+    ///   location, or the manager's error from `didFailWithError`.
+    public func requestLocation(desiredAccuracy: CLLocationAccuracy) async throws -> CLLocation {
+        guard isLocationUseAuthorized else {
+            throw LocationServiceError.notAuthorized
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            pendingOneShotRequests.append(continuation)
+            if pendingOneShotRequests.count == 1 {
+                locationManager.desiredAccuracy = desiredAccuracy
+                locationManager.requestLocation()
+            }
+        }
+    }
+
+    private func resolveOneShotRequests(with location: CLLocation) {
+        let waiters = pendingOneShotRequests
+        pendingOneShotRequests.removeAll()
+        for waiter in waiters {
+            waiter.resume(returning: location)
+        }
+    }
+
+    private func failOneShotRequests(with error: Error) {
+        let waiters = pendingOneShotRequests
+        pendingOneShotRequests.removeAll()
+        for waiter in waiters {
+            waiter.resume(throwing: error)
+        }
+    }
+
     // MARK: - Heading
 
     /// Guarded on authorization as well as availability. `isHeadingAvailable`
@@ -510,6 +574,15 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             applyAuthorizationState(rawStatus: rawAuthorizationStatus, servicesDenied: false)
         }
 
+        // A requested fix is delivered as-is: the prune below exists for
+        // continuous streams, where a coarse reading trailing a fine one is
+        // noise. Here somebody asked for exactly this reading.
+        if !pendingOneShotRequests.isEmpty {
+            self.currentLocation = newLocation
+            resolveOneShotRequests(with: newLocation)
+            return
+        }
+
         guard let currentLocation = currentLocation else {
             self.currentLocation = newLocation
             return
@@ -550,6 +623,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             applyAuthorizationState(rawStatus: rawAuthorizationStatus, servicesDenied: true)
         }
 
+        failOneShotRequests(with: error)
         notifyDelegatesErrorReceived(error)
     }
 }

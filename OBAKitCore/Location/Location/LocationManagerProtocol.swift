@@ -51,6 +51,17 @@ public protocol LocationManager {
     func stopUpdatingLocation()
     var location: CLLocation? { get }
 
+    // MARK: - One-shot location
+
+    /// Delivers a single fix through `didUpdateLocations`, or an error through
+    /// `didFailWithError`. Available on every platform this module builds for;
+    /// `CLLocationManager` implements it. No default implementation on purpose:
+    /// a mock that forgot it would silently never deliver.
+    func requestLocation()
+
+    /// The accuracy the next fix should aim for. `CLLocationManager` implements it.
+    var desiredAccuracy: CLLocationAccuracy { get set }
+
     // MARK: - Heading
     var isHeadingAvailable: Bool { get }
     func startUpdatingHeading()

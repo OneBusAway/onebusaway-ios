@@ -19,6 +19,16 @@ public class LocationManagerMock: NSObject, RegionMonitoringLocationManager {
     public var locationUpdatesStarted = false
     public var headingUpdatesStarted = false
 
+    public var desiredAccuracy: CLLocationAccuracy = kCLLocationAccuracyBest
+
+    /// How many times `requestLocation()` was called. The base mock is never
+    /// authorized, so it records the call and delivers nothing.
+    public private(set) var requestLocationCount = 0
+
+    public func requestLocation() {
+        requestLocationCount += 1
+    }
+
     // MARK: - Region Monitoring
 
     public private(set) var monitoredRegions = Set<CLRegion>()
@@ -167,6 +177,19 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
         // Guard on either authorized status, not just `.authorizedWhenInUse`, so
         // the `.authorizedAlways` path actually delivers fixes/errors instead of
         // returning here and letting Always-authorized tests pass vacuously.
+        guard authorizationStatus.isAuthorized else { return }
+
+        if simulatesLocationServicesOff {
+            delegate?.locationManager?(CLLocationManager(), didFailWithError: CLError(.denied))
+        } else {
+            location = updateLocation
+        }
+    }
+
+    /// One-shot counterpart of `startUpdatingLocation()`: delivers the fix, or
+    /// `CLError.denied` with services off, only when authorized.
+    public override func requestLocation() {
+        super.requestLocation()
         guard authorizationStatus.isAuthorized else { return }
 
         if simulatesLocationServicesOff {

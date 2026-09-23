@@ -20,6 +20,27 @@ class MockAuthorizedLocationManager: NSObject, RegionMonitoringLocationManager {
 
     var updatingLocation = false
     var updatingHeading = false
+    var desiredAccuracy: CLLocationAccuracy = kCLLocationAccuracyBest
+
+    /// How many times `requestLocation()` was called.
+    private(set) var requestLocationCount = 0
+
+    /// What the next `requestLocation()` delivers instead of `updateLocation`.
+    var oneShotLocation: CLLocation?
+
+    /// When set, the next `requestLocation()` delivers this error instead of a
+    /// fix, then clears itself.
+    var nextRequestLocationError: Error?
+
+    func requestLocation() {
+        requestLocationCount += 1
+        if let error = nextRequestLocationError {
+            nextRequestLocationError = nil
+            delegate?.locationManager?(CLLocationManager(), didFailWithError: error)
+            return
+        }
+        location = oneShotLocation ?? updateLocation
+    }
     private(set) var monitoredRegions = Set<CLRegion>()
 
     init(updateLocation: CLLocation, updateHeading: CLHeading) {
