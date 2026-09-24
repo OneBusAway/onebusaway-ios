@@ -44,15 +44,33 @@ final class ImageBadgeRendererTests {
         #expect(badgedImage.size.width == badgeSize)
         #expect(badgedImage.size.height == badgeSize)
         
-        // Verify it isn't an empty or blank image by comparing PNG data.
-        // A blank/transparent 48x48 image will have a very small pngData signature.
-        // A drawn rounded rect with a templated image in it will contain more pixel data.
-        let blankImage = UIGraphicsImageRenderer(size: CGSize(width: badgeSize, height: badgeSize)).image { _ in }
+        // Verify pixel colors to ensure the icon and background were composited.
+        func color(at point: CGPoint, in image: UIImage) -> UIColor? {
+            var pixel: [UInt8] = [0, 0, 0, 0]
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let context = CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+            
+            context.translateBy(x: -point.x, y: -point.y)
+            UIGraphicsPushContext(context)
+            image.draw(at: .zero)
+            UIGraphicsPopContext()
+            
+            return UIColor(red: CGFloat(pixel[0]) / 255.0, green: CGFloat(pixel[1]) / 255.0, blue: CGFloat(pixel[2]) / 255.0, alpha: CGFloat(pixel[3]) / 255.0)
+        }
         
-        let badgedData = try #require(badgedImage.pngData())
-        let blankData = try #require(blankImage.pngData())
+        // The image is drawn at 75% of badgeSize (36x36) centered.
+        // Center pixel (24, 24) should be the templated image fill color (.red).
+        let centerColor = try #require(color(at: CGPoint(x: 24, y: 24), in: badgedImage))
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        centerColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        #expect(r > 0.9, "Center pixel should be red (fillColor)")
+        #expect(b < 0.1, "Center pixel should not be blue")
         
-        #expect(badgedData.count > blankData.count, "The badged image should contain composite pixel data, not just blank bounds")
-        #expect(badgedData != blankData)
+        // A pixel near the edge (e.g. x: 4, y: 24) is outside the 36x36 icon (which starts at x=6), 
+        // but inside the rounded rect background. It should be the background color (.blue).
+        let edgeColor = try #require(color(at: CGPoint(x: 4, y: 24), in: badgedImage))
+        edgeColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        #expect(r < 0.1, "Edge pixel should not be red")
+        #expect(b > 0.9, "Edge pixel should be blue (backgroundColor)")
     }
 }
