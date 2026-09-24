@@ -42,7 +42,8 @@ final class MapItemSheetViewTests: OBATestCase {
             presentingController: { nil },
             coordinator: SheetCoordinator(root: .home),
             searchDisplayModel: MapSearchDisplayModel(),
-            stopsObserver: MapStopsObserver(application: application)
+            stopsObserver: MapStopsObserver(application: application),
+            tripPlannerMapDisplayModel: TripPlannerMapDisplayModel()
         )
     }
 
@@ -149,5 +150,59 @@ final class MapItemSheetViewTests: OBATestCase {
 
         #expect(view.application === application)
         #expect(view.coordinate?.latitude == coordinate.latitude)
+    }
+
+    @Test @MainActor
+    func `Region with OTP URL produces a plan trip handler that pushes trip planner`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+
+        // Verify Puget Sound region supports OTP
+        #expect(application.regionsService.currentRegion?.supportsOTP == true)
+
+        let placemark = MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3))
+        let mapItem = MKMapItem(placemark: placemark)
+        mapItem.name = "Pike Place Market"
+
+        var pushed: AppSheetRoute?
+
+        // Create a handler like MapItemSheetView does
+        let planTripHandler: (() -> Void)? = application.regionsService.currentRegion?.supportsOTP == true ? {
+            pushed = .tripPlanner(TripPlannerRequest(destination: mapItem))
+        } : nil
+
+        #expect(planTripHandler != nil)
+        planTripHandler?()
+
+        #expect(pushed != nil)
+        if case .tripPlanner(let request) = pushed {
+            #expect(request.destination === mapItem)
+        } else {
+            Issue.record("Expected .tripPlanner route")
+        }
+    }
+
+    @Test @MainActor
+    func `Region without OTP URL produces nil plan trip handler`() {
+        let coordinateRegion = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060),
+            latitudinalMeters: 1000.0,
+            longitudinalMeters: 1000.0
+        )
+        let noOTPRegion = Region(
+            name: "No OTP Region",
+            OBABaseURL: URL(string: "http://example.com")!,
+            coordinateRegion: coordinateRegion,
+            contactEmail: "test@example.com"
+        )
+
+        // Verify this region doesn't support OTP
+        #expect(noOTPRegion.supportsOTP == false)
+
+        // Simulate what MapItemSheetView does with this region
+        let planTripHandler: (() -> Void)? = noOTPRegion.supportsOTP == true ? {
+            // This shouldn't execute
+        } : nil
+
+        #expect(planTripHandler == nil)
     }
 }

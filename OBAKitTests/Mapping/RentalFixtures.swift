@@ -108,8 +108,9 @@ enum RentalFixtures {
     static func snapshot(
         added: [VehicleRental] = [],
         removed: [VehicleRental.ID] = [],
-        updated: [VehicleRental] = []
+        updated: [VehicleRental] = [],
+        fetchedAt: Date = Date(timeIntervalSince1970: 0)
     ) -> VehicleRentalSnapshot {
-        VehicleRentalSnapshot(added: added, removed: removed, updated: updated, fetchedAt: Date(timeIntervalSince1970: 0))
+        VehicleRentalSnapshot(added: added, removed: removed, updated: updated, fetchedAt: fetchedAt)
     }
 }
