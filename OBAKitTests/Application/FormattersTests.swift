@@ -1,8 +1,8 @@
-﻿//
+//
 //  FormattersTests.swift
 //  OBAKitTests
 //
-//  Copyright Â© Open Transit Software Foundation
+//  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
@@ -83,7 +83,7 @@ final class FormattersTests: OBATestCase {
     }
 
     /// A bookmark pin shows the user's chosen name visually, so VoiceOver has to
-    /// announce it too â€” otherwise the pin reads identically to a regular stop.
+    /// announce it too — otherwise the pin reads identically to a regular stop.
     @Test func `Formatted accessibility label leads with the bookmark name`() throws {
         let stop = try #require(Fixtures.loadSomeStops().first)
         let label = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "Home")
@@ -109,7 +109,7 @@ final class FormattersTests: OBATestCase {
     ///
     /// `Fixtures.dictionaryToModel` decodes with a plain `JSONDecoder`, whose
     /// default date strategy reads these numbers as seconds since the 2001
-    /// reference date â€” so the instants land in Nov 2054, temporal state
+    /// reference date — so the instants land in Nov 2054, temporal state
     /// `.future`, and the default stop sequence means `.arriving`. A +120 s
     /// prediction therefore reads "arrives 2 min late" on any machine until
     /// that date passes; pinning the phrase to the wall clock outright would
@@ -139,7 +139,7 @@ final class FormattersTests: OBATestCase {
 
     /// A schedule-only trip has a deviation of zero by definition, so the
     /// deviation phrase would falsely claim "on time". The label must say the
-    /// trip is schedule data instead â€” the widget pairs it with a concrete
+    /// trip is schedule data instead — the widget pairs it with a concrete
     /// clock time, which makes a false real-time claim louder.
     @Test func `Deviation label says scheduled for unpredicted trips`() throws {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
@@ -149,7 +149,7 @@ final class FormattersTests: OBATestCase {
     }
 
     /// The component overload exists for callers holding a view model rather than
-    /// the `ArrivalDeparture` it came from â€” `ArrivalDepartureItem` carries the
+    /// the `ArrivalDeparture` it came from — `ArrivalDepartureItem` carries the
     /// four values and not the model. Same gate, so `.unknown` must produce the
     /// same string the model form does.
     @Test func `Deviation label component form says scheduled for unknown status`() {
@@ -165,7 +165,7 @@ final class FormattersTests: OBATestCase {
     }
 
     /// And with a real prediction it must fall through to the deviation phrase
-    /// rather than short-circuiting â€” otherwise the gate would swallow every case.
+    /// rather than short-circuiting — otherwise the gate would swallow every case.
     @Test func `Deviation label component form uses the deviation phrase when predicted`() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
 
@@ -200,7 +200,7 @@ final class FormattersTests: OBATestCase {
     }
 
     /// A payload can carry predicted timestamps while declaring
-    /// `predicted: false`; the gate is the flag, not the fields â€” the same rule
+    /// `predicted: false`; the gate is the flag, not the fields — the same rule
     /// `DepartureTimeDisplay` applies before striking through a time.
     @Test func `Deviation label ignores stale predicted times when feed says not predicted`() throws {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
@@ -242,27 +242,27 @@ final class FormattersTests: OBATestCase {
     }
 
     /// U+2026, not three ASCII periods: `StopAnnotationView.titleLabel` truncates
-    /// with UIKit's own `â€¦`, and mixing the two glyphs is the inconsistency #514
+    /// with UIKit's own `…`, and mixing the two glyphs is the inconsistency #514
     /// is about. The marker lives in `OBALoc` so translators can substitute
-    /// locale-conventional overflow marks (zh-Hans `â€¦â€¦`).
+    /// locale-conventional overflow marks (zh-Hans `……`).
     @Test func `Formatted map routes over the limit appends ellipsis`() throws {
         let routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
         let label = try #require(Formatters.formattedMapRoutes(routes, limit: 3))
-        #expect(label == "10, 20, 30\u{2026}")
+        #expect(label == "10, 20, 30…")
         #expect(label.contains("\u{2026}"))
         #expect(!label.contains("..."))
         #expect(!label.hasPrefix("Routes:"))
     }
 
     /// The pin label and the callout must agree. Home/Recent still use
-    /// `Stop.subtitle` (`"Routes: â€¦"` with every route) â€” that is not a map
+    /// `Stop.subtitle` (`"Routes: …"` with every route) — that is not a map
     /// surface, so it is left alone.
     @Test func `Map callout uses the overflowing map route list, not plus-more`() throws {
         let stop = try #require(Fixtures.loadSomeStops().first)
         stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
 
         let callout = stop.mapCalloutText
-        #expect(callout == "#\(stop.code)\n10, 20, 30\u{2026}")
+        #expect(callout == "#\(stop.code)\n10, 20, 30…")
         #expect(!callout.contains("Routes:"))
 
         let subtitle = try #require(stop.subtitle)
@@ -273,7 +273,7 @@ final class FormattersTests: OBATestCase {
     }
 
     /// Bookmark pins title with `bookmark.name`, so the callout is the only
-    /// place routes appear â€” keep every route (#1342).
+    /// place routes appear — keep every route (#1342).
     @Test func `Bookmark callout lists every route without truncating`() throws {
         let stop = try #require(Fixtures.loadSomeStops().first)
         stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
