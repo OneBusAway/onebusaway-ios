@@ -133,6 +133,15 @@ final class StopViewModelTests: OBATestCase {
         return (viewModel, app)
     }
 
+    /// A minimal `Stop`, decoded rather than constructed: `Stop` has no public
+    /// memberwise initializer, and both the preferences setter and
+    /// `ProximityAlert` take the real model.
+    private func makeStop(id: StopID, routeIDs: [String] = ["1_R1"]) throws -> Stop {
+        let routes = routeIDs.map { "\"\($0)\"" }.joined(separator: ",")
+        let json = #"{"id":"\#(id)","code":"TEST","name":"Test Stop","lat":47.6,"lon":-122.3,"locationType":0,"routeIds":[\#(routes)],"direction":""}"#
+        return try JSONDecoder().decode(Stop.self, from: Data(json.utf8))
+    }
+
     /// Hides every route present in `arrivals_and_departures_for_stop_1_10020.json`
     /// (routes `1_30` and `1_65`) so the rider never sees a real-time row from that
     /// fixture. Writes straight to the view model's in-memory `stopPreferences` via
@@ -308,9 +317,7 @@ final class StopViewModelTests: OBATestCase {
         let region = try #require(app.currentRegion)
 
         // The fixture's stop serves a single route, "1_R1". Pre-hide it.
-        // We need a `Stop` object to call the data-store setter; build a minimal one from JSON.
-        let stopJSON = #"{"id":"1_TEST","code":"TEST","name":"Test Stop","lat":47.6,"lon":-122.3,"locationType":0,"routeIds":["1_R1"],"direction":""}"#
-        let stub = try JSONDecoder().decode(Stop.self, from: stopJSON.data(using: .utf8)!)
+        let stub = try makeStop(id: testStopID)
         var prefs = StopPreferences()
         prefs.hiddenRoutes = ["1_R1"]
         app.stopPreferencesDataStore.set(stopPreferences: prefs, stop: stub, region: region)
@@ -949,29 +956,124 @@ final class StopViewModelTests: OBATestCase {
         #expect(!app.userDataStore.alarms.isEmpty)
     }
 
-    // MARK: - Live Activity Toast
+    // MARK: - Transient Toast
 
-    /// The toast's own contract: the flag goes up on demand, and a second signal
+    /// The toast's own contract: the text goes up on demand, and a second signal
     /// arriving inside the first one's window leaves it up rather than inheriting
     /// that window's imminent dismissal.
     ///
-    /// The race the `Task.checkCancellation()` in `signalLiveActivityStarted`
-    /// closes is not reachable from here. It needs `cancel()` to land after the
-    /// sleep has already resumed but before its continuation runs — a window the
-    /// scheduler owns, with no seam to force it from a test. Same limitation
+    /// The race the `Task.checkCancellation()` in `signalToast(_:)` closes is not
+    /// reachable from here. It needs `cancel()` to land after the sleep has
+    /// already resumed but before its continuation runs — a window the scheduler
+    /// owns, with no seam to force it from a test. Same limitation
     /// `ProximityAlertTests` documents for the 24-hour expiry boundary.
     @Test @MainActor
-    func `Signalling a Live Activity raises the toast and a second signal keeps it up`() {
+    func `Signalling a toast raises it and a second signal keeps it up`() {
         let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
 
-        #expect(!viewModel.liveActivityStarted)
+        #expect(viewModel.transientToast == nil)
 
-        viewModel.signalLiveActivityStarted()
-        #expect(viewModel.liveActivityStarted)
+        viewModel.signalToast("Tracking on Lock Screen")
+        #expect(viewModel.transientToast == "Tracking on Lock Screen")
 
         // The duplicate-Track path signals again; the rider must still see a toast.
-        viewModel.signalLiveActivityStarted()
-        #expect(viewModel.liveActivityStarted)
+        viewModel.signalToast("Tracking on Lock Screen")
+        #expect(viewModel.transientToast == "Tracking on Lock Screen")
+    }
+
+    /// The generalisation's own contract: the toast carries a message, so a
+    /// second occasion inside the first one's window shows *its* words rather
+    /// than leaving the earlier confirmation on screen.
+    @Test @MainActor
+    func `A second toast replaces the first one's text`() {
+        let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+
+        viewModel.signalToast("Tracking on Lock Screen")
+        viewModel.signalToast("Nearby alert cancelled")
+
+        #expect(viewModel.transientToast == "Nearby alert cancelled")
+    }
+
+    // MARK: - Proximity Alert
+
+    @Test @MainActor
+    func `A stop with no proximity alert exposes none`() {
+        let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+        #expect(viewModel.proximityAlert == nil)
+    }
+
+    /// An alert set before this page opened has to be visible from the first
+    /// draw, or the menu offers to set a second one on the same stop.
+    @Test @MainActor
+    func `An alert set before the page opened is picked up at construction`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let alert = ProximityAlert(stop: try makeStop(id: testStopID))
+        app.userDataStore.add(proximityAlert: alert)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        #expect(viewModel.proximityAlert?.id == alert.id)
+    }
+
+    /// The store is app-wide and anything can mutate it — including a geofence
+    /// firing in the background and cancelling its own one-shot alert — so the
+    /// page tracks the notification rather than only its own writes.
+    @Test @MainActor
+    func `An alert added while the page is open appears and then clears`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        #expect(viewModel.proximityAlert == nil)
+
+        let alert = ProximityAlert(stop: try makeStop(id: testStopID))
+        app.userDataStore.add(proximityAlert: alert)
+
+        // `.proximityAlertsDidChange` fans out through `receive(on: main)`, so
+        // give the runloop a few hops to deliver — same as the filter test above.
+        for _ in 0..<5 { await Task.yield() }
+        #expect(viewModel.proximityAlert?.id == alert.id)
+
+        app.userDataStore.delete(proximityAlert: alert)
+
+        for _ in 0..<5 { await Task.yield() }
+        #expect(viewModel.proximityAlert == nil)
+    }
+
+    /// Another stop's alert must not light up this page's menu item.
+    @Test @MainActor
+    func `An alert on a different stop is ignored`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        app.userDataStore.add(proximityAlert: ProximityAlert(stop: try makeStop(id: "1_SOMEWHERE_ELSE")))
+
+        for _ in 0..<5 { await Task.yield() }
+        #expect(viewModel.proximityAlert == nil)
+    }
+
+    /// An alert set for a trip that ended a day ago must never reach the menu,
+    /// which is what lets the item fall back to "Alert Me" without this class
+    /// running a timer of its own.
+    ///
+    /// Two mechanisms produce that outcome and this pins the outcome rather than
+    /// which one ran: `activeAlert(for:)` filters expired alerts, and the
+    /// manager's reconciliation — which the store's change notification triggers
+    /// — reaps them outright.
+    @Test @MainActor
+    func `An expired alert never reaches the page`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let expired = ProximityAlert(
+            stop: try makeStop(id: testStopID),
+            createdAt: Date(timeIntervalSinceNow: -(ProximityAlert.expirationInterval + 60))
+        )
+        app.userDataStore.add(proximityAlert: expired)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        #expect(viewModel.proximityAlert == nil)
     }
 
     // MARK: - Review prompt success recording

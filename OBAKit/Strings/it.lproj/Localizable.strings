@@ -1321,6 +1321,50 @@
 /* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.past_toggle_show_a11y_fmt" = "Mostra %d partenze passate";
 
+/* Body of the alert shown when location is denied for the app. %@ is the app name. */
+"stop_page.proximity_alert.location_denied.message_fmt" = "Per ricevere avvisi di prossimità, consenti la posizione per %@ in Impostazioni.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but location is denied for the app. */
+"stop_page.proximity_alert.location_denied.title" = "La posizione è disattivata";
+
+/* Body of the alert shown when location access is restricted on the device. */
+"stop_page.proximity_alert.location_restricted.message" = "Gli avvisi di prossimità richiedono l'accesso alla posizione, che potrebbe essere limitato da un'impostazione di questo dispositivo.";
+
+/* Title of the alert shown when location may be limited by a device restriction the rider does not control. */
+"stop_page.proximity_alert.location_restricted.title" = "Posizione non disponibile";
+
+/* Body of the alert asking the rider to widen location access from While Using to Always. %@ is the app name. */
+"stop_page.proximity_alert.location_when_in_use.message_fmt" = "%@ ha accesso alla posizione solo quando è aperta. Gli avvisi di prossimità ne hanno bisogno anche in background, così funzionano con il telefono in tasca.";
+
+/* Title of the alert shown when the rider has granted location only While Using, which nearby alerts cannot work with. */
+"stop_page.proximity_alert.location_when_in_use.title" = "Consenti posizione sempre";
+
+/* Stop Location menu action that takes down the approach notification already set on this stop. */
+"stop_page.proximity_alert.menu.cancel" = "Annulla avviso di prossimità";
+
+/* Stop Location menu action that sets a notification for when the rider approaches this stop. */
+"stop_page.proximity_alert.menu.set" = "Avvisami quando sono vicino";
+
+/* Body of the alert shown when notifications are denied. %@ is the app name. */
+"stop_page.proximity_alert.notifications_denied.message_fmt" = "Gli avvisi di prossimità arrivano come notifiche. Consentile per %@ in Impostazioni.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but notifications are denied in Settings. */
+"stop_page.proximity_alert.notifications_denied.title" = "Le notifiche sono disattivate";
+
+/* Button that opens the system Settings app so the rider can grant what a nearby alert needs. */
+"stop_page.proximity_alert.open_settings" = "Apri Impostazioni";
+
+/* Body of the alert shown when the app is already monitoring every region iOS allows. %1$@ is the app name and %2$d is the number of regions. */
+"stop_page.proximity_alert.region_limit.message_fmt" = "iOS consente a %1$@ di monitorare %2$d luoghi alla volta. Annullane uno per aggiungerne un altro.";
+
+/* Title of the alert shown when iOS will not monitor another region because the app is already at its limit. */
+"stop_page.proximity_alert.region_limit.title" = "Troppi avvisi";
+
+/* Toast confirming the rider's nearby alert for this stop was taken down. */
+"stop_page.proximity_alert.toast.cancelled" = "Avviso di prossimità annullato";
+
+/* Toast confirming a nearby alert was set. %@ is the name of the stop. */
+"stop_page.proximity_alert.toast.set_fmt" = "Ti avviseremo quando sarai vicino a %@";
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "sveglia impostata";
 

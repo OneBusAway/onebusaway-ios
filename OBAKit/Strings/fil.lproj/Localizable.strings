@@ -1321,6 +1321,50 @@
 /* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.past_toggle_show_a11y_fmt" = "Ipakita ang %d nakaraang pag-alis";
 
+/* Body of the alert shown when location is denied for the app. %@ is the app name. */
+"stop_page.proximity_alert.location_denied.message_fmt" = "Para makatanggap ng mga abiso kapag malapit, payagan ang lokasyon para sa %@ sa Settings.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but location is denied for the app. */
+"stop_page.proximity_alert.location_denied.title" = "Naka-off ang lokasyon";
+
+/* Body of the alert shown when location access is restricted on the device. */
+"stop_page.proximity_alert.location_restricted.message" = "Kailangan ng access sa lokasyon ang mga abiso kapag malapit, at maaaring limitado ito ng isang setting sa device na ito.";
+
+/* Title of the alert shown when location may be limited by a device restriction the rider does not control. */
+"stop_page.proximity_alert.location_restricted.title" = "Hindi available ang lokasyon";
+
+/* Body of the alert asking the rider to widen location access from While Using to Always. %@ is the app name. */
+"stop_page.proximity_alert.location_when_in_use.message_fmt" = "May access lang ang %@ sa lokasyon habang bukas ito. Kailangan din ng mga abiso kapag malapit ang lokasyon sa background, para gumana kahit nasa bulsa ang telepono mo.";
+
+/* Title of the alert shown when the rider has granted location only While Using, which nearby alerts cannot work with. */
+"stop_page.proximity_alert.location_when_in_use.title" = "Payagan ang lokasyon nang palagi";
+
+/* Stop Location menu action that takes down the approach notification already set on this stop. */
+"stop_page.proximity_alert.menu.cancel" = "Kanselahin ang abiso kapag malapit";
+
+/* Stop Location menu action that sets a notification for when the rider approaches this stop. */
+"stop_page.proximity_alert.menu.set" = "Abisuhan ako kapag malapit na";
+
+/* Body of the alert shown when notifications are denied. %@ is the app name. */
+"stop_page.proximity_alert.notifications_denied.message_fmt" = "Dumarating ang mga abiso kapag malapit bilang notification. Payagan ang mga ito para sa %@ sa Settings.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but notifications are denied in Settings. */
+"stop_page.proximity_alert.notifications_denied.title" = "Naka-off ang mga notification";
+
+/* Button that opens the system Settings app so the rider can grant what a nearby alert needs. */
+"stop_page.proximity_alert.open_settings" = "Buksan ang Settings";
+
+/* Body of the alert shown when the app is already monitoring every region iOS allows. %1$@ is the app name and %2$d is the number of regions. */
+"stop_page.proximity_alert.region_limit.message_fmt" = "Pinapayagan ng iOS ang %1$@ na magbantay ng %2$d na lugar nang sabay. Kanselahin ang isa para makadagdag ng iba.";
+
+/* Title of the alert shown when iOS will not monitor another region because the app is already at its limit. */
+"stop_page.proximity_alert.region_limit.title" = "Masyadong maraming abiso";
+
+/* Toast confirming the rider's nearby alert for this stop was taken down. */
+"stop_page.proximity_alert.toast.cancelled" = "Kinansela ang abiso kapag malapit";
+
+/* Toast confirming a nearby alert was set. %@ is the name of the stop. */
+"stop_page.proximity_alert.toast.set_fmt" = "Aabisuhan ka namin kapag malapit ka na sa %@";
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "may nakatakdang paalala";
 
