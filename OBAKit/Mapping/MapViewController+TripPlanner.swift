@@ -22,6 +22,8 @@ import UIKit
 extension MapViewController {
 
     func showTripPlannerMapView() {
+        isShowingTripPlannerMap = true
+
         tripPlannerMapView.mapType = mapRegionManager.mapView.mapType
 
         tripPlannerMapView.isHidden = false
@@ -35,7 +37,14 @@ extension MapViewController {
     }
 
     func hideTripPlannerMapView() {
-        mapRegionManager.mapView.mapType = tripPlannerMapView.mapType
+        isShowingTripPlannerMap = false
+
+        // Only the region comes back. `mapType` used to be copied here too, which
+        // overwrote any choice the rider made during the trip: the picker writes to
+        // the main map, the trip map only received the value once on the way in,
+        // and this line then put the stale one back. Both maps now track the
+        // rider's choice while route mode is up (`bindMapType`), so the main map
+        // already holds it. See #1451.
         mapRegionManager.mapView.region = tripPlannerMapView.region
 
         mapRegionManager.mapView.isHidden = false
