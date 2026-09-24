@@ -39,7 +39,10 @@ final class RESTAPIURLBuilderTests {
         components.year = 2023
         components.month = 1
         components.day = 1
-        let date = Calendar.current.date(from: components)!
+        components.hour = 12
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = calendar.date(from: components)!
         
         let urlWithDate = builder.getScheduleForRoute(id: "1_100", date: date)
         let urlComponents = URLComponents(url: urlWithDate, resolvingAgainstBaseURL: false)
@@ -56,7 +59,10 @@ final class RESTAPIURLBuilderTests {
         components.year = 2023
         components.month = 1
         components.day = 1
-        let date = Calendar.current.date(from: components)!
+        components.hour = 12
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = calendar.date(from: components)!
         
         let urlWithDate = builder.getScheduleForStop(id: "1_10020", date: date)
         let urlComponents = URLComponents(url: urlWithDate, resolvingAgainstBaseURL: false)
