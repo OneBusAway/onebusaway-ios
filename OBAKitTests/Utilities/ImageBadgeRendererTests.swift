@@ -12,6 +12,7 @@ import Testing
 import UIKit
 @testable import OBAKitCore
 
+@MainActor
 @Suite(.serialized)
 final class ImageBadgeRendererTests {
     
