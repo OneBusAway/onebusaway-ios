@@ -119,6 +119,10 @@ public class StopViewController: UIViewController,
     /// Controls whether departures before the transfer arrival time are visible (local UI state).
     private var showAllTransferDepartures = false
 
+    /// What `$onDemandServices` last emitted. `@Published` emits before the
+    /// view model stores the value, so the list reads this copy instead.
+    private var displayedOnDemandServices: [OnDemandService] = []
+
     private var schedulesButton: UIBarButtonItem?
 
     // MARK: - Init/Deinit
@@ -1340,7 +1344,7 @@ private extension StopViewController {
     /// Mirrors the redesigned page's `OnDemandServicesSection`: one row per
     /// service, its name over its kind.
     var onDemandServicesSection: OBAListViewSection? {
-        let services = viewModel.onDemandServices
+        let services = displayedOnDemandServices
         guard !services.isEmpty else { return nil }
 
         let rows = services.map { service in
@@ -1385,11 +1389,10 @@ private extension StopViewController {
     func bindOnDemandServicesSink() {
         viewModel.$onDemandServices
             .dropFirst()
-            .sink { [weak self] _ in
-                // `@Published` emits before the value is stored; rebuild once it is.
-                Task { @MainActor [weak self] in
-                    self?.listView.applyData(animated: false)
-                }
+            .sink { [weak self] services in
+                guard let self else { return }
+                displayedOnDemandServices = services
+                listView.applyData(animated: false)
             }
             .store(in: &cancellables)
     }
