@@ -22,6 +22,8 @@ import UIKit
 extension MapViewController {
 
     func showTripPlannerMapView() {
+        isShowingTripPlannerMap = true
+
         tripPlannerMapView.mapType = mapRegionManager.mapView.mapType
 
         tripPlannerMapView.isHidden = false
@@ -35,6 +37,8 @@ extension MapViewController {
     }
 
     func hideTripPlannerMapView() {
+        isShowingTripPlannerMap = false
+
         mapRegionManager.mapView.mapType = tripPlannerMapView.mapType
         mapRegionManager.mapView.region = tripPlannerMapView.region
 

@@ -331,10 +331,12 @@ class MapViewController: UIViewController,
 
     func centerMapOnUserLocation() {
         guard isLoadedAndOnScreen else { return }
-        let userLocation = mapRegionManager.mapView.userLocation
+
+        let mapView = visibleMapView
+        let userLocation = mapView.userLocation
         guard userLocation.isValid else { return }
 
-        mapRegionManager.mapView.setCenterCoordinate(
+        mapView.setCenterCoordinate(
             centerCoordinate: userLocation.coordinate,
             zoomLevel: viewModel.zoomLevelForCurrentLocation(),
             animated: true
@@ -533,6 +535,23 @@ class MapViewController: UIViewController,
         mapView.pinToSuperview(.edges)
         return mapView
     }()
+
+    /// True while `tripPlannerMapView` is the map on screen. Set by
+    /// `showTripPlannerMapView()` and `hideTripPlannerMapView()`, which live in
+    /// `MapViewController+TripPlanner.swift` — hence internal, not `private(set)`.
+    var isShowingTripPlannerMap = false
+
+    /// The map the rider is actually looking at. `tripPlannerMapView` stands in for
+    /// the main map for the duration of route mode, so anything that moves or reads
+    /// "the map" has to ask which of the two is on screen. See #1441.
+    ///
+    /// Keyed on `isShowingTripPlannerMap` rather than on either map's `isHidden`:
+    /// `tripPlannerMapView` is lazy and starts life with `isHidden == false`, so an
+    /// `isHidden` test would name the wrong map until the first planned trip ends,
+    /// and would build the map merely to ask the question.
+    var visibleMapView: MKMapView {
+        isShowingTripPlannerMap ? tripPlannerMapView : mapRegionManager.mapView
+    }
 
     // MARK: - Map Type
     public lazy var toggleMapTypeButton: UIButton = {
