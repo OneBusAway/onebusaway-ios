@@ -175,7 +175,11 @@ import OBAKitCore
         }
 
         Logger.error("On-demand zones fetch failed: \(error)")
-        if services.isEmpty {
+        // Asks what is drawn, not what was fetched: a zoomed-out viewport
+        // removes the zones but keeps `services`, and a live row over an
+        // empty map would say "there is nothing here".
+        let isNothingDrawn = overlays.isEmpty && annotations.isEmpty
+        if isNothingDrawn {
             setAvailability(.unavailable(reason: Strings.onDemandZonesUnavailable))
         }
     }
