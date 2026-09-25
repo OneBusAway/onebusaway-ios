@@ -427,7 +427,7 @@ struct MapPanelRootView: View {
         }
         ForEach(layersModel.onDemandMarkers) { marker in
             Marker(marker.title ?? "", systemImage: "car.fill", coordinate: marker.coordinate)
-                .tint(Color(uiColor: layersModel.onDemandMarkerColor(for: marker)))
+                .tint(Color(uiColor: marker.color))
                 .tag(MapPinSelection.onDemandZone(marker.id))
         }
     }

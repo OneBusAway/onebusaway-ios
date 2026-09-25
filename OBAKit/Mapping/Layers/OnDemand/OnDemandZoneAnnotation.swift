@@ -19,12 +19,15 @@ import OBAKitCore
 nonisolated final class OnDemandZoneAnnotation: NSObject, MKAnnotation, Identifiable {
     let service: OnDemandService
     let coordinate: CLLocationCoordinate2D
+    /// The service's route colour, resolved once when the layer draws it.
+    let color: UIColor
 
     var title: String? { service.name }
 
-    init(service: OnDemandService, coordinate: CLLocationCoordinate2D) {
+    init(service: OnDemandService, coordinate: CLLocationCoordinate2D, color: UIColor) {
         self.service = service
         self.coordinate = coordinate
+        self.color = color
         super.init()
     }
 }

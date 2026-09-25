@@ -239,11 +239,6 @@ import OTPKit
         onDemandMarkers.first { $0.id == id }
     }
 
-    /// The marker's colour, matching the UIKit map's marker tint.
-    func onDemandMarkerColor(for marker: OnDemandZoneAnnotation) -> UIColor {
-        boundOnDemandLayer?.markerColor(for: marker) ?? ThemeColors.shared.brand
-    }
-
     /// The detail surface the registered layers offer for `annotation` —
     /// the same lookup `MapViewController.presentLayerDetail` makes.
     func layerDetailViewController(for annotation: MKAnnotation) -> UIViewController? {
