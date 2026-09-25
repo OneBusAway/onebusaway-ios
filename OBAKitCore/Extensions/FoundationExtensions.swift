@@ -314,6 +314,19 @@ public extension String {
         return trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// The receiver reduced to what a dialer accepts — digits and `+` — or
+    /// nil when nothing dialable is left. Feeds publish phone numbers however
+    /// they like ("(703) 746-5222", "703.746.5222").
+    var dialableDigits: String? {
+        let cleaned = replacingOccurrences(of: "[^0-9+]", with: "", options: .regularExpression)
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
+    /// A `tel://` URL dialing `dialableDigits`, or nil when there are none.
+    var telephoneURL: URL? {
+        dialableDigits.flatMap { URL(string: "tel://\($0)") }
+    }
+
     /// Converts empty string fields into `nil`s.
     ///
     /// There are some parts of the OneBusAway REST API that return empty strings
