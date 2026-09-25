@@ -168,11 +168,27 @@ final class OnDemandServiceViewTests: OBATestCase {
     @Test func `Returning to the foreground refreshes the booking line`() throws {
         let clock = SendableBox(now)
         let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
+        let window = UIWindow()
+        window.rootViewController = controller
+        window.isHidden = false
+        defer { window.isHidden = true }
 
         clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
         NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
 
         #expect(controller.rootView.bookingLineText == Strings.onDemandBookingClosed)
+    }
+
+    /// A page that isn't on screen catches up in `viewWillAppear` instead.
+    @Test func `Returning to the foreground leaves an off-screen page alone`() throws {
+        let clock = SendableBox(now)
+        let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
+        let bookByLine = controller.rootView.bookingLineText
+
+        clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        #expect(controller.rootView.bookingLineText == bookByLine)
     }
 
     /// The one-shot timer fires at the earliest instant the line can change.

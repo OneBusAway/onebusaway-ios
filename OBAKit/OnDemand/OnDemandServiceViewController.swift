@@ -46,6 +46,10 @@ final class OnDemandServiceViewController: UIHostingController<OnDemandServiceVi
         fatalError("init(coder:) has not been implemented")
     }
 
+    isolated deinit {
+        boundaryRefreshTask?.cancel()
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshSummary()
@@ -58,7 +62,10 @@ final class OnDemandServiceViewController: UIHostingController<OnDemandServiceVi
         boundaryRefreshTask = nil
     }
 
+    /// An off-screen page (pushed under another, or in a dismissed sheet
+    /// still being torn down) refreshes on its next `viewWillAppear`.
     @objc private func applicationWillEnterForeground() {
+        guard viewIfLoaded?.window != nil else { return }
         refreshSummary()
     }
 
