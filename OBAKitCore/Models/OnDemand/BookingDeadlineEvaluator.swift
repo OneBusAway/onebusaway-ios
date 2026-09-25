@@ -187,11 +187,18 @@ public struct BookingDeadlineEvaluator: Sendable {
         )
     }
 
+    /// `latestPickup(D) = instant(D, rule.endPickupTime ?? 24:00:00)` — the
+    /// deadline every booking type anchors to, computed once rather than
+    /// duplicated per type (mirrors Android's `latestPickup`).
+    private func latestPickup(rule: AvailabilityRule, travelDate: ServiceDate) -> Date {
+        instant(travelDate, rule.endPickupTime ?? .endOfServiceDay)
+    }
+
     /// Type 0, real-time: booked at ride time. Notice fields are forbidden
     /// for this type and ignored even when a feed ships them (Charlevoix
     /// `booking_rule_CC4`).
     private func realTimeDeadlines(rule: AvailabilityRule, travelDate: ServiceDate) -> Deadlines {
-        (instant(travelDate, rule.endPickupTime ?? .endOfServiceDay), nil)
+        (latestPickup(rule: rule, travelDate: travelDate), nil)
     }
 
     /// Type 1, same-day minutes-based notice. A missing minimum would invent
@@ -200,8 +207,7 @@ public struct BookingDeadlineEvaluator: Sendable {
     /// start day here counts plain calendar days.
     private func sameDayDeadlines(rule: AvailabilityRule, bookingRule: OnDemandBookingRule, travelDate: ServiceDate) -> Deadlines? {
         guard let minimumMinutes = bookingRule.priorNoticeDurationMin else { return nil }
-        let latestPickup = instant(travelDate, rule.endPickupTime ?? .endOfServiceDay)
-        let cutoff = latestPickup.addingTimeInterval(-Double(minimumMinutes) * 60)
+        let cutoff = latestPickup(rule: rule, travelDate: travelDate).addingTimeInterval(-Double(minimumMinutes) * 60)
 
         let open: Date?
         if let maximumMinutes = bookingRule.priorNoticeDurationMax {
