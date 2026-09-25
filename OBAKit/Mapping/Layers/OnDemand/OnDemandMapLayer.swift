@@ -15,7 +15,8 @@ import OBAKitCore
 /// Fetches `services-for-location` in the server's viewport mode on every map
 /// region change and draws each zone as a filled `MKPolygon` in its route's
 /// colour, with a marker at the zone's bounding-box centre that opens the
-/// service page. Follows `RentalLayerCoordinator` for availability: the first
+/// service page. The UIKit map draws through `mapView`; the SwiftUI panel
+/// reads `zoneShapes` and `annotations` after `onMapContentDidChange`. Follows `RentalLayerCoordinator` for availability: the first
 /// `.requestNotFound` from the probe marks the server in `OnDemandSupport` and
 /// the row disappears; any other failure dims the row only while nothing is
 /// drawn, and the next region change retries.
@@ -26,8 +27,9 @@ import OBAKitCore
     private let application: Application
 
     /// Attached by `MapViewController` after registration; nil on the SwiftUI
-    /// panel, which cannot render overlays. Re-adds whatever is already loaded,
-    /// because the first fetch usually lands before the host attaches.
+    /// panel, which draws `zoneShapes` itself as `MapPolygon`s. Re-adds
+    /// whatever is already loaded, because the first fetch usually lands
+    /// before the host attaches.
     weak var mapView: MKMapView? {
         didSet {
             guard let mapView, mapView !== oldValue else { return }
@@ -42,6 +44,26 @@ import OBAKitCore
     private(set) var annotations: [OnDemandZoneAnnotation] = []
     /// Which service drew each overlay, by identity — the renderer claims only these.
     private var serviceIDByOverlay: [ObjectIdentifier: String] = [:]
+
+    /// Called after the drawn zones change, for a host with no `MKMapView`
+    /// (the SwiftUI panel) to re-read `zoneShapes` and `annotations`.
+    var onMapContentDidChange: (() -> Void)?
+
+    /// Shared by both surfaces so the panel's zones match the UIKit map's.
+    static let zoneFillAlpha: CGFloat = 0.2
+    static let zoneLineWidth: CGFloat = 2
+
+    /// Each drawn polygon with its colour, for the panel's `MapPolygon`s.
+    var zoneShapes: [OnDemandZoneShape] {
+        overlays.map { polygon in
+            let serviceID = serviceIDByOverlay[ObjectIdentifier(polygon)]
+            return OnDemandZoneShape(polygon: polygon, color: serviceID.map(color(forServiceID:)) ?? tintColor)
+        }
+    }
+
+    func markerColor(for zone: OnDemandZoneAnnotation) -> UIColor {
+        color(forServiceID: zone.service.id)
+    }
 
     /// Exposed so tests can await the in-flight fetch instead of polling.
     private(set) var fetchTask: Task<Void, Never>?
@@ -108,9 +130,9 @@ import OBAKitCore
         }
         let color = self.color(forServiceID: serviceID)
         let renderer = MKPolygonRenderer(polygon: polygon)
-        renderer.fillColor = color.withAlphaComponent(0.2)
+        renderer.fillColor = color.withAlphaComponent(Self.zoneFillAlpha)
         renderer.strokeColor = color
-        renderer.lineWidth = 2
+        renderer.lineWidth = Self.zoneLineWidth
         return renderer
     }
 
@@ -219,17 +241,30 @@ import OBAKitCore
 
         mapView?.addOverlays(overlays, level: .aboveRoads)
         mapView?.addAnnotations(annotations)
+        onMapContentDidChange?()
     }
 
     private func removeAllFromMap() {
+        let wasDrawn = !overlays.isEmpty || !annotations.isEmpty
         mapView?.removeOverlays(overlays)
         mapView?.removeAnnotations(annotations)
         overlays = []
         annotations = []
         serviceIDByOverlay = [:]
+        if wasDrawn {
+            onMapContentDidChange?()
+        }
     }
 
     private func color(forServiceID serviceID: String) -> UIColor {
         services.first { $0.id == serviceID }?.route?.color ?? tintColor
     }
+}
+
+/// One drawn zone polygon and the colour both surfaces paint it in.
+struct OnDemandZoneShape: Identifiable {
+    let polygon: MKPolygon
+    let color: UIColor
+
+    var id: ObjectIdentifier { ObjectIdentifier(polygon) }
 }

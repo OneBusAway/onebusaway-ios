@@ -100,6 +100,38 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(application.mapRegionManager.currentVisibleMapRect.height == 10_000)
     }
 
+    // MARK: - On-demand zones
+
+    /// A ~100 km viewport over Alexandria, inside the zones layer's zoom window.
+    private let alexandriaViewport = MKMapRect(
+        origin: MKMapPoint(CLLocationCoordinate2D(latitude: 39.1, longitude: -77.6)),
+        size: MKMapSize(width: 100_000, height: 100_000)
+    )
+
+    /// The panel has no `MKMapView`, so the zones reach its `Map` only through
+    /// the model; without this the layer fetched on every pan and drew nothing.
+    @Test func `A viewport fetch publishes the on-demand zones to the panel`() async throws {
+        model.viewportDidChange(alexandriaViewport)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+
+        #expect(model.onDemandZones.count == 1)
+        #expect(model.onDemandMarkers.map(\.service.id) == ["5088_77652"])
+        let marker = try #require(model.onDemandMarkers.first)
+        #expect(model.onDemandMarker(withID: marker.id) === marker)
+        #expect(model.layerDetailViewController(for: marker) is OnDemandServiceViewController)
+    }
+
+    @Test func `Zooming out clears the panel's on-demand zones`() async {
+        model.viewportDidChange(alexandriaViewport)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+        #expect(!model.onDemandZones.isEmpty)
+
+        model.viewportDidChange(MKMapRect(x: 0, y: 0, width: 5_000_000, height: 5_000_000))
+
+        #expect(model.onDemandZones.isEmpty)
+        #expect(model.onDemandMarkers.isEmpty)
+    }
+
     /// Leaving bikeshare must *empty* the panel, or the rider keeps seeing the
     /// old region's vehicles. Pins the whole chain — layer deactivation clears
     /// `visibleRentals` through the still-live subscription, then the coordinator
