@@ -37,7 +37,8 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     public struct ServiceWindow: Equatable, Hashable, Sendable {
         /// e.g. "Mon–Sat".
         public let days: String
-        /// e.g. "5:00 AM – 12:50 AM"; nil when the rule runs all service hours.
+        /// e.g. "5:00 AM – 12:50 AM"; nil when the rule sets neither pickup
+        /// time and so runs all service hours.
         public let hours: String?
     }
 
@@ -91,11 +92,16 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
 
         for rule in service.rules {
             let days = Set(rule.calendarIDs.compactMap { calendarsByID[$0] }.flatMap(\.days))
+            // One missing bound takes the default the evaluator books against
+            // (midnight, or `24:00:00` as `latestPickup` does), so the hours
+            // shown are the hours a deadline is computed for.
             let hours: String?
-            if let start = rule.startPickupTime, let end = rule.endPickupTime {
-                hours = "\(formatters.wallClock(start)) – \(formatters.wallClock(end))"
-            } else {
+            if rule.startPickupTime == nil, rule.endPickupTime == nil {
                 hours = nil
+            } else {
+                let start = rule.startPickupTime ?? .midnight
+                let end = rule.endPickupTime ?? .endOfServiceDay
+                hours = "\(formatters.wallClock(start)) – \(formatters.wallClock(end))"
             }
             let window = ServiceWindow(days: daysText(Array(days), shortWeekdaySymbols: formatters.shortWeekdaySymbols), hours: hours)
             if seen.insert(window).inserted {
