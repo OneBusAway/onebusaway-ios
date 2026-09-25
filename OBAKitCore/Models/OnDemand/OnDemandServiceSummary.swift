@@ -255,26 +255,11 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             wallClockFormatter.dateStyle = .none
             wallClockFormatter.timeStyle = .short
 
-            deadlineFormatterRelative = DateFormatter()
-            deadlineFormatterRelative.locale = locale
-            deadlineFormatterRelative.timeZone = timeZone
-            deadlineFormatterRelative.dateStyle = .medium
-            deadlineFormatterRelative.timeStyle = .short
-            deadlineFormatterRelative.doesRelativeDateFormatting = true
-            // Every template places the deadline mid-sentence ("Book by
-            // today at 5:00 PM"), so the relative word must not be capitalized.
-            deadlineFormatterRelative.formattingContext = .middleOfSentence
-
-            // Same styling, but never reads the live wall clock — used
-            // whenever `relativeProbe` can't vouch for a "Today"/"Tomorrow"
-            // label (see `deadline(_:today:)`).
-            deadlineFormatterAbsolute = DateFormatter()
-            deadlineFormatterAbsolute.locale = locale
-            deadlineFormatterAbsolute.timeZone = timeZone
-            deadlineFormatterAbsolute.dateStyle = .medium
-            deadlineFormatterAbsolute.timeStyle = .short
-            deadlineFormatterAbsolute.doesRelativeDateFormatting = false
-            deadlineFormatterAbsolute.formattingContext = .middleOfSentence
+            // The relative one is used only when `relativeProbe` can vouch
+            // for a "Today"/"Tomorrow" label (see `deadline(_:today:)`); the
+            // absolute one never reads the live wall clock.
+            deadlineFormatterRelative = Self.makeDeadlineFormatter(relative: true, timeZone: timeZone, locale: locale)
+            deadlineFormatterAbsolute = Self.makeDeadlineFormatter(relative: false, timeZone: timeZone, locale: locale)
 
             travelDateFormatter = DateFormatter()
             travelDateFormatter.locale = locale
@@ -289,6 +274,19 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             gregorian.timeZone = timeZone
             calendar = gregorian
             self.now = now
+        }
+
+        private static func makeDeadlineFormatter(relative: Bool, timeZone: TimeZone, locale: Locale) -> DateFormatter {
+            let formatter = DateFormatter()
+            formatter.locale = locale
+            formatter.timeZone = timeZone
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            formatter.doesRelativeDateFormatting = relative
+            // Every template places the deadline mid-sentence ("Book by
+            // today at 5:00 PM"), so the relative word must not be capitalized.
+            formatter.formattingContext = .middleOfSentence
+            return formatter
         }
 
         /// A nominal GTFS time of day, e.g. "5:00 AM"; `25:00:00` reads
