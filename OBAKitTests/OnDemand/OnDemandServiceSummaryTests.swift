@@ -265,6 +265,86 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(expected.contains("9:00"), "\(expected)")
     }
 
+    // MARK: - Unknown outcomes
+
+    /// Rewrites the fixture's references: each calendar through `calendar`,
+    /// plus `extraCalendars`, and the booking rules wholesale.
+    private func alexandria(
+        calendar: @escaping (inout [String: Any]) -> Void = { _ in },
+        extraCalendars: [[String: Any]] = [],
+        bookingRules: [[String: Any]],
+        ruleBookingIDs: [String]? = nil
+    ) throws -> OnDemandService {
+        try alexandria { json in
+            var data = json["data"] as! [String: Any]
+            var references = data["references"] as! [String: Any]
+            references["calendars"] = (references["calendars"] as! [[String: Any]]).map { element in
+                var element = element
+                calendar(&element)
+                return element
+            } + extraCalendars
+            references["bookingRules"] = bookingRules
+            data["references"] = references
+            if let ruleBookingIDs {
+                var entry = data["entry"] as! [String: Any]
+                entry["rules"] = zip(entry["rules"] as! [[String: Any]], ruleBookingIDs).map { rule, bookingID in
+                    var rule = rule
+                    rule["pickupBookingRuleId"] = bookingID
+                    rule["dropOffBookingRuleId"] = bookingID
+                    return rule
+                }
+                data["entry"] = entry
+            }
+            json["data"] = data
+        }
+    }
+
+    private let fixtureBookingRuleID = "5088_booking_route_77652"
+
+    @Test func `Same-day rule without a minimum notice is unknown`() throws {
+        let service = try alexandria(bookingRules: [["id": fixtureBookingRuleID, "bookingType": 1]])
+        #expect(summary(service).bookingLine == .unknown)
+    }
+
+    /// The service ends Wednesday. Tuesday's count-back walks past the notice
+    /// calendar's start (unknown) and Wednesday's cutoff has passed (closed):
+    /// with one date unevaluable the line cannot claim booking is closed.
+    @Test func `An ending service with a failed count-back is unknown rather than closed`() throws {
+        let service = try alexandria(
+            calendar: { $0["endDate"] = "2026-03-11" },
+            extraCalendars: [[
+                "id": "notice", "days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+                "startDate": "2026-03-10", "endDate": "2026-12-31", "exceptedDates": []
+            ]],
+            bookingRules: [[
+                "id": fixtureBookingRuleID, "bookingType": 2,
+                "priorNoticeLastDay": 1, "priorNoticeLastTime": "17:00:00", "priorNoticeCalendarId": "notice"
+            ]]
+        )
+        // 2026-03-10 18:00 in Los Angeles.
+        let tuesdayEvening = ISO8601DateFormatter().date(from: "2026-03-11T01:00:00Z")!
+        #expect(summary(service, now: tuesdayEvening).bookingLine == .unknown)
+    }
+
+    /// Mon–Sat is over (its last day's cutoff passed); Sunday's same-day
+    /// rule has no minimum notice. One settled rule cannot outvote an
+    /// unknown one.
+    @Test func `One settled rule and one unknown rule is unknown`() throws {
+        let service = try alexandria(
+            calendar: { calendar in
+                if calendar["id"] as? String == "5088_c_71675_b_85952_d_63" {
+                    calendar["endDate"] = "2026-03-10"
+                }
+            },
+            bookingRules: [
+                ["id": "prior-day", "bookingType": 2, "priorNoticeLastDay": 1, "priorNoticeLastTime": "17:00:00"],
+                ["id": "same-day-no-minimum", "bookingType": 1]
+            ],
+            ruleBookingIDs: ["prior-day", "same-day-no-minimum"]
+        )
+        #expect(summary(service).bookingLine == .unknown)
+    }
+
     @Test func `Day runs render as ranges and lists`() {
         let symbols = DateFormatter().shortWeekdaySymbols!  // en_US in the GMT-pinned test process
         #expect(OnDemandServiceSummary.daysText([.mon, .tue, .wed, .thu, .fri, .sat], shortWeekdaySymbols: symbols) == "Mon–Sat")
