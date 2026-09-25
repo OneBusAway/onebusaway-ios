@@ -35,11 +35,15 @@ import SwiftUI
         self.regionName = regionName
     }
 
-    /// Safe to call again (retry, or the view reappearing); the list keeps
-    /// showing its current state until the new result arrives.
+    /// Safe to call again (retry, or the view reappearing). A retry from the
+    /// failed state shows the spinner so the tap has visible feedback; a
+    /// loaded list stays on screen until the new result arrives.
     func load() async {
         loadGeneration += 1
         let generation = loadGeneration
+        if case .failed = state {
+            state = .loading
+        }
         let newState = await fetchState()
         // A cancelled load (the view went away) must not report the
         // cancellation as a failure; the next appearance loads again.
@@ -48,9 +52,8 @@ import SwiftUI
     }
 
     private func fetchState() async -> State {
-        guard let apiService else {
-            return .failed(UnstructuredError("No API Service").localizedDescription)
-        }
+        // Without a region there is no server to ask and nothing to retry.
+        guard let apiService else { return .loaded([]) }
         // The map layer's probe already found no `/api/ondemand` here.
         if apiService.onDemandSupport.isKnownUnsupported(baseURL: apiService.baseURL) {
             return .loaded([])
