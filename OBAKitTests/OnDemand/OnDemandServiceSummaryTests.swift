@@ -78,7 +78,8 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         }
         // Cutoff = 2026-03-10 17:00 LA for a ride on Wed 2026-03-11.
         #expect(deadline.contains("5:00"), "\(deadline)")
-        #expect(deadline.localizedCaseInsensitiveContains("today"), "\(deadline)")
+        // The relative word sits mid-sentence: "Book by today at 5:00 PM".
+        #expect(deadline.hasPrefix("today"), "\(deadline)")
         #expect(travelDate.contains("Mar 11"), "\(travelDate)")
         #expect(travelDate.contains("Wed"), "\(travelDate)")
     }
@@ -245,7 +246,7 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         }
         #expect(travelDate.contains("Mar 10"), "\(travelDate)")
         #expect(travelDate.contains("Tue"), "\(travelDate)")
-        #expect(deadline.localizedCaseInsensitiveContains("today"), "\(deadline)")
+        #expect(deadline.hasPrefix("today"), "\(deadline)")
         // Same-day rule's cutoff: endPickupTime 24:50:00 minus the 60-minute
         // notice = 23:50 the same service day → 11:50 PM.
         #expect(deadline.contains("11:50"), "\(deadline)")

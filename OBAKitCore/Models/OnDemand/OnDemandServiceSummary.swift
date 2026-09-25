@@ -255,6 +255,9 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             deadlineFormatterRelative.dateStyle = .medium
             deadlineFormatterRelative.timeStyle = .short
             deadlineFormatterRelative.doesRelativeDateFormatting = true
+            // Every template places the deadline mid-sentence ("Book by
+            // today at 5:00 PM"), so the relative word must not be capitalized.
+            deadlineFormatterRelative.formattingContext = .middleOfSentence
 
             // Same styling, but never reads the live wall clock — used
             // whenever `relativeProbe` can't vouch for a "Today"/"Tomorrow"
@@ -265,6 +268,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             deadlineFormatterAbsolute.dateStyle = .medium
             deadlineFormatterAbsolute.timeStyle = .short
             deadlineFormatterAbsolute.doesRelativeDateFormatting = false
+            deadlineFormatterAbsolute.formattingContext = .middleOfSentence
 
             travelDateFormatter = DateFormatter()
             travelDateFormatter.locale = locale
