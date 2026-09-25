@@ -153,7 +153,7 @@ final class OnDemandServiceViewTests: OBATestCase {
 
     /// A rider who calls and comes back after the cutoff must not still see
     /// "Book by today at 5:00 PM".
-    @Test func `Refreshing past the cutoff replaces the book-by line`() throws {
+    @Test func `Refreshing past the cutoff replaces the book-by line`() async throws {
         let clock = SendableBox(now)
         let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
         #expect(controller.rootView.bookingLineText?.contains("5:00") == true)
@@ -161,11 +161,12 @@ final class OnDemandServiceViewTests: OBATestCase {
         // 2026-03-10 17:30 in Los Angeles.
         clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
         controller.refreshSummary()
+        await controller.summaryBuildTask?.value
 
         #expect(controller.rootView.bookingLineText == Strings.onDemandBookingClosed)
     }
 
-    @Test func `Returning to the foreground refreshes the booking line`() throws {
+    @Test func `Returning to the foreground refreshes the booking line`() async throws {
         let clock = SendableBox(now)
         let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
         let window = UIWindow()
@@ -175,6 +176,7 @@ final class OnDemandServiceViewTests: OBATestCase {
 
         clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
         NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        await controller.summaryBuildTask?.value
 
         #expect(controller.rootView.bookingLineText == Strings.onDemandBookingClosed)
     }
@@ -188,7 +190,24 @@ final class OnDemandServiceViewTests: OBATestCase {
         clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
         NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
 
+        #expect(controller.summaryBuildTask == nil)
         #expect(controller.rootView.bookingLineText == bookByLine)
+    }
+
+    /// Only the newest rebuild lands, whichever finishes first.
+    @Test func `A superseded rebuild never replaces a newer one`() async throws {
+        let clock = SendableBox(ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!)
+        let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
+        controller.refreshSummary()
+        let staleBuild = try #require(controller.summaryBuildTask)
+
+        clock.value = now
+        controller.refreshSummary()
+        await staleBuild.value
+        await controller.summaryBuildTask?.value
+
+        #expect(staleBuild.isCancelled)
+        #expect(controller.rootView.bookingLineText?.contains("5:00") == true)
     }
 
     /// The one-shot timer fires at the earliest instant the line can change.
@@ -202,7 +221,7 @@ final class OnDemandServiceViewTests: OBATestCase {
 
     /// A page left open overnight must not keep saying "tomorrow" once
     /// tomorrow has become today.
-    @Test func `Refreshing past agency midnight updates the relative day`() throws {
+    @Test func `Refreshing past agency midnight updates the relative day`() async throws {
         // Mon 2026-03-09 23:30 in Los Angeles; Wednesday's ride is booked by Tue 17:00.
         let clock = SendableBox(ISO8601DateFormatter().date(from: "2026-03-10T06:30:00Z")!)
         let controller = makeController(service: try alexandria(), clock: clock)
@@ -213,6 +232,7 @@ final class OnDemandServiceViewTests: OBATestCase {
 
         clock.value = midnight.addingTimeInterval(30 * 60)
         controller.refreshSummary()
+        await controller.summaryBuildTask?.value
 
         let afterMidnight = try #require(controller.rootView.bookingLineText)
         #expect(afterMidnight != beforeMidnight, "the deadline moved from tomorrow to today")
