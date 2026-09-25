@@ -122,9 +122,9 @@ class OBATestCase {
 
     var restService: RESTAPIService!
 
-    func buildRESTService(dataLoader: MockDataLoader? = nil) -> RESTAPIService {
+    func buildRESTService(dataLoader: MockDataLoader? = nil, onDemandSupport: OnDemandSupport = OnDemandSupport()) -> RESTAPIService {
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier, surveyBaseURL: surveyBaseURL)
-        return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
+        return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name), onDemandSupport: onDemandSupport)
     }
 
     // MARK: - Network Request Stubbing
