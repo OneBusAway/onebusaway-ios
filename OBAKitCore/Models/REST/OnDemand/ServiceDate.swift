@@ -58,28 +58,16 @@ public struct ServiceDate: Hashable, Comparable, Sendable, Decodable, CustomStri
 public enum Weekday: String, CaseIterable, Sendable {
     case mon, tue, wed, thu, fri, sat, sun
 
-    /// `Calendar.component(.weekday, from:)` numbering: 1 = Sunday … 7 = Saturday.
+    /// `Calendar.component(.weekday, from:)` order: 1 = Sunday … 7 = Saturday.
+    private static let calendarOrder: [Weekday] = [.sun, .mon, .tue, .wed, .thu, .fri, .sat]
+
+    /// Out-of-range numbers read as Saturday.
     public init(calendarWeekday: Int) {
-        switch calendarWeekday {
-        case 1: self = .sun
-        case 2: self = .mon
-        case 3: self = .tue
-        case 4: self = .wed
-        case 5: self = .thu
-        case 6: self = .fri
-        default: self = .sat
-        }
+        let index = calendarWeekday - 1
+        self = Self.calendarOrder.indices.contains(index) ? Self.calendarOrder[index] : .sat
     }
 
     public var calendarWeekday: Int {
-        switch self {
-        case .sun: return 1
-        case .mon: return 2
-        case .tue: return 3
-        case .wed: return 4
-        case .thu: return 5
-        case .fri: return 6
-        case .sat: return 7
-        }
+        Self.calendarOrder.firstIndex(of: self)! + 1
     }
 }
