@@ -24,6 +24,9 @@ import OBAKitCore
 nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
 
     private let inner: MockDataLoader
+    /// Which requests the gate holds; the rest pass straight through, so a test can
+    /// hold one endpoint open while the app's other traffic keeps flowing.
+    private let isGated: @Sendable (URLRequest) -> Bool
     private let lock = NSLock()
 
     private var hasArrived = false
@@ -32,8 +35,9 @@ nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sen
     private var isReleased = false
     private var releaseContinuation: CheckedContinuation<Void, Never>?
 
-    init(_ inner: MockDataLoader) {
+    init(_ inner: MockDataLoader, gating isGated: @escaping @Sendable (URLRequest) -> Bool = { _ in true }) {
         self.inner = inner
+        self.isGated = isGated
     }
 
     /// Suspends until a request reaches the loader — i.e. until the code under test
@@ -66,6 +70,14 @@ nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sen
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        guard isGated(request) else {
+            // `MockDataLoader` answers without suspending, so without this a chain
+            // of passed-through requests would run start to finish without ever
+            // letting other tasks on the caller's actor in — unlike a real network.
+            await Task.yield()
+            return try await inner.data(for: request)
+        }
+
         let arrival = lock.withLock { () -> CheckedContinuation<Void, Never>? in
             hasArrived = true
             defer { arrivalContinuation = nil }

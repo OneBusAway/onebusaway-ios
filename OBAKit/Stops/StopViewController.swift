@@ -43,6 +43,7 @@ public class StopViewController: UIViewController,
         case survey
         case emptyData
         case serviceAlerts
+        case onDemandServices
         case pastArrivalDepartures(suffix: String)
         case arrivalDepartures(suffix: String)
         case loadMoreButton
@@ -543,6 +544,7 @@ public class StopViewController: UIViewController,
         }
 
         sections.append(serviceAlertsSection)
+        sections.append(onDemandServicesSection)
         sections.append(contentsOf: stopArrivalsSection)
 
         if self.stopPreferences.sortType == .route {
@@ -1061,6 +1063,27 @@ public class StopViewController: UIViewController,
         return listSection(serviceAlerts: alerts, showSectionTitle: true, sectionID: ListSections.serviceAlerts.sectionID)
     }
 
+    // MARK: - Data/On-demand services
+
+    /// Mirrors the redesigned page's `OnDemandServicesSection`: one row per
+    /// service, its name over its kind.
+    private var onDemandServicesSection: OBAListViewSection? {
+        let services = viewModel.onDemandServices
+        guard !services.isEmpty else { return nil }
+
+        let rows = services.map { service in
+            OBAListRowView.SubtitleViewModel(
+                title: service.name,
+                subtitle: Strings.onDemandKindTitle(service.serviceKind),
+                onSelectAction: { [weak self] _ in
+                    guard let self else { return }
+                    self.application.viewRouter.navigateTo(onDemandService: service, from: self)
+                }
+            )
+        }
+        return listViewSection(for: .onDemandServices, title: Strings.onDemandSectionTitle, items: rows)
+    }
+
     // MARK: - Data/Load More
     private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
     private var loadMoreItems: [AnyOBAListViewItem] {
@@ -1335,6 +1358,7 @@ public class StopViewController: UIViewController,
 private extension StopViewController {
     func bindListData() {
         bindArrivalsSink()
+        bindOnDemandServicesSink()
         bindStopSink()
         bindSurveysSink()
         bindPreferencesSinks()
@@ -1352,6 +1376,18 @@ private extension StopViewController {
                 listView.applyData(animated: false)
                 configureTabBarButtons()
                 beginUserActivity()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindOnDemandServicesSink() {
+        viewModel.$onDemandServices
+            .dropFirst()
+            .sink { [weak self] _ in
+                // `@Published` emits before the value is stored; rebuild once it is.
+                Task { @MainActor [weak self] in
+                    self?.listView.applyData(animated: false)
+                }
             }
             .store(in: &cancellables)
     }
