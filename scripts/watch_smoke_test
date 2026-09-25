@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+#
+# Builds WatchApp for an unpaired watch simulator, installs it, launches it,
+# and asserts it is still alive 8 seconds later.
+#
+# Why this exists: `simctl launch` (and XcodeBuildMCP's build_run_sim) print a
+# PID and exit 0 even when dyld kills the app 10 ms later — which is exactly
+# what a missing LD_RUNPATH_SEARCH_PATHS does. A compile cannot catch dyld,
+# Info.plist, or embedding failures; this can.
+#
+# Usage: scripts/watch_smoke_test [DERIVED_DATA_PATH]
+#   Assumes OBAKit.xcodeproj was generated with the watch targets enabled.
+#
+# On FAIL, the dyld/library-load query runs first and is printed up to 20
+# lines: the daemons that re-announce the dead bundle ID to Spotlight/
+# LaunchServices in the following seconds outnumber the one dyld line that
+# actually explains the crash, so a single tail-ed query buries it.
+#
+# `launchctl list` was measured to lag a live process by more than 18 s under
+# post-install daemon load, so it cannot gate PASS/FAIL here; it is reported
+# for information only. A dyld-killed app never survives the 8 s wait, so
+# `kill -0` plus a check of the process's own name is what keeps the
+# assertion meaningful (the name check guards against another process having
+# reused the PID).
+
+set -euo pipefail
+
+# Resolve the argument from the caller's directory before moving to the repo
+# root, which the script and project paths below assume.
+derived=${1:-DerivedData}
+[[ $derived = /* ]] || derived="$PWD/$derived"
+cd "$(dirname "$0")/.."
+
+udid=$(scripts/resolve_watch_simulator_udid)
+
+xcrun simctl boot "$udid" 2>/dev/null || true
+if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
+    echo "error: simctl bootstatus failed" >&2
+    exit 1
+fi
+
+# `-quiet` prints only warnings and errors; `set -e` fails the script on a
+# failed build, so a broken compile is reported as itself, not as a missing app.
+xcodebuild build \
+  -project OBAKit.xcodeproj \
+  -scheme WatchApp \
+  -configuration Debug \
+  -destination "platform=watchOS Simulator,id=$udid" \
+  -derivedDataPath "$derived" \
+  -quiet
+
+# The exact product path for -configuration Debug, rather than a `find` that
+# could pick a stale WatchApp.app if $derived is a reused/cached path holding
+# more than one matching build.
+app="$derived/Build/Products/Debug-watchsimulator/WatchApp.app"
+if [ ! -d "$app" ]; then
+    echo "error: $app was not produced by the build" >&2
+    exit 1
+fi
+
+bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
+
+xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
+if ! xcrun simctl install "$udid" "$app"; then
+    echo "error: simctl install failed" >&2
+    exit 1
+fi
+if ! launch_output=$(xcrun simctl launch "$udid" "$bundle_id"); then
+    echo "error: simctl launch failed" >&2
+    exit 1
+fi
+pid=${launch_output##*: }
+echo "launched $bundle_id as pid $pid; waiting 8 s"
+sleep 8
+
+alive=0
+if kill -0 "$pid" 2>/dev/null; then
+    alive=1
+fi
+
+comm=$(ps -p "$pid" -o comm= 2>/dev/null || true)
+name_ok=0
+if [ "$(basename "$comm")" = "WatchApp" ]; then
+    name_ok=1
+fi
+
+# Informational only: launchd registration does not gate PASS/FAIL (see the
+# header comment above for why).
+registered=0
+for _ in 1 2 3 4 5; do
+    if xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -q "$bundle_id"; then
+        registered=1
+        break
+    fi
+    sleep 2
+done
+if [ "$registered" = 1 ]; then
+    echo "launchd registration: yes"
+else
+    echo "launchd registration: not observed within 10 s (informational)"
+fi
+
+if [ "$alive" = 1 ] && [ "$name_ok" = 1 ]; then
+    echo "PASS: $bundle_id is running (pid $pid, comm=$comm)"
+    exit 0
+fi
+
+echo "FAIL: alive=$alive name_ok=$name_ok (comm=$comm)" >&2
+
+echo "--- dyld / library-load failures ---" >&2
+xcrun simctl spawn "$udid" log show --last 2m --style compact \
+  --predicate 'eventMessage CONTAINS "Library not loaded" OR eventMessage CONTAINS "OS_REASON_DYLD" OR eventMessage CONTAINS "dyld"' 2>/dev/null | head -20 >&2 || true
+
+echo "--- last minute of simulator log mentioning the app or dyld ---" >&2
+xcrun simctl spawn "$udid" log show --last 2m \
+  --predicate "process == 'WatchApp' OR eventMessage CONTAINS '$bundle_id'" 2>/dev/null | tail -40 >&2 || true
+exit 1

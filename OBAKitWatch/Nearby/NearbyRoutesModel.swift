@@ -1,0 +1,146 @@
+//
+//  NearbyRoutesModel.swift
+//  OBAKitWatch
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import Foundation
+import CoreLocation
+import Observation
+import OBAKitCore
+
+/// Drives the Nearby screen: one location fix → region check → nearby stops'
+/// arrivals → route directions.
+///
+/// All branching that can be tested lives in OBAKitCore (`NearbyRoutesLoader`,
+/// `NearbyRouteDirections`, `LocationService.requestLocation`,
+/// `RegionsService`); this maps their results to a `Phase`.
+@MainActor
+@Observable
+public final class NearbyRoutesModel {
+    public enum Phase: Equatable {
+        case awaitingAuthorization
+        case locationDenied
+        case locating
+        case loading
+        case noRegion
+        case failed(String)
+        case empty
+        case loaded([NearbyRouteDirection])
+    }
+
+    public private(set) var phase: Phase
+    /// The fix the current list was built around; the route screen measures
+    /// stop distances from it.
+    public private(set) var origin: CLLocation?
+    /// The region containing the last fix; the screen title.
+    public private(set) var regionName: String?
+    /// When the loaded list's arrivals were fetched; the route screen's
+    /// "Updated at" until its first poll lands.
+    public private(set) var loadedAt: Date?
+
+    @ObservationIgnored private let host: WatchAppHost?
+    @ObservationIgnored private let loader = NearbyRoutesLoader()
+    @ObservationIgnored private var refreshTask: Task<Void, Never>?
+
+    public init(host: WatchAppHost) {
+        self.host = host
+        self.phase = .locating
+    }
+
+    /// For previews and tests: a fixed phase, no services.
+    public init(phase: Phase, origin: CLLocation? = nil, regionName: String? = nil) {
+        self.host = nil
+        self.phase = phase
+        self.origin = origin
+        self.regionName = regionName
+        self.loadedAt = Date()
+    }
+
+    /// The loaded directions, or none.
+    public var directions: [NearbyRouteDirection] {
+        if case .loaded(let directions) = phase { return directions }
+        return []
+    }
+
+    /// Re-requests location and reloads. A refresh already in flight is
+    /// cancelled; the one-shot it was awaiting still resolves and is ignored.
+    public func refresh() {
+        refreshTask?.cancel()
+        refreshTask = Task { await performRefresh() }
+    }
+
+    private func performRefresh() async {
+        guard !Task.isCancelled else { return }
+        guard let host, ensureAuthorized(host) else { return }
+
+        phase = .locating
+
+        let fix: CLLocation
+        do {
+            fix = try await host.locationService.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
+        } catch {
+            guard !Task.isCancelled else { return }
+            if error is LocationServiceError {
+                phase = .locationDenied
+            } else {
+                phase = .failed(OBALoc("nearby.location_failed", value: "Couldn't find your location. Try again.", comment: "Shown when a location fix fails or times out"))
+            }
+            return
+        }
+        guard !Task.isCancelled else { return }
+        origin = fix
+
+        // `currentRegion` keeps the previous launch's region when a fix lands
+        // outside every region, so the rule keys off where the watch *is*.
+        guard let region = host.regionsService.physicallyLocatedRegion else {
+            regionName = nil
+            phase = .noRegion
+            return
+        }
+        regionName = region.name
+
+        // The fix above set currentLocation → RegionsService selected the
+        // region → StandaloneAPIServiceProvider rebuilt the service, all
+        // synchronously on the main actor; the host reads the provider directly.
+        guard let apiService = host.apiService else {
+            phase = .noRegion
+            return
+        }
+
+        await loadDirections(near: fix, using: apiService)
+    }
+
+    /// Returns whether location is authorized. When it is not, sets `phase`
+    /// accordingly and, if authorization has not been asked for yet, triggers
+    /// the system prompt.
+    private func ensureAuthorized(_ host: WatchAppHost) -> Bool {
+        switch host.locationService.authorizationStatus {
+        case .notDetermined:
+            phase = .awaitingAuthorization
+            host.locationService.requestInUseAuthorization()
+            return false
+        case .denied, .restricted:
+            phase = .locationDenied
+            return false
+        default:
+            return true
+        }
+    }
+
+    private func loadDirections(near fix: CLLocation, using apiService: RESTAPIService) async {
+        phase = .loading
+        do {
+            let directions = try await loader.directions(near: fix, using: apiService)
+            guard !Task.isCancelled else { return }
+            loadedAt = Date()
+            phase = directions.isEmpty ? .empty : .loaded(directions)
+        } catch {
+            guard !Task.isCancelled else { return }
+            phase = .failed(error.localizedDescription)
+        }
+    }
+}

@@ -1,7 +1,7 @@
 targets:
   OBAKitCore:
     type: framework
-    platform: iOS
+    supportedDestinations: [iOS, watchOS]
     sources:
       # XcodeGen's synced folders can't mark headers public, so the umbrella
       # header is carved out of the buildable folder and added as an explicit
@@ -9,9 +9,18 @@ targets:
       - path: "."
         # The .proto schema is source material for pre-generated Swift, not a
         # target member; without the exclusion Xcode tries to compile it.
-        excludes: ["OBAKitCore.h", "Models/Protobuf/gtfs-realtime.proto"]
+        # project.yml is excluded so it stops shipping as a bundle resource.
+        excludes: ["OBAKitCore.h", "Models/Protobuf/gtfs-realtime.proto", "project.yml"]
       - path: OBAKitCore.h
         headerVisibility: public
+      # iOS-only half of the same module. It MUST be a sibling directory with
+      # `type: group`: XcodeGen 2.46 silently ignores destinationFilters on a
+      # synced folder, and a group nested inside the synced root dangles its
+      # file reference and breaks the iOS build. Because it is a group, not a
+      # synced folder, files added here need `scripts/generate_project`.
+      - path: ../OBAKitCoreiOS
+        type: group
+        destinationFilters: [iOS]
     dependencies:
       - package: SwiftProtobuf
       - package: GRDB
@@ -29,3 +38,8 @@ targets:
         # override: Core owns actors, networking, and background decode, so it
         # pins against the project-wide MainActor default.
         SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        # A per-target `deploymentTarget: {iOS: …, watchOS: …}` map is silently
+        # dropped on a supportedDestinations target; watchOS would fall to the
+        # SDK default and dependents fail with "minimum deployment target of
+        # watchOS 27.0". 11.0 is the release paired with the iOS 18.0 floor.
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"

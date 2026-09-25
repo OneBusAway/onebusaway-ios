@@ -24,7 +24,7 @@ public struct RealtimeGlyph: View {
     public var body: some View {
         Image(systemName: isRealTime ? "dot.radiowaves.up.forward" : "clock")
             .font(.system(size: size * scale, weight: .semibold))
-            .foregroundStyle(isRealTime ? color : Color(uiColor: .secondaryLabel))
+            .foregroundStyle(isRealTime ? color : Color(uiColor: ThemeColors.shared.secondaryLabel))
             .symbolEffect(.variableColor.iterative, options: .repeating, isActive: isRealTime && !reduceMotion)
             .accessibilityHidden(true)
     }

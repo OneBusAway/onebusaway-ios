@@ -1,0 +1,33 @@
+targets:
+  OBAKitWatch:
+    type: framework
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      # XcodeGen's synced folders can't mark headers public, so the umbrella
+      # header is carved out of the buildable folder and added as an explicit
+      # public header. project.yml is excluded so it does not ship as a resource.
+      - path: "."
+        excludes: ["OBAKitWatch.h", "project.yml"]
+      - path: OBAKitWatch.h
+        headerVisibility: public
+    dependencies:
+      - target: OBAKitCore
+    # A declared scheme so `xcodebuild -scheme OBAKitWatch` exists on a fresh
+    # checkout; XcodeGen writes shared schemes only for targets that ask.
+    scheme:
+      gatherCoverageData: false
+    postBuildScripts:
+      - path: "../scripts/swiftlint.sh"
+        name: Swiftlint
+        basedOnDependencyAnalysis: false
+    info:
+      path: "Info.plist"
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+    settings:
+      base:
+        # The step 6 watch widget extension links this framework.
+        APPLICATION_EXTENSION_API_ONLY: true
+        # Swift language mode, checking level, and MainActor default isolation
+        # come from the project-wide base in Apps/Shared/app_shared.yml.

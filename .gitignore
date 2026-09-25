@@ -10,7 +10,10 @@ OBAKit/Info.plist
 OBAKitCore/Info.plist
 OBAKitTests/Info.plist
 OBAWidget/Info.plist
+OBAKitWatch/Info.plist
+WatchApp/Info.plist
 /project.yml
+/project.local.yml
 
 ## SwiftPM
 OBAKit.xcodeproj/**

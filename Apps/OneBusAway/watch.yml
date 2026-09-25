@@ -1,0 +1,58 @@
+############
+# OneBusAway watch app
+############
+#
+# Every line of watch wiring for this app. Included from project.yml only when
+# OBA_WATCH is set (scripts/generate_project sets it unless given --no-watch).
+# An app with no watch.yml generates exactly the project it generates today.
+
+# This file is included with `relativePaths: false`, so these paths resolve
+# from the repo root. The nested includes keep the default (paths inside
+# OBAKitWatch/project.yml resolve from OBAKitWatch/, as OBAKitCore's do).
+include:
+  - path: OBAKitWatch/project.yml
+  - path: WatchApp/project.yml
+
+targets:
+  App:
+    dependencies:
+      - target: WatchApp
+  WatchApp:
+    sources:
+      # A lone file inside the App target's synced folder needs an explicit
+      # group: without one XcodeGen emits an orphaned `Resources` group and the
+      # file resolves to the repo root ("regions.json couldn't be opened").
+      - path: Apps/OneBusAway/Resources/regions.json
+        group: OneBusAway
+      - path: Apps/OneBusAway/Assets.xcassets
+    entitlements:
+      path: Apps/OneBusAway/WatchApp.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.onebusaway.iphone
+    info:
+      properties:
+        CFBundleDisplayName: OneBusAway
+        WKCompanionAppBundleIdentifier: org.onebusaway.iphone
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+          NSExceptionDomains: {
+            "onebusaway.co": {
+                NSIncludesSubdomains: true,
+                NSExceptionAllowsInsecureHTTPLoads: true
+            },
+            "sidecar.onebusaway.org": {
+                NSIncludesSubdomains: true,
+                NSExceptionAllowsInsecureHTTPLoads: true
+            }
+          }
+        OBAKitConfig:
+          AppGroup: group.org.onebusaway.iphone
+          BundledRegionsFileName: regions.json
+          RESTServerAPIKey: org.onebusaway.iphone
+          RegionsServerBaseAddress: https://regions.onebusaway.org
+          RegionsServerAPIPath: /regions-v3.json
+    settings:
+      base:
+        DEVELOPMENT_TEAM: 4ZQCMA634J
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.watchkitapp

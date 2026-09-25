@@ -13,7 +13,10 @@ OneBusAway iOS (OBAKit) is a white-label transit app framework written in Swift.
 scripts/generate_project [APP_NAME]     # Generate Xcode project for specific app
 scripts/generate_project OneBusAway     # Generate default OneBusAway app
 scripts/generate_project                # Defaults to OneBusAway if no app specified
+scripts/generate_project OneBusAway --no-watch   # iOS only; no watchOS platform needed
 ```
+
+The OneBusAway project includes two watchOS targets, `OBAKitWatch` (framework) and `WatchApp` (shell), opted in through `Apps/OneBusAway/watch.yml`. Building the `App` scheme also builds them, so a machine without the watchOS platform must pass `--no-watch`. Build the watch app with `WATCH_UDID=$(scripts/resolve_watch_simulator_udid)` and `-scheme WatchApp -destination "platform=watchOS Simulator,id=$WATCH_UDID"`; `scripts/watch_smoke_test` installs, launches, and asserts it stays alive, which a compile cannot. Watch code never builds a `CoreApplication` and never reads `\.coreApplication`; `OBAKitWatch/Host/WatchAppHost.swift` is the assembly.
 
 **Available Apps**: OneBusAway, KiedyBus
 
@@ -160,7 +163,12 @@ scripts/extract_strings               # Extract strings for localization
 ## Architecture
 
 ### Framework Structure
-- **OBAKitCore**: Core business logic, networking, data models (application extension safe)
+- **OBAKitCore**: Core business logic, networking, data models (application extension safe). One module, two directories:
+  - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region-monitoring API calls.
+  - `OBAKitCoreiOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. It is an XcodeGen `group`, so run `scripts/generate_project` after adding a file here.
+  - **If a file in `OBAKitCore/` needs a platform `#if`, move the iOS-only part to `OBAKitCoreiOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
+- **OBAKitWatch**: watchOS UI framework (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it.
+- **WatchApp**: watchOS application shell. White-label; per-app identity comes from Apps/<App>/watch.yml.
 - **OBAKit**: UI framework with view controllers and user interface components
 - **App**: Main application target that combines the frameworks
 
@@ -184,6 +192,10 @@ scripts/extract_strings               # Extract strings for localization
   - `Network/`: API services and networking
   - `Location/`: Location services and region management
   - `Orchestration/`: Application setup and configuration
+- `OBAKitCoreiOS/`: iOS-only files of the OBAKitCore module (same module, no separate import)
+  - `UIKit/`: UIKit view code
+  - `LiveActivities/`: Everything that imports or renders ActivityKit
+  - `Location/`: Region monitoring / geofencing
 - `OBAKit/`: UI framework
   - `Controls/`: Reusable UI components
   - `Mapping/`: Map views and location features
@@ -269,3 +281,5 @@ onebusaway://add-region?name=REGION_NAME
 - Core framework (OBAKitCore) must remain application extension safe
 - UI tests are minimal - focus is on unit tests
 - Documentation is generated with DocC via `scripts/docs`
+- **`Int` is 32 bits on most Apple Watches** (`arm64_32`), and watch simulators hide it. In `OBAKitCore/`, never decode an epoch value as `Int` — use `Int64` or `Date`. Check with `xcodebuild build -scheme OBAKitCore -destination 'generic/platform=watchOS' CODE_SIGNING_ALLOWED=NO`; CI runs the same build.
+- **Extensions do not build a `CoreApplication`.** It starts a regions fetch, opens the stop cache, and bumps the launch counter. A widget reads the app-group suite instead: `ResolvedRegionStore` for the region (the app writes it via `ResolvedRegionPersister`; extensions only read), `UserUUID` for the client id, `RESTAPIService.standalone(…)` for the API, and `BookmarkArrivalsLoader` for arrivals.

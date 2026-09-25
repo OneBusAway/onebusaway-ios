@@ -10,7 +10,7 @@ end
 
 def update_all_apps
   apps = Dir.glob("Apps/*") - ["Apps/Shared"]
-  apps += ["OBAKit", "OBAKitCore", "OBAWidget"]
+  apps += ["OBAKit", "OBAKitCore", "OBAWidget", "OBAKitWatch", "WatchApp"]
   launch_directory = Dir.pwd
 
   build_version = DateTime.now.strftime("%Y%m%d.%H")
@@ -20,6 +20,9 @@ def update_all_apps
   apps.each do |app_path|
     label = app_path
     plist = Dir["#{app_path}/Info.plist"].first
+    # Not every target is generated for every app (no watch.yml, --no-watch).
+    next unless plist
+
     abs_path = "#{launch_directory}/#{plist}"
     update_build_version(label, abs_path, build_version)
   end

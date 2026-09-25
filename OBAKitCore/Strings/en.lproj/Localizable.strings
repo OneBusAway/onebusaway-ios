@@ -400,6 +400,9 @@
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "This data may be out of date.";
 
+/* Error shown when a location request is made without authorization */
+"location_service.error.not_authorized" = "Location access is not authorized.";
+
 /* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
 "map_layers_tip.message" = "Tap here to show bikes and scooters on the map.";
 

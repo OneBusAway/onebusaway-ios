@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OBAKitCore
 import WidgetKit
 
 /// Timeline provider for generating widget updates based on bookmark data.
@@ -20,43 +21,45 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
 
     // MARK: Snapshot
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> BookmarkEntry {
+        // The widget gallery asks for a snapshot to draw a preview. It wants it
+        // fast and it is not the user's data, so don't spend a fetch on it.
+        guard !context.isPreview else {
+            return BookmarkEntry(date: .now, bookmarks: [])
+        }
 
-        await dataProvider.loadData()
-        let data = dataProvider.getBookmarks()
-
-        let entry = BookmarkEntry(date: .now, bookmarks: data)
-
-        return entry
+        let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
+        return BookmarkEntry(date: .now, bookmarks: content.bookmarks, departures: content.departures, fetchedAt: content.fetchedAt)
     }
 
     // MARK: Actual Timelines
-    /// Generates timeline entries for the next 6 hours, starting from the current time.
+    /// One fetch, several entries, one slow reload.
     ///
-    /// - **Current Time**: Let's say it's 12:00 PM.
-    /// - **End Time**: 6 hours later, resulting in 6:00 PM.
-    /// - **Entry Interval**: Creates entries every 30 minutes.
-    /// - **Generated Entries**:
-    ///   - 12:00 PM
-    ///   - 12:30 PM
-    ///   - 1:00 PM
-    ///   - 1:30 PM
-    ///   - so on ......
+    /// `WidgetTimelinePlanner` puts an entry at each departure boundary, so the
+    /// widget drops a bus as it leaves without asking for a reload, and sets the
+    /// reload 30 minutes out (60 when nothing is coming). Never reload on the
+    /// next departure: WidgetKit budgets 40–70 reloads a day.
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<BookmarkEntry> {
-        await dataProvider.loadData()
-        let data = dataProvider.getBookmarks()
+        let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
+        let now = Date()
 
-        let currentDate = Date()
-        let endDate = Calendar.current.date(byAdding: .hour, value: 6, to: currentDate)!
+        let plan = WidgetTimelinePlanner().plan(
+            departureDates: content.departures.values.flatMap { $0.map(\.arrivalDepartureDate) },
+            now: now
+        )
 
-        // Generate entries for every 30 minutes within the defined time range.
-        var entries: [BookmarkEntry] = []
-        var date = currentDate
-        while date < endDate {
-            let entry = BookmarkEntry(date: date, bookmarks: data)
-            entries.append(entry)
-            date = Calendar.current.date(byAdding: .minute, value: 30, to: date)!
+        let entries = plan.entryDates.map { date in
+            BookmarkEntry(
+                date: date,
+                bookmarks: content.bookmarks,
+                // `mapValues` keeps a fetched-but-now-empty bookmark present
+                // (as `[]`), so it reads "no departures", not "no data".
+                departures: content.departures.mapValues { departures in
+                    WidgetTimelinePlanner.departures(departures, visibleAt: date)
+                },
+                fetchedAt: content.fetchedAt
+            )
         }
 
-        return Timeline(entries: entries, policy: .atEnd)
+        return Timeline(entries: entries, policy: .after(plan.reloadDate))
     }
 }
