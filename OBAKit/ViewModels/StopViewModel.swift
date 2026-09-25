@@ -687,18 +687,10 @@ class StopViewModel: ObservableObject {
         }
 
         onDemandFetchTask = Task { [weak self] in
-            var loaded: [OnDemandService] = []
-            for id in ids {
-                do {
-                    // Simplified geometry: the service page this row opens draws the zones.
-                    loaded.append(try await apiService.getOnDemandService(id: id, geometryDetail: .simplified).entry)
-                } catch {
-                    // The task's flag, not the error: a `URLError.cancelled` this task
-                    // didn't ask for is an ordinary failure that must still allow a retry.
-                    if Task.isCancelled { return }
-                    Logger.error("On-demand service \(id) failed to load: \(error)")
-                }
-            }
+            // Simplified geometry: the service page this row opens draws the zones.
+            let loaded = await apiService.loadOnDemandServices(ids: ids, geometryDetail: .simplified)
+            // The task's flag, not an error: a `URLError.cancelled` this task
+            // didn't ask for is an ordinary failure that must still allow a retry.
             guard !Task.isCancelled, let self else { return }
             self.onDemandServices = loaded.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             if loaded.isEmpty {

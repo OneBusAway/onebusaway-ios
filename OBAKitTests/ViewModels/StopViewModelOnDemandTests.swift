@@ -137,6 +137,30 @@ final class StopViewModelOnDemandTests: OBATestCase {
         #expect(onDemandRequestCount(dataLoader) == 1)
     }
 
+    /// Pointers load side by side: with the first service's request held, the
+    /// second is still asked for, and both show once the first is let go.
+    @Test func `A stop's services load concurrently`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubService(dataLoader)
+        stubService(dataLoader, id: Self.secondServiceID, name: "Night Owl Dial-a-Ride")
+        stubArrivals(dataLoader, try arrivals(pointers: [Self.alexandriaServiceID, Self.secondServiceID]))
+        // Held after its response, so the held request is already recorded.
+        let gate = GatedDataLoader(dataLoader, gating: { Self.isServiceRequest($0, id: Self.alexandriaServiceID) }, holdsAfterResponse: true)
+        let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader, gate: gate), stopID: Self.fixedRouteStopID)
+
+        await viewModel.refresh()
+        await gate.waitForRequest()
+        let deadline = ContinuousClock.now + .seconds(5)
+        while onDemandRequestCount(dataLoader) < 2, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(onDemandRequestCount(dataLoader) == 2, "the second request doesn't wait for the first")
+
+        gate.releaseRequest()
+        await viewModel.onDemandFetchTask?.value
+        #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID, Self.secondServiceID])
+    }
+
     // MARK: - Failures
 
     @Test func `Failed on-demand load leaves the list empty and retries on the next refresh`() async throws {
