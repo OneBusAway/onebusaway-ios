@@ -48,9 +48,10 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     public let bookingURL: URL?
     public let infoURL: URL?
     public let message: String?
-    /// The earliest cutoff or opening instant after `now` among the rules'
-    /// candidates — when the booking line can next read differently. Nil
-    /// when nothing ahead would change it.
+    /// When the booking line can next read differently: the earliest cutoff
+    /// or opening instant after `now` among the rules' candidates, or the
+    /// agency's next midnight if sooner, when "tomorrow" becomes "today".
+    /// Nil when the zone is unknown, so nothing ahead would change the line.
     public let nextChangeInstant: Date?
 
     /// - Parameter timeZone: The agency's zone, or nil when it is unknown.
@@ -68,7 +69,9 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             bookingLine = .unknown
             nextChangeInstant = nil
         } else {
-            (bookingLine, nextChangeInstant) = Self.bookingLine(for: service, evaluator: evaluator, formatters: formatters, now: now)
+            let (line, boundary) = Self.bookingLine(for: service, evaluator: evaluator, formatters: formatters, now: now)
+            bookingLine = line
+            nextChangeInstant = [boundary, formatters.nextMidnight].compactMap { $0 }.min()
         }
 
         let contact = service.rules.lazy.compactMap { service.bookingRule(id: $0.pickupBookingRuleID) }.first
@@ -322,6 +325,11 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         }
 
         func travelDate(_ date: Date) -> String { travelDateFormatter.string(from: date) }
+
+        /// The start of the day after `now`'s, in the agency zone.
+        var nextMidnight: Date? {
+            calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
+        }
 
         /// `today` stands in for the live wall clock; production always
         /// passes `Date()` (the caller's default). Exposed as a parameter

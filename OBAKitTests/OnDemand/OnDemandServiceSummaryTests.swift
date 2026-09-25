@@ -84,6 +84,20 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(travelDate.contains("Wed"), "\(travelDate)")
     }
 
+    /// "tomorrow" becomes "today" at the agency's midnight, so that is a
+    /// boundary even when no cutoff or opening falls before it.
+    @Test func `Agency midnight bounds the next change`() throws {
+        // Mon 2026-03-09 23:30 in Los Angeles.
+        let lateMonday = ISO8601DateFormatter().date(from: "2026-03-10T06:30:00Z")!
+        let summary = summary(try alexandria(), now: lateMonday)
+        guard case .bookBy(let deadline, _) = summary.bookingLine else {
+            Issue.record("expected bookBy, got \(summary.bookingLine)")
+            return
+        }
+        #expect(deadline.hasPrefix("tomorrow"), "\(deadline)")
+        #expect(summary.nextChangeInstant == ISO8601DateFormatter().date(from: "2026-03-10T07:00:00Z"))
+    }
+
     @Test func `Contact details come from the pickup booking rule`() throws {
         let summary = summary(try alexandria())
         #expect(summary.phoneNumber == "703-746-5222")
