@@ -8,17 +8,36 @@ import SwiftUI
 import OBAKitCore
 
 /// The dashed reachability divider in chronological mode: everything above is
-/// "just missed", everything below is catchable on foot (§4.5).
+/// "just missed", everything below is catchable at the user's current travel
+/// mode (§4.5). `walkMinutes` is mode-aware — it's already bike time when Bike
+/// Mode is on — so the label and icon have to say so too, or the divider would
+/// tell a cyclist they have an implausibly fast "walk".
 struct WalkLineDivider: View {
     let walkMinutes: Int
+    var isBikeMode: Bool = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    /// Matches the walk pill on the header card (§4.5).
-    private let lineColor = Color(uiColor: ThemeColors.shared.departureOnTime)
+    /// Matches the walk/bike pill on the header card (§4.5).
+    private var lineColor: Color {
+        Color(uiColor: isBikeMode ? ThemeColors.shared.blue : ThemeColors.shared.departureOnTime)
+    }
+
+    private var systemImage: String {
+        isBikeMode ? "bicycle" : "figure.walk"
+    }
 
     private var text: String {
-        let fmt = OBALoc("stop_page.walk_divider_fmt", value: "%d MIN WALK — CATCH BELOW", comment: "Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes.")
+        let fmt = isBikeMode
+            ? OBALoc("stop_page.bike_divider_fmt", value: "%d MIN BIKE — CATCH BELOW", comment: "Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes.")
+            : OBALoc("stop_page.walk_divider_fmt", value: "%d MIN WALK — CATCH BELOW", comment: "Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes.")
+        return String(format: fmt, walkMinutes)
+    }
+
+    private var accessibilityText: String {
+        let fmt = isBikeMode
+            ? OBALoc("stop_page.bike_divider_a11y_fmt", value: "Departures above this point leave sooner than your %d minute bike ride to the stop", comment: "VoiceOver description of the bike divider. %d is bike minutes.")
+            : OBALoc("stop_page.walk_divider_a11y_fmt", value: "Departures above this point leave sooner than your %d minute walk to the stop", comment: "VoiceOver description of the walk divider. %d is walk minutes.")
         return String(format: fmt, walkMinutes)
     }
 
@@ -29,7 +48,7 @@ struct WalkLineDivider: View {
         // Dynamic Type strategy; the text must grow, not the row squeeze it).
         HStack(spacing: 10) {
             if dynamicTypeSize.isAccessibilitySize {
-                Label(text, systemImage: "figure.walk")
+                Label(text, systemImage: systemImage)
                     .font(.caption.weight(.heavy))
                     .foregroundStyle(lineColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -41,7 +60,7 @@ struct WalkLineDivider: View {
                     )
             } else {
                 dash
-                Label(text, systemImage: "figure.walk")
+                Label(text, systemImage: systemImage)
                     .font(.caption.weight(.heavy))
                     .foregroundStyle(lineColor)
                     .lineLimit(1)
@@ -54,7 +73,7 @@ struct WalkLineDivider: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(String(format: OBALoc("stop_page.walk_divider_a11y_fmt", value: "Departures above this point leave sooner than your %d minute walk to the stop", comment: "VoiceOver description of the walk divider. %d is walk minutes."), walkMinutes))
+        .accessibilityLabel(accessibilityText)
     }
 
     private var dash: some View {
@@ -79,5 +98,6 @@ struct WalkLineDivider: View {
     List {
         WalkLineDivider(walkMinutes: 104)
         WalkLineDivider(walkMinutes: 8)
+        WalkLineDivider(walkMinutes: 3, isBikeMode: true)
     }
 }

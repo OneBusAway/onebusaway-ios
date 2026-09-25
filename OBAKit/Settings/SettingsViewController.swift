@@ -41,6 +41,7 @@ class SettingsViewController: FormViewController {
             +++ experimentalSection
             +++ accessibilitySection
             +++ walkingSpeedSection
+            +++ bikeModeSection
             +++ surveySection
             +++ feedbackSection
             +++ debugSection
@@ -73,7 +74,9 @@ class SettingsViewController: FormViewController {
             stopTripCompactModeTag: application.userDataStore.stopTripCompactMode,
             transferBannerTag: application.userDataStore.showTransferArrivalBanner,
             regionTimeZoneTag: application.userDataStore.showRegionTimeZone,
-            alwaysShowFeedbackPrompt: application.reviewPromptPolicy.alwaysShowPrompt
+            alwaysShowFeedbackPrompt: application.reviewPromptPolicy.alwaysShowPrompt,
+            bikeModeEnabledKey: application.userDataStore.bikeModeEnabled,
+            bikeSpeedUseHealthKitKey: application.userDataStore.bikeSpeedSource == .healthKit
         ])
     }
 
@@ -140,6 +143,21 @@ class SettingsViewController: FormViewController {
         }
 
         saveWalkingSpeedValues(values)
+        saveBikeModeValues(values)
+    }
+
+    private func saveBikeModeValues(_ values: [String: Any?]) {
+        if let bikeModeEnabled = values[bikeModeEnabledKey] as? Bool {
+            application.userDataStore.bikeModeEnabled = bikeModeEnabled
+        }
+
+        // Toggling HealthKit *on* is handled by the row's `onChange` (the manager writes
+        // `.healthKit` itself once a usable sample lands). Only the *off* direction has to be
+        // persisted here. Unlike walking there's no manual speed to snap to — the stored speed
+        // stays as-is and `effectiveTravelVelocityMetersPerSecond` keeps using it.
+        if values[bikeSpeedUseHealthKitKey] as? Bool == false {
+            application.userDataStore.bikeSpeedSource = .manual
+        }
     }
 
     private func saveAccessibilityValues(_ values: [String: Any?]) {
@@ -424,7 +442,64 @@ class SettingsViewController: FormViewController {
         return section
     }()
 
-   // MARK: - Privacy
+    // MARK: - Bike Mode
+
+    private let bikeModeEnabledKey = "bikeModeEnabled"
+    private let bikeSpeedUseHealthKitKey = "bikeSpeedUseHealthKit"
+
+    private lazy var bikeModeSection: Section = {
+        let section = Section(
+            header: OBALoc("settings_controller.bike_mode_section.title", value: "Bike Mode", comment: "Settings > Bike Mode section title"),
+            footer: OBALoc("settings_controller.bike_mode_section.footer", value: "Uses a faster travel speed for walk-time estimates, arrival ETAs, and the Stop page.", comment: "Settings > Bike Mode section footer")
+        )
+
+        // Deliberately side-effect free: `form.setValues` fires `onChange` when it seeds a row
+        // from nil, so anything hung off this switch would run on every Settings open. The
+        // HealthKit sync lives on its own opt-in row below, whose seeded value is
+        // `source == .healthKit` — which a failed sync flips back off, so it can't re-fire.
+        section <<< SwitchRow {
+            $0.tag = bikeModeEnabledKey
+            $0.title = OBALoc("settings_controller.bike_mode.title", value: "Bike Mode", comment: "Settings > Bike Mode > on/off toggle")
+        }
+
+        if HKHealthStore.isHealthDataAvailable() {
+            section <<< SwitchRow {
+                $0.tag = bikeSpeedUseHealthKitKey
+                $0.title = OBALoc("settings_controller.bike_mode.use_healthkit",
+                                  value: "Use Health app data",
+                                  comment: "Settings > Bike Mode section > HealthKit toggle")
+                $0.onChange { [weak self] row in
+                    guard let self, row.value == true else { return }
+                    // Eureka's onChange closure is nonisolated (pre-concurrency
+                    // library), so `row` can't cross into the main-actor task;
+                    // re-fetch it by tag inside instead.
+                    Task { @MainActor in
+                        let granted = await self.application.bikeModeManager.requestHealthKitAuthorizationAndSync()
+                        if !granted {
+                            if let row: SwitchRow = self.form.rowBy(tag: self.bikeSpeedUseHealthKitKey) {
+                                row.value = false
+                                row.reload()
+                            } else {
+                                Logger.error("Bike HealthKit toggle row not found by tag; cannot revert after authorization failure.")
+                            }
+                            self.showErrorToast(
+                                OBALoc(
+                                    "settings_controller.bike_mode.healthkit_unavailable",
+                                    value: "Couldn't sync cycling speed from Health. Using a standard biking speed instead.",
+                                    comment: "Settings > Bike Mode > HealthKit denial or no-data toast"
+                                ),
+                                using: self.application.toastManager
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        return section
+    }()
+
+    // MARK: - Privacy
 
     private let privacySectionReportingEnabled = "privacySectionReportingEnabled"
 
