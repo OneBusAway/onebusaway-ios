@@ -99,6 +99,24 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
         agency?.resolvedTimeZone
     }
 
+    // MARK: - Equatable and Hashable
+
+    /// Identity is the combined service ID, so a refreshed decode of the same
+    /// service is equal to the old one in diffable snapshots and `Set`s.
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? OnDemandService else {
+            return false
+        }
+
+        return id == rhs.id
+    }
+
+    public override var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(id)
+        return hasher.finalize()
+    }
+
     // MARK: - CustomDebugStringConvertible
 
     public override var debugDescription: String {
