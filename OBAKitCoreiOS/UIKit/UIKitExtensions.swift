@@ -446,6 +446,26 @@ public extension UIViewController {
     var isLoadedAndOnScreen: Bool {
         isViewLoaded && view.window != nil
     }
+
+    /// The controller at the end of this one's presentation chain, or `self` when nothing is presented.
+    ///
+    /// Present from here when something above `self` may already be presenting. UIKit refuses
+    /// `present(_:)` on a controller whose chain already holds a `presentedViewController`, and a
+    /// SwiftUI sheet raised from a hosted child is realised on the root — so `self` can be blocked
+    /// by a presentation it never made, and the refusal is only ever a console line.
+    ///
+    /// `presentedViewController` reports what this controller *or its nearest ancestor* presented,
+    /// so this resolves correctly from a controller embedded in a tab or navigation stack as well
+    /// as from a root.
+    ///
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1441
+    var topmostPresentedController: UIViewController {
+        var top: UIViewController = self
+        while let next = top.presentedViewController {
+            top = next
+        }
+        return top
+    }
 }
 
 // MARK: - UIViewController/Child Controller Containment

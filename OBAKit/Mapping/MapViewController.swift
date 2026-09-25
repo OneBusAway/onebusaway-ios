@@ -289,7 +289,7 @@ class MapViewController: UIViewController,
         } else {
             let surveyVC = SurveyViewController(survey: survey, surveyService: application.surveyService)
             let navigation = UINavigationController(rootViewController: surveyVC)
-            present(navigation, animated: true)
+            topmostPresentedController.present(navigation, animated: true)
             dismissMapSurveyCard()
         }
     }
@@ -318,7 +318,7 @@ class MapViewController: UIViewController,
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        present(alert, animated: true)
+        topmostPresentedController.present(alert, animated: true)
     }
 
     // MARK: - User Location
@@ -404,7 +404,7 @@ class MapViewController: UIViewController,
             // We shouldn't hit this state, but if we do, that's OK.
             alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
         }
-        self.present(alert, animated: true)
+        topmostPresentedController.present(alert, animated: true)
     }
 
     private lazy var locationButton: UIButton = {
@@ -430,7 +430,7 @@ class MapViewController: UIViewController,
     }()
 
     @objc private func showCurrentTrip() {
-        application.viewRouter.navigateToCurrentTrip(from: self)
+        application.viewRouter.navigateToCurrentTrip(from: topmostPresentedController)
     }
 
     // MARK: - Weather
@@ -481,7 +481,7 @@ class MapViewController: UIViewController,
         host.modalPresentationStyle = .overFullScreen
         host.modalTransitionStyle = .crossDissolve
         host.view.backgroundColor = .clear
-        present(host, animated: true)
+        topmostPresentedController.present(host, animated: true)
     }
 
     private var weatherDisplay: WeatherDisplay? {
@@ -1078,7 +1078,7 @@ class MapViewController: UIViewController,
             floatingPanel.move(to: .half, animated: true)
 
             if !floatingPanel.userHasSeenFullSheetVoiceoverChange {
-                self.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
+                topmostPresentedController.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
                 floatingPanel.userHasSeenFullSheetVoiceoverChange = true
             }
         }
@@ -1230,7 +1230,7 @@ class MapViewController: UIViewController,
                 self.application.regionsService.currentRegion = region
             }))
 
-            present(alert, animated: true) {
+            topmostPresentedController.present(alert, animated: true) {
                 mapView.deselectAnnotation(view.annotation, animated: true)
             }
         } else if !view.canShowCallout, let stop = selectableStop(for: view.annotation) {
@@ -1300,7 +1300,7 @@ class MapViewController: UIViewController,
     public func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            await AlertPresenter.show(errorMessage: OBALoc("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: self)
+            await AlertPresenter.show(errorMessage: OBALoc("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: topmostPresentedController)
         }
     }
 
@@ -1309,7 +1309,7 @@ class MapViewController: UIViewController,
             guard let self else { return }
             let searchResults = SearchResultsController(searchResponse: response, application: application, delegate: self)
             let nav = UINavigationController(rootViewController: searchResults)
-            application.viewRouter.present(nav, from: self, isModal: true)
+            application.viewRouter.present(nav, from: topmostPresentedController, isModal: true)
         }
     }
 
@@ -1334,7 +1334,7 @@ class MapViewController: UIViewController,
                 }
                 else {
                     let msg = OBALoc("map_controller.vehicle_not_on_trip_error", value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.", comment: "This message appears when a searched-for vehicle doesn't have an assigned trip.")
-                    await AlertPresenter.show(errorMessage: msg, presentingController: self)
+                    await AlertPresenter.show(errorMessage: msg, presentingController: topmostPresentedController)
                 }
             default:
                 fatalError()
