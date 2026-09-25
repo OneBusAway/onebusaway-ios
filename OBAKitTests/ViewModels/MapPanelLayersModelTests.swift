@@ -34,10 +34,7 @@ final class MapPanelLayersModelTests: OBATestCase {
         // that region's base URL.
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
-        // The on-demand zones layer is on by default and probes on every viewport.
-        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json")) { request in
-            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
-        }
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
         application = buildApplication(queue: queue, dataLoader: dataLoader)
         model = MapPanelLayersModel(application: application)
     }

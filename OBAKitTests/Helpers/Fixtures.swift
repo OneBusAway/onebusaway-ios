@@ -178,6 +178,17 @@ class Fixtures {
         }
     }
 
+    /// Answers the on-demand zones layer's `services-for-location` probe with
+    /// one Alexandria zone. Needed by any suite that pushes a viewport through
+    /// an `Application` whose `MapLayerRegistrar` has registered that layer:
+    /// the layer is on by default and probes on every viewport inside its zoom
+    /// window, and an unstubbed probe is a `MockDataLoader` fatalError.
+    class func stubOnDemandViewportProbe(dataLoader: MockDataLoader) {
+        dataLoader.mock(data: loadData(file: "ondemand_services_for_location_viewport.json")) { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+    }
+
     class func createRoute(id: String) throws -> Route {
         let dictionary: [String: Any] = [
             "agencyId": "test_agency",
