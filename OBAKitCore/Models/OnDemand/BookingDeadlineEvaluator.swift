@@ -318,7 +318,7 @@ public struct BookingDeadlineEvaluator: Sendable {
     /// Hands `body` each active service day of `rule` from the agency-local
     /// today, in order and with its evaluation, until `body` returns false
     /// or the walk reaches the bounds `nextBookableServiceDate` uses.
-    public func walkServiceDates(
+    func walkServiceDates(
         rule: AvailabilityRule,
         bookingRule: OnDemandBookingRule?,
         now: Date,
