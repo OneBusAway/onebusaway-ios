@@ -136,41 +136,89 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     // MARK: - AnalyticsInstallID
 
-    @Test func `Install ID is stable across repeated calls`() {
-        let first = AnalyticsInstallID.persisted(userDefaults: userDefaults)
-        let second = AnalyticsInstallID.persisted(userDefaults: userDefaults)
+    /// A fresh, empty directory for a single test's install ID file, removed
+    /// after the test runs.
+    private func makeTemporaryDirectory() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    @Test func `Install ID is stable across repeated calls`() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let first = AnalyticsInstallID.persisted(directory: directory)
+        let second = AnalyticsInstallID.persisted(directory: directory)
         #expect(first == second)
     }
 
-    @Test func `Install ID is stable across new instances sharing the same defaults`() {
-        let suiteName = "AnalyticsInstallIDTests.\(UUID().uuidString)"
-        let defaults = buildUserDefaults(suiteName: suiteName)
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+    @Test func `Install ID is stable across new instances sharing the same directory`() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
 
-        let first = AnalyticsInstallID.persisted(userDefaults: defaults)
-        // A fresh UserDefaults instance backed by the same suite — mimics a new
-        // process launch reading the same persisted store.
-        let second = AnalyticsInstallID.persisted(userDefaults: buildUserDefaults(suiteName: suiteName))
+        let first = AnalyticsInstallID.persisted(directory: directory)
+        // A fresh call with a URL pointing at the same directory — mimics a
+        // new process launch reading the same persisted file.
+        let second = AnalyticsInstallID.persisted(directory: directory)
         #expect(first == second)
     }
 
-    @Test func `Install ID differs across fresh defaults suites`() {
-        let suiteNameA = "AnalyticsInstallIDTests.\(UUID().uuidString)"
-        let suiteNameB = "AnalyticsInstallIDTests.\(UUID().uuidString)"
-        let defaultsA = buildUserDefaults(suiteName: suiteNameA)
-        let defaultsB = buildUserDefaults(suiteName: suiteNameB)
+    @Test func `Install ID differs across fresh directories`() throws {
+        let directoryA = try makeTemporaryDirectory()
+        let directoryB = try makeTemporaryDirectory()
         defer {
-            defaultsA.removePersistentDomain(forName: suiteNameA)
-            defaultsB.removePersistentDomain(forName: suiteNameB)
+            try? FileManager.default.removeItem(at: directoryA)
+            try? FileManager.default.removeItem(at: directoryB)
         }
 
-        let idA = AnalyticsInstallID.persisted(userDefaults: defaultsA)
-        let idB = AnalyticsInstallID.persisted(userDefaults: defaultsB)
+        let idA = AnalyticsInstallID.persisted(directory: directoryA)
+        let idB = AnalyticsInstallID.persisted(directory: directoryB)
         #expect(idA != idB)
     }
 
-    @Test func `Install ID is a valid UUID string`() {
-        let id = AnalyticsInstallID.persisted(userDefaults: userDefaults)
+    @Test func `Install ID is a valid UUID string`() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let id = AnalyticsInstallID.persisted(directory: directory)
+        #expect(UUID(uuidString: id) != nil)
+    }
+
+    @Test func `Install ID file is excluded from backups`() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        _ = AnalyticsInstallID.persisted(directory: directory)
+
+        let fileURL = directory.appendingPathComponent("install-id", isDirectory: false)
+        let resourceValues = try fileURL.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        #expect(resourceValues.isExcludedFromBackup == true)
+    }
+
+    @Test func `Corrupt install ID file is replaced with a fresh valid UUID`() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("install-id", isDirectory: false)
+        try "not-a-uuid".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let id = AnalyticsInstallID.persisted(directory: directory)
+        #expect(UUID(uuidString: id) != nil)
+
+        // The corrupt value is replaced on disk, too, so future reads are stable.
+        let second = AnalyticsInstallID.persisted(directory: directory)
+        #expect(id == second)
+    }
+
+    @Test func `Empty install ID file is replaced with a fresh valid UUID`() throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let fileURL = directory.appendingPathComponent("install-id", isDirectory: false)
+        try "".write(to: fileURL, atomically: true, encoding: .utf8)
+
+        let id = AnalyticsInstallID.persisted(directory: directory)
         #expect(UUID(uuidString: id) != nil)
     }
 }
