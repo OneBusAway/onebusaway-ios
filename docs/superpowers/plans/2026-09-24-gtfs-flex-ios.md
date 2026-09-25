@@ -118,7 +118,7 @@ Lint: `cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint li
 - Consumes: maglev `/api/ondemand/service/{id}.json`, `/api/ondemand/services-for-location.json`, `/api/ondemand/services-for-agency/{id}.json`, `/api/where/stop/{id}.json`, `/api/where/route/{id}.json`.
 - Produces: the fixture file names above; every later test loads them by these exact names. Expected values (from wiki §3.4 worked example): service id `"5088_77652"`, `serviceKind` `"zone"`, two rules (`05:00:00–24:50:00` / drop-off `25:00:00` on `5088_c_71675_b_85952_d_63`, `07:00:00–24:50:00` / `25:00:00` on `5088_c_71675_b_85952_d_64`), booking rule `5088_booking_route_77652` with `phoneNumber` `"703-746-5222"`, `priorNoticeLastDay` 1, `priorNoticeLastTime` `"17:00:00"`, `priorNoticeStartDay` 14, calendar `…d_63` days `["mon","tue","wed","thu","fri","sat"]`, `…d_64` days `["sun"]`, both `2025-12-01`…`2026-12-01`, area `5088_area_1449` bbox `[-77.5372039, 38.617508, -76.9092198, 39.057831]`, agency timezone `"America/Los_Angeles"`. Charlevoix: four services `CC_CC1`, `CC_CC2_med`, `CC_CC3` (`stopGroup`, one location group of two stops), `CC_CC4`; stop `CC_CC_Ironton_Ferry_West` and route `CC_CC3` carry `onDemandServiceIds: ["CC_CC3"]`.
 
-- [ ] **Step 1: Build maglev and write the Alexandria config**
+- [x] **Step 1: Build maglev and write the Alexandria config**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/maglev && make build && \
@@ -139,7 +139,7 @@ sed 's/alexandria/charlevoix/g' /private/tmp/claude-501/-Users-aaron-repos-onebu
   > /private/tmp/claude-501/-Users-aaron-repos-onebusaway-maglev/215fa362-5529-43a3-9cb6-317b7d70341f/scratchpad/flexcap/charlevoix.json
 ```
 
-- [ ] **Step 2: Run maglev on Alexandria and capture six responses**
+- [x] **Step 2: Run maglev on Alexandria and capture six responses**
 
 Run the server in the background (`bin/maglev --config <path>` — check `bin/maglev --help` for the flag name if it differs), wait for `curl -sf http://localhost:4000/healthz`, then:
 
@@ -156,7 +156,7 @@ curl -sf 'http://localhost:4000/api/where/stop/5088_4258639.json?key=test' > "$F
 kill "$(cat /private/tmp/claude-501/-Users-aaron-repos-onebusaway-maglev/215fa362-5529-43a3-9cb6-317b7d70341f/scratchpad/flexcap/pid)"
 ```
 
-- [ ] **Step 3: Run maglev on Charlevoix and capture three responses**
+- [x] **Step 3: Run maglev on Charlevoix and capture three responses**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/maglev && \
@@ -172,7 +172,7 @@ cp /Users/aaron/repos/onebusaway/maglev/testdata/flex-booking-vectors.json "$F/f
 
 (`agency.txt` in `charlevoix-flex.zip` declares `agency_id` `CC`; `stops.txt` ids are `CC_Ironton_Ferry_West`/`CC_Ironton_Ferry_East`, so the combined ids are `CC_CC_Ironton_Ferry_West`. The route is `CC3` → `CC_CC3`.)
 
-- [ ] **Step 4: Verify the fixtures carry the contract values**
+- [x] **Step 4: Verify the fixtures carry the contract values**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex/OBAKitTests/fixtures && \
@@ -189,7 +189,7 @@ jq -r '.vectors | length' flex-booking-vectors.json
 
 Expected, line by line: `5088_77652 zone rules=2`; `703-746-5222 lastDay=1 lastTime=17:00:00 startDay=14`; `[-77.5372039,38.617508,-76.9092198,39.057831]`; two calendars (`…d_63` Mon–Sat, `…d_64` `["sun"]`); `areaContainsPoint` then `areaIntersectsViewport`; `CC_CC1:zone CC_CC2_med:zoneToZone CC_CC3:stopGroup CC_CC4:zone`; `["CC_CC3"]` twice; `false`; a vector count of at least 12. If any line differs, the maglev branch is not at the contract; do not "fix" the JSON by hand.
 
-- [ ] **Step 5: Copy the spec and wiki next to the plan**
+- [x] **Step 5: Copy the spec and wiki next to the plan**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && mkdir -p docs/superpowers/specs && \
@@ -197,11 +197,11 @@ cp /private/tmp/claude-501/-Users-aaron-repos-onebusaway-maglev/215fa362-5529-43
 cp /private/tmp/claude-501/-Users-aaron-repos-onebusaway-maglev/215fa362-5529-43a3-9cb6-317b7d70341f/scratchpad/wiki/GTFS-Flex-Support.md docs/superpowers/specs/2026-09-24-gtfs-flex-wiki.md
 ```
 
-- [ ] **Step 6: Run the existing test suite once to prove the fixtures broke nothing**
+- [x] **Step 6: Run the existing test suite once to prove the fixtures broke nothing**
 
 Run the standard command with `-only-testing:OBAKitTests/StopsModelOperationTests`. Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && \
@@ -241,7 +241,7 @@ git commit -m "Add on-demand API fixtures captured from maglev"
   - `struct AvailabilityRule: Decodable, Hashable, Sendable { fromIDs: [String]; toIDs: [String]; startPickupTime: GTFSTimeOfDay?; endPickupTime: GTFSTimeOfDay?; endDropOffTime: GTFSTimeOfDay?; calendarIDs: [String]; pickupType: Int; dropOffType: Int; pickupBookingRuleID: String?; dropOffBookingRuleID: String?; safeDurationFactor: Double?; safeDurationOffset: Double?; public init(fromIDs:toIDs:startPickupTime:endPickupTime:endDropOffTime:calendarIDs:pickupType:dropOffType:pickupBookingRuleID:dropOffBookingRuleID:safeDurationFactor:safeDurationOffset:) }`
   - `final class OnDemandService: NSObject, Identifiable, Decodable, HasReferences, @unchecked Sendable { id, agencyID: String; routeID: String?; name: String; serviceKind: ServiceKind; serviceDescription: String?; url: URL?; rules: [AvailabilityRule]; matchReason: MatchReason?; private(set) var route: Route?; agency: Agency?; areas: [ServiceArea]; locationGroups: [OnDemandLocationGroup]; bookingRules: [OnDemandBookingRule]; calendars: [OnDemandCalendar]; regionIdentifier: Int?; func bookingRule(id: String?) -> OnDemandBookingRule?; var timeZone: TimeZone? }`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `OBAKitTests/Modeling/Model Unit Tests/OnDemandModelTests.swift`:
 
@@ -465,11 +465,11 @@ final class OnDemandModelTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandModelTests`. Expected: the build fails with `cannot find 'GTFSTimeOfDay' in scope` (and siblings).
 
-- [ ] **Step 3: Create `GTFSTimeOfDay.swift`**
+- [x] **Step 3: Create `GTFSTimeOfDay.swift`**
 
 ```swift
 //
@@ -534,7 +534,7 @@ public struct GTFSTimeOfDay: Hashable, Comparable, Sendable, Decodable, CustomSt
 }
 ```
 
-- [ ] **Step 4: Create `ServiceDate.swift`**
+- [x] **Step 4: Create `ServiceDate.swift`**
 
 ```swift
 //
@@ -624,7 +624,7 @@ public enum Weekday: String, CaseIterable, Sendable {
 }
 ```
 
-- [ ] **Step 5: Create `ServiceKind.swift`**
+- [x] **Step 5: Create `ServiceKind.swift`**
 
 ```swift
 //
@@ -672,7 +672,7 @@ public enum MatchReason: String, Decodable, Sendable {
 }
 ```
 
-- [ ] **Step 6: Create `OnDemandBookingRule.swift`, `OnDemandCalendar.swift`, `OnDemandLocationGroup.swift`**
+- [x] **Step 6: Create `OnDemandBookingRule.swift`, `OnDemandCalendar.swift`, `OnDemandLocationGroup.swift`**
 
 `OnDemandBookingRule.swift`:
 
@@ -829,7 +829,7 @@ public struct OnDemandLocationGroup: Decodable, Identifiable, Hashable, Sendable
 }
 ```
 
-- [ ] **Step 7: Create `ServiceArea.swift`**
+- [x] **Step 7: Create `ServiceArea.swift`**
 
 ```swift
 //
@@ -949,7 +949,7 @@ private struct GeoJSONGeometry: Decodable {
 }
 ```
 
-- [ ] **Step 8: Create `AvailabilityRule.swift`**
+- [x] **Step 8: Create `AvailabilityRule.swift`**
 
 ```swift
 //
@@ -1038,7 +1038,7 @@ public struct AvailabilityRule: Decodable, Hashable, Sendable {
 }
 ```
 
-- [ ] **Step 9: Create `OnDemandService.swift`**
+- [x] **Step 9: Create `OnDemandService.swift`**
 
 The `loadReferences` body below resolves only `route` and `agency`; Task 2 adds the four reference finders and extends this method.
 
@@ -1143,11 +1143,11 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
 }
 ```
 
-- [ ] **Step 10: Run the tests to verify they pass**
+- [x] **Step 10: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandModelTests`. Expected: all 11 tests PASS. Then run the watchOS portability check. Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 11: Lint and commit**
+- [x] **Step 11: Lint and commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -1168,7 +1168,7 @@ git commit -m "Add on-demand service wire models"
 - Consumes: Task 1 types.
 - Produces: on `References`: `public let serviceAreas: [ServiceArea]`, `public let locationGroups: [OnDemandLocationGroup]`, `public let bookingRules: [OnDemandBookingRule]`, `public let calendars: [OnDemandCalendar]` (each sorted by `id`); finders `serviceAreaWithID(_ id: String?) -> ServiceArea?`, `locationGroupWithID(_:) -> OnDemandLocationGroup?`, `bookingRuleWithID(_:) -> OnDemandBookingRule?`, `calendarWithID(_:) -> OnDemandCalendar?`. On `OnDemandService`: `areas`, `locationGroups`, `bookingRules`, `calendars` populated after `loadReferences`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `OBAKitTests/Modeling/Model Unit Tests/OnDemandReferencesTests.swift`:
 
@@ -1279,11 +1279,11 @@ final class OnDemandReferencesTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandReferencesTests`. Expected: build failure `value of type 'References' has no member 'serviceAreas'`.
 
-- [ ] **Step 3: Extend `References`**
+- [x] **Step 3: Extend `References`**
 
 In `References.swift`, add after `public let trips: [Trip]`:
 
@@ -1348,7 +1348,7 @@ Append to the `Finders` extension:
     }
 ```
 
-- [ ] **Step 4: Complete `OnDemandService.loadReferences`**
+- [x] **Step 4: Complete `OnDemandService.loadReferences`**
 
 Replace the method body in `OnDemandService.swift` with:
 
@@ -1373,11 +1373,11 @@ Replace the method body in `OnDemandService.swift` with:
     }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandReferencesTests` and then with `-only-testing:OBAKitTests/ReferencesTests`. Expected: PASS for both. Run the watchOS portability check. Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -1398,7 +1398,7 @@ git commit -m "Resolve on-demand references on service models"
 **Interfaces:**
 - Produces: `Stop.onDemandServiceIDs: [String]` and `Route.onDemandServiceIDs: [String]` (`public let`; empty when the key is absent; encoded only when non-empty; part of `isEqual`/`hash`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `StopTests` in `OBAKitTests/Modeling/Model Unit Tests/StopTests.swift` (inside the class):
 
@@ -1494,11 +1494,11 @@ final class RouteOnDemandPointerTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/StopTests` then `-only-testing:OBAKitTests/RouteOnDemandPointerTests`. Expected: build failure `has no member 'onDemandServiceIDs'`.
 
-- [ ] **Step 3: Add the pointer to `Stop`**
+- [x] **Step 3: Add the pointer to `Stop`**
 
 In `Stop.swift`, after `public let routeIDs: [String]`:
 
@@ -1527,7 +1527,7 @@ In `encode(to:)`, after `try container.encode(routeIDs, forKey: .routeIDs)`:
 
 In `isEqual`, add `onDemandServiceIDs == rhs.onDemandServiceIDs &&` before `wheelchairBoarding == rhs.wheelchairBoarding`. In `hash`, add `hasher.combine(onDemandServiceIDs)` after `hasher.combine(routeIDs)`.
 
-- [ ] **Step 4: Add the pointer to `Route`**
+- [x] **Step 4: Add the pointer to `Route`**
 
 In `Route.swift`, after `public let routeURL: URL?`:
 
@@ -1553,11 +1553,11 @@ In `encode(to:)`, after the `routeURL` line:
 
 In `isEqual`, add `onDemandServiceIDs == rhs.onDemandServiceIDs &&` before `routeURL == rhs.routeURL`. In `hash`, add `hasher.combine(onDemandServiceIDs)`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/StopTests`, `-only-testing:OBAKitTests/RouteOnDemandPointerTests`, `-only-testing:OBAKitTests/StopsModelOperationTests`, and `-only-testing:OBAKitTests/ReferencesTests`. Expected: PASS. Run the watchOS portability check. Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -1583,7 +1583,7 @@ git commit -m "Decode on-demand service pointers on stops and routes"
   - `RESTAPIURLBuilder.getOnDemandService(id: String, geometryDetail: OnDemandGeometryDetail) -> URL`, `.getOnDemandServices(agencyID: String, geometryDetail:) -> URL`, `.getOnDemandServices(region: MKCoordinateRegion, geometryDetail:) -> URL`
   - `RESTAPIService.getOnDemandService(id: String, geometryDetail: OnDemandGeometryDetail = .full) async throws -> RESTAPIResponse<OnDemandService>`, `.getOnDemandServices(agencyID: String, geometryDetail: = .simplified) async throws -> RESTAPIResponse<[OnDemandService]>`, `.getOnDemandServices(region: MKCoordinateRegion, geometryDetail: = .simplified) async throws -> RESTAPIResponse<[OnDemandService]>` (all `public nonisolated`).
 
-- [ ] **Step 1: Write the failing URL builder tests**
+- [x] **Step 1: Write the failing URL builder tests**
 
 Append inside `RESTAPIURLBuilderTests` in `OBAKitTests/Network/RESTAPIURLBuilderTests.swift`:
 
@@ -1634,7 +1634,7 @@ Append inside `RESTAPIURLBuilderTests` in `OBAKitTests/Network/RESTAPIURLBuilder
 
 Add `import MapKit` to the file's imports.
 
-- [ ] **Step 2: Write the failing service tests**
+- [x] **Step 2: Write the failing service tests**
 
 Create `OBAKitTests/Modeling/REST Model Service Tests/OnDemandModelOperationTests.swift`:
 
@@ -1720,11 +1720,11 @@ final class OnDemandModelOperationTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/RESTAPIURLBuilderTests`. Expected: build failure `has no member 'getOnDemandService'`.
 
-- [ ] **Step 4: Create `OnDemandGeometryDetail.swift`**
+- [x] **Step 4: Create `OnDemandGeometryDetail.swift`**
 
 ```swift
 //
@@ -1752,7 +1752,7 @@ public enum OnDemandGeometryDetail: String, Sendable {
 }
 ```
 
-- [ ] **Step 5: Add the URL builders**
+- [x] **Step 5: Add the URL builders**
 
 Insert into `RESTAPIURLBuilder.swift` immediately before `// MARK: - Survey API URL Builders`:
 
@@ -1799,7 +1799,7 @@ Insert into `RESTAPIURLBuilder.swift` immediately before `// MARK: - Survey API 
     }
 ```
 
-- [ ] **Step 6: Create `RESTAPIService+OnDemand.swift`**
+- [x] **Step 6: Create `RESTAPIService+OnDemand.swift`**
 
 ```swift
 //
@@ -1865,11 +1865,11 @@ extension RESTAPIService {
 }
 ```
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/RESTAPIURLBuilderTests` and `-only-testing:OBAKitTests/OnDemandModelOperationTests`. Expected: PASS. Run the watchOS portability check. Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -1894,7 +1894,7 @@ git commit -m "Add on-demand endpoints to the REST API service"
   - `RESTAPIService.init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader = URLSession.shared, onDemandSupport: OnDemandSupport = .shared)`; `public nonisolated let onDemandSupport: OnDemandSupport`; `public nonisolated let baseURL: URL` (the configuration's base URL, readable without hopping to the actor).
   - Behaviour: only `getOnDemandServices(region:)` calls `recordAbsent` and only on `APIError.requestNotFound` (a real 404 or the blank-200 shape `APIService+GetData` maps to it). Every other error on that call, and every error on the other two calls, leaves support untouched.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `OBAKitTests/Network/OnDemandSupportTests.swift`:
 
@@ -2023,11 +2023,11 @@ final class OnDemandSupportTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandSupportTests`. Expected: build failure `cannot find 'OnDemandSupport' in scope`.
 
-- [ ] **Step 3: Create `OnDemandSupport.swift`**
+- [x] **Step 3: Create `OnDemandSupport.swift`**
 
 ```swift
 //
@@ -2086,7 +2086,7 @@ public final class OnDemandSupport: Sendable {
 }
 ```
 
-- [ ] **Step 4: Inject support into `RESTAPIService`**
+- [x] **Step 4: Inject support into `RESTAPIService`**
 
 Replace the body of `RESTAPIService.swift` (the actor declaration) with:
 
@@ -2128,7 +2128,7 @@ public actor RESTAPIService: @preconcurrency APIService {
 }
 ```
 
-- [ ] **Step 5: Make the location call record absence**
+- [x] **Step 5: Make the location call record absence**
 
 In `RESTAPIService+OnDemand.swift`, replace `getOnDemandServices(region:geometryDetail:)` with:
 
@@ -2163,7 +2163,7 @@ In `RESTAPIService+OnDemand.swift`, replace `getOnDemandServices(region:geometry
     }
 ```
 
-- [ ] **Step 6: Let tests inject support through `OBATestCase`**
+- [x] **Step 6: Let tests inject support through `OBATestCase`**
 
 In `OBAKitTests/Helpers/OBATestCase.swift`, replace `buildRESTService`:
 
@@ -2176,11 +2176,11 @@ In `OBAKitTests/Helpers/OBATestCase.swift`, replace `buildRESTService`:
 
 (A fresh `OnDemandSupport()` per test service by default, so no suite can taint another through `.shared`.)
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandSupportTests` and `-only-testing:OBAKitTests/OnDemandModelOperationTests`. Expected: PASS. Run the watchOS portability check. Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -2216,7 +2216,7 @@ Spec §6 rules implemented here, restated so the implementer needs no other docu
 - `countBack(D, n, nil)` = D − n calendar days; with a calendar: step back one day at a time counting only days active on that calendar (its days, range and `exceptedDates`) until n are consumed. `countBack(D, 0, _) = D`. An unknown calendar ID falls back to calendar days.
 - `nextBookableServiceDate` = earliest D′ from agency-local today (`serviceDate(for: now)`) through the latest `endDate` of the rule's calendars, active on at least one of the rule's calendars, with `evaluate(D′).state == .open`. Bounded at 400 days.
 
-- [ ] **Step 1: Write the failing vectors-driven test**
+- [x] **Step 1: Write the failing vectors-driven test**
 
 Create `OBAKitTests/OnDemand/BookingDeadlineEvaluatorTests.swift`:
 
@@ -2399,11 +2399,11 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run the standard command with `-only-testing:OBAKitTests/BookingDeadlineEvaluatorTests`. Expected: build failure `cannot find 'BookingDeadlineEvaluator' in scope`.
 
-- [ ] **Step 3: Create `BookingDeadlineEvaluator.swift`**
+- [x] **Step 3: Create `BookingDeadlineEvaluator.swift`**
 
 ```swift
 //
@@ -2660,11 +2660,11 @@ public struct BookingDeadlineEvaluator: Sendable {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/BookingDeadlineEvaluatorTests`. Expected: PASS. If a shared vector fails, compare the vector's `expected` against spec §6 by hand before touching the evaluator — the vectors are the contract; the maglev-side file wins over a hunch, and a genuine vectors bug is reported back to the maglev plan rather than papered over here. Run the watchOS portability check. Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -2691,7 +2691,7 @@ Behaviour:
 - `bookingLine`: evaluate every rule against its pickup booking rule for `nextBookableServiceDate`. If any rule has a `pickupBookingRuleID` that `service.bookingRule(id:)` cannot resolve → `.unknown`. If no rules → `.unknown`. Otherwise pick the candidate with the earliest date, ties broken by earliest cutoff (conservative, wiki §2.5 multi-rule note): cutoff nil → `.noNoticeRequired`; else `.bookBy(deadline: relative medium-date short-time in agency zone, travelDate: "EEE, MMM d"-template on the travel date)`. If no rule is bookable: if any rule's next active date evaluates `.notYetOpen` → `.opensAt(formatted openInstant)` for the earliest such open instant; if any rule evaluates `.unknown` → `.unknown`; else `.closed`.
 - `phoneNumber`/`message`/URLs come from the first resolved pickup booking rule (rules are already server-sorted); `phoneURL` = `tel://` + the digits and `+` of `phoneNumber` (same cleaning as `Agency.callURL`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `OBAKitTests/OnDemand/OnDemandServiceSummaryTests.swift`:
 
@@ -2876,11 +2876,11 @@ final class OnDemandServiceSummaryTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandServiceSummaryTests`. Expected: build failure `cannot find 'OnDemandServiceSummary' in scope`.
 
-- [ ] **Step 3: Create `OnDemandServiceSummary.swift`**
+- [x] **Step 3: Create `OnDemandServiceSummary.swift`**
 
 ```swift
 //
@@ -3098,11 +3098,11 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandServiceSummaryTests`. Expected: PASS. If `deadline.localizedCaseInsensitiveContains("today")` fails, print `deadline` in the failure and check that the test process's `now` (16:00 LA on 2026-03-10) and the cutoff (17:00 LA the same day) share a local date — they must; do not loosen the assertion. Run the watchOS portability check. Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -3133,7 +3133,7 @@ git commit -m "Add the on-demand service summary presenter"
   - `final class OnDemandServiceViewController: UIHostingController<OnDemandServiceView> { init(application: Application, service: OnDemandService) }`
   - `ViewRouter.navigateTo(onDemandService: OnDemandService, from: UIViewController)`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `OBAKitTests/OnDemand/OnDemandServiceViewTests.swift`:
 
@@ -3228,11 +3228,11 @@ final class OnDemandServiceViewTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandServiceViewTests`. Expected: build failure `cannot find 'OnDemandServiceView' in scope`.
 
-- [ ] **Step 3: Create `Strings+OnDemand.swift`**
+- [x] **Step 3: Create `Strings+OnDemand.swift`**
 
 ```swift
 //
@@ -3309,7 +3309,7 @@ public extension Strings {
 }
 ```
 
-- [ ] **Step 4: Append the keys to all 13 locale files**
+- [x] **Step 4: Append the keys to all 13 locale files**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && \
@@ -3384,7 +3384,7 @@ done && grep -c 'on_demand' OBAKit/Strings/*.lproj/Localizable.strings
 
 Expected: every file reports `21`.
 
-- [ ] **Step 5: Create `ServiceArea+MapKit.swift`**
+- [x] **Step 5: Create `ServiceArea+MapKit.swift`**
 
 ```swift
 //
@@ -3416,7 +3416,7 @@ extension ServiceArea {
 }
 ```
 
-- [ ] **Step 6: Create `OnDemandServiceView.swift`**
+- [x] **Step 6: Create `OnDemandServiceView.swift`**
 
 ```swift
 //
@@ -3585,7 +3585,7 @@ struct OnDemandServiceView: View {
 }
 ```
 
-- [ ] **Step 7: Create `OnDemandServiceViewController.swift`**
+- [x] **Step 7: Create `OnDemandServiceViewController.swift`**
 
 ```swift
 //
@@ -3629,7 +3629,7 @@ final class OnDemandServiceViewController: UIHostingController<OnDemandServiceVi
 }
 ```
 
-- [ ] **Step 8: Add the router entry**
+- [x] **Step 8: Add the router entry**
 
 In `OBAKit/ViewRouting/Router.swift`, after `navigateTo(alert:locale:from:)`:
 
@@ -3640,11 +3640,11 @@ In `OBAKit/ViewRouting/Router.swift`, after `navigateTo(alert:locale:from:)`:
     }
 ```
 
-- [ ] **Step 9: Run the tests to verify they pass**
+- [x] **Step 9: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandServiceViewTests` and then `-only-testing:OBAKitTests/LocalizationTests`. Expected: PASS for both.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -3677,7 +3677,7 @@ Design notes (decisions, so the implementer doesn't relitigate them):
 - Overlays render only on the UIKit `MKMapView`; the SwiftUI panel cannot draw `MKOverlay`s (same limitation as the route-focus layers). `mapView` is nil there and the layer still tracks its state.
 - Availability: `.unsupported` once `OnDemandSupport` knows the base URL (or the probe 404s); `.unavailable(reason:)` on a transient failure **only when nothing is on the map** (rental precedent: a stale but drawn zone with a dimmed row would contradict itself); `.available` on any success.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `OBAKitTests/Mapping/OnDemandMapLayerTests.swift`:
 
@@ -3914,11 +3914,11 @@ Append to `MapLayerRegistrarTests` in `OBAKitTests/Mapping/MapLayerRegistrarTest
     }
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandMapLayerTests`. Expected: build failure `cannot find 'OnDemandMapLayer' in scope`.
 
-- [ ] **Step 3: Create `OnDemandZoneAnnotation.swift`**
+- [x] **Step 3: Create `OnDemandZoneAnnotation.swift`**
 
 ```swift
 //
@@ -3953,7 +3953,7 @@ nonisolated final class OnDemandZoneAnnotation: NSObject, MKAnnotation {
 }
 ```
 
-- [ ] **Step 4: Create `OnDemandMapLayer.swift`**
+- [x] **Step 4: Create `OnDemandMapLayer.swift`**
 
 ```swift
 //
@@ -4188,7 +4188,7 @@ import OBAKitCore
 }
 ```
 
-- [ ] **Step 5: Register the layer in `MapLayerRegistrar`**
+- [x] **Step 5: Register the layer in `MapLayerRegistrar`**
 
 Add after `private(set) var rentalLayers: [RentalMapLayer] = []`:
 
@@ -4225,7 +4225,7 @@ Add after `configureRentalLayers()`:
     }
 ```
 
-- [ ] **Step 6: Attach the map view in `MapViewController+MapLayers.swift`**
+- [x] **Step 6: Attach the map view in `MapViewController+MapLayers.swift`**
 
 Replace the start of `attachRentalLayerHost(_:)` so the on-demand layer is wired before the rental guard can return early:
 
@@ -4244,11 +4244,11 @@ Replace the start of `attachRentalLayerHost(_:)` so the on-demand layer is wired
 
 (The rest of the method is unchanged.)
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandMapLayerTests`, then `-only-testing:OBAKitTests/MapLayerRegistrarTests`, `-only-testing:OBAKitTests/MapLayerRendererDispatchTests`, `-only-testing:OBAKitTests/MapLayerViewportForwardingTests`, and `-only-testing:OBAKitTests/MapPanelLayersModelTests`. Expected: PASS. If `MapPanelLayersModelTests` counts enabled layers, the new default-on layer changes the count; update that expectation by exactly one and say so in the commit body.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -4283,7 +4283,7 @@ git commit -m "Draw on-demand service zones as a map layer"
 
 Fetch policy: on every successful arrivals fetch the view model compares `stop.onDemandServiceIDs` to the ID set it last loaded; a changed set (including the first) fetches each service with `geometryDetail: .simplified` (the service page needs polygons, and the row costs nothing extra). Services that fail to load are logged and skipped; if every load fails the recorded set is cleared so the next 15 s refresh retries. Nothing here blocks or fails the arrivals list.
 
-- [ ] **Step 1: Write the failing view-model tests**
+- [x] **Step 1: Write the failing view-model tests**
 
 Append inside `StopViewModelTests` in `OBAKitTests/ViewModels/StopViewModelTests.swift`:
 
@@ -4356,7 +4356,7 @@ Append inside `StopViewModelTests` in `OBAKitTests/ViewModels/StopViewModelTests
     }
 ```
 
-- [ ] **Step 2: Write the failing section test**
+- [x] **Step 2: Write the failing section test**
 
 Create `OBAKitTests/Stops/StopDeparturesSectionsOnDemandTests.swift`:
 
@@ -4414,11 +4414,11 @@ final class StopDeparturesSectionsOnDemandTests: OBATestCase {
 }
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/StopViewModelTests`. Expected: build failure `has no member 'onDemandFetchTask'` / `onDemandServices`.
 
-- [ ] **Step 4: Extend `StopViewModel`**
+- [x] **Step 4: Extend `StopViewModel`**
 
 After `@Published private(set) var stopArrivals: StopArrivals?` add:
 
@@ -4474,7 +4474,7 @@ In `applySuccessfulFetch(stop:arrivals:)`, after `stopArrivals = arrivals`, add 
     }
 ```
 
-- [ ] **Step 5: Create `OnDemandServicesSection.swift`**
+- [x] **Step 5: Create `OnDemandServicesSection.swift`**
 
 ```swift
 //
@@ -4583,7 +4583,7 @@ struct OnDemandServicesSection: View {
 }
 ```
 
-- [ ] **Step 6: Thread the callback through the SwiftUI page**
+- [x] **Step 6: Thread the callback through the SwiftUI page**
 
 In `StopPageView.swift`, add to `StopPageNavigationHandler` directly after `let showAlertDetail: (ServiceAlert) -> Void`:
 
@@ -4613,7 +4613,7 @@ cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && grep -rn 'StopPageN
 
 Expected: exactly `StopPageActionPresenter.swift`, `StopPageViewController.swift` and the new test file.
 
-- [ ] **Step 7: Insert the section into `StopDeparturesSections` and the builder**
+- [x] **Step 7: Insert the section into `StopDeparturesSections` and the builder**
 
 In `StopDeparturesSections.swift`, add `let onDemandServices: [OnDemandService]` after `let serviceAlerts: [ServiceAlert]`, and `let onSelectOnDemandService: (OnDemandService) -> Void` after `let onSelectAlert: (ServiceAlert) -> Void`. Replace the alerts block with:
 
@@ -4637,7 +4637,7 @@ cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && grep -rn 'StopDepar
 
 Expected: only `StopDeparturesBuilder.swift`. Any other call site (a preview) gets the two new arguments too.
 
-- [ ] **Step 8: Add the legacy `StopViewController` section**
+- [x] **Step 8: Add the legacy `StopViewController` section**
 
 In `ListSections`, add `case onDemandServices` after `case serviceAlerts`. In `itemsForRegularMode()`, after `sections.append(serviceAlertsSection)` add `sections.append(onDemandServicesSection)`. After `serviceAlertsSection` (line ~1062) add:
 
@@ -4673,11 +4673,11 @@ In the view-model bindings (next to the `viewModel.$stopArrivals` sink around li
 
 (If the sinks in that method are stored in a differently named set, use that name; `grep -n 'store(in:' OBAKit/Stops/StopViewController.swift` shows it.)
 
-- [ ] **Step 9: Run the tests to verify they pass**
+- [x] **Step 9: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/StopViewModelTests`, `-only-testing:OBAKitTests/StopDeparturesSectionsOnDemandTests`, and `-only-testing:OBAKitTests/StopPageContentTests` (if present; `ls OBAKitTests/Stops`). Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -4705,7 +4705,7 @@ git commit -m "Show on-demand services on the stop page"
 
 The wiki (§3.3) returns 404 for an unknown agency; the list treats `.requestNotFound` as an empty list rather than an error, because the agency came from `agencies-with-coverage` a moment ago and "no services" is the honest reading. Whether the list is empty cannot be known before fetching, so the action shows whenever the server is not known-unsupported and the list itself shows the empty state.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `OBAKitTests/OnDemand/OnDemandServicesListTests.swift`:
 
@@ -4792,11 +4792,11 @@ final class OnDemandServicesListTests: OBATestCase {
 
 `OnDemandServicesListModel.State` must be `Equatable`; `OnDemandService` is an `NSObject`, so `[OnDemandService]` equality is identity-based, which is what `.loaded([])` needs.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandServicesListTests`. Expected: build failure `cannot find 'OnDemandServicesListModel' in scope`.
 
-- [ ] **Step 3: Create `OnDemandServicesListView.swift`**
+- [x] **Step 3: Create `OnDemandServicesListView.swift`**
 
 ```swift
 //
@@ -4901,7 +4901,7 @@ struct OnDemandServicesListView: View {
 }
 ```
 
-- [ ] **Step 4: Create `OnDemandServicesListViewController.swift`**
+- [x] **Step 4: Create `OnDemandServicesListViewController.swift`**
 
 ```swift
 //
@@ -4945,7 +4945,7 @@ final class OnDemandServicesListViewController: UIHostingController<OnDemandServ
 }
 ```
 
-- [ ] **Step 5: Add the action to `AgenciesViewController`**
+- [x] **Step 5: Add the action to `AgenciesViewController`**
 
 Add to the class:
 
@@ -4978,11 +4978,11 @@ In `showAgencyOptions(_:)`, before `alert.addAction(UIAlertAction.cancelAction)`
         }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run the standard command with `-only-testing:OBAKitTests/OnDemandServicesListTests` and `-only-testing:OBAKitTests/AgenciesViewModelTests`. Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && swiftlint lint --quiet | tail -20 && \
@@ -5000,11 +5000,11 @@ git commit -m "List an agency's on-demand services"
 
 **Interfaces:** none new.
 
-- [ ] **Step 1: Run the entire unit suite**
+- [x] **Step 1: Run the entire unit suite**
 
 Run the standard command with `-only-testing:OBAKitTests`. Expected: every suite passes, including `LocalizationTests`, `StopsModelOperationTests`, `ReferencesTests`, `MapPanelLayersModelTests`, `MapLayerRegistrarTests`. Fix any regression in the task that owns the code, as a new commit.
 
-- [ ] **Step 2: watchOS device build and SwiftLint**
+- [x] **Step 2: watchOS device build and SwiftLint**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && set -o pipefail && \
@@ -5014,7 +5014,7 @@ swiftlint lint --quiet | tail -30
 
 Expected: `BUILD SUCCEEDED` (or, on a machine without the watchOS platform, the OBAKitCore-only check from Standard commands) and no SwiftLint errors or warnings in new files.
 
-- [ ] **Step 3: Project generation is clean for both apps**
+- [x] **Step 3: Project generation is clean for both apps**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && scripts/generate_project KiedyBus && scripts/assert_no_watch_target && scripts/generate_project OneBusAway && git status --short
@@ -5022,7 +5022,7 @@ cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && scripts/generate_pr
 
 Expected: `git status` shows no tracked-file changes (the generated project and root `project.yml` are gitignored).
 
-- [ ] **Step 4: Document the feature in `CLAUDE.md`**
+- [x] **Step 4: Document the feature in `CLAUDE.md`**
 
 Under `### Core Components`, after the `- **Models**` bullet, add:
 
@@ -5030,7 +5030,7 @@ Under `### Core Components`, after the `- **Models**` bullet, add:
 - **On-demand (GTFS-Flex)**: `OBAKitCore/Models/REST/OnDemand/` holds the `/api/ondemand` wire models; `OBAKitCore/Models/OnDemand/` holds `BookingDeadlineEvaluator` (normative; verified against `OBAKitTests/fixtures/flex-booking-vectors.json`, mirrored from maglev) and the `OnDemandServiceSummary` presenter. `OnDemandSupport` remembers servers without the namespace; only `services-for-location` may record there. UI lives in `OBAKit/OnDemand/` and `OBAKit/Mapping/Layers/OnDemand/`.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd /Users/aaron/repos/onebusaway/.worktrees/ios-gtfs-flex && \
@@ -5044,3 +5044,15 @@ git commit -m "Document the on-demand modules"
 
 - **Spec coverage (§7):** Core models → Task 1; `References` arrays + finders → Task 2; `Stop`/`Route` pointers → Task 3; URL builder + service calls (`simplified` on screens) → Tasks 4, 8, 9, 10, 11; `OnDemandSupport` with the location-only probe → Task 5; evaluator + vectors → Task 6; presenter → Task 7; `OnDemandMapLayer` registered for every region, availability transitions, tap → service page → Task 9; stop page section in both presentations, cached in `StopViewModel` → Task 10; service page + host + router → Task 8; agencies action sheet + list → Task 11; strings in 13 locales → Task 8; tests listed in §7 → Tasks 1–6, 9, 10. Out of scope per spec §10: watch screens, booking transactions.
 - **Resolved ambiguities:** (1) Tap on a polygon: MapKit reports no overlay taps, so each zone gets a marker at its bbox centre that routes through the existing `presentLayerDetail` path. (2) `.unavailable` only when nothing is drawn (rental precedent) rather than on every transient failure. (3) A degenerate zero-rule service resolves no areas (rules are the only link), so its page shows contact info and no map. (4) `services-for-agency` 404 → empty list, not an error. (5) "Hidden when empty" on the agencies sheet is unknowable before fetching; the action shows unless the server is known-unsupported and the list carries the empty state. (6) Spec §7 names `ondemand_services_for_agency_manistee.json`; the caller's capture list uses Charlevoix (the real `stopGroup` case), so the fixture is `ondemand_services_for_agency_charlevoix.json`. (7) `priorNoticeStartTime` nil with a start day → `00:00:00`; an unknown `priorNoticeCalendarId` → calendar days. (8) Task order swaps the caller's 8 and 9: the map layer's `detailViewController` needs the service page to exist first.
+
+## Execution notes
+
+Deviations from the steps above, as built:
+
+- **Task 6, evaluator.** `countBack` returns `ServiceDate?`. It returns nil when the calendar has no active weekdays, when the walk passes the calendar's `startDate` before `n` days are used up, or when the 400-day cap trips. `evaluate` maps nil to `.unknown` (spec §6.3), which matches Android. `nextBookableServiceDate` skips unknown candidates and doesn't stop at the first one (spec §6.4, Android, maglev). A parity vector for that case went into maglev's shared file, so the mirrored file has 22 vectors. `evaluate` is split into one helper per booking type to stay inside SwiftLint's complexity limit.
+- **Task 7, presenter.** `bookingLine` is split for complexity. Foundation's relative formatting ignores the injected `now`. So the deadline borrows "Today"/"Tomorrow" from a probe date anchored to the real clock. It falls back to a non-relative formatter when the date is outside ±1 day or when a DST gap would shift the probe's clock time. An internal `deadlineForTesting` seam pins that case.
+- **Task 8, service page.** Contact details never depend on the time zone. `OnDemandServiceSummary.init` takes `TimeZone?`. With nil, the booking line is `.unknown`, and the windows are formatted through a fixed UTC calendar. The host always builds a summary.
+- **Task 9, map layer.** `AppConfig` gains `onDemandSupport` (default `.shared`), which is passed through `refreshRESTAPIService`. `OBATestCase.buildApplication` injects a fresh instance. The layer reads support from `application.apiService` so the layer and the service always agree. "Nothing on the map" means no overlays or annotations are drawn, not an empty service list. Tests cover a nil viewport followed by a 500, and both cancellation guards.
+- **Task 10, stop page.** The pointer set is recorded when the fetch starts, which stops refresh churn on flex-only stops. A missing stop clears the card. Cancellation is checked with `Task.isCancelled`. The on-demand code moved out of the long types, and its tests live in `StopViewModelOnDemandTests.swift`. The existing length warnings on `StopViewController` and `StopViewModel` grew slightly but don't cross the error limit.
+- **Task 11, agencies.** Every `.requestNotFound` from `services-for-agency` becomes an empty list, whether it's a real 404 or the blank-200 shape. The list has a Retry button with loading feedback and a localized no-service state.
+- **Task 12, presenter parity.** When a rule has nothing bookable, the opens line now comes from the first date that evaluates `.notYetOpen`, through `BookingDeadlineEvaluator.nextServiceDate(in:rule:bookingRule:now:)`. `nextBookableServiceDate` delegates to it with `.open`. Before, only the next active date was checked, so a one-day notice window viewed in the evening showed "closed". This matches Android's `nextServiceDateInState`. A rule with no open or not-yet-open date is unknown if any remaining date can't be evaluated, and closed otherwise.
