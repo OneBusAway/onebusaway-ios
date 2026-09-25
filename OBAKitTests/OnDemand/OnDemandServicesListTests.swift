@@ -74,16 +74,13 @@ final class OnDemandServicesListTests: OBATestCase {
         #expect(!text.isEmpty)
     }
 
-    /// `APIService+GetData` throws `requestNotFound` for a blank 200 too; that
-    /// is a bad response, not an agency without services.
-    @Test func `Blank 200 is a failure, not an empty list`() async {
+    /// `APIService+GetData` throws `requestNotFound` for a blank 200 too, which
+    /// a legacy server may send; it reads as no services, never a failure.
+    @Test func `Blank 200 is an empty list`() async {
         dataLoader.mock(data: Data(), statusCode: 200) { Self.isAgencyListRequest($0) }
         let model = OnDemandServicesListModel(agencyID: "CC", apiService: restService, regionName: "Test")
         await model.load()
-        guard case .failed = model.state else {
-            Issue.record("expected failed, got \(model.state)")
-            return
-        }
+        #expect(model.state == .loaded([]))
     }
 
     @Test func `Missing API service is a failure`() async {

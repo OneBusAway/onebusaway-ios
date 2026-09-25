@@ -58,10 +58,11 @@ import SwiftUI
         do {
             let list = try await apiService.getOnDemandServices(agencyID: agencyID, geometryDetail: .simplified).list
             return .loaded(list.sorted { $0.id < $1.id })
-        } catch APIError.requestNotFound(let response) where response.statusCode == 404 {
-            // An unknown agency ID is a 404 (wiki §3.3); the agency was listed a
-            // moment ago, so "no services" is the honest reading. A blank 200 is
-            // also thrown as `requestNotFound` but is a bad response, not absence.
+        } catch APIError.requestNotFound {
+            // An unknown agency ID is a 404 (wiki §3.3), and a legacy server may
+            // answer with the blank 200 that `APIService+GetData` maps to the same
+            // case. The agency was listed a moment ago, so "no services" is the
+            // honest reading either way; this screen never shows a failure for it.
             return .loaded([])
         } catch {
             return .failed(ErrorClassifier.classify(error, regionName: regionName).localizedDescription)
