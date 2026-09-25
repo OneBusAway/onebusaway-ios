@@ -71,12 +71,13 @@ enum AnalyticsInstallID {
     private static func persist(_ id: String, to fileURL: URL) {
         var directory = fileURL.deletingLastPathComponent()
         do {
-            if !FileManager.default.fileExists(atPath: directory.path) {
-                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-                var resourceValues = URLResourceValues()
-                resourceValues.isExcludedFromBackup = true
-                try directory.setResourceValues(resourceValues)
-            }
+            // No-op when the directory exists. Exclusion is (re)applied on every
+            // write so a directory left unexcluded by an earlier failed attempt
+            // still ends up out of backups before the ID lands in it.
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            var resourceValues = URLResourceValues()
+            resourceValues.isExcludedFromBackup = true
+            try directory.setResourceValues(resourceValues)
             try id.write(to: fileURL, atomically: true, encoding: .utf8)
         } catch {
             // Analytics must never crash or block on a persistence failure.
