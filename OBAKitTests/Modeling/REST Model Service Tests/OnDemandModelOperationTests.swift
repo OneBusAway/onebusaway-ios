@@ -75,5 +75,8 @@ final class OnDemandModelOperationTests: OBATestCase {
         #expect(response.list.map(\.id) == ["CC_CC1", "CC_CC2_med", "CC_CC3", "CC_CC4"])
         #expect(response.list[2].serviceKind == .stopGroup)
         #expect(response.list[2].locationGroups.first?.stopIDs.count == 2)
+
+        let requested = dataLoader.recordedRequestURLs.last!
+        #expect(URLComponents(url: requested, resolvingAgainstBaseURL: false)?.queryItems?.contains(URLQueryItem(name: "geometryDetail", value: "simplified")) == true)
     }
 }
