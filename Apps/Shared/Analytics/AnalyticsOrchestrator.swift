@@ -72,9 +72,11 @@ import FirebaseCrashlytics
         }
 
         if let umamiConfig = region.umamiAnalytics {
+            // One install ID for every region, read once per process.
             umami = UmamiAnalytics(serverURL: umamiConfig.url,
                                    websiteID: umamiConfig.id,
-                                   hostname: region.OBABaseURL.host ?? "")
+                                   hostname: region.OBABaseURL.host ?? "",
+                                   installID: AnalyticsInstallID.current)
         }
     }
 
