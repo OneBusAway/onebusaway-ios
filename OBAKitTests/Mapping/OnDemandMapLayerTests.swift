@@ -66,6 +66,55 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(layer.zoneShapes.map(\.color) == [routeColor])
     }
 
+    /// A pan that finds the same services keeps what is drawn, so the panel's
+    /// selected marker (tagged by annotation identity) survives it.
+    @Test func `A refetch with the same services keeps the drawn zones`() async {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        let layer = makeLayer()
+        let mapView = MKMapView()
+        layer.mapView = mapView
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+        let firstOverlay = layer.overlays[0]
+        let firstMarker = layer.annotations[0]
+
+        layer.viewportDidChange(viewport.offsetBy(dx: 10_000, dy: 0))
+        await layer.fetchTask?.value
+
+        #expect(layer.overlays.count == 1)
+        #expect(layer.overlays[0] === firstOverlay)
+        #expect(layer.annotations[0] === firstMarker)
+        #expect(mapView.overlays.count == 1, "the overlay was not re-added")
+        #expect(mapView.annotations.filter { $0 is OnDemandZoneAnnotation }.count == 1)
+    }
+
+    @Test func `A refetch with different services replaces the drawn zones`() async throws {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        let layer = makeLayer()
+        let mapView = MKMapView()
+        layer.mapView = mapView
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+        let firstOverlay = layer.overlays[0]
+
+        let viewportJSON = try #require(String(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"), encoding: .utf8))
+        let otherService = Data(viewportJSON.replacingOccurrences(of: "5088_77652", with: "5088_other").utf8)
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(data: otherService) { $0.url?.path.contains("/api/ondemand/services-for-location") ?? false }
+        }
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+
+        #expect(layer.services.map(\.id) == ["5088_other"])
+        #expect(layer.overlays.count == 1)
+        #expect(layer.overlays[0] !== firstOverlay)
+        #expect(layer.annotations.map(\.service.id) == ["5088_other"])
+        #expect(mapView.overlays.count == 1)
+        #expect(mapView.overlays.first === layer.overlays[0])
+    }
+
     @Test func `404 on the probe marks the layer unsupported and empties it`() async {
         mockProbe(statusCode: 404)
         let layer = makeLayer()
