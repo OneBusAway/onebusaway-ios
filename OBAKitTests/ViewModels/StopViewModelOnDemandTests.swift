@@ -20,6 +20,7 @@ import Testing
 final class StopViewModelOnDemandTests: OBATestCase {
 
     nonisolated private static let alexandriaServiceID = "5088_77652"
+    nonisolated private static let secondServiceID = "5088_99999"
     private static let fixedRouteStopID = "1_10020"
     private static let fixedRouteArrivals = "arrivals_and_departures_for_stop_1_10020.json"
 
@@ -64,8 +65,12 @@ final class StopViewModelOnDemandTests: OBATestCase {
         }
     }
 
-    private func stubService(_ dataLoader: MockDataLoader) {
-        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_service_alexandria.json")) { Self.isServiceRequest($0, id: Self.alexandriaServiceID) }
+    private func stubService(_ dataLoader: MockDataLoader, id: String = alexandriaServiceID, name: String = "DOT Paratransit") {
+        let alexandria = String(bytes: Fixtures.loadData(file: "ondemand_service_alexandria.json"), encoding: .utf8) ?? ""
+        let service = alexandria
+            .replacingOccurrences(of: Self.alexandriaServiceID, with: id)
+            .replacingOccurrences(of: "DOT Paratransit", with: name)
+        dataLoader.mock(data: Data(service.utf8)) { $0.url?.path.contains("/api/ondemand/service/\(id)") ?? false }
     }
 
     private func onDemandRequestCount(_ dataLoader: MockDataLoader) -> Int {
@@ -151,6 +156,25 @@ final class StopViewModelOnDemandTests: OBATestCase {
         #expect(onDemandRequestCount(dataLoader) == 2)
     }
 
+    /// A `URLError.cancelled` the load's own task never asked for — the session
+    /// was invalidated, say — is an ordinary failure: it must not strand the
+    /// pointer set as "requested" and suppress the retry.
+    @Test func `A cancellation error the task didn't ask for still retries`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: URLError(.cancelled)) { Self.isServiceRequest($0) })
+        stubArrivals(dataLoader, try arrivals(pointers: [Self.alexandriaServiceID]))
+        let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
+
+        await viewModel.refresh()
+        await viewModel.onDemandFetchTask?.value
+        #expect(viewModel.onDemandServices.isEmpty)
+        #expect(onDemandRequestCount(dataLoader) == 1)
+
+        await viewModel.refresh()
+        await viewModel.onDemandFetchTask?.value
+        #expect(onDemandRequestCount(dataLoader) == 2)
+    }
+
     /// One pointer 404s, the other loads: the missing one is omitted, and because
     /// something loaded the set counts as done — no retry on the next refresh.
     @Test func `A service that fails to load is omitted while the rest show`() async throws {
@@ -171,12 +195,41 @@ final class StopViewModelOnDemandTests: OBATestCase {
         #expect(onDemandRequestCount(dataLoader) == 2, "a partly loaded set is not retried")
     }
 
+    /// A stop the server no longer has takes its card with it, as the legacy
+    /// page's empty list already does; if the stop comes back, the card reloads.
+    @Test func `A stop that goes missing drops its on-demand card`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubService(dataLoader)
+        let phase = SendableBox(0)
+        let withPointer = try arrivals(pointers: [Self.alexandriaServiceID])
+        stubArrivals(dataLoader, phase: phase, index: 0, withPointer)
+        stubArrivals(dataLoader, phase: phase, index: 1, Data(), statusCode: 404)
+        stubArrivals(dataLoader, phase: phase, index: 2, withPointer)
+        let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
+
+        await viewModel.refresh()
+        await viewModel.onDemandFetchTask?.value
+        #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
+
+        phase.value = 1
+        await viewModel.refresh()
+        #expect(viewModel.stopIsMissing, "fixture premise: the 404 reads as a missing stop")
+        #expect(viewModel.onDemandServices.isEmpty)
+        #expect(viewModel.onDemandFetchTask == nil)
+
+        phase.value = 2
+        await viewModel.refresh()
+        await viewModel.onDemandFetchTask?.value
+        #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
+        #expect(onDemandRequestCount(dataLoader) == 2)
+    }
+
     // MARK: - Supersession and cancellation
 
     /// A refresh that brings a different pointer set cancels the load for the old
-    /// one, and the old load's result never lands — even when its request
-    /// completes after the newer fetch has applied.
-    @Test func `A newer pointer set supersedes an in-flight load`() async throws {
+    /// one while its request is still held; once let go, that request fails as
+    /// cancelled and the load returns from inside its loop without applying.
+    @Test func `A newer pointer set cancels an in-flight load`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         stubService(dataLoader)
         let phase = SendableBox(0)
@@ -197,6 +250,56 @@ final class StopViewModelOnDemandTests: OBATestCase {
         gate.releaseRequest()
         await staleTask.value
         #expect(viewModel.onDemandServices.isEmpty, "the superseded load's result never applies")
+    }
+
+    /// The network has already answered when the newer fetch cancels the load,
+    /// so its loop finishes with a service in hand: only the check after the
+    /// loop stands between that stale result and the card.
+    @Test func `A superseded load whose response already arrived still never applies`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubService(dataLoader)
+        let phase = SendableBox(0)
+        stubArrivals(dataLoader, phase: phase, index: 0, try arrivals(pointers: [Self.alexandriaServiceID]))
+        stubArrivals(dataLoader, phase: phase, index: 1, try arrivals(pointers: []))
+        let gate = GatedDataLoader(dataLoader, gating: { Self.isServiceRequest($0) }, holdsAfterResponse: true)
+        let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader, gate: gate), stopID: Self.fixedRouteStopID)
+
+        await viewModel.refresh()
+        let staleTask = try #require(viewModel.onDemandFetchTask)
+        await gate.waitForRequest()
+        #expect(onDemandRequestCount(dataLoader) == 1, "the held request has its response")
+
+        phase.value = 1
+        await viewModel.refresh()
+        gate.releaseRequest()
+        await staleTask.value
+        #expect(viewModel.onDemandServices.isEmpty, "the superseded load's result never applies")
+    }
+
+    /// Pointer set A gives way to a different, non-empty set B while A's load is
+    /// held: B's services show, and A's — released afterwards — never replace them.
+    @Test func `Only the newer pointer set's services remain`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubService(dataLoader)
+        stubService(dataLoader, id: Self.secondServiceID, name: "Night Owl Dial-a-Ride")
+        let phase = SendableBox(0)
+        stubArrivals(dataLoader, phase: phase, index: 0, try arrivals(pointers: [Self.alexandriaServiceID]))
+        stubArrivals(dataLoader, phase: phase, index: 1, try arrivals(pointers: [Self.secondServiceID]))
+        let gate = GatedDataLoader(dataLoader) { Self.isServiceRequest($0, id: Self.alexandriaServiceID) }
+        let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader, gate: gate), stopID: Self.fixedRouteStopID)
+
+        await viewModel.refresh()
+        let staleTask = try #require(viewModel.onDemandFetchTask)
+        await gate.waitForRequest()
+
+        phase.value = 1
+        await viewModel.refresh()
+        await viewModel.onDemandFetchTask?.value
+        #expect(viewModel.onDemandServices.map(\.id) == [Self.secondServiceID])
+
+        gate.releaseRequest()
+        await staleTask.value
+        #expect(viewModel.onDemandServices.map(\.id) == [Self.secondServiceID])
     }
 
     @Test func `Releasing the view model cancels its in-flight on-demand load`() async throws {

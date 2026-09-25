@@ -27,6 +27,10 @@ nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sen
     /// Which requests the gate holds; the rest pass straight through, so a test can
     /// hold one endpoint open while the app's other traffic keeps flowing.
     private let isGated: @Sendable (URLRequest) -> Bool
+    /// Whether a gated request fetches its response before the hold rather than
+    /// after, so a caller cancelled mid-hold still gets the answer — the network
+    /// replied, and the caller has to notice the cancellation for itself.
+    private let holdsAfterResponse: Bool
     private let lock = NSLock()
 
     private var hasArrived = false
@@ -35,9 +39,14 @@ nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sen
     private var isReleased = false
     private var releaseContinuation: CheckedContinuation<Void, Never>?
 
-    init(_ inner: MockDataLoader, gating isGated: @escaping @Sendable (URLRequest) -> Bool = { _ in true }) {
+    init(
+        _ inner: MockDataLoader,
+        gating isGated: @escaping @Sendable (URLRequest) -> Bool = { _ in true },
+        holdsAfterResponse: Bool = false
+    ) {
         self.inner = inner
         self.isGated = isGated
+        self.holdsAfterResponse = holdsAfterResponse
     }
 
     /// Suspends until a request reaches the loader — i.e. until the code under test
@@ -78,6 +87,8 @@ nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sen
             return try await inner.data(for: request)
         }
 
+        let earlyResponse = holdsAfterResponse ? try await inner.data(for: request) : nil
+
         let arrival = lock.withLock { () -> CheckedContinuation<Void, Never>? in
             hasArrived = true
             defer { arrivalContinuation = nil }
@@ -94,6 +105,7 @@ nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sen
             if alreadyReleased { continuation.resume() }
         }
 
+        if let earlyResponse { return earlyResponse }
         return try await inner.data(for: request)
     }
 }
