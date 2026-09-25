@@ -40,15 +40,15 @@ final class DepartureTimeBadgeTests {
         
         let config = DepartureTimeBadge.Configuration(
             arrivalDepartureMinutes: 5,
-            arrivalDepartureStatus: .onTime,
+            arrivalDepartureStatus: .departing,
             temporalState: .future,
-            scheduleStatus: .scheduled,
+            scheduleStatus: .onTime,
             formatters: formatters
         )
         
-        #expect(config.accessibilityLabel == formatters.explanationForArrivalDeparture(tempuraState: .future, arrivalDepartureStatus: .onTime, arrivalDepartureMinutes: 5))
+        #expect(config.accessibilityLabel == formatters.explanationForArrivalDeparture(tempuraState: .future, arrivalDepartureStatus: .departing, arrivalDepartureMinutes: 5))
         #expect(config.displayText == formatters.shortFormattedTime(untilMinutes: 5, temporalState: .future))
-        #expect(config.backgroundColor == formatters.backgroundColorForScheduleStatus(.scheduled).cgColor)
+        #expect(config.backgroundColor == formatters.backgroundColorForScheduleStatus(.onTime).cgColor)
     }
 
     @Test func testBadgeInitialization() {

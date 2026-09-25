@@ -44,6 +44,6 @@ final class ProminentButtonTests {
         
         let highlightLayer = button.layer.sublayers?.last
         #expect(highlightLayer?.backgroundColor == button.prominentColor.cgColor)
-        #expect(highlightLayer?.cornerRadius == button.layer.cornerRadius)
+        #expect(highlightLayer?.cornerRadius == ThemeMetrics.compactCornerRadius)
     }
 }
