@@ -224,6 +224,28 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(summary.windows[0].hours == nil)
     }
 
+    /// A rule with one pickup bound is not all-hours: the missing bound reads
+    /// as the default the evaluator books against — `24:00:00` for the end,
+    /// as `latestPickup` assumes — rather than hiding the window.
+    @Test func `Rule with only a start pickup time reports hours to the end of the service day`() throws {
+        let service = try alexandria { json in
+            var data = json["data"] as! [String: Any]
+            var entry = data["entry"] as! [String: Any]
+            entry["rules"] = (entry["rules"] as! [[String: Any]]).map { rule in
+                var rule = rule
+                rule["endPickupTime"] = NSNull()
+                rule["endDropOffTime"] = NSNull()
+                return rule
+            }
+            data["entry"] = entry
+            json["data"] = data
+        }
+        let summary = summary(service)
+        let hours = try #require(summary.windows.first?.hours)
+        #expect(hours.contains("5:00"), "\(hours)")
+        #expect(hours.contains("12:00"), "24:00 renders as the next day's 12:00; got \(hours)")
+    }
+
     /// Cross-client parity: two rules active on the same travel date with
     /// different pickup booking rules. The prior-day rule's deadline for
     /// today has already passed (book-by-1-day, cutoff was yesterday 17:00),
