@@ -48,6 +48,7 @@ final class OnDemandModelTests: OBATestCase {
         #expect(Weekday(calendarWeekday: 1) == .sun)
         #expect(Weekday(calendarWeekday: 7) == .sat)
         #expect(Weekday.mon.calendarWeekday == 2)
+        #expect(Weekday.allCases.allSatisfy { Weekday(calendarWeekday: $0.calendarWeekday) == $0 })
     }
 
     // MARK: - Enums
