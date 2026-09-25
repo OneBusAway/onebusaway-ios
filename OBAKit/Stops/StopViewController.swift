@@ -1063,27 +1063,6 @@ public class StopViewController: UIViewController,
         return listSection(serviceAlerts: alerts, showSectionTitle: true, sectionID: ListSections.serviceAlerts.sectionID)
     }
 
-    // MARK: - Data/On-demand services
-
-    /// Mirrors the redesigned page's `OnDemandServicesSection`: one row per
-    /// service, its name over its kind.
-    private var onDemandServicesSection: OBAListViewSection? {
-        let services = viewModel.onDemandServices
-        guard !services.isEmpty else { return nil }
-
-        let rows = services.map { service in
-            OBAListRowView.SubtitleViewModel(
-                title: service.name,
-                subtitle: Strings.onDemandKindTitle(service.serviceKind),
-                onSelectAction: { [weak self] _ in
-                    guard let self else { return }
-                    self.application.viewRouter.navigateTo(onDemandService: service, from: self)
-                }
-            )
-        }
-        return listViewSection(for: .onDemandServices, title: Strings.onDemandSectionTitle, items: rows)
-    }
-
     // MARK: - Data/Load More
     private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
     private var loadMoreItems: [AnyOBAListViewItem] {
@@ -1356,6 +1335,29 @@ public class StopViewController: UIViewController,
 // MARK: - ViewModel Binding
 
 private extension StopViewController {
+    // MARK: - Data/On-demand services
+
+    /// Mirrors the redesigned page's `OnDemandServicesSection`: one row per
+    /// service, its name over its kind.
+    var onDemandServicesSection: OBAListViewSection? {
+        let services = viewModel.onDemandServices
+        guard !services.isEmpty else { return nil }
+
+        let rows = services.map { service in
+            OBAListRowView.SubtitleViewModel(
+                title: service.name,
+                subtitle: Strings.onDemandKindTitle(service.serviceKind),
+                onSelectAction: { [weak self] _ in
+                    guard let self else { return }
+                    self.application.viewRouter.navigateTo(onDemandService: service, from: self)
+                }
+            )
+        }
+        return listViewSection(for: .onDemandServices, title: Strings.onDemandSectionTitle, items: rows)
+    }
+
+    // MARK: - List data bindings
+
     func bindListData() {
         bindArrivalsSink()
         bindOnDemandServicesSink()

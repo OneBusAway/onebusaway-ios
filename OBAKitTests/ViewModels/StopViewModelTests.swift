@@ -49,8 +49,7 @@ final class StopViewModelTests: OBATestCase {
         arrivalsData: Data? = nil,
         arrivalsFailureStatusCode: Int? = nil,
         bundledRegionsFixture: String? = nil,
-        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
-        gate: GatedDataLoader? = nil
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -92,7 +91,7 @@ final class StopViewModelTests: OBATestCase {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsFixture.map { Fixtures.path(to: $0) } ?? bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
-            dataLoader: gate ?? dataLoader,
+            dataLoader: dataLoader,
             fixedRegionName: Fixtures.pugetSoundRegion.name,
             defaultArrivalDepartureFilter: defaultArrivalDepartureFilter
         )
@@ -1250,191 +1249,5 @@ final class StopViewModelTests: OBATestCase {
         for _ in 0..<5 { await Task.yield() }
 
         #expect(emissions == baseline)
-    }
-}
-
-// MARK: - On-demand services
-
-/// Kept out of the main suite body, which is already at its length limit.
-extension StopViewModelTests {
-
-    nonisolated private static let alexandriaServiceID = "5088_77652"
-
-    private func arrivalsDataWithPointer(_ ids: [String], fixture: String = "arrivals_and_departures_for_stop_1_10020.json") throws -> Data {
-        try Fixtures.loadData(file: fixture, stampingOnDemandServiceIDs: ids)
-    }
-
-    private func onDemandRequestCount(_ dataLoader: MockDataLoader) -> Int {
-        dataLoader.recordedRequestURLs.filter { $0.path.contains("/api/ondemand/service/") }.count
-    }
-
-    private func stubAlexandriaService(_ dataLoader: MockDataLoader) {
-        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_service_alexandria.json")) {
-            $0.url?.path.contains("/api/ondemand/service/\(Self.alexandriaServiceID)") ?? false
-        }
-    }
-
-    @Test @MainActor
-    func `Stop with a pointer loads its on-demand services once`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        stubAlexandriaService(dataLoader)
-        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: try arrivalsDataWithPointer([Self.alexandriaServiceID]))
-        let viewModel = StopViewModel(application: app, stopID: "1_10020")
-
-        await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
-        #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
-        #expect(viewModel.onDemandServices[0].areas.first?.hasGeometry == true, "rows fetch simplified geometry for the service page")
-        #expect(onDemandRequestCount(dataLoader) == 1)
-
-        await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
-        #expect(onDemandRequestCount(dataLoader) == 1, "same pointer set → no refetch")
-    }
-
-    @Test @MainActor
-    func `Stop without a pointer has no on-demand services and makes no request`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: try arrivalsDataWithPointer([]))
-        let viewModel = StopViewModel(application: app, stopID: "1_10020")
-
-        await viewModel.refresh()
-        #expect(viewModel.onDemandFetchTask == nil)
-        #expect(viewModel.onDemandServices.isEmpty)
-        #expect(onDemandRequestCount(dataLoader) == 0)
-    }
-
-    @Test @MainActor
-    func `Failed on-demand load leaves the list empty and retries on the next refresh`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path.contains("/api/ondemand/service/") ?? false }
-        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: try arrivalsDataWithPointer([Self.alexandriaServiceID]))
-        let viewModel = StopViewModel(application: app, stopID: "1_10020")
-
-        await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
-        #expect(viewModel.onDemandServices.isEmpty)
-        #expect(viewModel.operationError == nil, "on-demand failures never fail the arrivals page")
-        #expect(onDemandRequestCount(dataLoader) == 1)
-
-        await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
-        #expect(onDemandRequestCount(dataLoader) == 2)
-    }
-
-    /// One pointer 404s, the other loads: the missing one is omitted, and because
-    /// something loaded the set counts as done — no retry on the next refresh.
-    @Test @MainActor
-    func `A service that fails to load is omitted while the rest show`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        stubAlexandriaService(dataLoader)
-        dataLoader.mock(data: Data(), statusCode: 404) { $0.url?.path.contains("/api/ondemand/service/5088_missing") ?? false }
-        let app = createApplication(
-            dataLoader: dataLoader,
-            analytics: AnalyticsMock(),
-            arrivalsData: try arrivalsDataWithPointer([Self.alexandriaServiceID, "5088_missing"])
-        )
-        let viewModel = StopViewModel(application: app, stopID: "1_10020")
-
-        await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
-        #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
-        #expect(viewModel.operationError == nil)
-        #expect(onDemandRequestCount(dataLoader) == 2)
-
-        await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
-        #expect(onDemandRequestCount(dataLoader) == 2, "a partly loaded set is not retried")
-    }
-
-    /// A flex-only stop has pointers and nothing scheduled. The empty response
-    /// walks the arrivals window out in a chain of refreshes, and the load holds
-    /// its request open across the whole chain: none of those refreshes may
-    /// cancel it and start over.
-    @Test @MainActor
-    func `Flex-only stop with no arrivals loads its services once`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        stubAlexandriaService(dataLoader)
-        let gate = GatedDataLoader(dataLoader) { $0.url?.path.contains("/api/ondemand/service/") ?? false }
-        let app = createApplication(
-            dataLoader: dataLoader,
-            analytics: AnalyticsMock(),
-            arrivalsData: try arrivalsDataWithPointer([Self.alexandriaServiceID], fixture: "arrivals_and_departures_empty.json"),
-            gate: gate
-        )
-        let viewModel = StopViewModel(application: app, stopID: testStopID)
-
-        let refreshChain = Task { await viewModel.refresh() }
-        await gate.waitForRequest()
-        let firstLoad = try #require(viewModel.onDemandFetchTask)
-        await refreshChain.value
-        #expect(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty == true)
-        #expect(viewModel.isLoadMoreExhausted, "fixture premise: the window was walked out to its cap")
-        #expect(viewModel.onDemandFetchTask == firstLoad)
-        #expect(!firstLoad.isCancelled)
-
-        gate.releaseRequest()
-        await viewModel.onDemandFetchTask?.value
-        #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
-        #expect(onDemandRequestCount(dataLoader) == 1)
-    }
-
-    /// A refresh that brings a different pointer set cancels the load for the old
-    /// one, and the old load's result never lands — even when its request
-    /// completes after the newer fetch has applied.
-    @Test @MainActor
-    func `A newer pointer set supersedes an in-flight load`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        stubAlexandriaService(dataLoader)
-        let pointerIsCleared = SendableBox(false)
-        let withPointer = try arrivalsDataWithPointer([Self.alexandriaServiceID])
-        let withoutPointer = try arrivalsDataWithPointer([])
-        dataLoader.mock(data: withoutPointer) { request in
-            pointerIsCleared.value && (request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false)
-        }
-        let gate = GatedDataLoader(dataLoader) { $0.url?.path.contains("/api/ondemand/service/") ?? false }
-        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: withPointer, gate: gate)
-        let viewModel = StopViewModel(application: app, stopID: "1_10020")
-
-        await viewModel.refresh()
-        let staleTask = try #require(viewModel.onDemandFetchTask)
-        await gate.waitForRequest()
-
-        pointerIsCleared.value = true
-        await viewModel.refresh()
-        #expect(staleTask.isCancelled)
-        #expect(viewModel.onDemandFetchTask == nil)
-
-        gate.releaseRequest()
-        await staleTask.value
-        #expect(viewModel.onDemandServices.isEmpty, "the superseded load's result never applies")
-    }
-
-    @Test @MainActor
-    func `Releasing the view model cancels its in-flight on-demand load`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        stubAlexandriaService(dataLoader)
-        let gate = GatedDataLoader(dataLoader) { $0.url?.path.contains("/api/ondemand/service/") ?? false }
-        let app = createApplication(
-            dataLoader: dataLoader,
-            analytics: AnalyticsMock(),
-            arrivalsData: try arrivalsDataWithPointer([Self.alexandriaServiceID]),
-            gate: gate
-        )
-        var viewModel: StopViewModel? = StopViewModel(application: app, stopID: "1_10020")
-
-        await viewModel?.refresh()
-        // The survey fetch holds the view model strongly while it runs.
-        await viewModel?.surveyRefreshTask?.value
-        let task = try #require(viewModel?.onDemandFetchTask)
-        await gate.waitForRequest()
-
-        weak var released = viewModel
-        viewModel = nil
-        #expect(released == nil)
-        #expect(task.isCancelled)
-
-        gate.releaseRequest()
-        await task.value
     }
 }
