@@ -26,6 +26,10 @@ public class Route: NSObject, Identifiable, Codable, HasReferences {
     public let routeType: RouteType
     public let routeURL: URL?
 
+    /// IDs of `/api/ondemand` services compiled from this route's trips (wiki
+    /// §3.1). Empty and omitted from encoding for non-flex routes.
+    public let onDemandServiceIDs: [String]
+
     public private(set) var regionIdentifier: Int?
 
     private enum CodingKeys: String, CodingKey {
@@ -34,6 +38,7 @@ public class Route: NSObject, Identifiable, Codable, HasReferences {
         case color
         case id
         case longName
+        case onDemandServiceIDs = "onDemandServiceIds"
         case regionIdentifier
         case routeDescription = "description"
         case routeType = "type"
@@ -64,6 +69,7 @@ public class Route: NSObject, Identifiable, Codable, HasReferences {
         textColor = UIColor(hex: String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .textColor)))
         routeType = try container.decode(RouteType.self, forKey: .routeType)
         routeURL = try? container.decodeGarbageURL(forKey: .routeURL)
+        onDemandServiceIDs = try container.decodeIfPresent([String].self, forKey: .onDemandServiceIDs) ?? []
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -79,6 +85,9 @@ public class Route: NSObject, Identifiable, Codable, HasReferences {
         try container.encodeIfPresent(textColor?.toHex, forKey: .textColor)
         try container.encode(routeType, forKey: .routeType)
         try container.encodeIfPresent(routeURL?.absoluteString, forKey: .routeURL)
+        if !onDemandServiceIDs.isEmpty {
+            try container.encode(onDemandServiceIDs, forKey: .onDemandServiceIDs)
+        }
     }
 
     // MARK: - HasReferences
@@ -112,6 +121,7 @@ public class Route: NSObject, Identifiable, Codable, HasReferences {
             routeDescription == rhs.routeDescription &&
             id == rhs.id &&
             longName == rhs.longName &&
+            onDemandServiceIDs == rhs.onDemandServiceIDs &&
             shortName == rhs.shortName &&
             textColor == rhs.textColor &&
             routeType == rhs.routeType &&
@@ -126,6 +136,7 @@ public class Route: NSObject, Identifiable, Codable, HasReferences {
         hasher.combine(routeDescription)
         hasher.combine(id)
         hasher.combine(longName)
+        hasher.combine(onDemandServiceIDs)
         hasher.combine(shortName)
         hasher.combine(textColor)
         hasher.combine(routeType)
