@@ -108,6 +108,28 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(layer.overlays.count == 1)
     }
 
+    /// Zooming out removes the zones but keeps the fetched services; a failure
+    /// after zooming back in has nothing drawn to stand behind.
+    @Test func `Server error after zooming out and back in dims the layer`() async {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        let layer = makeLayer()
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+        layer.viewportDidChange(nil)
+
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(data: Data(), statusCode: 500) { $0.url?.path.contains("/api/ondemand/services-for-location") ?? false }
+        }
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+
+        guard case .unavailable = layer.availability else {
+            Issue.record("expected unavailable, got \(layer.availability)")
+            return
+        }
+    }
+
     @Test func `A known-unsupported server is unsupported on activate and never fetches`() {
         support.recordAbsent(baseURL: serverBaseURL)
         let layer = makeLayer()
