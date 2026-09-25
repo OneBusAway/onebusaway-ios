@@ -18,7 +18,7 @@ import Testing
 final class OnDemandMapLayerTests: OBATestCase {
 
     private var application: Application!
-    private var dataLoader: ProbeHoldingDataLoader!
+    private var dataLoader: MockDataLoader!
 
     /// A ~50 km viewport over Alexandria.
     private let viewport = MKMapRect(
@@ -28,7 +28,7 @@ final class OnDemandMapLayerTests: OBATestCase {
 
     override init() async throws {
         try await super.init()
-        dataLoader = ProbeHoldingDataLoader(testName: name)
+        dataLoader = MockDataLoader(testName: name)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
     }
@@ -47,6 +47,19 @@ final class OnDemandMapLayerTests: OBATestCase {
     }
 
     private var serverBaseURL: URL { application.apiService!.baseURL }
+
+    /// Rebuilds `application` over a gate that holds the probes `gating` picks
+    /// *after* their response is in hand, so a test can cancel the fetch between
+    /// the network answering and the layer applying the result.
+    private func holdProbes(gating: @escaping @Sendable (URLRequest) -> Bool = { OnDemandMapLayerTests.isProbe($0) }) -> GatedDataLoader {
+        let gate = GatedDataLoader(dataLoader, gating: gating, holdsAfterResponse: true)
+        application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader, transport: gate)
+        return gate
+    }
+
+    private nonisolated static func isProbe(_ request: URLRequest) -> Bool {
+        request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+    }
 
     @Test func `Successful fetch draws one polygon and one marker per area`() async {
         mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
@@ -322,15 +335,15 @@ final class OnDemandMapLayerTests: OBATestCase {
     /// layer's own cancellation check stands between a 404 and `.unsupported`.
     @Test func `A failure landing after deactivate is ignored`() async {
         mockProbe(statusCode: 404)
-        dataLoader.holdsNextProbe = true
+        let gate = holdProbes()
         let layer = makeLayer()
         layer.activate()
         layer.viewportDidChange(viewport)
         let task = layer.fetchTask
-        await dataLoader.waitForHeldProbe()
+        await gate.waitForRequest()
 
         layer.deactivate()
-        dataLoader.releaseHeldProbe()
+        gate.releaseRequest()
         await task?.value
 
         #expect(layer.availability == .available)
@@ -341,15 +354,15 @@ final class OnDemandMapLayerTests: OBATestCase {
     /// zones over a map that is now too far out to show them.
     @Test func `A fetch landing after a zoom-out draws nothing`() async {
         mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
-        dataLoader.holdsNextProbe = true
+        let gate = holdProbes()
         let layer = makeLayer()
         layer.activate()
         layer.viewportDidChange(viewport)
         let task = layer.fetchTask
-        await dataLoader.waitForHeldProbe()
+        await gate.waitForRequest()
 
         layer.viewportDidChange(nil)
-        dataLoader.releaseHeldProbe()
+        gate.releaseRequest()
         await task?.value
 
         #expect(layer.overlays.isEmpty)
@@ -372,16 +385,17 @@ final class OnDemandMapLayerTests: OBATestCase {
             request.url?.path.contains("/api/ondemand/services-for-location") ?? false
         }
 
-        dataLoader.holdsNextProbe = true
+        // Only the first viewport's probe is held; the second answers at once.
+        let gate = holdProbes { Self.isProbe($0, centeredAtLatitude: firstCenterLatitude) }
         let layer = makeLayer()
         layer.activate()
         layer.viewportDidChange(firstViewport)
         let firstTask = layer.fetchTask
-        await dataLoader.waitForHeldProbe()
+        await gate.waitForRequest()
 
         layer.viewportDidChange(secondViewport)
         await layer.fetchTask?.value
-        dataLoader.releaseHeldProbe()
+        gate.releaseRequest()
         await firstTask?.value
 
         #expect(layer.services.map(\.id) == ["5088_77652"])
@@ -394,75 +408,5 @@ final class OnDemandMapLayerTests: OBATestCase {
             return false
         }
         return abs(requestLatitude - latitude) < 1e-6
-    }
-}
-
-/// Holds one on-demand probe *after* its response is in hand, so a test can
-/// cancel the fetch between the network answering and the layer applying the
-/// result. `GatedDataLoader` can't: it holds before the request, and the
-/// mock then throws `URLError.cancelled` instead of answering.
-// @unchecked Sendable: the hold state is guarded by `lock`.
-private nonisolated final class ProbeHoldingDataLoader: MockDataLoader, @unchecked Sendable {
-    private let lock = NSLock()
-    private var shouldHold = false
-    private var heldProbeArrived = false
-    private var arrivalContinuation: CheckedContinuation<Void, Never>?
-    private var isReleased = false
-    private var releaseContinuation: CheckedContinuation<Void, Never>?
-
-    /// Arms the hold for the next probe only.
-    var holdsNextProbe: Bool {
-        get { lock.withLock { shouldHold } }
-        set { lock.withLock { shouldHold = newValue } }
-    }
-
-    /// Suspends until the held probe's response has been produced.
-    func waitForHeldProbe() async {
-        await withCheckedContinuation { continuation in
-            let alreadyArrived = lock.withLock { () -> Bool in
-                if heldProbeArrived { return true }
-                arrivalContinuation = continuation
-                return false
-            }
-            if alreadyArrived { continuation.resume() }
-        }
-    }
-
-    /// Lets the held probe return its response.
-    func releaseHeldProbe() {
-        let continuation = lock.withLock { () -> CheckedContinuation<Void, Never>? in
-            isReleased = true
-            defer { releaseContinuation = nil }
-            return releaseContinuation
-        }
-        continuation?.resume()
-    }
-
-    override func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        let response = try await super.data(for: request)
-        let isProbe = request.url?.path.contains("/api/ondemand/services-for-location") ?? false
-        let holdsThis = lock.withLock { () -> Bool in
-            guard isProbe, shouldHold else { return false }
-            shouldHold = false
-            return true
-        }
-        guard holdsThis else { return response }
-
-        let arrival = lock.withLock { () -> CheckedContinuation<Void, Never>? in
-            heldProbeArrived = true
-            defer { arrivalContinuation = nil }
-            return arrivalContinuation
-        }
-        arrival?.resume()
-
-        await withCheckedContinuation { continuation in
-            let alreadyReleased = lock.withLock { () -> Bool in
-                if isReleased { return true }
-                releaseContinuation = continuation
-                return false
-            }
-            if alreadyReleased { continuation.resume() }
-        }
-        return response
     }
 }
