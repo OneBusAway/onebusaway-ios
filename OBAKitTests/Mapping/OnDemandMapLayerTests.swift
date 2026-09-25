@@ -18,7 +18,7 @@ import Testing
 final class OnDemandMapLayerTests: OBATestCase {
 
     private var application: Application!
-    private var dataLoader: MockDataLoader!
+    private var dataLoader: ProbeHoldingDataLoader!
 
     /// A ~50 km viewport over Alexandria.
     private let viewport = MKMapRect(
@@ -28,7 +28,7 @@ final class OnDemandMapLayerTests: OBATestCase {
 
     override init() async throws {
         try await super.init()
-        dataLoader = MockDataLoader(testName: name)
+        dataLoader = ProbeHoldingDataLoader(testName: name)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
     }
@@ -156,7 +156,7 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(dataLoader.recordedRequestURLs.isEmpty)
     }
 
-    @Test func `Deactivate cancels and clears`() async {
+    @Test func `Deactivate clears drawn zones and ignores later viewports`() async {
         mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
         let layer = makeLayer()
         layer.activate()
@@ -262,5 +262,136 @@ final class OnDemandMapLayerTests: OBATestCase {
         application.regionsService.currentRegion = Fixtures.tampaRegion
         layer.activate()
         #expect(layer.availability == .available)
+    }
+
+    // MARK: - Cancellation
+
+    /// The response has already arrived when the task is cancelled, so only the
+    /// layer's own cancellation check stands between a 404 and `.unsupported`.
+    @Test func `A failure landing after deactivate is ignored`() async {
+        mockProbe(statusCode: 404)
+        dataLoader.holdsNextProbe = true
+        let layer = makeLayer()
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        let task = layer.fetchTask
+        await dataLoader.waitForHeldProbe()
+
+        layer.deactivate()
+        dataLoader.releaseHeldProbe()
+        await task?.value
+
+        #expect(layer.availability == .available)
+        #expect(layer.services.isEmpty)
+    }
+
+    /// The first fetch's services land after the second fetch has applied its
+    /// own; a superseded fetch must never overwrite a newer one.
+    @Test func `A superseded fetch never applies its services`() async throws {
+        let viewportJSON = try #require(String(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"), encoding: .utf8))
+        let staleData = Data(viewportJSON.replacingOccurrences(of: "5088_77652", with: "5088_stale").utf8)
+        let firstViewport = viewport
+        let secondViewport = viewport.offsetBy(dx: 0, dy: 100_000)
+        let firstCenterLatitude = MKCoordinateRegion(firstViewport).center.latitude
+
+        dataLoader.mock(data: staleData) { request in
+            Self.isProbe(request, centeredAtLatitude: firstCenterLatitude)
+        }
+        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json")) { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+
+        dataLoader.holdsNextProbe = true
+        let layer = makeLayer()
+        layer.activate()
+        layer.viewportDidChange(firstViewport)
+        let firstTask = layer.fetchTask
+        await dataLoader.waitForHeldProbe()
+
+        layer.viewportDidChange(secondViewport)
+        await layer.fetchTask?.value
+        dataLoader.releaseHeldProbe()
+        await firstTask?.value
+
+        #expect(layer.services.map(\.id) == ["5088_77652"])
+    }
+
+    private nonisolated static func isProbe(_ request: URLRequest, centeredAtLatitude latitude: Double) -> Bool {
+        guard let url = request.url, url.path.contains("/api/ondemand/services-for-location"),
+              let latParam = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "lat" })?.value,
+              let requestLatitude = Double(latParam) else {
+            return false
+        }
+        return abs(requestLatitude - latitude) < 1e-6
+    }
+}
+
+/// Holds one on-demand probe *after* its response is in hand, so a test can
+/// cancel the fetch between the network answering and the layer applying the
+/// result. `GatedDataLoader` can't: it holds before the request, and the
+/// mock then throws `URLError.cancelled` instead of answering.
+// @unchecked Sendable: the hold state is guarded by `lock`.
+private nonisolated final class ProbeHoldingDataLoader: MockDataLoader, @unchecked Sendable {
+    private let lock = NSLock()
+    private var shouldHold = false
+    private var heldProbeArrived = false
+    private var arrivalContinuation: CheckedContinuation<Void, Never>?
+    private var isReleased = false
+    private var releaseContinuation: CheckedContinuation<Void, Never>?
+
+    /// Arms the hold for the next probe only.
+    var holdsNextProbe: Bool {
+        get { lock.withLock { shouldHold } }
+        set { lock.withLock { shouldHold = newValue } }
+    }
+
+    /// Suspends until the held probe's response has been produced.
+    func waitForHeldProbe() async {
+        await withCheckedContinuation { continuation in
+            let alreadyArrived = lock.withLock { () -> Bool in
+                if heldProbeArrived { return true }
+                arrivalContinuation = continuation
+                return false
+            }
+            if alreadyArrived { continuation.resume() }
+        }
+    }
+
+    /// Lets the held probe return its response.
+    func releaseHeldProbe() {
+        let continuation = lock.withLock { () -> CheckedContinuation<Void, Never>? in
+            isReleased = true
+            defer { releaseContinuation = nil }
+            return releaseContinuation
+        }
+        continuation?.resume()
+    }
+
+    override func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let response = try await super.data(for: request)
+        let isProbe = request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        let holdsThis = lock.withLock { () -> Bool in
+            guard isProbe, shouldHold else { return false }
+            shouldHold = false
+            return true
+        }
+        guard holdsThis else { return response }
+
+        let arrival = lock.withLock { () -> CheckedContinuation<Void, Never>? in
+            heldProbeArrived = true
+            defer { arrivalContinuation = nil }
+            return arrivalContinuation
+        }
+        arrival?.resume()
+
+        await withCheckedContinuation { continuation in
+            let alreadyReleased = lock.withLock { () -> Bool in
+                if isReleased { return true }
+                releaseContinuation = continuation
+                return false
+            }
+            if alreadyReleased { continuation.resume() }
+        }
+        return response
     }
 }
