@@ -165,6 +165,20 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         #expect(emptyEvaluator.countBack(from: ServiceDate("2026-03-16")!, days: 1, calendarID: "empty") == nil)
     }
 
+    @Test func `Count back exhausts its four-hundred day step cap`() {
+        // The calendar's startDate is far in the past, so the walk never
+        // exits early on the startDate check; asking for more active days
+        // than 400 calendar days can contain (roughly 5/7 of them, on a
+        // Mon-Fri calendar) exercises the loop's own step cap instead.
+        let farCalendar = OnDemandCalendar(
+            id: "far", days: [.mon, .tue, .wed, .thu, .fri],
+            startDate: ServiceDate(year: 2000, month: 1, day: 1), endDate: ServiceDate(year: 2030, month: 12, day: 31),
+            exceptedDates: []
+        )
+        let farEvaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [farCalendar])
+        #expect(farEvaluator.countBack(from: ServiceDate("2026-03-16")!, days: 1000, calendarID: "far") == nil)
+    }
+
     @Test func `Active days honour range, weekday and exceptions`() {
         let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar])
         #expect(evaluator.isActive(calendarID: "wk", on: ServiceDate("2026-03-11")!))
@@ -180,6 +194,48 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-14")!) == ServiceDate("2026-03-16")!)
         #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-11")!) == ServiceDate("2026-03-11")!)
         #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2027-06-01")!) == nil)
+    }
+
+    @Test func `Next active service date is nil when the rule names no known calendar`() {
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar])
+        let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["missing"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
+        #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-11")!) == nil)
+    }
+
+    @Test func `Next active service date exhausts its own step cap when nothing is active`() {
+        // A distant endDate keeps the walk's `cursor <= lastDate` condition
+        // true throughout, so exit must come from the step cap, not from
+        // running past the calendar's range.
+        let neverActiveCalendar = OnDemandCalendar(
+            id: "never", days: [],
+            startDate: ServiceDate("2026-03-11")!, endDate: ServiceDate("2030-12-31")!,
+            exceptedDates: []
+        )
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [neverActiveCalendar])
+        let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["never"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
+        #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-11")!) == nil)
+    }
+
+    @Test func `Same-day booking type opens durationMax minutes before start pickup`() throws {
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [])
+        let bookingRule = try JSONDecoder().decode(
+            OnDemandBookingRule.self,
+            from: Data(#"{"id":"same-day-max","bookingType":1,"priorNoticeDurationMin":30,"priorNoticeDurationMax":120}"#.utf8)
+        )
+        let rule = AvailabilityRule(
+            fromIDs: [], toIDs: [],
+            startPickupTime: GTFSTimeOfDay("08:00:00"), endPickupTime: GTFSTimeOfDay("18:00:00"),
+            endDropOffTime: nil, calendarIDs: [],
+            pickupType: 2, dropOffType: 2,
+            pickupBookingRuleID: "same-day-max", dropOffBookingRuleID: nil,
+            safeDurationFactor: nil, safeDurationOffset: nil
+        )
+        let travelDate = ServiceDate("2026-03-11")!
+
+        let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: travelDate, now: evaluator.instant(travelDate, GTFSTimeOfDay("07:00:00")!))
+
+        let expectedOpen = evaluator.instant(travelDate, GTFSTimeOfDay("08:00:00")!).addingTimeInterval(-120 * 60)
+        #expect(evaluation.openInstant == expectedOpen)
     }
 
     @Test func `Unknown booking type is unknown`() {
