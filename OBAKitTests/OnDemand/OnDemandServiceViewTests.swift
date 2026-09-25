@@ -10,6 +10,7 @@
 import Foundation
 import MapKit
 import Testing
+import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -133,5 +134,53 @@ final class OnDemandServiceViewTests: OBATestCase {
         #expect(summary.phoneNumber == "703-746-5222")
         #expect(summary.bookingURL?.host() == "spare-rider-alexandriadot-production.vercel.app")
         #expect(controller.rootView.hasContactDetails)
+    }
+
+    // MARK: - Refreshing the booking line
+
+    /// Alexandria's calendars cut to end on Wed 2026-03-11, so once Tuesday's
+    /// 17:00 cutoff passes no service day is left to book.
+    private func alexandriaEndingWednesday() throws -> OnDemandService {
+        try alexandria(rewriting: "calendars") { $0["endDate"] = "2026-03-11" }
+    }
+
+    private func makeController(service: OnDemandService, clock: SendableBox<Date>) -> OnDemandServiceViewController {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        return OnDemandServiceViewController(application: application, service: service, now: { clock.value })
+    }
+
+    /// A rider who calls and comes back after the cutoff must not still see
+    /// "Book by today at 5:00 PM".
+    @Test func `Refreshing past the cutoff replaces the book-by line`() throws {
+        let clock = SendableBox(now)
+        let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
+        #expect(controller.rootView.bookingLineText?.contains("5:00") == true)
+
+        // 2026-03-10 17:30 in Los Angeles.
+        clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
+        controller.refreshSummary()
+
+        #expect(controller.rootView.bookingLineText == Strings.onDemandBookingClosed)
+    }
+
+    @Test func `Returning to the foreground refreshes the booking line`() throws {
+        let clock = SendableBox(now)
+        let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
+
+        clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        #expect(controller.rootView.bookingLineText == Strings.onDemandBookingClosed)
+    }
+
+    /// The one-shot timer fires at the earliest instant the line can change.
+    @Test func `The next change instant is the shown cutoff`() throws {
+        let clock = SendableBox(now)
+        let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
+
+        // Tuesday 17:00 in Los Angeles (PDT).
+        #expect(controller.rootView.summary.nextChangeInstant == ISO8601DateFormatter().date(from: "2026-03-11T00:00:00Z"))
     }
 }

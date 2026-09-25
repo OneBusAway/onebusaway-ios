@@ -46,6 +46,10 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     public let bookingURL: URL?
     public let infoURL: URL?
     public let message: String?
+    /// The earliest cutoff or opening instant after `now` among the rules'
+    /// candidates — when the booking line can next read differently. Nil
+    /// when nothing ahead would change it.
+    public let nextChangeInstant: Date?
 
     /// - Parameter timeZone: The agency's zone, or nil when it is unknown.
     ///   Without a zone the booking line is `.unknown`, because a deadline is
@@ -59,9 +63,12 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         let formatters = SummaryFormatters(timeZone: resolvedZone, locale: locale, now: now)
 
         windows = Self.windows(for: service, evaluator: evaluator, formatters: formatters, now: now)
-        bookingLine = timeZone == nil
-            ? .unknown
-            : Self.bookingLine(for: service, evaluator: evaluator, formatters: formatters, now: now)
+        if timeZone == nil {
+            bookingLine = .unknown
+            nextChangeInstant = nil
+        } else {
+            (bookingLine, nextChangeInstant) = Self.bookingLine(for: service, evaluator: evaluator, formatters: formatters, now: now)
+        }
 
         let contact = service.rules.lazy.compactMap { service.bookingRule(id: $0.pickupBookingRuleID) }.first
         phoneNumber = contact?.phoneNumber
@@ -140,8 +147,8 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         case settled
     }
 
-    private static func bookingLine(for service: OnDemandService, evaluator: BookingDeadlineEvaluator, formatters: SummaryFormatters, now: Date) -> BookingLine {
-        guard !service.rules.isEmpty else { return .unknown }
+    private static func bookingLine(for service: OnDemandService, evaluator: BookingDeadlineEvaluator, formatters: SummaryFormatters, now: Date) -> (BookingLine, Date?) {
+        guard !service.rules.isEmpty else { return (.unknown, nil) }
 
         var bookable: [Candidate] = []
         var notYetOpen: [Date] = []
@@ -150,7 +157,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         for rule in service.rules {
             switch outcome(for: rule, service: service, evaluator: evaluator, now: now) {
             case .unresolvedBookingRule:
-                return .unknown
+                return (.unknown, nil)
             case .bookable(let candidate):
                 bookable.append(candidate)
             case .notYetOpen(let open):
@@ -162,7 +169,9 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             }
         }
 
-        return resolvedLine(bookable: bookable, notYetOpen: notYetOpen, sawUnknown: sawUnknown, evaluator: evaluator, formatters: formatters)
+        let line = resolvedLine(bookable: bookable, notYetOpen: notYetOpen, sawUnknown: sawUnknown, evaluator: evaluator, formatters: formatters)
+        let boundaries = bookable.compactMap(\.evaluation.cutoffInstant) + notYetOpen
+        return (line, boundaries.filter { $0 > now }.min())
     }
 
     /// The single rule's outcome as of `now`: its own next bookable date if
