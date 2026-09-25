@@ -209,7 +209,10 @@ class OBATestCase {
     /// `cancelAllOperations()` scoped to one test — Swift Testing builds a fresh
     /// suite instance per test function and releases it afterwards, so the
     /// cancellation lands in that instance's `deinit`.
-    func buildApplication(queue: OperationQueue, dataLoader: MockDataLoader) -> Application {
+    ///
+    /// `onDemandSupport` defaults to a fresh instance, not `.shared`, so a
+    /// probe that 404s in one suite can't mark the server unsupported in another.
+    func buildApplication(queue: OperationQueue, dataLoader: MockDataLoader, onDemandSupport: OnDemandSupport = OnDemandSupport()) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
 
@@ -230,7 +233,8 @@ class OBATestCase {
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
             dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            fixedRegionName: Fixtures.pugetSoundRegion.name,
+            onDemandSupport: onDemandSupport
         )
 
         return Application(config: config)
