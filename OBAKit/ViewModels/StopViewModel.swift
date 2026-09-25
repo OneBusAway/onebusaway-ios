@@ -79,11 +79,9 @@ class StopViewModel: ObservableObject {
     /// The in-flight on-demand load; held for cancellation and so tests can await it.
     private(set) var onDemandFetchTask: Task<Void, Never>?
 
-    /// The pointer set the current or last load was started for. Recorded when
-    /// the load starts, not when it finishes, so refreshes that land while it is
-    /// in flight — an empty window's auto-extension fires several — don't
-    /// restart it. Cleared after a load that produced nothing, so the next
-    /// refresh retries.
+    /// The pointer set the current or last load was started for — recorded at the
+    /// start so refreshes landing mid-load (auto-extension fires several) don't
+    /// restart it. Nil after a load that produced nothing, so the next refresh retries.
     private var requestedOnDemandServiceIDs: [String]?
 
     /// `true` while a network request is in-flight.
@@ -368,6 +366,7 @@ class StopViewModel: ObservableObject {
             stopArrivals = nil
             lastUpdated = nil
             updateStatus()
+            clearOnDemandServices()
 
             // With a bookmark behind it, a server that has no stop at this ID is the
             // broken-bookmark path: the page explains itself and offers a way out, and
@@ -694,7 +693,9 @@ class StopViewModel: ObservableObject {
                     // Simplified geometry: the service page this row opens draws the zones.
                     loaded.append(try await apiService.getOnDemandService(id: id, geometryDetail: .simplified).entry)
                 } catch {
-                    if error.isCancellation { return }
+                    // The task's flag, not the error: a `URLError.cancelled` this task
+                    // didn't ask for is an ordinary failure that must still allow a retry.
+                    if Task.isCancelled { return }
                     Logger.error("On-demand service \(id) failed to load: \(error)")
                 }
             }
@@ -704,6 +705,14 @@ class StopViewModel: ObservableObject {
                 self.requestedOnDemandServiceIDs = nil
             }
         }
+    }
+
+    /// Drops the on-demand card and forgets its pointer set, so a later fetch reloads it.
+    private func clearOnDemandServices() {
+        onDemandFetchTask?.cancel()
+        onDemandFetchTask = nil
+        requestedOnDemandServiceIDs = nil
+        onDemandServices = []
     }
 
     private func loadMore(minutes: UInt) async {
