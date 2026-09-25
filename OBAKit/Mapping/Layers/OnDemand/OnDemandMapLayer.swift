@@ -16,7 +16,9 @@ import OBAKitCore
 /// region change and draws each zone as a filled `MKPolygon` in its route's
 /// colour, with a marker at the zone's bounding-box centre that opens the
 /// service page. The UIKit map draws through `mapView`; the SwiftUI panel
-/// reads `zoneShapes` and `annotations` after `onMapContentDidChange`. Follows `RentalLayerCoordinator` for availability: the first
+/// reads `zoneShapes` and `annotations` after `onMapContentDidChange`.
+///
+/// Follows `RentalLayerCoordinator` for availability: the first
 /// `.requestNotFound` from the probe marks the server in `OnDemandSupport` and
 /// the row disappears; any other failure dims the row only while nothing is
 /// drawn, and the next region change retries.
