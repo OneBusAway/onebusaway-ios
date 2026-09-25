@@ -121,6 +121,16 @@ public struct BookingDeadlineEvaluator: Sendable {
         return !serviceCalendar.exceptedDates.contains(date)
     }
 
+    /// Whether any of `rule`'s calendars is known and has a usable
+    /// `startDate` and `endDate`. Without one the rule has no service days
+    /// the evaluator can vouch for, which spec §6.3 makes unknown, not closed.
+    public func hasUsableCalendar(_ rule: AvailabilityRule) -> Bool {
+        rule.calendarIDs.contains { calendarID in
+            guard let serviceCalendar = calendarsByID[calendarID] else { return false }
+            return serviceCalendar.startDate != nil && serviceCalendar.endDate != nil
+        }
+    }
+
     /// `countBack(D, n, calendarId)` from spec §6.1/§6.3: calendar days when
     /// there is no (known) calendar, otherwise the n-th preceding day active
     /// on it. `n == 0` returns `D` unconditionally, without validating the

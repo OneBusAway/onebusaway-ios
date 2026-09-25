@@ -322,4 +322,16 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["undated", "unended"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
         #expect(nextActiveDate(evaluator, rule: rule, from: ServiceDate("2026-03-11")!) == nil)
     }
+
+    @Test func `A rule has a usable calendar only when one resolves with both dates`() {
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar, undatedCalendar])
+        func rule(_ calendarIDs: [String]) -> AvailabilityRule {
+            AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: calendarIDs, pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
+        }
+        #expect(evaluator.hasUsableCalendar(rule(["wk"])))
+        #expect(evaluator.hasUsableCalendar(rule(["undated", "wk"])))
+        #expect(!evaluator.hasUsableCalendar(rule(["undated"])))
+        #expect(!evaluator.hasUsableCalendar(rule(["missing"])))
+        #expect(!evaluator.hasUsableCalendar(rule([])))
+    }
 }
