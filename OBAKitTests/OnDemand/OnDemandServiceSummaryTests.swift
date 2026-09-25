@@ -381,6 +381,26 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(summary(service).bookingLine == .unknown)
     }
 
+    /// Spec §6.3: an unparseable startDate makes the evaluation unknown, so a
+    /// service whose rules have no usable calendar cannot claim to be closed.
+    @Test func `Rules on calendars with no usable start date are unknown`() throws {
+        let service = try alexandria(calendar: { $0["startDate"] = "" }, bookingRules: [[
+            "id": fixtureBookingRuleID, "bookingType": 2, "priorNoticeLastDay": 1, "priorNoticeLastTime": "17:00:00"
+        ]])
+        #expect(service.calendars.allSatisfy { $0.startDate == nil })
+        #expect(summary(service).bookingLine == .unknown)
+    }
+
+    /// One usable calendar keeps the normal walk: only the unusable one is ignored.
+    @Test func `A rule with one usable calendar keeps its normal outcome`() throws {
+        let service = try alexandria(
+            calendar: { $0["endDate"] = "2026-01-31" },
+            extraCalendars: [["id": "undated", "days": ["mon"], "startDate": "", "endDate": "2026-12-31"]],
+            bookingRules: [["id": fixtureBookingRuleID, "bookingType": 2, "priorNoticeLastDay": 1, "priorNoticeLastTime": "17:00:00"]]
+        )
+        #expect(summary(service).bookingLine == .closed, "the ended calendar is usable, so the rules are closed")
+    }
+
     @Test func `Day runs render as ranges and lists`() {
         let symbols = DateFormatter().shortWeekdaySymbols!  // en_US in the GMT-pinned test process
         #expect(OnDemandServiceSummary.daysText([.mon, .tue, .wed, .thu, .fri, .sat], shortWeekdaySymbols: symbols) == "Mon–Sat")

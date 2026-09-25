@@ -186,6 +186,9 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         if rule.pickupBookingRuleID != nil, bookingRule == nil {
             return .unresolvedBookingRule
         }
+        // No usable calendar means no dates to walk; that is unknown, not
+        // closed (spec §6.3).
+        guard evaluator.hasUsableCalendar(rule) else { return .unknown }
 
         var bookable: Candidate?
         // The next service day may already be closed while a later one has
