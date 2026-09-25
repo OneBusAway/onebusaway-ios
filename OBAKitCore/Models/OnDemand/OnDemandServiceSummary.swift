@@ -11,6 +11,7 @@ import Foundation
 
 /// The rider-facing facts about an on-demand service, formatted for a locale
 /// in the agency's time zone: when it runs, by when to book, how to book.
+/// Contact details never depend on that zone being known.
 ///
 /// Carries no localized sentences of its own — only Foundation-formatted
 /// dates, times and day names — so OBAKit (and the watch, later) wrap the
@@ -46,12 +47,21 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     public let infoURL: URL?
     public let message: String?
 
-    public init(service: OnDemandService, timeZone: TimeZone, now: Date, locale: Locale) {
-        let evaluator = BookingDeadlineEvaluator(timeZone: timeZone, calendars: service.calendars)
-        let formatters = SummaryFormatters(timeZone: timeZone, locale: locale, now: now)
+    /// - Parameter timeZone: The agency's zone, or nil when it is unknown.
+    ///   Without a zone the booking line is `.unknown`, because a deadline is
+    ///   an instant and cannot be placed. Windows and contact details are
+    ///   still computed: pickup times are GTFS wall-clock times of day, so
+    ///   they are formatted through a fixed UTC zone. UTC has no DST, so
+    ///   "9:00 AM – 5:00 PM" reads the same as it would in the agency's zone.
+    public init(service: OnDemandService, timeZone: TimeZone?, now: Date, locale: Locale) {
+        let resolvedZone = timeZone ?? .gmt
+        let evaluator = BookingDeadlineEvaluator(timeZone: resolvedZone, calendars: service.calendars)
+        let formatters = SummaryFormatters(timeZone: resolvedZone, locale: locale, now: now)
 
         windows = Self.windows(for: service, evaluator: evaluator, formatters: formatters, now: now)
-        bookingLine = Self.bookingLine(for: service, evaluator: evaluator, formatters: formatters, now: now)
+        bookingLine = timeZone == nil
+            ? .unknown
+            : Self.bookingLine(for: service, evaluator: evaluator, formatters: formatters, now: now)
 
         let contact = service.rules.lazy.compactMap { service.bookingRule(id: $0.pickupBookingRuleID) }.first
         phoneNumber = contact?.phoneNumber

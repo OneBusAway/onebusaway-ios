@@ -71,6 +71,27 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(summary.message?.hasPrefix("DOT is the City of Alexandria") == true)
     }
 
+    @Test func `Unknown time zone leaves the line unknown but keeps windows and contact details`() throws {
+        let summary = OnDemandServiceSummary(service: try alexandria(), timeZone: nil, now: now, locale: enUS)
+        #expect(summary.bookingLine == .unknown)
+        #expect(summary.windows.count == 2)
+        #expect(summary.windows[0].days == "Mon–Sat")
+        #expect(summary.windows[0].hours == "5:00\u{202F}AM – 12:50\u{202F}AM", "wall-clock hours are zone-independent; got \(summary.windows[0].hours ?? "nil")")
+        #expect(summary.windows[1].hours?.contains("7:00") == true)
+        #expect(summary.phoneNumber == "703-746-5222")
+        #expect(summary.phoneURL == URL(string: "tel://7037465222"))
+        #expect(summary.bookingURL?.host() == "spare-rider-alexandriadot-production.vercel.app")
+        #expect(summary.infoURL == URL(string: "https://www.alexandriava.gov/Paratransit"))
+        #expect(summary.message?.hasPrefix("DOT is the City of Alexandria") == true)
+    }
+
+    @Test func `Unknown time zone renders the same hours as the agency zone`() throws {
+        let service = try alexandria()
+        let withZone = summary(service)
+        let withoutZone = OnDemandServiceSummary(service: service, timeZone: nil, now: now, locale: enUS)
+        #expect(withoutZone.windows == withZone.windows)
+    }
+
     @Test func `Degenerate service with no rules is unknown with no windows`() throws {
         let service = try alexandria { json in
             var data = json["data"] as! [String: Any]
