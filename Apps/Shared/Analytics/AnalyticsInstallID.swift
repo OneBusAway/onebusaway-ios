@@ -22,7 +22,7 @@ import Foundation
 /// Tracking Transparency implications.
 ///
 /// The ID is persisted to a file in the app's private container (Application
-/// Support), not `UserDefaults`, and that file is excluded from device
+/// Support), not `UserDefaults`, in a directory excluded from device
 /// backups. That keeps the value truly per-install: it's never swept up in a
 /// backup, so restoring a backup to a second device (or restoring to the
 /// same device after a reinstall) can't leave two devices sharing one ID,
@@ -30,29 +30,27 @@ import Foundation
 enum AnalyticsInstallID {
     private static let fileName = "install-id"
 
-    /// The directory the install ID file lives in: `Analytics/` inside the
-    /// app's private Application Support directory.
-    static var defaultDirectory: URL {
-        let appSupport = (try? FileManager.default.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: false
-        )) ?? FileManager.default.temporaryDirectory
+    /// This install's ID, read (or created) once per process — the value can't
+    /// change while the app runs, so later region changes and activations skip
+    /// the file I/O.
+    static let current = persisted()
 
-        return appSupport.appendingPathComponent("Analytics", isDirectory: true)
-    }
+    /// `Analytics/` inside the app's private Application Support directory, or
+    /// nil if that can't be resolved (the ID is then not persisted rather than
+    /// written somewhere the OS may purge).
+    static let defaultDirectory: URL? = try? FileManager.default.url(
+        for: .applicationSupportDirectory,
+        in: .userDomainMask,
+        appropriateFor: nil,
+        create: false
+    ).appendingPathComponent("Analytics", isDirectory: true)
 
-    /// Returns the persisted install ID, generating and storing one on first
-    /// call. Stable across calls (and across app launches) for a given
-    /// `directory`.
-    ///
-    /// Never throws: analytics must never crash or block the app. If the
-    /// existing file can't be read, is empty, or doesn't contain a valid
-    /// UUID, a fresh ID is generated. If persisting a newly-generated ID
-    /// fails, the generated ID is still returned (it just won't survive to
-    /// the next launch).
-    static func persisted(directory: URL = defaultDirectory) -> String {
+    /// Returns the ID stored in `directory`, generating and storing a new one
+    /// when it's missing or invalid. Never throws: analytics must never crash
+    /// or block the app, so a persistence failure still returns an ID for
+    /// this run.
+    static func persisted(directory: URL? = defaultDirectory) -> String {
+        guard let directory else { return UUID().uuidString }
         let fileURL = directory.appendingPathComponent(fileName, isDirectory: false)
 
         if let data = try? Data(contentsOf: fileURL),
@@ -64,22 +62,24 @@ enum AnalyticsInstallID {
         }
 
         let newID = UUID().uuidString
-        persist(newID, to: fileURL, in: directory)
+        persist(newID, to: fileURL)
         return newID
     }
 
-    private static func persist(_ id: String, to fileURL: URL, in directory: URL) {
+    /// Writes `id`, creating the directory on first use and excluding the
+    /// whole directory from backups so anything stored here stays per-device.
+    private static func persist(_ id: String, to fileURL: URL) {
+        var directory = fileURL.deletingLastPathComponent()
         do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: directory.path) {
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                var resourceValues = URLResourceValues()
+                resourceValues.isExcludedFromBackup = true
+                try directory.setResourceValues(resourceValues)
+            }
             try id.write(to: fileURL, atomically: true, encoding: .utf8)
-
-            var excludedURL = fileURL
-            var resourceValues = URLResourceValues()
-            resourceValues.isExcludedFromBackup = true
-            try excludedURL.setResourceValues(resourceValues)
         } catch {
-            // Analytics must never crash or block on a persistence failure;
-            // the caller still gets `id` back for this run.
+            // Analytics must never crash or block on a persistence failure.
         }
     }
 }
