@@ -11,6 +11,7 @@ import Foundation
 import Testing
 @testable import OBAKitCore
 import CoreLocation
+import MapKit
 
 @Suite(.serialized)
 final class RESTAPIURLBuilderTests {
@@ -93,5 +94,48 @@ final class RESTAPIURLBuilderTests {
     @Test func testSubmitSurveyResponse() {
         let url = builder.submitSurveyResponse()
         #expect(url?.absoluteString == "https://surveys.onebusaway.org/api/v1/survey_responses/?key=TEST")
+    }
+
+    // MARK: - On-demand
+
+    private func queryValue(_ url: URL, _ name: String) -> String? {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == name }?.value
+    }
+
+    @Test func testGetOnDemandService() {
+        let url = builder.getOnDemandService(id: "5088_77652", geometryDetail: .full)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components?.path == "/api/ondemand/service/5088_77652.json")
+        #expect(queryValue(url, "geometryDetail") == "full")
+        #expect(queryValue(url, "key") == "TEST")
+    }
+
+    @Test func testGetOnDemandServiceEscapesID() {
+        let url = builder.getOnDemandService(id: "CC_CC2 med/x", geometryDetail: .simplified)
+        #expect(url.absoluteString.contains("/api/ondemand/service/CC_CC2%20med%2Fx.json"))
+    }
+
+    @Test func testGetOnDemandServicesForAgency() {
+        let url = builder.getOnDemandServices(agencyID: "CC", geometryDetail: .none)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components?.path == "/api/ondemand/services-for-agency/CC.json")
+        #expect(queryValue(url, "geometryDetail") == "none")
+        #expect(queryValue(url, "key") == "TEST")
+    }
+
+    @Test func testGetOnDemandServicesForRegion() {
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 38.83, longitude: -77.05),
+            span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.2)
+        )
+        let url = builder.getOnDemandServices(region: region, geometryDetail: .simplified)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components?.path == "/api/ondemand/services-for-location.json")
+        #expect(queryValue(url, "lat").flatMap(Double.init) == 38.83)
+        #expect(queryValue(url, "lon").flatMap(Double.init) == -77.05)
+        #expect(queryValue(url, "latSpan").flatMap(Double.init) == 0.1)
+        #expect(queryValue(url, "lonSpan").flatMap(Double.init) == 0.2)
+        #expect(queryValue(url, "radius") == nil, "viewport mode must not send a radius; radius wins the server tiebreak")
+        #expect(queryValue(url, "geometryDetail") == "simplified")
     }
 }

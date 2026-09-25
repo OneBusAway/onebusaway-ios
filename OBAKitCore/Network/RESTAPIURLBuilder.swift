@@ -466,6 +466,47 @@ extension RESTAPIURLBuilder {
         return generateURL(path: apiPath, params: args)
     }
 
+    // MARK: - On-demand
+
+    /// Creates a full URL for the `getOnDemandService` API call.
+    ///
+    /// - API Endpoint: `/api/ondemand/service/{id}.json`
+    ///
+    /// - Parameters:
+    ///   - id: The combined on-demand service ID.
+    ///   - geometryDetail: How much zone geometry to embed in the references.
+    /// - Returns: An URL suitable for making a request to retrieve information.
+    public func getOnDemandService(id: String, geometryDetail: OnDemandGeometryDetail) -> URL {
+        generateURL(
+            path: String(format: "/api/ondemand/service/%@.json", NetworkHelpers.escapePathVariable(id)),
+            params: ["geometryDetail": geometryDetail.rawValue]
+        )
+    }
+
+    /// Creates a full URL for the `getOnDemandServices(agencyID:)` API call.
+    ///
+    /// - API Endpoint: `/api/ondemand/services-for-agency/{id}.json`
+    public func getOnDemandServices(agencyID: String, geometryDetail: OnDemandGeometryDetail) -> URL {
+        generateURL(
+            path: String(format: "/api/ondemand/services-for-agency/%@.json", NetworkHelpers.escapePathVariable(agencyID)),
+            params: ["geometryDetail": geometryDetail.rawValue]
+        )
+    }
+
+    /// Creates a full URL for the `getOnDemandServices(region:)` API call, in
+    /// the server's viewport mode (`latSpan`/`lonSpan`, no `radius`).
+    ///
+    /// - API Endpoint: `/api/ondemand/services-for-location.json`
+    public func getOnDemandServices(region: MKCoordinateRegion, geometryDetail: OnDemandGeometryDetail) -> URL {
+        generateURL(path: "/api/ondemand/services-for-location.json", params: [
+            "lat": region.center.latitude,
+            "lon": region.center.longitude,
+            "latSpan": region.span.latitudeDelta,
+            "lonSpan": region.span.longitudeDelta,
+            "geometryDetail": geometryDetail.rawValue
+        ])
+    }
+
     // MARK: - Survey API URL Builders
 
     /// Creates a full URL for the `getSurveys` API call, including query params.
