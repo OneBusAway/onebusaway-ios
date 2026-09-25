@@ -47,15 +47,29 @@ extension RESTAPIService {
     /// Retrieves the on-demand services whose zones or stops intersect `region`
     /// (the server's viewport mode).
     ///
+    /// This is the **only** call that probes for the namespace: a
+    /// `.requestNotFound` here — a real HTTP 404, or the blank 200 that
+    /// `APIService+GetData` maps to the same case — records the server in
+    /// ``onDemandSupport`` for the rest of the process. Every other failure,
+    /// including `.invalidContentType` and decode errors, is transient and is
+    /// simply rethrown.
+    ///
     /// - API Endpoint: `/api/ondemand/services-for-location.json`
     ///
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for [``OnDemandService``]; each
     ///   element carries a ``MatchReason``.
     public nonisolated func getOnDemandServices(region: MKCoordinateRegion, geometryDetail: OnDemandGeometryDetail = .simplified) async throws -> RESTAPIResponse<[OnDemandService]> {
-        return try await getData(
-            for: urlBuilder.getOnDemandServices(region: region, geometryDetail: geometryDetail),
-            decodeRESTAPIResponseAs: [OnDemandService].self
-        )
+        do {
+            return try await getData(
+                for: urlBuilder.getOnDemandServices(region: region, geometryDetail: geometryDetail),
+                decodeRESTAPIResponseAs: [OnDemandService].self
+            )
+        } catch let error as APIError {
+            if case .requestNotFound = error {
+                onDemandSupport.recordAbsent(baseURL: baseURL)
+            }
+            throw error
+        }
     }
 }
