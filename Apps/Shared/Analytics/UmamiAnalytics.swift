@@ -72,7 +72,7 @@ final class UmamiAnalytics {
     @MainActor init(serverURL: URL,
          websiteID: String,
          hostname: String,
-         installID: String = AnalyticsInstallID.persisted(),
+         installID: String,
          dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession()) {
         self.serverURL = serverURL
         self.websiteID = websiteID
