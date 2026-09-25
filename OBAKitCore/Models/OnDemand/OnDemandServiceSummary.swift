@@ -166,7 +166,8 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     }
 
     /// The single rule's outcome as of `now`: its own next bookable date if
-    /// it has one, otherwise how its next active date currently evaluates.
+    /// it has one, otherwise the first date whose booking is still to open,
+    /// otherwise whether any remaining date can't be evaluated.
     private static func outcome(for rule: AvailabilityRule, service: OnDemandService, evaluator: BookingDeadlineEvaluator, now: Date) -> RuleOutcome {
         let bookingRule = service.bookingRule(id: rule.pickupBookingRuleID)
         // Referenced but missing is not "no notice": nothing can be promised.
@@ -174,23 +175,20 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             return .unresolvedBookingRule
         }
 
-        if let date = evaluator.nextBookableServiceDate(rule: rule, bookingRule: bookingRule, now: now) {
-            let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: date, now: now)
-            return .bookable(Candidate(travelDate: date, evaluation: evaluation))
+        if let bookable = evaluator.nextServiceDate(in: .open, rule: rule, bookingRule: bookingRule, now: now) {
+            return .bookable(Candidate(travelDate: bookable.date, evaluation: bookable.evaluation))
         }
 
-        guard let nextActive = evaluator.nextActiveServiceDate(rule: rule, from: evaluator.serviceDate(for: now)) else {
-            return .settled
+        // The next service day may already be closed while a later one has
+        // yet to open, so look for the first not-yet-open date directly.
+        if let opening = evaluator.nextServiceDate(in: .notYetOpen, rule: rule, bookingRule: bookingRule, now: now),
+           let openInstant = opening.evaluation.openInstant {
+            return .notYetOpen(openInstant)
         }
-        let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: nextActive, now: now)
-        switch evaluation.state {
-        case .notYetOpen:
-            return evaluation.openInstant.map(RuleOutcome.notYetOpen) ?? .settled
-        case .unknown:
+        if evaluator.nextServiceDate(in: .unknown, rule: rule, bookingRule: bookingRule, now: now) != nil {
             return .unknown
-        case .open, .closedForDate:
-            return .settled
         }
+        return .settled
     }
 
     /// Turns the rules' individual outcomes into one line: the earliest

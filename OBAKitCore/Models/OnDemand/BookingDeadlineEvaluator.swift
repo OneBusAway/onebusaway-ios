@@ -250,7 +250,7 @@ public struct BookingDeadlineEvaluator: Sendable {
 
     /// The earliest active service day of `rule`, on or after `date`, bounded
     /// by the rule's latest calendar `endDate`.
-    public func nextActiveServiceDate(rule: AvailabilityRule, from date: ServiceDate) -> ServiceDate? {
+    private func nextActiveServiceDate(rule: AvailabilityRule, from date: ServiceDate) -> ServiceDate? {
         guard let lastDate = rule.calendarIDs.compactMap({ calendarsByID[$0]?.endDate }).max() else {
             return nil
         }
@@ -276,12 +276,26 @@ public struct BookingDeadlineEvaluator: Sendable {
         bookingRule: OnDemandBookingRule?,
         now: Date
     ) -> ServiceDate? {
+        nextServiceDate(in: .open, rule: rule, bookingRule: bookingRule, now: now)?.date
+    }
+
+    /// The earliest active service day from the agency-local today, within the
+    /// same bounds as `nextBookableServiceDate`, whose evaluation is `state`,
+    /// together with that evaluation. Asking for `.notYetOpen` finds the first
+    /// date whose booking is still to open, which need not be the rule's next
+    /// service day — that one may already be closed.
+    public func nextServiceDate(
+        in state: BookingState,
+        rule: AvailabilityRule,
+        bookingRule: OnDemandBookingRule?,
+        now: Date
+    ) -> (date: ServiceDate, evaluation: BookingEvaluation)? {
         var cursor: ServiceDate? = serviceDate(for: now)
         var stepped = 0
         while let candidate = cursor.flatMap({ nextActiveServiceDate(rule: rule, from: $0) }), stepped < Self.maximumLookaheadDays {
             let evaluation = evaluate(rule: rule, bookingRule: bookingRule, travelDate: candidate, now: now)
-            if evaluation.state == .open {
-                return candidate
+            if evaluation.state == state {
+                return (candidate, evaluation)
             }
             cursor = adding(days: 1, to: candidate)
             stepped += 1
