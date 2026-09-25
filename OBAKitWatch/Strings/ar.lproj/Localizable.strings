@@ -16,8 +16,8 @@
 /* Shown while the system location prompt is up */
 "nearby.awaiting_authorization" = "اسمح بالوصول إلى الموقع لعرض المواقف القريبة منك.";
 
-/* The server returned zero stops */
-"nearby.empty" = "لا توجد مواقف قريبة.";
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "لا توجد مغادرات قريبة خلال الساعة القادمة.";
 
 /* Progress text */
 "nearby.locating" = "جارٍ تحديد موقعك…";
@@ -34,3 +34,17 @@
 /* Screen title before a transit region is known */
 "nearby.title" = "بالقرب منك";
 
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "جارٍ البحث عن الخطوط القريبة…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ إلى %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "قريب أيضًا";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "كل الوصولات في هذه المحطة";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "تبديل الاتجاه";

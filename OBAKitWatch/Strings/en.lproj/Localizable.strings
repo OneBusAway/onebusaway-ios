@@ -16,8 +16,8 @@
 /* Shown while the system location prompt is up */
 "nearby.awaiting_authorization" = "Allow location access to see stops near you.";
 
-/* The server returned zero stops */
-"nearby.empty" = "No stops nearby.";
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "No departures nearby in the next hour.";
 
 /* Progress text */
 "nearby.locating" = "Finding your location…";
@@ -34,3 +34,17 @@
 /* Screen title before a transit region is known */
 "nearby.title" = "Nearby";
 
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "Finding nearby routes…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ to %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "Also nearby";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "All arrivals at this stop";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "Switch direction";

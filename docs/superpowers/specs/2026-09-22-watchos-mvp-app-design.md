@@ -16,6 +16,13 @@ the code; the review's must-fixes (location updates, one-shot pruning, region
 notification behavior, localization coverage, the release lane, CI ordering)
 and should-fixes are folded in below.
 
+Revised 2026-09-24: **Nearby shows routes, not stops.** The root screen is now
+a list of route-and-direction cards (route badge + headsign), and a tap opens a
+route screen with where to catch it and when. See "Nearby routes" in §2 and §3.
+`routes-for-location` was considered and rejected: it returns route names only
+— no headsigns, stops, or arrivals — which `stops-for-location` references
+already carry.
+
 ## Decisions
 
 Made with the maintainer, 2026-09-22.
@@ -28,6 +35,7 @@ Made with the maintainer, 2026-09-22.
 | Verification hardware | **Simulator only.** Runtime on a 32-bit watch stays in "Still unknown". |
 | Release lane | **The TestFlight lane passes `--no-watch`** until a hardware pass and App Store Connect setup exist. The watch app never ships by accident. |
 | Sequencing | Step 4 = this app. Step 5 = sync plus the Bookmarks tab. Step 6 = the widget, unchanged. |
+| Nearby shape (2026-09-24) | **Route-and-direction cards, route + headsign only.** Times live one tap away on the route screen: nearest stop's next 3 departures, up to 2 "Also nearby" stops, ⇆ to the opposite direction, and a link to the stop's full arrivals. Tapping a departure does nothing yet (trip details deferred). |
 
 ## What steps 1–3 left the watch to stand on
 
@@ -306,12 +314,30 @@ All portable, all in `OBAKitCore/`, all tested in OBAKitTests:
    never thrown, so the stream survives it (the same convention as
    `BookmarkArrivalsLoader`); the consumer keeps its last good value. Tests use
    a hand-written `TestClock` in OBAKitTests (manual advance); no package.
+6. **Nearby routes** (`NearbyRouteDirections.swift`, 2026-09-24).
+   - `NearbyRouteDirections.group(stops:arrivalsByStop:origin:)` — pure. Groups
+     upcoming arrivals by `RouteDirectionKey` (route ID + GTFS `direction_id`,
+     falling back to the trip headsign when an agency omits direction IDs).
+     Each `NearbyRouteDirection` carries its route, the **most common**
+     headsign among its departures (ties → soonest), and its stops nearest
+     first with that direction's departures. Directions sort by nearest stop's
+     distance, then soonest departure there. A route with no departure in the
+     next 60 minutes is absent: its headsign is only known from a departure.
+   - `NearbyRouteDirections.opposite(of:in:)` — the same route's other
+     direction, the route screen's ⇆ target.
+   - `NearbyRoutesLoader` — `directions(near:using:)` takes the nearest 8
+     stops from `NearbyStopsLoader` and fetches their arrivals in parallel
+     through `BookmarkArrivalsLoader` (8 requests per refresh);
+     `directions(at:origin:using:)` is the route screen's poll. It throws only
+     when every stop fails; a partial failure drops those stops.
+   - Fixes `Trip.direction`, which decoded the key `direction` while the API
+     sends `directionId`, so it was always nil.
 
 ### Watch-side flow
 
 ```
 scene → .active ─┐
-refresh button ──┴→ NearbyStopsModel.refresh()
+refresh button ──┴→ NearbyRoutesModel.refresh()
       │ authorization .notDetermined → requestInUseAuthorization(); phase .awaitingAuthorization
       │   (host's authorizationStatusChanged → WatchRootView calls refresh() again)
       │ denied/restricted → phase .locationDenied
@@ -323,11 +349,16 @@ refresh button ──┴→ NearbyStopsModel.refresh()
    regionsService.physicallyLocatedRegion == nil → phase .noRegion   (never fetches)
       │ else, host.apiService (rebuilt by the provider on updatedRegion)
       ▼
-   NearbyStopsLoader.stops(near:)  → phase .loaded([Stop]) / .empty / .failed
+   phase .loading → NearbyRoutesLoader.directions(near:)
+      → phase .loaded([NearbyRouteDirection]) / .empty / .failed
 
-   tap a stop → StopArrivalsModel.start(stopID)
-      → StopArrivalsPoller (30 s, ContinuousClock) while the scene is .active
+   tap a card → RouteDirectionModel, seeded from the list's snapshot
+      → NearbyRoutesLoader.directions(at: nearest 3 stops) every 30 s while .active
+      → ⇆ swaps to the opposite direction's snapshot and polls its stops
       → cancelled when the scene leaves .active
+
+   "All arrivals at this stop" / an "Also nearby" row → StopArrivalsModel
+      → StopArrivalsPoller (30 s, ContinuousClock) while the scene is .active
 ```
 
 **The Nearby "no region" rule keys off `physicallyLocatedRegion`, not
@@ -347,15 +378,28 @@ refresh, which is what motivated it.
 One `NavigationStack` in `WatchRootView`, no tab bar. Bookmarks get a tab in
 step 5. `WatchRootView` owns the `scenePhase` observer and the models.
 
-**Nearby (root).** A `List` of up to 20 stops sorted by distance. Row:
-`stop.nameWithLocalizedDirectionAbbreviation`, a secondary line of the stop's
-route short names joined with ", ", and the distance as a `Measurement<UnitLength>`
-formatted for the locale. A toolbar refresh button re-requests location and
-refetches (`.refreshable` has no gesture on watchOS). The navigation title is
-`physicallyLocatedRegion?.name` once a region resolves; before that it is
-"Nearby".
+**Nearby (root).** A `List` of route-and-direction cards, ordered by nearest
+stop. Card: the route badge in agency colors and the headsign — nothing else,
+so the list orients rather than informs. A toolbar refresh button re-requests
+location and refetches (`.refreshable` has no gesture on watchOS). The
+navigation title is `physicallyLocatedRegion?.name` once a region resolves;
+before that it is "Nearby".
 
-**Stop arrivals (pushed on tap).** A `List` of departures for the next 60
+**Route direction (pushed on a card).** Opens instantly from the list's
+snapshot, then polls:
+
+1. Header: the card's badge and headsign again, so the tap reads as the card
+   opening.
+2. The nearest stop's name and distance, then its next 3 departures for this
+   route and direction: `CountdownView`, clock time, and
+   `Formatters.deviationLabel(for:)` in the schedule-status color.
+3. "Also nearby": up to 2 more stops for the same direction, each with its
+   distance and next departure. Each row opens that stop's arrivals.
+4. "All arrivals at this stop" → the stop arrivals screen for the nearest stop.
+5. ⇆ in the toolbar, shown only when the opposite direction is served nearby.
+6. Footer: "Updated at", orange when a poll failed.
+
+**Stop arrivals (from the route screen).** A `List` of departures for the next 60
 minutes, sorted by `arrivalDepartureDate`. Row: OBAKitCore's `RouteBadgeView`
 at size 32, `tripHeadsign`, and OBAKitCore's
 `CountdownView(departure:isRealTime:color:emphasized: false)`, which already
@@ -374,15 +418,21 @@ for all 13 locales; `scripts/extract_strings` gains a third block for
 Each model holds one `Phase` enum, not a set of optionals, so every state
 renders something deliberate:
 
-| `NearbyStopsModel.Phase` | Nearby shows |
+| `NearbyRoutesModel.Phase` | Nearby shows |
 |---|---|
 | `.awaitingAuthorization` | The when-in-use prompt, fired from the watch, with an explanation row above it |
 | `.locationDenied` | Text explaining that nearby stops need location. watchOS has no Settings deep link, so no button |
 | `.locating` | A progress row |
+| `.loading` | "Finding nearby routes…" while the nearest stops' arrivals load |
 | `.noRegion` | "No transit region here" |
 | `.failed(String)` | The error's localized description and a retry button |
-| `.empty` | "No stops nearby" |
-| `.loaded([Stop])` | The list |
+| `.empty` | "No departures nearby in the next hour" |
+| `.loaded([NearbyRouteDirection])` | The cards |
+
+`RouteDirectionModel` has no phase enum: it always starts from the snapshot.
+It holds live `stops` (empty after a poll that found nothing → "No departures
+in the next 60 minutes" under the nearest stop), `updatedAt`, and `stale`
+(a failed poll keeps the last good departures).
 
 | `StopArrivalsModel.Phase` | Stop arrivals shows |
 |---|---|

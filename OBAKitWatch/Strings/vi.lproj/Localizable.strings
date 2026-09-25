@@ -16,8 +16,8 @@
 /* Shown while the system location prompt is up */
 "nearby.awaiting_authorization" = "Cho phép truy cập vị trí để xem các điểm dừng gần bạn.";
 
-/* The server returned zero stops */
-"nearby.empty" = "Không có điểm dừng nào ở gần.";
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "Không có chuyến khởi hành nào gần đây trong giờ tới.";
 
 /* Progress text */
 "nearby.locating" = "Đang tìm vị trí của bạn…";
@@ -34,3 +34,17 @@
 /* Screen title before a transit region is known */
 "nearby.title" = "Lân cận";
 
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "Đang tìm các tuyến gần đây…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ đến %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "Cũng ở gần";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "Tất cả chuyến đến tại trạm này";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "Đổi chiều";

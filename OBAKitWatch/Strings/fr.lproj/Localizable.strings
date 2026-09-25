@@ -16,8 +16,8 @@
 /* Shown while the system location prompt is up */
 "nearby.awaiting_authorization" = "Autorisez l’accès à votre position pour voir les arrêts à proximité.";
 
-/* The server returned zero stops */
-"nearby.empty" = "Aucun arrêt à proximité.";
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "Aucun départ à proximité dans l'heure.";
 
 /* Progress text */
 "nearby.locating" = "Recherche de votre position…";
@@ -34,3 +34,17 @@
 /* Screen title before a transit region is known */
 "nearby.title" = "À proximité";
 
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "Recherche des lignes à proximité…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ vers %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "Également à proximité";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "Tous les passages à cet arrêt";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "Changer de sens";

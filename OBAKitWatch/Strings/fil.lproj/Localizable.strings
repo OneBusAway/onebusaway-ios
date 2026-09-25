@@ -16,8 +16,8 @@
 /* Shown while the system location prompt is up */
 "nearby.awaiting_authorization" = "Payagan ang access sa lokasyon para makita ang mga hintuan malapit sa iyo.";
 
-/* The server returned zero stops */
-"nearby.empty" = "Walang hintuan sa malapit.";
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "Walang aalis na malapit sa susunod na oras.";
 
 /* Progress text */
 "nearby.locating" = "Hinahanap ang iyong lokasyon…";
@@ -34,3 +34,17 @@
 /* Screen title before a transit region is known */
 "nearby.title" = "Malapit";
 
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "Hinahanap ang mga kalapit na ruta…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ papuntang %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "Malapit din";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "Lahat ng pagdating sa hintuang ito";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "Palitan ang direksyon";

@@ -16,8 +16,8 @@
 /* Shown while the system location prompt is up */
 "nearby.awaiting_authorization" = "주변 정류장을 보려면 위치 접근을 허용하세요.";
 
-/* The server returned zero stops */
-"nearby.empty" = "주변에 정류장이 없습니다.";
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "다음 1시간 동안 근처 출발편이 없습니다.";
 
 /* Progress text */
 "nearby.locating" = "현재 위치를 찾는 중…";
@@ -34,3 +34,17 @@
 /* Screen title before a transit region is known */
 "nearby.title" = "주변";
 
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "주변 노선을 찾는 중…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%2$@ 방면 %1$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "주변의 다른 정류장";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "이 정류장의 모든 도착 정보";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "방향 전환";

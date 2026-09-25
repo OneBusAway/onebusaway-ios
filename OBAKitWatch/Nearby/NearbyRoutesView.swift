@@ -1,5 +1,5 @@
 //
-//  NearbyStopsView.swift
+//  NearbyRoutesView.swift
 //  OBAKitWatch
 //
 //  Copyright © Open Transit Software Foundation
@@ -11,9 +11,8 @@ import SwiftUI
 import CoreLocation
 import OBAKitCore
 
-struct NearbyStopsView: View {
-    let model: NearbyStopsModel
-    let formatters: Formatters
+struct NearbyRoutesView: View {
+    let model: NearbyRoutesModel
 
     var body: some View {
         content
@@ -44,6 +43,8 @@ struct NearbyStopsView: View {
             )
         case .locating:
             ProgressView(OBALoc("nearby.locating", value: "Finding your location…", comment: "Progress text"))
+        case .loading:
+            ProgressView(OBALoc("nearby.loading", value: "Finding nearby routes…", comment: "Progress text while nearby stops' departures load"))
         case .noRegion:
             MessageView(
                 text: OBALoc("nearby.no_region", value: "No transit region here.", comment: "The fix is outside every supported region"),
@@ -58,45 +59,43 @@ struct NearbyStopsView: View {
             )
         case .empty:
             MessageView(
-                text: OBALoc("nearby.empty", value: "No stops nearby.", comment: "The server returned zero stops"),
+                text: OBALoc("nearby.empty", value: "No departures nearby in the next hour.", comment: "No nearby stop has a departure in the next 60 minutes"),
                 systemImage: "bus"
             )
-        case .loaded(let stops):
-            List(stops) { stop in
-                NavigationLink(value: stop) {
-                    NearbyStopRow(stop: stop, origin: model.origin, formatters: formatters)
+        case .loaded(let directions):
+            List(directions) { direction in
+                NavigationLink(value: direction.key) {
+                    RouteDirectionCard(direction: direction)
                 }
             }
         }
     }
 }
 
-private extension Formatters {
-    static var preview: Formatters {
-        Formatters(locale: .current, calendar: .current, themeColors: .shared)
-    }
-}
-
 #Preview("Awaiting authorization") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .awaitingAuthorization), formatters: .preview) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .awaitingAuthorization)) }
 }
 
 #Preview("Denied") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locationDenied), formatters: .preview) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .locationDenied)) }
 }
 
 #Preview("Locating") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .locating), formatters: .preview) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .locating)) }
+}
+
+#Preview("Loading") {
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .loading, regionName: "Puget Sound")) }
 }
 
 #Preview("No region") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .noRegion), formatters: .preview) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .noRegion)) }
 }
 
 #Preview("Failed") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .failed("The request timed out.")), formatters: .preview) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .failed("The request timed out."))) }
 }
 
 #Preview("Empty") {
-    NavigationStack { NearbyStopsView(model: NearbyStopsModel(phase: .empty, regionName: "Puget Sound"), formatters: .preview) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .empty, regionName: "Puget Sound")) }
 }

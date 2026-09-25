@@ -1,5 +1,5 @@
 //
-//  NearbyStopsModel.swift
+//  NearbyRoutesModel.swift
 //  OBAKitWatch
 //
 //  Copyright © Open Transit Software Foundation
@@ -12,32 +12,38 @@ import CoreLocation
 import Observation
 import OBAKitCore
 
-/// Drives the Nearby screen: one location fix → region check → stops.
+/// Drives the Nearby screen: one location fix → region check → nearby stops'
+/// arrivals → route directions.
 ///
-/// All branching that can be tested lives in OBAKitCore (`NearbyStopsLoader`,
-/// `LocationService.requestLocation`, `RegionsService`); this maps their
-/// results to a `Phase`.
+/// All branching that can be tested lives in OBAKitCore (`NearbyRoutesLoader`,
+/// `NearbyRouteDirections`, `LocationService.requestLocation`,
+/// `RegionsService`); this maps their results to a `Phase`.
 @MainActor
 @Observable
-public final class NearbyStopsModel {
+public final class NearbyRoutesModel {
     public enum Phase: Equatable {
         case awaitingAuthorization
         case locationDenied
         case locating
+        case loading
         case noRegion
         case failed(String)
         case empty
-        case loaded([Stop])
+        case loaded([NearbyRouteDirection])
     }
 
     public private(set) var phase: Phase
-    /// The fix the current list was fetched around; rows show distance from it.
+    /// The fix the current list was built around; the route screen measures
+    /// stop distances from it.
     public private(set) var origin: CLLocation?
     /// The region containing the last fix; the screen title.
     public private(set) var regionName: String?
+    /// When the loaded list's arrivals were fetched; the route screen's
+    /// "Updated at" until its first poll lands.
+    public private(set) var loadedAt: Date?
 
     @ObservationIgnored private let host: WatchAppHost?
-    @ObservationIgnored private let loader = NearbyStopsLoader()
+    @ObservationIgnored private let loader = NearbyRoutesLoader()
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
     public init(host: WatchAppHost) {
@@ -51,6 +57,13 @@ public final class NearbyStopsModel {
         self.phase = phase
         self.origin = origin
         self.regionName = regionName
+        self.loadedAt = Date()
+    }
+
+    /// The loaded directions, or none.
+    public var directions: [NearbyRouteDirection] {
+        if case .loaded(let directions) = phase { return directions }
+        return []
     }
 
     /// Re-requests location and reloads. A refresh already in flight is
@@ -98,7 +111,7 @@ public final class NearbyStopsModel {
             return
         }
 
-        await loadStops(near: fix, using: apiService)
+        await loadDirections(near: fix, using: apiService)
     }
 
     /// Returns whether location is authorized. When it is not, sets `phase`
@@ -118,11 +131,13 @@ public final class NearbyStopsModel {
         }
     }
 
-    private func loadStops(near fix: CLLocation, using apiService: RESTAPIService) async {
+    private func loadDirections(near fix: CLLocation, using apiService: RESTAPIService) async {
+        phase = .loading
         do {
-            let stops = try await loader.stops(near: fix.coordinate, using: apiService)
+            let directions = try await loader.directions(near: fix, using: apiService)
             guard !Task.isCancelled else { return }
-            phase = stops.isEmpty ? .empty : .loaded(stops)
+            loadedAt = Date()
+            phase = directions.isEmpty ? .empty : .loaded(directions)
         } catch {
             guard !Task.isCancelled else { return }
             phase = .failed(error.localizedDescription)

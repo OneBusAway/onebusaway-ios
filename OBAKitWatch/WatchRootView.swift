@@ -10,12 +10,13 @@
 import SwiftUI
 import OBAKitCore
 
-/// The watch app's root: one navigation stack, Nearby at the bottom of it.
+/// The watch app's root: one navigation stack, Nearby routes at the bottom of
+/// it, then a route direction, then (optionally) a stop's full arrivals.
 /// Owns the models and the scene-phase driver so the shell stays a `@main`.
 public struct WatchRootView: View {
     @Environment(WatchAppHost.self) private var host
     @Environment(\.scenePhase) private var scenePhase
-    @State private var nearby: NearbyStopsModel?
+    @State private var nearby: NearbyRoutesModel?
 
     public init() {}
 
@@ -23,9 +24,14 @@ public struct WatchRootView: View {
         NavigationStack {
             Group {
                 if let nearby {
-                    NearbyStopsView(model: nearby, formatters: host.formatters)
+                    NearbyRoutesView(model: nearby)
                 } else {
                     ProgressView()
+                }
+            }
+            .navigationDestination(for: RouteDirectionKey.self) { key in
+                if let nearby {
+                    RouteDirectionScreen(key: key, nearby: nearby)
                 }
             }
             .navigationDestination(for: Stop.self) { stop in
@@ -34,7 +40,7 @@ public struct WatchRootView: View {
         }
         .task {
             guard nearby == nil else { return }
-            let model = NearbyStopsModel(host: host)
+            let model = NearbyRoutesModel(host: host)
             nearby = model
             host.refreshRegionsList()
             model.refresh()
