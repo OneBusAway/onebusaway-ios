@@ -1348,9 +1348,10 @@ private extension StopViewController {
         guard !services.isEmpty else { return nil }
 
         let rows = services.map { service in
-            OBAListRowView.SubtitleViewModel(
-                title: service.name,
-                subtitle: Strings.onDemandKindTitle(service.serviceKind),
+            let listing = OnDemandServiceListing(service)
+            return OBAListRowView.SubtitleViewModel(
+                title: listing.title,
+                subtitle: listing.subtitle,
                 onSelectAction: { [weak self] _ in
                     guard let self else { return }
                     self.application.viewRouter.navigateTo(onDemandService: service, from: self)

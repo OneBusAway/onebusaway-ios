@@ -18,17 +18,11 @@ struct OnDemandServicesSection: View {
     let onSelect: (OnDemandService) -> Void
 
     /// What the rows render; exposed so tests assert the projection without a host.
-    struct Row: Identifiable, Equatable {
-        let id: String
-        let title: String
-        let subtitle: String
+    var rows: [OnDemandServiceListing] {
+        services.map(OnDemandServiceListing.init)
     }
 
-    var rows: [Row] {
-        services.map { Row(id: $0.id, title: $0.name, subtitle: Strings.onDemandKindTitle($0.serviceKind)) }
-    }
-
-    func select(_ row: Row) {
+    func select(_ row: OnDemandServiceListing) {
         guard let service = services.first(where: { $0.id == row.id }) else { return }
         onSelect(service)
     }
@@ -74,7 +68,7 @@ struct OnDemandServicesSection: View {
         .accessibilityAddTraits(.isHeader)
     }
 
-    private func serviceRow(_ row: Row) -> some View {
+    private func serviceRow(_ row: OnDemandServiceListing) -> some View {
         Button {
             select(row)
         } label: {
