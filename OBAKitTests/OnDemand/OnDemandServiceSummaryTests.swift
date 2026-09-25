@@ -49,6 +49,27 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(summary.windows[1].hours?.contains("7:00") == true)
     }
 
+    /// Pickup times are nominal GTFS wall-clock times. On the spring-forward
+    /// day the service day's anchor sits an hour off local midnight, so
+    /// placing "01:00:00" on that day read "12:00 AM".
+    @Test func `Window hours are nominal on a DST transition day`() throws {
+        let service = try alexandria { json in
+            var data = json["data"] as! [String: Any]
+            var entry = data["entry"] as! [String: Any]
+            entry["rules"] = (entry["rules"] as! [[String: Any]]).map { rule in
+                var rule = rule
+                rule["startPickupTime"] = "01:00:00"
+                return rule
+            }
+            data["entry"] = entry
+            json["data"] = data
+        }
+        // 2026-03-08 12:00 in Los Angeles, the spring-forward day.
+        let springForwardNoon = ISO8601DateFormatter().date(from: "2026-03-08T19:00:00Z")!
+        let hours = summary(service, now: springForwardNoon).windows[0].hours
+        #expect(hours == "1:00\u{202F}AM – 12:50\u{202F}AM", "\(hours ?? "nil")")
+    }
+
     @Test func `Book-by line uses the next bookable date and its cutoff`() throws {
         let summary = summary(try alexandria())
         guard case .bookBy(let deadline, let travelDate) = summary.bookingLine else {

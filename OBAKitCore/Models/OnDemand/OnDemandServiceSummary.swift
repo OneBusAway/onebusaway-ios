@@ -56,15 +56,14 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     /// - Parameter timeZone: The agency's zone, or nil when it is unknown.
     ///   Without a zone the booking line is `.unknown`, because a deadline is
     ///   an instant and cannot be placed. Windows and contact details are
-    ///   still computed: pickup times are GTFS wall-clock times of day, so
-    ///   they are formatted through a fixed UTC zone. UTC has no DST, so
-    ///   "9:00 AM – 5:00 PM" reads the same as it would in the agency's zone.
+    ///   still computed: pickup times are GTFS wall-clock times of day, which
+    ///   are always formatted through a fixed UTC zone (see `wallClock`).
     public init(service: OnDemandService, timeZone: TimeZone?, now: Date, locale: Locale) {
         let resolvedZone = timeZone ?? .gmt
         let evaluator = BookingDeadlineEvaluator(timeZone: resolvedZone, calendars: service.calendars)
         let formatters = SummaryFormatters(timeZone: resolvedZone, locale: locale, now: now)
 
-        windows = Self.windows(for: service, evaluator: evaluator, formatters: formatters, now: now)
+        windows = Self.windows(for: service, formatters: formatters)
         if timeZone == nil {
             bookingLine = .unknown
             nextChangeInstant = nil
@@ -82,10 +81,8 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
 
     // MARK: - Windows
 
-    private static func windows(for service: OnDemandService, evaluator: BookingDeadlineEvaluator, formatters: SummaryFormatters, now: Date) -> [ServiceWindow] {
+    private static func windows(for service: OnDemandService, formatters: SummaryFormatters) -> [ServiceWindow] {
         let calendarsByID = Dictionary(service.calendars.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        // Hours are a time-of-day; any day works, today keeps DST offsets current.
-        let today = evaluator.serviceDate(for: now)
         var seen = Set<ServiceWindow>()
         var result: [ServiceWindow] = []
 
@@ -93,7 +90,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             let days = Set(rule.calendarIDs.compactMap { calendarsByID[$0] }.flatMap(\.days))
             let hours: String?
             if let start = rule.startPickupTime, let end = rule.endPickupTime {
-                hours = "\(formatters.time(evaluator.instant(today, start))) – \(formatters.time(evaluator.instant(today, end)))"
+                hours = "\(formatters.wallClock(start)) – \(formatters.wallClock(end))"
             } else {
                 hours = nil
             }
@@ -237,7 +234,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
 
     /// Named to avoid shadowing OBAKitCore's `Formatters` inside this type.
     private struct SummaryFormatters {
-        let timeFormatter: DateFormatter
+        let wallClockFormatter: DateFormatter
         let deadlineFormatterRelative: DateFormatter
         let deadlineFormatterAbsolute: DateFormatter
         let travelDateFormatter: DateFormatter
@@ -246,11 +243,11 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         let now: Date
 
         init(timeZone: TimeZone, locale: Locale, now: Date) {
-            timeFormatter = DateFormatter()
-            timeFormatter.locale = locale
-            timeFormatter.timeZone = timeZone
-            timeFormatter.dateStyle = .none
-            timeFormatter.timeStyle = .short
+            wallClockFormatter = DateFormatter()
+            wallClockFormatter.locale = locale
+            wallClockFormatter.timeZone = .gmt
+            wallClockFormatter.dateStyle = .none
+            wallClockFormatter.timeStyle = .short
 
             deadlineFormatterRelative = DateFormatter()
             deadlineFormatterRelative.locale = locale
@@ -284,7 +281,12 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             self.now = now
         }
 
-        func time(_ date: Date) -> String { timeFormatter.string(from: date) }
+        /// A nominal GTFS time of day, e.g. "5:00 AM"; `25:00:00` reads
+        /// "1:00 AM". Formatted as that offset from a UTC midnight: UTC has
+        /// no DST, so a transition day in the agency's zone cannot shift it.
+        func wallClock(_ time: GTFSTimeOfDay) -> String {
+            wallClockFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(time.seconds)))
+        }
 
         /// `dateStyle: .medium, timeStyle: .short`, in the agency zone,
         /// reading "Today"/"Tomorrow" for the day (or the one after) around
