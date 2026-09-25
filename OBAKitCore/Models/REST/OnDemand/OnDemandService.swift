@@ -101,19 +101,22 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
 
     // MARK: - Equatable and Hashable
 
-    /// Identity is the combined service ID, so a refreshed decode of the same
-    /// service is equal to the old one in diffable snapshots and `Set`s.
+    /// Identity is the combined service ID plus `regionIdentifier`, so a
+    /// refreshed decode of the same service is equal to the old one in
+    /// diffable snapshots and `Set`s, but services with the same id from two
+    /// different regions are not — matching `Stop` and `Route`.
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? OnDemandService else {
             return false
         }
 
-        return id == rhs.id
+        return id == rhs.id && regionIdentifier == rhs.regionIdentifier
     }
 
     public override var hash: Int {
         var hasher = Hasher()
         hasher.combine(id)
+        hasher.combine(regionIdentifier)
         return hasher.finalize()
     }
 

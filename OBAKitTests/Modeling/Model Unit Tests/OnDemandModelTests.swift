@@ -79,6 +79,14 @@ final class OnDemandModelTests: OBATestCase {
         #expect(first.hash == second.hash)
         #expect(first != other)
         #expect(Set([first, second, other]).count == 2)
+
+        let emptyReferences = try JSONDecoder().decode(References.self, from: Data("{}".utf8))
+        let regionA = try decodeService(json)
+        let regionB = try decodeService(json)
+        regionA.loadReferences(emptyReferences, regionIdentifier: 1)
+        regionB.loadReferences(emptyReferences, regionIdentifier: 2)
+        #expect(regionA != regionB)
+        #expect(regionA.hash != regionB.hash)
     }
 
     // MARK: - Entry decoding (wiki §3.4 worked example)
