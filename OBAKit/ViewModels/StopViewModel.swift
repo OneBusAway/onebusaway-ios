@@ -70,6 +70,22 @@ class StopViewModel: ObservableObject {
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
 
+    /// On-demand services referencing this stop (`Stop.onDemandServiceIDs`),
+    /// loaded once per distinct pointer set and rendered as the on-demand card.
+    /// Empty for non-flex stops, while the first load is in flight, and when
+    /// every service failed to load.
+    @Published private(set) var onDemandServices: [OnDemandService] = []
+
+    /// The in-flight on-demand load; held for cancellation and so tests can await it.
+    private(set) var onDemandFetchTask: Task<Void, Never>?
+
+    /// The pointer set the current or last load was started for. Recorded when
+    /// the load starts, not when it finishes, so refreshes that land while it is
+    /// in flight — an empty window's auto-extension fires several — don't
+    /// restart it. Cleared after a load that produced nothing, so the next
+    /// refresh retries.
+    private var requestedOnDemandServiceIDs: [String]?
+
     /// `true` while a network request is in-flight.
     @Published private(set) var isLoading = false
 
@@ -292,6 +308,7 @@ class StopViewModel: ObservableObject {
         statusTimer?.invalidate()
         surveyRefreshTask?.cancel()
         liveActivityToastDismissTask?.cancel()
+        onDemandFetchTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -398,6 +415,7 @@ class StopViewModel: ObservableObject {
             self.stop = stop
         }
         stopArrivals = arrivals
+        refreshOnDemandServices(for: stop)
         rebuildAlarmIndex()
         recomputeCurrentSurvey()
         recordReviewSuccessIfNeeded(arrivals: arrivals)
@@ -651,6 +669,42 @@ class StopViewModel: ObservableObject {
     }
 
     // MARK: - Private Helpers
+
+    /// Loads the services behind `stop.onDemandServiceIDs` when the set changes,
+    /// cancelling a load still running for the previous set so its result never
+    /// lands. Failures never surface as `operationError`: the departures list is
+    /// the page, and this card is an addition to it.
+    private func refreshOnDemandServices(for stop: Stop) {
+        let ids = stop.onDemandServiceIDs
+        guard ids != requestedOnDemandServiceIDs else { return }
+
+        onDemandFetchTask?.cancel()
+        onDemandFetchTask = nil
+        requestedOnDemandServiceIDs = ids
+
+        guard !ids.isEmpty, let apiService = environment.apiService else {
+            onDemandServices = []
+            return
+        }
+
+        onDemandFetchTask = Task { [weak self] in
+            var loaded: [OnDemandService] = []
+            for id in ids {
+                do {
+                    // Simplified geometry: the service page this row opens draws the zones.
+                    loaded.append(try await apiService.getOnDemandService(id: id, geometryDetail: .simplified).entry)
+                } catch {
+                    if error.isCancellation { return }
+                    Logger.error("On-demand service \(id) failed to load: \(error)")
+                }
+            }
+            guard !Task.isCancelled, let self else { return }
+            self.onDemandServices = loaded.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            if loaded.isEmpty {
+                self.requestedOnDemandServiceIDs = nil
+            }
+        }
+    }
 
     private func loadMore(minutes: UInt) async {
         let cappedMinutes = min(minutesAfter + minutes, 720)
