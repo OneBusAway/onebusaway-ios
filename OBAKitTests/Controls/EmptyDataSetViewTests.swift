@@ -32,15 +32,40 @@ final class EmptyDataSetViewTests {
         #expect(emptyView.topConstraint.priority == .required)
         #expect(emptyView.centerYConstraint.priority == .defaultLow)
         #expect(emptyView.bottomConstraint.priority == .required)
+        
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        hostView.addSubview(emptyView)
+        emptyView.frame = hostView.bounds
+        emptyView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        emptyView.titleLabel.text = "Test"
+        hostView.layoutIfNeeded()
+        
+        let labelY = emptyView.titleLabel.convert(CGPoint.zero, to: emptyView).y
+        #expect(labelY < 240, "Top alignment should place content above the center")
     }
 
     @Test func testAlignmentUpdatesConstraints() {
         let emptyView = EmptyDataSetView(alignment: .center)
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        hostView.addSubview(emptyView)
+        emptyView.frame = hostView.bounds
+        emptyView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        emptyView.titleLabel.text = "Test"
+        hostView.layoutIfNeeded()
+        
+        let centerLabelY = emptyView.titleLabel.convert(CGPoint.zero, to: emptyView).y
+        
         emptyView.alignment = .top
+        hostView.setNeedsLayout()
+        hostView.layoutIfNeeded()
+        
+        let topLabelY = emptyView.titleLabel.convert(CGPoint.zero, to: emptyView).y
         
         #expect(emptyView.topConstraint.priority == .required)
         #expect(emptyView.centerYConstraint.priority == .defaultLow)
         #expect(emptyView.bottomConstraint.priority == .required)
+        
+        #expect(topLabelY < centerLabelY, "Top alignment should position the content higher than center alignment.")
     }
 
     @Test func testTextColorPropertySyncsLabels() {

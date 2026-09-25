@@ -31,7 +31,9 @@ final class ActivityIndicatedButtonTests {
         #expect(config.largeContentImage == nil)
         #expect(config.showsActivityIndicatorOnTap == true)
         
-        config.action()
+        let buttonView = ActivityIndicatedButton(config: config)
+        buttonView.buttonDidTap(UIButton())
+        
         #expect(actionFired == true)
     }
 
