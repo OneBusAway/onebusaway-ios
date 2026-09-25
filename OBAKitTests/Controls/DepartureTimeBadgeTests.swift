@@ -33,6 +33,24 @@ final class DepartureTimeBadgeTests {
         #expect(config.backgroundColor == expectedColor)
     }
 
+    @Test func testParameterizedConfigurationInitialization() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US")
+        let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: calendar, themeColors: ThemeColors())
+        
+        let config = DepartureTimeBadge.Configuration(
+            arrivalDepartureMinutes: 5,
+            arrivalDepartureStatus: .onTime,
+            temporalState: .future,
+            scheduleStatus: .scheduled,
+            formatters: formatters
+        )
+        
+        #expect(config.accessibilityLabel == formatters.explanationForArrivalDeparture(tempuraState: .future, arrivalDepartureStatus: .onTime, arrivalDepartureMinutes: 5))
+        #expect(config.displayText == formatters.shortFormattedTime(untilMinutes: 5, temporalState: .future))
+        #expect(config.backgroundColor == formatters.backgroundColorForScheduleStatus(.scheduled).cgColor)
+    }
+
     @Test func testBadgeInitialization() {
         let badge = DepartureTimeBadge(frame: .zero)
         

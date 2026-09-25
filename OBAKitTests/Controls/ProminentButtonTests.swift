@@ -31,18 +31,19 @@ final class ProminentButtonTests {
         button.prominentColor = newColor
         #expect(button.prominentColor == newColor)
         
-        // Assert the sublayer color was updated (highlightLayer is private, but its effect should reflect on layout)
-        // Note: we can't directly check the private highlightLayer, but we can verify the property updates correctly.
+        button.layoutSubviews()
+        let highlightLayer = button.layer.sublayers?.last
+        #expect(highlightLayer?.backgroundColor == newColor.cgColor)
     }
 
     @Test func testLayoutSubviewsAddsHighlightLayer() {
         let button = ProminentButton(frame: CGRect(x: 0, y: 0, width: 100, height: 50))
         
-        let initialLayerCount = button.layer.sublayers?.count ?? 0
+        button.setNeedsLayout()
+        button.layoutIfNeeded()
         
-        button.layoutSubviews()
-        
-        let newLayerCount = button.layer.sublayers?.count ?? 0
-        #expect(newLayerCount == initialLayerCount + 1, "layoutSubviews should add the highlightLayer")
+        let highlightLayer = button.layer.sublayers?.last
+        #expect(highlightLayer?.backgroundColor == button.prominentColor.cgColor)
+        #expect(highlightLayer?.cornerRadius == button.layer.cornerRadius)
     }
 }
