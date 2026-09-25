@@ -46,6 +46,14 @@ import OBAKitCore
     private(set) var annotations: [OnDemandZoneAnnotation] = []
     /// Each drawn overlay's colour, by identity — the renderer claims only these.
     private var colorByOverlay: [ObjectIdentifier: UIColor] = [:]
+    /// What each drawn service put on the map, so a refetch touches only the
+    /// services that came or went.
+    private var drawnByServiceID: [String: DrawnService] = [:]
+
+    private struct DrawnService {
+        let overlays: [MKPolygon]
+        let annotations: [OnDemandZoneAnnotation]
+    }
 
     /// Called after the drawn zones change, for a host with no `MKMapView`
     /// (the SwiftUI panel) to re-read `zoneShapes` and `annotations`.
@@ -180,7 +188,7 @@ import OBAKitCore
     func apply(services newServices: [OnDemandService]) {
         services = newServices.sorted { $0.id < $1.id }
         setAvailability(.available)
-        rebuildMapContent()
+        reconcileMapContent()
     }
 
     /// Not `private`: tests feed failures straight in.
@@ -224,23 +232,48 @@ import OBAKitCore
 
     // MARK: - Map content
 
-    private func rebuildMapContent() {
-        removeAllFromMap()
-
-        for service in services {
-            let color = service.route?.color ?? tintColor
-            for area in service.areas {
-                for polygon in area.mkPolygons {
-                    colorByOverlay[ObjectIdentifier(polygon)] = color
-                    overlays.append(polygon)
-                }
-                annotations.append(OnDemandZoneAnnotation(service: service, coordinate: area.bbox.center, color: color))
+    /// Diffs the fetched services against what is drawn by id: services that
+    /// left the viewport come off the map, new ones go on, and the rest keep
+    /// their overlays and annotations — so the panel's selected marker, which
+    /// is tagged by annotation identity, survives a pan.
+    private func reconcileMapContent() {
+        let fetchedIDs = Set(services.map(\.id))
+        let departedIDs = drawnByServiceID.keys.filter { !fetchedIDs.contains($0) }
+        for serviceID in departedIDs {
+            guard let drawn = drawnByServiceID.removeValue(forKey: serviceID) else { continue }
+            mapView?.removeOverlays(drawn.overlays)
+            mapView?.removeAnnotations(drawn.annotations)
+            for polygon in drawn.overlays {
+                colorByOverlay[ObjectIdentifier(polygon)] = nil
             }
         }
 
-        mapView?.addOverlays(overlays, level: .aboveRoads)
-        mapView?.addAnnotations(annotations)
+        for service in services where drawnByServiceID[service.id] == nil {
+            let drawn = draw(service)
+            drawnByServiceID[service.id] = drawn
+            mapView?.addOverlays(drawn.overlays, level: .aboveRoads)
+            mapView?.addAnnotations(drawn.annotations)
+        }
+
+        let drawnInOrder = services.compactMap { drawnByServiceID[$0.id] }
+        overlays = drawnInOrder.flatMap(\.overlays)
+        annotations = drawnInOrder.flatMap(\.annotations)
         onMapContentDidChange?()
+    }
+
+    /// Builds one service's polygons and zone markers, in its route colour.
+    private func draw(_ service: OnDemandService) -> DrawnService {
+        let color = service.route?.color ?? tintColor
+        var polygons: [MKPolygon] = []
+        var markers: [OnDemandZoneAnnotation] = []
+        for area in service.areas {
+            for polygon in area.mkPolygons {
+                colorByOverlay[ObjectIdentifier(polygon)] = color
+                polygons.append(polygon)
+            }
+            markers.append(OnDemandZoneAnnotation(service: service, coordinate: area.bbox.center, color: color))
+        }
+        return DrawnService(overlays: polygons, annotations: markers)
     }
 
     private func removeAllFromMap() {
@@ -250,6 +283,7 @@ import OBAKitCore
         overlays = []
         annotations = []
         colorByOverlay = [:]
+        drawnByServiceID = [:]
         if wasDrawn {
             onMapContentDidChange?()
         }
