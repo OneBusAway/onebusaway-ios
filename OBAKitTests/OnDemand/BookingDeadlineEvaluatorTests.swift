@@ -12,8 +12,6 @@ import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_try
-
 /// Runs the shared `flex-booking-vectors.json` (mirrored verbatim from maglev's
 /// `testdata/`) so iOS, Android and the server agree on one algorithm.
 @Suite(.serialized)
@@ -238,13 +236,14 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         #expect(evaluation.openInstant == expectedOpen)
     }
 
-    @Test func `Unknown booking type is unknown`() {
+    @Test func `Unknown booking type is unknown`() throws {
         let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar])
         let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["wk"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: "b", dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
-        let bookingRule = try! JSONDecoder().decode(OnDemandBookingRule.self, from: Data("{\"id\":\"b\",\"bookingType\":7}".utf8))
-        let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: ServiceDate("2026-03-11")!, now: Date())
+        let bookingRule = try JSONDecoder().decode(OnDemandBookingRule.self, from: Data(#"{"id":"b","bookingType":7}"#.utf8))
+        let now = evaluator.instant(ServiceDate("2026-03-11")!, GTFSTimeOfDay("12:00:00")!)
+        let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: ServiceDate("2026-03-11")!, now: now)
         #expect(evaluation == .unknown)
-        #expect(evaluator.nextBookableServiceDate(rule: rule, bookingRule: bookingRule, now: Date()) == nil)
+        #expect(evaluator.nextBookableServiceDate(rule: rule, bookingRule: bookingRule, now: now) == nil)
     }
 
     @Test func `Next bookable service date skips unknown candidates instead of stopping`() throws {
