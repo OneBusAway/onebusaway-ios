@@ -76,7 +76,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
 
         let contact = service.rules.lazy.compactMap { service.bookingRule(id: $0.pickupBookingRuleID) }.first
         phoneNumber = contact?.phoneNumber
-        phoneURL = contact?.phoneNumber.flatMap(Self.telephoneURL)
+        phoneURL = contact?.phoneNumber?.telephoneURL
         bookingURL = contact?.bookingURL
         infoURL = contact?.infoURL
         message = contact?.message ?? contact?.pickupMessage
@@ -366,12 +366,5 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     /// No production code path calls this.
     static func deadlineForTesting(now: Date, cutoff: Date, today: Date, timeZone: TimeZone, locale: Locale) -> String {
         SummaryFormatters(timeZone: timeZone, locale: locale, now: now).deadline(cutoff, today: today)
-    }
-
-    /// Same cleaning as `Agency.callURL`: keep digits and `+`.
-    private static func telephoneURL(_ raw: String) -> URL? {
-        let cleaned = raw.replacingOccurrences(of: "[^0-9+]", with: "", options: .regularExpression)
-        guard !cleaned.isEmpty else { return nil }
-        return URL(string: "tel://\(cleaned)")
     }
 }
