@@ -41,6 +41,17 @@ final class OnDemandServicesListTests: OBATestCase {
         return RESTAPIService(config, dataLoader: gate, onDemandSupport: OnDemandSupport())
     }
 
+    /// Holds only the `number`th request (1-based), passing the rest through.
+    private func gatingRequest(number: Int, holdsAfterResponse: Bool = false) -> GatedDataLoader {
+        let requestCount = OSAllocatedUnfairLock(initialState: 0)
+        return GatedDataLoader(dataLoader, gating: { _ in
+            requestCount.withLock { count in
+                count += 1
+                return count == number
+            }
+        }, holdsAfterResponse: holdsAfterResponse)
+    }
+
     // MARK: - Model
 
     @Test func `Loads an agency's services sorted by id`() async {
@@ -83,13 +94,10 @@ final class OnDemandServicesListTests: OBATestCase {
         #expect(model.state == .loaded([]))
     }
 
-    @Test func `Missing API service is a failure`() async {
+    @Test func `Missing API service shows no services`() async {
         let model = OnDemandServicesListModel(agencyID: "CC", apiService: nil, regionName: nil)
         await model.load()
-        guard case .failed = model.state else {
-            Issue.record("expected failed, got \(model.state)")
-            return
-        }
+        #expect(model.state == .loaded([]))
     }
 
     @Test func `Known-unsupported server shows no services without a request`() async {
@@ -100,9 +108,10 @@ final class OnDemandServicesListTests: OBATestCase {
         #expect(dataLoader.recordedRequestURLs.isEmpty)
     }
 
-    @Test func `Retry after a failure loads the services`() async {
+    @Test func `Retry after a failure shows the spinner, then the services`() async {
         dataLoader.mock(data: Data(), statusCode: 500) { Self.isAgencyListRequest($0) }
-        let model = OnDemandServicesListModel(agencyID: "CC", apiService: restService, regionName: "Test")
+        let gate = gatingRequest(number: 2)
+        let model = OnDemandServicesListModel(agencyID: "CC", apiService: gatedService(gate), regionName: "Test")
         await model.load()
         guard case .failed = model.state else {
             Issue.record("expected failed, got \(model.state)")
@@ -110,7 +119,12 @@ final class OnDemandServicesListTests: OBATestCase {
         }
 
         dataLoader.replaceMappedResponses { stubCharlevoix($0) }
-        await model.load()
+        let retry = Task { await model.load() }
+        await gate.waitForRequest()
+        #expect(model.state == .loading)
+
+        gate.releaseRequest()
+        await retry.value
         guard case .loaded(let services) = model.state else {
             Issue.record("expected loaded, got \(model.state)")
             return
@@ -118,17 +132,26 @@ final class OnDemandServicesListTests: OBATestCase {
         #expect(services.count == 4)
     }
 
+    @Test func `Reloading a loaded list keeps it on screen`() async {
+        stubCharlevoix(dataLoader)
+        let gate = gatingRequest(number: 2)
+        let model = OnDemandServicesListModel(agencyID: "CC", apiService: gatedService(gate), regionName: "Test")
+        await model.load()
+        let loaded = model.state
+
+        let reload = Task { await model.load() }
+        await gate.waitForRequest()
+        #expect(model.state == loaded)
+
+        gate.releaseRequest()
+        await reload.value
+    }
+
     /// The first load's failure arrives after a second load has already
     /// succeeded; the list keeps the newer result.
     @Test func `A superseded load does not overwrite the newer result`() async {
         dataLoader.mock(data: Data(), statusCode: 500) { Self.isAgencyListRequest($0) }
-        let requestCount = OSAllocatedUnfairLock(initialState: 0)
-        let gate = GatedDataLoader(dataLoader, gating: { _ in
-            requestCount.withLock { count in
-                count += 1
-                return count == 1
-            }
-        }, holdsAfterResponse: true)
+        let gate = gatingRequest(number: 1, holdsAfterResponse: true)
         let model = OnDemandServicesListModel(agencyID: "CC", apiService: gatedService(gate), regionName: "Test")
 
         let firstLoad = Task { await model.load() }
@@ -186,11 +209,32 @@ final class OnDemandServicesListTests: OBATestCase {
         #expect(!actionTitles(controller.agencyOptionsAlert(agency)).contains(Strings.agenciesOnDemandServices))
     }
 
-    @Test func `On-demand list host is titled for the list`() throws {
+    @Test func `Agencies screen without an API service offers no on-demand action`() {
+        // An unauthorized location manager and no fixed region leave
+        // `currentRegion`, and so `apiService`, nil.
+        let loader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: loader)
+        Fixtures.stubAllAgencyAlerts(dataLoader: loader)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: OperationQueue(), locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: loader)
+        let application = Application(config: config)
+        #expect(application.apiService == nil)
+
+        let controller = AgenciesViewController(application: application)
+        #expect(!controller.showsOnDemandAction)
+    }
+
+    @Test func `On-demand list host is titled for the list and pushes the service page`() throws {
         let (_, application) = buildAgenciesController(onDemandSupport: OnDemandSupport())
         let agency = try #require(try Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json").first)
         let host = OnDemandServicesListViewController(application: application, agency: agency.agency)
         #expect(host.title == Strings.onDemandListTitle)
+
+        let navigation = UINavigationController(rootViewController: host)
+        let list = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<[OnDemandService]>.self, from: Fixtures.loadData(file: "ondemand_services_for_agency_charlevoix.json")).list
+        let service = try #require(list.first)
+        host.rootView.onSelect(service)
+        #expect(navigation.topViewController is OnDemandServiceViewController)
     }
 }
 
