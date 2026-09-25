@@ -348,7 +348,7 @@ final class AppSheetRouteTests {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
              .currentTrip, .transitAlert, .more, .settings, .mapSettings,
-             .rentalDetail, .rentalCluster,
+             .rentalDetail, .rentalCluster, .onDemandService,
              .searchResults, .mapItem, .routeStops, .nearbyStops:
             break
         }

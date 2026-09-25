@@ -257,7 +257,8 @@ struct MapPanelRootView: View {
                 guard !members.isEmpty else { break }
                 coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
             case .onDemandZone(let markerID):
-                presentOnDemandService(markerID: markerID)
+                guard let route = layersModel.onDemandServiceRoute(forMarkerID: markerID) else { break }
+                coordinator.push(route)
             }
             mapSelection = nil
         }
@@ -430,21 +431,6 @@ struct MapPanelRootView: View {
                 .tint(Color(uiColor: marker.color))
                 .tag(MapPinSelection.onDemandZone(marker.id))
         }
-    }
-
-    /// Presents the zone's service page the way the UIKit map does: the
-    /// layer's own detail controller, as a medium sheet over whatever is up.
-    private func presentOnDemandService(markerID: OnDemandZoneAnnotation.ID) {
-        guard let marker = layersModel.onDemandMarker(withID: markerID),
-              let controller = layersModel.layerDetailViewController(for: marker),
-              let presenter = factory.presentingController() else {
-            return
-        }
-        if let sheet = controller.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-        }
-        presenter.present(controller, animated: true)
     }
 
     /// Re-evaluates `showStopLabels` from the last settled viewport height and

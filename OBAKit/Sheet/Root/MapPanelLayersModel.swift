@@ -239,10 +239,10 @@ import OTPKit
         onDemandMarkers.first { $0.id == id }
     }
 
-    /// The detail surface the registered layers offer for `annotation` —
-    /// the same lookup `MapViewController.presentLayerDetail` makes.
-    func layerDetailViewController(for annotation: MKAnnotation) -> UIViewController? {
-        mapRegionManager.mapLayers.lazy.compactMap { $0.detailViewController(for: annotation) }.first
+    /// The sheet route for a tapped zone marker's service page; nil once the
+    /// marker has left the map.
+    func onDemandServiceRoute(forMarkerID id: OnDemandZoneAnnotation.ID) -> AppSheetRoute? {
+        onDemandMarker(withID: id).map { .onDemandService($0.service) }
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this

@@ -115,7 +115,29 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(model.onDemandMarkers.map(\.service.id) == ["5088_77652"])
         let marker = try #require(model.onDemandMarkers.first)
         #expect(model.onDemandMarker(withID: marker.id) === marker)
-        #expect(model.layerDetailViewController(for: marker) is OnDemandServiceViewController)
+    }
+
+    /// A zone marker tap pushes the service page through the sheet coordinator,
+    /// like every other marker, at medium with a grabber.
+    @Test func `A zone marker resolves to the service page's sheet route`() async throws {
+        model.viewportDidChange(alexandriaViewport)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+        let marker = try #require(model.onDemandMarkers.first)
+
+        let route = try #require(model.onDemandServiceRoute(forMarkerID: marker.id))
+        guard case .onDemandService(let service) = route else {
+            Issue.record("expected an on-demand service route, got \(route.id)")
+            return
+        }
+        #expect(service === marker.service)
+        #expect(route.id == "onDemandService-5088_77652")
+        #expect(route.prefersStacking)
+        #expect(route.detentConfiguration.detents == [.medium, .large])
+        #expect(route.detentConfiguration.initialDetent == .medium)
+        #expect(route.detentConfiguration.showDragIndicator)
+
+        model.viewportDidChange(MKMapRect(x: 0, y: 0, width: 5_000_000, height: 5_000_000))
+        #expect(model.onDemandServiceRoute(forMarkerID: marker.id) == nil, "a marker that left the map resolves to nothing")
     }
 
     @Test func `Zooming out clears the panel's on-demand zones`() async {
