@@ -212,7 +212,15 @@ class OBATestCase {
     ///
     /// `onDemandSupport` defaults to a fresh instance, not `.shared`, so a
     /// probe that 404s in one suite can't mark the server unsupported in another.
-    func buildApplication(queue: OperationQueue, dataLoader: MockDataLoader, onDemandSupport: OnDemandSupport = OnDemandSupport()) -> Application {
+    ///
+    /// `transport` replaces `dataLoader` as the app's network — a
+    /// `GatedDataLoader` wrapping it, say. Stubs still register on `dataLoader`.
+    func buildApplication(
+        queue: OperationQueue,
+        dataLoader: MockDataLoader,
+        transport: URLDataLoader? = nil,
+        onDemandSupport: OnDemandSupport = OnDemandSupport()
+    ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
 
@@ -232,7 +240,7 @@ class OBATestCase {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader,
+            dataLoader: transport ?? dataLoader,
             fixedRegionName: Fixtures.pugetSoundRegion.name,
             onDemandSupport: onDemandSupport
         )
