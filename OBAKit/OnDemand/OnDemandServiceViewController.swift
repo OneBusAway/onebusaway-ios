@@ -20,9 +20,9 @@ import UIKit
 final class OnDemandServiceViewController: UIHostingController<OnDemandServiceView> {
 
     init(application: Application, service: OnDemandService) {
-        let summary = service.timeZone.map {
-            OnDemandServiceSummary(service: service, timeZone: $0, now: Date(), locale: .current)
-        }
+        // A nil zone still yields hours and contact details; only the
+        // deadline line drops out.
+        let summary = OnDemandServiceSummary(service: service, timeZone: service.timeZone, now: Date(), locale: .current)
         super.init(rootView: OnDemandServiceView(
             service: service,
             summary: summary,
