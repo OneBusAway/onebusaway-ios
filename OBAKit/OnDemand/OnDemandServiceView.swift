@@ -157,20 +157,18 @@ struct OnDemandServiceView: View {
         .listStyle(.insetGrouped)
     }
 
-    /// The union of the areas' bounding boxes, padded so the outline is not
-    /// flush with the map edge.
+    /// The union of the drawn polygons' bounds, padded so the outline is not
+    /// flush with the map edge. Read only under `showsMap`, so `polygons` is
+    /// never empty here.
     private var mapRegion: MKCoordinateRegion {
-        let boxes = service.areas.filter(\.hasGeometry).map(\.bbox)
-        guard let first = boxes.first else {
-            return MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 0, longitude: 0), span: MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1))
-        }
-        let minLat = boxes.map(\.minLatitude).min() ?? first.minLatitude
-        let maxLat = boxes.map(\.maxLatitude).max() ?? first.maxLatitude
-        let minLon = boxes.map(\.minLongitude).min() ?? first.minLongitude
-        let maxLon = boxes.map(\.maxLongitude).max() ?? first.maxLongitude
+        let bounds = polygons.reduce(MKMapRect.null) { $0.union($1.boundingMapRect) }
+        let fitted = MKCoordinateRegion(bounds)
         return MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2, longitude: (minLon + maxLon) / 2),
-            span: MKCoordinateSpan(latitudeDelta: (maxLat - minLat) * 1.2 + 0.01, longitudeDelta: (maxLon - minLon) * 1.2 + 0.01)
+            center: fitted.center,
+            span: MKCoordinateSpan(
+                latitudeDelta: fitted.span.latitudeDelta * 1.2 + 0.01,
+                longitudeDelta: fitted.span.longitudeDelta * 1.2 + 0.01
+            )
         )
     }
 }
