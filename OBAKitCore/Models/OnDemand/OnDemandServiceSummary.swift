@@ -160,7 +160,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     private static func outcome(for rule: AvailabilityRule, service: OnDemandService, evaluator: BookingDeadlineEvaluator, now: Date) -> RuleOutcome {
         let bookingRule = service.bookingRule(id: rule.pickupBookingRuleID)
         // Referenced but missing is not "no notice": nothing can be promised.
-        guard !(rule.pickupBookingRuleID != nil && bookingRule == nil) else {
+        if rule.pickupBookingRuleID != nil, bookingRule == nil {
             return .unresolvedBookingRule
         }
 
@@ -209,7 +209,8 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     /// Named to avoid shadowing OBAKitCore's `Formatters` inside this type.
     private struct SummaryFormatters {
         let timeFormatter: DateFormatter
-        let deadlineFormatter: DateFormatter
+        let deadlineFormatterRelative: DateFormatter
+        let deadlineFormatterAbsolute: DateFormatter
         let travelDateFormatter: DateFormatter
         let shortWeekdaySymbols: [String]
         let calendar: Calendar
@@ -222,12 +223,22 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             timeFormatter.dateStyle = .none
             timeFormatter.timeStyle = .short
 
-            deadlineFormatter = DateFormatter()
-            deadlineFormatter.locale = locale
-            deadlineFormatter.timeZone = timeZone
-            deadlineFormatter.dateStyle = .medium
-            deadlineFormatter.timeStyle = .short
-            deadlineFormatter.doesRelativeDateFormatting = true
+            deadlineFormatterRelative = DateFormatter()
+            deadlineFormatterRelative.locale = locale
+            deadlineFormatterRelative.timeZone = timeZone
+            deadlineFormatterRelative.dateStyle = .medium
+            deadlineFormatterRelative.timeStyle = .short
+            deadlineFormatterRelative.doesRelativeDateFormatting = true
+
+            // Same styling, but never reads the live wall clock — used
+            // whenever `relativeProbe` can't vouch for a "Today"/"Tomorrow"
+            // label (see `deadline(_:today:)`).
+            deadlineFormatterAbsolute = DateFormatter()
+            deadlineFormatterAbsolute.locale = locale
+            deadlineFormatterAbsolute.timeZone = timeZone
+            deadlineFormatterAbsolute.dateStyle = .medium
+            deadlineFormatterAbsolute.timeStyle = .short
+            deadlineFormatterAbsolute.doesRelativeDateFormatting = false
 
             travelDateFormatter = DateFormatter()
             travelDateFormatter.locale = locale
@@ -259,24 +270,58 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         /// stand-in that really is that many calendar days from the live
         /// clock (so the relative word it produces is genuine, locale-correct
         /// Foundation vocabulary) but carries `date`'s own time of day, which
-        /// keeps the label a pure function of `now`.
-        func deadline(_ date: Date) -> String {
-            guard let probe = relativeProbe(for: date) else {
-                return deadlineFormatter.string(from: date)
+        /// keeps the label a pure function of `now` — except for the
+        /// unavoidable race between the two clock reads this method and
+        /// `SummaryFormatters.init` each make: if the presenter is built just
+        /// before local midnight and this method runs just after, `now` and
+        /// the live day it's compared against can disagree by one day. When
+        /// `relativeProbe` can't safely vouch for a day offset (out of
+        /// range, or a DST gap moved the probe's clock time — see
+        /// `relativeProbe`), this falls back to `deadlineFormatterAbsolute`,
+        /// which never reads the wall clock at all.
+        func deadline(_ date: Date, today: Date = Date()) -> String {
+            guard let probe = relativeProbe(for: date, today: today) else {
+                return deadlineFormatterAbsolute.string(from: date)
             }
-            return deadlineFormatter.string(from: probe)
+            return deadlineFormatterRelative.string(from: probe)
         }
 
         func travelDate(_ date: Date) -> String { travelDateFormatter.string(from: date) }
 
-        private func relativeProbe(for date: Date) -> Date? {
+        /// `today` stands in for the live wall clock; production always
+        /// passes `Date()` (the caller's default). Exposed as a parameter
+        /// only so tests can pin a specific "live" day — e.g. a DST
+        /// spring-forward day — deterministically.
+        private func relativeProbe(for date: Date, today: Date) -> Date? {
             let dayOffset = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? Int.max
-            guard (-1...1).contains(dayOffset), let shiftedDay = calendar.date(byAdding: .day, value: dayOffset, to: Date()) else {
+            guard (-1...1).contains(dayOffset), let shiftedDay = calendar.date(byAdding: .day, value: dayOffset, to: today) else {
                 return nil
             }
-            let timeOfDay = calendar.dateComponents([.hour, .minute, .second], from: date)
-            return calendar.date(bySettingHour: timeOfDay.hour ?? 0, minute: timeOfDay.minute ?? 0, second: timeOfDay.second ?? 0, of: shiftedDay)
+
+            let targetTime = calendar.dateComponents([.hour, .minute, .second], from: date)
+            guard let probe = calendar.date(bySettingHour: targetTime.hour ?? 0, minute: targetTime.minute ?? 0, second: targetTime.second ?? 0, of: shiftedDay) else {
+                return nil
+            }
+
+            // A DST spring-forward gap can make `bySettingHour` roll a
+            // nonexistent local time forward (02:30 in the gap becomes
+            // 03:00) instead of failing — a probe like that would show a
+            // later time than the real deadline. Treat a clock mismatch the
+            // same as a hard failure.
+            let probeTime = calendar.dateComponents([.hour, .minute], from: probe)
+            guard probeTime.hour == targetTime.hour, probeTime.minute == targetTime.minute else {
+                return nil
+            }
+            return probe
         }
+    }
+
+    /// Test-only seam for `SummaryFormatters.deadline`'s DST-gap guard: lets
+    /// a test pin the "live now" `relativeProbe` reads instead of the real
+    /// wall clock, so a spring-forward gap can be exercised deterministically.
+    /// No production code path calls this.
+    static func deadlineForTesting(now: Date, cutoff: Date, today: Date, timeZone: TimeZone, locale: Locale) -> String {
+        SummaryFormatters(timeZone: timeZone, locale: locale, now: now).deadline(cutoff, today: today)
     }
 
     /// Same cleaning as `Agency.callURL`: keep digits and `+`.
