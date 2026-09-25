@@ -204,6 +204,9 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(travelDate.contains("Mar 10"), "\(travelDate)")
         #expect(travelDate.contains("Tue"), "\(travelDate)")
         #expect(deadline.localizedCaseInsensitiveContains("today"), "\(deadline)")
+        // Same-day rule's cutoff: endPickupTime 24:50:00 minus the 60-minute
+        // notice = 23:50 the same service day → 11:50 PM.
+        #expect(deadline.contains("11:50"), "\(deadline)")
     }
 
     @Test func `Day runs render as ranges and lists`() {
@@ -214,4 +217,35 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(OnDemandServiceSummary.daysText([.mon, .tue, .thu, .fri, .sat, .sun], shortWeekdaySymbols: symbols) == "Mon–Tue, Thu–Sun")
         #expect(OnDemandServiceSummary.daysText([], shortWeekdaySymbols: symbols) == "")
     }
+
+    /// `SummaryFormatters.relativeProbe` builds a same-day-offset stand-in
+    /// from the *live* clock to borrow Foundation's relative vocabulary
+    /// (see the type's doc comment). If the live day it lands on is a DST
+    /// spring-forward day and the deadline's own clock time falls in the
+    /// gap (2:00–3:00 AM doesn't exist locally on 2026-03-08 in Los
+    /// Angeles), `Calendar.date(bySettingHour:)` silently rolls the
+    /// nonexistent time forward to 3:00 AM rather than failing — a probe
+    /// like that would show a later cutoff than the real one. Exercised via
+    /// `OnDemandServiceSummary.deadlineForTesting`, the test-only seam that
+    /// lets `today` (the live-clock stand-in) be pinned to the gap day
+    /// instead of whatever day the test actually runs on.
+    @Test func `Deadline falls back to the absolute formatter when a DST gap would shift the probe's clock time`() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = losAngeles
+
+        let now = calendar.date(from: DateComponents(year: 2026, month: 3, day: 7, hour: 1, minute: 0))!
+        let cutoff = calendar.date(from: DateComponents(year: 2026, month: 3, day: 7, hour: 2, minute: 30))!
+        // 2026-03-08 is the US spring-forward day in Los Angeles; pinning
+        // "today" there (instead of the real live day) makes the gap
+        // reproducible regardless of when this test actually runs.
+        let liveNowOnGapDay = calendar.date(from: DateComponents(year: 2026, month: 3, day: 8, hour: 9, minute: 0))!
+
+        let deadline = OnDemandServiceSummary.deadlineForTesting(now: now, cutoff: cutoff, today: liveNowOnGapDay, timeZone: losAngeles, locale: enUS)
+
+        #expect(deadline.contains("2:30"), "\(deadline)")
+        #expect(!deadline.contains("3:00"), "\(deadline)")
+        #expect(!deadline.localizedCaseInsensitiveContains("today"), "\(deadline)")
+    }
 }
+
+// swiftlint:enable force_cast
