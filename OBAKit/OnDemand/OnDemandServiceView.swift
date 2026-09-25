@@ -24,15 +24,14 @@ struct OnDemandServiceView: View {
     /// deadline line.
     let summary: OnDemandServiceSummary
     let onOpenURL: (URL) -> Void
+    /// Built once here: `showsMap` and the map body both read them.
+    private let polygons: [MKPolygon]
 
     init(service: OnDemandService, summary: OnDemandServiceSummary, onOpenURL: @escaping (URL) -> Void) {
         self.service = service
         self.summary = summary
         self.onOpenURL = onOpenURL
-    }
-
-    private var polygons: [MKPolygon] {
-        service.areas.flatMap(\.mkPolygons)
+        self.polygons = service.areas.flatMap(\.mkPolygons)
     }
 
     /// The map section renders only when at least one area has a ring
