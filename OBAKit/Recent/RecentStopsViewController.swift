@@ -110,7 +110,11 @@ public class RecentStopsViewController: UIViewController,
                 stopSequence: deepLink.stopSequence)
 
             await MainActor.run {
-                self.application.viewRouter.navigateTo(arrivalDeparture: response.entry, from: self)
+                self.application.viewRouter.navigateTo(
+                    arrivalDeparture: response.entry,
+                    from: self,
+                    destinationStopID: deepLink.destinationStopID
+                )
             }
         } catch {
             await self.application.displayError(error)

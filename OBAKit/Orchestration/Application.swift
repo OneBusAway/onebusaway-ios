@@ -146,7 +146,11 @@ public class Application: CoreApplication, PushServiceDelegate {
 
                     await MainActor.run {
                         if let topViewController = self.topViewController {
-                            self.viewRouter.navigateTo(arrivalDeparture: arrDep, from: topViewController)
+                            self.viewRouter.navigateTo(
+                                arrivalDeparture: arrDep,
+                                from: topViewController,
+                                destinationStopID: deepLink.destinationStopID
+                            )
                         }
                     }
                 } catch {

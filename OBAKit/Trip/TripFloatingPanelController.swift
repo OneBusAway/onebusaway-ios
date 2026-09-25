@@ -411,7 +411,8 @@ class TripFloatingPanelController: UIViewController,
         let closestStopIdx = closestStopIndex(in: tripDetails)
         let userStopIndex = TripStopListModel.userStopIndex(
             in: tripDetails.stopTimes,
-            arrivalDeparture: arrivalDeparture
+            arrivalDeparture: arrivalDeparture,
+            sharedDestinationStopID: parentTripViewController?.destinationStopID
         )
 
         // Stop times
@@ -452,7 +453,8 @@ class TripFloatingPanelController: UIViewController,
         let arrivalDeparture = tripConvertible?.arrivalDeparture
         let userStopIndex = TripStopListModel.userStopIndex(
             in: tripDetails.stopTimes,
-            arrivalDeparture: arrivalDeparture
+            arrivalDeparture: arrivalDeparture,
+            sharedDestinationStopID: parentTripViewController?.destinationStopID
         )
 
         guard let vm = TripProgressViewModel(
