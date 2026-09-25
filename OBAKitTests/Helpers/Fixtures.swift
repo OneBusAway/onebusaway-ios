@@ -50,6 +50,28 @@ class Fixtures {
         NSData(contentsOfFile: path(to: file))! as Data
     }
 
+    /// Loads a REST fixture with `onDemandServiceIds` stamped on every stop
+    /// reference — or removed, for an empty `ids` — so a stop fetched from it
+    /// carries exactly that on-demand pointer set.
+    class func loadData(file: String, stampingOnDemandServiceIDs ids: [String]) throws -> Data {
+        var json = try JSONSerialization.jsonObject(with: loadData(file: file)) as? [String: Any] ?? [:]
+        var data = json["data"] as? [String: Any] ?? [:]
+        var references = data["references"] as? [String: Any] ?? [:]
+        let stops = references["stops"] as? [[String: Any]] ?? []
+        references["stops"] = stops.map { stop in
+            var stop = stop
+            if ids.isEmpty {
+                stop.removeValue(forKey: "onDemandServiceIds")
+            } else {
+                stop["onDemandServiceIds"] = ids
+            }
+            return stop
+        }
+        data["references"] = references
+        json["data"] = data
+        return try JSONSerialization.data(withJSONObject: json)
+    }
+
     class func loadRESTAPIPayload<T>(type: T.Type, fileName: String) throws -> T where T: Decodable {
         let data = loadData(file: fileName)
         let apiResponse = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<T>.self, from: data)
@@ -153,6 +175,17 @@ class Fixtures {
         dataLoader.mock(data: agencyAlertsData) { (request) -> Bool in
             request.url!.absoluteString.contains("/api/gtfs_realtime/alerts-for-agency")
             || request.url!.absoluteString.contains("alerts.pb")
+        }
+    }
+
+    /// Answers the on-demand zones layer's `services-for-location` probe with
+    /// one Alexandria zone. Needed by any suite that pushes a viewport through
+    /// an `Application` whose `MapLayerRegistrar` has registered that layer:
+    /// the layer is on by default and probes on every viewport inside its zoom
+    /// window, and an unstubbed probe is a `MockDataLoader` fatalError.
+    class func stubOnDemandViewportProbe(dataLoader: MockDataLoader) {
+        dataLoader.mock(data: loadData(file: "ondemand_services_for_location_viewport.json")) { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
         }
     }
 

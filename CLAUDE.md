@@ -180,6 +180,7 @@ scripts/extract_strings               # Extract strings for localization
 
 ### Core Components
 - **Models**: REST API models, Protobuf models, user data models, view models
+- **On-demand (GTFS-Flex)**: `OBAKitCore/Models/REST/OnDemand/` holds the `/api/ondemand` wire models; `OBAKitCore/Models/OnDemand/` holds `BookingDeadlineEvaluator` (normative; verified against `OBAKitTests/fixtures/flex-booking-vectors.json`, mirrored from maglev) and the `OnDemandServiceSummary` presenter. `OnDemandSupport` remembers servers without the namespace; only `services-for-location` may record there. UI lives in `OBAKit/OnDemand/` and `OBAKit/Mapping/Layers/OnDemand/`.
 - **Services**: RESTAPIService, RegionsService, LocationService, UserDataStore
 - **Controllers**: Tab-based navigation with map, stops, bookmarks, search, and more
 - **Extensions**: Foundation, CoreLocation, UIKit, and MapKit extensions

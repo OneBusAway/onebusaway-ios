@@ -122,9 +122,9 @@ class OBATestCase {
 
     var restService: RESTAPIService!
 
-    func buildRESTService(dataLoader: MockDataLoader? = nil) -> RESTAPIService {
+    func buildRESTService(dataLoader: MockDataLoader? = nil, onDemandSupport: OnDemandSupport = OnDemandSupport()) -> RESTAPIService {
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier, surveyBaseURL: surveyBaseURL)
-        return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
+        return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name), onDemandSupport: onDemandSupport)
     }
 
     // MARK: - Network Request Stubbing
@@ -209,7 +209,18 @@ class OBATestCase {
     /// `cancelAllOperations()` scoped to one test — Swift Testing builds a fresh
     /// suite instance per test function and releases it afterwards, so the
     /// cancellation lands in that instance's `deinit`.
-    func buildApplication(queue: OperationQueue, dataLoader: MockDataLoader) -> Application {
+    ///
+    /// `onDemandSupport` defaults to a fresh instance, not `.shared`, so a
+    /// probe that 404s in one suite can't mark the server unsupported in another.
+    ///
+    /// `transport` replaces `dataLoader` as the app's network — a
+    /// `GatedDataLoader` wrapping it, say. Stubs still register on `dataLoader`.
+    func buildApplication(
+        queue: OperationQueue,
+        dataLoader: MockDataLoader,
+        transport: URLDataLoader? = nil,
+        onDemandSupport: OnDemandSupport = OnDemandSupport()
+    ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
 
@@ -229,8 +240,9 @@ class OBATestCase {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            dataLoader: transport ?? dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name,
+            onDemandSupport: onDemandSupport
         )
 
         return Application(config: config)

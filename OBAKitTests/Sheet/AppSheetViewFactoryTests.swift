@@ -73,6 +73,21 @@ final class AppSheetViewFactoryTests: OBATestCase {
     }
 
     @Test @MainActor
+    func `On-demand service view hosts the service page for the route's service`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let service = try JSONDecoder.RESTDecoder().decode(
+            RESTAPIResponse<OnDemandService>.self,
+            from: Fixtures.loadData(file: "ondemand_service_alexandria.json")
+        ).entry
+
+        let host = makeFactory(application: application).onDemandServiceView(service: service)
+
+        #expect(host.application === application)
+        #expect(host.service === service)
+    }
+
+    @Test @MainActor
     func `Stop detail view returns the SwiftUI sheet forwarding the stop ID`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)

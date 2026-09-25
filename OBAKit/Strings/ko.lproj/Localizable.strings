@@ -1933,3 +1933,66 @@
 "voice_search.permission_denied" = "음성 검색에는 마이크 또는 음성 인식 접근 권한이 필요합니다.";
 /* Shown when SFSpeechRecognizer cannot run. */
 "voice_search.unavailable" = "이 기기에서는 음성 검색을 사용할 수 없습니다.";
+
+/* Action on the agency action sheet that opens the agency's on-demand services */
+"agencies_controller.on_demand_services" = "수요응답형 서비스";
+
+/* Reason shown on a dimmed on-demand zones layer row when the server is unreachable */
+"map_layers.on_demand_unavailable" = "지금은 사용할 수 없음";
+
+/* Map sheet row for the on-demand (dial-a-ride) service zones layer */
+"map_layers.on_demand_zones" = "수요응답형 구역";
+
+/* Shown in place of a time window when a service runs all hours of its service days */
+"on_demand.all_hours" = "전체 운행 시간";
+
+/* Button that opens the agency's online booking page */
+"on_demand.book_online" = "온라인 예약";
+
+/* Booking deadline line. %1$@ is a formatted date and time (e.g. 'Today at 5:00 PM'), %2$@ is the travel date (e.g. 'Wed, Mar 11') */
+"on_demand.book_by_fmt" = "%2$@ 탑승은 %1$@까지 예약하세요";
+
+/* Shown when every upcoming service day's booking deadline has passed */
+"on_demand.booking_closed" = "다가오는 운행일의 예약이 마감되었습니다";
+
+/* Section header on the on-demand service page with the booking deadline, phone number and links */
+"on_demand.booking_header" = "예약 방법";
+
+/* Shown when the next service day cannot be booked yet. %@ is a formatted date and time */
+"on_demand.booking_opens_fmt" = "%@에 예약이 열립니다";
+
+/* Button that dials the booking phone number. %@ is the phone number as published */
+"on_demand.call_fmt" = "%@에 전화";
+
+/* Badge for a fixed route that can deviate into a zone on request */
+"on_demand.kind.deviated_route" = "노선 이탈 운행";
+
+/* Badge for an on-demand service that serves a set of stops */
+"on_demand.kind.stop_group" = "정류장 그룹";
+
+/* Badge for an on-demand service of unknown shape */
+"on_demand.kind.unknown" = "수요응답형";
+
+/* Badge for an on-demand service that serves anywhere inside one zone */
+"on_demand.kind.zone" = "구역 서비스";
+
+/* Badge for an on-demand service that travels between zones */
+"on_demand.kind.zone_to_zone" = "구역 간 이동";
+
+/* Title of the list of an agency's on-demand services */
+"on_demand.list_title" = "수요응답형 서비스";
+
+/* Button that opens the agency's information page about the service */
+"on_demand.more_info" = "자세한 정보";
+
+/* Shown when a service can be booked at ride time */
+"on_demand.no_notice_required" = "사전 예약 불필요";
+
+/* Empty state of the list of an agency's on-demand services */
+"on_demand.no_services" = "수요응답형 서비스 없음";
+
+/* Header of the stop page card listing dial-a-ride services that cover this stop */
+"on_demand.section_title" = "수요응답형 서비스";
+
+/* Section header on the on-demand service page listing service days and hours */
+"on_demand.when_header" = "운행 시간";

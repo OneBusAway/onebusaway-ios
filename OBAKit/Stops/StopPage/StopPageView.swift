@@ -37,6 +37,8 @@ struct StopPageNavigationHandler {
     let showDirectionsFromHere: (() -> Void)?
     /// Pushes the alert-detail screen for a tapped service alert.
     let showAlertDetail: (ServiceAlert) -> Void
+    /// Pushes the on-demand service page for a row of the stop's on-demand card.
+    let showOnDemandService: (OnDemandService) -> Void
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
     /// `ArrivalDeparture` for a trip-level bookmark (row swipe/menu).
     let showBookmarkEditor: (ArrivalDeparture?) -> Void
