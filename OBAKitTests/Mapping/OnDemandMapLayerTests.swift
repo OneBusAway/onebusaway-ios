@@ -61,6 +61,9 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(layer.annotations.count == 1)
         #expect(layer.annotations[0].title == "DOT Paratransit")
         expectClose(layer.annotations[0].coordinate.latitude, (38.617508 + 39.057831) / 2)
+        let routeColor = layer.services[0].route?.color ?? layer.tintColor
+        #expect(layer.annotations[0].color == routeColor, "the marker carries its service's colour")
+        #expect(layer.zoneShapes.map(\.color) == [routeColor])
     }
 
     @Test func `404 on the probe marks the layer unsupported and empties it`() async {

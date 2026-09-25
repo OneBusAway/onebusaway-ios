@@ -44,8 +44,8 @@ import OBAKitCore
     private(set) var services: [OnDemandService] = []
     private(set) var overlays: [MKPolygon] = []
     private(set) var annotations: [OnDemandZoneAnnotation] = []
-    /// Which service drew each overlay, by identity — the renderer claims only these.
-    private var serviceIDByOverlay: [ObjectIdentifier: String] = [:]
+    /// Each drawn overlay's colour, by identity — the renderer claims only these.
+    private var colorByOverlay: [ObjectIdentifier: UIColor] = [:]
 
     /// Called after the drawn zones change, for a host with no `MKMapView`
     /// (the SwiftUI panel) to re-read `zoneShapes` and `annotations`.
@@ -58,13 +58,8 @@ import OBAKitCore
     /// Each drawn polygon with its colour, for the panel's `MapPolygon`s.
     var zoneShapes: [OnDemandZoneShape] {
         overlays.map { polygon in
-            let serviceID = serviceIDByOverlay[ObjectIdentifier(polygon)]
-            return OnDemandZoneShape(polygon: polygon, color: serviceID.map(color(forServiceID:)) ?? tintColor)
+            OnDemandZoneShape(polygon: polygon, color: colorByOverlay[ObjectIdentifier(polygon)] ?? tintColor)
         }
-    }
-
-    func markerColor(for zone: OnDemandZoneAnnotation) -> UIColor {
-        color(forServiceID: zone.service.id)
     }
 
     /// Exposed so tests can await the in-flight fetch instead of polling.
@@ -129,10 +124,9 @@ import OBAKitCore
 
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? {
         guard let polygon = overlay as? MKPolygon,
-              let serviceID = serviceIDByOverlay[ObjectIdentifier(polygon)] else {
+              let color = colorByOverlay[ObjectIdentifier(polygon)] else {
             return nil
         }
-        let color = self.color(forServiceID: serviceID)
         let renderer = MKPolygonRenderer(polygon: polygon)
         renderer.fillColor = color.withAlphaComponent(Self.zoneFillAlpha)
         renderer.strokeColor = color
@@ -148,7 +142,7 @@ import OBAKitCore
             ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: Self.markerReuseIdentifier)
         marker.annotation = annotation
         marker.glyphImage = UIImage(systemName: "car.fill")
-        marker.markerTintColor = color(forServiceID: zone.service.id)
+        marker.markerTintColor = zone.color
         marker.canShowCallout = false
         marker.displayPriority = .defaultLow
         return marker
@@ -234,12 +228,13 @@ import OBAKitCore
         removeAllFromMap()
 
         for service in services {
+            let color = service.route?.color ?? tintColor
             for area in service.areas {
                 for polygon in area.mkPolygons {
-                    serviceIDByOverlay[ObjectIdentifier(polygon)] = service.id
+                    colorByOverlay[ObjectIdentifier(polygon)] = color
                     overlays.append(polygon)
                 }
-                annotations.append(OnDemandZoneAnnotation(service: service, coordinate: area.bbox.center))
+                annotations.append(OnDemandZoneAnnotation(service: service, coordinate: area.bbox.center, color: color))
             }
         }
 
@@ -254,14 +249,10 @@ import OBAKitCore
         mapView?.removeAnnotations(annotations)
         overlays = []
         annotations = []
-        serviceIDByOverlay = [:]
+        colorByOverlay = [:]
         if wasDrawn {
             onMapContentDidChange?()
         }
-    }
-
-    private func color(forServiceID serviceID: String) -> UIColor {
-        services.first { $0.id == serviceID }?.route?.color ?? tintColor
     }
 }
 
