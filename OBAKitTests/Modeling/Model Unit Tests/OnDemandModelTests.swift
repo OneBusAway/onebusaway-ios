@@ -63,6 +63,24 @@ final class OnDemandModelTests: OBATestCase {
         #expect(service.rules.isEmpty)
     }
 
+    // MARK: - Equality
+
+    @Test func `Services compare and hash by id`() throws {
+        let json = """
+        {"id":"x_1","agencyId":"x","routeId":null,"name":"X","serviceKind":"zone",
+         "description":null,"url":null,"rules":[],"matchReason":null}
+        """
+        let first = try decodeService(json)
+        let second = try decodeService(json)
+        let other = try decodeService(json.replacingOccurrences(of: "x_1", with: "x_2"))
+
+        #expect(first !== second)
+        #expect(first == second)
+        #expect(first.hash == second.hash)
+        #expect(first != other)
+        #expect(Set([first, second, other]).count == 2)
+    }
+
     // MARK: - Entry decoding (wiki §3.4 worked example)
 
     @Test func `Alexandria service decodes`() throws {
@@ -116,7 +134,10 @@ final class OnDemandModelTests: OBATestCase {
         #expect(area.hasGeometry)
         #expect(area.polygons.count == 1)
         #expect(area.polygons[0].count == 1, "Alexandria's zone has no holes")
-        #expect(area.polygons[0][0].count > 100)
+        #expect(area.polygons[0][0].count == 4239)
+        // GeoJSON positions are [lon, lat]; a swap would put latitude at -77.
+        expectClose(area.polygons[0][0][0].latitude, 38.8762916)
+        expectClose(area.polygons[0][0][0].longitude, -77.0464775)
         #expect(area.distanceToArea == nil)
         #expect(area.nearestPointOnBoundary == nil)
         expectClose(area.bbox.center.latitude, (38.617508 + 39.057831) / 2)
@@ -150,6 +171,8 @@ final class OnDemandModelTests: OBATestCase {
         expectClose(area.polygons[0][1][0].latitude, 4)
         expectClose(area.polygons[0][1][0].longitude, 4)
         #expect(area.polygons[1].count == 1)
+        expectClose(area.polygons[1][0][1].latitude, 20)
+        expectClose(area.polygons[1][0][1].longitude, 21)
         #expect(area.distanceToArea == 1234.5)
         expectClose(area.nearestPointOnBoundary?.latitude, 38.8)
         expectClose(area.nearestPointOnBoundary?.longitude, -77.1)
