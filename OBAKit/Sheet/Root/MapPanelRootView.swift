@@ -15,12 +15,13 @@ import UIKit
 
 // MARK: - MapPinSelection
 
-/// What the panel map's `selection` can hold. Stops and rentals share one Map,
-/// so the binding needs one type covering both.
+/// What the panel map's `selection` can hold. Stops, rentals and on-demand
+/// zone markers share one Map, so the binding needs one type covering all.
 enum MapPinSelection: Hashable {
     case stop(Stop.ID)
     case rental(VehicleRental.ID)
     case rentalCluster(String)
+    case onDemandZone(OnDemandZoneAnnotation.ID)
 }
 
 // MARK: - MapPanelRootView
@@ -152,6 +153,7 @@ struct MapPanelRootView: View {
     var body: some View {
         Map(position: $cameraPosition, selection: $mapSelection) {
             UserAnnotation()
+            onDemandZoneContent
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in
                 stopAnnotation(
@@ -254,6 +256,8 @@ struct MapPanelRootView: View {
                     .members ?? []
                 guard !members.isEmpty else { break }
                 coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
+            case .onDemandZone(let markerID):
+                presentOnDemandService(markerID: markerID)
             }
             mapSelection = nil
         }
@@ -409,6 +413,38 @@ struct MapPanelRootView: View {
             }
             .tag(tag(for: item))
         }
+    }
+
+    /// Zones under everything else, as on the UIKit map, where they are
+    /// overlays and markers at low display priority.
+    @MapContentBuilder
+    private var onDemandZoneContent: some MapContent {
+        ForEach(layersModel.onDemandZones) { zone in
+            MapPolygon(zone.polygon)
+                .foregroundStyle(Color(uiColor: zone.color).opacity(OnDemandMapLayer.zoneFillAlpha))
+                .stroke(Color(uiColor: zone.color), lineWidth: OnDemandMapLayer.zoneLineWidth)
+                .mapOverlayLevel(level: .aboveRoads)
+        }
+        ForEach(layersModel.onDemandMarkers) { marker in
+            Marker(marker.title ?? "", systemImage: "car.fill", coordinate: marker.coordinate)
+                .tint(Color(uiColor: layersModel.onDemandMarkerColor(for: marker)))
+                .tag(MapPinSelection.onDemandZone(marker.id))
+        }
+    }
+
+    /// Presents the zone's service page the way the UIKit map does: the
+    /// layer's own detail controller, as a medium sheet over whatever is up.
+    private func presentOnDemandService(markerID: OnDemandZoneAnnotation.ID) {
+        guard let marker = layersModel.onDemandMarker(withID: markerID),
+              let controller = layersModel.layerDetailViewController(for: marker),
+              let presenter = factory.presentingController() else {
+            return
+        }
+        if let sheet = controller.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        presenter.present(controller, animated: true)
     }
 
     /// Re-evaluates `showStopLabels` from the last settled viewport height and

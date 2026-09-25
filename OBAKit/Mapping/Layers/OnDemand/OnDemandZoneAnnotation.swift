@@ -16,7 +16,7 @@ import OBAKitCore
 ///
 /// `nonisolated`: `MKAnnotation`'s requirements are nonisolated Objective-C
 /// declarations, and every stored value here is immutable and `Sendable`.
-nonisolated final class OnDemandZoneAnnotation: NSObject, MKAnnotation {
+nonisolated final class OnDemandZoneAnnotation: NSObject, MKAnnotation, Identifiable {
     let service: OnDemandService
     let coordinate: CLLocationCoordinate2D
 
