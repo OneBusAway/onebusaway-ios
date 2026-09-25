@@ -260,8 +260,11 @@ public struct BookingDeadlineEvaluator: Sendable {
         return nil
     }
 
-    /// `nextBookableServiceDate` from spec §6: the earliest active service day
-    /// from the agency-local today whose evaluation is `open`.
+    /// `nextBookableServiceDate` from spec §6.4: the earliest active service
+    /// day from the agency-local today whose evaluation is `open`. A
+    /// candidate that evaluates `unknown` (e.g. its own count-back can't
+    /// complete) is skipped, not treated as a search-ending failure — Android
+    /// and maglev both keep walking past it.
     public func nextBookableServiceDate(
         rule: AvailabilityRule,
         bookingRule: OnDemandBookingRule?,
@@ -273,9 +276,6 @@ public struct BookingDeadlineEvaluator: Sendable {
             let evaluation = evaluate(rule: rule, bookingRule: bookingRule, travelDate: candidate, now: now)
             if evaluation.state == .open {
                 return candidate
-            }
-            if evaluation.state == .unknown {
-                return nil
             }
             cursor = adding(days: 1, to: candidate)
             stepped += 1

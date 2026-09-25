@@ -190,4 +190,43 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         #expect(evaluation == .unknown)
         #expect(evaluator.nextBookableServiceDate(rule: rule, bookingRule: bookingRule, now: Date()) == nil)
     }
+
+    @Test func `Next bookable service date skips unknown candidates instead of stopping`() throws {
+        // The rule itself runs every day; only the booking rule's notice
+        // calendar starts late.
+        let everyDayCalendar = OnDemandCalendar(
+            id: "every-day", days: Weekday.allCases,
+            startDate: ServiceDate("2026-03-13")!, endDate: ServiceDate("2026-03-31")!,
+            exceptedDates: []
+        )
+        let noticeCalendar = OnDemandCalendar(
+            id: "notice-late-start", days: [.mon, .tue, .wed, .thu, .fri],
+            startDate: ServiceDate("2026-03-16")!, endDate: ServiceDate("2026-12-31")!,
+            exceptedDates: []
+        )
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [everyDayCalendar, noticeCalendar])
+        let bookingRule = try JSONDecoder().decode(
+            OnDemandBookingRule.self,
+            from: Data(#"{"id":"notice-rule","bookingType":2,"priorNoticeLastDay":1,"priorNoticeCalendarId":"notice-late-start"}"#.utf8)
+        )
+        let rule = AvailabilityRule(
+            fromIDs: [], toIDs: [],
+            startPickupTime: GTFSTimeOfDay("09:00:00"), endPickupTime: GTFSTimeOfDay("17:00:00"),
+            endDropOffTime: nil, calendarIDs: ["every-day"],
+            pickupType: 2, dropOffType: 2,
+            pickupBookingRuleID: "notice-rule", dropOffBookingRuleID: nil,
+            safeDurationFactor: nil, safeDurationOffset: nil
+        )
+        let now = evaluator.instant(ServiceDate("2026-03-13")!, GTFSTimeOfDay("08:00:00")!)
+
+        // 2026-03-13 through 03-16 all evaluate unknown: the notice
+        // calendar's count-back walks past its own startDate before
+        // consuming a day.
+        #expect(evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: ServiceDate("2026-03-16")!, now: now).state == .unknown)
+
+        // 03-17's count-back lands on 03-16 (the notice calendar's first
+        // active day); its 00:00 cutoff is still ahead of `now`, so the walk
+        // must not have stopped at the earlier unknown candidates.
+        #expect(evaluator.nextBookableServiceDate(rule: rule, bookingRule: bookingRule, now: now) == ServiceDate("2026-03-17")!)
+    }
 }
