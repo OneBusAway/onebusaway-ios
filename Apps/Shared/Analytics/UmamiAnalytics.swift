@@ -147,6 +147,8 @@ final class UmamiAnalytics {
             /// from `uuid(website, id)` when this is present, instead of
             /// `uuid(website, IP, User-Agent, monthly salt)` — which keeps a
             /// visitor's session stable across IP changes (wifi ↔ cellular).
+            /// Server-version dependent: true through Umami v3.2; v3.3+ hash the
+            /// IP back in, so the shared server must stay pinned to ≤ v3.2.
             let id: String
         }
     }
