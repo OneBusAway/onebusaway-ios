@@ -21,7 +21,9 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     public enum BookingLine: Equatable, Sendable {
         /// "Book by `deadline` for a ride on `travelDate`."
         case bookBy(deadline: String, travelDate: String)
-        /// Booking for the next service day hasn't opened yet.
+        /// No service day is bookable yet: booking for the first not-yet-open
+        /// service day opens at this time. That day need not be the next
+        /// service day, which may already be closed.
         case opensAt(String)
         /// The next service day's rule has no pickup booking rule.
         case noNoticeRequired
@@ -176,7 +178,8 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
 
     /// The single rule's outcome as of `now`: its own next bookable date if
     /// it has one, otherwise the first date whose booking is still to open,
-    /// otherwise whether any remaining date can't be evaluated.
+    /// otherwise whether any remaining date can't be evaluated. One walk
+    /// over the rule's service days answers all three.
     private static func outcome(for rule: AvailabilityRule, service: OnDemandService, evaluator: BookingDeadlineEvaluator, now: Date) -> RuleOutcome {
         let bookingRule = service.bookingRule(id: rule.pickupBookingRuleID)
         // Referenced but missing is not "no notice": nothing can be promised.
@@ -184,20 +187,29 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             return .unresolvedBookingRule
         }
 
-        if let bookable = evaluator.nextServiceDate(in: .open, rule: rule, bookingRule: bookingRule, now: now) {
-            return .bookable(Candidate(travelDate: bookable.date, evaluation: bookable.evaluation))
+        var bookable: Candidate?
+        // The next service day may already be closed while a later one has
+        // yet to open, so the walk keeps the first not-yet-open date it sees.
+        var firstOpenInstant: Date?
+        var sawUnknown = false
+        evaluator.walkServiceDates(rule: rule, bookingRule: bookingRule, now: now) { date, evaluation in
+            switch evaluation.state {
+            case .open:
+                bookable = Candidate(travelDate: date, evaluation: evaluation)
+                return false
+            case .notYetOpen:
+                firstOpenInstant = firstOpenInstant ?? evaluation.openInstant
+            case .unknown:
+                sawUnknown = true
+            case .closedForDate:
+                break
+            }
+            return true
         }
 
-        // The next service day may already be closed while a later one has
-        // yet to open, so look for the first not-yet-open date directly.
-        if let opening = evaluator.nextServiceDate(in: .notYetOpen, rule: rule, bookingRule: bookingRule, now: now),
-           let openInstant = opening.evaluation.openInstant {
-            return .notYetOpen(openInstant)
-        }
-        if evaluator.nextServiceDate(in: .unknown, rule: rule, bookingRule: bookingRule, now: now) != nil {
-            return .unknown
-        }
-        return .settled
+        if let bookable { return .bookable(bookable) }
+        if let firstOpenInstant { return .notYetOpen(firstOpenInstant) }
+        return sawUnknown ? .unknown : .settled
     }
 
     /// Turns the rules' individual outcomes into one line: the earliest

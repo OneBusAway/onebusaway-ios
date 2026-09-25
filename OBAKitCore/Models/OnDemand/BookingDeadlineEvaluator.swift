@@ -296,16 +296,31 @@ public struct BookingDeadlineEvaluator: Sendable {
         bookingRule: OnDemandBookingRule?,
         now: Date
     ) -> (date: ServiceDate, evaluation: BookingEvaluation)? {
+        var found: (date: ServiceDate, evaluation: BookingEvaluation)?
+        walkServiceDates(rule: rule, bookingRule: bookingRule, now: now) { date, evaluation in
+            guard evaluation.state == state else { return true }
+            found = (date, evaluation)
+            return false
+        }
+        return found
+    }
+
+    /// Hands `body` each active service day of `rule` from the agency-local
+    /// today, in order and with its evaluation, until `body` returns false
+    /// or the walk reaches the bounds `nextBookableServiceDate` uses.
+    public func walkServiceDates(
+        rule: AvailabilityRule,
+        bookingRule: OnDemandBookingRule?,
+        now: Date,
+        _ body: (ServiceDate, BookingEvaluation) -> Bool
+    ) {
         var cursor: ServiceDate? = serviceDate(for: now)
         var stepped = 0
         while let candidate = cursor.flatMap({ nextActiveServiceDate(rule: rule, from: $0) }), stepped < Self.maximumLookaheadDays {
             let evaluation = evaluate(rule: rule, bookingRule: bookingRule, travelDate: candidate, now: now)
-            if evaluation.state == state {
-                return (candidate, evaluation)
-            }
+            guard body(candidate, evaluation) else { return }
             cursor = adding(days: 1, to: candidate)
             stepped += 1
         }
-        return nil
     }
 }
