@@ -67,6 +67,19 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
         self.regionIdentifier = regionIdentifier
         route = references.routeWithID(routeID)
         agency = references.agencyWithID(agencyID)
+
+        // Rules are the only link from a service to its areas and groups; the
+        // ID namespace is shared, so each endpoint ID is tried against both.
+        let endpointIDs = Set(rules.flatMap { $0.fromIDs + $0.toIDs }).sorted()
+        areas = endpointIDs.compactMap { references.serviceAreaWithID($0) }
+        locationGroups = endpointIDs.compactMap { references.locationGroupWithID($0) }
+
+        let bookingRuleIDs = Set(rules.flatMap { [$0.pickupBookingRuleID, $0.dropOffBookingRuleID].compactMap { $0 } }).sorted()
+        bookingRules = bookingRuleIDs.compactMap { references.bookingRuleWithID($0) }
+
+        // Booking rules may reference a notice calendar of their own (spec §6.1).
+        let calendarIDs = Set(rules.flatMap(\.calendarIDs) + bookingRules.compactMap(\.priorNoticeCalendarID)).sorted()
+        calendars = calendarIDs.compactMap { references.calendarWithID($0) }
     }
 
     // MARK: - Lookups
