@@ -285,6 +285,25 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(layer.services.isEmpty)
     }
 
+    /// Zooming out mid-fetch must stop the in-flight fetch from redrawing
+    /// zones over a map that is now too far out to show them.
+    @Test func `A fetch landing after a zoom-out draws nothing`() async {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        dataLoader.holdsNextProbe = true
+        let layer = makeLayer()
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        let task = layer.fetchTask
+        await dataLoader.waitForHeldProbe()
+
+        layer.viewportDidChange(nil)
+        dataLoader.releaseHeldProbe()
+        await task?.value
+
+        #expect(layer.overlays.isEmpty)
+        #expect(layer.annotations.isEmpty)
+    }
+
     /// The first fetch's services land after the second fetch has applied its
     /// own; a superseded fetch must never overwrite a newer one.
     @Test func `A superseded fetch never applies its services`() async throws {

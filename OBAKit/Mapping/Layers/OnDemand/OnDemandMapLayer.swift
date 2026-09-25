@@ -108,6 +108,8 @@ import OBAKitCore
     func viewportDidChange(_ mapRect: MKMapRect?) {
         guard isActive else { return }
         guard let mapRect else {
+            // An in-flight fetch would otherwise redraw the zones it removed.
+            fetchTask?.cancel()
             removeAllFromMap()
             return
         }
