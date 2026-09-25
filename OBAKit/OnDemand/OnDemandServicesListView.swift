@@ -101,7 +101,7 @@ struct OnDemandServicesListView: View {
                     Button {
                         onSelect(service)
                     } label: {
-                        OnDemandServicesListRow(service: service)
+                        OnDemandServicesListRow(listing: OnDemandServiceListing(service))
                     }
                 }
                 .listStyle(.insetGrouped)
@@ -113,13 +113,13 @@ struct OnDemandServicesListView: View {
 
 /// One service: its name, its kind, and a disclosure chevron.
 private struct OnDemandServicesListRow: View {
-    let service: OnDemandService
+    let listing: OnDemandServiceListing
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(service.name).foregroundStyle(.primary)
-                Text(Strings.onDemandKindTitle(service.serviceKind))
+                Text(listing.title).foregroundStyle(.primary)
+                Text(listing.subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
