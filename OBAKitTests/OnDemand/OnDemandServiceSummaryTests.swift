@@ -304,10 +304,12 @@ final class OnDemandServiceSummaryTests: OBATestCase {
     // MARK: - Unknown outcomes
 
     /// Rewrites the fixture's references: each calendar through `calendar`,
-    /// plus `extraCalendars`, and the booking rules wholesale.
+    /// plus `extraCalendars`, and the booking rules wholesale. Each rule's
+    /// `calendarIds` gains `extraRuleCalendarIDs`.
     private func alexandria(
         calendar: @escaping (inout [String: Any]) -> Void = { _ in },
         extraCalendars: [[String: Any]] = [],
+        extraRuleCalendarIDs: [String] = [],
         bookingRules: [[String: Any]],
         ruleBookingIDs: [String]? = nil
     ) throws -> OnDemandService {
@@ -321,16 +323,22 @@ final class OnDemandServiceSummaryTests: OBATestCase {
             } + extraCalendars
             references["bookingRules"] = bookingRules
             data["references"] = references
+            var entry = data["entry"] as! [String: Any]
+            var rules = entry["rules"] as! [[String: Any]]
             if let ruleBookingIDs {
-                var entry = data["entry"] as! [String: Any]
-                entry["rules"] = zip(entry["rules"] as! [[String: Any]], ruleBookingIDs).map { rule, bookingID in
+                rules = zip(rules, ruleBookingIDs).map { rule, bookingID in
                     var rule = rule
                     rule["pickupBookingRuleId"] = bookingID
                     rule["dropOffBookingRuleId"] = bookingID
                     return rule
                 }
-                data["entry"] = entry
             }
+            entry["rules"] = rules.map { rule in
+                var rule = rule
+                rule["calendarIds"] = (rule["calendarIds"] as! [String]) + extraRuleCalendarIDs
+                return rule
+            }
+            data["entry"] = entry
             json["data"] = data
         }
     }
@@ -396,8 +404,10 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         let service = try alexandria(
             calendar: { $0["endDate"] = "2026-01-31" },
             extraCalendars: [["id": "undated", "days": ["mon"], "startDate": "", "endDate": "2026-12-31"]],
+            extraRuleCalendarIDs: ["undated"],
             bookingRules: [["id": fixtureBookingRuleID, "bookingType": 2, "priorNoticeLastDay": 1, "priorNoticeLastTime": "17:00:00"]]
         )
+        #expect(service.calendars.contains { $0.id == "undated" && $0.startDate == nil })
         #expect(summary(service).bookingLine == .closed, "the ended calendar is usable, so the rules are closed")
     }
 
