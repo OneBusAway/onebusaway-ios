@@ -183,4 +183,23 @@ final class OnDemandServiceViewTests: OBATestCase {
         // Tuesday 17:00 in Los Angeles (PDT).
         #expect(controller.rootView.summary.nextChangeInstant == ISO8601DateFormatter().date(from: "2026-03-11T00:00:00Z"))
     }
+
+    /// A page left open overnight must not keep saying "tomorrow" once
+    /// tomorrow has become today.
+    @Test func `Refreshing past agency midnight updates the relative day`() throws {
+        // Mon 2026-03-09 23:30 in Los Angeles; Wednesday's ride is booked by Tue 17:00.
+        let clock = SendableBox(ISO8601DateFormatter().date(from: "2026-03-10T06:30:00Z")!)
+        let controller = makeController(service: try alexandria(), clock: clock)
+        let beforeMidnight = try #require(controller.rootView.bookingLineText)
+        // Tue 00:00 PDT comes before the 17:00 cutoff, so midnight is the boundary.
+        let midnight = try #require(ISO8601DateFormatter().date(from: "2026-03-10T07:00:00Z"))
+        #expect(controller.rootView.summary.nextChangeInstant == midnight)
+
+        clock.value = midnight.addingTimeInterval(30 * 60)
+        controller.refreshSummary()
+
+        let afterMidnight = try #require(controller.rootView.bookingLineText)
+        #expect(afterMidnight != beforeMidnight, "the deadline moved from tomorrow to today")
+        #expect(afterMidnight.contains("5:00"), "\(afterMidnight)")
+    }
 }
