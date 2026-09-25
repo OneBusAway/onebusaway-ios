@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift 6 language mode (strict concurrency), SwiftUI + MapKit (`Map`/`MapPolygon`, `MKPolygon`), Swift Testing, XcodeGen, SwiftLint 0.65.1, `Synchronization.Mutex`.
 
-**Spec:** `/private/tmp/claude-501/-Users-aaron-repos-onebusaway-maglev/215fa362-5529-43a3-9cb6-317b7d70341f/scratchpad/spec.md` (§0, §1, §6, §7, §9) and the wire contract `/private/tmp/claude-501/-Users-aaron-repos-onebusaway-maglev/215fa362-5529-43a3-9cb6-317b7d70341f/scratchpad/wiki/GTFS-Flex-Support.md` (§2.1, §2.2, §2.4, §2.5, §3, §3.1, §3.3, §3.4). Copy both into `docs/superpowers/specs/2026-09-24-gtfs-flex-ios-spec.md` and `docs/superpowers/specs/2026-09-24-gtfs-flex-wiki.md` in Task 0 so they travel with the branch. The JSON shapes in wiki §3.4 are normative; the booking algorithm in spec §6 is normative.
+**Spec:** `docs/superpowers/specs/2026-09-24-gtfs-flex-ios-spec.md` (§0, §1, §6, §7, §9; copied from maglev's `docs/superpowers/specs/2026-09-24-gtfs-flex-implementation-design.md`) and the wire contract `docs/superpowers/specs/2026-09-24-gtfs-flex-wiki.md` (§2.1, §2.2, §2.4, §2.5, §3, §3.1, §3.3, §3.4; copied from the maglev wiki's `GTFS-Flex-Support.md`). The JSON shapes in wiki §3.4 are normative; the booking algorithm in spec §6 is normative.
 
 ## Global Constraints
 
