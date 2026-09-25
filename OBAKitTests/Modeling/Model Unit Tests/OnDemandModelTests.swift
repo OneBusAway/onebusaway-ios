@@ -245,6 +245,27 @@ final class OnDemandModelTests: OBATestCase {
         #expect(calendar.days == [.mon, .sun])
         #expect(calendar.exceptedDates == [ServiceDate("2026-07-04")!])
     }
+
+    /// maglev passes unparseable GTFS dates through verbatim; one bad date
+    /// must not fail the whole `/api/ondemand` response (spec §6.3).
+    @Test func `Calendar decodes unparseable dates lossily`() throws {
+        let json = """
+        {"id":"c","days":["mon"],"startDate":"","endDate":"2026-13-01","exceptedDates":["2026-07-04","July 5th"]}
+        """
+        let calendar = try JSONDecoder().decode(OnDemandCalendar.self, from: Data(json.utf8))
+        #expect(calendar.startDate == nil)
+        #expect(calendar.endDate == nil)
+        #expect(calendar.exceptedDates == [ServiceDate("2026-07-04")!])
+    }
+
+    @Test func `Service with a malformed calendar date still decodes`() throws {
+        let data = Fixtures.loadData(file: "ondemand_service_alexandria.json")
+        let text = try #require(String(data: data, encoding: .utf8))
+        let malformed = Data(text.replacingOccurrences(of: "\"startDate\":\"2025-12-01\"", with: "\"startDate\":\"\"").utf8)
+        #expect(malformed != data, "the fixture's startDate spelling changed")
+        let service = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<OnDemandService>.self, from: malformed).entry
+        #expect(service.calendars.allSatisfy { $0.startDate == nil })
+    }
 }
 
 // swiftlint:enable force_cast

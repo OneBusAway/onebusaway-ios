@@ -108,10 +108,15 @@ public struct BookingDeadlineEvaluator: Sendable {
     // MARK: - Calendars
 
     /// Whether `calendarID` runs on `date`: inside its range, on one of its
-    /// weekdays, and not an `exceptedDates` entry. Unknown ids are never active.
+    /// weekdays, and not an `exceptedDates` entry. Unknown ids, and calendars
+    /// without a usable `startDate` or `endDate`, are never active.
     public func isActive(calendarID: String, on date: ServiceDate) -> Bool {
-        guard let serviceCalendar = calendarsByID[calendarID] else { return false }
-        guard date >= serviceCalendar.startDate, date <= serviceCalendar.endDate else { return false }
+        guard let serviceCalendar = calendarsByID[calendarID],
+              let startDate = serviceCalendar.startDate,
+              let endDate = serviceCalendar.endDate else {
+            return false
+        }
+        guard date >= startDate, date <= endDate else { return false }
         guard serviceCalendar.days.contains(weekday(of: date)) else { return false }
         return !serviceCalendar.exceptedDates.contains(date)
     }
@@ -119,15 +124,16 @@ public struct BookingDeadlineEvaluator: Sendable {
     /// `countBack(D, n, calendarId)` from spec §6.1/§6.3: calendar days when
     /// there is no (known) calendar, otherwise the n-th preceding day active
     /// on it. `n == 0` returns `D` unconditionally, without validating the
-    /// calendar. A known calendar with no active weekdays, or whose
-    /// `startDate` the walk reaches before `n` days are consumed, fails
-    /// closed (`nil`) rather than returning a date outside its range.
+    /// calendar. A known calendar with no active weekdays or no usable
+    /// `startDate`, or whose `startDate` the walk reaches before `n` days are
+    /// consumed, fails closed (`nil`) rather than returning a date outside
+    /// its range.
     public func countBack(from date: ServiceDate, days count: Int, calendarID: String?) -> ServiceDate? {
         guard count > 0 else { return date }
         guard let calendarID, let serviceCalendar = calendarsByID[calendarID] else {
             return adding(days: -count, to: date)
         }
-        guard !serviceCalendar.days.isEmpty else { return nil }
+        guard !serviceCalendar.days.isEmpty, let startDate = serviceCalendar.startDate else { return nil }
 
         var remaining = count
         var cursor = date
@@ -135,7 +141,7 @@ public struct BookingDeadlineEvaluator: Sendable {
         while stepped < Self.maximumLookaheadDays {
             cursor = adding(days: -1, to: cursor)
             stepped += 1
-            guard cursor >= serviceCalendar.startDate else { return nil }
+            guard cursor >= startDate else { return nil }
             if isActive(calendarID: calendarID, on: cursor) {
                 remaining -= 1
                 if remaining == 0 {
@@ -249,7 +255,7 @@ public struct BookingDeadlineEvaluator: Sendable {
     }
 
     /// The earliest active service day of `rule`, on or after `date`, bounded
-    /// by the rule's latest calendar `endDate`.
+    /// by the rule's latest usable calendar `endDate`.
     private func nextActiveServiceDate(rule: AvailabilityRule, from date: ServiceDate) -> ServiceDate? {
         guard let lastDate = rule.calendarIDs.compactMap({ calendarsByID[$0]?.endDate }).max() else {
             return nil

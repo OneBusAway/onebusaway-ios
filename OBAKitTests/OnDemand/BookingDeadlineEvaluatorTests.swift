@@ -290,4 +290,36 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         // must not have stopped at the earlier unknown candidates.
         #expect(evaluator.nextBookableServiceDate(rule: rule, bookingRule: bookingRule, now: now) == ServiceDate("2026-03-17")!)
     }
+
+    // MARK: - Calendars with unusable dates
+
+    private var undatedCalendar: OnDemandCalendar {
+        OnDemandCalendar(id: "undated", days: Weekday.allCases, startDate: nil, endDate: ServiceDate("2026-12-31")!, exceptedDates: [])
+    }
+
+    /// Spec §6.3: a missing or unparseable `startDate` makes a count-back over
+    /// that calendar, and so the evaluation, unknown.
+    @Test func `A rule whose notice calendar has no usable start date evaluates unknown`() throws {
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar, undatedCalendar])
+        let bookingRule = try JSONDecoder().decode(
+            OnDemandBookingRule.self,
+            from: Data(#"{"id":"b","bookingType":2,"priorNoticeLastDay":1,"priorNoticeCalendarId":"undated"}"#.utf8)
+        )
+        let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["wk"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: "b", dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
+        let travelDate = ServiceDate("2026-03-11")!
+
+        #expect(evaluator.countBack(from: travelDate, days: 1, calendarID: "undated") == nil)
+        let now = evaluator.instant(ServiceDate("2026-03-09")!, GTFSTimeOfDay("12:00:00")!)
+        #expect(evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: travelDate, now: now) == .unknown)
+    }
+
+    @Test func `A calendar without a usable start or end date is never active`() {
+        let unended = OnDemandCalendar(id: "unended", days: Weekday.allCases, startDate: ServiceDate("2026-01-01")!, endDate: nil, exceptedDates: [])
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [undatedCalendar, unended])
+        #expect(!evaluator.isActive(calendarID: "undated", on: ServiceDate("2026-03-11")!))
+        #expect(!evaluator.isActive(calendarID: "unended", on: ServiceDate("2026-03-11")!))
+
+        let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["undated", "unended"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
+        #expect(nextActiveDate(evaluator, rule: rule, from: ServiceDate("2026-03-11")!) == nil)
+    }
 }
