@@ -230,6 +230,41 @@ final class OnDemandServiceSummaryTests: OBATestCase {
         #expect(deadline.contains("11:50"), "\(deadline)")
     }
 
+    /// Cross-client parity (Android `earliestOpening`): a one-day notice
+    /// window viewed Tuesday 18:00. Tuesday and Wednesday are already closed
+    /// (cutoffs Mon and Tue 17:00), while Thursday's booking opens Wednesday
+    /// 09:00 — so the opens line must look past the closed next service day.
+    @Test func `Opens-at looks past a closed next service day`() throws {
+        let service = try alexandria { json in
+            var data = json["data"] as! [String: Any]
+
+            var entry = data["entry"] as! [String: Any]
+            var rule = (entry["rules"] as! [[String: Any]])[0]
+            rule["pickupBookingRuleId"] = "prior-day-window"
+            rule["dropOffBookingRuleId"] = "prior-day-window"
+            entry["rules"] = [rule]
+            data["entry"] = entry
+
+            var references = data["references"] as! [String: Any]
+            references["bookingRules"] = [[
+                "id": "prior-day-window", "bookingType": 2,
+                "priorNoticeLastDay": 1, "priorNoticeLastTime": "17:00:00",
+                "priorNoticeStartDay": 1, "priorNoticeStartTime": "09:00:00"
+            ]]
+            data["references"] = references
+            json["data"] = data
+        }
+        // 2026-03-10 18:00 in Los Angeles, a Tuesday.
+        let tuesdayEvening = ISO8601DateFormatter().date(from: "2026-03-11T01:00:00Z")!
+        let wednesdayNine = ISO8601DateFormatter().date(from: "2026-03-11T16:00:00Z")!
+        let expected = OnDemandServiceSummary.deadlineForTesting(
+            now: tuesdayEvening, cutoff: wednesdayNine, today: Date(), timeZone: losAngeles, locale: enUS
+        )
+
+        #expect(summary(service, now: tuesdayEvening).bookingLine == .opensAt(expected))
+        #expect(expected.contains("9:00"), "\(expected)")
+    }
+
     @Test func `Day runs render as ranges and lists`() {
         let symbols = DateFormatter().shortWeekdaySymbols!  // en_US in the GMT-pinned test process
         #expect(OnDemandServiceSummary.daysText([.mon, .tue, .wed, .thu, .fri, .sat], shortWeekdaySymbols: symbols) == "Mon–Sat")

@@ -186,21 +186,27 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         #expect(!evaluator.isActive(calendarID: "nope", on: ServiceDate("2026-03-11")!))
     }
 
-    @Test func `Next active service date starts at the given day`() {
+    /// With no booking rule every active day evaluates `open`, so the next
+    /// bookable date from noon on `date` is the rule's next active day.
+    private func nextActiveDate(_ evaluator: BookingDeadlineEvaluator, rule: AvailabilityRule, from date: ServiceDate) -> ServiceDate? {
+        evaluator.nextBookableServiceDate(rule: rule, bookingRule: nil, now: evaluator.noon(date))
+    }
+
+    @Test func `Walk starts at today's service day`() {
         let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar])
         let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["wk"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
-        #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-14")!) == ServiceDate("2026-03-16")!)
-        #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-11")!) == ServiceDate("2026-03-11")!)
-        #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2027-06-01")!) == nil)
+        #expect(nextActiveDate(evaluator, rule: rule, from: ServiceDate("2026-03-14")!) == ServiceDate("2026-03-16")!)
+        #expect(nextActiveDate(evaluator, rule: rule, from: ServiceDate("2026-03-11")!) == ServiceDate("2026-03-11")!)
+        #expect(nextActiveDate(evaluator, rule: rule, from: ServiceDate("2027-06-01")!) == nil)
     }
 
-    @Test func `Next active service date is nil when the rule names no known calendar`() {
+    @Test func `Walk finds nothing when the rule names no known calendar`() {
         let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar])
         let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["missing"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
-        #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-11")!) == nil)
+        #expect(nextActiveDate(evaluator, rule: rule, from: ServiceDate("2026-03-11")!) == nil)
     }
 
-    @Test func `Next active service date exhausts its own step cap when nothing is active`() {
+    @Test func `Walk exhausts its step cap when nothing is active`() {
         // A distant endDate keeps the walk's `cursor <= lastDate` condition
         // true throughout, so exit must come from the step cap, not from
         // running past the calendar's range.
@@ -211,7 +217,7 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         )
         let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [neverActiveCalendar])
         let rule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["never"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
-        #expect(evaluator.nextActiveServiceDate(rule: rule, from: ServiceDate("2026-03-11")!) == nil)
+        #expect(nextActiveDate(evaluator, rule: rule, from: ServiceDate("2026-03-11")!) == nil)
     }
 
     @Test func `Same-day booking type opens durationMax minutes before start pickup`() throws {
