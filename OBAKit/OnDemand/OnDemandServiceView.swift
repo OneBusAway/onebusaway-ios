@@ -19,12 +19,13 @@ import SwiftUI
 /// before construction, so the body is a straight rendering of its inputs.
 struct OnDemandServiceView: View {
     let service: OnDemandService
-    /// Nil when the agency's time zone is unknown; the page then shows contact
-    /// details with no deadline or hours.
-    let summary: OnDemandServiceSummary?
+    /// Always present. When the agency's time zone is unknown its booking line
+    /// is `.unknown`, so the page shows hours and contact details with no
+    /// deadline line.
+    let summary: OnDemandServiceSummary
     let onOpenURL: (URL) -> Void
 
-    init(service: OnDemandService, summary: OnDemandServiceSummary?, onOpenURL: @escaping (URL) -> Void) {
+    init(service: OnDemandService, summary: OnDemandServiceSummary, onOpenURL: @escaping (URL) -> Void) {
         self.service = service
         self.summary = summary
         self.onOpenURL = onOpenURL
@@ -34,13 +35,25 @@ struct OnDemandServiceView: View {
         service.areas.flatMap(\.mkPolygons)
     }
 
-    /// The map section renders only when at least one area has geometry.
+    /// The map section renders only when at least one area has a ring
+    /// MapKit can draw; a degenerate ring would leave an empty map.
     var showsMap: Bool {
-        service.areas.contains { $0.hasGeometry }
+        !polygons.isEmpty
     }
 
     var bookingLineText: String? {
-        summary.flatMap { Self.bookingLineText(for: $0.bookingLine) }
+        Self.bookingLineText(for: summary.bookingLine)
+    }
+
+    /// The booking rule's info page, falling back to the service's own URL.
+    var infoURL: URL? {
+        summary.infoURL ?? service.url
+    }
+
+    /// Whether the booking section has a contact row; with no deadline line
+    /// either, the section is omitted rather than left as a bare header.
+    var hasContactDetails: Bool {
+        summary.phoneURL != nil || summary.bookingURL != nil || infoURL != nil
     }
 
     /// Wraps the presenter's formatted pieces in the localized sentence
@@ -100,43 +113,43 @@ struct OnDemandServiceView: View {
                 }
             }
 
-            if let summary {
-                Section(Strings.onDemandWhenHeader) {
-                    if summary.windows.isEmpty {
-                        Text(Strings.onDemandAllHours).foregroundStyle(.secondary)
+            Section(Strings.onDemandWhenHeader) {
+                if summary.windows.isEmpty {
+                    Text(Strings.onDemandAllHours).foregroundStyle(.secondary)
+                }
+                ForEach(summary.windows, id: \.self) { window in
+                    HStack {
+                        Text(window.days).font(.body.weight(.medium))
+                        Spacer()
+                        Text(window.hours ?? Strings.onDemandAllHours).foregroundStyle(.secondary)
                     }
-                    ForEach(summary.windows, id: \.self) { window in
-                        HStack {
-                            Text(window.days).font(.body.weight(.medium))
-                            Spacer()
-                            Text(window.hours ?? Strings.onDemandAllHours).foregroundStyle(.secondary)
+                }
+            }
+
+            if bookingLineText != nil || hasContactDetails {
+                Section(Strings.onDemandBookingHeader) {
+                    if let bookingLineText {
+                        Label(bookingLineText, systemImage: "clock")
+                    }
+                    if let phone = summary.phoneNumber, let phoneURL = summary.phoneURL {
+                        Button { onOpenURL(phoneURL) } label: {
+                            Label(String(format: Strings.onDemandCallFormat, phone), systemImage: "phone.fill")
+                        }
+                    }
+                    if let bookingURL = summary.bookingURL {
+                        Button { onOpenURL(bookingURL) } label: {
+                            Label(Strings.onDemandBookOnline, systemImage: "safari")
+                        }
+                    }
+                    if let infoURL {
+                        Button { onOpenURL(infoURL) } label: {
+                            Label(Strings.onDemandMoreInfo, systemImage: "info.circle")
                         }
                     }
                 }
             }
 
-            Section(Strings.onDemandBookingHeader) {
-                if let bookingLineText {
-                    Label(bookingLineText, systemImage: "clock")
-                }
-                if let phone = summary?.phoneNumber, let phoneURL = summary?.phoneURL {
-                    Button { onOpenURL(phoneURL) } label: {
-                        Label(String(format: Strings.onDemandCallFormat, phone), systemImage: "phone.fill")
-                    }
-                }
-                if let bookingURL = summary?.bookingURL {
-                    Button { onOpenURL(bookingURL) } label: {
-                        Label(Strings.onDemandBookOnline, systemImage: "safari")
-                    }
-                }
-                if let infoURL = summary?.infoURL ?? service.url {
-                    Button { onOpenURL(infoURL) } label: {
-                        Label(Strings.onDemandMoreInfo, systemImage: "info.circle")
-                    }
-                }
-            }
-
-            if let message = summary?.message {
+            if let message = summary.message {
                 Section {
                     Text(message).font(.footnote).foregroundStyle(.secondary)
                 }
