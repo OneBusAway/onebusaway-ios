@@ -34,6 +34,10 @@ final class MapPanelLayersModelTests: OBATestCase {
         // that region's base URL.
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
+        // The on-demand zones layer is on by default and probes on every viewport.
+        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json")) { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
         application = buildApplication(queue: queue, dataLoader: dataLoader)
         model = MapPanelLayersModel(application: application)
     }
@@ -70,10 +74,10 @@ final class MapPanelLayersModelTests: OBATestCase {
     /// has to move with the toggles.
     @Test func `Badge count follows enabled layers`() {
         let initial = model.enabledLayerCount
-        #expect(initial == 2)
+        #expect(initial == 3)
 
         application.mapRegionManager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
-        #expect(model.enabledLayerCount == 1)
+        #expect(model.enabledLayerCount == 2)
     }
 
     /// Reset restores stops on and points of interest on in one write; the model
