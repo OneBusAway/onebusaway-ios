@@ -72,9 +72,13 @@ import FirebaseCrashlytics
         }
 
         if let umamiConfig = region.umamiAnalytics {
+            // Same install ID across every region/instance for this install:
+            // AnalyticsInstallID.persisted reads/writes `userDefaults`, which
+            // this orchestrator holds for its whole lifetime.
             umami = UmamiAnalytics(serverURL: umamiConfig.url,
                                    websiteID: umamiConfig.id,
-                                   hostname: region.OBABaseURL.host ?? "")
+                                   hostname: region.OBABaseURL.host ?? "",
+                                   installID: AnalyticsInstallID.persisted(userDefaults: userDefaults))
         }
     }
 

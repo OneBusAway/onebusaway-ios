@@ -17,11 +17,13 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     private let successBody = #"{"cache":"x","sessionId":"s","visitId":"v"}"#.data(using: .utf8)!
     private let beepBoopBody = #"{"beep":"boop"}"#.data(using: .utf8)!
+    private let testInstallID = "test-install-id"
 
-    private func makeReporter(loader: MockDataLoader) -> UmamiAnalytics {
+    private func makeReporter(loader: MockDataLoader, installID: String? = nil) -> UmamiAnalytics {
         UmamiAnalytics(serverURL: URL(string: "https://analytics.example.com")!,
                        websiteID: "site-uuid",
                        hostname: "api.example.org",
+                       installID: installID ?? testInstallID,
                        dataLoader: loader)
     }
 
@@ -84,6 +86,7 @@ final class UmamiAnalyticsTests: OBATestCase {
         #expect((payload["hostname"] as? String) == "api.example.org")
         #expect((payload["url"] as? String) == "/stop")
         #expect(payload["name"] == nil)  // pageview → no name
+        #expect((payload["id"] as? String) == testInstallID)
         let data = payload["data"] as! [String: Any]
         #expect((data["id"] as? String) == "1_75403")
         #expect((data["distance"] as? String) == "near")
@@ -107,6 +110,7 @@ final class UmamiAnalyticsTests: OBATestCase {
         let payload = body["payload"] as! [String: Any]
         #expect((payload["name"] as? String) == "Clicked MapStopIcon")
         #expect((payload["url"] as? String) == "/map")
+        #expect((payload["id"] as? String) == testInstallID)
     }
 
     // MARK: - Fail-safe
@@ -128,5 +132,45 @@ final class UmamiAnalyticsTests: OBATestCase {
         // Should complete normally despite the dropped-event response.
         await reporter.reportSearchQuery("downtown")
         #expect(loader.recordedRequestURLs.count == 1)
+    }
+
+    // MARK: - AnalyticsInstallID
+
+    @Test func `Install ID is stable across repeated calls`() {
+        let first = AnalyticsInstallID.persisted(userDefaults: userDefaults)
+        let second = AnalyticsInstallID.persisted(userDefaults: userDefaults)
+        #expect(first == second)
+    }
+
+    @Test func `Install ID is stable across new instances sharing the same defaults`() {
+        let suiteName = "AnalyticsInstallIDTests.\(UUID().uuidString)"
+        let defaults = buildUserDefaults(suiteName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let first = AnalyticsInstallID.persisted(userDefaults: defaults)
+        // A fresh UserDefaults instance backed by the same suite — mimics a new
+        // process launch reading the same persisted store.
+        let second = AnalyticsInstallID.persisted(userDefaults: buildUserDefaults(suiteName: suiteName))
+        #expect(first == second)
+    }
+
+    @Test func `Install ID differs across fresh defaults suites`() {
+        let suiteNameA = "AnalyticsInstallIDTests.\(UUID().uuidString)"
+        let suiteNameB = "AnalyticsInstallIDTests.\(UUID().uuidString)"
+        let defaultsA = buildUserDefaults(suiteName: suiteNameA)
+        let defaultsB = buildUserDefaults(suiteName: suiteNameB)
+        defer {
+            defaultsA.removePersistentDomain(forName: suiteNameA)
+            defaultsB.removePersistentDomain(forName: suiteNameB)
+        }
+
+        let idA = AnalyticsInstallID.persisted(userDefaults: defaultsA)
+        let idB = AnalyticsInstallID.persisted(userDefaults: defaultsB)
+        #expect(idA != idB)
+    }
+
+    @Test func `Install ID is a valid UUID string`() {
+        let id = AnalyticsInstallID.persisted(userDefaults: userDefaults)
+        #expect(UUID(uuidString: id) != nil)
     }
 }
