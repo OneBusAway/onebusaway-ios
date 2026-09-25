@@ -1934,7 +1934,6 @@
 /* Shown when SFSpeechRecognizer cannot run. */
 "voice_search.unavailable" = "Hindi available ang voice search sa device na ito.";
 
-
 /* Action on the agency action sheet that opens the agency's on-demand services */
 "agencies_controller.on_demand_services" = "On-demand services";
 
