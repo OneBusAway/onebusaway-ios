@@ -671,4 +671,18 @@ final class OnDemandProbeControllerTests: OBATestCase {
         controller.clearPlanner()
         #expect(controller.dockState == .hidden)
     }
+
+    /// Spec 2.4: the planner fallback stays available with the on-demand layer off.
+    @Test func `The planner state ignores the layer toggle`() async throws {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        let result = try #require(await controller.plannerResult(origin: alexandriaPoint, destination: alexandriaPoint))
+        controller.showPlanner(result)
+
+        controller.setLayerEnabled(false)
+        #expect(controller.dockState == .planner(result))
+
+        controller.clearPlanner()
+        #expect(controller.dockState == .hidden)
+    }
 }
