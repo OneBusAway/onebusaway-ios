@@ -1964,21 +1964,6 @@
 /* Button that dials the booking phone number. %@ is the phone number as published */
 "on_demand.call_fmt" = "致电 %@";
 
-/* Badge for a fixed route that can deviate into a zone on request */
-"on_demand.kind.deviated_route" = "线路偏离";
-
-/* Badge for an on-demand service that serves a set of stops */
-"on_demand.kind.stop_group" = "站点组";
-
-/* Badge for an on-demand service of unknown shape */
-"on_demand.kind.unknown" = "按需";
-
-/* Badge for an on-demand service that serves anywhere inside one zone */
-"on_demand.kind.zone" = "区域服务";
-
-/* Badge for an on-demand service that travels between zones */
-"on_demand.kind.zone_to_zone" = "区域间服务";
-
 /* Title of the list of an agency's on-demand services */
 "on_demand.list_title" = "按需服务";
 

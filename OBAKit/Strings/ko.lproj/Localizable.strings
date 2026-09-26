@@ -1964,21 +1964,6 @@
 /* Button that dials the booking phone number. %@ is the phone number as published */
 "on_demand.call_fmt" = "%@에 전화";
 
-/* Badge for a fixed route that can deviate into a zone on request */
-"on_demand.kind.deviated_route" = "노선 이탈 운행";
-
-/* Badge for an on-demand service that serves a set of stops */
-"on_demand.kind.stop_group" = "정류장 그룹";
-
-/* Badge for an on-demand service of unknown shape */
-"on_demand.kind.unknown" = "수요응답형";
-
-/* Badge for an on-demand service that serves anywhere inside one zone */
-"on_demand.kind.zone" = "구역 서비스";
-
-/* Badge for an on-demand service that travels between zones */
-"on_demand.kind.zone_to_zone" = "구역 간 이동";
-
 /* Title of the list of an agency's on-demand services */
 "on_demand.list_title" = "수요응답형 서비스";
 

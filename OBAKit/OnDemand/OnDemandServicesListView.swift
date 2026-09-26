@@ -111,18 +111,13 @@ struct OnDemandServicesListView: View {
     }
 }
 
-/// One service: its name, its kind, and a disclosure chevron.
+/// One service: its name and a disclosure chevron.
 private struct OnDemandServicesListRow: View {
     let listing: OnDemandServiceListing
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(listing.title).foregroundStyle(.primary)
-                Text(listing.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text(listing.title).foregroundStyle(.primary)
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))

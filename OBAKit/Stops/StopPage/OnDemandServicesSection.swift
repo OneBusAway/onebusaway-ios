@@ -42,16 +42,11 @@ struct OnDemandServicesSection: View {
         StopPageCardRow {
             select(row)
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(row.title)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                Text(row.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text(row.title)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
         }
     }
 }

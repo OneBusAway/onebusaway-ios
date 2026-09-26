@@ -82,12 +82,6 @@ struct OnDemandServiceView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(service.name)
                         .font(.title2.weight(.semibold))
-                    Text(Strings.onDemandKindTitle(service.serviceKind))
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(tint.opacity(0.15), in: Capsule())
-                        .foregroundStyle(tint)
                     if let description = service.serviceDescription {
                         Text(description)
                             .font(.subheadline)

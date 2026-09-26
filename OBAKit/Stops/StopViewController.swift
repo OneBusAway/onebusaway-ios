@@ -1342,16 +1342,15 @@ private extension StopViewController {
     // MARK: - Data/On-demand services
 
     /// Mirrors the redesigned page's `OnDemandServicesSection`: one row per
-    /// service, its name over its kind.
+    /// service, named after it.
     var onDemandServicesSection: OBAListViewSection? {
         let services = displayedOnDemandServices
         guard !services.isEmpty else { return nil }
 
         let rows = services.map { service in
             let listing = OnDemandServiceListing(service)
-            return OBAListRowView.SubtitleViewModel(
+            return OBAListRowView.DefaultViewModel(
                 title: listing.title,
-                subtitle: listing.subtitle,
                 onSelectAction: { [weak self] _ in
                     guard let self else { return }
                     self.application.viewRouter.navigateTo(onDemandService: service, from: self)

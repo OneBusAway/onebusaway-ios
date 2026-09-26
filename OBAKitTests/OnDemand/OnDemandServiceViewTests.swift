@@ -109,13 +109,6 @@ final class OnDemandServiceViewTests: OBATestCase {
         #expect(OnDemandServiceView.bookingLineText(for: .unknown) == nil)
     }
 
-    @Test func `Kind titles are distinct and non-empty`() {
-        let kinds: [ServiceKind] = [.zone, .zoneToZone, .stopGroup, .deviatedRoute, .unknown]
-        let titles = kinds.map(Strings.onDemandKindTitle)
-        #expect(titles.allSatisfy { !$0.isEmpty })
-        #expect(Set(titles).count == kinds.count)
-    }
-
     @Test func `Hosting controller titles itself with the service name`() throws {
         let dataLoader = MockDataLoader(testName: name)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)

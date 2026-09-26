@@ -2058,21 +2058,6 @@
 /* Button that dials the booking phone number. %@ is the phone number as published */
 "on_demand.call_fmt" = "Call %@";
 
-/* Badge for a fixed route that can deviate into a zone on request */
-"on_demand.kind.deviated_route" = "Route deviation";
-
-/* Badge for an on-demand service that serves a set of stops */
-"on_demand.kind.stop_group" = "Stop group";
-
-/* Badge for an on-demand service of unknown shape */
-"on_demand.kind.unknown" = "On-demand";
-
-/* Badge for an on-demand service that serves anywhere inside one zone */
-"on_demand.kind.zone" = "Zone service";
-
-/* Badge for an on-demand service that travels between zones */
-"on_demand.kind.zone_to_zone" = "Zone to zone";
-
 /* Title of the list of an agency's on-demand services */
 "on_demand.list_title" = "On-demand services";
 
