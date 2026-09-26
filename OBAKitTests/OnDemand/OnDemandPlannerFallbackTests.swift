@@ -157,13 +157,13 @@ final class OnDemandPlannerFallbackTests: OBATestCase {
         )
     }
 
-    @Test func `The card shows at most two services and leaves the rest to Show all`() throws {
+    @Test func `The card shows at most one service and leaves the rest to Show all`() throws {
         let result = try threeQualifying()
         #expect(result.qualifying.count == 3)
-        #expect(OnDemandPlannerFallbackView.visibleServices(in: result).map(\.id) == ["X", "Y"])
+        #expect(OnDemandPlannerFallbackView.visibleServices(in: result).map(\.id) == ["X"])
     }
 
-    /// Two cards and the captions outgrow the space between the map
+    /// Even one card and the captions outgrow the space between the map
     /// controls and a half-height planner on a phone; the card then scrolls
     /// within the height it is given instead of running under the status bar.
     @Test func `The card scrolls within a height shorter than its content`() throws {
@@ -177,7 +177,7 @@ final class OnDemandPlannerFallbackTests: OBATestCase {
         let host = UIHostingController(rootView: view)
         let natural = host.sizeThatFits(in: CGSize(width: 343, height: CGFloat.greatestFiniteMagnitude)).height
         let limit: CGFloat = 220
-        #expect(natural > limit, "precondition: two cards need more than \(limit) pt, got \(natural)")
+        #expect(natural > limit, "precondition: one card needs more than \(limit) pt, got \(natural)")
 
         #expect(host.sizeThatFits(in: CGSize(width: 343, height: limit)).height <= limit)
     }
