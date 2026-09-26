@@ -137,15 +137,23 @@ public struct OnDemandAvailability: Equatable, Sendable {
         // service past its cutoff still opens again: at the first window
         // after the current one.
         let isRunningPastCutoff = runningNow && !bookableNow
+        // The window search after the running window's end must include a
+        // window starting exactly there — an adjacent rule can pick up right
+        // where the current one's cutoff left off (ruling: don't skip it and
+        // report tomorrow instead).
         let nextOpening = isRunningPastCutoff
-            ? nextWindowStart(after: runningUntil ?? now, service: service, evaluator: evaluator, today: today)
+            ? nextWindowStart(after: runningUntil ?? now, service: service, evaluator: evaluator, today: today, inclusive: true)
             : nextRunStart
         let status = status(
             bookingTier: bookingTier, resolution: outcome.resolution, runningNow: runningNow, bookableNow: bookableNow,
             runningUntil: runningUntil, nextOpening: nextOpening, hasUsableCalendar: hasUsableCalendar, hasServiceDay: firstActiveDate != nil
         )
         let tags = tags(bookingTier: bookingTier, eligibility: service.eligibility)
-        let nextChange = [runningUntil, nextRunStart, outcome.nextChangeInstant].compactMap { $0 }.filter { $0 > now }.min()
+        // `usabilityTier` depends on `today`, so the agency-zone midnight
+        // rollover always counts as a next change, even for a continuous
+        // service with no other boundary ahead of it (ruling: spec §2.5).
+        let nextMidnight = evaluator.anchor(evaluator.adding(days: 1, to: today))
+        let nextChange = [runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight].compactMap { $0 }.filter { $0 > now }.min()
 
         return OnDemandAvailability(
             runningNow: runningNow,
@@ -183,12 +191,33 @@ public struct OnDemandAvailability: Equatable, Sendable {
     }
 
     private static func window(of rule: AvailabilityRule, on date: ServiceDate, evaluator: BookingDeadlineEvaluator) -> Window {
-        Window(
+        // An all-day rule spans true wall-clock midnight to midnight, not
+        // `anchor(date) ..< anchor(date) + 24h`: on a DST transition day
+        // those two are 23h/25h apart, which would otherwise open a false
+        // gap between consecutive all-day windows (ruling: spec §2.5).
+        guard rule.startPickupTime == nil, rule.endPickupTime == nil else {
+            return Window(
+                rule: rule,
+                date: date,
+                start: evaluator.instant(date, rule.startPickupTime ?? .midnight),
+                end: evaluator.instant(date, rule.endPickupTime ?? .endOfServiceDay)
+            )
+        }
+        return Window(
             rule: rule,
             date: date,
-            start: evaluator.instant(date, rule.startPickupTime ?? .midnight),
-            end: evaluator.instant(date, rule.endPickupTime ?? .endOfServiceDay)
+            start: startOfDay(date, evaluator: evaluator),
+            end: startOfDay(evaluator.adding(days: 1, to: date), evaluator: evaluator)
         )
+    }
+
+    /// True wall-clock midnight of `date` in the agency zone — distinct from
+    /// `BookingDeadlineEvaluator.anchor`, which is a fixed 12-hour offset from
+    /// local noon and so can land off true midnight on a DST transition day.
+    private static func startOfDay(_ date: ServiceDate, evaluator: BookingDeadlineEvaluator) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = evaluator.timeZone
+        return calendar.startOfDay(for: evaluator.noon(date))
     }
 
     private static func windows(of service: OnDemandService, on dates: [ServiceDate], evaluator: BookingDeadlineEvaluator) -> [Window] {
@@ -198,24 +227,27 @@ public struct OnDemandAvailability: Equatable, Sendable {
     }
 
     /// The latest end among the containing windows — or nil when that end
-    /// abuts the start of a window on the next service day, so a continuous
-    /// service reads "Open" rather than "until 12:00 AM".
+    /// touches or overlaps the start of a window on the next service day, so
+    /// a continuous service reads "Open" rather than "until 12:00 AM".
     private static func runningUntilInstant(_ containing: [Window], service: OnDemandService, evaluator: BookingDeadlineEvaluator) -> Date? {
         guard let latest = containing.max(by: { $0.end < $1.end }) else { return nil }
         let nextDay = evaluator.adding(days: 1, to: latest.date)
-        let abuts = windows(of: service, on: [nextDay], evaluator: evaluator).contains { $0.start == latest.end }
+        let abuts = windows(of: service, on: [nextDay], evaluator: evaluator).contains { $0.start <= latest.end }
         return abuts ? nil : latest.end
     }
 
     /// The earliest window start after `now` from `today − 1` through
     /// `today + lookaheadDays`. Stops once a day's anchor is past the best
-    /// candidate: no later day can start earlier.
-    private static func nextWindowStart(after now: Date, service: OnDemandService, evaluator: BookingDeadlineEvaluator, today: ServiceDate) -> Date? {
+    /// candidate: no later day can start earlier. `inclusive` widens "after"
+    /// to "at or after", so a window starting exactly at `now` — e.g. an
+    /// adjacent rule picking up right where the current one's cutoff left
+    /// off — is not skipped.
+    private static func nextWindowStart(after now: Date, service: OnDemandService, evaluator: BookingDeadlineEvaluator, today: ServiceDate, inclusive: Bool = false) -> Date? {
         var best: Date?
         for offset in -1...lookaheadDays {
             let date = evaluator.adding(days: offset, to: today)
             if let best, evaluator.anchor(date) >= best { break }
-            for window in windows(of: service, on: [date], evaluator: evaluator) where window.start > now {
+            for window in windows(of: service, on: [date], evaluator: evaluator) where inclusive ? window.start >= now : window.start > now {
                 best = min(best ?? window.start, window.start)
             }
         }
