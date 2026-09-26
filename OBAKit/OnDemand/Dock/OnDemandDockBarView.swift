@@ -40,6 +40,9 @@ struct OnDemandDockBarPage: Identifiable, Equatable {
     let eyebrow: String?
     let title: String
     let backgroundColor: UIColor
+    /// The service's zone colour, which the thumbnail placeholder disc keeps
+    /// even when the page itself is outside gray (spec 3.4).
+    let serviceColor: UIColor
     let textColor: UIColor
     let trailing: Trailing
 
@@ -69,6 +72,7 @@ struct OnDemandDockBarPage: Identifiable, Equatable {
         let title = copy.forService(match.service).barTitle(for: match, edge: edge)
         eyebrow = title == nil ? nil : match.service.name
         self.title = title ?? match.service.name
+        serviceColor = color
         if match.isInside {
             backgroundColor = color
             textColor = OnDemandServiceColors.textColor(for: match.service, on: color)
@@ -92,6 +96,9 @@ struct OnDemandDockBarModel: Equatable {
     let probePoint: CLLocationCoordinate2D
     /// Nil until every stacked service's geometry is cached, or when any fetch failed.
     let thumbnailRings: [OnDemandThumbnailRing]?
+    /// Every current match with a finite distance, inside and nearby: the
+    /// long-press picker lists these, not just the bar's stack (spec 3.5).
+    let pickerMatches: [OnDemandServiceMatch]
 
     var showsBadge: Bool { pages.count > 1 }
 
@@ -106,8 +113,14 @@ struct OnDemandDockBarModel: Equatable {
         return [page.eyebrow, page.title].compactMap { $0 }.joined(separator: ", ")
     }
 
+    /// The bar long-press (and its accessibility action) opens the nearby picker.
+    func pickerRequest(source: ProbeSource) -> OnDemandPickerRequest {
+        OnDemandPickerRequest(matches: pickerMatches, scope: .nearby, source: source, coordinate: probePoint)
+    }
+
     init(
         matches: [OnDemandServiceMatch],
+        pickerMatches: [OnDemandServiceMatch],
         probePoint: CLLocationCoordinate2D,
         edges: [String: OnDemandEdge],
         fullAreas: [String: [ServiceArea]],
@@ -125,6 +138,7 @@ struct OnDemandDockBarModel: Equatable {
             )
         }
         self.probePoint = probePoint
+        self.pickerMatches = pickerMatches
 
         let allLoaded = sorted.allSatisfy { fullAreas[$0.id] != nil && !failedGeometry.contains($0.id) }
         guard allLoaded, !sorted.isEmpty else {
@@ -140,6 +154,7 @@ struct OnDemandDockBarModel: Equatable {
     static func == (lhs: OnDemandDockBarModel, rhs: OnDemandDockBarModel) -> Bool {
         lhs.pages == rhs.pages
             && lhs.thumbnailRings == rhs.thumbnailRings
+            && lhs.pickerMatches == rhs.pickerMatches
             && lhs.probePoint.latitude == rhs.probePoint.latitude
             && lhs.probePoint.longitude == rhs.probePoint.longitude
     }
@@ -160,6 +175,7 @@ struct OnDemandDockBarView: View {
     private static let padding: CGFloat = 8
     private static let minimumHeight: CGFloat = 72
     private static let trailingButtonSize = OnDemandZoneCardView.minimumTouchTarget
+    private static let longPressDuration = 0.5
     private static let dotSize: CGFloat = 7
     private static let dotColor = Color(red: 0xc7 / 255.0, green: 0xc7 / 255.0, blue: 0xcc / 255.0)
     private static let currentDotColor = Color(red: 0x3a / 255.0, green: 0x3a / 255.0, blue: 0x3c / 255.0)
@@ -174,7 +190,7 @@ struct OnDemandDockBarView: View {
     }
 
     private var pickerRequest: OnDemandPickerRequest {
-        OnDemandPickerRequest(matches: model.pages.map(\.match), scope: .nearby, source: locationCheck.source, coordinate: model.probePoint)
+        model.pickerRequest(source: locationCheck.source)
     }
 
     var body: some View {
@@ -243,7 +259,7 @@ struct OnDemandDockBarView: View {
     private func pageView(_ page: OnDemandDockBarPage, index: Int) -> some View {
         HStack(spacing: 12) {
             Button { actions.zoomOut(model.pages.map(\.match)) } label: {
-                OnDemandZoneThumbnailView(rings: model.thumbnailRings, probePoint: model.probePoint, placeholderColor: page.backgroundColor)
+                OnDemandZoneThumbnailView(rings: model.thumbnailRings, probePoint: model.probePoint, placeholderColor: page.serviceColor)
                     .overlay(alignment: .bottomLeading) {
                         if model.showsBadge {
                             Text(model.badge(forPageAt: index))
@@ -280,9 +296,15 @@ struct OnDemandDockBarView: View {
         .padding(Self.padding)
         .background(Color(uiColor: page.backgroundColor), in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
-        .onLongPressGesture(minimumDuration: 0.5) {
-            actions.openPicker(pickerRequest)
-        }
+        // High priority so a long press over the thumbnail, title or trailing
+        // button opens the picker instead of firing that button on release; a
+        // quick tap fails the long press and still reaches the button, and a
+        // drag past the long press's distance limit still pages the TabView.
+        .highPriorityGesture(
+            LongPressGesture(minimumDuration: Self.longPressDuration).onEnded { _ in
+                actions.openPicker(pickerRequest)
+            }
+        )
     }
 
     private func performTrailing(_ page: OnDemandDockBarPage) {

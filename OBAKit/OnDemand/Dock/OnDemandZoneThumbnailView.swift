@@ -53,7 +53,8 @@ struct OnDemandThumbnailProjection {
 }
 
 /// The bar's 56 pt thumbnail: a Canvas of the stack's rings around the probe
-/// point, or a disc with a car glyph until every ring has loaded.
+/// point, or a disc in the page's service colour with a car glyph until every
+/// ring has loaded.
 struct OnDemandZoneThumbnailView: View {
     let rings: [OnDemandThumbnailRing]?
     let probePoint: CLLocationCoordinate2D
@@ -64,36 +65,45 @@ struct OnDemandZoneThumbnailView: View {
     private static let inset: CGFloat = 4
     private static let ringFillAlpha = 0.35
     private static let probeDotDiameter: CGFloat = 6
+    private static let borderColor = Color.white.opacity(0.85)
+    private static let borderWidth: CGFloat = 2
 
     var body: some View {
-        ZStack {
-            if let rings {
-                Canvas { context, size in
-                    let projection = OnDemandThumbnailProjection(rings: rings, probePoint: probePoint, side: size.width, inset: Self.inset)
-                    for ring in rings where ring.points.count >= 3 {
-                        var path = Path()
-                        path.addLines(ring.points.map(projection.point))
-                        path.closeSubpath()
-                        context.fill(path, with: .color(Color(uiColor: ring.color).opacity(Self.ringFillAlpha)))
-                        context.stroke(path, with: .color(Color(uiColor: ring.color)), lineWidth: 1)
-                    }
-                    let dot = CGRect(
-                        x: projection.centre.x - Self.probeDotDiameter / 2,
-                        y: projection.centre.y - Self.probeDotDiameter / 2,
-                        width: Self.probeDotDiameter,
-                        height: Self.probeDotDiameter
-                    )
-                    context.stroke(Path(ellipseIn: dot.insetBy(dx: -0.75, dy: -0.75)), with: .color(.white), lineWidth: 1.5)
-                    context.fill(Path(ellipseIn: dot), with: .color(Color(uiColor: .systemBlue)))
-                }
-                .background(Color(uiColor: .systemBackground).opacity(0.9))
-            } else {
-                Color(uiColor: placeholderColor)
+        if let rings {
+            ringsCanvas(rings)
+                .frame(width: side, height: side)
+                .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous).strokeBorder(Self.borderColor, lineWidth: Self.borderWidth))
+        } else {
+            // Spec 3.4: until the geometry loads, a disc in the service colour.
+            ZStack {
+                Circle().fill(Color(uiColor: placeholderColor))
                 Image(systemName: "car.fill").foregroundStyle(.white)
             }
+            .frame(width: side, height: side)
+            .overlay(Circle().strokeBorder(Self.borderColor, lineWidth: Self.borderWidth))
         }
-        .frame(width: side, height: side)
-        .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous).strokeBorder(.white.opacity(0.85), lineWidth: 2))
+    }
+
+    private func ringsCanvas(_ rings: [OnDemandThumbnailRing]) -> some View {
+        Canvas { context, size in
+            let projection = OnDemandThumbnailProjection(rings: rings, probePoint: probePoint, side: size.width, inset: Self.inset)
+            for ring in rings where ring.points.count >= 3 {
+                var path = Path()
+                path.addLines(ring.points.map(projection.point))
+                path.closeSubpath()
+                context.fill(path, with: .color(Color(uiColor: ring.color).opacity(Self.ringFillAlpha)))
+                context.stroke(path, with: .color(Color(uiColor: ring.color)), lineWidth: 1)
+            }
+            let dot = CGRect(
+                x: projection.centre.x - Self.probeDotDiameter / 2,
+                y: projection.centre.y - Self.probeDotDiameter / 2,
+                width: Self.probeDotDiameter,
+                height: Self.probeDotDiameter
+            )
+            context.stroke(Path(ellipseIn: dot.insetBy(dx: -0.75, dy: -0.75)), with: .color(.white), lineWidth: 1.5)
+            context.fill(Path(ellipseIn: dot), with: .color(Color(uiColor: .systemBlue)))
+        }
+        .background(Color(uiColor: .systemBackground).opacity(0.9))
     }
 }
