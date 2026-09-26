@@ -229,9 +229,11 @@ final class OnDemandDockHostTests: OBATestCase {
         // The registration domain is process-wide, so an earlier test's
         // registration of the layer's default would otherwise mask the bug.
         let defaults = application.userDefaults
-        var registered = defaults.volatileDomain(forName: UserDefaults.registrationDomain)
+        let originalRegistered = defaults.volatileDomain(forName: UserDefaults.registrationDomain)
+        var registered = originalRegistered
         registered.removeValue(forKey: key)
         defaults.setVolatileDomain(registered, forName: UserDefaults.registrationDomain)
+        defer { defaults.setVolatileDomain(originalRegistered, forName: UserDefaults.registrationDomain) }
         #expect(defaults.object(forKey: key) == nil, "precondition: no stored preference")
 
         let mapController = MapViewController(application: application)
