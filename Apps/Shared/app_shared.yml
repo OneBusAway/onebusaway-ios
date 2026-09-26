@@ -139,11 +139,11 @@ packages:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.5.3
     OTPKit:
-        # OneBusAway/otpkit#155 has merged to main but is not in a tagged
-        # release yet; track main until one ships, then switch back to a
-        # version range.
+        # Tracks OneBusAway/otpkit branch drt-trip-plan-empty (commit ebccd14),
+        # which posts Notifications.tripPlanEmpty for the on-demand planner
+        # fallback. Switch back to main once that branch merges.
         url: https://github.com/OneBusAway/otpkit.git
-        branch: main
+        branch: drt-trip-plan-empty
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.38.1
