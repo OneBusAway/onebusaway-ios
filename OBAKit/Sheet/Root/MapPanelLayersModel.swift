@@ -255,9 +255,13 @@ import OTPKit
     }
 
     /// The sheet route for a tapped zone marker's service page; nil once the
-    /// marker has left the map.
-    func onDemandServiceRoute(forMarkerID id: OnDemandZoneAnnotation.ID) -> AppSheetRoute? {
-        onDemandMarker(withID: id).map { .onDemandService($0.service) }
+    /// marker has left the map. `locationCheck` supplies the probe result for
+    /// the marker's service id when it has one (spec 3.6 item 3).
+    func onDemandServiceRoute(
+        forMarkerID id: OnDemandZoneAnnotation.ID,
+        locationCheck: (String) -> OnDemandLocationCheck? = { _ in nil }
+    ) -> AppSheetRoute? {
+        onDemandMarker(withID: id).map { .onDemandService($0.service, locationCheck: locationCheck($0.service.id)) }
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this

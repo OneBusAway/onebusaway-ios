@@ -366,6 +366,18 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(controller.locationCheck?.source == .mapCenter)
     }
 
+    @Test func `A pin's location check covers only a matched service`() async {
+        mockProbe(file: "ondemand_services_for_location_point_near.json")
+        let controller = makeController()
+        await settle(controller, at: charlevoixPoint, level: .street)
+
+        let check = controller.locationCheck(forServiceID: "CC_CC1")
+        #expect(check?.source == .mapCenter)
+        #expect(check?.isInside == false)
+        #expect(check?.coordinate.latitude == charlevoixPoint.latitude)
+        #expect(controller.locationCheck(forServiceID: "not-a-match") == nil)
+    }
+
     @Test func `A street-level settle inside a zone shows the bar`() async {
         mockProbe(file: "ondemand_services_for_location_point.json")
         let controller = makeController()

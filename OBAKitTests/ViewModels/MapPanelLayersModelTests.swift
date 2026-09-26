@@ -117,6 +117,26 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(model.onDemandMarker(withID: marker.id) === marker)
     }
 
+    /// A pin whose service is in the probe's match list opens the page with
+    /// that probe result (spec 3.6 item 3).
+    @Test func `A zone marker's route carries the probe result for its service`() async throws {
+        model.viewportDidChange(alexandriaViewport)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+        let marker = try #require(model.onDemandMarkers.first)
+        let check = OnDemandLocationCheck(source: .rider, isInside: true, locality: nil, coordinate: marker.coordinate)
+
+        let checkForMatchedService: (String) -> OnDemandLocationCheck? = { serviceID in
+            guard serviceID == marker.service.id else { return nil }
+            return check
+        }
+        let route = try #require(model.onDemandServiceRoute(forMarkerID: marker.id, locationCheck: checkForMatchedService))
+        guard case .onDemandService(_, let carried) = route else {
+            Issue.record("expected an on-demand service route, got \(route.id)")
+            return
+        }
+        #expect(carried == check)
+    }
+
     /// A zone marker tap pushes the service page through the sheet coordinator,
     /// like every other marker, at medium with a grabber.
     @Test func `A zone marker resolves to the service page's sheet route`() async throws {

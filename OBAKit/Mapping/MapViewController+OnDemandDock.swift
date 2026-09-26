@@ -80,16 +80,31 @@ extension MapViewController {
 
     private func onDemandDockActions() -> OnDemandDockActions {
         OnDemandDockActions(
-            openDetail: { [weak self] match, _ in
-                guard let self else { return }
-                presentMediumSheet(OnDemandServiceViewController(application: application, service: match.service))
-            },
+            openDetail: { [weak self] match, check in self?.presentOnDemandDetail(match, check: check) },
             openPicker: { [weak self] request in self?.presentOnDemandPicker(request) },
             call: { [weak self] url in self?.application.open(url, options: [:], completionHandler: nil) },
             openURL: { [weak self] url in self?.application.open(url, options: [:], completionHandler: nil) },
             zoomOut: { [weak self] matches in self?.zoomOutToOnDemandZones(matches) },
             panTo: { [weak self] point in self?.mapRegionManager.mapView.setCenter(point, animated: true) }
         )
+    }
+
+    /// Resolves the locality (at most one second), which the dock's check
+    /// lacks, and presents the service page with the location row.
+    private func presentOnDemandDetail(_ match: OnDemandServiceMatch, check: OnDemandLocationCheck) {
+        Task { [weak self] in
+            let locality = await OnDemandLocalityResolver().locality(for: check.coordinate)
+            guard let self else { return }
+            let resolved = OnDemandLocationCheck(source: check.source, isInside: check.isInside, locality: locality, coordinate: check.coordinate)
+            presentOnDemandServicePage(OnDemandServiceViewController(application: application, service: match.service, locationCheck: resolved))
+        }
+    }
+
+    /// Presents a service page that keeps the zone highlight while it is open
+    /// and clears it once the page closes (spec 2.3, ruling F15).
+    func presentOnDemandServicePage(_ detail: OnDemandServiceViewController) {
+        detail.onDismiss = { [weak self] in self?.onDemandProbeController.highlightedServiceID = nil }
+        presentMediumSheet(detail)
     }
 
     /// Resolves the locality (at most one second) and presents the picker sheet.
