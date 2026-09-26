@@ -32,7 +32,7 @@ final class MapItemSheetViewTests: OBATestCase {
     }
 
     @MainActor
-    private func makeFactory(application: Application) -> AppSheetViewFactory {
+    private func makeFactory(application: Application, probeController: OnDemandProbeController? = nil) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
             mapViewModel: MapViewModel(application: application),
@@ -43,7 +43,7 @@ final class MapItemSheetViewTests: OBATestCase {
             coordinator: SheetCoordinator(root: .home),
             searchDisplayModel: MapSearchDisplayModel(),
             stopsObserver: MapStopsObserver(application: application),
-            onDemandProbeController: OnDemandProbeController.make(application: application)
+            onDemandProbeController: probeController ?? OnDemandProbeController.make(application: application)
         )
     }
 
@@ -138,6 +138,25 @@ final class MapItemSheetViewTests: OBATestCase {
 
         #expect(view.application === application)
         #expect(view.mapItem === item)
+    }
+
+    /// Spec 3.7: no address line on a deployment without `/api/ondemand`.
+    @Test @MainActor
+    func `Factory withholds the coverage probe once the deployment is unsupported`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Data(), statusCode: 404) { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let probeController = OnDemandProbeController.make(application: application)
+        let factory = makeFactory(application: application, probeController: probeController)
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
+        #expect(factory.mapItemView(mapItem: item).coverageProbe != nil)
+
+        _ = try? await probeController.probeExact(at: item.placemark.coordinate)
+
+        #expect(probeController.isUnsupported)
+        #expect(factory.mapItemView(mapItem: item).coverageProbe == nil)
     }
 
     @Test @MainActor

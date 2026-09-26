@@ -321,7 +321,16 @@ final class AppSheetViewFactory {
     }
 
     func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {
-        MapItemSheetView(application: application, mapItem: mapItem)
+        MapItemSheetView(application: application, mapItem: mapItem, coverageProbe: coverageProbe)
+    }
+
+    /// The address check's exact probe (spec 3.7); nil once the deployment is
+    /// known to lack `/api/ondemand`, so the map item shows no line.
+    private var coverageProbe: OnDemandCoverageProbe? {
+        guard !onDemandProbeController.isUnsupported else { return nil }
+        return { [onDemandProbeController] coordinate in
+            try await onDemandProbeController.probeExact(at: coordinate)
+        }
     }
 
     /// `AppSheetRoute.nearbyStops` — stops around a coordinate the user picked
