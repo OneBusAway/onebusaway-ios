@@ -96,11 +96,17 @@ struct OnDemandDockBarModel: Equatable {
     let probePoint: CLLocationCoordinate2D
     /// Nil until every stacked service's geometry is cached, or when any fetch failed.
     let thumbnailRings: [OnDemandThumbnailRing]?
-    /// Every current match with a finite distance, inside and nearby: the
+    /// Every current inside and nearby match (`pickerCandidates(from:)`): the
     /// long-press picker lists these, not just the bar's stack (spec 3.5).
     let pickerMatches: [OnDemandServiceMatch]
 
     var showsBadge: Bool { pages.count > 1 }
+
+    /// The long-press picker's list: the inside and nearby matches. `isNearby`
+    /// carries the 5,000 m rule, so a far stop-radius match stays out.
+    static func pickerCandidates(from matches: [OnDemandServiceMatch]) -> [OnDemandServiceMatch] {
+        matches.filter { $0.isInside || $0.isNearby }
+    }
 
     func badge(forPageAt index: Int) -> String {
         OnDemandCopy.badge(index: index + 1, count: pages.count)
