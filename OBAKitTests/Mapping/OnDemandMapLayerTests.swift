@@ -61,7 +61,7 @@ final class OnDemandMapLayerTests: OBATestCase {
         request.url?.path.contains("/api/ondemand/services-for-location") ?? false
     }
 
-    @Test func `Successful fetch draws one polygon and one marker per area`() async {
+    @Test func `Successful fetch draws one polygon and one marker per service at its label point`() async {
         mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
         let layer = makeLayer()
         layer.activate()
@@ -74,9 +74,12 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(layer.annotations.count == 1)
         #expect(layer.annotations[0].title == "DOT Paratransit")
         expectClose(layer.annotations[0].coordinate.latitude, (38.617508 + 39.057831) / 2)
+        let exterior = layer.services[0].areas[0].polygons[0][0]
+        #expect(OnDemandGeometry.pointInRing(layer.annotations[0].coordinate, ring: exterior), "the pin sits inside its own polygon")
         let routeColor = layer.services[0].route?.color ?? layer.tintColor
         #expect(layer.annotations[0].color == routeColor, "the marker carries its service's colour")
         #expect(layer.zoneShapes.map(\.color) == [routeColor])
+        #expect(layer.iconName == "car.fill")
     }
 
     /// A pan that finds the same services keeps what is drawn, so the panel's
@@ -252,6 +255,126 @@ final class OnDemandMapLayerTests: OBATestCase {
 
         let foreign = MKPolygon(coordinates: [CLLocationCoordinate2D(latitude: 0, longitude: 0), CLLocationCoordinate2D(latitude: 1, longitude: 0), CLLocationCoordinate2D(latitude: 1, longitude: 1)], count: 3)
         #expect(layer.renderer(for: foreign, in: mapView) == nil)
+    }
+
+    // MARK: - Zoom levels
+
+    private let streetViewport = MKMapRect(
+        origin: MKMapPoint(CLLocationCoordinate2D(latitude: 38.83, longitude: -77.05)),
+        size: MKMapSize(width: 30_000, height: 30_000)
+    )
+
+    @Test func `Zoom level is decided from the visible height`() {
+        #expect(OnDemandZoomLevel.level(forVisibleHeight: 40_000) == .street)
+        #expect(OnDemandZoomLevel.level(forVisibleHeight: 40_001) == .region)
+        #expect(OnDemandZoomLevel.level(forVisibleHeight: 600_000) == .region)
+        #expect(OnDemandZoomLevel.level(forVisibleHeight: 600_001) == .hidden)
+        #expect(OnDemandZoomLevel.streetMaxVisibleHeight == MapRegionManager.requiredHeightToShowStops)
+        #expect(layerZoomWindowMatchesRegionLevel())
+    }
+
+    private func layerZoomWindowMatchesRegionLevel() -> Bool {
+        makeLayer().zoomWindow.maxVisibleHeight == OnDemandZoomLevel.regionMaxVisibleHeight
+    }
+
+    @Test func `Street level hides pins and draws a halo under a stroke-only polygon`() async {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        let layer = makeLayer()
+        let mapView = MKMapView()
+        layer.mapView = mapView
+        layer.activate()
+        layer.viewportDidChange(streetViewport)
+        await layer.fetchTask?.value
+
+        #expect(layer.zoomLevel == .street)
+        #expect(layer.annotations.isEmpty)
+        #expect(!mapView.annotations.contains { $0 is OnDemandZoneAnnotation })
+        #expect(layer.haloOverlays.count == 1)
+        #expect(mapView.overlays.count == 2, "halo plus stroke")
+
+        let stroke = layer.renderer(for: layer.overlays[0], in: mapView) as? MKPolygonRenderer
+        #expect(stroke?.lineWidth == 4)
+        var alpha: CGFloat = 1
+        stroke?.fillColor?.getRed(nil, green: nil, blue: nil, alpha: &alpha)
+        expectClose(Double(alpha), 0)
+
+        let halo = layer.renderer(for: layer.haloOverlays[0], in: mapView) as? MKPolygonRenderer
+        #expect(halo?.lineWidth == 10)
+        halo?.strokeColor?.getRed(nil, green: nil, blue: nil, alpha: &alpha)
+        expectClose(Double(alpha), 0.25)
+
+        #expect(layer.zoneShapes.map(\.style) == [.halo, .street(emphasis: .normal)])
+    }
+
+    @Test func `Zooming back to region level restores pins and removes halos`() async {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        let layer = makeLayer()
+        let mapView = MKMapView()
+        layer.mapView = mapView
+        layer.activate()
+        layer.viewportDidChange(streetViewport)
+        await layer.fetchTask?.value
+
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+
+        #expect(layer.zoomLevel == .region)
+        #expect(layer.annotations.count == 1)
+        #expect(mapView.annotations.contains { $0 is OnDemandZoneAnnotation })
+        #expect(mapView.overlays.count == 1)
+        #expect(layer.zoneShapes.map(\.style) == [.region(highlighted: false)])
+        let renderer = layer.renderer(for: layer.overlays[0], in: mapView) as? MKPolygonRenderer
+        #expect(renderer?.lineWidth == 2)
+    }
+
+    @Test func `Highlight raises one service and dims the others at street level`() async throws {
+        let viewportJSON = try #require(String(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"), encoding: .utf8))
+        let element = try #require(Self.listElement(in: viewportJSON))
+        let twoServices = viewportJSON.replacingOccurrences(
+            of: "\"list\":[",
+            with: "\"list\":[" + element.replacingOccurrences(of: "5088_77652", with: "5088_other") + ","
+        )
+        mockProbe(statusCode: 200, data: Data(twoServices.utf8))
+        let layer = makeLayer()
+        let mapView = MKMapView()
+        layer.mapView = mapView
+        layer.activate()
+        layer.viewportDidChange(streetViewport)
+        await layer.fetchTask?.value
+        #expect(layer.services.map(\.id) == ["5088_77652", "5088_other"])
+
+        layer.setHighlightedService("5088_other")
+        #expect(layer.highlightedServiceID == "5088_other")
+        // One polygon per service, in service order.
+        func style(ofServiceAt index: Int) -> OnDemandZoneStyle? {
+            let polygon = layer.overlays[index]
+            return layer.zoneShapes.first { $0.polygon === polygon }?.style
+        }
+        #expect(style(ofServiceAt: 1) == .street(emphasis: .highlighted))
+        #expect(style(ofServiceAt: 0) == .street(emphasis: .dimmed))
+
+        var alpha: CGFloat = 1
+        let dimmed = layer.renderer(for: layer.overlays[0], in: mapView) as? MKPolygonRenderer
+        dimmed?.strokeColor?.getRed(nil, green: nil, blue: nil, alpha: &alpha)
+        expectClose(Double(alpha), 0.6)
+
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+        let regionShapes = layer.zoneShapes.map(\.style)
+        #expect(regionShapes.contains(.region(highlighted: true)))
+        #expect(regionShapes.contains(.region(highlighted: false)))
+
+        layer.setHighlightedService(nil)
+        #expect(layer.zoneShapes.allSatisfy { $0.style == .region(highlighted: false) })
+    }
+
+    /// The JSON text of the fixture's single list element, for duplication.
+    private nonisolated static func listElement(in json: String) -> String? {
+        guard let start = json.range(of: "\"list\":[")?.upperBound,
+              let end = json.range(of: "],\"outOfRange\"")?.lowerBound ?? json.range(of: "],\"references\"")?.lowerBound else {
+            return nil
+        }
+        return String(json[start..<end])
     }
 
     @Test func `Detail controller is the service page for a zone marker`() async {

@@ -151,6 +151,33 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(model.onDemandMarkers.isEmpty)
     }
 
+    @Test func `A street-level viewport publishes halo shapes and no markers`() async {
+        let street = MKMapRect(
+            origin: MKMapPoint(CLLocationCoordinate2D(latitude: 38.83, longitude: -77.05)),
+            size: MKMapSize(width: 30_000, height: 30_000)
+        )
+        model.viewportDidChange(street)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+
+        #expect(model.onDemandMarkers.isEmpty)
+        #expect(model.onDemandZones.contains { $0.style == .halo })
+        #expect(model.onDemandZones.contains { $0.style == .street(emphasis: .normal) })
+    }
+
+    @Test func `Highlighting a service reaches the layer`() async {
+        let street = MKMapRect(
+            origin: MKMapPoint(CLLocationCoordinate2D(latitude: 38.83, longitude: -77.05)),
+            size: MKMapSize(width: 30_000, height: 30_000)
+        )
+        model.viewportDidChange(street)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+
+        model.setHighlightedService("5088_77652")
+        #expect(model.onDemandZones.contains { $0.style == .street(emphasis: .highlighted) })
+        model.setHighlightedService(nil)
+        #expect(!model.onDemandZones.contains { $0.style == .street(emphasis: .highlighted) })
+    }
+
     /// Leaving bikeshare must *empty* the panel, or the rider keeps seeing the
     /// old region's vehicles. Pins the whole chain — layer deactivation clears
     /// `visibleRentals` through the still-live subscription, then the coordinator
