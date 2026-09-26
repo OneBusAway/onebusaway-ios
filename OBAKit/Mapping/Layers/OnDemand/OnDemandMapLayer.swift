@@ -90,8 +90,8 @@ import OBAKitCore
     var group: MapLayerGroup { .transit }
     var isEnabledByDefault: Bool { true }
 
-    /// Ten times the stop gate: county-sized zones must survive a zoomed-out map.
-    var zoomWindow: MapLayerZoomWindow { MapLayerZoomWindow(maxVisibleHeight: 400_000) }
+    /// 15 times the stop gate: county-sized zones must survive a zoomed-out map.
+    var zoomWindow: MapLayerZoomWindow { MapLayerZoomWindow(maxVisibleHeight: 600_000) }
     var densityBudget: Int { 50 }
     var isClusterable: Bool { false }
     var refreshPolicy: MapLayerRefreshPolicy { .onViewportChange }
