@@ -100,6 +100,50 @@ final class OnDemandGeometryTests {
         #expect(OnDemandGeometry.labelPoint(areas: [bare]) == nil)
     }
 
+    // MARK: - Coincident label points
+
+    @Test func `Identical rings move the later service to the one-third row`() throws {
+        let zone = try area(polygons: [[square]])
+        let labels = OnDemandGeometry.labelPoints(areasByServiceID: ["B": [zone], "A": [zone]])
+
+        let first = try #require(labels["A"])
+        let second = try #require(labels["B"])
+        expectClose(first.latitude, 0.005, within: 1e-9)
+        expectClose(second.latitude, 0.01 / 3, within: 1e-9)
+        expectClose(second.longitude, 0.005, within: 1e-9)
+        #expect(OnDemandGeometry.pointInRing(second, ring: square))
+    }
+
+    @Test func `A later service tries its next-largest polygon first`() throws {
+        let small = ring([(0.02, 0.02), (0.02, 0.024), (0.024, 0.024), (0.024, 0.02)])
+        let labels = OnDemandGeometry.labelPoints(areasByServiceID: [
+            "A": [try area(polygons: [[square]])],
+            "B": [try area(polygons: [[square], [small]])]
+        ])
+
+        let second = try #require(labels["B"])
+        expectClose(second.latitude, 0.022, within: 1e-9)
+        expectClose(second.longitude, 0.022, within: 1e-9)
+    }
+
+    @Test func `A third service takes the two-thirds row and a fourth keeps its own`() throws {
+        let zone = try area(polygons: [[square]])
+        let labels = OnDemandGeometry.labelPoints(areasByServiceID: ["A": [zone], "B": [zone], "C": [zone], "D": [zone]])
+
+        expectClose(labels["C"]?.latitude, 0.02 / 3, within: 1e-9)
+        expectClose(labels["D"]?.latitude, 0.005, within: 1e-9, "no free spot left: the spec label stands")
+    }
+
+    @Test func `Distant services keep their own label points`() throws {
+        let far = ring([(1, 1), (1, 1.01), (1.01, 1.01), (1.01, 1)])
+        let labels = OnDemandGeometry.labelPoints(areasByServiceID: [
+            "A": [try area(polygons: [[square]])],
+            "B": [try area(polygons: [[far]])]
+        ])
+        expectClose(labels["B"]?.latitude, 1.005, within: 1e-9)
+        #expect(OnDemandGeometry.labelPoints(areasByServiceID: ["bare": []]).isEmpty)
+    }
+
     // MARK: - Nearest edge
 
     @Test func `Inside a square the nearest edge is the closest side`() throws {
