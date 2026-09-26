@@ -151,6 +151,15 @@ final class OnDemandDockBarTests: OBATestCase {
         #expect(request.coordinate.latitude == probe.latitude && request.coordinate.longitude == probe.longitude)
     }
 
+    @Test func `The long-press picker takes inside and nearby matches, never a far stop-radius one`() throws {
+        let services = try charlevoix()
+        let inside = match(services.first { $0.id == "CC_CC1" }!)
+        let nearby = match(services.first { $0.id == "CC_CC4" }!, reason: .areaNearby, distance: 500, point: nil)
+        let farStop = match(services.first { $0.id != "CC_CC1" && $0.id != "CC_CC4" }!, reason: .stopWithinRadius, distance: 6_000, point: nil)
+        let candidates = OnDemandDockBarModel.pickerCandidates(from: [inside, nearby, farStop])
+        #expect(candidates.map(\.id) == ["CC_CC1", "CC_CC4"])
+    }
+
     @Test func `The thumbnail placeholder takes the service colour, even on a gray outside page`() throws {
         let services = try charlevoix()
         let dialARide = services.first { $0.id == "CC_CC1" }!

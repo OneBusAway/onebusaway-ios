@@ -54,7 +54,7 @@ struct OnDemandDockView: View {
                 OnDemandDockBarView(
                     model: OnDemandDockBarModel(
                         matches: matches,
-                        pickerMatches: controller.matches.filter { $0.distanceToArea?.isFinite == true },
+                        pickerMatches: OnDemandDockBarModel.pickerCandidates(from: controller.matches),
                         probePoint: probePoint,
                         edges: controller.edgesByServiceID,
                         fullAreas: controller.fullAreasByServiceID,
