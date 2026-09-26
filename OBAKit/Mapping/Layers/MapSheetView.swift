@@ -216,11 +216,12 @@ struct MapSheetView: View {
 
     // MARK: - Basemap
 
+    /// Text-only segments: the segmented style drops a `Label`'s icon.
     private var basemapPicker: some View {
         Picker(selection: Binding(get: { model.selectedBaseType }, set: { model.selectBaseType($0) })) {
-            Label(OBALoc("map_sheet.basemap_standard", value: "Standard", comment: "Basemap style: standard street map"), systemImage: "map").tag(MapBaseType.standard)
-            Label(OBALoc("map_sheet.basemap_satellite", value: "Satellite", comment: "Basemap style: satellite imagery"), systemImage: "globe.americas.fill").tag(MapBaseType.satellite)
-            Label(OBALoc("map_sheet.basemap_hybrid", value: "Hybrid", comment: "Basemap style: satellite imagery with labels"), systemImage: "map.fill").tag(MapBaseType.hybrid)
+            Text(OBALoc("map_sheet.basemap_standard", value: "Standard", comment: "Basemap style: standard street map")).tag(MapBaseType.standard)
+            Text(OBALoc("map_sheet.basemap_satellite", value: "Satellite", comment: "Basemap style: satellite imagery")).tag(MapBaseType.satellite)
+            Text(OBALoc("map_sheet.basemap_hybrid", value: "Hybrid", comment: "Basemap style: satellite imagery with labels")).tag(MapBaseType.hybrid)
         } label: {
             EmptyView()
         }
