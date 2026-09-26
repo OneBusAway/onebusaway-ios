@@ -208,6 +208,30 @@ final class OnDemandAvailabilityTests: OBATestCase {
         #expect(result.runningUntil == instant("2026-03-15T07:00:00Z"), "Sunday 00:00 LA; Sunday is no longer active")
     }
 
+    /// A 24/7 service must stay continuous across a DST transition: the
+    /// wall-clock day is 23h or 25h long that week, but an all-day window's
+    /// true midnight-to-midnight boundaries still abut exactly (ruling:
+    /// spec §2.5 — windows must use calendar `startOfDay`, not the fixed
+    /// `anchor + 24h` offset).
+    @Test func `All-day service stays continuous across a DST transition`() throws {
+        let service = try alexandria { json in
+            self.rewriteRules(&json) { rule in
+                rule["startPickupTime"] = nil
+                rule["endPickupTime"] = nil
+            }
+            self.rewriteReferences(&json, "bookingRules") { rule in rule["bookingType"] = 0 }
+        }
+        // Spring forward is 2026-03-08; noon LA on the day before is still PST.
+        let springForward = availability(service, at: instant("2026-03-07T20:00:00Z"))
+        #expect(springForward.runningNow)
+        #expect(springForward.runningUntil == nil)
+
+        // Fall back is 2026-11-01; noon LA on the day before is still PDT.
+        let fallBack = availability(service, at: instant("2026-10-31T19:00:00Z"))
+        #expect(fallBack.runningNow)
+        #expect(fallBack.runningUntil == nil)
+    }
+
     @Test func `An excepted date removes today from service`() throws {
         let service = try charlevoix("CC_CC1") { json in
             self.rewriteReferences(&json, "calendars") { calendar in
@@ -280,6 +304,35 @@ final class OnDemandAvailabilityTests: OBATestCase {
         let result = availability(service, at: instant("2026-03-10T16:00:00Z"))
         #expect(result.bookingTier == .realTime)
         #expect(result.tags == [.noNoticeNeeded])
+    }
+
+    /// A second rule picks up exactly where CC1's window ends: running past
+    /// CC1's cutoff must find that adjacent same-day window, not skip past it
+    /// to tomorrow (ruling: the past-cutoff search must include a window
+    /// starting exactly at the boundary).
+    @Test func `Running past cutoff finds an adjacent same-day window, not tomorrow`() throws {
+        let service = try charlevoix("CC_CC1") { json in
+            var body = json["data"] as! [String: Any]
+            body["list"] = (body["list"] as! [[String: Any]]).map { service in
+                guard service["id"] as? String == "CC_CC1" else { return service }
+                var service = service
+                var rules = service["rules"] as! [[String: Any]]
+                var second = rules[0]
+                second["startPickupTime"] = "16:40:00"
+                second["endPickupTime"] = "21:40:00"
+                second["pickupBookingRuleId"] = "CC_booking_rule_CC3"
+                second["dropOffBookingRuleId"] = "CC_booking_rule_CC3"
+                rules.append(second)
+                service["rules"] = rules
+                return service
+            }
+            json["data"] = body
+        }
+        // 15:30 EDT: past CC1's 15:10 cutoff, before its 16:40 window end.
+        let result = availability(service, at: instant("2026-03-10T19:30:00Z"))
+        #expect(result.runningNow)
+        #expect(!result.bookableNow)
+        #expect(result.status == .opensAt(instant("2026-03-10T20:40:00Z")))
     }
 
     /// Advance booking that has not opened yet is `.bookingOpens`, not
@@ -376,6 +429,29 @@ final class OnDemandAvailabilityTests: OBATestCase {
     @Test func `Next change instant is the earliest boundary`() throws {
         let result = availability(try charlevoix("CC_CC1"), at: instant("2026-03-10T16:00:00Z"))
         #expect(result.nextChangeInstant == instant("2026-03-10T19:10:00Z"))
+    }
+
+    /// 23:00 EDT: CC1 isn't running and nothing else changes before local
+    /// midnight, so the next change is the agency-zone midnight rollover
+    /// itself — `usabilityTier` depends on `today` (ruling: spec §2.5).
+    @Test func `Next change instant includes the agency midnight rollover`() throws {
+        let result = availability(try charlevoix("CC_CC1"), at: instant("2026-03-11T03:00:00Z"))
+        #expect(result.nextChangeInstant == instant("2026-03-11T04:00:00Z"))
+    }
+
+    /// A continuous real-time service has no cutoff, opening or running-until
+    /// boundary, but the midnight rollover still gives it a non-nil next
+    /// change instant.
+    @Test func `All-day real-time service still reports a next change instant`() throws {
+        let service = try alexandria { json in
+            self.rewriteRules(&json) { rule in
+                rule["startPickupTime"] = nil
+                rule["endPickupTime"] = nil
+            }
+            self.rewriteReferences(&json, "bookingRules") { rule in rule["bookingType"] = 0 }
+        }
+        let result = availability(service, at: instant("2026-03-10T10:00:00Z")) // Tuesday 03:00 LA
+        #expect(result.nextChangeInstant != nil)
     }
 
     // MARK: - Resolution and relative formatting
