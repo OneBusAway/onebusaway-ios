@@ -94,7 +94,13 @@ struct OnDemandZoneCardView: View {
 
     private static let cornerRadius: CGFloat = 22
     private static let iconSize: CGFloat = 40
+    /// The visual pill height from the mock.
     private static let pillHeight: CGFloat = 40
+    /// The global 44 pt touch-target floor (CONTRIBUTING's visual tokens)
+    /// outranks the mock's 40 pt pill: the button's tappable area is grown to
+    /// this with an outer frame and `contentShape`, while the drawn capsule
+    /// stays at `pillHeight` so the card still reads like the mock.
+    static let minimumTouchTarget: CGFloat = 44
     private static let detailsFill = Color(red: 0xee / 255.0, green: 0xf4 / 255.0, blue: 0xe6 / 255.0)
 
     private var accent: Color { Color(uiColor: ThemeColors.shared.brandAccent) }
@@ -167,6 +173,8 @@ struct OnDemandZoneCardView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(accent)
+                .frame(minHeight: Self.minimumTouchTarget)
+                .contentShape(Rectangle())
                 .layoutPriority(1.5)
             }
 
@@ -178,6 +186,8 @@ struct OnDemandZoneCardView: View {
             .buttonStyle(.bordered)
             .tint(accent)
             .background(Self.detailsFill, in: Capsule())
+            .frame(minHeight: Self.minimumTouchTarget)
+            .contentShape(Rectangle())
         }
     }
 
