@@ -13,6 +13,44 @@ import Contacts
 import SafariServices
 import OBAKitCore
 
+/// The exact-coordinate probe the address check runs (`OnDemandProbeController.probeExact`).
+/// Public because the public `MapItemViewModel.init` takes one.
+public typealias OnDemandCoverageProbe = @MainActor (CLLocationCoordinate2D) async throws -> [OnDemandServiceMatch]
+
+/// Spec 3.7: "Inside X" / "Inside X and N more" / "Outside X" for one point.
+struct OnDemandCoverageLine: Equatable {
+    let match: OnDemandServiceMatch
+    let isInside: Bool
+    /// Other services that also contain the point.
+    let extraCount: Int
+
+    var serviceName: String { match.service.name }
+
+    var text: String {
+        if isInside {
+            return extraCount > 0
+                ? OnDemandCopy.addressInsideMore(name: serviceName, extra: extraCount)
+                : String(format: Strings.onDemandAddressInsideFormat, serviceName)
+        }
+        return String(format: Strings.onDemandAddressOutsideFormat, serviceName)
+    }
+
+    /// The first inside match by the shared sort, else the nearest service
+    /// within 5,000 m (ties by the sort), else nil.
+    static func line(from matches: [OnDemandServiceMatch]) -> OnDemandCoverageLine? {
+        let inside = sortedSoonestUsable(matches.filter { $0.isInside && $0.distanceToArea != nil })
+        if let first = inside.first {
+            return OnDemandCoverageLine(match: first, isInside: true, extraCount: inside.count - 1)
+        }
+        let nearby = sortedSoonestUsable(matches.filter(\.isNearby))
+        guard let closest = nearby.map({ $0.distanceToArea ?? .infinity }).min(),
+              let nearest = nearby.first(where: { $0.distanceToArea == closest }) else {
+            return nil
+        }
+        return OnDemandCoverageLine(match: nearest, isInside: false, extraCount: 0)
+    }
+}
+
 /// The presentation-dependent half of the map-item screen, injected so the same
 /// view model drives both the UIKit floating panel and the SwiftUI sheet.
 ///
@@ -26,17 +64,22 @@ public struct MapItemActions {
     /// Only the UIKit host uses this — the sheet renders a native `ShareLink` from
     /// `MapItemViewModel.shareURL` instead and passes a no-op here.
     public var share: (URL) -> Void
+    /// Opens the zone page the coverage line names (spec 3.7); nil leaves the
+    /// line inert.
+    public var openOnDemandDetail: ((OnDemandServiceMatch, OnDemandLocationCheck) -> Void)?
 
     public init(
         openWebsite: @escaping (URL) -> Void,
         showNearbyStops: @escaping (CLLocationCoordinate2D) -> Void,
         dismiss: @escaping () -> Void,
-        share: @escaping (URL) -> Void = { _ in }
+        share: @escaping (URL) -> Void = { _ in },
+        openOnDemandDetail: ((OnDemandServiceMatch, OnDemandLocationCheck) -> Void)? = nil
     ) {
         self.openWebsite = openWebsite
         self.showNearbyStops = showNearbyStops
         self.dismiss = dismiss
         self.share = share
+        self.openOnDemandDetail = openOnDemandDetail
     }
 
     /// Reproduces the pre-sheet behavior: an in-app Safari controller and a pushed
@@ -137,6 +180,15 @@ public class MapItemViewModel {
     /// Indicates whether Look Around is loading
     var isLoadingLookAround: Bool = false
 
+    /// The on-demand coverage line for this point (spec 3.7); nil while loading,
+    /// on failure, or when nothing is within 5 km.
+    var coverageLine: OnDemandCoverageLine?
+
+    private let coverageProbe: OnDemandCoverageProbe?
+
+    /// Exposed so tests can await the probe.
+    private(set) var coverageTask: Task<Void, Never>?
+
     /// Initializes a new map item view model.
     ///
     /// - Parameters:
@@ -146,12 +198,22 @@ public class MapItemViewModel {
     ///   - removePinHandler: Optional handler called when user wants to remove a dropped pin
     ///   - planTripHandler: Handler called when user wants to plan a trip, or `nil`
     ///     to hide the Plan Trip button entirely
-    public init(mapItem: MKMapItem, application: Application, actions: MapItemActions, removePinHandler: (() -> Void)? = nil, planTripHandler: (() -> Void)?) {
+    ///   - coverageProbe: The on-demand address check's exact probe, or `nil`
+    ///     when the deployment has no `/api/ondemand` (no line is shown)
+    public init(
+        mapItem: MKMapItem,
+        application: Application,
+        actions: MapItemActions,
+        removePinHandler: (() -> Void)? = nil,
+        planTripHandler: (() -> Void)?,
+        coverageProbe: OnDemandCoverageProbe? = nil
+    ) {
         self.mapItem = mapItem
         self.application = application
         self.actions = actions
         self.removePinHandler = removePinHandler
         self.planTripHandler = planTripHandler
+        self.coverageProbe = coverageProbe
 
         self.title = mapItem.name ?? ""
 
@@ -170,6 +232,33 @@ public class MapItemViewModel {
         Task {
             await fetchLookAroundScene()
         }
+
+        if coverageProbe != nil {
+            coverageTask = Task { await loadCoverage() }
+        }
+    }
+
+    /// Runs the exact-coordinate probe; any failure simply shows no line.
+    private func loadCoverage() async {
+        guard let coverageProbe else { return }
+        let coordinate = mapItem.placemark.coordinate
+        do {
+            coverageLine = OnDemandCoverageLine.line(from: try await coverageProbe(coordinate))
+        } catch {
+            coverageLine = nil
+        }
+    }
+
+    /// Opens the zone detail for the named service with `ProbeSource.point` at this pin.
+    func openCoverageDetail() {
+        guard let coverageLine, let open = actions.openOnDemandDetail else { return }
+        let check = OnDemandLocationCheck(
+            source: .point(label: mapItem.name),
+            isInside: coverageLine.isInside,
+            locality: mapItem.placemark.locality,
+            coordinate: mapItem.placemark.coordinate
+        )
+        open(coverageLine.match, check)
     }
 
     /// Fetches the Look Around scene for the map item's location,

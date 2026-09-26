@@ -1214,7 +1214,9 @@ class MapViewController: UIViewController,
                 self.dismissExistingMapItemController(animated: true)
                 self.showTripPlanner(destination: mapItem)
                 self.semiModalPanel?.move(to: .tip, animated: false)
-            }
+            },
+            coverageProbe: onDemandCoverageProbe,
+            openOnDemandDetail: { [weak self] match, check in self?.openOnDemandDetail(match, check: check) }
         )
         let semiModal = createSemiModalPanel(childController: mapItemController)
         addSemiModalPanel(semiModal)

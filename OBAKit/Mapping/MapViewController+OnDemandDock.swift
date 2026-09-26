@@ -100,6 +100,22 @@ extension MapViewController {
         }
     }
 
+    /// The address check's exact probe (spec 3.7); nil once the deployment is
+    /// known to lack `/api/ondemand`.
+    var onDemandCoverageProbe: OnDemandCoverageProbe? {
+        guard !onDemandProbeController.isUnsupported else { return nil }
+        return { [weak self] coordinate in
+            guard let self else { return [] }
+            return try await onDemandProbeController.probeExact(at: coordinate)
+        }
+    }
+
+    /// Opens the zone detail a map item's coverage line names. The check
+    /// already carries the map item's locality, so no lookup is needed.
+    func openOnDemandDetail(_ match: OnDemandServiceMatch, check: OnDemandLocationCheck) {
+        presentOnDemandServicePage(OnDemandServiceViewController(application: application, service: match.service, locationCheck: check))
+    }
+
     /// Presents a service page that keeps the zone highlight while it is open
     /// and clears it once the page closes (spec 2.3, ruling F15).
     func presentOnDemandServicePage(_ detail: OnDemandServiceViewController) {
