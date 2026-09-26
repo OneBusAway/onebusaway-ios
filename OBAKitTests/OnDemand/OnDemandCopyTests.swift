@@ -147,6 +147,32 @@ final class OnDemandCopyTests: OBATestCase {
         #expect(bookingOpens.hasPrefix("Booking opens "), "\(bookingOpens)")
     }
 
+    /// The bar is too narrow for "Book by Mar 13, 2026 at 3:10 PM"; it drops
+    /// the year, while the card and picker keep the full date.
+    @Test func `The bar's booking line omits the year for a later day`() throws {
+        let fridayCutoff = instant("2026-03-13T19:10:00Z")
+        let later = try match(reason: .areaContainsPoint, distance: 0, availability: availability(
+            status: .opensAt(instant("2026-03-14T11:20:00Z")), tier: 3,
+            booking: .bookBy(cutoff: fridayCutoff, travelDate: ServiceDate(year: 2026, month: 3, day: 14))
+        ))
+
+        // The joiner between day and time is ICU's ("Mar 13 at 3:10 PM" on this OS).
+        let barLine = normalizeSpaces(copy().barTitle(for: later, edge: nil)) ?? ""
+        #expect(barLine.hasPrefix("Book by Mar 13") && barLine.hasSuffix("3:10 PM"), "\(barLine)")
+        #expect(!barLine.contains("2026"), "\(barLine)")
+        let cardLine = normalizeSpaces(copy().statusText(.bookBy(deadline: fridayCutoff, travelDate: ServiceDate(year: 2026, month: 3, day: 14)), style: .card)) ?? ""
+        #expect(cardLine.contains("2026"), "\(cardLine)")
+    }
+
+    @Test func `The bar's opening line omits the year too, and today keeps its word`() throws {
+        let opensLater = try match(reason: .areaContainsPoint, distance: 0, availability: availability(status: .opensAt(instant("2026-03-13T11:20:00Z")), tier: 2))
+        let opensLine = normalizeSpaces(copy().barTitle(for: opensLater, edge: nil)) ?? ""
+        #expect(opensLine.hasPrefix("Opens Mar 13") && opensLine.hasSuffix("7:20 AM") && !opensLine.contains("2026"), "\(opensLine)")
+
+        let opensToday = try match(reason: .areaContainsPoint, distance: 0, availability: availability(status: .opensAt(instant("2026-03-10T19:10:00Z")), tier: 2))
+        #expect(normalizeSpaces(copy().barTitle(for: opensToday, edge: nil)) == "Opens today at 3:10 PM")
+    }
+
     @Test func `Near the edge the title names the walk direction and distance`() throws {
         let match = try match(reason: .areaContainsPoint, distance: 0, availability: availability(status: .openNow(until: nil), tier: 1))
         let edge = OnDemandEdge(distanceMeters: 30, point: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2), bearingDegrees: 0)

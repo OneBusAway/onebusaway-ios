@@ -167,4 +167,11 @@ final class OnDemandDockBarTests: OBATestCase {
         #expect(page.backgroundColor == ThemeColors.shared.onDemandOutside)
         #expect(page.serviceColor == OnDemandServiceColors.resolvedColors(for: services, brand: ThemeColors.shared.brand)["CC_CC1"])
     }
+
+    /// A long booking line wraps to a second line (and shrinks a little)
+    /// instead of truncating mid-date at the side panel's width.
+    @Test func `The bar title may wrap to two lines and shrink to 80 percent`() {
+        #expect(OnDemandDockBarView.titleLineLimit == 2)
+        #expect(OnDemandDockBarView.titleMinimumScaleFactor == 0.8)
+    }
 }

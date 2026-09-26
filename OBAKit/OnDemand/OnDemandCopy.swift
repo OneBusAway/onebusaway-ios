@@ -20,6 +20,9 @@ struct OnDemandCopy {
         case card
         /// "Open now · until 4:40 PM" (service page).
         case detail
+        /// As `card`, with dates that drop the year ("Opens Sep 28, 7:20 AM")
+        /// to fit the docked bar's title.
+        case bar
     }
 
     let timeZone: TimeZone
@@ -84,24 +87,25 @@ struct OnDemandCopy {
     }
 
     /// "tomorrow at 7:20 AM", through the summary's relative formatter.
-    func relativeDateTime(_ date: Date) -> String {
-        OnDemandServiceSummary.formattedRelativeDateTime(date, now: now, timeZone: timeZone, locale: locale)
+    func relativeDateTime(_ date: Date, omitsYear: Bool = false) -> String {
+        OnDemandServiceSummary.formattedRelativeDateTime(date, now: now, timeZone: timeZone, locale: locale, omitsYear: omitsYear)
     }
 
     // MARK: - Status and tags
 
     func statusText(_ status: OnDemandStatus, style: StatusStyle) -> String? {
+        let omitsYear = style == .bar
         switch status {
         case .openNow(let until):
             guard let until else { return Strings.onDemandStatusOpen }
             let format = style == .detail ? Strings.onDemandStatusOpenNowUntilFormat : Strings.onDemandStatusOpenUntilFormat
             return String(format: format, time(until))
         case .opensAt(let start):
-            return String(format: Strings.onDemandStatusOpensFormat, relativeDateTime(start))
+            return String(format: Strings.onDemandStatusOpensFormat, relativeDateTime(start, omitsYear: omitsYear))
         case .bookingOpens(let open):
-            return String(format: Strings.onDemandBookingOpensFormat, relativeDateTime(open))
+            return String(format: Strings.onDemandBookingOpensFormat, relativeDateTime(open, omitsYear: omitsYear))
         case .bookBy(let deadline, _):
-            return String(format: Strings.onDemandStatusBookByFormat, relativeDateTime(deadline))
+            return String(format: Strings.onDemandStatusBookByFormat, relativeDateTime(deadline, omitsYear: omitsYear))
         case .closed:
             return Strings.onDemandStatusClosed
         case .unknown:
@@ -159,7 +163,7 @@ struct OnDemandCopy {
         case OnDemandAvailability.advanceTier:
             return bookingLineTitle(availability)
         case OnDemandAvailability.sameDayTier:
-            return statusText(availability.status, style: .card)
+            return statusText(availability.status, style: .bar)
         case OnDemandAvailability.unknownTier:
             return availability.status == .closed ? Strings.onDemandStatusClosed : nil
         default:
@@ -174,11 +178,11 @@ struct OnDemandCopy {
     private func bookingLineTitle(_ availability: OnDemandAvailability) -> String? {
         switch availability.bookingResolution {
         case .bookBy(let cutoff, _):
-            return String(format: Strings.onDemandStatusBookByFormat, relativeDateTime(cutoff))
+            return String(format: Strings.onDemandStatusBookByFormat, relativeDateTime(cutoff, omitsYear: true))
         case .opensAt(let open):
-            return String(format: Strings.onDemandBookingOpensFormat, relativeDateTime(open))
+            return String(format: Strings.onDemandBookingOpensFormat, relativeDateTime(open, omitsYear: true))
         case .noNoticeRequired, .closed, .unknown:
-            return statusText(availability.status, style: .card)
+            return statusText(availability.status, style: .bar)
         }
     }
 

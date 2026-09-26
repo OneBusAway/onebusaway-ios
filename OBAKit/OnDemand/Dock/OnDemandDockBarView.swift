@@ -175,11 +175,14 @@ struct OnDemandDockBarView: View {
     let onPageChange: (String) -> Void
 
     @State private var selectedPageID: String?
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private static let cornerRadius: CGFloat = 20
     private static let padding: CGFloat = 8
     private static let minimumHeight: CGFloat = 72
+    /// A booking line such as "Book by Sep 28, 5:00 PM" wraps rather than
+    /// truncating at the side panel's width; the eyebrow stays one line.
+    static let titleLineLimit = 2
+    static let titleMinimumScaleFactor: CGFloat = 0.8
     private static let trailingButtonSize = OnDemandZoneCardView.minimumTouchTarget
     private static let longPressDuration = 0.5
     private static let dotSize: CGFloat = 7
@@ -288,7 +291,8 @@ struct OnDemandDockBarView: View {
                     }
                     Text(page.title)
                         .font(.headline.weight(.bold))
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                        .lineLimit(Self.titleLineLimit)
+                        .minimumScaleFactor(Self.titleMinimumScaleFactor)
                         .truncationMode(.tail)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
