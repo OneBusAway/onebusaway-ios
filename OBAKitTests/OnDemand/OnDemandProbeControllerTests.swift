@@ -624,4 +624,51 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(controller.failedGeometryServiceIDs.contains("5088_77652"))
         #expect(controller.edgesByServiceID["5088_77652"] == nil)
     }
+
+    // MARK: - Planner fallback (spec 3.8)
+
+    @Test func `The planner state survives the semi-modal hide rule and clears on demand`() async throws {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        controller.setSurfaceFocus(true)
+
+        let result = try #require(await controller.plannerResult(origin: alexandriaPoint, destination: alexandriaPoint))
+        controller.showPlanner(result)
+        #expect(controller.dockState == .planner(result))
+        #expect(result.qualifying.map(\.id) == ["5088_77652"])
+
+        controller.clearPlanner()
+        #expect(controller.dockState == .hidden)
+    }
+
+    @Test func `The planner probes both ends through the exact cache`() async throws {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        _ = try await controller.probe(at: alexandriaPoint)
+
+        _ = await controller.plannerResult(origin: alexandriaPoint, destination: CLLocationCoordinate2D(latitude: 38.81, longitude: -77.05))
+        #expect(probeRequests.count == 3, "one rider probe plus one exact probe per end")
+    }
+
+    /// Decision 5: a routine reprobe, successful or failed, never replaces the
+    /// planner state; only `clearPlanner()` does.
+    @Test func `A reprobe keeps the planner state until it is cleared`() async throws {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        let result = try #require(await controller.plannerResult(origin: alexandriaPoint, destination: alexandriaPoint))
+        controller.showPlanner(result)
+
+        await settle(controller, at: alexandriaPoint, level: .street)
+        #expect(controller.dockState == .planner(result), "a successful reprobe keeps the planner")
+
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(data: Data(), statusCode: 500, matcher: Self.isProbe)
+            staging.mock(data: Data(), statusCode: 500, matcher: Self.isGeometry)
+        }
+        await settle(controller, at: CLLocationCoordinate2D(latitude: 38.82, longitude: -77.05), level: .street) // ~2 km
+        #expect(controller.dockState == .planner(result), "a failed reprobe far away keeps the planner")
+
+        controller.clearPlanner()
+        #expect(controller.dockState == .hidden)
+    }
 }
