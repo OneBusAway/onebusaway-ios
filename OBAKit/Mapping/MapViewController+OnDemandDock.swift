@@ -53,21 +53,24 @@ extension MapViewController {
         layoutOnDemandDock()
     }
 
-    /// Pins the dock for the current size class, panel state and anchor
-    /// panel. Runs from `viewDidLayoutSubviews`, so it rebuilds constraints
-    /// only when the placement or the anchor actually changes.
+    /// Pins the dock for the current size class, anchor panel and that
+    /// panel's state, and hides the planner card while its panel is full
+    /// height. Runs from `viewDidLayoutSubviews` and on every planner panel
+    /// state change, so it rebuilds constraints only when the placement or
+    /// the anchor actually changes.
     func layoutOnDemandDock() {
         guard let host = onDemandDockHost else { return }
-        let placement = OnDemandDockPlacement.placement(
-            horizontalSizeClass: traitCollection.horizontalSizeClass,
-            isPanelFullHeight: floatingPanel.state == .full
-        )
         // R11 over R5: the planner card anchors to the trip planner's own panel.
-        let anchorsToPlanner: Bool = {
-            if case .planner = onDemandProbeController.dockState { return semiModalTripPlannerController != nil }
-            return false
-        }()
-        let surface = anchorsToPlanner ? semiModalTripPlannerController!.surfaceView : floatingPanel.surfaceView
+        let plannerPanel = semiModalTripPlannerController
+        let anchoring = OnDemandDockAnchoring(
+            dockState: onDemandProbeController.dockState,
+            horizontalSizeClass: traitCollection.horizontalSizeClass,
+            homePanelState: floatingPanel.state,
+            plannerPanelState: plannerPanel?.state
+        )
+        host.view.isHidden = anchoring.isHidden
+        let placement = anchoring.placement
+        let surface: UIView = (anchoring.anchorsToPlanner ? plannerPanel?.surfaceView : nil) ?? floatingPanel.surfaceView
         guard placement != host.placement || surface !== host.placementSurface else { return }
         NSLayoutConstraint.deactivate(host.placementConstraints)
         host.placement = placement

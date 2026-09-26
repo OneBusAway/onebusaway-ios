@@ -8,6 +8,7 @@
 //
 
 import Combine
+import FloatingPanel
 import SwiftUI
 import UIKit
 
@@ -59,6 +60,35 @@ enum OnDemandDockPlacement: Equatable {
                 dockView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor, constant: -Self.gutter)
             ]
         }
+    }
+}
+
+/// Which panel the classic dock pins to and how (spec 3.8). The planner
+/// card follows the trip planner's panel: its placement comes from that
+/// panel's state, and it hides while that panel is full height, where a
+/// card above the surface would sit off-screen. Everything else follows
+/// the home panel.
+struct OnDemandDockAnchoring: Equatable {
+    let anchorsToPlanner: Bool
+    let placement: OnDemandDockPlacement
+    let isHidden: Bool
+
+    /// `plannerPanelState` is nil when no trip planner panel is presented.
+    init(
+        dockState: OnDemandDockState,
+        horizontalSizeClass: UIUserInterfaceSizeClass,
+        homePanelState: FloatingPanelState,
+        plannerPanelState: FloatingPanelState?
+    ) {
+        let isPlannerCard: Bool = {
+            if case .planner = dockState { return true }
+            return false
+        }()
+        let anchorState = isPlannerCard ? plannerPanelState : nil
+        anchorsToPlanner = anchorState != nil
+        let isAnchorFull = (anchorState ?? homePanelState) == .full
+        placement = OnDemandDockPlacement.placement(horizontalSizeClass: horizontalSizeClass, isPanelFullHeight: isAnchorFull)
+        isHidden = anchorsToPlanner && isAnchorFull
     }
 }
 

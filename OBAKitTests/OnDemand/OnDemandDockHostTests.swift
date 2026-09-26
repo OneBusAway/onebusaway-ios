@@ -8,6 +8,7 @@
 //
 
 import CoreLocation
+import FloatingPanel
 import Foundation
 import MapKit
 import Testing
@@ -46,6 +47,48 @@ final class OnDemandDockHostTests: OBATestCase {
         #expect(leading.secondAttribute == .trailing)
         #expect(leading.constant == OnDemandDockPlacement.gutter)
         #expect(constraints.contains { $0.firstItem === dock && $0.firstAttribute == .width && $0.relation == .lessThanOrEqual && $0.constant == 360 })
+    }
+
+    // MARK: - Anchor (spec 3.8)
+
+    private let plannerState = OnDemandDockState.planner(OnDemandPlannerResult(
+        qualifying: [], hiddenCount: 0, originInsideMatches: [],
+        origin: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2),
+        destination: CLLocationCoordinate2D(latitude: 45.0, longitude: -84.7)
+    ))
+
+    @Test func `The planner card anchors to the planner panel and takes its placement`() {
+        let anchoring = OnDemandDockAnchoring(dockState: plannerState, horizontalSizeClass: .regular, homePanelState: .full, plannerPanelState: .half)
+        #expect(anchoring.anchorsToPlanner)
+        #expect(anchoring.placement == .sidePanel(width: MapPanelLandscapeLayout.WidthSize), "a full home panel must not push the card past a full-width planner surface")
+        #expect(!anchoring.isHidden)
+    }
+
+    @Test func `The planner card hides while the planner panel is full height`() {
+        let full = OnDemandDockAnchoring(dockState: plannerState, horizontalSizeClass: .compact, homePanelState: .tip, plannerPanelState: .full)
+        #expect(full.anchorsToPlanner)
+        #expect(full.isHidden)
+
+        let tip = OnDemandDockAnchoring(dockState: plannerState, horizontalSizeClass: .compact, homePanelState: .tip, plannerPanelState: .tip)
+        #expect(!tip.isHidden)
+    }
+
+    @Test func `Without a planner panel or card the dock follows the home panel`() {
+        let noPanel = OnDemandDockAnchoring(dockState: plannerState, horizontalSizeClass: .regular, homePanelState: .full, plannerPanelState: nil)
+        #expect(!noPanel.anchorsToPlanner)
+        #expect(noPanel.placement == .floatingLeading(maxWidth: OnDemandDockPlacement.floatingMaxWidth))
+        #expect(!noPanel.isHidden)
+
+        let hidden = OnDemandDockAnchoring(dockState: .hidden, horizontalSizeClass: .regular, homePanelState: .half, plannerPanelState: .full)
+        #expect(!hidden.anchorsToPlanner)
+        #expect(!hidden.isHidden)
+    }
+
+    @Test func `The planner panel observer reports every state change`() {
+        var changes = 0
+        let observer = TripPlannerPanelObserver { changes += 1 }
+        observer.floatingPanelDidChangeState(FloatingPanelController())
+        #expect(changes == 1)
     }
 
     // MARK: - Host sizing
