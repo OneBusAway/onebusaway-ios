@@ -94,9 +94,10 @@ struct OnDemandPlannerFallbackView: View {
     /// The mock's pill height; the tappable area is grown to the 44 pt floor (Task 9 ruling).
     private static let pillHeight: CGFloat = 40
     private static let cornerRadius: CGFloat = 22
-    /// More cards than this do not fit above the planner at half height; the
-    /// rest are one tap away behind "Show all".
-    static let maximumVisibleServices = 2
+    /// A second card pushed the card into a scrolling fallback tall enough to
+    /// cut off the first service's Call button; the rest are one tap away
+    /// behind "Show all".
+    static let maximumVisibleServices = 1
 
     static func visibleServices(in result: OnDemandPlannerResult) -> [OnDemandServiceMatch] {
         Array(result.qualifying.prefix(maximumVisibleServices))
