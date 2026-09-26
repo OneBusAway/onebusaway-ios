@@ -70,9 +70,9 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             bookingLine = .unknown
             nextChangeInstant = nil
         } else {
-            let (line, boundary) = Self.bookingLine(for: service, evaluator: evaluator, formatters: formatters, now: now)
-            bookingLine = line
-            nextChangeInstant = [boundary, formatters.nextMidnight].compactMap { $0 }.min()
+            let outcome = OnDemandBookingResolution.resolve(service: service, evaluator: evaluator, now: now)
+            bookingLine = Self.bookingLine(for: outcome.resolution, evaluator: evaluator, formatters: formatters)
+            nextChangeInstant = [outcome.nextChangeInstant, formatters.nextMidnight].compactMap { $0 }.min()
         }
 
         let contact = service.rules.lazy.compactMap { service.bookingRule(id: $0.pickupBookingRuleID) }.first
@@ -138,108 +138,27 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
 
     // MARK: - Booking line
 
-    private struct Candidate {
-        let travelDate: ServiceDate
-        let evaluation: BookingEvaluation
+    /// Wraps the instant-valued resolution in the presenter's formatted pieces.
+    private static func bookingLine(for resolution: OnDemandBookingResolution, evaluator: BookingDeadlineEvaluator, formatters: SummaryFormatters) -> BookingLine {
+        switch resolution {
+        case .bookBy(let cutoff, let travelDate):
+            return .bookBy(deadline: formatters.deadline(cutoff), travelDate: formatters.travelDate(evaluator.noon(travelDate)))
+        case .opensAt(let open):
+            return .opensAt(formatters.deadline(open))
+        case .noNoticeRequired:
+            return .noNoticeRequired
+        case .closed:
+            return .closed
+        case .unknown:
+            return .unknown
+        }
     }
 
-    /// One rule's contribution to the service-wide booking line: either a
-    /// bookable candidate, a still-closed date's open instant, a rule this
-    /// build can't evaluate, an unresolved `pickupBookingRuleID` (which
-    /// collapses the whole line to `.unknown`), or nothing worth surfacing.
-    private enum RuleOutcome {
-        case unresolvedBookingRule
-        case bookable(Candidate)
-        case notYetOpen(Date)
-        case unknown
-        case settled
-    }
-
-    private static func bookingLine(for service: OnDemandService, evaluator: BookingDeadlineEvaluator, formatters: SummaryFormatters, now: Date) -> (BookingLine, Date?) {
-        guard !service.rules.isEmpty else { return (.unknown, nil) }
-
-        var bookable: [Candidate] = []
-        var notYetOpen: [Date] = []
-        var sawUnknown = false
-
-        for rule in service.rules {
-            switch outcome(for: rule, service: service, evaluator: evaluator, now: now) {
-            case .unresolvedBookingRule:
-                return (.unknown, nil)
-            case .bookable(let candidate):
-                bookable.append(candidate)
-            case .notYetOpen(let open):
-                notYetOpen.append(open)
-            case .unknown:
-                sawUnknown = true
-            case .settled:
-                break
-            }
-        }
-
-        let line = resolvedLine(bookable: bookable, notYetOpen: notYetOpen, sawUnknown: sawUnknown, evaluator: evaluator, formatters: formatters)
-        let boundaries = bookable.compactMap(\.evaluation.cutoffInstant) + notYetOpen
-        return (line, boundaries.filter { $0 > now }.min())
-    }
-
-    /// The single rule's outcome as of `now`: its own next bookable date if
-    /// it has one, otherwise the first date whose booking is still to open,
-    /// otherwise whether any remaining date can't be evaluated. One walk
-    /// over the rule's service days answers all three.
-    private static func outcome(for rule: AvailabilityRule, service: OnDemandService, evaluator: BookingDeadlineEvaluator, now: Date) -> RuleOutcome {
-        let bookingRule = service.bookingRule(id: rule.pickupBookingRuleID)
-        // Referenced but missing is not "no notice": nothing can be promised.
-        if rule.pickupBookingRuleID != nil, bookingRule == nil {
-            return .unresolvedBookingRule
-        }
-        // No usable calendar means no dates to walk; that is unknown, not
-        // closed (spec §6.3).
-        guard evaluator.hasUsableCalendar(rule) else { return .unknown }
-
-        var bookable: Candidate?
-        // The next service day may already be closed while a later one has
-        // yet to open, so the walk keeps the first not-yet-open date it sees.
-        var firstOpenInstant: Date?
-        var sawUnknown = false
-        evaluator.walkServiceDates(rule: rule, bookingRule: bookingRule, now: now) { date, evaluation in
-            switch evaluation.state {
-            case .open:
-                bookable = Candidate(travelDate: date, evaluation: evaluation)
-                return false
-            case .notYetOpen:
-                firstOpenInstant = firstOpenInstant ?? evaluation.openInstant
-            case .unknown:
-                sawUnknown = true
-            case .closedForDate:
-                break
-            }
-            return true
-        }
-
-        if let bookable { return .bookable(bookable) }
-        if let firstOpenInstant { return .notYetOpen(firstOpenInstant) }
-        return sawUnknown ? .unknown : .settled
-    }
-
-    /// Turns the rules' individual outcomes into one line: the earliest
-    /// bookable candidate wins outright; otherwise the earliest not-yet-open
-    /// date; otherwise `.unknown` if any rule couldn't be evaluated, else
-    /// every remaining date is closed.
-    private static func resolvedLine(bookable: [Candidate], notYetOpen: [Date], sawUnknown: Bool, evaluator: BookingDeadlineEvaluator, formatters: SummaryFormatters) -> BookingLine {
-        // Earliest date wins; on the same date the earliest cutoff is the one
-        // to show — never later than any real deadline the rider might hit.
-        if let best = bookable.min(by: { lhs, rhs in
-            if lhs.travelDate != rhs.travelDate { return lhs.travelDate < rhs.travelDate }
-            return (lhs.evaluation.cutoffInstant ?? .distantFuture) < (rhs.evaluation.cutoffInstant ?? .distantFuture)
-        }) {
-            guard let cutoff = best.evaluation.cutoffInstant else { return .noNoticeRequired }
-            return .bookBy(deadline: formatters.deadline(cutoff), travelDate: formatters.travelDate(evaluator.noon(best.travelDate)))
-        }
-
-        if let earliestOpen = notYetOpen.min() {
-            return .opensAt(formatters.deadline(earliestOpen))
-        }
-        return sawUnknown ? .unknown : .closed
+    /// `date` in the agency zone with a relative day word when it is within a
+    /// day of `now` ("tomorrow at 7:20 AM"), else an absolute medium date. The
+    /// dock, card and picker copy use this for "Opens …" and "Book by …".
+    public static func formattedRelativeDateTime(_ date: Date, now: Date, timeZone: TimeZone, locale: Locale) -> String {
+        SummaryFormatters(timeZone: timeZone, locale: locale, now: now).deadline(date)
     }
 
     // MARK: - Formatting
