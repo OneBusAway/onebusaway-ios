@@ -164,6 +164,25 @@ nonisolated protocol SheetRouteable: Identifiable, Hashable {
     var prefersStacking: Bool { get }
 }
 
+// MARK: - OnDemandPickerPayload
+
+/// A pushed overlap picker: the matches and where they were probed. Equality
+/// is by `id` so two pushes of the same list are two sheets.
+nonisolated struct OnDemandPickerPayload: Hashable {
+    let id: String
+    let request: OnDemandPickerRequest
+    let locality: String?
+
+    init(request: OnDemandPickerRequest, locality: String?) {
+        id = UUID().uuidString
+        self.request = request
+        self.locality = locality
+    }
+
+    static func == (lhs: OnDemandPickerPayload, rhs: OnDemandPickerPayload) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}
+
 // MARK: - AppSheetRoute
 
 /// All navigable destinations within the floating sheet.
@@ -187,6 +206,7 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case rentalDetail(rentalID: VehicleRental.ID)
     case rentalCluster(memberIDs: [VehicleRental.ID])
     case onDemandService(OnDemandService)
+    case onDemandPicker(OnDemandPickerPayload)
     case searchResults(SearchResponse)
     case mapItem(MKMapItem)
     case routeStops(StopsForRoute)
@@ -262,6 +282,8 @@ nonisolated extension AppSheetRoute {
             return "\(caseName)-\(memberIDs.sorted().joined(separator: ","))"
         case .onDemandService(let service):
             return "\(caseName)-\(service.id)"
+        case .onDemandPicker(let payload):
+            return "\(caseName)-\(payload.id)"
         case .searchResults(let response):
             return "\(caseName)-\(response.request.searchType.rawValue)-\(response.request.query)"
         case .mapItem(let item):
@@ -291,7 +313,7 @@ nonisolated extension AppSheetRoute {
         switch self {
         case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll,
              .recentStopsAll, .bookmarksAll, .settings, .mapSettings, .rentalDetail, .rentalCluster,
-             .onDemandService, .searchResults, .mapItem, .routeStops, .nearbyStops:
+             .onDemandService, .onDemandPicker, .searchResults, .mapItem, .routeStops, .nearbyStops:
             return true
         case .home, .search, .routePicker:
             return false
@@ -417,9 +439,10 @@ nonisolated extension AppSheetRoute {
                 initialDetent: .medium,
                 isDismissDisabled: false
             )
-        case .onDemandService:
-            // `.medium` first, like a rental: the zone the rider tapped stays in
-            // view above the sheet, and `.large` shows the whole page.
+        case .onDemandService, .onDemandPicker:
+            // `.medium` first, like a rental: the zone the rider tapped (or the
+            // picker's highlighted zone) stays in view above the sheet, and
+            // `.large` shows the whole page.
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .medium,
