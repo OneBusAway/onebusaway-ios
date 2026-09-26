@@ -144,7 +144,7 @@ final class OnDemandDockHostTests: OBATestCase {
     @Test func `A small zone zooms out to twice the street gate centred on the probe point`() throws {
         let tiny = try area(minLon: -85.201, minLat: 45.299, maxLon: -85.199, maxLat: 45.301)
         let probe = CLLocationCoordinate2D(latitude: 45.31, longitude: -85.21)
-        let rect = try #require(OnDemandCameraTargets.zoomOutRect(areas: [tiny], probePoint: probe))
+        let rect = try #require(OnDemandCameraTargets.zoomOutRect(areas: [tiny], probePoint: probe, viewportSize: CGSize(width: 400, height: 800)))
         expectClose(rect.height, OnDemandCameraTargets.minimumZoomOutHeight, within: 1)
         let centre = MKMapPoint(x: rect.midX, y: rect.midY).coordinate
         expectClose(centre.latitude, probe.latitude, within: 1e-6)
@@ -158,16 +158,30 @@ final class OnDemandDockHostTests: OBATestCase {
             size: MKMapSize(width: MKMapPoint(CLLocationCoordinate2D(latitude: 45.37, longitude: -84.73)).x - MKMapPoint(CLLocationCoordinate2D(latitude: 45.37, longitude: -85.39)).x,
                             height: MKMapPoint(CLLocationCoordinate2D(latitude: 45.11, longitude: -85.39)).y - MKMapPoint(CLLocationCoordinate2D(latitude: 45.37, longitude: -85.39)).y)
         )
-        let rect = try #require(OnDemandCameraTargets.zoomOutRect(areas: [county], probePoint: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2)))
+        // A viewport with the zone's own aspect ratio adds nothing to the fit.
+        let viewport = CGSize(width: bbox.width, height: bbox.height)
+        let rect = try #require(OnDemandCameraTargets.zoomOutRect(areas: [county], probePoint: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2), viewportSize: viewport))
         expectClose(rect.height, bbox.height * 1.4, within: 1)
         expectClose(rect.width, bbox.width * 1.4, within: 1)
     }
 
     @Test func `A huge zone is clamped to nine tenths of the outer window`() throws {
         let huge = try area(minLon: -90, minLat: 40, maxLon: -80, maxLat: 50)
-        let rect = try #require(OnDemandCameraTargets.zoomOutRect(areas: [huge], probePoint: CLLocationCoordinate2D(latitude: 45, longitude: -85)))
+        let rect = try #require(OnDemandCameraTargets.zoomOutRect(areas: [huge], probePoint: CLLocationCoordinate2D(latitude: 45, longitude: -85), viewportSize: CGSize(width: 400, height: 800)))
         expectClose(rect.height, OnDemandCameraTargets.maximumZoomOutHeight, within: 1)
-        #expect(OnDemandCameraTargets.zoomOutRect(areas: [], probePoint: CLLocationCoordinate2D(latitude: 45, longitude: -85)) == nil)
+        #expect(OnDemandCameraTargets.zoomOutRect(areas: [], probePoint: CLLocationCoordinate2D(latitude: 45, longitude: -85), viewportSize: CGSize(width: 400, height: 800)) == nil)
+    }
+
+    /// `setVisibleMapRect` fits a rect to the map's aspect ratio, so a wide
+    /// county on a tall phone grew past the 600,000 window and nothing drew.
+    /// The target already carries the viewport's aspect, so the fit adds no height.
+    @Test func `A wide zone on a tall phone stays inside the zones window`() throws {
+        let county = try area(minLon: -85.39, minLat: 45.11, maxLon: -84.73, maxLat: 45.37)
+        let phone = CGSize(width: 402, height: 874)
+        let rect = try #require(OnDemandCameraTargets.zoomOutRect(areas: [county], probePoint: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2), viewportSize: phone))
+        #expect(rect.height <= OnDemandCameraTargets.maximumZoomOutHeight + 1)
+        #expect(rect.height < OnDemandZoomLevel.regionMaxVisibleHeight)
+        expectClose(rect.width / rect.height, Double(phone.width / phone.height), within: 1e-6)
     }
 
     // MARK: - Viewport settle delegate

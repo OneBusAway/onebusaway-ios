@@ -804,7 +804,7 @@ extension MapPanelRootView {
             zoomOut: { matches in
                 guard let probePoint = probeController.probePoint else { return }
                 let areas = matches.flatMap { probeController.fullAreasByServiceID[$0.id] ?? $0.service.areas }
-                guard let rect = OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint) else { return }
+                guard let rect = OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint, viewportSize: mapSize) else { return }
                 withAnimation { cameraPosition = .rect(rect) }
             },
             panTo: { point in

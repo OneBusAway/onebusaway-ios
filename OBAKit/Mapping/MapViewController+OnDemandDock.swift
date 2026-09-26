@@ -162,7 +162,7 @@ extension MapViewController {
     private func zoomOutToOnDemandZones(_ matches: [OnDemandServiceMatch]) {
         guard let probePoint = onDemandProbeController.probePoint else { return }
         let areas = matches.flatMap { onDemandProbeController.fullAreasByServiceID[$0.id] ?? $0.service.areas }
-        guard let rect = OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint) else { return }
+        guard let rect = OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint, viewportSize: mapRegionManager.mapView.bounds.size) else { return }
         mapRegionManager.mapView.setVisibleMapRect(rect, animated: true)
     }
 }
