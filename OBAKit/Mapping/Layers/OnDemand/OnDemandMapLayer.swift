@@ -330,8 +330,16 @@ import OBAKitCore
     /// Diffs the fetched services against what is drawn by id, so the panel's
     /// selected marker (tagged by annotation identity) survives a pan.
     private func reconcileMapContent() {
+        let labelPoints = OnDemandGeometry.labelPoints(
+            areasByServiceID: Dictionary(services.map { ($0.id, $0.areas) }, uniquingKeysWith: { first, _ in first })
+        )
         let fetchedIDs = Set(services.map(\.id))
-        let departedIDs = drawnByServiceID.keys.filter { !fetchedIDs.contains($0) }
+        // A newly fetched service can take a label spot a drawn one must now leave.
+        let movedIDs = drawnByServiceID.filter { serviceID, drawn in
+            guard let pin = drawn.annotations.first?.coordinate, let label = labelPoints[serviceID] else { return false }
+            return pin.latitude != label.latitude || pin.longitude != label.longitude
+        }.keys
+        let departedIDs = drawnByServiceID.keys.filter { !fetchedIDs.contains($0) } + movedIDs
         for serviceID in departedIDs {
             guard let drawn = drawnByServiceID.removeValue(forKey: serviceID) else { continue }
             mapView?.removeOverlays(drawn.overlays + drawn.halos)
@@ -346,7 +354,7 @@ import OBAKitCore
 
         let colors = OnDemandServiceColors.resolvedColors(for: services, brand: tintColor)
         for service in services where drawnByServiceID[service.id] == nil {
-            let drawn = draw(service, color: colors[service.id] ?? tintColor)
+            let drawn = draw(service, color: colors[service.id] ?? tintColor, labelPoint: labelPoints[service.id])
             drawnByServiceID[service.id] = drawn
             if let mapView {
                 insertZoneOverlays(halos: zoomLevel == .street ? drawn.halos : [], strokes: drawn.overlays, into: mapView)
@@ -364,8 +372,8 @@ import OBAKitCore
     }
 
     /// Builds one service's polygons, their halo copies and its single marker
-    /// at the label point of its largest polygon.
-    private func draw(_ service: OnDemandService, color: UIColor) -> DrawnService {
+    /// at `labelPoint`, or its first area's bbox centre when it has no rings.
+    private func draw(_ service: OnDemandService, color: UIColor, labelPoint: CLLocationCoordinate2D?) -> DrawnService {
         var polygons: [MKPolygon] = []
         var halos: [MKPolygon] = []
         for area in service.areas {
@@ -382,7 +390,7 @@ import OBAKitCore
         }
 
         var markers: [OnDemandZoneAnnotation] = []
-        if let coordinate = OnDemandGeometry.labelPoint(areas: service.areas) ?? service.areas.first?.bbox.center {
+        if let coordinate = labelPoint ?? service.areas.first?.bbox.center {
             markers.append(OnDemandZoneAnnotation(service: service, coordinate: coordinate, color: color))
         }
         return DrawnService(color: color, overlays: polygons, halos: halos, annotations: markers)

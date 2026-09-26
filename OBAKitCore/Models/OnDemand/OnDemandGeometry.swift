@@ -55,6 +55,8 @@ public enum OnDemandGeometry {
 
     /// Inside with a client edge distance below this is "near edge".
     public static let nearEdgeMeters = 100.0
+    /// Two services' pins closer than this read as one (ruling on coincident labels).
+    public static let labelSeparationMeters = 50.0
 
     // MARK: - Projection
 
@@ -88,9 +90,11 @@ public enum OnDemandGeometry {
     /// Spec 2.3: the midpoint of the widest run of the bbox mid-latitude line
     /// inside the polygon (holes cut out, even-odd), else the exterior
     /// centroid when it is inside the ring, else the bbox centre.
-    public static func labelPoint(polygon: [[CLLocationCoordinate2D]], bbox: BoundingBox) -> CLLocationCoordinate2D {
+    /// - Parameter rowFraction: where the label row sits up the bbox height;
+    ///   0.5 is the spec's mid-latitude line, other rows move a coincident pin.
+    public static func labelPoint(polygon: [[CLLocationCoordinate2D]], bbox: BoundingBox, rowFraction: Double = 0.5) -> CLLocationCoordinate2D {
         guard let exterior = polygon.first, exterior.count >= 3 else { return bbox.center }
-        let midLatitude = (bbox.minLatitude + bbox.maxLatitude) / 2
+        let midLatitude = bbox.minLatitude + (bbox.maxLatitude - bbox.minLatitude) * rowFraction
 
         let crossings = polygon.flatMap { longitudeCrossings(of: $0, atLatitude: midLatitude) }.sorted()
         var widest: (start: Double, end: Double)?
@@ -116,16 +120,59 @@ public enum OnDemandGeometry {
     /// area has a non-degenerate ring. Size is the exterior ring's shoelace
     /// area in the local projection, so a ring of repeated points never wins.
     public static func labelPoint(areas: [ServiceArea]) -> CLLocationCoordinate2D? {
-        let largest = areas
+        guard let largest = polygonsBySize(areas).first else { return nil }
+        return labelPoint(polygon: largest, bbox: boundingBox(of: largest[0]))
+    }
+
+    /// The label rows tried on a service's largest polygon once every
+    /// polygon's own label is taken.
+    private static let fallbackRowFractions = [1.0 / 3, 2.0 / 3]
+
+    /// One label point per service, placed in service id order so a pan
+    /// never swaps them. A service whose label falls within
+    /// `labelSeparationMeters` of an earlier one takes its next-largest
+    /// polygon's label, then the label rows at 1/3 and 2/3 of its largest
+    /// polygon's bbox height; when all of those collide it keeps its own.
+    /// Services with no drawable ring get no entry.
+    public static func labelPoints(areasByServiceID: [String: [ServiceArea]]) -> [String: CLLocationCoordinate2D] {
+        var placed: [String: CLLocationCoordinate2D] = [:]
+        for serviceID in areasByServiceID.keys.sorted() {
+            let candidates = labelCandidates(areas: areasByServiceID[serviceID] ?? [])
+            guard let preferred = candidates.first else { continue }
+            let isClear = { (candidate: CLLocationCoordinate2D) in
+                placed.values.allSatisfy { distanceMeters(candidate, $0) >= labelSeparationMeters }
+            }
+            placed[serviceID] = candidates.first(where: isClear) ?? preferred
+        }
+        return placed
+    }
+
+    private static func labelCandidates(areas: [ServiceArea]) -> [CLLocationCoordinate2D] {
+        let polygons = polygonsBySize(areas)
+        guard let largest = polygons.first else { return [] }
+        let largestBox = boundingBox(of: largest[0])
+        return polygons.map { labelPoint(polygon: $0, bbox: boundingBox(of: $0[0])) }
+            + fallbackRowFractions.map { labelPoint(polygon: largest, bbox: largestBox, rowFraction: $0) }
+    }
+
+    /// Every polygon with a non-degenerate exterior, largest first. Size is
+    /// the exterior ring's shoelace area in the local projection, so a ring
+    /// of repeated points never counts.
+    private static func polygonsBySize(_ areas: [ServiceArea]) -> [[[CLLocationCoordinate2D]]] {
+        areas
             .flatMap(\.polygons)
             .compactMap { polygon -> (polygon: [[CLLocationCoordinate2D]], area: Double)? in
                 guard let exterior = polygon.first, exterior.count >= 3 else { return nil }
                 let area = projectedArea(of: exterior)
                 return area > 0 ? (polygon, area) : nil
             }
-            .max { $0.area < $1.area }
-        guard let largest else { return nil }
-        return labelPoint(polygon: largest.polygon, bbox: boundingBox(of: largest.polygon[0]))
+            .sorted { $0.area > $1.area }
+            .map(\.polygon)
+    }
+
+    private static func distanceMeters(_ lhs: CLLocationCoordinate2D, _ rhs: CLLocationCoordinate2D) -> Double {
+        let offset = LocalProjection(origin: lhs).project(rhs)
+        return (offset.x * offset.x + offset.y * offset.y).squareRoot()
     }
 
     /// Longitudes where `ring` crosses the horizontal line at `latitude`.

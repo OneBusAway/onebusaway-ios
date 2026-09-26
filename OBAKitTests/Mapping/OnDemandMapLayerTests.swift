@@ -105,6 +105,37 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(mapView.annotations.filter { $0 is OnDemandZoneAnnotation }.count == 1)
     }
 
+    /// Two services sharing one zone (Charlevoix's Dial-a-Ride and Medical
+    /// Trips) stacked their pins on one point, so only one was visible.
+    @Test func `Services sharing a zone get pins at least 50 metres apart`() async throws {
+        let data = Fixtures.loadData(file: "ondemand_services_for_location_viewport.json")
+        var json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var body = try #require(json["data"] as? [String: Any])
+        var list = try #require(body["list"] as? [[String: Any]])
+        var twin = list[0]
+        twin["id"] = "5088_twin"
+        twin["name"] = "Twin Service"
+        list.append(twin)
+        body["list"] = list
+        json["data"] = body
+        mockProbe(statusCode: 200, data: try JSONSerialization.data(withJSONObject: json))
+        let layer = makeLayer()
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+
+        #expect(layer.annotations.count == 2)
+        let pins = Dictionary(uniqueKeysWithValues: layer.annotations.map { ($0.service.id, $0.coordinate) })
+        let first = try #require(pins["5088_77652"])
+        let second = try #require(pins["5088_twin"])
+        let separation = CLLocation(latitude: first.latitude, longitude: first.longitude)
+            .distance(from: CLLocation(latitude: second.latitude, longitude: second.longitude))
+        #expect(separation >= OnDemandGeometry.labelSeparationMeters, "pins \(separation) m apart")
+        expectClose(first.latitude, (38.617508 + 39.057831) / 2, within: 1e-9)
+        let exterior = layer.services[0].areas[0].polygons[0][0]
+        #expect(OnDemandGeometry.pointInRing(second, ring: exterior), "the moved pin stays inside its polygon")
+    }
+
     @Test func `A refetch with different services replaces the drawn zones`() async throws {
         mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
         let layer = makeLayer()
