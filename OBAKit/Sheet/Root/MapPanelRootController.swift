@@ -50,6 +50,7 @@ public final class MapPanelRootController: UIViewController {
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         let mapViewModel = MapViewModel(application: application, initialMapType: initialMapType)
         let layersModel = MapPanelLayersModel(application: application)
+        let probeController = OnDemandProbeController.make(application: application)
         let factory = AppSheetViewFactory(
             application: application,
             mapViewModel: mapViewModel,
@@ -72,7 +73,8 @@ public final class MapPanelRootController: UIViewController {
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver,
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel,
-            tripFocusMapDisplayModel: tripFocusMapDisplayModel
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel,
+            probeController: probeController
         )
         self.host = UIHostingController(rootView: rootView)
         self.bridge = bridge

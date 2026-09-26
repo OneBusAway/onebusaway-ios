@@ -96,6 +96,7 @@ extension MapViewController {
         // Overlay layers draw straight onto the MKMapView; the registrar builds
         // the layer without one because the SwiftUI panel has none to give.
         registrar.onDemandLayer?.mapView = mapRegionManager.mapView
+        registrar.onDemandLayer?.setHighlightedService(onDemandProbeController.highlightedServiceID)
 
         guard let coordinator = registrar.rentalCoordinator else {
             rentalAnnotationSyncer = nil
@@ -170,6 +171,7 @@ extension MapViewController {
         // Toggling Bikes on while zoomed out has to raise the rental hint now,
         // not at the next camera settle.
         viewModel.updateRentalZoomHint(mapRegionManager.rentalZoomHintStatus)
+        onDemandProbeController.setLayerEnabled(mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID))
     }
 
     /// `MapViewController` is the composition root for the rental layers, so it
@@ -213,7 +215,7 @@ extension MapViewController {
         presentMediumSheet(UIHostingController(rootView: MapSheetView(model: model)))
     }
 
-    private func presentMediumSheet(_ controller: UIViewController) {
+    func presentMediumSheet(_ controller: UIViewController) {
         if let sheet = controller.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
