@@ -11,6 +11,16 @@ import Combine
 import CoreLocation
 import Foundation
 import OBAKitCore
+import UIKit
+
+/// What the dock slot shows (spec 2.4). Never two things at once.
+enum OnDemandDockState: Equatable {
+    case hidden
+    /// Region level, probe point inside these (sorted) services.
+    case card([OnDemandServiceMatch])
+    /// Street level: the inside stack, or the nearby stack when none is inside.
+    case bar([OnDemandServiceMatch])
+}
 
 /// Owns the point-mode probe (spec 2.1): its two caches, its error rules and
 /// the deployment it belongs to. Both map shells share one instance per
@@ -69,19 +79,77 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     private(set) var currentDeployment: String?
     private(set) var isUnsupported = false
 
+    // MARK: - Dock state
+
+    @Published private(set) var dockState: OnDemandDockState = .hidden
+    @Published private(set) var matches: [OnDemandServiceMatch] = []
+    @Published private(set) var probePoint: CLLocationCoordinate2D?
+    @Published private(set) var probeSource: ProbeSource = .mapCenter
+    @Published private(set) var zoomLevel: OnDemandZoomLevel = .hidden
+    /// Full geometry per matched service as it arrives (spec 2.7).
+    @Published private(set) var fullAreasByServiceID: [String: [ServiceArea]] = [:]
+    /// Services whose geometry fetch failed; the thumbnail stays a placeholder for them.
+    @Published private(set) var failedGeometryServiceIDs: Set<String> = []
+    /// The resolved edge per match: the server point outside, the client geometry inside.
+    @Published private(set) var edgesByServiceID: [String: OnDemandEdge] = [:]
+    /// Spec 2.3: set by a bar page swipe or picker row; cleared when the dock leaves the bar.
+    @Published var highlightedServiceID: String?
+
+    private(set) var refreshTask: Task<Void, Never>?
+    private(set) var geometryTask: Task<Void, Never>?
+    private(set) var boundaryTask: Task<Void, Never>?
+
+    private let isLocationAuthorized: () -> Bool
+    private let currentLocation: () -> CLLocation?
+    private let sleep: @Sendable (TimeInterval) async throws -> Void
+
+    private var mapCenter: CLLocationCoordinate2D?
+    private var riderLocation: CLLocation?
+    private var lastProbePoint: CLLocationCoordinate2D?
+    private var lastSuccessfulProbePoint: CLLocationCoordinate2D?
+    private var isLayerEnabled = true
+    private var hasSurfaceFocus = false
+    private var isMapMostlyCovered = false
+
+    private enum RefreshReason {
+        case mapSettled, locationUpdate, authorization, foreground, boundary
+
+        /// Authorization, foreground and boundary probes ignore the 100 m rule.
+        var ignoresMovementThreshold: Bool { self != .mapSettled && self != .locationUpdate }
+    }
+
+    /// The current probe point's location facts for a detail page opened from the dock.
+    var locationCheck: OnDemandLocationCheck? {
+        guard let probePoint else { return nil }
+        return OnDemandLocationCheck(source: probeSource, isInside: matches.contains(where: \.isInside), locality: nil, coordinate: probePoint)
+    }
+
     init(
         apiService: @escaping () -> RESTAPIService?,
         geometryCache: OnDemandGeometryCache,
         now: @escaping () -> Date = Date.init,
-        configuration: Configuration = Configuration()
+        configuration: Configuration = Configuration(),
+        isLocationAuthorized: @escaping () -> Bool = { false },
+        currentLocation: @escaping () -> CLLocation? = { nil },
+        sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
     ) {
         self.apiService = apiService
         self.geometryCache = geometryCache
         self.now = now
         self.configuration = configuration
+        self.isLocationAuthorized = isLocationAuthorized
+        self.currentLocation = currentLocation
+        self.sleep = sleep
         super.init()
         currentDeployment = deployment
         isUnsupported = Self.isKnownUnsupported(apiService())
+        NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    isolated deinit {
+        refreshTask?.cancel()
+        geometryTask?.cancel()
+        boundaryTask?.cancel()
     }
 
     var deployment: String? { apiService()?.baseURL.absoluteString }
@@ -116,11 +184,239 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     /// deployment's support state.
     func deploymentDidChange() {
         resetState(for: deployment)
+        refreshTask?.cancel()
+        geometryTask?.cancel()
+        boundaryTask?.cancel()
+        matches = []
+        fullAreasByServiceID = [:]
+        failedGeometryServiceIDs = []
+        edgesByServiceID = [:]
+        lastProbePoint = nil
+        lastSuccessfulProbePoint = nil
+        highlightedServiceID = nil
+        setDockState(.hidden)
     }
 
     static func cacheKey(for coordinate: CLLocationCoordinate2D, decimals: Int) -> (latitude: Double, longitude: Double) {
         let scale = pow(10.0, Double(decimals))
         return ((coordinate.latitude * scale).rounded() / scale, (coordinate.longitude * scale).rounded() / scale)
+    }
+
+    // MARK: - Triggers (spec 2.1)
+
+    /// Trigger 1: the map settled.
+    func mapDidSettle(center: CLLocationCoordinate2D, zoomLevel: OnDemandZoomLevel) {
+        mapCenter = center
+        if zoomLevel != self.zoomLevel {
+            highlightedServiceID = nil
+            self.zoomLevel = zoomLevel
+        }
+        refresh(reason: .mapSettled)
+    }
+
+    /// Trigger 2.
+    func locationAuthorizationDidChange() {
+        refresh(reason: .authorization)
+    }
+
+    /// Trigger 3.
+    func applicationWillEnterForeground() {
+        refresh(reason: .foreground)
+    }
+
+    @objc private func willEnterForeground() {
+        applicationWillEnterForeground()
+    }
+
+    /// Trigger 5: a fix worse than 100 m is ignored; the first usable fix
+    /// switches the source from the map centre to the rider and probes.
+    func locationDidUpdate(_ location: CLLocation) {
+        guard location.horizontalAccuracy >= 0, location.horizontalAccuracy <= configuration.accuracyGateMeters else { return }
+        let isFirstFix = riderLocation == nil
+        riderLocation = location
+        guard isLocationAuthorized() else { return }
+        refresh(reason: isFirstFix ? .authorization : .locationUpdate)
+    }
+
+    func setLayerEnabled(_ enabled: Bool) {
+        isLayerEnabled = enabled
+        deriveDockState()
+    }
+
+    /// A stop, route, trip or directions sheet, search results, or the survey card owns the slot.
+    func setSurfaceFocus(_ hasFocus: Bool) {
+        hasSurfaceFocus = hasFocus
+        deriveDockState()
+    }
+
+    /// The bottom sheet leaves less than half the screen to the map.
+    func setMapMostlyCovered(_ covered: Bool) {
+        isMapMostlyCovered = covered
+        deriveDockState()
+    }
+
+    // MARK: - Refresh
+
+    private func resolvedProbePoint() -> (coordinate: CLLocationCoordinate2D, source: ProbeSource)? {
+        if isLocationAuthorized(), let fix = riderLocation ?? currentLocation() {
+            return (fix.coordinate, .rider)
+        }
+        return mapCenter.map { ($0, .mapCenter) }
+    }
+
+    private func refresh(reason: RefreshReason) {
+        guard !isUnsupported, let point = resolvedProbePoint() else {
+            deriveDockState()
+            return
+        }
+        probeSource = point.source
+        if !reason.ignoresMovementThreshold, let lastProbePoint,
+           Self.distanceMeters(lastProbePoint, point.coordinate) < configuration.movementThresholdMeters {
+            deriveDockState()
+            return
+        }
+
+        refreshTask?.cancel()
+        let allowStale = reason == .boundary
+        refreshTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let matches = try await probe(at: point.coordinate, allowStale: allowStale)
+                guard !Task.isCancelled else { return }
+                didProbe(point, matches: matches)
+            } catch {
+                guard !Task.isCancelled, !error.isCancellation else { return }
+                lastProbePoint = point.coordinate
+                handleProbeFailure(at: point.coordinate)
+            }
+        }
+    }
+
+    private func didProbe(_ point: (coordinate: CLLocationCoordinate2D, source: ProbeSource), matches: [OnDemandServiceMatch]) {
+        lastProbePoint = point.coordinate
+        lastSuccessfulProbePoint = point.coordinate
+        probePoint = point.coordinate
+        probeSource = point.source
+        self.matches = matches
+        updateEdges()
+        deriveDockState()
+        loadGeometry(for: matches)
+    }
+
+    /// Spec 2.1: any error other than a 404 keeps the last state only when
+    /// the new probe point is within 100 m of the one that produced it.
+    private func handleProbeFailure(at coordinate: CLLocationCoordinate2D) {
+        if isUnsupported {
+            matches = []
+            setDockState(.hidden)
+            return
+        }
+        if let lastSuccessfulProbePoint,
+           Self.distanceMeters(lastSuccessfulProbePoint, coordinate) <= configuration.movementThresholdMeters {
+            deriveDockState()
+            return
+        }
+        matches = []
+        edgesByServiceID = [:]
+        setDockState(.hidden)
+    }
+
+    // MARK: - Dock state (spec 2.4)
+
+    private func deriveDockState() {
+        let slotAvailable = isLayerEnabled && !hasSurfaceFocus && !isMapMostlyCovered && !isUnsupported
+        guard slotAvailable else {
+            setDockState(.hidden)
+            return
+        }
+        // A match with no area (a pure stop group) has no distance and is never shown.
+        let inside = sortedSoonestUsable(matches.filter { $0.isInside && $0.distanceToArea != nil })
+        switch zoomLevel {
+        case .hidden:
+            setDockState(.hidden)
+        case .region:
+            setDockState(inside.isEmpty ? .hidden : .card(inside))
+        case .street:
+            if !inside.isEmpty {
+                setDockState(.bar(inside))
+            } else {
+                let nearby = sortedSoonestUsable(matches.filter(\.isNearby))
+                setDockState(nearby.isEmpty ? .hidden : .bar(nearby))
+            }
+        }
+    }
+
+    private func setDockState(_ state: OnDemandDockState) {
+        if case .bar = state { } else {
+            highlightedServiceID = nil
+        }
+        if state != dockState {
+            dockState = state
+        }
+        scheduleBoundaryRefresh()
+    }
+
+    /// Trigger 4: re-evaluate one second after the earliest `nextChangeInstant`.
+    private func scheduleBoundaryRefresh() {
+        boundaryTask?.cancel()
+        boundaryTask = nil
+        guard let nextChange = matches.compactMap(\.availability.nextChangeInstant).min() else { return }
+        let delay = max(nextChange.timeIntervalSince(now()), 0) + 1
+        let sleep = sleep
+        boundaryTask = Task { [weak self] in
+            do {
+                try await sleep(delay)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.refresh(reason: .boundary)
+        }
+    }
+
+    // MARK: - Edges and geometry (spec 2.7)
+
+    private func updateEdges() {
+        guard let probePoint else {
+            edgesByServiceID = [:]
+            return
+        }
+        var edges: [String: OnDemandEdge] = [:]
+        for match in matches {
+            if !match.isInside, let distance = match.distanceToArea, let point = match.nearestPointOnBoundary {
+                edges[match.id] = OnDemandGeometry.edge(from: probePoint, toServerPoint: point, distanceMeters: distance)
+            } else if let areas = fullAreasByServiceID[match.id],
+                      let edge = OnDemandGeometry.nearestBoundaryPoint(from: probePoint, areas: areas) {
+                edges[match.id] = edge
+            }
+        }
+        edgesByServiceID = edges
+    }
+
+    private func loadGeometry(for matches: [OnDemandServiceMatch]) {
+        geometryTask?.cancel()
+        let missing = matches.map(\.id).filter { fullAreasByServiceID[$0] == nil }
+        guard !missing.isEmpty else { return }
+        geometryTask = Task { [weak self] in
+            for serviceID in missing {
+                guard let self, !Task.isCancelled else { return }
+                do {
+                    let areas = try await fullAreas(for: serviceID)
+                    guard !Task.isCancelled else { return }
+                    fullAreasByServiceID[serviceID] = areas
+                    failedGeometryServiceIDs.remove(serviceID)
+                    updateEdges()
+                } catch {
+                    guard !Task.isCancelled, !error.isCancellation else { return }
+                    failedGeometryServiceIDs.insert(serviceID)
+                }
+            }
+        }
+    }
+
+    private static func distanceMeters(_ lhs: CLLocationCoordinate2D, _ rhs: CLLocationCoordinate2D) -> CLLocationDistance {
+        CLLocation(latitude: lhs.latitude, longitude: lhs.longitude)
+            .distance(from: CLLocation(latitude: rhs.latitude, longitude: rhs.longitude))
     }
 
     // MARK: - Fetching
@@ -211,5 +507,17 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     private static func isKnownUnsupported(_ apiService: RESTAPIService?) -> Bool {
         guard let apiService else { return false }
         return apiService.onDemandSupport.isKnownUnsupported(baseURL: apiService.baseURL)
+    }
+}
+
+// MARK: - LocationServiceDelegate
+
+extension OnDemandProbeController: LocationServiceDelegate {
+    func locationService(_ service: LocationService, locationChanged location: CLLocation) {
+        locationDidUpdate(location)
+    }
+
+    func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
+        locationAuthorizationDidChange()
     }
 }

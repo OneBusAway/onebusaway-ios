@@ -41,15 +41,26 @@ final class OnDemandProbeControllerTests: OBATestCase {
         baseNow.addingTimeInterval(Double(clock.now.offset.components.seconds))
     }
 
-    private func makeController() -> OnDemandProbeController {
+    private func makeController(authorized: Bool = false) -> OnDemandProbeController {
+        mockGeometryFallback()
         let cache = OnDemandGeometryCache { apiService, serviceID in
             try await apiService.getOnDemandService(id: serviceID, geometryDetail: .full).entry.areas
         }
+        let clock = self.clock
         return OnDemandProbeController(
             apiService: { [weak application] in application?.apiService },
             geometryCache: cache,
-            now: { [self] in now }
+            now: { [self] in now },
+            isLocationAuthorized: { authorized },
+            sleep: { seconds in try await clock.sleep(for: .seconds(seconds), tolerance: nil) }
         )
+    }
+
+    /// A settle loads full geometry for every match (spec 2.7), and the mock
+    /// loader traps on an unmatched request. First match wins, so this 500
+    /// only answers services the test did not mock itself.
+    private func mockGeometryFallback() {
+        dataLoader.mock(data: Data(), statusCode: 500, matcher: Self.isGeometry)
     }
 
     private func mockProbe(file: String) {
@@ -323,5 +334,245 @@ final class OnDemandProbeControllerTests: OBATestCase {
         let geometryRequests = dataLoader.recordedRequestURLs.filter { $0.path.contains("/api/ondemand/service/") }
         #expect(geometryRequests.count == 1)
         #expect(query(geometryRequests[0], "geometryDetail") == "full")
+    }
+
+    // MARK: - Dock state (spec 2.4)
+
+    private func settle(_ controller: OnDemandProbeController, at point: CLLocationCoordinate2D, level: OnDemandZoomLevel) async {
+        controller.mapDidSettle(center: point, zoomLevel: level)
+        await controller.refreshTask?.value
+    }
+
+    private func ids(of state: OnDemandDockState) -> [String]? {
+        switch state {
+        case .card(let matches), .bar(let matches): return matches.map(\.id)
+        default: return nil
+        }
+    }
+
+    @Test func `A region-level settle inside a zone shows the card`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .region)
+
+        guard case .card(let matches) = controller.dockState else {
+            Issue.record("expected card, got \(controller.dockState)")
+            return
+        }
+        #expect(matches.map(\.id) == ["5088_77652"])
+        #expect(controller.probeSource == .mapCenter)
+        #expect(controller.locationCheck?.isInside == true)
+        #expect(controller.locationCheck?.source == .mapCenter)
+    }
+
+    @Test func `A street-level settle inside a zone shows the bar`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .street)
+        #expect(ids(of: controller.dockState) == ["5088_77652"])
+        if case .bar = controller.dockState { } else { Issue.record("expected bar") }
+    }
+
+    @Test func `A street-level settle near a zone shows the outside bar with the server edge`() async {
+        mockProbe(file: "ondemand_services_for_location_point_near.json")
+        let controller = makeController()
+        await settle(controller, at: charlevoixPoint, level: .street)
+
+        guard case .bar(let matches) = controller.dockState else {
+            Issue.record("expected bar, got \(controller.dockState)")
+            return
+        }
+        #expect(matches.map(\.id) == ["CC_CC1"])
+        #expect(!matches[0].isInside)
+        #expect(controller.edgesByServiceID["CC_CC1"]?.distanceMeters == 850)
+        #expect(controller.edgesByServiceID["CC_CC1"]?.riderDirection == .south, "the boundary point is 850 m due north of the probe")
+        #expect(controller.locationCheck?.isInside == false)
+    }
+
+    @Test func `Region level near a zone and the hidden level show nothing`() async {
+        mockProbe(file: "ondemand_services_for_location_point_near.json")
+        let controller = makeController()
+        await settle(controller, at: charlevoixPoint, level: .region)
+        #expect(controller.dockState == .hidden)
+
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        await settle(controller, at: alexandriaPoint, level: .hidden)
+        #expect(controller.dockState == .hidden)
+    }
+
+    /// Review Focus 5: a pure stop group has no area and no distance.
+    @Test func `A stop-group-only match never shows the dock`() async throws {
+        let near = try #require(String(data: Fixtures.loadData(file: "ondemand_services_for_location_point_near.json"), encoding: .utf8))
+        let stopGroup = near
+            .replacingOccurrences(of: "\"matchReason\":\"areaNearby\"", with: "\"matchReason\":\"stopWithinRadius\"")
+            .replacingOccurrences(of: "\"distanceToArea\":850,\"nearestPointOnBoundary\":[-85.2,45.30765]", with: "\"distanceToArea\":null,\"nearestPointOnBoundary\":null")
+        dataLoader.mock(data: Data(stopGroup.utf8), matcher: Self.isProbe)
+        let controller = makeController()
+        await settle(controller, at: charlevoixPoint, level: .street)
+        #expect(controller.matches.count == 1)
+        #expect(controller.dockState == .hidden)
+    }
+
+    // MARK: - Triggers (spec 2.1)
+
+    @Test func `A settle under 100 metres does not re-probe`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .region)
+        await settle(controller, at: CLLocationCoordinate2D(latitude: 38.8004, longitude: -77.05), level: .region) // ~45 m
+        #expect(probeRequests.count == 1)
+
+        await settle(controller, at: CLLocationCoordinate2D(latitude: 38.8014, longitude: -77.05), level: .region) // ~155 m
+        #expect(probeRequests.count == 2)
+    }
+
+    @Test func `A location update 150 metres away re-probes and a poor fix does not`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController(authorized: true)
+
+        controller.locationDidUpdate(CLLocation(latitude: alexandriaPoint.latitude, longitude: alexandriaPoint.longitude))
+        await controller.refreshTask?.value
+        #expect(controller.probeSource == .rider, "the first fix switches the source to the rider")
+        #expect(probeRequests.count == 1)
+
+        controller.locationDidUpdate(CLLocation(coordinate: CLLocationCoordinate2D(latitude: 38.80135, longitude: -77.05), altitude: 0, horizontalAccuracy: 10, verticalAccuracy: 10, timestamp: now))
+        await controller.refreshTask?.value
+        #expect(probeRequests.count == 2)
+
+        controller.locationDidUpdate(CLLocation(coordinate: CLLocationCoordinate2D(latitude: 38.804, longitude: -77.05), altitude: 0, horizontalAccuracy: 200, verticalAccuracy: 10, timestamp: now))
+        await controller.refreshTask?.value
+        #expect(probeRequests.count == 2, "a fix worse than 100 m is ignored")
+    }
+
+    @Test func `Without location authorization the map centre stays the source`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController(authorized: false)
+        controller.locationDidUpdate(CLLocation(latitude: 45.3, longitude: -85.2))
+        await controller.refreshTask?.value
+        #expect(probeRequests.isEmpty)
+
+        await settle(controller, at: alexandriaPoint, level: .region)
+        #expect(controller.probeSource == .mapCenter)
+    }
+
+    @Test func `A failed probe near the last one keeps the state and far away hides the dock`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .region)
+        #expect(ids(of: controller.dockState) == ["5088_77652"])
+
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(data: Data(), statusCode: 500, matcher: Self.isProbe)
+            staging.mock(data: Data(), statusCode: 500, matcher: Self.isGeometry)
+        }
+        clock.advance(by: .seconds(700)) // the cache is stale, so the foreground probe hits the network
+        controller.applicationWillEnterForeground()
+        await controller.refreshTask?.value
+        #expect(ids(of: controller.dockState) == ["5088_77652"], "a failed re-probe at the last good probe point keeps the state")
+
+        await settle(controller, at: CLLocationCoordinate2D(latitude: 38.82, longitude: -77.05), level: .region) // ~2 km
+        #expect(controller.dockState == .hidden)
+    }
+
+    @Test func `The boundary refresh recomputes from the cache without a network call`() async {
+        mockProbe(file: "ondemand_services_for_location_point_near.json")
+        let controller = makeController()
+        await settle(controller, at: charlevoixPoint, level: .street)
+        #expect(controller.matches[0].availability.bookableNow)
+        #expect(controller.boundaryTask != nil)
+
+        // Advance only once the boundary task has parked: a sleeper that
+        // registers after the advance gets a deadline 62 s later and never wakes.
+        await poll(until: { self.clock.sleeperCount >= 1 }, "the boundary task should be sleeping until the cutoff")
+        clock.advance(by: .seconds(62)) // 15:10 cutoff + 1 s
+        await controller.boundaryTask?.value
+        await controller.refreshTask?.value
+
+        #expect(!controller.matches[0].availability.bookableNow)
+        if case .opensAt = controller.matches[0].availability.status { } else { Issue.record("expected opensAt, got \(controller.matches[0].availability.status)") }
+        #expect(probeRequests.count == 1)
+    }
+
+    @Test func `A 404 hides the dock`() async {
+        mockProbe(statusCode: 404)
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .region)
+        #expect(controller.dockState == .hidden)
+        #expect(controller.isUnsupported)
+    }
+
+    @Test func `A deployment change hides the dock and clears the highlight`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .street)
+        controller.highlightedServiceID = "5088_77652"
+
+        application.regionsService.currentRegion = Fixtures.tampaRegion
+        controller.deploymentDidChange()
+
+        #expect(controller.dockState == .hidden)
+        #expect(controller.highlightedServiceID == nil)
+        #expect(controller.matches.isEmpty)
+    }
+
+    @Test func `The highlight clears when the dock leaves the bar state`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .street)
+        controller.highlightedServiceID = "5088_77652"
+
+        await settle(controller, at: alexandriaPoint, level: .region)
+        #expect(controller.highlightedServiceID == nil)
+        if case .card = controller.dockState { } else { Issue.record("expected card") }
+    }
+
+    @Test func `Focus, coverage and the layer toggle hide the dock without dropping the matches`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .region)
+
+        controller.setSurfaceFocus(true)
+        #expect(controller.dockState == .hidden)
+        controller.setSurfaceFocus(false)
+        if case .card = controller.dockState { } else { Issue.record("expected card") }
+
+        controller.setMapMostlyCovered(true)
+        #expect(controller.dockState == .hidden)
+        controller.setMapMostlyCovered(false)
+
+        controller.setLayerEnabled(false)
+        #expect(controller.dockState == .hidden)
+        #expect(controller.matches.count == 1, "the address check still needs the probe")
+        controller.setLayerEnabled(true)
+        if case .card = controller.dockState { } else { Issue.record("expected card") }
+    }
+
+    // MARK: - Geometry for matches (spec 2.7)
+
+    @Test func `Full geometry loads lazily for matched services and yields an inside edge`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_service_alexandria.json")) { request in
+            request.url?.path.contains("/api/ondemand/service/5088_77652.json") ?? false
+        }
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .street)
+        await controller.geometryTask?.value
+
+        #expect(controller.fullAreasByServiceID["5088_77652"]?.first?.hasGeometry == true)
+        let edge = controller.edgesByServiceID["5088_77652"]
+        #expect((edge?.distanceMeters ?? 0) > 0, "inside: the client edge is the only one")
+    }
+
+    @Test func `A failed geometry fetch is remembered for the placeholder thumbnail`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        dataLoader.mock(data: Data(), statusCode: 500) { request in
+            request.url?.path.contains("/api/ondemand/service/5088_77652.json") ?? false
+        }
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .street)
+        await controller.geometryTask?.value
+
+        #expect(controller.failedGeometryServiceIDs.contains("5088_77652"))
+        #expect(controller.edgesByServiceID["5088_77652"] == nil)
     }
 }
