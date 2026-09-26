@@ -20,6 +20,23 @@ struct TripPlannerFallbackContext {
     var origin: CLLocationCoordinate2D?
     var destination: CLLocationCoordinate2D?
     var task: Task<Void, Never>?
+    /// The planner panel's delegate, held here because the panel keeps it weakly.
+    var panelObserver: TripPlannerPanelObserver?
+}
+
+/// Tells the map when the trip planner panel changes detent, so the planner
+/// card re-lays out against it (and hides at full height). Only the state
+/// callback is implemented; the panel keeps its default layout.
+final class TripPlannerPanelObserver: NSObject, FloatingPanelControllerDelegate {
+    private let onStateChange: () -> Void
+
+    init(onStateChange: @escaping () -> Void) {
+        self.onStateChange = onStateChange
+    }
+
+    func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
+        onStateChange()
+    }
 }
 
 /// Trip planner presentation. An extension rather than more of `MapViewController`
@@ -150,6 +167,9 @@ extension MapViewController {
         hostingController.view.backgroundColor = .clear
 
         let semiModal = createSemiModalPanel(childController: hostingController)
+        let panelObserver = TripPlannerPanelObserver { [weak self] in self?.layoutOnDemandDock() }
+        semiModal.delegate = panelObserver
+        tripPlannerFallback.panelObserver = panelObserver
         semiModal.addPanel(toParent: self)
         self.semiModalTripPlannerController = semiModal
         self.tripPlanner = tripPlanner
@@ -162,6 +182,7 @@ extension MapViewController {
         dismissModalController(tripPlannerHostingController)
 
         self.semiModalTripPlannerController = nil
+        tripPlannerFallback.panelObserver = nil
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
         hideTripPlannerMapView()
