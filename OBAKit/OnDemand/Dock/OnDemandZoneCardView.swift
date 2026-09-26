@@ -157,9 +157,8 @@ struct OnDemandZoneCardView: View {
         .accessibilityAddTraits(.isButton)
     }
 
-    @ViewBuilder
     private var buttonRow: some View {
-        HStack(spacing: 10) {
+        OnDemandPillRowLayout(spacing: 10) {
             if let primary = model.primary {
                 Button {
                     switch primary {
@@ -169,18 +168,21 @@ struct OnDemandZoneCardView: View {
                 } label: {
                     Label(primaryTitle(primary), systemImage: primaryIcon(primary))
                         .font(.subheadline.weight(.semibold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity, minHeight: Self.pillHeight)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(accent)
                 .frame(minHeight: Self.minimumTouchTarget)
                 .contentShape(Rectangle())
-                .layoutPriority(1.5)
             }
 
             Button { actions.openDetail(model.match, locationCheck) } label: {
                 Text(Strings.onDemandCardDetails)
                     .font(.subheadline.weight(.semibold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, minHeight: Self.pillHeight)
             }
             .buttonStyle(.bordered)
@@ -203,5 +205,54 @@ struct OnDemandZoneCardView: View {
         case .call: return "phone.fill"
         case .bookOnline: return "arrow.up.right.square"
         }
+    }
+}
+
+/// The zone card's button row: the primary pill and Details share the width
+/// 1.5 : 1, and neither is ever narrower than its label on one line while
+/// the other can keep its own. A lone pill takes the whole row.
+///
+/// Replaces a `layoutPriority` on the primary pill, which let it take the
+/// entire row and squeezed Details into a tall, empty capsule.
+struct OnDemandPillRowLayout: Layout {
+    static let primaryShare: CGFloat = 1.5
+    static let secondaryShare: CGFloat = 1
+
+    var spacing: CGFloat
+
+    /// Splits `available` between the pills. The secondary grows past its
+    /// share to its minimum only while the primary keeps its own minimum;
+    /// when both minimums cannot fit, the proportion stands and the labels wrap.
+    static func widths(available: CGFloat, spacing: CGFloat, primaryMinimum: CGFloat, secondaryMinimum: CGFloat) -> (primary: CGFloat, secondary: CGFloat) {
+        let content = max(available - spacing, 0)
+        let proportional = content * secondaryShare / (primaryShare + secondaryShare)
+        let secondary = max(proportional, min(secondaryMinimum, content - primaryMinimum))
+        return (content - secondary, secondary)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let widths = columnWidths(forWidth: proposal.width, subviews: subviews)
+        let height = zip(subviews, widths)
+            .map { subview, width in subview.sizeThatFits(ProposedViewSize(width: width, height: nil)).height }
+            .max() ?? 0
+        let width = proposal.width ?? widths.reduce(0, +) + spacing * CGFloat(max(widths.count - 1, 0))
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        for (subview, width) in zip(subviews, columnWidths(forWidth: bounds.width, subviews: subviews)) {
+            subview.place(at: CGPoint(x: x, y: bounds.midY), anchor: .leading, proposal: ProposedViewSize(width: width, height: bounds.height))
+            x += width + spacing
+        }
+    }
+
+    /// Each pill's width; a nil `width` measures the pills' one-line widths.
+    private func columnWidths(forWidth width: CGFloat?, subviews: Subviews) -> [CGFloat] {
+        let minimums = subviews.map { $0.sizeThatFits(.unspecified).width }
+        guard let width else { return minimums }
+        guard minimums.count == 2 else { return minimums.map { _ in width } }
+        let split = Self.widths(available: width, spacing: spacing, primaryMinimum: minimums[0], secondaryMinimum: minimums[1])
+        return [split.primary, split.secondary]
     }
 }
