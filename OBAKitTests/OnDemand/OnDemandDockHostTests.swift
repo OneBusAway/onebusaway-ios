@@ -31,6 +31,67 @@ final class OnDemandDockHostTests: OBATestCase {
         #expect(OnDemandDockPlacement.placement(horizontalSizeClass: .regular, isPanelFullHeight: true) == .floatingLeading(maxWidth: 360))
     }
 
+    @Test func `A full-height side panel puts the dock past the panel's trailing edge`() throws {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        let surface = UIView()
+        let dock = UIView()
+        container.addSubview(surface)
+        container.addSubview(dock)
+
+        let constraints = OnDemandDockPlacement.floatingLeading(maxWidth: OnDemandDockPlacement.floatingMaxWidth)
+            .constraints(dockView: dock, safeArea: container.safeAreaLayoutGuide, surface: surface)
+
+        let leading = try #require(constraints.first { $0.firstItem === dock && $0.firstAttribute == .leading })
+        #expect(leading.secondItem === surface)
+        #expect(leading.secondAttribute == .trailing)
+        #expect(leading.constant == OnDemandDockPlacement.gutter)
+        #expect(constraints.contains { $0.firstItem === dock && $0.firstAttribute == .width && $0.relation == .lessThanOrEqual && $0.constant == 360 })
+    }
+
+    // MARK: - Host sizing
+
+    /// The Alexandria point fixture with its one service renamed.
+    private func dockHost(serviceName: String) async throws -> OnDemandDockHostController {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        let fixture = try #require(String(data: Fixtures.loadData(file: "ondemand_services_for_location_point.json"), encoding: .utf8))
+        let renamed = fixture.replacingOccurrences(of: "\"name\":\"DOT Paratransit\",\"serviceKind\"", with: "\"name\":\"\(serviceName)\",\"serviceKind\"")
+        dataLoader.mock(data: Data(renamed.utf8)) { $0.url?.path.contains("/api/ondemand/services-for-location") ?? false }
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path.contains("/api/ondemand/service/") ?? false }
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+
+        let controller = OnDemandProbeController.make(application: application)
+        controller.mapDidSettle(center: CLLocationCoordinate2D(latitude: 38.8, longitude: -77.05), zoomLevel: .region)
+        await controller.refreshTask?.value
+        guard case .card = controller.dockState else {
+            Issue.record("expected the zone card, got \(controller.dockState)")
+            throw CancellationError()
+        }
+        return OnDemandDockHostController(controller: controller, actions: .none, serviceColors: { [:] })
+    }
+
+    @Test func `A long service name grows the docked card at phone width`() async throws {
+        let width: CGFloat = 343
+        let shortHost = try await dockHost(serviceName: "DOT Paratransit")
+        let longHost = try await dockHost(serviceName: "City of Alexandria Department of Transportation Paratransit Service")
+        let singleLine = shortHost.fittingHeight(forWidth: width)
+        #expect(singleLine > 0)
+        #expect(longHost.fittingHeight(forWidth: width) > singleLine)
+
+        // Laid out at that width, the host takes the wrapped height.
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: width, height: 800))
+        container.addSubview(longHost.view)
+        NSLayoutConstraint.activate([
+            longHost.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            longHost.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            longHost.view.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+        container.layoutIfNeeded()
+        container.layoutIfNeeded()
+        #expect(longHost.view.bounds.height > singleLine)
+        expectClose(Double(longHost.view.bounds.height), Double(longHost.fittingHeight(forWidth: width)), within: 0.5)
+    }
+
     // MARK: - Zoom out (spec 3.4 Interactions)
 
     private func area(minLon: Double, minLat: Double, maxLon: Double, maxLat: Double) throws -> ServiceArea {
