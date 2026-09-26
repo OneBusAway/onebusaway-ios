@@ -104,7 +104,11 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     /// Full geometry for a matched service, cached per `(deployment, serviceId)`.
     func fullAreas(for serviceID: String) async throws -> [ServiceArea] {
         guard let apiService = apiService() else { throw ProbeError.noAPIService }
-        return try await geometryCache.areas(deployment: apiService.baseURL.absoluteString, serviceID: serviceID, apiService: apiService)
+        let deployment = apiService.baseURL.absoluteString
+        let areas = try await geometryCache.areas(deployment: deployment, serviceID: serviceID, apiService: apiService)
+        // The reset's `cancelAll()` is not awaited, so an old fetch can still land.
+        try discardUnlessCurrent(deployment)
+        return areas
     }
 
     /// Region switch or custom URL change: cancels in-flight probes and
@@ -140,29 +144,40 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         }
         let inFlightKey = InFlightKey(isExact: exact, cacheKey: key)
         if let task = inFlight[inFlightKey] {
-            return try await task.value
+            return try await currentDeploymentResult(of: task, deployment: deployment)
         }
 
         let radius = configuration.radiusMeters
-        let task = Task { try await apiService.getOnDemandServices(near: coordinate, radiusMeters: radius, geometryDetail: .none).list }
+        let task = Task {
+            let services = try await apiService.getOnDemandServices(near: coordinate, radiusMeters: radius, geometryDetail: .none).list
+            // A reset cancels this task, but the response may already be in hand.
+            try Task.checkCancellation()
+            return services
+        }
         inFlight[inFlightKey] = task
         defer {
             // A deployment reset may have let a newer probe take this key meanwhile.
             if inFlight[inFlightKey] == task { inFlight[inFlightKey] = nil }
         }
 
-        // `getOnDemandServices(near:)` records a 404 in `onDemandSupport`
-        // itself; any other failure is transient: rethrown, nothing cached.
+        let services = try await currentDeploymentResult(of: task, deployment: deployment)
+        let entry = CacheEntry(services: services, fetchedAt: now())
+        if exact {
+            exactCache[key] = entry
+        } else {
+            probeCache[key] = entry
+        }
+        return services
+    }
+
+    /// Awaits a probe for its owner and every joiner alike, so each discards a
+    /// result whose deployment is no longer current (spec 2.7).
+    /// `getOnDemandServices(near:)` records a 404 in `onDemandSupport` itself;
+    /// any other failure is transient: rethrown, nothing cached.
+    private func currentDeploymentResult(of task: Task<[OnDemandService], Error>, deployment: String) async throws -> [OnDemandService] {
         do {
             let services = try await task.value
-            // A result for a deployment that is no longer current is discarded.
-            guard deployment == currentDeployment else { throw CancellationError() }
-            let entry = CacheEntry(services: services, fetchedAt: now())
-            if exact {
-                exactCache[key] = entry
-            } else {
-                probeCache[key] = entry
-            }
+            try discardUnlessCurrent(deployment)
             return services
         } catch let error as APIError {
             if case .requestNotFound = error, deployment == currentDeployment {
@@ -170,6 +185,10 @@ final class OnDemandProbeController: NSObject, ObservableObject {
             }
             throw error
         }
+    }
+
+    private func discardUnlessCurrent(_ deployment: String) throws {
+        guard deployment == currentDeployment else { throw CancellationError() }
     }
 
     private func resetState(for deployment: String?) {

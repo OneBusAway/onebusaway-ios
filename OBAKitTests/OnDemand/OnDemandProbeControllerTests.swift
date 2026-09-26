@@ -76,6 +76,10 @@ final class OnDemandProbeControllerTests: OBATestCase {
         request.url?.path.contains("/api/ondemand/services-for-location") ?? false
     }
 
+    private nonisolated static func isGeometry(_ request: URLRequest) -> Bool {
+        request.url?.path.contains("/api/ondemand/service/") ?? false
+    }
+
     // MARK: - Point probe
 
     @Test func `Probe requests point mode with the dock radius and no geometry`() async throws {
@@ -253,6 +257,45 @@ final class OnDemandProbeControllerTests: OBATestCase {
         _ = try await controller.probe(at: alexandriaPoint)
         _ = try await controller.probeExact(at: alexandriaPoint)
         #expect(probeRequests.count == 4)
+    }
+
+    @Test func `A deployment change discards a joined probe's result for every awaiter`() async throws {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let gate = GatedDataLoader(dataLoader, gating: Self.isProbe, holdsAfterResponse: true)
+        application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader, transport: gate)
+        let controller = makeController()
+
+        let owner = Task { try await controller.probe(at: alexandriaPoint) }
+        await gate.waitForRequest()
+        let joiner = Task { try await controller.probe(at: alexandriaPoint) }
+        for _ in 0..<10 { await Task.yield() }
+
+        application.regionsService.currentRegion = Fixtures.tampaRegion
+        controller.deploymentDidChange()
+        gate.releaseRequest()
+
+        await #expect(throws: (any Error).self) { _ = try await owner.value }
+        await #expect(throws: (any Error).self) { _ = try await joiner.value }
+        #expect(probeRequests.count == 1, "the joiner shared the held request")
+
+        _ = try await controller.probe(at: alexandriaPoint)
+        #expect(probeRequests.count == 2, "the discarded result was not cached")
+    }
+
+    @Test func `A deployment change discards an in-flight geometry fetch`() async throws {
+        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_service_alexandria.json"), matcher: Self.isGeometry)
+        let gate = GatedDataLoader(dataLoader, gating: Self.isGeometry, holdsAfterResponse: true)
+        application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader, transport: gate)
+        let controller = makeController()
+
+        let fetch = Task { try await controller.fullAreas(for: "5088_77652") }
+        await gate.waitForRequest()
+
+        application.regionsService.currentRegion = Fixtures.tampaRegion
+        controller.deploymentDidChange()
+        gate.releaseRequest()
+
+        await #expect(throws: (any Error).self) { _ = try await fetch.value }
     }
 
     @Test func `Cache keys are rounded to the requested decimals`() {
