@@ -146,6 +146,9 @@ final class AppSheetViewFactory {
         case .onDemandService(let service):
             onDemandServiceView(service: service)
 
+        case .onDemandPicker(let payload):
+            onDemandPickerView(payload: payload)
+
         case .mapSettings:
             mapSettingsView()
         }
@@ -283,6 +286,26 @@ final class AppSheetViewFactory {
     /// A zone marker's service page, hosted with its own refresh timer.
     func onDemandServiceView(service: OnDemandService) -> OnDemandServiceHost {
         OnDemandServiceHost(application: application, service: service)
+    }
+
+    /// The overlap picker (spec 3.5). A row highlights its zone through the
+    /// layers model and pushes the service page.
+    func onDemandPickerView(payload: OnDemandPickerPayload) -> OnDemandPickerView {
+        let services = payload.request.matches.map(\.service)
+        let colors = OnDemandServiceColors.resolvedColors(for: services, brand: ThemeColors.shared.brand)
+        let copy = OnDemandCopy(timeZone: services.first?.timeZone ?? .current, now: Date())
+        let model = OnDemandPickerModel(request: payload.request, locality: payload.locality, colors: colors, copy: copy)
+        return OnDemandPickerView(
+            model: model,
+            onHighlight: { [layersModel] id in layersModel.setHighlightedService(id) },
+            onSelect: { [coordinator] match, _ in coordinator.push(.onDemandService(match.service)) },
+            onClose: { [layersModel, coordinator] in
+                // The panel host clears the highlight on close (ruling F14);
+                // a row push keeps it.
+                layersModel.setHighlightedService(nil)
+                coordinator.pop()
+            }
+        )
     }
 
     func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {
