@@ -93,6 +93,14 @@ struct OnDemandPlannerFallbackView: View {
 
     /// The mock's pill height; the tappable area is grown to the 44 pt floor (Task 9 ruling).
     private static let pillHeight: CGFloat = 40
+    private static let cornerRadius: CGFloat = 22
+    /// More cards than this do not fit above the planner at half height; the
+    /// rest are one tap away behind "Show all".
+    static let maximumVisibleServices = 2
+
+    static func visibleServices(in result: OnDemandPlannerResult) -> [OnDemandServiceMatch] {
+        Array(result.qualifying.prefix(maximumVisibleServices))
+    }
 
     private var accent: Color { Color(uiColor: ThemeColors.shared.brandAccent) }
 
@@ -100,18 +108,31 @@ struct OnDemandPlannerFallbackView: View {
         OnDemandLocationCheck(source: .point(label: nil), isInside: true, locality: nil, coordinate: result.origin)
     }
 
+    /// Scrolls inside the card when the space above the planner panel is
+    /// shorter than the content (large text, a short screen).
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            sections
+            ScrollView { sections }
+        }
+        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+    }
+
+    private var sections: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(Strings.onDemandPlannerSection).font(.footnote.weight(.semibold)).foregroundStyle(.secondary).textCase(.uppercase)
 
             if result.qualifying.isEmpty && result.hiddenCount == 0 {
                 Text(Strings.onDemandPlannerEmpty).font(.subheadline).foregroundStyle(.secondary)
             } else {
-                ForEach(result.qualifying) { match in
+                ForEach(Self.visibleServices(in: result)) { match in
                     card(OnDemandPlannerCardModel(match: match, colors: colors, copy: copy))
                 }
                 Text(Strings.onDemandPlannerStatusNow).font(.caption).foregroundStyle(.secondary)
-                HStack(spacing: 4) {
+                // Stacked: side by side, the caption and the link each wrap to several lines.
+                VStack(alignment: .leading, spacing: 0) {
                     Text(Strings.onDemandPlannerCaption).font(.caption).foregroundStyle(.secondary)
                     Button(Strings.onDemandPlannerShowAll) {
                         actions.openPicker(OnDemandPickerRequest(matches: result.originInsideMatches, scope: .insideOnly, source: .point(label: nil), coordinate: result.origin))
@@ -124,8 +145,7 @@ struct OnDemandPlannerFallbackView: View {
             }
         }
         .padding(16)
-        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func card(_ model: OnDemandPlannerCardModel) -> some View {
