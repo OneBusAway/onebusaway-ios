@@ -120,6 +120,13 @@ extension MapViewController {
     /// an annotation, when some registered layer claims it.
     /// - Returns: true when a layer presented a detail surface.
     func presentLayerDetail(for annotation: MKAnnotation, in mapView: MKMapView) -> Bool {
+        if let zone = annotation as? OnDemandZoneAnnotation {
+            // The pin carries the current probe result when its service is a match (spec 3.6 item 3).
+            let check = onDemandProbeController.locationCheck(forServiceID: zone.service.id)
+            presentOnDemandServicePage(OnDemandServiceViewController(application: application, service: zone.service, locationCheck: check))
+            mapView.deselectAnnotation(annotation, animated: true)
+            return true
+        }
         for layer in mapRegionManager.mapLayers {
             guard let controller = layer.detailViewController(for: annotation) else { continue }
 

@@ -354,7 +354,7 @@ struct MapPanelRootView: View {
                 reportRentalSelected(isCluster: true)
                 coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
             case .onDemandZone(let markerID):
-                guard let route = layersModel.onDemandServiceRoute(forMarkerID: markerID) else { break }
+                guard let route = layersModel.onDemandServiceRoute(forMarkerID: markerID, locationCheck: probeController.locationCheck(forServiceID:)) else { break }
                 coordinator.push(route)
             case .tripPlannerAnnotation(let identifier):
                 // Hand the tap straight back to OTPKit, which owns what a pin on
@@ -479,7 +479,18 @@ struct MapPanelRootView: View {
             onDemandDock
         }
         .onChange(of: coordinator.routeStack.map(\.id) + coordinator.stackedRoutes.map(\.id)) { _, _ in
+            // The focus hides the dock, and leaving the bar drops the highlight;
+            // a zone detail page keeps it until the page closes (spec 2.3, ruling F15).
+            let heldHighlight = probeController.highlightedServiceID
             probeController.setSurfaceFocus(coordinator.currentRoute != .home || !coordinator.stackedRoutes.isEmpty)
+            if isOnDemandDetailShown {
+                probeController.highlightedServiceID = heldHighlight
+            }
+        }
+        .onChange(of: isOnDemandDetailShown) { wasShown, isShown in
+            guard wasShown, !isShown, !isOnDemandPickerShown else { return }
+            probeController.highlightedServiceID = nil
+            layersModel.setHighlightedService(nil)
         }
         .onChange(of: sheetHeight) { _, newValue in
             probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
@@ -950,6 +961,24 @@ extension MapPanelRootView {
 
     // MARK: - On-demand dock
 
+    /// Whether a zone detail page is on the sheet stack (spec 2.3 highlight).
+    private var isOnDemandDetailShown: Bool {
+        (coordinator.routeStack + coordinator.stackedRoutes).contains { route in
+            if case .onDemandService = route { return true }
+            return false
+        }
+    }
+
+    /// The picker owns the highlight while it is on the stack: popping its
+    /// detail back to it keeps the row's highlight, and closing it clears
+    /// (ruling F14), as in the classic shell.
+    private var isOnDemandPickerShown: Bool {
+        (coordinator.routeStack + coordinator.stackedRoutes).contains { route in
+            if case .onDemandPicker = route { return true }
+            return false
+        }
+    }
+
     /// Spec 2.4: above the sheet, 16 pt gutters in compact width, at most
     /// 360 pt bottom-leading in regular width; its height lifts the controls.
     private var onDemandDock: some View {
@@ -972,7 +1001,14 @@ extension MapPanelRootView {
 
     private var onDemandDockActions: OnDemandDockActions {
         OnDemandDockActions(
-            openDetail: { match, _ in coordinator.push(.onDemandService(match.service)) },
+            openDetail: { match, check in
+                // The dock's check has no locality; resolve it within the 1 s bound.
+                Task {
+                    let locality = await OnDemandLocalityResolver().locality(for: check.coordinate)
+                    let resolved = OnDemandLocationCheck(source: check.source, isInside: check.isInside, locality: locality, coordinate: check.coordinate)
+                    coordinator.push(.onDemandService(match.service, locationCheck: resolved))
+                }
+            },
             openPicker: { request in
                 Task {
                     let locality = await OnDemandLocalityResolver().locality(for: request.coordinate)

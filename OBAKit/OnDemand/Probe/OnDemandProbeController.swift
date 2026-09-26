@@ -129,6 +129,14 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         return OnDemandLocationCheck(source: probeSource, isInside: matches.contains(where: \.isInside), locality: nil, coordinate: probePoint)
     }
 
+    /// The current probe point's facts for one service, for a detail page
+    /// opened from that service's region pin (spec 3.6 item 3); nil when the
+    /// service is not in the match list, so the page omits the location row.
+    func locationCheck(forServiceID serviceID: String) -> OnDemandLocationCheck? {
+        guard let probePoint, let match = matches.first(where: { $0.id == serviceID }) else { return nil }
+        return OnDemandLocationCheck(source: probeSource, isInside: match.isInside, locality: nil, coordinate: probePoint)
+    }
+
     init(
         apiService: @escaping () -> RESTAPIService?,
         geometryCache: OnDemandGeometryCache,
