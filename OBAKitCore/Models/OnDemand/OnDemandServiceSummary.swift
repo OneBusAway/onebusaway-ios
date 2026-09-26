@@ -75,7 +75,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             nextChangeInstant = [outcome.nextChangeInstant, formatters.nextMidnight].compactMap { $0 }.min()
         }
 
-        let contact = service.rules.lazy.compactMap { service.bookingRule(id: $0.pickupBookingRuleID) }.first
+        let contact = service.contactBookingRule
         phoneNumber = contact?.phoneNumber
         phoneURL = contact?.phoneNumber?.telephoneURL
         bookingURL = contact?.bookingURL
