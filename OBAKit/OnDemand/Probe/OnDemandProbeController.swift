@@ -114,6 +114,9 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     private var riderLocation: CLLocation?
     private var lastProbePoint: CLLocationCoordinate2D?
     private var lastSuccessfulProbePoint: CLLocationCoordinate2D?
+    /// What that probe returned, so a failure nearby re-evaluates it at the
+    /// failure time instead of keeping matches with a boundary in the past.
+    private var lastSuccessfulServices: [OnDemandService] = []
     private(set) var isLayerEnabled = true
     private var hasSurfaceFocus = false
     private var isMapMostlyCovered = false
@@ -220,6 +223,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         edgesByServiceID = [:]
         lastProbePoint = nil
         lastSuccessfulProbePoint = nil
+        lastSuccessfulServices = []
         highlightedServiceID = nil
         activePlannerResult = nil
         setDockState(.hidden)
@@ -309,9 +313,9 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         refreshTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let matches = try await probe(at: point.coordinate, allowStale: allowStale)
+                let services = try await services(at: point.coordinate, decimals: configuration.probeKeyDecimals, exact: false, allowStale: allowStale)
                 guard !Task.isCancelled else { return }
-                didProbe(point, matches: matches)
+                didProbe(point, services: services)
             } catch {
                 guard !Task.isCancelled, !error.isCancellation else { return }
                 lastProbePoint = point.coordinate
@@ -320,9 +324,11 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         }
     }
 
-    private func didProbe(_ point: (coordinate: CLLocationCoordinate2D, source: ProbeSource), matches: [OnDemandServiceMatch]) {
+    private func didProbe(_ point: (coordinate: CLLocationCoordinate2D, source: ProbeSource), services: [OnDemandService]) {
+        let matches = OnDemandServiceMatch.matches(from: services, now: now())
         lastProbePoint = point.coordinate
         lastSuccessfulProbePoint = point.coordinate
+        lastSuccessfulServices = services
         probePoint = point.coordinate
         probeSource = point.source
         self.matches = matches
@@ -332,7 +338,9 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     }
 
     /// Spec 2.1: any error other than a 404 keeps the last state only when
-    /// the new probe point is within 100 m of the one that produced it.
+    /// the new probe point is within 100 m of the one that produced it. The
+    /// kept services are re-evaluated now, so their status is current and
+    /// the next boundary refresh lies in the future.
     private func handleProbeFailure(at coordinate: CLLocationCoordinate2D) {
         if isUnsupported {
             matches = []
@@ -341,9 +349,12 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         }
         if let lastSuccessfulProbePoint,
            Self.distanceMeters(lastSuccessfulProbePoint, coordinate) <= configuration.movementThresholdMeters {
+            matches = OnDemandServiceMatch.matches(from: lastSuccessfulServices, now: now())
+            updateEdges()
             deriveDockState()
             return
         }
+        lastSuccessfulServices = []
         matches = []
         edgesByServiceID = [:]
         // Derived rather than set, so a planner card outlives the failure.
@@ -417,12 +428,16 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         scheduleBoundaryRefresh()
     }
 
-    /// Trigger 4: re-evaluate one second after the earliest `nextChangeInstant`.
+    /// Trigger 4: re-evaluate one second after the earliest future
+    /// `nextChangeInstant`. A past instant is skipped: it can only come from
+    /// state that has not been re-evaluated, and would re-arm every second.
     private func scheduleBoundaryRefresh() {
         boundaryTask?.cancel()
         boundaryTask = nil
-        guard let nextChange = matches.compactMap(\.availability.nextChangeInstant).min() else { return }
-        let delay = max(nextChange.timeIntervalSince(now()), 0) + 1
+        let currentTime = now()
+        let futureChanges = matches.compactMap(\.availability.nextChangeInstant).filter { $0 > currentTime }
+        guard let nextChange = futureChanges.min() else { return }
+        let delay = nextChange.timeIntervalSince(currentTime) + 1
         let sleep = sleep
         boundaryTask = Task { [weak self] in
             do {

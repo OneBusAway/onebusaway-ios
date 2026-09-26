@@ -531,6 +531,39 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(probeRequests.count == 1)
     }
 
+    @Test func `A failed boundary refresh at a new cell probes once`() async {
+        mockProbe(file: "ondemand_services_for_location_point_near.json")
+        let controller = makeController()
+        await settle(controller, at: charlevoixPoint, level: .street)
+        // ~67 m north: under the movement threshold, so no probe, but a new
+        // 3-decimal cell that the boundary refresh cannot answer from cache.
+        await settle(controller, at: CLLocationCoordinate2D(latitude: 45.3006, longitude: -85.2), level: .street)
+        #expect(probeRequests.count == 1)
+
+        await poll(until: { self.clock.sleeperCount >= 1 }, "the boundary task should be sleeping until the cutoff")
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(data: Data(), statusCode: 500, matcher: Self.isProbe)
+            staging.mock(data: Data(), statusCode: 500, matcher: Self.isGeometry)
+        }
+        clock.advance(by: .seconds(62)) // 15:10 cutoff + 1 s
+        await controller.boundaryTask?.value
+        await controller.refreshTask?.value
+        #expect(probeRequests.count == 2, "the boundary refresh missed the cache and got the 500")
+        if case .opensAt = controller.matches.first?.availability.status { } else {
+            Issue.record("the kept matches should be re-evaluated at the failure time")
+        }
+
+        // A kept boundary in the past would re-arm a one-second refresh.
+        await poll(until: { self.clock.sleeperCount >= 1 }, "the next boundary should be scheduled")
+        clock.advance(by: .seconds(2))
+        // A retry would land within a few scheduler turns; give it a second of wall time.
+        for _ in 0..<50 where probeRequests.count == 2 {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        await controller.refreshTask?.value
+        #expect(probeRequests.count == 2, "a failed boundary refresh must not retry every second")
+    }
+
     @Test func `A 404 hides the dock`() async {
         mockProbe(statusCode: 404)
         let controller = makeController()
