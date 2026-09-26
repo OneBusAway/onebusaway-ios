@@ -53,7 +53,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             presentingController: { nil },
             coordinator: coordinator,
             searchDisplayModel: displayModel,
-            stopsObserver: stopsObserver ?? MapStopsObserver(application: application)
+            stopsObserver: stopsObserver ?? MapStopsObserver(application: application),
+            onDemandProbeController: OnDemandProbeController.make(application: application)
         )
     }
 

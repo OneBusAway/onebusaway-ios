@@ -41,6 +41,10 @@ final class AppSheetViewFactory {
     let coordinator: SheetCoordinator<AppSheetRoute>
     let searchDisplayModel: MapSearchDisplayModel
     let stopsObserver: MapStopsObserver
+    /// The dock's probe controller: the picker writes its highlight, which the
+    /// panel mirrors onto the zone layer, so bar pages and picker rows share
+    /// one source of truth.
+    let onDemandProbeController: OnDemandProbeController
 
     /// Nothing here is defaulted, on purpose, and for two separate reasons.
     ///
@@ -49,12 +53,13 @@ final class AppSheetViewFactory {
     /// it, so a call site that omitted it would build a factory whose sheet
     /// renders correctly and then silently ignores every button on it.
     ///
-    /// `coordinator`, `searchDisplayModel`, and `stopsObserver`: they must be the
-    /// same instances the hosting `MapPanelRootView` observes. A factory built with
-    /// its own private copies would push routes onto a coordinator nobody is
-    /// watching, draw into a display model nobody renders, or observe a different
-    /// stop set than the map is showing — silently, with the search sheet simply
-    /// appearing to do nothing.
+    /// `coordinator`, `searchDisplayModel`, `stopsObserver`, and
+    /// `onDemandProbeController`: they must be the same instances the hosting
+    /// `MapPanelRootView` observes. A factory built with its own private copies
+    /// would push routes onto a coordinator nobody is watching, draw into a
+    /// display model nobody renders, observe a different stop set than the map
+    /// is showing, or highlight a zone the map never hears about — silently,
+    /// with the search sheet simply appearing to do nothing.
     init(
         application: Application,
         mapViewModel: MapViewModel,
@@ -64,7 +69,8 @@ final class AppSheetViewFactory {
         presentingController: @escaping () -> UIViewController?,
         coordinator: SheetCoordinator<AppSheetRoute>,
         searchDisplayModel: MapSearchDisplayModel,
-        stopsObserver: MapStopsObserver
+        stopsObserver: MapStopsObserver,
+        onDemandProbeController: OnDemandProbeController
     ) {
         self.application = application
         self.mapViewModel = mapViewModel
@@ -75,6 +81,7 @@ final class AppSheetViewFactory {
         self.coordinator = coordinator
         self.searchDisplayModel = searchDisplayModel
         self.stopsObserver = stopsObserver
+        self.onDemandProbeController = onDemandProbeController
     }
 
     /// Built once and shared: the search sheet and the results sheet must route a
@@ -289,7 +296,7 @@ final class AppSheetViewFactory {
     }
 
     /// The overlap picker (spec 3.5). A row highlights its zone through the
-    /// layers model and pushes the service page.
+    /// probe controller and pushes the service page.
     func onDemandPickerView(payload: OnDemandPickerPayload) -> OnDemandPickerView {
         let timeZone = payload.request.matches.first?.service.timeZone ?? .current
         let copy = OnDemandCopy(timeZone: timeZone, now: Date())
@@ -301,12 +308,12 @@ final class AppSheetViewFactory {
         )
         return OnDemandPickerView(
             model: model,
-            onHighlight: { [layersModel] id in layersModel.setHighlightedService(id) },
+            onHighlight: { [onDemandProbeController] id in onDemandProbeController.highlightedServiceID = id },
             onSelect: { [coordinator] match, _ in coordinator.push(.onDemandService(match.service)) },
-            onClose: { [layersModel, coordinator] in
+            onClose: { [onDemandProbeController, coordinator] in
                 // The panel host clears the highlight on close (ruling F14);
                 // a row push keeps it.
-                layersModel.setHighlightedService(nil)
+                onDemandProbeController.highlightedServiceID = nil
                 coordinator.pop()
             }
         )

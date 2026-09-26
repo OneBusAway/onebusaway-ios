@@ -49,7 +49,8 @@ public final class MapPanelRootController: UIViewController {
             presentingController: { [weak bridge] in bridge?.topmostController() },
             coordinator: coordinator,
             searchDisplayModel: displayModel,
-            stopsObserver: stopsObserver
+            stopsObserver: stopsObserver,
+            onDemandProbeController: probeController
         )
         let rootView = MapPanelRootView(
             application: application,
