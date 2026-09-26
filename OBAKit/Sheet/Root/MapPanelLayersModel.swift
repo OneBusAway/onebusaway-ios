@@ -171,6 +171,12 @@ import OTPKit
         onDemandMarkers = boundOnDemandLayer?.annotations ?? []
     }
 
+    /// The on-demand layer's drawn zone colours by service id, so a picker
+    /// row's icon matches the zone it highlights.
+    var onDemandServiceColors: [String: UIColor] {
+        boundOnDemandLayer?.serviceColors ?? [:]
+    }
+
     /// Spec 2.3 Highlight, driven by the dock: the bar page or picker row.
     func setHighlightedService(_ serviceID: String?) {
         boundOnDemandLayer?.setHighlightedService(serviceID)

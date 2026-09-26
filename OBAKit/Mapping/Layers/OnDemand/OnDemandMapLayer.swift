@@ -67,9 +67,18 @@ import OBAKitCore
     private var drawnByServiceID: [String: DrawnService] = [:]
 
     private struct DrawnService {
+        let color: UIColor
         let overlays: [MKPolygon]
         let halos: [MKPolygon]
         let annotations: [OnDemandZoneAnnotation]
+    }
+
+    /// The colour each drawn service's zone carries, by service id. Dock and
+    /// picker surfaces read this rather than resolving over their own subset:
+    /// the collision palette goes by id order across every fetched service,
+    /// so a subset can resolve differently from the zone it highlights.
+    var serviceColors: [String: UIColor] {
+        drawnByServiceID.mapValues(\.color)
     }
 
     /// Called after the drawn zones or their styles change, for a host with no
@@ -376,7 +385,7 @@ import OBAKitCore
         if let coordinate = OnDemandGeometry.labelPoint(areas: service.areas) ?? service.areas.first?.bbox.center {
             markers.append(OnDemandZoneAnnotation(service: service, coordinate: coordinate, color: color))
         }
-        return DrawnService(overlays: polygons, halos: halos, annotations: markers)
+        return DrawnService(color: color, overlays: polygons, halos: halos, annotations: markers)
     }
 
     private func removeAllFromMap() {

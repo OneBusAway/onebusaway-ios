@@ -291,10 +291,14 @@ final class AppSheetViewFactory {
     /// The overlap picker (spec 3.5). A row highlights its zone through the
     /// layers model and pushes the service page.
     func onDemandPickerView(payload: OnDemandPickerPayload) -> OnDemandPickerView {
-        let services = payload.request.matches.map(\.service)
-        let colors = OnDemandServiceColors.resolvedColors(for: services, brand: ThemeColors.shared.brand)
-        let copy = OnDemandCopy(timeZone: services.first?.timeZone ?? .current, now: Date())
-        let model = OnDemandPickerModel(request: payload.request, locality: payload.locality, colors: colors, copy: copy)
+        let timeZone = payload.request.matches.first?.service.timeZone ?? .current
+        let copy = OnDemandCopy(timeZone: timeZone, now: Date())
+        let model = OnDemandPickerModel(
+            request: payload.request,
+            locality: payload.locality,
+            colors: layersModel.onDemandServiceColors,
+            copy: copy
+        )
         return OnDemandPickerView(
             model: model,
             onHighlight: { [layersModel] id in layersModel.setHighlightedService(id) },
