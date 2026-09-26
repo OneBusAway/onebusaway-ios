@@ -197,6 +197,29 @@ final class OnDemandDockHostTests: OBATestCase {
         #expect(spy.rects.count == 1)
     }
 
+    // MARK: - Layer flag on a cold launch
+
+    /// With no stored preference, `bool(forKey:)` reads false until the
+    /// registrar registers the layer's `true` default; the dock must read the
+    /// flag after that, or the card and bar never show until the tile is toggled.
+    @Test func `A fresh launch with no stored layer preference enables the dock`() {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
+            request.url?.path.contains("stops-for-location") ?? false
+        }
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let key = MapRegionManager.mapLayerDefaultsKey(id: OnDemandMapLayer.layerID)
+        application.userDefaults.removeObject(forKey: key)
+        #expect(application.userDefaults.object(forKey: key) == nil, "precondition: no stored preference")
+
+        let mapController = MapViewController(application: application)
+        mapController.loadViewIfNeeded()
+
+        #expect(mapController.onDemandProbeController.isLayerEnabled)
+    }
+
     // MARK: - Factory
 
     @Test func `The application factory wires location and region delegates`() {
