@@ -226,7 +226,13 @@ final class OnDemandDockHostTests: OBATestCase {
         let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
         let key = MapRegionManager.mapLayerDefaultsKey(id: OnDemandMapLayer.layerID)
         application.userDefaults.removeObject(forKey: key)
-        #expect(application.userDefaults.object(forKey: key) == nil, "precondition: no stored preference")
+        // The registration domain is process-wide, so an earlier test's
+        // registration of the layer's default would otherwise mask the bug.
+        let defaults = application.userDefaults
+        var registered = defaults.volatileDomain(forName: UserDefaults.registrationDomain)
+        registered.removeValue(forKey: key)
+        defaults.setVolatileDomain(registered, forName: UserDefaults.registrationDomain)
+        #expect(defaults.object(forKey: key) == nil, "precondition: no stored preference")
 
         let mapController = MapViewController(application: application)
         mapController.loadViewIfNeeded()
