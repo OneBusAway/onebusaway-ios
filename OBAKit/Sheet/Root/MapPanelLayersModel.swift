@@ -171,6 +171,11 @@ import OTPKit
         onDemandMarkers = boundOnDemandLayer?.annotations ?? []
     }
 
+    /// Spec 2.3 Highlight, driven by the dock: the bar page or picker row.
+    func setHighlightedService(_ serviceID: String?) {
+        boundOnDemandLayer?.setHighlightedService(serviceID)
+    }
+
     /// Records the viewport geometry clustering needs and recomputes.
     func updateViewport(mapRect: MKMapRect, mapSize: CGSize) {
         lastMapRect = mapRect

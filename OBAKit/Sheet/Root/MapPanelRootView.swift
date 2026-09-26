@@ -416,14 +416,15 @@ struct MapPanelRootView: View {
         }
     }
 
-    /// Zones under everything else, as on the UIKit map, where they are
-    /// overlays and markers at low display priority.
+    /// Zones under everything else, as on the UIKit map. Halos come first in
+    /// `onDemandZones`, so they draw beneath the strokes; markers are empty at
+    /// street level.
     @MapContentBuilder
     private var onDemandZoneContent: some MapContent {
         ForEach(layersModel.onDemandZones) { zone in
             MapPolygon(zone.polygon)
-                .foregroundStyle(Color(uiColor: zone.color).opacity(OnDemandMapLayer.zoneFillAlpha))
-                .stroke(Color(uiColor: zone.color), lineWidth: OnDemandMapLayer.zoneLineWidth)
+                .foregroundStyle(Color(uiColor: zone.color).opacity(zone.style.fillAlpha))
+                .stroke(Color(uiColor: zone.color).opacity(zone.style.strokeAlpha), lineWidth: zone.style.lineWidth)
                 .mapOverlayLevel(level: .aboveRoads)
         }
         ForEach(layersModel.onDemandMarkers) { marker in
