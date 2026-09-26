@@ -423,7 +423,7 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let closestStopIdx = closestStopIndex(in: tripDetails)
-        let userStopIndex = TripStopListModel.userStopIndex(
+        let riderStops = TripStopListModel.riderStops(
             in: tripDetails.stopTimes,
             arrivalDeparture: arrivalDeparture,
             sharedDestinationStopID: parentTripViewController?.destinationStopID
@@ -437,7 +437,8 @@ class TripFloatingPanelController: UIViewController,
                 arrivalDeparture: arrivalDeparture,
                 stopIndex: index,
                 closestStopIndex: closestStopIdx,
-                userStopIndex: userStopIndex,
+                userStopIndex: riderStops.userStopIndex,
+                boardingMarkerIndex: riderStops.boardingMarkerIndex,
                 onSelectAction: selectTripStopAction
             ).typeErased
         }
@@ -465,13 +466,7 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let arrivalDeparture = tripConvertible?.arrivalDeparture
-        // Resolved without the shared destination, this is the boarding stop:
-        // the row `arrivalDepartureMinutes` counts down to.
-        let boardingStopIndex = TripStopListModel.userStopIndex(
-            in: tripDetails.stopTimes,
-            arrivalDeparture: arrivalDeparture
-        )
-        let userStopIndex = TripStopListModel.userStopIndex(
+        let riderStops = TripStopListModel.riderStops(
             in: tripDetails.stopTimes,
             arrivalDeparture: arrivalDeparture,
             sharedDestinationStopID: parentTripViewController?.destinationStopID
@@ -480,8 +475,8 @@ class TripFloatingPanelController: UIViewController,
         guard let vm = TripProgressViewModel(
             closestStopIndex: currentIndex,
             totalStops: tripDetails.stopTimes.count,
-            userStopIndex: userStopIndex,
-            boardingStopIndex: boardingStopIndex,
+            userStopIndex: riderStops.userStopIndex,
+            boardingStopIndex: riderStops.boardingIndex,
             arrivalDepartureMinutes: arrivalDeparture?.arrivalDepartureMinutes
         ) else {
             tripProgressWrapper.isHidden = true

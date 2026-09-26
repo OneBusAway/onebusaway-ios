@@ -12,7 +12,7 @@ import OBAKitCore
 
 /// The line/squircle adornment on the leading side of a cell on the `TripFloatingPanelController`.
 ///
-/// Depicts if the associated stop is the user's destination or the current location of the transit vehicle.
+/// Depicts if the associated stop is the user's destination, where the rider boarded, or the current location of the transit vehicle.
 class TripSegmentView: UIView {
 
     private let lineWidth: CGFloat = 1.0
@@ -51,10 +51,12 @@ class TripSegmentView: UIView {
     }
 
     private var isUserDestination: Bool = false
+    private var isBoardingStop: Bool = false
     private var isCurrentVehicleLocation: Bool = false
 
-    public func setDestinationStatus(user: Bool, vehicle: Bool) {
+    public func setDestinationStatus(user: Bool, vehicle: Bool, boarding: Bool) {
         isUserDestination = user
+        isBoardingStop = boarding
         isCurrentVehicleLocation = vehicle
         setAccessibilityLabel()
         setNeedsDisplay()
@@ -134,6 +136,10 @@ class TripSegmentView: UIView {
             drawUserDestinationBadge(frame: bezierFrame, context: context)
         }
 
+        if isBoardingStop {
+            drawBoardingBadge(frame: bezierFrame, context: context)
+        }
+
         bezierPath.stroke()
 
         // Bottom line: past → gray, current/future → brand color
@@ -143,10 +149,24 @@ class TripSegmentView: UIView {
         bottomLine.fill()
     }
 
+    /// Bottom-right quadrant of the squircle.
     private func drawUserDestinationBadge(frame: CGRect, context: CGContext?) {
-        context?.saveGState()
-
         let miniFrame = CGRect(x: frame.midX - lineWidth, y: frame.midY - lineWidth, width: halfRadius + lineWidth, height: halfRadius + lineWidth)
+        drawRiderBadge(in: miniFrame, context: context)
+    }
+
+    /// Top-left quadrant: the destination badge's mirror image. Read down the
+    /// timeline, the rider steps on at the top of the ridden segment and off at
+    /// the bottom, and the list already puts the boarding row above the exit —
+    /// so the same glyph in the opposite corner reads as the other end of the
+    /// same journey.
+    private func drawBoardingBadge(frame: CGRect, context: CGContext?) {
+        let miniFrame = CGRect(x: frame.minX, y: frame.minY, width: halfRadius + lineWidth, height: halfRadius + lineWidth)
+        drawRiderBadge(in: miniFrame, context: context)
+    }
+
+    private func drawRiderBadge(in miniFrame: CGRect, context: CGContext?) {
+        context?.saveGState()
 
         lineColor.setFill()
         ThemeColors.shared.systemBackground.setStroke()
@@ -176,6 +196,10 @@ class TripSegmentView: UIView {
             flags.append(OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "Voiceover text explaining that this stop is the user's destination"))
         }
 
+        if isBoardingStop {
+            flags.append(OBALoc("trip_stop.boarding_stop.accessibility_label", value: "Boarding stop", comment: "Voiceover text explaining that this stop is where the rider boarded the vehicle"))
+        }
+
         if isCurrentVehicleLocation {
             flags.append(OBALoc("trip_stop.vehicle_location.accessibility_label", value: "Vehicle is here", comment: "Voiceover text explaining that the vehicle is currently at this stop"))
         }
@@ -194,9 +218,9 @@ struct TripSegmentView_Previews: PreviewProvider {
     private static let width: CGFloat = 64
     private static let height: CGFloat = 44
 
-    private static func tripSegmentView(user: Bool, vehicle: Bool) -> TripSegmentView {
+    private static func tripSegmentView(user: Bool, vehicle: Bool, boarding: Bool = false) -> TripSegmentView {
         let view = TripSegmentView()
-        view.setDestinationStatus(user: user, vehicle: vehicle)
+        view.setDestinationStatus(user: user, vehicle: vehicle, boarding: boarding)
         return view
     }
 
@@ -216,6 +240,7 @@ struct TripSegmentView_Previews: PreviewProvider {
             preview(for: tripSegmentView(user: true, vehicle: false), "User")
             preview(for: tripSegmentView(user: false, vehicle: true), "Vehicle")
             preview(for: tripSegmentView(user: true, vehicle: true), "User & Vehicle")
+            preview(for: tripSegmentView(user: false, vehicle: false, boarding: true), "Boarding")
         }
         .previewLayout(.sizeThatFits)
         .padding()

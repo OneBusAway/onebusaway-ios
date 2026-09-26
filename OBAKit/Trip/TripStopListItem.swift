@@ -67,6 +67,12 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
     /// Is this the trip stop where the user is intending to go?
     let isUserDestination: Bool
 
+    /// Where the rider got on, once `isUserDestination` has moved to the stop a
+    /// shared link named as their exit. On every other trip the boarding stop
+    /// *is* the `isUserDestination` row and this stays false: one row, one
+    /// marker. See `TripStopListModel.RiderStops.boardingMarkerIndex`.
+    let isBoardingStop: Bool
+
     /// Whether this stop is in the past, present, or future relative to the vehicle position.
     let temporalState: TripStopTemporalState
 
@@ -90,6 +96,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         stopIndex: Int,
         closestStopIndex: Int?,
         userStopIndex: Int?,
+        boardingMarkerIndex: Int?,
         onSelectAction: OBAListViewAction<TripStopViewModel>?
     ) {
         self.stopTime = stopTime
@@ -97,6 +104,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         stop = stopTime.stop
 
         isUserDestination = userStopIndex.map { stopIndex == $0 } ?? false
+        isBoardingStop = boardingMarkerIndex.map { stopIndex == $0 } ?? false
 
         // Derive isCurrentVehicleLocation from the same closestStopIndex used for
         // temporalState so both properties always agree on which stop is "current".
@@ -116,6 +124,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         hasher.combine(id)
         hasher.combine(isCurrentVehicleLocation)
         hasher.combine(isUserDestination)
+        hasher.combine(isBoardingStop)
         hasher.combine(temporalState)
         hasher.combine(title)
         hasher.combine(date)
@@ -126,6 +135,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         return lhs.id == rhs.id &&
             lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
             lhs.isUserDestination == rhs.isUserDestination &&
+            lhs.isBoardingStop == rhs.isBoardingStop &&
             lhs.temporalState == rhs.temporalState &&
             lhs.title == rhs.title &&
             lhs.date == rhs.date &&
@@ -241,7 +251,7 @@ final class TripStopCell: OBAListViewCell {
         timeLabel.text = config.formatters?.timeFormatter.string(from: viewModel.date) ?? ""
         tripSegmentView.routeType = viewModel.routeType
         tripSegmentView.temporalState = viewModel.temporalState
-        tripSegmentView.setDestinationStatus(user: viewModel.isUserDestination, vehicle: viewModel.isCurrentVehicleLocation)
+        tripSegmentView.setDestinationStatus(user: viewModel.isUserDestination, vehicle: viewModel.isCurrentVehicleLocation, boarding: viewModel.isBoardingStop)
 
         applyTemporalStateStyling(viewModel)
 
@@ -261,6 +271,10 @@ final class TripStopCell: OBAListViewCell {
 
         if viewModel.isUserDestination {
             accessibilityValueFlags.append(OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "Voiceover text explaining that this stop is the user's destination"))
+        }
+
+        if viewModel.isBoardingStop {
+            accessibilityValueFlags.append(OBALoc("trip_stop.boarding_stop.accessibility_label", value: "Boarding stop", comment: "Voiceover text explaining that this stop is where the rider boarded the vehicle"))
         }
 
         if viewModel.isCurrentVehicleLocation {
