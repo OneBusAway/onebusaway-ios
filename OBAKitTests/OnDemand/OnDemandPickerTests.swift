@@ -9,6 +9,7 @@
 
 import CoreLocation
 import Foundation
+import MapKit
 import SwiftUI
 import Testing
 import UIKit
@@ -145,6 +146,65 @@ final class OnDemandPickerTests: OBATestCase {
         picker.select(match(dialARide), check: OnDemandLocationCheck(source: .rider, isInside: true, locality: "Boyne City", coordinate: probe))
         #expect(picker.viewControllers.count == 2)
         #expect(picker.viewControllers.last is OnDemandServiceViewController)
+    }
+
+    /// Ruling F14: a row push keeps the highlight the row set; only the
+    /// sheet's dismissal clears it.
+    @Test func `Classic picker clears the highlight on dismissal, not on a row push`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let dialARide = try charlevoix().first { $0.id == "CC_CC1" }!
+        var highlights: [String?] = []
+        let picker = OnDemandPickerViewController(application: application, model: try model([match(dialARide)], scope: .insideOnly), onHighlight: { highlights.append($0) })
+
+        picker.select(match(dialARide), check: OnDemandLocationCheck(source: .rider, isInside: true, locality: nil, coordinate: probe))
+        #expect(highlights.isEmpty)
+
+        picker.viewDidDisappear(false)
+        #expect(highlights == [nil])
+    }
+
+    @Test func `Panel picker keeps the highlight on a row push and clears it on close`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let layersModel = MapPanelLayersModel(application: application)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let factory = AppSheetViewFactory(
+            application: application,
+            mapViewModel: MapViewModel(application: application),
+            layersModel: layersModel,
+            onPresentTrip: { _ in },
+            onPresentVehicleTrip: { _ in },
+            presentingController: { nil },
+            coordinator: coordinator,
+            searchDisplayModel: MapSearchDisplayModel(),
+            stopsObserver: MapStopsObserver(application: application)
+        )
+        let street = MKMapRect(
+            origin: MKMapPoint(CLLocationCoordinate2D(latitude: 38.83, longitude: -77.05)),
+            size: MKMapSize(width: 30_000, height: 30_000)
+        )
+        layersModel.viewportDidChange(street)
+        await layersModel.registrar.onDemandLayer?.fetchTask?.value
+        #expect(Array(layersModel.onDemandServiceColors.keys) == ["5088_77652"])
+        let isHighlighted = { layersModel.onDemandZones.contains { $0.style == .street(emphasis: .highlighted) } }
+
+        let payload = try dialARidePayload()
+        coordinator.push(.onDemandPicker(payload))
+        let view = factory.onDemandPickerView(payload: payload)
+        layersModel.setHighlightedService("5088_77652")
+
+        view.onSelect(view.model.rows[0].match, view.model.locationCheck(for: view.model.rows[0].match))
+        #expect(isHighlighted())
+        #expect(coordinator.stackedRoute(at: 1) == .onDemandService(view.model.rows[0].match.service))
+
+        coordinator.pop()
+        view.onClose()
+        #expect(!isHighlighted())
+        #expect(coordinator.stackedRoute(at: 0) == nil)
     }
 
     @Test func `Locality lookup gives up after the timeout when the geocoder never answers`() async {
