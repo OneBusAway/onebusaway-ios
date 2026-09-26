@@ -36,10 +36,19 @@ final class OnDemandPickerTests: OBATestCase {
 
     private var copy: OnDemandCopy { OnDemandCopy(timeZone: detroit, locale: Locale(identifier: "en_US"), now: now) }
 
-    private func model(_ matches: [OnDemandServiceMatch], scope: OnDemandPickerScope, source: ProbeSource = .rider, locality: String? = "Boyne City") throws -> OnDemandPickerModel {
-        let services = try charlevoix()
+    /// The colours the layer draws: resolved over every fetched service.
+    private func layerColors() throws -> [String: UIColor] {
+        OnDemandServiceColors.resolvedColors(for: try charlevoix(), brand: ThemeColors.shared.brand)
+    }
+
+    private func model(_ matches: [OnDemandServiceMatch], scope: OnDemandPickerScope, source: ProbeSource = .rider, locality: String? = "Boyne City", colors: [String: UIColor]? = nil) throws -> OnDemandPickerModel {
         let request = OnDemandPickerRequest(matches: matches, scope: scope, source: source, coordinate: probe)
-        return OnDemandPickerModel(request: request, locality: locality, colors: OnDemandServiceColors.resolvedColors(for: services, brand: ThemeColors.shared.brand), copy: copy)
+        return OnDemandPickerModel(request: request, locality: locality, colors: try colors ?? layerColors(), copy: copy)
+    }
+
+    private func dialARidePayload(source: ProbeSource = .rider, locality: String? = nil) throws -> OnDemandPickerPayload {
+        let dialARide = try charlevoix().first { $0.id == "CC_CC1" }!
+        return OnDemandPickerPayload(request: OnDemandPickerRequest(matches: [match(dialARide)], scope: .insideOnly, source: source, coordinate: probe), locality: locality)
     }
 
     @Test func `Rows follow the sort and the inside-only scope drops nearby matches`() throws {
@@ -75,12 +84,26 @@ final class OnDemandPickerTests: OBATestCase {
         // `DateFormatter` puts a narrow no-break space (U+202F) before AM/PM.
         #expect(row.statusLine?.replacingOccurrences(of: "\u{202F}", with: " ") == "Open · until 4:40 PM")
         #expect(row.detailLine == "\(OnDemandCopy.zoneCount(1)) · Same-day booking", "Charlevoix's areas are unnamed")
-        #expect(row.color == ThemeColors.shared.brand)
+    }
+
+    /// The collision palette goes by id order across every fetched service,
+    /// so resolving over the picker's subset would recolour CC_CC4 and its
+    /// icon would no longer match the zone the row highlights.
+    @Test func `Rows take the layer's colours, not a resolution over the matches`() throws {
+        let services = try charlevoix()
+        let subset = ["CC_CC2_med", "CC_CC4"].map { id in services.first { $0.id == id }! }
+        let layer = try layerColors()
+        let matchOnly = OnDemandServiceColors.resolvedColors(for: subset, brand: ThemeColors.shared.brand)
+        try #require(layer["CC_CC4"] != matchOnly["CC_CC4"], "the fixture must make the two resolutions differ")
+
+        let rows = try model(subset.map { match($0) }, scope: .insideOnly, colors: layer).rows
+        for row in rows {
+            #expect(row.color == layer[row.id], "\(row.id)")
+        }
     }
 
     @Test func `Picker route stacks at medium and carries a stable id`() throws {
-        let dialARide = try charlevoix().first { $0.id == "CC_CC1" }!
-        let payload = OnDemandPickerPayload(request: OnDemandPickerRequest(matches: [match(dialARide)], scope: .insideOnly, source: .rider, coordinate: probe), locality: nil)
+        let payload = try dialARidePayload()
         let route = AppSheetRoute.onDemandPicker(payload)
         #expect(route.id == "onDemandPicker-\(payload.id)")
         #expect(route.prefersStacking)
@@ -105,8 +128,7 @@ final class OnDemandPickerTests: OBATestCase {
             searchDisplayModel: MapSearchDisplayModel(),
             stopsObserver: MapStopsObserver(application: application)
         )
-        let dialARide = try charlevoix().first { $0.id == "CC_CC1" }!
-        let payload = OnDemandPickerPayload(request: OnDemandPickerRequest(matches: [match(dialARide)], scope: .insideOnly, source: .mapCenter, coordinate: probe), locality: "Boyne City")
+        let payload = try dialARidePayload(source: .mapCenter, locality: "Boyne City")
         let view = factory.onDemandPickerView(payload: payload)
         #expect(view.model.rows.map(\.id) == ["CC_CC1"])
         #expect(view.model.subtitle == "Boyne City · Map center")

@@ -34,6 +34,12 @@ struct OnDemandPickerModel: Equatable {
     let coordinate: CLLocationCoordinate2D
     let locality: String?
 
+    /// `colors` must be the on-demand layer's drawn colour map
+    /// (`OnDemandMapLayer.serviceColors`; the panel reads it through
+    /// `MapPanelLayersModel.onDemandServiceColors`, the classic host from
+    /// `onDemandLayer`), never a resolution over `request.matches`: the
+    /// collision palette is assigned across every fetched service, so a
+    /// subset can resolve a different colour from the zone a row highlights.
     init(request: OnDemandPickerRequest, locality: String?, colors: [String: UIColor], copy: OnDemandCopy) {
         let candidates = request.scope == .insideOnly ? request.matches.filter(\.isInside) : request.matches
         let sorted = sortedSoonestUsable(candidates)
