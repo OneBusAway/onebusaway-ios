@@ -9,6 +9,7 @@
 
 import CoreLocation
 import Foundation
+import SwiftUI
 import Testing
 import UIKit
 @testable import OBAKit
@@ -131,5 +132,40 @@ final class OnDemandZoneCardTests: OBATestCase {
     /// area to this constant even though the drawn capsule stays smaller.
     @Test func `Buttons meet the 44pt touch target floor`() {
         #expect(OnDemandZoneCardView.minimumTouchTarget == 44)
+    }
+
+    // MARK: - Button row sizing
+
+    /// The Details pill collapsed to a 24 pt capsule when the primary pill
+    /// took the whole row, which stretched the card to about 320 pt. Both
+    /// pills on one line keep the card near its header-plus-row height.
+    @Test func `A Call to Book card keeps both pills on one row at phone width`() throws {
+        let services = try charlevoixServices()
+        let dialARide = try #require(services.first { $0.id == "CC_CC1" })
+        let model = try #require(OnDemandZoneCardModel(insideMatches: [insideMatch(dialARide)], colors: colors(services), copy: copy))
+        let check = OnDemandLocationCheck(source: .rider, isInside: true, locality: nil, coordinate: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2))
+        let host = UIHostingController(rootView: OnDemandZoneCardView(model: model, locationCheck: check, actions: .none))
+
+        let height = host.sizeThatFits(in: CGSize(width: 343, height: CGFloat.greatestFiniteMagnitude)).height
+
+        #expect(height < 200, "card height \(height)")
+    }
+
+    @Test func `The pills share the row one and a half to one`() {
+        let split = OnDemandPillRowLayout.widths(available: 311, spacing: 10, primaryMinimum: 130, secondaryMinimum: 80)
+        expectClose(Double(split.primary + split.secondary), 301, within: 1e-9)
+        expectClose(Double(split.primary / split.secondary), 1.5, within: 1e-9)
+    }
+
+    @Test func `Details grows to its one-line width while the primary keeps its own`() {
+        let split = OnDemandPillRowLayout.widths(available: 311, spacing: 10, primaryMinimum: 130, secondaryMinimum: 150)
+        #expect(split.secondary == 150)
+        #expect(split.primary == 151)
+    }
+
+    @Test func `When both labels cannot fit on one line the proportion stands`() {
+        let split = OnDemandPillRowLayout.widths(available: 261, spacing: 10, primaryMinimum: 200, secondaryMinimum: 150)
+        expectClose(Double(split.primary / split.secondary), 1.5, within: 1e-9)
+        #expect(split.secondary > 0)
     }
 }
