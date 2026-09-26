@@ -97,6 +97,7 @@ extension MapViewController {
         // the layer without one because the SwiftUI panel has none to give.
         registrar.onDemandLayer?.mapView = mapRegionManager.mapView
         registrar.onDemandLayer?.setHighlightedService(onDemandProbeController.highlightedServiceID)
+        syncOnDemandLayerEnabled()
 
         guard let coordinator = registrar.rentalCoordinator else {
             rentalAnnotationSyncer = nil
@@ -147,7 +148,7 @@ extension MapViewController {
 
     @objc func mapLayerStateDidChange(_ note: NSNotification) {
         updateMapLayerBadge()
-        onDemandProbeController.setLayerEnabled(mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID))
+        syncOnDemandLayerEnabled()
     }
 
     /// `MapViewController` is the composition root for the rental layers, so it

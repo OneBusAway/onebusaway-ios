@@ -114,7 +114,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     private var riderLocation: CLLocation?
     private var lastProbePoint: CLLocationCoordinate2D?
     private var lastSuccessfulProbePoint: CLLocationCoordinate2D?
-    private var isLayerEnabled = true
+    private(set) var isLayerEnabled = true
     private var hasSurfaceFocus = false
     private var isMapMostlyCovered = false
     /// Shown until `clearPlanner()`; routine reprobes never replace it.

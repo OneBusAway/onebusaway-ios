@@ -35,8 +35,16 @@ extension MapViewController {
             .sink { [weak self] id in self?.mapLayerRegistrar?.onDemandLayer?.setHighlightedService(id) }
             .store(in: &host.cancellables)
 
-        onDemandProbeController.setLayerEnabled(mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID))
+        syncOnDemandLayerEnabled()
         updateOnDemandDockContext()
+    }
+
+    /// Hands the probe controller the layer's stored on/off state. Called
+    /// again once the registrar has registered the layer: before that the
+    /// layer's `true` default is not in UserDefaults' registration domain, so
+    /// a fresh install reads false and the dock would stay hidden.
+    func syncOnDemandLayerEnabled() {
+        onDemandProbeController.setLayerEnabled(mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID))
     }
 
     /// Spec 2.4 "Nothing otherwise": a semi-modal panel, search results, the
