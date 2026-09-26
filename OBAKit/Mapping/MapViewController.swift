@@ -75,6 +75,7 @@ class MapViewController: UIViewController,
 
     lazy var onDemandProbeController = OnDemandProbeController.make(application: application)
     var onDemandDockHost: OnDemandDockHostController?
+    var tripPlannerFallback = TripPlannerFallbackContext()
 
     // MARK: - Init
 

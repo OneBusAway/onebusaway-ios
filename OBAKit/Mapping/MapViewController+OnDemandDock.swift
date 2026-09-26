@@ -53,22 +53,29 @@ extension MapViewController {
         layoutOnDemandDock()
     }
 
-    /// Pins the dock for the current size class and panel state. Runs from
-    /// `viewDidLayoutSubviews`, so it rebuilds constraints only when the
-    /// placement actually changes.
+    /// Pins the dock for the current size class, panel state and anchor
+    /// panel. Runs from `viewDidLayoutSubviews`, so it rebuilds constraints
+    /// only when the placement or the anchor actually changes.
     func layoutOnDemandDock() {
         guard let host = onDemandDockHost else { return }
         let placement = OnDemandDockPlacement.placement(
             horizontalSizeClass: traitCollection.horizontalSizeClass,
             isPanelFullHeight: floatingPanel.state == .full
         )
-        guard placement != host.placement else { return }
+        // R11 over R5: the planner card anchors to the trip planner's own panel.
+        let anchorsToPlanner: Bool = {
+            if case .planner = onDemandProbeController.dockState { return semiModalTripPlannerController != nil }
+            return false
+        }()
+        let surface = anchorsToPlanner ? semiModalTripPlannerController!.surfaceView : floatingPanel.surfaceView
+        guard placement != host.placement || surface !== host.placementSurface else { return }
         NSLayoutConstraint.deactivate(host.placementConstraints)
         host.placement = placement
+        host.placementSurface = surface
         host.placementConstraints = placement.constraints(
             dockView: host.view,
             safeArea: view.safeAreaLayoutGuide,
-            surface: floatingPanel.surfaceView
+            surface: surface
         )
         NSLayoutConstraint.activate(host.placementConstraints)
     }

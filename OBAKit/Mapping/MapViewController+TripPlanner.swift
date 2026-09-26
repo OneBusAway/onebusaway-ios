@@ -14,6 +14,14 @@ import OTPKit
 import SwiftUI
 import UIKit
 
+/// The planner fallback's state (spec 3.8): the endpoints passed to the
+/// planner, used when `tripPlanEmpty` carries none, and the probe in flight.
+struct TripPlannerFallbackContext {
+    var origin: CLLocationCoordinate2D?
+    var destination: CLLocationCoordinate2D?
+    var task: Task<Void, Never>?
+}
+
 /// Trip planner presentation. An extension rather than more of `MapViewController`
 /// because presenting one feature is a separate concern from the map state that
 /// class holds — not because of a lint limit. `type_body_length` reports nothing
@@ -119,6 +127,8 @@ extension MapViewController {
             currentLocation: application.locationService.currentLocation
         )
         let destinationLocation = TripPlannerEndpoints.destination(from: destination)
+        tripPlannerFallback.origin = originLocation.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        tripPlannerFallback.destination = destinationLocation.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
 
         guard let tripPlanner = buildTripPlanner(region: currentRegion) else { return }
 
@@ -156,6 +166,9 @@ extension MapViewController {
         self.tripPlanner = nil
         hideTripPlannerMapView()
 
+        tripPlannerFallback.task?.cancel()
+        tripPlannerFallback.task = nil
+        onDemandProbeController.clearPlanner()
         unsubscribeFromTripPlannerNotifications()
         updateOnDemandDockContext()
     }
@@ -163,15 +176,38 @@ extension MapViewController {
     func subscribeToTripPlannerNotifications() {
         application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(tripStarted), name: Notifications.tripStarted, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(tripPlanEmpty), name: Notifications.tripPlanEmpty, object: nil)
     }
 
     func unsubscribeFromTripPlannerNotifications() {
         application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
         application.notificationCenter.removeObserver(self, name: Notifications.tripStarted, object: nil)
+        application.notificationCenter.removeObserver(self, name: Notifications.tripPlanEmpty, object: nil)
     }
 
     @objc func itinerariesUpdated(_ note: NSNotification) {
+        tripPlannerFallback.task?.cancel()
+        onDemandProbeController.clearPlanner()
+        layoutOnDemandDock()
         semiModalTripPlannerController?.move(to: .full, animated: true)
+    }
+
+    /// R11: the planner came back empty (an OTP error or zero itineraries).
+    /// Probe both ends and dock the on-demand options above the planner panel.
+    @objc func tripPlanEmpty(_ note: NSNotification) {
+        guard let endpoints = TripPlanEmptyEndpoints.resolve(
+            userInfo: note.userInfo,
+            fallbackOrigin: tripPlannerFallback.origin,
+            fallbackDestination: tripPlannerFallback.destination
+        ) else { return }
+
+        tripPlannerFallback.task?.cancel()
+        tripPlannerFallback.task = Task { [weak self] in
+            guard let self, let result = await onDemandProbeController.plannerResult(origin: endpoints.origin, destination: endpoints.destination) else { return }
+            guard !Task.isCancelled else { return }
+            onDemandProbeController.showPlanner(result)
+            layoutOnDemandDock()
+        }
     }
 
     @objc func tripStarted(_ note: NSNotification) {
