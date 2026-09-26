@@ -87,8 +87,8 @@ extension MapViewController {
     /// This is also where the first-run tip gets its second chance. The registrar
     /// is the `RegionsServiceDelegate` that rebuilds the rental layers now, so its
     /// `onDidConfigure` callback is the only host-side hook a region change still
-    /// reaches — `configureMapLayers()` runs from `viewDidAppear` alone. On a cold
-    /// launch the region resolves *after* `viewDidAppear`, so the coordinator that
+    /// reaches — `configureMapLayers()` runs from `viewDidLoad` alone. On a cold
+    /// launch the region resolves *after* `viewDidLoad`, so the coordinator that
     /// gates the tip doesn't exist yet when that first attempt runs; retrying here,
     /// once the layers are actually registered, is what makes the tip show on the
     /// launch that introduces bikeshare — the launch it exists for.
