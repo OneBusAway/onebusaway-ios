@@ -1981,3 +1981,222 @@
 
 /* Section header on the on-demand service page listing service days and hours */
 "on_demand.when_header" = "Thời gian";
+
+/* Eyebrow above the service name on the zone card */
+"on_demand.card.eyebrow" = "Có dịch vụ theo yêu cầu tại đây";
+
+/* Primary button on the zone card that dials the booking phone number */
+"on_demand.card.call_to_book" = "Gọi để đặt chỗ";
+
+/* Secondary button on the zone card that opens the service page */
+"on_demand.card.details" = "Chi tiết";
+
+/* Footer of the zone card; plural forms in Localizable.stringsdict */
+"on_demand.card.more_services" = "%d dịch vụ khác tại đây";
+
+/* Card and picker status while running. %@ is the end time */
+"on_demand.status.open_until" = "Mở · đến %@";
+
+/* Service page status while running. %@ is the end time */
+"on_demand.status.open_now_until" = "Đang mở · đến %@";
+
+/* Status of a service that runs continuously */
+"on_demand.status.open" = "Đang mở";
+
+/* Status of a service not running yet. %@ is a relative day and time */
+"on_demand.status.opens" = "Mở lúc %@";
+
+/* Short booking deadline. %@ is a relative day and time */
+"on_demand.status.book_by" = "Đặt chỗ trước %@";
+
+/* Status of a service with no upcoming service day */
+"on_demand.status.closed" = "Đã đóng";
+
+/* Tag for a service booked the same day */
+"on_demand.tag.same_day" = "Đặt chỗ trong ngày";
+
+/* Tag for a service booked a day or more ahead */
+"on_demand.tag.advance" = "Đặt chỗ trước";
+
+/* Tag for a service booked at ride time */
+"on_demand.tag.no_notice" = "Không cần báo trước";
+
+/* Tag for a service that requires rider certification */
+"on_demand.tag.eligibility" = "Yêu cầu đủ điều kiện";
+
+/* Bar title when the rider is inside a zone that is open now */
+"on_demand.bar.inside" = "Có thể đón khách tại đây";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.north" = "Trong vùng · rìa %@ về phía Bắc";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northeast" = "Trong vùng · rìa %@ về phía Đông Bắc";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.east" = "Trong vùng · rìa %@ về phía Đông";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southeast" = "Trong vùng · rìa %@ về phía Đông Nam";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.south" = "Trong vùng · rìa %@ về phía Nam";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southwest" = "Trong vùng · rìa %@ về phía Tây Nam";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.west" = "Trong vùng · rìa %@ về phía Tây";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northwest" = "Trong vùng · rìa %@ về phía Tây Bắc";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.north" = "%@ về phía Bắc của vùng";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northeast" = "%@ về phía Đông Bắc của vùng";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.east" = "%@ về phía Đông của vùng";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southeast" = "%@ về phía Đông Nam của vùng";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.south" = "%@ về phía Nam của vùng";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southwest" = "%@ về phía Tây Nam của vùng";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.west" = "%@ về phía Tây của vùng";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northwest" = "%@ về phía Tây Bắc của vùng";
+
+/* Page badge on the bar thumbnail. %1$d is the page, %2$d the count */
+"on_demand.bar.badge" = "%1$d/%2$d";
+
+/* Accessibility label of the bar's chevron when outside a zone */
+"on_demand.bar.a11y.show_edge" = "Hiển thị rìa vùng gần nhất";
+
+/* Accessibility label of the bar's thumbnail button */
+"on_demand.bar.a11y.zoom_out" = "Hiển thị toàn bộ vùng";
+
+/* Accessibility label of the bar's phone button. %@ is the service name */
+"on_demand.bar.a11y.call" = "Gọi %@";
+
+/* Accessibility action on the bar that opens the picker */
+"on_demand.bar.a11y.more_services" = "Tất cả dịch vụ tại đây";
+
+/* Picker title for the services containing the point; plural forms in Localizable.stringsdict */
+"on_demand.picker.title" = "%d dịch vụ tại đây";
+
+/* Picker title for every matched service; plural forms in Localizable.stringsdict */
+"on_demand.picker.title_nearby" = "%d dịch vụ gần đây";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_location" = "%@ · Vị trí của bạn";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_center" = "%@ · Tâm bản đồ";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_point" = "%@ · Địa điểm đã chọn";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.your_location" = "Vị trí của bạn";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.map_center" = "Tâm bản đồ";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.selected_place" = "Địa điểm đã chọn";
+
+/* Footer of the overlap picker */
+"on_demand.picker.footer" = "Sắp xếp theo thời gian phục vụ sớm nhất.";
+
+/* Location row when the rider's location is inside the zone */
+"on_demand.detail.location_inside" = "Vị trí của bạn nằm trong vùng này";
+
+/* Location row when the rider's location is outside the zone */
+"on_demand.detail.location_outside" = "Vị trí của bạn nằm ngoài vùng này";
+
+/* Location row for the map centre */
+"on_demand.detail.center_inside" = "Tâm bản đồ nằm trong vùng này";
+
+/* Location row for the map centre */
+"on_demand.detail.center_outside" = "Tâm bản đồ nằm ngoài vùng này";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_inside" = "Địa điểm này nằm trong vùng này";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_outside" = "Địa điểm này nằm ngoài vùng này";
+
+/* Sub line of the location row. %@ is a locality */
+"on_demand.detail.location_sub" = "Có thể đón khách tại %@";
+
+/* Service area sub line when the rider is inside. %@ is the area names */
+"on_demand.detail.includes_location" = "%@ — bao gồm vị trí của bạn";
+
+/* Section header listing service and drop-off areas */
+"on_demand.detail.where_header" = "Địa điểm";
+
+/* Row title for the pickup areas */
+"on_demand.detail.service_area" = "Khu vực phục vụ";
+
+/* Row title for the drop-off areas */
+"on_demand.detail.drop_off" = "Điểm trả khách";
+
+/* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
+"on_demand.detail.zone_count" = "%d vùng";
+
+/* Hours column for weekdays without service */
+"on_demand.detail.no_service" = "Không có dịch vụ";
+
+/* Row that opens the service's url */
+"on_demand.detail.open_agency_website" = "Mở trang web của đơn vị vận hành";
+
+/* Header of the planner fallback card */
+"on_demand.planner.section" = "Tùy chọn dịch vụ theo yêu cầu";
+
+/* First meta line of a qualifying planner fallback service */
+"on_demand.planner.serves_both" = "Phục vụ cả hai địa điểm";
+
+/* Caption under the planner fallback cards */
+"on_demand.planner.caption" = "Các dịch vụ yêu cầu đủ điều kiện hoặc chỉ phục vụ một đầu tuyến sẽ được ẩn.";
+
+/* Link under the planner fallback caption */
+"on_demand.planner.show_all" = "Xem tất cả trong danh sách vùng";
+
+/* Planner fallback when nothing qualifies and nothing is hidden */
+"on_demand.planner.empty" = "Không có dịch vụ theo yêu cầu nào phục vụ cả hai địa điểm.";
+
+/* Caption noting availability is evaluated at the current time */
+"on_demand.planner.status_now" = "Trạng thái hiển thị cho thời điểm hiện tại.";
+
+/* Map item line when the place is inside a zone. %@ is the service name */
+"on_demand.address.inside" = "Trong %@";
+
+/* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
+"on_demand.address.inside_more" = "Trong %1$@ và %2$d dịch vụ khác";
+
+/* Map item line when the place is outside the nearest zone. %@ is the service name */
+"on_demand.address.outside" = "Ngoài %@";
+
+/* Layers sheet group header */
+"map_layers.group.transit" = "Giao thông công cộng";
+
+/* Layers sheet group header */
+"map_layers.group.rentals" = "Cho thuê";
+
+/* Layer tile subtitle when enabled */
+"map_layers.state.on" = "Bật";
+
+/* Layer tile subtitle when disabled */
+"map_layers.state.off" = "Tắt";
+
+/* Label before the rental range chips */
+"map_layers.min_range" = "Phạm vi tối thiểu";

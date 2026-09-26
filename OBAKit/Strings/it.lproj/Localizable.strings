@@ -1981,3 +1981,222 @@
 
 /* Section header on the on-demand service page listing service days and hours */
 "on_demand.when_header" = "Quando";
+
+/* Eyebrow above the service name on the zone card */
+"on_demand.card.eyebrow" = "Servizio a chiamata disponibile qui";
+
+/* Primary button on the zone card that dials the booking phone number */
+"on_demand.card.call_to_book" = "Chiama per prenotare";
+
+/* Secondary button on the zone card that opens the service page */
+"on_demand.card.details" = "Dettagli";
+
+/* Footer of the zone card; plural forms in Localizable.stringsdict */
+"on_demand.card.more_services" = "%d altri servizi qui";
+
+/* Card and picker status while running. %@ is the end time */
+"on_demand.status.open_until" = "Aperto · fino a %@";
+
+/* Service page status while running. %@ is the end time */
+"on_demand.status.open_now_until" = "Aperto ora · fino a %@";
+
+/* Status of a service that runs continuously */
+"on_demand.status.open" = "Aperto";
+
+/* Status of a service not running yet. %@ is a relative day and time */
+"on_demand.status.opens" = "Apre %@";
+
+/* Short booking deadline. %@ is a relative day and time */
+"on_demand.status.book_by" = "Prenota entro %@";
+
+/* Status of a service with no upcoming service day */
+"on_demand.status.closed" = "Chiuso";
+
+/* Tag for a service booked the same day */
+"on_demand.tag.same_day" = "Prenotazione in giornata";
+
+/* Tag for a service booked a day or more ahead */
+"on_demand.tag.advance" = "Prenotazione anticipata";
+
+/* Tag for a service booked at ride time */
+"on_demand.tag.no_notice" = "Nessun preavviso";
+
+/* Tag for a service that requires rider certification */
+"on_demand.tag.eligibility" = "Idoneità richiesta";
+
+/* Bar title when the rider is inside a zone that is open now */
+"on_demand.bar.inside" = "Ritiri disponibili qui";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.north" = "Dentro · bordo a %@ a nord";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northeast" = "Dentro · bordo a %@ a nordest";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.east" = "Dentro · bordo a %@ a est";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southeast" = "Dentro · bordo a %@ a sudest";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.south" = "Dentro · bordo a %@ a sud";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southwest" = "Dentro · bordo a %@ a sudovest";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.west" = "Dentro · bordo a %@ a ovest";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northwest" = "Dentro · bordo a %@ a nordovest";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.north" = "%@ a nord della zona";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northeast" = "%@ a nordest della zona";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.east" = "%@ a est della zona";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southeast" = "%@ a sudest della zona";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.south" = "%@ a sud della zona";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southwest" = "%@ a sudovest della zona";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.west" = "%@ a ovest della zona";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northwest" = "%@ a nordovest della zona";
+
+/* Page badge on the bar thumbnail. %1$d is the page, %2$d the count */
+"on_demand.bar.badge" = "%1$d di %2$d";
+
+/* Accessibility label of the bar's chevron when outside a zone */
+"on_demand.bar.a11y.show_edge" = "Mostra il bordo più vicino della zona";
+
+/* Accessibility label of the bar's thumbnail button */
+"on_demand.bar.a11y.zoom_out" = "Mostra l'intera zona";
+
+/* Accessibility label of the bar's phone button. %@ is the service name */
+"on_demand.bar.a11y.call" = "Chiama %@";
+
+/* Accessibility action on the bar that opens the picker */
+"on_demand.bar.a11y.more_services" = "Tutti i servizi qui";
+
+/* Picker title for the services containing the point; plural forms in Localizable.stringsdict */
+"on_demand.picker.title" = "%d servizi qui";
+
+/* Picker title for every matched service; plural forms in Localizable.stringsdict */
+"on_demand.picker.title_nearby" = "%d servizi nelle vicinanze";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_location" = "%@ · La tua posizione";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_center" = "%@ · Centro mappa";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_point" = "%@ · Luogo selezionato";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.your_location" = "La tua posizione";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.map_center" = "Centro mappa";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.selected_place" = "Luogo selezionato";
+
+/* Footer of the overlap picker */
+"on_demand.picker.footer" = "Ordinati per disponibilità più vicina.";
+
+/* Location row when the rider's location is inside the zone */
+"on_demand.detail.location_inside" = "La tua posizione è in questa zona";
+
+/* Location row when the rider's location is outside the zone */
+"on_demand.detail.location_outside" = "La tua posizione è fuori da questa zona";
+
+/* Location row for the map centre */
+"on_demand.detail.center_inside" = "Il centro mappa è in questa zona";
+
+/* Location row for the map centre */
+"on_demand.detail.center_outside" = "Il centro mappa è fuori da questa zona";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_inside" = "Questo luogo è in questa zona";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_outside" = "Questo luogo è fuori da questa zona";
+
+/* Sub line of the location row. %@ is a locality */
+"on_demand.detail.location_sub" = "Ritiri disponibili a %@";
+
+/* Service area sub line when the rider is inside. %@ is the area names */
+"on_demand.detail.includes_location" = "%@ — include la tua posizione";
+
+/* Section header listing service and drop-off areas */
+"on_demand.detail.where_header" = "Dove";
+
+/* Row title for the pickup areas */
+"on_demand.detail.service_area" = "Area di servizio";
+
+/* Row title for the drop-off areas */
+"on_demand.detail.drop_off" = "Destinazione";
+
+/* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
+"on_demand.detail.zone_count" = "%d zone";
+
+/* Hours column for weekdays without service */
+"on_demand.detail.no_service" = "Nessun servizio";
+
+/* Row that opens the service's url */
+"on_demand.detail.open_agency_website" = "Apri il sito web dell'agenzia";
+
+/* Header of the planner fallback card */
+"on_demand.planner.section" = "Opzioni a chiamata";
+
+/* First meta line of a qualifying planner fallback service */
+"on_demand.planner.serves_both" = "Serve entrambe le posizioni";
+
+/* Caption under the planner fallback cards */
+"on_demand.planner.caption" = "I servizi che richiedono idoneità o coprono solo un punto del percorso sono nascosti.";
+
+/* Link under the planner fallback caption */
+"on_demand.planner.show_all" = "Mostra tutti nel selettore delle zone";
+
+/* Planner fallback when nothing qualifies and nothing is hidden */
+"on_demand.planner.empty" = "Nessun servizio a chiamata copre entrambe le posizioni.";
+
+/* Caption noting availability is evaluated at the current time */
+"on_demand.planner.status_now" = "Stato visualizzato per l'orario attuale.";
+
+/* Map item line when the place is inside a zone. %@ is the service name */
+"on_demand.address.inside" = "Dentro %@";
+
+/* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
+"on_demand.address.inside_more" = "Dentro %1$@ e altri %2$d";
+
+/* Map item line when the place is outside the nearest zone. %@ is the service name */
+"on_demand.address.outside" = "Fuori da %@";
+
+/* Layers sheet group header */
+"map_layers.group.transit" = "Trasporto pubblico";
+
+/* Layers sheet group header */
+"map_layers.group.rentals" = "Noleggi";
+
+/* Layer tile subtitle when enabled */
+"map_layers.state.on" = "Attivo";
+
+/* Layer tile subtitle when disabled */
+"map_layers.state.off" = "Disattivo";
+
+/* Label before the rental range chips */
+"map_layers.min_range" = "Autonomia min.";

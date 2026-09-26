@@ -1981,3 +1981,222 @@
 
 /* Section header on the on-demand service page listing service days and hours */
 "on_demand.when_header" = "服務時間";
+
+/* Eyebrow above the service name on the zone card */
+"on_demand.card.eyebrow" = "此處提供隨需服務";
+
+/* Primary button on the zone card that dials the booking phone number */
+"on_demand.card.call_to_book" = "致電預約";
+
+/* Secondary button on the zone card that opens the service page */
+"on_demand.card.details" = "詳細資訊";
+
+/* Footer of the zone card; plural forms in Localizable.stringsdict */
+"on_demand.card.more_services" = "另有 %d 項服務";
+
+/* Card and picker status while running. %@ is the end time */
+"on_demand.status.open_until" = "服務中・至%@";
+
+/* Service page status while running. %@ is the end time */
+"on_demand.status.open_now_until" = "目前服務中・至%@";
+
+/* Status of a service that runs continuously */
+"on_demand.status.open" = "服務中";
+
+/* Status of a service not running yet. %@ is a relative day and time */
+"on_demand.status.opens" = "%@開始服務";
+
+/* Short booking deadline. %@ is a relative day and time */
+"on_demand.status.book_by" = "請在%@前預約";
+
+/* Status of a service with no upcoming service day */
+"on_demand.status.closed" = "已停止服務";
+
+/* Tag for a service booked the same day */
+"on_demand.tag.same_day" = "當日預約";
+
+/* Tag for a service booked a day or more ahead */
+"on_demand.tag.advance" = "提前預約";
+
+/* Tag for a service booked at ride time */
+"on_demand.tag.no_notice" = "無需提前預約";
+
+/* Tag for a service that requires rider certification */
+"on_demand.tag.eligibility" = "需符合資格";
+
+/* Bar title when the rider is inside a zone that is open now */
+"on_demand.bar.inside" = "此處提供上車服務";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.north" = "區域內・北側邊緣%@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northeast" = "區域內・東北側邊緣%@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.east" = "區域內・東側邊緣%@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southeast" = "區域內・東南側邊緣%@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.south" = "區域內・南側邊緣%@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southwest" = "區域內・西南側邊緣%@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.west" = "區域內・西側邊緣%@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northwest" = "區域內・西北側邊緣%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.north" = "區域以北%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northeast" = "區域東北方%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.east" = "區域以東%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southeast" = "區域東南方%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.south" = "區域以南%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southwest" = "區域西南方%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.west" = "區域以西%@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northwest" = "區域西北方%@";
+
+/* Page badge on the bar thumbnail. %1$d is the page, %2$d the count */
+"on_demand.bar.badge" = "%1$d / %2$d";
+
+/* Accessibility label of the bar's chevron when outside a zone */
+"on_demand.bar.a11y.show_edge" = "顯示最近的區域邊緣";
+
+/* Accessibility label of the bar's thumbnail button */
+"on_demand.bar.a11y.zoom_out" = "顯示整個區域";
+
+/* Accessibility label of the bar's phone button. %@ is the service name */
+"on_demand.bar.a11y.call" = "致電 %@";
+
+/* Accessibility action on the bar that opens the picker */
+"on_demand.bar.a11y.more_services" = "此處所有服務";
+
+/* Picker title for the services containing the point; plural forms in Localizable.stringsdict */
+"on_demand.picker.title" = "此處有 %d 項服務";
+
+/* Picker title for every matched service; plural forms in Localizable.stringsdict */
+"on_demand.picker.title_nearby" = "附近有 %d 項服務";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_location" = "%@・您的位置";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_center" = "%@・地圖中心";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_point" = "%@・已選地點";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.your_location" = "您的位置";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.map_center" = "地圖中心";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.selected_place" = "已選地點";
+
+/* Footer of the overlap picker */
+"on_demand.picker.footer" = "依最快可用時間排序。";
+
+/* Location row when the rider's location is inside the zone */
+"on_demand.detail.location_inside" = "您的位置位於此區域內";
+
+/* Location row when the rider's location is outside the zone */
+"on_demand.detail.location_outside" = "您的位置位於此區域外";
+
+/* Location row for the map centre */
+"on_demand.detail.center_inside" = "地圖中心位於此區域內";
+
+/* Location row for the map centre */
+"on_demand.detail.center_outside" = "地圖中心位於此區域外";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_inside" = "此地點位於此區域內";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_outside" = "此地點位於此區域外";
+
+/* Sub line of the location row. %@ is a locality */
+"on_demand.detail.location_sub" = "%@提供上車服務";
+
+/* Service area sub line when the rider is inside. %@ is the area names */
+"on_demand.detail.includes_location" = "%@—包含您的位置";
+
+/* Section header listing service and drop-off areas */
+"on_demand.detail.where_header" = "地點";
+
+/* Row title for the pickup areas */
+"on_demand.detail.service_area" = "服務區域";
+
+/* Row title for the drop-off areas */
+"on_demand.detail.drop_off" = "下車地點";
+
+/* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
+"on_demand.detail.zone_count" = "%d 個區域";
+
+/* Hours column for weekdays without service */
+"on_demand.detail.no_service" = "無服務";
+
+/* Row that opens the service's url */
+"on_demand.detail.open_agency_website" = "開啟業者網站";
+
+/* Header of the planner fallback card */
+"on_demand.planner.section" = "隨需服務選項";
+
+/* First meta line of a qualifying planner fallback service */
+"on_demand.planner.serves_both" = "同時服務兩個地點";
+
+/* Caption under the planner fallback cards */
+"on_demand.planner.caption" = "需要資格審核或僅涵蓋單一端點的服務已隱藏。";
+
+/* Link under the planner fallback caption */
+"on_demand.planner.show_all" = "在區域選擇器中顯示全部";
+
+/* Planner fallback when nothing qualifies and nothing is hidden */
+"on_demand.planner.empty" = "沒有隨需服務同時涵蓋這兩個地點。";
+
+/* Caption noting availability is evaluated at the current time */
+"on_demand.planner.status_now" = "顯示為目前狀態。";
+
+/* Map item line when the place is inside a zone. %@ is the service name */
+"on_demand.address.inside" = "位於%@內";
+
+/* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
+"on_demand.address.inside_more" = "位於%1$@及另外%2$d項";
+
+/* Map item line when the place is outside the nearest zone. %@ is the service name */
+"on_demand.address.outside" = "位於%@外";
+
+/* Layers sheet group header */
+"map_layers.group.transit" = "大眾運輸";
+
+/* Layers sheet group header */
+"map_layers.group.rentals" = "租借服務";
+
+/* Layer tile subtitle when enabled */
+"map_layers.state.on" = "開啟";
+
+/* Layer tile subtitle when disabled */
+"map_layers.state.off" = "關閉";
+
+/* Label before the rental range chips */
+"map_layers.min_range" = "最低續航里程";

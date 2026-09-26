@@ -1981,3 +1981,222 @@
 
 /* Section header on the on-demand service page listing service days and hours */
 "on_demand.when_header" = "متى";
+
+/* Eyebrow above the service name on the zone card */
+"on_demand.card.eyebrow" = "خدمة عند الطلب هنا";
+
+/* Primary button on the zone card that dials the booking phone number */
+"on_demand.card.call_to_book" = "اتصل للحجز";
+
+/* Secondary button on the zone card that opens the service page */
+"on_demand.card.details" = "التفاصيل";
+
+/* Footer of the zone card; plural forms in Localizable.stringsdict */
+"on_demand.card.more_services" = "%d خدمة إضافية هنا";
+
+/* Card and picker status while running. %@ is the end time */
+"on_demand.status.open_until" = "مفتوح · حتى %@";
+
+/* Service page status while running. %@ is the end time */
+"on_demand.status.open_now_until" = "مفتوح الآن · حتى %@";
+
+/* Status of a service that runs continuously */
+"on_demand.status.open" = "مفتوح";
+
+/* Status of a service not running yet. %@ is a relative day and time */
+"on_demand.status.opens" = "يفتح %@";
+
+/* Short booking deadline. %@ is a relative day and time */
+"on_demand.status.book_by" = "احجز قبل %@";
+
+/* Status of a service with no upcoming service day */
+"on_demand.status.closed" = "مغلق";
+
+/* Tag for a service booked the same day */
+"on_demand.tag.same_day" = "الحجز في نفس اليوم";
+
+/* Tag for a service booked a day or more ahead */
+"on_demand.tag.advance" = "الحجز المسبق";
+
+/* Tag for a service booked at ride time */
+"on_demand.tag.no_notice" = "لا يلزم إشعار مسبق";
+
+/* Tag for a service that requires rider certification */
+"on_demand.tag.eligibility" = "الأهلية مطلوبة";
+
+/* Bar title when the rider is inside a zone that is open now */
+"on_demand.bar.inside" = "الركوب متاح هنا";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.north" = "داخل · الحافة %@ شمالاً";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northeast" = "داخل · الحافة %@ شمال شرقاً";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.east" = "داخل · الحافة %@ شرقاً";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southeast" = "داخل · الحافة %@ جنوب شرقاً";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.south" = "داخل · الحافة %@ جنوباً";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southwest" = "داخل · الحافة %@ جنوب غرباً";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.west" = "داخل · الحافة %@ غرباً";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northwest" = "داخل · الحافة %@ شمال غرباً";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.north" = "%@ شمال المنطقة";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northeast" = "%@ شمال شرق المنطقة";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.east" = "%@ شرق المنطقة";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southeast" = "%@ جنوب شرق المنطقة";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.south" = "%@ جنوب المنطقة";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southwest" = "%@ جنوب غرب المنطقة";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.west" = "%@ غرب المنطقة";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northwest" = "%@ شمال غرب المنطقة";
+
+/* Page badge on the bar thumbnail. %1$d is the page, %2$d the count */
+"on_demand.bar.badge" = "%1$d من %2$d";
+
+/* Accessibility label of the bar's chevron when outside a zone */
+"on_demand.bar.a11y.show_edge" = "إظهار أقرب حافة للمنطقة";
+
+/* Accessibility label of the bar's thumbnail button */
+"on_demand.bar.a11y.zoom_out" = "إظهار المنطقة بالكامل";
+
+/* Accessibility label of the bar's phone button. %@ is the service name */
+"on_demand.bar.a11y.call" = "الاتصال بـ %@";
+
+/* Accessibility action on the bar that opens the picker */
+"on_demand.bar.a11y.more_services" = "جميع الخدمات هنا";
+
+/* Picker title for the services containing the point; plural forms in Localizable.stringsdict */
+"on_demand.picker.title" = "%d خدمة هنا";
+
+/* Picker title for every matched service; plural forms in Localizable.stringsdict */
+"on_demand.picker.title_nearby" = "%d خدمة قريبة";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_location" = "%@ · موقعك";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_center" = "%@ · مركز الخريطة";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_point" = "%@ · المكان المحدد";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.your_location" = "موقعك";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.map_center" = "مركز الخريطة";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.selected_place" = "المكان المحدد";
+
+/* Footer of the overlap picker */
+"on_demand.picker.footer" = "مرتبة حسب الأقرب توفرًا.";
+
+/* Location row when the rider's location is inside the zone */
+"on_demand.detail.location_inside" = "موقعك ضمن هذه المنطقة";
+
+/* Location row when the rider's location is outside the zone */
+"on_demand.detail.location_outside" = "موقعك خارج هذه المنطقة";
+
+/* Location row for the map centre */
+"on_demand.detail.center_inside" = "مركز الخريطة ضمن هذه المنطقة";
+
+/* Location row for the map centre */
+"on_demand.detail.center_outside" = "مركز الخريطة خارج هذه المنطقة";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_inside" = "هذا المكان ضمن هذه المنطقة";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_outside" = "هذا المكان خارج هذه المنطقة";
+
+/* Sub line of the location row. %@ is a locality */
+"on_demand.detail.location_sub" = "الركوب متاح في %@";
+
+/* Service area sub line when the rider is inside. %@ is the area names */
+"on_demand.detail.includes_location" = "%@ — يشمل موقعك";
+
+/* Section header listing service and drop-off areas */
+"on_demand.detail.where_header" = "أين";
+
+/* Row title for the pickup areas */
+"on_demand.detail.service_area" = "منطقة الخدمة";
+
+/* Row title for the drop-off areas */
+"on_demand.detail.drop_off" = "النزول";
+
+/* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
+"on_demand.detail.zone_count" = "%d منطقة";
+
+/* Hours column for weekdays without service */
+"on_demand.detail.no_service" = "لا توجد خدمة";
+
+/* Row that opens the service's url */
+"on_demand.detail.open_agency_website" = "فتح موقع الوكالة";
+
+/* Header of the planner fallback card */
+"on_demand.planner.section" = "خيارات الخدمة عند الطلب";
+
+/* First meta line of a qualifying planner fallback service */
+"on_demand.planner.serves_both" = "يخدم كلا الموقعين";
+
+/* Caption under the planner fallback cards */
+"on_demand.planner.caption" = "الخدمات التي تتطلب الأهلية أو تغطي طرفًا واحدًا فقط مخفية.";
+
+/* Link under the planner fallback caption */
+"on_demand.planner.show_all" = "عرض الكل في منتقي المناطق";
+
+/* Planner fallback when nothing qualifies and nothing is hidden */
+"on_demand.planner.empty" = "لا توجد خدمة عند الطلب تغطي كلا الموقعين.";
+
+/* Caption noting availability is evaluated at the current time */
+"on_demand.planner.status_now" = "الحالة المعروضة للوقت الحالي.";
+
+/* Map item line when the place is inside a zone. %@ is the service name */
+"on_demand.address.inside" = "داخل %@";
+
+/* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
+"on_demand.address.inside_more" = "داخل %1$@ و%2$d أخرى";
+
+/* Map item line when the place is outside the nearest zone. %@ is the service name */
+"on_demand.address.outside" = "خارج %@";
+
+/* Layers sheet group header */
+"map_layers.group.transit" = "النقل العام";
+
+/* Layers sheet group header */
+"map_layers.group.rentals" = "الإيجار";
+
+/* Layer tile subtitle when enabled */
+"map_layers.state.on" = "تشغيل";
+
+/* Layer tile subtitle when disabled */
+"map_layers.state.off" = "إيقاف";
+
+/* Label before the rental range chips */
+"map_layers.min_range" = "الحد الأدنى للمدى";
