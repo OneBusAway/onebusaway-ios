@@ -40,6 +40,15 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         /// e.g. "5:00 AM – 12:50 AM"; nil when the rule sets neither pickup
         /// time and so runs all service hours.
         public let hours: String?
+        /// The weekdays behind `days`, in `Weekday.allCases` order, so the
+        /// service page can merge windows with equal hours (spec 3.6 item 6).
+        public let weekdays: [Weekday]
+
+        public init(days: String, hours: String?, weekdays: [Weekday]) {
+            self.days = days
+            self.hours = hours
+            self.weekdays = weekdays
+        }
     }
 
     public let bookingLine: BookingLine
@@ -103,7 +112,8 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
                 let end = rule.endPickupTime ?? .endOfServiceDay
                 hours = "\(formatters.wallClock(start)) – \(formatters.wallClock(end))"
             }
-            let window = ServiceWindow(days: daysText(Array(days), shortWeekdaySymbols: formatters.shortWeekdaySymbols), hours: hours)
+            let ordered = Weekday.allCases.filter { days.contains($0) }
+            let window = ServiceWindow(days: daysText(ordered, shortWeekdaySymbols: formatters.shortWeekdaySymbols), hours: hours, weekdays: ordered)
             if seen.insert(window).inserted {
                 result.append(window)
             }
