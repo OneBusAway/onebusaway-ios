@@ -65,34 +65,12 @@ extension MapViewController {
         guard placement != host.placement else { return }
         NSLayoutConstraint.deactivate(host.placementConstraints)
         host.placement = placement
-        host.placementConstraints = onDemandDockConstraints(for: placement, dockView: host.view)
+        host.placementConstraints = placement.constraints(
+            dockView: host.view,
+            safeArea: view.safeAreaLayoutGuide,
+            surface: floatingPanel.surfaceView
+        )
         NSLayoutConstraint.activate(host.placementConstraints)
-    }
-
-    private func onDemandDockConstraints(for placement: OnDemandDockPlacement, dockView: UIView) -> [NSLayoutConstraint] {
-        let safeArea = view.safeAreaLayoutGuide
-        let surface = floatingPanel.surfaceView
-        switch placement {
-        case .compact:
-            return [
-                dockView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: OnDemandDockPlacement.gutter),
-                dockView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: -OnDemandDockPlacement.gutter),
-                dockView.bottomAnchor.constraint(equalTo: surface.topAnchor, constant: -OnDemandDockPlacement.gap)
-            ]
-        case .sidePanel(let width):
-            return [
-                dockView.leadingAnchor.constraint(equalTo: surface.leadingAnchor),
-                dockView.widthAnchor.constraint(equalToConstant: width),
-                dockView.bottomAnchor.constraint(equalTo: surface.topAnchor, constant: -OnDemandDockPlacement.gap)
-            ]
-        case .floatingLeading(let maxWidth):
-            return [
-                dockView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: OnDemandDockPlacement.gutter),
-                dockView.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth),
-                dockView.trailingAnchor.constraint(lessThanOrEqualTo: safeArea.trailingAnchor, constant: -OnDemandDockPlacement.gutter),
-                dockView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor, constant: -OnDemandDockPlacement.gutter)
-            ]
-        }
     }
 
     /// The zone colours the layer drew, so the dock and picker match the map.
