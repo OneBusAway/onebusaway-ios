@@ -127,7 +127,8 @@ final class OnDemandPickerTests: OBATestCase {
             presentingController: { nil },
             coordinator: SheetCoordinator(root: .home),
             searchDisplayModel: MapSearchDisplayModel(),
-            stopsObserver: MapStopsObserver(application: application)
+            stopsObserver: MapStopsObserver(application: application),
+            onDemandProbeController: OnDemandProbeController.make(application: application)
         )
         let payload = try dialARidePayload(source: .mapCenter, locality: "Boyne City")
         let view = factory.onDemandPickerView(payload: payload)
@@ -165,45 +166,40 @@ final class OnDemandPickerTests: OBATestCase {
         #expect(highlights == [nil])
     }
 
-    @Test func `Panel picker keeps the highlight on a row push and clears it on close`() async throws {
+    @Test func `Panel picker keeps the highlight on a row push and clears it on close`() throws {
         let dataLoader = MockDataLoader(testName: name)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
         let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
-        let layersModel = MapPanelLayersModel(application: application)
+        // The picker writes the probe controller's highlight, the one source
+        // the dock's bar pages share; the panel mirrors it onto the layer.
+        let probeController = OnDemandProbeController.make(application: application)
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         let factory = AppSheetViewFactory(
             application: application,
             mapViewModel: MapViewModel(application: application),
-            layersModel: layersModel,
+            layersModel: MapPanelLayersModel(application: application),
             onPresentTrip: { _ in },
             onPresentVehicleTrip: { _ in },
             presentingController: { nil },
             coordinator: coordinator,
             searchDisplayModel: MapSearchDisplayModel(),
-            stopsObserver: MapStopsObserver(application: application)
+            stopsObserver: MapStopsObserver(application: application),
+            onDemandProbeController: probeController
         )
-        let street = MKMapRect(
-            origin: MKMapPoint(CLLocationCoordinate2D(latitude: 38.83, longitude: -77.05)),
-            size: MKMapSize(width: 30_000, height: 30_000)
-        )
-        layersModel.viewportDidChange(street)
-        await layersModel.registrar.onDemandLayer?.fetchTask?.value
-        #expect(Array(layersModel.onDemandServiceColors.keys) == ["5088_77652"])
-        let isHighlighted = { layersModel.onDemandZones.contains { $0.style == .street(emphasis: .highlighted) } }
 
         let payload = try dialARidePayload()
         coordinator.push(.onDemandPicker(payload))
         let view = factory.onDemandPickerView(payload: payload)
-        layersModel.setHighlightedService("5088_77652")
+        view.onHighlight("CC_CC1")
+        #expect(probeController.highlightedServiceID == "CC_CC1")
 
         view.onSelect(view.model.rows[0].match, view.model.locationCheck(for: view.model.rows[0].match))
-        #expect(isHighlighted())
+        #expect(probeController.highlightedServiceID == "CC_CC1")
         #expect(coordinator.stackedRoute(at: 1) == .onDemandService(view.model.rows[0].match.service))
 
         coordinator.pop()
         view.onClose()
-        #expect(!isHighlighted())
+        #expect(probeController.highlightedServiceID == nil)
         #expect(coordinator.stackedRoute(at: 0) == nil)
     }
 

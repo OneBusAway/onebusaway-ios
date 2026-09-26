@@ -62,7 +62,8 @@ public final class MapPanelRootController: UIViewController {
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver,
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel,
-            tripFocusMapDisplayModel: tripFocusMapDisplayModel
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel,
+            onDemandProbeController: probeController
         )
         let rootView = MapPanelRootView(
             application: application,

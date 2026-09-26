@@ -43,6 +43,10 @@ final class AppSheetViewFactory {
     let stopsObserver: MapStopsObserver
     let tripPlannerMapDisplayModel: TripPlannerMapDisplayModel
     let tripFocusMapDisplayModel: TripFocusMapDisplayModel
+    /// The dock's probe controller: the picker writes its highlight, which the
+    /// panel mirrors onto the zone layer, so bar pages and picker rows share
+    /// one source of truth.
+    let onDemandProbeController: OnDemandProbeController
 
     /// Nothing here is defaulted, on purpose, and for two separate reasons.
     ///
@@ -52,12 +56,14 @@ final class AppSheetViewFactory {
     /// renders correctly and then silently ignores every button on it.
     ///
     /// `coordinator`, `searchDisplayModel`, `stopsObserver`,
-    /// `tripPlannerMapDisplayModel`, and `tripFocusMapDisplayModel`: they must be
-    /// the same instances the hosting `MapPanelRootView` observes. A factory built
-    /// with its own private copies would push routes onto a coordinator nobody is
-    /// watching, draw into a display model nobody renders, observe a different
-    /// stop set than the map is showing, or push trip state into a model nobody
-    /// renders — silently, with the sheets simply appearing to do nothing.
+    /// `tripPlannerMapDisplayModel`, `tripFocusMapDisplayModel`, and
+    /// `onDemandProbeController`: they must be the same instances the hosting
+    /// `MapPanelRootView` observes. A factory built with its own private copies
+    /// would push routes onto a coordinator nobody is watching, draw into a
+    /// display model nobody renders, observe a different stop set than the map
+    /// is showing, push trip state into a model nobody renders, or highlight a
+    /// zone the map never hears about — silently, with the sheets simply
+    /// appearing to do nothing.
     init(
         application: Application,
         mapViewModel: MapViewModel,
@@ -69,7 +75,8 @@ final class AppSheetViewFactory {
         searchDisplayModel: MapSearchDisplayModel,
         stopsObserver: MapStopsObserver,
         tripPlannerMapDisplayModel: TripPlannerMapDisplayModel,
-        tripFocusMapDisplayModel: TripFocusMapDisplayModel
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel,
+        onDemandProbeController: OnDemandProbeController
     ) {
         self.application = application
         self.mapViewModel = mapViewModel
@@ -82,6 +89,7 @@ final class AppSheetViewFactory {
         self.stopsObserver = stopsObserver
         self.tripPlannerMapDisplayModel = tripPlannerMapDisplayModel
         self.tripFocusMapDisplayModel = tripFocusMapDisplayModel
+        self.onDemandProbeController = onDemandProbeController
     }
 
     /// Built once and shared: the search sheet and the results sheet must route a
@@ -451,7 +459,7 @@ final class AppSheetViewFactory {
     }
 
     /// The overlap picker (spec 3.5). A row highlights its zone through the
-    /// layers model and pushes the service page.
+    /// probe controller and pushes the service page.
     func onDemandPickerView(payload: OnDemandPickerPayload) -> OnDemandPickerView {
         let timeZone = payload.request.matches.first?.service.timeZone ?? .current
         let copy = OnDemandCopy(timeZone: timeZone, now: Date())
@@ -463,12 +471,12 @@ final class AppSheetViewFactory {
         )
         return OnDemandPickerView(
             model: model,
-            onHighlight: { [layersModel] id in layersModel.setHighlightedService(id) },
+            onHighlight: { [onDemandProbeController] id in onDemandProbeController.highlightedServiceID = id },
             onSelect: { [coordinator] match, _ in coordinator.push(.onDemandService(match.service)) },
-            onClose: { [layersModel, coordinator] in
+            onClose: { [onDemandProbeController, coordinator] in
                 // The panel host clears the highlight on close (ruling F14);
                 // a row push keeps it.
-                layersModel.setHighlightedService(nil)
+                onDemandProbeController.highlightedServiceID = nil
                 coordinator.pop()
             }
         )

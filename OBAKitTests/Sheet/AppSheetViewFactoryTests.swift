@@ -58,7 +58,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver ?? MapStopsObserver(application: application),
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel(),
-            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil })
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil }),
+            onDemandProbeController: OnDemandProbeController.make(application: application)
         )
     }
 
