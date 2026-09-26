@@ -167,8 +167,10 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     /// `date` in the agency zone with a relative day word when it is within a
     /// day of `now` ("tomorrow at 7:20 AM"), else an absolute medium date. The
     /// dock, card and picker copy use this for "Opens …" and "Book by …".
-    public static func formattedRelativeDateTime(_ date: Date, now: Date, timeZone: TimeZone, locale: Locale) -> String {
-        SummaryFormatters(timeZone: timeZone, locale: locale, now: now).deadline(date)
+    /// - Parameter omitsYear: the absolute date drops its year ("Sep 28,
+    ///   5:00 PM"), for the docked bar's one-line title.
+    public static func formattedRelativeDateTime(_ date: Date, now: Date, timeZone: TimeZone, locale: Locale, omitsYear: Bool = false) -> String {
+        SummaryFormatters(timeZone: timeZone, locale: locale, now: now).deadline(date, omitsYear: omitsYear)
     }
 
     // MARK: - Formatting
@@ -178,6 +180,7 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         let wallClockFormatter: DateFormatter
         let deadlineFormatterRelative: DateFormatter
         let deadlineFormatterAbsolute: DateFormatter
+        let deadlineFormatterAbsoluteNoYear: DateFormatter
         let travelDateFormatter: DateFormatter
         let shortWeekdaySymbols: [String]
         let calendar: Calendar
@@ -195,6 +198,10 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
             // absolute one never reads the live wall clock.
             deadlineFormatterRelative = Self.makeDeadlineFormatter(relative: true, timeZone: timeZone, locale: locale)
             deadlineFormatterAbsolute = Self.makeDeadlineFormatter(relative: false, timeZone: timeZone, locale: locale)
+            deadlineFormatterAbsoluteNoYear = DateFormatter()
+            deadlineFormatterAbsoluteNoYear.locale = locale
+            deadlineFormatterAbsoluteNoYear.timeZone = timeZone
+            deadlineFormatterAbsoluteNoYear.setLocalizedDateFormatFromTemplate("MMMdjmm")
 
             travelDateFormatter = DateFormatter()
             travelDateFormatter.locale = locale
@@ -253,9 +260,9 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
         /// range, or a DST gap moved the probe's clock time — see
         /// `relativeProbe`), this falls back to `deadlineFormatterAbsolute`,
         /// which never reads the wall clock at all.
-        func deadline(_ date: Date, today: Date = Date()) -> String {
+        func deadline(_ date: Date, today: Date = Date(), omitsYear: Bool = false) -> String {
             guard let probe = relativeProbe(for: date, today: today) else {
-                return deadlineFormatterAbsolute.string(from: date)
+                return (omitsYear ? deadlineFormatterAbsoluteNoYear : deadlineFormatterAbsolute).string(from: date)
             }
             return deadlineFormatterRelative.string(from: probe)
         }
