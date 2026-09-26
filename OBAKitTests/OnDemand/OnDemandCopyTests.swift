@@ -46,6 +46,18 @@ final class OnDemandCopyTests: OBATestCase {
         OnDemandServiceMatch(service: try service(), matchReason: reason, distanceToArea: distance, nearestPointOnBoundary: nil, availability: availability)
     }
 
+    /// `DateFormatter`/`MeasurementFormatter` insert a narrow no-break space
+    /// (U+202F) before AM/PM and before a metric unit on this OS; normalise it
+    /// to a plain space so exact-equality assertions don't hard-code an ICU
+    /// formatting detail that could drift (see `FormattersTests`).
+    private func normalizeSpaces(_ string: String) -> String {
+        string.replacingOccurrences(of: "\u{202F}", with: " ")
+    }
+
+    private func normalizeSpaces(_ string: String?) -> String? {
+        string.map(normalizeSpaces)
+    }
+
     // MARK: - Distances
 
     @Test func `Imperial distances use feet below a tenth of a mile and miles above`() {
@@ -58,7 +70,7 @@ final class OnDemandCopyTests: OBATestCase {
 
     @Test func `Metric distances use metres below a kilometre and kilometres above`() {
         let metric = copy("fr_FR")
-        #expect(metric.distance(54) == "50\u{202F}m")
+        #expect(normalizeSpaces(metric.distance(54)) == "50 m")
         let roundedUp = metric.distance(996)
         #expect(roundedUp.hasSuffix("m") && !roundedUp.hasSuffix("km") && roundedUp.contains("000"), "996 m rounds to 1 000 m, not 1,0 km: \(roundedUp)")
         let kilometres = metric.distance(1550)
@@ -69,8 +81,8 @@ final class OnDemandCopyTests: OBATestCase {
 
     @Test func `Status text follows the copy catalogue`() {
         let until = instant("2026-03-10T20:40:00Z")
-        #expect(copy().statusText(.openNow(until: until), style: .card) == "Open · until 4:40\u{202F}PM")
-        #expect(copy().statusText(.openNow(until: until), style: .detail) == "Open now · until 4:40\u{202F}PM")
+        #expect(normalizeSpaces(copy().statusText(.openNow(until: until), style: .card)) == "Open · until 4:40 PM")
+        #expect(normalizeSpaces(copy().statusText(.openNow(until: until), style: .detail)) == "Open now · until 4:40 PM")
         #expect(copy().statusText(.openNow(until: nil), style: .card) == "Open")
         let opens = copy().statusText(.opensAt(instant("2026-03-11T11:20:00Z")), style: .card) ?? ""
         #expect(opens.hasPrefix("Opens ") && opens.localizedCaseInsensitiveContains("tomorrow") && opens.contains("7:20"), "\(opens)")
@@ -84,7 +96,7 @@ final class OnDemandCopyTests: OBATestCase {
 
     @Test func `Card meta joins status and booking tag and omits empty segments`() {
         let until = instant("2026-03-10T20:40:00Z")
-        #expect(copy().cardMeta(availability(status: .openNow(until: until), tags: [.sameDayBooking], tier: 1)) == "Open · until 4:40\u{202F}PM · Same-day booking")
+        #expect(normalizeSpaces(copy().cardMeta(availability(status: .openNow(until: until), tags: [.sameDayBooking], tier: 1))) == "Open · until 4:40 PM · Same-day booking")
         #expect(copy().cardMeta(availability(status: .unknown, tags: [.advanceBooking], tier: 5)) == "Advance booking")
         #expect(copy().cardMeta(availability(status: .closed, tags: [], tier: 5)) == "Closed")
         #expect(copy().cardMeta(availability(status: .unknown, tags: [], tier: 5)) == nil)
