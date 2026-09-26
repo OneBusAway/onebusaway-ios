@@ -70,6 +70,9 @@ enum OnDemandDockPlacement: Equatable {
 final class OnDemandDockHostController: UIHostingController<OnDemandDockView> {
     /// The placement `placementConstraints` implement; nil before the first layout.
     var placement: OnDemandDockPlacement?
+    /// The panel surface `placementConstraints` pin to: the search panel's,
+    /// or the trip planner's while the planner card shows (spec 3.8).
+    weak var placementSurface: UIView?
     var placementConstraints: [NSLayoutConstraint] = []
     var cancellables = Set<AnyCancellable>()
 
