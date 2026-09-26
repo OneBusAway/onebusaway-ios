@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import Synchronization
 import Testing
 @testable import OBAKitCore
 
@@ -64,37 +63,50 @@ final class DecodingErrorReporterTests {
         #expect(message.contains("Context: Invalid format"))
     }
 
-    private struct ReportedData: Sendable {
+    private final class ReportedData: @unchecked Sendable {
         var error: DecodingError?
         var url: URL?
         var method: String?
         var message: String?
+        let lock = NSLock()
     }
 
     @Test func testReportHandlerInvocation() {
-        let reportedData = Mutex(ReportedData())
+        let reportedData = ReportedData()
         
         DecodingErrorReporter.reportHandler = { error, url, httpMethod, message in
-            reportedData.withLock {
-                $0.error = error
-                $0.url = url
-                $0.method = httpMethod
-                $0.message = message
-            }
+            reportedData.lock.lock()
+            reportedData.error = error
+            reportedData.url = url
+            reportedData.method = httpMethod
+            reportedData.message = message
+            reportedData.lock.unlock()
         }
         
         let context = DecodingError.Context(codingPath: [], debugDescription: "Error")
-        let error = DecodingError.dataCorrupted(context)
+        let originalError = DecodingError.dataCorrupted(context)
         let testURL = URL(string: "https://api.onebusaway.org/test")!
         
-        DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
+        DecodingErrorReporter.report(error: originalError, url: testURL, httpMethod: "GET")
         
-        let finalData = reportedData.withLock { $0 }
+        reportedData.lock.lock()
+        let finalError = reportedData.error
+        let finalURL = reportedData.url
+        let finalMethod = reportedData.method
+        let finalMessage = reportedData.message
+        reportedData.lock.unlock()
         
-        #expect(finalData.url == testURL)
-        #expect(finalData.method == "GET")
-        #expect(finalData.message != nil)
-        #expect(finalData.message?.contains("Data corrupted") == true)
+        #expect(finalURL == testURL)
+        #expect(finalMethod == "GET")
+        #expect(finalMessage != nil)
+        #expect(finalMessage?.contains("Data corrupted") == true)
+        
+        if case .dataCorrupted(let reportedContext) = finalError,
+           case .dataCorrupted(let originalContext) = originalError {
+            #expect(reportedContext.debugDescription == originalContext.debugDescription)
+        } else {
+            Issue.record("Expected dataCorrupted error to be forwarded to the handler")
+        }
         
         // Reset the handler
         DecodingErrorReporter.reportHandler = nil
