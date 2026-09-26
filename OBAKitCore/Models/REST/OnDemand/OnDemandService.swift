@@ -95,6 +95,13 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
         return bookingRules.first { $0.id == id }
     }
 
+    /// The booking rule riders contact: the first rule whose pickup booking
+    /// rule resolves (a rule without one, or with a dangling id, is skipped).
+    /// The summary, the zone card, the bar and the planner all read this.
+    public var contactBookingRule: OnDemandBookingRule? {
+        rules.lazy.compactMap { self.bookingRule(id: $0.pickupBookingRuleID) }.first
+    }
+
     /// The agency's time zone — the zone every service-day value is interpreted
     /// in (wiki §2.4). Nil until references load, or when the agency publishes
     /// an unknown identifier.
