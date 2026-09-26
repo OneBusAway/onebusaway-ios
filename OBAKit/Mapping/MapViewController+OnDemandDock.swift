@@ -86,9 +86,17 @@ extension MapViewController {
         host.placementConstraints = placement.constraints(
             dockView: host.view,
             safeArea: view.safeAreaLayoutGuide,
-            surface: surface
+            surface: surface,
+            ceiling: anchoring.anchorsToPlanner ? plannerCardCeiling(for: placement) : nil
         )
         NSLayoutConstraint.activate(host.placementConstraints)
+    }
+
+    /// The planner card rises from the half-height planner toward the top of
+    /// the screen; at compact width it spans the map, so it stops below the
+    /// map controls instead of covering Layers and My Trip.
+    private func plannerCardCeiling(for placement: OnDemandDockPlacement) -> NSLayoutYAxisAnchor {
+        placement == .compact ? toolbar.bottomAnchor : view.safeAreaLayoutGuide.topAnchor
     }
 
     /// The zone colours the layer drew, so the dock and picker match the map.

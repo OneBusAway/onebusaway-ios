@@ -10,7 +10,9 @@
 import CoreLocation
 import Foundation
 import OTPKit
+import SwiftUI
 import Testing
+import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -142,5 +144,59 @@ final class OnDemandPlannerFallbackTests: OBATestCase {
         #expect(partial?.destination.latitude == destination.latitude)
 
         #expect(TripPlanEmptyEndpoints.resolve(userInfo: nil, fallbackOrigin: nil, fallbackDestination: destination) == nil)
+    }
+
+    // MARK: - Fitting above the planner (half height)
+
+    private func threeQualifying() throws -> OnDemandPlannerResult {
+        let zone = [(from: ["A"], to: ["A"])]
+        let ids = ["X", "Y", "Z"]
+        return result(
+            origin: try ids.map { try match(serviceID: $0, rules: zone, areaIDs: ["A"], insideAreaIDs: ["A"]) },
+            destination: try ids.map { try match(serviceID: $0, rules: zone, areaIDs: ["A"], insideAreaIDs: ["A"]) }
+        )
+    }
+
+    @Test func `The card shows at most two services and leaves the rest to Show all`() throws {
+        let result = try threeQualifying()
+        #expect(result.qualifying.count == 3)
+        #expect(OnDemandPlannerFallbackView.visibleServices(in: result).map(\.id) == ["X", "Y"])
+    }
+
+    /// Two cards and the captions outgrow the space between the map
+    /// controls and a half-height planner on a phone; the card then scrolls
+    /// within the height it is given instead of running under the status bar.
+    @Test func `The card scrolls within a height shorter than its content`() throws {
+        let result = try threeQualifying()
+        let view = OnDemandPlannerFallbackView(
+            result: result,
+            copy: OnDemandCopy(timeZone: TimeZone(identifier: "America/Detroit")!, locale: Locale(identifier: "en_US"), now: now),
+            colors: [:],
+            actions: .none
+        )
+        let host = UIHostingController(rootView: view)
+        let natural = host.sizeThatFits(in: CGSize(width: 343, height: CGFloat.greatestFiniteMagnitude)).height
+        let limit: CGFloat = 220
+        #expect(natural > limit, "precondition: two cards need more than \(limit) pt, got \(natural)")
+
+        #expect(host.sizeThatFits(in: CGSize(width: 343, height: limit)).height <= limit)
+    }
+
+    @Test func `The planner card's placement stops below its ceiling`() throws {
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+        let controls = UIView()
+        let surface = UIView()
+        let dock = UIView()
+        [controls, surface, dock].forEach(container.addSubview)
+
+        let constraints = OnDemandDockPlacement.compact.constraints(dockView: dock, safeArea: container.safeAreaLayoutGuide, surface: surface, ceiling: controls.bottomAnchor)
+        let top = try #require(constraints.first { $0.firstItem === dock && $0.firstAttribute == .top })
+        #expect(top.relation == .greaterThanOrEqual)
+        #expect(top.secondItem === controls)
+        #expect(top.secondAttribute == .bottom)
+        #expect(top.constant == OnDemandDockPlacement.gap)
+
+        let uncapped = OnDemandDockPlacement.compact.constraints(dockView: dock, safeArea: container.safeAreaLayoutGuide, surface: surface)
+        #expect(!uncapped.contains { $0.firstAttribute == .top })
     }
 }

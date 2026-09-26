@@ -33,7 +33,14 @@ enum OnDemandDockPlacement: Equatable {
 
     /// Pins `dockView` horizontally and vertically; its height comes from
     /// `OnDemandDockHostController`. `surface` is the floating panel's surface.
-    func constraints(dockView: UIView, safeArea: UILayoutGuide, surface: UIView) -> [NSLayoutConstraint] {
+    /// - Parameter ceiling: the highest the dock's top may reach, `gap` below
+    ///   it; the dock gives up height (its content scrolls) rather than cross it.
+    func constraints(dockView: UIView, safeArea: UILayoutGuide, surface: UIView, ceiling: NSLayoutYAxisAnchor? = nil) -> [NSLayoutConstraint] {
+        let ceilingConstraints = ceiling.map { [dockView.topAnchor.constraint(greaterThanOrEqualTo: $0, constant: Self.gap)] } ?? []
+        return ceilingConstraints + edgeConstraints(dockView: dockView, safeArea: safeArea, surface: surface)
+    }
+
+    private func edgeConstraints(dockView: UIView, safeArea: UILayoutGuide, surface: UIView) -> [NSLayoutConstraint] {
         switch self {
         case .compact:
             return [
@@ -106,7 +113,12 @@ final class OnDemandDockHostController: UIHostingController<OnDemandDockView> {
     var placementConstraints: [NSLayoutConstraint] = []
     var cancellables = Set<AnyCancellable>()
 
-    private lazy var heightConstraint = view.heightAnchor.constraint(equalToConstant: 0)
+    /// Just below required, so a placement's ceiling can cap the height.
+    private lazy var heightConstraint: NSLayoutConstraint = {
+        let constraint = view.heightAnchor.constraint(equalToConstant: 0)
+        constraint.priority = .required - 1
+        return constraint
+    }()
 
     init(controller: OnDemandProbeController, actions: OnDemandDockActions, serviceColors: @escaping () -> [String: UIColor]) {
         super.init(rootView: OnDemandDockView(controller: controller, actions: actions, serviceColors: serviceColors))
