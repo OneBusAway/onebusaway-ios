@@ -71,6 +71,11 @@ class MapViewController: UIViewController,
 
     private var surveyCardView: SurveyLauncherCardView?
 
+    // MARK: - On-demand dock
+
+    lazy var onDemandProbeController = OnDemandProbeController.make(application: application)
+    var onDemandDockHost: OnDemandDockHostController?
+
     // MARK: - Init
 
     public init(application: Application) {
@@ -123,6 +128,7 @@ class MapViewController: UIViewController,
         mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
 
         floatingPanel.addPanel(toParent: self)
+        installOnDemandDock()
 
         let appearance = UITabBarAppearance()
         appearance.configureWithDefaultBackground()
@@ -272,6 +278,7 @@ class MapViewController: UIViewController,
             card.alpha = 1
             card.transform = .identity
         }
+        updateOnDemandDockContext()
     }
 
     private func handleMapSurveyTakeSurvey(_ survey: Survey) {
@@ -309,6 +316,7 @@ class MapViewController: UIViewController,
         }, completion: { _ in
             card.removeFromSuperview()
         })
+        updateOnDemandDockContext()
     }
 
     private func showMapExternalSurveyError() {
@@ -895,6 +903,7 @@ class MapViewController: UIViewController,
             guard oldValue != stopSheetStopID else { return }
             mapRegionManager.stopSheetSelection = stopSheetStopID
             renderMapStatus()
+            updateOnDemandDockContext()
         }
     }
 
@@ -1019,6 +1028,7 @@ class MapViewController: UIViewController,
         panel.addPanel(toParent: self)
 
         semiModalPanel = panel
+        updateOnDemandDockContext()
     }
 
     // MARK: - Floating Panel Controller
@@ -1069,6 +1079,7 @@ class MapViewController: UIViewController,
         if mapPanelController.inSearchMode && floatingPanelPositionIsCollapsed {
             mapPanelController.exitSearchMode()
         }
+        updateOnDemandDockContext()
     }
 
     func updateVoiceover() {
@@ -1109,6 +1120,7 @@ class MapViewController: UIViewController,
         else {
             controller.dismiss(animated: true, completion: nil)
         }
+        updateOnDemandDockContext()
     }
 
     // MARK: - Map Item Controller
@@ -1124,6 +1136,7 @@ class MapViewController: UIViewController,
             removeSemiModalPanel(existingController, animated: animated)
             semiModalMapItemController = nil
         }
+        updateOnDemandDockContext()
     }
 
     /// Presents a `MapItemController` with the provided `MKMapItem` as a semi-modal panel.
@@ -1160,6 +1173,7 @@ class MapViewController: UIViewController,
         let semiModal = createSemiModalPanel(childController: mapItemController)
         semiModal.addPanel(toParent: self)
         self.semiModalMapItemController = semiModal
+        updateOnDemandDockContext()
     }
 
     // MARK: - Map Panel Controller
@@ -1196,6 +1210,7 @@ class MapViewController: UIViewController,
         } else if let currentTrackingScrollView = floatingPanel.trackingScrollView {
             floatingPanel.untrack(scrollView: currentTrackingScrollView)
         }
+        updateOnDemandDockContext()
     }
 
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool) {
@@ -1555,6 +1570,32 @@ private extension MapViewController {
         )
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
         layoutMapMargins()
+    }
+}
+
+// MARK: - On-demand dock context
+
+/// Kept out of the class body (SwiftLint `type_body_length`); in this file so
+/// it can read the private state behind the dock's visibility rule.
+extension MapViewController {
+    var isSurveyCardShown: Bool { surveyCardView != nil }
+
+    /// A panel being removed is still parented until its hide animation ends,
+    /// but its state is `.hidden` from the start.
+    var hasSemiModalPanelPresented: Bool {
+        [semiModalPanel, semiModalMapItemController, semiModalTripPlannerController]
+            .contains { panel in panel.map { $0.parent != nil && $0.state != .hidden } ?? false }
+    }
+
+    var isSearchListShown: Bool { mapPanelController.inSearchMode }
+
+    /// `stopSheetStopID`, not `stopSheet.isPresenting`, which the property's
+    /// own documentation calls unreliable.
+    var isStopSheetPresented: Bool { stopSheetStopID != nil }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        layoutOnDemandDock()
     }
 }
 

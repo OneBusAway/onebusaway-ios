@@ -144,6 +144,7 @@ extension MapViewController {
         self.semiModalTripPlannerController = semiModal
         self.tripPlanner = tripPlanner
         self.tripPlannerHostingController = hostingController
+        updateOnDemandDockContext()
     }
 
     func dismissTripPlannerController() {
@@ -156,6 +157,7 @@ extension MapViewController {
         hideTripPlannerMapView()
 
         unsubscribeFromTripPlannerNotifications()
+        updateOnDemandDockContext()
     }
 
     func subscribeToTripPlannerNotifications() {

@@ -36,6 +36,7 @@ struct MapPanelRootView: View {
     @StateObject private var mapViewModel: MapViewModel
     @StateObject private var layersModel: MapPanelLayersModel
     @ObservedObject private var stopsObserver: MapStopsObserver
+    @ObservedObject private var probeController: OnDemandProbeController
 
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
@@ -66,6 +67,7 @@ struct MapPanelRootView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
     @State private var mapSize: CGSize = .zero
@@ -94,6 +96,10 @@ struct MapPanelRootView: View {
 
     @State private var halfScreenHeight: CGFloat = 350
 
+    /// The on-demand dock's measured height; zero while it shows nothing. The
+    /// control stack rides above it (spec 2.4).
+    @State private var dockHeight: CGFloat = 0
+
     /// Points of fade band immediately below the clamp ceiling. Toolbar
     /// opacity ramps from 1 → 0 across this window as the sheet approaches `halfScreenHeight`.
     private let toolbarFadeRange: CGFloat = 50
@@ -109,11 +115,13 @@ struct MapPanelRootView: View {
         factory: AppSheetViewFactory,
         coordinator: SheetCoordinator<AppSheetRoute>,
         searchDisplayModel: MapSearchDisplayModel,
-        stopsObserver: MapStopsObserver
+        stopsObserver: MapStopsObserver,
+        probeController: OnDemandProbeController
     ) {
         _coordinator = StateObject(wrappedValue: coordinator)
         _searchDisplay = ObservedObject(wrappedValue: searchDisplayModel)
         _stopsObserver = ObservedObject(wrappedValue: stopsObserver)
+        _probeController = ObservedObject(wrappedValue: probeController)
         _mapViewModel = StateObject(wrappedValue: mapViewModel)
         _layersModel = StateObject(wrappedValue: layersModel)
         self.application = application
@@ -195,6 +203,10 @@ struct MapPanelRootView: View {
             visibleMapRectHeight = context.rect.height
             layersModel.viewportDidChange(context.rect)
             layersModel.updateViewport(mapRect: context.rect, mapSize: mapSize)
+            probeController.mapDidSettle(
+                center: context.region.center,
+                zoomLevel: OnDemandZoomLevel.level(forVisibleHeight: context.rect.height)
+            )
             // Keep the "Zoom in for stops" pill in sync with the stop-loading
             // threshold by updating it before the stop-loading early return, so it
             // also works when the map is zoomed out.
@@ -347,6 +359,21 @@ struct MapPanelRootView: View {
         }
         .overlay(alignment: .bottomLeading) {
             myTripButton
+        }
+        .overlay(alignment: .bottom) {
+            onDemandDock
+        }
+        .onChange(of: coordinator.routeStack.map(\.id) + coordinator.stackedRoutes.map(\.id)) { _, _ in
+            probeController.setSurfaceFocus(coordinator.currentRoute != .home || !coordinator.stackedRoutes.isEmpty)
+        }
+        .onChange(of: sheetHeight) { _, newValue in
+            probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
+        }
+        .onChange(of: layersModel.isOnDemandLayerEnabled, initial: true) { _, enabled in
+            probeController.setLayerEnabled(enabled)
+        }
+        .onChange(of: probeController.highlightedServiceID) { _, id in
+            layersModel.setHighlightedService(id)
         }
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
@@ -684,6 +711,7 @@ extension MapPanelRootView {
             coordinator.push(.routePicker)
         }
         .padding(.leading, ThemeMetrics.controllerMargin)
+        .padding(.bottom, controlsDockOffset)
         .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
     }
 
@@ -696,7 +724,58 @@ extension MapPanelRootView {
             onCenterOnUser: centerOnUser
         )
         .padding(.trailing, ThemeMetrics.controllerMargin)
+        .padding(.bottom, controlsDockOffset)
         .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
+    }
+
+    private var controlsDockOffset: CGFloat {
+        dockHeight > 0 ? dockHeight + OnDemandDockPlacement.gap : 0
+    }
+
+    // MARK: - On-demand dock
+
+    /// Spec 2.4: above the sheet, 16 pt gutters in compact width, at most
+    /// 360 pt bottom-leading in regular width; its height lifts the controls.
+    private var onDemandDock: some View {
+        let isRegular = horizontalSizeClass == .regular
+        return OnDemandDockView(
+            controller: probeController,
+            actions: onDemandDockActions,
+            serviceColors: { [layersModel] in layersModel.onDemandServiceColors }
+        )
+        .frame(maxWidth: isRegular ? OnDemandDockPlacement.floatingMaxWidth : .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: isRegular ? .leading : .center)
+        .padding(.horizontal, OnDemandDockPlacement.gutter)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { _, newValue in
+            dockHeight = newValue
+        }
+        .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
+    }
+
+    private var onDemandDockActions: OnDemandDockActions {
+        OnDemandDockActions(
+            openDetail: { match, _ in coordinator.push(.onDemandService(match.service)) },
+            openPicker: { request in
+                Task {
+                    let locality = await OnDemandLocalityResolver().locality(for: request.coordinate)
+                    coordinator.push(.onDemandPicker(OnDemandPickerPayload(request: request, locality: locality)))
+                }
+            },
+            call: { url in application.open(url, options: [:], completionHandler: nil) },
+            openURL: { url in application.open(url, options: [:], completionHandler: nil) },
+            zoomOut: { matches in
+                guard let probePoint = probeController.probePoint else { return }
+                let areas = matches.flatMap { probeController.fullAreasByServiceID[$0.id] ?? $0.service.areas }
+                guard let rect = OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint) else { return }
+                withAnimation { cameraPosition = .rect(rect) }
+            },
+            panTo: { point in
+                guard let span = visibleRegion?.span else { return }
+                withAnimation { cameraPosition = .region(MKCoordinateRegion(center: point, span: span)) }
+            }
+        )
     }
 
 }
@@ -708,4 +787,3 @@ private final class RegionMismatchCameraActions: ObservableObject {
     @Published var applyLaunch = false
     @Published var showSelectedServiceRect = false
 }
-

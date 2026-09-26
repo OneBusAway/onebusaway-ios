@@ -26,6 +26,9 @@ import OTPKit
     @Published private(set) var isStopsLayerEnabled = true
     @Published private(set) var showsPointsOfInterest = true
 
+    /// The on-demand zones layer's toggle, for the dock's layer-off rule.
+    @Published private(set) var isOnDemandLayerEnabled = true
+
     /// Drives the badge on the map-type button — the panel's only at-a-glance
     /// readout of layer state.
     @Published private(set) var enabledLayerCount = 0
@@ -111,6 +114,7 @@ import OTPKit
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
         showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
+        isOnDemandLayerEnabled = mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID)
         subscribeToRentalCoordinator()
         bindOnDemandLayer()
 
