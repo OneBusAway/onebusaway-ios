@@ -51,22 +51,4 @@ public extension Strings {
     static let onDemandListTitle = OBALoc("on_demand.list_title", value: "On-demand services", comment: "Title of the list of an agency's on-demand services")
 
     static let agenciesOnDemandServices = OBALoc("agencies_controller.on_demand_services", value: "On-demand services", comment: "Action on the agency action sheet that opens the agency's on-demand services")
-
-    // MARK: - Service kinds
-
-    /// A short badge for the shape of a service (wiki §2.3).
-    static func onDemandKindTitle(_ kind: ServiceKind) -> String {
-        switch kind {
-        case .zone:
-            return OBALoc("on_demand.kind.zone", value: "Zone service", comment: "Badge for an on-demand service that serves anywhere inside one zone")
-        case .zoneToZone:
-            return OBALoc("on_demand.kind.zone_to_zone", value: "Zone to zone", comment: "Badge for an on-demand service that travels between zones")
-        case .stopGroup:
-            return OBALoc("on_demand.kind.stop_group", value: "Stop group", comment: "Badge for an on-demand service that serves a set of stops")
-        case .deviatedRoute:
-            return OBALoc("on_demand.kind.deviated_route", value: "Route deviation", comment: "Badge for a fixed route that can deviate into a zone on request")
-        case .unknown:
-            return OBALoc("on_demand.kind.unknown", value: "On-demand", comment: "Badge for an on-demand service of unknown shape")
-        }
-    }
 }

@@ -47,7 +47,6 @@ final class StopDeparturesSectionsOnDemandTests: OBATestCase {
 
         #expect(section.rows.map(\.id) == [Self.alexandriaServiceID])
         #expect(section.rows[0].title == "DOT Paratransit")
-        #expect(section.rows[0].subtitle == Strings.onDemandKindTitle(.zone))
         section.select(section.rows[0])
         #expect(selected?.id == Self.alexandriaServiceID)
     }
@@ -102,10 +101,9 @@ final class StopDeparturesSectionsOnDemandTests: OBATestCase {
 
         let section = try #require(onDemandSection(of: controller))
         #expect(section.title == Strings.onDemandSectionTitle)
-        let row = try #require(section.contents.first?.as(OBAListRowView.SubtitleViewModel.self))
+        let row = try #require(section.contents.first?.as(OBAListRowView.DefaultViewModel.self))
         #expect(section.contents.count == 1)
         #expect(row.title == .string("DOT Paratransit"))
-        #expect(row.subtitle == .string(Strings.onDemandKindTitle(.zone)))
     }
 
     @Test func `Legacy page has no on-demand section for a stop without pointers`() async throws {
