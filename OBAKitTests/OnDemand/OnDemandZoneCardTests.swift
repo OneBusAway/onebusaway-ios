@@ -125,4 +125,11 @@ final class OnDemandZoneCardTests: OBATestCase {
         #expect(OnDemandZoneCardModel(insideMatches: [], colors: colors(services), copy: copy) == nil)
         #expect(OnDemandZoneCardModel(insideMatches: [nearby], colors: colors(services), copy: copy) == nil, "a nearby match is not inside")
     }
+
+    /// The global 44 pt touch-target floor outranks the mock's 40 pt pill
+    /// (review ruling): the primary and Details buttons both grow their hit
+    /// area to this constant even though the drawn capsule stays smaller.
+    @Test func `Buttons meet the 44pt touch target floor`() {
+        #expect(OnDemandZoneCardView.minimumTouchTarget == 44)
+    }
 }
