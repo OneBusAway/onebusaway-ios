@@ -146,4 +146,23 @@ final class OnDemandPickerTests: OBATestCase {
         #expect(picker.viewControllers.count == 2)
         #expect(picker.viewControllers.last is OnDemandServiceViewController)
     }
+
+    @Test func `Locality lookup gives up after the timeout when the geocoder never answers`() async {
+        // Never resumes and ignores cancellation, like a stuck `CLGeocoder`
+        // (unsafe, so the dropped continuation doesn't log a leak).
+        let resolver = OnDemandLocalityResolver { _ in
+            await withUnsafeContinuation { (_: UnsafeContinuation<String?, Never>) in }
+        }
+        let start = ContinuousClock.now
+        let locality = await resolver.locality(for: probe)
+        let elapsed = ContinuousClock.now - start
+        #expect(locality == nil)
+        #expect(elapsed >= .seconds(OnDemandLocalityResolver.timeout))
+        #expect(elapsed < .seconds(OnDemandLocalityResolver.timeout + 1))
+    }
+
+    @Test func `Locality lookup returns the geocoded locality when it arrives in time`() async {
+        let resolver = OnDemandLocalityResolver { _ in "Boyne City" }
+        #expect(await resolver.locality(for: probe) == "Boyne City")
+    }
 }
