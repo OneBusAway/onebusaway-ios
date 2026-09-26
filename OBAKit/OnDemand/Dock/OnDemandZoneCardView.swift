@@ -115,7 +115,7 @@ struct OnDemandZoneCardView: View {
                         Text(OnDemandCopy.moreServices(model.moreCount))
                             .font(.subheadline.weight(.semibold))
                         Spacer()
-                        Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).accessibilityHidden(true)
                     }
                     .foregroundStyle(accent)
                 }
@@ -144,7 +144,7 @@ struct OnDemandZoneCardView: View {
                 }
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary).accessibilityHidden(true)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
