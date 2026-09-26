@@ -20,9 +20,10 @@ import UIKit
 struct OnDemandServiceHost: UIViewControllerRepresentable {
     let application: Application
     let service: OnDemandService
+    let locationCheck: OnDemandLocationCheck?
 
     func makeUIViewController(context: Context) -> OnDemandServiceViewController {
-        OnDemandServiceViewController(application: application, service: service)
+        OnDemandServiceViewController(application: application, service: service, locationCheck: locationCheck)
     }
 
     // The route carries one service for the sheet's lifetime; the controller

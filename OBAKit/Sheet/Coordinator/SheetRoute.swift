@@ -106,7 +106,7 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case transitAlert(alertID: String)
     case rentalDetail(rentalID: VehicleRental.ID)
     case rentalCluster(memberIDs: [VehicleRental.ID])
-    case onDemandService(OnDemandService)
+    case onDemandService(OnDemandService, locationCheck: OnDemandLocationCheck? = nil)
     case onDemandPicker(OnDemandPickerPayload)
     case searchResults(SearchResponse)
     case mapItem(MKMapItem)
@@ -159,7 +159,7 @@ nonisolated extension AppSheetRoute {
             // must produce the same route regardless of feed ordering, which is
             // what keeps an open sheet bound to its marker across a camera move.
             return "\(caseName)-\(memberIDs.sorted().joined(separator: ","))"
-        case .onDemandService(let service):
+        case .onDemandService(let service, _):
             return "\(caseName)-\(service.id)"
         case .onDemandPicker(let payload):
             return "\(caseName)-\(payload.id)"

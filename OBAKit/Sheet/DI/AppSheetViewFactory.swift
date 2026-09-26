@@ -150,8 +150,8 @@ final class AppSheetViewFactory {
         case .rentalCluster(let memberIDs):
             rentalClusterView(memberIDs: memberIDs)
 
-        case .onDemandService(let service):
-            onDemandServiceView(service: service)
+        case .onDemandService(let service, let locationCheck):
+            onDemandServiceView(service: service, locationCheck: locationCheck)
 
         case .onDemandPicker(let payload):
             onDemandPickerView(payload: payload)
@@ -290,9 +290,10 @@ final class AppSheetViewFactory {
         .padding()
     }
 
-    /// A zone marker's service page, hosted with its own refresh timer.
-    func onDemandServiceView(service: OnDemandService) -> OnDemandServiceHost {
-        OnDemandServiceHost(application: application, service: service)
+    /// A zone's service page, hosted with its own refresh timer; the location
+    /// row shows when the page was opened with a probe result.
+    func onDemandServiceView(service: OnDemandService, locationCheck: OnDemandLocationCheck? = nil) -> OnDemandServiceHost {
+        OnDemandServiceHost(application: application, service: service, locationCheck: locationCheck)
     }
 
     /// The overlap picker (spec 3.5). A row highlights its zone through the
@@ -309,7 +310,7 @@ final class AppSheetViewFactory {
         return OnDemandPickerView(
             model: model,
             onHighlight: { [onDemandProbeController] id in onDemandProbeController.highlightedServiceID = id },
-            onSelect: { [coordinator] match, _ in coordinator.push(.onDemandService(match.service)) },
+            onSelect: { [coordinator] match, check in coordinator.push(.onDemandService(match.service, locationCheck: check)) },
             onClose: { [onDemandProbeController, coordinator] in
                 // The panel host clears the highlight on close (ruling F14);
                 // a row push keeps it.

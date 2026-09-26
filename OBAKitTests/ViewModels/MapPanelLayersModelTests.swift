@@ -125,7 +125,7 @@ final class MapPanelLayersModelTests: OBATestCase {
         let marker = try #require(model.onDemandMarkers.first)
 
         let route = try #require(model.onDemandServiceRoute(forMarkerID: marker.id))
-        guard case .onDemandService(let service) = route else {
+        guard case .onDemandService(let service, _) = route else {
             Issue.record("expected an on-demand service route, got \(route.id)")
             return
         }

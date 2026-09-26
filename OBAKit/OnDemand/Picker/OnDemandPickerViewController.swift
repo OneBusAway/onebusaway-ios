@@ -40,7 +40,7 @@ final class OnDemandPickerViewController: UINavigationController {
 
     /// Pushes the service page for a picked row.
     func select(_ match: OnDemandServiceMatch, check: OnDemandLocationCheck) {
-        let detail = OnDemandServiceViewController(application: application, service: match.service)
+        let detail = OnDemandServiceViewController(application: application, service: match.service, locationCheck: check)
         setNavigationBarHidden(false, animated: true)
         pushViewController(detail, animated: true)
     }
