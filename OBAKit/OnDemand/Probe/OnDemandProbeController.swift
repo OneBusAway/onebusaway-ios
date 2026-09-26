@@ -20,6 +20,8 @@ enum OnDemandDockState: Equatable {
     case card([OnDemandServiceMatch])
     /// Street level: the inside stack, or the nearby stack when none is inside.
     case bar([OnDemandServiceMatch])
+    /// The planner showed an empty result; R11 over R5.
+    case planner(OnDemandPlannerResult)
 
     var isBar: Bool {
         if case .bar = self { return true }
@@ -115,6 +117,8 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     private var isLayerEnabled = true
     private var hasSurfaceFocus = false
     private var isMapMostlyCovered = false
+    /// Shown until `clearPlanner()`; routine reprobes never replace it.
+    private var activePlannerResult: OnDemandPlannerResult?
 
     private enum RefreshReason {
         case mapSettled, locationUpdate, authorization, foreground, boundary
@@ -207,6 +211,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         lastProbePoint = nil
         lastSuccessfulProbePoint = nil
         highlightedServiceID = nil
+        activePlannerResult = nil
         setDockState(.hidden)
     }
 
@@ -331,12 +336,42 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         }
         matches = []
         edgesByServiceID = [:]
-        setDockState(.hidden)
+        // Derived rather than set, so a planner card outlives the failure.
+        deriveDockState()
+    }
+
+    // MARK: - Planner fallback (spec 3.8)
+
+    /// Probes both ends through the exact cache. Nil when either probe fails.
+    func plannerResult(origin: CLLocationCoordinate2D, destination: CLLocationCoordinate2D) async -> OnDemandPlannerResult? {
+        guard !isUnsupported else { return nil }
+        do {
+            let originMatches = try await probeExact(at: origin)
+            let destinationMatches = try await probeExact(at: destination)
+            return OnDemandPlannerQualifier.result(origin: originMatches, destination: destinationMatches, originCoordinate: origin, destinationCoordinate: destination)
+        } catch {
+            return nil
+        }
+    }
+
+    func showPlanner(_ result: OnDemandPlannerResult) {
+        activePlannerResult = result
+        deriveDockState()
+    }
+
+    func clearPlanner() {
+        guard activePlannerResult != nil else { return }
+        activePlannerResult = nil
+        deriveDockState()
     }
 
     // MARK: - Dock state (spec 2.4)
 
     private func deriveDockState() {
+        if let activePlannerResult, !isUnsupported {
+            setDockState(.planner(activePlannerResult))
+            return
+        }
         let slotAvailable = isLayerEnabled && !hasSurfaceFocus && !isMapMostlyCovered && !isUnsupported
         guard slotAvailable else {
             setDockState(.hidden)

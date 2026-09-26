@@ -36,6 +36,7 @@ struct OnDemandDockView: View {
         case .hidden: return "hidden"
         case .card(let matches): return "card-" + matches.map(\.id).joined(separator: ",")
         case .bar(let matches): return "bar-" + matches.map(\.id).joined(separator: ",")
+        case .planner(let result): return "planner-" + result.qualifying.map(\.id).joined(separator: ",") + "-\(result.hiddenCount)"
         }
     }
 
@@ -67,6 +68,8 @@ struct OnDemandDockView: View {
                     onPageChange: { controller.highlightedServiceID = $0 }
                 )
             }
+        case .planner(let result):
+            OnDemandPlannerFallbackView(result: result, copy: copy(for: result.qualifying), colors: serviceColors(), actions: actions)
         }
     }
 
