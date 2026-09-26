@@ -41,7 +41,7 @@ final class OnDemandProbeControllerTests: OBATestCase {
         baseNow.addingTimeInterval(Double(clock.now.offset.components.seconds))
     }
 
-    private func makeController(authorized: Bool = false) -> OnDemandProbeController {
+    private func makeController(authorized: Bool = false, configuration: OnDemandProbeController.Configuration = .init()) -> OnDemandProbeController {
         mockGeometryFallback()
         let cache = OnDemandGeometryCache { apiService, serviceID in
             try await apiService.getOnDemandService(id: serviceID, geometryDetail: .full).entry.areas
@@ -51,6 +51,7 @@ final class OnDemandProbeControllerTests: OBATestCase {
             apiService: { [weak application] in application?.apiService },
             geometryCache: cache,
             now: { [self] in now },
+            configuration: configuration,
             isLocationAuthorized: { authorized },
             sleep: { seconds in try await clock.sleep(for: .seconds(seconds), tolerance: nil) }
         )
@@ -455,22 +456,30 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(controller.probeSource == .mapCenter)
     }
 
-    @Test func `A failed probe near the last one keeps the state and far away hides the dock`() async {
+    @Test func `A failed probe near the last one keeps the state and far away hides the dock`() async throws {
         mockProbe(file: "ondemand_services_for_location_point.json")
-        let controller = makeController()
+        // A one-second cache lets the foreground probe hit the network without
+        // advancing the clock far enough to wake the boundary refresh, which
+        // would answer from the stale cache and skip the failure path.
+        let controller = makeController(configuration: .init(cacheLifetime: 1))
         await settle(controller, at: alexandriaPoint, level: .region)
         #expect(ids(of: controller.dockState) == ["5088_77652"])
+        let nextChange = try #require(controller.matches[0].availability.nextChangeInstant)
+        #expect(nextChange.timeIntervalSince(now) > 2, "the advance below must stay short of the boundary refresh")
+        await poll(until: { self.clock.sleeperCount >= 1 }, "the boundary task should be sleeping until the next change")
 
         dataLoader.replaceMappedResponses { staging in
             staging.mock(data: Data(), statusCode: 500, matcher: Self.isProbe)
             staging.mock(data: Data(), statusCode: 500, matcher: Self.isGeometry)
         }
-        clock.advance(by: .seconds(700)) // the cache is stale, so the foreground probe hits the network
+        clock.advance(by: .seconds(2))
         controller.applicationWillEnterForeground()
         await controller.refreshTask?.value
+        #expect(probeRequests.count == 2, "the foreground probe reached the network and got the 500")
         #expect(ids(of: controller.dockState) == ["5088_77652"], "a failed re-probe at the last good probe point keeps the state")
 
         await settle(controller, at: CLLocationCoordinate2D(latitude: 38.82, longitude: -77.05), level: .region) // ~2 km
+        #expect(probeRequests.count == 3)
         #expect(controller.dockState == .hidden)
     }
 
@@ -524,6 +533,34 @@ final class OnDemandProbeControllerTests: OBATestCase {
         await settle(controller, at: alexandriaPoint, level: .region)
         #expect(controller.highlightedServiceID == nil)
         if case .card = controller.dockState { } else { Issue.record("expected card") }
+    }
+
+    @Test func `Leaving the bar for hidden clears the highlight`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .street)
+        controller.highlightedServiceID = "5088_77652"
+
+        controller.setSurfaceFocus(true)
+        #expect(controller.dockState == .hidden)
+        #expect(controller.highlightedServiceID == nil)
+    }
+
+    /// Spec 2.3: a highlight set by the picker or held for the detail page
+    /// while the dock is suppressed survives refreshes that keep it hidden.
+    @Test func `A highlight set while the dock is hidden survives a trigger`() async {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .street)
+        controller.setSurfaceFocus(true)
+        controller.highlightedServiceID = "5088_77652"
+
+        controller.applicationWillEnterForeground()
+        await controller.refreshTask?.value
+        await settle(controller, at: CLLocationCoordinate2D(latitude: 38.8004, longitude: -77.05), level: .street)
+
+        #expect(controller.dockState == .hidden)
+        #expect(controller.highlightedServiceID == "5088_77652")
     }
 
     @Test func `Focus, coverage and the layer toggle hide the dock without dropping the matches`() async {

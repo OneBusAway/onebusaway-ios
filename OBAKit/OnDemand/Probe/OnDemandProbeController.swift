@@ -20,6 +20,11 @@ enum OnDemandDockState: Equatable {
     case card([OnDemandServiceMatch])
     /// Street level: the inside stack, or the nearby stack when none is inside.
     case bar([OnDemandServiceMatch])
+
+    var isBar: Bool {
+        if case .bar = self { return true }
+        return false
+    }
 }
 
 /// Owns the point-mode probe (spec 2.1): its two caches, its error rules and
@@ -347,7 +352,10 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     }
 
     private func setDockState(_ state: OnDemandDockState) {
-        if case .bar = state { } else {
+        // Spec 2.3: only a real exit from the bar drops the highlight, so one
+        // set by the picker or held for the detail page while the dock is
+        // suppressed survives unrelated refreshes.
+        if case .bar = dockState, !state.isBar {
             highlightedServiceID = nil
         }
         if state != dockState {
