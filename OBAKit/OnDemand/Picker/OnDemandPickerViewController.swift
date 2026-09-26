@@ -15,11 +15,17 @@ import UIKit
 /// row tap pushes the service page inside the same sheet.
 final class OnDemandPickerViewController: UINavigationController {
 
-    private let application: Application
+    private let makeDetail: (OnDemandServiceMatch, OnDemandLocationCheck) -> OnDemandServiceViewController?
     private let onHighlight: (String?) -> Void
 
-    init(application: Application, model: OnDemandPickerModel, onHighlight: @escaping (String?) -> Void) {
-        self.application = application
+    /// - Parameter makeDetail: builds a row's service page, with the probe's
+    ///   geometry for its thumbnail.
+    init(
+        model: OnDemandPickerModel,
+        makeDetail: @escaping (OnDemandServiceMatch, OnDemandLocationCheck) -> OnDemandServiceViewController?,
+        onHighlight: @escaping (String?) -> Void
+    ) {
+        self.makeDetail = makeDetail
         self.onHighlight = onHighlight
         super.init(nibName: nil, bundle: nil)
         setNavigationBarHidden(true, animated: false)
@@ -40,7 +46,7 @@ final class OnDemandPickerViewController: UINavigationController {
 
     /// Pushes the service page for a picked row.
     func select(_ match: OnDemandServiceMatch, check: OnDemandLocationCheck) {
-        let detail = OnDemandServiceViewController(application: application, service: match.service, locationCheck: check)
+        guard let detail = makeDetail(match, check) else { return }
         setNavigationBarHidden(false, animated: true)
         pushViewController(detail, animated: true)
     }

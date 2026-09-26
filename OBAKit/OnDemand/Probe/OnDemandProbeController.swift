@@ -196,6 +196,16 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         return areas
     }
 
+    /// What a service page opened from the dock, bar or picker draws: the
+    /// full areas already loaded for `serviceID`, else a fetch through the
+    /// same cache.
+    func detailGeometry(forServiceID serviceID: String) -> OnDemandDetailGeometry {
+        OnDemandDetailGeometry(cached: fullAreasByServiceID[serviceID]) { [weak self] in
+            guard let self else { throw CancellationError() }
+            return try await fullAreas(for: serviceID)
+        }
+    }
+
     /// Region switch or custom URL change: cancels in-flight probes and
     /// geometry fetches, drops both probe caches and forgets the old
     /// deployment's support state.

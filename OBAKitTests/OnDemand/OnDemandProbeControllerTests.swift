@@ -337,6 +337,23 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(query(geometryRequests[0], "geometryDetail") == "full")
     }
 
+    @Test func `The detail geometry fetches full areas through the shared cache`() async throws {
+        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_service_alexandria.json")) { request in
+            request.url?.path.contains("/api/ondemand/service/5088_77652.json") ?? false
+        }
+        let controller = makeController()
+        let geometry = controller.detailGeometry(forServiceID: "5088_77652")
+        #expect(geometry.cached == nil)
+
+        let areas = try await geometry.fetch()
+        _ = try await controller.fullAreas(for: "5088_77652")
+
+        #expect(areas.first?.hasGeometry == true)
+        let geometryRequests = dataLoader.recordedRequestURLs.filter { $0.path.contains("/api/ondemand/service/") }
+        #expect(geometryRequests.count == 1)
+        #expect(query(geometryRequests[0], "geometryDetail") == "full")
+    }
+
     // MARK: - Dock state (spec 2.4)
 
     private func settle(_ controller: OnDemandProbeController, at point: CLLocationCoordinate2D, level: OnDemandZoomLevel) async {

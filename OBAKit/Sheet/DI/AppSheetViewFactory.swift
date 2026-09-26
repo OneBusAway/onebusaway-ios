@@ -293,7 +293,12 @@ final class AppSheetViewFactory {
     /// A zone's service page, hosted with its own refresh timer; the location
     /// row shows when the page was opened with a probe result.
     func onDemandServiceView(service: OnDemandService, locationCheck: OnDemandLocationCheck? = nil) -> OnDemandServiceHost {
-        OnDemandServiceHost(application: application, service: service, locationCheck: locationCheck)
+        OnDemandServiceHost(
+            application: application,
+            service: service,
+            locationCheck: locationCheck,
+            geometry: onDemandProbeController.detailGeometry(forServiceID: service.id)
+        )
     }
 
     /// The overlap picker (spec 3.5). A row highlights its zone through the

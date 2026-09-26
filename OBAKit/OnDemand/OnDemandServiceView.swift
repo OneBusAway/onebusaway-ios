@@ -50,8 +50,11 @@ struct OnDemandServiceView: View {
     private static let warnText = Color(red: 0x8a / 255.0, green: 0x5a / 255.0, blue: 0x00 / 255.0)
     private static let thumbnailHeight: CGFloat = 210
 
+    /// - Parameter mapAreas: the areas the thumbnail draws; nil draws the
+    ///   service's own.
     init(
         service: OnDemandService,
+        mapAreas: [ServiceArea]? = nil,
         summary: OnDemandServiceSummary,
         availability: OnDemandAvailability,
         locationCheck: OnDemandLocationCheck?,
@@ -63,7 +66,7 @@ struct OnDemandServiceView: View {
         self.availability = availability
         self.locationCheck = locationCheck
         self.onOpenURL = onOpenURL
-        polygons = service.areas.flatMap(\.mkPolygons)
+        polygons = (mapAreas ?? service.areas).flatMap(\.mkPolygons)
         let timeZone = service.timeZone ?? .current
         copy = OnDemandCopy(timeZone: timeZone, now: now)
         today = BookingDeadlineEvaluator(timeZone: timeZone, calendars: service.calendars).serviceDate(for: now)
