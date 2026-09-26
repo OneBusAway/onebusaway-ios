@@ -124,7 +124,7 @@ extension MapViewController {
         if let zone = annotation as? OnDemandZoneAnnotation {
             // The pin carries the current probe result when its service is a match (spec 3.6 item 3).
             let check = onDemandProbeController.locationCheck(forServiceID: zone.service.id)
-            presentOnDemandServicePage(OnDemandServiceViewController(application: application, service: zone.service, locationCheck: check))
+            presentOnDemandServicePage(makeOnDemandServicePage(zone.service, check: check))
             mapView.deselectAnnotation(annotation, animated: true)
             return true
         }

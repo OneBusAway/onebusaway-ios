@@ -141,7 +141,11 @@ final class OnDemandPickerTests: OBATestCase {
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
         let dialARide = try charlevoix().first { $0.id == "CC_CC1" }!
-        let picker = OnDemandPickerViewController(application: application, model: try model([match(dialARide)], scope: .insideOnly), onHighlight: { _ in })
+        let picker = OnDemandPickerViewController(
+            model: try model([match(dialARide)], scope: .insideOnly),
+            makeDetail: { match, check in OnDemandServiceViewController(application: application, service: match.service, locationCheck: check) },
+            onHighlight: { _ in }
+        )
         #expect(picker.viewControllers.count == 1)
 
         picker.select(match(dialARide), check: OnDemandLocationCheck(source: .rider, isInside: true, locality: "Boyne City", coordinate: probe))
@@ -157,7 +161,11 @@ final class OnDemandPickerTests: OBATestCase {
         let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
         let dialARide = try charlevoix().first { $0.id == "CC_CC1" }!
         var highlights: [String?] = []
-        let picker = OnDemandPickerViewController(application: application, model: try model([match(dialARide)], scope: .insideOnly), onHighlight: { highlights.append($0) })
+        let picker = OnDemandPickerViewController(
+            model: try model([match(dialARide)], scope: .insideOnly),
+            makeDetail: { match, check in OnDemandServiceViewController(application: application, service: match.service, locationCheck: check) },
+            onHighlight: { highlights.append($0) }
+        )
 
         picker.select(match(dialARide), check: OnDemandLocationCheck(source: .rider, isInside: true, locality: nil, coordinate: probe))
         #expect(highlights.isEmpty)

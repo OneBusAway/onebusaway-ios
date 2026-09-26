@@ -114,7 +114,7 @@ extension MapViewController {
             let locality = await OnDemandLocalityResolver().locality(for: check.coordinate)
             guard let self else { return }
             let resolved = OnDemandLocationCheck(source: check.source, isInside: check.isInside, locality: locality, coordinate: check.coordinate)
-            presentOnDemandServicePage(OnDemandServiceViewController(application: application, service: match.service, locationCheck: resolved))
+            presentOnDemandServicePage(makeOnDemandServicePage(match.service, check: resolved))
         }
     }
 
@@ -131,7 +131,18 @@ extension MapViewController {
     /// Opens the zone detail a map item's coverage line names. The check
     /// already carries the map item's locality, so no lookup is needed.
     func openOnDemandDetail(_ match: OnDemandServiceMatch, check: OnDemandLocationCheck) {
-        presentOnDemandServicePage(OnDemandServiceViewController(application: application, service: match.service, locationCheck: check))
+        presentOnDemandServicePage(makeOnDemandServicePage(match.service, check: check))
+    }
+
+    /// A service page that draws the probe's full geometry when `service`
+    /// came from the point probe, which carries none.
+    func makeOnDemandServicePage(_ service: OnDemandService, check: OnDemandLocationCheck?) -> OnDemandServiceViewController {
+        OnDemandServiceViewController(
+            application: application,
+            service: service,
+            locationCheck: check,
+            geometry: onDemandProbeController.detailGeometry(forServiceID: service.id)
+        )
     }
 
     /// Presents a service page that keeps the zone highlight while it is open
@@ -152,9 +163,11 @@ extension MapViewController {
                 colors: onDemandServiceColors,
                 copy: OnDemandCopy(timeZone: request.matches.first?.service.timeZone ?? .current, now: onDemandProbeController.now())
             )
-            let picker = OnDemandPickerViewController(application: application, model: model) { [weak self] id in
-                self?.onDemandProbeController.highlightedServiceID = id
-            }
+            let picker = OnDemandPickerViewController(
+                model: model,
+                makeDetail: { [weak self] match, check in self?.makeOnDemandServicePage(match.service, check: check) },
+                onHighlight: { [weak self] id in self?.onDemandProbeController.highlightedServiceID = id }
+            )
             presentMediumSheet(picker)
         }
     }

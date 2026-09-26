@@ -91,6 +91,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(host.application === application)
         #expect(host.service === service)
+        #expect(host.geometry != nil, "a probe service's page draws the probe's full geometry")
     }
 
     @Test @MainActor

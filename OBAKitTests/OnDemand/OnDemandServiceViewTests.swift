@@ -152,6 +152,62 @@ final class OnDemandServiceViewTests: OBATestCase {
         #expect(controller.rootView.hasContactDetails)
     }
 
+    // MARK: - Geometry from the probe (dock, bar, picker)
+
+    /// The point probe asks for `geometryDetail=none`, so its services carry
+    /// areas without rings.
+    private func alexandriaFromProbe() throws -> OnDemandService {
+        let service = try alexandria(rewriting: "serviceAreas") { $0.removeValue(forKey: "geometry") }
+        #expect(service.areas.allSatisfy { $0.mkPolygons.isEmpty })
+        return service
+    }
+
+    private func makeApplication() -> Application {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        return buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+    }
+
+    @Test func `A page opened from the dock draws the geometry the probe cached`() throws {
+        let full = try alexandria().areas
+        let geometry = OnDemandDetailGeometry(cached: full) {
+            Issue.record("cached geometry must not be fetched again")
+            return []
+        }
+        let controller = OnDemandServiceViewController(application: makeApplication(), service: try alexandriaFromProbe(), geometry: geometry)
+
+        #expect(controller.rootView.showsMap)
+        #expect(controller.geometryTask == nil)
+    }
+
+    @Test func `With nothing cached the page fetches the full geometry itself`() async throws {
+        let full = try alexandria().areas
+        var fetches = 0
+        let geometry = OnDemandDetailGeometry(cached: nil) {
+            fetches += 1
+            return full
+        }
+        let controller = OnDemandServiceViewController(application: makeApplication(), service: try alexandriaFromProbe(), geometry: geometry)
+        #expect(!controller.rootView.showsMap)
+
+        await controller.geometryTask?.value
+
+        #expect(fetches == 1)
+        #expect(controller.rootView.showsMap)
+        #expect(controller.rootView.bookingLineText != nil, "the rebuilt page keeps its summary")
+    }
+
+    @Test func `A service with its own geometry never fetches`() throws {
+        let geometry = OnDemandDetailGeometry(cached: nil) {
+            Issue.record("a pin's service already has its polygons")
+            return []
+        }
+        let controller = OnDemandServiceViewController(application: makeApplication(), service: try alexandria(), geometry: geometry)
+
+        #expect(controller.rootView.showsMap)
+        #expect(controller.geometryTask == nil)
+    }
+
     // MARK: - Refreshing the booking line
 
     /// Alexandria's calendars cut to end on Wed 2026-03-11, so once Tuesday's
