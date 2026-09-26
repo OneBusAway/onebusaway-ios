@@ -283,7 +283,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>另有 %d 項服務</string>
+			<string>另有%d項服務</string>
 		</dict>
 	</dict>
 	<key>on_demand.picker.title</key>
@@ -297,7 +297,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>此處有 %d 項服務</string>
+			<string>此處有%d項服務</string>
 		</dict>
 	</dict>
 	<key>on_demand.picker.title_nearby</key>
@@ -311,7 +311,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>附近有 %d 項服務</string>
+			<string>附近有%d項服務</string>
 		</dict>
 	</dict>
 	<key>on_demand.detail.zone_count</key>
@@ -325,7 +325,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d 個區域</string>
+			<string>%d個區域</string>
 		</dict>
 	</dict>
 	<key>on_demand.address.inside_more</key>

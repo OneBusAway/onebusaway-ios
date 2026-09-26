@@ -1992,13 +1992,13 @@
 "on_demand.card.details" = "詳細資訊";
 
 /* Footer of the zone card; plural forms in Localizable.stringsdict */
-"on_demand.card.more_services" = "另有 %d 項服務";
+"on_demand.card.more_services" = "另有%d項服務";
 
 /* Card and picker status while running. %@ is the end time */
-"on_demand.status.open_until" = "服務中・至%@";
+"on_demand.status.open_until" = "服務中·至%@";
 
 /* Service page status while running. %@ is the end time */
-"on_demand.status.open_now_until" = "目前服務中・至%@";
+"on_demand.status.open_now_until" = "目前服務中·至%@";
 
 /* Status of a service that runs continuously */
 "on_demand.status.open" = "服務中";
@@ -2010,7 +2010,7 @@
 "on_demand.status.book_by" = "請在%@前預約";
 
 /* Status of a service with no upcoming service day */
-"on_demand.status.closed" = "已停止服務";
+"on_demand.status.closed" = "暫停服務";
 
 /* Tag for a service booked the same day */
 "on_demand.tag.same_day" = "當日預約";
@@ -2028,28 +2028,28 @@
 "on_demand.bar.inside" = "此處提供上車服務";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.north" = "區域內・北側邊緣%@";
+"on_demand.bar.inside_near_edge.north" = "區域內·北側邊緣%@";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.northeast" = "區域內・東北側邊緣%@";
+"on_demand.bar.inside_near_edge.northeast" = "區域內·東北側邊緣%@";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.east" = "區域內・東側邊緣%@";
+"on_demand.bar.inside_near_edge.east" = "區域內·東側邊緣%@";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.southeast" = "區域內・東南側邊緣%@";
+"on_demand.bar.inside_near_edge.southeast" = "區域內·東南側邊緣%@";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.south" = "區域內・南側邊緣%@";
+"on_demand.bar.inside_near_edge.south" = "區域內·南側邊緣%@";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.southwest" = "區域內・西南側邊緣%@";
+"on_demand.bar.inside_near_edge.southwest" = "區域內·西南側邊緣%@";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.west" = "區域內・西側邊緣%@";
+"on_demand.bar.inside_near_edge.west" = "區域內·西側邊緣%@";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.northwest" = "區域內・西北側邊緣%@";
+"on_demand.bar.inside_near_edge.northwest" = "區域內·西北側邊緣%@";
 
 /* Bar title outside a zone. %@ is a distance */
 "on_demand.bar.outside.north" = "區域以北%@";
@@ -2091,19 +2091,19 @@
 "on_demand.bar.a11y.more_services" = "此處所有服務";
 
 /* Picker title for the services containing the point; plural forms in Localizable.stringsdict */
-"on_demand.picker.title" = "此處有 %d 項服務";
+"on_demand.picker.title" = "此處有%d項服務";
 
 /* Picker title for every matched service; plural forms in Localizable.stringsdict */
-"on_demand.picker.title_nearby" = "附近有 %d 項服務";
+"on_demand.picker.title_nearby" = "附近有%d項服務";
 
 /* Picker subtitle. %@ is a locality */
-"on_demand.picker.subtitle_location" = "%@・您的位置";
+"on_demand.picker.subtitle_location" = "%@·您的位置";
 
 /* Picker subtitle. %@ is a locality */
-"on_demand.picker.subtitle_center" = "%@・地圖中心";
+"on_demand.picker.subtitle_center" = "%@·地圖中心";
 
 /* Picker subtitle. %@ is a locality */
-"on_demand.picker.subtitle_point" = "%@・已選地點";
+"on_demand.picker.subtitle_point" = "%@·已選地點";
 
 /* Picker subtitle when no locality is known */
 "on_demand.picker.your_location" = "您的位置";
@@ -2151,7 +2151,7 @@
 "on_demand.detail.drop_off" = "下車地點";
 
 /* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
-"on_demand.detail.zone_count" = "%d 個區域";
+"on_demand.detail.zone_count" = "%d個區域";
 
 /* Hours column for weekdays without service */
 "on_demand.detail.no_service" = "無服務";

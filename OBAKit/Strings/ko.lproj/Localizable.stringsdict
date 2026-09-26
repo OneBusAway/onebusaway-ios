@@ -331,7 +331,7 @@
 	<key>on_demand.address.inside_more</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$@ 내부 및 %2$#@count@</string>
+		<string>%1$@ 외 %2$#@count@</string>
 		<key>count</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
@@ -339,7 +339,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d개 더</string>
+			<string>%d곳</string>
 		</dict>
 	</dict>
 </dict>

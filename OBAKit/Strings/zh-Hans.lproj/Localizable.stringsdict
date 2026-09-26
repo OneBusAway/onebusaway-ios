@@ -339,7 +339,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>另外%d个</string>
+			<string>另外%d项</string>
 		</dict>
 	</dict>
 </dict>

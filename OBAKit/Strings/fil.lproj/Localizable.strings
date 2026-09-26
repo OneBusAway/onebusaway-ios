@@ -1986,7 +1986,7 @@
 "on_demand.card.eyebrow" = "On-demand na serbisyo dito";
 
 /* Primary button on the zone card that dials the booking phone number */
-"on_demand.card.call_to_book" = "Tumawag Para Mag-book";
+"on_demand.card.call_to_book" = "Tumawag para mag-book";
 
 /* Secondary button on the zone card that opens the service page */
 "on_demand.card.details" = "Detalye";
@@ -2148,7 +2148,7 @@
 "on_demand.detail.service_area" = "Lugar ng serbisyo";
 
 /* Row title for the drop-off areas */
-"on_demand.detail.drop_off" = "Drop-off";
+"on_demand.detail.drop_off" = "Babaan";
 
 /* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
 "on_demand.detail.zone_count" = "%d na zone";
@@ -2157,7 +2157,7 @@
 "on_demand.detail.no_service" = "Walang serbisyo";
 
 /* Row that opens the service's url */
-"on_demand.detail.open_agency_website" = "Buksan ang Website ng Ahensya";
+"on_demand.detail.open_agency_website" = "Buksan ang website ng ahensya";
 
 /* Header of the planner fallback card */
 "on_demand.planner.section" = "Mga on-demand na opsyon";

@@ -2004,7 +2004,7 @@
 "on_demand.status.open" = "Đang mở";
 
 /* Status of a service not running yet. %@ is a relative day and time */
-"on_demand.status.opens" = "Mở lúc %@";
+"on_demand.status.opens" = "Mở %@";
 
 /* Short booking deadline. %@ is a relative day and time */
 "on_demand.status.book_by" = "Đặt chỗ trước %@";
@@ -2199,4 +2199,4 @@
 "map_layers.state.off" = "Tắt";
 
 /* Label before the rental range chips */
-"map_layers.min_range" = "Phạm vi tối thiểu";
+"map_layers.min_range" = "Quãng đường tối thiểu";

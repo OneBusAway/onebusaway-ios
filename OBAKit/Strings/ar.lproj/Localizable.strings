@@ -2028,28 +2028,28 @@
 "on_demand.bar.inside" = "الركوب متاح هنا";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.north" = "داخل · الحافة %@ شمالاً";
+"on_demand.bar.inside_near_edge.north" = "داخل · الحافة %@ باتجاه الشمال";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.northeast" = "داخل · الحافة %@ شمال شرقاً";
+"on_demand.bar.inside_near_edge.northeast" = "داخل · الحافة %@ باتجاه الشمال الشرقي";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.east" = "داخل · الحافة %@ شرقاً";
+"on_demand.bar.inside_near_edge.east" = "داخل · الحافة %@ باتجاه الشرق";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.southeast" = "داخل · الحافة %@ جنوب شرقاً";
+"on_demand.bar.inside_near_edge.southeast" = "داخل · الحافة %@ باتجاه الجنوب الشرقي";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.south" = "داخل · الحافة %@ جنوباً";
+"on_demand.bar.inside_near_edge.south" = "داخل · الحافة %@ باتجاه الجنوب";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.southwest" = "داخل · الحافة %@ جنوب غرباً";
+"on_demand.bar.inside_near_edge.southwest" = "داخل · الحافة %@ باتجاه الجنوب الغربي";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.west" = "داخل · الحافة %@ غرباً";
+"on_demand.bar.inside_near_edge.west" = "داخل · الحافة %@ باتجاه الغرب";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.northwest" = "داخل · الحافة %@ شمال غرباً";
+"on_demand.bar.inside_near_edge.northwest" = "داخل · الحافة %@ باتجاه الشمال الغربي";
 
 /* Bar title outside a zone. %@ is a distance */
 "on_demand.bar.outside.north" = "%@ شمال المنطقة";
@@ -2190,13 +2190,13 @@
 "map_layers.group.transit" = "النقل العام";
 
 /* Layers sheet group header */
-"map_layers.group.rentals" = "الإيجار";
+"map_layers.group.rentals" = "التأجير";
 
 /* Layer tile subtitle when enabled */
-"map_layers.state.on" = "تشغيل";
+"map_layers.state.on" = "مُفعّل";
 
 /* Layer tile subtitle when disabled */
-"map_layers.state.off" = "إيقاف";
+"map_layers.state.off" = "مُعطّل";
 
 /* Label before the rental range chips */
 "map_layers.min_range" = "الحد الأدنى للمدى";

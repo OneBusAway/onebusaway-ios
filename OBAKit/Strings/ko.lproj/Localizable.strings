@@ -2019,7 +2019,7 @@
 "on_demand.tag.advance" = "사전 예약";
 
 /* Tag for a service booked at ride time */
-"on_demand.tag.no_notice" = "예약 불필요";
+"on_demand.tag.no_notice" = "사전 예약 불필요";
 
 /* Tag for a service that requires rider certification */
 "on_demand.tag.eligibility" = "자격 요건 필요";
@@ -2181,7 +2181,7 @@
 "on_demand.address.inside" = "%@ 내부";
 
 /* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
-"on_demand.address.inside_more" = "%1$@ 내부 및 %2$d개 더";
+"on_demand.address.inside_more" = "%1$@ 외 %2$d곳";
 
 /* Map item line when the place is outside the nearest zone. %@ is the service name */
 "on_demand.address.outside" = "%@ 외부";

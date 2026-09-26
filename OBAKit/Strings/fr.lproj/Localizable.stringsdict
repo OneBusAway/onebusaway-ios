@@ -387,9 +387,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d de plus</string>
+			<string>%d autres</string>
 			<key>other</key>
-			<string>%d de plus</string>
+			<string>%d autres</string>
 		</dict>
 	</dict>
 </dict>

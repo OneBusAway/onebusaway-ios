@@ -2175,7 +2175,7 @@
 "on_demand.planner.empty" = "Nenhum serviço sob demanda atende aos dois locais.";
 
 /* Caption noting availability is evaluated at the current time */
-"on_demand.planner.status_now" = "Status exibido para agora.";
+"on_demand.planner.status_now" = "Status no horário atual.";
 
 /* Map item line when the place is inside a zone. %@ is the service name */
 "on_demand.address.inside" = "Dentro de %@";

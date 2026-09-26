@@ -2001,7 +2001,7 @@
 "on_demand.status.open_now_until" = "现在开放 · 至%@";
 
 /* Status of a service that runs continuously */
-"on_demand.status.open" = "开放中";
+"on_demand.status.open" = "运营中";
 
 /* Status of a service not running yet. %@ is a relative day and time */
 "on_demand.status.opens" = "%@开放";
@@ -2181,7 +2181,7 @@
 "on_demand.address.inside" = "位于%@内";
 
 /* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
-"on_demand.address.inside_more" = "位于%1$@及另外%2$d个";
+"on_demand.address.inside_more" = "位于%1$@及另外%2$d项";
 
 /* Map item line when the place is outside the nearest zone. %@ is the service name */
 "on_demand.address.outside" = "位于%@外";

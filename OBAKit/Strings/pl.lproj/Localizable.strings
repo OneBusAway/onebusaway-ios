@@ -2019,37 +2019,37 @@
 "on_demand.tag.advance" = "Rezerwacja z wyprzedzeniem";
 
 /* Tag for a service booked at ride time */
-"on_demand.tag.no_notice" = "Bez zgłoszenia";
+"on_demand.tag.no_notice" = "Bez wcześniejszej rezerwacji";
 
 /* Tag for a service that requires rider certification */
-"on_demand.tag.eligibility" = "Wymagane uprawnienia";
+"on_demand.tag.eligibility" = "Wymagane uprawnienie do przejazdu";
 
 /* Bar title when the rider is inside a zone that is open now */
-"on_demand.bar.inside" = "Odbiór dostępny tutaj";
+"on_demand.bar.inside" = "Wsiadanie możliwe tutaj";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.north" = "Wewnątrz · krawędź %@ na północy";
+"on_demand.bar.inside_near_edge.north" = "Wewnątrz · granica %@ na północy";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.northeast" = "Wewnątrz · krawędź %@ na północnym wschodzie";
+"on_demand.bar.inside_near_edge.northeast" = "Wewnątrz · granica %@ na północnym wschodzie";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.east" = "Wewnątrz · krawędź %@ na wschodzie";
+"on_demand.bar.inside_near_edge.east" = "Wewnątrz · granica %@ na wschodzie";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.southeast" = "Wewnątrz · krawędź %@ na południowym wschodzie";
+"on_demand.bar.inside_near_edge.southeast" = "Wewnątrz · granica %@ na południowym wschodzie";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.south" = "Wewnątrz · krawędź %@ na południu";
+"on_demand.bar.inside_near_edge.south" = "Wewnątrz · granica %@ na południu";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.southwest" = "Wewnątrz · krawędź %@ na południowym zachodzie";
+"on_demand.bar.inside_near_edge.southwest" = "Wewnątrz · granica %@ na południowym zachodzie";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.west" = "Wewnątrz · krawędź %@ na zachodzie";
+"on_demand.bar.inside_near_edge.west" = "Wewnątrz · granica %@ na zachodzie";
 
 /* Bar title near a zone edge. %@ is a distance */
-"on_demand.bar.inside_near_edge.northwest" = "Wewnątrz · krawędź %@ na północnym zachodzie";
+"on_demand.bar.inside_near_edge.northwest" = "Wewnątrz · granica %@ na północnym zachodzie";
 
 /* Bar title outside a zone. %@ is a distance */
 "on_demand.bar.outside.north" = "%@ na północ od strefy";
