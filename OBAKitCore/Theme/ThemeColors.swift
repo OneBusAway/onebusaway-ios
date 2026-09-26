@@ -15,6 +15,16 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     /// Primary theme color/brand color.
     public let brand: UIColor
 
+    /// The darker brand shade for links, focus and primary buttons (`#486621`
+    /// unless the app bundle names a `brandAccent` colour).
+    public let brandAccent: UIColor
+
+    /// The docked bar's background when the rider is outside every zone.
+    public let onDemandOutside: UIColor
+
+    /// The weight of "Open" in on-demand status lines.
+    public let onDemandOpenGreen: UIColor
+
     /// Light text color, used on dark backgrounds.
     public let lightText: UIColor
 
@@ -95,7 +105,7 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     }
 
     public convenience init(bundle: Bundle) {
-        self.init(brand: Palette.brand(in: bundle), palette: .platformDefault)
+        self.init(brand: Palette.brand(in: bundle), brandAccent: Palette.brandAccent(in: bundle), palette: .platformDefault)
     }
 
     #if !os(watchOS)
@@ -103,12 +113,19 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     // This and `Palette.system` below are the only platform conditionals in the
     // theme; keep it that way.
     public convenience init(bundle: Bundle, traitCollection: UITraitCollection?) {
-        self.init(brand: UIColor(named: "brand", in: bundle, compatibleWith: traitCollection), palette: .system)
+        self.init(
+            brand: UIColor(named: "brand", in: bundle, compatibleWith: traitCollection),
+            brandAccent: UIColor(named: "brandAccent", in: bundle, compatibleWith: traitCollection),
+            palette: .system
+        )
     }
     #endif
 
-    private init(brand: UIColor?, palette: Palette) {
+    private init(brand: UIColor?, brandAccent: UIColor?, palette: Palette) {
         self.brand = brand ?? UIColor(red: 0.471, green: 0.667, blue: 0.212, alpha: 1.0)  // fallback for swiftui previews
+        self.brandAccent = brandAccent ?? UIColor(red: 0x48 / 255.0, green: 0x66 / 255.0, blue: 0x21 / 255.0, alpha: 1.0)
+        onDemandOutside = UIColor(red: 0x63 / 255.0, green: 0x63 / 255.0, blue: 0x66 / 255.0, alpha: 1.0)
+        onDemandOpenGreen = UIColor(red: 0x24 / 255.0, green: 0x8a / 255.0, blue: 0x3d / 255.0, alpha: 1.0)
 
         mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
 
@@ -192,11 +209,19 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             // watchOS can only look a named color up in the main bundle.
             UIColor(named: "brand")
         }
+
+        static func brandAccent(in bundle: Bundle) -> UIColor? {
+            UIColor(named: "brandAccent")
+        }
         #else
         static let platformDefault = system
 
         static func brand(in bundle: Bundle) -> UIColor? {
             UIColor(named: "brand", in: bundle, compatibleWith: nil)
+        }
+
+        static func brandAccent(in bundle: Bundle) -> UIColor? {
+            UIColor(named: "brandAccent", in: bundle, compatibleWith: nil)
         }
 
         static let system = Palette(
