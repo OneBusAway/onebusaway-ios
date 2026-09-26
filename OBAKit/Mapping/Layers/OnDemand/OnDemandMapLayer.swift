@@ -37,7 +37,7 @@ import OBAKitCore
     weak var mapView: MKMapView? {
         didSet {
             guard let mapView, mapView !== oldValue else { return }
-            mapView.addOverlays(displayedOverlays, level: .aboveRoads)
+            insertZoneOverlays(halos: displayedHalos, strokes: overlays, into: mapView)
             mapView.addAnnotations(annotations)
         }
     }
@@ -139,7 +139,8 @@ import OBAKitCore
     }
 
     func mapOverlaysWereCleared() {
-        mapView?.addOverlays(displayedOverlays, level: .aboveRoads)
+        guard let mapView else { return }
+        insertZoneOverlays(halos: displayedHalos, strokes: overlays, into: mapView)
     }
 
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? {
@@ -194,9 +195,25 @@ import OBAKitCore
 
     // MARK: - Styles
 
-    /// Everything the map should carry at the current level: halos under strokes at street level.
-    private var displayedOverlays: [MKPolygon] {
-        zoomLevel == .street ? haloOverlays + overlays : overlays
+    /// The halos the map should carry at the current level: street level only.
+    private var displayedHalos: [MKPolygon] {
+        zoomLevel == .street ? haloOverlays : []
+    }
+
+    /// Puts zones at the bottom of `.aboveRoads`, beneath the route- and
+    /// trip-focus polylines that share the level, and every halo beneath every
+    /// stroke — `addOverlays` would stack a restyled or newly fetched zone's
+    /// fill or halo on top of both.
+    private func insertZoneOverlays(halos: [MKPolygon], strokes: [MKPolygon], into mapView: MKMapView) {
+        for (index, halo) in halos.enumerated() {
+            mapView.insertOverlay(halo, at: index, level: .aboveRoads)
+        }
+        let levelOverlays = mapView.overlays(in: .aboveRoads)
+        let lastHaloIndex = levelOverlays.lastIndex { haloOverlayIDs.contains(ObjectIdentifier($0)) }
+        let strokeStart = lastHaloIndex.map { $0 + 1 } ?? 0
+        for (offset, stroke) in strokes.enumerated() {
+            mapView.insertOverlay(stroke, at: strokeStart + offset, level: .aboveRoads)
+        }
     }
 
     private func style(for polygon: MKPolygon) -> OnDemandZoneStyle {
@@ -231,7 +248,7 @@ import OBAKitCore
     private func restyleOverlays() {
         if let mapView {
             mapView.removeOverlays(overlays + haloOverlays)
-            mapView.addOverlays(displayedOverlays, level: .aboveRoads)
+            insertZoneOverlays(halos: displayedHalos, strokes: overlays, into: mapView)
         }
         onMapContentDidChange?()
     }
@@ -322,7 +339,9 @@ import OBAKitCore
         for service in services where drawnByServiceID[service.id] == nil {
             let drawn = draw(service, color: colors[service.id] ?? tintColor)
             drawnByServiceID[service.id] = drawn
-            mapView?.addOverlays(zoomLevel == .street ? drawn.halos + drawn.overlays : drawn.overlays, level: .aboveRoads)
+            if let mapView {
+                insertZoneOverlays(halos: zoomLevel == .street ? drawn.halos : [], strokes: drawn.overlays, into: mapView)
+            }
             if zoomLevel != .street {
                 mapView?.addAnnotations(drawn.annotations)
             }

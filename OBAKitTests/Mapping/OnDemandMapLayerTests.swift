@@ -328,13 +328,7 @@ final class OnDemandMapLayerTests: OBATestCase {
     }
 
     @Test func `Highlight raises one service and dims the others at street level`() async throws {
-        let viewportJSON = try #require(String(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"), encoding: .utf8))
-        let element = try #require(Self.listElement(in: viewportJSON))
-        let twoServices = viewportJSON.replacingOccurrences(
-            of: "\"list\":[",
-            with: "\"list\":[" + element.replacingOccurrences(of: "5088_77652", with: "5088_other") + ","
-        )
-        mockProbe(statusCode: 200, data: Data(twoServices.utf8))
+        mockProbe(statusCode: 200, data: try Self.twoServicesResponse())
         let layer = makeLayer()
         let mapView = MKMapView()
         layer.mapView = mapView
@@ -366,6 +360,72 @@ final class OnDemandMapLayerTests: OBATestCase {
 
         layer.setHighlightedService(nil)
         #expect(layer.zoneShapes.allSatisfy { $0.style == .region(highlighted: false) })
+    }
+
+    // MARK: - Overlay order
+
+    private func zoneIndices(_ polygons: [MKPolygon], in mapView: MKMapView) -> [Int] {
+        polygons.compactMap { polygon in mapView.overlays.firstIndex { $0 === polygon } }
+    }
+
+    /// Route- and trip-focus polylines share `.aboveRoads`; a restyle must not
+    /// lift a zone's fill or halo over them.
+    @Test func `Restyled zones stay beneath other overlays at their level`() async throws {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        let layer = makeLayer()
+        let mapView = MKMapView()
+        var focusCoordinates = [CLLocationCoordinate2D(latitude: 38.83, longitude: -77.05), CLLocationCoordinate2D(latitude: 38.84, longitude: -77.04)]
+        let focusLine = MKPolyline(coordinates: &focusCoordinates, count: 2)
+        mapView.addOverlay(focusLine, level: .aboveRoads)
+        layer.mapView = mapView
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+
+        layer.viewportDidChange(streetViewport)
+        await layer.fetchTask?.value
+        layer.setHighlightedService("5088_77652")
+
+        let focusIndex = try #require(mapView.overlays.firstIndex { $0 === focusLine })
+        let zoneIndices = zoneIndices(layer.haloOverlays + layer.overlays, in: mapView)
+        #expect(zoneIndices.count == 2)
+        #expect(zoneIndices.allSatisfy { $0 < focusIndex })
+    }
+
+    @Test func `A service fetched on a later pan keeps its halo beneath every stroke`() async throws {
+        mockProbe(statusCode: 200, data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"))
+        let layer = makeLayer()
+        let mapView = MKMapView()
+        layer.mapView = mapView
+        layer.activate()
+        layer.viewportDidChange(streetViewport)
+        await layer.fetchTask?.value
+
+        let twoServices = try Self.twoServicesResponse()
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(data: twoServices) { Self.isProbe($0) }
+        }
+        layer.viewportDidChange(streetViewport)
+        await layer.fetchTask?.value
+        #expect(layer.services.count == 2)
+
+        let haloIndices = zoneIndices(layer.haloOverlays, in: mapView)
+        let strokeIndices = zoneIndices(layer.overlays, in: mapView)
+        #expect(haloIndices.count == 2)
+        #expect(strokeIndices.count == 2)
+        #expect(try #require(haloIndices.max()) < #require(strokeIndices.min()))
+    }
+
+    /// The viewport fixture with its service duplicated as `5088_other`, which
+    /// draws the same zone.
+    private static func twoServicesResponse() throws -> Data {
+        let viewportJSON = try #require(String(data: Fixtures.loadData(file: "ondemand_services_for_location_viewport.json"), encoding: .utf8))
+        let element = try #require(listElement(in: viewportJSON))
+        let twoServices = viewportJSON.replacingOccurrences(
+            of: "\"list\":[",
+            with: "\"list\":[" + element.replacingOccurrences(of: "5088_77652", with: "5088_other") + ","
+        )
+        return Data(twoServices.utf8)
     }
 
     /// The JSON text of the fixture's single list element, for duplication.
