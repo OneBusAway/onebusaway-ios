@@ -2,12 +2,13 @@
 //  DecodingErrorReporterTests.swift
 //  OBAKitTests
 //
-//  Copyright Â© Open Transit Software Foundation
+//  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
 
 import Foundation
+import Synchronization
 import Testing
 @testable import OBAKitCore
 
@@ -39,7 +40,7 @@ final class DecodingErrorReporterTests {
         
         let message = DecodingErrorReporter.message(from: error)
         #expect(message.contains("Type mismatch (expected Int)"))
-        #expect(message.contains("Path: user â†’ age"))
+        #expect(message.contains("Path: user → age"))
         #expect(message.contains("Context: Expected Int but found String"))
     }
 
@@ -63,17 +64,23 @@ final class DecodingErrorReporterTests {
         #expect(message.contains("Context: Invalid format"))
     }
 
+    private struct ReportedData: Sendable {
+        var error: DecodingError?
+        var url: URL?
+        var method: String?
+        var message: String?
+    }
+
     @Test func testReportHandlerInvocation() {
-        var reportedError: DecodingError?
-        var reportedURL: URL?
-        var reportedMethod: String?
-        var reportedMessage: String?
+        let reportedData = Mutex(ReportedData())
         
         DecodingErrorReporter.reportHandler = { error, url, httpMethod, message in
-            reportedError = error
-            reportedURL = url
-            reportedMethod = httpMethod
-            reportedMessage = message
+            reportedData.withLock {
+                $0.error = error
+                $0.url = url
+                $0.method = httpMethod
+                $0.message = message
+            }
         }
         
         let context = DecodingError.Context(codingPath: [], debugDescription: "Error")
@@ -82,10 +89,12 @@ final class DecodingErrorReporterTests {
         
         DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
         
-        #expect(reportedURL == testURL)
-        #expect(reportedMethod == "GET")
-        #expect(reportedMessage != nil)
-        #expect(reportedMessage?.contains("Data corrupted") == true)
+        let finalData = reportedData.withLock { $0 }
+        
+        #expect(finalData.url == testURL)
+        #expect(finalData.method == "GET")
+        #expect(finalData.message != nil)
+        #expect(finalData.message?.contains("Data corrupted") == true)
         
         // Reset the handler
         DecodingErrorReporter.reportHandler = nil
