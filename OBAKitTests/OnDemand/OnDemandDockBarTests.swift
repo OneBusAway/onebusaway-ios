@@ -35,10 +35,10 @@ final class OnDemandDockBarTests: OBATestCase {
 
     private var copy: OnDemandCopy { OnDemandCopy(timeZone: detroit, locale: Locale(identifier: "en_US"), now: now) }
 
-    private func model(_ matches: [OnDemandServiceMatch], edges: [String: OnDemandEdge] = [:], fullAreas: [String: [ServiceArea]] = [:], failed: Set<String> = []) throws -> OnDemandDockBarModel {
+    private func model(_ matches: [OnDemandServiceMatch], pickerMatches: [OnDemandServiceMatch]? = nil, edges: [String: OnDemandEdge] = [:], fullAreas: [String: [ServiceArea]] = [:], failed: Set<String> = []) throws -> OnDemandDockBarModel {
         let services = try charlevoix()
         return OnDemandDockBarModel(
-            matches: matches, probePoint: probe, edges: edges, fullAreas: fullAreas, failedGeometry: failed,
+            matches: matches, pickerMatches: pickerMatches ?? matches, probePoint: probe, edges: edges, fullAreas: fullAreas, failedGeometry: failed,
             colors: OnDemandServiceColors.resolvedColors(for: services, brand: ThemeColors.shared.brand), copy: copy
         )
     }
@@ -138,5 +138,24 @@ final class OnDemandDockBarTests: OBATestCase {
         #expect(try model([match(dialARide)]).accessibilityLabel(forPageAt: 0) == "Charlevoix County Dial-a-Ride, Pickups available here")
         let nameOnly = try model([match(dialARide, reason: .areaNearby, distance: 500, point: nil)])
         #expect(nameOnly.accessibilityLabel(forPageAt: 0) == "Charlevoix County Dial-a-Ride", "no eyebrow: the name alone")
+    }
+
+    @Test func `The long-press picker lists every nearby match, not just the bar's stack`() throws {
+        let services = try charlevoix()
+        let inside = match(services.first { $0.id == "CC_CC1" }!)
+        let nearby = match(services.first { $0.id == "CC_CC4" }!, reason: .areaNearby, distance: 500, point: nil)
+        let request = try model([inside], pickerMatches: [inside, nearby]).pickerRequest(source: .rider)
+        #expect(request.matches.map(\.id) == ["CC_CC1", "CC_CC4"])
+        #expect(request.scope == .nearby)
+        #expect(request.source == .rider)
+        #expect(request.coordinate.latitude == probe.latitude && request.coordinate.longitude == probe.longitude)
+    }
+
+    @Test func `The thumbnail placeholder takes the service colour, even on a gray outside page`() throws {
+        let services = try charlevoix()
+        let dialARide = services.first { $0.id == "CC_CC1" }!
+        let page = try model([match(dialARide, reason: .areaNearby, distance: 500, point: nil)]).pages[0]
+        #expect(page.backgroundColor == ThemeColors.shared.onDemandOutside)
+        #expect(page.serviceColor == OnDemandServiceColors.resolvedColors(for: services, brand: ThemeColors.shared.brand)["CC_CC1"])
     }
 }
