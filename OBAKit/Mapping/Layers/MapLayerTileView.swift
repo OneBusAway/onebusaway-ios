@@ -11,7 +11,9 @@ import OBAKitCore
 import SwiftUI
 
 /// A 62 pt layer tile: icon well, title, On/Off (or the unavailable reason).
-/// On, it takes its group's tint; unavailable, it dims to 0.5.
+/// On, it takes its group's tint; unavailable, it dims to 0.5. Off, it uses
+/// semantic fills, so the tile and its well stand out from the grouped
+/// sheet in dark mode as well as light.
 struct MapLayerTileView: View {
     let tile: MapLayerTile
     let tint: Color
@@ -20,7 +22,10 @@ struct MapLayerTileView: View {
     private static let height: CGFloat = 62
     private static let cornerRadius: CGFloat = 16
     private static let wellSize: CGFloat = 34
-    private static let offWell = Color(red: 0xe9 / 255.0, green: 0xe9 / 255.0, blue: 0xee / 255.0)
+    static let offWell = Color(uiColor: .tertiarySystemFill)
+    static let offBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    /// "On-demand zones" and "Route lines" wrap rather than truncate in a half-width tile.
+    static let titleLineLimit = 2
 
     var body: some View {
         Button(action: onTap) {
@@ -31,7 +36,7 @@ struct MapLayerTileView: View {
                 }
                 .frame(width: Self.wellSize, height: Self.wellSize)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(tile.title).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    Text(tile.title).font(.subheadline.weight(.semibold)).lineLimit(Self.titleLineLimit)
                     Text(tile.subtitle).font(.caption).lineLimit(1)
                 }
                 Spacer(minLength: 0)
@@ -39,7 +44,7 @@ struct MapLayerTileView: View {
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: Self.height, alignment: .leading)
             .foregroundStyle(tile.isEnabled ? Color.white : Color.primary)
-            .background(tile.isEnabled ? tint : Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+            .background(tile.isEnabled ? tint : Self.offBackground, in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!tile.isTapEnabled)

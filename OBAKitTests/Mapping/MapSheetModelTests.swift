@@ -9,6 +9,7 @@
 
 import Foundation
 import MapKit
+import SwiftUI
 import Testing
 import UIKit
 @testable import OBAKit
@@ -113,5 +114,15 @@ final class MapSheetModelTests: OBATestCase {
         #expect(model.showsResetButton)
         model.resetToDefaults()
         #expect(!model.showsResetButton)
+    }
+
+    // MARK: - Tile appearance
+
+    /// A fixed light gray well read as a pale disc under a white glyph in
+    /// dark mode, and the off tile matched the sheet; semantic fills adapt.
+    @Test func `Off tiles use semantic fills and titles may wrap`() {
+        #expect(MapLayerTileView.offWell == Color(uiColor: .tertiarySystemFill))
+        #expect(MapLayerTileView.offBackground == Color(uiColor: .secondarySystemGroupedBackground))
+        #expect(MapLayerTileView.titleLineLimit == 2)
     }
 }
