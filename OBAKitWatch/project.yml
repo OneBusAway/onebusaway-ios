@@ -1,7 +1,8 @@
 targets:
   OBAKitWatch:
     type: framework
-    supportedDestinations: [watchOS]
+    platform: watchOS
+    deploymentTarget: "11.0"
     sources:
       # XcodeGen's synced folders can't mark headers public, so the umbrella
       # header is carved out of the buildable folder and added as an explicit
@@ -26,7 +27,6 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
     settings:
       base:
-        WATCHOS_DEPLOYMENT_TARGET: "11.0"
         # The step 6 watch widget extension links this framework.
         APPLICATION_EXTENSION_API_ONLY: true
         # Swift language mode, checking level, and MainActor default isolation
