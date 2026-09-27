@@ -14,8 +14,9 @@ import OBAKitCore
 /// dark scrim, with the identity block bottom-left in white — the "last
 /// updated" status line, stop name, the code/direction subtitle with inline
 /// route chips (wrapping onto as many lines as needed, never truncated), and
-/// the walk pill (the single visual source of walk time, §4.5). Tapping the
-/// walk pill opens walking directions in an external maps app.
+/// the travel pills — a walk estimate and a bike estimate, each at the user's
+/// respective speed and always shown regardless of Bike Mode (§4.5). Tapping
+/// the walk pill opens walking directions in an external maps app.
 ///
 /// A plain-value view: it never touches `StopViewModel`. The map snapshot is
 /// produced by a `snapshotLoader` closure supplied by the hosting VC, so the
@@ -24,7 +25,10 @@ import OBAKitCore
 /// `UIScreen.main`.
 struct StopPageHeaderView: View {
     let stop: Stop
+    /// Walk time at the user's walking speed — always shown, independent of Bike Mode.
     let walkTime: WalkTimeInfo?
+    /// Bike time at the user's cycling speed — always shown, independent of Bike Mode.
+    let bikeTime: WalkTimeInfo?
     /// The "Updated: …" line; empty hides it.
     let statusText: String
     let snapshotLoader: (CGSize) async -> UIImage?
@@ -87,17 +91,31 @@ struct StopPageHeaderView: View {
             // The screen's title: mark it a heading so it anchors VoiceOver's
             // Headings rotor for quick top-of-page navigation.
             .accessibilityAddTraits(.isHeader)
-            if let walkTime {
-                Button(action: onWalkingDirections) {
-                    Label(walkChipText(walkTime), systemImage: "figure.walk")
-                        .font(.footnote.weight(.heavy))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Color(uiColor: ThemeColors.shared.departureOnTime), in: Capsule())
-                        .contentShape(Capsule())
+            // Two independent estimates: the walk chip (tappable, opens walking
+            // directions) and the bike chip. Both are always shown when
+            // available — Bike Mode only affects the arrival split, not these.
+            // FlowLayout, not HStack: the subtitle/route chips above never
+            // compress or drop at accessibility sizes, and two side-by-side
+            // pills with no wrap would be the one thing on this card that does.
+            //
+            // `FlowLayout` sizes subviews with an unspecified proposal, which a
+            // `Button` answers with a greedy height — that is what once stretched
+            // the sheet header's walk pill down the whole sheet (5a95d4fe), and
+            // neither `.buttonStyle(.plain)` nor `.fixedSize()` on the `Button`
+            // held. So nothing in this row is a `Button`: the walk chip is a
+            // `Text`-shaped tappable view, like `StopPageSheetHeaderView.walkPill`.
+            if walkTime != nil || bikeTime != nil {
+                FlowLayout(hSpacing: 8, vSpacing: 8) {
+                    if let walkTime {
+                        travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTime)
+                            .onTapGesture(perform: onWalkingDirections)
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
+                    }
+                    if let bikeTime {
+                        travelChip(bikeChipText(bikeTime), systemImage: "bicycle", background: ThemeColors.shared.blue)
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
             }
         }
         .padding(16)
@@ -148,11 +166,41 @@ struct StopPageHeaderView: View {
             .background(Color.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
+    /// Shared capsule styling for the walk and bike chips. Each mode gets its own
+    /// background color (walk: on-time green, bike: system blue) so the two
+    /// estimates read as distinct at a glance, not just by their icon.
+    private func travelChip(_ text: String, systemImage: String, background: UIColor) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.footnote.weight(.heavy))
+            .foregroundStyle(.white)
+            // One unwrappable line so the chip's size is a function of its content
+            // under `FlowLayout`'s unspecified proposal (see the sheet's `walkPill`).
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .background(Color(uiColor: background), in: Capsule())
+            .contentShape(Capsule())
+            // The `Button` this replaced used to fold the glyph and text into one
+            // VoiceOver element; do that explicitly now so the SF Symbol doesn't
+            // surface as its own stop with only its stock name.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
+    }
+
     private func walkChipText(_ info: WalkTimeInfo) -> String {
         let fmt = OBALoc(
             "stop_page.walk_chip_minutes_fmt",
             value: "%d min walk",
             comment: "Walk chip on the header card. %d is the walk time in minutes."
+        )
+        return String(format: fmt, info.walkMinutes)
+    }
+
+    private func bikeChipText(_ info: WalkTimeInfo) -> String {
+        let fmt = OBALoc(
+            "stop_page.bike_chip_minutes_fmt",
+            value: "%d min bike",
+            comment: "Bike chip on the header card. %d is the bike time in minutes."
         )
         return String(format: fmt, info.walkMinutes)
     }
@@ -271,6 +319,7 @@ private struct HeaderStatusLine: View {
         StopPageHeaderView(
             stop: stop,
             walkTime: WalkTimeInfo(walkMinutes: 7, distance: 520),
+            bikeTime: WalkTimeInfo(walkMinutes: 3, distance: 520),
             statusText: "Updated: 2 min ago",
             snapshotLoader: { _ in nil },
             onWalkingDirections: {}
@@ -278,6 +327,7 @@ private struct HeaderStatusLine: View {
         StopPageHeaderView(
             stop: stop,
             walkTime: nil,
+            bikeTime: nil,
             statusText: "",
             snapshotLoader: { _ in nil },
             onWalkingDirections: {}
@@ -288,8 +338,13 @@ private struct HeaderStatusLine: View {
 
 /// Minimal leading-aligned wrapping layout: subviews flow left-to-right at
 /// their ideal sizes and break onto new lines as needed, so chips wrap instead
-/// of compressing or truncating. Shared by the header's subtitle + route chips
-/// and the grouped card's upcoming-trip chips at accessibility sizes.
+/// of compressing or truncating. Shared by the header's subtitle + route chips,
+/// its walk/bike travel-pill row, the sheet header's pills + chips row, and the
+/// grouped card's upcoming-trip chips at accessibility sizes.
+///
+/// Subviews are sized with an unspecified proposal, which a `Button` answers with
+/// a greedy height — so callers put `Text`-shaped tappable views in here, never
+/// a `Button` (see `StopPageSheetHeaderView.walkPill`).
 struct FlowLayout: Layout {
     var hSpacing: CGFloat = 4
     var vSpacing: CGFloat = 4

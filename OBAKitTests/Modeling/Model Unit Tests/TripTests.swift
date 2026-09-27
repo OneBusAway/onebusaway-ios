@@ -25,7 +25,7 @@ final class TripTests: OBATestCase {
             "shapeId": "1_20010002",
             "tripHeadsign": "Bellevue TC",
             "tripShortName": "Express 001",
-            "direction": "0",
+            "directionId": "0",
             "routeShortName": "ST Express",
             "timeZone": "America/Los_Angeles"
         ]

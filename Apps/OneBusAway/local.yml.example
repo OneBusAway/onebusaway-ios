@@ -18,3 +18,9 @@ targets:
     settings:
       base:
         DEVELOPMENT_TEAM: YOUR_TEAM_ID
+  # Only used when the watch app is generated (the default; see
+  # scripts/generate_project --no-watch).
+  WatchApp:
+    settings:
+      base:
+        DEVELOPMENT_TEAM: YOUR_TEAM_ID

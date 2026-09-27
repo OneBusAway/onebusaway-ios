@@ -59,6 +59,7 @@ final class UmamiAnalytics {
     private let serverURL: URL
     private let websiteID: String
     private let hostname: String
+    private let installID: String
     private let dataLoader: URLDataLoader
     private let userAgent: String
 
@@ -71,10 +72,12 @@ final class UmamiAnalytics {
     @MainActor init(serverURL: URL,
          websiteID: String,
          hostname: String,
+         installID: String,
          dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession()) {
         self.serverURL = serverURL
         self.websiteID = websiteID
         self.hostname = hostname
+        self.installID = installID
         self.dataLoader = dataLoader
 
 #if targetEnvironment(simulator)
@@ -139,6 +142,14 @@ final class UmamiAnalytics {
             let url: String
             let name: String?                       // omitted when nil → pageview
             let data: [String: UmamiJSONValue]?     // omitted when nil/empty
+
+            /// Stable per-install anonymous ID. Umami derives its `sessionId`
+            /// from `uuid(website, id)` when this is present, instead of
+            /// `uuid(website, IP, User-Agent, monthly salt)` — which keeps a
+            /// visitor's session stable across IP changes (wifi ↔ cellular).
+            /// Server-version dependent: true through Umami v3.2; v3.3+ hash the
+            /// IP back in, so the shared server must stay pinned to ≤ v3.2.
+            let id: String
         }
     }
 
@@ -148,7 +159,8 @@ final class UmamiAnalytics {
             hostname: hostname,
             url: path,
             name: name,
-            data: data.isEmpty ? nil : data
+            data: data.isEmpty ? nil : data,
+            id: installID
         ))
 
         // JSONEncoder throws a *catchable* Swift error; never an NSException.

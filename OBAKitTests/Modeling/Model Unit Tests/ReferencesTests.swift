@@ -177,7 +177,7 @@ final class ReferencesTests: OBATestCase {
         }
 
         #expect(trip.blockID == "Hillsborough Area Regional Transit_288317")
-        #expect(trip.direction == nil)
+        #expect(trip.direction == "0")
         #expect(trip.id == "Hillsborough Area Regional Transit_99283")
         #expect(trip.routeID == "Hillsborough Area Regional Transit_9")
         #expect(trip.route.shortName == "9")

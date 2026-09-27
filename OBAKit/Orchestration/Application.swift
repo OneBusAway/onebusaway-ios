@@ -118,6 +118,9 @@ public class Application: CoreApplication, PushServiceDelegate {
         regionIDProvider: { [weak self] in self?.regionsService.currentRegion?.regionIdentifier }
     )
 
+    @MainActor
+    lazy var bikeModeManager = BikeModeManager(userDataStore: userDataStore)
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -170,6 +173,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// screen went away.
     let bookmarkWidgetRefresher: BookmarkWidgetRefresher
 
+    /// Mirrors the resolved current region into the app-group suite so the
+    /// widget extension — which cannot see this process's custom regions — can
+    /// read it. Retained here because `RegionsService` holds delegates weakly.
+    private var resolvedRegionPersister: ResolvedRegionPersister?
+
     // MARK: - Init
 
     /// Creates a new `Application` object.
@@ -181,6 +189,11 @@ public class Application: CoreApplication, PushServiceDelegate {
         bookmarkWidgetRefresher = BookmarkWidgetRefresher()
 
         super.init(config: config)
+
+        resolvedRegionPersister = ResolvedRegionPersister(
+            regionsService: regionsService,
+            store: ResolvedRegionStore(userDefaults: userDefaults)
+        )
 
         // Force the proximity alert manager now instead of leaving it to a first
         // use that may never come. A geofence crossing relaunches a terminated
@@ -534,6 +547,14 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
+        }
+
+        // Matches the walking-speed refresh above: gated on the sync source alone, not
+        // on whether Bike Mode is currently toggled on. The header's bike chip is always
+        // shown regardless of mode, so a rider who synced once and later turned Bike Mode
+        // off would otherwise keep a frozen cycling-speed ETA on every stop header forever.
+        if userDataStore.bikeSpeedSource == .healthKit {
+            Task { await bikeModeManager.refreshFromHealthKitIfPossible() }
         }
     }
 
