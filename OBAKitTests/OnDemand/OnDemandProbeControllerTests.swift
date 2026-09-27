@@ -395,6 +395,20 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(controller.locationCheck(forServiceID: "not-a-match") == nil)
     }
 
+    @Test func `The dock opens each page's detail with that service's own check`() async throws {
+        mockProbe(file: "ondemand_services_for_location_point_near.json")
+        let controller = makeController()
+        await settle(controller, at: charlevoixPoint, level: .street)
+        var opened: [OnDemandLocationCheck] = []
+        var actions = OnDemandDockActions.none
+        actions.openDetail = { _, check in opened.append(check) }
+
+        let match = try #require(controller.matches.first)
+        let aggregate = OnDemandLocationCheck(source: .mapCenter, isInside: true, locality: nil, coordinate: charlevoixPoint)
+        OnDemandDockView.perServiceDetailActions(actions, controller: controller).openDetail(match, aggregate)
+        #expect(opened.map(\.isInside) == [false], "CC_CC1 is nearby, whatever the probe point's aggregate says")
+    }
+
     @Test func `A street-level settle inside a zone shows the bar`() async {
         mockProbe(file: "ondemand_services_for_location_point.json")
         let controller = makeController()
