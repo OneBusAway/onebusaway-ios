@@ -1,8 +1,7 @@
 targets:
   WatchApp:
     type: application
-    platform: watchOS
-    deploymentTarget: "11.0"
+    supportedDestinations: [watchOS]
     sources:
       - path: "."
         excludes: ["project.yml"]
@@ -36,6 +35,7 @@ targets:
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
     settings:
       base:
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
         # XcodeGen's watchOS application preset omits this; without it the app
         # installs and dies in dyld ("Library not loaded: @rpath/OBAKitWatch").
         # A compile cannot catch it — scripts/watch_smoke_test does.
