@@ -174,12 +174,9 @@ final class OnDemandPickerTests: OBATestCase {
         #expect(highlights == [nil])
     }
 
-    @Test func `Panel picker keeps the highlight on a row push and clears it on close`() throws {
-        let dataLoader = MockDataLoader(testName: name)
-        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
-        // The picker writes the probe controller's highlight, the one source
-        // the dock's bar pages share; the panel mirrors it onto the layer.
+    /// The picker writes the probe controller's highlight, the one source
+    /// the dock's bar pages share; the panel mirrors it onto the layer.
+    private func panelPicker(_ application: Application) throws -> (OnDemandProbeController, SheetCoordinator<AppSheetRoute>, OnDemandPickerView) {
         let probeController = OnDemandProbeController.make(application: application)
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         let factory = AppSheetViewFactory(
@@ -194,21 +191,51 @@ final class OnDemandPickerTests: OBATestCase {
             stopsObserver: MapStopsObserver(application: application),
             onDemandProbeController: probeController
         )
-
         let payload = try dialARidePayload()
         coordinator.push(.onDemandPicker(payload))
-        let view = factory.onDemandPickerView(payload: payload)
+        return (probeController, coordinator, factory.onDemandPickerView(payload: payload))
+    }
+
+    /// What `MapPanelRootView` runs when the picker's presence on the stack changes.
+    private func pickerStackDidChange(from wasShown: Bool, _ coordinator: SheetCoordinator<AppSheetRoute>, _ probeController: OnDemandProbeController) {
+        MapPanelRootView.onDemandPickerStackDidChange(
+            wasShown: wasShown,
+            routes: coordinator.routeStack + coordinator.stackedRoutes,
+            probeController: probeController
+        )
+    }
+
+    @Test func `Panel picker keeps the highlight on a row push and clears it on close`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let (probeController, coordinator, view) = try panelPicker(application)
         view.onHighlight("CC_CC1")
         #expect(probeController.highlightedServiceID == "CC_CC1")
 
         view.onSelect(view.model.rows[0].match, view.model.locationCheck(for: view.model.rows[0].match))
+        pickerStackDidChange(from: true, coordinator, probeController)
         #expect(probeController.highlightedServiceID == "CC_CC1")
         #expect(coordinator.stackedRoute(at: 1) == .onDemandService(view.model.rows[0].match.service))
 
         coordinator.pop()
         view.onClose()
+        pickerStackDidChange(from: true, coordinator, probeController)
         #expect(probeController.highlightedServiceID == nil)
         #expect(coordinator.stackedRoute(at: 0) == nil)
+    }
+
+    @Test func `Panel picker swiped away clears the highlight`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let (probeController, coordinator, view) = try panelPicker(application)
+        view.onHighlight("CC_CC1")
+
+        // The OS drag-down: the container truncates the stack; onClose never runs.
+        coordinator.truncateStacked(toDepth: 0)
+        pickerStackDidChange(from: true, coordinator, probeController)
+        #expect(probeController.highlightedServiceID == nil)
     }
 
     @Test func `Locality lookup gives up after the timeout when the geocoder never answers`() async {
