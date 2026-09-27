@@ -10,6 +10,7 @@
 import CoreLocation
 import Foundation
 import MapKit
+import os
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -21,6 +22,8 @@ final class OnDemandProbeControllerTests: OBATestCase {
     private var application: Application!
     private var dataLoader: MockDataLoader!
     private let clock = TestClock()
+    /// Every delay the controller asked its sleep closure for, in order.
+    private let requestedSleeps = OSAllocatedUnfairLock<[TimeInterval]>(initialState: [])
     /// Tuesday 2026-03-10 15:09 EDT: CC1 is running and bookable for one more minute.
     private let baseNow = ISO8601DateFormatter().date(from: "2026-03-10T19:09:00Z")!
 
@@ -47,13 +50,17 @@ final class OnDemandProbeControllerTests: OBATestCase {
             try await apiService.getOnDemandService(id: serviceID, geometryDetail: .full).entry.areas
         }
         let clock = self.clock
+        let requestedSleeps = self.requestedSleeps
         return OnDemandProbeController(
             apiService: { [weak application] in application?.apiService },
             geometryCache: cache,
             now: { [self] in now },
             configuration: configuration,
             isLocationAuthorized: { authorized },
-            sleep: { seconds in try await clock.sleep(for: .seconds(seconds), tolerance: nil) }
+            sleep: { seconds in
+                requestedSleeps.withLock { $0.append(seconds) }
+                try await clock.sleep(for: .seconds(seconds), tolerance: nil)
+            }
         )
     }
 
@@ -545,7 +552,7 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(probeRequests.count == 1)
     }
 
-    @Test func `A failed boundary refresh at a new cell probes once`() async {
+    @Test func `A failed boundary refresh at a new cell probes once`() async throws {
         mockProbe(file: "ondemand_services_for_location_point_near.json")
         let controller = makeController()
         await settle(controller, at: charlevoixPoint, level: .street)
@@ -569,13 +576,9 @@ final class OnDemandProbeControllerTests: OBATestCase {
 
         // A kept boundary in the past would re-arm a one-second refresh.
         await poll(until: { self.clock.sleeperCount >= 1 }, "the next boundary should be scheduled")
-        clock.advance(by: .seconds(2))
-        // A retry would land within a few scheduler turns; give it a second of wall time.
-        for _ in 0..<50 where probeRequests.count == 2 {
-            try? await Task.sleep(for: .milliseconds(20))
-        }
-        await controller.refreshTask?.value
-        #expect(probeRequests.count == 2, "a failed boundary refresh must not retry every second")
+        let nextDelay = try #require(requestedSleeps.withLock { $0.last })
+        #expect(nextDelay > 2, "a failed boundary refresh must wait for a real future boundary, not retry every second")
+        #expect(probeRequests.count == 2)
     }
 
     @Test func `A 404 hides the dock`() async {
