@@ -334,9 +334,12 @@ import OBAKitCore
         let labelPoints = OnDemandGeometry.labelPoints(
             areasByServiceID: Dictionary(services.map { ($0.id, $0.areas) }, uniquingKeysWith: { first, _ in first })
         )
+        let colors = OnDemandServiceColors.resolvedColors(for: services, brand: tintColor)
         let fetchedIDs = Set(services.map(\.id))
-        // A newly fetched service can take a label spot a drawn one must now leave.
+        // A newly fetched service can take a label spot a drawn one must now
+        // leave, or the collision palette's colour a drawn one must now give up.
         let movedIDs = drawnByServiceID.filter { serviceID, drawn in
+            if let color = colors[serviceID], color != drawn.color { return true }
             guard let pin = drawn.annotations.first?.coordinate, let label = labelPoints[serviceID] else { return false }
             return pin.latitude != label.latitude || pin.longitude != label.longitude
         }.keys
@@ -353,7 +356,6 @@ import OBAKitCore
             }
         }
 
-        let colors = OnDemandServiceColors.resolvedColors(for: services, brand: tintColor)
         for service in services where drawnByServiceID[service.id] == nil {
             let drawn = draw(service, color: colors[service.id] ?? tintColor, labelPoint: labelPoints[service.id])
             drawnByServiceID[service.id] = drawn

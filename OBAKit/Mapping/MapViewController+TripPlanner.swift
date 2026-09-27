@@ -227,6 +227,11 @@ extension MapViewController {
             guard let self, let result = await onDemandProbeController.plannerResult(origin: endpoints.origin, destination: endpoints.destination) else { return }
             guard !Task.isCancelled else { return }
             onDemandProbeController.showPlanner(result)
+            // An empty plan also posts `itinerariesUpdated` first, which moves
+            // the panel to full height, where the card is hidden.
+            if semiModalTripPlannerController?.state == .full {
+                semiModalTripPlannerController?.move(to: .half, animated: true)
+            }
             layoutOnDemandDock()
         }
     }
