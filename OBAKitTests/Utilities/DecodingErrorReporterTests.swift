@@ -101,10 +101,10 @@ final class DecodingErrorReporterTests {
         #expect(finalMessage != nil)
         #expect(finalMessage?.contains("Data corrupted") == true)
         
-        if case .dataCorrupted(let reportedContext) = finalError,
+        if case let .dataCorrupted(reportedContext)? = finalError,
            case .dataCorrupted(let originalContext) = originalError {
             #expect(reportedContext.debugDescription == originalContext.debugDescription)
-            #expect(reportedContext.codingPath.map(\.stringValue) == originalContext.codingPath.map(\.stringValue))
+            #expect(reportedContext.codingPath.map { x in x.stringValue } == originalContext.codingPath.map { x in x.stringValue })
         } else {
             Issue.record("Expected dataCorrupted error to be forwarded to the handler")
         }
