@@ -39,7 +39,7 @@ struct OnDemandZoneCardModel: Equatable {
         eyebrow = Strings.onDemandCardEyebrow
         title = first.service.name
         meta = copy.forService(first.service).cardMeta(first.availability)
-        color = colors[first.id] ?? OnDemandServiceColors.baseColor(for: first.service)
+        color = OnDemandServiceColors.color(for: first, in: colors)
         primary = Self.primaryAction(for: first.service)
         moreCount = inside.count - 1
     }

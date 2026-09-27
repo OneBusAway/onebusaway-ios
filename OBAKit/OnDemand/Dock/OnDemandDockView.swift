@@ -85,6 +85,6 @@ struct OnDemandDockView: View {
     }
 
     private func copy(for matches: [OnDemandServiceMatch]) -> OnDemandCopy {
-        OnDemandCopy(timeZone: matches.first?.service.timeZone ?? .current, now: controller.now())
+        controller.copy(for: matches)
     }
 }

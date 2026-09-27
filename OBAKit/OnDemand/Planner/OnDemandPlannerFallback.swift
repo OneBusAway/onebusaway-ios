@@ -80,7 +80,7 @@ struct OnDemandPlannerCardModel: Equatable {
         self.match = match
         title = match.service.name
         meta = copy.forService(match.service).cardMeta(match.availability)
-        color = colors[match.id] ?? OnDemandServiceColors.baseColor(for: match.service)
+        color = OnDemandServiceColors.color(for: match, in: colors)
         primary = OnDemandZoneCardModel.primaryAction(for: match.service)
     }
 }

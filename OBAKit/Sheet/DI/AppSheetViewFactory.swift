@@ -304,13 +304,11 @@ final class AppSheetViewFactory {
     /// The overlap picker (spec 3.5). A row highlights its zone through the
     /// probe controller and pushes the service page.
     func onDemandPickerView(payload: OnDemandPickerPayload) -> OnDemandPickerView {
-        let timeZone = payload.request.matches.first?.service.timeZone ?? .current
-        let copy = OnDemandCopy(timeZone: timeZone, now: Date())
         let model = OnDemandPickerModel(
             request: payload.request,
             locality: payload.locality,
             colors: layersModel.onDemandServiceColors,
-            copy: copy
+            copy: onDemandProbeController.copy(for: payload.request.matches)
         )
         return OnDemandPickerView(
             model: model,
@@ -325,16 +323,7 @@ final class AppSheetViewFactory {
     }
 
     func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {
-        MapItemSheetView(application: application, mapItem: mapItem, coverageProbe: coverageProbe)
-    }
-
-    /// The address check's exact probe (spec 3.7); nil once the deployment is
-    /// known to lack `/api/ondemand`, so the map item shows no line.
-    private var coverageProbe: OnDemandCoverageProbe? {
-        guard !onDemandProbeController.isUnsupported else { return nil }
-        return { [onDemandProbeController] coordinate in
-            try await onDemandProbeController.probeExact(at: coordinate)
-        }
+        MapItemSheetView(application: application, mapItem: mapItem, coverageProbe: onDemandProbeController.coverageProbe)
     }
 
     /// `AppSheetRoute.nearbyStops` — stops around a coordinate the user picked

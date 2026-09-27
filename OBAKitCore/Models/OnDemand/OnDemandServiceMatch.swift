@@ -34,6 +34,11 @@ public struct OnDemandLocationCheck: Equatable, Sendable {
         self.coordinate = coordinate
     }
 
+    /// The same check with a resolved locality.
+    public func withLocality(_ locality: String?) -> OnDemandLocationCheck {
+        OnDemandLocationCheck(source: source, isInside: isInside, locality: locality, coordinate: coordinate)
+    }
+
     public static func == (lhs: OnDemandLocationCheck, rhs: OnDemandLocationCheck) -> Bool {
         lhs.source == rhs.source
             && lhs.isInside == rhs.isInside

@@ -121,19 +121,14 @@ extension MapViewController {
         Task { [weak self] in
             let locality = await OnDemandLocalityResolver().locality(for: check.coordinate)
             guard let self else { return }
-            let resolved = OnDemandLocationCheck(source: check.source, isInside: check.isInside, locality: locality, coordinate: check.coordinate)
-            presentOnDemandServicePage(makeOnDemandServicePage(match.service, check: resolved))
+            presentOnDemandServicePage(makeOnDemandServicePage(match.service, check: check.withLocality(locality)))
         }
     }
 
     /// The address check's exact probe (spec 3.7); nil once the deployment is
     /// known to lack `/api/ondemand`.
     var onDemandCoverageProbe: OnDemandCoverageProbe? {
-        guard !onDemandProbeController.isUnsupported else { return nil }
-        return { [weak self] coordinate in
-            guard let self else { return [] }
-            return try await onDemandProbeController.probeExact(at: coordinate)
-        }
+        onDemandProbeController.coverageProbe
     }
 
     /// Opens the zone detail a map item's coverage line names. The check
@@ -169,7 +164,7 @@ extension MapViewController {
                 request: request,
                 locality: locality,
                 colors: onDemandServiceColors,
-                copy: OnDemandCopy(timeZone: request.matches.first?.service.timeZone ?? .current, now: onDemandProbeController.now())
+                copy: onDemandProbeController.copy(for: request.matches)
             )
             let picker = OnDemandPickerViewController(
                 model: model,
@@ -181,9 +176,7 @@ extension MapViewController {
     }
 
     private func zoomOutToOnDemandZones(_ matches: [OnDemandServiceMatch]) {
-        guard let probePoint = onDemandProbeController.probePoint else { return }
-        let areas = matches.flatMap { onDemandProbeController.fullAreasByServiceID[$0.id] ?? $0.service.areas }
-        guard let rect = OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint, viewportSize: mapRegionManager.mapView.bounds.size) else { return }
+        guard let rect = onDemandProbeController.zoomOutRect(for: matches, viewportSize: mapRegionManager.mapView.bounds.size) else { return }
         mapRegionManager.mapView.setVisibleMapRect(rect, animated: true)
     }
 }

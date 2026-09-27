@@ -54,7 +54,7 @@ struct OnDemandPickerModel: Equatable {
                     areaCount: match.service.areas.count,
                     availability: match.availability
                 ),
-                color: colors[match.id] ?? OnDemandServiceColors.baseColor(for: match.service)
+                color: OnDemandServiceColors.color(for: match, in: colors)
             )
         }
         title = OnDemandCopy.pickerTitle(count: sorted.count, nearby: request.scope == .nearby)

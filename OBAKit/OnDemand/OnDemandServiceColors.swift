@@ -30,6 +30,11 @@ enum OnDemandServiceColors {
         service.route?.color ?? brand
     }
 
+    /// `match`'s collision-resolved colour from `colors`, else its base colour.
+    static func color(for match: OnDemandServiceMatch, in colors: [String: UIColor]) -> UIColor {
+        colors[match.id] ?? baseColor(for: match.service)
+    }
+
     static func resolvedColors(for services: [OnDemandService], brand: UIColor = ThemeColors.shared.brand) -> [String: UIColor] {
         var used = Set<String>()
         var result: [String: UIColor] = [:]

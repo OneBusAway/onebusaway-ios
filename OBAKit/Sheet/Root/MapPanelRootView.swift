@@ -375,7 +375,6 @@ struct MapPanelRootView: View {
         .onChange(of: isOnDemandDetailShown) { wasShown, isShown in
             guard wasShown, !isShown, !isOnDemandPickerShown else { return }
             probeController.highlightedServiceID = nil
-            layersModel.setHighlightedService(nil)
         }
         .onChange(of: isOnDemandPickerShown) { wasShown, _ in
             Self.onDemandPickerStackDidChange(wasShown: wasShown, routes: sheetRoutes, probeController: probeController)
@@ -806,8 +805,7 @@ extension MapPanelRootView {
                 // The dock's check has no locality; resolve it within the 1 s bound.
                 Task {
                     let locality = await OnDemandLocalityResolver().locality(for: check.coordinate)
-                    let resolved = OnDemandLocationCheck(source: check.source, isInside: check.isInside, locality: locality, coordinate: check.coordinate)
-                    coordinator.push(.onDemandService(match.service, locationCheck: resolved))
+                    coordinator.push(.onDemandService(match.service, locationCheck: check.withLocality(locality)))
                 }
             },
             openPicker: { request in
@@ -819,9 +817,7 @@ extension MapPanelRootView {
             call: { url in application.open(url, options: [:], completionHandler: nil) },
             openURL: { url in application.open(url, options: [:], completionHandler: nil) },
             zoomOut: { matches in
-                guard let probePoint = probeController.probePoint else { return }
-                let areas = matches.flatMap { probeController.fullAreasByServiceID[$0.id] ?? $0.service.areas }
-                guard let rect = OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint, viewportSize: mapSize) else { return }
+                guard let rect = probeController.zoomOutRect(for: matches, viewportSize: mapSize) else { return }
                 withAnimation { cameraPosition = .rect(rect) }
             },
             panTo: { point in
