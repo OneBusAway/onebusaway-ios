@@ -83,7 +83,7 @@ final class DecodingErrorReporterTests {
             reportedData.lock.unlock()
         }
         
-        let context = DecodingError.Context(codingPath: [], debugDescription: "Error")
+        let context = DecodingError.Context(codingPath: [TestKey(stringValue: "payload")!], debugDescription: "Error")
         let originalError = DecodingError.dataCorrupted(context)
         let testURL = URL(string: "https://api.onebusaway.org/test")!
         
@@ -104,6 +104,7 @@ final class DecodingErrorReporterTests {
         if case .dataCorrupted(let reportedContext) = finalError,
            case .dataCorrupted(let originalContext) = originalError {
             #expect(reportedContext.debugDescription == originalContext.debugDescription)
+            #expect(reportedContext.codingPath.map(\.stringValue) == originalContext.codingPath.map(\.stringValue))
         } else {
             Issue.record("Expected dataCorrupted error to be forwarded to the handler")
         }
