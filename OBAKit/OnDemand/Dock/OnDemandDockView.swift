@@ -48,7 +48,7 @@ struct OnDemandDockView: View {
         case .card(let matches):
             if let check = controller.locationCheck,
                let model = OnDemandZoneCardModel(insideMatches: matches, colors: serviceColors(), copy: copy(for: matches)) {
-                OnDemandZoneCardView(model: model, locationCheck: check, actions: actions)
+                OnDemandZoneCardView(model: model, locationCheck: check, actions: Self.perServiceDetailActions(actions, controller: controller))
             }
         case .bar(let matches):
             if let check = controller.locationCheck, let probePoint = controller.probePoint {
@@ -64,13 +64,24 @@ struct OnDemandDockView: View {
                         copy: copy(for: matches)
                     ),
                     locationCheck: check,
-                    actions: actions,
+                    actions: Self.perServiceDetailActions(actions, controller: controller),
                     onPageChange: { controller.highlightedServiceID = $0 }
                 )
             }
         case .planner(let result):
             OnDemandPlannerFallbackView(result: result, copy: copy(for: result.qualifying), colors: serviceColors(), actions: actions)
         }
+    }
+
+    /// The card and bar pass the probe point's aggregate check; each page
+    /// opens its detail with its own service's check instead, so the
+    /// location row states that service's inside or nearby fact.
+    static func perServiceDetailActions(_ actions: OnDemandDockActions, controller: OnDemandProbeController) -> OnDemandDockActions {
+        var perService = actions
+        perService.openDetail = { [weak controller] match, aggregate in
+            actions.openDetail(match, controller?.locationCheck(forServiceID: match.id) ?? aggregate)
+        }
+        return perService
     }
 
     private func copy(for matches: [OnDemandServiceMatch]) -> OnDemandCopy {
