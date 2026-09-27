@@ -2,7 +2,7 @@
 //  DepartureTimeDisplayTests.swift
 //  OBAKitTests
 //
-//  Copyright Â© Open Transit Software Foundation
+//  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
@@ -15,6 +15,7 @@ import Testing
 @Suite(.serialized)
 final class DepartureTimeDisplayTests {
 
+    @MainActor
     private func createFormatters() -> Formatters {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = Locale(identifier: "en_US")
