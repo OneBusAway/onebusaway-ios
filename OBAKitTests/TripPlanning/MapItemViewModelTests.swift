@@ -80,12 +80,13 @@ final class MapItemViewModelTests: OBATestCase {
 
     @Test func `A pin in two zones reads inside the first and counts the rest`() throws {
         let inside = try matches(file: "ondemand_services_for_location_point.json")
+        let other = try Fixtures.dictionaryToModel(type: OnDemandService.self, dictionary: [
+            "id": "5088_other", "agencyId": "5088", "routeId": "5088_other", "name": "Other Zone", "serviceKind": "zone",
+            "description": NSNull(), "url": NSNull(), "rules": []
+        ])
         let twice = inside + inside.map { match in
             OnDemandServiceMatch(
-                service: try! Fixtures.dictionaryToModel(type: OnDemandService.self, dictionary: [
-                    "id": "5088_other", "agencyId": "5088", "routeId": "5088_other", "name": "Other Zone", "serviceKind": "zone",
-                    "description": NSNull(), "url": NSNull(), "rules": []
-                ]),
+                service: other,
                 matchReason: .areaContainsPoint, distanceToArea: 0, nearestPointOnBoundary: nil, availability: match.availability
             )
         }
