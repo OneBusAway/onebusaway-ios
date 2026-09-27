@@ -15,8 +15,8 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     /// Primary theme color/brand color.
     public let brand: UIColor
 
-    /// The darker brand shade for links, focus and primary buttons (`#486621`
-    /// unless the app bundle names a `brandAccent` colour).
+    /// The darker brand shade for links, focus and primary buttons (`#486621`,
+    /// `#5B802A` in dark mode, unless the app bundle names a `brandAccent` colour).
     public let brandAccent: UIColor
 
     /// The docked bar's background when the rider is outside every zone.
@@ -123,7 +123,7 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
 
     private init(brand: UIColor?, brandAccent: UIColor?, palette: Palette) {
         self.brand = brand ?? UIColor(red: 0.471, green: 0.667, blue: 0.212, alpha: 1.0)  // fallback for swiftui previews
-        self.brandAccent = brandAccent ?? UIColor(red: 0x48 / 255.0, green: 0x66 / 255.0, blue: 0x21 / 255.0, alpha: 1.0)
+        self.brandAccent = brandAccent ?? palette.brandAccent
         onDemandOutside = UIColor(red: 0x63 / 255.0, green: 0x63 / 255.0, blue: 0x66 / 255.0, alpha: 1.0)
         onDemandOpenGreen = UIColor(red: 0x24 / 255.0, green: 0x8a / 255.0, blue: 0x3d / 255.0, alpha: 1.0)
 
@@ -182,6 +182,12 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         let secondaryBackground: UIColor
         let groupedBackground: UIColor
         let gray6: UIColor
+        let brandAccent: UIColor
+
+        static let lightBrandAccent = UIColor(red: 0x48 / 255.0, green: 0x66 / 255.0, blue: 0x21 / 255.0, alpha: 1.0)
+        /// Lighter, so accent text keeps 4.5:1 on a black card; still dark
+        /// enough that a pill's white label keeps 4.5:1 on it.
+        static let darkBrandAccent = UIColor(red: 0x5b / 255.0, green: 0x80 / 255.0, blue: 0x2a / 255.0, alpha: 1.0)
 
         /// Defined on every platform — not just watchOS — so the iOS-hosted
         /// test suite can check it.
@@ -199,7 +205,8 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             background: .black,
             secondaryBackground: UIColor(red: 0.110, green: 0.110, blue: 0.118, alpha: 1),
             groupedBackground: .black,
-            gray6: UIColor(red: 0.110, green: 0.110, blue: 0.118, alpha: 1)
+            gray6: UIColor(red: 0.110, green: 0.110, blue: 0.118, alpha: 1),
+            brandAccent: darkBrandAccent
         )
 
         #if os(watchOS)
@@ -248,7 +255,10 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             background: .systemBackground,
             secondaryBackground: .secondarySystemBackground,
             groupedBackground: .systemGroupedBackground,
-            gray6: .systemGray6
+            gray6: .systemGray6,
+            brandAccent: UIColor { traitCollection in
+                traitCollection.userInterfaceStyle == .dark ? darkBrandAccent : lightBrandAccent
+            }
         )
         #endif
     }
