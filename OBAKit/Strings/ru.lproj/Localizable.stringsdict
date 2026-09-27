@@ -412,6 +412,26 @@
 			<string>Ещё %d услуги здесь</string>
 		</dict>
 	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ещё %d услуга обслуживает оба места</string>
+			<key>few</key>
+			<string>Ещё %d услуги обслуживают оба места</string>
+			<key>many</key>
+			<string>Ещё %d услуг обслуживают оба места</string>
+			<key>other</key>
+			<string>Ещё %d услуги обслуживают оба места</string>
+		</dict>
+	</dict>
 	<key>on_demand.picker.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

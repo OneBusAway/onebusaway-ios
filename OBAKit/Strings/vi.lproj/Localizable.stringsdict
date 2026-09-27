@@ -286,6 +286,20 @@
 			<string>%d dịch vụ khác tại đây</string>
 		</dict>
 	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d dịch vụ khác phục vụ cả hai địa điểm</string>
+		</dict>
+	</dict>
 	<key>on_demand.picker.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

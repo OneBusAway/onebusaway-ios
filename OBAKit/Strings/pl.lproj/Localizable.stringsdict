@@ -412,6 +412,26 @@
 			<string>Jeszcze %d usługi tutaj</string>
 		</dict>
 	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Jeszcze %d usługa obsługuje obie lokalizacje</string>
+			<key>few</key>
+			<string>Jeszcze %d usługi obsługują obie lokalizacje</string>
+			<key>many</key>
+			<string>Jeszcze %d usług obsługuje obie lokalizacje</string>
+			<key>other</key>
+			<string>Jeszcze %d usługi obsługuje obie lokalizacje</string>
+		</dict>
+	</dict>
 	<key>on_demand.picker.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

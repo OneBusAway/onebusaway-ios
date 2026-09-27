@@ -60,7 +60,8 @@ final class LocalizationTests {
         "on_demand.picker.title",
         "on_demand.picker.title_nearby",
         "on_demand.detail.zone_count",
-        "on_demand.address.inside_more"
+        "on_demand.address.inside_more",
+        "on_demand.planner.more_serving_both"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.

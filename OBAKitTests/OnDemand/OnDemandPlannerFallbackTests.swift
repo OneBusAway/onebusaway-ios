@@ -157,10 +157,31 @@ final class OnDemandPlannerFallbackTests: OBATestCase {
         )
     }
 
-    @Test func `The card shows at most one service and leaves the rest to Show all`() throws {
+    @Test func `The card shows one service and a row for the others serving both ends`() throws {
         let result = try threeQualifying()
         #expect(result.qualifying.count == 3)
         #expect(OnDemandPlannerFallbackView.visibleServices(in: result).map(\.id) == ["X"])
+        #expect(OnDemandPlannerFallbackView.moreServingBothCount(in: result) == 2)
+        #expect(OnDemandCopy.moreServingBoth(2) == "2 more services serve both locations")
+        #expect(OnDemandCopy.moreServingBoth(1) == "1 more service serves both locations")
+    }
+
+    @Test func `The more-serving-both row opens the picker with every qualifying service`() throws {
+        let result = try threeQualifying()
+        let request = OnDemandPlannerFallbackView.moreServingBothRequest(for: result)
+        #expect(request.matches.map(\.id) == ["X", "Y", "Z"])
+        #expect(request.scope == .insideOnly)
+        #expect(request.coordinate.latitude == origin.latitude)
+        #expect(request.coordinate.longitude == origin.longitude)
+    }
+
+    @Test func `One qualifying service has no more-serving-both row`() throws {
+        let zone = [(from: ["A"], to: ["A"])]
+        let single = result(
+            origin: [try match(serviceID: "X", rules: zone, areaIDs: ["A"], insideAreaIDs: ["A"])],
+            destination: [try match(serviceID: "X", rules: zone, areaIDs: ["A"], insideAreaIDs: ["A"])]
+        )
+        #expect(OnDemandPlannerFallbackView.moreServingBothCount(in: single) == 0)
     }
 
     /// Even one card and the captions outgrow the space between the map

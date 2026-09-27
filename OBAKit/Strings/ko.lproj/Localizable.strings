@@ -2177,6 +2177,9 @@
 /* Caption noting availability is evaluated at the current time */
 "on_demand.planner.status_now" = "현재 시간 기준 상태입니다";
 
+/* Row under the planner fallback card when more than one service serves both locations; opens the picker with them. Plural forms live in Localizable.stringsdict; the value is only the not-found fallback. */
+"on_demand.planner.more_serving_both" = "두 위치를 모두 운행하는 서비스 %d개 더 있음";
+
 /* Map item line when the place is inside a zone. %@ is the service name */
 "on_demand.address.inside" = "%@ 내부";
 

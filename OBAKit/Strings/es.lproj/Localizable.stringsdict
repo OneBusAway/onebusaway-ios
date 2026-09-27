@@ -328,6 +328,22 @@
 			<string>%d servicios más aquí</string>
 		</dict>
 	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d servicio más cubre ambas ubicaciones</string>
+			<key>other</key>
+			<string>%d servicios más cubren ambas ubicaciones</string>
+		</dict>
+	</dict>
 	<key>on_demand.picker.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

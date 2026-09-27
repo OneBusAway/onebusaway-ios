@@ -2177,6 +2177,9 @@
 /* Caption noting availability is evaluated at the current time */
 "on_demand.planner.status_now" = "Estado según la hora actual.";
 
+/* Row under the planner fallback card when more than one service serves both locations; opens the picker with them. Plural forms live in Localizable.stringsdict; the value is only the not-found fallback. */
+"on_demand.planner.more_serving_both" = "%d servicios más cubren ambas ubicaciones";
+
 /* Map item line when the place is inside a zone. %@ is the service name */
 "on_demand.address.inside" = "Dentro de %@";
 
