@@ -148,6 +148,7 @@ public extension Strings {
     static let onDemandPlannerCaption = OBALoc("on_demand.planner.caption", value: "Services that need eligibility or cover only one end are hidden.", comment: "Caption under the planner fallback cards")
     static let onDemandPlannerShowAll = OBALoc("on_demand.planner.show_all", value: "Show all in the zone picker", comment: "Link under the planner fallback caption")
     static let onDemandPlannerEmpty = OBALoc("on_demand.planner.empty", value: "No on-demand service covers both locations.", comment: "Planner fallback when nothing qualifies and nothing is hidden")
+    static let onDemandPlannerMoreServingBothFormat = OBALoc("on_demand.planner.more_serving_both", value: "%d more services serve both locations", comment: "Row under the planner fallback card when more than one service serves both locations; opens the picker with them. Plural forms live in Localizable.stringsdict; the value is only the not-found fallback.")
     static let onDemandPlannerStatusNow = OBALoc("on_demand.planner.status_now", value: "Status shown for now.", comment: "Caption noting availability is evaluated at the current time")
 
     // MARK: - Address check (spec 3.7)

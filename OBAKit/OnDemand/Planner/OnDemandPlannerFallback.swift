@@ -96,11 +96,21 @@ struct OnDemandPlannerFallbackView: View {
     private static let cornerRadius: CGFloat = 22
     /// A second card pushed the card into a scrolling fallback tall enough to
     /// cut off the first service's Call button; the rest are one tap away
-    /// behind "Show all".
+    /// behind the "N more services serve both locations" row.
     static let maximumVisibleServices = 1
 
     static func visibleServices(in result: OnDemandPlannerResult) -> [OnDemandServiceMatch] {
         Array(result.qualifying.prefix(maximumVisibleServices))
+    }
+
+    /// Qualifying services without a card of their own.
+    static func moreServingBothCount(in result: OnDemandPlannerResult) -> Int {
+        max(result.qualifying.count - maximumVisibleServices, 0)
+    }
+
+    /// Every qualifying service, so the picker lists the carded one too.
+    static func moreServingBothRequest(for result: OnDemandPlannerResult) -> OnDemandPickerRequest {
+        OnDemandPickerRequest(matches: result.qualifying, scope: .insideOnly, source: .point(label: nil), coordinate: result.origin)
     }
 
     private var accent: Color { Color(uiColor: ThemeColors.shared.brandAccent) }
@@ -131,6 +141,7 @@ struct OnDemandPlannerFallbackView: View {
                 ForEach(Self.visibleServices(in: result)) { match in
                     card(OnDemandPlannerCardModel(match: match, colors: colors, copy: copy))
                 }
+                moreServingBothRow
                 Text(Strings.onDemandPlannerStatusNow).font(.caption).foregroundStyle(.secondary)
                 // Stacked: side by side, the caption and the link each wrap to several lines.
                 VStack(alignment: .leading, spacing: 0) {
@@ -147,6 +158,26 @@ struct OnDemandPlannerFallbackView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var moreServingBothRow: some View {
+        let moreCount = Self.moreServingBothCount(in: result)
+        if moreCount > 0 {
+            Button {
+                actions.openPicker(Self.moreServingBothRequest(for: result))
+            } label: {
+                HStack {
+                    Text(OnDemandCopy.moreServingBoth(moreCount)).font(.subheadline.weight(.semibold))
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).accessibilityHidden(true)
+                }
+                .foregroundStyle(accent)
+                .frame(minHeight: OnDemandZoneCardView.minimumTouchTarget)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private func card(_ model: OnDemandPlannerCardModel) -> some View {

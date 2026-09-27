@@ -196,6 +196,10 @@ struct OnDemandCopy {
         String.localizedStringWithFormat(Strings.onDemandCardMoreServicesFormat, count)
     }
 
+    static func moreServingBoth(_ count: Int) -> String {
+        String.localizedStringWithFormat(Strings.onDemandPlannerMoreServingBothFormat, count)
+    }
+
     static func pickerTitle(count: Int, nearby: Bool) -> String {
         String.localizedStringWithFormat(nearby ? Strings.onDemandPickerTitleNearbyFormat : Strings.onDemandPickerTitleFormat, count)
     }
