@@ -306,6 +306,8 @@ public struct OnDemandAvailability: Equatable, Sendable {
         }
         if runningNow && bookableNow { return .openNow(until: runningUntil) }
         if let nextOpening { return .opensAt(nextOpening) }
+        // Running past the cutoff on the last service day: nothing is left to book.
+        if runningNow { return .closed }
         // Empty rules, or rules with no usable calendar, promise nothing.
         guard hasUsableCalendar else { return .unknown }
         return hasServiceDay ? .unknown : .closed
