@@ -272,18 +272,21 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     }
 
     func setLayerEnabled(_ enabled: Bool) {
+        guard enabled != isLayerEnabled else { return }
         isLayerEnabled = enabled
         deriveDockState()
     }
 
     /// A stop, route, trip or directions sheet, search results, or the survey card owns the slot.
     func setSurfaceFocus(_ hasFocus: Bool) {
+        guard hasFocus != hasSurfaceFocus else { return }
         hasSurfaceFocus = hasFocus
         deriveDockState()
     }
 
     /// The bottom sheet leaves less than half the screen to the map.
     func setMapMostlyCovered(_ covered: Bool) {
+        guard covered != isMapMostlyCovered else { return }
         isMapMostlyCovered = covered
         deriveDockState()
     }
@@ -368,9 +371,9 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     func plannerResult(origin: CLLocationCoordinate2D, destination: CLLocationCoordinate2D) async -> OnDemandPlannerResult? {
         guard !isUnsupported else { return nil }
         do {
-            let originMatches = try await probeExact(at: origin)
-            let destinationMatches = try await probeExact(at: destination)
-            return OnDemandPlannerQualifier.result(origin: originMatches, destination: destinationMatches, originCoordinate: origin, destinationCoordinate: destination)
+            async let originMatches = probeExact(at: origin)
+            async let destinationMatches = probeExact(at: destination)
+            return try await OnDemandPlannerQualifier.result(origin: originMatches, destination: destinationMatches, originCoordinate: origin, destinationCoordinate: destination)
         } catch {
             return nil
         }

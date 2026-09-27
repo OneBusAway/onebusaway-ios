@@ -24,6 +24,7 @@ struct OnDemandPlannerResult: Equatable {
 
     static func == (lhs: OnDemandPlannerResult, rhs: OnDemandPlannerResult) -> Bool {
         lhs.qualifying == rhs.qualifying && lhs.hiddenCount == rhs.hiddenCount
+            && lhs.originInsideMatches == rhs.originInsideMatches
             && lhs.origin.latitude == rhs.origin.latitude && lhs.origin.longitude == rhs.origin.longitude
             && lhs.destination.latitude == rhs.destination.latitude && lhs.destination.longitude == rhs.destination.longitude
     }
