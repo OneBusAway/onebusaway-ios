@@ -19,7 +19,6 @@ struct MapLayerTile: Identifiable, Equatable {
     let iconName: String
     let isEnabled: Bool
     let unavailableReason: String?
-    let group: MapLayerGroup
 
     /// Unavailable blocks turning a layer on; an enabled layer is always switchable off.
     var isTapEnabled: Bool { unavailableReason == nil || isEnabled }
@@ -128,7 +127,7 @@ struct MapLayerTile: Identifiable, Equatable {
                 if case .unavailable(let reason) = layer.availability { return reason }
                 return nil
             }()
-            return MapLayerTile(id: layer.id, title: layer.title, iconName: layer.iconName, isEnabled: isEnabled(layer), unavailableReason: reason, group: layer.group)
+            return MapLayerTile(id: layer.id, title: layer.title, iconName: layer.iconName, isEnabled: isEnabled(layer), unavailableReason: reason)
         }
     }
 

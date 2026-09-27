@@ -139,7 +139,7 @@ struct OnDemandDockBarModel: Equatable {
             OnDemandDockBarPage(
                 match: match,
                 edge: edges[match.id],
-                color: colors[match.id] ?? OnDemandServiceColors.baseColor(for: match.service),
+                color: OnDemandServiceColors.color(for: match, in: colors),
                 copy: copy
             )
         }
@@ -152,7 +152,7 @@ struct OnDemandDockBarModel: Equatable {
             return
         }
         thumbnailRings = sorted.flatMap { match -> [OnDemandThumbnailRing] in
-            let color = colors[match.id] ?? OnDemandServiceColors.baseColor(for: match.service)
+            let color = OnDemandServiceColors.color(for: match, in: colors)
             return (fullAreas[match.id] ?? []).flatMap(\.polygons).flatMap { $0 }.map { OnDemandThumbnailRing(points: $0, color: color) }
         }
     }

@@ -10,6 +10,7 @@
 import Combine
 import CoreLocation
 import Foundation
+import MapKit
 import OBAKitCore
 import UIKit
 
@@ -303,7 +304,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         }
         probeSource = point.source
         if !reason.ignoresMovementThreshold, let lastProbePoint,
-           Self.distanceMeters(lastProbePoint, point.coordinate) < configuration.movementThresholdMeters {
+           lastProbePoint.distance(from: point.coordinate) < configuration.movementThresholdMeters {
             deriveDockState()
             return
         }
@@ -348,7 +349,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
             return
         }
         if let lastSuccessfulProbePoint,
-           Self.distanceMeters(lastSuccessfulProbePoint, coordinate) <= configuration.movementThresholdMeters {
+           lastSuccessfulProbePoint.distance(from: coordinate) <= configuration.movementThresholdMeters {
             matches = OnDemandServiceMatch.matches(from: lastSuccessfulServices, now: now())
             updateEdges()
             deriveDockState()
@@ -490,9 +491,29 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         }
     }
 
-    private static func distanceMeters(_ lhs: CLLocationCoordinate2D, _ rhs: CLLocationCoordinate2D) -> CLLocationDistance {
-        CLLocation(latitude: lhs.latitude, longitude: lhs.longitude)
-            .distance(from: CLLocation(latitude: rhs.latitude, longitude: rhs.longitude))
+    // MARK: - Shared shell hooks
+
+    /// The address check's exact probe (spec 3.7); nil once the deployment is
+    /// known to lack `/api/ondemand`, so a map item shows no line.
+    var coverageProbe: OnDemandCoverageProbe? {
+        guard !isUnsupported else { return nil }
+        return { [weak self] coordinate in
+            guard let self else { return [] }
+            return try await probeExact(at: coordinate)
+        }
+    }
+
+    /// The camera rect that frames `matches`' zones around the probe point,
+    /// preferring each service's full geometry over the probe's simplified areas.
+    func zoomOutRect(for matches: [OnDemandServiceMatch], viewportSize: CGSize) -> MKMapRect? {
+        guard let probePoint else { return nil }
+        let areas = matches.flatMap { fullAreasByServiceID[$0.id] ?? $0.service.areas }
+        return OnDemandCameraTargets.zoomOutRect(areas: areas, probePoint: probePoint, viewportSize: viewportSize)
+    }
+
+    /// Copy for `matches` in the first service's agency zone at the controller's clock.
+    func copy(for matches: [OnDemandServiceMatch]) -> OnDemandCopy {
+        OnDemandCopy(timeZone: matches.first?.service.timeZone ?? .current, now: now())
     }
 
     // MARK: - Fetching

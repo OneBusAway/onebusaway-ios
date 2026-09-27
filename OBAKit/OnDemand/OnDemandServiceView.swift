@@ -210,7 +210,7 @@ struct OnDemandServiceView: View {
     }
 
     private var tint: Color {
-        Color(service.route?.color ?? ThemeColors.shared.brand)
+        Color(OnDemandServiceColors.baseColor(for: service))
     }
 
     private var accent: Color { Color(uiColor: ThemeColors.shared.brandAccent) }
