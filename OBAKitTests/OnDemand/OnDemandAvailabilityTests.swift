@@ -408,6 +408,18 @@ final class OnDemandAvailabilityTests: OBATestCase {
         #expect(result.usabilityTier == OnDemandAvailability.unknownTier)
     }
 
+    /// 16:00 EDT on the calendars' last day: still running, but past the
+    /// 15:10 cutoff with no later window, so nothing more can be booked.
+    @Test func `Running past the cutoff on the last service day is closed`() throws {
+        let service = try charlevoix("CC_CC1") { json in
+            self.rewriteReferences(&json, "calendars") { calendar in calendar["endDate"] = "2026-03-10" }
+        }
+        let result = availability(service, at: instant("2026-03-10T20:00:00Z"))
+        #expect(result.runningNow)
+        #expect(!result.bookableNow)
+        #expect(result.status == .closed)
+    }
+
     @Test func `Certification requirement adds the eligibility tag and tier four`() throws {
         let service = try charlevoix("CC_CC1") { json in
             var body = json["data"] as! [String: Any]
