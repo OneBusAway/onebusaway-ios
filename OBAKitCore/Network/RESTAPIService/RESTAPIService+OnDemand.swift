@@ -50,9 +50,10 @@ extension RESTAPIService {
     ///
     /// This is the **only** call that probes for the namespace: a
     /// `.requestNotFound` here — a real HTTP 404, or the blank 200 that
-    /// `APIService+GetData` maps to the same case — records the server in
+    /// `APIService+GetData` maps to the same case — or an HTML page (see
+    /// ``APIError/meansOnDemandUnsupported``) records the server in
     /// ``onDemandSupport`` for the rest of the process. Every other failure,
-    /// including `.invalidContentType` and decode errors, is transient and is
+    /// including other content types and decode errors, is transient and is
     /// simply rethrown.
     ///
     /// - API Endpoint: `/api/ondemand/services-for-location.json`
@@ -70,7 +71,7 @@ extension RESTAPIService {
     /// carries a ``MatchReason`` and each area a `distanceToArea`.
     ///
     /// Probes the namespace exactly as the viewport call does: a
-    /// `.requestNotFound` records the server in ``onDemandSupport``.
+    /// `.requestNotFound` or an HTML page records the server in ``onDemandSupport``.
     ///
     /// - API Endpoint: `/api/ondemand/services-for-location.json`
     public nonisolated func getOnDemandServices(near coordinate: CLLocationCoordinate2D, radiusMeters: Double, geometryDetail: OnDemandGeometryDetail = .none) async throws -> RESTAPIResponse<[OnDemandService]> {
@@ -81,7 +82,7 @@ extension RESTAPIService {
         do {
             return try await getData(for: url, decodeRESTAPIResponseAs: [OnDemandService].self)
         } catch let error as APIError {
-            if case .requestNotFound = error {
+            if error.meansOnDemandUnsupported {
                 onDemandSupport.recordAbsent(baseURL: baseURL)
             }
             throw error

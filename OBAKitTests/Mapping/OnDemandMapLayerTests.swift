@@ -175,6 +175,17 @@ final class OnDemandMapLayerTests: OBATestCase {
         #expect(!OnDemandSupport.shared.isKnownUnsupported(baseURL: serverBaseURL), "the probe must not taint the process-wide cache")
     }
 
+    @Test func `An HTML 200 on the probe marks the layer unsupported`() async {
+        dataLoader.mock(data: Data("<!doctype html><html><body>maglev</body></html>".utf8), contentType: "text/html; charset=utf-8", matcher: Self.isProbe)
+        let layer = makeLayer()
+        layer.activate()
+        layer.viewportDidChange(viewport)
+        await layer.fetchTask?.value
+
+        #expect(layer.availability == .unsupported, "the layers tile hides rather than dims")
+        #expect(support.isKnownUnsupported(baseURL: serverBaseURL))
+    }
+
     @Test func `Server error with nothing drawn dims the layer`() async {
         mockProbe(statusCode: 500)
         let layer = makeLayer()

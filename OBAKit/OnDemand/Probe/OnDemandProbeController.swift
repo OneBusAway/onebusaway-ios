@@ -544,7 +544,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
 
     /// Awaits a probe for its owner and every joiner alike, so each discards a
     /// result whose deployment is no longer current (spec 2.7).
-    /// `getOnDemandServices(near:)` records a 404 in `onDemandSupport` itself;
+    /// `getOnDemandServices(near:)` records a 404 or an HTML page in `onDemandSupport` itself;
     /// any other failure is transient: rethrown, nothing cached.
     private func currentDeploymentResult(of task: Task<[OnDemandService], Error>, deployment: String) async throws -> [OnDemandService] {
         do {
@@ -552,7 +552,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
             try discardUnlessCurrent(deployment)
             return services
         } catch let error as APIError {
-            if case .requestNotFound = error, deployment == currentDeployment {
+            if error.meansOnDemandUnsupported, deployment == currentDeployment {
                 isUnsupported = true
             }
             throw error

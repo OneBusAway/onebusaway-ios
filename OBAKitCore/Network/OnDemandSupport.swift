@@ -52,3 +52,20 @@ public final class OnDemandSupport: Sendable {
         return key
     }
 }
+
+public extension APIError {
+    /// Whether this failure of the `services-for-location` probe means the
+    /// server lacks `/api/ondemand`: a 404, the blank 200 `APIService` maps to
+    /// one, or an HTML page — a stock server's catch-all index route answers
+    /// unknown paths with `200 text/html`.
+    var meansOnDemandUnsupported: Bool {
+        switch self {
+        case .requestNotFound:
+            return true
+        case .invalidContentType(_, _, let actualContentType):
+            return actualContentType?.lowercased().hasPrefix("text/html") ?? false
+        default:
+            return false
+        }
+    }
+}

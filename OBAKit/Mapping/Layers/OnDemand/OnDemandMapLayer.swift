@@ -22,7 +22,8 @@ import OBAKitCore
 /// `annotations` after `onMapContentDidChange`.
 ///
 /// Follows `RentalLayerCoordinator` for availability: the first
-/// `.requestNotFound` from the probe marks the server in `OnDemandSupport` and
+/// `.requestNotFound` or HTML page from the probe marks the server in
+/// `OnDemandSupport` (`APIError.meansOnDemandUnsupported`) and
 /// the row disappears; any other failure dims the row only while nothing is
 /// drawn, and the next region change retries.
 @MainActor final class OnDemandMapLayer: NSObject, MapLayer {
@@ -288,7 +289,7 @@ import OBAKitCore
 
     /// Not `private`: tests feed failures straight in.
     func handle(_ error: Error) {
-        if let apiError = error as? APIError, case .requestNotFound = apiError {
+        if let apiError = error as? APIError, apiError.meansOnDemandUnsupported {
             // The service layer has already recorded the absence; mirror it here
             // so the row disappears without a second probe.
             removeAllFromMap()
