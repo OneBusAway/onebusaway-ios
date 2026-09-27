@@ -377,6 +377,9 @@ struct MapPanelRootView: View {
             probeController.highlightedServiceID = nil
             layersModel.setHighlightedService(nil)
         }
+        .onChange(of: isOnDemandPickerShown) { wasShown, _ in
+            Self.onDemandPickerStackDidChange(wasShown: wasShown, routes: sheetRoutes, probeController: probeController)
+        }
         .onChange(of: sheetHeight) { _, newValue in
             probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
         }
@@ -745,22 +748,36 @@ extension MapPanelRootView {
 
     // MARK: - On-demand dock
 
+    private var sheetRoutes: [AppSheetRoute] { coordinator.routeStack + coordinator.stackedRoutes }
+
     /// Whether a zone detail page is on the sheet stack (spec 2.3 highlight).
-    private var isOnDemandDetailShown: Bool {
-        (coordinator.routeStack + coordinator.stackedRoutes).contains { route in
+    private var isOnDemandDetailShown: Bool { Self.isOnDemandDetailShown(in: sheetRoutes) }
+
+    /// The picker owns the highlight while it is on the stack: popping its
+    /// detail back to it keeps the row's highlight, and closing it clears
+    /// (ruling F14), as in the classic shell.
+    private var isOnDemandPickerShown: Bool { Self.isOnDemandPickerShown(in: sheetRoutes) }
+
+    static func isOnDemandDetailShown(in routes: [AppSheetRoute]) -> Bool {
+        routes.contains { route in
             if case .onDemandService = route { return true }
             return false
         }
     }
 
-    /// The picker owns the highlight while it is on the stack: popping its
-    /// detail back to it keeps the row's highlight, and closing it clears
-    /// (ruling F14), as in the classic shell.
-    private var isOnDemandPickerShown: Bool {
-        (coordinator.routeStack + coordinator.stackedRoutes).contains { route in
+    static func isOnDemandPickerShown(in routes: [AppSheetRoute]) -> Bool {
+        routes.contains { route in
             if case .onDemandPicker = route { return true }
             return false
         }
+    }
+
+    /// Ruling F14: the picker leaving the stack by any path, its close
+    /// button or a swipe down, clears the highlight unless a zone detail
+    /// page is still up to hold it.
+    static func onDemandPickerStackDidChange(wasShown: Bool, routes: [AppSheetRoute], probeController: OnDemandProbeController) {
+        guard wasShown, !isOnDemandPickerShown(in: routes), !isOnDemandDetailShown(in: routes) else { return }
+        probeController.highlightedServiceID = nil
     }
 
     /// Spec 2.4: above the sheet, 16 pt gutters in compact width, at most

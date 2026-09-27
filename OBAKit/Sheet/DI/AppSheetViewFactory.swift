@@ -316,10 +316,9 @@ final class AppSheetViewFactory {
             model: model,
             onHighlight: { [onDemandProbeController] id in onDemandProbeController.highlightedServiceID = id },
             onSelect: { [coordinator] match, check in coordinator.push(.onDemandService(match.service, locationCheck: check)) },
-            onClose: { [onDemandProbeController, coordinator] in
-                // The panel host clears the highlight on close (ruling F14);
-                // a row push keeps it.
-                onDemandProbeController.highlightedServiceID = nil
+            onClose: { [coordinator] in
+                // `MapPanelRootView` clears the highlight when the picker
+                // leaves the stack, so a swipe down clears it too (ruling F14).
                 coordinator.pop()
             }
         )
