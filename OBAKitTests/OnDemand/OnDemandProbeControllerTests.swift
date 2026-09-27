@@ -572,6 +572,18 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(controller.isUnsupported)
     }
 
+    @Test func `An HTML 200 hides the dock and stops probing`() async {
+        dataLoader.mock(data: Data("<!doctype html><html><body>maglev</body></html>".utf8), contentType: "text/html; charset=utf-8", matcher: Self.isProbe)
+        let controller = makeController()
+        await settle(controller, at: alexandriaPoint, level: .region)
+        #expect(controller.dockState == .hidden)
+        #expect(controller.isUnsupported)
+
+        controller.applicationWillEnterForeground()
+        await controller.refreshTask?.value
+        #expect(probeRequests.count == 1, "the HTML page is not fetched again")
+    }
+
     @Test func `A deployment change hides the dock and clears the highlight`() async {
         mockProbe(file: "ondemand_services_for_location_point.json")
         let controller = makeController()
