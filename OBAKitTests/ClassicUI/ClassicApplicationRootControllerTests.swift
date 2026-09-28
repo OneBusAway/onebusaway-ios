@@ -42,6 +42,9 @@ final class ClassicApplicationRootControllerTests: OBATestCase {
         
         // The root controller should be registered in the ViewRouter
         #expect(application.viewRouter.rootController === rootController)
+        
+        // Assert initial selected tab from persisted store (defaults to map)
+        #expect(rootController.selectedIndex == ClassicApplicationRootController.Page.map.rawValue)
     }
 
     @Test func testNavigation() {
