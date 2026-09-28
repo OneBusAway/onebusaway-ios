@@ -33,7 +33,7 @@ final class ClassicApplicationRootControllerTests: OBATestCase {
         let navControllers = rootController.viewControllers as? [UINavigationController]
         #expect(navControllers?.count == 4)
         
-        if let navControllers {
+        if let navControllers, navControllers.count == 4 {
             #expect(navControllers[0].viewControllers.first === rootController.mapController)
             #expect(navControllers[1].viewControllers.first === rootController.recentStopsController)
             #expect(navControllers[2].viewControllers.first === rootController.bookmarksController)
