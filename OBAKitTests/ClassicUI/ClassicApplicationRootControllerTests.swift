@@ -30,9 +30,14 @@ final class ClassicApplicationRootControllerTests: OBATestCase {
         #expect(rootController.moreController != nil)
         
         // Assert that view controllers are wrapped in UINavigationController
-        #expect(rootController.viewControllers?.count == 4)
-        for vc in rootController.viewControllers ?? [] {
-            #expect(vc is UINavigationController)
+        let navControllers = rootController.viewControllers as? [UINavigationController]
+        #expect(navControllers?.count == 4)
+        
+        if let navControllers {
+            #expect(navControllers[0].viewControllers.first === rootController.mapController)
+            #expect(navControllers[1].viewControllers.first === rootController.recentStopsController)
+            #expect(navControllers[2].viewControllers.first === rootController.bookmarksController)
+            #expect(navControllers[3].viewControllers.first === rootController.moreController)
         }
         
         // The root controller should be registered in the ViewRouter
