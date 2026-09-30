@@ -27,7 +27,7 @@ final class ReportProblemCopyTests {
             value: "MISSING",
             table: nil
         )
-        #expect(expected == "Problem with the Stop")
+        #expect(ReportProblemCopy.stopProblemHeader == expected)
     }
 
     @Test func testVehicleProblemHeader() {
@@ -37,6 +37,6 @@ final class ReportProblemCopyTests {
             value: "MISSING",
             table: nil
         )
-        #expect(expected == "Problem with a Trip")
+        #expect(ReportProblemCopy.vehicleProblemHeader == expected)
     }
 }
