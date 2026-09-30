@@ -40,14 +40,13 @@ final class RentalDetailViewController: UIHostingController<RentalDetailView> {
         userLocation: CLLocation? = nil,
         actionsDelegate: RentalLayerActionsDelegate? = nil
     ) {
-        weak var delegate = actionsDelegate
         super.init(rootView: RentalDetailView(
             rental: rental,
             fetchedAt: fetchedAt,
             staleAfter: staleAfter,
             userLocation: userLocation,
-            onPlanTrip: { delegate?.rentalLayer(planTripUsing: $0) },
-            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1, networkID: $2) }
+            onPlanTrip: { [weak actionsDelegate] in actionsDelegate?.rentalLayer(planTripUsing: $0) },
+            onOpenURL: { [weak actionsDelegate] in actionsDelegate?.rentalLayer(open: $0, webFallback: $1, networkID: $2) }
         ))
     }
 
@@ -293,14 +292,13 @@ final class RentalClusterListViewController: UIHostingController<RentalClusterLi
         userLocation: CLLocation? = nil,
         actionsDelegate: RentalLayerActionsDelegate? = nil
     ) {
-        weak var delegate = actionsDelegate
         super.init(rootView: RentalClusterListView(
             rentals: rentals,
             fetchedAt: fetchedAt,
             staleAfter: staleAfter,
             userLocation: userLocation,
-            onPlanTrip: { delegate?.rentalLayer(planTripUsing: $0) },
-            onOpenURL: { delegate?.rentalLayer(open: $0, webFallback: $1, networkID: $2) }
+            onPlanTrip: { [weak actionsDelegate] in actionsDelegate?.rentalLayer(planTripUsing: $0) },
+            onOpenURL: { [weak actionsDelegate] in actionsDelegate?.rentalLayer(open: $0, webFallback: $1, networkID: $2) }
         ))
     }
 
