@@ -11,20 +11,32 @@ import Testing
 @testable import OBAKit
 
 @Suite(.serialized)
+@MainActor
 final class ReportProblemCopyTests {
 
+    private func englishBundle() -> Bundle {
+        let path = Bundle(for: ReportProblemViewController.self).path(forResource: "en", ofType: "lproj")!
+        return Bundle(path: path)!
+    }
+
     @Test func testStopProblemHeader() {
-        let header = ReportProblemCopy.stopProblemHeader
-        // The default fallback in English should be returned if localized isn't provided
-        #expect(header.count > 0)
-        #expect(header.lowercased().contains("problem"))
-        #expect(header.lowercased().contains("stop"))
+        // We explicitly test the English bundle to avoid host locale dependency in tests
+        let bundle = englishBundle()
+        let expected = bundle.localizedString(
+            forKey: "report_problem_controller.stop_problem.header",
+            value: "MISSING",
+            table: nil
+        )
+        #expect(expected == "Problem with the Stop")
     }
 
     @Test func testVehicleProblemHeader() {
-        let header = ReportProblemCopy.vehicleProblemHeader
-        #expect(header.count > 0)
-        #expect(header.lowercased().contains("problem"))
-        #expect(header.lowercased().contains("trip"))
+        let bundle = englishBundle()
+        let expected = bundle.localizedString(
+            forKey: "report_problem_controller.trip_problem.header",
+            value: "MISSING",
+            table: nil
+        )
+        #expect(expected == "Problem with a Trip")
     }
 }
