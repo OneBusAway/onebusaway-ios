@@ -29,6 +29,10 @@ final class DocumentWebViewTests {
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             onError?(error)
         }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            onError?(error)
+        }
     }
 
     /// Verifies that `DocumentWebView` can be initialized.
