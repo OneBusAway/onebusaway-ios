@@ -12,28 +12,55 @@ import Testing
 import WebKit
 @testable import OBAKit
 
+/// Tests for the `DocumentWebView` component.
 @Suite(.serialized)
 @MainActor
 final class DocumentWebViewTests {
 
+    /// Helper delegate to bridge WKNavigationDelegate callbacks to async/await.
+    private class NavigationDelegate: NSObject, WKNavigationDelegate {
+        var onFinish: ((WKWebView) -> Void)?
+        var onError: ((Error) -> Void)?
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            onFinish?(webView)
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            onError?(error)
+        }
+    }
+
+    /// Verifies that `DocumentWebView` can be initialized.
     @Test func testWebViewInitialization() {
         let webView = DocumentWebView()
         #expect(webView != nil)
     }
     
+    /// Verifies that the internal JS action button handler name is correct.
     @Test func testActionButtonHandlerName() {
         #expect(DocumentWebView.actionButtonHandlerName == "actionButtonClicked")
     }
 
-    @Test func testSetPageContentDoesNotCrash() {
+    /// Verifies that setting page content injects the HTML and button appropriately without crashing.
+    @Test func testSetPageContentDoesNotCrash() async throws {
         let webView = DocumentWebView()
-        // Ensure that injecting HTML and a button doesn't trap due to forced unwraps
-        // of missing resources (e.g. document_web_view_content.html not being bundled)
+        let delegate = NavigationDelegate()
+        webView.navigationDelegate = delegate
+        
         webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: "Test Button")
         
-        // At this point we can't synchronously inspect the WKWebView loaded HTML without
-        // an active navigation delegate, but reaching this line confirms that the pageBody
-        // was read successfully from the framework bundle.
-        #expect(webView.configuration != nil)
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            delegate.onFinish = { _ in
+                continuation.resume()
+            }
+            delegate.onError = { error in
+                continuation.resume(throwing: error)
+            }
+        }
+        
+        let html = try await webView.evaluateJavaScript("document.documentElement.outerHTML") as? String ?? ""
+        #expect(html.contains("Test Content"))
+        #expect(html.contains("Test Button"))
     }
 }
