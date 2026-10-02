@@ -83,31 +83,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
 
-    # DerivedData cache. The key is intentionally narrow: it busts only when the
-    # resolved dependency graph, the XcodeGen project specs, or this workflow
-    # change. The previous `**/*.yml` glob also matched vendored yml under
-    # .build/checkouts and caused needless cache misses (→ full rebuilds).
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      id: deriveddata-cache
-      with:
-        path: DerivedData
-        key: ${{ runner.os }}-deriveddata-${{ hashFiles('**/Package.resolved', 'project.yml', 'Apps/**/project.yml', '.github/workflows/obakittests.yml') }}
-        restore-keys: |
-          ${{ runner.os }}-deriveddata-
-
-    # A restore-keys fallback restores DerivedData built against a different
-    # dependency graph. Freshly resolved package checkouts then carry newer
-    # mtimes than the cached explicit precompiled modules, and swift-frontend
-    # hard-errors ("file ... has been modified since the module file was
-    # built", exit 65) instead of rebuilding the stale .pcm. Purge the
-    # precompiled modules on inexact restores — they rebuild in a fraction of
-    # the build step, unlike the rest of DerivedData. (Observed 2026-07-19 on
-    # the GRDB 6→7 pin bump, matching the same local failure mode.)
-    - name: Purge stale precompiled modules on inexact cache restore
-      if: steps.deriveddata-cache.outputs.cache-hit != 'true'
-      run: rm -rf DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
-
-    # The `xcode-27` image ships exactly one Xcode (27.0 beta), so this is close to
+    # The `xcode-27` image ships exactly one Xcode (a 27.x beta), so this is close to
     # a no-op today — it's here so that if the image ever carries a second Xcode,
     # CI takes the newest one rather than whatever `xcode-select` defaults to.
     # `latest`, not `latest-stable`: the only installed Xcode is a beta, and
@@ -121,6 +97,33 @@ jobs:
       uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: 'latest'
+
+    # Keys the DerivedData cache below, which is why Setup Xcode runs first.
+    - name: Record Xcode build version
+      id: xcode
+      run: echo "build=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+
+    # DerivedData cache. Exact-match restores only — there is deliberately no
+    # restore-keys fallback. The fallback used to restore whatever older
+    # DerivedData was newest on main, and an inexact restore across a project-spec
+    # change can fail the build: after #1456 moved files out of OBAKitCore/,
+    # OBAWidget failed to link against OBAKitCore (undefined symbols for every file
+    # added since the cache was built). A failed run saves nothing, so main kept
+    # restoring that Aug 14 cache and stayed red. A cold build costs a few minutes
+    # once per key; a poisoned fallback cost every run until someone deleted it
+    # by hand. (Without a fallback, the old step that purged stale precompiled
+    # modules on inexact restores has nothing to do, so it is gone.)
+    #
+    # The key busts when the resolved dependency graph, any XcodeGen spec under
+    # Apps/ (app_shared.yml and watch.yml define targets too, not just
+    # project.yml), this workflow, or the Xcode build changes. Narrow globs on
+    # purpose: `**/*.yml` also matched vendored yml under .build/checkouts and
+    # missed the cache for no reason.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      id: deriveddata-cache
+      with:
+        path: DerivedData
+        key: ${{ runner.os }}-deriveddata-${{ steps.xcode.outputs.build }}-${{ hashFiles('**/Package.resolved', 'project.yml', 'Apps/**/*.yml', '.github/workflows/tests.yml') }}
 
     - name: Install xcodegen
       env:
