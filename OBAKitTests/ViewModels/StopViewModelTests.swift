@@ -270,6 +270,14 @@ final class StopViewModelTests: OBATestCase {
         #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: UNKNOWN")
     }
 
+    /// Only a negative accuracy is invalid on CLLocation, so 0 is a valid fix.
+    /// Android differs here and sends 0 to UNKNOWN.
+    @Test @MainActor
+    func `Fix with zero accuracy is bucketed by distance`() {
+        let location = userLocation(accuracy: 0)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: 00000-00050m")
+    }
+
     @Test @MainActor
     func `Fix at the accuracy threshold reports the unknown distance bucket`() {
         let location = userLocation(accuracy: 50)
