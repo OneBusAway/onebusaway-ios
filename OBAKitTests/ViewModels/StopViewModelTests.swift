@@ -44,6 +44,10 @@ final class StopViewModelTests: OBATestCase {
     private func createApplication(
         dataLoader: MockDataLoader,
         analytics: AnalyticsMock,
+        locationManager: LocationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        ),
         surveyHitCounter: SurveyHitCounter? = nil,
         arrivalsFixture: String = "arrivals_and_departures_empty.json",
         arrivalsData: Data? = nil,
@@ -74,11 +78,7 @@ final class StopViewModelTests: OBATestCase {
             stubSurveys(dataLoader: dataLoader)
         }
 
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locationManager)
         locationService.startUpdates()
 
         let config = AppConfig(
@@ -302,6 +302,37 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
 
         #expect(analytics.lastReportedStopDistance == "User Distance: 01600-03200m")
+    }
+
+    /// `LocationManagerMock` is never authorized, so the app has no fix at all.
+    @Test @MainActor
+    func `Stop view reports unknown distance when location is missing`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics, locationManager: LocationManagerMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.stopViewedCount == 1)
+        #expect(analytics.lastReportedStopDistance == "User Distance: UNKNOWN")
+    }
+
+    @Test @MainActor
+    func `Stop view reports unknown distance for an inaccurate location`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let locationManager = MockAuthorizedLocationManager(
+            updateLocation: userLocation(accuracy: 50),
+            updateHeading: TestData.mockHeading
+        )
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics, locationManager: locationManager)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.stopViewedCount == 1)
+        #expect(analytics.lastReportedStopDistance == "User Distance: UNKNOWN")
     }
 
     // MARK: - Recents recorded once (issue #1)
