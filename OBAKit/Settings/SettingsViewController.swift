@@ -17,7 +17,7 @@ class SettingsViewController: FormViewController {
     private let application: Application
 
     /// While `true`, `form.setValues` is seeding rows and any `onChange` firing is the
-    /// seed — not the user. HealthKit syncs must not start from a seed (#1458.2).
+    /// seed - not the user. HealthKit syncs must not start from a seed (#1458.2).
     private var isSeedingForm = false
 
     init(application: Application) {
@@ -57,7 +57,7 @@ class SettingsViewController: FormViewController {
         form +++ migrateDataSection
         form +++ exportDataSection
 
-        // `setValues` fires each row's `onChange` as it seeds from nil — the HealthKit
+        // `setValues` fires each row's `onChange` as it seeds from nil - the HealthKit
         // rows below guard on `isSeedingForm` so merely opening Settings never starts
         // a sync (and never downgrades the source or toasts). Only an explicit toggle-on
         // can do that; only launch's passive refresh updates silently otherwise.
@@ -101,22 +101,7 @@ class SettingsViewController: FormViewController {
     private func saveFormValues() {
         let values = form.values()
 
-        if let scale = values[mapSectionShowsScale] as? Bool {
-            application.mapRegionManager.mapViewShowsScale = scale
-        }
-
-        if let traffic = values[mapSectionShowsTraffic] as? Bool {
-            application.mapRegionManager.mapViewShowsTraffic = traffic
-        }
-
-        if let heading = values[mapSectionShowsHeading] as? Bool {
-            application.mapRegionManager.mapViewShowsHeading = heading
-        }
-
-        if let showsPOIs = values[mapSectionShowsPointsOfInterest] as? Bool {
-            application.mapRegionManager.mapViewShowsPointsOfInterest = showsPOIs
-        }
-
+        saveMapValues(values)
         saveAccessibilityValues(values)
         saveExperimentalValues(values)
         saveAlertsValues(values)
@@ -170,6 +155,24 @@ class SettingsViewController: FormViewController {
         if values[bikeSpeedUseHealthKitKey] as? Bool == false {
             application.bikeModeManager.cancelPendingSync()
             application.userDataStore.bikeSpeedSource = .manual
+        }
+    }
+
+    private func saveMapValues(_ values: [String: Any?]) {
+        if let scale = values[mapSectionShowsScale] as? Bool {
+            application.mapRegionManager.mapViewShowsScale = scale
+        }
+
+        if let traffic = values[mapSectionShowsTraffic] as? Bool {
+            application.mapRegionManager.mapViewShowsTraffic = traffic
+        }
+
+        if let heading = values[mapSectionShowsHeading] as? Bool {
+            application.mapRegionManager.mapViewShowsHeading = heading
+        }
+
+        if let showsPOIs = values[mapSectionShowsPointsOfInterest] as? Bool {
+            application.mapRegionManager.mapViewShowsPointsOfInterest = showsPOIs
         }
     }
 
@@ -429,7 +432,7 @@ class SettingsViewController: FormViewController {
                                   comment: "Settings > Walking Speed section > HealthKit toggle")
                 $0.onChange { [weak self] row in
                     guard let self else { return }
-                    // Seeded value, not a tap — opening Settings must never sync (#1458.2).
+                    // Seeded value, not a tap - opening Settings must never sync (#1458.2).
                     if self.isSeedingForm { return }
                     guard let value = row.value else { return }
                     if value == false {
@@ -448,7 +451,7 @@ class SettingsViewController: FormViewController {
                         let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
                             // The user may have opted back out while the sync was in
-                            // flight — then the row is already off and no toast is owed.
+                            // flight - then the row is already off and no toast is owed.
                             guard (self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) as? SwitchRow)?.value == true else { return }
                             if let row: SwitchRow = self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) {
                                 row.value = false
@@ -490,7 +493,7 @@ class SettingsViewController: FormViewController {
         // Deliberately side-effect free: `form.setValues` fires `onChange` when it seeds a row
         // from nil, so anything hung off this switch would run on every Settings open. The
         // HealthKit sync lives on its own opt-in row below, which ignores the seed via
-        // `isSeedingForm` — so opening Settings never syncs, never downgrades the source,
+        // `isSeedingForm` - so opening Settings never syncs, never downgrades the source,
         // and never toasts. Only an explicit toggle-on syncs.
         section <<< SwitchRow {
             $0.tag = bikeModeEnabledKey
@@ -505,7 +508,7 @@ class SettingsViewController: FormViewController {
                                   comment: "Settings > Bike Mode section > HealthKit toggle")
                 $0.onChange { [weak self] row in
                     guard let self else { return }
-                    // Seeded value, not a tap — opening Settings must never sync (#1458.2).
+                    // Seeded value, not a tap - opening Settings must never sync (#1458.2).
                     if self.isSeedingForm { return }
                     guard let value = row.value else { return }
                     if value == false {
@@ -524,7 +527,7 @@ class SettingsViewController: FormViewController {
                         let granted = await self.application.bikeModeManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
                             // The user may have opted back out while the sync was in
-                            // flight — then the row is already off and no toast is owed.
+                            // flight - then the row is already off and no toast is owed.
                             guard (self.form.rowBy(tag: self.bikeSpeedUseHealthKitKey) as? SwitchRow)?.value == true else { return }
                             if let row: SwitchRow = self.form.rowBy(tag: self.bikeSpeedUseHealthKitKey) {
                                 row.value = false
