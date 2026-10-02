@@ -693,10 +693,23 @@ class StopViewModel: ObservableObject {
     }
 
     private func analyticsDistanceToStop(_ stop: Stop) -> String {
-        guard let userLocation = environment.currentUserLocation else {
-            return "User Distance: 03200-INFINITY"
+        Self.analyticsDistanceBucket(userLocation: environment.currentUserLocation, stopLocation: stop.location)
+    }
+
+    /// A fix at or above this accuracy (meters) is too coarse to bucket. Matches Android.
+    static let analyticsLocationAccuracyThreshold: CLLocationAccuracy = 50
+
+    /// The `User Distance` bucket reported with a stop view. With no fix, a fix
+    /// without valid accuracy, or one too coarse to trust, this is `UNKNOWN` rather
+    /// than `03200-INFINITY`, so "far away" and "location unknown" stay separate.
+    /// The labels must match Android exactly so the dashboards group them together.
+    static func analyticsDistanceBucket(userLocation: CLLocation?, stopLocation: CLLocation) -> String {
+        guard let userLocation,
+              userLocation.horizontalAccuracy >= 0,
+              userLocation.horizontalAccuracy < analyticsLocationAccuracyThreshold else {
+            return "User Distance: UNKNOWN"
         }
-        let distance = userLocation.distance(from: stop.location)
+        let distance = userLocation.distance(from: stopLocation)
         switch distance {
         case ..<50:   return "User Distance: 00000-00050m"
         case ..<100:  return "User Distance: 00050-00100m"
