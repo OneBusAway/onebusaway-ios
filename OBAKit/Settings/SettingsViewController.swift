@@ -17,8 +17,14 @@ class SettingsViewController: FormViewController {
     private let application: Application
 
     /// While `true`, `form.setValues` is seeding rows and any `onChange` firing is the
-    /// seed - not the user. HealthKit syncs must not start from a seed (#1458.2).
+    /// seed — not the user. HealthKit syncs must not start from a seed (#1458.2).
     private var isSeedingForm = false
+
+    /// Identifies the latest HealthKit sync Task per row. Minted synchronously on every
+    /// explicit toggle-on; a stale completion (off -> on while an older sync was still
+    /// in flight) sees a mismatched ID and leaves the row and toast alone.
+    private var walkingHealthKitSyncID = 0
+    private var bikeHealthKitSyncID = 0
 
     init(application: Application) {
         self.application = application
@@ -447,9 +453,14 @@ class SettingsViewController: FormViewController {
                     // Eureka's onChange closure is nonisolated (pre-concurrency
                     // library), so `row` can't cross into the main-actor task;
                     // re-fetch it by tag inside instead.
+                    walkingHealthKitSyncID += 1
+                    let walkingSyncID = walkingHealthKitSyncID
                     Task { @MainActor in
                         let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
+                            // A newer toggle-on started its own sync after this one;
+                            // this superseded request no longer owns the row.
+                            guard walkingSyncID == self.walkingHealthKitSyncID else { return }
                             // The user may have opted back out while the sync was in
                             // flight - then the row is already off and no toast is owed.
                             guard (self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) as? SwitchRow)?.value == true else { return }
@@ -523,9 +534,14 @@ class SettingsViewController: FormViewController {
                     // Eureka's onChange closure is nonisolated (pre-concurrency
                     // library), so `row` can't cross into the main-actor task;
                     // re-fetch it by tag inside instead.
+                    bikeHealthKitSyncID += 1
+                    let bikeSyncID = bikeHealthKitSyncID
                     Task { @MainActor in
                         let granted = await self.application.bikeModeManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
+                            // A newer toggle-on started its own sync after this one;
+                            // this superseded request no longer owns the row.
+                            guard bikeSyncID == self.bikeHealthKitSyncID else { return }
                             // The user may have opted back out while the sync was in
                             // flight - then the row is already off and no toast is owed.
                             guard (self.form.rowBy(tag: self.bikeSpeedUseHealthKitKey) as? SwitchRow)?.value == true else { return }
