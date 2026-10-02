@@ -114,16 +114,17 @@ jobs:
     # by hand. (Without a fallback, the old step that purged stale precompiled
     # modules on inexact restores has nothing to do, so it is gone.)
     #
-    # The key busts when the resolved dependency graph, any XcodeGen spec under
-    # Apps/ (app_shared.yml and watch.yml define targets too, not just
-    # project.yml), this workflow, or the Xcode build changes. Narrow globs on
-    # purpose: `**/*.yml` also matched vendored yml under .build/checkouts and
-    # missed the cache for no reason.
+    # The key busts when the resolved dependency graph, any XcodeGen spec, this
+    # workflow, or the Xcode build changes. Specs live in each target directory
+    # (OBAKitCore/project.yml, …) and under Apps/ (app_shared.yml and watch.yml
+    # define targets too, not just project.yml). Narrow globs on purpose:
+    # `**/*.yml` also matched vendored yml under .build/checkouts and missed the
+    # cache for no reason; `*/project.yml` stays one directory deep.
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: deriveddata-cache
       with:
         path: DerivedData
-        key: ${{ runner.os }}-deriveddata-${{ steps.xcode.outputs.build }}-${{ hashFiles('**/Package.resolved', 'project.yml', 'Apps/**/*.yml', '.github/workflows/tests.yml') }}
+        key: ${{ runner.os }}-deriveddata-${{ steps.xcode.outputs.build }}-${{ hashFiles('**/Package.resolved', 'project.yml', '*/project.yml', 'Apps/**/*.yml', '.github/workflows/tests.yml') }}
 
     - name: Install xcodegen
       env:
