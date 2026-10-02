@@ -33,9 +33,24 @@ final class WalkingSpeedManagerTests: OBATestCase {
     /// Defers the sample until the test releases it, so an opt-out can race a sync in flight.
     private actor FetchGate {
         private var continuation: CheckedContinuation<Double?, Never>?
+        private var fetchingContinuation: CheckedContinuation<Void, Never>?
 
         func wait() async -> Double? {
-            await withCheckedContinuation { self.continuation = $0 }
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+                // Signal arrival: a test awaiting `waitUntilFetching()` now proceeds.
+                self.fetchingContinuation?.resume()
+                self.fetchingContinuation = nil
+            }
+        }
+
+        /// Returns only after `wait()` has stored its continuation, so the test knows
+        /// the sync is parked in the fetch (and not still before it) before cancelling.
+        func waitUntilFetching() async {
+            guard continuation == nil else { return }
+            await withCheckedContinuation { continuation in
+                self.fetchingContinuation = continuation
+            }
         }
 
         func resume(returning value: Double?) {
@@ -125,8 +140,9 @@ final class WalkingSpeedManagerTests: OBATestCase {
         )
 
         async let sync = manager.requestHealthKitAuthorizationAndSync()
-        // Let the sync reach the gated fetch before racing it.
-        try? await Task.sleep(for: .milliseconds(50))
+        // Deterministic rendezvous: proceed only once the sync is parked in the fetch,
+        // so cancellation always races the post-fetch guard (never the pre-fetch one).
+        await gate.waitUntilFetching()
 
         // What `saveWalkingSpeedValues` does when the user turns "Use Health app data" off.
         manager.cancelPendingSync()
