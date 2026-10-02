@@ -44,6 +44,10 @@ final class StopViewModelTests: OBATestCase {
     private func createApplication(
         dataLoader: MockDataLoader,
         analytics: AnalyticsMock,
+        locationManager: LocationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        ),
         surveyHitCounter: SurveyHitCounter? = nil,
         arrivalsFixture: String = "arrivals_and_departures_empty.json",
         arrivalsData: Data? = nil,
@@ -74,11 +78,7 @@ final class StopViewModelTests: OBATestCase {
             stubSurveys(dataLoader: dataLoader)
         }
 
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locationManager)
         locationService.startUpdates()
 
         let config = AppConfig(
@@ -247,6 +247,100 @@ final class StopViewModelTests: OBATestCase {
 
         #expect(analytics.stopViewedCount == 1)
         #expect(analytics.lastReportedStopID == testStopID)
+    }
+
+    // MARK: - Analytics distance bucket (#1466)
+
+    private let stopLocation = CLLocation(latitude: TestData.seattleCoordinate.latitude, longitude: TestData.seattleCoordinate.longitude)
+
+    private func userLocation(_ coordinate: CLLocationCoordinate2D = TestData.seattleCoordinate, accuracy: CLLocationAccuracy) -> CLLocation {
+        CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: accuracy, verticalAccuracy: 10, timestamp: Date())
+    }
+
+    @Test @MainActor
+    func `No location reports the unknown distance bucket`() {
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: nil, stopLocation: stopLocation) == "User Distance: UNKNOWN")
+    }
+
+    /// A negative `horizontalAccuracy` means the fix is invalid, so even a fix
+    /// sitting on the stop must not count as near it.
+    @Test @MainActor
+    func `Fix without valid accuracy reports the unknown distance bucket`() {
+        let location = userLocation(accuracy: -1)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: UNKNOWN")
+    }
+
+    /// Only a negative accuracy is invalid on CLLocation, so 0 is a valid fix.
+    /// Android differs here and sends 0 to UNKNOWN.
+    @Test @MainActor
+    func `Fix with zero accuracy is bucketed by distance`() {
+        let location = userLocation(accuracy: 0)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: 00000-00050m")
+    }
+
+    @Test @MainActor
+    func `Fix at the accuracy threshold reports the unknown distance bucket`() {
+        let location = userLocation(accuracy: 50)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: UNKNOWN")
+    }
+
+    @Test @MainActor
+    func `Fix just under the accuracy threshold is bucketed by distance`() {
+        let location = userLocation(accuracy: 49.9)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: 00000-00050m")
+    }
+
+    /// `03200-INFINITY` now means only a measured distance past 3200 m.
+    @Test @MainActor
+    func `Accurate far fix reports the farthest distance bucket`() {
+        let location = userLocation(TestData.tampaCoordinate, accuracy: 10)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: 03200-INFINITY")
+    }
+
+    /// The stop view itself carries the bucket computed from the app's current fix.
+    /// The mock location service reports a 10 m fix about 2.8 km from the fixture's
+    /// stop at (47.6, -122.3), so it is measured, not unknown.
+    @Test @MainActor
+    func `Stop view reports a measured distance bucket`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.lastReportedStopDistance == "User Distance: 01600-03200m")
+    }
+
+    /// `LocationManagerMock` is never authorized, so the app has no fix at all.
+    @Test @MainActor
+    func `Stop view reports unknown distance when location is missing`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics, locationManager: LocationManagerMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.stopViewedCount == 1)
+        #expect(analytics.lastReportedStopDistance == "User Distance: UNKNOWN")
+    }
+
+    @Test @MainActor
+    func `Stop view reports unknown distance for an inaccurate location`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let locationManager = MockAuthorizedLocationManager(
+            updateLocation: userLocation(accuracy: 50),
+            updateHeading: TestData.mockHeading
+        )
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics, locationManager: locationManager)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.stopViewedCount == 1)
+        #expect(analytics.lastReportedStopDistance == "User Distance: UNKNOWN")
     }
 
     // MARK: - Recents recorded once (issue #1)
