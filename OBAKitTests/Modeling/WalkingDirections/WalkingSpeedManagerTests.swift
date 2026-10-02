@@ -30,6 +30,31 @@ final class WalkingSpeedManagerTests: OBATestCase {
         }
     }
 
+    /// Defers the sample until the test releases it, so an opt-out can race a sync in flight.
+    private actor FetchGate {
+        private var continuation: CheckedContinuation<Double?, Never>?
+
+        func wait() async -> Double? {
+            await withCheckedContinuation { self.continuation = $0 }
+        }
+
+        func resume(returning value: Double?) {
+            continuation?.resume(returning: value)
+            continuation = nil
+        }
+    }
+
+    private struct GatedProvider: WalkingSpeedHealthKitProviding {
+        var isAvailable: Bool = true
+        let gate: FetchGate
+
+        func requestAuthorization() async throws {}
+
+        func fetchLatestWalkingSpeed() async -> Double? {
+            await gate.wait()
+        }
+    }
+
     private struct DummyError: Error {}
 
     private var store: UserDefaultsStore {
@@ -86,6 +111,33 @@ final class WalkingSpeedManagerTests: OBATestCase {
         #expect(result == false)
         #expect(self.store.walkingSpeedSource == .manual)
         // Stored speed unchanged — the out-of-range sample must not leak in.
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
+    }
+
+    @Test func `Opt-out while a sync is in flight wins over its trailing write`() async {
+        store.walkingSpeedSource = .healthKit
+        store.walkingSpeedMetersPerSecond = 1.4
+
+        let gate = FetchGate()
+        let manager = WalkingSpeedManager(
+            userDataStore: store,
+            healthKit: GatedProvider(gate: gate)
+        )
+
+        async let sync = manager.requestHealthKitAuthorizationAndSync()
+        // Let the sync reach the gated fetch before racing it.
+        try? await Task.sleep(for: .milliseconds(50))
+
+        // What `saveWalkingSpeedValues` does when the user turns "Use Health app data" off.
+        manager.cancelPendingSync()
+        store.walkingSpeedSource = .manual
+
+        await gate.resume(returning: 1.7)
+        let result = await sync
+
+        #expect(result == false)
+        #expect(self.store.walkingSpeedSource == .manual)
+        // The late 1.7 sample must not leak in over the opt-out.
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
     }
 

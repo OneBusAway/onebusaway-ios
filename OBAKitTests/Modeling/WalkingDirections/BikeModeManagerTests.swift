@@ -25,8 +25,33 @@ final class BikeModeManagerTests: OBATestCase {
             }
         }
 
-        func fetchLatestBikeSpeed() async -> Double? {
+        func fetchAverageBikeSpeed() async -> Double? {
             sampleSpeed
+        }
+    }
+
+    /// Defers the average until the test releases it, so an opt-out can race a sync in flight.
+    private actor FetchGate {
+        private var continuation: CheckedContinuation<Double?, Never>?
+
+        func wait() async -> Double? {
+            await withCheckedContinuation { self.continuation = $0 }
+        }
+
+        func resume(returning value: Double?) {
+            continuation?.resume(returning: value)
+            continuation = nil
+        }
+    }
+
+    private struct GatedProvider: BikeSpeedHealthKitProviding {
+        var isAvailable: Bool = true
+        let gate: FetchGate
+
+        func requestAuthorization() async throws {}
+
+        func fetchAverageBikeSpeed() async -> Double? {
+            await gate.wait()
         }
     }
 
@@ -75,7 +100,7 @@ final class BikeModeManagerTests: OBATestCase {
         store.bikeSpeedSource = .healthKit
         store.bikeSpeedMetersPerSecond = 4.2
 
-        // 30 m/s sits well outside BikeSpeed.validRange (1.0...20.0).
+        // 30 m/s sits well outside BikeSpeed.validRange (2.0...20.0).
         let manager = BikeModeManager(
             userDataStore: store,
             healthKit: FakeProvider(sampleSpeed: 30.0)
@@ -86,6 +111,51 @@ final class BikeModeManagerTests: OBATestCase {
         #expect(result == false)
         #expect(self.store.bikeSpeedSource == .manual)
         // Stored speed unchanged — the out-of-range sample must not leak in.
+        expectClose(self.store.bikeSpeedMetersPerSecond, 4.2)
+    }
+
+    @Test func `Request and sync when average is a walk-speed crawl rejects and forces manual`() async {
+        store.bikeSpeedSource = .healthKit
+        store.bikeSpeedMetersPerSecond = 4.2
+
+        // 1.2 m/s passed the old 1.0 lower bound and rendered a bike ETA slower than
+        // walking; the raised 2.0 bound (above the 1.8 fast-walk preset) rejects it (#1458.1).
+        let manager = BikeModeManager(
+            userDataStore: store,
+            healthKit: FakeProvider(sampleSpeed: 1.2)
+        )
+
+        let result = await manager.requestHealthKitAuthorizationAndSync()
+
+        #expect(result == false)
+        #expect(self.store.bikeSpeedSource == .manual)
+        expectClose(self.store.bikeSpeedMetersPerSecond, 4.2)
+    }
+
+    @Test func `Opt-out while a sync is in flight wins over its trailing write`() async {
+        store.bikeSpeedSource = .healthKit
+        store.bikeSpeedMetersPerSecond = 4.2
+
+        let gate = FetchGate()
+        let manager = BikeModeManager(
+            userDataStore: store,
+            healthKit: GatedProvider(gate: gate)
+        )
+
+        async let sync = manager.requestHealthKitAuthorizationAndSync()
+        // Let the sync reach the gated fetch before racing it.
+        try? await Task.sleep(for: .milliseconds(50))
+
+        // What `saveBikeModeValues` does when the user turns "Use Health app data" off.
+        manager.cancelPendingSync()
+        store.bikeSpeedSource = .manual
+
+        await gate.resume(returning: 5.0)
+        let result = await sync
+
+        #expect(result == false)
+        #expect(self.store.bikeSpeedSource == .manual)
+        // The late 5.0 average must not leak in over the opt-out.
         expectClose(self.store.bikeSpeedMetersPerSecond, 4.2)
     }
 

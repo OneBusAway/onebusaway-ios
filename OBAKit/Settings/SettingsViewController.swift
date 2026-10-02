@@ -16,6 +16,10 @@ import UIKit
 class SettingsViewController: FormViewController {
     private let application: Application
 
+    /// While `true`, `form.setValues` is seeding rows and any `onChange` firing is the
+    /// seed — not the user. HealthKit syncs must not start from a seed (#1458.2).
+    private var isSeedingForm = false
+
     init(application: Application) {
         self.application = application
 
@@ -53,6 +57,11 @@ class SettingsViewController: FormViewController {
         form +++ migrateDataSection
         form +++ exportDataSection
 
+        // `setValues` fires each row's `onChange` as it seeds from nil — the HealthKit
+        // rows below guard on `isSeedingForm` so merely opening Settings never starts
+        // a sync (and never downgrades the source or toasts). Only an explicit toggle-on
+        // can do that; only launch's passive refresh updates silently otherwise.
+        isSeedingForm = true
         form.setValues([
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
@@ -78,6 +87,7 @@ class SettingsViewController: FormViewController {
             bikeModeEnabledKey: application.userDataStore.bikeModeEnabled,
             bikeSpeedUseHealthKitKey: application.userDataStore.bikeSpeedSource == .healthKit
         ])
+        isSeedingForm = false
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -155,7 +165,10 @@ class SettingsViewController: FormViewController {
         // `.healthKit` itself once a usable sample lands). Only the *off* direction has to be
         // persisted here. Unlike walking there's no manual speed to snap to — the stored speed
         // stays as-is and `effectiveTravelVelocityMetersPerSecond` keeps using it.
+        // `cancelPendingSync` first so a sync still in flight can't write `.healthKit`
+        // back over this opt-out when it lands (#1458.3).
         if values[bikeSpeedUseHealthKitKey] as? Bool == false {
+            application.bikeModeManager.cancelPendingSync()
             application.userDataStore.bikeSpeedSource = .manual
         }
     }
@@ -200,10 +213,16 @@ class SettingsViewController: FormViewController {
 
     private func saveWalkingSpeedValues(_ values: [String: Any?]) {
         let store = application.userDataStore
+        let useHealthKit = values[walkingSpeedUseHealthKitKey] as? Bool
+        // Same opt-out race as Bike Mode (#1458.3): invalidate a still-running sync before
+        // persisting `.manual` so its trailing write can't resurrect `.healthKit`.
+        if useHealthKit == false {
+            application.walkingSpeedManager.cancelPendingSync()
+        }
         let decision = WalkingSpeedSettingsDecision.compute(
             currentSource: store.walkingSpeedSource,
             currentSpeed: store.walkingSpeedMetersPerSecond,
-            useHealthKit: values[walkingSpeedUseHealthKitKey] as? Bool,
+            useHealthKit: useHealthKit,
             segmentSpeed: values[walkingSpeedMetersPerSecondKey] as? Double
         )
         store.walkingSpeedSource = decision.source
@@ -409,13 +428,28 @@ class SettingsViewController: FormViewController {
                                   value: "Use Health app data",
                                   comment: "Settings > Walking Speed section > HealthKit toggle")
                 $0.onChange { [weak self] row in
-                    guard let self, row.value == true else { return }
+                    guard let self else { return }
+                    // Seeded value, not a tap — opening Settings must never sync (#1458.2).
+                    if self.isSeedingForm { return }
+                    guard let value = row.value else { return }
+                    if value == false {
+                        // Opt-out while a sync is in flight: invalidate it so its trailing
+                        // write can't resurrect `.healthKit` (#1458.3). The `.manual`
+                        // persist itself happens in `saveWalkingSpeedValues`.
+                        Task { @MainActor [weak self] in
+                            self?.application.walkingSpeedManager.cancelPendingSync()
+                        }
+                        return
+                    }
                     // Eureka's onChange closure is nonisolated (pre-concurrency
                     // library), so `row` can't cross into the main-actor task;
                     // re-fetch it by tag inside instead.
                     Task { @MainActor in
                         let granted = await self.application.walkingSpeedManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
+                            // The user may have opted back out while the sync was in
+                            // flight — then the row is already off and no toast is owed.
+                            guard (self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) as? SwitchRow)?.value == true else { return }
                             if let row: SwitchRow = self.form.rowBy(tag: self.walkingSpeedUseHealthKitKey) {
                                 row.value = false
                                 row.reload()
@@ -455,8 +489,9 @@ class SettingsViewController: FormViewController {
 
         // Deliberately side-effect free: `form.setValues` fires `onChange` when it seeds a row
         // from nil, so anything hung off this switch would run on every Settings open. The
-        // HealthKit sync lives on its own opt-in row below, whose seeded value is
-        // `source == .healthKit` — which a failed sync flips back off, so it can't re-fire.
+        // HealthKit sync lives on its own opt-in row below, which ignores the seed via
+        // `isSeedingForm` — so opening Settings never syncs, never downgrades the source,
+        // and never toasts. Only an explicit toggle-on syncs.
         section <<< SwitchRow {
             $0.tag = bikeModeEnabledKey
             $0.title = OBALoc("settings_controller.bike_mode.title", value: "Bike Mode", comment: "Settings > Bike Mode > on/off toggle")
@@ -469,13 +504,28 @@ class SettingsViewController: FormViewController {
                                   value: "Use Health app data",
                                   comment: "Settings > Bike Mode section > HealthKit toggle")
                 $0.onChange { [weak self] row in
-                    guard let self, row.value == true else { return }
+                    guard let self else { return }
+                    // Seeded value, not a tap — opening Settings must never sync (#1458.2).
+                    if self.isSeedingForm { return }
+                    guard let value = row.value else { return }
+                    if value == false {
+                        // Opt-out while a sync is in flight: invalidate it so its trailing
+                        // write can't resurrect `.healthKit` (#1458.3). The `.manual`
+                        // persist itself happens in `saveBikeModeValues`.
+                        Task { @MainActor [weak self] in
+                            self?.application.bikeModeManager.cancelPendingSync()
+                        }
+                        return
+                    }
                     // Eureka's onChange closure is nonisolated (pre-concurrency
                     // library), so `row` can't cross into the main-actor task;
                     // re-fetch it by tag inside instead.
                     Task { @MainActor in
                         let granted = await self.application.bikeModeManager.requestHealthKitAuthorizationAndSync()
                         if !granted {
+                            // The user may have opted back out while the sync was in
+                            // flight — then the row is already off and no toast is owed.
+                            guard (self.form.rowBy(tag: self.bikeSpeedUseHealthKitKey) as? SwitchRow)?.value == true else { return }
                             if let row: SwitchRow = self.form.rowBy(tag: self.bikeSpeedUseHealthKitKey) {
                                 row.value = false
                                 row.reload()
