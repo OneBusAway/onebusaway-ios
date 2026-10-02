@@ -24,12 +24,18 @@ class TripViewController: UIViewController,
 
     let viewModel: TripViewModel
 
+    /// The stop a shared trip link named as the sharer's exit, or `nil` for every
+    /// other way into this screen. Read by `TripFloatingPanelController` when it
+    /// decides which row carries the destination marker. See #449.
+    let destinationStopID: StopID?
+
     var tripConvertible: TripConvertible { viewModel.tripConvertible }
 
     private var cancellables = Set<AnyCancellable>()
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     init(application: Application, tripConvertible: TripConvertible) {
+        self.destinationStopID = nil
         self.application = application
         self.viewModel = TripViewModel(application: application, tripConvertible: tripConvertible)
 
@@ -38,8 +44,11 @@ class TripViewController: UIViewController,
         registerTraitChangeCallback()
     }
 
-    init(application: Application, arrivalDeparture: ArrivalDeparture) {
+    /// - Parameter destinationStopID: Where the sharer said they will step off,
+    ///   when this trip was opened from a shared link that named one. See #449.
+    init(application: Application, arrivalDeparture: ArrivalDeparture, destinationStopID: StopID? = nil) {
         self.application = application
+        self.destinationStopID = destinationStopID
         self.viewModel = TripViewModel(
             application: application,
             tripConvertible: TripConvertible(arrivalDeparture: arrivalDeparture)

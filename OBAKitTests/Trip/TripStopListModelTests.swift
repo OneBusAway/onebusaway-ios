@@ -175,4 +175,97 @@ struct TripStopListModelTests {
         #expect(last.isUserStop)
         #expect(last.isTerminal)
     }
+
+    // MARK: - Shared destination (#449)
+
+    @Test func `A shared destination resolves to its row`() {
+        let stops = line(["A", "B", "C", "D"])
+
+        let index = TripStopListModel.destinationStopIndex(
+            in: stops,
+            destinationStopID: "C",
+            boardingIndex: 0
+        )
+
+        #expect(index == 2)
+    }
+
+    @Test func `No shared destination marks no row`() {
+        let stops = line(["A", "B", "C"])
+
+        let index = TripStopListModel.destinationStopIndex(
+            in: stops,
+            destinationStopID: nil,
+            boardingIndex: 0
+        )
+
+        #expect(index == nil)
+    }
+
+    /// The link carries a stop ID and no sequence, so a loop that calls at the
+    /// destination both before and after boarding has two candidate rows. The
+    /// rider cannot step off before they get on, so the later one wins.
+    @Test func `On a loop, a shared destination resolves to the call after boarding`() {
+        let stops = line(["A", "B", "C", "B", "D"])
+
+        let index = TripStopListModel.destinationStopIndex(
+            in: stops,
+            destinationStopID: "B",
+            boardingIndex: 2
+        )
+
+        #expect(index == 3)
+    }
+
+    /// Same line, boarding earlier: now the first call at B is already ahead of
+    /// the rider, so that is the one they step off at.
+    @Test func `On a loop, an earlier boarding takes the earlier call`() {
+        let stops = line(["A", "B", "C", "B", "D"])
+
+        let index = TripStopListModel.destinationStopIndex(
+            in: stops,
+            destinationStopID: "B",
+            boardingIndex: 0
+        )
+
+        #expect(index == 1)
+    }
+
+    @Test func `A destination the trip never reaches after boarding marks no row`() {
+        let stops = line(["A", "B", "C"])
+
+        let index = TripStopListModel.destinationStopIndex(
+            in: stops,
+            destinationStopID: "A",
+            boardingIndex: 1
+        )
+
+        #expect(index == nil)
+    }
+
+    /// Boarding at the terminal leaves nothing after it to search, which must
+    /// come back empty rather than slicing past the end.
+    @Test func `Boarding at the last stop marks no destination`() {
+        let stops = line(["A", "B"])
+
+        let index = TripStopListModel.destinationStopIndex(
+            in: stops,
+            destinationStopID: "B",
+            boardingIndex: 1
+        )
+
+        #expect(index == nil)
+    }
+
+    @Test func `With no boarding row the whole trip is searched`() {
+        let stops = line(["A", "B", "C"])
+
+        let index = TripStopListModel.destinationStopIndex(
+            in: stops,
+            destinationStopID: "A",
+            boardingIndex: nil
+        )
+
+        #expect(index == 0)
+    }
 }
