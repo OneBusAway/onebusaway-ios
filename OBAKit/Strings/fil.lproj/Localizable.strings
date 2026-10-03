@@ -1884,6 +1884,12 @@
 "trip_page.card.a11y_fmt" = "Ruta %1$@ papuntang %2$@, darating sa loob ng %3$d minuto, %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "Ruta %1$@ papuntang %2$@";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "Paparating na sa hintuan mo";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "%1$@ ang layo, %2$d na hintuan ang layo";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "%1$@ ang layo · %2$d na hintuan";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Hindi maisumite ang ulat na ito dahil hindi available ngayon ang serbisyo ng pag-uulat. Pakisubukang muli mamaya.";
 /* Trip page button that starts a Live Activity for this trip. */

@@ -392,5 +392,45 @@
 			<string>%3$d минуты</string>
 		</dict>
 	</dict>
+	<key>trip_page.card.distance_stops_a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>ещё %1$@, %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%2$d остановки</string>
+			<key>many</key>
+			<string>%2$d остановок</string>
+			<key>one</key>
+			<string>%2$d остановка</string>
+			<key>other</key>
+			<string>%2$d остановки</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.distance_stops_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>ещё %1$@ · %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%2$d остановки</string>
+			<key>many</key>
+			<string>%2$d остановок</string>
+			<key>one</key>
+			<string>%2$d остановка</string>
+			<key>other</key>
+			<string>%2$d остановки</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
