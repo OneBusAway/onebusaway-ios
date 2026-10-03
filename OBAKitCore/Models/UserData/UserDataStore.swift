@@ -1283,6 +1283,9 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         set { userDefaults.set(newValue, forKey: UserDefaultsKeys.bikeModeEnabled) }
     }
 
+    /// Reads clamp into BikeSpeed.validRange. Stored values below the 2.0 floor
+    /// from the earlier 1.0 range read back as 2.0 without changing the stored
+    /// value or the source. The next successful HealthKit sync overwrites them.
     public var bikeSpeedMetersPerSecond: Double {
         get {
             let stored = userDefaults.double(forKey: UserDefaultsKeys.bikeSpeedMetersPerSecond)
