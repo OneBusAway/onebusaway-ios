@@ -48,13 +48,12 @@ final class BikeModeManager {
     /// flight) abandons without touching the store, so the opt-out wins.
     @discardableResult
     func requestHealthKitAuthorizationAndSync() async -> Bool {
-        let generation = syncGeneration
-
         guard healthKit.isAvailable else {
-            guard generation == syncGeneration else { return false }
             userDataStore.bikeSpeedSource = .manual
             return false
         }
+
+        let generation = syncGeneration
 
         do {
             try await healthKit.requestAuthorization()
