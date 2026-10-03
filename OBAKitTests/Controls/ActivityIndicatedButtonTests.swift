@@ -1,8 +1,8 @@
-﻿//
+//
 //  ActivityIndicatedButtonTests.swift
 //  OBAKitTests
 //
-//  Copyright © Open Transit Software Foundation
+//  Copyright � Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
@@ -11,7 +11,7 @@ import Foundation
 import Testing
 import UIKit
 @testable import OBAKit
-@testable import OBAKitCore
+@testable import OBAKitCoreiOS
 
 @MainActor
 @Suite(.serialized)
@@ -113,39 +113,65 @@ final class ActivityIndicatedButtonTests {
         #expect(buttonView.config == config)
     }
 
-    @Test func testViewVisibilityWhenConfigIsNil() {
+    @Test func testViewVisibilityWhenConfigIsNil() async throws {
         let buttonView = ActivityIndicatedButton(config: nil)
         #expect(buttonView.isHidden == true)
 
-        let config = ActivityIndicatedButton.Configuration(text: "Test", action: {})
+        let config = ActivityIndicatedButton.Configuration(
+            text: "Test",
+            largeContentImage: nil,
+            action: {}
+        )
         buttonView.config = config
+
+        // Wait for the async configureView() to run on the main queue
+        try await Task.sleep(nanoseconds: 10_000_000)
+
         #expect(buttonView.isHidden == false)
     }
 
     @Test func testShowAndHideActivityIndicator() {
-        let config = ActivityIndicatedButton.Configuration(text: "Test", action: {})
+        let config = ActivityIndicatedButton.Configuration(
+            text: "Test",
+            largeContentImage: nil,
+            action: {}
+        )
         let buttonView = ActivityIndicatedButton(config: config)
 
-        // By default, indicator shouldn't be active (assuming default state logic)
         buttonView.showActivityIndicator()
-        // We can't easily inspect UIActivityIndicatorView state if it's deeply private,
-        // but calling the methods ensures they don't trap.
-        // We can check if user interaction gets disabled during loading.
-        #expect(buttonView.isUserInteractionEnabled == false)
+
+        #expect(buttonView.button.isHidden == true)
+        #expect(buttonView.chevron.isHidden == true)
+        #expect(buttonView.activityIndicator.isAnimating == true)
 
         buttonView.hideActivityIndicator()
-        #expect(buttonView.isUserInteractionEnabled == true)
+
+        #expect(buttonView.button.isHidden == false)
+        #expect(buttonView.chevron.isHidden == false)
+        #expect(buttonView.activityIndicator.isAnimating == false)
     }
 
-    @Test func testPrepareForReuse() {
-        let config = ActivityIndicatedButton.Configuration(text: "Test", action: {})
+    @Test func testPrepareForReuse() async throws {
+        let config = ActivityIndicatedButton.Configuration(
+            text: "Test",
+            largeContentImage: nil,
+            action: {}
+        )
         let buttonView = ActivityIndicatedButton(config: config)
-        
+
+        // Ensure configureView has run
+        try await Task.sleep(nanoseconds: 10_000_000)
+
         buttonView.showActivityIndicator()
         buttonView.prepareForReuse()
-        
+
+        // Wait for the async configureView() after config = nil
+        try await Task.sleep(nanoseconds: 10_000_000)
+
         #expect(buttonView.config == nil)
         #expect(buttonView.isHidden == true)
-        #expect(buttonView.isUserInteractionEnabled == true) // Restored by hideActivityIndicator
+        #expect(buttonView.activityIndicator.isAnimating == false)
+        #expect(buttonView.button.isHidden == false)
+        #expect(buttonView.chevron.isHidden == false)
     }
 }
