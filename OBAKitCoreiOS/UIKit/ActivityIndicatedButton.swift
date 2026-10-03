@@ -54,7 +54,7 @@ public class ActivityIndicatedButton: UIView {
     }
 
     // MARK: - UI
-    fileprivate lazy var button: UIButton = {
+    lazy var button: UIButton = {
         let button = UIButton()
         button.titleLabel?.font = .preferredFont(forTextStyle: .headline)
         button.setTitleColor(ThemeColors.shared.brand, for: .normal)
@@ -67,14 +67,14 @@ public class ActivityIndicatedButton: UIView {
         return button
     }()
 
-    fileprivate let chevron: UIImageView = {
+    let chevron: UIImageView = {
         let view = UIImageView(image: UIImage(systemName: "chevron.compact.down"))
         view.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .headline)
         view.tintColor = ThemeColors.shared.brand
         return view
     }()
 
-    fileprivate let activityIndicator: UIActivityIndicatorView = {
+    let activityIndicator: UIActivityIndicatorView = {
         let activityIndicator = UIActivityIndicatorView(style: .medium)
         activityIndicator.hidesWhenStopped = true
         return activityIndicator
