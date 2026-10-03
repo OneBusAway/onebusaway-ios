@@ -1884,6 +1884,12 @@
 "trip_page.card.a11y_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 도착, %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "노선 %1$@, %2$@ 방면";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "곧 내 정류장에 도착";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "%1$@ 거리, 정류장 %2$d개 전";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "%1$@ 거리 · 정류장 %2$d개";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "신고 서비스를 사용할 수 없어 이 신고를 제출하지 못했습니다. 나중에 다시 시도해 주세요.";
 /* Trip page button that starts a Live Activity for this trip. */

@@ -1884,6 +1884,12 @@
 "trip_page.card.a11y_fmt" = "الخط %1$@ إلى %2$@، تصل خلال %3$d دقائق، %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "الخط %1$@ إلى %2$@";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "يقترب من موقفك";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "على بُعد %1$@، على بُعد %2$d موقف";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "على بُعد %1$@ · %2$d موقف";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "تعذّر إرسال هذا البلاغ لأن خدمة الإبلاغ غير متاحة حاليًا. يُرجى المحاولة مرة أخرى لاحقًا.";
 /* Trip page button that starts a Live Activity for this trip. */

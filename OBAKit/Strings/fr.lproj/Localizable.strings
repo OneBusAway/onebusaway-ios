@@ -1884,6 +1884,12 @@
 "trip_page.card.a11y_fmt" = "Ligne %1$@ vers %2$@, arrive dans %3$d minutes, %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "Ligne %1$@ vers %2$@";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "Arrive à votre arrêt";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "à %1$@, à %2$d arrêts";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "à %1$@ · %2$d arrêts";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Ce signalement n'a pas pu être envoyé, car le service de signalement n'est pas disponible pour le moment. Veuillez réessayer plus tard.";
 /* Trip page button that starts a Live Activity for this trip. */
