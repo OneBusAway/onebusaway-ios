@@ -384,6 +384,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             // update their alarm index via the notification.
             self.deleteMatchingAlarm(for: pushBody)
             NotificationCenter.default.post(name: .alarmFired, object: nil)
+            self.launchRouteGate.suppress()
 
             guard let topViewController = self.topViewController else {
                 // UI not ready yet (cold launch). Navigate once the scene activates.
@@ -454,6 +455,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// historically did not carry a region. When set, drain refuses to open the
     /// stop against a different region's API.
     var pendingStopRegionID: Int?
+    /// Lives here rather than on the map so it survives root reloads and sees every
+    /// deep link, which arrive here before (or instead of) any map appearing.
+    lazy var launchRouteGate = LaunchRouteGate(configValue: config.launchRouteID)
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false
     private var donationPromptID: String?
@@ -765,6 +769,8 @@ public class Application: CoreApplication, PushServiceDelegate {
             return
         }
 
+        launchRouteGate.suppress()
+
         if let topViewController, currentRegion?.regionIdentifier == destination.regionID {
             viewRouter.navigateTo(stopID: destination.stopID, from: topViewController)
             return
@@ -779,7 +785,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             return false
         }
 
-        return appLinksRouter.route(userActivity: userActivity)
+        let handled = appLinksRouter.route(userActivity: userActivity)
+        if handled {
+            launchRouteGate.suppress()
+        }
+        return handled
     }
 
     @MainActor
@@ -788,11 +798,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             return false
         }
 
-        let router = URLSchemeRouter(scheme: scheme)
-
-        guard let urlType = router.decodeURLType(from: url) else {
+        guard let urlType = URLSchemeRouter(scheme: scheme).decodeURLType(from: url) else {
             return false
         }
+
+        launchRouteGate.suppress()
 
         switch urlType {
         case .viewStop(let stopData):

@@ -210,6 +210,7 @@ class MapViewController: UIViewController,
         viewModel.start()
         updateVoiceover()
         showMapLayersTipIfNeeded()
+        showLaunchRouteIfNeeded()
         Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
