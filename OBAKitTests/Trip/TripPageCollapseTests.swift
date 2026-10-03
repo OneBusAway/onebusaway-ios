@@ -60,4 +60,23 @@ final class TripPageCollapseTests: OBATestCase {
         collapsible.setAtTip(false)
         #expect(page.rootView.isCollapsed == false)
     }
+
+    // MARK: - Show on Map
+
+    /// Only a host with a map behind the page can answer the button, so a page nobody wired
+    /// must not offer it.
+    @Test func `Show on Map is not offered until a host supplies it`() throws {
+        let page = try makeTripPage()
+        #expect(page.rootView.actions.onShowMap == nil)
+    }
+
+    @Test func `Show on Map runs the host's handler`() throws {
+        let page = try makeTripPage()
+        var shown = 0
+
+        page.onShowMap = { shown += 1 }
+        try #require(page.rootView.actions.onShowMap)()
+
+        #expect(shown == 1)
+    }
 }

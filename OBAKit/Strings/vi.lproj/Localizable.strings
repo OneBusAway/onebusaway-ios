@@ -1896,6 +1896,8 @@
 "trip_page.remove_alarm" = "Xóa lời nhắc";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Báo cáo xe buýt không đến";
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "Hiển thị trên bản đồ";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "đã đi qua";
 /* VoiceOver clause on the final stop of the trip. */

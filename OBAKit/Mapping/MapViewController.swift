@@ -783,7 +783,7 @@ class MapViewController: UIViewController,
     /// rider pops out. Suppression rather than `end()` — the stop sheet
     /// underneath is still presented.
     private func wireTripFocus(for tripPage: TripPageViewController) {
-        tripPage.onMapFocusChanged = { [weak self] tripFocus in
+        tripPage.onMapFocusChanged = { [weak self, weak tripPage] tripFocus in
             guard let self else { return }
 
             // Gated on the layer's own Map-sheet toggle, for the same reason
@@ -803,6 +803,12 @@ class MapViewController: UIViewController,
                 // animating up at this point.
                 tripLayer.cameraInsets = { [weak self] in self?.sheetCameraInsets() ?? .zero }
                 tripLayer.begin(focus: tripFocus)
+
+                // Offered only while the layer is drawing the trip; with it off,
+                // lowering the sheet would reveal a map that doesn't show it.
+                // The route was framed above the `.half` sheet, so it stays in
+                // view as the sheet drops below it.
+                tripPage?.onShowMap = { [weak self] in self?.stopSheet.collapseToTip() }
             } else {
                 tripLayer.end()
             }
