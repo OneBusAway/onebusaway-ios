@@ -164,6 +164,7 @@ public class EmptyDataSetView: UIView {
     // MARK: - Configure with error
     public func configure(with error: Error, icon: UIImage? = nil, buttonConfig: ActivityIndicatedButton.Configuration? = nil) {
         self.bodyLabel.text = error.localizedDescription
+        self.imageView.image = icon
         self.button.config = buttonConfig
     }
 }

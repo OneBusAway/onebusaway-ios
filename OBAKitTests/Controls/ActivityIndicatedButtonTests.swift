@@ -1,4 +1,4 @@
-//
+﻿//
 //  ActivityIndicatedButtonTests.swift
 //  OBAKitTests
 //
@@ -30,45 +30,75 @@ final class ActivityIndicatedButtonTests {
         #expect(config.text == "Tap Me")
         #expect(config.largeContentImage == nil)
         #expect(config.showsActivityIndicatorOnTap == true)
-        
+
         let buttonView = ActivityIndicatedButton(config: config)
         buttonView.buttonDidTap(UIButton())
-        
+
         #expect(actionFired == true)
     }
 
     @Test func testConfigurationEquality() {
+        let image1 = UIImage(systemName: "star")
+        let image2 = UIImage(systemName: "heart")
+
         let config1 = ActivityIndicatedButton.Configuration(
             text: "Refresh",
-            largeContentImage: nil,
+            largeContentImage: image1,
             showsActivityIndicatorOnTap: true,
             action: {}
         )
 
         let config2 = ActivityIndicatedButton.Configuration(
             text: "Refresh",
-            largeContentImage: nil,
+            largeContentImage: image1,
             showsActivityIndicatorOnTap: true,
             action: {}
         )
 
         let config3 = ActivityIndicatedButton.Configuration(
             text: "Different",
-            largeContentImage: nil,
+            largeContentImage: image1,
             showsActivityIndicatorOnTap: true,
             action: {}
         )
 
         let config4 = ActivityIndicatedButton.Configuration(
             text: "Refresh",
-            largeContentImage: nil,
+            largeContentImage: image1,
             showsActivityIndicatorOnTap: false,
+            action: {}
+        )
+
+        let config5 = ActivityIndicatedButton.Configuration(
+            text: "Refresh",
+            largeContentImage: image2,
+            showsActivityIndicatorOnTap: true,
             action: {}
         )
 
         #expect(config1 == config2)
         #expect(config1 != config3)
         #expect(config1 != config4)
+        #expect(config1 != config5)
+    }
+
+    @Test func testConfigurationEqualityIgnoresActionClosure() {
+        let config1 = ActivityIndicatedButton.Configuration(
+            text: "Same",
+            largeContentImage: nil,
+            showsActivityIndicatorOnTap: true,
+            action: { print("Action 1") }
+        )
+
+        let config2 = ActivityIndicatedButton.Configuration(
+            text: "Same",
+            largeContentImage: nil,
+            showsActivityIndicatorOnTap: true,
+            action: { print("Action 2") }
+        )
+
+        // Closures are fundamentally un-equatable, so our custom == deliberately ignores them.
+        #expect(config1 == config2)
     }
 
     @Test func testInitializationWithConfig() {
@@ -78,8 +108,44 @@ final class ActivityIndicatedButtonTests {
             showsActivityIndicatorOnTap: true,
             action: {}
         )
-        
+
         let buttonView = ActivityIndicatedButton(config: config)
         #expect(buttonView.config == config)
+    }
+
+    @Test func testViewVisibilityWhenConfigIsNil() {
+        let buttonView = ActivityIndicatedButton(config: nil)
+        #expect(buttonView.isHidden == true)
+
+        let config = ActivityIndicatedButton.Configuration(text: "Test", action: {})
+        buttonView.config = config
+        #expect(buttonView.isHidden == false)
+    }
+
+    @Test func testShowAndHideActivityIndicator() {
+        let config = ActivityIndicatedButton.Configuration(text: "Test", action: {})
+        let buttonView = ActivityIndicatedButton(config: config)
+
+        // By default, indicator shouldn't be active (assuming default state logic)
+        buttonView.showActivityIndicator()
+        // We can't easily inspect UIActivityIndicatorView state if it's deeply private,
+        // but calling the methods ensures they don't trap.
+        // We can check if user interaction gets disabled during loading.
+        #expect(buttonView.isUserInteractionEnabled == false)
+
+        buttonView.hideActivityIndicator()
+        #expect(buttonView.isUserInteractionEnabled == true)
+    }
+
+    @Test func testPrepareForReuse() {
+        let config = ActivityIndicatedButton.Configuration(text: "Test", action: {})
+        let buttonView = ActivityIndicatedButton(config: config)
+        
+        buttonView.showActivityIndicator()
+        buttonView.prepareForReuse()
+        
+        #expect(buttonView.config == nil)
+        #expect(buttonView.isHidden == true)
+        #expect(buttonView.isUserInteractionEnabled == true) // Restored by hideActivityIndicator
     }
 }
