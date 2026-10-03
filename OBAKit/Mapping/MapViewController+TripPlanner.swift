@@ -84,6 +84,14 @@ extension MapViewController {
 
         let mapViewProvider = MKMapViewAdapter(mapView: tripPlannerMapView)
 
+        let mapDelegate = TripPlannerMapDelegate(
+            forwardingTo: mapViewProvider,
+            locationService: application.locationService,
+            showsHeading: mapRegionManager.mapViewShowsHeading
+        )
+        mapDelegate.attach(to: tripPlannerMapView)
+        tripPlannerMapDelegate = mapDelegate
+
         let tripPlanner = TripPlanner(
             otpConfig: config,
             apiService: apiService,
@@ -153,6 +161,7 @@ extension MapViewController {
         self.semiModalTripPlannerController = nil
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
+        self.tripPlannerMapDelegate = nil
         hideTripPlannerMapView()
 
         unsubscribeFromTripPlannerNotifications()
