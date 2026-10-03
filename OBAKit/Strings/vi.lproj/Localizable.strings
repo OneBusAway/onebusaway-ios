@@ -664,6 +664,36 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Di chuyển bản đồ hoặc bật dịch vụ vị trí để xem các điểm dừng gần bạn.";
 
+/* Siri response when the requested bookmark was deleted or belongs to a different region. */
+"next_departures_intent.bookmark_unavailable" = "Dấu trang đó không khả dụng ở khu vực hiện tại của bạn.";
+
+/* Siri asks which trip bookmark to report departures for when the user has more than one. */
+"next_departures_intent.choose_bookmark" = "Dấu trang nào?";
+
+/* Siri response naming the next departure. {Route short name} to {Headsign} departs {'now' or 'in X minutes'}. */
+"next_departures_intent.first_departure_fmt" = "Tuyến %1$@ đi %2$@ khởi hành %3$@.";
+
+/* Siri response: a vehicle departs in {X} minutes. Plural forms in Localizable.stringsdict. */
+"next_departures_intent.in_minutes_fmt" = "sau %d phút";
+
+/* Siri response listing the departures after the next one. {List of 'in X minutes'} */
+"next_departures_intent.later_departures_fmt" = "Sau đó %@.";
+
+/* Siri response when departures could not be fetched. {Bookmark name} */
+"next_departures_intent.load_failed_fmt" = "Không thể tải các chuyến khởi hành cho %@. Hãy kiểm tra kết nối và thử lại.";
+
+/* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
+"next_departures_intent.no_bookmarks" = "Bạn chưa có chuyến nào trong dấu trang. Hãy đánh dấu một tuyến tại một trạm trước.";
+
+/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
+"next_departures_intent.no_departures_fmt" = "Không có chuyến khởi hành nào cho %@ trong giờ tới.";
+
+/* Siri response when the user asks for their next departures before the app knows their region. */
+"next_departures_intent.no_region" = "Hãy chọn khu vực giao thông trong ứng dụng trước.";
+
+/* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
+"next_departures_intent.now" = "ngay bây giờ";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Chen chúc, chỉ còn chỗ đứng";
 
