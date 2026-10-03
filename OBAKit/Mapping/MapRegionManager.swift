@@ -1746,12 +1746,7 @@ extension MapRegionManager: LocationServiceDelegate {
             return
         }
 
-        if annotationView.headingImage == nil {
-            annotationView.headingImage = Icons.userHeading
-        }
-
-        // The PulsingAnnotationView treats east as 0º.
-        annotationView.headingImageView.transform = heading.trueHeading.affineTransform(rotatedBy: -0.5 * .pi)
+        annotationView.showUserHeading(heading)
     }
 }
 

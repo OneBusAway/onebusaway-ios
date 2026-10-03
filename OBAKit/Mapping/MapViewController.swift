@@ -525,6 +525,7 @@ class MapViewController: UIViewController,
 
     var tripPlanner: TripPlanner?
     var tripPlannerHostingController: UIViewController?
+    var tripPlannerMapDelegate: TripPlannerMapDelegate?
 
     lazy var tripPlannerMapView: MKMapView = {
         let mapView = MKMapView.autolayoutNew()
