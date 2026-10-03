@@ -1796,6 +1796,16 @@
 "map_sheet.other_modes_group" = "다른 이동 수단";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "초기화";
+/* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
+"map_sheet.routes_on_map" = "지도의 노선";
+/* Empty state on the Routes on Map screen when no stops with routes are loaded for the visible map area. */
+"map_sheet.routes_on_map_empty" = "지도의 이 영역에는 노선이 없습니다";
+/* Footer under the Routes on Map row explaining what picking a route does and how to undo it. */
+"map_sheet.routes_on_map_footer" = "한 노선의 경로와 정류장만 표시합니다. 노선을 닫으면 모든 정류장이 다시 표시됩니다.";
+/* VoiceOver hint on a route row in the Routes on Map list. */
+"map_sheet.routes_on_map_row_hint" = "지도에 이 노선만 표시합니다.";
+/* Empty state on the Routes on Map screen when the map is zoomed out too far to load stops. */
+"map_sheet.routes_on_map_zoomed_out" = "이 지역을 지나는 노선을 보려면 확대하세요";
 /* Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.) */
 "map_sheet.shows_points_of_interest" = "관심 지점";
 /* Title of the Map sheet */

@@ -1796,6 +1796,16 @@
 "map_sheet.other_modes_group" = "其他出行方式";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "重置";
+/* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
+"map_sheet.routes_on_map" = "地图上的线路";
+/* Empty state on the Routes on Map screen when no stops with routes are loaded for the visible map area. */
+"map_sheet.routes_on_map_empty" = "地图的这一区域没有线路";
+/* Footer under the Routes on Map row explaining what picking a route does and how to undo it. */
+"map_sheet.routes_on_map_footer" = "只显示一条线路的走向和车站。关闭该线路即可重新看到所有车站。";
+/* VoiceOver hint on a route row in the Routes on Map list. */
+"map_sheet.routes_on_map_row_hint" = "在地图上只显示这条线路。";
+/* Empty state on the Routes on Map screen when the map is zoomed out too far to load stops. */
+"map_sheet.routes_on_map_zoomed_out" = "放大地图以查看服务此区域的线路";
 /* Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.) */
 "map_sheet.shows_points_of_interest" = "兴趣点";
 /* Title of the Map sheet */

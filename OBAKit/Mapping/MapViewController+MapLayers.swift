@@ -153,7 +153,11 @@ extension MapViewController {
     // MARK: - Map Sheet
 
     func presentMapSheet() {
-        let model = MapSheetModel(mapRegionManager: mapRegionManager, mapViewModel: viewModel)
+        let model = MapSheetModel(mapRegionManager: mapRegionManager, mapViewModel: viewModel) { [weak self] route in
+            guard let self else { return }
+            dismiss(animated: true)
+            showRouteOnMap(route)
+        }
         presentMediumSheet(UIHostingController(rootView: MapSheetView(model: model)))
     }
 

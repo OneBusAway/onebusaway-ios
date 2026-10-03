@@ -40,6 +40,38 @@ public extension Strings {
         comment: "Message when no routes are found near the user's location."
     )
 
+    // MARK: - Routes on Map
+
+    static let routesOnMapTitle = OBALoc(
+        "map_sheet.routes_on_map",
+        value: "Routes on Map",
+        comment: "Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map."
+    )
+
+    static let routesOnMapFooter = OBALoc(
+        "map_sheet.routes_on_map_footer",
+        value: "Show only one route's path and stops. Close the route to see every stop again.",
+        comment: "Footer under the Routes on Map row explaining what picking a route does and how to undo it."
+    )
+
+    static let routesOnMapEmpty = OBALoc(
+        "map_sheet.routes_on_map_empty",
+        value: "No routes on this part of the map",
+        comment: "Empty state on the Routes on Map screen when no stops with routes are loaded for the visible map area."
+    )
+
+    static let routesOnMapZoomedOut = OBALoc(
+        "map_sheet.routes_on_map_zoomed_out",
+        value: "Zoom in to see the routes serving this area",
+        comment: "Empty state on the Routes on Map screen when the map is zoomed out too far to load stops."
+    )
+
+    static let routesOnMapRowHint = OBALoc(
+        "map_sheet.routes_on_map_row_hint",
+        value: "Shows only this route on the map.",
+        comment: "VoiceOver hint on a route row in the Routes on Map list."
+    )
+
     // MARK: - Current Trip
 
     static let currentTripTitle = OBALoc(

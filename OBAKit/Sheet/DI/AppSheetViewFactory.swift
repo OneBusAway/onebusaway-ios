@@ -208,8 +208,30 @@ final class AppSheetViewFactory {
     func mapSettingsView() -> MapSheetView {
         MapSheetView(model: MapSheetModel(
             mapRegionManager: self.application.mapRegionManager,
-            mapViewModel: self.mapViewModel
+            mapViewModel: self.mapViewModel,
+            onSelectRoute: { [weak self] route in
+                guard let self else { return }
+                Task { await self.showRouteOnMap(route) }
+            }
         ))
+    }
+
+    /// A route picked from the Map sheet's Routes on Map list takes the same
+    /// resolve-then-present path as a route picked from search results, so the
+    /// route sheet's Close is what restores the ambient stops here too.
+    ///
+    /// Resolved before unwinding, for the reason `SearchResultsSelection.select`
+    /// gives: a failed request leaves the rider on the list they tapped.
+    private func showRouteOnMap(_ route: Route) async {
+        let router = searchResultRouter
+        guard let resolved = await router.resolve(result: route) else {
+            if let error = router.lastError {
+                await application.displayError(error)
+            }
+            return
+        }
+        coordinator.popToRoot()
+        router.present(resolved)
     }
 
     /// Resolves the id to a live model, so a vehicle that leaves the feed while

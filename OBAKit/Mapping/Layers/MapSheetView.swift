@@ -27,11 +27,28 @@ import UIKit
     /// (the SwiftUI panel's map-type button can change it out from under us).
     var selectedBaseType: MapBaseType { mapViewModel.mapType }
 
+    /// Each map root shows the route through its own route-display path; the
+    /// sheet only says which route was picked. Required so a host can't build a
+    /// Routes on Map list whose rows silently do nothing.
+    private let onSelectRoute: (Route) -> Void
+
     private var cancellables = Set<AnyCancellable>()
 
-    init(mapRegionManager: MapRegionManager, mapViewModel: MapViewModel) {
+    init(mapRegionManager: MapRegionManager, mapViewModel: MapViewModel, onSelectRoute: @escaping (Route) -> Void) {
         self.mapRegionManager = mapRegionManager
         self.mapViewModel = mapViewModel
+        self.onSelectRoute = onSelectRoute
+
+        // Zooming past the stop-loading threshold behind the sheet must flip an
+        // open Routes on Map list to its zoomed-out state.
+        mapViewModel.$showZoomWarning
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .mapLayerAvailabilityDidChange)
             .receive(on: DispatchQueue.main)
@@ -122,6 +139,19 @@ import UIKit
         objectWillChange.send()
         mapRegionManager.mapViewShowsPointsOfInterest = shows
     }
+
+    // MARK: - Routes on Map
+
+    /// `showZoomWarning` rather than `mapRegionManager.zoomInStatus`: the panel
+    /// root never moves the manager's offscreen `mapView`, while both roots keep
+    /// the view model's flag in step with their camera.
+    var routeFilterContent: RouteFilterOptions.Content {
+        RouteFilterOptions.content(stops: mapRegionManager.stops, isZoomedOut: mapViewModel.showZoomWarning)
+    }
+
+    func selectRoute(_ route: Route) {
+        onSelectRoute(route)
+    }
 }
 
 struct MapSheetView: View {
@@ -142,6 +172,8 @@ struct MapSheetView: View {
         NavigationStack {
             List {
                 basemapSection
+
+                routesOnMapSection
 
                 mapDisplaySection
 
@@ -224,6 +256,35 @@ struct MapSheetView: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Routes on Map
+
+    /// Directly under the basemap tiles, ahead of the layer toggles, because it is
+    /// the one row here that changes *which* transit the map shows. The footer
+    /// carries the way back out, since the filter is cleared from the route
+    /// sheet's Close button rather than from here.
+    private var routesOnMapSection: some View {
+        Section {
+            NavigationLink {
+                RoutesOnMapView(model: model)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    Text(Strings.routesOnMapTitle)
+                    Spacer()
+                    if case .routes(let routes) = model.routeFilterContent {
+                        Text(routes.count, format: .number)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } footer: {
+            Text(Strings.routesOnMapFooter)
+        }
     }
 
     // MARK: - Map Display
