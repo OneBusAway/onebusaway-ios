@@ -284,9 +284,10 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     // MARK: - BookmarkDataDelegate
 
     nonisolated func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        // BookmarkDataLoader dispatches this callback inside `await MainActor.run`, so
-        // we're already on the main actor. `assumeIsolated` confirms that without the
-        // round-trip Task hop. Traps loudly if the loader's contract ever changes.
+        // BookmarkDataLoader calls this from its `@MainActor`
+        // `settle(_:stopID:slots:batchID:)`, so we're already on the main actor.
+        // `assumeIsolated` confirms that without the round-trip Task hop. Traps
+        // loudly if the loader's contract ever changes.
         MainActor.assumeIsolated {
             rebuildSections()
             didUpdateSubject.send()

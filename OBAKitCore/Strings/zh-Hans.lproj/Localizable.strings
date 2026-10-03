@@ -433,6 +433,9 @@
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "此数据可能已过期。";
 
+/* Error shown when a location request is made without authorization */
+"location_service.error.not_authorized" = "未获得位置访问授权。";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "现在";
 

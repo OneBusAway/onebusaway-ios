@@ -272,6 +272,12 @@ open class CoreApplication: NSObject,
 
     public let obacoServiceUpdatedNotification = NSNotification.Name("ObacoServiceUpdatedNotification")
 
+    // ActivityKit is iOS/iPadOS only, and `import ActivityKit` fails watchOS
+    // dependency scanning outright, so `LiveActivityRegistry` and
+    // `LiveActivityTracker` are not compiled for the watch. These are stored
+    // lazy properties and cannot move to an extension — hence the one
+    // conditional this file carries.
+    #if canImport(ActivityKit)
     // MARK: - Live Activities
 
     /// Owns the Live Activity push subscriptions registered with OBACloud: registration,
@@ -289,6 +295,7 @@ open class CoreApplication: NSObject,
     /// per-screen on purpose: a Live Activity outlives the view controller that started it, and
     /// so must the observer that unregisters it. See `LiveActivityTracker`.
     public private(set) lazy var liveActivityTracker = LiveActivityTracker(registry: liveActivityRegistry)
+    #endif
 
     /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
     /// This must be called when the region changes.
@@ -304,19 +311,10 @@ open class CoreApplication: NSObject,
 
     // MARK: - UUID
 
-    private let userUUIDDefaultsKey = "userUUIDDefaultsKey"
-
     /// A unique (but not personally-identifying) identifier for the current user that is used
     /// to correlate crash logs and other events to a single person.
     @objc public var userUUID: String {
-        if let uuid = userDefaults.object(forKey: userUUIDDefaultsKey) as? String {
-            return uuid
-        }
-        else {
-            let uuid = UUID().uuidString
-            userDefaults.set(uuid, forKey: userUUIDDefaultsKey)
-            return uuid
-        }
+        UserUUID.value(in: userDefaults)
     }
 
     // MARK: - Regions Service
@@ -348,7 +346,7 @@ open class CoreApplication: NSObject,
     // MARK: - Migration
 
     public func migrate(userID: String) {
-        userDefaults.set(userID, forKey: userUUIDDefaultsKey)
+        userDefaults.set(userID, forKey: UserUUID.defaultsKey)
     }
 
     public func migrate(region: MigrationRegion) {

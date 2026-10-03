@@ -10,7 +10,7 @@ import CoreLocation
 
 nonisolated struct StopArrivalWalkItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
-        return .custom(StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk))
+        return .custom(StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk, isBikeMode: isBikeMode))
     }
 
     static var customCellType: OBAListViewCell.Type? {
@@ -26,11 +26,15 @@ nonisolated struct StopArrivalWalkItem: OBAListViewItem {
     let id: String
     let distance: CLLocationDistance
     let timeToWalk: TimeInterval
+    /// Whether `timeToWalk` was computed at bike speed — Bike Mode swaps the
+    /// row's icon and wording from walk to bike to match.
+    var isBikeMode: Bool = false
 
     static func == (lhs: StopArrivalWalkItem, rhs: StopArrivalWalkItem) -> Bool {
         return lhs.id == rhs.id &&
             lhs.distance == rhs.distance &&
-            lhs.timeToWalk == rhs.timeToWalk
+            lhs.timeToWalk == rhs.timeToWalk &&
+            lhs.isBikeMode == rhs.isBikeMode
     }
 
     func hash(into hasher: inout Hasher) {
@@ -41,6 +45,7 @@ nonisolated struct StopArrivalWalkItem: OBAListViewItem {
 nonisolated struct StopArrivalWalkContentConfiguration: OBAContentConfiguration {
     var distance: CLLocationDistance
     var timeToWalk: TimeInterval
+    var isBikeMode: Bool = false
     var formatters: Formatters?
 
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
@@ -65,6 +70,6 @@ class StopArrivalWalkCell: OBAListViewCell {
     override func apply(_ config: OBAContentConfiguration) {
         guard let config = config as? StopArrivalWalkContentConfiguration else { return }
         walkTimeView.formatters = config.formatters
-        walkTimeView.set(distance: config.distance, timeToWalk: config.timeToWalk)
+        walkTimeView.set(distance: config.distance, timeToWalk: config.timeToWalk, isBikeMode: config.isBikeMode)
     }
 }

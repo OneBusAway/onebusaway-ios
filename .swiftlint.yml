@@ -15,7 +15,10 @@ opt_in_rules: # some rules are only opt-in
 included: # paths to include during linting. `--path` is ignored if present.
   - OBAKit
   - OBAKitCore
+  - OBAKitCoreiOS
   - OBAWidget
+  - OBAKitWatch
+  - WatchApp
 
 excluded: # paths to ignore during linting. Takes precedence over `included`.
   - OBAKitCore/Models/Protobuf/gtfs-realtime.pb.swift
@@ -31,7 +34,7 @@ type_body_length:
 custom_rules:
   hardcoded_app_name:
     name: "Hardcoded app name"
-    # OBAKit/OBAKitCore/OBAWidget are the white-label frameworks — the same code ships
+    # OBAKit/OBAKitCore/OBAKitCoreiOS/OBAWidget/OBAKitWatch/WatchApp are the white-label frameworks and shells — the same code ships
     # as KiedyBus. A brand name baked into a string literal renders the wrong app name.
     # `included:` above already scopes linting to the frameworks, so the app targets
     # under Apps/ remain free to name themselves.
@@ -45,4 +48,27 @@ custom_rules:
     match_kinds:
       - string
     message: "Don't hardcode 'OneBusAway' in a string in a shared framework — use %@ with Bundle.main.appName. This code also ships as KiedyBus."
+    severity: error
+  epoch_decoded_as_int:
+    name: "Epoch value decoded as Int"
+    # `Int` is 32 bits on arm64_32 Apple Watches (every watch on watchOS 11; Series
+    # 6-8, SE 2, and Ultra 1 on any version). Watch simulators are 64-bit, so a
+    # time-valued `Int` decodes fine everywhere except on a customer's wrist.
+    # Decode epoch values as Int64 or Date. A key that merely *sounds* temporal
+    # (seconds since midnight, an offset) may suppress this with
+    # `// swiftlint:disable:next epoch_decoded_as_int` and a reason.
+    # Known blind spots — this is a tripwire, not a proof: it cannot see synthesized
+    # Codable, it does not match UInt, and it only fires on keys NAMED like a time
+    # (it would not have caught ServiceAlert.TimeWindow's `.from` / `.to`). The
+    # watchOS device build catches overflowing literals; nothing but review catches
+    # an epoch decoded into Int under an innocuous key name.
+    included: "OBAKitCore(iOS)?/.*\\.swift"
+    regex: 'decode(IfPresent)?\(Int\.self, forKey: \.\w*([Tt]ime|[Dd]ate|[Tt]imestamp)\b'
+    message: "Decode epoch values as Int64 or Date — Int is 32 bits on arm64_32 Apple Watches."
+    severity: error
+  epoch_narrowed_to_int:
+    name: "timeIntervalSince1970 narrowed to Int"
+    included: "OBAKitCore(iOS)?/.*\\.swift"
+    regex: '\bU?Int\((?:[^()]|\([^()]*\))*timeIntervalSince1970'
+    message: "Use Int64(…) or UInt64(…) — Int is 32 bits on arm64_32 Apple Watches, and seconds-since-1970 overflows it in 2038."
     severity: error

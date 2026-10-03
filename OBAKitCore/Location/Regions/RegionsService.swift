@@ -19,6 +19,11 @@ public protocol RegionsServiceDelegate {
     @objc optional func regionsService(_ service: RegionsService, updatedRegion region: Region)
     @objc optional func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool)
 
+    /// A custom region was added, replaced, or deleted. `updatedRegion` does not
+    /// cover this: editing the *current* custom region keeps its identifier, so
+    /// the `currentRegion` setter never fires.
+    @objc optional func regionsService(_ service: RegionsService, updatedCustomRegions regions: [Region])
+
     /// This delegate method is called when the region list update is cancelled before retrieving data.
     ///
     /// The update will be cancelled when the regions list has been updated within the past day, and an update is not forced.
@@ -173,6 +178,13 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
+    private func notifyDelegatesCustomRegionsUpdated() {
+        let customRegions = self.customRegions
+        for delegate in delegates.allObjects {
+            delegate.regionsService?(self, updatedCustomRegions: customRegions)
+        }
+    }
+
     // MARK: - Regions Data
 
     public private(set) var regions: [Region] {
@@ -251,6 +263,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     public func add(customRegion newRegion: Region) async throws {
         try fileStorage.saveCustomRegion(newRegion)
         customRegionsCacheLock.withLock { customRegionsCache = nil }
+        notifyDelegatesCustomRegionsUpdated()
     }
 
     /// Deletes the custom region. If the region could not be found, this method exits normally.
@@ -272,6 +285,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         try fileStorage.deleteCustomRegion(identifier: identifier)
         customRegionsCacheLock.withLock { customRegionsCache = nil }
+        notifyDelegatesCustomRegionsUpdated()
     }
 
     public var customRegions: [Region] {
