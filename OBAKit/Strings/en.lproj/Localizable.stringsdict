@@ -328,5 +328,101 @@
 			<string>%3$d minutes</string>
 		</dict>
 	</dict>
+	<key>on_demand.card.more_services</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d more service here</string>
+			<key>other</key>
+			<string>%d more services here</string>
+		</dict>
+	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d more service serves both locations</string>
+			<key>other</key>
+			<string>%d more services serve both locations</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d service here</string>
+			<key>other</key>
+			<string>%d services here</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title_nearby</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d service nearby</string>
+			<key>other</key>
+			<string>%d services nearby</string>
+		</dict>
+	</dict>
+	<key>on_demand.detail.zone_count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d zone</string>
+			<key>other</key>
+			<string>%d zones</string>
+		</dict>
+	</dict>
+	<key>on_demand.address.inside_more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Inside %1$@ and %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d more</string>
+			<key>other</key>
+			<string>%d more</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

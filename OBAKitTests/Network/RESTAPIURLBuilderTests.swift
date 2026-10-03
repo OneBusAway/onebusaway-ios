@@ -138,4 +138,19 @@ final class RESTAPIURLBuilderTests {
         #expect(queryValue(url, "radius") == nil, "viewport mode must not send a radius; radius wins the server tiebreak")
         #expect(queryValue(url, "geometryDetail") == "simplified")
     }
+
+    @Test func testGetOnDemandServicesNearPoint() {
+        let url = builder.getOnDemandServices(
+            near: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2),
+            radiusMeters: 5000,
+            geometryDetail: .none
+        )
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components?.path == "/api/ondemand/services-for-location.json")
+        #expect(queryValue(url, "lat").flatMap(Double.init) == 45.3)
+        #expect(queryValue(url, "lon").flatMap(Double.init) == -85.2)
+        #expect(queryValue(url, "radius").flatMap(Double.init) == 5000)
+        #expect(queryValue(url, "latSpan") == nil, "point mode never sends a span")
+        #expect(queryValue(url, "geometryDetail") == "none")
+    }
 }

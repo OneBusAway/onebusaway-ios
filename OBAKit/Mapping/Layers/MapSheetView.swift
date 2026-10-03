@@ -12,6 +12,23 @@ import OBAKitCore
 import SwiftUI
 import UIKit
 
+/// One tile of the layers grid (spec 3.9).
+struct MapLayerTile: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let iconName: String
+    let isEnabled: Bool
+    let unavailableReason: String?
+
+    /// Unavailable blocks turning a layer on; an enabled layer is always switchable off.
+    var isTapEnabled: Bool { unavailableReason == nil || isEnabled }
+
+    var subtitle: String {
+        if let unavailableReason { return unavailableReason }
+        return isEnabled ? Strings.mapLayersStateOn : Strings.mapLayersStateOff
+    }
+}
+
 /// The Map sheet: basemap styles on top, stackable layer toggles below.
 ///
 /// Presented from the basemap button in the map's control stack — a browse layer
@@ -82,6 +99,27 @@ import UIKit
         mapRegionManager.setMapLayerEnabled(enabled, id: layer.id)
     }
 
+    func tiles(in group: MapLayerGroup) -> [MapLayerTile] {
+        visibleLayers(in: group).map { layer in
+            let reason: String? = {
+                if case .unavailable(let reason) = layer.availability { return reason }
+                return nil
+            }()
+            return MapLayerTile(id: layer.id, title: layer.title, iconName: layer.iconName, isEnabled: isEnabled(layer), unavailableReason: reason)
+        }
+    }
+
+    func toggle(_ tile: MapLayerTile) {
+        guard let layer = mapRegionManager.mapLayer(id: tile.id) else { return }
+        setEnabled(!tile.isEnabled, layer: layer)
+    }
+
+    /// The group, header included, disappears when no rental layer is registered.
+    var showsRentalsGroup: Bool { !visibleLayers(in: .otherModes).isEmpty }
+
+    /// Chips show whenever the group does, so the range can be set before a layer is on.
+    var showsRangeChips: Bool { showsRentalsGroup }
+
     var showsResetButton: Bool {
         mapRegionManager.mapLayersDifferFromDefaults
     }
@@ -138,25 +176,30 @@ struct MapSheetView: View {
         _model = StateObject(wrappedValue: model())
     }
 
+    private static let sheetBackground = Color(uiColor: .systemGroupedBackground)
+    private static let gridSpacing: CGFloat = 12
+
     var body: some View {
         NavigationStack {
-            List {
-                basemapSection
-
-                mapDisplaySection
-
-                layerSection(
-                    title: OBALoc("map_sheet.transit_group", value: "Transit", comment: "Map sheet group header for transit layers"),
-                    group: .transit
-                )
-
-                otherModesSection
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    basemapPicker
+                    layerGroup(title: Strings.mapLayersGroupTransit, group: .transit, tint: Color(uiColor: ThemeColors.shared.brandAccent))
+                    if model.showsRentalsGroup {
+                        layerGroup(title: Strings.mapLayersGroupRentals, group: .otherModes, tint: Color(uiColor: .rentalPurple))
+                    }
+                    if model.showsRangeChips {
+                        RentalRangeChipRow(presets: model.rangeFilterPresets, selectedID: model.selectedRangePresetID) { model.selectRangePreset(id: $0) }
+                    }
+                    pointsOfInterestCard
+                }
+                .padding(16)
             }
+            .background(Self.sheetBackground)
             .navigationTitle(OBALoc("map_sheet.title", value: "Map", comment: "Title of the Map sheet"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    // Shown only when current state differs from the defaults.
                     if model.showsResetButton {
                         Button(OBALoc("map_sheet.reset", value: "Reset", comment: "Button restoring the default map layer configuration")) {
                             model.resetToDefaults()
@@ -170,179 +213,47 @@ struct MapSheetView: View {
         }
     }
 
-    // MARK: - Basemap Tiles
+    // MARK: - Basemap
 
-    private var basemapSection: some View {
-        Section {
-            HStack(spacing: 12) {
-                basemapTile(
-                    .standard,
-                    title: OBALoc("map_sheet.basemap_standard", value: "Standard", comment: "Basemap style: standard street map"),
-                    systemImage: "map"
-                )
-                basemapTile(
-                    .satellite,
-                    title: OBALoc("map_sheet.basemap_satellite", value: "Satellite", comment: "Basemap style: satellite imagery"),
-                    systemImage: "globe.americas.fill"
-                )
-                basemapTile(
-                    .hybrid,
-                    title: OBALoc("map_sheet.basemap_hybrid", value: "Hybrid", comment: "Basemap style: satellite imagery with labels"),
-                    systemImage: "map.fill"
-                )
-            }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-        }
-    }
-
-    private func basemapTile(_ type: MapBaseType, title: String, systemImage: String) -> some View {
-        let isSelected = model.selectedBaseType == type
-
-        return Button {
-            model.selectBaseType(type)
+    /// Text-only segments: the segmented style drops a `Label`'s icon.
+    private var basemapPicker: some View {
+        Picker(selection: Binding(get: { model.selectedBaseType }, set: { model.selectBaseType($0) })) {
+            Text(OBALoc("map_sheet.basemap_standard", value: "Standard", comment: "Basemap style: standard street map")).tag(MapBaseType.standard)
+            Text(OBALoc("map_sheet.basemap_satellite", value: "Satellite", comment: "Basemap style: satellite imagery")).tag(MapBaseType.satellite)
+            Text(OBALoc("map_sheet.basemap_hybrid", value: "Hybrid", comment: "Basemap style: satellite imagery with labels")).tag(MapBaseType.hybrid)
         } label: {
-            VStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .font(.title2)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2)
-                    )
-
-                Text(title)
-                    .font(.caption)
-                    .fontWeight(isSelected ? .semibold : .regular)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-            }
+            EmptyView()
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .pickerStyle(.segmented)
     }
 
-    // MARK: - Map Display
-
-    /// MapKit chrome that isn't a stackable layer — currently just Points of
-    /// Interest. Lives under the basemap tiles so it's always reachable, even
-    /// in regions with no rental layers.
-    private var mapDisplaySection: some View {
-        Section(OBALoc("map_sheet.display_group", value: "Map display", comment: "Map sheet section for display options like Points of Interest")) {
-            Toggle(isOn: Binding(
-                get: { model.showsPointsOfInterest },
-                set: { model.setShowsPointsOfInterest($0) }
-            )) {
-                HStack(spacing: 12) {
-                    Image(systemName: "mappin.and.ellipse")
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 28)
-                        .accessibilityHidden(true)
-                    Text(OBALoc(
-                        "map_sheet.shows_points_of_interest",
-                        value: "Points of Interest",
-                        comment: "Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.)"
-                    ))
-                }
-            }
-        }
-    }
-
-    // MARK: - Layer Rows
+    // MARK: - Layer groups
 
     @ViewBuilder
-    private func layerSection(title: String, group: MapLayerGroup) -> some View {
-        let layers = model.visibleLayers(in: group)
-        if !layers.isEmpty {
-            Section(title) {
-                ForEach(layers, id: \.id) { layer in
-                    layerRow(layer)
+    private func layerGroup(title: String, group: MapLayerGroup, tint: Color) -> some View {
+        let tiles = model.tiles(in: group)
+        if !tiles.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.secondary).textCase(.uppercase)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: Self.gridSpacing), GridItem(.flexible(), spacing: Self.gridSpacing)], spacing: Self.gridSpacing) {
+                    ForEach(tiles) { tile in
+                        MapLayerTileView(tile: tile, tint: tint) { model.toggle(tile) }
+                    }
                 }
             }
         }
     }
 
-    /// The non-transit section, which carries the range-filter row beneath its
-    /// layer toggles. The row shows whenever a rental layer row is visible — not
-    /// only when one is enabled — so it doesn't jump in and out of the sheet as the
-    /// rider toggles them, and so the filter can be set before turning a layer on.
-    @ViewBuilder
-    private var otherModesSection: some View {
-        let layers = model.visibleLayers(in: .otherModes)
-        if !layers.isEmpty {
-            Section(OBALoc("map_sheet.other_modes_group", value: "Other ways to get around", comment: "Map sheet group header for non-transit mobility layers")) {
-                ForEach(layers, id: \.id) { layer in
-                    layerRow(layer)
-                }
-                rangeFilterRow
-            }
+    // MARK: - Points of Interest
+
+    private var pointsOfInterestCard: some View {
+        Toggle(isOn: Binding(get: { model.showsPointsOfInterest }, set: { model.setShowsPointsOfInterest($0) })) {
+            Label(
+                OBALoc("map_sheet.shows_points_of_interest", value: "Points of Interest", comment: "Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.)"),
+                systemImage: "mappin.and.ellipse"
+            )
         }
-    }
-
-    /// `.menu` is stated explicitly rather than left to `.automatic`, which Apple
-    /// documents as "based on the picker's context" — in a List that has resolved
-    /// to a navigation link in some OS versions and a menu in others.
-    private var rangeFilterRow: some View {
-        Picker(selection: Binding(
-            get: { model.selectedRangePresetID },
-            set: { model.selectRangePreset(id: $0) }
-        )) {
-            ForEach(model.rangeFilterPresets) { preset in
-                Text(preset.title).tag(preset.meters)
-            }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "bolt")
-                    .foregroundStyle(Color(uiColor: .rentalPurple))
-                    .frame(width: 28)
-                    .accessibilityHidden(true)
-                Text(OBALoc("map_sheet.minimum_range", value: "Minimum range", comment: "Map sheet row label for the rental minimum-range filter"))
-            }
-        }
-        .pickerStyle(.menu)
-    }
-
-    @ViewBuilder
-    private func layerRow(_ layer: MapLayer) -> some View {
-        // Unavailable rows are dimmed with a reason instead of hidden or left
-        // toggleable: an enabled layer that cannot load would read as "there is
-        // nothing here," which is a lie.
-        let unavailableReason: String? = {
-            if case .unavailable(let reason) = layer.availability { return reason }
-            return nil
-        }()
-
-        HStack(spacing: 12) {
-            Image(systemName: layer.iconName)
-                .foregroundStyle(Color(uiColor: layer.tintColor))
-                .frame(width: 28)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(layer.title)
-                if let unavailableReason {
-                    Text(unavailableReason)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-
-            Toggle(layer.title, isOn: Binding(
-                get: { model.isEnabled(layer) },
-                set: { model.setEnabled($0, layer: layer) }
-            ))
-            .labelsHidden()
-            // Unavailable blocks turning a layer *on* (it can't load), but an
-            // enabled layer must always be switchable off — a failing layer the
-            // rider can't disable is a stuck switch.
-            .disabled(unavailableReason != nil && !model.isEnabled(layer))
-        }
-        .opacity(unavailableReason == nil ? 1 : 0.5)
+        .padding(16)
+        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

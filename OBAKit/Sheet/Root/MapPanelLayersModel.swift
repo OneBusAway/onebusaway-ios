@@ -26,6 +26,9 @@ import OTPKit
     @Published private(set) var isStopsLayerEnabled = true
     @Published private(set) var showsPointsOfInterest = true
 
+    /// The on-demand zones layer's toggle, for the dock's layer-off rule.
+    @Published private(set) var isOnDemandLayerEnabled = true
+
     /// Drives the badge on the map-type button — the panel's only at-a-glance
     /// readout of layer state.
     @Published private(set) var enabledLayerCount = 0
@@ -111,6 +114,7 @@ import OTPKit
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
         showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
+        isOnDemandLayerEnabled = mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID)
         subscribeToRentalCoordinator()
         bindOnDemandLayer()
 
@@ -169,6 +173,17 @@ import OTPKit
     private func syncOnDemandZones() {
         onDemandZones = boundOnDemandLayer?.zoneShapes ?? []
         onDemandMarkers = boundOnDemandLayer?.annotations ?? []
+    }
+
+    /// The on-demand layer's drawn zone colours by service id, so a picker
+    /// row's icon matches the zone it highlights.
+    var onDemandServiceColors: [String: UIColor] {
+        boundOnDemandLayer?.serviceColors ?? [:]
+    }
+
+    /// Spec 2.3 Highlight, driven by the dock: the bar page or picker row.
+    func setHighlightedService(_ serviceID: String?) {
+        boundOnDemandLayer?.setHighlightedService(serviceID)
     }
 
     /// Records the viewport geometry clustering needs and recomputes.
@@ -240,9 +255,13 @@ import OTPKit
     }
 
     /// The sheet route for a tapped zone marker's service page; nil once the
-    /// marker has left the map.
-    func onDemandServiceRoute(forMarkerID id: OnDemandZoneAnnotation.ID) -> AppSheetRoute? {
-        onDemandMarker(withID: id).map { .onDemandService($0.service) }
+    /// marker has left the map. `locationCheck` supplies the probe result for
+    /// the marker's service id when it has one (spec 3.6 item 3).
+    func onDemandServiceRoute(
+        forMarkerID id: OnDemandZoneAnnotation.ID,
+        locationCheck: (String) -> OnDemandLocationCheck? = { _ in nil }
+    ) -> AppSheetRoute? {
+        onDemandMarker(withID: id).map { .onDemandService($0.service, locationCheck: locationCheck($0.service.id)) }
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this

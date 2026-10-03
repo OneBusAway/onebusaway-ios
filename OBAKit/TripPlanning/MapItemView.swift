@@ -123,6 +123,18 @@ public struct MapItemView: View {
                         .lineLimit(1)
                         .padding(.horizontal, 44)
                 }
+
+                if let line = viewModel.coverageLine {
+                    Button { viewModel.openCoverageDetail() } label: {
+                        Label(line.text, systemImage: line.isInside ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(line.isInside ? Color(uiColor: .systemGreen) : Color(uiColor: .systemRed))
+                            .frame(minHeight: 44)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 44)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 4)

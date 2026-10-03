@@ -25,6 +25,10 @@ public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, didRemoveUserAnnotation annotation: UserDroppedPin)
     @objc optional func mapRegionManager(_ manager: MapRegionManager, didSelectUserAnnotation annotation: UserDroppedPin)
 
+    /// The map settled on a new viewport (`regionDidChangeAnimated`). The
+    /// on-demand probe controller reads the centre and zoom level from it.
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, viewportDidSettle rect: MKMapRect)
+
     @objc optional func mapRegionManagerDismissSearch(_ manager: MapRegionManager)
 
     @objc optional func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager)
@@ -1058,6 +1062,10 @@ public class MapRegionManager: NSObject,
         reloadRegionAnnotations()
         reloadStopAnnotations()
         mapLayersViewportDidChange(mapView.visibleMapRect)
+
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManager?(self, viewportDidSettle: mapView.visibleMapRect)
+        }
     }
 
     public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {

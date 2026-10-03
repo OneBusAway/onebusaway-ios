@@ -10,16 +10,13 @@
 import OBAKitCore
 
 /// A service as every list of services shows it — the stop page's card, the
-/// legacy stop page's section and the agency's service list: its name over
-/// its kind.
+/// legacy stop page's section and the agency's service list: its name.
 struct OnDemandServiceListing: Identifiable, Equatable {
     let id: String
     let title: String
-    let subtitle: String
 
     init(_ service: OnDemandService) {
         id = service.id
         title = service.name
-        subtitle = Strings.onDemandKindTitle(service.serviceKind)
     }
 }

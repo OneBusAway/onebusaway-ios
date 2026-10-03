@@ -53,7 +53,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             presentingController: { nil },
             coordinator: coordinator,
             searchDisplayModel: displayModel,
-            stopsObserver: stopsObserver ?? MapStopsObserver(application: application)
+            stopsObserver: stopsObserver ?? MapStopsObserver(application: application),
+            onDemandProbeController: OnDemandProbeController.make(application: application)
         )
     }
 
@@ -85,6 +86,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(host.application === application)
         #expect(host.service === service)
+        #expect(host.geometry != nil, "a probe service's page draws the probe's full geometry")
     }
 
     @Test @MainActor

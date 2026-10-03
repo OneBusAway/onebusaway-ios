@@ -87,8 +87,8 @@ extension MapViewController {
     /// This is also where the first-run tip gets its second chance. The registrar
     /// is the `RegionsServiceDelegate` that rebuilds the rental layers now, so its
     /// `onDidConfigure` callback is the only host-side hook a region change still
-    /// reaches — `configureMapLayers()` runs from `viewDidAppear` alone. On a cold
-    /// launch the region resolves *after* `viewDidAppear`, so the coordinator that
+    /// reaches — `configureMapLayers()` runs from `viewDidLoad` alone. On a cold
+    /// launch the region resolves *after* `viewDidLoad`, so the coordinator that
     /// gates the tip doesn't exist yet when that first attempt runs; retrying here,
     /// once the layers are actually registered, is what makes the tip show on the
     /// launch that introduces bikeshare — the launch it exists for.
@@ -96,6 +96,8 @@ extension MapViewController {
         // Overlay layers draw straight onto the MKMapView; the registrar builds
         // the layer without one because the SwiftUI panel has none to give.
         registrar.onDemandLayer?.mapView = mapRegionManager.mapView
+        registrar.onDemandLayer?.setHighlightedService(onDemandProbeController.highlightedServiceID)
+        syncOnDemandLayerEnabled()
 
         guard let coordinator = registrar.rentalCoordinator else {
             rentalAnnotationSyncer = nil
@@ -119,6 +121,13 @@ extension MapViewController {
     /// an annotation, when some registered layer claims it.
     /// - Returns: true when a layer presented a detail surface.
     func presentLayerDetail(for annotation: MKAnnotation, in mapView: MKMapView) -> Bool {
+        if let zone = annotation as? OnDemandZoneAnnotation {
+            // The pin carries the current probe result when its service is a match (spec 3.6 item 3).
+            let check = onDemandProbeController.locationCheck(forServiceID: zone.service.id)
+            presentOnDemandServicePage(makeOnDemandServicePage(zone.service, check: check))
+            mapView.deselectAnnotation(annotation, animated: true)
+            return true
+        }
         for layer in mapRegionManager.mapLayers {
             guard let controller = layer.detailViewController(for: annotation) else { continue }
 
@@ -139,6 +148,7 @@ extension MapViewController {
 
     @objc func mapLayerStateDidChange(_ note: NSNotification) {
         updateMapLayerBadge()
+        syncOnDemandLayerEnabled()
     }
 
     /// `MapViewController` is the composition root for the rental layers, so it
@@ -161,7 +171,7 @@ extension MapViewController {
         presentMediumSheet(UIHostingController(rootView: MapSheetView(model: model)))
     }
 
-    private func presentMediumSheet(_ controller: UIViewController) {
+    func presentMediumSheet(_ controller: UIViewController) {
         if let sheet = controller.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true

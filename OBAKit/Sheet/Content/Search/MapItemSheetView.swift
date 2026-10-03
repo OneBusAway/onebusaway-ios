@@ -24,6 +24,8 @@ import OBAKitCore
 struct MapItemSheetView: View {
     let application: Application
     let mapItem: MKMapItem
+    /// The on-demand address check (spec 3.7); nil hides the coverage line.
+    let coverageProbe: OnDemandCoverageProbe?
 
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.dismiss) private var dismiss
@@ -61,14 +63,18 @@ struct MapItemSheetView: View {
                 actions: MapItemActions(
                     openWebsite: { website = WebsiteLink(url: $0) },
                     showNearbyStops: { coordinator.push(.nearbyStops(coordinate: $0)) },
-                    dismiss: { dismiss() }
+                    dismiss: { dismiss() },
+                    openOnDemandDetail: { match, check in
+                        coordinator.push(.onDemandService(match.service, locationCheck: check))
+                    }
                 ),
                 removePinHandler: nil,
                 // Map-panel mode has no classic `MapViewController` to present the
                 // OTP trip planner on. Leave `nil` so the Plan Trip button stays
                 // hidden rather than shipping a no-op; wire when the panel can
                 // host the planner (see #883 / StopPageActionPresenter).
-                planTripHandler: nil
+                planTripHandler: nil,
+                coverageProbe: coverageProbe
             )
         }
         .sheet(item: $website) { link in

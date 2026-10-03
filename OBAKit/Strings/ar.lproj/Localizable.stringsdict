@@ -472,5 +472,149 @@
 			<string>أقل من دقيقة</string>
 		</dict>
 	</dict>
+	<key>on_demand.card.more_services</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد خدمات إضافية هنا</string>
+			<key>one</key>
+			<string>خدمة إضافية واحدة هنا</string>
+			<key>two</key>
+			<string>خدمتان إضافيتان هنا</string>
+			<key>few</key>
+			<string>%d خدمات إضافية هنا</string>
+			<key>many</key>
+			<string>%d خدمة إضافية هنا</string>
+			<key>other</key>
+			<string>%d خدمة إضافية هنا</string>
+		</dict>
+	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد خدمات إضافية تخدم كلا الموقعين</string>
+			<key>one</key>
+			<string>خدمة إضافية واحدة تخدم كلا الموقعين</string>
+			<key>two</key>
+			<string>خدمتان إضافيتان تخدمان كلا الموقعين</string>
+			<key>few</key>
+			<string>%d خدمات إضافية تخدم كلا الموقعين</string>
+			<key>many</key>
+			<string>%d خدمة إضافية تخدم كلا الموقعين</string>
+			<key>other</key>
+			<string>%d خدمة إضافية تخدم كلا الموقعين</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد خدمات هنا</string>
+			<key>one</key>
+			<string>خدمة واحدة هنا</string>
+			<key>two</key>
+			<string>خدمتان هنا</string>
+			<key>few</key>
+			<string>%d خدمات هنا</string>
+			<key>many</key>
+			<string>%d خدمة هنا</string>
+			<key>other</key>
+			<string>%d خدمة هنا</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title_nearby</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد خدمات قريبة</string>
+			<key>one</key>
+			<string>خدمة واحدة قريبة</string>
+			<key>two</key>
+			<string>خدمتان قريبتان</string>
+			<key>few</key>
+			<string>%d خدمات قريبة</string>
+			<key>many</key>
+			<string>%d خدمة قريبة</string>
+			<key>other</key>
+			<string>%d خدمة قريبة</string>
+		</dict>
+	</dict>
+	<key>on_demand.detail.zone_count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>لا توجد مناطق</string>
+			<key>one</key>
+			<string>منطقة واحدة</string>
+			<key>two</key>
+			<string>منطقتان</string>
+			<key>few</key>
+			<string>%d مناطق</string>
+			<key>many</key>
+			<string>%d منطقة</string>
+			<key>other</key>
+			<string>%d منطقة</string>
+		</dict>
+	</dict>
+	<key>on_demand.address.inside_more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>داخل %1$@ و%2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d أخرى</string>
+			<key>one</key>
+			<string>واحدة أخرى</string>
+			<key>two</key>
+			<string>أخريان</string>
+			<key>few</key>
+			<string>%d أخرى</string>
+			<key>many</key>
+			<string>%d أخرى</string>
+			<key>other</key>
+			<string>%d أخرى</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

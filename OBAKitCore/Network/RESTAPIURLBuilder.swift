@@ -507,6 +507,20 @@ extension RESTAPIURLBuilder {
         ])
     }
 
+    /// Creates a full URL for the `getOnDemandServices(near:radiusMeters:)` API
+    /// call, in the server's point mode (`radius`, no span). The server lets a
+    /// positive radius win over a span, so none is sent.
+    ///
+    /// - API Endpoint: `/api/ondemand/services-for-location.json`
+    public func getOnDemandServices(near coordinate: CLLocationCoordinate2D, radiusMeters: Double, geometryDetail: OnDemandGeometryDetail) -> URL {
+        generateURL(path: "/api/ondemand/services-for-location.json", params: [
+            "lat": coordinate.latitude,
+            "lon": coordinate.longitude,
+            "radius": radiusMeters,
+            "geometryDetail": geometryDetail.rawValue
+        ])
+    }
+
     // MARK: - Survey API URL Builders
 
     /// Creates a full URL for the `getSurveys` API call, including query params.

@@ -1964,21 +1964,6 @@
 /* Button that dials the booking phone number. %@ is the phone number as published */
 "on_demand.call_fmt" = "Tawagan ang %@";
 
-/* Badge for a fixed route that can deviate into a zone on request */
-"on_demand.kind.deviated_route" = "Paglihis sa ruta";
-
-/* Badge for an on-demand service that serves a set of stops */
-"on_demand.kind.stop_group" = "Grupo ng mga hintuan";
-
-/* Badge for an on-demand service of unknown shape */
-"on_demand.kind.unknown" = "On-demand";
-
-/* Badge for an on-demand service that serves anywhere inside one zone */
-"on_demand.kind.zone" = "Serbisyo sa zone";
-
-/* Badge for an on-demand service that travels between zones */
-"on_demand.kind.zone_to_zone" = "Zone papuntang zone";
-
 /* Title of the list of an agency's on-demand services */
 "on_demand.list_title" = "Mga serbisyong on-demand";
 
@@ -1996,3 +1981,225 @@
 
 /* Section header on the on-demand service page listing service days and hours */
 "on_demand.when_header" = "Kailan";
+
+/* Eyebrow above the service name on the zone card */
+"on_demand.card.eyebrow" = "On-demand na serbisyo dito";
+
+/* Primary button on the zone card that dials the booking phone number */
+"on_demand.card.call_to_book" = "Tumawag para mag-book";
+
+/* Secondary button on the zone card that opens the service page */
+"on_demand.card.details" = "Detalye";
+
+/* Footer of the zone card; plural forms in Localizable.stringsdict */
+"on_demand.card.more_services" = "%d pang serbisyo dito";
+
+/* Card and picker status while running. %@ is the end time */
+"on_demand.status.open_until" = "Bukas · hanggang %@";
+
+/* Service page status while running. %@ is the end time */
+"on_demand.status.open_now_until" = "Bukas ngayon · hanggang %@";
+
+/* Status of a service that runs continuously */
+"on_demand.status.open" = "Bukas";
+
+/* Status of a service not running yet. %@ is a relative day and time */
+"on_demand.status.opens" = "Magbubukas %@";
+
+/* Short booking deadline. %@ is a relative day and time */
+"on_demand.status.book_by" = "Mag-book bago %@";
+
+/* Status of a service with no upcoming service day */
+"on_demand.status.closed" = "Sarado";
+
+/* Tag for a service booked the same day */
+"on_demand.tag.same_day" = "Booking sa parehong araw";
+
+/* Tag for a service booked a day or more ahead */
+"on_demand.tag.advance" = "Paunang booking";
+
+/* Tag for a service booked at ride time */
+"on_demand.tag.no_notice" = "Hindi kailangan ng paunang abiso";
+
+/* Tag for a service that requires rider certification */
+"on_demand.tag.eligibility" = "Kailangan ng eligibility";
+
+/* Bar title when the rider is inside a zone that is open now */
+"on_demand.bar.inside" = "Available ang pickup dito";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.north" = "Nasa loob · gilid %@ sa hilaga";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northeast" = "Nasa loob · gilid %@ sa hilagang-silangan";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.east" = "Nasa loob · gilid %@ sa silangan";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southeast" = "Nasa loob · gilid %@ sa timog-silangan";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.south" = "Nasa loob · gilid %@ sa timog";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southwest" = "Nasa loob · gilid %@ sa timog-kanluran";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.west" = "Nasa loob · gilid %@ sa kanluran";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northwest" = "Nasa loob · gilid %@ sa hilagang-kanluran";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.north" = "%@ sa hilaga ng zone";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northeast" = "%@ sa hilagang-silangan ng zone";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.east" = "%@ sa silangan ng zone";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southeast" = "%@ sa timog-silangan ng zone";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.south" = "%@ sa timog ng zone";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southwest" = "%@ sa timog-kanluran ng zone";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.west" = "%@ sa kanluran ng zone";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northwest" = "%@ sa hilagang-kanluran ng zone";
+
+/* Page badge on the bar thumbnail. %1$d is the page, %2$d the count */
+"on_demand.bar.badge" = "%1$d sa %2$d";
+
+/* Accessibility label of the bar's chevron when outside a zone */
+"on_demand.bar.a11y.show_edge" = "Ipakita ang pinakamalapit na gilid ng zone";
+
+/* Accessibility label of the bar's thumbnail button */
+"on_demand.bar.a11y.zoom_out" = "Ipakita ang buong zone";
+
+/* Accessibility label of the bar's phone button. %@ is the service name */
+"on_demand.bar.a11y.call" = "Tawagan ang %@";
+
+/* Accessibility action on the bar that opens the picker */
+"on_demand.bar.a11y.more_services" = "Lahat ng serbisyo dito";
+
+/* Picker title for the services containing the point; plural forms in Localizable.stringsdict */
+"on_demand.picker.title" = "%d na serbisyo dito";
+
+/* Picker title for every matched service; plural forms in Localizable.stringsdict */
+"on_demand.picker.title_nearby" = "%d na serbisyo sa malapit";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_location" = "%@ · Ang iyong lokasyon";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_center" = "%@ · Gitna ng mapa";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_point" = "%@ · Napiling lugar";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.your_location" = "Ang iyong lokasyon";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.map_center" = "Gitna ng mapa";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.selected_place" = "Napiling lugar";
+
+/* Footer of the overlap picker */
+"on_demand.picker.footer" = "Nakaayos ayon sa pinakamaagang available.";
+
+/* Location row when the rider's location is inside the zone */
+"on_demand.detail.location_inside" = "Nasa zone na ito ang iyong lokasyon";
+
+/* Location row when the rider's location is outside the zone */
+"on_demand.detail.location_outside" = "Nasa labas ng zone na ito ang iyong lokasyon";
+
+/* Location row for the map centre */
+"on_demand.detail.center_inside" = "Nasa zone na ito ang gitna ng mapa";
+
+/* Location row for the map centre */
+"on_demand.detail.center_outside" = "Nasa labas ng zone na ito ang gitna ng mapa";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_inside" = "Nasa zone na ito ang lugar na ito";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_outside" = "Nasa labas ng zone na ito ang lugar na ito";
+
+/* Sub line of the location row. %@ is a locality */
+"on_demand.detail.location_sub" = "Available ang pickup sa %@";
+
+/* Service area sub line when the rider is inside. %@ is the area names */
+"on_demand.detail.includes_location" = "%@ — kasama ang iyong lokasyon";
+
+/* Section header listing service and drop-off areas */
+"on_demand.detail.where_header" = "Saan";
+
+/* Row title for the pickup areas */
+"on_demand.detail.service_area" = "Lugar ng serbisyo";
+
+/* Row title for the drop-off areas */
+"on_demand.detail.drop_off" = "Babaan";
+
+/* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
+"on_demand.detail.zone_count" = "%d na zone";
+
+/* Hours column for weekdays without service */
+"on_demand.detail.no_service" = "Walang serbisyo";
+
+/* Row that opens the service's url */
+"on_demand.detail.open_agency_website" = "Buksan ang website ng ahensya";
+
+/* Header of the planner fallback card */
+"on_demand.planner.section" = "Mga on-demand na opsyon";
+
+/* First meta line of a qualifying planner fallback service */
+"on_demand.planner.serves_both" = "Sinasaklaw ang parehong lokasyon";
+
+/* Caption under the planner fallback cards */
+"on_demand.planner.caption" = "Nakatago ang mga serbisyong nangangailangan ng eligibility o sumasaklaw lang sa isang dulo.";
+
+/* Link under the planner fallback caption */
+"on_demand.planner.show_all" = "Ipakita ang lahat sa zone picker";
+
+/* Planner fallback when nothing qualifies and nothing is hidden */
+"on_demand.planner.empty" = "Walang serbisyong on-demand na sumasaklaw sa parehong lokasyon.";
+
+/* Caption noting availability is evaluated at the current time */
+"on_demand.planner.status_now" = "Ipinapakita ang status para sa ngayon.";
+
+/* Row under the planner fallback card when more than one service serves both locations; opens the picker with them. Plural forms live in Localizable.stringsdict; the value is only the not-found fallback. */
+"on_demand.planner.more_serving_both" = "%d pang serbisyo ang sumasaklaw sa parehong lokasyon";
+
+/* Map item line when the place is inside a zone. %@ is the service name */
+"on_demand.address.inside" = "Nasa loob ng %@";
+
+/* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
+"on_demand.address.inside_more" = "Nasa loob ng %1$@ at %2$d pa";
+
+/* Map item line when the place is outside the nearest zone. %@ is the service name */
+"on_demand.address.outside" = "Sa labas ng %@";
+
+/* Layers sheet group header */
+"map_layers.group.transit" = "Transportasyon";
+
+/* Layers sheet group header */
+"map_layers.group.rentals" = "Paupahan";
+
+/* Layer tile subtitle when enabled */
+"map_layers.state.on" = "Naka-on";
+
+/* Layer tile subtitle when disabled */
+"map_layers.state.off" = "Naka-off";
+
+/* Label before the rental range chips */
+"map_layers.min_range" = "Min. na range";

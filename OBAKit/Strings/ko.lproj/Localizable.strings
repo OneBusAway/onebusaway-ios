@@ -1964,21 +1964,6 @@
 /* Button that dials the booking phone number. %@ is the phone number as published */
 "on_demand.call_fmt" = "%@에 전화";
 
-/* Badge for a fixed route that can deviate into a zone on request */
-"on_demand.kind.deviated_route" = "노선 이탈 운행";
-
-/* Badge for an on-demand service that serves a set of stops */
-"on_demand.kind.stop_group" = "정류장 그룹";
-
-/* Badge for an on-demand service of unknown shape */
-"on_demand.kind.unknown" = "수요응답형";
-
-/* Badge for an on-demand service that serves anywhere inside one zone */
-"on_demand.kind.zone" = "구역 서비스";
-
-/* Badge for an on-demand service that travels between zones */
-"on_demand.kind.zone_to_zone" = "구역 간 이동";
-
 /* Title of the list of an agency's on-demand services */
 "on_demand.list_title" = "수요응답형 서비스";
 
@@ -1996,3 +1981,225 @@
 
 /* Section header on the on-demand service page listing service days and hours */
 "on_demand.when_header" = "운행 시간";
+
+/* Eyebrow above the service name on the zone card */
+"on_demand.card.eyebrow" = "이곳의 수요응답형 서비스";
+
+/* Primary button on the zone card that dials the booking phone number */
+"on_demand.card.call_to_book" = "전화로 예약";
+
+/* Secondary button on the zone card that opens the service page */
+"on_demand.card.details" = "상세 정보";
+
+/* Footer of the zone card; plural forms in Localizable.stringsdict */
+"on_demand.card.more_services" = "여기에 서비스 %d개 더 있음";
+
+/* Card and picker status while running. %@ is the end time */
+"on_demand.status.open_until" = "운행 중 · %@까지";
+
+/* Service page status while running. %@ is the end time */
+"on_demand.status.open_now_until" = "지금 운행 중 · %@까지";
+
+/* Status of a service that runs continuously */
+"on_demand.status.open" = "운행 중";
+
+/* Status of a service not running yet. %@ is a relative day and time */
+"on_demand.status.opens" = "%@에 운행 시작";
+
+/* Short booking deadline. %@ is a relative day and time */
+"on_demand.status.book_by" = "%@까지 예약";
+
+/* Status of a service with no upcoming service day */
+"on_demand.status.closed" = "휴무";
+
+/* Tag for a service booked the same day */
+"on_demand.tag.same_day" = "당일 예약";
+
+/* Tag for a service booked a day or more ahead */
+"on_demand.tag.advance" = "사전 예약";
+
+/* Tag for a service booked at ride time */
+"on_demand.tag.no_notice" = "사전 예약 불필요";
+
+/* Tag for a service that requires rider certification */
+"on_demand.tag.eligibility" = "자격 요건 필요";
+
+/* Bar title when the rider is inside a zone that is open now */
+"on_demand.bar.inside" = "이곳에서 승차 가능";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.north" = "내부 · 북쪽 경계까지 %@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northeast" = "내부 · 북동쪽 경계까지 %@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.east" = "내부 · 동쪽 경계까지 %@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southeast" = "내부 · 남동쪽 경계까지 %@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.south" = "내부 · 남쪽 경계까지 %@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.southwest" = "내부 · 남서쪽 경계까지 %@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.west" = "내부 · 서쪽 경계까지 %@";
+
+/* Bar title near a zone edge. %@ is a distance */
+"on_demand.bar.inside_near_edge.northwest" = "내부 · 북서쪽 경계까지 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.north" = "구역 북쪽으로 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northeast" = "구역 북동쪽으로 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.east" = "구역 동쪽으로 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southeast" = "구역 남동쪽으로 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.south" = "구역 남쪽으로 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.southwest" = "구역 남서쪽으로 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.west" = "구역 서쪽으로 %@";
+
+/* Bar title outside a zone. %@ is a distance */
+"on_demand.bar.outside.northwest" = "구역 북서쪽으로 %@";
+
+/* Page badge on the bar thumbnail. %1$d is the page, %2$d the count */
+"on_demand.bar.badge" = "%1$d/%2$d";
+
+/* Accessibility label of the bar's chevron when outside a zone */
+"on_demand.bar.a11y.show_edge" = "가장 가까운 구역 경계 표시";
+
+/* Accessibility label of the bar's thumbnail button */
+"on_demand.bar.a11y.zoom_out" = "전체 구역 표시";
+
+/* Accessibility label of the bar's phone button. %@ is the service name */
+"on_demand.bar.a11y.call" = "%@에 전화";
+
+/* Accessibility action on the bar that opens the picker */
+"on_demand.bar.a11y.more_services" = "이곳의 모든 서비스";
+
+/* Picker title for the services containing the point; plural forms in Localizable.stringsdict */
+"on_demand.picker.title" = "이곳의 서비스 %d개";
+
+/* Picker title for every matched service; plural forms in Localizable.stringsdict */
+"on_demand.picker.title_nearby" = "근처 서비스 %d개";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_location" = "%@ · 내 위치";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_center" = "%@ · 지도 중심";
+
+/* Picker subtitle. %@ is a locality */
+"on_demand.picker.subtitle_point" = "%@ · 선택한 장소";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.your_location" = "내 위치";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.map_center" = "지도 중심";
+
+/* Picker subtitle when no locality is known */
+"on_demand.picker.selected_place" = "선택한 장소";
+
+/* Footer of the overlap picker */
+"on_demand.picker.footer" = "가장 빨리 이용 가능한 순으로 정렬됨";
+
+/* Location row when the rider's location is inside the zone */
+"on_demand.detail.location_inside" = "내 위치가 이 구역 안에 있습니다";
+
+/* Location row when the rider's location is outside the zone */
+"on_demand.detail.location_outside" = "내 위치가 이 구역 밖에 있습니다";
+
+/* Location row for the map centre */
+"on_demand.detail.center_inside" = "지도 중심이 이 구역 안에 있습니다";
+
+/* Location row for the map centre */
+"on_demand.detail.center_outside" = "지도 중심이 이 구역 밖에 있습니다";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_inside" = "이 장소가 이 구역 안에 있습니다";
+
+/* Location row for a dropped pin or planner endpoint */
+"on_demand.detail.point_outside" = "이 장소가 이 구역 밖에 있습니다";
+
+/* Sub line of the location row. %@ is a locality */
+"on_demand.detail.location_sub" = "%@에서 승차 가능";
+
+/* Service area sub line when the rider is inside. %@ is the area names */
+"on_demand.detail.includes_location" = "%@ — 내 위치 포함";
+
+/* Section header listing service and drop-off areas */
+"on_demand.detail.where_header" = "위치";
+
+/* Row title for the pickup areas */
+"on_demand.detail.service_area" = "서비스 구역";
+
+/* Row title for the drop-off areas */
+"on_demand.detail.drop_off" = "하차";
+
+/* Fallback for unnamed areas; plural forms in Localizable.stringsdict */
+"on_demand.detail.zone_count" = "%d개 구역";
+
+/* Hours column for weekdays without service */
+"on_demand.detail.no_service" = "운행 없음";
+
+/* Row that opens the service's url */
+"on_demand.detail.open_agency_website" = "기관 웹사이트 열기";
+
+/* Header of the planner fallback card */
+"on_demand.planner.section" = "수요응답형 옵션";
+
+/* First meta line of a qualifying planner fallback service */
+"on_demand.planner.serves_both" = "두 위치 모두 운행";
+
+/* Caption under the planner fallback cards */
+"on_demand.planner.caption" = "자격 요건이 필요하거나 한쪽 위치만 운행하는 서비스는 표시되지 않습니다";
+
+/* Link under the planner fallback caption */
+"on_demand.planner.show_all" = "구역 선택기에서 모두 보기";
+
+/* Planner fallback when nothing qualifies and nothing is hidden */
+"on_demand.planner.empty" = "두 위치를 모두 운행하는 수요응답형 서비스가 없습니다";
+
+/* Caption noting availability is evaluated at the current time */
+"on_demand.planner.status_now" = "현재 시간 기준 상태입니다";
+
+/* Row under the planner fallback card when more than one service serves both locations; opens the picker with them. Plural forms live in Localizable.stringsdict; the value is only the not-found fallback. */
+"on_demand.planner.more_serving_both" = "두 위치를 모두 운행하는 서비스 %d개 더 있음";
+
+/* Map item line when the place is inside a zone. %@ is the service name */
+"on_demand.address.inside" = "%@ 내부";
+
+/* Map item line when the place is inside several zones; plural forms in Localizable.stringsdict */
+"on_demand.address.inside_more" = "%1$@ 외 %2$d곳";
+
+/* Map item line when the place is outside the nearest zone. %@ is the service name */
+"on_demand.address.outside" = "%@ 외부";
+
+/* Layers sheet group header */
+"map_layers.group.transit" = "대중교통";
+
+/* Layers sheet group header */
+"map_layers.group.rentals" = "대여";
+
+/* Layer tile subtitle when enabled */
+"map_layers.state.on" = "켜짐";
+
+/* Layer tile subtitle when disabled */
+"map_layers.state.off" = "꺼짐";
+
+/* Label before the rental range chips */
+"map_layers.min_range" = "최소 주행 거리";

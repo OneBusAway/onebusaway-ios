@@ -59,6 +59,21 @@ import Testing
         #expect(colors.departureEarly == .systemRed)
     }
 
+    /// The eyebrow, "N more" link and planner links set the accent on the
+    /// card's background, and the Call to Book pill sets white text on it.
+    @Test func `Brand accent keeps 4.5 to 1 on the card and under white text in both styles`() {
+        let accent = ThemeColors().brandAccent
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            let resolved = accent.resolvedColor(with: traits)
+            let card = UIColor.systemBackground.resolvedColor(with: traits)
+            #expect(resolved.wcagContrastRatio(against: card) >= 4.5, "accent on the \(style == .dark ? "dark" : "light") card")
+            #expect(UIColor.white.wcagContrastRatio(against: resolved) >= 4.5, "white pill text in \(style == .dark ? "dark" : "light") mode")
+        }
+        let light = accent.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        #expect(light == UIColor(red: 0x48 / 255.0, green: 0x66 / 255.0, blue: 0x21 / 255.0, alpha: 1.0), "light mode keeps #486621")
+    }
+
     /// The watch face is always dark and its `UIColor` has no dynamic colors,
     /// so every watch value must be fixed: identical under both styles.
     @Test func `Watch palette colors are fixed, not dynamic`() {
@@ -68,7 +83,8 @@ import Testing
 
         for color in [palette.red, palette.blue, palette.green, palette.onTime, palette.gray, palette.yellow,
                       palette.label, palette.secondaryLabel, palette.separator, palette.fill,
-                      palette.background, palette.secondaryBackground, palette.groupedBackground, palette.gray6] {
+                      palette.background, palette.secondaryBackground, palette.groupedBackground, palette.gray6,
+                      palette.brandAccent] {
             #expect(color.resolvedColor(with: light) == color.resolvedColor(with: dark))
         }
     }

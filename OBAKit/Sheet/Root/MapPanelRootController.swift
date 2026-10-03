@@ -39,6 +39,7 @@ public final class MapPanelRootController: UIViewController {
         let initialMapType = MapBaseType(application.mapRegionManager.userSelectedMapType)
         let mapViewModel = MapViewModel(application: application, initialMapType: initialMapType)
         let layersModel = MapPanelLayersModel(application: application)
+        let probeController = OnDemandProbeController.make(application: application)
         let factory = AppSheetViewFactory(
             application: application,
             mapViewModel: mapViewModel,
@@ -48,7 +49,8 @@ public final class MapPanelRootController: UIViewController {
             presentingController: { [weak bridge] in bridge?.topmostController() },
             coordinator: coordinator,
             searchDisplayModel: displayModel,
-            stopsObserver: stopsObserver
+            stopsObserver: stopsObserver,
+            onDemandProbeController: probeController
         )
         let rootView = MapPanelRootView(
             application: application,
@@ -57,7 +59,8 @@ public final class MapPanelRootController: UIViewController {
             factory: factory,
             coordinator: coordinator,
             searchDisplayModel: displayModel,
-            stopsObserver: stopsObserver
+            stopsObserver: stopsObserver,
+            probeController: probeController
         )
         self.host = UIHostingController(rootView: rootView)
         self.bridge = bridge

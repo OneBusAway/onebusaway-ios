@@ -54,7 +54,14 @@ final class LocalizationTests {
         // The arriving/departing counterparts. Leaving these out would have made
         // VoiceOver correct for arriving vehicles and wrong for departing ones.
         "stop_page.row.a11y_fmt",
-        "stop_page.grouped.a11y_arrives_fmt"
+        "stop_page.grouped.a11y_arrives_fmt",
+        // DRT (spec 2.8) counts.
+        "on_demand.card.more_services",
+        "on_demand.picker.title",
+        "on_demand.picker.title_nearby",
+        "on_demand.detail.zone_count",
+        "on_demand.address.inside_more",
+        "on_demand.planner.more_serving_both"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
