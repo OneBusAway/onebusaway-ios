@@ -442,11 +442,13 @@ class SettingsViewController: FormViewController {
                     if self.isSeedingForm { return }
                     guard let value = row.value else { return }
                     if value == false {
-                        // Opt-out while a sync is in flight: invalidate it so its trailing
-                        // write can't resurrect `.healthKit` (#1458.3). The `.manual`
-                        // persist itself happens in `saveWalkingSpeedValues`.
-                        Task { @MainActor [weak self] in
-                            self?.application.walkingSpeedManager.cancelPendingSync()
+                        // Opt-out while a sync is in flight: invalidate it now so its trailing
+                        // write cannot pass the generation check and resurrect `.healthKit`
+                        // (#1458.3). Runs here on the main thread, so assume isolation and
+                        // cancel before returning instead of hopping through a Task. The
+                        // `.manual` persist itself happens in `saveWalkingSpeedValues`.
+                        MainActor.assumeIsolated {
+                            self.application.walkingSpeedManager.cancelPendingSync()
                         }
                         return
                     }
@@ -523,11 +525,11 @@ class SettingsViewController: FormViewController {
                     if self.isSeedingForm { return }
                     guard let value = row.value else { return }
                     if value == false {
-                        // Opt-out while a sync is in flight: invalidate it so its trailing
-                        // write can't resurrect `.healthKit` (#1458.3). The `.manual`
-                        // persist itself happens in `saveBikeModeValues`.
-                        Task { @MainActor [weak self] in
-                            self?.application.bikeModeManager.cancelPendingSync()
+                        // Same synchronous invalidation as the walking row above. Cancel here
+                        // on the main thread before returning. The `.manual` persist itself
+                        // happens in `saveBikeModeValues`.
+                        MainActor.assumeIsolated {
+                            self.application.bikeModeManager.cancelPendingSync()
                         }
                         return
                     }
