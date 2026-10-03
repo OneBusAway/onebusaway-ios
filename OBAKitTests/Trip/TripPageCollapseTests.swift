@@ -75,7 +75,8 @@ final class TripPageCollapseTests: OBATestCase {
         var shown = 0
 
         page.onShowMap = { shown += 1 }
-        try #require(page.rootView.actions.onShowMap)()
+        let showMap = try #require(page.rootView.actions.onShowMap)
+        showMap()
 
         #expect(shown == 1)
     }
