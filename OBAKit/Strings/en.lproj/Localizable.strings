@@ -648,6 +648,21 @@
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "Reset";
 
+/* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
+"map_sheet.routes_on_map" = "Routes on Map";
+
+/* Empty state on the Routes on Map screen when no stops with routes are loaded for the visible map area. */
+"map_sheet.routes_on_map_empty" = "No routes on this part of the map";
+
+/* Footer under the Routes on Map row explaining what picking a route does and how to undo it. */
+"map_sheet.routes_on_map_footer" = "Show only one route's path and stops. Close the route to see every stop again.";
+
+/* VoiceOver hint on a route row in the Routes on Map list. */
+"map_sheet.routes_on_map_row_hint" = "Shows only this route on the map.";
+
+/* Empty state on the Routes on Map screen when the map is zoomed out too far to load stops. */
+"map_sheet.routes_on_map_zoomed_out" = "Zoom in to see the routes serving this area";
+
 /* Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.) */
 "map_sheet.shows_points_of_interest" = "Points of Interest";
 
