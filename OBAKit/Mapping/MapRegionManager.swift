@@ -286,6 +286,7 @@ public class MapRegionManager: NSObject,
         mapView.registerAnnotationView(MinimalStopAnnotationView.self)
         mapView.registerAnnotationView(MKMarkerAnnotationView.self)
         mapView.registerAnnotationView(StopAnnotationView.self)
+        mapView.registerAnnotationView(StopClusterAnnotationView.self)
         mapView.registerAnnotationView(PulsingAnnotationView.self)
         mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
         mapView.registerAnnotationView(RentalAnnotationView.self)
@@ -1192,6 +1193,8 @@ public class MapRegionManager: NSObject,
         case is Region: return MKMapView.reuseIdentifier(for: MKMarkerAnnotationView.self)
         case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
         case is UserDroppedPin: return "UserDroppedPin"
+        case let cluster as MKClusterAnnotation where StopCluster.isStopCluster(cluster):
+            return MKMapView.reuseIdentifier(for: StopClusterAnnotationView.self)
         default: return nil
         }
     }
