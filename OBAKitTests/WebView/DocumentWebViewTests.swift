@@ -35,6 +35,32 @@ final class DocumentWebViewTests {
         }
     }
 
+    /// Thread-safe wrapper to ensure the continuation is resumed exactly once.
+    private class CancellableContinuation {
+        private var continuation: CheckedContinuation<Void, Error>?
+        private let lock = NSLock()
+
+        func set(_ c: CheckedContinuation<Void, Error>) {
+            lock.lock()
+            defer { lock.unlock() }
+            continuation = c
+        }
+
+        func resume() {
+            lock.lock()
+            defer { lock.unlock() }
+            continuation?.resume()
+            continuation = nil
+        }
+
+        func resume(throwing error: Error) {
+            lock.lock()
+            defer { lock.unlock() }
+            continuation?.resume(throwing: error)
+            continuation = nil
+        }
+    }
+
     private struct TimeoutError: Error {}
 
     /// Verifies that the internal JS action button handler name is correct.
@@ -48,18 +74,27 @@ final class DocumentWebViewTests {
         let delegate = NavigationDelegate()
         webView.navigationDelegate = delegate
 
+        let cancellable = CancellableContinuation()
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
-                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                    delegate.onFinish = { _ in
-                        continuation.resume()
-                    }
-                    delegate.onError = { error in
-                        continuation.resume(throwing: error)
-                    }
+                try await withTaskCancellationHandler {
+                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                        cancellable.set(continuation)
+                        delegate.onFinish = { _ in
+                            cancellable.resume()
+                        }
+                        delegate.onError = { error in
+                            cancellable.resume(throwing: error)
+                        }
 
+                        DispatchQueue.main.async {
+                            webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: "Test Button")
+                        }
+                    }
+                } onCancel: {
+                    cancellable.resume(throwing: CancellationError())
                     DispatchQueue.main.async {
-                        webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: "Test Button")
+                        webView.stopLoading()
                     }
                 }
             }
@@ -85,18 +120,27 @@ final class DocumentWebViewTests {
         let delegate = NavigationDelegate()
         webView.navigationDelegate = delegate
 
+        let cancellable = CancellableContinuation()
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
-                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                    delegate.onFinish = { _ in
-                        continuation.resume()
-                    }
-                    delegate.onError = { error in
-                        continuation.resume(throwing: error)
-                    }
+                try await withTaskCancellationHandler {
+                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                        cancellable.set(continuation)
+                        delegate.onFinish = { _ in
+                            cancellable.resume()
+                        }
+                        delegate.onError = { error in
+                            cancellable.resume(throwing: error)
+                        }
 
+                        DispatchQueue.main.async {
+                            webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: nil)
+                        }
+                    }
+                } onCancel: {
+                    cancellable.resume(throwing: CancellationError())
                     DispatchQueue.main.async {
-                        webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: nil)
+                        webView.stopLoading()
                     }
                 }
             }
