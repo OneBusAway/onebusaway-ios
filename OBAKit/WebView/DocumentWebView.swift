@@ -25,6 +25,11 @@ class DocumentWebView: WKWebView {
     /// - Parameter htmlFragment: The content to render in the web view.
     /// - Parameter actionButtonTitle: The title of the optional button shown at the bottom of the web view.
     func setPageContent(_ htmlFragment: String, actionButtonTitle: String? = nil) {
+        let content = buildPageContent(htmlFragment, actionButtonTitle: actionButtonTitle)
+        loadHTMLString(content, baseURL: nil)
+    }
+
+    internal func buildPageContent(_ htmlFragment: String, actionButtonTitle: String? = nil) -> String {
         var content = pageBody
             .replacingOccurrences(of: "{{{oba_page_content}}}", with: htmlFragment)
             .replacingOccurrences(of: "{{{accent_color}}}", with: accentHexColor)
@@ -43,7 +48,7 @@ class DocumentWebView: WKWebView {
         // Use coalescing operator to remove action button placeholder if buttonText is nil
         content = content.replacingOccurrences(of: "{{{oba_page_actions}}}", with: buttonText ?? "")
 
-        loadHTMLString(content, baseURL: nil)
+        return content
     }
 
     private var accentForegroundColor: String {
