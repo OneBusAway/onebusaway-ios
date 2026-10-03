@@ -48,12 +48,12 @@ final class TripPlannerMapDelegateTests {
         return subject
     }
 
-    @Test func attachReplacesTheAdapterAsDelegate() {
+    @Test func `Attach replaces the adapter as the map delegate`() {
         let subject = makeSubject()
         #expect(mapView.delegate === subject)
     }
 
-    @Test func userLocationGetsTheHeadingConeView() throws {
+    @Test func `The user location gets the heading cone view`() throws {
         let subject = makeSubject()
 
         let view = try #require(subject.mapView(mapView, viewFor: mapView.userLocation) as? PulsingAnnotationView)
@@ -64,7 +64,7 @@ final class TripPlannerMapDelegateTests {
         #expect(view.headingImageView.transform != .identity)
     }
 
-    @Test func headingSettingOffHidesTheCone() throws {
+    @Test func `Turning the heading setting off hides the cone`() throws {
         let subject = makeSubject(showsHeading: false)
 
         let view = try #require(subject.mapView(mapView, viewFor: mapView.userLocation) as? PulsingAnnotationView)
@@ -74,14 +74,14 @@ final class TripPlannerMapDelegateTests {
 
     /// Mirrors the main map: reduced accuracy keeps the system view, which draws
     /// the imprecise-area circle that the pulsing dot can't.
-    @Test func reducedAccuracyKeepsTheSystemView() {
+    @Test func `Reduced accuracy keeps the system view`() {
         locationManager.overrideAccuracyAuthorization = .reducedAccuracy
         let subject = makeSubject()
 
         #expect(subject.mapView(mapView, viewFor: mapView.userLocation) == nil)
     }
 
-    @Test func otherAnnotationsStillComeFromTheAdapter() throws {
+    @Test func `Other annotations still come from the adapter`() throws {
         let subject = makeSubject()
         adapter.addAnnotation(
             coordinate: TestData.mockSeattleLocation.coordinate,
@@ -98,7 +98,7 @@ final class TripPlannerMapDelegateTests {
     /// `MKMapView` only calls optional delegate methods its delegate responds
     /// to, so a method OTPKit starts implementing that this class doesn't
     /// forward would silently stop working in route mode.
-    @Test func forwardsEveryDelegateMethodTheAdapterImplements() throws {
+    @Test func `Forwards every delegate method the adapter implements`() throws {
         let subject = makeSubject()
         let mapViewDelegate = try #require(objc_getProtocol("MKMapViewDelegate"))
 
