@@ -1,7 +1,7 @@
 targets:
   OBAKitTests:
     type: bundle.unit-test
-    supportedDestinations: [iOS]
+    platform: iOS
     sources: ["."]
     # No settings overrides: this target inherits the Swift 6 language mode,
     # main-actor default isolation, approachable concurrency, and the
