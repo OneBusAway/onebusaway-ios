@@ -27,6 +27,7 @@ final class TripPlannerMapDelegate: NSObject, MKMapViewDelegate, LocationService
     private let locationService: LocationService
     private let showsHeading: Bool
     private weak var userLocationView: PulsingAnnotationView?
+    private weak var mapView: MKMapView?
 
     init(forwardingTo adapter: MKMapViewDelegate, locationService: LocationService, showsHeading: Bool) {
         self.adapter = adapter
@@ -38,16 +39,37 @@ final class TripPlannerMapDelegate: NSObject, MKMapViewDelegate, LocationService
 
     /// Call after creating the adapter, which claims `mapView.delegate` in its initializer.
     func attach(to mapView: MKMapView) {
+        self.mapView = mapView
         mapView.registerAnnotationView(PulsingAnnotationView.self)
         mapView.delegate = self
 
         // The map outlives each planner session, and MapKit doesn't ask again
-        // for a user location view it already has.
-        if let existing = mapView.view(for: mapView.userLocation) as? PulsingAnnotationView {
+        // for a user location view it already has. Between sessions it has no
+        // delegate, so what it kept may be the system dot instead.
+        switch mapView.view(for: mapView.userLocation) {
+        case let existing as PulsingAnnotationView:
             existing.headingImageView.isHidden = !showsHeading
             userLocationView = existing
             updateUserHeading()
+        case .some where wantsPulsingView:
+            reloadUserLocationView(on: mapView)
+        default:
+            break
         }
+    }
+
+    /// Same rule as `MapRegionManager`: the system view draws the
+    /// imprecise-area circle under reduced accuracy; the pulsing dot can't.
+    private var wantsPulsingView: Bool {
+        locationService.accuracyAuthorization != .reducedAccuracy
+    }
+
+    /// Makes MapKit ask `viewFor` again, the way `MapRegionManager` does on an
+    /// authorization change. Never shows a user location the map was hiding.
+    private func reloadUserLocationView(on mapView: MKMapView) {
+        guard mapView.showsUserLocation else { return }
+        mapView.showsUserLocation = false
+        mapView.showsUserLocation = true
     }
 
     // MARK: - MKMapViewDelegate
@@ -57,9 +79,7 @@ final class TripPlannerMapDelegate: NSObject, MKMapViewDelegate, LocationService
             return adapter?.mapView?(mapView, viewFor: annotation)
         }
 
-        // Same rule as `MapRegionManager`: the system view draws the
-        // imprecise-area circle under reduced accuracy; the pulsing dot can't.
-        guard locationService.accuracyAuthorization != .reducedAccuracy else {
+        guard wantsPulsingView else {
             return nil
         }
 
@@ -90,6 +110,12 @@ final class TripPlannerMapDelegate: NSObject, MKMapViewDelegate, LocationService
 
     func locationService(_ service: LocationService, headingChanged heading: CLHeading?) {
         updateUserHeading()
+    }
+
+    /// Which view the user location gets depends on accuracy.
+    func locationService(_ service: LocationService, accuracyAuthorizationChanged accuracyAuthorization: CLAccuracyAuthorization) {
+        guard let mapView else { return }
+        reloadUserLocationView(on: mapView)
     }
 
     private func updateUserHeading() {

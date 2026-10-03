@@ -81,6 +81,77 @@ final class TripPlannerMapDelegateTests {
         #expect(subject.mapView(mapView, viewFor: mapView.userLocation) == nil)
     }
 
+    // MARK: - Replacing a stale user location view
+
+    /// Records every `showsUserLocation` write, and can report that MapKit is
+    /// already showing a user location view of its own — which a headless map
+    /// never does, since it has no location to show.
+    private final class UserLocationSpyMapView: MKMapView {
+        var showsUserLocationWrites: [Bool] = []
+        var existingUserLocationView: MKAnnotationView?
+
+        override var showsUserLocation: Bool {
+            didSet { showsUserLocationWrites.append(showsUserLocation) }
+        }
+
+        override func view(for annotation: MKAnnotation) -> MKAnnotationView? {
+            annotation is MKUserLocation ? existingUserLocationView : super.view(for: annotation)
+        }
+    }
+
+    private func makeSpySubject(showsUserLocation: Bool, existingView: MKAnnotationView? = nil) -> (TripPlannerMapDelegate, UserLocationSpyMapView) {
+        let spy = UserLocationSpyMapView(frame: mapView.frame)
+        spy.showsUserLocation = showsUserLocation
+        spy.existingUserLocationView = existingView
+        spy.showsUserLocationWrites = []
+
+        let subject = TripPlannerMapDelegate(
+            forwardingTo: MKMapViewAdapter(mapView: spy),
+            locationService: locationService,
+            showsHeading: true
+        )
+        subject.attach(to: spy)
+        return (subject, spy)
+    }
+
+    /// The planner's map outlives each session and goes undelegated in between,
+    /// so it can come back holding the plain system dot — and MapKit won't ask
+    /// for a user location view it already has.
+    @Test func `Attach replaces a system user location view the map is already showing`() {
+        let (_, spy) = makeSpySubject(showsUserLocation: true, existingView: MKAnnotationView())
+        #expect(spy.showsUserLocationWrites == [false, true])
+    }
+
+    @Test func `Attach leaves an existing pulsing view in place`() {
+        let (_, spy) = makeSpySubject(showsUserLocation: true, existingView: PulsingAnnotationView(annotation: nil, reuseIdentifier: nil))
+        #expect(spy.showsUserLocationWrites.isEmpty)
+    }
+
+    @Test func `Attach keeps the system view under reduced accuracy`() {
+        locationManager.overrideAccuracyAuthorization = .reducedAccuracy
+        let (_, spy) = makeSpySubject(showsUserLocation: true, existingView: MKAnnotationView())
+        #expect(spy.showsUserLocationWrites.isEmpty)
+    }
+
+    /// Which view the user location gets depends on accuracy, so a change has
+    /// to make MapKit ask again.
+    @Test func `An accuracy change refreshes the user location view`() {
+        let (subject, spy) = makeSpySubject(showsUserLocation: true)
+
+        subject.locationService(locationService, accuracyAuthorizationChanged: .reducedAccuracy)
+
+        #expect(spy.showsUserLocationWrites == [false, true])
+    }
+
+    @Test func `An accuracy change doesn't turn on a hidden user location`() {
+        let (subject, spy) = makeSpySubject(showsUserLocation: false)
+
+        subject.locationService(locationService, accuracyAuthorizationChanged: .fullAccuracy)
+
+        #expect(spy.showsUserLocationWrites.isEmpty)
+        #expect(spy.showsUserLocation == false)
+    }
+
     @Test func `Other annotations still come from the adapter`() throws {
         let subject = makeSubject()
         adapter.addAnnotation(
