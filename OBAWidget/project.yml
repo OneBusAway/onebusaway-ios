@@ -1,7 +1,7 @@
 targets:
   OBAWidget:
     type: app-extension
-    supportedDestinations: [iOS]
+    platform: iOS
     sources: ["."]
     dependencies:
       - target: OBAKitCore
@@ -14,7 +14,4 @@ targets:
       properties:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
-    settings:
-      base:
-        APPLICATION_EXTENSION_API_ONLY: true
 
