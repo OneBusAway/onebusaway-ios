@@ -11,8 +11,8 @@ import SwiftUI
 import OBAKitCore
 
 /// The Stop page sections every presentation renders, in the order they all
-/// render them: survey, donation, service alerts, mode toggle, departures,
-/// footer.
+/// render them: survey, donation, service alerts, on-demand services, mode
+/// toggle, departures, footer.
 ///
 /// Returns several `Section`s from one body — the shape `ServiceAlertsSection`
 /// already uses — so callers drop it straight into their own `List` and keep
@@ -26,6 +26,7 @@ struct StopDeparturesSections: View {
     let survey: Survey?
     let stopID: StopID
     let serviceAlerts: [ServiceAlert]
+    let onDemandServices: [OnDemandService]
     let sortType: StopSort
     let walkMinutes: Int?
     /// Whether `walkMinutes` was computed at bike speed — the chronological
@@ -57,6 +58,7 @@ struct StopDeparturesSections: View {
     let onDonate: () -> Void
     let onDonationClose: () -> Void
     let onSelectAlert: (ServiceAlert) -> Void
+    let onSelectOnDemandService: (OnDemandService) -> Void
     let onChangeMode: (StopSort) -> Void
     let onTogglePast: () -> Void
     let onToggleRoute: (RouteID) -> Void
@@ -139,6 +141,14 @@ struct StopDeparturesSections: View {
 
         if !serviceAlerts.isEmpty {
             ServiceAlertsSection(alerts: serviceAlerts, onSelect: onSelectAlert)
+        }
+
+        // After alerts, before the departures: a rider who can't take the bus
+        // needs to see the dial-a-ride option before scrolling. Independent of
+        // the departures below, so a flex-only stop with nothing scheduled
+        // shows it above its empty state.
+        if !onDemandServices.isEmpty {
+            OnDemandServicesSection(services: onDemandServices, onSelect: onSelectOnDemandService)
         }
 
         // The two states the row itself offers a "show everything" button for —

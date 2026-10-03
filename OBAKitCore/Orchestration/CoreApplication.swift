@@ -196,7 +196,8 @@ open class CoreApplication: NSObject,
 
         self.apiService = RESTAPIService(
             APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier, surveyBaseURL: region.sidecarBaseURL),
-            dataLoader: config.dataLoader
+            dataLoader: config.dataLoader,
+            onDemandSupport: config.onDemandSupport
         )
         refreshFormattersTimeZone()
     }

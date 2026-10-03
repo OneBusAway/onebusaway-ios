@@ -36,6 +36,16 @@ import OTPKit
     /// Whether the current zoom is tight enough to show fuel figures.
     @Published private(set) var showsFuelLabels = false
 
+    /// On-demand zone polygons the panel's `Map` draws as `MapPolygon`s.
+    @Published private(set) var onDemandZones: [OnDemandZoneShape] = []
+
+    /// The zones' tappable markers.
+    @Published private(set) var onDemandMarkers: [OnDemandZoneAnnotation] = []
+
+    /// The layer whose `onMapContentDidChange` points here. `MapLayerRegistrar`
+    /// builds a fresh one per region, so `refresh()` rebinds on a change.
+    private weak var boundOnDemandLayer: OnDemandMapLayer?
+
     /// Every rental currently visible, before clustering. Backs id resolution
     /// for the rental sheet routes.
     private var visibleRentals: [VehicleRental] = []
@@ -102,6 +112,7 @@ import OTPKit
         showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
         subscribeToRentalCoordinator()
+        bindOnDemandLayer()
 
         // The Map sheet writes the threshold through `MapRegionManager` and
         // posts `.rentalRangeFilterDidChange`; on this surface nothing else
@@ -145,6 +156,19 @@ import OTPKit
         coordinator.$showsFuelLabels
             .sink { [weak self] shows in self?.showsFuelLabels = shows }
             .store(in: &rentalCancellables)
+    }
+
+    private func bindOnDemandLayer() {
+        let layer = registrar.onDemandLayer
+        guard layer !== boundOnDemandLayer else { return }
+        boundOnDemandLayer = layer
+        layer?.onMapContentDidChange = { [weak self] in self?.syncOnDemandZones() }
+        syncOnDemandZones()
+    }
+
+    private func syncOnDemandZones() {
+        onDemandZones = boundOnDemandLayer?.zoneShapes ?? []
+        onDemandMarkers = boundOnDemandLayer?.annotations ?? []
     }
 
     /// Records the viewport geometry clustering needs and recomputes.
@@ -208,6 +232,17 @@ import OTPKit
     func rentals(withIDs ids: [VehicleRental.ID]) -> [VehicleRental] {
         let wanted = Set(ids)
         return visibleRentals.filter { wanted.contains($0.id) }
+    }
+
+    /// Resolves a tapped marker's selection tag back to its annotation.
+    func onDemandMarker(withID id: OnDemandZoneAnnotation.ID) -> OnDemandZoneAnnotation? {
+        onDemandMarkers.first { $0.id == id }
+    }
+
+    /// The sheet route for a tapped zone marker's service page; nil once the
+    /// marker has left the map.
+    func onDemandServiceRoute(forMarkerID id: OnDemandZoneAnnotation.ID) -> AppSheetRoute? {
+        onDemandMarker(withID: id).map { .onDemandService($0.service) }
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this

@@ -16,6 +16,13 @@ public class References: NSObject, Decodable {
     public let stops: [Stop]
     public let trips: [Trip]
 
+    // `/api/ondemand` responses only (wiki §2.4); every `/where` response
+    // decodes these as empty.
+    public let serviceAreas: [ServiceArea]
+    public let locationGroups: [OnDemandLocationGroup]
+    public let bookingRules: [OnDemandBookingRule]
+    public let calendars: [OnDemandCalendar]
+
     static var regionIdentifierUserInfoKey: CodingUserInfoKey {
         return CodingUserInfoKey(rawValue: "regionIdentifier")!
     }
@@ -25,6 +32,7 @@ public class References: NSObject, Decodable {
     private enum CodingKeys: String, CodingKey {
         case agencies, routes, stops, trips
         case alerts = "situations"
+        case serviceAreas, locationGroups, bookingRules, calendars
     }
 
     public required init(from decoder: Decoder) throws {
@@ -46,6 +54,18 @@ public class References: NSObject, Decodable {
 
         let trips = try container.decodeIfPresent([Trip].self, forKey: .trips) ?? []
         self.trips = trips.sorted(by: \.id)
+
+        let serviceAreas = try container.decodeIfPresent([ServiceArea].self, forKey: .serviceAreas) ?? []
+        self.serviceAreas = serviceAreas.sorted(by: \.id)
+
+        let locationGroups = try container.decodeIfPresent([OnDemandLocationGroup].self, forKey: .locationGroups) ?? []
+        self.locationGroups = locationGroups.sorted(by: \.id)
+
+        let bookingRules = try container.decodeIfPresent([OnDemandBookingRule].self, forKey: .bookingRules) ?? []
+        self.bookingRules = bookingRules.sorted(by: \.id)
+
+        let calendars = try container.decodeIfPresent([OnDemandCalendar].self, forKey: .calendars) ?? []
+        self.calendars = calendars.sorted(by: \.id)
 
         super.init()
 
@@ -137,5 +157,27 @@ extension References {
     public func tripWithID(_ id: String?) -> Trip? {
         guard let id = id else { return nil }
         return trips.binarySearch(sortedBy: \.id, element: id)?.element
+    }
+
+    // MARK: - On-demand
+
+    public func serviceAreaWithID(_ id: String?) -> ServiceArea? {
+        guard let id else { return nil }
+        return serviceAreas.binarySearch(sortedBy: \.id, element: id)?.element
+    }
+
+    public func locationGroupWithID(_ id: String?) -> OnDemandLocationGroup? {
+        guard let id else { return nil }
+        return locationGroups.binarySearch(sortedBy: \.id, element: id)?.element
+    }
+
+    public func bookingRuleWithID(_ id: String?) -> OnDemandBookingRule? {
+        guard let id else { return nil }
+        return bookingRules.binarySearch(sortedBy: \.id, element: id)?.element
+    }
+
+    public func calendarWithID(_ id: String?) -> OnDemandCalendar? {
+        guard let id else { return nil }
+        return calendars.binarySearch(sortedBy: \.id, element: id)?.element
     }
 }

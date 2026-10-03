@@ -137,4 +137,19 @@ final class MapLayerRegistrarTests: OBATestCase {
 
         #expect(callCount == afterInitialConfigure + 1)
     }
+
+    /// No region flag gates on-demand zones: every server is probed once, and
+    /// `OnDemandSupport` hides the row where the namespace is missing.
+    @Test func `Registers the on-demand layer for every region`() {
+        registrar = MapLayerRegistrar(application: application) { _ in }
+        registrar.configure()
+        #expect(application.mapRegionManager.mapLayer(id: OnDemandMapLayer.layerID) != nil)
+        #expect(registrar.onDemandLayer != nil)
+
+        application.regionsService.currentRegion = Fixtures.tampaRegion
+        registrar.configure()
+        let layers = application.mapRegionManager.mapLayers.filter { $0.id == OnDemandMapLayer.layerID }
+        #expect(layers.count == 1)
+        #expect(layers.first === registrar.onDemandLayer)
+    }
 }

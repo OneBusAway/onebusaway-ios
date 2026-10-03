@@ -308,4 +308,15 @@ final class BundleFeedbackConfigTests {
     @Test func `Normalized search query preserves interior spacing`() {
         #expect(String.normalizedSearchQuery(" 3rd  ave ") == "3rd  ave")
     }
+
+    // MARK: - String.telephoneURL
+
+    /// Shared by `Agency.callURL` and the on-demand booking line: feeds publish
+    /// numbers in any punctuation, and a dialer takes digits and `+` only.
+    @Test func `Telephone URL keeps digits and plus`() {
+        #expect("(703) 746-5222".dialableDigits == "7037465222")
+        #expect(" +1 206.553.3000 ".telephoneURL == URL(string: "tel://+12065533000"))
+        #expect("n/a".dialableDigits == nil)
+        #expect("call us".telephoneURL == nil)
+    }
 }

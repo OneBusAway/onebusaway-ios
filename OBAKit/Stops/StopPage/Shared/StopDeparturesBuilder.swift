@@ -47,6 +47,7 @@ struct StopDeparturesBuilder {
             survey: viewModel.currentSurvey,
             stopID: viewModel.stopID,
             serviceAlerts: viewModel.stopArrivals?.serviceAlerts ?? [],
+            onDemandServices: viewModel.onDemandServices,
             sortType: viewModel.stopPreferences.sortType,
             walkMinutes: walkTime?.walkMinutes,
             // Read straight off the view model, unlike `walkTime`: it has no
@@ -74,6 +75,7 @@ struct StopDeparturesBuilder {
             onDonate: navigation.showDonation,
             onDonationClose: hideDonation,
             onSelectAlert: navigation.showAlertDetail,
+            onSelectOnDemandService: navigation.showOnDemandService,
             onChangeMode: change(sortType:),
             onTogglePast: togglePast,
             onToggleRoute: toggleExpandedRoute(_:),

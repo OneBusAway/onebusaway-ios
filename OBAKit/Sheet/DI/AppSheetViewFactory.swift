@@ -143,6 +143,9 @@ final class AppSheetViewFactory {
         case .rentalCluster(let memberIDs):
             rentalClusterView(memberIDs: memberIDs)
 
+        case .onDemandService(let service):
+            onDemandServiceView(service: service)
+
         case .mapSettings:
             mapSettingsView()
         }
@@ -275,6 +278,11 @@ final class AppSheetViewFactory {
         .font(.headline)
         .foregroundStyle(.secondary)
         .padding()
+    }
+
+    /// A zone marker's service page, hosted with its own refresh timer.
+    func onDemandServiceView(service: OnDemandService) -> OnDemandServiceHost {
+        OnDemandServiceHost(application: application, service: service)
     }
 
     func mapItemView(mapItem: MKMapItem) -> MapItemSheetView {

@@ -160,6 +160,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         present(navigationController, from: fromController)
     }
 
+    /// Pushes the on-demand service page.
+    public func navigateTo(onDemandService service: OnDemandService, from fromController: UIViewController) {
+        navigate(to: OnDemandServiceViewController(application: application, service: service), from: fromController)
+    }
+
     /// Presents the route picker modal, then navigates to the current trip flow.
     ///
     /// - Parameter fromController: The view controller presenting the modal.

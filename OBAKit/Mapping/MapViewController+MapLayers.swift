@@ -93,6 +93,10 @@ extension MapViewController {
     /// once the layers are actually registered, is what makes the tip show on the
     /// launch that introduces bikeshare — the launch it exists for.
     private func attachRentalLayerHost(_ registrar: MapLayerRegistrar) {
+        // Overlay layers draw straight onto the MKMapView; the registrar builds
+        // the layer without one because the SwiftUI panel has none to give.
+        registrar.onDemandLayer?.mapView = mapRegionManager.mapView
+
         guard let coordinator = registrar.rentalCoordinator else {
             rentalAnnotationSyncer = nil
             updateMapLayerBadge()

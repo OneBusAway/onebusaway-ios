@@ -113,6 +113,13 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
     /// Route IDs correspond to values in References.
     public let routeIDs: [String]
 
+    /// IDs of `/api/ondemand` services that reference this stop — a
+    /// location-group member, or a deviated route's timed stop (wiki §3.1).
+    /// Empty for servers and feeds without flex data; the key is omitted on the
+    /// wire when empty and this property is encoded only when non-empty, so
+    /// cached stop blobs for non-flex regions are byte-identical to before.
+    public let onDemandServiceIDs: [String]
+
     /// A list of `Route`s served by this stop.
     public var routes: [Route]!
 
@@ -149,6 +156,7 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
         case lon
         case locationType
         case name
+        case onDemandServiceIDs = "onDemandServiceIds"
         case regionIdentifier
         case routes
         case routeIDs = "routeIds"
@@ -170,6 +178,7 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
         locationType = try container.decode(StopLocationType.self, forKey: .locationType)
 
         routeIDs = try container.decode([String].self, forKey: .routeIDs)
+        onDemandServiceIDs = try container.decodeIfPresent([String].self, forKey: .onDemandServiceIDs) ?? []
 
         if let encodedRoutes = try container.decodeIfPresent([Route].self, forKey: .routes) {
             // If we are decoding a Stop that has been serialized internally (e.g. as
@@ -195,6 +204,9 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
         try container.encode(locationType.rawValue, forKey: .locationType)
         try container.encode(name, forKey: .name)
         try container.encode(routeIDs, forKey: .routeIDs)
+        if !onDemandServiceIDs.isEmpty {
+            try container.encode(onDemandServiceIDs, forKey: .onDemandServiceIDs)
+        }
         try container.encodeIfPresent(regionIdentifier, forKey: .regionIdentifier)
         try container.encodeIfPresent(routes, forKey: .routes)
         try container.encode(wheelchairBoarding.rawValue, forKey: .wheelchairBoarding)
@@ -228,6 +240,7 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
             location.coordinate.longitude == rhs.location.coordinate.longitude &&
             locationType == rhs.locationType &&
             name == rhs.name &&
+            onDemandServiceIDs == rhs.onDemandServiceIDs &&
             regionIdentifier == rhs.regionIdentifier &&
             routeIDs == rhs.routeIDs &&
             wheelchairBoarding == rhs.wheelchairBoarding
@@ -242,6 +255,7 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
         hasher.combine(location.coordinate.longitude)
         hasher.combine(locationType)
         hasher.combine(name)
+        hasher.combine(onDemandServiceIDs)
         hasher.combine(regionIdentifier)
         hasher.combine(routeIDs)
         hasher.combine(wheelchairBoarding)
