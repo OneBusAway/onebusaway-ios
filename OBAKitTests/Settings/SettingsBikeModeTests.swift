@@ -15,8 +15,9 @@ import Foundation
 import Testing
 
 /// Eureka fires a row's `onChange` when `form.setValues` seeds it from nil, so anything hung off
-/// the Bike Mode switch would run on every Settings open. The HealthKit sync therefore lives on
-/// its own opt-in row, seeded from `bikeSpeedSource == .healthKit`. These tests drive the real
+/// a switch would run on every Settings open. Both HealthKit rows therefore ignore the seed
+/// via `isSeedingForm`: opening Settings never syncs, never downgrades the source, and never
+/// toasts. Only an explicit toggle-on reaches the manager. These tests drive the real
 /// controller with a spy HealthKit provider and pin down which user actions — and which
 /// non-actions — reach the manager.
 @MainActor
@@ -33,7 +34,7 @@ final class SettingsBikeModeTests: OBATestCase {
             requestAuthorizationCount += 1
         }
 
-        func fetchLatestBikeSpeed() async -> Double? {
+        func fetchAverageBikeSpeed() async -> Double? {
             sampleSpeed
         }
     }
@@ -151,18 +152,22 @@ final class SettingsBikeModeTests: OBATestCase {
         #expect(try self.row(controller, "bikeSpeedUseHealthKit").value == false)
     }
 
-    /// Same self-healing the walking-speed section relies on: a seeded-on switch re-syncs, and a
-    /// failed sync flips it back off — so unlike the old Bike Mode switch, it can't re-fire forever.
+    /// Opening Settings must not sync at all: a rider with no samples in the last 30 days
+    /// (common in winter) keeps their opt-in and sees no error toast. Only an explicit
+    /// toggle-on sync may downgrade the source to `.manual` (#1458.2).
     @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))
-    func `Opening settings with a stale health kit source downgrades to manual`() async throws {
+    func `Opening settings with a stale health kit source keeps the opt-in`() async throws {
         store.bikeSpeedSource = .healthKit
+        store.bikeSpeedMetersPerSecond = 5.0
         provider.sampleSpeed = nil
         let controller = makeLoadedController()
 
-        try await settle { self.store.bikeSpeedSource == .manual }
+        try await settle()
 
-        #expect(self.store.bikeSpeedSource == .manual)
-        #expect(try self.row(controller, "bikeSpeedUseHealthKit").value == false)
+        #expect(self.provider.requestAuthorizationCount == 0)
+        #expect(self.store.bikeSpeedSource == .healthKit)
+        expectClose(self.store.bikeSpeedMetersPerSecond, 5.0)
+        #expect(try self.row(controller, "bikeSpeedUseHealthKit").value == true)
     }
 
     @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))

@@ -12,6 +12,94 @@ import MapKit
 import OBAKitCore
 import OTPKit
 
+// MARK: - TripPlannerRequest
+
+/// Parameters for initiating the OTPKit trip planner.
+///
+/// Both map-item and rental entry points carry payloads to prefill planner state:
+/// a map item prefills the destination and leaves the mode open; a rental (later)
+/// prefills a via point and locks the mode. All fields are optional so the planner
+/// can open empty (all three `nil`), with partial prefill, or fully configured.
+nonisolated struct TripPlannerRequest: Hashable, Equatable {
+    /// Destination pin on the map, if prefilled by the entry point (e.g., a
+    /// tapped map item). The planner uses this to seed the destination field.
+    let destination: MKMapItem?
+
+    /// Intermediate point (stopover) for multi-segment trips. Currently used by
+    /// rental (later) to seed a via point. `CLLocationCoordinate2D` is not
+    /// `Hashable` or `Equatable`, so we implement both over latitude/longitude.
+    let viaPoint: CLLocationCoordinate2D?
+
+    /// Transport mode to preselect or lock. Used by rental (later) to fix a mode
+    /// when the planner opens; map-item entry (this task) leaves it `nil` so the
+    /// user can pick freely.
+    let transportMode: TransportMode?
+
+    /// Initializer with all parameters optional, defaulting to `nil`.
+    init(
+        destination: MKMapItem? = nil,
+        viaPoint: CLLocationCoordinate2D? = nil,
+        transportMode: TransportMode? = nil
+    ) {
+        self.destination = destination
+        self.viaPoint = viaPoint
+        self.transportMode = transportMode
+    }
+
+    // MARK: - Hashable
+
+    func hash(into hasher: inout Hasher) {
+        // `MKMapItem` is a reference type; follow what `AppSheetRoute.mapItem`
+        // does — hash the coordinate.
+        if let destination {
+            let coordinate = destination.placemark.coordinate
+            hasher.combine(coordinate.latitude)
+            hasher.combine(coordinate.longitude)
+        } else {
+            hasher.combine(NSNull())
+        }
+
+        // `CLLocationCoordinate2D` is not `Hashable`; hash its components.
+        if let viaPoint {
+            hasher.combine(viaPoint.latitude)
+            hasher.combine(viaPoint.longitude)
+        } else {
+            hasher.combine(NSNull())
+        }
+
+        hasher.combine(transportMode)
+    }
+
+    // MARK: - Equatable
+
+    static func == (lhs: TripPlannerRequest, rhs: TripPlannerRequest) -> Bool {
+        // For reference types like `MKMapItem`, compare by identity (===) or
+        // coordinate. The mapItem case uses coordinates, so we do the same.
+        let destinationEqual: Bool
+        if let lhsDest = lhs.destination, let rhsDest = rhs.destination {
+            let lhsCoord = lhsDest.placemark.coordinate
+            let rhsCoord = rhsDest.placemark.coordinate
+            destinationEqual = (lhsCoord.latitude == rhsCoord.latitude &&
+                               lhsCoord.longitude == rhsCoord.longitude)
+        } else {
+            destinationEqual = (lhs.destination == nil && rhs.destination == nil)
+        }
+
+        // For `CLLocationCoordinate2D`, compare latitude and longitude.
+        let viaPointEqual: Bool
+        if let lhsVia = lhs.viaPoint, let rhsVia = rhs.viaPoint {
+            viaPointEqual = (lhsVia.latitude == rhsVia.latitude &&
+                            lhsVia.longitude == rhsVia.longitude)
+        } else {
+            viaPointEqual = (lhs.viaPoint == nil && rhs.viaPoint == nil)
+        }
+
+        let transportModeEqual = lhs.transportMode == rhs.transportMode
+
+        return destinationEqual && viaPointEqual && transportModeEqual
+    }
+}
+
 // MARK: - SheetDetentConfiguration
 
 /// Per-route configuration for detent behaviour, drag indicator, dismiss lock, and background interaction.
@@ -80,7 +168,7 @@ nonisolated enum AppSheetRoute: SheetRouteable {
 
     // Stacked layer
     case stopDetails(stopID: Stop.ID)
-    case tripPlanner
+    case tripPlanner(TripPlannerRequest)
     case tripDetails(tripID: TripIdentifier)
     case routePicker
     case currentTrip(route: Route)
@@ -121,10 +209,27 @@ nonisolated extension AppSheetRoute {
     var id: String {
         switch self {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .tripPlanner, .routePicker, .more, .settings, .mapSettings:
+             .routePicker, .more, .settings, .mapSettings:
             return caseName
         case .stopDetails(let stopID):
             return "\(caseName)-\(stopID)"
+        case .tripPlanner(let request):
+            // Analytics key based on payload presence. Privacy guard: no
+            // coordinates in the key (rider location is sensitive). Instead, flag
+            // which fields are present so analytics can track entry points
+            // separately (map item, rental, etc.) without leaking location.
+            var parts: [String] = []
+            if request.destination != nil {
+                parts.append("destination")
+            }
+            if request.viaPoint != nil {
+                parts.append("viaPoint")
+            }
+            if request.transportMode != nil {
+                parts.append("transportMode")
+            }
+            let suffix = parts.isEmpty ? "blank" : parts.joined(separator: "_")
+            return "\(caseName)_\(suffix)"
         case .tripDetails(let tripID):
             return "\(caseName)-\(tripID)"
         case .currentTrip(let route):
@@ -198,6 +303,15 @@ nonisolated extension AppSheetRoute {
     /// occupies above it.
     static let homeCollapsedHeight: CGFloat = 75
 
+    /// Height of the trip planner's tip detent — a "peek" rung that leaves the
+    /// map dominant when the panel is minimized. OTPKit's
+    /// `DirectionsSheetView.tipDetent` collapses its own view when turn-by-turn
+    /// directions open, and the panel owns detents centrally, so the trip
+    /// planner needs a comparable rung for that handoff. Sized similarly to
+    /// `homeCollapsedHeight`: a single row (e.g., just a button bar) with
+    /// minimal padding.
+    static let tripPlannerTipHeight: CGFloat = 80
+
     var detentConfiguration: SheetDetentConfiguration {
         switch self {
         case .home:
@@ -249,7 +363,20 @@ nonisolated extension AppSheetRoute {
                 isDismissDisabled: false,
                 backgroundInteraction: .disabled
             )
-        case .tripPlanner, .tripDetails, .routePicker, .currentTrip, .transitAlert, .more, .settings:
+        case .tripPlanner:
+            // Opens at `.medium`: planning a trip is a map task, and the origin and
+            // destination fields are what the rider reads first — a full-height sheet
+            // hides the very map the trip is being drawn on.
+            //
+            // OTPKit's trip planner also collapses to its own custom tip detent when
+            // directions open. The panel owns detents, so it needs a comparable tip
+            // rung to stay in sync with OTPKit's collapsed state.
+            return SheetDetentConfiguration(
+                detents: [.height(AppSheetRoute.tripPlannerTipHeight), .medium, .large],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .tripDetails, .routePicker, .currentTrip, .transitAlert, .more, .settings:
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .large,

@@ -47,6 +47,8 @@ final class LocalizationTests {
         "stop_page.row.a11y_arrives_fmt",
         "stop_page.row.a11y_past_fmt",
         "trip_page.card.a11y_fmt",
+        "trip_page.card.distance_stops_fmt",
+        "trip_page.card.distance_stops_a11y_fmt",
         "alarm_builder_controller.minutes_fmt",
         "next_departures_intent.in_minutes_fmt",
         // Two counts: the minute countdown (bound to "count", which the well-formedness
@@ -503,5 +505,17 @@ final class LocalizationTests {
         #expect(String(format: format, locale: polish, 1) == "za 1 minutę")
         #expect(String(format: format, locale: polish, 3) == "za 3 minuty")
         #expect(String(format: format, locale: polish, 5) == "za 5 minut")
+    }
+
+    @Test func `Polish trip card stop count reaches its few and many forms`() throws {
+        let format = try #require(localizedFormat(
+            forKey: "trip_page.card.distance_stops_fmt",
+            localization: "pl"
+        ))
+        let polish = Locale(identifier: "pl")
+
+        #expect(String(format: format, locale: polish, "2 km", 1) == "jeszcze 2 km · 1 przystanek")
+        #expect(String(format: format, locale: polish, "2 km", 3) == "jeszcze 2 km · 3 przystanki")
+        #expect(String(format: format, locale: polish, "2 km", 5) == "jeszcze 2 km · 5 przystanków")
     }
 }

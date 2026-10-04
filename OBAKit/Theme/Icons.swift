@@ -203,6 +203,25 @@ nonisolated class Icons: NSObject {
         systemImage(named: departureTypeSymbolName(isActive: isActive))
     }
 
+    /// The symbol name behind ``proximityAlert(isActive:)``, for the SwiftUI
+    /// stop page's `Label(_:systemImage:)`. Same split as
+    /// ``departureTypeSymbolName(isActive:)``: the two Stop-page presentations
+    /// build their menus from different frameworks and have to show one glyph.
+    public class func proximityAlertSymbolName(isActive: Bool) -> String {
+        isActive
+            ? "bell.and.waves.left.and.right.fill"
+            : "bell.and.waves.left.and.right"
+    }
+
+    /// An icon for the destination proximity alert menu item.
+    ///
+    /// Fills while an alert is armed on the stop, the same filled/unfilled pair
+    /// the departure rows' alarm bell uses — the rider reads "this is on" off the
+    /// glyph without opening the menu.
+    public class func proximityAlert(isActive: Bool) -> UIImage {
+        systemImage(named: proximityAlertSymbolName(isActive: isActive))
+    }
+
     /// An icon for the sort-order menu (up/down arrows).
     public class var sort: UIImage {
         systemImage(named: "arrow.up.arrow.down")

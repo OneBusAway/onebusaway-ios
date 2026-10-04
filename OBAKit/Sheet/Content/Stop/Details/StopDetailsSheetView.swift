@@ -213,7 +213,7 @@ struct StopDetailsSheetView: View {
             .stopPageLifecycle(
                 viewModel: viewModel,
                 userDefaults: userDefaults,
-                liveActivityStarted: viewModel.liveActivityStarted
+                transientToast: viewModel.transientToast
             )
             .keepsScreenAwake()
             .environment(\.obaFormatters, formatters)
