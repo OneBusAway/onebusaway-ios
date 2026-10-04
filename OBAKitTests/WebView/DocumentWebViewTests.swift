@@ -38,26 +38,69 @@ final class DocumentWebViewTests {
     /// Thread-safe wrapper to ensure the continuation is resumed exactly once.
     private final class CancellableContinuation: @unchecked Sendable {
         private var continuation: CheckedContinuation<Void, Error>?
+        private var result: Result<Void, Error>?
+        private var hasResumed = false
         private let lock = NSLock()
 
         func set(_ c: CheckedContinuation<Void, Error>) {
+            var storedResult: Result<Void, Error>?
             lock.lock()
-            defer { lock.unlock() }
-            continuation = c
+            if hasResumed {
+                lock.unlock()
+                return
+            }
+            if let res = result {
+                hasResumed = true
+                storedResult = res
+            } else {
+                continuation = c
+            }
+            lock.unlock()
+            
+            if let res = storedResult {
+                switch res {
+                case .success: c.resume()
+                case .failure(let e): c.resume(throwing: e)
+                }
+            }
         }
 
         func resume() {
+            var cToResume: CheckedContinuation<Void, Error>?
             lock.lock()
-            defer { lock.unlock() }
-            continuation?.resume()
-            continuation = nil
+            if hasResumed || result != nil {
+                lock.unlock()
+                return
+            }
+            if let c = continuation {
+                hasResumed = true
+                cToResume = c
+                continuation = nil
+            } else {
+                result = .success(())
+            }
+            lock.unlock()
+            
+            cToResume?.resume()
         }
 
         func resume(throwing error: Error) {
+            var cToResume: CheckedContinuation<Void, Error>?
             lock.lock()
-            defer { lock.unlock() }
-            continuation?.resume(throwing: error)
-            continuation = nil
+            if hasResumed || result != nil {
+                lock.unlock()
+                return
+            }
+            if let c = continuation {
+                hasResumed = true
+                cToResume = c
+                continuation = nil
+            } else {
+                result = .failure(error)
+            }
+            lock.unlock()
+            
+            cToResume?.resume(throwing: error)
         }
     }
 
