@@ -168,6 +168,12 @@ nonisolated struct ArrivalDepartureContentConfiguration: OBAContentConfiguration
     var viewModel: ArrivalDepartureItem
     var formatters: Formatters?
 
+    /// The zone the rider's device is in, which decides whether the clock below
+    /// carries a timezone badge. Defaults to the real one; injectable so a test
+    /// can fix both sides of that comparison instead of depending on the machine
+    /// it runs on.
+    var deviceTimeZone: TimeZone = .current
+
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         return StopArrivalCell.self
     }
@@ -199,7 +205,7 @@ nonisolated struct ArrivalDepartureContentConfiguration: OBAContentConfiguration
     /// clock on screen, so a bare region-zone time would read as local (#1438).
     var accessibilityTimeLabelText: String? {
         guard let formatters else { return nil }
-        return formatters.formattedClockTime(viewModel.arrivalDepartureDate)
+        return formatters.formattedClockTime(viewModel.arrivalDepartureDate, deviceTimeZone: deviceTimeZone)
     }
 
     var accessibilityScheduleDeviationText: String? {

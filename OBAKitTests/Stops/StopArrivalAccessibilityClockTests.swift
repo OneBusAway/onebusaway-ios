@@ -17,9 +17,10 @@ import Testing
 /// text sizes that label is the only clock on screen. Both therefore have to carry
 /// the timezone badge, which the configuration path did not until #1438.
 ///
-/// The bundle pins the process to GMT (`OBATestCase`), so pointing `formatters`
-/// at Los Angeles makes the offsets differ deterministically rather than relying
-/// on where the test happens to run.
+/// Both zones are fixed here, the region's on `formatters` and the rider's on the
+/// configuration. This suite is a plain struct, so it never runs `OBATestCase`'s
+/// GMT pin, and `formattedClockTime` would otherwise default the device zone to
+/// `.current` and decide the outcome from the machine the tests run on.
 @MainActor
 @Suite(.serialized)
 struct StopArrivalAccessibilityClockTests {
@@ -39,7 +40,7 @@ struct StopArrivalAccessibilityClockTests {
     /// implicitly-unwrapped `Route` that only `loadReferences()` populates — when
     /// the denormalized name is absent. A fixture without it doesn't fail this
     /// test, it traps and takes the whole test runner with it.
-    private func makeConfiguration(formatters: Formatters) throws -> ArrivalDepartureContentConfiguration {
+    private func makeConfiguration(formatters: Formatters, deviceTimeZone: TimeZone) throws -> ArrivalDepartureContentConfiguration {
         let epoch = 1_700_000_480
         let arrivalDeparture: ArrivalDeparture = try Fixtures.dictionaryToModel(
             type: ArrivalDeparture.self,
@@ -69,12 +70,17 @@ struct StopArrivalAccessibilityClockTests {
             ]
         )
         let item = ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: false)
-        return ArrivalDepartureContentConfiguration(viewModel: item, formatters: formatters)
+        return ArrivalDepartureContentConfiguration(
+            viewModel: item,
+            formatters: formatters,
+            deviceTimeZone: deviceTimeZone
+        )
     }
 
     @Test func `Accessibility clock carries the badge when the region zone differs`() throws {
+        let deviceTimeZone = try #require(TimeZone(identifier: "GMT"))
         let formatters = makeFormatters(timeZone: try #require(TimeZone(identifier: "America/Los_Angeles")))
-        let config = try makeConfiguration(formatters: formatters)
+        let config = try makeConfiguration(formatters: formatters, deviceTimeZone: deviceTimeZone)
 
         let label = try #require(config.accessibilityTimeLabelText)
 
@@ -82,12 +88,16 @@ struct StopArrivalAccessibilityClockTests {
         // nothing saying so, and a GMT rider reads it as their own time.
         #expect(label != formatters.timeFormatter.string(from: config.viewModel.arrivalDepartureDate))
         #expect(label.contains("("))
-        #expect(label == formatters.formattedClockTime(config.viewModel.arrivalDepartureDate))
+        #expect(label == formatters.formattedClockTime(
+            config.viewModel.arrivalDepartureDate,
+            deviceTimeZone: deviceTimeZone
+        ))
     }
 
     @Test func `Accessibility clock stays bare when the rider shares the region zone`() throws {
-        let formatters = makeFormatters(timeZone: try #require(TimeZone(identifier: "GMT")))
-        let config = try makeConfiguration(formatters: formatters)
+        let deviceTimeZone = try #require(TimeZone(identifier: "GMT"))
+        let formatters = makeFormatters(timeZone: deviceTimeZone)
+        let config = try makeConfiguration(formatters: formatters, deviceTimeZone: deviceTimeZone)
 
         let label = try #require(config.accessibilityTimeLabelText)
 
