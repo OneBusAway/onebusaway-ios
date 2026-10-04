@@ -61,4 +61,36 @@ final class MapViewControllerVisibleMapTests: OBATestCase {
         #expect(controller.isShowingTripPlannerMap == false)
         #expect(controller.visibleMapView === application.mapRegionManager.mapView)
     }
+
+    /// The picker writes to the main map, which is hidden in route mode. Before
+    /// #1451 the trip planner map only received `mapType` once, on the way in,
+    /// so a change made mid-trip landed on a map the rider could not see.
+    @Test func `A map type picked in route mode reaches the trip planner map`() {
+        let controller = MapViewController(application: application)
+        controller.loadViewIfNeeded()
+        controller.showTripPlannerMapView()
+
+        // Premise: the pick has to be a change, or `setMapType` returns early and
+        // the test proves nothing.
+        #expect(controller.tripPlannerMapView.mapType != .satellite)
+
+        controller.viewModel.setMapType(.satellite)
+
+        #expect(controller.tripPlannerMapView.mapType == .satellite)
+        #expect(application.mapRegionManager.mapView.mapType == .satellite)
+    }
+
+    /// The other half of #1451: `hideTripPlannerMapView()` used to copy the trip
+    /// map's `mapType` back onto the main map, overwriting whatever the rider had
+    /// picked during the trip. Ending the trip must not undo the choice.
+    @Test func `Ending route mode keeps the map type picked during it`() {
+        let controller = MapViewController(application: application)
+        controller.loadViewIfNeeded()
+        controller.showTripPlannerMapView()
+        controller.viewModel.setMapType(.satellite)
+
+        controller.hideTripPlannerMapView()
+
+        #expect(application.mapRegionManager.mapView.mapType == .satellite)
+    }
 }
