@@ -30,6 +30,46 @@ final class WalkingSpeedManagerTests: OBATestCase {
         }
     }
 
+    /// Defers the sample until the test releases it, so an opt-out can race a sync in flight.
+    private actor FetchGate {
+        private var continuation: CheckedContinuation<Double?, Never>?
+        private var fetchingContinuation: CheckedContinuation<Void, Never>?
+
+        func wait() async -> Double? {
+            await withCheckedContinuation { continuation in
+                self.continuation = continuation
+                // Signal arrival: a test awaiting `waitUntilFetching()` now proceeds.
+                self.fetchingContinuation?.resume()
+                self.fetchingContinuation = nil
+            }
+        }
+
+        /// Returns only after `wait()` has stored its continuation, so the test knows
+        /// the sync is parked in the fetch (and not still before it) before cancelling.
+        func waitUntilFetching() async {
+            guard continuation == nil else { return }
+            await withCheckedContinuation { continuation in
+                self.fetchingContinuation = continuation
+            }
+        }
+
+        func resume(returning value: Double?) {
+            continuation?.resume(returning: value)
+            continuation = nil
+        }
+    }
+
+    private struct GatedProvider: WalkingSpeedHealthKitProviding {
+        var isAvailable: Bool = true
+        let gate: FetchGate
+
+        func requestAuthorization() async throws {}
+
+        func fetchLatestWalkingSpeed() async -> Double? {
+            await gate.wait()
+        }
+    }
+
     private struct DummyError: Error {}
 
     private var store: UserDefaultsStore {
@@ -86,6 +126,34 @@ final class WalkingSpeedManagerTests: OBATestCase {
         #expect(result == false)
         #expect(self.store.walkingSpeedSource == .manual)
         // Stored speed unchanged — the out-of-range sample must not leak in.
+        expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
+    }
+
+    @Test func `Opt-out while a sync is in flight wins over its trailing write`() async {
+        store.walkingSpeedSource = .healthKit
+        store.walkingSpeedMetersPerSecond = 1.4
+
+        let gate = FetchGate()
+        let manager = WalkingSpeedManager(
+            userDataStore: store,
+            healthKit: GatedProvider(gate: gate)
+        )
+
+        async let sync = manager.requestHealthKitAuthorizationAndSync()
+        // Deterministic rendezvous: proceed only once the sync is parked in the fetch,
+        // so cancellation always races the post-fetch guard (never the pre-fetch one).
+        await gate.waitUntilFetching()
+
+        // What `saveWalkingSpeedValues` does when the user turns "Use Health app data" off.
+        manager.cancelPendingSync()
+        store.walkingSpeedSource = .manual
+
+        await gate.resume(returning: 1.7)
+        let result = await sync
+
+        #expect(result == false)
+        #expect(self.store.walkingSpeedSource == .manual)
+        // The late 1.7 sample must not leak in over the opt-out.
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.4)
     }
 

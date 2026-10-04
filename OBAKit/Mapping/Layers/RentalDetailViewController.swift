@@ -63,9 +63,8 @@ struct RentalDetailView: View {
     /// The layer's declared trust window; past it, the footer flags the data as stale.
     let staleAfter: Duration?
     let userLocation: CLLocation?
-    /// Nil on the SwiftUI map panel, which has no trip planner to route into —
-    /// `AppSheetRoute.tripPlanner` has no registered view. The button is hidden
-    /// rather than disabled: a dead primary action is worse than none.
+    /// Nil when the current region has no OTP server, on either surface. The button is
+    /// hidden rather than disabled: a dead primary action is worse than none.
     var onPlanTrip: ((VehicleRental) -> Void)?
     var onOpenURL: (URL, URL?, String?) -> Void
 
@@ -316,6 +315,18 @@ struct RentalClusterListView: View {
     let staleAfter: Duration?
     let userLocation: CLLocation?
     var onPlanTrip: ((VehicleRental) -> Void)?
+    /// Where tapping a row goes, when the host wants to own that.
+    ///
+    /// Nil on the UIKit surface, where this view is a modally-presented hosting
+    /// controller and the `selectedRental` sheet below is the only way to drill in.
+    ///
+    /// The map panel passes a closure instead, because that sheet is not the panel's to
+    /// present: `StackedSheetLayer` already attaches a `.sheet` to this same content for
+    /// the next stacked route, and SwiftUI allows one presentation per view — "Currently,
+    /// only presenting a single sheet is supported." A rental sheet opened here would hold
+    /// that slot, and the trip planner pushed from inside it would silently queue until the
+    /// rider dismissed the rental by hand.
+    var onSelectRental: ((VehicleRental) -> Void)?
     var onOpenURL: (URL, URL?, String?) -> Void
 
     @State private var selectedRental: VehicleRental?
@@ -324,7 +335,11 @@ struct RentalClusterListView: View {
         NavigationStack {
             List(rentals) { rental in
                 Button {
-                    selectedRental = rental
+                    if let onSelectRental {
+                        onSelectRental(rental)
+                    } else {
+                        selectedRental = rental
+                    }
                 } label: {
                     row(for: rental)
                 }

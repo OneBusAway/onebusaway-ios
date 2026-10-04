@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import TipKit
 import OBAKitCore
 
 struct HomeSheetView: View {
@@ -86,6 +87,17 @@ struct HomeSheetView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 12)
+        // The map panel's home for `TripPlannerTip`, which on the UIKit surface
+        // points at `MapFloatingPanelController`'s search bar — this row is that
+        // bar's counterpart, and the tip's copy ("tap here to search for places")
+        // only reads correctly anchored to it. `popoverTip` rather than
+        // `TipPresenter`: the UIKit presenter exists to work around a broken
+        // system *controller*, and none of that applies here.
+        //
+        // Passing `nil` when the region has no OTP server withholds the tip
+        // instead of spending its one display announcing a feature the rider
+        // cannot reach.
+        .popoverTip(viewModel.offersTripPlanning ? TripPlannerTip() : nil)
     }
 
     // MARK: - Sections

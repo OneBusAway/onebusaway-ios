@@ -45,6 +45,10 @@ struct TripCardView: View {
         departure.map { DepartureTimeDisplay(arrivalDeparture: $0, formatters: formatters) }
     }
 
+    private var etaDistance: TripETADistance? {
+        departure.flatMap { TripETADistance.make(departure: $0, formatter: formatters.distanceFormatter) }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: StopTripSpacing.card(compactMode)) {
             if dynamicTypeSize.isAccessibilitySize {
@@ -57,6 +61,7 @@ struct TripCardView: View {
                 }
                 headsignText
                 timeAndStatus
+                distanceLine
                 occupancy
             } else {
                 HStack(alignment: .top, spacing: StopTripSpacing.hStack(compactMode)) {
@@ -64,6 +69,7 @@ struct TripCardView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         headsignText
                         timeAndStatus
+                        distanceLine
                         occupancy
                     }
                     Spacer(minLength: 8)
@@ -135,7 +141,7 @@ struct TripCardView: View {
             departure: departure,
             status: status,
             timeDisplay: timeDisplay,
-            extraClauses: [provenance].compactMap { $0 }
+            extraClauses: [etaDistance?.accessibilityText, provenance].compactMap { $0 }
         )
     }
 
@@ -166,6 +172,16 @@ struct TripCardView: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color(uiColor: status.color))
             }
+        }
+    }
+
+    @ViewBuilder
+    private var distanceLine: some View {
+        if let etaDistance {
+            Text(etaDistance.text)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

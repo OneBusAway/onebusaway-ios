@@ -90,6 +90,26 @@ final class StopSheetPresenterTests {
         #expect(panels.first?.contentInsetAdjustmentBehavior == .never)
     }
 
+    // MARK: - Collapsing
+
+    /// The trip page's Show on Map button: lowering the sheet is what puts the trip's route,
+    /// already drawn on the map behind it, in front of the rider.
+    @Test func `Collapse to tip lowers a presented sheet to the tip detent`() {
+        presenter.present(UIViewController(), from: parent) {}
+
+        presenter.collapseToTip(animated: false)
+
+        #expect(panels.first?.state == .tip)
+        #expect(presenter.isPresenting)
+    }
+
+    @Test func `Collapse to tip with no sheet onscreen does nothing`() {
+        presenter.collapseToTip(animated: false)
+
+        #expect(panels.isEmpty)
+        #expect(presenter.isPresenting == false)
+    }
+
     // MARK: - Replacement
 
     /// The HIG is explicit that one sheet shows at a time, and the map has several things

@@ -14,7 +14,7 @@ import Testing
 
 /// `Icons` force-unwraps `UIImage(systemName:)`, so a symbol name that doesn't
 /// resolve on the running OS is a crash the first time the icon is drawn rather
-/// than a build failure. These pin the departure-type pair.
+/// than a build failure. These pin the departure-type and proximity-alert pairs.
 @Suite
 struct IconsTests {
 
@@ -34,5 +34,17 @@ struct IconsTests {
         // And the force-unwrapping accessor itself must survive both states.
         #expect(Icons.departureType(isActive: false).size != .zero)
         #expect(Icons.departureType(isActive: true).size != .zero)
+    }
+
+    @Test func `Proximity alert symbol differs by state`() {
+        #expect(Icons.proximityAlertSymbolName(isActive: false) != Icons.proximityAlertSymbolName(isActive: true))
+    }
+
+    @Test func `Proximity alert symbols resolve on this OS`() {
+        #expect(UIImage(systemName: Icons.proximityAlertSymbolName(isActive: false)) != nil)
+        #expect(UIImage(systemName: Icons.proximityAlertSymbolName(isActive: true)) != nil)
+
+        #expect(Icons.proximityAlert(isActive: false).size != .zero)
+        #expect(Icons.proximityAlert(isActive: true).size != .zero)
     }
 }

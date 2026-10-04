@@ -231,6 +231,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showServiceAlerts: {},
         showNearbyStops: {},
         showReportProblem: {},
+        toggleProximityAlert: {},
         closeSheet: {}
     )
 
@@ -276,6 +277,16 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             .store(in: &cancellables)
 
         viewModel.$arrivalDepartureFilter
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.configureBarButtons() }
+            .store(in: &cancellables)
+
+        // The More menu's nearby-alert item reads its title and glyph from this.
+        // A `UIMenu` is built once and handed to the bar button, so without this
+        // the pushed page would keep offering "Alert Me When Nearby" for an alert
+        // the rider has already set. The sheet presentation needs no equivalent:
+        // `StopPageView` observes the view model and re-evaluates its `body`.
+        viewModel.$proximityAlert
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.configureBarButtons() }
             .store(in: &cancellables)
@@ -580,7 +591,28 @@ private extension StopPageViewController {
             locationChildren.append(contentsOf: [directionsToHere, directionsFromHere])
         }
 
+        locationChildren.append(proximityAlertAction())
+
         return UIMenu(title: "Location", options: .displayInline, children: locationChildren)
+    }
+
+    /// The Location group's last item. Every sibling above it is "getting to
+    /// this stop"; this is "tell me when I've got there", so it reads as one
+    /// family.
+    ///
+    /// Always present and never disabled: a rider who cannot use it yet needs to
+    /// be told why, and a greyed row reproduces the silent no-op the
+    /// authorization step exists to prevent. The stop is read inside the closure
+    /// rather than captured here, so a menu built before the stop's details
+    /// landed still works.
+    func proximityAlertAction() -> UIAction {
+        let isActive = viewModel.proximityAlert != nil
+        return UIAction(
+            title: ProximityAlertMenuItem.title(isActive: isActive),
+            image: Icons.proximityAlert(isActive: isActive)
+        ) { [unowned self] _ in
+            self.actionPresenter.toggleProximityAlert(viewModel: self.viewModel)
+        }
     }
 
     func helpMenu() -> UIMenu {
