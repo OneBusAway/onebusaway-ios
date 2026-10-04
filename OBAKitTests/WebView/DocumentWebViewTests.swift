@@ -18,7 +18,7 @@ import WebKit
 final class DocumentWebViewTests {
 
     /// Helper delegate to bridge WKNavigationDelegate callbacks to async/await.
-    private class NavigationDelegate: NSObject, WKNavigationDelegate {
+    private final class NavigationDelegate: NSObject, WKNavigationDelegate, @unchecked Sendable {
         var onFinish: ((WKWebView) -> Void)?
         var onError: ((Error) -> Void)?
 
@@ -36,7 +36,7 @@ final class DocumentWebViewTests {
     }
 
     /// Thread-safe wrapper to ensure the continuation is resumed exactly once.
-    private class CancellableContinuation {
+    private final class CancellableContinuation: @unchecked Sendable {
         private var continuation: CheckedContinuation<Void, Error>?
         private let lock = NSLock()
 
