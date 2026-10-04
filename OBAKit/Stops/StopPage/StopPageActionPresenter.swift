@@ -50,8 +50,13 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// a UI bug. `TripPresentationBridge.present` logs the same condition, so
     /// the two halves of the sheet system report failures the same way.
     ///
+    /// Internal rather than `private` because the proximity-alert flow in
+    /// `StopPageActionPresenter+ProximityAlerts` presents through it too, and
+    /// `private` does not reach across files even between extensions of the same
+    /// type.
+    ///
     /// - Parameter action: what was being attempted, for the log line.
-    private func presentationHost(for action: String) -> UIViewController? {
+    func presentationHost(for action: String) -> UIViewController? {
         guard let controller = presentingController() else {
             Logger.error("StopPageActionPresenter: dropping \(action) — no presenting controller resolved.")
             return nil
@@ -124,6 +129,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showServiceAlerts: stop.showServiceAlerts,
             showNearbyStops: stop.showNearbyStops,
             showReportProblem: stop.showReportProblem,
+            toggleProximityAlert: stop.toggleProximityAlert,
             closeSheet: closeSheet
         )
     }
@@ -192,6 +198,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         let showServiceAlerts: () -> Void
         let showNearbyStops: () -> Void
         let showReportProblem: () -> Void
+        let toggleProximityAlert: () -> Void
     }
 
     private func makeStopClosures(viewModel: StopViewModel) -> StopClosures {
@@ -238,6 +245,9 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showReportProblem: { [weak self] in
                 guard let stop = viewModel.stop else { return }
                 self?.showReportProblem(stop: stop)
+            },
+            toggleProximityAlert: { [weak self] in
+                self?.toggleProximityAlert(viewModel: viewModel)
             }
         )
     }
@@ -579,6 +589,14 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
 
     // MARK: - Live Activity
 
+    /// Hoisted to a single constant because both start paths — a fresh
+    /// `Activity.request()` and a re-Track that promotes the running one —
+    /// confirm with the same words, and the toast now takes text rather than
+    /// naming its own occasion.
+    private static var liveActivityStartedText: String {
+        OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen")
+    }
+
     func startLiveActivity(for departure: ArrivalDeparture, viewModel: StopViewModel) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
@@ -618,7 +636,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
                 )
             }
             // Re-show the confirmation rather than appearing to do nothing.
-            viewModel.signalLiveActivityStarted()
+            viewModel.signalToast(Self.liveActivityStartedText)
             return
         }
 
@@ -629,12 +647,41 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             )
             application.liveActivityTracker.track(activity: activity, metadata: .init(departure))
             Logger.info("Started Live Activity with ID: \(activity.id)")
-            viewModel.signalLiveActivityStarted()
+            viewModel.signalToast(Self.liveActivityStartedText)
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
             presentationHost(for: "live activity error")?.showLiveActivityErrorAlert()
         }
     }
+
+    // MARK: - Proximity Alerts
+
+    // The flow that reads and writes both of these is in
+    // `StopPageActionPresenter+ProximityAlerts`; they live here because an
+    // extension cannot hold stored properties, which is also why neither is
+    // `private`.
+
+    /// `true` between asking iOS for Always authorization and hearing back.
+    ///
+    /// `LocationService.requestAlwaysAuthorization()` spends the one-time prompt
+    /// flag synchronously, one line before it asks the system to raise the
+    /// prompt. Nothing visible happens on that first tap — the prompt arrives a
+    /// beat later — so a second tap is likely, and it would resolve
+    /// `.locationBlocked` and push "Open Settings" in front of a rider still
+    /// looking at the prompt they haven't answered yet.
+    var isRequestingLocationAuthorization = false
+
+    /// Releases ``isRequestingLocationAuthorization`` if no authorization change
+    /// ever arrives. iOS raises no prompt at all when the usage description is
+    /// missing, and without this the guard would latch for the page's lifetime.
+    ///
+    /// Deliberately not cancelled in a `deinit`, unlike the in-flight tasks the
+    /// view models cancel. Reaching a main-actor-isolated property from a
+    /// `deinit` needs an `isolated deinit`, and this object is released on
+    /// whatever thread the last SwiftUI or UIKit reference drops it on. The task
+    /// captures `self` weakly, so a presenter released mid-wait is not held
+    /// alive: the sleep finishes against a nil `self` and does nothing.
+    var locationAuthorizationTimeoutTask: Task<Void, Never>?
 
     // MARK: - User Activity
 

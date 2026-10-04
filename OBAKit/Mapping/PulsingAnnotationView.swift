@@ -6,6 +6,7 @@
 //
 
 import MapKit
+import OBAKitCore
 
 typealias PulsingAnnotationWillMoveAnimationBlock = (PulsingAnnotationView?, UIView?) -> Void
 
@@ -292,5 +293,17 @@ class PulsingAnnotationView: MKAnnotationView {
         let dotImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return dotImage!
+    }
+}
+
+extension PulsingAnnotationView {
+    /// Points the user-heading cone at `heading`, adding the cone image on first use.
+    func showUserHeading(_ heading: CLHeading) {
+        if headingImage == nil {
+            headingImage = Icons.userHeading
+        }
+
+        // The PulsingAnnotationView treats east as 0º.
+        headingImageView.transform = heading.trueHeading.affineTransform(rotatedBy: -0.5 * .pi)
     }
 }

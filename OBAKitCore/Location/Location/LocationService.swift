@@ -10,6 +10,19 @@
 import Foundation
 import CoreLocation
 
+/// Errors thrown by `LocationService.requestLocation(desiredAccuracy:)`.
+public enum LocationServiceError: LocalizedError {
+    /// The app is not authorized to use location, so no request was made.
+    case notAuthorized
+
+    public var errorDescription: String? {
+        switch self {
+        case .notAuthorized:
+            return OBALoc("location_service.error.not_authorized", value: "Location access is not authorized.", comment: "Error shown when a location request is made without authorization")
+        }
+    }
+}
+
 @objc(OBALocationServiceDelegate)
 @MainActor
 public protocol LocationServiceDelegate: NSObjectProtocol {
@@ -41,14 +54,26 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 // Callers of the designated initializer must construct the injected manager
 // on the main thread for the same reason.
 @objc(OBALocationService) @MainActor public class LocationService: NSObject, @preconcurrency CLLocationManagerDelegate {
-    private var locationManager: LocationManager
+    // Internal, not private: `LocationService+ProximityAlerts.swift` is a
+    // cross-file extension and needs to reach it.
+    var locationManager: LocationManager
+
+    private let startsUpdatesOnAuthorization: Bool
 
     public convenience override init() {
         self.init(userDefaults: UserDefaults.standard, locationManager: CLLocationManager())
     }
 
-    public init(userDefaults: UserDefaults, locationManager: LocationManager) {
+    /// - parameter startsUpdatesOnAuthorization: When `true` (the iOS default),
+    ///   a grant starts continuous location and heading updates immediately —
+    ///   Core Location fires the authorization callback the moment the delegate
+    ///   is assigned, so an already-authorized app starts its first fix from
+    ///   `init`. The watch passes `false`: it takes one-shot fixes through
+    ///   ``requestLocation(desiredAccuracy:)`` and never powers the magnetometer.
+    ///   Revocation stops updates either way.
+    public init(userDefaults: UserDefaults, locationManager: LocationManager, startsUpdatesOnAuthorization: Bool = true) {
         self.locationManager = locationManager
+        self.startsUpdatesOnAuthorization = startsUpdatesOnAuthorization
         rawAuthorizationStatus = locationManager.authorizationStatus
         lastAccuracyAuthorization = locationManager.accuracyAuthorization
         currentLocation = locationManager.location
@@ -104,7 +129,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - Delegates
 
-    private let delegates = NSHashTable<LocationServiceDelegate>.weakObjects()
+    let delegates = NSHashTable<LocationServiceDelegate>.weakObjects()
 
     public func addDelegate(_ delegate: LocationServiceDelegate) {
         delegates.add(delegate)
@@ -141,18 +166,6 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     private func notifyDelegatesErrorReceived(_ error: Error) {
         for delegate in delegates.allObjects {
             delegate.locationService?(self, errorReceived: error)
-        }
-    }
-
-    private func notifyDelegatesDidEnterMonitoredRegion(_ identifier: String) {
-        for delegate in delegates.allObjects {
-            delegate.locationService?(self, didEnterMonitoredRegion: identifier)
-        }
-    }
-
-    private func notifyDelegatesMonitoringDidFail(_ identifier: String?, error: Error, kind: RegionMonitoringFailureKind) {
-        for delegate in delegates.allObjects {
-            delegate.locationService?(self, monitoringDidFailFor: identifier, error: error, kind: kind)
         }
     }
 
@@ -222,7 +235,9 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         // `CLLocationManager` left running keeps the location-usage indicator lit
         // and the magnetometer powered for the rest of the process.
         if isLocationUseAuthorized {
-            startUpdates()
+            if startsUpdatesOnAuthorization {
+                startUpdates()
+            }
         } else {
             stopUpdates()
         }
@@ -382,8 +397,64 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// Unlike its `start` counterpart this is unguarded: stopping is always safe,
     /// and gating it on authorization would make a manager we started before
     /// access was revoked impossible to ever turn off.
+    ///
+    /// Also fails any pending one-shot waiters. Stopping cancels a pending
+    /// `requestLocation()` and Core Location sends no callback afterwards, so
+    /// without this they would stay suspended forever, and so would every later
+    /// caller that queued up behind them. Revocation, the services-off latch
+    /// and external stops all come through here.
     public func stopUpdatingLocation() {
+        failOneShotRequests(with: LocationServiceError.notAuthorized)
         locationManager.stopUpdatingLocation()
+    }
+
+    // MARK: - One-shot location
+
+    /// Callers suspended in `requestLocation(desiredAccuracy:)`. All resolve on
+    /// the next `didUpdateLocations` / `didFailWithError`, whichever comes first.
+    /// Internal read access so tests can wait until every caller is suspended.
+    private(set) var pendingOneShotRequests: [CheckedContinuation<CLLocation, Error>] = []
+
+    /// Requests a single fix and suspends until the manager delivers one.
+    ///
+    /// The fix **also becomes `currentLocation`, bypassing the accuracy prune**
+    /// that continuous updates apply, so `locationChanged` reaches every
+    /// delegate (`RegionsService` selects the region from it). A caller asked
+    /// for this fix; a coarser-than-last answer is still the answer. Concurrent
+    /// callers share one manager request. A stop while a request is pending
+    /// (revocation, Location Services turned off, or `stopUpdatingLocation()`)
+    /// fails the waiters with ``LocationServiceError/notAuthorized``.
+    ///
+    /// - throws: ``LocationServiceError/notAuthorized`` when the app may not use
+    ///   location, or the manager's error from `didFailWithError`.
+    public func requestLocation(desiredAccuracy: CLLocationAccuracy) async throws -> CLLocation {
+        guard isLocationUseAuthorized else {
+            throw LocationServiceError.notAuthorized
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            pendingOneShotRequests.append(continuation)
+            if pendingOneShotRequests.count == 1 {
+                locationManager.desiredAccuracy = desiredAccuracy
+                locationManager.requestLocation()
+            }
+        }
+    }
+
+    private func resolveOneShotRequests(with location: CLLocation) {
+        let waiters = pendingOneShotRequests
+        pendingOneShotRequests.removeAll()
+        for waiter in waiters {
+            waiter.resume(returning: location)
+        }
+    }
+
+    private func failOneShotRequests(with error: Error) {
+        let waiters = pendingOneShotRequests
+        pendingOneShotRequests.removeAll()
+        for waiter in waiters {
+            waiter.resume(throwing: error)
+        }
     }
 
     // MARK: - Heading
@@ -520,6 +591,15 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             applyAuthorizationState(rawStatus: rawAuthorizationStatus, servicesDenied: false)
         }
 
+        // A requested fix is delivered as-is: the prune below exists for
+        // continuous streams, where a coarse reading trailing a fine one is
+        // noise. Here somebody asked for exactly this reading.
+        if !pendingOneShotRequests.isEmpty {
+            self.currentLocation = newLocation
+            resolveOneShotRequests(with: newLocation)
+            return
+        }
+
         guard let currentLocation = currentLocation else {
             self.currentLocation = newLocation
             return
@@ -560,182 +640,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             applyAuthorizationState(rawStatus: rawAuthorizationStatus, servicesDenied: true)
         }
 
+        failOneShotRequests(with: error)
         notifyDelegatesErrorReceived(error)
-    }
-
-    // MARK: - Region Monitoring
-
-    static let proximityRegionPrefix = "oba.proximity."
-
-    /// The number of regions iOS will monitor for a single app, across every
-    /// feature that asks for one.
-    ///
-    /// Core Location does not expose this as a constant, and it enforces the cap
-    /// asynchronously: the call that exceeds it returns normally, then fails via
-    /// `monitoringDidFailFor` carrying no region at all. Checking up front is the
-    /// only way to tell the caller *which* alert failed to arm.
-    public static let maximumMonitoredRegions = 20
-
-    static func proximityRegionIdentifier(for alert: ProximityAlert) -> String {
-        proximityRegionIdentifier(forAlertID: alert.id)
-    }
-
-    /// Builds the same identifier from an alert's ID alone.
-    ///
-    /// An alert deleted while the app wasn't running leaves its region armed with
-    /// no `ProximityAlert` left to name it, so the ID has to be enough.
-    static func proximityRegionIdentifier(forAlertID id: UUID) -> String {
-        proximityRegionPrefix + id.uuidString
-    }
-
-    /// Recovers the proximity alert a monitored region belongs to, or nil for a
-    /// region this service did not create.
-    ///
-    /// `didEnterMonitoredRegion` and `monitoringDidFailFor` hand their delegates a
-    /// bare identifier string, and the prefix-plus-UUID encoding behind it is
-    /// built a few lines above. Decoding it here as well keeps consumers from
-    /// reconstructing a format they don't own — the two drifting apart would
-    /// strand every alert with nothing to attribute a geofence event to.
-    public static func proximityAlertID(forRegionIdentifier identifier: String) -> UUID? {
-        guard identifier.hasPrefix(proximityRegionPrefix) else { return nil }
-        return UUID(uuidString: String(identifier.dropFirst(proximityRegionPrefix.count)))
-    }
-
-    /// The regions currently monitored on behalf of proximity alerts, excluding
-    /// any the app monitors for other reasons.
-    public var monitoredProximityRegions: Set<CLRegion> {
-        locationManager.monitoredRegions.filter { $0.identifier.hasPrefix(Self.proximityRegionPrefix) }
-    }
-
-    /// The IDs of the proximity alerts currently armed.
-    ///
-    /// Monitored regions outlive the process that armed them, while the alerts
-    /// explaining those regions live in `UserDataStore` and expire on a clock.
-    /// Comparing the two sets is what tells a consumer which alerts still need
-    /// arming and which regions were left behind by alerts that are gone.
-    public var monitoredProximityAlertIDs: Set<UUID> {
-        Set(monitoredProximityRegions.compactMap { Self.proximityAlertID(forRegionIdentifier: $0.identifier) })
-    }
-
-    /// Starts monitoring a geofence region for the given proximity alert.
-    ///
-    /// The result is deliberately *not* `@discardableResult`. Region monitoring
-    /// has no self-healing re-arm — nothing retries it when authorization or the
-    /// region count later changes — so a caller that drops a failure on the floor
-    /// ships an alert that will never fire and never explains why.
-    public func startMonitoringProximity(for alert: ProximityAlert) -> ProximityMonitoringResult {
-        guard isProximityMonitoringAuthorized else {
-            Logger.warn("Not monitoring proximity alert \(alert.id): needs authorizedAlways, have \(authorizationStatus).")
-            return .insufficientAuthorization(authorizationStatus)
-        }
-
-        let identifier = Self.proximityRegionIdentifier(for: alert)
-
-        // Re-arming an alert already being monitored replaces its region instead
-        // of adding one — `CLRegion` hashes on identifier — so it can't push the
-        // app over the cap and must not be rejected by this check.
-        let isReplacement = locationManager.monitoredRegions.contains { $0.identifier == identifier }
-        if !isReplacement, locationManager.monitoredRegions.count >= Self.maximumMonitoredRegions {
-            Logger.warn("Not monitoring proximity alert \(alert.id): already at the \(Self.maximumMonitoredRegions)-region limit.")
-            return .regionLimitReached(limit: Self.maximumMonitoredRegions)
-        }
-
-        // Clamp deliberately and report it. Core Location answers an oversize
-        // radius with `CLError.regionMonitoringFailure`, which arrives
-        // asynchronously through `monitoringDidFailFor` carrying no radius — too
-        // late, and too vague, to tell the rider their alert would have fired
-        // somewhere other than where they asked.
-        //
-        // `-1` is not an unknown limit. Apple documents it as region monitoring
-        // being unavailable or unsupported on this device, so honouring the
-        // request in that case hands the caller `.started` for an alert that can
-        // never fire. Left that way for now — the failure does still surface
-        // through `monitoringDidFailFor` — but refusing up front wants an
-        // `isMonitoringAvailable(for:)` check and a result case to carry it.
-        // Both points flagged in review of #1292.
-        let requestedRadius = alert.radiusMeters
-        let deviceMaximum = locationManager.maximumRegionMonitoringDistance
-        let radius = deviceMaximum > 0 ? min(requestedRadius, deviceMaximum) : requestedRadius
-
-        let region = CLCircularRegion(center: alert.coordinate, radius: radius, identifier: identifier)
-        region.notifyOnEntry = true
-        region.notifyOnExit = false
-        locationManager.startMonitoring(for: region)
-
-        guard radius == requestedRadius else {
-            Logger.warn("Proximity alert \(alert.id) radius \(requestedRadius)m exceeds the device maximum \(deviceMaximum)m; monitoring at \(radius)m.")
-            return .startedWithClampedRadius(requested: requestedRadius, monitored: radius)
-        }
-
-        return .started
-    }
-
-    /// Stops monitoring the geofence region for the given proximity alert.
-    public func stopMonitoringProximity(for alert: ProximityAlert) {
-        stopMonitoringProximityAlert(id: alert.id)
-    }
-
-    /// Stops monitoring the geofence region armed for `id`, whether or not an
-    /// alert with that ID still exists.
-    ///
-    /// The counterpart to `stopMonitoringProximity(for:)` for the case that has no
-    /// alert to pass: a region whose alert was deleted or expired in an earlier
-    /// run of the app still holds one of the twenty slots, and only its ID
-    /// survives to identify it.
-    public func stopMonitoringProximityAlert(id: UUID) {
-        let identifier = Self.proximityRegionIdentifier(forAlertID: id)
-        guard let matchingRegion = locationManager.monitoredRegions.first(where: {
-            $0.identifier == identifier
-        }) else {
-            Logger.warn("No monitored region found for proximity alert \(id)")
-            return
-        }
-        locationManager.stopMonitoring(for: matchingRegion)
-    }
-
-    /// Stops monitoring all proximity alert regions without affecting other monitored regions.
-    public func stopMonitoringAllProximityAlerts() {
-        for region in monitoredProximityRegions {
-            locationManager.stopMonitoring(for: region)
-        }
-    }
-
-    public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        guard region.identifier.hasPrefix(Self.proximityRegionPrefix) else { return }
-
-        // Every region registered under this prefix is created as a
-        // `CLCircularRegion` a few lines above, so one that isn't means either a
-        // bug here or something else writing into our identifier namespace.
-        // Returning silently would strand the alert with nothing to debug from.
-        guard region is CLCircularRegion else {
-            Logger.error("Entered region \(region.identifier) carrying the proximity prefix but typed \(type(of: region)) rather than CLCircularRegion. Ignoring.")
-            return
-        }
-
-        notifyDelegatesDidEnterMonitoredRegion(region.identifier)
-    }
-
-    public func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        let kind = RegionMonitoringFailureKind(error: error)
-
-        guard let identifier = region?.identifier else {
-            // Core Location reports the region-count cap, and some setup
-            // failures, with no region attached. Unattributable, but plausibly
-            // one of ours, so it still goes to the delegates.
-            Logger.error("Region monitoring failed with no region attached (\(kind)): \(error)")
-            notifyDelegatesMonitoringDidFail(nil, error: error, kind: kind)
-            return
-        }
-
-        // Mirrors the prefix filter in `didEnterRegion`. Without it, proximity
-        // delegates receive every monitoring failure in the app — including ones
-        // they can neither attribute nor act on.
-        guard identifier.hasPrefix(Self.proximityRegionPrefix) else {
-            Logger.error("Region monitoring failed for non-proximity region \(identifier) (\(kind)): \(error)")
-            return
-        }
-
-        Logger.error("Region monitoring failed for proximity region \(identifier) (\(kind)): \(error)")
-        notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
     }
 }

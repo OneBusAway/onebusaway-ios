@@ -433,6 +433,9 @@
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "Maaaring luma na ang data na ito.";
 
+/* Error shown when a location request is made without authorization */
+"location_service.error.not_authorized" = "Hindi pinapayagan ang access sa lokasyon.";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "NGAYON";
 

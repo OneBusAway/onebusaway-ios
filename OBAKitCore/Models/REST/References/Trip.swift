@@ -69,7 +69,7 @@ public class Trip: NSObject, Identifiable, Decodable, HasReferences {
 
     private enum CodingKeys: String, CodingKey {
         case blockID = "blockId"
-        case direction
+        case direction = "directionId"
         case headsign = "tripHeadsign"
         case id
         case routeID = "routeId"

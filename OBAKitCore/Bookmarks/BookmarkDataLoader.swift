@@ -178,68 +178,80 @@ public class BookmarkDataLoader: NSObject {
                 batchContinuations[batchID, default: []].append(continuation)
             }
         }
+
+        // `beginBatch` reserved one slot per bookmark. Results arrive per *stop*
+        // (the loader fetches each stop once), so count how many slots each stop
+        // settles, and release at once the slots that will never fetch.
+        var slotsByStop = [StopID: Int]()
         for bookmark in bookmarks {
-            loadData(bookmark: bookmark, batchID: batchID)
+            if application.apiService != nil, bookmark.isTripBookmark {
+                slotsByStop[bookmark.stopID, default: 0] += 1
+            } else {
+                // No fetch will run for this bookmark — release the slot reserved by beginBatch.
+                taskFinished(batchID: batchID)
+            }
+        }
+
+        guard let apiService = application.apiService, !slotsByStop.isEmpty else { return }
+
+        let slots = slotsByStop
+        let requests = slots.keys.map { BookmarkArrivalsRequest(stopID: $0) }
+        Task(priority: .userInitiated) {
+            for await (stopID, result) in BookmarkArrivalsLoader().arrivals(for: requests, using: apiService) {
+                // The loader only ever reports stops it was asked about, so a
+                // miss here means the invariant broke. Settling 0 slots would
+                // leave the batch short a release and hang `loadDataAndWait`
+                // silently; say so in debug instead.
+                guard let stopSlots = slots[stopID] else {
+                    assertionFailure("BookmarkArrivalsLoader delivered a stop (\(stopID)) this batch never requested.")
+                    continue
+                }
+
+                // One task per stop, so a slow `displayError` for one stop
+                // does not hold up delivery of the next stop's arrivals.
+                Task { @MainActor in
+                    await self.settle(result, stopID: stopID, slots: stopSlots, batchID: batchID)
+                }
+            }
         }
     }
 
+    /// Applies one stop's result, then releases the slots of every bookmark at
+    /// that stop. The release comes last, as it did when this was a `defer`:
+    /// `loadDataAndWait()` must not return before the delegate has been told.
     @MainActor
-    private func loadData(bookmark: Bookmark, batchID: UInt64) {
-        guard
-            let apiService = application.apiService,
-            bookmark.isTripBookmark
-        else {
-            // No fetch will run for this bookmark — release the slot reserved by beginBatch.
-            taskFinished(batchID: batchID)
-            return
+    private func settle(_ result: Result<[ArrivalDeparture], Error>, stopID: StopID, slots: Int, batchID: UInt64) async {
+        defer {
+            for _ in 0..<slots { taskFinished(batchID: batchID) }
         }
 
-        Task(priority: .userInitiated) {
-            defer {
-                Task { @MainActor in self.taskFinished(batchID: batchID) }
+        // Skip stale completions: a newer batch has already started (or
+        // cancelUpdates() retired this one), so writing this fetch's data would
+        // overwrite fresher results, and an error would be shown to a consumer
+        // that has moved on.
+        guard batchID == currentBatchID else { return }
+
+        switch result {
+        case .success(let arrivals):
+            fetchedStopIDs.insert(stopID)
+            for (key, deps) in arrivals.tripKeyGroupedElements {
+                tripBookmarkKeys[key] = deps
             }
-            do {
-                let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: bookmark.stopID, minutesBefore: 0, minutesAfter: 60).entry
+            delegate?.dataLoaderDidUpdate(self)
 
-                await MainActor.run {
-                    // Skip stale completions: a newer batch has already started, so
-                    // writing this fetch's data would overwrite fresher results and
-                    // fire dataLoaderDidUpdate with stale state for the consumer.
-                    guard batchID == self.currentBatchID else { return }
+        case .failure(let error as APIError) where error.indicatesMissingStop:
+            // The stop no longer exists in this region. Don't bulletin —
+            // settle the card on "No upcoming departures" and drop any
+            // previous countdown for this stop.
+            fetchedStopIDs.insert(stopID)
+            tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
+            delegate?.dataLoaderDidUpdate(self)
 
-                    self.fetchedStopIDs.insert(bookmark.stopID)
-
-                    let keysAndDeps = stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements
-                    for (key, deps) in keysAndDeps {
-                        self.tripBookmarkKeys[key] = deps
-                    }
-
-                    self.delegate?.dataLoaderDidUpdate(self)
-                }
-            } catch let error as APIError where error.indicatesMissingStop {
-                // The stop no longer exists in this region. Don't bulletin —
-                // settle the card on "No upcoming departures" and drop any
-                // previous countdown for this stop.
-                await MainActor.run {
-                    guard batchID == self.currentBatchID else { return }
-                    self.fetchedStopIDs.insert(bookmark.stopID)
-                    self.tripBookmarkKeys = self.tripBookmarkKeys.filter { $0.key.stopID != bookmark.stopID }
-                    self.delegate?.dataLoaderDidUpdate(self)
-                }
-            } catch {
-                // Same staleness gate as the success path: if cancelUpdates() retired
-                // the batch (or a newer batch started) while this fetch was in flight,
-                // suppress the error — the consumer has moved on and shouldn't see it.
-                let isCurrent = await MainActor.run { () -> Bool in
-                    let current = batchID == self.currentBatchID
-                    // Record the failure against the live batch so the batch-complete
-                    // signal can report whether any fetch errored.
-                    if current { self.lastBatchHadError = true }
-                    return current
-                }
-                guard isCurrent else { return }
-                await self.application.displayError(error)
-            }
+        case .failure(let error):
+            // Record the failure against the live batch so the batch-complete
+            // signal can report whether any fetch errored.
+            lastBatchHadError = true
+            await application.displayError(error)
         }
     }
 

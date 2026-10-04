@@ -494,6 +494,9 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "Pokaż prognozę pogody";
 
+/* Title of the list shown when tapping a map pin that groups several stops at the same location. */
+"map_controller.stop_cluster_picker.title" = "Wybierz przystanek";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "Pojazd, który wybrałeś, nie wykonuje żadnego kursu, więc nie mamy co pokazać.";
 
@@ -1102,6 +1105,21 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Pokazuj odjazdy";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "Tryb rowerowy";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "Używa większej prędkości przemieszczania się do szacowania czasu dojazdu na przystanek, godzin przyjazdu i na stronie przystanku.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "Tryb rowerowy";
+
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Użyj danych z aplikacji Zdrowie";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Nie udało się zsynchronizować prędkości jazdy rowerem z aplikacją Zdrowie. Zostanie użyta standardowa prędkość roweru.";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Odśwież regiony przy każdym uruchomieniu";
 
@@ -1240,6 +1258,15 @@
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "Powiadomienia są wyłączone";
 
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "%d MIN ROWEREM — PONIŻEJ ZDĄŻYSZ";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "Odjazdy powyżej tego miejsca nastąpią, zanim dojedziesz na przystanek. Dojazd rowerem zajmuje %d min.";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "%d min rowerem";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "TERAZ";
 
@@ -1321,6 +1348,50 @@
 /* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.past_toggle_show_a11y_fmt" = "Pokaż minione odjazdy (%d)";
 
+/* Body of the alert shown when location is denied for the app. %@ is the app name. */
+"stop_page.proximity_alert.location_denied.message_fmt" = "Aby otrzymywać powiadomienia o zbliżaniu, zezwól na lokalizację dla aplikacji %@ w Ustawieniach.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but location is denied for the app. */
+"stop_page.proximity_alert.location_denied.title" = "Lokalizacja jest wyłączona";
+
+/* Body of the alert shown when location access is restricted on the device. */
+"stop_page.proximity_alert.location_restricted.message" = "Powiadomienia o zbliżaniu wymagają dostępu do lokalizacji, który może być ograniczony ustawieniem tego urządzenia.";
+
+/* Title of the alert shown when location may be limited by a device restriction the rider does not control. */
+"stop_page.proximity_alert.location_restricted.title" = "Lokalizacja jest niedostępna";
+
+/* Body of the alert asking the rider to widen location access from While Using to Always. %@ is the app name. */
+"stop_page.proximity_alert.location_when_in_use.message_fmt" = "Aplikacja %@ ma dostęp do lokalizacji tylko wtedy, gdy jest otwarta. Powiadomienia o zbliżaniu potrzebują go także w tle, aby działały z telefonem w kieszeni.";
+
+/* Title of the alert shown when the rider has granted location only While Using, which nearby alerts cannot work with. */
+"stop_page.proximity_alert.location_when_in_use.title" = "Zezwól na lokalizację zawsze";
+
+/* Stop Location menu action that takes down the approach notification already set on this stop. */
+"stop_page.proximity_alert.menu.cancel" = "Anuluj powiadomienie o zbliżaniu";
+
+/* Stop Location menu action that sets a notification for when the rider approaches this stop. */
+"stop_page.proximity_alert.menu.set" = "Powiadom mnie w pobliżu";
+
+/* Body of the alert shown when notifications are denied. %@ is the app name. */
+"stop_page.proximity_alert.notifications_denied.message_fmt" = "Powiadomienia o zbliżaniu przychodzą jako powiadomienia systemowe. Zezwól na nie dla aplikacji %@ w Ustawieniach.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but notifications are denied in Settings. */
+"stop_page.proximity_alert.notifications_denied.title" = "Powiadomienia są wyłączone";
+
+/* Button that opens the system Settings app so the rider can grant what a nearby alert needs. */
+"stop_page.proximity_alert.open_settings" = "Otwórz Ustawienia";
+
+/* Body of the alert shown when the app is already monitoring every region iOS allows. %1$@ is the app name and %2$d is the number of regions. */
+"stop_page.proximity_alert.region_limit.message_fmt" = "iOS pozwala aplikacji %1$@ obserwować %2$d miejsc naraz. Anuluj jedno, aby dodać kolejne.";
+
+/* Title of the alert shown when iOS will not monitor another region because the app is already at its limit. */
+"stop_page.proximity_alert.region_limit.title" = "Zbyt wiele powiadomień";
+
+/* Toast confirming the rider's nearby alert for this stop was taken down. */
+"stop_page.proximity_alert.toast.cancelled" = "Powiadomienie o zbliżaniu anulowane";
+
+/* Toast confirming a nearby alert was set. %@ is the name of the stop. */
+"stop_page.proximity_alert.toast.set_fmt" = "Damy znać, gdy będziesz blisko: %@";
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "alarm ustawiony";
 
@@ -1661,10 +1732,16 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "Czas spaceru do przystanku";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "Czas dojazdu rowerem do przystanku";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. Potrzeba%2$@ spacerem, przyjazd o %3$@";
 
-/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. Potrzeba %2$@ rowerem, przyjazd o %3$@";
+
+/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: przyjedzie %3$@";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
@@ -1854,6 +1931,12 @@
 "trip_page.card.a11y_fmt" = "Linia %1$@ do %2$@, przyjazd za %3$d minut, %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "Linia %1$@ do %2$@";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "Dojeżdża do Twojego przystanku";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "jeszcze %1$@, przystanki: %2$d";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "jeszcze %1$@ · przystanki: %2$d";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Nie udało się wysłać zgłoszenia, ponieważ usługa zgłoszeń jest teraz niedostępna. Spróbuj ponownie później.";
 /* Trip page button that starts a Live Activity for this trip. */
@@ -1866,6 +1949,8 @@
 "trip_page.remove_alarm" = "Usuń alarm";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Zgłoś autobus widmo";
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "Pokaż na mapie";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "już minięty";
 /* VoiceOver clause on the final stop of the trip. */

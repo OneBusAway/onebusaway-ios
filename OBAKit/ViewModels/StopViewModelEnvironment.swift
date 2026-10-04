@@ -35,6 +35,15 @@ protocol StopViewModelEnvironment: AnyObject {
     func recordRecentStop(_ stop: Stop, region: Region)
     var defaultAlarmLeadTimeMinutes: Int { get }
     var walkingSpeedMetersPerSecond: CLLocationSpeed { get }
+    /// The user's cycling speed, independent of whether Bike Mode is enabled —
+    /// the header's bike chip is always shown regardless of mode.
+    var bikeSpeedMetersPerSecond: CLLocationSpeed { get }
+    /// `userDataStore.effectiveTravelVelocityMetersPerSecond` — walking speed, or
+    /// cycling speed when Bike Mode is enabled. Drives the mode-aware split.
+    var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { get }
+    /// Whether the mode-aware split above is currently reading bike speed —
+    /// drives the "walk" vs. "bike" wording on the chronological divider.
+    var bikeModeEnabled: Bool { get }
 
     // MARK: - Stop preferences (individual operations, not the full StopPreferencesStore)
 
@@ -64,6 +73,13 @@ protocol StopViewModelEnvironment: AnyObject {
     var obacoFeatureStatus: Application.FeatureStatus { get }
     /// `features.push`
     var pushFeatureStatus: Application.FeatureStatus { get }
+
+    /// `proximityAlertManager.activeAlert(for:)` — the unexpired destination
+    /// alert set on this stop, or `nil`. A scalar extraction, like the four
+    /// above, rather than the manager itself: the page reads one alert for one
+    /// stop, and taking the manager would hand every stub a collaborator to
+    /// build and the protocol a concrete `OBAKit` service type.
+    func activeProximityAlert(for stopID: StopID) -> ProximityAlert?
 
     /// Counts successful real-time stop views toward the feedback prompt.
     var reviewPromptPolicy: ReviewPromptPolicy { get }
@@ -95,6 +111,9 @@ extension Application: StopViewModelEnvironment {
     func recordRecentStop(_ stop: Stop, region: Region) { userDataStore.addRecentStop(stop, region: region) }
     var defaultAlarmLeadTimeMinutes: Int { userDataStore.defaultAlarmLeadTimeMinutes }
     var walkingSpeedMetersPerSecond: CLLocationSpeed { userDataStore.walkingSpeedMetersPerSecond }
+    var bikeSpeedMetersPerSecond: CLLocationSpeed { userDataStore.bikeSpeedMetersPerSecond }
+    var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { userDataStore.effectiveTravelVelocityMetersPerSecond }
+    var bikeModeEnabled: Bool { userDataStore.bikeModeEnabled }
 
     func stopPreferences(stopID: StopID, region: Region) -> StopPreferences {
         stopPreferencesDataStore.preferences(stopID: stopID, region: region)
@@ -118,6 +137,10 @@ extension Application: StopViewModelEnvironment {
 
     var obacoFeatureStatus: Application.FeatureStatus { features.obaco }
     var pushFeatureStatus: Application.FeatureStatus { features.push }
+
+    func activeProximityAlert(for stopID: StopID) -> ProximityAlert? {
+        proximityAlertManager.activeAlert(for: stopID)
+    }
 
     func noteStopLoadFailed() { promptCoordinator.sawErrorThisSession = true }
 }
@@ -147,6 +170,9 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     func recordRecentStop(_ stop: Stop, region: Region) {}
     var defaultAlarmLeadTimeMinutes: Int { 2 }
     var walkingSpeedMetersPerSecond: CLLocationSpeed { 1.4 }
+    var bikeSpeedMetersPerSecond: CLLocationSpeed { 4.2 }
+    var effectiveTravelVelocityMetersPerSecond: CLLocationSpeed { 1.4 }
+    var bikeModeEnabled: Bool { false }
 
     func stopPreferences(stopID: StopID, region: Region) -> StopPreferences { .init() }
     func setStopPreferences(_ prefs: StopPreferences, stop: Stop, region: Region) {}
@@ -163,6 +189,8 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     var shouldRequestDonations: Bool { false }
     var obacoFeatureStatus: Application.FeatureStatus { .off }
     var pushFeatureStatus: Application.FeatureStatus { .off }
+
+    func activeProximityAlert(for stopID: StopID) -> ProximityAlert? { nil }
 
     lazy var reviewPromptPolicy = ReviewPromptPolicy(
         userDefaults: UserDefaults(suiteName: "StopViewModelPreview")!

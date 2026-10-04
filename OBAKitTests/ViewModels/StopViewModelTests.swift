@@ -44,6 +44,10 @@ final class StopViewModelTests: OBATestCase {
     private func createApplication(
         dataLoader: MockDataLoader,
         analytics: AnalyticsMock,
+        locationManager: LocationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        ),
         surveyHitCounter: SurveyHitCounter? = nil,
         arrivalsFixture: String = "arrivals_and_departures_empty.json",
         arrivalsData: Data? = nil,
@@ -74,11 +78,7 @@ final class StopViewModelTests: OBATestCase {
             stubSurveys(dataLoader: dataLoader)
         }
 
-        let locManager = MockAuthorizedLocationManager(
-            updateLocation: TestData.mockSeattleLocation,
-            updateHeading: TestData.mockHeading
-        )
-        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locationManager)
         locationService.startUpdates()
 
         let config = AppConfig(
@@ -131,6 +131,15 @@ final class StopViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: Data("null".utf8))
         let viewModel = StopViewModel(application: app, stopID: testStopID, bookmarkContext: bookmarkContext)
         return (viewModel, app)
+    }
+
+    /// A minimal `Stop`, decoded rather than constructed: `Stop` has no public
+    /// memberwise initializer, and both the preferences setter and
+    /// `ProximityAlert` take the real model.
+    private func makeStop(id: StopID, routeIDs: [String] = ["1_R1"]) throws -> Stop {
+        let routes = routeIDs.map { "\"\($0)\"" }.joined(separator: ",")
+        let json = #"{"id":"\#(id)","code":"TEST","name":"Test Stop","lat":47.6,"lon":-122.3,"locationType":0,"routeIds":[\#(routes)],"direction":""}"#
+        return try JSONDecoder().decode(Stop.self, from: Data(json.utf8))
     }
 
     /// Hides every route present in `arrivals_and_departures_for_stop_1_10020.json`
@@ -249,6 +258,100 @@ final class StopViewModelTests: OBATestCase {
         #expect(analytics.lastReportedStopID == testStopID)
     }
 
+    // MARK: - Analytics distance bucket (#1466)
+
+    private let stopLocation = CLLocation(latitude: TestData.seattleCoordinate.latitude, longitude: TestData.seattleCoordinate.longitude)
+
+    private func userLocation(_ coordinate: CLLocationCoordinate2D = TestData.seattleCoordinate, accuracy: CLLocationAccuracy) -> CLLocation {
+        CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: accuracy, verticalAccuracy: 10, timestamp: Date())
+    }
+
+    @Test @MainActor
+    func `No location reports the unknown distance bucket`() {
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: nil, stopLocation: stopLocation) == "User Distance: UNKNOWN")
+    }
+
+    /// A negative `horizontalAccuracy` means the fix is invalid, so even a fix
+    /// sitting on the stop must not count as near it.
+    @Test @MainActor
+    func `Fix without valid accuracy reports the unknown distance bucket`() {
+        let location = userLocation(accuracy: -1)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: UNKNOWN")
+    }
+
+    /// Only a negative accuracy is invalid on CLLocation, so 0 is a valid fix.
+    /// Android differs here and sends 0 to UNKNOWN.
+    @Test @MainActor
+    func `Fix with zero accuracy is bucketed by distance`() {
+        let location = userLocation(accuracy: 0)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: 00000-00050m")
+    }
+
+    @Test @MainActor
+    func `Fix at the accuracy threshold reports the unknown distance bucket`() {
+        let location = userLocation(accuracy: 50)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: UNKNOWN")
+    }
+
+    @Test @MainActor
+    func `Fix just under the accuracy threshold is bucketed by distance`() {
+        let location = userLocation(accuracy: 49.9)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: 00000-00050m")
+    }
+
+    /// `03200-INFINITY` now means only a measured distance past 3200 m.
+    @Test @MainActor
+    func `Accurate far fix reports the farthest distance bucket`() {
+        let location = userLocation(TestData.tampaCoordinate, accuracy: 10)
+        #expect(StopViewModel.analyticsDistanceBucket(userLocation: location, stopLocation: stopLocation) == "User Distance: 03200-INFINITY")
+    }
+
+    /// The stop view itself carries the bucket computed from the app's current fix.
+    /// The mock location service reports a 10 m fix about 2.8 km from the fixture's
+    /// stop at (47.6, -122.3), so it is measured, not unknown.
+    @Test @MainActor
+    func `Stop view reports a measured distance bucket`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.lastReportedStopDistance == "User Distance: 01600-03200m")
+    }
+
+    /// `LocationManagerMock` is never authorized, so the app has no fix at all.
+    @Test @MainActor
+    func `Stop view reports unknown distance when location is missing`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics, locationManager: LocationManagerMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.stopViewedCount == 1)
+        #expect(analytics.lastReportedStopDistance == "User Distance: UNKNOWN")
+    }
+
+    @Test @MainActor
+    func `Stop view reports unknown distance for an inaccurate location`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let analytics = AnalyticsMock()
+        let locationManager = MockAuthorizedLocationManager(
+            updateLocation: userLocation(accuracy: 50),
+            updateHeading: TestData.mockHeading
+        )
+        let app = createApplication(dataLoader: dataLoader, analytics: analytics, locationManager: locationManager)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        #expect(analytics.stopViewedCount == 1)
+        #expect(analytics.lastReportedStopDistance == "User Distance: UNKNOWN")
+    }
+
     // MARK: - Recents recorded once (issue #1)
 
     /// `addRecentStop` is one-shot per VM lifetime — multiple successful refreshes must not
@@ -308,9 +411,7 @@ final class StopViewModelTests: OBATestCase {
         let region = try #require(app.currentRegion)
 
         // The fixture's stop serves a single route, "1_R1". Pre-hide it.
-        // We need a `Stop` object to call the data-store setter; build a minimal one from JSON.
-        let stopJSON = #"{"id":"1_TEST","code":"TEST","name":"Test Stop","lat":47.6,"lon":-122.3,"locationType":0,"routeIds":["1_R1"],"direction":""}"#
-        let stub = try JSONDecoder().decode(Stop.self, from: stopJSON.data(using: .utf8)!)
+        let stub = try makeStop(id: testStopID)
         var prefs = StopPreferences()
         prefs.hiddenRoutes = ["1_R1"]
         app.stopPreferencesDataStore.set(stopPreferences: prefs, stop: stub, region: region)
@@ -949,29 +1050,124 @@ final class StopViewModelTests: OBATestCase {
         #expect(!app.userDataStore.alarms.isEmpty)
     }
 
-    // MARK: - Live Activity Toast
+    // MARK: - Transient Toast
 
-    /// The toast's own contract: the flag goes up on demand, and a second signal
+    /// The toast's own contract: the text goes up on demand, and a second signal
     /// arriving inside the first one's window leaves it up rather than inheriting
     /// that window's imminent dismissal.
     ///
-    /// The race the `Task.checkCancellation()` in `signalLiveActivityStarted`
-    /// closes is not reachable from here. It needs `cancel()` to land after the
-    /// sleep has already resumed but before its continuation runs — a window the
-    /// scheduler owns, with no seam to force it from a test. Same limitation
+    /// The race the `Task.checkCancellation()` in `signalToast(_:)` closes is not
+    /// reachable from here. It needs `cancel()` to land after the sleep has
+    /// already resumed but before its continuation runs — a window the scheduler
+    /// owns, with no seam to force it from a test. Same limitation
     /// `ProximityAlertTests` documents for the 24-hour expiry boundary.
     @Test @MainActor
-    func `Signalling a Live Activity raises the toast and a second signal keeps it up`() {
+    func `Signalling a toast raises it and a second signal keeps it up`() {
         let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
 
-        #expect(!viewModel.liveActivityStarted)
+        #expect(viewModel.transientToast == nil)
 
-        viewModel.signalLiveActivityStarted()
-        #expect(viewModel.liveActivityStarted)
+        viewModel.signalToast("Tracking on Lock Screen")
+        #expect(viewModel.transientToast == "Tracking on Lock Screen")
 
         // The duplicate-Track path signals again; the rider must still see a toast.
-        viewModel.signalLiveActivityStarted()
-        #expect(viewModel.liveActivityStarted)
+        viewModel.signalToast("Tracking on Lock Screen")
+        #expect(viewModel.transientToast == "Tracking on Lock Screen")
+    }
+
+    /// The generalisation's own contract: the toast carries a message, so a
+    /// second occasion inside the first one's window shows *its* words rather
+    /// than leaving the earlier confirmation on screen.
+    @Test @MainActor
+    func `A second toast replaces the first one's text`() {
+        let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+
+        viewModel.signalToast("Tracking on Lock Screen")
+        viewModel.signalToast("Nearby alert cancelled")
+
+        #expect(viewModel.transientToast == "Nearby alert cancelled")
+    }
+
+    // MARK: - Proximity Alert
+
+    @Test @MainActor
+    func `A stop with no proximity alert exposes none`() {
+        let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+        #expect(viewModel.proximityAlert == nil)
+    }
+
+    /// An alert set before this page opened has to be visible from the first
+    /// draw, or the menu offers to set a second one on the same stop.
+    @Test @MainActor
+    func `An alert set before the page opened is picked up at construction`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let alert = ProximityAlert(stop: try makeStop(id: testStopID))
+        app.userDataStore.add(proximityAlert: alert)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        #expect(viewModel.proximityAlert?.id == alert.id)
+    }
+
+    /// The store is app-wide and anything can mutate it — including a geofence
+    /// firing in the background and cancelling its own one-shot alert — so the
+    /// page tracks the notification rather than only its own writes.
+    @Test @MainActor
+    func `An alert added while the page is open appears and then clears`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        #expect(viewModel.proximityAlert == nil)
+
+        let alert = ProximityAlert(stop: try makeStop(id: testStopID))
+        app.userDataStore.add(proximityAlert: alert)
+
+        // `.proximityAlertsDidChange` fans out through `receive(on: main)`, so
+        // give the runloop a few hops to deliver — same as the filter test above.
+        for _ in 0..<5 { await Task.yield() }
+        #expect(viewModel.proximityAlert?.id == alert.id)
+
+        app.userDataStore.delete(proximityAlert: alert)
+
+        for _ in 0..<5 { await Task.yield() }
+        #expect(viewModel.proximityAlert == nil)
+    }
+
+    /// Another stop's alert must not light up this page's menu item.
+    @Test @MainActor
+    func `An alert on a different stop is ignored`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        app.userDataStore.add(proximityAlert: ProximityAlert(stop: try makeStop(id: "1_SOMEWHERE_ELSE")))
+
+        for _ in 0..<5 { await Task.yield() }
+        #expect(viewModel.proximityAlert == nil)
+    }
+
+    /// An alert set for a trip that ended a day ago must never reach the menu,
+    /// which is what lets the item fall back to "Alert Me" without this class
+    /// running a timer of its own.
+    ///
+    /// Two mechanisms produce that outcome and this pins the outcome rather than
+    /// which one ran: `activeAlert(for:)` filters expired alerts, and the
+    /// manager's reconciliation — which the store's change notification triggers
+    /// — reaps them outright.
+    @Test @MainActor
+    func `An expired alert never reaches the page`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+        let expired = ProximityAlert(
+            stop: try makeStop(id: testStopID),
+            createdAt: Date(timeIntervalSinceNow: -(ProximityAlert.expirationInterval + 60))
+        )
+        app.userDataStore.add(proximityAlert: expired)
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        #expect(viewModel.proximityAlert == nil)
     }
 
     // MARK: - Review prompt success recording
@@ -1153,5 +1349,101 @@ final class StopViewModelTests: OBATestCase {
 
         let message = try #require(viewModel.operationErrorMessage)
         #expect(!message.contains("404"))
+    }
+
+    // MARK: - Stop Page: Walk/Bike Time
+
+    /// `headerWalkTime` and `headerBikeTime` must stay fixed at their respective speeds
+    /// regardless of Bike Mode, while the mode-aware `walkTime` is the one that switches —
+    /// the contract the header chips and the chronological split each depend on.
+    @Test @MainActor
+    func `Header walk and bike time stay fixed across Bike Mode while the mode-aware value switches`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        app.userDataStore.bikeModeEnabled = false
+        let headerWalkBefore = try #require(viewModel.headerWalkTime)
+        let headerBikeBefore = try #require(viewModel.headerBikeTime)
+
+        // Cycling speed is faster than walking speed, so the bike estimate must be shorter.
+        #expect(headerBikeBefore.walkMinutes < headerWalkBefore.walkMinutes)
+        // Bike Mode off: the mode-aware value tracks the walking speed.
+        #expect(viewModel.walkTime == headerWalkBefore)
+
+        app.userDataStore.bikeModeEnabled = true
+
+        // The header chips must not move when Bike Mode toggles...
+        #expect(viewModel.headerWalkTime == headerWalkBefore)
+        #expect(viewModel.headerBikeTime == headerBikeBefore)
+        // ...but the mode-aware value now tracks the cycling speed instead.
+        #expect(viewModel.walkTime == headerBikeBefore)
+    }
+
+    /// A Bike Mode toggle made in Settings — not through this view model — must
+    /// still refresh the stop page immediately, or the header chips and the
+    /// chronological divider would show stale minutes until the next periodic
+    /// poll. Mirrors `Arrival departure filter syncs from an external Settings
+    /// change` above: `syncBikeStateFromDefaults` shares that test's subscription
+    /// (#1273) rather than a second one.
+    @Test @MainActor
+    func `Bike Mode toggle from an external Settings change emits objectWillChange`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        var emissions = 0
+        let cancellable = viewModel.objectWillChange.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        // `refresh()` above has its own async side effects (e.g. recording this
+        // stop as recently viewed) that can still be landing on the main queue
+        // here, each a legitimate `objectWillChange` in its own right. Let that
+        // settle before measuring, so the assertion below isolates this write's
+        // effect from that unrelated background noise, not just its raw count.
+        for _ in 0..<5 { await Task.yield() }
+        let baseline = emissions
+
+        // Settings' write path.
+        app.userDataStore.bikeModeEnabled = true
+
+        // `UserDefaults.didChangeNotification` fan-out is `receive(on: main)`,
+        // so give the runloop a few hops to deliver.
+        for _ in 0..<5 { await Task.yield() }
+
+        #expect(emissions > baseline)
+    }
+
+    /// The no-op guard on the same path: re-persisting an unchanged bike setting
+    /// must not emit beyond baseline — pins `syncBikeStateFromDefaults`'s
+    /// `current != lastBikeState` check so a rider isn't paying a re-render on
+    /// every unrelated Settings write.
+    @Test @MainActor
+    func `Unrelated Settings write does not emit a bike state refresh`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
+
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+        await viewModel.refresh()
+
+        var emissions = 0
+        let cancellable = viewModel.objectWillChange.sink { emissions += 1 }
+        defer { cancellable.cancel() }
+
+        // See the sibling test above for why this settles against a baseline
+        // rather than an absolute count.
+        for _ in 0..<5 { await Task.yield() }
+        let baseline = emissions
+
+        // Re-writing the already-current value: nothing bike-related actually changed.
+        app.userDataStore.bikeModeEnabled = app.userDataStore.bikeModeEnabled
+
+        for _ in 0..<5 { await Task.yield() }
+
+        #expect(emissions == baseline)
     }
 }

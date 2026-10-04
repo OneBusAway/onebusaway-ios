@@ -22,6 +22,8 @@ import UIKit
 extension MapViewController {
 
     func showTripPlannerMapView() {
+        isShowingTripPlannerMap = true
+
         tripPlannerMapView.mapType = mapRegionManager.mapView.mapType
 
         tripPlannerMapView.isHidden = false
@@ -35,6 +37,8 @@ extension MapViewController {
     }
 
     func hideTripPlannerMapView() {
+        isShowingTripPlannerMap = false
+
         mapRegionManager.mapView.mapType = tripPlannerMapView.mapType
         mapRegionManager.mapView.region = tripPlannerMapView.region
 
@@ -83,6 +87,14 @@ extension MapViewController {
         )
 
         let mapViewProvider = MKMapViewAdapter(mapView: tripPlannerMapView)
+
+        let mapDelegate = TripPlannerMapDelegate(
+            forwardingTo: mapViewProvider,
+            locationService: application.locationService,
+            showsHeading: mapRegionManager.mapViewShowsHeading
+        )
+        mapDelegate.attach(to: tripPlannerMapView)
+        tripPlannerMapDelegate = mapDelegate
 
         let tripPlanner = TripPlanner(
             otpConfig: config,
@@ -153,6 +165,7 @@ extension MapViewController {
         self.semiModalTripPlannerController = nil
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
+        self.tripPlannerMapDelegate = nil
         hideTripPlannerMapView()
 
         unsubscribeFromTripPlannerNotifications()

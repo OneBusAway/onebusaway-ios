@@ -433,6 +433,9 @@
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "Ces données peuvent être obsolètes.";
 
+/* Error shown when a location request is made without authorization */
+"location_service.error.not_authorized" = "L'accès à la position n'est pas autorisé.";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "MAINT.";
 

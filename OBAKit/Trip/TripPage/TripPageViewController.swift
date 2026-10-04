@@ -66,6 +66,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         super.init(rootView: TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
+            formatters: application.formatters,
             originTitle: originTitle,
             actions: TripPageActions()
         ))
@@ -155,6 +156,12 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// and with `nil` when it leaves the stack.
     var onMapFocusChanged: ((TripMapFocus?) -> Void)?
 
+    /// Set by a host whose map is behind this page: brings that map, already focused on the
+    /// trip, into view. `nil` keeps the Show on Map button off the page.
+    var onShowMap: (() -> Void)? {
+        didSet { render() }
+    }
+
     private func publishMapFocus(
         convertible: TripConvertible,
         details: TripDetails?,
@@ -201,6 +208,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
+            formatters: application.formatters,
             originTitle: originTitle,
             actions: makeActions(),
             backBehavior: backBehavior,
@@ -267,6 +275,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
         actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
+        actions.onShowMap = onShowMap
 
         return actions
     }

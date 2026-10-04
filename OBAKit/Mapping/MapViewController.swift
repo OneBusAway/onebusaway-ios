@@ -289,7 +289,7 @@ class MapViewController: UIViewController,
         } else {
             let surveyVC = SurveyViewController(survey: survey, surveyService: application.surveyService)
             let navigation = UINavigationController(rootViewController: surveyVC)
-            present(navigation, animated: true)
+            topmostPresentedController.present(navigation, animated: true)
             dismissMapSurveyCard()
         }
     }
@@ -318,7 +318,7 @@ class MapViewController: UIViewController,
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        present(alert, animated: true)
+        topmostPresentedController.present(alert, animated: true)
     }
 
     // MARK: - User Location
@@ -331,10 +331,12 @@ class MapViewController: UIViewController,
 
     func centerMapOnUserLocation() {
         guard isLoadedAndOnScreen else { return }
-        let userLocation = mapRegionManager.mapView.userLocation
+
+        let mapView = visibleMapView
+        let userLocation = mapView.userLocation
         guard userLocation.isValid else { return }
 
-        mapRegionManager.mapView.setCenterCoordinate(
+        mapView.setCenterCoordinate(
             centerCoordinate: userLocation.coordinate,
             zoomLevel: viewModel.zoomLevelForCurrentLocation(),
             animated: true
@@ -404,7 +406,7 @@ class MapViewController: UIViewController,
             // We shouldn't hit this state, but if we do, that's OK.
             alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
         }
-        self.present(alert, animated: true)
+        topmostPresentedController.present(alert, animated: true)
     }
 
     private lazy var locationButton: UIButton = {
@@ -430,7 +432,7 @@ class MapViewController: UIViewController,
     }()
 
     @objc private func showCurrentTrip() {
-        application.viewRouter.navigateToCurrentTrip(from: self)
+        application.viewRouter.navigateToCurrentTrip(from: topmostPresentedController)
     }
 
     // MARK: - Weather
@@ -481,7 +483,7 @@ class MapViewController: UIViewController,
         host.modalPresentationStyle = .overFullScreen
         host.modalTransitionStyle = .crossDissolve
         host.view.backgroundColor = .clear
-        present(host, animated: true)
+        topmostPresentedController.present(host, animated: true)
     }
 
     private var weatherDisplay: WeatherDisplay? {
@@ -525,6 +527,7 @@ class MapViewController: UIViewController,
 
     var tripPlanner: TripPlanner?
     var tripPlannerHostingController: UIViewController?
+    var tripPlannerMapDelegate: TripPlannerMapDelegate?
 
     lazy var tripPlannerMapView: MKMapView = {
         let mapView = MKMapView.autolayoutNew()
@@ -533,6 +536,23 @@ class MapViewController: UIViewController,
         mapView.pinToSuperview(.edges)
         return mapView
     }()
+
+    /// True while `tripPlannerMapView` is the map on screen. Set by
+    /// `showTripPlannerMapView()` and `hideTripPlannerMapView()`, which live in
+    /// `MapViewController+TripPlanner.swift` — hence internal, not `private(set)`.
+    var isShowingTripPlannerMap = false
+
+    /// The map the rider is actually looking at. `tripPlannerMapView` stands in for
+    /// the main map for the duration of route mode, so anything that moves or reads
+    /// "the map" has to ask which of the two is on screen. See #1441.
+    ///
+    /// Keyed on `isShowingTripPlannerMap` rather than on either map's `isHidden`:
+    /// `tripPlannerMapView` is lazy and starts life with `isHidden == false`, so an
+    /// `isHidden` test would name the wrong map until the first planned trip ends,
+    /// and would build the map merely to ask the question.
+    var visibleMapView: MKMapView {
+        isShowingTripPlannerMap ? tripPlannerMapView : mapRegionManager.mapView
+    }
 
     // MARK: - Map Type
     public lazy var toggleMapTypeButton: UIButton = {
@@ -783,7 +803,7 @@ class MapViewController: UIViewController,
     /// rider pops out. Suppression rather than `end()` — the stop sheet
     /// underneath is still presented.
     private func wireTripFocus(for tripPage: TripPageViewController) {
-        tripPage.onMapFocusChanged = { [weak self] tripFocus in
+        tripPage.onMapFocusChanged = { [weak self, weak tripPage] tripFocus in
             guard let self else { return }
 
             // Gated on the layer's own Map-sheet toggle, for the same reason
@@ -803,6 +823,12 @@ class MapViewController: UIViewController,
                 // animating up at this point.
                 tripLayer.cameraInsets = { [weak self] in self?.sheetCameraInsets() ?? .zero }
                 tripLayer.begin(focus: tripFocus)
+
+                // Offered only while the layer is drawing the trip; with it off,
+                // lowering the sheet would reveal a map that doesn't show it.
+                // The route was framed above the `.half` sheet, so it stays in
+                // view as the sheet drops below it.
+                tripPage?.onShowMap = { [weak self] in self?.stopSheet.collapseToTip() }
             } else {
                 tripLayer.end()
             }
@@ -1078,7 +1104,7 @@ class MapViewController: UIViewController,
             floatingPanel.move(to: .half, animated: true)
 
             if !floatingPanel.userHasSeenFullSheetVoiceoverChange {
-                self.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
+                topmostPresentedController.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
                 floatingPanel.userHasSeenFullSheetVoiceoverChange = true
             }
         }
@@ -1220,6 +1246,11 @@ class MapViewController: UIViewController,
             return
         }
 
+        if let cluster = view.annotation as? MKClusterAnnotation, StopCluster.isStopCluster(cluster) {
+            selectStopCluster(cluster, view: view, in: mapView)
+            return
+        }
+
         if let region = view.annotation as? Region {
             let title = OBALoc("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
             let messageFmt = OBALoc("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")
@@ -1230,7 +1261,7 @@ class MapViewController: UIViewController,
                 self.application.regionsService.currentRegion = region
             }))
 
-            present(alert, animated: true) {
+            topmostPresentedController.present(alert, animated: true) {
                 mapView.deselectAnnotation(view.annotation, animated: true)
             }
         } else if !view.canShowCallout, let stop = selectableStop(for: view.annotation) {
@@ -1300,7 +1331,7 @@ class MapViewController: UIViewController,
     public func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            await AlertPresenter.show(errorMessage: OBALoc("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: self)
+            await AlertPresenter.show(errorMessage: OBALoc("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: topmostPresentedController)
         }
     }
 
@@ -1309,7 +1340,7 @@ class MapViewController: UIViewController,
             guard let self else { return }
             let searchResults = SearchResultsController(searchResponse: response, application: application, delegate: self)
             let nav = UINavigationController(rootViewController: searchResults)
-            application.viewRouter.present(nav, from: self, isModal: true)
+            application.viewRouter.present(nav, from: topmostPresentedController, isModal: true)
         }
     }
 
@@ -1334,7 +1365,7 @@ class MapViewController: UIViewController,
                 }
                 else {
                     let msg = OBALoc("map_controller.vehicle_not_on_trip_error", value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.", comment: "This message appears when a searched-for vehicle doesn't have an assigned trip.")
-                    await AlertPresenter.show(errorMessage: msg, presentingController: self)
+                    await AlertPresenter.show(errorMessage: msg, presentingController: topmostPresentedController)
                 }
             default:
                 fatalError()

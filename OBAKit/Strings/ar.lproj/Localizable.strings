@@ -494,6 +494,9 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "إظهار توقعات الطقس";
 
+/* Title of the list shown when tapping a map pin that groups several stops at the same location. */
+"map_controller.stop_cluster_picker.title" = "اختر محطة";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "يبدو أن المركبة التي اخترتها ليست في رحلة حاليًا، لذا لا نعرف كيف نعرضها لك.";
 
@@ -1102,6 +1105,21 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "إظهار المغادرات";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "وضع الدراجة";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "يستخدم سرعة تنقّل أسرع لتقديرات وقت الوصول إلى الموقف ومواعيد الوصول وصفحة الموقف.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "وضع الدراجة";
+
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "استخدام بيانات تطبيق «صحتي»";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "تعذّرت مزامنة سرعة ركوب الدراجة من تطبيق «صحتي». سيتم استخدام سرعة قياسية للدراجة بدلًا من ذلك.";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "تحديث المناطق عند كل تشغيل";
 
@@ -1240,6 +1258,15 @@
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "الإشعارات متوقفة";
 
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "%d د بالدراجة — يمكنك اللحاق بما بالأسفل";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "المغادرات فوق هذه النقطة تغادر قبل أن تصل إلى الموقف بالدراجة خلال %d دقيقة";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "%d د بالدراجة";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "الآن";
 
@@ -1321,6 +1348,50 @@
 /* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.past_toggle_show_a11y_fmt" = "إظهار %d مغادرات سابقة";
 
+/* Body of the alert shown when location is denied for the app. %@ is the app name. */
+"stop_page.proximity_alert.location_denied.message_fmt" = "لتلقّي تنبيهات الاقتراب، اسمح بالموقع لتطبيق %@ من الإعدادات.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but location is denied for the app. */
+"stop_page.proximity_alert.location_denied.title" = "الموقع متوقف";
+
+/* Body of the alert shown when location access is restricted on the device. */
+"stop_page.proximity_alert.location_restricted.message" = "تحتاج تنبيهات الاقتراب إلى الوصول إلى الموقع، وقد يكون مقيّدًا بإعداد على هذا الجهاز.";
+
+/* Title of the alert shown when location may be limited by a device restriction the rider does not control. */
+"stop_page.proximity_alert.location_restricted.title" = "الموقع غير متاح";
+
+/* Body of the alert asking the rider to widen location access from While Using to Always. %@ is the app name. */
+"stop_page.proximity_alert.location_when_in_use.message_fmt" = "لا يصل %@ إلى الموقع إلا أثناء فتحه. تحتاج تنبيهات الاقتراب إلى الموقع في الخلفية أيضًا، لتعمل وهاتفك في جيبك.";
+
+/* Title of the alert shown when the rider has granted location only While Using, which nearby alerts cannot work with. */
+"stop_page.proximity_alert.location_when_in_use.title" = "السماح بالموقع دائمًا";
+
+/* Stop Location menu action that takes down the approach notification already set on this stop. */
+"stop_page.proximity_alert.menu.cancel" = "إلغاء تنبيه الاقتراب";
+
+/* Stop Location menu action that sets a notification for when the rider approaches this stop. */
+"stop_page.proximity_alert.menu.set" = "نبّهني عند الاقتراب";
+
+/* Body of the alert shown when notifications are denied. %@ is the app name. */
+"stop_page.proximity_alert.notifications_denied.message_fmt" = "تصل تنبيهات الاقتراب على شكل إشعارات. اسمح بها لتطبيق %@ من الإعدادات.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but notifications are denied in Settings. */
+"stop_page.proximity_alert.notifications_denied.title" = "الإشعارات متوقفة";
+
+/* Button that opens the system Settings app so the rider can grant what a nearby alert needs. */
+"stop_page.proximity_alert.open_settings" = "فتح الإعدادات";
+
+/* Body of the alert shown when the app is already monitoring every region iOS allows. %1$@ is the app name and %2$d is the number of regions. */
+"stop_page.proximity_alert.region_limit.message_fmt" = "يسمح iOS لتطبيق %1$@ بمراقبة %2$d مواقع في الوقت نفسه. ألغِ واحدًا لإضافة آخر.";
+
+/* Title of the alert shown when iOS will not monitor another region because the app is already at its limit. */
+"stop_page.proximity_alert.region_limit.title" = "تنبيهات كثيرة جدًا";
+
+/* Toast confirming the rider's nearby alert for this stop was taken down. */
+"stop_page.proximity_alert.toast.cancelled" = "تم إلغاء تنبيه الاقتراب";
+
+/* Toast confirming a nearby alert was set. %@ is the name of the stop. */
+"stop_page.proximity_alert.toast.set_fmt" = "سننبّهك عند اقترابك من %@";
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "تم ضبط تذكير";
 
@@ -1661,10 +1732,16 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "وقت المشي إلى الموقف";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "وقت الوصول إلى الموقف بالدراجة";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. يستغرق المشي %2$@، والوصول عند %3$@";
 
-/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. يستغرق ركوب الدراجة %2$@، والوصول عند %3$@";
+
+/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@، %2$@: الوصول عند %3$@";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
@@ -1854,6 +1931,12 @@
 "trip_page.card.a11y_fmt" = "الخط %1$@ إلى %2$@، تصل خلال %3$d دقائق، %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "الخط %1$@ إلى %2$@";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "يقترب من موقفك";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "على بُعد %1$@، على بُعد %2$d موقف";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "على بُعد %1$@ · %2$d موقف";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "تعذّر إرسال هذا البلاغ لأن خدمة الإبلاغ غير متاحة حاليًا. يُرجى المحاولة مرة أخرى لاحقًا.";
 /* Trip page button that starts a Live Activity for this trip. */
@@ -1866,6 +1949,8 @@
 "trip_page.remove_alarm" = "إزالة التذكير";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "الإبلاغ عن حافلة لم تأتِ";
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "عرض على الخريطة";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "تم تجاوزه بالفعل";
 /* VoiceOver clause on the final stop of the trip. */

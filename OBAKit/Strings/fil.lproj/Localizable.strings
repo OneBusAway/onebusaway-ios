@@ -494,6 +494,9 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "Ipakita ang Taya ng Panahon";
 
+/* Title of the list shown when tapping a map pin that groups several stops at the same location. */
+"map_controller.stop_cluster_picker.title" = "Pumili ng Hintuan";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "Mukhang wala sa biyahe ngayon ang sasakyang pinili mo, kaya hindi namin alam kung paano ito ipapakita sa iyo.";
 
@@ -1102,6 +1105,21 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Ipakita ang mga Pag-alis";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "Mode ng Bisikleta";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "Gumagamit ng mas mabilis na bilis ng paglalakbay para sa mga tantiya ng oras papunta sa hintuan, mga oras ng pagdating, at sa pahina ng Hintuan.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "Mode ng Bisikleta";
+
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Gamitin ang data ng Health app";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Hindi ma-sync ang bilis ng pagbibisikleta mula sa Health. Gagamit na lang ng karaniwang bilis ng bisikleta.";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "I-refresh ang mga rehiyon sa bawat paglunsad";
 
@@ -1240,6 +1258,15 @@
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "Naka-off ang Mga Notification";
 
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "%d MIN BISIKLETA — ABUTAN SA IBABA";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "Ang mga pag-alis sa itaas ng puntong ito ay aalis nang mas maaga kaysa sa %d minutong pagbibisikleta mo papunta sa hintuan";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "%d min bisikleta";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "NGAYON";
 
@@ -1321,6 +1348,50 @@
 /* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.past_toggle_show_a11y_fmt" = "Ipakita ang %d nakaraang pag-alis";
 
+/* Body of the alert shown when location is denied for the app. %@ is the app name. */
+"stop_page.proximity_alert.location_denied.message_fmt" = "Para makatanggap ng mga abiso kapag malapit, payagan ang lokasyon para sa %@ sa Settings.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but location is denied for the app. */
+"stop_page.proximity_alert.location_denied.title" = "Naka-off ang lokasyon";
+
+/* Body of the alert shown when location access is restricted on the device. */
+"stop_page.proximity_alert.location_restricted.message" = "Kailangan ng access sa lokasyon ang mga abiso kapag malapit, at maaaring limitado ito ng isang setting sa device na ito.";
+
+/* Title of the alert shown when location may be limited by a device restriction the rider does not control. */
+"stop_page.proximity_alert.location_restricted.title" = "Hindi available ang lokasyon";
+
+/* Body of the alert asking the rider to widen location access from While Using to Always. %@ is the app name. */
+"stop_page.proximity_alert.location_when_in_use.message_fmt" = "May access lang ang %@ sa lokasyon habang bukas ito. Kailangan din ng mga abiso kapag malapit ang lokasyon sa background, para gumana kahit nasa bulsa ang telepono mo.";
+
+/* Title of the alert shown when the rider has granted location only While Using, which nearby alerts cannot work with. */
+"stop_page.proximity_alert.location_when_in_use.title" = "Payagan ang lokasyon nang palagi";
+
+/* Stop Location menu action that takes down the approach notification already set on this stop. */
+"stop_page.proximity_alert.menu.cancel" = "Kanselahin ang abiso kapag malapit";
+
+/* Stop Location menu action that sets a notification for when the rider approaches this stop. */
+"stop_page.proximity_alert.menu.set" = "Abisuhan ako kapag malapit na";
+
+/* Body of the alert shown when notifications are denied. %@ is the app name. */
+"stop_page.proximity_alert.notifications_denied.message_fmt" = "Dumarating ang mga abiso kapag malapit bilang notification. Payagan ang mga ito para sa %@ sa Settings.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but notifications are denied in Settings. */
+"stop_page.proximity_alert.notifications_denied.title" = "Naka-off ang mga notification";
+
+/* Button that opens the system Settings app so the rider can grant what a nearby alert needs. */
+"stop_page.proximity_alert.open_settings" = "Buksan ang Settings";
+
+/* Body of the alert shown when the app is already monitoring every region iOS allows. %1$@ is the app name and %2$d is the number of regions. */
+"stop_page.proximity_alert.region_limit.message_fmt" = "Pinapayagan ng iOS ang %1$@ na magbantay ng %2$d na lugar nang sabay. Kanselahin ang isa para makadagdag ng iba.";
+
+/* Title of the alert shown when iOS will not monitor another region because the app is already at its limit. */
+"stop_page.proximity_alert.region_limit.title" = "Masyadong maraming abiso";
+
+/* Toast confirming the rider's nearby alert for this stop was taken down. */
+"stop_page.proximity_alert.toast.cancelled" = "Kinansela ang abiso kapag malapit";
+
+/* Toast confirming a nearby alert was set. %@ is the name of the stop. */
+"stop_page.proximity_alert.toast.set_fmt" = "Aabisuhan ka namin kapag malapit ka na sa %@";
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "may nakatakdang paalala";
 
@@ -1661,10 +1732,16 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "Oras ng paglalakad papunta sa hintuan";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "Oras ng pagbibisikleta papunta sa hintuan";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. Aabutin ng %2$@ ang paglalakad, darating sa %3$@";
 
-/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. Aabutin ng %2$@ ang pagbibisikleta, darating sa %3$@";
+
+/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: darating sa %3$@";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
@@ -1854,6 +1931,12 @@
 "trip_page.card.a11y_fmt" = "Ruta %1$@ papuntang %2$@, darating sa loob ng %3$d minuto, %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "Ruta %1$@ papuntang %2$@";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "Paparating na sa hintuan mo";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "%1$@ ang layo, %2$d na hintuan ang layo";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "%1$@ ang layo · %2$d na hintuan";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Hindi maisumite ang ulat na ito dahil hindi available ngayon ang serbisyo ng pag-uulat. Pakisubukang muli mamaya.";
 /* Trip page button that starts a Live Activity for this trip. */
@@ -1866,6 +1949,8 @@
 "trip_page.remove_alarm" = "Alisin ang paalala";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Mag-ulat ng Ghost Bus";
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "Ipakita sa Mapa";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "nadaanan na";
 /* VoiceOver clause on the final stop of the trip. */

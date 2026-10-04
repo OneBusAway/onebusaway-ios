@@ -15,7 +15,10 @@ platform :ios do
     # Generate the Xcode project via XcodeGen (required before any build).
     # Run from the project root so the script can find Apps/OneBusAway/project.yml.
     Dir.chdir("..") do
-      sh("scripts/generate_project", "OneBusAway")
+      # --no-watch until the watch app has a hardware pass and App Store Connect
+      # identifiers (see docs/superpowers/specs/2026-09-22-watchos-mvp-app-design.md,
+      # Decisions). Without it every TestFlight build would embed the watch app.
+      sh("scripts/generate_project", "OneBusAway", "--no-watch")
     end
 
     # Use the GitHub Actions run number as the build number to ensure

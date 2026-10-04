@@ -17,11 +17,13 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     private let successBody = #"{"cache":"x","sessionId":"s","visitId":"v"}"#.data(using: .utf8)!
     private let beepBoopBody = #"{"beep":"boop"}"#.data(using: .utf8)!
+    private let testInstallID = "test-install-id"
 
-    private func makeReporter(loader: MockDataLoader) -> UmamiAnalytics {
+    private func makeReporter(loader: MockDataLoader, installID: String? = nil) -> UmamiAnalytics {
         UmamiAnalytics(serverURL: URL(string: "https://analytics.example.com")!,
                        websiteID: "site-uuid",
                        hostname: "api.example.org",
+                       installID: installID ?? testInstallID,
                        dataLoader: loader)
     }
 
@@ -84,6 +86,7 @@ final class UmamiAnalyticsTests: OBATestCase {
         #expect((payload["hostname"] as? String) == "api.example.org")
         #expect((payload["url"] as? String) == "/stop")
         #expect(payload["name"] == nil)  // pageview → no name
+        #expect((payload["id"] as? String) == testInstallID)
         let data = payload["data"] as! [String: Any]
         #expect((data["id"] as? String) == "1_75403")
         #expect((data["distance"] as? String) == "near")
@@ -107,6 +110,7 @@ final class UmamiAnalyticsTests: OBATestCase {
         let payload = body["payload"] as! [String: Any]
         #expect((payload["name"] as? String) == "Clicked MapStopIcon")
         #expect((payload["url"] as? String) == "/map")
+        #expect((payload["id"] as? String) == testInstallID)
     }
 
     // MARK: - Fail-safe
@@ -128,5 +132,67 @@ final class UmamiAnalyticsTests: OBATestCase {
         // Should complete normally despite the dropped-event response.
         await reporter.reportSearchQuery("downtown")
         #expect(loader.recordedRequestURLs.count == 1)
+    }
+
+    // MARK: - AnalyticsInstallID
+
+    /// A unique, not-yet-created directory for a single test's install ID
+    /// file; callers remove it when done.
+    private func makeTemporaryDirectory() -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    }
+
+    @Test func `Install ID is stable across repeated calls`() {
+        let directory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let first = AnalyticsInstallID.persisted(directory: directory)
+        let second = AnalyticsInstallID.persisted(directory: directory)
+        #expect(first == second)
+    }
+
+    @Test func `Install ID differs across fresh directories`() {
+        let directoryA = makeTemporaryDirectory()
+        let directoryB = makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: directoryA)
+            try? FileManager.default.removeItem(at: directoryB)
+        }
+
+        #expect(AnalyticsInstallID.persisted(directory: directoryA) != AnalyticsInstallID.persisted(directory: directoryB))
+    }
+
+    @Test func `Install ID is a valid UUID string`() {
+        let directory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        #expect(UUID(uuidString: AnalyticsInstallID.persisted(directory: directory)) != nil)
+    }
+
+    @Test func `Install ID directory is excluded from backups`() throws {
+        let directory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        _ = AnalyticsInstallID.persisted(directory: directory)
+
+        let resourceValues = try directory.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        #expect(resourceValues.isExcludedFromBackup == true)
+    }
+
+    @Test(arguments: ["not-a-uuid", ""])
+    func `Invalid install ID file is replaced with a fresh valid UUID`(contents: String) throws {
+        let directory = makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try contents.write(to: directory.appendingPathComponent("install-id"), atomically: true, encoding: .utf8)
+
+        let id = AnalyticsInstallID.persisted(directory: directory)
+        #expect(UUID(uuidString: id) != nil)
+        // The replacement is written back, so later reads are stable.
+        #expect(AnalyticsInstallID.persisted(directory: directory) == id)
+    }
+
+    @Test func `Install ID without a storage directory is still a valid UUID`() {
+        #expect(UUID(uuidString: AnalyticsInstallID.persisted(directory: nil)) != nil)
     }
 }

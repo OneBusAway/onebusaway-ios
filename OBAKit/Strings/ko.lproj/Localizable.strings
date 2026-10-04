@@ -494,6 +494,9 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "일기 예보 표시";
 
+/* Title of the list shown when tapping a map pin that groups several stops at the same location. */
+"map_controller.stop_cluster_picker.title" = "정류장 선택";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "선택하신 차량은 현재 운행 중이 아닌 것으로 보여 표시할 수 없습니다.";
 
@@ -1102,6 +1105,21 @@
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "출발 표시";
 
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "자전거 모드";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "정류장까지의 소요 시간 추정, 도착 예정 시간, 정류장 화면에 더 빠른 이동 속도를 사용합니다.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "자전거 모드";
+
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "건강 앱 데이터 사용";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "건강 앱에서 자전거 속도를 동기화할 수 없습니다. 표준 자전거 속도를 사용합니다.";
+
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "실행할 때마다 지역 새로고침";
 
@@ -1240,6 +1258,15 @@
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "알림이 꺼져 있음";
 
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "자전거 %d분 — 아래부터 탑승 가능";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "이 지점 위의 출발편은 정류장까지 자전거 %d분보다 먼저 출발합니다";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "자전거 %d분";
+
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "지금";
 
@@ -1321,6 +1348,50 @@
 /* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.past_toggle_show_a11y_fmt" = "지난 출발 %d건 표시";
 
+/* Body of the alert shown when location is denied for the app. %@ is the app name. */
+"stop_page.proximity_alert.location_denied.message_fmt" = "근처 알림을 받으려면 설정에서 %@의 위치 접근을 허용하세요.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but location is denied for the app. */
+"stop_page.proximity_alert.location_denied.title" = "위치가 꺼져 있습니다";
+
+/* Body of the alert shown when location access is restricted on the device. */
+"stop_page.proximity_alert.location_restricted.message" = "근처 알림에는 위치 접근이 필요하며, 이 기기의 설정으로 제한되어 있을 수 있습니다.";
+
+/* Title of the alert shown when location may be limited by a device restriction the rider does not control. */
+"stop_page.proximity_alert.location_restricted.title" = "위치를 사용할 수 없습니다";
+
+/* Body of the alert asking the rider to widen location access from While Using to Always. %@ is the app name. */
+"stop_page.proximity_alert.location_when_in_use.message_fmt" = "%@은(는) 앱이 열려 있을 때만 위치에 접근할 수 있습니다. 근처 알림은 백그라운드에서도 위치가 필요하며, 그래야 휴대전화를 주머니에 넣고도 작동합니다.";
+
+/* Title of the alert shown when the rider has granted location only While Using, which nearby alerts cannot work with. */
+"stop_page.proximity_alert.location_when_in_use.title" = "위치 항상 허용";
+
+/* Stop Location menu action that takes down the approach notification already set on this stop. */
+"stop_page.proximity_alert.menu.cancel" = "근처 알림 취소";
+
+/* Stop Location menu action that sets a notification for when the rider approaches this stop. */
+"stop_page.proximity_alert.menu.set" = "근처에 도착하면 알림";
+
+/* Body of the alert shown when notifications are denied. %@ is the app name. */
+"stop_page.proximity_alert.notifications_denied.message_fmt" = "근처 알림은 알림으로 전달됩니다. 설정에서 %@의 알림을 허용하세요.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but notifications are denied in Settings. */
+"stop_page.proximity_alert.notifications_denied.title" = "알림이 꺼져 있습니다";
+
+/* Button that opens the system Settings app so the rider can grant what a nearby alert needs. */
+"stop_page.proximity_alert.open_settings" = "설정 열기";
+
+/* Body of the alert shown when the app is already monitoring every region iOS allows. %1$@ is the app name and %2$d is the number of regions. */
+"stop_page.proximity_alert.region_limit.message_fmt" = "iOS에서는 %1$@이(가) 한 번에 %2$d곳을 감시할 수 있습니다. 하나를 취소한 뒤 다른 하나를 추가하세요.";
+
+/* Title of the alert shown when iOS will not monitor another region because the app is already at its limit. */
+"stop_page.proximity_alert.region_limit.title" = "알림이 너무 많습니다";
+
+/* Toast confirming the rider's nearby alert for this stop was taken down. */
+"stop_page.proximity_alert.toast.cancelled" = "근처 알림이 취소되었습니다";
+
+/* Toast confirming a nearby alert was set. %@ is the name of the stop. */
+"stop_page.proximity_alert.toast.set_fmt" = "%@ 근처에 도착하면 알려드릴게요";
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "미리 알림 설정됨";
 
@@ -1661,10 +1732,16 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "정류장까지 도보 시간";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "정류장까지 자전거 이동 시간";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. 도보로 %2$@ 걸리며, %3$@에 도착합니다";
 
-/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. 자전거로 %2$@ 걸리며, %3$@에 도착합니다";
+
+/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: %3$@ 도착";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
@@ -1854,6 +1931,12 @@
 "trip_page.card.a11y_fmt" = "노선 %1$@, %2$@ 방면, %3$d분 후 도착, %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "노선 %1$@, %2$@ 방면";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "곧 내 정류장에 도착";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "%1$@ 거리, 정류장 %2$d개 전";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "%1$@ 거리 · 정류장 %2$d개";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "신고 서비스를 사용할 수 없어 이 신고를 제출하지 못했습니다. 나중에 다시 시도해 주세요.";
 /* Trip page button that starts a Live Activity for this trip. */
@@ -1866,6 +1949,8 @@
 "trip_page.remove_alarm" = "미리 알림 제거";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "유령 버스 신고";
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "지도에서 보기";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "이미 지나감";
 /* VoiceOver clause on the final stop of the trip. */

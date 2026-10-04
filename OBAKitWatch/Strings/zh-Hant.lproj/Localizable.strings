@@ -1,0 +1,50 @@
+/* Empty state */
+"arrivals.empty" = "接下來 60 分鐘內沒有離站班次。";
+
+/* Progress text */
+"arrivals.loading" = "正在載入離站班次…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "尚未選擇大眾運輸區域。";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ 往 %2$@，%3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "更新於 %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "允許取用位置，即可查看附近的站牌。";
+
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "附近一小時內沒有發車。";
+
+/* Progress text */
+"nearby.locating" = "正在尋找您的位置…";
+
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "無法找到您的位置。請再試一次。";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "位置取用已關閉。查看附近站牌需要您的位置。";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "這裡沒有大眾運輸區域。";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "附近";
+
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "正在尋找附近路線…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ 開往 %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "附近其他站牌";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "此站所有到站資訊";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "切換方向";

@@ -1,0 +1,50 @@
+/* Empty state */
+"arrivals.empty" = "لا توجد مغادرات خلال الـ60 دقيقة القادمة.";
+
+/* Progress text */
+"arrivals.loading" = "جارٍ تحميل المغادرات…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "لم يتم اختيار منطقة نقل.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ إلى %2$@، %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "آخر تحديث: %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "اسمح بالوصول إلى الموقع لعرض المواقف القريبة منك.";
+
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "لا توجد مغادرات قريبة خلال الساعة القادمة.";
+
+/* Progress text */
+"nearby.locating" = "جارٍ تحديد موقعك…";
+
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "تعذّر تحديد موقعك. حاول مرة أخرى.";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "الوصول إلى الموقع متوقف. تحتاج المواقف القريبة إلى معرفة موقعك.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "لا توجد منطقة نقل هنا.";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "بالقرب منك";
+
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "جارٍ البحث عن الخطوط القريبة…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ إلى %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "قريب أيضًا";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "كل الوصولات في هذه المحطة";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "تبديل الاتجاه";

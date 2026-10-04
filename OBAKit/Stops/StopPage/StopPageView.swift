@@ -71,6 +71,11 @@ struct StopPageNavigationHandler {
     let showNearbyStops: () -> Void
     /// Presents the report-a-problem flow.
     let showReportProblem: () -> Void
+    /// Sets or cancels this stop's destination proximity alert. One closure for
+    /// both directions: the item is one item, and which way it goes is read off
+    /// the view model's `proximityAlert` at the moment of the tap rather than
+    /// captured when the menu was built.
+    let toggleProximityAlert: () -> Void
     /// Dismisses the sheet (its header's close button). No-op in the pushed presentation, which
     /// leaves instead through the navigation bar's back button.
     let closeSheet: () -> Void
@@ -174,8 +179,9 @@ struct StopPageView: View {
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
     var body: some View {
-        // Hoist the single computed walk value so the header chip, the
-        // chronological partition, and the divider all read one snapshot of it.
+        // Hoist the mode-aware walk value so the chronological partition and the
+        // divider read one snapshot of it. The header shows its own always-on
+        // walk and bike estimates, independent of Bike Mode.
         let walkTime = viewModel.walkTime
         let content = StopPageContent(viewModel: viewModel)
 
@@ -187,7 +193,7 @@ struct StopPageView: View {
             if let stop = viewModel.stop {
                 if !showToolbarOnBottom {
                     Section {
-                        StopPageHeaderView(stop: stop, walkTime: walkTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
+                        StopPageHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, onWalkingDirections: navigation.showWalkingDirections)
                             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
@@ -227,7 +233,7 @@ struct StopPageView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
                 if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: walkTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
+                    StopPageSheetHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, onWalkingDirections: navigation.showWalkingDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
                 } else {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop
@@ -247,7 +253,7 @@ struct StopPageView: View {
         .stopPageLifecycle(
             viewModel: viewModel,
             userDefaults: userDefaults,
-            liveActivityStarted: viewModel.liveActivityStarted
+            transientToast: viewModel.transientToast
         )
         // Reconcile the open route card against the live feed: when a refresh
         // drops the expanded route from the list, clear the stale expansion.
@@ -303,6 +309,8 @@ struct StopPageView: View {
             onWalkingDirections: navigation.showWalkingDirections,
             onDirectionsToHere: navigation.showDirectionsToHere,
             onDirectionsFromHere: navigation.showDirectionsFromHere,
+            isProximityAlertActive: viewModel.proximityAlert != nil,
+            onToggleProximityAlert: navigation.toggleProximityAlert,
             onReportProblem: navigation.showReportProblem
         )
     }
@@ -452,6 +460,7 @@ struct StopPageView: View {
             onBookmark: {}, onSchedule: {},
             onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
             onDirectionsToHere: nil, onDirectionsFromHere: nil,
+            isProximityAlertActive: false, onToggleProximityAlert: {},
             onReportProblem: {}
         )
     }
