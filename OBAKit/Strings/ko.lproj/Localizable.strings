@@ -494,6 +494,9 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "일기 예보 표시";
 
+/* Title of the list shown when tapping a map pin that groups several stops at the same location. */
+"map_controller.stop_cluster_picker.title" = "정류장 선택";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "선택하신 차량은 현재 운행 중이 아닌 것으로 보여 표시할 수 없습니다.";
 

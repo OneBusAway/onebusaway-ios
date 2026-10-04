@@ -494,6 +494,9 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "Показать прогноз погоды";
 
+/* Title of the list shown when tapping a map pin that groups several stops at the same location. */
+"map_controller.stop_cluster_picker.title" = "Выберите остановку";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "Похоже, выбранный транспорт сейчас не выполняет рейс, поэтому мы не знаем, как его показать.";
 

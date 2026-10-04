@@ -1246,6 +1246,11 @@ class MapViewController: UIViewController,
             return
         }
 
+        if let cluster = view.annotation as? MKClusterAnnotation, StopCluster.isStopCluster(cluster) {
+            selectStopCluster(cluster, view: view, in: mapView)
+            return
+        }
+
         if let region = view.annotation as? Region {
             let title = OBALoc("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
             let messageFmt = OBALoc("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")

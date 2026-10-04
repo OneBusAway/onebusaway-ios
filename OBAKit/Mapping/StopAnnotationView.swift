@@ -80,6 +80,7 @@ class StopAnnotationView: MKAnnotationView {
         }
 
         rightCalloutAccessoryView = UIButton.chevronButton
+        clusteringIdentifier = StopCluster.clusteringIdentifier
 
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
         updateCalloutVisibility()
@@ -105,12 +106,14 @@ class StopAnnotationView: MKAnnotationView {
         super.prepareForReuse()
 
         labelStack.isHidden = true
+        clusteringIdentifier = StopCluster.clusteringIdentifier
 
         titleLabel.text = nil
     }
 
     public override func prepareForDisplay() {
         super.prepareForDisplay()
+        clusteringIdentifier = StopCluster.clusteringIdentifier
         applyPresentation()
     }
 
