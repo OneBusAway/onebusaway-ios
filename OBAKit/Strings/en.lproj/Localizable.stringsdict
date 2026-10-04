@@ -328,5 +328,37 @@
 			<string>%3$d minutes</string>
 		</dict>
 	</dict>
+	<key>trip_page.card.distance_stops_a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@ away, %2$#@count@ away</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%2$d stop</string>
+			<key>other</key>
+			<string>%2$d stops</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.distance_stops_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$@ away · %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%2$d stop</string>
+			<key>other</key>
+			<string>%2$d stops</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -1884,6 +1884,12 @@
 "trip_page.card.a11y_fmt" = "%1$@号公交线路，开往%2$@，将在%3$d分钟后到站，%4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "%1$@号公交线路，开往%2$@";
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "即将到达您的车站";
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "距离%1$@，还有%2$d站";
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "距离%1$@ · %2$d站";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "由于报告服务当前不可用，此报告无法提交。请稍后重试。";
 /* Trip page button that starts a Live Activity for this trip. */

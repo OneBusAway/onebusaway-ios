@@ -42,6 +42,9 @@ struct TripPageActions {
 struct TripPageRootView: View {
     let viewModel: TripViewModel
     let userDefaults: UserDefaults
+    /// The app's instance, carrying the region time zone and locale. Without it
+    /// the page falls back to the environment default built from `.current`.
+    let formatters: Formatters
     let originTitle: String?
     let actions: TripPageActions
     var backBehavior: TripPageBackBehavior = .pop
@@ -61,6 +64,7 @@ struct TripPageRootView: View {
             isCollapsed: isCollapsed
         )
         .defaultAppStorage(userDefaults)
+        .environment(\.obaFormatters, formatters)
     }
 }
 

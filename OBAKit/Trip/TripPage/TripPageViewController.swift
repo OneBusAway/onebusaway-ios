@@ -66,6 +66,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         super.init(rootView: TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
+            formatters: application.formatters,
             originTitle: originTitle,
             actions: TripPageActions()
         ))
@@ -207,6 +208,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
+            formatters: application.formatters,
             originTitle: originTitle,
             actions: makeActions(),
             backBehavior: backBehavior,
