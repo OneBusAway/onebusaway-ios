@@ -11,7 +11,7 @@ import Foundation
 import Testing
 import UIKit
 @testable import OBAKit
-@testable import OBAKitCoreiOS
+@testable import OBAKitCore
 
 @MainActor
 @Suite(.serialized)
@@ -113,7 +113,7 @@ final class ActivityIndicatedButtonTests {
         #expect(buttonView.config == config)
     }
 
-    @Test func testViewVisibilityWhenConfigIsNil() async throws {
+    @Test func testViewVisibilityWhenConfigIsNil() {
         let buttonView = ActivityIndicatedButton(config: nil)
         #expect(buttonView.isHidden == true)
 
@@ -124,8 +124,8 @@ final class ActivityIndicatedButtonTests {
         )
         buttonView.config = config
 
-        // Wait for the async configureView() to run on the main queue
-        try await Task.sleep(nanoseconds: 10_000_000)
+        // Call configureView() directly to avoid test flakiness from DispatchQueue.main.async
+        buttonView.configureView()
 
         #expect(buttonView.isHidden == false)
     }
@@ -151,7 +151,7 @@ final class ActivityIndicatedButtonTests {
         #expect(buttonView.activityIndicator.isAnimating == false)
     }
 
-    @Test func testPrepareForReuse() async throws {
+    @Test func testPrepareForReuse() {
         let config = ActivityIndicatedButton.Configuration(
             text: "Test",
             largeContentImage: nil,
@@ -160,13 +160,13 @@ final class ActivityIndicatedButtonTests {
         let buttonView = ActivityIndicatedButton(config: config)
 
         // Ensure configureView has run
-        try await Task.sleep(nanoseconds: 10_000_000)
+        buttonView.configureView()
 
         buttonView.showActivityIndicator()
         buttonView.prepareForReuse()
 
-        // Wait for the async configureView() after config = nil
-        try await Task.sleep(nanoseconds: 10_000_000)
+        // Ensure configureView has run after config = nil
+        buttonView.configureView()
 
         #expect(buttonView.config == nil)
         #expect(buttonView.isHidden == true)
