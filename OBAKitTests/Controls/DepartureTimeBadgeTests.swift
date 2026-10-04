@@ -48,7 +48,7 @@ final class DepartureTimeBadgeTests {
         
         #expect(config.accessibilityLabel == "Departs in 5 min")
         #expect(config.displayText == "5m")
-        #expect(config.backgroundColor == ThemeColors().onTime.cgColor)
+        #expect(config.backgroundColor == ThemeColors().departureOnTime.cgColor)
     }
 
     @Test func testBadgeInitialization() {

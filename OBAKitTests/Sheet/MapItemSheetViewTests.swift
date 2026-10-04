@@ -89,7 +89,7 @@ final class MapItemSheetViewTests: OBATestCase {
 
         viewModel.showNearbyStops()
 
-        let coordinate = try? #require(received)
+        let coordinate = received
         #expect(coordinate?.latitude == 47.6)
     }
 
