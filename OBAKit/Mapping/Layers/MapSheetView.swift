@@ -18,7 +18,7 @@ import UIKit
 /// buried in Settings is a discoverability failure, so this sheet is the single
 /// canonical place riders turn layers on and off. Settings may mirror the same
 /// UserDefaults keys, but it does not own them.
-@MainActor final class MapSheetModel: ObservableObject {
+@MainActor final class MapSheetModel: NSObject, ObservableObject, MapRegionDelegate {
 
     private let mapRegionManager: MapRegionManager
     private let mapViewModel: MapViewModel
@@ -38,6 +38,11 @@ import UIKit
         self.mapRegionManager = mapRegionManager
         self.mapViewModel = mapViewModel
         self.onSelectRoute = onSelectRoute
+        super.init()
+
+        // Stops load after the camera settles, so the zoom flip below fires
+        // before the Routes on Map list has anything new to show. Weakly held.
+        mapRegionManager.addDelegate(self)
 
         // Zooming past the stop-loading threshold behind the sheet must flip an
         // open Routes on Map list to its zoomed-out state.
@@ -151,6 +156,10 @@ import UIKit
 
     func selectRoute(_ route: Route) {
         onSelectRoute(route)
+    }
+
+    func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {
+        objectWillChange.send()
     }
 }
 

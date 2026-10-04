@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import Foundation
 import MapKit
 import CoreLocation
@@ -234,6 +235,35 @@ final class MapRegionManagerTests: OBATestCase {
         await mgr.requestStops(in: region)
 
         #expect(!mgr.stops.isEmpty)
+    }
+
+    /// The Map sheet's Routes on Map list reads `stops` through `MapSheetModel`,
+    /// which must re-render when they land — not only when the zoom gate flips,
+    /// or an open list keeps showing whatever was in memory before.
+    @Test func `Map sheet model refreshes Routes on Map when stops arrive`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
+        clearStopCache(for: application)
+        let mgr = MapRegionManager(application: application)
+        let model = MapSheetModel(mapRegionManager: mgr, mapViewModel: MapViewModel(application: application)) { _ in }
+        #expect(model.routeFilterContent == .noRoutes)
+
+        var changeCount = 0
+        let subscription = model.objectWillChange.sink { changeCount += 1 }
+        defer { subscription.cancel() }
+
+        await mgr.requestStops(in: MKCoordinateRegion(
+            center: TestData.mockSeattleLocation.coordinate,
+            latitudinalMeters: 5000,
+            longitudinalMeters: 5000
+        ))
+
+        #expect(changeCount > 0)
+        guard case .routes(let routes) = model.routeFilterContent else {
+            Issue.record("Expected routes once stops loaded, got \(model.routeFilterContent)")
+            return
+        }
+        #expect(!routes.isEmpty)
     }
 
     @Test func `Schedule stops request debounced load populates stops`() async {
