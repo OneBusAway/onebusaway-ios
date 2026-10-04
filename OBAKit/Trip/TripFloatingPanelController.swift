@@ -20,7 +20,13 @@ nonisolated struct TripProgressViewModel {
     let etaText: String?
     let progress: Float
 
-    init?(closestStopIndex: Int, totalStops: Int, userStopIndex: Int?, arrivalDepartureMinutes: Int?) {
+    /// - Parameters:
+    ///   - userStopIndex: The row carrying the rider's-stop marker: the boarding
+    ///     stop, or the destination a shared trip link named.
+    ///   - boardingStopIndex: The row `arrivalDepartureMinutes` counts down to.
+    ///   - arrivalDepartureMinutes: Minutes until the vehicle reaches the
+    ///     *boarding* stop.
+    init?(closestStopIndex: Int, totalStops: Int, userStopIndex: Int?, boardingStopIndex: Int?, arrivalDepartureMinutes: Int?) {
         guard totalStops > 0 else { return nil }
         let currentStopNumber = closestStopIndex + 1
         progress = Float(currentStopNumber) / Float(totalStops)
@@ -32,6 +38,14 @@ nonisolated struct TripProgressViewModel {
             ),
             currentStopNumber, totalStops
         )
+
+        // `arrivalDepartureMinutes` is an ETA to the user's stop only while that
+        // stop is the boarding stop. Once a shared link has moved the marker to
+        // the sharer's exit, the number describes a stop that may be half an
+        // hour short of it, so it is dropped and position alone decides the
+        // text. See #449.
+        let minutesToUserStop = userStopIndex == boardingStopIndex ? arrivalDepartureMinutes : nil
+
         if let userStopIndex {
             if userStopIndex < closestStopIndex {
                 etaText = OBALoc(
@@ -45,7 +59,7 @@ nonisolated struct TripProgressViewModel {
                     value: "Arriving now",
                     comment: "Shown when the vehicle is arriving at the user's stop"
                 )
-            } else if let minutes = arrivalDepartureMinutes, minutes > 0 {
+            } else if let minutes = minutesToUserStop, minutes > 0 {
                 etaText = String(
                     format: OBALoc(
                         "trip_progress.eta_to_stop_fmt",
@@ -451,6 +465,12 @@ class TripFloatingPanelController: UIViewController,
         }
 
         let arrivalDeparture = tripConvertible?.arrivalDeparture
+        // Resolved without the shared destination, this is the boarding stop:
+        // the row `arrivalDepartureMinutes` counts down to.
+        let boardingStopIndex = TripStopListModel.userStopIndex(
+            in: tripDetails.stopTimes,
+            arrivalDeparture: arrivalDeparture
+        )
         let userStopIndex = TripStopListModel.userStopIndex(
             in: tripDetails.stopTimes,
             arrivalDeparture: arrivalDeparture,
@@ -461,6 +481,7 @@ class TripFloatingPanelController: UIViewController,
             closestStopIndex: currentIndex,
             totalStops: tripDetails.stopTimes.count,
             userStopIndex: userStopIndex,
+            boardingStopIndex: boardingStopIndex,
             arrivalDepartureMinutes: arrivalDeparture?.arrivalDepartureMinutes
         ) else {
             tripProgressWrapper.isHidden = true

@@ -181,76 +181,120 @@ final class TripStopViewModelIdentityTests {
 final class TripProgressViewModelTests {
 
     @Test func `Zero total stops returns nil`() {
-        let vm = TripProgressViewModel(closestStopIndex: 0, totalStops: 0, userStopIndex: nil, arrivalDepartureMinutes: nil)
+        let vm = TripProgressViewModel(closestStopIndex: 0, totalStops: 0, userStopIndex: nil, boardingStopIndex: nil, arrivalDepartureMinutes: nil)
         #expect(vm == nil)
     }
 
     @Test func `First stop displays one-based stop count`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 0, totalStops: 10, userStopIndex: nil, arrivalDepartureMinutes: nil))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 0, totalStops: 10, userStopIndex: nil, boardingStopIndex: nil, arrivalDepartureMinutes: nil))
         #expect(vm.stopCountText.contains("1 of 10"))
         #expect(abs(vm.progress - 0.1) < 0.001)
     }
 
     @Test func `Last stop reaches full progress`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 9, totalStops: 10, userStopIndex: nil, arrivalDepartureMinutes: nil))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 9, totalStops: 10, userStopIndex: nil, boardingStopIndex: nil, arrivalDepartureMinutes: nil))
         #expect(vm.stopCountText.contains("10 of 10"))
         #expect(abs(vm.progress - 1.0) < 0.001)
     }
 
     @Test func `Mid trip progress is proportional`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 4, totalStops: 10, userStopIndex: nil, arrivalDepartureMinutes: nil))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 4, totalStops: 10, userStopIndex: nil, boardingStopIndex: nil, arrivalDepartureMinutes: nil))
         #expect(abs(vm.progress - 0.5) < 0.001)
     }
 
     @Test func `No user stop omits ETA`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: nil, arrivalDepartureMinutes: 8))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: nil, boardingStopIndex: nil, arrivalDepartureMinutes: 8))
         #expect(vm.etaText == nil)
     }
 
     @Test func `User stop behind vehicle reads passed`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 5, totalStops: 10, userStopIndex: 3, arrivalDepartureMinutes: nil))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 5, totalStops: 10, userStopIndex: 3, boardingStopIndex: 3, arrivalDepartureMinutes: nil))
         #expect(vm.etaText?.contains("Passed") == true)
     }
 
     @Test func `Vehicle at user stop reads arriving now`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 5, totalStops: 10, userStopIndex: 5, arrivalDepartureMinutes: 0))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 5, totalStops: 10, userStopIndex: 5, boardingStopIndex: 5, arrivalDepartureMinutes: 0))
         #expect(vm.etaText?.contains("Arriving now") == true)
     }
 
     @Test func `Positive minutes shows ETA text`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, arrivalDepartureMinutes: 8))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, boardingStopIndex: 7, arrivalDepartureMinutes: 8))
         #expect(vm.etaText?.contains("8") == true)
     }
 
     @Test func `Positive minutes wins over adjacency`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 4, arrivalDepartureMinutes: 2))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 4, boardingStopIndex: 4, arrivalDepartureMinutes: 2))
         #expect(vm.etaText?.contains("2") == true)
     }
 
     @Test func `Zero minutes at adjacent stop reads arriving now`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 4, arrivalDepartureMinutes: 0))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 4, boardingStopIndex: 4, arrivalDepartureMinutes: 0))
         #expect(vm.etaText?.contains("Arriving now") == true)
     }
 
     @Test func `Nil minutes at adjacent stop reads arriving now`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 4, arrivalDepartureMinutes: nil))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 4, boardingStopIndex: 4, arrivalDepartureMinutes: nil))
         #expect(vm.etaText?.contains("Arriving now") == true)
     }
 
     /// A stale prediction (zero or negative minutes) with the vehicle still several
     /// stops away must not claim "Arriving now" — the ETA is omitted instead.
     @Test func `Zero minutes far from stop omits ETA`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, arrivalDepartureMinutes: 0))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, boardingStopIndex: 7, arrivalDepartureMinutes: 0))
         #expect(vm.etaText == nil)
     }
 
     @Test func `Negative minutes far from stop omits ETA`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, arrivalDepartureMinutes: -3))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, boardingStopIndex: 7, arrivalDepartureMinutes: -3))
         #expect(vm.etaText == nil)
     }
 
     @Test func `Nil minutes far from stop omits ETA`() throws {
-        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, arrivalDepartureMinutes: nil))
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 3, totalStops: 10, userStopIndex: 7, boardingStopIndex: 7, arrivalDepartureMinutes: nil))
+        #expect(vm.etaText == nil)
+    }
+
+    // MARK: - Shared destination (#449)
+
+    /// The minutes count down to the boarding stop. With the marker on a shared
+    /// link's destination, "~3 min to your stop" would put the boarding stop's
+    /// ETA next to a stop half an hour further on.
+    @Test func `A shared destination does not borrow the boarding stop's ETA`() throws {
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 2, totalStops: 20, userStopIndex: 15, boardingStopIndex: 5, arrivalDepartureMinutes: 3))
+        #expect(vm.etaText == nil)
+    }
+
+    /// A link whose destination the trip never reaches falls back to the
+    /// boarding row, and there the minutes are that row's own.
+    @Test func `The boarding stop keeps its ETA when it is the user's stop`() throws {
+        let vm = try #require(TripProgressViewModel(closestStopIndex: 2, totalStops: 20, userStopIndex: 5, boardingStopIndex: 5, arrivalDepartureMinutes: 3))
+        #expect(vm.etaText?.contains("3") == true)
+    }
+
+    /// The same two lookups `TripFloatingPanelController.updateProgressView`
+    /// makes, on real trip data: a shared link resolves the marker and the
+    /// boarding stop to different rows, and the header shows no ETA.
+    @Test func `A shared trip's progress header shows no ETA`() throws {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        let stopTimes = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data).entry.stopTimes
+        let arrivalDeparture = try Fixtures.arrivalDeparture(stopSequence: 4, stopID: stopTimes[4].stopID)
+
+        let boardingStopIndex = TripStopListModel.userStopIndex(in: stopTimes, arrivalDeparture: arrivalDeparture)
+        let userStopIndex = TripStopListModel.userStopIndex(
+            in: stopTimes,
+            arrivalDeparture: arrivalDeparture,
+            sharedDestinationStopID: stopTimes[10].stopID
+        )
+        #expect(boardingStopIndex == 4)
+        #expect(userStopIndex == 10)
+
+        let vm = try #require(TripProgressViewModel(
+            closestStopIndex: 2,
+            totalStops: stopTimes.count,
+            userStopIndex: userStopIndex,
+            boardingStopIndex: boardingStopIndex,
+            arrivalDepartureMinutes: 3
+        ))
         #expect(vm.etaText == nil)
     }
 }
