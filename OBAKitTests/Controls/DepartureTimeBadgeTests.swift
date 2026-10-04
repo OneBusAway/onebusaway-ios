@@ -46,9 +46,9 @@ final class DepartureTimeBadgeTests {
             formatters: formatters
         )
         
-        #expect(config.accessibilityLabel == formatters.explanationForArrivalDeparture(tempuraState: .future, arrivalDepartureStatus: .departing, arrivalDepartureMinutes: 5))
-        #expect(config.displayText == formatters.shortFormattedTime(untilMinutes: 5, temporalState: .future))
-        #expect(config.backgroundColor == formatters.backgroundColorForScheduleStatus(.onTime).cgColor)
+        #expect(config.accessibilityLabel == "Departs in 5 min")
+        #expect(config.displayText == "5m")
+        #expect(config.backgroundColor == ThemeColors().onTime.cgColor)
     }
 
     @Test func testBadgeInitialization() {

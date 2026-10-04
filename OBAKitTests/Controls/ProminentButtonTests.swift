@@ -32,8 +32,8 @@ final class ProminentButtonTests {
         #expect(button.prominentColor == newColor)
         
         button.layoutSubviews()
-        let highlightLayer = button.layer.sublayers?.last
-        #expect(highlightLayer?.backgroundColor == newColor.cgColor)
+        let highlightLayer = button.highlightLayer
+        #expect(highlightLayer.backgroundColor == newColor.cgColor)
     }
 
     @Test func testLayoutSubviewsAddsHighlightLayer() {
@@ -42,8 +42,8 @@ final class ProminentButtonTests {
         button.setNeedsLayout()
         button.layoutIfNeeded()
         
-        let highlightLayer = button.layer.sublayers?.last
-        #expect(highlightLayer?.backgroundColor == button.prominentColor.cgColor)
-        #expect(highlightLayer?.cornerRadius == ThemeMetrics.compactCornerRadius)
+        let highlightLayer = button.highlightLayer
+        #expect(highlightLayer.backgroundColor == button.prominentColor.cgColor)
+        #expect(highlightLayer.cornerRadius == ThemeMetrics.compactCornerRadius)
     }
 }
