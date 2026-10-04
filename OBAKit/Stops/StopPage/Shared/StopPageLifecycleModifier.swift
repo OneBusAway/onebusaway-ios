@@ -17,7 +17,8 @@ enum StopPageLifecycleKeys {
 }
 
 /// Lifecycle every Stop page presentation shares: start and stop the view
-/// model, seed the last-used list mode, and show the Live Activity toast.
+/// model, seed the last-used list mode, and show the transient confirmation
+/// toast.
 ///
 /// `.refreshable` is deliberately absent — the pushed screen and the
 /// FloatingPanel sheet offer pull-to-refresh, the map sheet refreshes from its
@@ -25,7 +26,11 @@ enum StopPageLifecycleKeys {
 private struct StopPageLifecycleModifier: ViewModifier {
     @ObservedObject var viewModel: StopViewModel
     let userDefaults: UserDefaults
-    let liveActivityStarted: Bool
+    /// The confirmation to show, or `nil` for none. The text arrives already
+    /// localized: the occasions that raise it — a Live Activity starting, a
+    /// proximity alert set or cancelled — share this one capsule rather than
+    /// each adding a flag and a branch.
+    let transientToast: String?
 
     @State private var didSeedMode = false
 
@@ -35,11 +40,12 @@ private struct StopPageLifecycleModifier: ViewModifier {
             .onAppear(perform: seedLastUsedModeIfNeeded)
             .onDisappear { viewModel.deactivate() }
             .overlay(alignment: .bottom) {
-                if liveActivityStarted {
-                    Text(OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen"))
+                if let transientToast {
+                    Text(transientToast)
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
                         .background(.tint, in: Capsule())
@@ -47,7 +53,7 @@ private struct StopPageLifecycleModifier: ViewModifier {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.spring(duration: 0.3), value: liveActivityStarted)
+            .animation(.spring(duration: 0.3), value: transientToast)
     }
 
     /// One-shot: a stop the user has never customised opens in the last mode
@@ -70,12 +76,12 @@ extension View {
     func stopPageLifecycle(
         viewModel: StopViewModel,
         userDefaults: UserDefaults,
-        liveActivityStarted: Bool
+        transientToast: String?
     ) -> some View {
         modifier(StopPageLifecycleModifier(
             viewModel: viewModel,
             userDefaults: userDefaults,
-            liveActivityStarted: liveActivityStarted
+            transientToast: transientToast
         ))
     }
 }
