@@ -1896,6 +1896,8 @@
 "trip_page.remove_alarm" = "미리 알림 제거";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "유령 버스 신고";
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "지도에서 보기";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "이미 지나감";
 /* VoiceOver clause on the final stop of the trip. */

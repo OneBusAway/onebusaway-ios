@@ -1896,6 +1896,8 @@
 "trip_page.remove_alarm" = "Alisin ang paalala";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Mag-ulat ng Ghost Bus";
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "Ipakita sa Mapa";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "nadaanan na";
 /* VoiceOver clause on the final stop of the trip. */

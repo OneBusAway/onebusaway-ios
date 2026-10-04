@@ -26,6 +26,8 @@ struct TripPageActions {
     var onSchedule: () -> Void = {}
     var onAlarm: () -> Void = {}
     var onReportGhostBus: () -> Void = {}
+    /// `nil` hides the Show on Map button: only a host with a map behind the page can answer it.
+    var onShowMap: (() -> Void)?
 }
 
 /// Thin hosting wrapper for `TripPageView`. Its only job is to apply
@@ -127,7 +129,13 @@ struct TripPageView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TripPageBackRow(title: originTitle, behavior: backBehavior, onBack: actions.onBack)
+            // At `.tip` the map is already showing, so the button would have nothing left to do.
+            TripPageBackRow(
+                title: originTitle,
+                behavior: backBehavior,
+                onBack: actions.onBack,
+                onShowMap: isCollapsed ? nil : actions.onShowMap
+            )
 
             ScrollView {
                 VStack(alignment: .leading, spacing: StopTripSpacing.tripPage(compactMode)) {
@@ -278,14 +286,12 @@ private struct TripPageBackRow: View {
     /// disagree about whether this goes back or closes.
     let behavior: TripPageBackBehavior
     let onBack: () -> Void
+    var onShowMap: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
             Button(action: onBack) {
-                Image(systemName: behavior.systemImage)
-                    .font(.subheadline.weight(.semibold))
-                    .frame(width: 32, height: 32)
-                    .background(Color(uiColor: .tertiarySystemFill), in: Circle())
+                circleGlyph(behavior.systemImage)
             }
             .tint(Color(uiColor: .label))
             .accessibilityLabel(behavior == .pop ? Strings.back : Strings.close)
@@ -297,8 +303,23 @@ private struct TripPageBackRow: View {
             }
 
             Spacer(minLength: 0)
+
+            if let onShowMap {
+                Button(action: onShowMap) {
+                    circleGlyph("map")
+                }
+                .tint(Color(uiColor: .label))
+                .accessibilityLabel(OBALoc("trip_page.show_on_map", value: "Show on Map", comment: "Trip page button that lowers the sheet to reveal the trip's route on the map behind it."))
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+
+    private func circleGlyph(_ systemImage: String) -> some View {
+        Image(systemName: systemImage)
+            .font(.subheadline.weight(.semibold))
+            .frame(width: 32, height: 32)
+            .background(Color(uiColor: .tertiarySystemFill), in: Circle())
     }
 }
