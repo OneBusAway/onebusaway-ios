@@ -20,7 +20,7 @@ extension MapViewController {
     /// per launch, and only after a region exists to look it up in.
     func showLaunchRouteIfNeeded() {
         guard let routeID = application.launchRouteGate.claim(
-            hasRegion: application.currentRegion != nil && application.apiService != nil,
+            regionIdentifier: application.apiService == nil ? nil : application.currentRegionIdentifier,
             hasPendingNavigation: application.pendingStopID != nil
         ) else {
             return
@@ -46,12 +46,14 @@ extension MapViewController {
         let isMapShowingOtherContent = mapRegionManager.searchResponse != nil
             || mapRegionManager.stopSheetSelection != nil
             || presentedViewController != nil
+            || isShowingRiderActivityPanel
 
         guard application.launchRouteGate.mayDisplay(
             polylineCount: stopsForRoute.polylines.count,
-            isMapShowingOtherContent: isMapShowingOtherContent
+            isMapShowingOtherContent: isMapShowingOtherContent,
+            regionIdentifier: application.currentRegionIdentifier
         ) else {
-            Logger.info("LaunchRouteID \(routeID) loaded but was not shown: suppressed, superseded, or has no geometry.")
+            Logger.info("LaunchRouteID \(routeID) loaded but was not shown: suppressed, superseded, region changed, or has no geometry.")
             return
         }
 

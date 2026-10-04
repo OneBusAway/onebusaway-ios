@@ -980,6 +980,14 @@ class MapViewController: UIViewController,
 
     private var semiModalPanel: FloatingPanelController?
 
+    /// A search, map item, or trip planner panel the rider opened over the map.
+    var isShowingRiderActivityPanel: Bool {
+        mapPanelController.inSearchMode
+            || semiModalPanel != nil
+            || semiModalMapItemController != nil
+            || semiModalTripPlannerController != nil
+    }
+
     private func createFloatingPanelSurfaceAppearance() -> SurfaceAppearance {
         let appearance = SurfaceAppearance()
         appearance.cornerRadius = ThemeMetrics.cornerRadius

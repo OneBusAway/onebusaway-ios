@@ -24,6 +24,7 @@ struct LaunchRouteGate {
 
     private(set) var isClaimed = false
     private(set) var isSuppressed = false
+    private var claimedRegionIdentifier: Int?
 
     init(configValue: String?) {
         let trimmed = configValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -38,8 +39,8 @@ struct LaunchRouteGate {
     /// Returns the route ID the first time it is asked once a region is available, and
     /// `nil` on every other call. Without a region it returns `nil` without consuming
     /// the claim, because the route can only be looked up against a region's server.
-    mutating func claim(hasRegion: Bool, hasPendingNavigation: Bool) -> RouteID? {
-        guard let routeID, !isClaimed, !isSuppressed, hasRegion else { return nil }
+    mutating func claim(regionIdentifier: Int?, hasPendingNavigation: Bool) -> RouteID? {
+        guard let routeID, !isClaimed, !isSuppressed, let regionIdentifier else { return nil }
 
         // A stop stashed for later navigation will open over the map as soon as it
         // drains; drawing a route underneath it would only flash past.
@@ -49,12 +50,14 @@ struct LaunchRouteGate {
         }
 
         isClaimed = true
+        claimedRegionIdentifier = regionIdentifier
         return routeID
     }
 
     /// Whether a route that finished loading may still be drawn. The fetch is
-    /// asynchronous, so a deep link or a rider's own search can land first.
-    func mayDisplay(polylineCount: Int, isMapShowingOtherContent: Bool) -> Bool {
+    /// asynchronous, so a deep link, a rider's own search, or a region switch can land first.
+    func mayDisplay(polylineCount: Int, isMapShowingOtherContent: Bool, regionIdentifier: Int?) -> Bool {
         isClaimed && !isSuppressed && polylineCount > 0 && !isMapShowingOtherContent
+            && regionIdentifier == claimedRegionIdentifier
     }
 }
