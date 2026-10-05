@@ -159,6 +159,34 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(!view.placeholder.isEmpty)
     }
 
+    /// The trip sheet's host gets the factory's application and the route's trip,
+    /// and both of the page's ways out land on the coordinator the panel observes.
+    @Test @MainActor
+    func `Trip details view forwards the trip and navigates through the coordinator`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
+        coordinator.push(.recentStopsAll)
+        coordinator.push(.tripDetails(convertible))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: convertible)
+
+        #expect(host.application === application)
+        #expect(host.tripConvertible === convertible)
+
+        // A tapped stop opens the panel's stop sheet above the trip.
+        host.onSelectStop("1_75403")
+        #expect(coordinator.stackedRoutes == [.recentStopsAll, .tripDetails(convertible), .stopDetails(stopID: "1_75403")])
+
+        // The rider drags the stop sheet away, then taps Back on the trip. Only
+        // the trip goes; the sheet it was opened from stays.
+        coordinator.truncateStacked(toDepth: 2)
+        host.onClose()
+        #expect(coordinator.stackedRoutes == [.recentStopsAll])
+    }
+
     /// `.bookmarksAll` renders the native index, not the placeholder. With all
     /// three index routes wired, no route reaches `indexPlaceholderView` any
     /// more — it survives only as `unimplementedView`'s release-build fallback.

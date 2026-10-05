@@ -120,7 +120,10 @@ final class AppSheetViewFactory {
         case .tripPlanner(let request):
             tripPlannerView(request: request)
 
-        case .tripDetails, .transitAlert, .settings:
+        case .tripDetails(let tripConvertible):
+            tripDetailsView(tripConvertible: tripConvertible)
+
+        case .transitAlert, .settings:
             unimplementedView(for: route)
 
         case .searchResults(let response):
@@ -198,6 +201,22 @@ final class AppSheetViewFactory {
 
     func routePickerView() -> RoutePickerView {
         RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
+    }
+
+    /// The SwiftUI trip page as a stacked sheet over the panel's map.
+    ///
+    /// Both of the page's ways onward go through the coordinator. A tapped stop
+    /// opens the panel's stop sheet above the trip, as a stop does everywhere else
+    /// in the panel. Back pops the route rather than letting the page dismiss
+    /// itself from UIKit: the coordinator's stack is what holds the sheet on
+    /// screen, so it is closed there, as `StopDetailsSheetView`'s Close is.
+    func tripDetailsView(tripConvertible: TripConvertible) -> TripPageSheetHost {
+        TripPageSheetHost(
+            application: application,
+            tripConvertible: tripConvertible,
+            onSelectStop: { [coordinator] stopID in coordinator.push(.stopDetails(stopID: stopID)) },
+            onClose: { [coordinator] in coordinator.pop() }
+        )
     }
 
     private func currentTripView(route: Route) -> CurrentTripView {
