@@ -725,7 +725,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func setPinned(_ isPinned: Bool, for bookmark: Bookmark) {
-        var allBookmarks = bookmarks
+        let allBookmarks = bookmarks
         guard let index = allBookmarks.firstIndex(where: { $0.id == bookmark.id }) else { return }
         guard allBookmarks[index].isPinned != isPinned else { return }
 
