@@ -22,6 +22,10 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     let application: Application
     let tripConvertible: TripConvertible
 
+    /// Hands the page's map focus to the panel's map. See
+    /// `TripPageViewController.onMapFocusChanged`.
+    let onMapFocusChanged: (TripMapFocus?) -> Void
+
     /// Opens a tapped stop. See `TripPageViewController.onSelectStop`.
     let onSelectStop: (StopID) -> Void
 
@@ -33,6 +37,7 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
         Self.makeTripPage(
             application: application,
             tripConvertible: tripConvertible,
+            onMapFocusChanged: onMapFocusChanged,
             onSelectStop: onSelectStop,
             onClose: onClose
         )
@@ -48,10 +53,12 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     static func makeTripPage(
         application: Application,
         tripConvertible: TripConvertible,
+        onMapFocusChanged: @escaping (TripMapFocus?) -> Void,
         onSelectStop: @escaping (StopID) -> Void,
         onClose: @escaping () -> Void
     ) -> TripPageViewController {
         let page = TripPageViewController(application: application, tripConvertible: tripConvertible)
+        page.onMapFocusChanged = onMapFocusChanged
         page.onSelectStop = onSelectStop
         page.onClose = onClose
         return page

@@ -81,6 +81,7 @@ struct MapPanelRootView: View {
     @StateObject private var layersModel: MapPanelLayersModel
     @ObservedObject private var stopsObserver: MapStopsObserver
     @ObservedObject private var tripPlannerDisplay: TripPlannerMapDisplayModel
+    @ObservedObject private var tripFocusDisplay: TripFocusMapDisplayModel
 
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
@@ -155,12 +156,14 @@ struct MapPanelRootView: View {
         coordinator: SheetCoordinator<AppSheetRoute>,
         searchDisplayModel: MapSearchDisplayModel,
         stopsObserver: MapStopsObserver,
-        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel
+        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel,
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel
     ) {
         _coordinator = StateObject(wrappedValue: coordinator)
         _searchDisplay = ObservedObject(wrappedValue: searchDisplayModel)
         _stopsObserver = ObservedObject(wrappedValue: stopsObserver)
         _tripPlannerDisplay = ObservedObject(wrappedValue: tripPlannerMapDisplayModel)
+        _tripFocusDisplay = ObservedObject(wrappedValue: tripFocusMapDisplayModel)
         _mapViewModel = StateObject(wrappedValue: mapViewModel)
         _layersModel = StateObject(wrappedValue: layersModel)
         self.application = application
@@ -214,11 +217,13 @@ struct MapPanelRootView: View {
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels. Suppress them if a search
-            // result or trip is drawn, as those take over the map.
+            // result, a planned trip or an open trip is drawn, as those take over
+            // the map.
             if isZoomedInForStops,
                layersModel.isStopsLayerEnabled,
                !searchDisplay.suppressesAmbientStops,
-               !tripPlannerDisplay.isShowingTrip {
+               !tripPlannerDisplay.isShowingTrip,
+               !tripFocusDisplay.isShowingTrip {
                 ForEach(stopsObserver.renderStops) { renderStop in
                     stopAnnotation(
                         for: renderStop.stop,
@@ -239,6 +244,7 @@ struct MapPanelRootView: View {
                 )
             }
             tripPlannerMapContent(for: tripPlannerDisplay)
+            tripFocusMapContent(for: tripFocusDisplay.display)
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             viewportRecorder.record(context.rect)
@@ -274,7 +280,9 @@ struct MapPanelRootView: View {
             // directly — and `updateViewport` is the observer's prune step.
             // Only rendering is gated, in the `ForEach` above.
             stopsObserver.updateViewport(context.region)
-            guard !searchDisplay.suppressesAmbientStops, !tripPlannerDisplay.isShowingTrip else { return }
+            guard !searchDisplay.suppressesAmbientStops,
+                  !tripPlannerDisplay.isShowingTrip,
+                  !tripFocusDisplay.isShowingTrip else { return }
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
         // The map-type toggle changes the label gate (labels only show on the
@@ -325,12 +333,12 @@ struct MapPanelRootView: View {
             }
             mapSelection = nil
         }
-        // A searched result and a trip plan stay drawn for exactly as long as the
-        // sheet that owns them is on the stack. Watching the stack — rather than
-        // clearing from the owning sheet's `onDisappear` — keeps the drawing alive
-        // across the content teardowns the sheet system performs without dismissing
-        // anything, and still clears on a real exit, including the drag-down the OS
-        // routes through `truncateStacked`.
+        // A searched result, a trip plan and an open trip stay drawn for exactly as
+        // long as the sheet that owns them is on the stack. Watching the stack —
+        // rather than clearing from the owning sheet's `onDisappear` — keeps the
+        // drawing alive across the content teardowns the sheet system performs
+        // without dismissing anything, and still clears on a real exit, including
+        // the drag-down the OS routes through `truncateStacked`.
         .onChange(of: coordinator.stackedRoutes) { _, _ in
             searchDisplay.clearIfOwnerAbsent(from: coordinator.routeStack + coordinator.stackedRoutes)
             // Clear the trip planner when `.tripPlanner` is no longer on the stack.
@@ -347,6 +355,7 @@ struct MapPanelRootView: View {
             if !hasActiveTripPlanner {
                 tripPlannerDisplay.clear()
             }
+            tripFocusDisplay.clearIfOwnerAbsent(from: coordinator.routeStack + coordinator.stackedRoutes)
         }
         .onChange(of: searchDisplay.cameraTarget) { _, target in
             guard let target else { return }
@@ -371,6 +380,11 @@ struct MapPanelRootView: View {
             guard let target else { return }
             applyTripPlannerCameraTarget(target)
             tripPlannerDisplay.consumeCameraTarget()
+        }
+        .onChange(of: tripFocusDisplay.cameraTarget) { _, target in
+            guard let target else { return }
+            applyTripFocusCameraTarget(target)
+            tripFocusDisplay.consumeCameraTarget()
         }
         .mapStyle(mapViewModel.mapType.styleDescriptor(
             showingPointsOfInterest: layersModel.showsPointsOfInterest
@@ -666,6 +680,27 @@ extension MapPanelRootView {
             } else {
                 cameraPosition = .userLocation(fallback: .automatic)
             }
+        }
+    }
+
+    /// Frames an open trip in the part of the map its sheet leaves visible.
+    ///
+    /// The trip sheet opens at `.medium`, which covers about half the map, so the
+    /// bottom inset is half the map's height. The rect bounds the bus's and the
+    /// rider's coordinates, which are the middles of their markers, so every edge
+    /// also leaves a marker's width of room: with the margin alone, a bus on the
+    /// edge was drawn half off the screen. `paddedMapRect` turns the insets into
+    /// map points against the map's current size.
+    private func applyTripFocusCameraTarget(_ target: TripFocusMapDisplayModel.CameraTarget) {
+        let edge = ThemeMetrics.controllerMargin + TripFocusMapLayer.Style.vehicleDiameter
+        let insets = UIEdgeInsets(
+            top: edge + pillHeight,
+            left: edge,
+            bottom: halfScreenHeight + edge,
+            right: edge
+        )
+        withAnimation {
+            cameraPosition = .rect(paddedMapRect(target.rect, edgePadding: insets, mapSize: mapSize))
         }
     }
 

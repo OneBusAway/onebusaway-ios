@@ -38,12 +38,31 @@ final class TripPageSheetHostTests: OBATestCase {
         let page = TripPageSheetHost.makeTripPage(
             application: application,
             tripConvertible: convertible,
+            onMapFocusChanged: { _ in },
             onSelectStop: { _ in },
             onClose: {}
         )
 
         #expect(page.viewModel.tripConvertible === convertible)
         #expect(page.application === application)
+    }
+
+    @Test @MainActor
+    func `Make trip page hands the page the host's map focus handler`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var reported: [TripMapFocus?] = []
+
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: try Fixtures.tripConvertible(),
+            onMapFocusChanged: { reported.append($0) },
+            onSelectStop: { _ in },
+            onClose: {}
+        )
+        page.onMapFocusChanged?(page.mapFocus)
+
+        #expect(reported.count == 1)
+        #expect(reported.first.flatMap { $0 } === page.mapFocus)
     }
 
     @Test @MainActor
@@ -54,6 +73,7 @@ final class TripPageSheetHostTests: OBATestCase {
         let page = TripPageSheetHost.makeTripPage(
             application: application,
             tripConvertible: try Fixtures.tripConvertible(),
+            onMapFocusChanged: { _ in },
             onSelectStop: { _ in },
             onClose: { closeCount += 1 }
         )
@@ -75,6 +95,7 @@ final class TripPageSheetHostTests: OBATestCase {
         let page = TripPageSheetHost.makeTripPage(
             application: application,
             tripConvertible: try Fixtures.tripConvertible(),
+            onMapFocusChanged: { _ in },
             onSelectStop: { selectedStopIDs.append($0) },
             onClose: {}
         )

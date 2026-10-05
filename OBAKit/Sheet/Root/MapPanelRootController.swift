@@ -35,6 +35,14 @@ public final class MapPanelRootController: UIViewController {
         // Built here for the same reason: the factory must have the instance so the
         // trip planner sheet can push the same model instance the map renders from.
         let stopsObserver = MapStopsObserver(application: application)
+        // Built here for the same reason: the trip sheet hands its trip to this
+        // instance, and the map draws from it. The rider's location only frames
+        // the trip when the app may use it.
+        let tripFocusMapDisplayModel = TripFocusMapDisplayModel(userLocation: { [weak application] in
+            guard let locationService = application?.locationService,
+                  locationService.isLocationUseAuthorized else { return nil }
+            return locationService.currentLocation?.coordinate
+        })
         // Same reasoning for the map models: `AppSheetViewFactory` needs the
         // very instances the map renders from — `MapSheetModel` reads and
         // writes the map type through `MapViewModel`, so a second copy would
@@ -52,7 +60,8 @@ public final class MapPanelRootController: UIViewController {
             coordinator: coordinator,
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver,
-            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel
+            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel,
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel
         )
         let rootView = MapPanelRootView(
             application: application,
@@ -62,7 +71,8 @@ public final class MapPanelRootController: UIViewController {
             coordinator: coordinator,
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver,
-            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel
+            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel,
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel
         )
         self.host = UIHostingController(rootView: rootView)
         self.bridge = bridge
