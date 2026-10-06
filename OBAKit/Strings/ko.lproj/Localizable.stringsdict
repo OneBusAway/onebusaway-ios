@@ -86,6 +86,34 @@
 			<string>여기에 차량 %d대</string>
 		</dict>
 	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d대 이용 가능</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>도보 %d분</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

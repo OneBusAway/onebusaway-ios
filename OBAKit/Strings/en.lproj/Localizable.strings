@@ -618,6 +618,9 @@
 /* Reason shown on a dimmed rental layer row when its server is unreachable */
 "map_layers.rental_unavailable" = "Not available right now";
 
+/* Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it */
+"map_layers.rental_gone" = "This vehicle is no longer available";
+
 /* Map sheet row for the rental scooters layer */
 "map_layers.scooters" = "Scooters";
 
@@ -689,6 +692,9 @@
 
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "Zoom in for stops";
+
+/* Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles */
+"map_status_view.zoom_in_for_rentals" = "Zoom in to see bikes and scooters";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "About this App";
@@ -1095,6 +1101,12 @@
 /* Label for the number of bikes available at a station */
 "rental_detail.bikes_available" = "Bikes";
 
+/* Label for the number of scooters available at a station that only holds scooters */
+"rental_detail.scooters_available" = "Scooters";
+
+/* Label for the number of rental vehicles available at a station whose vehicle types are mixed or unknown */
+"rental_detail.vehicles_available" = "Available";
+
 /* Label for the number of open docks at a station */
 "rental_detail.docks_available" = "Docks";
 
@@ -1109,6 +1121,12 @@
 
 /* Button opening the rental operator's app or website */
 "rental_detail.open_in_fmt" = "Open in %@";
+
+/* VoiceOver hint on the button opening a rental operator's app. %@ is the operator, e.g. Lime. */
+"rental_detail.open_in_hint_fmt" = "Opens %@, or its App Store page if it isn't installed.";
+
+/* Button opening a rental operator's app when the operator's name is unknown */
+"rental_detail.open_rental_app" = "Open rental app";
 
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "Pickup";

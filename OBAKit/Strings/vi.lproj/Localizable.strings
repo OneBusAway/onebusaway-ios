@@ -554,6 +554,8 @@
 
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "Phóng to để xem điểm dừng";
+/* Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles */
+"map_status_view.zoom_in_for_rentals" = "Phóng to để xem xe đạp và xe scooter";
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Location Services Off";
@@ -1851,6 +1853,8 @@
 "map_layers.bus_stops" = "Điểm dừng";
 /* Reason shown on a dimmed rental layer row when its server is unreachable */
 "map_layers.rental_unavailable" = "Hiện không khả dụng";
+/* Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it */
+"map_layers.rental_gone" = "Xe này không còn khả dụng";
 /* Map sheet row for the rental scooters layer */
 "map_layers.scooters" = "Xe scooter";
 /* Map sheet row for the layer drawing a selected stop's routes and live vehicles. */
@@ -1903,6 +1907,10 @@
 "rental_detail.battery" = "Pin";
 /* Label for the number of bikes available at a station */
 "rental_detail.bikes_available" = "Xe đạp";
+/* Label for the number of scooters available at a station that only holds scooters */
+"rental_detail.scooters_available" = "Xe scooter";
+/* Label for the number of rental vehicles available at a station whose vehicle types are mixed or unknown */
+"rental_detail.vehicles_available" = "Có sẵn";
 /* Label for the number of open docks at a station */
 "rental_detail.docks_available" = "Chỗ trả xe";
 /* Label for whether dropping off a vehicle is currently allowed */
@@ -1913,6 +1921,10 @@
 "rental_detail.not_in_service" = "Không hoạt động";
 /* Button opening the rental operator's app or website */
 "rental_detail.open_in_fmt" = "Mở trong %@";
+/* VoiceOver hint on the button opening a rental operator's app. %@ is the operator, e.g. Lime. */
+"rental_detail.open_in_hint_fmt" = "Mở %@ hoặc trang của ứng dụng trên App Store nếu chưa cài đặt.";
+/* Button opening a rental operator's app when the operator's name is unknown */
+"rental_detail.open_rental_app" = "Mở ứng dụng thuê xe";
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "Lấy xe";
 /* Primary action on the rental vehicle sheet */

@@ -554,6 +554,8 @@
 
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "Acérquese para ver paradas";
+/* Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles */
+"map_status_view.zoom_in_for_rentals" = "Acérquese para ver bicicletas y scooters";
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Location Services Off";
@@ -1851,6 +1853,8 @@
 "map_layers.bus_stops" = "Paradas";
 /* Reason shown on a dimmed rental layer row when its server is unreachable */
 "map_layers.rental_unavailable" = "No disponible en este momento";
+/* Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it */
+"map_layers.rental_gone" = "Este vehículo ya no está disponible";
 /* Map sheet row for the rental scooters layer */
 "map_layers.scooters" = "Scooters";
 /* Map sheet row for the layer drawing a selected stop's routes and live vehicles. */
@@ -1903,6 +1907,10 @@
 "rental_detail.battery" = "Batería";
 /* Label for the number of bikes available at a station */
 "rental_detail.bikes_available" = "Bicicletas";
+/* Label for the number of scooters available at a station that only holds scooters */
+"rental_detail.scooters_available" = "Scooters";
+/* Label for the number of rental vehicles available at a station whose vehicle types are mixed or unknown */
+"rental_detail.vehicles_available" = "Disponibles";
 /* Label for the number of open docks at a station */
 "rental_detail.docks_available" = "Anclajes";
 /* Label for whether dropping off a vehicle is currently allowed */
@@ -1913,6 +1921,10 @@
 "rental_detail.not_in_service" = "Fuera de servicio";
 /* Button opening the rental operator's app or website */
 "rental_detail.open_in_fmt" = "Abrir en %@";
+/* VoiceOver hint on the button opening a rental operator's app. %@ is the operator, e.g. Lime. */
+"rental_detail.open_in_hint_fmt" = "Abre %@ o su página en el App Store si no está instalada.";
+/* Button opening a rental operator's app when the operator's name is unknown */
+"rental_detail.open_rental_app" = "Abrir app de alquiler";
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "Recogida";
 /* Primary action on the rental vehicle sheet */

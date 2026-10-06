@@ -554,6 +554,8 @@
 
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "放大以顯示站牌";
+/* Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles */
+"map_status_view.zoom_in_for_rentals" = "放大以顯示單車和滑板車";
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Location Services Off";
@@ -1851,6 +1853,8 @@
 "map_layers.bus_stops" = "站點";
 /* Reason shown on a dimmed rental layer row when its server is unreachable */
 "map_layers.rental_unavailable" = "目前無法使用";
+/* Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it */
+"map_layers.rental_gone" = "此車輛已無法使用";
 /* Map sheet row for the rental scooters layer */
 "map_layers.scooters" = "滑板車";
 /* Map sheet row for the layer drawing a selected stop's routes and live vehicles. */
@@ -1903,6 +1907,10 @@
 "rental_detail.battery" = "電量";
 /* Label for the number of bikes available at a station */
 "rental_detail.bikes_available" = "單車";
+/* Label for the number of scooters available at a station that only holds scooters */
+"rental_detail.scooters_available" = "滑板車";
+/* Label for the number of rental vehicles available at a station whose vehicle types are mixed or unknown */
+"rental_detail.vehicles_available" = "可租借";
 /* Label for the number of open docks at a station */
 "rental_detail.docks_available" = "空位";
 /* Label for whether dropping off a vehicle is currently allowed */
@@ -1913,6 +1921,10 @@
 "rental_detail.not_in_service" = "暫停服務";
 /* Button opening the rental operator's app or website */
 "rental_detail.open_in_fmt" = "在 %@ 中開啟";
+/* VoiceOver hint on the button opening a rental operator's app. %@ is the operator, e.g. Lime. */
+"rental_detail.open_in_hint_fmt" = "開啟 %@；若尚未安裝，則開啟其 App Store 頁面。";
+/* Button opening a rental operator's app when the operator's name is unknown */
+"rental_detail.open_rental_app" = "開啟租借 App";
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "借車";
 /* Primary action on the rental vehicle sheet */
