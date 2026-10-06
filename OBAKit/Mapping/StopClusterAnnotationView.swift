@@ -16,6 +16,9 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         markerTintColor = ThemeColors.shared.brand
+        // White on OneBusAway's green is under 3:1; take whichever of white or
+        // black clears 4.5:1 on the white-label app's brand.
+        glyphTintColor = ThemeColors.shared.brand.badgeTextColor(preferring: .white, minimumRatio: 4.5)
         displayPriority = .defaultHigh
         collisionMode = .circle
     }
@@ -28,6 +31,9 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
         guard let cluster = annotation as? MKClusterAnnotation else { return }
         let stops = StopCluster.stops(in: cluster.memberAnnotations)
         glyphText = String(stops.count)
-        accessibilityLabel = stops.map(\.name).joined(separator: ", ")
+        accessibilityLabel = StopCluster.accessibilityLabel(stopCount: stops.count)
+        accessibilityValue = StopCluster.accessibilityValue(for: stops)
+        accessibilityHint = StopCluster.accessibilityHint
+        accessibilityTraits = .button
     }
 }

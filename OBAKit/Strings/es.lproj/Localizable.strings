@@ -305,6 +305,9 @@
 /* Title of the read-only Stop ID row on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_row.title" = "ID de parada";
 
+/* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
+"edit_bookmark_controller.stop_id_row.accessibility_hint" = "Copia el ID de parada.";
+
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Sin grupo)";
@@ -461,6 +464,9 @@
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "Centar el mapa en la ubicación actual";
 
+/* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
+"map_controller.dropped_pin_title" = "Pin colocado";
+
 /* Change Region button on the alert that appears when the user is updating their current region manually. */
 "map_controller.change_region_alert.button" = "Cambiar Región";
 
@@ -500,6 +506,9 @@
 /* Title of the list shown when tapping a map pin that groups several stops at the same location. */
 "map_controller.stop_cluster_picker.title" = "Elige una parada";
 
+/* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
+"map_controller.stop_cluster.accessibility_hint" = "Muestra las paradas de este lugar.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "El vehículo que eligió no parece estar de viaje en este momento, lo que significa que no sabemos cómo mostrárselo.";
 
@@ -536,6 +545,9 @@
 
 /* Button to remove a dropped pin from the map */
 "map_item_controller.remove_pin" = "Eliminar Pin";
+
+/* Name shown in the trip planner for a destination that has no name of its own, such as a point on the map. */
+"map_item_controller.destination_fallback_title" = "Destino";
 
 /* Accessibility label for remove pin button */
 "map_item_controller.remove_pin_accessibility" = "Eliminar este pin del mapa";
@@ -1249,6 +1261,9 @@
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "Es posible que este marcador ya no funcione. ¿Tu agencia de tránsito cambió algo? Elimine y vuelva a crear el marcador.";
 
+/* Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop. */
+"stop_controller.bad_bookmark_error_title" = "Marcador roto";
+
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Datos proporcionados por %@";
 
@@ -1569,6 +1584,15 @@
 
 /* Title of the row that will show stops that are near this one. */
 "stops_controller.nearby_stops" = "Paradas Cercanas";
+
+/* Section heading in the stop screen's More menu, over the Add Bookmark and Service Alerts items. */
+"stops_controller.menu.file_title" = "Archivo";
+
+/* Section heading in the stop screen's More menu, over the nearby stops, walking directions and trip planning items. */
+"stops_controller.menu.location_title" = "Ubicación";
+
+/* Section heading in the stop screen's More menu, over the Report a Problem item. */
+"stops_controller.menu.help_title" = "Ayuda";
 
 /* Button that launches the 'Report Problem' UI. */
 "stops_controller.report_problem" = "Informar de un problema";

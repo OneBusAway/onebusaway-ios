@@ -144,10 +144,27 @@ extension MapViewController {
         rentalLayerCoordinator?.setRangeFilter(mapRegionManager.rentalRangeFilter)
     }
 
+    /// Refreshes the basemap button's icon and VoiceOver value. Runs on a basemap
+    /// change (`bindMapType`) and on a layer change (`updateMapLayerBadge()`),
+    /// since the value carries both. Satellite used to share hybrid's globe and
+    /// be announced as "hybrid".
+    ///
+    /// - Parameter mapType: Passed explicitly by `bindMapType`, whose `@Published`
+    ///   sink fires before `viewModel.mapType` takes the new value.
+    func updateMapTypeButton(mapType: MapBaseType? = nil) {
+        let mapType = mapType ?? viewModel.mapType
+        toggleMapTypeButton.setImage(UIImage(systemName: MapTypeButtonPresentation.symbolName(for: mapType)), for: .normal)
+        toggleMapTypeButton.accessibilityValue = MapTypeButtonPresentation.accessibilityValue(
+            mapType: mapType,
+            layerCount: mapRegionManager.enabledMapLayerCount
+        )
+    }
+
     func updateMapLayerBadge() {
         let count = mapRegionManager.enabledMapLayerCount
         mapLayerBadge.text = String(count)
         mapLayerBadge.isHidden = count == 0
+        updateMapTypeButton()
     }
 
     // MARK: - Map Sheet

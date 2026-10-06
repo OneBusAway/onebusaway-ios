@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import OBAKitCore
 import UIKit
 
 extension ProgressHUD {
@@ -22,8 +23,16 @@ extension ProgressHUD {
     class func showSuccessAndDismiss(message: String? = nil, dismissAfter: TimeInterval = 3.0) {
         pendingDismiss?.cancel()
         ProgressHUD.showSuccess(message, image: nil, interaction: false)
+        AccessibilityAnnouncement.post(successAnnouncement(for: message))
         let dismiss = DispatchWorkItem { ProgressHUD.dismiss() }
         pendingDismiss = dismiss
         DispatchQueue.main.asyncAfter(deadline: .now() + dismissAfter, execute: dismiss)
+    }
+
+    /// The HUD never takes VoiceOver focus, so without an announcement a VoiceOver
+    /// user hears nothing at all. A bare checkmark (no message) is read as "Done".
+    static func successAnnouncement(for message: String?) -> String {
+        guard let message, !message.isEmpty else { return Strings.done }
+        return message
     }
 }

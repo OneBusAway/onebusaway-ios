@@ -82,6 +82,26 @@
 			<string>%2$d warstwy włączonej</string>
 		</dict>
 	</dict>
+	<key>map_controller.stop_cluster.accessibility_label_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d przystanki</string>
+			<key>many</key>
+			<string>%d przystanków</string>
+			<key>one</key>
+			<string>1 przystanek</string>
+			<key>other</key>
+			<string>%d przystanku</string>
+		</dict>
+	</dict>
 	<key>next_departures_intent.in_minutes_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

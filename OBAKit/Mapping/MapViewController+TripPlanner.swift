@@ -162,7 +162,7 @@ extension MapViewController {
         hostingController.view.backgroundColor = .clear
 
         let semiModal = createSemiModalPanel(childController: hostingController)
-        semiModal.addPanel(toParent: self)
+        addSemiModalPanel(semiModal)
         self.semiModalTripPlannerController = semiModal
         self.tripPlanner = tripPlanner
         self.tripPlannerHostingController = hostingController
@@ -198,6 +198,13 @@ extension MapViewController {
     @objc func tripStarted(_ note: NSNotification) {
         showTripPlannerMapView()
 
-        semiModalTripPlannerController?.move(to: .tip, animated: true)
+        semiModalTripPlannerController?.move(to: Self.tripStartedPanelState(isVoiceOverRunning: UIAccessibility.isVoiceOverRunning), animated: true)
+    }
+
+    /// Starting a trip drops the planner to `.tip` so the route map shows. Under
+    /// VoiceOver the map is nothing to look at and `.tip` leaves barely more than
+    /// the grabber, so the itinerary the rider just chose stays readable at `.half`.
+    static func tripStartedPanelState(isVoiceOverRunning: Bool) -> FloatingPanelState {
+        isVoiceOverRunning ? .half : .tip
     }
 }

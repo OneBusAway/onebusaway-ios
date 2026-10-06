@@ -58,6 +58,20 @@
 			<string>%2$d lớp đang bật</string>
 		</dict>
 	</dict>
+	<key>map_controller.stop_cluster.accessibility_label_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d điểm dừng</string>
+		</dict>
+	</dict>
 	<key>next_departures_intent.in_minutes_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
