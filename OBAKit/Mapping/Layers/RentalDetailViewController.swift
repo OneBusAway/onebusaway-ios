@@ -409,11 +409,24 @@ struct RentalClusterListView: View {
             }
 
             Spacer()
-            Image(systemName: "chevron.right")
+            Image(systemName: "chevron.forward")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
+        // The drawn detail line is a bare "17 miles · 13 min walk"; spoken, the
+        // figure needs its name and the dot shouldn't be read at all. Same words
+        // as the map marker, so the list and the pin it came from agree.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(rowAccessibilityLabel(for: rental)))
+    }
+
+    private func rowAccessibilityLabel(for rental: VehicleRental) -> String {
+        var parts = [RentalFormat.markerAccessibilityLabel(for: rental)]
+        if let walkTime = RentalFormat.walkTimeText(from: userLocation, to: rental.coordinate) {
+            parts.append(walkTime)
+        }
+        return parts.joined(separator: ", ")
     }
 
     /// Range (battery only when the feed provides it) and walk estimate.
