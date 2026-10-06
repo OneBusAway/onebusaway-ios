@@ -71,15 +71,18 @@ extension TimeZone {
                 hours
             )
         }
+        // Minutes are padded here and passed as a string: genstrings drops the
+        // width from `%02d`, so a translatable `%3$02d` would regress to `%3$d`
+        // ("GMT+5:5") the next time scripts/extract_strings regenerated en.
         return String(
             format: OBALoc(
                 "timezone.gmt_offset_hours_minutes_fmt",
-                value: "GMT%@%d:%02d",
-                comment: "GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and zero-padded minutes."
+                value: "GMT%@%d:%@",
+                comment: "GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and the two-digit minutes."
             ),
             sign,
             hours,
-            minutes
+            String(format: "%02d", minutes)
         )
     }
 }

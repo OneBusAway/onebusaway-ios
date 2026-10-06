@@ -515,8 +515,8 @@
 /* GMT offset with whole hours, e.g. GMT+5 or GMT-8. First argument is + or -. Second is the hour count. */
 "timezone.gmt_offset_hours_fmt" = "GMT%1$@%2$d";
 
-/* GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and zero-padded minutes. */
-"timezone.gmt_offset_hours_minutes_fmt" = "GMT%1$@%2$d:%3$02d";
+/* GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and the two-digit minutes. */
+"timezone.gmt_offset_hours_minutes_fmt" = "GMT%1$@%2$d:%3$@";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "اضغط هنا للبحث عن الأماكن وتخطيط رحلتك باستخدام اتجاهات النقل.";
