@@ -88,7 +88,23 @@ import OTPKit
 
     /// Stricter than the stop gate (40,000): `vehicleRentalsByBbox` has no
     /// server-side result limit, so the client must keep bounding boxes small.
-    var zoomWindow: MapLayerZoomWindow { MapLayerZoomWindow(maxVisibleHeight: 20_000) }
+    /// Also the threshold for the "Zoom in to see bikes and scooters" pill —
+    /// see `MapRegionManager.shouldShowRentalZoomHint`.
+    static let maxVisibleHeight: Double = 20_000
+
+    var zoomWindow: MapLayerZoomWindow { MapLayerZoomWindow(maxVisibleHeight: Self.maxVisibleHeight) }
+
+    /// Where the `onebusaway://rentals` link lands: 500 m square, centred on the
+    /// link's coordinate — a few blocks of choice, with individual vehicles visible.
+    ///
+    /// Sized against `maxVisibleHeight`, not by eye. MapKit fits the region to the
+    /// view's narrower side, so on a portrait phone the visible height is about
+    /// twice this, ~1.1 km; and map points per metre grow with latitude. That stays
+    /// under 20,000 map points to about 65°, so rentals draw on arrival. 800 m, the
+    /// first guess, came within 5% of the threshold in Seattle.
+    static func focusRegion(around coordinate: CLLocationCoordinate2D) -> MKCoordinateRegion {
+        MKCoordinateRegion(center: coordinate, latitudinalMeters: 500, longitudinalMeters: 500)
+    }
 
     var densityBudget: Int { 500 }
     var isClusterable: Bool { true }
@@ -182,5 +198,41 @@ import OTPKit
         }
 
         return nil
+    }
+}
+
+// MARK: - Zoom hint
+
+extension MapRegionManager {
+
+    /// Whether the "Zoom in to see bikes and scooters" hint should show: a rental
+    /// layer is on, and the map is zoomed out past where rentals draw but not so
+    /// far that stops vanish too — there, "Zoom in for stops" already says it.
+    ///
+    /// Without the hint, a rider who switched Bikes on at a stop-level zoom saw
+    /// stops and no bikes, with nothing to say the layer was working. Shared by
+    /// both surfaces, like `shouldShowZoomInWarning`.
+    static func shouldShowRentalZoomHint(forVisibleMapRectHeight height: Double, rentalLayerEnabled: Bool) -> Bool {
+        rentalLayerEnabled
+            && height > RentalMapLayer.maxVisibleHeight
+            && !shouldShowZoomInWarning(forVisibleMapRectHeight: height)
+    }
+
+    /// True when a rental layer is registered for this region, switched on, and
+    /// working. A layer whose server is down is excluded: zooming in would not
+    /// make its vehicles appear, so the hint would be a false promise.
+    var isAnyRentalLayerShowing: Bool {
+        mapLayers.contains { layer in
+            layer is RentalMapLayer && layer.availability == .available && isMapLayerEnabled(id: layer.id)
+        }
+    }
+
+    /// The UIKit map's hint state, from its own `MKMapView`. The panel computes
+    /// the same thing from its SwiftUI camera.
+    var rentalZoomHintStatus: Bool {
+        MapRegionManager.shouldShowRentalZoomHint(
+            forVisibleMapRectHeight: mapView.visibleMapRect.height,
+            rentalLayerEnabled: isAnyRentalLayerShowing
+        )
     }
 }

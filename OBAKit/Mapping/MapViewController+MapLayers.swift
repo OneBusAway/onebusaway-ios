@@ -133,8 +133,39 @@ extension MapViewController {
         return false
     }
 
+    // MARK: - Rentals Deep Link
+
+    @objc func rentalsDeepLinkPending(_ note: NSNotification) {
+        showPendingRentalsIfNeeded()
+    }
+
+    /// Content that something outside the map asked it to show once it appears:
+    /// the configured launch route, and an `onebusaway://rentals` link.
+    func showExternallyRequestedContent() {
+        showLaunchRouteIfNeeded()
+        showPendingRentalsIfNeeded()
+    }
+
+    /// Applies an `onebusaway://rentals` link: `Application` has already switched
+    /// the rental layers on, so this only moves the camera to where they draw.
+    ///
+    /// Waits for the map to be on screen — `viewDidAppear` calls this too, which
+    /// is what applies a link that arrived on a cold launch or during onboarding.
+    func showPendingRentalsIfNeeded() {
+        guard viewIfLoaded?.window != nil,
+              let coordinate = application.claimPendingRentalsFocus() else {
+            return
+        }
+
+        initialMapChangeMade = true
+        mapRegionManager.mapView.setRegion(RentalMapLayer.focusRegion(around: coordinate), animated: true)
+    }
+
     @objc func mapLayerStateDidChange(_ note: NSNotification) {
         updateMapLayerBadge()
+        // Toggling Bikes on while zoomed out has to raise the rental hint now,
+        // not at the next camera settle.
+        viewModel.updateRentalZoomHint(mapRegionManager.rentalZoomHintStatus)
     }
 
     /// `MapViewController` is the composition root for the rental layers, so it
@@ -234,11 +265,18 @@ extension MapViewController: RegionsServiceDelegate {
 // MARK: - RentalLayerActionsDelegate
 
 extension MapViewController: RentalLayerActionsDelegate {
-    /// "Plan a trip using this bike": route through the vehicle's exact coordinate
-    /// as a via point with a rental mode preselected — OTP has no "use vehicle X"
-    /// parameter, but routing through the spot where the vehicle stands picks it up.
-    /// Transit + Bikeshare (not Bikeshare Only) because via routing requires a
-    /// transit mode in the request on OTP's default configuration.
+    /// The predicate `showTripPlanner` gates on, asked before the sheet draws its
+    /// button. Without it the sheet dismissed itself on tap and `showTripPlanner`
+    /// then returned silently: a primary action that did nothing at all.
+    var rentalLayerOffersTripPlanning: Bool {
+        RentalTripPlan.isTripPlanningAvailable(
+            region: application.regionsService.currentRegion,
+            userDataStore: application.userDataStore
+        )
+    }
+
+    /// "Plan a trip using this vehicle": the planner starts *at* the vehicle in
+    /// bike-rental mode, which is what makes OTP rent it. See `RentalTripPlan`.
     func rentalLayer(planTripUsing rental: VehicleRental) {
         application.analytics?.reportEvent(
             pageURL: "app://localhost/bikeshare",
@@ -246,36 +284,17 @@ extension MapViewController: RentalLayerActionsDelegate {
             value: rental.rentalNetwork?.networkId
         )
         dismiss(animated: true) { [weak self] in
-            self?.showTripPlanner(viaPoint: rental.coordinate, preselectedMode: .transitBikeRental)
+            self?.showTripPlanner(
+                origin: RentalTripPlan.origin(for: rental),
+                preselectedMode: RentalTripPlan.transportMode
+            )
         }
     }
 
-    /// Opens a rental deep link. No `canOpenURL` pre-check: Apple's own guidance
-    /// is to attempt the open and handle failure, and `open` — unlike
-    /// `canOpenURL` — is not constrained by `LSApplicationQueriesSchemes`.
-    ///
-    /// The URL is often synthesized from a reverse-engineered scheme rather than
-    /// published by the feed (see `RentalDeepLink`), so failure is expected and
-    /// routine: no app claims the scheme, `success` is false, and we fall back to
-    /// the operator's App Store page or web page.
-    func rentalLayer(open url: URL, webFallback: URL?, networkID: String?) {
-        application.analytics?.reportEvent(
-            pageURL: "app://localhost/bikeshare",
-            label: AnalyticsLabels.rentalDeepLinkTapped,
-            value: networkID
-        )
-
-        application.open(url, options: [:]) { [weak self] success in
-            guard !success else { return }
-            Logger.info("Rental deep link failed to open: \(url)")
-            self?.application.analytics?.reportEvent(
-                pageURL: "app://localhost/bikeshare",
-                label: AnalyticsLabels.rentalDeepLinkFallbackFired,
-                value: networkID
-            )
-            if let webFallback {
-                self?.application.open(webFallback, options: [:], completionHandler: nil)
-            }
-        }
+    /// Opens a rental deep link; `RentalLinkOpener` owns the analytics and the
+    /// fallbacks, shared with the map panel.
+    func rentalLayer(open target: RentalDeepLink.Target, networkID: String?) {
+        RentalLinkOpener.live(application: application) { [weak self] in self }
+            .open(target, networkID: networkID)
     }
 }

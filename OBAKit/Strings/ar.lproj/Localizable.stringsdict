@@ -170,6 +170,54 @@
 			<string>لا توجد مركبات هنا</string>
 		</dict>
 	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d مركبات متاحة</string>
+			<key>many</key>
+			<string>%d مركبة متاحة</string>
+			<key>one</key>
+			<string>مركبة واحدة متاحة</string>
+			<key>other</key>
+			<string>%d مركبة متاحة</string>
+			<key>two</key>
+			<string>مركبتان متاحتان</string>
+			<key>zero</key>
+			<string>لا توجد مركبات متاحة</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d دقائق مشيًا</string>
+			<key>many</key>
+			<string>%d دقيقة مشيًا</string>
+			<key>one</key>
+			<string>دقيقة واحدة مشيًا</string>
+			<key>other</key>
+			<string>%d دقيقة مشيًا</string>
+			<key>two</key>
+			<string>دقيقتان مشيًا</string>
+			<key>zero</key>
+			<string>%d دقيقة مشيًا</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

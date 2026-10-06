@@ -39,8 +39,14 @@ struct RentalVisibility {
     private(set) var filter: RentalRangeFilter = .any
 
     /// With no form factors selected, every layer is off and nothing is visible.
+    ///
+    /// Virtual stations never show: they are a feed's bookkeeping, not a place a
+    /// rider can walk to and find a vehicle. See `VehicleRental.isVirtualStation`.
     private func isVisible(_ rental: VehicleRental) -> Bool {
-        !formFactors.isEmpty && rental.matches(formFactors: formFactors) && filter.allows(rental)
+        !formFactors.isEmpty
+            && !rental.isVirtualStation
+            && rental.matches(formFactors: formFactors)
+            && filter.allows(rental)
     }
 
     // MARK: - Snapshot application
@@ -121,5 +127,43 @@ struct RentalVisibility {
         }
 
         return changes
+    }
+}
+
+// MARK: - Virtual stations
+
+extension VehicleRentalStation {
+    /// Dock counts at or above this are sentinels, not docks.
+    ///
+    /// Dockless operators publish "virtual stations" so their free-floating fleet
+    /// fits GBFS's station model, and report an effectively unlimited capacity for
+    /// them. Puget Sound's Lime feed carries one, `lime_seattle:seattle` — named
+    /// "Seattle", pinned at Westlake, with 0 vehicles and `spacesAvailable` 999999.
+    /// Drawn, it is a purple "0" in the middle of downtown that rents nothing.
+    /// No real dock bank comes within two orders of magnitude of this.
+    static let virtualStationDockThreshold = 10_000
+
+    /// True when either dock count the feed publishes is a sentinel. Both are
+    /// checked: `docksAvailableCount` prefers the typed total, which a feed could
+    /// leave sane while the legacy field carries the sentinel.
+    var isVirtual: Bool {
+        [availableSpaces?.total, spacesAvailable]
+            .compactMap { $0 }
+            .contains { $0 >= Self.virtualStationDockThreshold }
+    }
+
+    /// The open-dock count fit to show a rider: nil when the feed omits it or
+    /// reports a sentinel, so "999999 Docks" can never reach the screen.
+    var displayableDocksCount: Int? {
+        guard !isVirtual, let docks = docksAvailableCount else { return nil }
+        return docks
+    }
+}
+
+extension VehicleRental {
+    /// True for a dockless operator's virtual station. Vehicles are never virtual.
+    var isVirtualStation: Bool {
+        guard case .station(let station) = self else { return false }
+        return station.isVirtual
     }
 }

@@ -142,6 +142,46 @@
 			<string>%d pojazdu tutaj</string>
 		</dict>
 	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d dostępne</string>
+			<key>many</key>
+			<string>%d dostępnych</string>
+			<key>one</key>
+			<string>%d dostępny</string>
+			<key>other</key>
+			<string>%d dostępnego</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d minuty pieszo</string>
+			<key>many</key>
+			<string>%d minut pieszo</string>
+			<key>one</key>
+			<string>%d minuta pieszo</string>
+			<key>other</key>
+			<string>%d minuty pieszo</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

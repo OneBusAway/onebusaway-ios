@@ -147,12 +147,11 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         fuelLabel.isHidden = fuelText == nil || !rentalAnnotation.showsFuelLabel
 
         // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
-        // VoiceOver user information. The station occupancy line is carried across
-        // explicitly because assigning accessibilityLabel replaces MapKit's
-        // title/subtitle default — anything omitted here is silently lost.
-        accessibilityLabel = [rental.displayLabel, rentalAnnotation.subtitle, fuelText]
-            .compactMap { $0 }
-            .joined(separator: ", ")
+        // VoiceOver user information. Built by `RentalFormat` so this and the
+        // panel's `RentalMapMarker` say the same thing.
+        accessibilityLabel = RentalFormat.markerAccessibilityLabel(for: rental)
+        // Activating the marker opens the rental sheet, so it is a button.
+        accessibilityTraits.insert(.button)
     }
 
     /// Applies just the zoom gate's decision, without re-running `configure()`.
@@ -200,5 +199,11 @@ public class RentalClusterAnnotationView: MKMarkerAnnotationView {
         guard let cluster = annotation as? MKClusterAnnotation else { return }
         markerTintColor = .rentalPurple
         glyphText = String(cluster.memberAnnotations.count)
+
+        // Without a label, VoiceOver reads MapKit's default cluster title — or the
+        // bare glyph number, which says nothing about what was counted.
+        isAccessibilityElement = true
+        accessibilityLabel = RentalFormat.clusterAccessibilityLabel(count: cluster.memberAnnotations.count)
+        accessibilityTraits.insert(.button)
     }
 }

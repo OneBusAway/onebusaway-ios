@@ -181,4 +181,91 @@ struct RentalDeepLinkTests {
         let rental = try RentalFixtures.vehicle(id: "lime_seattle:abc", networkId: nil)
         #expect(RentalDeepLink.target(for: rental, now: now) == nil)
     }
+
+    // MARK: - Feed URI hardening
+
+    /// The button says "Open in Lime". A feed URI that would place a call, compose
+    /// a message, or offer an app install is treated as absent, so synthesis runs.
+    @Test(arguments: [
+        "tel:+12065550100", "TEL:+12065550100", "telprompt:+12065550100",
+        "sms:+12065550100", "facetime:someone@example.com", "facetime-audio:someone@example.com",
+        "mailto:rides@example.com", "file:///etc/hosts", "javascript:alert(1)",
+        "data:text/html,hi", "itms-services://?action=download-manifest&url=https://x.example/m.plist"
+    ])
+    func rejectedFeedSchemesFallThroughToSynthesis(uri: String) throws {
+        let rental = try RentalFixtures.vehicle(id: "lime_seattle:abc", rentalUris: ["ios": uri])
+        let target = try #require(RentalDeepLink.target(for: rental, now: now))
+
+        #expect(target.url.scheme == "limebike")
+        #expect(query(target.url)["selected_vehicle_id"] == "abc")
+    }
+
+    /// A rejected URI with nothing to synthesize from hides the button.
+    @Test func rejectedFeedSchemeWithoutAnOperatorHidesTheButton() throws {
+        let rental = try RentalFixtures.vehicle(id: "x:1", networkId: nil, rentalUris: ["ios": "tel:+12065550100"])
+        #expect(RentalDeepLink.target(for: rental, now: now) == nil)
+    }
+
+    @Test func ordinaryFeedSchemesAreKept() throws {
+        let rental = try RentalFixtures.vehicle(id: "lime_seattle:abc", rentalUris: ["ios": "lime://ride/abc"])
+        let target = try #require(RentalDeepLink.target(for: rental, now: now))
+        #expect(target.url.absoluteString == "lime://ride/abc")
+    }
+
+    // MARK: - App Store registry
+
+    @Test func synthesizedLinksCarryTheAppStoreID() throws {
+        let lime = try #require(RentalDeepLink.target(for: try RentalFixtures.vehicle(id: "lime_seattle:abc"), now: now))
+        #expect(lime.appStoreID == "1199780189")
+
+        let bird = try #require(RentalDeepLink.target(
+            for: try RentalFixtures.vehicle(id: "bird-seattle-washington:abc", networkId: "bird-seattle-washington"),
+            now: now
+        ))
+        #expect(bird.appStoreID == "1260842311")
+    }
+
+    /// A feed-published link fails just as hard when the app is not installed,
+    /// so it carries the id too — while its plain fallback stays the web page.
+    @Test func feedProvidedURIStillCarriesTheAppStoreID() throws {
+        let rental = try RentalFixtures.vehicle(
+            id: "lime_seattle:abc",
+            networkURL: "https://www.li.me/",
+            rentalUris: ["ios": "https://lime.example/ride/abc"]
+        )
+        let target = try #require(RentalDeepLink.target(for: rental, now: now))
+
+        #expect(target.appStoreID == "1199780189")
+        #expect(target.storeFallback?.absoluteString == "https://www.li.me/")
+    }
+
+    @Test func webPageTargetCarriesTheAppStoreIDForKnownOperators() throws {
+        let rental = try RentalFixtures.vehicle(id: "veo_seattle:abc", networkId: "veo_seattle", networkURL: "https://www.veoride.com/")
+        let target = try #require(RentalDeepLink.target(for: rental, now: now))
+        #expect(target.appStoreID == "1279820696")
+    }
+
+    @Test(arguments: [
+        ("lime_seattle", "1199780189"),
+        ("bird-seattle-washington", "1260842311"),
+        ("veo_seattle", "1279820696"),
+        ("spin_dc", "1241808993"),
+        ("bolt-portland", "6475395031"),
+        ("lyft_sfo", "529379082"),
+        ("capital_bikeshare", "1233403073"),
+        ("CapitalBikeshare", "1233403073"),
+        ("citibike-nyc", "641194843"),
+        ("divvy", "1369992600"),
+        ("bay_wheels", "1233398899")
+    ])
+    func registryMatchesKnownOperators(networkID: String, expected: String) {
+        #expect(RentalDeepLink.appStoreID(forNetworkID: networkID) == expected)
+    }
+
+    /// Conservative on purpose: a leading token that merely starts like a known
+    /// system must not borrow its App Store page.
+    @Test(arguments: ["capital", "capital_metro", "citi", "bay_area_bikes", "limelight", "unknown_network", ""])
+    func registryDoesNotGuess(networkID: String) {
+        #expect(RentalDeepLink.appStoreID(forNetworkID: networkID) == nil)
+    }
 }
