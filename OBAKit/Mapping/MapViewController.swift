@@ -210,6 +210,7 @@ class MapViewController: UIViewController,
         viewModel.start()
         updateVoiceover()
         showMapLayersTipIfNeeded()
+        showLaunchRouteIfNeeded()
         Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
@@ -1004,6 +1005,14 @@ class MapViewController: UIViewController,
     // MARK: - Semi Modals
 
     private var semiModalPanel: FloatingPanelController?
+
+    /// A search, map item, or trip planner panel the rider opened over the map.
+    var isShowingRiderActivityPanel: Bool {
+        mapPanelController.inSearchMode
+            || semiModalPanel != nil
+            || semiModalMapItemController != nil
+            || semiModalTripPlannerController != nil
+    }
 
     private func createFloatingPanelSurfaceAppearance() -> SurfaceAppearance {
         let appearance = SurfaceAppearance()

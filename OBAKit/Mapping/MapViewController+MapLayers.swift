@@ -201,6 +201,10 @@ extension MapViewController: RegionsServiceDelegate {
         dismissStopSheetForReplacement()
 
         configureStopRouteFocusLayer()
+
+        // A first launch has no region when the map appears; the region picker
+        // supplies one here. `apiService` was rebuilt in `willUpdateToRegion`.
+        showLaunchRouteIfNeeded()
     }
 
     public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {

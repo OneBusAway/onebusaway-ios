@@ -245,6 +245,21 @@ final class BundleFeedbackConfigTests {
         #expect(garbage.fixedRegionOBABaseURL == nil)
     }
 
+    // MARK: - Launch route (issue #617)
+
+    @Test func `Launch route ID reads from OBA kit config`() throws {
+        let bundle = try FeedbackConfigBundle.create(config: ["LaunchRouteID": "1_100479"])
+        #expect(bundle.launchRouteID == "1_100479")
+    }
+
+    @Test func `Launch route ID is nil when absent or not a string`() throws {
+        let missing = try FeedbackConfigBundle.create(config: [:])
+        #expect(missing.launchRouteID == nil)
+
+        let number = try FeedbackConfigBundle.create(config: ["LaunchRouteID": 100479])
+        #expect(number.launchRouteID == nil)
+    }
+
     // MARK: - OBAKitConfig.MoreTab
 
     @Test func `More tab configuration uses defaults when MoreTab is absent`() throws {

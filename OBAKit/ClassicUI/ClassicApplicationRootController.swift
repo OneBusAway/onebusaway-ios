@@ -47,6 +47,11 @@ public class ClassicApplicationRootController: UITabBarController {
         viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
 
         selectedIndex = application.userDataStore.lastSelectedView.rawValue
+
+        // A restored tab other than the map has already decided what the rider sees.
+        if selectedIndex != Page.map.rawValue {
+            application.launchRouteGate.suppress()
+        }
     }
 
     let mapController: MapViewController

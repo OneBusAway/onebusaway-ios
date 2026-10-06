@@ -193,6 +193,16 @@ Stop pages can hide departures that lack real-time data, or hide the real-time o
 
 This is a starting value, not a lock: riders can change it in Settings under Arrival & Departure Display, or from the Departure Type menu on any stop page, and their choice is remembered from then on. An unrecognized value is ignored and treated as `all`.
 
+### Launch Route
+
+* `LaunchRouteID` - Optional. The full route ID (agency prefix included, e.g. `1_100479`) of a route the map opens on.
+
+Meant for agencies with one route, or one that matters far more than the rest, so riders see it the moment the app opens instead of finding a stop first. The route is shown the same way as a route the rider searched for: its path, only its stops, and the route sheet, whose Close button brings the ordinary map back.
+
+It is offered once per launch, and only when nothing else has already decided what the rider should see. A deep link, an opened user activity (Handoff, Spotlight, a donated shortcut), a tapped alarm or proximity notification, a stop waiting to open, or a restored tab other than the map each skip it for that launch. The route is looked up on the current region's server once a region exists, so on a first launch it appears after the region is chosen. A route ID the server doesn't recognize, or one with no shape, is logged and the ordinary map is shown.
+
+Omit the key, or leave it empty, to keep the default behavior.
+
 ### More Tab
 
 * `MoreTab` - Optional dictionary. Customizes the More (settings) tab header and menu items without forking the UI. Omit the whole key to keep OneBusAway defaults. KiedyBus is a working example.

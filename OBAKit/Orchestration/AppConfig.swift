@@ -18,6 +18,9 @@ public class AppConfig: CoreAppConfig {
     let analytics: Analytics?
     @objc public var pushServiceProvider: PushServiceProvider?
 
+    /// The raw `OBAKitConfig.LaunchRouteID`: a route the map opens on at launch. See `LaunchRouteGate`.
+    public let launchRouteID: String?
+
     /// Convenience initializer that pulls from the host application's main `Bundle`.
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
@@ -40,7 +43,8 @@ public class AppConfig: CoreAppConfig {
             dataLoader: URLSession.shared,
             fixedRegionName: appBundle.fixedRegionName,
             fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
-            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter
+            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter,
+            launchRouteID: appBundle.launchRouteID
         )
     }
 
@@ -67,9 +71,11 @@ public class AppConfig: CoreAppConfig {
         dataLoader: URLDataLoader,
         fixedRegionName: String? = nil,
         fixedRegionOBABaseURL: URL? = nil,
-        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
+        launchRouteID: String? = nil
     ) {
         self.analytics = analytics
+        self.launchRouteID = launchRouteID
         super.init(
             regionsBaseURL: regionsBaseURL,
             apiKey: apiKey,
