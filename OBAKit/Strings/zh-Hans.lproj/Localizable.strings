@@ -1827,8 +1827,8 @@
 "ghost_bus_report.error.already_reported" = "本次车程似乎已从本设备报告过。";
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "无法提交";
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "您的报告将匿名提交给运营此服务的交通局。";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "您的报告（以及您选择分享的位置）将发送给 %@ 和交通运营机构，以帮助改进服务。";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "分享我的定位";
 /* Submit button on the ghost bus form. */

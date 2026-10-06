@@ -1827,8 +1827,8 @@
 "ghost_bus_report.error.already_reported" = "Sembra che questa corsa sia già stata segnalata da questo dispositivo.";
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "Impossibile inviare";
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "La tua segnalazione è anonima e viene inviata all'ente che gestisce questo servizio.";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "La tua segnalazione, e la tua posizione se scegli di condividerla, viene inviata a %@ e all'ente di trasporto per aiutare a migliorare il servizio.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "Condividi la mia posizione";
 /* Submit button on the ghost bus form. */

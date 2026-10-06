@@ -1827,8 +1827,8 @@
 "ghost_bus_report.error.already_reported" = "Il semble que ce trajet ait déjà été signalé depuis cet appareil.";
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "Envoi impossible";
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "Votre signalement est anonyme et est transmis à l'agence qui exploite ce service.";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "Votre signalement, ainsi que votre position si vous choisissez de la partager, est transmis à %@ et à l'agence de transport pour aider à améliorer le service.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "Partager ma position";
 /* Submit button on the ghost bus form. */

@@ -1827,8 +1827,8 @@
 "ghost_bus_report.error.already_reported" = "이 기기에서 이 운행을 이미 신고한 것으로 보입니다.";
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "제출할 수 없음";
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "신고는 익명으로 처리되며 이 서비스를 운영하는 기관에 전달됩니다.";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "신고 내용과, 공유하기로 선택한 경우 위치 정보는 서비스 개선을 위해 %@와 교통 기관에 전달됩니다.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "내 위치 공유";
 /* Submit button on the ghost bus form. */

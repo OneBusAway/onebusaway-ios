@@ -1827,8 +1827,8 @@
 "ghost_bus_report.error.already_reported" = "Похоже, об этом рейсе уже сообщали с этого устройства.";
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "Не удалось отправить";
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "Ваше сообщение анонимно и направляется транспортному агентству, которое обслуживает этот рейс.";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "Ваше сообщение, а также ваша геопозиция, если вы решите ею поделиться, передаются %@ и транспортному агентству, чтобы помочь улучшить обслуживание.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "Поделиться моей геопозицией";
 /* Submit button on the ghost bus form. */
