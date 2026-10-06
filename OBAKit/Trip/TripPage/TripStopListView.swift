@@ -96,6 +96,9 @@ private struct TripStopRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(.isButton)
+        // `.onTapGesture` is invisible to assistive tech; without this the row
+        // announces "button" and activating it does nothing.
+        .accessibilityAction(perform: onSelect)
     }
 
     private var name: some View {

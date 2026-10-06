@@ -161,6 +161,11 @@ struct HomeSheetView: View {
                 .onTapGesture {
                     coordinator.push(.stopDetails(stopID: row.stopID))
                 }
+                // The cells announce `.isButton`; `.onTapGesture` is invisible to
+                // assistive tech, so the default action carries the same tap.
+                .accessibilityAction {
+                    coordinator.push(.stopDetails(stopID: row.stopID))
+                }
                 .contextMenu {
                     // Pinning is reachable from the row it affects, not only from
                     // the Bookmarks tab — this section is where the result shows.

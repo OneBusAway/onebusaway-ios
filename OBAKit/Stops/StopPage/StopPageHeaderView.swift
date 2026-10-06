@@ -111,6 +111,9 @@ struct StopPageHeaderView: View {
                             .onTapGesture(perform: onWalkingDirections)
                             .accessibilityAddTraits(.isButton)
                             .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
+                            // `.onTapGesture` is invisible to assistive tech: the
+                            // default action is what makes "button" activatable.
+                            .accessibilityAction(perform: onWalkingDirections)
                     }
                     if let bikeTime {
                         travelChip(bikeChipText(bikeTime), systemImage: "bicycle", background: ThemeColors.shared.blue)
