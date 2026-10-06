@@ -255,7 +255,10 @@ Custom region addition:
 ```
 onebusaway://add-region?name=REGION_NAME
     &oba-url=ENCODED_OBA_URL
+    &region-id=SIDECAR_REGION_ID
     &otp-url=ENCODED_OTP_URL
+    &otp-graphql-url=ENCODED_OTP_GRAPHQL_URL
+    &otp-graphql-bikeshare=true
     &sidecar-url=ENCODED_SIDECAR_URL
     &umami-url=ENCODED_UMAMI_URL
     &umami-id=UMAMI_WEBSITE_ID
@@ -264,7 +267,10 @@ onebusaway://add-region?name=REGION_NAME
 **Parameter details:**
 - `name` (required): Region display name
 - `oba-url` (required): OneBusAway server base URL
-- `otp-url` (optional): OpenTripPlanner server URL
+- `region-id` (optional): the region's id on the Obaco sidecar. Without it the region gets a random id, and every sidecar feature (alerts, alarms, push, surveys) 404s
+- `otp-url` (optional): OpenTripPlanner 1.x REST server URL
+- `otp-graphql-url` (optional): OTP 2.x GTFS GraphQL server URL (e.g. `https://…/otp/gtfs/v1`). Preferred over `otp-url` for trip planning when both are set
+- `otp-graphql-bikeshare` (optional): `true` or `1` when the GraphQL server serves vehicle rental data. Turns on the map's Bikes and Scooters layers and the rental trip modes; meaningless without `otp-graphql-url`
 - `sidecar-url` (optional): Obaco sidecar server URL for OneBusAway.co features
 - `umami-url` and `umami-id` (optional, both required together): Umami analytics URL and website ID—omit both to disable analytics
 
@@ -273,6 +279,17 @@ onebusaway://add-region?name=REGION_NAME
 2. **Umami is "both-or-nothing"**: analytics are enabled only if both `umami-url` and `umami-id` are present and valid; a partial pair is silently ignored
 3. URL parameters must be percent-encoded (e.g., query strings in nested URLs: `https://example.com/api?a=1&b=2` must be encoded as `https%3A%2F%2Fexample.com%2Fapi%3Fa%3D1%26b%3D2`)
 4. New URL fields are validated for well-formedness only; invalid optional URLs degrade to nil. The Add Custom Region form live-validates the base URL on save; the deep link path checks well-formedness only
+
+Bikes and scooters on the map:
+```
+onebusaway://rentals?lat=47.6097&lon=-122.3422
+```
+
+- `lat` and `lon` (both required): decimal degrees, on the globe. A missing, non-numeric, non-finite, or out-of-range value makes the link undecodable, and the app ignores it
+- Switches on the Bikes and Scooters layers and centres the map on the coordinate, close enough that rentals draw
+- Ignored, with a log line, when the current region has no rental layers or the coordinate is outside it
+- Arriving before the map exists (cold launch, onboarding), it is held in `Application.pendingRentalsCoordinate` and applied once the map appears and the region has loaded — the same stash pattern as `pendingStopID`. Both map surfaces claim it with `Application.claimPendingRentalsFocus()`
+- `URLSchemeRouter.encodeViewRentals(coordinate:)` builds one
 
 ## Development Notes
 
