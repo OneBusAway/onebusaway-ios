@@ -194,6 +194,30 @@
 			<string>لا توجد مغادرات أبكر</string>
 		</dict>
 	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>يتم عرض %d مغادرات سابقة</string>
+			<key>many</key>
+			<string>يتم عرض %d مغادرة سابقة</string>
+			<key>one</key>
+			<string>يتم عرض مغادرة سابقة واحدة</string>
+			<key>other</key>
+			<string>يتم عرض %d مغادرة سابقة</string>
+			<key>two</key>
+			<string>يتم عرض مغادرتين سابقتين</string>
+			<key>zero</key>
+			<string>لا تُعرض أي مغادرة سابقة</string>
+		</dict>
+	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

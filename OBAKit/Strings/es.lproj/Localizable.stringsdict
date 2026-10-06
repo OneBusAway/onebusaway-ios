@@ -130,6 +130,22 @@
 			<string>Mostrar %d salidas anteriores</string>
 		</dict>
 	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Mostrando %d salida anterior</string>
+			<key>other</key>
+			<string>Mostrando %d salidas anteriores</string>
+		</dict>
+	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

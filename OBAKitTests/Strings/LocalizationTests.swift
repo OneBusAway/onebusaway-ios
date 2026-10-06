@@ -34,6 +34,7 @@ final class LocalizationTests {
         "stop_page.service_alerts.show_all_fmt",
         "stop_page.timeline.skipped_stops_fmt",
         "stop_page.past_toggle_show_a11y_fmt",
+        "stop_page.a11y.past_shown_fmt",
         "stop_controller.transfer_show_earlier_departures_fmt",
         "stop_page.empty.no_departures_fmt",
         "data_migration_bulletin.report_summary_number_of_failures",
@@ -497,5 +498,69 @@ final class LocalizationTests {
         #expect(String(format: format, locale: polish, "2 km", 1) == "jeszcze 2 km · 1 przystanek")
         #expect(String(format: format, locale: polish, "2 km", 3) == "jeszcze 2 km · 3 przystanki")
         #expect(String(format: format, locale: polish, "2 km", 5) == "jeszcze 2 km · 5 przystanków")
+    }
+
+    // MARK: - App Intents and App Shortcuts
+
+    private func table(_ name: String, in bundle: Bundle, localization: String) -> [String: String]? {
+        guard let url = bundle.url(forResource: name, withExtension: "strings",
+                                   subdirectory: nil, localization: localization) else { return nil }
+        return NSDictionary(contentsOf: url) as? [String: String]
+    }
+
+    /// Shortcuts and Siri read `AppIntents.strings` out of process, and
+    /// `scripts/extract_strings` never touches it, so nothing else notices a
+    /// locale that lacks a key or carries a stale one.
+    @Test func `Every locale has the same App Intents keys as english`() throws {
+        let bundle = Bundle(for: DonationCell.self)
+        let english = try #require(table("AppIntents", in: bundle, localization: "en"))
+        #expect(english["track_bookmark_intent.title"] == "Track Bookmark")
+
+        for localization in bundle.localizations where localization != "en" && localization != "Base" {
+            let translated = try #require(table("AppIntents", in: bundle, localization: localization), "\(localization) has no AppIntents.strings")
+            #expect(Set(translated.keys) == Set(english.keys), "\(localization) AppIntents.strings keys differ from en")
+        }
+    }
+
+    /// Siri drops an App Shortcut phrase that lacks `${applicationName}`, and a
+    /// phrase that loses `${bookmark}` can no longer pick a bookmark by name.
+    /// Keys are the English phrases, so a renamed English phrase orphans every
+    /// translation; the key check catches that.
+    @Test func `Every locale has every App Shortcut phrase with its tokens`() throws {
+        let bundle = Bundle(for: DonationCell.self)
+        let english = try #require(table("AppShortcuts", in: bundle, localization: "en"))
+        #expect(english.count == 7)
+
+        for localization in bundle.localizations where localization != "Base" {
+            let phrases = try #require(table("AppShortcuts", in: bundle, localization: localization), "\(localization) has no AppShortcuts.strings")
+            #expect(Set(phrases.keys) == Set(english.keys), "\(localization) AppShortcuts.strings keys differ from en")
+            for (key, phrase) in phrases {
+                #expect(phrase.components(separatedBy: "${applicationName}").count == 2,
+                        "\(localization): \"\(phrase)\" must name ${applicationName} exactly once")
+                #expect(phrase.contains("${bookmark}") == key.contains("${bookmark}"),
+                        "\(localization): \"\(phrase)\" must keep ${bookmark} only where English has it")
+            }
+        }
+    }
+
+    /// Chinese runs sentences together after "。"; a hardcoded space between the
+    /// two Siri sentences read as a stray gap there.
+    @Test func `Chinese joins the next departures sentences without a space`() throws {
+        for localization in ["zh-Hans", "zh-Hant"] {
+            let format = try #require(localizedFormat(forKey: "next_departures_intent.sentences_join_fmt", localization: localization))
+            #expect(format == "%1$@%2$@", "\(localization): \(format)")
+        }
+    }
+
+    @Test func `Past departures announcement reaches Slavic few and many forms`() throws {
+        let plFormat = try #require(localizedFormat(forKey: "stop_page.a11y.past_shown_fmt", localization: "pl"))
+        let polish = Locale(identifier: "pl")
+        #expect(String(format: plFormat, locale: polish, 3) == "Wyświetlono 3 minione odjazdy")
+        #expect(String(format: plFormat, locale: polish, 5) == "Wyświetlono 5 minionych odjazdów")
+
+        let ruFormat = try #require(localizedFormat(forKey: "stop_page.a11y.past_shown_fmt", localization: "ru"))
+        let russian = Locale(identifier: "ru")
+        #expect(String(format: ruFormat, locale: russian, 3) == "Показано 3 прошедших отправления")
+        #expect(String(format: ruFormat, locale: russian, 5) == "Показано 5 прошедших отправлений")
     }
 }
