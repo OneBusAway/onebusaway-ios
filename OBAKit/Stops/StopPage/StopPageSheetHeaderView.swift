@@ -234,7 +234,7 @@ struct StopPageSheetHeaderView: View {
         .onTapGesture(perform: onWalkingDirections)
         // `.onTapGesture` is invisible to assistive tech: without a default action
         // the pill announces "button" and activating it does nothing.
-        .accessibilityAction(perform: onWalkingDirections)
+        .accessibilityAction { onWalkingDirections() }
         // `.accessibilityHidden(true)` on the glyph above was not enough on its
         // own: this view adds a trait but named no element, and the walk glyph
         // surfaced as a second, sibling stop — a 10x16pt target whose whole spoken

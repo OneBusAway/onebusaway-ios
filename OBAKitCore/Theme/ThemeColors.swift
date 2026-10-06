@@ -51,6 +51,15 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     /// The background color used to represent on time departures on smaller user interfaces like a Today View extension.
     public let departureOnTimeBackground: UIColor
 
+    /// Solid on-time green for a fill that carries white text or a white glyph
+    /// (the walk chip, a set alarm, the Live Activity button).
+    ///
+    /// `departureOnTime` can't do that job: in dark mode it is `systemGreen`,
+    /// tuned to be read *as* text on a dark background, and white on it is
+    /// 2.0:1. This token is darker in dark mode so white clears WCAG AA in
+    /// both appearances (light 6.1:1, dark 5.4:1).
+    public let departureOnTimeFill: UIColor
+
     /// The color used to represent departures with an unknown status. (i.e. We don't know if they are early/late/on-time.)
     public let departureUnknown: UIColor
 
@@ -83,6 +92,11 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     public let systemFill: UIColor
 
     public let errorColor: UIColor
+
+    /// Orange for warning *text and glyphs* on the page background (service
+    /// alerts, a stale Live Activity). `systemOrange` reads well on dark, but
+    /// on white it is 2.2:1; light mode gets a burnt orange at 5.3:1 instead.
+    public let warningText: UIColor
 
     public let green: UIColor
 
@@ -117,6 +131,7 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
 
         departureOnTime = palette.onTime
         departureOnTimeBackground = palette.onTime
+        departureOnTimeFill = palette.onTimeFill
 
         departureUnknown = palette.label
         departureUnknownBackground = palette.gray
@@ -143,6 +158,7 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         systemFill = palette.fill
         lightText = .white
         errorColor = palette.red
+        warningText = palette.warningText
     }
 
     /// The system-provided colors the theme is built from.
@@ -155,8 +171,10 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         let blue: UIColor
         let green: UIColor
         let onTime: UIColor
+        let onTimeFill: UIColor
         let gray: UIColor
         let yellow: UIColor
+        let warningText: UIColor
         let label: UIColor
         let secondaryLabel: UIColor
         let separator: UIColor
@@ -173,8 +191,12 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
             blue: UIColor(red: 0.039, green: 0.518, blue: 1.000, alpha: 1),
             green: UIColor(red: 0.188, green: 0.820, blue: 0.345, alpha: 1),
             onTime: UIColor(red: 0.188, green: 0.820, blue: 0.345, alpha: 1),
+            // Same value as the iOS dark appearance: a watch face is always dark.
+            onTimeFill: UIColor(red: 0.122, green: 0.478, blue: 0.208, alpha: 1),
             gray: UIColor(red: 0.557, green: 0.557, blue: 0.576, alpha: 1),
             yellow: UIColor(red: 1.000, green: 0.839, blue: 0.039, alpha: 1),
+            // systemOrange's dark value: 10:1 on black.
+            warningText: UIColor(red: 1.000, green: 0.624, blue: 0.039, alpha: 1),
             label: .white,
             secondaryLabel: UIColor(red: 0.922, green: 0.922, blue: 0.961, alpha: 0.6),
             separator: UIColor(red: 0.329, green: 0.329, blue: 0.345, alpha: 0.6),
@@ -214,8 +236,25 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
                     return UIColor(red: 0.00, green: 0.45, blue: 0.00, alpha: 1.00)
                 }
             },
+            // Light: the same #007300 as `onTime` (white on it is 6.1:1). Dark:
+            // #1F7A35 — white on it is 5.4:1, where white on systemGreen is 2.0:1.
+            onTimeFill: UIColor { traitCollection in
+                if traitCollection.userInterfaceStyle == .dark {
+                    return UIColor(red: 0.122, green: 0.478, blue: 0.208, alpha: 1.00)
+                } else {
+                    return UIColor(red: 0.00, green: 0.45, blue: 0.00, alpha: 1.00)
+                }
+            },
             gray: .systemGray,
             yellow: .systemYellow,
+            // Light: #C93400, 5.3:1 on white. Dark: systemOrange, 10:1 on black.
+            warningText: UIColor { traitCollection in
+                if traitCollection.userInterfaceStyle == .dark {
+                    return UIColor.systemOrange
+                } else {
+                    return UIColor(red: 0.788, green: 0.204, blue: 0.000, alpha: 1.00)
+                }
+            },
             label: .label,
             secondaryLabel: .secondaryLabel,
             separator: .separator,

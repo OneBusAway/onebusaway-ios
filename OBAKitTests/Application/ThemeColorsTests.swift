@@ -54,6 +54,31 @@ import Testing
         #expect(colors.departureOnTimeBackground == colors.departureOnTime)
     }
 
+    /// White text and glyphs sit on this fill (walk chip, set alarm, Live
+    /// Activity button). White on `departureOnTime` in dark mode is 2.0:1;
+    /// the fill must clear AA text contrast in both appearances.
+    @Test(arguments: [UIUserInterfaceStyle.light, .dark])
+    func `On time fill carries white text at AA contrast`(style: UIUserInterfaceStyle) {
+        let fill = ThemeColors().departureOnTimeFill.resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
+        #expect(UIColor.white.wcagContrastRatio(against: fill) >= 4.5)
+    }
+
+    /// Warning text (service alerts, a stale Live Activity) on the page
+    /// background. `systemOrange` on white is 2.2:1.
+    @Test(arguments: [UIUserInterfaceStyle.light, .dark])
+    func `Warning text clears AA contrast on the system background`(style: UIUserInterfaceStyle) {
+        let traits = UITraitCollection(userInterfaceStyle: style)
+        let text = ThemeColors().warningText.resolvedColor(with: traits)
+        let background = UIColor.systemBackground.resolvedColor(with: traits)
+        #expect(text.wcagContrastRatio(against: background) >= 4.5)
+    }
+
+    @Test func `Watch fill and warning colors clear AA on their backgrounds`() {
+        let palette = ThemeColors.Palette.watch
+        #expect(UIColor.white.wcagContrastRatio(against: palette.onTimeFill) >= 4.5)
+        #expect(palette.warningText.wcagContrastRatio(against: palette.background) >= 4.5)
+    }
+
     @Test func `The trait collection initializer still exists on iOS`() {
         let colors = ThemeColors(bundle: .main, traitCollection: UITraitCollection(userInterfaceStyle: .dark))
         #expect(colors.departureEarly == .systemRed)
@@ -66,7 +91,8 @@ import Testing
         let light = UITraitCollection(userInterfaceStyle: .light)
         let dark = UITraitCollection(userInterfaceStyle: .dark)
 
-        for color in [palette.red, palette.blue, palette.green, palette.onTime, palette.gray, palette.yellow,
+        for color in [palette.red, palette.blue, palette.green, palette.onTime, palette.onTimeFill, palette.gray,
+                      palette.yellow, palette.warningText,
                       palette.label, palette.secondaryLabel, palette.separator, palette.fill,
                       palette.background, palette.secondaryBackground, palette.groupedBackground, palette.gray6] {
             #expect(color.resolvedColor(with: light) == color.resolvedColor(with: dark))

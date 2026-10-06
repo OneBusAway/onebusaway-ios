@@ -158,7 +158,7 @@ struct DepartureRowView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(hasAlarm ? Color.white : Color.secondary)
                 .frame(width: alarmCircleSize, height: alarmCircleSize)
-                .background(hasAlarm ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color.clear, in: Circle())
+                .background(hasAlarm ? Color(uiColor: ThemeColors.shared.departureOnTimeFill) : Color.clear, in: Circle())
                 .overlay(Circle().strokeBorder(Color(uiColor: .separator), lineWidth: hasAlarm ? 0 : 1.5))
                 // Use onTapGesture, not Button: inner gestures beat the outer
                 // .onTapGesture(perform: onTap) on the row VStack, so tapping the

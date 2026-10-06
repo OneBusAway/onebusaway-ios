@@ -106,7 +106,7 @@ struct TripActionBar: View {
             .frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.borderedProminent)
-        .tint(Color(uiColor: ThemeColors.shared.departureOnTime))
+        .tint(Color(uiColor: ThemeColors.shared.departureOnTimeFill))
         .foregroundStyle(.white)
         .disabled(isTrackingLiveActivity)
     }
@@ -180,6 +180,7 @@ struct TripActionBar: View {
     private func actionLabel(title: String, systemImage: String) -> some View {
         VStack(spacing: 4) {
             Image(systemName: systemImage)
+                .accessibilityHidden(true) // the caption names the action
             Text(title)
                 .font(.caption)
                 .lineLimit(1)
