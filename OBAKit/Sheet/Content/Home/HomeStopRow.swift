@@ -55,7 +55,7 @@ struct HomeStopRow: View {
                 Spacer()
 
                 // Trailing chevron
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.footnote)
                     .fontWeight(.semibold)
                     .foregroundStyle(brandColor)

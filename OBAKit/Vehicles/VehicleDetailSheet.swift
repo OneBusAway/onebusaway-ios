@@ -92,7 +92,7 @@ struct VehicleDetailSheet: View {
                         .padding(.trailing, 4)
                 }
                 Text(tripDetails?.trip.routeHeadsign ?? vehicle.routeID ?? "Route")
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
             }
             .frame(maxWidth: .infinity)
         }

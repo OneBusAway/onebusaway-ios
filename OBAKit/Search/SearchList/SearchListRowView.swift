@@ -40,7 +40,7 @@ struct SearchListRowView: View {
                 labelStack()
                 Spacer()
                 if row.accessory == .disclosureIndicator {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.footnote)
                         .fontWeight(.semibold)
                         .foregroundStyle(brandColor)
