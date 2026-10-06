@@ -1,6 +1,9 @@
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Xem vị trí của bạn so với mạng lưới giao thông công cộng và giúp bạn di chuyển dễ dàng hơn.";
 "NSLocationWhenInUseUsageDescription" = "Xem vị trí của bạn so với mạng lưới giao thông công cộng và giúp bạn di chuyển dễ dàng hơn.";
 
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "Xem vị trí của bạn so với mạng lưới giao thông công cộng và giúp bạn di chuyển dễ dàng hơn.";
+
 /* Purpose string shown when the app requests HealthKit access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "Dùng tốc độ đi bộ hoặc đạp xe của bạn từ ứng dụng Sức khỏe để ước tính giờ đến chính xác hơn.";
 "NSHealthUpdateUsageDescription" = "Dùng tốc độ đi bộ hoặc đạp xe của bạn từ ứng dụng Sức khỏe để ước tính giờ đến chính xác hơn.";
