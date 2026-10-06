@@ -11,7 +11,7 @@ import OBAKitCore
 
 // MARK: - Constants
 private enum Constants {
-    static let minutes: UInt = 60
+    static let minutes = 60
     static let maxDeparturesToShow = 3
     static let maxStopDeparturesToShow = 2
     static let rowWidth: CGFloat = 180
@@ -35,7 +35,7 @@ struct WidgetRowView: View {
     private var fallbackLabel: String {
         guard departures != nil else { return LocalizationKeys.tapForMoreInformation }
 
-        return String(format: LocalizationKeys.noDeparturesInNextNMinutes, String(Constants.minutes))
+        return WidgetStrings.noDepartures(inNextMinutes: Constants.minutes)
     }
 
     var body: some View {
