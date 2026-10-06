@@ -25,25 +25,25 @@ enum TripPlannerEndpoints {
     }
 
     /// Maps a place pin into OTPKit's `Location`. Untitled items fall back to
-    /// `"Destination"`, matching `MapViewController.showTripPlanner`.
+    /// a localized "Destination".
     static func location(from mapItem: MKMapItem) -> Location {
         Location(
-            title: mapItem.name ?? "Destination",
+            title: mapItem.name ?? OBALoc(
+                "map_item_controller.destination_fallback_title",
+                value: "Destination",
+                comment: "Name shown in the trip planner for a destination that has no name of its own, such as a point on the map."
+            ),
             subTitle: mapItem.placemark.title ?? "",
             latitude: mapItem.placemark.coordinate.latitude,
             longitude: mapItem.placemark.coordinate.longitude
         )
     }
 
-    /// Hardcoded English titles match the existing `MapViewController` origin
-    /// construction; do not expand localization here without need.
+    /// OTPKit's own current-location entry, so the title and subtitle are
+    /// localized and match what its location picker offers. These were English
+    /// literals, which VoiceOver read in every language.
     static func location(fromCurrentLocation location: CLLocation) -> Location {
-        Location(
-            title: "Current Location",
-            subTitle: "Your current location",
-            latitude: location.coordinate.latitude,
-            longitude: location.coordinate.longitude
-        )
+        Location.currentLocation(from: location.coordinate)
     }
 
     /// Explicit origin wins; otherwise current location is used when available.

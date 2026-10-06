@@ -532,7 +532,7 @@ private extension StopPageViewController {
             alertsAction.attributes = .disabled
         }
 
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+        return UIMenu(title: StopMenuTitles.file, options: .displayInline, children: [bookmarkAction, alertsAction])
     }
 
     func locationMenu() -> UIMenu {
@@ -593,7 +593,7 @@ private extension StopPageViewController {
 
         locationChildren.append(proximityAlertAction())
 
-        return UIMenu(title: "Location", options: .displayInline, children: locationChildren)
+        return UIMenu(title: StopMenuTitles.location, options: .displayInline, children: locationChildren)
     }
 
     /// The Location group's last item. Every sibling above it is "getting to
@@ -620,7 +620,24 @@ private extension StopPageViewController {
             self.showReportProblem()
         }
 
-        return UIMenu(title: "Help", options: .displayInline, children: [reportButton])
+        return UIMenu(title: StopMenuTitles.help, options: .displayInline, children: [reportButton])
+    }
+}
+
+/// Section headings in the stop screen's More menu, shared with the legacy
+/// `StopViewController`. Inline menus show their titles as section headers, and
+/// VoiceOver reads them, so they can't stay English.
+enum StopMenuTitles {
+    static var file: String {
+        OBALoc("stops_controller.menu.file_title", value: "File", comment: "Section heading in the stop screen's More menu, over the Add Bookmark and Service Alerts items.")
+    }
+
+    static var location: String {
+        OBALoc("stops_controller.menu.location_title", value: "Location", comment: "Section heading in the stop screen's More menu, over the nearby stops, walking directions and trip planning items.")
+    }
+
+    static var help: String {
+        OBALoc("stops_controller.menu.help_title", value: "Help", comment: "Section heading in the stop screen's More menu, over the Report a Problem item.")
     }
 }
 
