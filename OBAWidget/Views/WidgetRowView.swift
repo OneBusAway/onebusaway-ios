@@ -15,7 +15,6 @@ private enum Constants {
     static let maxDeparturesToShow = 3
     static let maxStopDeparturesToShow = 2
     static let rowWidth: CGFloat = 180
-    static let fontSize: CGFloat = 13
 }
 
 // MARK: - WidgetRowView
@@ -48,7 +47,7 @@ struct WidgetRowView: View {
 
     private var titleText: some View {
         Text(bookmarkTitle)
-            .font(.system(size: Constants.fontSize, weight: .semibold))
+            .font(.footnote.weight(.semibold))
             .lineLimit(1)
             .truncationMode(.tail)
     }
@@ -83,13 +82,13 @@ struct WidgetRowView: View {
                 ForEach(departures.prefix(Constants.maxStopDeparturesToShow), id: \.self) { departure in
                     HStack {
                         Text(departure.routeAndHeadsign)
-                            .font(.system(size: Constants.fontSize))
+                            .font(.footnote)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.tail)
                         Spacer()
                         Text(formatters.shortFormattedTime(until: departure))
-                            .font(.system(size: Constants.fontSize, weight: .bold))
+                            .font(.footnote.weight(.bold))
                             .foregroundStyle(Color(formatters.colorForScheduleStatus(departure.scheduleStatus)))
                     }
                     .accessibilityElement(children: .ignore)
@@ -97,7 +96,7 @@ struct WidgetRowView: View {
                 }
             } else {
                 Text(fallbackLabel)
-                    .font(.system(size: Constants.fontSize))
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -129,7 +128,7 @@ struct WidgetRowView: View {
             (DepartureTimeText.text(for: display)
                 + Text(" · ").foregroundStyle(.tertiary)
                 + Text(deviation))
-                .font(.system(size: Constants.fontSize))
+                .font(.footnote)
                 .foregroundStyle(.secondary)
                 // No `fixedSize`: the label wraps to its two lines whenever the
                 // row has room, but under `.systemLarge` height pressure (seven
@@ -142,7 +141,7 @@ struct WidgetRowView: View {
                 .accessibilityLabel("\(display.accessibilityTimeDescription), \(deviation)")
         } else {
             Text(fallbackLabel)
-                .font(.system(size: Constants.fontSize))
+                .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
         }

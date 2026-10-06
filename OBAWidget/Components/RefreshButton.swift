@@ -53,7 +53,7 @@ struct RefreshButton: View {
                     .imageScale(.small)
 
                 Text("Refresh")
-                    .font(.system(size: 12))
+                    .font(.caption)
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
