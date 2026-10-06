@@ -626,6 +626,22 @@ final class MapViewModelTests: OBATestCase {
         #expect(viewModel.topPillState == .zoomInForStops)
     }
 
+    /// "Zoom in to see bikes and scooters" follows the same rules as the stops
+    /// pill: it wins over permission state, and yields to "Zoom in for stops",
+    /// which already tells the rider to zoom in.
+    @Test @MainActor
+    func `Top pill state rental zoom hint ranks below the stops warning`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = MapViewModel(application: app)
+
+        viewModel.updateZoomWarnings(stops: false, rentals: true)
+        #expect(viewModel.topPillState == .zoomInForRentals)
+
+        viewModel.updateZoomWarnings(stops: true, rentals: true)
+        #expect(viewModel.topPillState == .zoomInForStops)
+    }
+
     /// `updateZoomWarning` must not publish when the value is unchanged.
     /// `@Published` fires `objectWillChange` even for identical assignments, and
     /// this method runs on every camera settle; because the SwiftUI `Map`

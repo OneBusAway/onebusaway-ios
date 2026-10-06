@@ -98,4 +98,108 @@ final class RentalFormatTests {
         #expect(RentalFormat.distanceFormatter.unitStyle == .default)
         #expect(RentalFormat.abbreviatedDistanceFormatter.unitStyle == .abbreviated)
     }
+
+    // MARK: - Station stock
+
+    /// A scooter-only station was labeled "Bikes"; only a unanimous typed
+    /// breakdown earns a specific label.
+    @Test func stationStockFollowsTheTypedBreakdown() throws {
+        func stock(_ formFactors: [String]?) throws -> RentalFormat.StationStock {
+            guard case .station(let station) = try RentalFixtures.station(formFactors: formFactors) else {
+                throw CancellationError()
+            }
+            return RentalFormat.stock(of: station)
+        }
+
+        #expect(try stock(["BICYCLE", "CARGO_BICYCLE"]) == .bikes)
+        #expect(try stock(["SCOOTER_STANDING", "SCOOTER"]) == .scooters)
+        #expect(try stock(["BICYCLE", "SCOOTER"]) == .unknown)
+        #expect(try stock(nil) == .unknown)
+    }
+
+    @Test func scooterOnlyStationIsNotLabeledBikes() throws {
+        guard case .station(let station) = try RentalFixtures.station(formFactors: ["SCOOTER"]) else {
+            Issue.record("Expected a station")
+            return
+        }
+        #expect(RentalFormat.stationVehiclesLabel(for: station) == "Scooters")
+    }
+
+    // MARK: - Plurals
+
+    /// Both strings go through Localizable.stringsdict, so English gets its singular.
+    @Test func countsUseTheirSingularForms() {
+        #expect(RentalFormat.stationAvailableText(1) == "1 available")
+        #expect(RentalFormat.stationAvailableText(3) == "3 available")
+
+        let user = CLLocation(latitude: 47.6, longitude: -122.3)
+        let walk = RentalFormat.walkTimeText(from: user, to: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3001))
+        #expect(walk == "1 min walk")
+    }
+
+    // MARK: - VoiceOver
+
+    /// "Range 3.4 miles", not "3.4 mi": an abbreviation reads badly aloud.
+    @Test func spokenRangeSpellsTheUnitOut() {
+        let spoken = RentalFormat.spokenRangeText(5470)
+        #expect(spoken == MKDistanceFormatter.fullStyleForTests.string(fromDistance: 5470))
+        #expect(spoken != RentalFormat.abbreviatedDistanceFormatter.string(fromDistance: 5470))
+    }
+
+    @Test func markerLabelNamesTheFuelFigure() throws {
+        let battery = RentalFormat.markerAccessibilityLabel(for: try RentalFixtures.vehicle(rangeMeters: 5470, batteryPercent: 0.62))
+        #expect(battery.contains("Battery 62%"))
+
+        let range = RentalFormat.markerAccessibilityLabel(for: try RentalFixtures.vehicle(rangeMeters: 5470))
+        #expect(range.contains("Range "))
+    }
+
+    @Test func markerLabelSaysNotInService() throws {
+        let label = RentalFormat.markerAccessibilityLabel(for: try RentalFixtures.vehicle(operative: false))
+        #expect(label.contains("Not in service"))
+        #expect(RentalFormat.markerAccessibilityLabel(for: try RentalFixtures.vehicle()).contains("Not in service") == false)
+    }
+
+    /// The panel marker used to drop the station count it draws.
+    @Test func markerLabelCarriesStationCount() throws {
+        let label = RentalFormat.markerAccessibilityLabel(for: try RentalFixtures.station(vehiclesAvailable: 4))
+        #expect(label.contains("4 available"))
+    }
+
+    @Test func clusterLabelIsPluralized() {
+        #expect(RentalFormat.clusterAccessibilityLabel(count: 1) == "1 vehicle here")
+        #expect(RentalFormat.clusterAccessibilityLabel(count: 5) == "5 vehicles here")
+    }
+
+    // MARK: - Open button
+
+    @Test func knownOperatorPromisesTheAppStoreInItsHint() throws {
+        let target = try #require(RentalDeepLink.target(for: try RentalFixtures.vehicle(id: "lime_seattle:abc")))
+        let copy = RentalFormat.openButtonCopy(for: target)
+
+        #expect(copy.title == "Open in Lime")
+        #expect(copy.hint == "Opens Lime, or its App Store page if it isn't installed.")
+    }
+
+    /// No URL host and no bare "app": an unknown operator gets a localized title.
+    /// And no App Store promise, because there is no App Store id to keep it.
+    @Test func unknownOperatorGetsAGenericTitleAndNoStorePromise() throws {
+        let target = try #require(RentalDeepLink.target(for: try RentalFixtures.vehicle(
+            id: "x:1",
+            networkId: nil,
+            rentalUris: ["ios": "https://ride.example/x/1"]
+        )))
+        let copy = RentalFormat.openButtonCopy(for: target)
+
+        #expect(copy.title == "Open rental app")
+        #expect(copy.hint == nil)
+    }
+}
+
+private extension MKDistanceFormatter {
+    static let fullStyleForTests: MKDistanceFormatter = {
+        let formatter = MKDistanceFormatter()
+        formatter.unitStyle = .full
+        return formatter
+    }()
 }

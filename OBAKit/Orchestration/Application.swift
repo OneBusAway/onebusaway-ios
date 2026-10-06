@@ -459,6 +459,12 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// historically did not carry a region. When set, drain refuses to open the
     /// stop against a different region's API.
     var pendingStopRegionID: Int?
+    /// The coordinate of an `onebusaway://rentals` link, held until a map can show
+    /// it — the map's counterpart of `pendingStopID`. Whichever map surface is
+    /// installed takes it with `claimPendingRentalsFocus()`, on appearing or on
+    /// `.rentalsDeepLinkPending`, so a link that arrives on a cold launch or during
+    /// onboarding is applied once the map exists and the region has loaded.
+    var pendingRentalsCoordinate: CLLocationCoordinate2D?
     /// Lives here rather than on the map so it survives root reloads and sees every
     /// deep link, which arrive here before (or instead of) any map appearing.
     lazy var launchRouteGate = LaunchRouteGate(configValue: config.launchRouteID)
@@ -664,6 +670,10 @@ public class Application: CoreApplication, PushServiceDelegate {
             pendingStopRegionID = nil
         }
 
+        if pendingRentalsCoordinate != nil, topViewController != nil {
+            showMapForPendingRentals()
+        }
+
         if presentDonationUIOnActive, let topViewController {
             presentDonationUI(topViewController, id: donationPromptID)
             presentDonationUIOnActive = false
@@ -816,6 +826,13 @@ public class Application: CoreApplication, PushServiceDelegate {
                 return true
             }
             viewRouter.navigateTo(stopID: stopData.stopID, from: topViewController)
+            return true
+        case .viewRentals(let coordinate):
+            pendingRentalsCoordinate = coordinate
+            // UI not ready yet (cold launch) or onboarding up: the drain applies it.
+            if topViewController != nil, !isOnboardingRoot {
+                showMapForPendingRentals()
+            }
             return true
         case .addRegion(let regionData):
             viewRouter.rootNavigateTo(page: .map)

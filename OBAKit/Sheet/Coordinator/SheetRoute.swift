@@ -17,30 +17,38 @@ import OTPKit
 /// Parameters for initiating the OTPKit trip planner.
 ///
 /// Both map-item and rental entry points carry payloads to prefill planner state:
-/// a map item prefills the destination and leaves the mode open; a rental (later)
-/// prefills a via point and locks the mode. All fields are optional so the planner
-/// can open empty (all three `nil`), with partial prefill, or fully configured.
+/// a map item prefills the destination and leaves the mode open; a rental prefills
+/// the origin (the vehicle) and the mode. All fields are optional so the planner
+/// can open empty (all `nil`), with partial prefill, or fully configured.
 nonisolated struct TripPlannerRequest: Hashable, Equatable {
+    /// Starting point, if prefilled by the entry point. The rental sheet's "Plan a
+    /// trip using this vehicle" sets it to the vehicle: starting on top of a
+    /// vehicle in bike-rental mode is what makes OTP rent it (`RentalTripPlan`).
+    /// Nil leaves the planner on the rider's current location.
+    let origin: MKMapItem?
+
     /// Destination pin on the map, if prefilled by the entry point (e.g., a
     /// tapped map item). The planner uses this to seed the destination field.
     let destination: MKMapItem?
 
-    /// Intermediate point (stopover) for multi-segment trips. Currently used by
-    /// rental (later) to seed a via point. `CLLocationCoordinate2D` is not
-    /// `Hashable` or `Equatable`, so we implement both over latitude/longitude.
+    /// Intermediate point (stopover) for multi-segment trips. No entry point sets
+    /// it today — the rental sheet used to, but OTP never turned a via point into
+    /// a rental leg. `CLLocationCoordinate2D` is not `Hashable` or `Equatable`,
+    /// so we implement both over latitude/longitude.
     let viaPoint: CLLocationCoordinate2D?
 
-    /// Transport mode to preselect or lock. Used by rental (later) to fix a mode
-    /// when the planner opens; map-item entry (this task) leaves it `nil` so the
-    /// user can pick freely.
+    /// Transport mode to preselect. The rental sheet sets `.bikeRental`; map-item
+    /// entry leaves it `nil` so the user can pick freely.
     let transportMode: TransportMode?
 
     /// Initializer with all parameters optional, defaulting to `nil`.
     init(
+        origin: MKMapItem? = nil,
         destination: MKMapItem? = nil,
         viaPoint: CLLocationCoordinate2D? = nil,
         transportMode: TransportMode? = nil
     ) {
+        self.origin = origin
         self.destination = destination
         self.viaPoint = viaPoint
         self.transportMode = transportMode
@@ -51,12 +59,14 @@ nonisolated struct TripPlannerRequest: Hashable, Equatable {
     func hash(into hasher: inout Hasher) {
         // `MKMapItem` is a reference type; follow what `AppSheetRoute.mapItem`
         // does — hash the coordinate.
-        if let destination {
-            let coordinate = destination.placemark.coordinate
-            hasher.combine(coordinate.latitude)
-            hasher.combine(coordinate.longitude)
-        } else {
-            hasher.combine(NSNull())
+        for item in [origin, destination] {
+            if let item {
+                let coordinate = item.placemark.coordinate
+                hasher.combine(coordinate.latitude)
+                hasher.combine(coordinate.longitude)
+            } else {
+                hasher.combine(NSNull())
+            }
         }
 
         // `CLLocationCoordinate2D` is not `Hashable`; hash its components.
@@ -75,15 +85,14 @@ nonisolated struct TripPlannerRequest: Hashable, Equatable {
     static func == (lhs: TripPlannerRequest, rhs: TripPlannerRequest) -> Bool {
         // For reference types like `MKMapItem`, compare by identity (===) or
         // coordinate. The mapItem case uses coordinates, so we do the same.
-        let destinationEqual: Bool
-        if let lhsDest = lhs.destination, let rhsDest = rhs.destination {
-            let lhsCoord = lhsDest.placemark.coordinate
-            let rhsCoord = rhsDest.placemark.coordinate
-            destinationEqual = (lhsCoord.latitude == rhsCoord.latitude &&
-                               lhsCoord.longitude == rhsCoord.longitude)
-        } else {
-            destinationEqual = (lhs.destination == nil && rhs.destination == nil)
+        func sameItem(_ lhs: MKMapItem?, _ rhs: MKMapItem?) -> Bool {
+            guard let lhs, let rhs else { return lhs == nil && rhs == nil }
+            let lhsCoord = lhs.placemark.coordinate
+            let rhsCoord = rhs.placemark.coordinate
+            return lhsCoord.latitude == rhsCoord.latitude && lhsCoord.longitude == rhsCoord.longitude
         }
+        let originEqual = sameItem(lhs.origin, rhs.origin)
+        let destinationEqual = sameItem(lhs.destination, rhs.destination)
 
         // For `CLLocationCoordinate2D`, compare latitude and longitude.
         let viaPointEqual: Bool
@@ -96,7 +105,7 @@ nonisolated struct TripPlannerRequest: Hashable, Equatable {
 
         let transportModeEqual = lhs.transportMode == rhs.transportMode
 
-        return destinationEqual && viaPointEqual && transportModeEqual
+        return originEqual && destinationEqual && viaPointEqual && transportModeEqual
     }
 }
 
@@ -219,6 +228,9 @@ nonisolated extension AppSheetRoute {
             // which fields are present so analytics can track entry points
             // separately (map item, rental, etc.) without leaking location.
             var parts: [String] = []
+            if request.origin != nil {
+                parts.append("origin")
+            }
             if request.destination != nil {
                 parts.append("destination")
             }

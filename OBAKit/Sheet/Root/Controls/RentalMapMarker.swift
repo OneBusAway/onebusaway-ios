@@ -59,8 +59,11 @@ struct RentalMapMarker: View {
         }
         // VoiceOver ignores the zoom gate: a visual-density rule must not cost a
         // VoiceOver user information, so the fuel figure is always announced.
+        // `.ignore` drops the drawn station count along with everything else, so
+        // the shared label carries it — the same label `RentalAnnotationView` uses.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(accessibilityLabel))
+        .accessibilityLabel(Text(RentalFormat.markerAccessibilityLabel(for: rental)))
+        .accessibilityAddTraits(.isButton)
     }
 
     private var markerColor: Color {
@@ -86,12 +89,6 @@ struct RentalMapMarker: View {
         default: return "bicycle"
         }
     }
-
-    private var accessibilityLabel: String {
-        [rental.displayLabel, RentalFormat.fuelLabelText(for: rental)]
-            .compactMap { $0 }
-            .joined(separator: ", ")
-    }
 }
 
 /// A group of rentals too close together to draw separately. Mirrors
@@ -111,16 +108,7 @@ struct RentalClusterMapMarker: View {
                 .foregroundStyle(.white)
         }
         .accessibilityElement(children: .ignore)
-        // `localizedStringWithFormat`, not `String(format:)` — see the note on the
-        // sheet's `navigationTitle`; VoiceOver would otherwise read the root plural
-        // form for every count.
-        .accessibilityLabel(Text(String.localizedStringWithFormat(
-            OBALoc(
-                "rental_cluster.title_fmt",
-                value: "%d vehicles here",
-                comment: "Title of the sheet listing the members of a rental cluster. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
-            ),
-            count
-        )))
+        .accessibilityLabel(Text(RentalFormat.clusterAccessibilityLabel(count: count)))
+        .accessibilityAddTraits(.isButton)
     }
 }

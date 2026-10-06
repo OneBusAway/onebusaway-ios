@@ -41,6 +41,8 @@ final class LocalizationTests {
         "map_controller.map_type.accessibility_value_with_layers_fmt",
         "search_results_sheet.result_count_fmt",
         "rental_cluster.title_fmt",
+        "rental_annotation.vehicles_available_fmt",
+        "rental_detail.walk_time_fmt",
         // VoiceOver strings that interpolate a minute count. Slavic locales need
         // one/few/many agreement, so a single plain form is wrong at some counts —
         // Polish "minut" is right for 5+ and wrong for 1 and 2-4.
@@ -483,6 +485,22 @@ final class LocalizationTests {
         )
         let few = CountPlural.format(fewFormat, count: 3, locale: polish)
         #expect(few == "Pokaż 3 minione odjazdy", "pl few: \(few)")
+    }
+
+    /// The rental sheet's walk estimate and station count used `String(format:)` on a
+    /// plain string, so no locale could agree a noun or adjective with the count.
+    @Test func `Polish rental counts reach their few and many forms`() throws {
+        let polish = Locale(identifier: "pl")
+
+        let walk = try #require(localizedFormat(forKey: "rental_detail.walk_time_fmt", localization: "pl"))
+        #expect(String(format: walk, locale: polish, 1) == "1 minuta pieszo")
+        #expect(String(format: walk, locale: polish, 3) == "3 minuty pieszo")
+        #expect(String(format: walk, locale: polish, 5) == "5 minut pieszo")
+
+        let available = try #require(localizedFormat(forKey: "rental_annotation.vehicles_available_fmt", localization: "pl"))
+        #expect(String(format: available, locale: polish, 1) == "1 dostępny")
+        #expect(String(format: available, locale: polish, 3) == "3 dostępne")
+        #expect(String(format: available, locale: polish, 5) == "5 dostępnych")
     }
 
     @Test func `Polish layer count reaches its few and many forms`() throws {

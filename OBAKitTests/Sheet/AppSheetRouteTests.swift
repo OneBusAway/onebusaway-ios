@@ -243,6 +243,27 @@ final class AppSheetRouteTests {
         #expect(req1.hashValue == req2.hashValue)
     }
 
+    /// The rental entry point's payload: two vehicles are two different trips.
+    @Test func `TripPlannerRequest compares and hashes its origin`() {
+        func item(_ lat: Double) -> MKMapItem {
+            MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: lat, longitude: -122.3)))
+        }
+        #expect(TripPlannerRequest(origin: item(47.6)) == TripPlannerRequest(origin: item(47.6)))
+        #expect(TripPlannerRequest(origin: item(47.6)).hashValue == TripPlannerRequest(origin: item(47.6)).hashValue)
+        #expect(TripPlannerRequest(origin: item(47.6)) != TripPlannerRequest(origin: item(47.7)))
+        #expect(TripPlannerRequest(origin: item(47.6)) != TripPlannerRequest())
+        // Same coordinate as origin or as destination is not the same trip.
+        #expect(TripPlannerRequest(origin: item(47.6)) != TripPlannerRequest(destination: item(47.6)))
+    }
+
+    @Test func `Trip planner analytics key flags an origin without leaking it`() {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6123456, longitude: -122.3456789)))
+        let route = AppSheetRoute.tripPlanner(TripPlannerRequest(origin: item, transportMode: .bikeRental))
+
+        #expect(route.id == "tripPlanner_origin_transportMode")
+        #expect(!route.id.contains("47."))
+    }
+
     @Test func `TripPlannerRequest with different coordinates are unequal`() {
         let coord1 = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
         let coord2 = CLLocationCoordinate2D(latitude: 47.7, longitude: -122.4)
