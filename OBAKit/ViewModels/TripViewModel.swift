@@ -28,6 +28,11 @@ class TripViewModel: ObservableObject {
     /// Full trip details including stop sequence and vehicle status.
     @Published private(set) var tripDetails: TripDetails?
 
+    /// The live arrival at `destinationStopID`, which the trip panel's progress
+    /// header counts down to. `nil` when no shared destination was named, until
+    /// it first loads, and after a refresh that failed to load it.
+    @Published private(set) var destinationArrivalDeparture: ArrivalDeparture?
+
     /// Decoded route shape coordinates; nil until first loaded. UI layer converts to MKPolyline.
     @Published private(set) var routePolylineCoordinates: [CLLocationCoordinate2D]?
 
@@ -38,6 +43,10 @@ class TripViewModel: ObservableObject {
     @Published private(set) var operationError: Error?
 
     // MARK: - Configuration
+
+    /// The stop a shared trip link named as the sharer's exit, or `nil` for
+    /// every other way into the trip screen. See #449.
+    let destinationStopID: StopID?
 
     /// Set by the UI layer to gate programmatic auto-refreshes.
     /// e.g. `viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }`
@@ -52,9 +61,12 @@ class TripViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(application: Application, tripConvertible: TripConvertible) {
+    /// - Parameter destinationStopID: Where the sharer said they will step off,
+    ///   when the trip was opened from a shared link that named one. See #449.
+    init(application: Application, tripConvertible: TripConvertible, destinationStopID: StopID? = nil) {
         self.application = application
         self.tripConvertible = tripConvertible
+        self.destinationStopID = destinationStopID
     }
 
     isolated deinit {
@@ -106,6 +118,10 @@ class TripViewModel: ObservableObject {
                 if let newDetails { tripDetails = newDetails }
                 if let newPolyline { routePolylineCoordinates = newPolyline }
                 operationError = nil
+
+                // After the details are applied, because the destination's row
+                // is read from them.
+                await loadDestinationArrival()
             } catch {
                 // A cancelled load (e.g. dismissing a context menu preview)
                 // should never surface an error to the user. The view is being
@@ -162,6 +178,51 @@ class TripViewModel: ObservableObject {
 
         let response = try await apiService.getShape(id: shapeID)
         return Polyline(encodedPolyline: response.entry.points).coordinates
+    }
+
+    /// Loads the live arrival at the shared destination, for the progress
+    /// header's countdown.
+    ///
+    /// A failure is logged and clears the countdown rather than leave an old
+    /// prediction on screen. It does not set `operationError`: the trip itself
+    /// loaded, and an error alert over one supplementary time would be out of
+    /// proportion.
+    private func loadDestinationArrival() async {
+        // Every trip without a shared destination stops here: there is nothing
+        // to count down to.
+        guard let destinationStopID,
+              let apiService = application.apiService,
+              let arrivalDeparture = tripConvertible.arrivalDeparture,
+              let tripDetails else { return }
+
+        // The same resolution the stop list uses, so the countdown targets the
+        // row that carries the destination marker. When the trip never reaches
+        // the destination after boarding, the list leaves the marker on the
+        // boarding stop, and there is no destination to count down to.
+        guard let destinationIndex = TripStopListModel.riderStops(
+            in: tripDetails.stopTimes,
+            arrivalDeparture: arrivalDeparture,
+            sharedDestinationStopID: destinationStopID
+        ).destinationIndex else {
+            destinationArrivalDeparture = nil
+            return
+        }
+
+        do {
+            destinationArrivalDeparture = try await apiService.getTripArrivalDepartureAtStop(
+                stopID: destinationStopID,
+                tripID: arrivalDeparture.tripID,
+                serviceDate: arrivalDeparture.serviceDate,
+                vehicleID: arrivalDeparture.vehicleID,
+                // The row, not just the stop: a loop route can call at the
+                // destination more than once.
+                stopSequence: destinationIndex
+            ).entry
+        } catch {
+            if Task.isCancelled || error.isCancellation { return }
+            Logger.error("Failed to load the arrival at shared destination \(destinationStopID) on trip \(arrivalDeparture.tripID): \(error)")
+            destinationArrivalDeparture = nil
+        }
     }
 
     // MARK: - Refresh Timer

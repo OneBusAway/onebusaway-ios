@@ -34,11 +34,7 @@ final class TripViewModelTests: OBATestCase {
     // MARK: - Helpers
 
     private func createApplication(dataLoader: MockDataLoader) -> Application {
-        stubRegions(dataLoader: dataLoader)
-        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
-        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-        stubTripEndpoints(dataLoader: dataLoader)
-        stubSurveys(dataLoader: dataLoader)
+        stubCommonEndpoints(dataLoader: dataLoader)
 
         let locManager = MockAuthorizedLocationManager(
             updateLocation: TestData.mockSeattleLocation,
@@ -62,6 +58,16 @@ final class TripViewModelTests: OBATestCase {
         )
 
         return Application(config: config)
+    }
+
+    /// Everything `createApplication` needs answered. Separate so a test can
+    /// re-register it inside `MockDataLoader.replaceMappedResponses`.
+    private func stubCommonEndpoints(dataLoader: MockDataLoader) {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        stubTripEndpoints(dataLoader: dataLoader)
+        stubSurveys(dataLoader: dataLoader)
     }
 
     /// Broad-match stubs for the three endpoints `TripViewModel.loadData()` may hit.
@@ -120,5 +126,115 @@ final class TripViewModelTests: OBATestCase {
         for _ in 0..<5 { await Task.yield() }
 
         #expect(viewModel.operationError == nil)
+    }
+
+    // MARK: - Shared destination (#449)
+
+    // The two fixtures do not share a trip. The arrival is on trip 1_40989208,
+    // and the details the broad stub serves are trip 1_18196913, so the
+    // boarding stop has no row in them. The destination is then found by
+    // searching the whole trip, which puts stop 1_29930 at row 10.
+
+    /// Arrivals for a trip opened from a shared link: the boarding stop's, and
+    /// the destination's, which can be made to fail. Register these before
+    /// `createApplication`'s broad stubs: `MockDataLoader` serves the first
+    /// stub that matches.
+    private func stubSharedTripArrivals(dataLoader: MockDataLoader, destinationFails: Bool) {
+        let boardingPath = "/arrival-and-departure-for-stop/1_11420.json"
+        dataLoader.mock(data: Fixtures.loadData(file: "arrival-and-departure-for-stop-1_11420.json")) { request in
+            request.url?.path.hasSuffix(boardingPath) ?? false
+        }
+
+        let destinationPath = "/arrival-and-departure-for-stop/1_29930.json"
+        let destinationData = destinationFails ? Data() : Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
+        dataLoader.mock(data: destinationData, statusCode: destinationFails ? 404 : 200) { request in
+            request.url?.path.hasSuffix(destinationPath) ?? false
+        }
+    }
+
+    private func boardingTrip() throws -> TripConvertible {
+        let arrivalDeparture = try Fixtures.loadRESTAPIPayload(
+            type: ArrivalDeparture.self,
+            fileName: "arrival-and-departure-for-stop-1_11420.json"
+        )
+        return TripConvertible(arrivalDeparture: arrivalDeparture)
+    }
+
+    private func destinationRequests(in dataLoader: MockDataLoader) -> [URL] {
+        dataLoader.recordedRequestURLs.filter { $0.path.hasSuffix("/arrival-and-departure-for-stop/1_29930.json") }
+    }
+
+    /// A trip opened from a shared link asks for the destination's own arrival,
+    /// for the destination's row and on the boarding arrival's trip, and
+    /// publishes it.
+    @Test @MainActor
+    func `A shared destination's arrival is loaded for its row`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubSharedTripArrivals(dataLoader: dataLoader, destinationFails: false)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let trip = try boardingTrip()
+        let viewModel = TripViewModel(application: app, tripConvertible: trip, destinationStopID: "1_29930")
+
+        viewModel.loadData()
+        await poll(until: { viewModel.destinationArrivalDeparture != nil }, timeout: .seconds(10), "the destination's arrival never loaded")
+
+        // The payload served for the destination, not the boarding stop's.
+        #expect(viewModel.destinationArrivalDeparture?.stopID == "MTS_11589")
+
+        let request = try #require(destinationRequests(in: dataLoader).last)
+        let query = try #require(URLComponents(url: request, resolvingAgainstBaseURL: false)?.queryItems)
+        #expect(query.first(where: { $0.name == "stopSequence" })?.value == "10")
+        #expect(query.first(where: { $0.name == "tripId" })?.value == "1_40989208")
+    }
+
+    /// Every other trip makes the one arrival request it always made, for the
+    /// boarding stop.
+    @Test @MainActor
+    func `Without a shared destination only the boarding arrival is requested`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubSharedTripArrivals(dataLoader: dataLoader, destinationFails: false)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let trip = try boardingTrip()
+        let viewModel = TripViewModel(application: app, tripConvertible: trip)
+
+        viewModel.loadData()
+        await poll(until: { viewModel.tripDetails != nil && !viewModel.isLoading }, timeout: .seconds(10), "the trip never finished loading")
+
+        let arrivalRequests = dataLoader.recordedRequestURLs.filter { $0.path.contains("/arrival-and-departure-for-stop/") }
+        #expect(arrivalRequests.map(\.lastPathComponent) == ["1_11420.json"])
+        #expect(viewModel.destinationArrivalDeparture == nil)
+    }
+
+    /// A refresh that fails to load the destination's arrival clears the
+    /// countdown rather than leave the last prediction on screen, and raises
+    /// no error alert: the trip itself still loaded.
+    @Test @MainActor
+    func `A failed refresh clears the destination's arrival without an error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubSharedTripArrivals(dataLoader: dataLoader, destinationFails: false)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let trip = try boardingTrip()
+        let viewModel = TripViewModel(application: app, tripConvertible: trip, destinationStopID: "1_29930")
+        viewModel.loadData()
+        await poll(until: { viewModel.destinationArrivalDeparture != nil }, timeout: .seconds(10), "the first load never published the destination's arrival")
+
+        dataLoader.replaceMappedResponses { staging in
+            stubSharedTripArrivals(dataLoader: staging, destinationFails: true)
+            stubCommonEndpoints(dataLoader: staging)
+        }
+        dataLoader.resetRecordedRequestURLs()
+        viewModel.refresh()
+        await poll(
+            until: { !destinationRequests(in: dataLoader).isEmpty && !viewModel.isLoading },
+            timeout: .seconds(10),
+            "the refresh never finished asking for the destination's arrival"
+        )
+
+        #expect(viewModel.destinationArrivalDeparture == nil)
+        #expect(viewModel.operationError == nil)
+        #expect(viewModel.tripDetails != nil)
     }
 }
