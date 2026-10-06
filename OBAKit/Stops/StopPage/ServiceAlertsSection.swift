@@ -77,9 +77,11 @@ struct ServiceAlertsSection: View {
             }
         } label: {
             HStack(spacing: 12) {
+                // Black on orange, like a road warning sign: white on systemOrange
+                // is 2.2:1, black is 9.5:1 in both appearances.
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .frame(width: warningBadgeSize, height: warningBadgeSize)
                     .background(Color.orange.gradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 Text(Strings.serviceAlerts)
@@ -88,7 +90,7 @@ struct ServiceAlertsSection: View {
                 Text("\(alerts.count)")
                     .font(.caption.weight(.heavy))
                     .monospacedDigit()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
                     .background(Color.orange, in: Capsule())
@@ -120,7 +122,7 @@ struct ServiceAlertsSection: View {
         } label: {
             Text(CountPlural.format(OBALoc("stop_page.service_alerts.show_all_fmt", value: "Show all %d alerts", comment: "Row that expands the service alerts section to show every alert. %d is the total number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), count: alerts.count))
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color(uiColor: ThemeColors.shared.warningText))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 11)

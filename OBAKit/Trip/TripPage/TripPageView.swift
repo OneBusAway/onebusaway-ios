@@ -257,6 +257,9 @@ struct TripPageView: View {
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
             .padding(.leading, 4)
+            // Anchors the Headings rotor, so a VoiceOver rider can jump past the
+            // trip card straight to "All N stops".
+            .accessibilityAddTraits(.isHeader)
     }
 
     private var stopsSectionPlaceholderTitle: String {
@@ -325,5 +328,8 @@ private struct TripPageBackRow: View {
             .font(.subheadline.weight(.semibold))
             .frame(width: 32, height: 32)
             .background(Color(uiColor: .tertiarySystemFill), in: Circle())
+            // Hit area grows to the 44pt minimum without growing the glyph or
+            // the row: a negative inset extends the shape past the frame.
+            .contentShape(Circle().inset(by: -6))
     }
 }

@@ -486,9 +486,16 @@ public class Formatters: NSObject {
         switch temporalState {
         case .present: return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
         default:
-            let formatString = OBALoc("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
-            return String(format: formatString, untilMinutes)
+            return Self.shortMinutesText(untilMinutes)
         }
+    }
+
+    /// The localized abbreviated minute count, e.g. "7m" — the suffix differs
+    /// per locale, so never interpolate a literal `m`. Visual only: VoiceOver
+    /// reads "7m" as meters, so spoken text uses `formattedTimeUntilArrivalDeparture`.
+    public static func shortMinutesText(_ minutes: Int) -> String {
+        let formatString = OBALoc("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
+        return String(format: formatString, minutes)
     }
 
     private lazy var relativeDateTimeFormatter: RelativeDateTimeFormatter = {

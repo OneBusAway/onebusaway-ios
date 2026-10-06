@@ -54,6 +54,12 @@ struct VehiclesMapView: View {
                         .onTapGesture {
                             selectedVehicle = vehicle
                         }
+                        // `.onTapGesture` is invisible to assistive tech; expose the
+                        // same tap as a button so VoiceOver can open the vehicle.
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction {
+                            selectedVehicle = vehicle
+                        }
                 }
             }
         }

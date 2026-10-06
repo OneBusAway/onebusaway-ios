@@ -56,12 +56,14 @@ struct TripLiveActivity: Widget {
                             Image(systemName: "bus.fill")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(Color(presenter.primaryColor(for: context.state)))
+                                .accessibilityHidden(true) // decorative; the route name follows
                         }
                         Text(context.attributes.staticData.routeShortName)
                             .font(.system(.title3, design: .rounded))
                             .fontWeight(.heavy)
                             .foregroundColor(.white)
                             .opacity(staleOpacity)
+                            .accessibilityLabel(routeLabel(context.attributes.staticData))
                     }
                     .padding(.leading, 6)
                 }
@@ -143,6 +145,7 @@ struct TripLiveActivity: Widget {
                             .font(.system(.body, design: .rounded))
                             .fontWeight(.bold)
                             .foregroundColor(Color(presenter.primaryColor(for: context.state)))
+                            .accessibilityLabel(routeLabel(context.attributes.staticData))
                     }
                 }
                 .padding(.leading, 4)
@@ -162,7 +165,7 @@ struct TripLiveActivity: Widget {
                 // rider gets here. Compact and minimal are mutually exclusive
                 // presentations, so there is no compact leading triangle to lean on.
                 if let primary {
-                    let minuteText = TripCountdownFormatStyle(departure: primary.departureDate).format(Date())
+                    let minuteText = TripCountdownFormatStyle.spoken(departure: primary.departureDate).format(Date())
                     TickingCountdownText(
                         departure: primary.departureDate,
                         font: .system(.callout, design: .rounded, weight: .heavy),
@@ -172,10 +175,17 @@ struct TripLiveActivity: Widget {
                         opacity: staleOpacity,
                         accessibilityLabel: context.isStale
                             ? "\(LiveActivityStaleChrome.warningText), \(minuteText)"
-                            : minuteText
+                            : nil
                     )
                 }
             }
         }
+    }
+
+    /// "Route 8" rather than a bare "8", which VoiceOver reads as a number with
+    /// nothing to say what it counts.
+    private func routeLabel(_ staticData: TripAttributes.StaticData) -> String {
+        Formatters(locale: .autoupdatingCurrent, calendar: .autoupdatingCurrent, themeColors: ThemeColors.shared)
+            .accessibilityLabelForArrivalDeparture(routeAndHeadsign: staticData.routeShortName)
     }
 }
