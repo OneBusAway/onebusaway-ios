@@ -97,9 +97,48 @@ struct TripStopListModel {
 
     /// Which row is the rider's boarding or destination stop. Shared by the
     /// SwiftUI trip page and the UIKit stop list.
-    static func userStopIndex(in stopTimes: [TripStopTime], arrivalDeparture: ArrivalDeparture?) -> Int? {
+    ///
+    /// `sharedDestinationStopID` is set when the trip was opened from a shared
+    /// link that named where the sharer steps off. That stop then carries the
+    /// marker instead of the boarding stop: the recipient is being shown someone
+    /// else's journey, and its end is what the marker has always claimed to
+    /// point at. See #449.
+    static func userStopIndex(
+        in stopTimes: [TripStopTime],
+        arrivalDeparture: ArrivalDeparture?,
+        sharedDestinationStopID: StopID? = nil
+    ) -> Int? {
         guard let arrivalDeparture else { return nil }
-        return index(in: stopTimes, stopID: arrivalDeparture.stopID, stopSequence: arrivalDeparture.stopSequence)
+        let boardingIndex = index(in: stopTimes, stopID: arrivalDeparture.stopID, stopSequence: arrivalDeparture.stopSequence)
+        return destinationStopIndex(
+            in: stopTimes,
+            destinationStopID: sharedDestinationStopID,
+            boardingIndex: boardingIndex
+        ) ?? boardingIndex
+    }
+
+    /// Which row is the stop a shared trip link says the rider will step off at.
+    ///
+    /// The link carries `destination_stop_id` and no stop sequence
+    /// (`AppLinksRouter.encode`), so a loop route that calls at that stop twice
+    /// offers two candidate rows. The exit is the first call *after* boarding —
+    /// a rider cannot leave a vehicle before boarding it — which is the rule
+    /// `DestinationStopPickerController` already used to offer the choice on the
+    /// sending side. Returns `nil` when the link named no destination, or when
+    /// the trip never reaches that stop after boarding.
+    static func destinationStopIndex<S: TripStopListEntry>(
+        in stopTimes: [S],
+        destinationStopID: StopID?,
+        boardingIndex: Int?
+    ) -> Int? {
+        guard let destinationStopID else { return nil }
+
+        // Boarding at row `n` puts the earliest possible exit at `n + 1`.
+        // Clamped to `count`: the two indices are resolved by separate lookups,
+        // and a feed that renumbered stop times between them would otherwise
+        // slice out of bounds.
+        let searchStart = min((boardingIndex.map { $0 + 1 }) ?? 0, stopTimes.count)
+        return stopTimes[searchStart...].firstIndex { $0.stopID == destinationStopID }
     }
 
     /// Vehicle row for UIKit (and any caller that only has IDs), using the same
