@@ -139,6 +139,11 @@ extension MapViewController {
 
         guard let tripPlanner = buildTripPlanner(region: currentRegion) else { return }
 
+        // One planner at a time. A second panel stacked on the first overwrote the
+        // references to it, so closing the top one stranded the bottom one with no
+        // way to dismiss it, and the notification observers were registered twice.
+        dismissTripPlannerController()
+
         subscribeToTripPlannerNotifications()
 
         let tripPlannerView = tripPlanner.createTripPlannerView(

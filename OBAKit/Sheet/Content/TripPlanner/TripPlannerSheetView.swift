@@ -185,6 +185,11 @@ private struct TripPlannerSheetContent: View {
         // Built with no prefill so this pass writes nothing to the planner's view
         // model — see `applyPrefillIfNeeded`, which does the writing from `.task`.
         // Every nil argument is a documented no-op inside OTPKit.
+        //
+        // No `onDisappear` cleanup: the sheet system rebuilds content without
+        // dismissing it, and a reset there wiped a planned trip off a sheet that was
+        // still showing. `MapPanelRootView` clears the map when `.tripPlanner` leaves
+        // the route stack, and the planner's own state goes with this `@StateObject`.
         plannerWrapper.tripPlanner.createTripPlannerView(chrome: .embedded)
             .task {
                 plannerWrapper.applyPrefillIfNeeded(
@@ -208,9 +213,6 @@ private struct TripPlannerSheetContent: View {
                     if case .tripPlanner = route { return true }
                     return false
                 }
-            }
-            .onDisappear {
-                cleanupPlanner()
             }
     }
 
@@ -284,17 +286,5 @@ private struct TripPlannerSheetContent: View {
         )
 
         return tripPlanner
-    }
-
-    /// Cleans up planner state when the view disappears.
-    private func cleanupPlanner() {
-        // Reset the planner: clears origin, destination, via point, plan response,
-        // selected itinerary, errors, and any routes/annotations drawn on the map.
-        plannerWrapper.tripPlanner.reset()
-
-        // Clear the display model: removes any remaining routes and annotations.
-        // Task 3 may already call this when the route leaves the stack; if it does,
-        // this call is redundant but harmless.
-        tripPlannerMapDisplayModel.clear()
     }
 }

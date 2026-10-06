@@ -14,6 +14,7 @@ import OBAKitCore
 struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
+    @Environment(\.scenePhase) private var scenePhase
 
     /// Used by the bookmark rows to format distances.
     private let application: Application
@@ -53,7 +54,23 @@ struct HomeSheetView: View {
         .searchSheetBackground()
         .ignoresSafeArea(.container, edges: .bottom)
         .task {
-            viewModel.activate()
+            // Polls while the home sheet is on screen, so bookmark countdowns
+            // don't freeze. `loadIfNeeded`'s staleness gate keeps it to one fetch
+            // per window however often this fires; skipped while a stacked sheet
+            // covers the home sheet, since nobody can see the countdowns then.
+            while !Task.isCancelled {
+                if coordinator.stackedRoutes.isEmpty {
+                    viewModel.activate()
+                }
+                try? await Task.sleep(for: .seconds(30))
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // A phone unlocked after twenty minutes would otherwise show the
+            // countdowns it had when it locked — "NOW" for a bus long gone.
+            if phase == .active && coordinator.stackedRoutes.isEmpty {
+                viewModel.activate()
+            }
         }
         .onChange(of: coordinator.stackedRoutes) { previousRoutes, routes in
             // Re-activate when the stacked layer transitions to empty — the moment the
