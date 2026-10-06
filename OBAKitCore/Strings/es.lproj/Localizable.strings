@@ -430,6 +430,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Vea el Horario de su Ruta";
 
+/* VoiceOver lead-in before the spoken list of the next departures on a Live Activity, e.g. '…, later departures, 15 minutes, 22 minutes'. */
+"live_activity.a11y_later_departures" = "próximas salidas";
+
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "Estos datos pueden no estar actualizados.";
 

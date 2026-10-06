@@ -104,4 +104,75 @@ final class TripActivityPresenterTests {
         #expect(display.scheduledTimeText == nil)
         #expect(display.expectedTimeText == formatters.timeFormatter.string(from: now.addingTimeInterval(600)))
     }
+
+    // MARK: - Accessibility label
+
+    private let staticData = TripAttributes.StaticData(routeShortName: "49", routeHeadsign: "Downtown Seattle", stopID: "1_75403")
+
+    private func spokenLabel(arrivals: [TripAttributes.ContentState.ArrivalInfo], isStale: Bool = false) -> String {
+        let segments = presenter.accessibilitySegments(
+            staticData: staticData,
+            contentState: TripAttributes.ContentState(arrivals: arrivals),
+            isStale: isStale,
+            now: now
+        )
+        return TripActivityPresenter.spokenString(segments, now: now)
+    }
+
+    /// The card is one VoiceOver element, so its label has to carry everything
+    /// the card shows, in reading order, with the minutes spelled out — the
+    /// visible "8m" is read as meters.
+    @Test func `Card label reads route, headsign, minutes, time and adherence in order`() throws {
+        let label = spokenLabel(arrivals: [arrival(offsetSeconds: 510, status: .delayed, deviation: 120, now: now)])
+
+        let route = try #require(label.range(of: "Route 49"))
+        let headsign = try #require(label.range(of: "Downtown Seattle"))
+        let minutes = try #require(label.range(of: "8 minutes"))
+        let lateness = try #require(label.range(of: "2 min late"))
+        #expect(route.lowerBound < headsign.lowerBound)
+        #expect(headsign.lowerBound < minutes.lowerBound)
+        #expect(minutes.lowerBound < lateness.lowerBound)
+        #expect(label.contains(formatters.timeFormatter.string(from: now.addingTimeInterval(510))))
+        #expect(!label.contains("8m"))
+    }
+
+    /// The departure chips tick independently, so they stay symbolic countdowns
+    /// rather than strings baked at render time.
+    @Test func `Card label lists later departures as ticking countdowns`() {
+        let segments = presenter.accessibilitySegments(
+            staticData: staticData,
+            contentState: TripAttributes.ContentState(arrivals: [
+                arrival(offsetSeconds: 300, now: now),
+                arrival(offsetSeconds: 900, now: now),
+                arrival(offsetSeconds: 1_320, now: now)
+            ]),
+            isStale: false,
+            now: now
+        )
+
+        let countdowns = segments.filter { if case .countdown = $0 { true } else { false } }
+        #expect(countdowns == [
+            .countdown(now.addingTimeInterval(300)),
+            .countdown(now.addingTimeInterval(900)),
+            .countdown(now.addingTimeInterval(1_320))
+        ])
+        let label = TripActivityPresenter.spokenString(segments, now: now)
+        #expect(label.hasSuffix("later departures, 15 minutes, 22 minutes"))
+    }
+
+    @Test func `Card label ends with the stale warning when stale`() {
+        let label = spokenLabel(arrivals: [arrival(offsetSeconds: 300, now: now)], isStale: true)
+        #expect(label.hasSuffix(LiveActivityStaleChrome.warningText))
+    }
+
+    /// Every arrival has left: the card still names the trip rather than going silent.
+    @Test func `Card label with no upcoming arrivals still names the route`() {
+        let label = spokenLabel(arrivals: [arrival(offsetSeconds: -120, now: now)])
+        #expect(label == "Route 49, Downtown Seattle")
+    }
+
+    @Test func `Card label for a schedule-only trip says so`() {
+        let label = spokenLabel(arrivals: [arrival(offsetSeconds: 300, status: .unknown, now: now)])
+        #expect(label.contains(Strings.scheduledNotRealTime))
+    }
 }

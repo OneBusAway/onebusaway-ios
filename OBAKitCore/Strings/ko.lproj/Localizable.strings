@@ -430,6 +430,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "노선 시간표 보기";
 
+/* VoiceOver lead-in before the spoken list of the next departures on a Live Activity, e.g. '…, later departures, 15 minutes, 22 minutes'. */
+"live_activity.a11y_later_departures" = "이후 출발";
+
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "이 데이터가 오래되었을 수 있습니다.";
 

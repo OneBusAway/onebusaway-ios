@@ -430,6 +430,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Xem lịch trình tuyến của bạn";
 
+/* VoiceOver lead-in before the spoken list of the next departures on a Live Activity, e.g. '…, later departures, 15 minutes, 22 minutes'. */
+"live_activity.a11y_later_departures" = "các chuyến khởi hành tiếp theo";
+
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "Dữ liệu này có thể đã lỗi thời.";
 

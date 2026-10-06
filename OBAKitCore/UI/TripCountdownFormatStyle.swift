@@ -28,13 +28,27 @@ public struct TripCountdownFormatStyle: DiscreteFormatStyle, Sendable {
     public typealias FormatOutput = String
 
     public var departure: Date
+    /// Spell the unit out ("8 minutes") instead of abbreviating it ("8m").
+    /// VoiceOver reads a bare `8m` as "8 meters" or "8 m", so every spoken
+    /// countdown uses this form. Same boundaries as the visual form, so the
+    /// two flip together.
+    public var isSpoken: Bool
 
-    public init(departure: Date) {
+    public init(departure: Date, isSpoken: Bool = false) {
         self.departure = departure
+        self.isSpoken = isSpoken
+    }
+
+    /// The spoken form of the countdown, for accessibility labels.
+    public static func spoken(departure: Date) -> TripCountdownFormatStyle {
+        TripCountdownFormatStyle(departure: departure, isSpoken: true)
     }
 
     public func format(_ now: Date) -> String {
         let minutes = Int(departure.timeIntervalSince(now) / 60.0)
+        if isSpoken {
+            return spokenFormat(minutes: minutes)
+        }
         if minutes <= 0 {
             return OBALoc(
                 "stop_page.countdown.now",
@@ -50,6 +64,19 @@ public struct TripCountdownFormatStyle: DiscreteFormatStyle, Sendable {
             value: "%dm",
             comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past."
         )
+        return String(format: formatString, minutes)
+    }
+
+    /// Reuses the keys `Formatters.formattedTimeUntilArrivalDeparture` speaks
+    /// on the Stop page, so the Live Activity and the app say the same thing.
+    private func spokenFormat(minutes: Int) -> String {
+        if minutes <= 0 {
+            return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
+        }
+        if minutes == 1 {
+            return OBALoc("formatters.one_minute", value: "One minute", comment: "Formatted time text for arrivals/departures that occur in one minute.")
+        }
+        let formatString = OBALoc("formatters.time_fmt", value: "%d minutes", comment: "Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past.")
         return String(format: formatString, minutes)
     }
 
@@ -95,7 +122,9 @@ public struct TickingCountdownText: View {
     public let color: Color
     /// Stale Live Activity chrome dims minutes via `LiveActivityStaleChrome.contentOpacity`.
     public let opacity: Double
-    /// When set (e.g. minimal Island + stale warning), overrides the spoken countdown.
+    /// When set (e.g. minimal Island + stale warning), overrides the spoken
+    /// countdown. When `nil`, VoiceOver hears the spelled-out countdown
+    /// ("8 minutes"), never the visual `8m`.
     public let accessibilityLabel: String?
 
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
@@ -131,7 +160,19 @@ public struct TickingCountdownText: View {
         if let accessibilityLabel {
             label.accessibilityLabel(accessibilityLabel)
         } else {
-            label
+            label.accessibilityLabel(Self.spokenText(departure: departure, isLuminanceReduced: isLuminanceReduced))
         }
+    }
+
+    /// The spelled-out countdown as a `Text`, ticking on the same minute
+    /// boundaries as the visual one. Static under reduced luminance for the
+    /// same redaction reason as the visual text. Public so a combined
+    /// accessibility label (the Live Activity card) can splice it in.
+    public static func spokenText(departure: Date, isLuminanceReduced: Bool = false) -> Text {
+        let style = TripCountdownFormatStyle.spoken(departure: departure)
+        if isLuminanceReduced {
+            return Text(verbatim: style.format(Date()))
+        }
+        return Text(.currentDate, format: style)
     }
 }
