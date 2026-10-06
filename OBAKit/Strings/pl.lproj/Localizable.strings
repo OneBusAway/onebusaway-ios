@@ -49,6 +49,9 @@
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "Ten ekran będzie dostępny wkrótce.";
 
+/* Shown when the rider taps a link or notification for a stop that belongs to a transit region other than the currently selected one. */
+"application.stop_in_other_region" = "Ten przystanek znajduje się w innym regionie niż ten, którego używasz, więc nie można go otworzyć.";
+
 /* Filter option to show all departures regardless of real-time data availability */
 "arrival_departure_filter.all_departures" = "Wszystkie odjazdy";
 

@@ -541,6 +541,10 @@ struct MapPanelRootView: View {
     @ViewBuilder
     private func buildSheetContent(for route: AppSheetRoute) -> some View {
         factory.view(for: route)
+            // Settings writes display preferences (compact mode, reduced colors)
+            // to the app's defaults suite; without this, sheet content reading
+            // them through `@AppStorage` saw `.standard` and ignored them.
+            .defaultAppStorage(application.userDefaults)
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(
                     display: mapViewModel.weatherDisplay,
@@ -760,6 +764,14 @@ extension MapPanelRootView {
         }
     }
 
+    /// The map buttons stay tappable while their own sheet is up, and a second tap
+    /// stacked an identical copy on the first.
+    private func pushUnlessOnTop(_ route: AppSheetRoute) {
+        let topRoute = coordinator.stackedRoutes.last ?? coordinator.routeStack.last
+        guard topRoute != route else { return }
+        coordinator.push(route)
+    }
+
     private func openSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
@@ -767,7 +779,7 @@ extension MapPanelRootView {
 
     private var moreButton: some View {
         MoreButton {
-            coordinator.push(.more)
+            pushUnlessOnTop(.more)
         }
         .padding(ThemeMetrics.controllerMargin)
         .padding(.top, pillHeight)
@@ -776,7 +788,7 @@ extension MapPanelRootView {
 
     private var myTripButton: some View {
         MyTripButton {
-            coordinator.push(.routePicker)
+            pushUnlessOnTop(.routePicker)
         }
         .padding(.leading, ThemeMetrics.controllerMargin)
         .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)

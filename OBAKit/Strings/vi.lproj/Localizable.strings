@@ -49,6 +49,9 @@
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "Màn hình này sắp ra mắt.";
 
+/* Shown when the rider taps a link or notification for a stop that belongs to a transit region other than the currently selected one. */
+"application.stop_in_other_region" = "Trạm dừng này thuộc một khu vực khác với khu vực bạn đang dùng nên không thể mở.";
+
 /* Filter option to show all departures regardless of real-time data availability */
 "arrival_departure_filter.all_departures" = "Tất cả chuyến khởi hành";
 

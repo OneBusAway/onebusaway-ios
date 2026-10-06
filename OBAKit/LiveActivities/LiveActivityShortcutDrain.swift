@@ -84,7 +84,13 @@ enum LiveActivityShortcutDrain {
         case .started, .promotedExisting:
             LiveActivityShortcutRequest.clear(application.userDefaults)
         case .failed:
-            presenter?.showLiveActivityErrorAlert()
+            // Retry only while nobody has been told. Once the alert is up, the
+            // rider knows; leaving the request queued re-showed the same alert from
+            // every later drain entry (became-active, store change, foreground)
+            // for the rest of the 90s window.
+            guard let presenter else { return }
+            LiveActivityShortcutRequest.clear(application.userDefaults)
+            presenter.showLiveActivityErrorAlert()
         }
     }
 }

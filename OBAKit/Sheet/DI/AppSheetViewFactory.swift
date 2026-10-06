@@ -231,7 +231,12 @@ final class AppSheetViewFactory {
     /// gives: a failed request leaves the rider on the list they tapped.
     private func showRouteOnMap(_ route: Route) async {
         let router = searchResultRouter
-        guard let resolved = await router.resolve(result: route) else {
+        let stackAtTap = coordinator.routeStack + coordinator.stackedRoutes
+        let resolved = await router.resolve(result: route)
+        // The rider may have moved on while the route loaded; unwinding now would
+        // tear down whatever they opened instead.
+        guard !Task.isCancelled, coordinator.routeStack + coordinator.stackedRoutes == stackAtTap else { return }
+        guard let resolved else {
             if let error = router.lastError {
                 await application.displayError(error)
             }

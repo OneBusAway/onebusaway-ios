@@ -17,6 +17,7 @@ struct RouteDirectionView: View {
     let model: RouteDirectionModel
     @Environment(WatchAppHost.self) private var host
     @Environment(\.scenePhase) private var scenePhase
+    @State private var isVisible = false
 
     /// Departures listed for the nearest stop; later ones are noise on a watch.
     private let departureLimit = 3
@@ -83,11 +84,20 @@ struct RouteDirectionView: View {
                 }
             }
         }
-        .onAppear { model.startPolling() }
-        .onDisappear { model.stopPolling() }
+        .onAppear {
+            isVisible = true
+            model.startPolling()
+        }
+        .onDisappear {
+            isVisible = false
+            model.stopPolling()
+        }
         .onChange(of: scenePhase) { _, phase in
+            // A wrist raise makes every view in the stack active again, including
+            // this one when a pushed screen is covering it. Only the one on
+            // screen should poll.
             if phase == .active {
-                model.startPolling()
+                if isVisible { model.startPolling() }
             } else {
                 model.stopPolling()
             }

@@ -393,6 +393,9 @@ public class Application: CoreApplication, PushServiceDelegate {
             guard let topViewController = self.topViewController else {
                 // UI not ready yet (cold launch). Navigate once the scene activates.
                 self.pendingStopID = pushBody.stopID
+                // A region left by an earlier stash would make the drain refuse
+                // this stop as belonging to somewhere else.
+                self.pendingStopRegionID = nil
                 return
             }
             self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
@@ -770,12 +773,22 @@ public class Application: CoreApplication, PushServiceDelegate {
             // of the line for something the rider actually tapped, and the
             // no-region branch that defers instead already logs its reasoning.
             Logger.warn("Stop \(destination.stopID) belongs to region \(destination.regionID) but region \(current) is selected; dropping the tap.")
+            Task { @MainActor in
+                await self.displayError(UnstructuredError(OBALoc(
+                    "application.stop_in_other_region",
+                    value: "This stop is in a different region than the one you're using, so it can't be opened.",
+                    comment: "Shown when the rider taps a link or notification for a stop that belongs to a transit region other than the currently selected one."
+                )))
+            }
             return
         }
 
         launchRouteGate.suppress()
 
-        if let topViewController, currentRegion?.regionIdentifier == destination.regionID {
+        // Not while onboarding is the root: there is no API service to load the
+        // stop with yet, and the page would be pushed over the region picker. The
+        // drain picks the stash up once onboarding finishes.
+        if let topViewController, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
             viewRouter.navigateTo(stopID: destination.stopID, from: topViewController)
             return
         }
@@ -810,12 +823,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         switch urlType {
         case .viewStop(let stopData):
-            guard let topViewController = self.topViewController else {
-                // UI not ready yet (cold launch). Navigate once the scene activates.
-                pendingStopID = stopData.stopID
-                return true
-            }
-            viewRouter.navigateTo(stopID: stopData.stopID, from: topViewController)
+            // Shares the stash, region check, and onboarding guard every other
+            // stop entry point uses, rather than navigating against whichever
+            // region happens to be selected.
+            queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
             return true
         case .addRegion(let regionData):
             viewRouter.rootNavigateTo(page: .map)
