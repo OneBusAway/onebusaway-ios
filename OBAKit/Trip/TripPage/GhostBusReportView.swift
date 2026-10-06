@@ -135,7 +135,12 @@ struct GhostBusReportView: View {
                     }
                     .disabled(isSubmitting)
                 } footer: {
-                    Text(OBALoc("ghost_bus_report.footer", value: "Your report is anonymous and goes to the agency that runs this service.", comment: "Footer text under the submit button on the ghost bus form."))
+                    // Not "anonymous": the report carries the app's persistent user identifier
+                    // (ObacoAPIService.postGhostBusReport), plus location when shared.
+                    Text(String(
+                        format: OBALoc("ghost_bus_report.footer_recipients_fmt", value: "Your report, and your location if you choose to share it, goes to %@ and the transit agency to help improve service.", comment: "Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier."),
+                        Bundle.main.appName
+                    ))
                 }
             }
             .navigationTitle(OBALoc("ghost_bus_report.title", value: "Report Ghost Bus", comment: "Title of the ghost bus report sheet."))

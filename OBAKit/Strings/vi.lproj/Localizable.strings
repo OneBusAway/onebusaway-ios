@@ -1830,8 +1830,8 @@
 "ghost_bus_report.error.already_reported" = "Có vẻ chuyến đi này đã được báo cáo từ thiết bị này.";
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "Không thể gửi";
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "Báo cáo của bạn là ẩn danh và được gửi đến đơn vị vận tải điều hành dịch vụ này.";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "Báo cáo của bạn, cùng vị trí của bạn nếu bạn chọn chia sẻ, sẽ được gửi đến %@ và đơn vị vận tải để giúp cải thiện dịch vụ.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "Chia sẻ vị trí của tôi";
 /* Submit button on the ghost bus form. */

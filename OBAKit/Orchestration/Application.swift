@@ -275,7 +275,10 @@ public class Application: CoreApplication, PushServiceDelegate {
     ///
     /// Tapping the 'Crash' button will crash the app, which is useful for testing your integration of third-party
     /// crash reporter libraries, like Crashlytics.
-    /// - Note: This method always returns `false` when running on a device. It will only ever return `true` on the Simulator.
+    /// - Note: This is not limited to the Simulator or to Debug builds. It returns `true` on
+    ///   devices and in Release builds whenever the delegate implements `performTestCrash()`,
+    ///   which both shipping app delegates do. Users reach the Settings row that calls it only
+    ///   after they turn on Debug mode.
     var shouldShowCrashButton: Bool {
         guard let delegate = delegate as? NSObject & ApplicationDelegate else {
             return false

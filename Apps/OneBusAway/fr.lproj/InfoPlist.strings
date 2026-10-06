@@ -1,9 +1,9 @@
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "Voyez où vous vous trouvez par rapport aux transports en commun et déplacez-vous plus facilement.";
+/* Shown when a nearby (proximity) alert asks for Always location access. Opens with the When In Use sentence, then names the background use. */
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Voyez où vous vous trouvez par rapport aux transports en commun et déplacez-vous plus facilement. Les alertes de proximité utilisent aussi votre position en arrière-plan pour vous prévenir à l'approche d'un arrêt que vous avez choisi, même lorsque l'app est fermée.";
 "NSLocationWhenInUseUsageDescription" = "Voyez où vous vous trouvez par rapport aux transports en commun et déplacez-vous plus facilement.";
 
-/* Purpose string shown when the app requests HealthKit access to your walking and cycling speed. */
+/* Purpose string shown when the app requests HealthKit read access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "Utilise votre vitesse de marche ou à vélo issue de l'app Santé pour vous donner des estimations d'heure d'arrivée plus précises.";
-"NSHealthUpdateUsageDescription" = "Utilise votre vitesse de marche ou à vélo issue de l'app Santé pour vous donner des estimations d'heure d'arrivée plus précises.";
 
 /* Purpose strings shown when the app requests speech recognition / microphone for voice search. */
 "NSSpeechRecognitionUsageDescription" = "La recherche vocale convertit ce que vous dites en une requête de transport.";
