@@ -84,20 +84,19 @@ private struct SearchListContentView: View {
 // MARK: - SearchListEmptyStateView
 
 private struct SearchListEmptyStateView: View {
-    @Environment(\.accessibilityEnabled) private var accessibilityEnabled
-
-    private var size: CGFloat {
-        accessibilityEnabled ? 96 : 64
-    }
+    /// Scales with Dynamic Type. It used to key off `accessibilityEnabled`,
+    /// which is true whenever *any* assistive tech is on and says nothing about
+    /// the rider's text size.
+    @ScaledMetric(relativeTo: .largeTitle) private var size: CGFloat = 64
 
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .resizable()
-                .font(.largeTitle)
-                .frame(width: size, height: size)
                 .scaledToFit()
+                .frame(width: size, height: size)
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true) // decorative; the title below says "Search"
 
             Text(OBALoc(
                 "search_controller.empty_set.title",

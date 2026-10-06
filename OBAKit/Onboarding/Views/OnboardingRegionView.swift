@@ -60,11 +60,14 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                 if !shortList.isEmpty {
                     Text(OBALoc("onboarding.region.other_header", value: "Or choose another", comment: "Header above the alternate-regions list"))
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
+                        // `.secondary`, not `.tertiary`: tertiary label on this
+                        // background is well under 4.5:1 for caption text.
+                        .foregroundStyle(.secondary)
                         .textCase(.uppercase)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 24)
                         .padding(.bottom, 8)
+                        .accessibilityAddTraits(.isHeader)
 
                     VStack(spacing: 0) {
                         ForEach(Array(shortList.enumerated()), id: \.element.id) { index, region in
@@ -74,7 +77,10 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                                 Text(region.name)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 16)
-                                    .frame(height: 48)
+                                    // `minHeight`: a fixed height clipped long region
+                                    // names once Dynamic Type wraps them to two lines.
+                                    .padding(.vertical, 8)
+                                    .frame(minHeight: 48)
                                     // Without this the row's tappable area collapses to the
                                     // glyphs of the region name: `.buttonStyle(.plain)` derives
                                     // the hit region from the label's content rather than from
@@ -118,6 +124,9 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                 .allowsHitTesting(false)
                 .frame(height: 108)
                 .clipped()
+                // Decorative: the footer below names the region, and the map's
+                // own elements (points of interest, legal link) are noise here.
+                .accessibilityHidden(true)
             cardFooter(for: selection)
         }
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20))
