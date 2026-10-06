@@ -82,6 +82,26 @@
 			<string>включено %2$d слоя</string>
 		</dict>
 	</dict>
+	<key>next_departures_intent.in_minutes_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>через %d минуты</string>
+			<key>many</key>
+			<string>через %d минут</string>
+			<key>one</key>
+			<string>через %d минуту</string>
+			<key>other</key>
+			<string>через %d минуты</string>
+		</dict>
+	</dict>
 	<key>rental_cluster.title_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

@@ -667,6 +667,36 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Mueve el mapa o activa los servicios de ubicación para ver las paradas cercanas.";
 
+/* Siri response when the requested bookmark was deleted or belongs to a different region. */
+"next_departures_intent.bookmark_unavailable" = "Ese marcador no está disponible en tu región actual.";
+
+/* Siri asks which trip bookmark to report departures for when the user has more than one. */
+"next_departures_intent.choose_bookmark" = "¿Qué marcador?";
+
+/* Siri response naming the next departure. {Route short name} to {Headsign} departs {'now' or 'in X minutes'}. */
+"next_departures_intent.first_departure_fmt" = "%1$@ a %2$@ sale %3$@.";
+
+/* Siri response: a vehicle departs in {X} minutes. Plural forms in Localizable.stringsdict. */
+"next_departures_intent.in_minutes_fmt" = "en %d minutos";
+
+/* Siri response listing the departures after the next one. {List of 'in X minutes'} */
+"next_departures_intent.later_departures_fmt" = "Después %@.";
+
+/* Siri response when departures could not be fetched. {Bookmark name} */
+"next_departures_intent.load_failed_fmt" = "No se pudieron cargar las salidas de %@. Comprueba tu conexión e inténtalo de nuevo.";
+
+/* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
+"next_departures_intent.no_bookmarks" = "No tienes viajes en marcadores. Primero agrega a marcadores una ruta en una parada.";
+
+/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
+"next_departures_intent.no_departures_fmt" = "No hay salidas para %@ en la próxima hora.";
+
+/* Siri response when the user asks for their next departures before the app knows their region. */
+"next_departures_intent.no_region" = "Primero elige una región de transporte en la app.";
+
+/* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
+"next_departures_intent.now" = "ahora";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Espacio estrecho para personas de pie solamente";
 

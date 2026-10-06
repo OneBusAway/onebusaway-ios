@@ -99,5 +99,16 @@ nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
             shortTitle: "Track bookmark",
             systemImageName: "bell"
         )
+        AppShortcut(
+            intent: NextDeparturesIntent(),
+            phrases: [
+                "When is my next \(\.$bookmark) in \(.applicationName)",
+                "Next departures for \(\.$bookmark) in \(.applicationName)",
+                "When is my next bus in \(.applicationName)",
+                "Do I have time to catch the bus with \(.applicationName)"
+            ],
+            shortTitle: "Next departures",
+            systemImageName: "clock"
+        )
     }
 }

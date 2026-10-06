@@ -50,6 +50,7 @@ final class LocalizationTests {
         "trip_page.card.distance_stops_fmt",
         "trip_page.card.distance_stops_a11y_fmt",
         "alarm_builder_controller.minutes_fmt",
+        "next_departures_intent.in_minutes_fmt",
         // Two counts: the minute countdown (bound to "count", which the well-formedness
         // check below inspects) and the number of extra departures loaded.
         "stop_page.grouped.a11y_fmt",
@@ -494,6 +495,16 @@ final class LocalizationTests {
         #expect(String(format: format, locale: polish, "standardowa", 1) == "standardowa, 1 warstwa włączona")
         #expect(String(format: format, locale: polish, "standardowa", 3) == "standardowa, 3 warstwy włączone")
         #expect(String(format: format, locale: polish, "standardowa", 5) == "standardowa, 5 warstw włączonych")
+    }
+
+    /// Siri speaks this countdown, so a wrong plural form is heard, not just seen.
+    @Test func `Polish Siri departure countdown reaches its few and many forms`() throws {
+        let format = try #require(localizedFormat(forKey: "next_departures_intent.in_minutes_fmt", localization: "pl"))
+        let polish = Locale(identifier: "pl")
+
+        #expect(String(format: format, locale: polish, 1) == "za 1 minutę")
+        #expect(String(format: format, locale: polish, 3) == "za 3 minuty")
+        #expect(String(format: format, locale: polish, 5) == "za 5 minut")
     }
 
     @Test func `Polish trip card stop count reaches its few and many forms`() throws {

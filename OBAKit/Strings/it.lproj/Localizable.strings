@@ -667,6 +667,36 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Sposta la mappa o attiva i servizi di localizzazione per vedere le fermate vicine.";
 
+/* Siri response when the requested bookmark was deleted or belongs to a different region. */
+"next_departures_intent.bookmark_unavailable" = "Questo segnalibro non è disponibile nella tua regione attuale.";
+
+/* Siri asks which trip bookmark to report departures for when the user has more than one. */
+"next_departures_intent.choose_bookmark" = "Quale segnalibro?";
+
+/* Siri response naming the next departure. {Route short name} to {Headsign} departs {'now' or 'in X minutes'}. */
+"next_departures_intent.first_departure_fmt" = "%1$@ per %2$@ parte %3$@.";
+
+/* Siri response: a vehicle departs in {X} minutes. Plural forms in Localizable.stringsdict. */
+"next_departures_intent.in_minutes_fmt" = "tra %d minuti";
+
+/* Siri response listing the departures after the next one. {List of 'in X minutes'} */
+"next_departures_intent.later_departures_fmt" = "Poi %@.";
+
+/* Siri response when departures could not be fetched. {Bookmark name} */
+"next_departures_intent.load_failed_fmt" = "Impossibile caricare le partenze per %@. Controlla la connessione e riprova.";
+
+/* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
+"next_departures_intent.no_bookmarks" = "Non hai viaggi nei segnalibri. Aggiungi prima ai segnalibri una linea a una fermata.";
+
+/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
+"next_departures_intent.no_departures_fmt" = "Nessuna partenza per %@ nella prossima ora.";
+
+/* Siri response when the user asks for their next departures before the app knows their region. */
+"next_departures_intent.no_region" = "Scegli prima una regione di trasporto nell'app.";
+
+/* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
+"next_departures_intent.now" = "adesso";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Solo posti in piedi stretti";
 

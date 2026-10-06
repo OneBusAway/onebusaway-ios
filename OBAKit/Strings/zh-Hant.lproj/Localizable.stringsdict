@@ -58,6 +58,20 @@
 			<string>已開啟 %2$d 個圖層</string>
 		</dict>
 	</dict>
+	<key>next_departures_intent.in_minutes_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d 分鐘後</string>
+		</dict>
+	</dict>
 	<key>rental_cluster.title_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

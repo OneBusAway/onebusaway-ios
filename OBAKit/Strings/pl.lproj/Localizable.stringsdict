@@ -82,6 +82,26 @@
 			<string>%2$d warstwy włączonej</string>
 		</dict>
 	</dict>
+	<key>next_departures_intent.in_minutes_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>za %d minuty</string>
+			<key>many</key>
+			<string>za %d minut</string>
+			<key>one</key>
+			<string>za %d minutę</string>
+			<key>other</key>
+			<string>za %d minuty</string>
+		</dict>
+	</dict>
 	<key>rental_cluster.title_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

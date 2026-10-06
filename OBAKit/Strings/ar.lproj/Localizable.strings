@@ -667,6 +667,36 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "حرّك الخريطة أو فعّل خدمات الموقع لعرض المواقف القريبة منك.";
 
+/* Siri response when the requested bookmark was deleted or belongs to a different region. */
+"next_departures_intent.bookmark_unavailable" = "هذه الإشارة المرجعية غير متاحة في منطقتك الحالية.";
+
+/* Siri asks which trip bookmark to report departures for when the user has more than one. */
+"next_departures_intent.choose_bookmark" = "أي إشارة مرجعية؟";
+
+/* Siri response naming the next departure. {Route short name} to {Headsign} departs {'now' or 'in X minutes'}. */
+"next_departures_intent.first_departure_fmt" = "%1$@ إلى %2$@ يغادر %3$@.";
+
+/* Siri response: a vehicle departs in {X} minutes. Plural forms in Localizable.stringsdict. */
+"next_departures_intent.in_minutes_fmt" = "خلال %d دقيقة";
+
+/* Siri response listing the departures after the next one. {List of 'in X minutes'} */
+"next_departures_intent.later_departures_fmt" = "ثم %@.";
+
+/* Siri response when departures could not be fetched. {Bookmark name} */
+"next_departures_intent.load_failed_fmt" = "تعذّر تحميل المغادرات لـ %@. تحقق من اتصالك وحاول مرة أخرى.";
+
+/* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
+"next_departures_intent.no_bookmarks" = "ليست لديك أي رحلات في الإشارات المرجعية. أضف خطًا في محطة إلى الإشارات المرجعية أولاً.";
+
+/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
+"next_departures_intent.no_departures_fmt" = "لا توجد مغادرات لـ %@ خلال الساعة القادمة.";
+
+/* Siri response when the user asks for their next departures before the app knows their region. */
+"next_departures_intent.no_region" = "اختر منطقة النقل في التطبيق أولاً.";
+
+/* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
+"next_departures_intent.now" = "الآن";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "مكتظة، أماكن وقوف فقط";
 
