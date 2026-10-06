@@ -9,6 +9,7 @@
 
 import Foundation
 import SwiftUI
+import UIKit
 
 class ToastManager: ObservableObject {
 
@@ -35,6 +36,9 @@ class ToastManager: ObservableObject {
             self.isShowing = true
         }
 
+        // The toast never takes focus, so VoiceOver would not otherwise read it.
+        AccessibilityAnnouncement.post(toast.message)
+
         workItem?.cancel()
         let task = DispatchWorkItem { [weak self] in
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -46,7 +50,19 @@ class ToastManager: ObservableObject {
             }
         }
         workItem = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration, execute: task)
+        let dwell = Self.dwell(for: toast.duration, isVoiceOverRunning: UIAccessibility.isVoiceOverRunning)
+        DispatchQueue.main.asyncAfter(deadline: .now() + dwell, execute: task)
+    }
+
+    /// The minimum time a toast stays up under VoiceOver.
+    static let minimumVoiceOverDwell: TimeInterval = 8
+
+    /// How long a toast stays on screen. A VoiceOver user hears the message
+    /// queued behind whatever is already being spoken, and may then want to swipe
+    /// to it, so the toast stays at least `minimumVoiceOverDwell` seconds rather
+    /// than vanishing mid-sentence.
+    static func dwell(for requested: TimeInterval, isVoiceOverRunning: Bool) -> TimeInterval {
+        isVoiceOverRunning ? max(requested, minimumVoiceOverDwell) : requested
     }
 
     func dismiss() {
