@@ -75,10 +75,13 @@ targets:
           - fb
           - twitter
           - comgooglemaps
-        # Proximity alerts geofence the destination, and Core Location only delivers
-        # region events in the background under Always. Same body as the When In Use
-        # string, matching every InfoPlist.strings translation already in the repo.
-        NSLocationAlwaysAndWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
+        # Nearby alerts (stop proximity alerts) geofence the chosen stop, and Core
+        # Location only delivers region events in the background under Always. The
+        # body opens with the When In Use sentence, because iOS can show this string
+        # from .notDetermined too, then names the background use. Translations live
+        # in Apps/<App>/<locale>.lproj/InfoPlist.strings; keep the term in step with
+        # the stop_page.proximity_alert.* strings in OBAKit/Strings.
+        NSLocationAlwaysAndWhenInUseUsageDescription: "See where you are in relation to transit, and help you navigate more easily. Nearby alerts also use your location in the background to let you know when you're approaching a stop you chose, even when the app is closed."
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
         # HealthKit purpose strings live in Apps/Shared/info_plist.yml (shared by every app).
         NSLocationTemporaryUsageDescriptionDictionary:
