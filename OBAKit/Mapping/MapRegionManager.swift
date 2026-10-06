@@ -47,6 +47,16 @@ public class UserDroppedPin: MKPointAnnotation {
     nonisolated override public init() {
         super.init()
     }
+
+    /// The name of a pin whose location has no better one. VoiceOver reads it as
+    /// the pin's label, and the map item card shows it as a title.
+    nonisolated static var defaultTitle: String {
+        OBALoc(
+            "map_controller.dropped_pin_title",
+            value: "Dropped Pin",
+            comment: "Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver."
+        )
+    }
 }
 
 public class MapRegionManager: NSObject,
@@ -1086,7 +1096,7 @@ public class MapRegionManager: NSObject,
             }.value.value
 
             let searchRequest = SearchRequest(
-                query: mapItem.name ?? "Dropped Pin",
+                query: mapItem.name ?? UserDroppedPin.defaultTitle,
                 type: .address
             )
             let response = SearchResponse(
@@ -1105,10 +1115,10 @@ public class MapRegionManager: NSObject,
             // Fallback: create basic MKMapItem
             let placemark = MKPlacemark(coordinate: feature.coordinate)
             let mapItem = MKMapItem(placemark: placemark)
-            mapItem.name = feature.title ?? "Dropped Pin"
+            mapItem.name = feature.title ?? UserDroppedPin.defaultTitle
 
             let searchRequest = SearchRequest(
-                query: feature.title ?? "Dropped Pin",
+                query: feature.title ?? UserDroppedPin.defaultTitle,
                 type: .address
             )
             let response = SearchResponse(
@@ -1360,7 +1370,7 @@ public class MapRegionManager: NSObject,
     private func setUserAnnotation(coordinate: CLLocationCoordinate2D, title: String?, subtitle: String?) {
         let annotation = UserDroppedPin()
         annotation.coordinate = coordinate
-        annotation.title = title ?? "Dropped Pin"
+        annotation.title = title ?? UserDroppedPin.defaultTitle
         annotation.subtitle = subtitle ?? "Lat: \(coordinate.latitude), Lon: \(coordinate.longitude)"
 
         // Add to array

@@ -295,6 +295,50 @@ final class StopRouteFocusMapLayerTests {
         #expect(recycled.detailCalloutAccessoryView is VehicleCalloutView)
     }
 
+    // MARK: - Accessibility
+
+    /// `StopVehicleAnnotation` suppresses its `title`, which is what MapKit labels
+    /// an annotation view from, so the marker was silent to VoiceOver.
+    @Test func `A configured vehicle marker is labelled with its route and vehicle`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: twoVehicleModel(routeID: "H"))
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+
+        let view = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: nil)
+        layer.configure(view, for: annotation)
+
+        let label = try #require(view.accessibilityLabel)
+        #expect(label.hasPrefix("Route "))
+        #expect(label.hasSuffix("Vehicle \(annotation.id)"))
+        #expect(view.accessibilityValue?.isEmpty == false)
+    }
+
+    @Test func `A vehicle whose departure didn't resolve is labelled by the vehicle alone`() throws {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: twoVehicleModel(routeID: "H"))
+        let annotation = try #require(mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }.first)
+
+        let view = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: nil)
+        view.accessibilityValue = "stale"
+        layer.departureProvider = { _ in nil }
+        layer.configure(view, for: annotation)
+
+        #expect(view.accessibilityLabel == "Vehicle \(annotation.id)")
+        #expect(view.accessibilityValue == nil)
+    }
+
+    @Test func `The vehicle label joins route and headsign`() {
+        let label = StopRouteFocusMapLayer.accessibilityLabel(routeShortName: "8", headsign: "Seattle Center", vehicleID: "1234", formatters: Self.formatters)
+        #expect(label == "Route 8 - Seattle Center, Vehicle 1234")
+
+        let blankHeadsign = StopRouteFocusMapLayer.accessibilityLabel(routeShortName: "8", headsign: "", vehicleID: "1234", formatters: Self.formatters)
+        #expect(blankHeadsign == "Route 8, Vehicle 1234")
+    }
+
     @Test func `Update adds one vehicle annotation per drawn vehicle`() {
         #expect(Self.fixtureDeparture != nil)
         let mapView = MKMapView()

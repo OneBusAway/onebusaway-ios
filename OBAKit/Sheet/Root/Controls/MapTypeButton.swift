@@ -34,75 +34,20 @@ struct MapTypeButton: View {
             if badgeCount > 0 {
                 Text(String(badgeCount))
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color(uiColor: MapTypeButtonPresentation.badgeTextColor))
                     .frame(minWidth: 15, minHeight: 15)
                     .background(Color(uiColor: ThemeColors.shared.brand), in: Circle())
                     .offset(x: -2, y: 2)
                     .accessibilityHidden(true)
             }
         }
-        // Distinct from the UIKit hover bar's `map_controller.map_type.*` label,
-        // which really does toggle the basemap. This opens `MapSheetView`, whose
-        // basemap picker is one of four sections — the others cover POI display,
-        // transit layers and rental modes — so "Map type" described a quarter of
-        // where it leads (#1412).
-        .accessibilityLabel(Text(OBALoc(
-            "map_controller.map_settings.accessibility_label",
-            value: "Map settings",
-            comment: "Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes."
-        )))
-        .accessibilityValue(Text(accessibilityValueText))
+        // Shared with `MapViewController`'s hover-bar button, which opens the
+        // same sheet; see `MapTypeButtonPresentation`.
+        .accessibilityLabel(Text(MapTypeButtonPresentation.accessibilityLabel))
+        .accessibilityValue(Text(MapTypeButtonPresentation.accessibilityValue(mapType: mapType, layerCount: badgeCount)))
     }
 
     private var symbolName: String {
-        switch mapType {
-        case .standard: return "map"
-        case .satellite: return "globe.americas.fill"
-        case .hybrid: return "globe"
-        }
-    }
-
-    /// The basemap name, plus the layer count when the badge is showing one.
-    ///
-    /// The badge itself is `accessibilityHidden` — it is decoration sitting on
-    /// top of the button — so without folding the count in here a VoiceOver user
-    /// would have no way to learn the layer state short of opening the sheet,
-    /// which is exactly the trip the badge exists to save.
-    private var accessibilityValueText: String {
-        guard badgeCount > 0 else { return baseTypeValueText }
-
-        let format = OBALoc(
-            "map_controller.map_type.accessibility_value_with_layers_fmt",
-            value: "%1$@, %2$d layers on",
-            comment: "Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
-        )
-        // `localizedStringWithFormat`, not `String(format:)`: the latter expands
-        // `%2$#@count@` but always resolves it against the root plural rule, so the
-        // `few`/`many`/`zero`/`two` forms in the ar, pl, and ru entries could never
-        // be selected. Invisible in English; wrong everywhere with more than two.
-        return String.localizedStringWithFormat(format, baseTypeValueText, badgeCount)
-    }
-
-    private var baseTypeValueText: String {
-        switch mapType {
-        case .standard:
-            return OBALoc(
-                "map_controller.map_type.standard.accessibility_value",
-                value: "standard",
-                comment: "Voiceover text indicating the current map type as the standard base map."
-            )
-        case .satellite:
-            return OBALoc(
-                "map_controller.map_type.satellite.accessibility_value",
-                value: "satellite",
-                comment: "Voiceover text indicating the current map type as the satellite base map."
-            )
-        case .hybrid:
-            return OBALoc(
-                "map_controller.map_type.hybrid.accessibility_value",
-                value: "hybrid",
-                comment: "Voiceover text indicating the current map type as the hybrid base map (satellite view with labels)."
-            )
-        }
+        MapTypeButtonPresentation.symbolName(for: mapType)
     }
 }

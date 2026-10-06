@@ -302,6 +302,9 @@
 /* Title of the read-only Stop ID row on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_row.title" = "정류장 ID";
 
+/* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
+"edit_bookmark_controller.stop_id_row.accessibility_hint" = "정류장 ID를 복사합니다.";
+
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(그룹 없음)";
@@ -458,6 +461,9 @@
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "현재 위치를 지도 중앙에 표시";
 
+/* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
+"map_controller.dropped_pin_title" = "드롭된 핀";
+
 /* Change Region button on the alert that appears when the user is updating their current region manually. */
 "map_controller.change_region_alert.button" = "지역 변경";
 
@@ -497,6 +503,9 @@
 /* Title of the list shown when tapping a map pin that groups several stops at the same location. */
 "map_controller.stop_cluster_picker.title" = "정류장 선택";
 
+/* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
+"map_controller.stop_cluster.accessibility_hint" = "이곳의 정류장 목록을 표시합니다.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "선택하신 차량은 현재 운행 중이 아닌 것으로 보여 표시할 수 없습니다.";
 
@@ -533,6 +542,9 @@
 
 /* Button to remove a dropped pin from the map */
 "map_item_controller.remove_pin" = "핀 제거";
+
+/* Name shown in the trip planner for a destination that has no name of its own, such as a point on the map. */
+"map_item_controller.destination_fallback_title" = "목적지";
 
 /* Accessibility label for remove pin button */
 "map_item_controller.remove_pin_accessibility" = "지도에서 이 핀 제거";
@@ -1243,6 +1255,9 @@
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "이 즐겨찾기는 더 이상 작동하지 않을 수 있습니다. 운영 기관에서 무언가를 변경했나요? 즐겨찾기를 삭제하고 다시 만들어 주세요.";
 
+/* Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop. */
+"stop_controller.bad_bookmark_error_title" = "손상된 즐겨찾기";
+
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "데이터 제공: %@";
 
@@ -1563,6 +1578,15 @@
 
 /* Title of the row that will show stops that are near this one. */
 "stops_controller.nearby_stops" = "주변 정류장";
+
+/* Section heading in the stop screen's More menu, over the Add Bookmark and Service Alerts items. */
+"stops_controller.menu.file_title" = "파일";
+
+/* Section heading in the stop screen's More menu, over the nearby stops, walking directions and trip planning items. */
+"stops_controller.menu.location_title" = "위치";
+
+/* Section heading in the stop screen's More menu, over the Report a Problem item. */
+"stops_controller.menu.help_title" = "도움말";
 
 /* Button that launches the 'Report Problem' UI. */
 "stops_controller.report_problem" = "문제 신고";

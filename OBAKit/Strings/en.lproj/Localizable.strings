@@ -317,6 +317,9 @@
 /* Title of the read-only Stop ID row on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_row.title" = "Stop ID";
 
+/* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
+"edit_bookmark_controller.stop_id_row.accessibility_hint" = "Copies the stop ID.";
+
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(No Group)";
@@ -522,6 +525,9 @@
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "Center map on current location";
 
+/* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
+"map_controller.dropped_pin_title" = "Dropped Pin";
+
 /* Change Region button on the alert that appears when the user is updating their current region manually. */
 "map_controller.change_region_alert.button" = "Change Region";
 
@@ -561,6 +567,9 @@
 /* Title of the list shown when tapping a map pin that groups several stops at the same location. */
 "map_controller.stop_cluster_picker.title" = "Choose a Stop";
 
+/* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
+"map_controller.stop_cluster.accessibility_hint" = "Lists the stops here.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.";
 
@@ -596,6 +605,9 @@
 
 /* Button to remove a dropped pin from the map */
 "map_item_controller.remove_pin" = "Remove Pin";
+
+/* Name shown in the trip planner for a destination that has no name of its own, such as a point on the map. */
+"map_item_controller.destination_fallback_title" = "Destination";
 
 /* Accessibility label for remove pin button */
 "map_item_controller.remove_pin_accessibility" = "Remove this pin from the map";
@@ -1446,6 +1458,9 @@
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.";
 
+/* Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop. */
+"stop_controller.bad_bookmark_error_title" = "Broken Bookmark";
+
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Data provided by %@";
 
@@ -1801,6 +1816,15 @@
 
 /* Title of the row that will show stops that are near this one. */
 "stops_controller.nearby_stops" = "Nearby Stops";
+
+/* Section heading in the stop screen's More menu, over the Add Bookmark and Service Alerts items. */
+"stops_controller.menu.file_title" = "File";
+
+/* Section heading in the stop screen's More menu, over the nearby stops, walking directions and trip planning items. */
+"stops_controller.menu.location_title" = "Location";
+
+/* Section heading in the stop screen's More menu, over the Report a Problem item. */
+"stops_controller.menu.help_title" = "Help";
 
 /* Button that launches the 'Report Problem' UI. */
 "stops_controller.report_problem" = "Report a Problem";
