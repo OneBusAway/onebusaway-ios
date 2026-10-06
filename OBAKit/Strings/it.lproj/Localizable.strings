@@ -1120,9 +1120,6 @@
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Mostra il banner di arrivo della coincidenza";
 
-/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Mostra il banner di arrivo della coincidenza: se attivo, aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Disattiva quell’interruttore per l’orologio e tutte le partenze.";
-
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
 "settings_controller.arrival_display_section.footer" = "Banner di coincidenza: aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Fuso orario della regione: gli orari usano il fuso della regione di trasporto, con un breve badge quando il telefono differisce. Entrambi sono indipendenti.";
 
