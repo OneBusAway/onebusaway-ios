@@ -2,6 +2,9 @@
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Makikita kung nasaan ka kaugnay ng transit, at matutulungan kang mag-navigate nang mas madali. Ginagamit din ng mga abiso kapag malapit ang lokasyon mo sa background para abisuhan ka kapag papalapit ka na sa stop na pinili mo, kahit nakasara ang app.";
 "NSLocationWhenInUseUsageDescription" = "Makikita kung nasaan ka kaugnay ng transit, at matutulungan kang mag-navigate nang mas madali.";
 
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "Makikita kung nasaan ka kaugnay ng transit, at matutulungan kang mag-navigate nang mas madali.";
+
 /* Purpose string shown when the app requests HealthKit read access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "Ginagamit ang bilis ng paglalakad o pagbibisikleta mo mula sa Health app para bigyan ka ng mas tumpak na tantiya ng oras ng pagdating.";
 

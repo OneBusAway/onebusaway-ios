@@ -173,7 +173,7 @@
 "custom_region_builder_controller.server_validation_error_fmt" = "Impossibile raggiungere un server API di trasporto compatibile su %1$@. Controlla l'URL di base e riprova.\n\n%2$@";
 
 /* An explanation of dragging the map to highlight the service area of a custom region. */
-"custom_region_builder_controller.service_area_section.explanation" = "Drag the map to the approximate service area of this region.";
+"custom_region_builder_controller.service_area_section.explanation" = "Trascina la mappa sulla zona servita approssimativa di quest'area.";
 
 /* Title of the Service Area header. */
 "custom_region_builder_controller.service_area_section.header_title" = "Area di servizio";
@@ -182,31 +182,31 @@
 "data_migration_bulletin.action_button" = "Continua";
 
 /* Title for the DataMigrationBulletinPage. */
-"data_migration_bulletin.data_upgrade_title" = "Data Upgrade";
+"data_migration_bulletin.data_upgrade_title" = "Aggiornamento dei dati";
 
 /* Dismissal button title for the DataMigrationBulletinPage. */
-"data_migration_bulletin.dismiss_button" = "Not Now";
+"data_migration_bulletin.dismiss_button" = "Non ora";
 
 /* An error message that appears when the user needs to have data migrated, but is not connected to the Internet. */
 "data_migration_bulletin.errors.no_api_service_available" = "Controlla la connessione internet e riprova.";
 
 /* An error message that appears when the data migrator runs but no data can be migrated. */
-"data_migration_bulletin.errors.no_data_to_migrate" = "No data to upgrade";
+"data_migration_bulletin.errors.no_data_to_migrate" = "Nessun dato da aggiornare";
 
 /* An error message that appears when the data migrator runs without a pending migration. */
-"data_migration_bulletin.errors.no_migration_pending" = "No data migration is pending";
+"data_migration_bulletin.errors.no_migration_pending" = "Nessuna migrazione dei dati in sospeso";
 
 /* First bullet point of DataMigrationBulletinPage explanation */
-"data_migration_bulletin.explanation_1" = "Upgrade your Recent Stops and Bookmarks to work with the latest version of the app, you only need to do this once.";
+"data_migration_bulletin.explanation_1" = "Aggiorna le Fermate recenti e i Segnalibri per usarli con l'ultima versione dell'app. Basta farlo una sola volta.";
 
 /* Second bullet point of DataMigrationBulletinPage explanation */
-"data_migration_bulletin.explanation_2" = "You will not be able to see your Recent Stops or Bookmarks until you upgrade.";
+"data_migration_bulletin.explanation_2" = "Non potrai vedere le Fermate recenti né i Segnalibri finché non esegui l'aggiornamento.";
 
 /* Third bullet point of DataMigrationBulletinPage explanation */
-"data_migration_bulletin.explanation_3" = "Upgrading may take a bit of time, and a Wi-Fi or mobile connection is required during the upgrade.";
+"data_migration_bulletin.explanation_3" = "L'aggiornamento potrebbe richiedere un po' di tempo e, nel frattempo, è necessaria una connessione Wi-Fi o dati cellulare.";
 
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
-"data_migration_bulletin.finished_loading" = "Data Upgrade Complete!";
+"data_migration_bulletin.finished_loading" = "Aggiornamento dei dati completato!";
 
 /* Data migration report label for showing the number of failed migration tasks. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "data_migration_bulletin.report_summary_number_of_failures" = "%d non riusciti";
@@ -215,10 +215,10 @@
 "data_migration_bulletin.report_summary_number_of_successes" = "%d riusciti";
 
 /* Title for the Summary section of a data migration report */
-"data_migration_bulletin.report_summary_title" = "Summary";
+"data_migration_bulletin.report_summary_title" = "Riepilogo";
 
 /* Button title to let the user view a data migration report. */
-"data_migration_bulletin.view_report_button" = "View Report";
+"data_migration_bulletin.view_report_button" = "Visualizza rapporto";
 
 /* Error shown when the boarding stop cannot be found in the trip's stop list. */
 "destination_stop_picker.error_boarding_stop_not_found" = "Impossibile determinare la tua fermata di salita su questo itinerario.";
@@ -559,10 +559,10 @@
 "map_status_view.zoom_in_for_stops" = "Ingrandisci per le fermate";
 
 /* Title of the alert shown when location services are disabled for the app. */
-"map_status_alert.location_services_off.title" = "Location Services Off";
+"map_status_alert.location_services_off.title" = "Localizzazione disattivata";
 
 /* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Precise Location Off";
+"map_status_alert.precise_location_off.title" = "Posizione esatta disattivata";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "Informazioni sull'app";
@@ -700,6 +700,9 @@
 /* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
 "next_departures_intent.now" = "adesso";
 
+/* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
+"next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Solo posti in piedi stretti";
 
@@ -832,6 +835,9 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Avanzamento dell'introduzione";
 
+/* VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps} */
+"onboarding.progress.accessibility_value_fmt" = "Passaggio %1$d di %2$d";
+
 /* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Abbiamo trovato la rete di trasporto più vicina a te.";
 
@@ -923,22 +929,22 @@
 "region_mismatch_bulletin.update_map_button_fmt" = "Mostra %@ sulla mappa";
 
 /* Help text displayed on a custom (user-created) region. */
-"region_picker.custom_region_help_text" = "Custom region";
+"region_picker.custom_region_help_text" = "Area personalizzata";
 
 /* Help text displayed on an experimental region. */
-"region_picker.experimental_region_help_text" = "Experimental region";
+"region_picker.experimental_region_help_text" = "Area sperimentale";
 
 /* Help text displayed on an inactive region. */
-"region_picker.inactive_region_help_text" = "Inactive region";
+"region_picker.inactive_region_help_text" = "Area non attiva";
 
 /* Title of a button that shows a region creation view controller. */
-"region_picker.new_custom_region_button" = "New Custom Region";
+"region_picker.new_custom_region_button" = "Nuova area personalizzata";
 
 /* Title of a toggle that shows experimental (beta) regions. */
-"region_picker.show_experimental_regions_toggle" = "Show Experimental";
+"region_picker.show_experimental_regions_toggle" = "Mostra sperimentali";
 
 /* Title of a toggle that shows inactive regions. */
-"region_picker.show_inactive_regions_toggle" = "Show Inactive";
+"region_picker.show_inactive_regions_toggle" = "Mostra non attive";
 
 /* Title of the Region Picker Item, which lets the user choose a new region from the map. */
 "region_picker.title" = "Seleziona l'area";
@@ -1122,9 +1128,6 @@
 
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Mostra il banner di arrivo della coincidenza";
-
-/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Mostra il banner di arrivo della coincidenza: se attivo, aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Disattiva quell’interruttore per l’orologio e tutte le partenze.";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
 "settings_controller.arrival_display_section.footer" = "Banner di coincidenza: aprendo una fermata da una corsa gli orari sono relativi al tuo arrivo. Fuso orario della regione: gli orari usano il fuso della regione di trasporto, con un breve badge quando il telefono differisce. Entrambi sono indipendenti.";
@@ -1794,6 +1797,9 @@
 
 /* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
 "weather.percent_format" = "%d%%";
+
+/* VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention. */
+"weather.stat.a11y_fmt" = "%1$@: %2$@";
 
 /* VoiceOver label for the feels-like temperature stat on the weather card. */
 "weather.stat.feels_like" = "Percepita";

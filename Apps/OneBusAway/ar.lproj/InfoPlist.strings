@@ -2,6 +2,9 @@
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "لمعرفة مكانك بالنسبة إلى وسائل النقل العام ومساعدتك على التنقل بسهولة أكبر. كما تستخدم تنبيهات الاقتراب موقعك في الخلفية لتنبيهك عند اقترابك من محطة اخترتها، حتى عندما يكون التطبيق مغلقًا.";
 "NSLocationWhenInUseUsageDescription" = "لمعرفة مكانك بالنسبة إلى وسائل النقل العام ومساعدتك على التنقل بسهولة أكبر.";
 
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "لمعرفة مكانك بالنسبة إلى وسائل النقل العام ومساعدتك على التنقل بسهولة أكبر.";
+
 /* Purpose string shown when the app requests HealthKit read access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "يستخدم سرعة المشي أو ركوب الدراجة من تطبيق «صحتي» لمنحك تقديرات أدق لأوقات الوصول.";
 

@@ -27,7 +27,7 @@ struct OBAWidgetEntryView: View {
             HStack {
                 // `Text(verbatim:)`: the string is already localized, and an
                 // interpolated literal would be looked up as its own key.
-                Text(verbatim: String(format: LocalizationKeys.lastUpdatedAtFormat, entry.lastUpdatedAt(with: formatters)))
+                Text(verbatim: WidgetStrings.lastUpdated(at: entry.lastUpdatedAt(with: formatters)))
                     // A text style rather than a fixed 13pt, so it follows Dynamic Type.
                     .font(.footnote)
                     .foregroundStyle(.secondary)

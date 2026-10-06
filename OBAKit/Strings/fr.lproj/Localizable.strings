@@ -559,10 +559,10 @@
 "map_status_view.zoom_in_for_stops" = "Zoomez pour voir les arrêts";
 
 /* Title of the alert shown when location services are disabled for the app. */
-"map_status_alert.location_services_off.title" = "Location Services Off";
+"map_status_alert.location_services_off.title" = "Service de localisation désactivé";
 
 /* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Precise Location Off";
+"map_status_alert.precise_location_off.title" = "Position exacte désactivée";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "À propos de cette app";
@@ -700,6 +700,9 @@
 /* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
 "next_departures_intent.now" = "maintenant";
 
+/* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
+"next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Bondé, places debout uniquement";
 
@@ -831,6 +834,9 @@
 
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Progression de la découverte";
+
+/* VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps} */
+"onboarding.progress.accessibility_value_fmt" = "Étape %1$d sur %2$d";
 
 /* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Nous avons trouvé le réseau de transport le plus proche de vous.";
@@ -1122,9 +1128,6 @@
 
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Afficher la bannière d’arrivée de correspondance";
-
-/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Afficher la bannière d’arrivée de correspondance : activée, l’ouverture d’un arrêt depuis un trajet affiche les horaires relatifs à votre arrivée. Désactivez ce commutateur pour l’heure réelle et tous les départs.";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
 "settings_controller.arrival_display_section.footer" = "Bannière de correspondance : l'ouverture d'un arrêt depuis un trajet affiche les horaires relatifs à votre arrivée. Fuseau horaire de la région : les horaires utilisent le fuseau de la région de transport, avec un badge court lorsque votre téléphone diffère. Les deux sont indépendants.";
@@ -1794,6 +1797,9 @@
 
 /* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
 "weather.percent_format" = "%d %%";
+
+/* VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention. */
+"weather.stat.a11y_fmt" = "%1$@ : %2$@";
 
 /* VoiceOver label for the feels-like temperature stat on the weather card. */
 "weather.stat.feels_like" = "Température ressentie";

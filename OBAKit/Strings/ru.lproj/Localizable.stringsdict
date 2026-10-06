@@ -162,6 +162,26 @@
 			<string>Показать %d более раннего отправления</string>
 		</dict>
 	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Показано %d прошедших отправления</string>
+			<key>many</key>
+			<string>Показано %d прошедших отправлений</string>
+			<key>one</key>
+			<string>Показано %d прошедшее отправление</string>
+			<key>other</key>
+			<string>Показано %d прошедшего отправления</string>
+		</dict>
+	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

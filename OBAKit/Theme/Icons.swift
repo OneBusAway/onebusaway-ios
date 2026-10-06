@@ -84,9 +84,9 @@ nonisolated class Icons: NSObject {
         }
     }
 
-    /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
+    /// A trailing-pointing chevron (right in LTR, left in RTL), like the kind used as a disclosure indicator on a table cell.
     public class var chevron: UIImage {
-        return systemImage(named: "chevron.right")
+        return systemImage(named: "chevron.forward")
                 .withTintColor(.systemGray, renderingMode: .alwaysOriginal)
                 .withConfiguration(UIImage.SymbolConfiguration.init(weight: .bold))
     }

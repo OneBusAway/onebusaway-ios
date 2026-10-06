@@ -11,6 +11,9 @@
 
 "NSLocationWhenInUseUsageDescription" = "Pokaż swoją lokalizację na mapie";
 
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "Zobacz, gdzie jesteś względem transportu publicznego, i łatwiej się przemieszczaj.";
+
 /* Purpose string shown when the app requests HealthKit read access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "Wykorzystuje Twoją prędkość chodzenia lub jazdy rowerem z aplikacji Zdrowie, aby dokładniej szacować godziny przyjazdu.";
 

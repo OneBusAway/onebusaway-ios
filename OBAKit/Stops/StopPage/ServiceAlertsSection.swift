@@ -146,7 +146,7 @@ struct ServiceAlertsSection: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
                     .accessibilityHidden(true) // decorative; the alert title labels the button

@@ -63,7 +63,7 @@ public struct MapItemView: View {
                                         Text(OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button that shows the stops near this map item."))
                                             .bold()
                                         Spacer()
-                                        Image(systemName: "chevron.right")
+                                        Image(systemName: "chevron.forward")
                                             .font(.caption)
                                             .bold()
                                     }

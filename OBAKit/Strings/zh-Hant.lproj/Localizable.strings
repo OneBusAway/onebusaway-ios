@@ -559,10 +559,10 @@
 "map_status_view.zoom_in_for_stops" = "放大以顯示站牌";
 
 /* Title of the alert shown when location services are disabled for the app. */
-"map_status_alert.location_services_off.title" = "Location Services Off";
+"map_status_alert.location_services_off.title" = "定位服務已關閉";
 
 /* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Precise Location Off";
+"map_status_alert.precise_location_off.title" = "精確位置已關閉";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "關於此 App";
@@ -700,6 +700,9 @@
 /* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
 "next_departures_intent.now" = "現在";
 
+/* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
+"next_departures_intent.sentences_join_fmt" = "%1$@%2$@";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "極為擁擠，僅剩站位";
 
@@ -831,6 +834,9 @@
 
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "導覽進度";
+
+/* VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps} */
+"onboarding.progress.accessibility_value_fmt" = "第 %1$d 步，共 %2$d 步";
 
 /* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "我們找到離你最近的運輸網路。";
@@ -1122,9 +1128,6 @@
 
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "顯示轉乘到達橫幅";
-
-/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "顯示轉乘到達橫幅：開啟後，從行程開啟車站時時間會相對你到達該站顯示。關閉該開關將顯示時鐘時間和全部出發班次。";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
 "settings_controller.arrival_display_section.footer" = "轉乘橫幅：從行程開啟車站時，時間會相對你到達該站顯示。區域時區：時鐘時間使用交通區域時區，手機時區不同時會顯示簡短標記。兩者互不影響。";
@@ -1794,6 +1797,9 @@
 
 /* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
 "weather.percent_format" = "%d%%";
+
+/* VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention. */
+"weather.stat.a11y_fmt" = "%1$@：%2$@";
 
 /* VoiceOver label for the feels-like temperature stat on the weather card. */
 "weather.stat.feels_like" = "體感溫度";

@@ -235,7 +235,10 @@ private struct StatsRow: View {
                 .font(.subheadline)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(label): \(value)"))
+        .accessibilityLabel(Text(String(
+            format: OBALoc("weather.stat.a11y_fmt", value: "%1$@: %2$@", comment: "VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention."),
+            label, value
+        )))
     }
 }
 

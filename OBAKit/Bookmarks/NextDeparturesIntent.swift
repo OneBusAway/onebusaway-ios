@@ -20,12 +20,14 @@ import OBAKitCore
 /// Not `nonisolated`, for the same `@Parameter` reason as `TrackBookmarkIntent`.
 /// The `AppIntent` conformance still leaves members nonisolated, so `perform`
 /// opts into the main actor to use `NextDeparturesLoader`.
+///
+/// Strings come from `AppIntents.strings`; see `TrackBookmarkIntent` for why.
 struct NextDeparturesIntent: AppIntent {
-    static let title: LocalizedStringResource = "Next Departures"
-    static let description = IntentDescription("Hear when a bookmarked trip departs next.")
+    static let title = LocalizedStringResource("next_departures_intent.title", defaultValue: "Next Departures", table: "AppIntents", bundle: #bundle)
+    static let description = IntentDescription(LocalizedStringResource("next_departures_intent.description", defaultValue: "Hear when a bookmarked trip departs next.", table: "AppIntents", bundle: #bundle))
     static let openAppWhenRun = false
 
-    @Parameter(title: "Bookmark")
+    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle))
     var bookmark: BookmarkEntity?
 
     @MainActor

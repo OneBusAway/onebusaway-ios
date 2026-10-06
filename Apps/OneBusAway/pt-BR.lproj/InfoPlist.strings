@@ -2,6 +2,9 @@
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Veja onde você está em relação ao transporte público e navegue com mais facilidade. Os avisos de proximidade também usam sua localização em segundo plano para avisar quando você estiver chegando perto de uma parada escolhida, mesmo com o app fechado.";
 "NSLocationWhenInUseUsageDescription" = "Veja onde você está em relação ao transporte público e navegue com mais facilidade.";
 
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "Veja onde você está em relação ao transporte público e navegue com mais facilidade.";
+
 /* Purpose string shown when the app requests HealthKit read access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "Usa sua velocidade de caminhada ou de bicicleta do app Saúde para oferecer estimativas de horário de chegada mais precisas.";
 

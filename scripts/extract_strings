@@ -10,3 +10,14 @@ mkdir -p OBAKitWatch/Strings/en.lproj
 find OBAKitWatch -name "*.swift" -print0 | xargs -0 genstrings -s OBALoc -o OBAKitWatch/Strings/en.lproj
 iconv -f UTF-16 -t UTF-8 OBAKitWatch/Strings/en.lproj/Localizable.strings > OBAKitWatch/Strings/en.lproj/Localizable.strings.new
 mv -f OBAKitWatch/Strings/en.lproj/Localizable.strings.new OBAKitWatch/Strings/en.lproj/Localizable.strings
+
+# OBAWidget has no Localizable.strings of its own: its copy lives in OBAKitCore
+# (OBAKitCoreiOS/Widget/WidgetStrings.swift) and is extracted with that module above.
+# AppIntents.strings (OBAKit, OBAWidget) and AppShortcuts.strings (OBAKit) are
+# hand-maintained: genstrings cannot read LocalizedStringResource keys or App
+# Shortcut phrases, and this script must not overwrite them. Fail if someone adds
+# an OBALoc table to the widget, so it cannot silently go unextracted.
+if grep -rq --include='*.swift' 'func OBALoc' OBAWidget; then
+    echo "OBAWidget defines OBALoc; put widget strings in OBAKitCore's WidgetStrings instead." >&2
+    exit 1
+fi

@@ -840,6 +840,9 @@
 /* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
 "next_departures_intent.now" = "now";
 
+/* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
+"next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Crushed standing room only";
 
@@ -971,6 +974,9 @@
 
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Onboarding progress";
+
+/* VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps} */
+"onboarding.progress.accessibility_value_fmt" = "Step %1$d of %2$d";
 
 /* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "We found the transit network closest to you.";
@@ -1316,9 +1322,6 @@
 
 /* Settings > Arrival & Departure Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Show transfer arrival banner";
-
-/* Settings > Arrival & Departure Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Show transfer arrival banner: when on, opening a stop from a trip shows times relative to when you arrive. Turn that switch off for ordinary clock times and every departure.";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
 "settings_controller.arrival_display_section.footer" = "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.";
@@ -2113,6 +2116,9 @@
 
 /* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
 "weather.percent_format" = "%d%%";
+
+/* VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention. */
+"weather.stat.a11y_fmt" = "%1$@: %2$@";
 
 /* VoiceOver label for the feels-like temperature stat on the weather card. */
 "weather.stat.feels_like" = "Feels like";

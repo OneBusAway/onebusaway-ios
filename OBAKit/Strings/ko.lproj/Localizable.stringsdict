@@ -114,6 +114,20 @@
 			<string>이전 출발 %d건 표시</string>
 		</dict>
 	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>지난 출발 %d건 표시 중</string>
+		</dict>
+	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

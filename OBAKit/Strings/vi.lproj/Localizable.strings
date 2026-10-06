@@ -559,10 +559,10 @@
 "map_status_view.zoom_in_for_stops" = "Phóng to để xem điểm dừng";
 
 /* Title of the alert shown when location services are disabled for the app. */
-"map_status_alert.location_services_off.title" = "Location Services Off";
+"map_status_alert.location_services_off.title" = "Dịch vụ định vị đã tắt";
 
 /* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Precise Location Off";
+"map_status_alert.precise_location_off.title" = "Vị trí chính xác đã tắt";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "Giới thiệu ứng dụng";
@@ -700,6 +700,9 @@
 /* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
 "next_departures_intent.now" = "ngay bây giờ";
 
+/* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
+"next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Chen chúc, chỉ còn chỗ đứng";
 
@@ -831,6 +834,9 @@
 
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Tiến trình hướng dẫn";
+
+/* VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps} */
+"onboarding.progress.accessibility_value_fmt" = "Bước %1$d trên %2$d";
 
 /* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Chúng tôi đã tìm thấy mạng lưới giao thông gần bạn nhất.";
@@ -1122,9 +1128,6 @@
 
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Hiện banner tới lúc chuyển tuyến";
-
-/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Hiện banner tới lúc chuyển tuyến: khi bật, mở điểm dừng từ chuyến đi sẽ hiện giờ theo lúc bạn tới. Tắt công tắc đó để xem đồng hồ thường và mọi chuyến.";
 
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
 "settings_controller.arrival_display_section.footer" = "Banner chuyển tuyến: mở điểm dừng từ chuyến đi sẽ hiện giờ theo lúc bạn tới. Múi giờ vùng: đồng hồ dùng múi giờ vùng giao thông, kèm huy hiệu ngắn khi điện thoại khác múi giờ. Hai tùy chọn độc lập.";
@@ -1794,6 +1797,9 @@
 
 /* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
 "weather.percent_format" = "%d%%";
+
+/* VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention. */
+"weather.stat.a11y_fmt" = "%1$@: %2$@";
 
 /* VoiceOver label for the feels-like temperature stat on the weather card. */
 "weather.stat.feels_like" = "Cảm giác như";
