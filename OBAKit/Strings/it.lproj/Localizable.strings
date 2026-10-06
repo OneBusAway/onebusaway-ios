@@ -1873,6 +1873,16 @@
 "map_sheet.other_modes_group" = "Altri modi per spostarti";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "Reimposta";
+/* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
+"map_sheet.routes_on_map" = "Linee sulla mappa";
+/* Empty state on the Routes on Map screen when no stops with routes are loaded for the visible map area. */
+"map_sheet.routes_on_map_empty" = "Nessuna linea in questa parte della mappa";
+/* Footer under the Routes on Map row explaining what picking a route does and how to undo it. */
+"map_sheet.routes_on_map_footer" = "Mostra solo il percorso e le fermate di una linea. Chiudi la linea per rivedere tutte le fermate.";
+/* VoiceOver hint on a route row in the Routes on Map list. */
+"map_sheet.routes_on_map_row_hint" = "Mostra solo questa linea sulla mappa.";
+/* Empty state on the Routes on Map screen when the map is zoomed out too far to load stops. */
+"map_sheet.routes_on_map_zoomed_out" = "Ingrandisci per vedere le linee che servono questa zona";
 /* Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.) */
 "map_sheet.shows_points_of_interest" = "Punti di interesse";
 /* Title of the Map sheet */
