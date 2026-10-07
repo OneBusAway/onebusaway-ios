@@ -100,7 +100,9 @@ final class ServiceAlertViewModel: ObservableObject {
             }
         }
 
-        if let urlString = alert.urlString?.value {
+        if let urlString = alert.urlString?.value,
+           let url = URL(string: urlString),
+           url.scheme == "https" || url.scheme == "http" {
             let fmt = OBALoc(
                 "service_alert_controller.learn_more_fmt",
                 value: "Learn more: %@",
@@ -188,12 +190,29 @@ nonisolated fileprivate struct HTMLBuilder {
     mutating func append(_ tag: Tag, value: String? = nil, closure: ((inout HTMLBuilder) -> Void)? = nil) {
         HTML.append(tag.opening)
         if let value = value {
-            HTML.append(value)
+            HTML.append(value.htmlEscaped)
         } else if let closure = closure {
             var builder = HTMLBuilder()
             closure(&builder)
             HTML.append(builder.HTML)
         }
         HTML.append(tag.closing)
+    }
+}
+
+// MARK: - HTML Escaping
+
+extension String {
+    /// Escapes the five characters that carry special meaning in HTML content
+    /// (`&`, `<`, `>`, `"`, `'`). Use this before interpolating any untrusted
+    /// string into an HTML document.
+    nonisolated var htmlEscaped: String {
+        var result = self
+        result = result.replacingOccurrences(of: "&", with: "&amp;")
+        result = result.replacingOccurrences(of: "<", with: "&lt;")
+        result = result.replacingOccurrences(of: ">", with: "&gt;")
+        result = result.replacingOccurrences(of: "\"", with: "&quot;")
+        result = result.replacingOccurrences(of: "'", with: "&#x27;")
+        return result
     }
 }
