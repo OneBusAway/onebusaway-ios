@@ -16,7 +16,7 @@ import UIKit
  *
  * You must call the `prepare` method before displaying the view controller.
  *
- * `BLTNItemManager` must only be used from the main thread.
+ * `BLTNItemManager` is main-actor isolated.
  */
 
 @objc final class BLTNItemManager: NSObject {
@@ -164,8 +164,6 @@ extension BLTNItemManager {
 
     fileprivate func prepare() {
 
-        assertIsMainThread()
-
         bulletinController = BulletinViewController()
         bulletinController.manager = self
 
@@ -218,10 +216,14 @@ extension BLTNItemManager {
     @objc func displayActivityIndicator(color: UIColor? = nil) {
 
         assertIsPrepared()
-        assertIsMainThread()
 
         shouldDisplayActivityIndicator = true
         lastActivityIndicatorColor = color ?? defaultActivityIndicatorColor
+
+        // OBA: upstream documented that the indicator disables tap and swipe
+        // dismissal but never did so. `hideActivityIndicator()` restores it.
+        bulletinController.isDismissable = false
+        bulletinController.swipeInteractionController?.cancelIfNeeded()
 
         bulletinController.displayActivityIndicator(color: lastActivityIndicatorColor)
     }
@@ -242,7 +244,6 @@ extension BLTNItemManager {
     @objc func hideActivityIndicator() {
 
         assertIsPrepared()
-        assertIsMainThread()
 
         shouldDisplayActivityIndicator = false
         bulletinController.swipeInteractionController?.cancelIfNeeded()
@@ -259,7 +260,6 @@ extension BLTNItemManager {
     func push(item: BLTNItem) {
 
         assertIsPrepared()
-        assertIsMainThread()
 
         previousItem = currentItem
         itemsStack.append(item)
@@ -278,7 +278,6 @@ extension BLTNItemManager {
     @objc func popItem() {
 
         assertIsPrepared()
-        assertIsMainThread()
 
         guard let previousItem = itemsStack.popLast() else {
             popToRootItem()
@@ -309,7 +308,6 @@ extension BLTNItemManager {
     func popTo(item: BLTNItem, orDismiss: Bool) {
 
         assertIsPrepared()
-        assertIsMainThread()
 
         if let index = itemsStack.firstIndex(where: { $0 === item }) {
 
@@ -338,7 +336,6 @@ extension BLTNItemManager {
     @objc func popToRootItem() {
 
         assertIsPrepared()
-        assertIsMainThread()
 
         guard currentItem !== rootItem else {
             return
@@ -389,18 +386,21 @@ extension BLTNItemManager {
                       animated: Bool = true,
                       completion: (() -> Void)? = nil) {
 
+        // OBA: upstream asserted this *after* `prepare()` had already replaced
+        // `bulletinController`, so the check could never fire and a second call
+        // orphaned the card on screen. Re-showing is a no-op instead, which is
+        // what every OBA caller already relies on.
+        guard !isShowingBulletin else {
+            return
+        }
+
         self.prepare()
 
-        let isDetached = bulletinController.presentingViewController == nil
-        assert(isDetached, "Attempt to present a Bulletin that is already presented.")
+        // OBA: `loadViewIfNeeded()` rather than calling `loadView()` directly,
+        // which UIKit reserves for itself.
+        bulletinController.loadViewIfNeeded()
 
-        assertIsPrepared()
-        assertIsMainThread()
-        bulletinController.loadView()
-
-        let refreshActivityIndicator = shouldDisplayActivityIndicator && isDetached
-
-        if refreshActivityIndicator {
+        if shouldDisplayActivityIndicator {
             bulletinController.displayActivityIndicator(color: lastActivityIndicatorColor)
         }
 
@@ -421,17 +421,20 @@ extension BLTNItemManager {
     @objc(dismissBulletinAnimated:)
     func dismissBulletin(animated: Bool = true) {
 
-        assertIsPrepared()
-        assertIsMainThread()
+        // OBA: upstream made a second call a `precondition` failure. Callers
+        // gate on `isShowingBulletin`, which stays `true` until the dismissal
+        // animation finishes, so a repeat inside that window — connectivity
+        // flapping back to connected, a double-tapped Add Alarm, the user
+        // closing the card while an alarm request is in flight — crashed.
+        guard isPrepared else {
+            return
+        }
 
-        currentItem.tearDown()
-        currentItem.manager = nil
+        tearDownCurrentItem()
 
         bulletinController.dismiss(animated: animated) {
             self.completeDismissal()
         }
-
-        isPrepared = false
 
     }
 
@@ -444,11 +447,18 @@ extension BLTNItemManager {
 
     @nonobjc func completeInteractiveDismissal() {
 
+        tearDownCurrentItem()
+        completeDismissal()
+
+    }
+
+    /// Detaches the current item from the bulletin and marks the manager as no
+    /// longer prepared. Shared by tap, button and swipe dismissal.
+    private func tearDownCurrentItem() {
+
         currentItem.tearDown()
         currentItem.manager = nil
         isPrepared = false
-
-        completeDismissal()
 
     }
 
@@ -456,9 +466,9 @@ extension BLTNItemManager {
      * Tears down the view controller and item stack after dismissal is finished.
      */
 
-    @nonobjc func completeDismissal() {
+    private func completeDismissal() {
 
-        currentItem.onDismiss()
+        let dismissedItem = currentItem
 
         for arrangedSubview in bulletinController.contentStackView.arrangedSubviews {
             bulletinController.contentStackView.removeArrangedSubview(arrangedSubview)
@@ -473,6 +483,11 @@ extension BLTNItemManager {
 
         currentItem = self.rootItem
         itemsStack.removeAll()
+
+        // OBA: upstream called this first, so a dismissal handler that showed
+        // the bulletin again had its fresh controller and stack torn down by
+        // the cleanup above.
+        dismissedItem.onDismiss()
 
     }
 
@@ -492,18 +507,26 @@ extension BLTNItemManager {
     /// changes, so the current item's views stay as they are. (OBA: upstream
     /// rebuilt them anyway, which re-pointed the item's `actionButton` at an
     /// off-screen button and could pull a reused view out of the card.)
+    ///
+    /// OBA: the animation phases capture the controller they were built for.
+    /// Upstream read `self.bulletinController` from each phase, and that
+    /// implicitly unwrapped optional is `nil` once a dismissal completes — so
+    /// dismissing before a transition finished crashed.
     fileprivate func refreshCurrentItemInterface(elementsChanged: Bool = true) {
 
-        bulletinController.isDismissable = false
-        bulletinController.swipeInteractionController?.cancelIfNeeded()
-        bulletinController.refreshSwipeInteractionController()
+        let controller: BulletinViewController = bulletinController
 
-        let oldArrangedSubviews = bulletinController.contentStackView.arrangedSubviews
+        controller.isDismissable = false
+        controller.swipeInteractionController?.cancelIfNeeded()
+        controller.refreshSwipeInteractionController()
+
+        let oldArrangedSubviews = controller.contentStackView.arrangedSubviews
 
         guard elementsChanged else {
-            bulletinController.hideActivityIndicator()
+            controller.hideActivityIndicator()
             let transitionAnimationChain = AnimationChain(duration: transitionDuration)
-            transitionAnimationChain.add(makeFinalAnimationPhase(currentElements: oldArrangedSubviews,
+            transitionAnimationChain.add(makeFinalAnimationPhase(controller: controller,
+                                                                 currentElements: oldArrangedSubviews,
                                                                  oldArrangedSubviews: [],
                                                                  elementsChanged: false))
             transitionAnimationChain.start()
@@ -530,7 +553,7 @@ extension BLTNItemManager {
         }
 
         for arrangedSubview in newArrangedSubviews {
-            bulletinController.contentStackView.addArrangedSubview(arrangedSubview)
+            controller.contentStackView.addArrangedSubview(arrangedSubview)
         }
 
         // Animate transition
@@ -542,7 +565,7 @@ extension BLTNItemManager {
         hideSubviewsAnimationPhase.block = {
 
             if !showActivityIndicator {
-                self.bulletinController.hideActivityIndicator()
+                controller.hideActivityIndicator()
             }
 
             for arrangedSubview in oldArrangedSubviews + newArrangedSubviews {
@@ -553,18 +576,28 @@ extension BLTNItemManager {
 
         let transitionAnimationChain = AnimationChain(duration: transitionDuration)
         transitionAnimationChain.add(hideSubviewsAnimationPhase)
-        transitionAnimationChain.add(makeDisplayNewItemsAnimationPhase(hiding: oldHideableArrangedSubviews,
+        transitionAnimationChain.add(makeDisplayNewItemsAnimationPhase(controller: controller,
+                                                                       hiding: oldHideableArrangedSubviews,
                                                                        showing: newHideableArrangedSubviews))
-        transitionAnimationChain.add(makeFinalAnimationPhase(currentElements: newArrangedSubviews,
+        transitionAnimationChain.add(makeFinalAnimationPhase(controller: controller,
+                                                             currentElements: newArrangedSubviews,
                                                              oldArrangedSubviews: oldArrangedSubviews,
                                                              elementsChanged: true))
         transitionAnimationChain.start()
 
     }
 
+    /// Whether `controller` is still the one this manager is presenting, i.e.
+    /// the bulletin has not been dismissed (or re-shown) since a transition
+    /// for it began.
+    private func isPresenting(_ controller: BulletinViewController) -> Bool {
+        controller === bulletinController
+    }
+
     /// Creates the middle phase of an item change: swaps which arranged
     /// subviews are hidden, then tells the current item it will display.
-    private func makeDisplayNewItemsAnimationPhase(hiding oldViews: [UIView],
+    private func makeDisplayNewItemsAnimationPhase(controller: BulletinViewController,
+                                                   hiding oldViews: [UIView],
                                                    showing newViews: [UIView]) -> AnimationPhase {
 
         let displayNewItemsAnimationPhase = AnimationPhase(relativeDuration: 1/3, curve: .linear)
@@ -582,6 +615,7 @@ extension BLTNItemManager {
         }
 
         displayNewItemsAnimationPhase.completionHandler = {
+            guard self.isPresenting(controller) else { return }
             self.currentItem.willDisplay()
         }
 
@@ -596,7 +630,8 @@ extension BLTNItemManager {
 
     /// Creates the last phase of a refresh: fades in `currentElements` and
     /// finishes the transition.
-    private func makeFinalAnimationPhase(currentElements: [UIView],
+    private func makeFinalAnimationPhase(controller: BulletinViewController,
+                                         currentElements: [UIView],
                                          oldArrangedSubviews: [UIView],
                                          elementsChanged: Bool) -> AnimationPhase {
 
@@ -607,8 +642,8 @@ extension BLTNItemManager {
 
         finalAnimationPhase.block = {
 
-            self.bulletinController.contentStackView.alpha = contentAlpha
-            self.bulletinController.updateCloseButton(isRequired: self.needsCloseButton && !showActivityIndicator)
+            controller.contentStackView.alpha = contentAlpha
+            controller.updateCloseButton(isRequired: self.needsCloseButton && !showActivityIndicator)
 
             for arrangedSubview in currentElements {
                 arrangedSubview.alpha = contentAlpha
@@ -618,14 +653,18 @@ extension BLTNItemManager {
 
         finalAnimationPhase.completionHandler = {
 
-            self.bulletinController.isDismissable = self.currentItem.isDismissable && !showActivityIndicator
+            // Dismissed mid-transition: `completeDismissal()` already emptied
+            // the stack, and the item is no longer on screen to display.
+            guard self.isPresenting(controller) else { return }
+
+            controller.isDismissable = self.currentItem.isDismissable && !showActivityIndicator
 
             if elementsChanged {
 
                 self.currentItem.onDisplay()
 
                 for arrangedSubview in oldArrangedSubviews {
-                    self.bulletinController.contentStackView.removeArrangedSubview(arrangedSubview)
+                    controller.contentStackView.removeArrangedSubview(arrangedSubview)
                     arrangedSubview.removeFromSuperview()
                 }
 
@@ -677,11 +716,9 @@ extension BLTNItemManager {
 
 // MARK: - Utilities
 
+/// OBA: upstream also had a runtime `Thread.isMainThread` precondition. The
+/// type is main-actor isolated here, so the compiler enforces that instead.
 extension BLTNItemManager {
-
-    fileprivate func assertIsMainThread() {
-        precondition(Thread.isMainThread, "BLTNItemManager must only be used from the main thread.")
-    }
 
     fileprivate func assertIsPrepared() {
         precondition(isPrepared, "You must call the `prepare` function before interacting with the bulletin.")

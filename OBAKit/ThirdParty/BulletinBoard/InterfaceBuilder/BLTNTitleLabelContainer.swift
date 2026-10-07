@@ -20,6 +20,10 @@ import UIKit
         self.label = label
         super.init(frame: .zero)
         configureSubviews(horizontalInset: horizontalInset)
+        // OBA: `intrinsicContentSize` mirrors the label's, which changes with
+        // Dynamic Type; without this the container kept the old size.
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self],
+                                action: #selector(invalidateIntrinsicContentSize))
     }
 
     required init?(coder aDecoder: NSCoder) {

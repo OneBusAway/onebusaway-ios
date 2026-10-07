@@ -8,8 +8,7 @@ import UIKit
 /**
  * A button that provides a visual feedback when the user interacts with it.
  *
- * This style of button works best with a solid background color. Use the `setBackgroundColor`
- * function on `UIButton` to set one.
+ * This style of button works best with a solid `backgroundColor`.
  */
 
 class HighlightButton: UIButton {

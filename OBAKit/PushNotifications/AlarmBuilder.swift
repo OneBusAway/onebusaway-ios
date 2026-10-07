@@ -96,12 +96,21 @@ class AlarmBuilder: NSObject {
     }
 
     // MARK: - Alarm Creation
+
+    /// `true` from the moment a request starts until its card is dismissed.
+    /// Add Alarm stays live while the request is in flight, so without this a
+    /// second tap posted a duplicate alarm.
+    private var isCreatingAlarm = false
+
     private func createAlarm(minutes: Int) async {
         guard
+            !isCreatingAlarm,
             let modelService = application.obacoService,
             let pushService = application.pushService,
             let currentRegion = application.currentRegion
         else { return }
+
+        isCreatingAlarm = true
 
         let arrivalDeparture = self.arrivalDeparture
 
@@ -109,6 +118,7 @@ class AlarmBuilder: NSObject {
 
         defer {
             Task { @MainActor in
+                defer { self.isCreatingAlarm = false }
                 // The delegate owns the HUD from here: it shows a self-dismissing
                 // success message on creation, and dismisses on failure.
                 // Dismissing here too would hide "Alarm created" the instant it

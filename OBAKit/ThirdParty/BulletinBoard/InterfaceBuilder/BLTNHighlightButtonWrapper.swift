@@ -33,6 +33,11 @@ import UIKit
         button.topAnchor.constraint(equalTo: topAnchor).isActive = true
         button.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
 
+        // OBA: `intrinsicContentSize` mirrors the button's, which changes with
+        // Dynamic Type; without this the wrapper kept the old size.
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self],
+                                action: #selector(invalidateIntrinsicContentSize))
+
     }
 
     override var intrinsicContentSize: CGSize {

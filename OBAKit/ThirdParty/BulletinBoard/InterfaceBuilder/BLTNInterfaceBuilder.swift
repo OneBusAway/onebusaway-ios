@@ -118,8 +118,7 @@ import UIKit
         actionButton.clipsToBounds = true
 
         if let color = appearance.actionButtonBorderColor {
-            actionButton.layer.borderColor = color.cgColor
-            actionButton.layer.borderWidth = appearance.actionButtonBorderWidth
+            applyBorder(color: color, width: appearance.actionButtonBorderWidth, to: actionButton)
         }
 
         let wrapper = BLTNHighlightButtonWrapper(button: actionButton)
@@ -155,12 +154,24 @@ import UIKit
 
         if let color = appearance.alternativeButtonBorderColor {
             alternativeButton.clipsToBounds = true
-            alternativeButton.layer.borderColor = color.cgColor
-            alternativeButton.layer.borderWidth = appearance.alternativeButtonBorderWidth
+            applyBorder(color: color, width: appearance.alternativeButtonBorderWidth, to: alternativeButton)
         }
 
         return alternativeButton
 
+    }
+
+    /// Strokes `button` with `color`.
+    ///
+    /// OBA: upstream assigned `color.cgColor` once. A `CGColor` is resolved for
+    /// whichever appearance is current, so a dynamic border color stopped
+    /// following light and dark mode; re-resolve it when the traits change.
+    private func applyBorder(color: UIColor, width: CGFloat, to button: UIButton) {
+        button.layer.borderWidth = width
+        button.layer.borderColor = color.resolvedColor(with: button.traitCollection).cgColor
+        button.registerForTraitChanges(UITraitCollection.systemTraitsAffectingColorAppearance) { (button: UIButton, _: UITraitCollection) in
+            button.layer.borderColor = color.resolvedColor(with: button.traitCollection).cgColor
+        }
     }
 
     /**

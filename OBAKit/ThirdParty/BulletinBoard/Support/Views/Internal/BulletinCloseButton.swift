@@ -18,7 +18,8 @@ import OBAKitCore
  * - The accessibility label comes from the app's localized strings instead of
  *   a force-unwrapped lookup into UIKit's private bundle, and the control has
  *   the button trait.
- * - Highlighting starts on touch down instead of touch up.
+ * - Highlighting starts on touch down instead of touch up, and dims the
+ *   subviews rather than the control, whose alpha is its visibility.
  */
 
 class BulletinCloseButton: UIControl {
@@ -85,19 +86,22 @@ class BulletinCloseButton: UIControl {
         addTarget(self, action: #selector(unhighlight), for: [.touchUpInside, .touchUpOutside, .touchDragExit, .touchCancel])
     }
 
-    @objc private func highlight() {
-        let animations = {
-            self.alpha = 0.5
-        }
+    // OBA: highlighting dims the subviews, not `self.alpha`. The view
+    // controller shows and hides the button through `self.alpha`, so upstream's
+    // unhighlight could bring a hidden button back.
 
-        UIView.transition(with: self, duration: 0.1, animations: animations)
+    @objc private func highlight() {
+        setContentAlpha(0.5)
     }
 
     @objc func unhighlight() {
-        let animations = {
-            self.alpha = 1
-        }
+        setContentAlpha(1)
+    }
 
-        UIView.transition(with: self, duration: 0.1, animations: animations)
+    private func setContentAlpha(_ alpha: CGFloat) {
+        UIView.animate(withDuration: 0.1) {
+            self.backgroundContainer.alpha = alpha
+            self.closeGlyph.alpha = alpha
+        }
     }
 }

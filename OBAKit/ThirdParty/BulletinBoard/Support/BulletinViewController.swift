@@ -495,7 +495,10 @@ extension BulletinViewController {
     }
 
     @objc func closeButtonTapped() {
-        manager?.dismissBulletin(animated: true)
+        // OBA: upstream dismissed unconditionally. The button is only hidden
+        // (alpha 0) when the item isn't dismissable or the activity indicator
+        // is up, so respect the same rule as tap-outside and escape.
+        dismissIfPossible()
     }
 
 }
@@ -529,6 +532,14 @@ extension BulletinViewController: UIViewControllerTransitioningDelegate {
 
         guard manager?.allowsSwipeInteraction == true else {
             return
+        }
+
+        // OBA: upstream left the previous controller's pan recognizer on the
+        // content view, so every refresh (push, pop, hiding the activity
+        // indicator) stacked another one. The orphans have no target and could
+        // win the pan, leaving swipe-to-dismiss dead.
+        if let stalePan = swipeInteractionController?.panGestureRecognizer {
+            contentView.removeGestureRecognizer(stalePan)
         }
 
         swipeInteractionController = BulletinSwipeInteractionController()
