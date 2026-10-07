@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import UIKit
+import Eureka
 import WebKit
 import OBAKitCore
 
@@ -57,10 +57,11 @@ class CreditsViewController: UIViewController, AppContext, OBAListViewDataSource
     }
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        let items = credits.keys.localizedCaseInsensitiveSort().map { key in
-            OBAListRowView.DefaultViewModel(title: key, onSelectAction: { [weak self] _ in
-                self?.navigateTo(key: key)
-            })
+        var items: [OBAListRowView.DefaultViewModel] = []
+        for key in credits.keys.localizedCaseInsensitiveSort() {
+            items.append(OBAListRowView.DefaultViewModel(title: key, onSelectAction: { _ in
+                self.navigateTo(key: key)
+            }))
         }
 
         return [OBAListViewSection(id: "credits", contents: items)]
@@ -81,21 +82,13 @@ class CreditViewerController: UIViewController {
     }
 
     override func viewDidLoad() {
-        super.viewDidLoad()
-
         webView.frame = view.bounds
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.isOpaque = false
         webView.backgroundColor = ThemeColors.shared.systemBackground
         view.addSubview(webView)
 
-        // License text is plain text: escape it so `<name@example.com>` is not swallowed as a tag.
-        let escaped = licenseText
-            .replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\n", with: "<br>")
-        let mungedCredits = "<code>\(escaped)</code>"
+        let mungedCredits = "<code>\(licenseText.htmlEscaped.replacingOccurrences(of: "\n", with: "<br>"))</code>"
         webView.setPageContent(mungedCredits)
     }
 
