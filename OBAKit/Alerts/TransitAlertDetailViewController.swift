@@ -31,18 +31,22 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
 
         view.addSubview(webView)
 
-        let title = (transitAlert.title(forLocale: locale) ?? Strings.serviceAlert).htmlEscaped
-        let rawBody = transitAlert.body(forLocale: locale) ?? OBALoc("transit_alert.no_additional_details.body", value: "No additional details available.", comment: "A notice when a transit alert doesn't have body text.")
+        let html = Self.htmlFragment(for: transitAlert, locale: locale)
+        webView.setPageContent(html, actionButtonTitle: destinationURL != nil ? Strings.learnMore : nil)
+    }
+
+    /// Builds the HTML fragment for a transit alert, with all user-supplied strings escaped.
+    /// Exposed as `internal` so tests can assert on the output directly without loading a view.
+    static func htmlFragment(for alert: TransitAlertViewModel, locale: Locale) -> String {
+        let title = (alert.title(forLocale: locale) ?? Strings.serviceAlert).htmlEscaped
+        let rawBody = alert.body(forLocale: locale) ?? OBALoc("transit_alert.no_additional_details.body", value: "No additional details available.", comment: "A notice when a transit alert doesn't have body text.")
         // Escape first, then convert newlines to <br> so the line breaks survive
         // HTML rendering without re-introducing any injection surface.
         let body = rawBody.htmlEscaped.replacingOccurrences(of: "\n", with: "<br>")
-
-        let html = """
+        return """
         <h1 class='title'>\(title)</h1>
         <p class='body'>\(body)</p>
         """
-
-        webView.setPageContent(html, actionButtonTitle: destinationURL != nil ? Strings.learnMore : nil)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -66,6 +70,9 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
     }
 
     // MARK: - Web View
+
+    /// Exposes `webView` for unit tests that need to drive the navigation delegate directly.
+    var testWebView: DocumentWebView { webView }
 
     private lazy var webView: DocumentWebView = {
         let configuration = WKWebViewConfiguration()
