@@ -29,15 +29,6 @@
       }
     },
     {
-      "identity": "bulletinboard",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/alexaubry/BulletinBoard.git",
-      "state": {
-        "revision": "e8ba81d25e41e5d24d6a4f404ed28443d728723b",
-        "version": "5.0.0"
-      }
-    },
-    {
       "identity": "eureka",
       "kind": "remoteSourceControl",
       "location": "https://github.com/xmartlabs/Eureka.git",

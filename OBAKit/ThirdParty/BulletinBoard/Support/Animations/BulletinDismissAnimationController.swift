@@ -38,16 +38,12 @@ class BulletinDismissAnimationController: NSObject, UIViewControllerAnimatedTran
 
         snapshot.addSubview(snapshotActivityIndicator)
         snapshotActivityIndicator.topAnchor.constraint(equalTo: snapshot.topAnchor).isActive = true
-        snapshotActivityIndicator.leftAnchor.constraint(equalTo: snapshot.leftAnchor).isActive = true
-        snapshotActivityIndicator.rightAnchor.constraint(equalTo: snapshot.rightAnchor).isActive = true
+        snapshotActivityIndicator.leadingAnchor.constraint(equalTo: snapshot.leadingAnchor).isActive = true
+        snapshotActivityIndicator.trailingAnchor.constraint(equalTo: snapshot.trailingAnchor).isActive = true
         snapshotActivityIndicator.bottomAnchor.constraint(equalTo: snapshot.bottomAnchor).isActive = true
 
-        if #available(iOS 13.0, *) {
-            snapshotActivityIndicator.style = UIActivityIndicatorView.Style.large
-        } else {
-            snapshotActivityIndicator.style = .whiteLarge
-        }
-        snapshotActivityIndicator.color = .black
+        snapshotActivityIndicator.style = UIActivityIndicatorView.Style.large
+        snapshotActivityIndicator.color = activityIndicatorView.color
         snapshotActivityIndicator.isUserInteractionEnabled = false
 
         snapshotActivityIndicator.alpha = activityIndicatorView.alpha
@@ -69,7 +65,7 @@ class BulletinDismissAnimationController: NSObject, UIViewControllerAnimatedTran
             backgroundView.hide()
         }
 
-        UIView.animate(withDuration: duration, delay: 0, options: options, animations: animations) { finished in
+        UIView.animate(withDuration: duration, delay: 0, options: options, animations: animations) { _ in
 
             let isCancelled = transitionContext.transitionWasCancelled
 

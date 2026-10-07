@@ -9,7 +9,7 @@ import Foundation
  * Describes the position of a view inside of its parent container.
  */
 
-@objc public enum BLTNViewPosition: Int {
+@objc enum BLTNViewPosition: Int {
 
     /// The view is centered in its parent container.
     case centered

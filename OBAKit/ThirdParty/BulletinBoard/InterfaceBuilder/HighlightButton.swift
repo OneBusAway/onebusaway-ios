@@ -22,12 +22,14 @@ class HighlightButton: UIButton {
         super.init(coder: aDecoder)
         configureHighlighting()
     }
-    
+
     private func configureHighlighting() {
-        addTarget(self, action: #selector(highlight), for: [.touchUpInside, .touchDragEnter])
-        addTarget(self, action: #selector(unhighlight), for: [.touchUpInside, .touchDragExit])
+        // OBA: upstream highlighted on `.touchUpInside`, the same event that
+        // unhighlights, so the button never dimmed while pressed.
+        addTarget(self, action: #selector(highlight), for: [.touchDown, .touchDragEnter])
+        addTarget(self, action: #selector(unhighlight), for: [.touchUpInside, .touchUpOutside, .touchDragExit, .touchCancel])
     }
-    
+
     @objc private func highlight() {
         let animations = {
             self.alpha = 0.5
@@ -35,7 +37,7 @@ class HighlightButton: UIButton {
 
         UIView.transition(with: self, duration: 0.1, animations: animations)
     }
-    
+
     @objc private func unhighlight() {
         let animations = {
             self.alpha = 1

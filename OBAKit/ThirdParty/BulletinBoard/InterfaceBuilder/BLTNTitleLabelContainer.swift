@@ -9,10 +9,10 @@ import UIKit
  * A view that contains a title label.
  */
 
-@objc public class BLTNTitleLabelContainer: UIView {
+@objc class BLTNTitleLabelContainer: UIView {
 
     /// The label contained in the view.
-    @objc public let label: UILabel
+    @objc let label: UILabel
 
     // MARK: - Initialization
 
@@ -22,7 +22,7 @@ import UIKit
         configureSubviews(horizontalInset: horizontalInset)
     }
 
-    required public init?(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -38,7 +38,7 @@ import UIKit
 
     }
 
-    public override var intrinsicContentSize: CGSize {
+    override var intrinsicContentSize: CGSize {
         return label.intrinsicContentSize
     }
 

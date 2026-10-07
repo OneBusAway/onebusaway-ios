@@ -9,8 +9,8 @@ import UIKit
  * Represents a spacing value.
  */
 
-@objc public class BLTNSpacing: NSObject {
-    public let rawValue: CGFloat
+@objc class BLTNSpacing: NSObject {
+    let rawValue: CGFloat
 
     init(rawValue: CGFloat) {
         self.rawValue = rawValue
@@ -18,23 +18,23 @@ import UIKit
 
     /// A custom spacing.
     /// - parameter value: The spacing to apply.
-    @objc public class func custom(_ value: CGFloat) -> BLTNSpacing {
+    @objc class func custom(_ value: CGFloat) -> BLTNSpacing {
         return BLTNSpacing(rawValue: value)
     }
 
     /// No spacing is applied. (value: 0)
     /// - note: If you use this spacing, corner radii will be ignored.
-    @objc public class var none: BLTNSpacing {
+    @objc class var none: BLTNSpacing {
         return BLTNSpacing(rawValue: 0)
     }
 
      /// A compact spacing. (value: 6)
-    @objc public class var compact: BLTNSpacing {
+    @objc class var compact: BLTNSpacing {
         return BLTNSpacing(rawValue: 6)
     }
 
     /// The standard spacing. (value: 12)
-    @objc public class var regular: BLTNSpacing {
+    @objc class var regular: BLTNSpacing {
         return BLTNSpacing(rawValue: 12)
     }
 }

@@ -12,12 +12,12 @@ import UIKit
  * a bulletin transition.
  */
 
-@objc public class BLTNHighlightButtonWrapper: UIView {
+@objc class BLTNHighlightButtonWrapper: UIView {
 
     /// The underlying button.
-    @objc public let button: UIButton
+    @objc let button: UIButton
 
-    public required init?(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) is unavailable. Use init(button:) instead.")
     }
 
@@ -35,7 +35,7 @@ import UIKit
 
     }
 
-    public override var intrinsicContentSize: CGSize {
+    override var intrinsicContentSize: CGSize {
         return button.intrinsicContentSize
     }
 

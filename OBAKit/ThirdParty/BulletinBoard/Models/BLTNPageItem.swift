@@ -20,12 +20,12 @@ import UIKit
 * builder type, change the `interfaceBuilderType` property.
 */
 
-@objc open class BLTNPageItem: BLTNActionItem {
-    
+@objc class BLTNPageItem: BLTNActionItem {
+
     // MARK: - Page Contents
 
     /// The title of the page.
-    @objc public let title: String
+    @objc let title: String
 
     /**
      * An image to display below the title.
@@ -35,16 +35,19 @@ import UIKit
      * The image should have a size of 128x128 pixels (@1x).
      */
 
-    @objc open var image: UIImage? {
+    @objc var image: UIImage? {
         didSet {
             imageView?.image = image
         }
     }
 
     /// An accessibility label which gets announced to VoiceOver users if the image gets focused.
-    @objc open var imageAccessibilityLabel: String? {
+    @objc var imageAccessibilityLabel: String? {
         didSet {
-            image?.accessibilityLabel = imageAccessibilityLabel
+            // OBA: upstream labelled the `UIImage`, which VoiceOver never reads
+            // once the image view exists, and left the view's element state stale.
+            imageView?.isAccessibilityElement = imageAccessibilityLabel != nil
+            imageView?.accessibilityLabel = imageAccessibilityLabel
         }
     }
 
@@ -54,7 +57,7 @@ import UIKit
      * If you set this property to `nil`, no label will be displayed (this is the default).
      */
 
-    @objc open var descriptionText: String? {
+    @objc var descriptionText: String? {
         didSet {
             descriptionLabel?.text = descriptionText
         }
@@ -68,7 +71,7 @@ import UIKit
      * `attributedDescriptionText` will be used.
      */
 
-    @objc open var attributedDescriptionText: NSAttributedString? {
+    @objc var attributedDescriptionText: NSAttributedString? {
         didSet {
             descriptionLabel?.attributedText = attributedDescriptionText
         }
@@ -76,23 +79,22 @@ import UIKit
 
     // MARK: - View Management
 
-    @objc private(set) open var titleLabel: BLTNTitleLabelContainer?
-    @objc private(set) open var descriptionLabel: UILabel?
-    @objc private(set) open var imageView: UIImageView?
+    @objc private(set) var titleLabel: BLTNTitleLabelContainer?
+    @objc private(set) var descriptionLabel: UILabel?
+    @objc private(set) var imageView: UIImageView?
 
     // MARK: - Initialization
-    
+
     /**
      * Creates a bulletin page with the specified title.
      * - parameter title: The title of the page.
      */
-    
-    @objc public init(title: String) {
+
+    @objc init(title: String) {
         self.title = title
         super.init()
     }
 
-    
     // MARK: - Customization
 
     /**
@@ -108,7 +110,7 @@ import UIKit
      */
 
     @objc(makeHeaderViewsWithInterfaceBuilder:)
-    open func makeHeaderViews(interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
+    func makeHeaderViews(interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
         return nil
     }
 
@@ -125,7 +127,7 @@ import UIKit
      */
 
     @objc(makeViewsUnderTitleWithInterfaceBuilder:)
-    open func makeViewsUnderTitle(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
+    func makeViewsUnderTitle(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
         return nil
     }
 
@@ -142,7 +144,7 @@ import UIKit
      */
 
     @objc(makeViewsUnderImageWithInterfaceBuilder:)
-    open func makeViewsUnderImage(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
+    func makeViewsUnderImage(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
         return nil
     }
 
@@ -159,51 +161,51 @@ import UIKit
      */
 
     @objc(makeViewsUnderDescriptionWithInterfaceBuilder:)
-    open func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
+    func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
         return nil
     }
 
     // MARK: - Overrides
-    
-    open override func makeContentViews(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView] {
+
+    override func makeContentViews(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView] {
         var contentViews: [UIView] = []
-        
+
         func insertComplementaryViews(_ builder: (BLTNInterfaceBuilder) -> [UIView]?) {
             if let complementaryViews = builder(interfaceBuilder) {
                 contentViews += complementaryViews
             }
         }
-        
+
         // Headers
         insertComplementaryViews(makeHeaderViews)
-        
+
         // Title
         let isNextToCloseButton = isDismissable && requiresCloseButton
         let titleView = interfaceBuilder.makeTitleLabel(isNextToCloseButton: isNextToCloseButton)
         titleView.label.text = title
-        
+
         self.titleLabel = titleView
         contentViews.append(titleView)
         insertComplementaryViews(makeViewsUnderTitle)
-        
+
         // Image View
         if let image = self.image {
             let imageView = UIImageView(image: image)
             imageView.contentMode = .scaleAspectFit
             imageView.tintColor = appearance.imageViewTintColor
-            
+
             if let accessibilityLabel = imageAccessibilityLabel {
                 imageView.isAccessibilityElement = true
                 imageView.accessibilityLabel = accessibilityLabel
             } else {
                 imageView.isAccessibilityElement = false
             }
-            
+
             self.imageView = imageView
             contentViews.append(imageView)
             insertComplementaryViews(makeViewsUnderImage)
         }
-        
+
         // Description Label
         if let attributedDescription = attributedDescriptionText {
             let label = interfaceBuilder.makeDescriptionLabel()
@@ -218,7 +220,7 @@ import UIKit
             self.descriptionLabel = label
             insertComplementaryViews(makeViewsUnderDescription)
         }
-        
+
         return contentViews
     }
 }

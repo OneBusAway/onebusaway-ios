@@ -15,19 +15,19 @@ import UIKit
  * its duration relative to the chain duration, their curve and their individual completion handlers.
  */
 
-public class AnimationChain {
+class AnimationChain {
 
     /// The total duration of the animation chain.
-    public let duration: TimeInterval
+    let duration: TimeInterval
 
     /// The initial delay before the animation chain starts.
-    public var initialDelay: TimeInterval = 0
+    var initialDelay: TimeInterval = 0
 
     /// The code to execute after animation chain is executed.
-    public var completionHandler: () -> Void
+    var completionHandler: () -> Void
 
     /// Whether the chain is being run.
-    public private(set) var isRunning: Bool = false
+    private(set) var isRunning: Bool = false
 
     // MARK: Initialization
 
@@ -38,7 +38,7 @@ public class AnimationChain {
      * Creates an animation chain with the specified duration.
      */
 
-    public init(duration: TimeInterval) {
+    init(duration: TimeInterval) {
         self.duration = duration
         self.completionHandler = {}
     }
@@ -53,7 +53,7 @@ public class AnimationChain {
      * - parameter animation: The animation phase to add.
      */
 
-    public func add(_ animation: AnimationPhase) {
+    func add(_ animation: AnimationPhase) {
         precondition(!isRunning, "Cannot add an animation to the chain because it is already performing.")
         animations.append(animation)
     }
@@ -62,7 +62,7 @@ public class AnimationChain {
      * Starts the animation chain.
      */
 
-    public func start() {
+    func start() {
 
         precondition(!isRunning, "Animation chain already running.")
 
@@ -111,7 +111,7 @@ public class AnimationChain {
  * a block to execute at the end of the animation. The default values do nothing.
  */
 
-public class AnimationPhase {
+class AnimationPhase {
 
     /**
      * The duration of the animation, relative to the total duration of the chain.
@@ -119,25 +119,25 @@ public class AnimationPhase {
      * Must be between 0 and 1.
      */
 
-    public let relativeDuration: TimeInterval
+    let relativeDuration: TimeInterval
 
     /**
      * The animation curve.
      */
 
-    public let curve: UIView.AnimationCurve
+    let curve: UIView.AnimationCurve
 
     /**
      * The animation code.
      */
 
-    public var block: () -> Void
+    var block: () -> Void
 
     /**
      * A block to execute at the end of the animation.
      */
 
-    public var completionHandler: () -> Void
+    var completionHandler: () -> Void
 
     // MARK: Initialization
 
@@ -149,7 +149,7 @@ public class AnimationPhase {
      * - parameter curve: The animation curve
      */
 
-    public init(relativeDuration: TimeInterval, curve: UIView.AnimationCurve) {
+    init(relativeDuration: TimeInterval, curve: UIView.AnimationCurve) {
 
         self.relativeDuration = relativeDuration
         self.curve = curve
@@ -160,4 +160,3 @@ public class AnimationPhase {
     }
 
 }
-

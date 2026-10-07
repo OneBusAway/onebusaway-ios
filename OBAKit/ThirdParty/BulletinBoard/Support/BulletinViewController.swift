@@ -70,12 +70,6 @@ final class BulletinViewController: UIViewController, UIGestureRecognizerDelegat
     fileprivate var contentTopConstraint: NSLayoutConstraint!
     fileprivate var contentBottomConstraint: NSLayoutConstraint!
 
-    // MARK: - Deinit
-
-    deinit {
-        cleanUpKeyboardLogic()
-    }
-
 }
 
 // MARK: - Lifecycle
@@ -125,17 +119,7 @@ extension BulletinViewController {
         widthConstraint = contentView.widthAnchor.constraint(equalToConstant: 444)
         widthConstraint.priority = .required
 
-        // Close button
-
-        contentView.addSubview(closeButton)
-        closeButton.translatesAutoresizingMaskIntoConstraints = false
-        closeButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12).isActive = true
-        closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12).isActive = true
-        closeButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        closeButton.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        closeButton.isUserInteractionEnabled = true
-
-        closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+        configureCloseButton()
 
         // Content Stack View
 
@@ -155,25 +139,7 @@ extension BulletinViewController {
         contentStackView.alignment = .fill
         contentStackView.distribution = .fill
 
-        // Activity Indicator
-
-        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(activityIndicator)
-        activityIndicator.leftAnchor.constraint(equalTo: contentView.leftAnchor).isActive = true
-        activityIndicator.rightAnchor.constraint(equalTo: contentView.rightAnchor).isActive = true
-        activityIndicator.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
-        activityIndicator.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
-
-        if #available(iOS 13.0, *) {
-            activityIndicator.style = UIActivityIndicatorView.Style.large
-        } else {
-            activityIndicator.style = .whiteLarge
-        }
-        activityIndicator.color = .black
-        activityIndicator.isUserInteractionEnabled = false
-
-        activityIndicator.alpha = 0
+        configureActivityIndicator()
 
         // Vertical Position
 
@@ -192,11 +158,42 @@ extension BulletinViewController {
 
     }
 
-    @available(iOS 11.0, *)
     override func viewSafeAreaInsetsDidChange() {
         super.viewSafeAreaInsetsDidChange()
         updateCornerRadius()
         setUpLayout(with: traitCollection)
+    }
+
+    private func configureCloseButton() {
+
+        contentView.addSubview(closeButton)
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12).isActive = true
+        closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        closeButton.isUserInteractionEnabled = true
+
+        closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+
+    }
+
+    private func configureActivityIndicator() {
+
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(activityIndicator)
+        activityIndicator.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+        activityIndicator.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
+        activityIndicator.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
+        activityIndicator.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
+
+        activityIndicator.style = UIActivityIndicatorView.Style.large
+        activityIndicator.color = .label
+        activityIndicator.isUserInteractionEnabled = false
+
+        activityIndicator.alpha = 0
+
     }
 
     /// Configure content view with customizations.
@@ -209,7 +206,6 @@ extension BulletinViewController {
 
         contentView.backgroundColor = manager.backgroundColor
         contentView.cornerRadius = CGFloat((manager.cardCornerRadius ?? 12).doubleValue)
-        closeButton.updateColors(isDarkBackground: manager.backgroundColor.needsDarkText == false)
 
         let cardPadding = manager.edgeSpacing.rawValue
 
@@ -256,6 +252,10 @@ extension BulletinViewController {
 extension BulletinViewController {
 
     override func willTransition(to newCollection: UITraitCollection, with coordinator: UIViewControllerTransitionCoordinator) {
+
+        // OBA: upstream skipped `super`, which UIKit requires so the trait
+        // change reaches the presentation controller and children.
+        super.willTransition(to: newCollection, with: coordinator)
 
         coordinator.animate(alongsideTransition: { _ in
             self.setUpLayout(with: newCollection)
@@ -394,7 +394,6 @@ extension BulletinViewController {
         return manager?.statusBarAppearance == .hidden
     }
 
-    @available(iOS 11.0, *)
     override var prefersHomeIndicatorAutoHidden: Bool {
         return manager?.hidesHomeIndicator ?? false
     }
@@ -405,7 +404,6 @@ extension BulletinViewController {
 
 extension BulletinViewController {
 
-    @available(iOS 11.0, *)
     fileprivate var screenHasRoundedCorners: Bool {
         return view.safeAreaInsets.bottom > 0
     }
@@ -481,7 +479,11 @@ extension BulletinViewController {
 extension BulletinViewController {
 
     func updateCloseButton(isRequired: Bool) {
-        isRequired ? showCloseButton() : hideCloseButton()
+        if isRequired {
+            showCloseButton()
+        } else {
+            hideCloseButton()
+        }
     }
 
     func showCloseButton() {
@@ -549,11 +551,6 @@ extension BulletinViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(onKeyboardHide), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 
-    func cleanUpKeyboardLogic() {
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-    }
-
     @objc func onKeyboardShow(_ notification: Notification) {
 
         guard manager?.currentItem.shouldRespondToKeyboardChanges == true else {
@@ -581,7 +578,7 @@ extension BulletinViewController {
             self.contentBottomConstraint.constant = bottomSpacing
             self.centerYConstraint.constant = -(keyboardFrameFinal.size.height + 12) / 2
             self.contentView.superview?.layoutIfNeeded()
-        
+
         }, completion: nil)
 
     }

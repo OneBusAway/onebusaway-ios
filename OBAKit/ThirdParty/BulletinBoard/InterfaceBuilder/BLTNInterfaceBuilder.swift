@@ -10,13 +10,13 @@ import UIKit
  * standard components.
  */
 
-@objc open class BLTNInterfaceBuilder: NSObject {
+@objc class BLTNInterfaceBuilder: NSObject {
 
     /// The appearance to use to generate the items.
-    @objc public let appearance: BLTNItemAppearance
+    @objc let appearance: BLTNItemAppearance
 
     /// Creates a new interface builder.
-    @objc public required init(appearance: BLTNItemAppearance) {
+    @objc required init(appearance: BLTNItemAppearance) {
         self.appearance = appearance
     }
 
@@ -25,17 +25,19 @@ import UIKit
      */
 
     @objc(makeTitleLabelNextToCloseButton:)
-    open func makeTitleLabel(isNextToCloseButton: Bool) -> BLTNTitleLabelContainer {
+    func makeTitleLabel(isNextToCloseButton: Bool) -> BLTNTitleLabelContainer {
 
         let titleLabel = UILabel()
         titleLabel.textAlignment = .center
         titleLabel.textColor = appearance.titleTextColor
         titleLabel.accessibilityTraits.insert(.header)
-        titleLabel.numberOfLines = 2
-        titleLabel.adjustsFontSizeToFitWidth = true
+        // OBA: upstream capped the title at two lines and shrank it to fit,
+        // which fought Dynamic Type; let it wrap instead.
+        titleLabel.numberOfLines = 0
         titleLabel.lineBreakMode = .byWordWrapping
 
         titleLabel.font = appearance.makeTitleFont()
+        titleLabel.adjustsFontForContentSizeCategory = true
         let inset: CGFloat = isNextToCloseButton ? 12 + 30 : 0
 
         return BLTNTitleLabelContainer(label: titleLabel, horizontalInset: inset)
@@ -45,13 +47,14 @@ import UIKit
      * Creates a standard description label.
      */
 
-    @objc open func makeDescriptionLabel() -> UILabel {
+    @objc func makeDescriptionLabel() -> UILabel {
 
         let descriptionLabel = UILabel()
         descriptionLabel.textAlignment = .center
         descriptionLabel.textColor = appearance.descriptionTextColor
         descriptionLabel.numberOfLines = 0
         descriptionLabel.font = appearance.makeDescriptionFont()
+        descriptionLabel.adjustsFontForContentSizeCategory = true
 
         return descriptionLabel
 
@@ -65,13 +68,13 @@ import UIKit
      * - parameter delegate: The delegate for the text field.
      */
 
-    @objc open func makeTextField(placeholder: String? = nil,
-                                  returnKey: UIReturnKeyType = .default,
-                                  delegate: UITextFieldDelegate? = nil) -> UITextField {
+    @objc func makeTextField(placeholder: String? = nil,
+                             returnKey: UIReturnKeyType = .default,
+                             delegate: UITextFieldDelegate? = nil) -> UITextField {
 
         let textField = UITextField()
         textField.delegate = delegate
-        textField.textAlignment = .left
+        textField.textAlignment = .natural
         textField.placeholder = placeholder
         textField.borderStyle = .roundedRect
         textField.returnKeyType = returnKey
@@ -89,41 +92,42 @@ import UIKit
      * - parameter title: The title of the button.
      */
 
-    @objc open func makeActionButton(title: String) -> BLTNHighlightButtonWrapper {
+    @objc func makeActionButton(title: String) -> BLTNHighlightButtonWrapper {
 
         let actionButton = HighlightButton()
         actionButton.layer.cornerRadius = appearance.actionButtonCornerRadius
-        
-        if #available(iOS 13, *) {
-            actionButton.layer.cornerCurve = .continuous
-        }
-        
+        actionButton.layer.cornerCurve = .continuous
+
         if let actionButtonImage = appearance.actionButtonImage {
             actionButton.setBackgroundImage(actionButtonImage, for: .normal)
-            
         } else {
-            actionButton.setBackgroundColor(appearance.actionButtonColor, forState: .normal)
+            // OBA: upstream rendered the color into a 1x1 background image with
+            // the deprecated `UIGraphicsBeginImageContext`. That froze a dynamic
+            // color in whichever appearance was current when the button was
+            // built; `backgroundColor` keeps following light and dark mode.
+            actionButton.backgroundColor = appearance.actionButtonColor
         }
-        
+
         actionButton.setTitleColor(appearance.actionButtonTitleColor, for: .normal)
         actionButton.contentHorizontalAlignment = .center
 
         actionButton.setTitle(title, for: .normal)
         actionButton.titleLabel?.font = appearance.makeActionButtonFont()
+        actionButton.titleLabel?.adjustsFontForContentSizeCategory = true
 
         actionButton.clipsToBounds = true
 
         if let color = appearance.actionButtonBorderColor {
-          actionButton.layer.borderColor = color.cgColor
-          actionButton.layer.borderWidth = appearance.actionButtonBorderWidth
+            actionButton.layer.borderColor = color.cgColor
+            actionButton.layer.borderWidth = appearance.actionButtonBorderWidth
         }
 
         let wrapper = BLTNHighlightButtonWrapper(button: actionButton)
         wrapper.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        let heightConstraint = wrapper.heightAnchor.constraint(equalToConstant: 55)
-        heightConstraint.priority = .defaultHigh
-        heightConstraint.isActive = true
+        // OBA: a minimum rather than a fixed height, so the button grows with
+        // Dynamic Type instead of clipping its title.
+        wrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: 55).isActive = true
 
         return wrapper
 
@@ -137,23 +141,22 @@ import UIKit
      * - parameter title: The title of the button.
      */
 
-    @objc open func makeAlternativeButton(title: String) -> UIButton {
+    @objc func makeAlternativeButton(title: String) -> UIButton {
 
         let alternativeButton = UIButton()
         alternativeButton.layer.cornerRadius = appearance.alternativeButtonCornerRadius
-        
-        if #available(iOS 13, *) {
-            alternativeButton.layer.cornerCurve = .continuous
-        }
-        
+
+        alternativeButton.layer.cornerCurve = .continuous
+
         alternativeButton.setTitle(title, for: .normal)
         alternativeButton.setTitleColor(appearance.alternativeButtonTitleColor, for: .normal)
         alternativeButton.titleLabel?.font = appearance.makeAlternativeButtonFont()
+        alternativeButton.titleLabel?.adjustsFontForContentSizeCategory = true
 
         if let color = appearance.alternativeButtonBorderColor {
-          alternativeButton.clipsToBounds = true
-          alternativeButton.layer.borderColor = color.cgColor
-          alternativeButton.layer.borderWidth = appearance.alternativeButtonBorderWidth
+            alternativeButton.clipsToBounds = true
+            alternativeButton.layer.borderColor = color.cgColor
+            alternativeButton.layer.borderWidth = appearance.alternativeButtonBorderWidth
         }
 
         return alternativeButton
@@ -166,7 +169,7 @@ import UIKit
      * - parameter spacing: The spacing between elements. Defaults to `10`.
      */
 
-    @objc open func makeGroupStack(spacing: CGFloat = 10) -> UIStackView {
+    @objc func makeGroupStack(spacing: CGFloat = 10) -> UIStackView {
 
         let buttonsStack = UIStackView()
         buttonsStack.axis = .vertical
@@ -193,7 +196,7 @@ import UIKit
      * view to a stack view.
      */
 
-    @objc open func wrapView(_ view: UIView, width: NSNumber?, height: NSNumber?, position: BLTNViewPosition) -> BLTNContainerView {
+    @objc func wrapView(_ view: UIView, width: NSNumber?, height: NSNumber?, position: BLTNViewPosition) -> BLTNContainerView {
 
         let container = BLTNContainerView()
 

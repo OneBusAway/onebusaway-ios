@@ -57,7 +57,6 @@ class BulletinSwipeInteractionController: UIPercentDrivenInteractiveTransition, 
 
     }
 
-
     // MARK: - Gesture Recognizer
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
@@ -73,61 +72,13 @@ class BulletinSwipeInteractionController: UIPercentDrivenInteractiveTransition, 
 
         let dismissThreshold: CGFloat = 256 * distanceFactor
         let elasticThreshold: CGFloat = 128 * distanceFactor
-        let trackScreenPercentage = dismissThreshold / contentView.bounds.height
 
         switch gestureRecognizer.state {
         case .began:
-
-            isFinished = false
-
-            gestureRecognizer.setTranslation(.zero, in: contentView)
-
-            let isCompactWidth = viewController.traitCollection.horizontalSizeClass == .compact
-
-            guard viewController.isDismissable && isCompactWidth else {
-                isInteractionInProgress = false
-                return
-            }
-
-            isInteractionInProgress = true
-
-            viewController.dismiss(animated: true) {
-
-                guard self.isFinished else {
-                    return
-                }
-
-                self.viewController.manager?.completeDismissal()
-
-            }
+            panGestureBegan(gestureRecognizer)
 
         case .changed:
-
-            guard !isFinished else {
-                return
-            }
-
-            let translation = gestureRecognizer.translation(in: contentView)
-            let verticalTranslation = translation.y
-            isFinished = false
-
-            guard (verticalTranslation > 0) && isInteractionInProgress else {
-                update(0)
-                updateCardViews(forTranslation: translation)
-                return
-            }
-
-            snapshotView?.transform = .identity
-
-            let adaptativeTranslation = self.adaptativeTranslation(for: verticalTranslation, elasticThreshold: elasticThreshold)
-            let newPercentage = (adaptativeTranslation / dismissThreshold) * trackScreenPercentage
-
-            guard currentPercentage != newPercentage else {
-                return
-            }
-
-            currentPercentage = newPercentage
-            update(currentPercentage)
+            panGestureChanged(gestureRecognizer, dismissThreshold: dismissThreshold, elasticThreshold: elasticThreshold)
 
         case .cancelled, .failed:
 
@@ -140,25 +91,7 @@ class BulletinSwipeInteractionController: UIPercentDrivenInteractiveTransition, 
             panGestureRecognizer?.isEnabled = true
 
         case .ended:
-
-            guard isInteractionInProgress else {
-                resetCardViews()
-                isFinished = false
-                return
-            }
-
-            isInteractionInProgress = false
-
-            let translation = gestureRecognizer.translation(in: contentView).y
-
-            if translation >= dismissThreshold {
-                isFinished = true
-                finish()
-            } else {
-                resetCardViews()
-                cancel()
-                isFinished = false
-            }
+            panGestureEnded(gestureRecognizer, dismissThreshold: dismissThreshold)
 
         default:
             break
@@ -166,10 +99,96 @@ class BulletinSwipeInteractionController: UIPercentDrivenInteractiveTransition, 
 
     }
 
+    private func panGestureBegan(_ gestureRecognizer: UIPanGestureRecognizer) {
+
+        isFinished = false
+
+        gestureRecognizer.setTranslation(.zero, in: contentView)
+
+        let isCompactWidth = viewController.traitCollection.horizontalSizeClass == .compact
+
+        guard viewController.isDismissable && isCompactWidth else {
+            isInteractionInProgress = false
+            return
+        }
+
+        isInteractionInProgress = true
+
+        viewController.dismiss(animated: true) {
+
+            guard self.isFinished else {
+                return
+            }
+
+            // OBA: upstream called `completeDismissal()` here, skipping the
+            // item teardown and `isPrepared` reset that `dismissBulletin`
+            // performs.
+            self.viewController.manager?.completeInteractiveDismissal()
+
+        }
+
+    }
+
+    private func panGestureChanged(_ gestureRecognizer: UIPanGestureRecognizer,
+                                   dismissThreshold: CGFloat,
+                                   elasticThreshold: CGFloat) {
+
+        guard !isFinished else {
+            return
+        }
+
+        let translation = gestureRecognizer.translation(in: contentView)
+        let verticalTranslation = translation.y
+        isFinished = false
+
+        guard (verticalTranslation > 0) && isInteractionInProgress else {
+            update(0)
+            updateCardViews(forTranslation: translation)
+            return
+        }
+
+        snapshotView?.transform = .identity
+
+        let trackScreenPercentage = dismissThreshold / contentView.bounds.height
+        let adaptativeTranslation = self.adaptativeTranslation(for: verticalTranslation, elasticThreshold: elasticThreshold)
+        let newPercentage = (adaptativeTranslation / dismissThreshold) * trackScreenPercentage
+
+        guard currentPercentage != newPercentage else {
+            return
+        }
+
+        currentPercentage = newPercentage
+        update(currentPercentage)
+
+    }
+
+    private func panGestureEnded(_ gestureRecognizer: UIPanGestureRecognizer, dismissThreshold: CGFloat) {
+
+        guard isInteractionInProgress else {
+            resetCardViews()
+            isFinished = false
+            return
+        }
+
+        isInteractionInProgress = false
+
+        let translation = gestureRecognizer.translation(in: contentView).y
+
+        if translation >= dismissThreshold {
+            isFinished = true
+            finish()
+        } else {
+            resetCardViews()
+            cancel()
+            isFinished = false
+        }
+
+    }
+
     // MARK: - Math
 
     // Source: https://github.com/HarshilShah/DeckTransition
-    let elasticTranslationCurve = { (translation: CGFloat, translationFactor: CGFloat) -> CGFloat in
+    let elasticTranslationCurve = { (translation: CGFloat, _: CGFloat) -> CGFloat in
         return 30 * atan(translation/120) + translation/10
     }
 
@@ -227,7 +246,10 @@ class BulletinSwipeInteractionController: UIPercentDrivenInteractiveTransition, 
 
     private func resetCardViews() {
 
-        let options = UIView.AnimationOptions(rawValue: 6 << 7)
+        // OBA: upstream passed `rawValue: 6 << 7`, which sets
+        // `.showHideTransitionViews | .overrideInheritedOptions` rather than an
+        // animation curve — evidently a typo for a `<< 16` curve value.
+        let options: UIView.AnimationOptions = [.beginFromCurrentState, .curveEaseOut]
 
         let animations = {
             self.snapshotView?.transform = .identity

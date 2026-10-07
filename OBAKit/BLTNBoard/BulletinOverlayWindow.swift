@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import BLTNBoard
 
 /// Owns a dedicated `UIWindow` for hosting `BLTNItemManager` presentations.
 ///
