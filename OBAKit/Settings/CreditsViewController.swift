@@ -57,11 +57,10 @@ class CreditsViewController: UIViewController, AppContext, OBAListViewDataSource
     }
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        var items: [OBAListRowView.DefaultViewModel] = []
-        for key in credits.keys.localizedCaseInsensitiveSort() {
-            items.append(OBAListRowView.DefaultViewModel(title: key, onSelectAction: { _ in
-                self.navigateTo(key: key)
-            }))
+        let items = credits.keys.localizedCaseInsensitiveSort().map { key in
+            OBAListRowView.DefaultViewModel(title: key, onSelectAction: { [weak self] _ in
+                self?.navigateTo(key: key)
+            })
         }
 
         return [OBAListViewSection(id: "credits", contents: items)]
@@ -82,13 +81,21 @@ class CreditViewerController: UIViewController {
     }
 
     override func viewDidLoad() {
+        super.viewDidLoad()
+
         webView.frame = view.bounds
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         webView.isOpaque = false
         webView.backgroundColor = ThemeColors.shared.systemBackground
         view.addSubview(webView)
 
-        let mungedCredits = "<code>\(licenseText.replacingOccurrences(of: "\n", with: "<br>"))</code>"
+        // License text is plain text: escape it so `<name@example.com>` is not swallowed as a tag.
+        let escaped = licenseText
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\n", with: "<br>")
+        let mungedCredits = "<code>\(escaped)</code>"
         webView.setPageContent(mungedCredits)
     }
 
