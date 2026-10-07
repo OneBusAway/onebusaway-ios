@@ -87,11 +87,8 @@ class AlarmBuilder: NSObject {
 
     // MARK: - Public Methods
 
+    /// A no-op while the bulletin is already showing; `BLTNItemManager` enforces that.
     public func showBulletin(above viewController: UIViewController) {
-        guard !bulletinManager.isShowingBulletin else {
-            return
-        }
-
         bulletinManager.showBulletin(above: viewController)
     }
 
@@ -118,7 +115,6 @@ class AlarmBuilder: NSObject {
 
         defer {
             Task { @MainActor in
-                defer { self.isCreatingAlarm = false }
                 // The delegate owns the HUD from here: it shows a self-dismissing
                 // success message on creation, and dismisses on failure.
                 // Dismissing here too would hide "Alarm created" the instant it
@@ -131,6 +127,7 @@ class AlarmBuilder: NSObject {
                     ProgressHUD.dismiss()
                 }
                 self.bulletinManager.dismissBulletin(animated: true)
+                self.isCreatingAlarm = false
             }
         }
 

@@ -218,7 +218,7 @@ extension BLTNItemManager {
         assertIsPrepared()
 
         shouldDisplayActivityIndicator = true
-        lastActivityIndicatorColor = color ?? defaultActivityIndicatorColor
+        lastActivityIndicatorColor = color ?? .label
 
         // OBA: upstream documented that the indicator disables tap and swipe
         // dismissal but never did so. `hideActivityIndicator()` restores it.
@@ -226,12 +226,6 @@ extension BLTNItemManager {
         bulletinController.swipeInteractionController?.cancelIfNeeded()
 
         bulletinController.displayActivityIndicator(color: lastActivityIndicatorColor)
-    }
-
-    /// Provides a default color for activity indicator views.
-    /// Defaults to .label.
-    private var defaultActivityIndicatorColor: UIColor {
-        return .label
     }
 
     /**

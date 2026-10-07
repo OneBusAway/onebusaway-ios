@@ -38,10 +38,6 @@ extension BLTNItemManager {
     /// clamping bug doesn't exist there, so the extra window path (and its
     /// singleton lifecycle) is unnecessary.
     ///
-    /// BLTNBoard's built-in `showBulletin(in:)` was dropped when it was vendored:
-    /// it created a `UIWindow` without a `windowScene`, which iOS won't display
-    /// in a scene-based app.
-    ///
     /// `rootItem` is the item passed to `BLTNItemManager.init(rootItem:)`; it
     /// has to be supplied here because the manager keeps its reference private,
     /// and the overlay-window path hooks its `dismissalHandler` to retire the
