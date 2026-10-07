@@ -123,9 +123,6 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
 
 packages:
-    BLTNBoard:
-        url: https://github.com/alexaubry/BulletinBoard.git
-        exactVersion: 5.0.0
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
         exactVersion: 5.5.0

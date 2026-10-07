@@ -225,12 +225,13 @@ final class ErrorBulletinLifetimeTests: OBATestCase {
     }
 
     /// Lets BLTNBoard deliver the completion block of the interface refresh it
-    /// kicks off while preparing.
+    /// kicks off while preparing, so the card is settled before a test drives it.
     ///
-    /// Dismissing before that block runs crashes the test host: `completeDismissal`
-    /// nils out `bulletinController`, and the queued block force-unwraps it. The
-    /// refresh has no observable end state to poll for — it animates with
-    /// duration 0 and only posts a completion — which is what `spin` is for.
+    /// Upstream BLTNBoard crashed when a dismissal completed before that block
+    /// ran; the vendored copy now skips the block instead (`OBA:` in
+    /// `BLTNItemManager.refreshCurrentItemInterface`). The refresh has no
+    /// observable end state to poll for — it animates with duration 0 and only
+    /// posts a completion — which is what `spin` is for.
     private func settleAfterPresenting() async {
         await spin(0.15)
     }
