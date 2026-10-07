@@ -88,7 +88,7 @@ class CreditViewerController: UIViewController {
         webView.backgroundColor = ThemeColors.shared.systemBackground
         view.addSubview(webView)
 
-        let mungedCredits = "<code>\(licenseText.replacingOccurrences(of: "\n", with: "<br>"))</code>"
+        let mungedCredits = "<code>\(licenseText.htmlEscaped.replacingOccurrences(of: "\n", with: "<br>"))</code>"
         webView.setPageContent(mungedCredits)
     }
 
