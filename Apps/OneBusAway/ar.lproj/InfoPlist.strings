@@ -5,8 +5,9 @@
 /* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
 "MapStatusView" = "لمعرفة مكانك بالنسبة إلى وسائل النقل العام ومساعدتك على التنقل بسهولة أكبر.";
 
-/* Purpose string shown when the app requests HealthKit read access to your walking and cycling speed. */
+/* Purpose string shown when the app requests HealthKit access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "يستخدم سرعة المشي أو ركوب الدراجة من تطبيق «صحتي» لمنحك تقديرات أدق لأوقات الوصول.";
+"NSHealthUpdateUsageDescription" = "يستخدم سرعة المشي أو ركوب الدراجة من تطبيق «صحتي» لمنحك تقديرات أدق لأوقات الوصول.";
 
 /* Purpose strings shown when the app requests speech recognition / microphone for voice search. */
 "NSSpeechRecognitionUsageDescription" = "يحول البحث الصوتي ما تقوله إلى استعلام عن المواصلات.";

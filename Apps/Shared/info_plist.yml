@@ -14,9 +14,10 @@ targets:
   App:
     info:
       properties:
-        # Read-only: the walking and bike speed providers request authorization with
-        # toShare: [], so no NSHealthUpdateUsageDescription. Add it back only if the
-        # app ever writes to HealthKit.
+        # Keep both HealthKit purpose strings. The app only reads (`toShare: []`), but
+        # App Review rejects a build that carries the HealthKit entitlement without
+        # NSHealthUpdateUsageDescription, so removing it is not safe.
         NSHealthShareUsageDescription: Uses your walking or cycling speed from the Health app to give you more accurate arrival time estimates.
+        NSHealthUpdateUsageDescription: Uses your walking or cycling speed from the Health app to give you more accurate arrival time estimates.
         NSSpeechRecognitionUsageDescription: Voice search converts what you say into a transit search query.
         NSMicrophoneUsageDescription: Voice search listens so you can search for stops, routes, and places by speaking.
