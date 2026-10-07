@@ -49,6 +49,9 @@
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "Màn hình này sắp ra mắt.";
 
+/* Shown when the rider taps a link or notification for a stop that belongs to a transit region other than the currently selected one. */
+"application.stop_in_other_region" = "Trạm dừng này thuộc một khu vực khác với khu vực bạn đang dùng nên không thể mở.";
+
 /* Filter option to show all departures regardless of real-time data availability */
 "arrival_departure_filter.all_departures" = "Tất cả chuyến khởi hành";
 
@@ -302,6 +305,9 @@
 /* Title of the read-only Stop ID row on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_row.title" = "ID điểm dừng";
 
+/* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
+"edit_bookmark_controller.stop_id_row.accessibility_hint" = "Sao chép ID điểm dừng.";
+
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Không có nhóm)";
@@ -458,6 +464,9 @@
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "Căn giữa bản đồ vào vị trí hiện tại";
 
+/* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
+"map_controller.dropped_pin_title" = "Ghim đã thả";
+
 /* Change Region button on the alert that appears when the user is updating their current region manually. */
 "map_controller.change_region_alert.button" = "Đổi khu vực";
 
@@ -497,6 +506,9 @@
 /* Title of the list shown when tapping a map pin that groups several stops at the same location. */
 "map_controller.stop_cluster_picker.title" = "Chọn một điểm dừng";
 
+/* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
+"map_controller.stop_cluster.accessibility_hint" = "Liệt kê các điểm dừng tại đây.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "Phương tiện bạn chọn dường như hiện không chạy chuyến nào, vì vậy chúng tôi không biết cách hiển thị nó cho bạn.";
 
@@ -534,6 +546,9 @@
 /* Button to remove a dropped pin from the map */
 "map_item_controller.remove_pin" = "Xóa ghim";
 
+/* Name shown in the trip planner for a destination that has no name of its own, such as a point on the map. */
+"map_item_controller.destination_fallback_title" = "Điểm đến";
+
 /* Accessibility label for remove pin button */
 "map_item_controller.remove_pin_accessibility" = "Xóa ghim này khỏi bản đồ";
 
@@ -554,12 +569,14 @@
 
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "Phóng to để xem điểm dừng";
+/* Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles */
+"map_status_view.zoom_in_for_rentals" = "Phóng to để xem xe đạp và xe scooter";
 
 /* Title of the alert shown when location services are disabled for the app. */
-"map_status_alert.location_services_off.title" = "Location Services Off";
+"map_status_alert.location_services_off.title" = "Dịch vụ định vị đã tắt";
 
 /* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Precise Location Off";
+"map_status_alert.precise_location_off.title" = "Vị trí chính xác đã tắt";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "Giới thiệu ứng dụng";
@@ -697,6 +714,9 @@
 /* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
 "next_departures_intent.now" = "ngay bây giờ";
 
+/* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
+"next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Chen chúc, chỉ còn chỗ đứng";
 
@@ -828,6 +848,9 @@
 
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Tiến trình hướng dẫn";
+
+/* VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps} */
+"onboarding.progress.accessibility_value_fmt" = "Bước %1$d trên %2$d";
 
 /* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "Chúng tôi đã tìm thấy mạng lưới giao thông gần bạn nhất.";
@@ -1120,9 +1143,6 @@
 /* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Hiện banner tới lúc chuyển tuyến";
 
-/* Settings > Arrival Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Hiện banner tới lúc chuyển tuyến: khi bật, mở điểm dừng từ chuyến đi sẽ hiện giờ theo lúc bạn tới. Tắt công tắc đó để xem đồng hồ thường và mọi chuyến.";
-
 /* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
 "settings_controller.arrival_display_section.footer" = "Banner chuyển tuyến: mở điểm dừng từ chuyến đi sẽ hiện giờ theo lúc bạn tới. Múi giờ vùng: đồng hồ dùng múi giờ vùng giao thông, kèm huy hiệu ngắn khi điện thoại khác múi giờ. Hai tùy chọn độc lập.";
 
@@ -1242,6 +1262,9 @@
 
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "Dấu trang này có thể không còn hoạt động. Có phải đơn vị vận tải của bạn đã thay đổi gì đó? Vui lòng xóa và tạo lại dấu trang.";
+
+/* Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop. */
+"stop_controller.bad_bookmark_error_title" = "Dấu trang bị hỏng";
 
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Dữ liệu được cung cấp bởi %@";
@@ -1564,6 +1587,15 @@
 /* Title of the row that will show stops that are near this one. */
 "stops_controller.nearby_stops" = "Điểm dừng lân cận";
 
+/* Section heading in the stop screen's More menu, over the Add Bookmark and Service Alerts items. */
+"stops_controller.menu.file_title" = "Tệp";
+
+/* Section heading in the stop screen's More menu, over the nearby stops, walking directions and trip planning items. */
+"stops_controller.menu.location_title" = "Vị trí";
+
+/* Section heading in the stop screen's More menu, over the Report a Problem item. */
+"stops_controller.menu.help_title" = "Trợ giúp";
+
 /* Button that launches the 'Report Problem' UI. */
 "stops_controller.report_problem" = "Báo cáo sự cố";
 
@@ -1792,6 +1824,9 @@
 /* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
 "weather.percent_format" = "%d%%";
 
+/* VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention. */
+"weather.stat.a11y_fmt" = "%1$@: %2$@";
+
 /* VoiceOver label for the feels-like temperature stat on the weather card. */
 "weather.stat.feels_like" = "Cảm giác như";
 
@@ -1827,8 +1862,8 @@
 "ghost_bus_report.error.already_reported" = "Có vẻ chuyến đi này đã được báo cáo từ thiết bị này.";
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "Không thể gửi";
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "Báo cáo của bạn là ẩn danh và được gửi đến đơn vị vận tải điều hành dịch vụ này.";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "Báo cáo của bạn, cùng vị trí của bạn nếu bạn chọn chia sẻ, sẽ được gửi đến %@ và đơn vị vận tải để giúp cải thiện dịch vụ.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "Chia sẻ vị trí của tôi";
 /* Submit button on the ghost bus form. */
@@ -1851,6 +1886,8 @@
 "map_layers.bus_stops" = "Điểm dừng";
 /* Reason shown on a dimmed rental layer row when its server is unreachable */
 "map_layers.rental_unavailable" = "Hiện không khả dụng";
+/* Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it */
+"map_layers.rental_gone" = "Xe này không còn khả dụng";
 /* Map sheet row for the rental scooters layer */
 "map_layers.scooters" = "Xe scooter";
 /* Map sheet row for the layer drawing a selected stop's routes and live vehicles. */
@@ -1903,6 +1940,10 @@
 "rental_detail.battery" = "Pin";
 /* Label for the number of bikes available at a station */
 "rental_detail.bikes_available" = "Xe đạp";
+/* Label for the number of scooters available at a station that only holds scooters */
+"rental_detail.scooters_available" = "Xe scooter";
+/* Label for the number of rental vehicles available at a station whose vehicle types are mixed or unknown */
+"rental_detail.vehicles_available" = "Có sẵn";
 /* Label for the number of open docks at a station */
 "rental_detail.docks_available" = "Chỗ trả xe";
 /* Label for whether dropping off a vehicle is currently allowed */
@@ -1913,6 +1954,10 @@
 "rental_detail.not_in_service" = "Không hoạt động";
 /* Button opening the rental operator's app or website */
 "rental_detail.open_in_fmt" = "Mở trong %@";
+/* VoiceOver hint on the button opening a rental operator's app. %@ is the operator, e.g. Lime. */
+"rental_detail.open_in_hint_fmt" = "Mở %@ hoặc trang của ứng dụng trên App Store nếu chưa cài đặt.";
+/* Button opening a rental operator's app when the operator's name is unknown */
+"rental_detail.open_rental_app" = "Mở ứng dụng thuê xe";
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "Lấy xe";
 /* Primary action on the rental vehicle sheet */

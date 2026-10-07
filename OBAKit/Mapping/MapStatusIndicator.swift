@@ -28,12 +28,16 @@ enum MapStatusIndicator {
     /// The map is zoomed out too far to load stops.
     case zoomInForStops
 
+    /// A rental layer is on, and the map is zoomed out too far to draw rentals
+    /// (but not stops).
+    case zoomInForRentals
+
     /// SF Symbol used in the compact (SwiftUI pill / UIKit inline) presentation.
     var symbolName: String {
         switch self {
         case .locationUnavailable: return "location.slash"
         case .preciseLocationUnavailable: return "location.circle"
-        case .zoomInForStops: return "plus.magnifyingglass"
+        case .zoomInForStops, .zoomInForRentals: return "plus.magnifyingglass"
         }
     }
 
@@ -44,7 +48,7 @@ enum MapStatusIndicator {
         switch self {
         case .locationUnavailable: return "location.slash.fill"
         case .preciseLocationUnavailable: return "location.circle.fill"
-        case .zoomInForStops: return "plus.magnifyingglass"
+        case .zoomInForStops, .zoomInForRentals: return "plus.magnifyingglass"
         }
     }
 
@@ -68,6 +72,12 @@ enum MapStatusIndicator {
                 "map_status_view.zoom_in_for_stops",
                 value: "Zoom in for stops",
                 comment: "Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map"
+            )
+        case .zoomInForRentals:
+            return OBALoc(
+                "map_status_view.zoom_in_for_rentals",
+                value: "Zoom in to see bikes and scooters",
+                comment: "Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles"
             )
         }
     }

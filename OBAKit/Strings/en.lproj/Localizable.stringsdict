@@ -66,6 +66,22 @@
 			<string>%2$d layers on</string>
 		</dict>
 	</dict>
+	<key>map_controller.stop_cluster.accessibility_label_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 stop</string>
+			<key>other</key>
+			<string>%d stops</string>
+		</dict>
+	</dict>
 	<key>next_departures_intent.in_minutes_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -96,6 +112,38 @@
 			<string>1 vehicle here</string>
 			<key>other</key>
 			<string>%d vehicles here</string>
+		</dict>
+	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d available</string>
+			<key>other</key>
+			<string>%d available</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d min walk</string>
+			<key>other</key>
+			<string>%d min walk</string>
 		</dict>
 	</dict>
 	<key>search_results_sheet.result_count_fmt</key>

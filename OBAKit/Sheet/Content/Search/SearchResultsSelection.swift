@@ -50,7 +50,14 @@ final class SearchResultsSelection: ObservableObject {
         error = nil
         failedResult = nil
 
-        guard let resolved = await router.resolve(result: result) else {
+        // Snapshotted so a slow resolve can't act on a stack the rider has since
+        // changed: unwinding then would tear down whatever sheet they opened next.
+        let stackAtTap = coordinator.routeStack + coordinator.stackedRoutes
+
+        let resolved = await router.resolve(result: result)
+        guard !Task.isCancelled, coordinator.routeStack + coordinator.stackedRoutes == stackAtTap else { return }
+
+        guard let resolved else {
             // `router.lastError` is nil only for a result type `resolve` doesn't
             // handle, which is a programming error rather than anything the user did
             // — but the row still has to say *something*, or tapping it is a no-op.

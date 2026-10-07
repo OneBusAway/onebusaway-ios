@@ -66,6 +66,22 @@
 			<string>%2$d capas activadas</string>
 		</dict>
 	</dict>
+	<key>map_controller.stop_cluster.accessibility_label_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>1 parada</string>
+			<key>other</key>
+			<string>%d paradas</string>
+		</dict>
+	</dict>
 	<key>next_departures_intent.in_minutes_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -98,6 +114,38 @@
 			<string>%d vehículos aquí</string>
 		</dict>
 	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d disponible</string>
+			<key>other</key>
+			<string>%d disponibles</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d min a pie</string>
+			<key>other</key>
+			<string>%d min a pie</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -128,6 +176,22 @@
 			<string>Mostrar 1 salida anterior</string>
 			<key>other</key>
 			<string>Mostrar %d salidas anteriores</string>
+		</dict>
+	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Mostrando %d salida anterior</string>
+			<key>other</key>
+			<string>Mostrando %d salidas anteriores</string>
 		</dict>
 	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>

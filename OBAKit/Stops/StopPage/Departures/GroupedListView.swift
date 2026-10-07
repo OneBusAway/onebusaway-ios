@@ -238,7 +238,7 @@ struct GroupedListView: View {
     private func chips(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
         ForEach(group.chips, id: \.id) { chip in
             let chipStatus = statusProvider(chip)
-            Text("\(chip.arrivalDepartureMinutes)m")
+            Text(Formatters.shortMinutesText(chip.arrivalDepartureMinutes))
                 .font(.caption.weight(.heavy)).monospacedDigit()
                 .foregroundStyle(Color(uiColor: chipStatus.color))
                 .padding(.horizontal, 8).padding(.vertical, 3)
@@ -262,13 +262,13 @@ struct GroupedListView: View {
             } label: {
                 HStack(spacing: 5) {
                     Image(systemName: alarm != nil ? "bell.fill" : "bell")
-                    Text(alarm.map { "\(alarmLeadTime($0))m" } ?? Strings.alarm)
+                    Text(alarm.map { Formatters.shortMinutesText(alarmLeadTime($0)) } ?? Strings.alarm)
                         .monospacedDigit()
                 }
                 .font(.caption.weight(.heavy))
                 .foregroundStyle(alarm != nil ? Color.white : Color.secondary)
                 .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(alarm != nil ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color(uiColor: .tertiarySystemFill), in: Capsule())
+                .background(alarm != nil ? Color(uiColor: ThemeColors.shared.departureOnTimeFill) : Color(uiColor: .tertiarySystemFill), in: Capsule())
             }
             .buttonStyle(.plain)
         }
@@ -370,7 +370,7 @@ struct GroupedListView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(alarm != nil ? Color.white : Color.secondary)
                     .frame(width: alarmCircleSize, height: alarmCircleSize)
-                    .background(alarm != nil ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color.clear, in: Circle())
+                    .background(alarm != nil ? Color(uiColor: ThemeColors.shared.departureOnTimeFill) : Color.clear, in: Circle())
                     .overlay(Circle().strokeBorder(Color(uiColor: .separator), lineWidth: alarm != nil ? 0 : 1.5))
             }
             .buttonStyle(.plain)

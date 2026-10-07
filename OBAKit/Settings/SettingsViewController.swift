@@ -710,7 +710,7 @@ class SettingsViewController: FormViewController {
                 self.application.performTestCrash()
             }
             $0.cellUpdate { cell, _ in
-                let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
+                let imageView = UIImageView(image: UIImage(systemName: "chevron.forward"))
                 cell.accessoryView = imageView
             }
         }

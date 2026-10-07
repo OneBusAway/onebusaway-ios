@@ -82,6 +82,26 @@
 			<string>%2$d warstwy włączonej</string>
 		</dict>
 	</dict>
+	<key>map_controller.stop_cluster.accessibility_label_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d przystanki</string>
+			<key>many</key>
+			<string>%d przystanków</string>
+			<key>one</key>
+			<string>1 przystanek</string>
+			<key>other</key>
+			<string>%d przystanku</string>
+		</dict>
+	</dict>
 	<key>next_departures_intent.in_minutes_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -122,6 +142,46 @@
 			<string>%d pojazdu tutaj</string>
 		</dict>
 	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d dostępne</string>
+			<key>many</key>
+			<string>%d dostępnych</string>
+			<key>one</key>
+			<string>%d dostępny</string>
+			<key>other</key>
+			<string>%d dostępnego</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d minuty pieszo</string>
+			<key>many</key>
+			<string>%d minut pieszo</string>
+			<key>one</key>
+			<string>%d minuta pieszo</string>
+			<key>other</key>
+			<string>%d minuty pieszo</string>
+		</dict>
+	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -160,6 +220,26 @@
 			<string>Pokaż 1 wcześniejszy odjazd</string>
 			<key>other</key>
 			<string>Pokaż %d wcześniejszego odjazdu</string>
+		</dict>
+	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Wyświetlono %d minione odjazdy</string>
+			<key>many</key>
+			<string>Wyświetlono %d minionych odjazdów</string>
+			<key>one</key>
+			<string>Wyświetlono %d miniony odjazd</string>
+			<key>other</key>
+			<string>Wyświetlono %d minionego odjazdu</string>
 		</dict>
 	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>

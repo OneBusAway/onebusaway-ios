@@ -32,8 +32,18 @@ struct VehicleCoordinateUpdateTests {
     }
 
     @Test func `A city-block hop animates`() {
-        let decision = VehicleCoordinateUpdate.decision(from: seattle, to: nearby)
+        let decision = VehicleCoordinateUpdate.decision(from: seattle, to: nearby, reduceMotion: false)
         #expect(decision == .animate(duration: VehicleCoordinateUpdate.animationDuration))
+    }
+
+    /// The glide is motion the rider didn't start, which Reduce Motion asks to remove.
+    @Test func `With Reduce Motion on, a city-block hop snaps`() {
+        #expect(VehicleCoordinateUpdate.decision(from: seattle, to: nearby, reduceMotion: true) == .snap)
+    }
+
+    @Test func `With Reduce Motion on, jitter is still ignored`() {
+        let almost = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.33211)
+        #expect(VehicleCoordinateUpdate.decision(from: seattle, to: almost, reduceMotion: true) == .unchanged)
     }
 
     /// Farther than `snapBeyondMeters` (500 m) is a new fix, not motion.

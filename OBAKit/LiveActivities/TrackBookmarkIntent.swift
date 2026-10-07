@@ -19,12 +19,22 @@ import OBAKitCore
 ///
 /// Not `nonisolated`: `@Parameter` property wrappers are incompatible with a
 /// nonisolated AppIntent type on this SDK (entity/query/provider stay opted out).
+///
+/// Every user-facing string on the intent surface names an explicit key in
+/// OBAKit's `AppIntents.strings`. Shortcuts and Siri resolve them out of
+/// process from the metadata `appintentsmetadataprocessor` writes into
+/// OBAKit.framework, which records only key, table, and default value; the
+/// lookup bundle is implicitly the one holding that metadata. The processor
+/// rejects any bundle but the module's own (`#bundle`; `.forClass` fails the
+/// build with "requires 'LocalizedStringResource' to use the main bundle").
+/// A separate table keeps `scripts/extract_strings`, which regenerates
+/// `Localizable.strings` from `OBALoc` calls only, from deleting these keys.
 struct TrackBookmarkIntent: AppIntent {
-    static let title: LocalizedStringResource = "Track Bookmark"
-    static let description = IntentDescription("Start a Live Activity for a bookmarked trip.")
+    static let title = LocalizedStringResource("track_bookmark_intent.title", defaultValue: "Track Bookmark", table: "AppIntents", bundle: #bundle)
+    static let description = IntentDescription(LocalizedStringResource("track_bookmark_intent.description", defaultValue: "Start a Live Activity for a bookmarked trip.", table: "AppIntents", bundle: #bundle))
     static let openAppWhenRun = true
 
-    @Parameter(title: "Bookmark")
+    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle))
     var bookmark: BookmarkEntity
 
     func perform() async throws -> some IntentResult {
@@ -40,7 +50,9 @@ struct TrackBookmarkIntent: AppIntent {
 
 /// App Entity types are extracted off the main actor; OBAKit defaults to `@MainActor`.
 nonisolated struct BookmarkEntity: AppEntity {
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Bookmark")
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource("bookmark_entity.type_name", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle)
+    )
     static let defaultQuery = BookmarkEntityQuery()
 
     var id: UUID
@@ -87,6 +99,11 @@ nonisolated enum BookmarkIntentMapping {
 /// indexes intents compiled into OBAKit, and Shortcuts would not see Track.
 nonisolated public struct OBAKitAppIntentsPackage: AppIntentsPackage {}
 
+/// Phrases are localized by `AppShortcuts.strings`, keyed by the English phrase
+/// with `${applicationName}` / `${bookmark}` tokens, in OBAKit's `.lproj`s:
+/// the strings must sit in the bundle that contains this provider (and its
+/// `Metadata.appintents`), not the app's. Changing an English phrase changes
+/// its key, so update every locale's `AppShortcuts.strings` in the same commit.
 nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -96,7 +113,7 @@ nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
                 "Track \(.applicationName) bookmark",
                 "Start \(.applicationName) Live Activity"
             ],
-            shortTitle: "Track bookmark",
+            shortTitle: LocalizedStringResource("track_bookmark_intent.short_title", defaultValue: "Track bookmark", table: "AppIntents", bundle: #bundle),
             systemImageName: "bell"
         )
         AppShortcut(
@@ -107,7 +124,7 @@ nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
                 "When is my next bus in \(.applicationName)",
                 "Do I have time to catch the bus with \(.applicationName)"
             ],
-            shortTitle: "Next departures",
+            shortTitle: LocalizedStringResource("next_departures_intent.short_title", defaultValue: "Next departures", table: "AppIntents", bundle: #bundle),
             systemImageName: "clock"
         )
     }

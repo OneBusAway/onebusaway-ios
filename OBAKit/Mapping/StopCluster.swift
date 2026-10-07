@@ -57,6 +57,48 @@ enum StopCluster {
         return true
     }
 
+    /// Tapping lists the stops instead of zooming when zooming can't separate
+    /// them — and always under VoiceOver, where the zoom moves the map without
+    /// saying so and leaves focus on a pin that no longer exists.
+    static func listsStopsOnSelection(_ coordinates: [CLLocationCoordinate2D], isVoiceOverRunning: Bool) -> Bool {
+        isVoiceOverRunning || areCoLocated(coordinates)
+    }
+
+    // MARK: - Accessibility
+
+    /// "3 stops". Plural forms live in Localizable.stringsdict.
+    static func accessibilityLabel(stopCount: Int) -> String {
+        let format = OBALoc(
+            "map_controller.stop_cluster.accessibility_label_fmt",
+            value: "%d stops",
+            comment: "VoiceOver label for a map pin that groups several nearby stops. %d is the number of stops. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."
+        )
+        // `localizedStringWithFormat` so the stringsdict's plural rule is the
+        // locale's, not the root one; see `MapTypeButtonPresentation`.
+        return String.localizedStringWithFormat(format, stopCount)
+    }
+
+    /// How many stop names the VoiceOver value reads before stopping. The label
+    /// already gives the count, and the list the pin opens gives the rest.
+    static let accessibilityValueNameLimit = 3
+
+    /// The first few distinct stop names, as a localized list: "Pine St, 3rd Ave, and Pike St".
+    /// Distinct because co-located stops usually share a name, and "Pine St, Pine St"
+    /// tells a listener nothing.
+    static func accessibilityValue(for stops: [Stop]) -> String {
+        var seen = Set<String>()
+        let names = stops.map(\.name).filter { seen.insert($0).inserted }
+        return ListFormatter.localizedString(byJoining: Array(names.prefix(accessibilityValueNameLimit)))
+    }
+
+    static var accessibilityHint: String {
+        OBALoc(
+            "map_controller.stop_cluster.accessibility_hint",
+            value: "Lists the stops here.",
+            comment: "VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from."
+        )
+    }
+
     /// Co-located stops usually share a name, so the title adds the code and
     /// direction that tell them apart.
     static func pickerTitle(for stop: Stop) -> String {

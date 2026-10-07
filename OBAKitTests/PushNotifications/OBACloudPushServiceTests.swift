@@ -47,6 +47,30 @@ final class OBACloudPushServiceTests: OBATestCase {
         #expect(!service.isRegisteredForRemoteNotifications)
     }
 
+    // MARK: - Notification Taps
+
+    @Test func `A tap that arrives before the handler is delivered once the handler is set`() {
+        // A cold launch from a notification delivers the tap before PushService
+        // exists to install the handler.
+        let early = OBACloudPushService()
+        early.receiveNotificationTap(message: "Approaching your stop", userInfo: ["stop_id": "1_75403"])
+
+        var received: [String] = []
+        early.notificationReceivedHandler = { message, _ in received.append(message) }
+        #expect(received == ["Approaching your stop"])
+
+        // Delivered exactly once, not again on a later handler swap.
+        early.notificationReceivedHandler = { message, _ in received.append(message) }
+        #expect(received == ["Approaching your stop"])
+    }
+
+    @Test func `A tap after the handler is set is delivered immediately`() {
+        var received: [String] = []
+        service.notificationReceivedHandler = { message, _ in received.append(message) }
+        service.receiveNotificationTap(message: "Hi", userInfo: [:])
+        #expect(received == ["Hi"])
+    }
+
     // MARK: - Callback Delivery
 
     @Test func `Request push ID with existing token invokes callback immediately`() {

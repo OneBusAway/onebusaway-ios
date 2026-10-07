@@ -105,6 +105,10 @@ struct MapPanelRootView: View {
     /// first reported (non-zero) size, in which case the recenter must be
     /// retried when the size lands.
     @State private var needsInitialRecenter = false
+    /// Set once an `onebusaway://rentals` link has placed the camera, so the
+    /// one-shot launch recenter — which a late first GPS fix re-arms — cannot
+    /// move it off the vehicles the link asked to show.
+    @State private var rentalsLinkHoldsCamera = false
     @State private var regionMismatchBulletin: RegionMismatchBulletin?
     @State private var didPromptRegionMismatch = false
     @StateObject private var mismatchCamera = RegionMismatchCameraActions()
@@ -255,6 +259,7 @@ struct MapPanelRootView: View {
             mapViewModel.updateZoomWarning(
                 MapRegionManager.shouldShowZoomInWarning(forVisibleMapRectHeight: context.rect.height)
             )
+            updateRentalZoomHint(visibleMapRectHeight: context.rect.height)
 
             // Same stop-loading zoom gate as the UIKit region-change path.
             isZoomedInForStops = context.rect.height <= MapRegionManager.requiredHeightToShowStops
@@ -285,6 +290,12 @@ struct MapPanelRootView: View {
         .onChange(of: mapViewModel.mapType) { _, _ in
             recomputeStopLabels()
         }
+        // Switching Bikes on while zoomed out must raise the rental hint now, not
+        // at the next camera settle. Every layer toggle moves the badge count.
+        .onChange(of: layersModel.enabledLayerCount) { _, _ in
+            guard let visibleMapRectHeight else { return }
+            updateRentalZoomHint(visibleMapRectHeight: visibleMapRectHeight)
+        }
         .onChange(of: mismatchCamera.applyLaunch) { _, flag in
             guard flag else { return }
             mismatchCamera.applyLaunch = false
@@ -309,6 +320,7 @@ struct MapPanelRootView: View {
                 if let rental = layersModel.rental(withID: rentalID) {
                     layersModel.pinForOpenSheet([rental])
                 }
+                reportRentalSelected(isCluster: false)
                 coordinator.push(.rentalDetail(rentalID: rentalID))
             case .rentalCluster(let clusterID):
                 let members = layersModel.rentalItems
@@ -316,6 +328,7 @@ struct MapPanelRootView: View {
                     .members ?? []
                 guard !members.isEmpty else { break }
                 layersModel.pinForOpenSheet(members)
+                reportRentalSelected(isCluster: true)
                 coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
             case .tripPlannerAnnotation(let identifier):
                 // Hand the tap straight back to OTPKit, which owns what a pin on
@@ -435,6 +448,10 @@ struct MapPanelRootView: View {
         }
         .onAppear {
             mapViewModel.start()
+            applyPendingRentalsFocus()
+        }
+        .onReceive(application.notificationCenter.publisher(for: .rentalsDeepLinkPending)) { _ in
+            applyPendingRentalsFocus()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -541,6 +558,10 @@ struct MapPanelRootView: View {
     @ViewBuilder
     private func buildSheetContent(for route: AppSheetRoute) -> some View {
         factory.view(for: route)
+            // Settings writes display preferences (compact mode, reduced colors)
+            // to the app's defaults suite; without this, sheet content reading
+            // them through `@AppStorage` saw `.standard` and ignored them.
+            .defaultAppStorage(application.userDefaults)
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(
                     display: mapViewModel.weatherDisplay,
@@ -612,9 +633,18 @@ extension MapPanelRootView {
         switch state {
         case .notDetermined, .locationServicesOff, .impreciseLocation:
             permissionAlertState = state
-        case .hidden, .zoomInForStops, .locationServicesUnavailable:
+        case .hidden, .zoomInForStops, .zoomInForRentals, .locationServicesUnavailable:
             break
         }
+    }
+
+    /// Same rule as the UIKit map's `MapRegionManager.rentalZoomHintStatus`, fed
+    /// from this map's own camera rather than the unhosted `MKMapView`.
+    private func updateRentalZoomHint(visibleMapRectHeight height: Double) {
+        mapViewModel.updateRentalZoomHint(MapRegionManager.shouldShowRentalZoomHint(
+            forVisibleMapRectHeight: height,
+            rentalLayerEnabled: application.mapRegionManager.isAnyRentalLayerShowing
+        ))
     }
 
     /// Fans out an alert action to the concrete side effect. Kept as its own
@@ -673,7 +703,7 @@ extension MapPanelRootView {
     /// user (nearby stops); GPS outside frames the region (#615). The locate
     /// button still calls `centerOnUser()`.
     private func attemptInitialRecenter() {
-        guard needsInitialRecenter, mapSize != .zero else { return }
+        guard needsInitialRecenter, mapSize != .zero, !rentalsLinkHoldsCamera else { return }
         needsInitialRecenter = false
         applyLaunchCamera()
     }
@@ -760,6 +790,38 @@ extension MapPanelRootView {
         }
     }
 
+    /// The map buttons stay tappable while their own sheet is up, and a second tap
+    /// stacked an identical copy on the first.
+    private func pushUnlessOnTop(_ route: AppSheetRoute) {
+        let topRoute = coordinator.stackedRoutes.last ?? coordinator.routeStack.last
+        guard topRoute != route else { return }
+        coordinator.push(route)
+    }
+
+    /// Applies an `onebusaway://rentals` link, as `MapViewController.showPendingRentalsIfNeeded()`
+    /// does on the UIKit map. `Application` has already switched the rental layers on.
+    private func applyPendingRentalsFocus() {
+        guard let coordinate = application.claimPendingRentalsFocus() else { return }
+        rentalsLinkHoldsCamera = true
+        needsInitialRecenter = false
+        let region = RentalMapLayer.focusRegion(around: coordinate)
+        // Seeded before the animation for the same reason `centerOnUser` does it.
+        viewportRecorder.record(MKMapRect(region))
+        withAnimation {
+            cameraPosition = .region(region)
+        }
+    }
+
+    /// Same event and values as `MapViewController.presentLayerDetail(for:in:)`, so
+    /// rental engagement reads the same whichever map surface a rider is on.
+    private func reportRentalSelected(isCluster: Bool) {
+        application.analytics?.reportEvent(
+            pageURL: "app://localhost/bikeshare",
+            label: AnalyticsLabels.rentalVehicleSelected,
+            value: isCluster ? "cluster" : "vehicle"
+        )
+    }
+
     private func openSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
@@ -767,7 +829,7 @@ extension MapPanelRootView {
 
     private var moreButton: some View {
         MoreButton {
-            coordinator.push(.more)
+            pushUnlessOnTop(.more)
         }
         .padding(ThemeMetrics.controllerMargin)
         .padding(.top, pillHeight)
@@ -776,7 +838,7 @@ extension MapPanelRootView {
 
     private var myTripButton: some View {
         MyTripButton {
-            coordinator.push(.routePicker)
+            pushUnlessOnTop(.routePicker)
         }
         .padding(.leading, ThemeMetrics.controllerMargin)
         .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)

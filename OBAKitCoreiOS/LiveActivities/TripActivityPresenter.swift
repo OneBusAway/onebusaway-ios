@@ -109,6 +109,66 @@ public struct TripActivityPresenter {
         return color(for: first)
     }
 
+    // MARK: - Accessibility
+
+    /// One piece of the card's spoken label. Countdowns stay symbolic so the
+    /// view can render them as ticking `Text` — a label baked to a string at
+    /// render time would keep saying "8 minutes" until the next push.
+    public enum SpokenSegment: Equatable {
+        case text(String)
+        case countdown(Date)
+    }
+
+    /// The Live Activity card's VoiceOver label, in reading order: route,
+    /// headsign, the primary countdown, its clock time and adherence, then the
+    /// later departures and, last, the stale warning.
+    ///
+    /// The card is one element on purpose. Read child by child it was "8",
+    /// "Downtown", "3:26 PM, on time", "8m", "15m" — the minutes abbreviated so
+    /// VoiceOver said "meters", and nothing tying the route to its countdown.
+    public func accessibilitySegments(
+        staticData: TripAttributes.StaticData,
+        contentState: TripAttributes.ContentState,
+        isStale: Bool,
+        now: Date = Date()
+    ) -> [SpokenSegment] {
+        let upcoming = contentState.upcomingArrivals(now: now)
+        var segments: [SpokenSegment] = [
+            .text(formatters.accessibilityLabelForArrivalDeparture(routeAndHeadsign: staticData.routeShortName)),
+            .text(staticData.routeHeadsign)
+        ]
+
+        if let primary = upcoming.first {
+            segments.append(.countdown(primary.departureDate))
+            segments.append(.text(timeDisplay(for: primary).accessibilityTimeDescription))
+            segments.append(.text(deviationLabel(for: primary, now: now)))
+        }
+
+        let later = upcoming.dropFirst()
+        if !later.isEmpty {
+            segments.append(.text(OBALoc("live_activity.a11y_later_departures", value: "later departures", comment: "VoiceOver lead-in before the spoken list of the next departures on a Live Activity, e.g. '…, later departures, 15 minutes, 22 minutes'.")))
+            segments.append(contentsOf: later.map { .countdown($0.departureDate) })
+        }
+
+        if isStale {
+            segments.append(.text(LiveActivityStaleChrome.warningText))
+        }
+
+        return segments
+    }
+
+    /// The segments resolved to a string at `now`. Tests use this; so does
+    /// anything that can't tick.
+    public static func spokenString(_ segments: [SpokenSegment], now: Date) -> String {
+        segments.map { segment in
+            switch segment {
+            case .text(let text): text
+            case .countdown(let departure): TripCountdownFormatStyle.spoken(departure: departure).format(now)
+            }
+        }
+        .joined(separator: ", ")
+    }
+
     private func temporalState(minutes: Int) -> TemporalState {
         if minutes < 0 { return .past }
         if minutes == 0 { return .present }

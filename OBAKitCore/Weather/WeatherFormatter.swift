@@ -107,15 +107,26 @@ public enum WeatherFormatter {
 
     // MARK: - Wind
 
-    /// API delivers km/h; convert to mph for US/UK locales.
+    /// API delivers km/h; convert to mph for US/UK locales. The unit is chosen
+    /// explicitly (MeasurementFormatter's own preference does not reliably pick
+    /// mph for en_GB) and `.providedUnit` keeps it, but the number and unit
+    /// symbol are the locale's — "10 km/h", "10 км/ч", "10公里/小时".
     public static func formatWindSpeed(_ kmh: Double, locale: Locale) -> String {
+        let speed = Measurement(value: kmh, unit: UnitSpeed.kilometersPerHour)
+        let display: Measurement<UnitSpeed>
         switch locale.measurementSystem {
         case .us, .uk:
-            let mph = kmh / 1.60934
-            return "\(Int(mph)) mph"
+            display = speed.converted(to: .milesPerHour)
         default:
-            return "\(Int(kmh)) km/h"
+            display = speed
         }
+
+        let formatter = MeasurementFormatter()
+        formatter.locale = locale
+        formatter.unitOptions = .providedUnit
+        formatter.unitStyle = .medium
+        formatter.numberFormatter.maximumFractionDigits = 0
+        return formatter.string(from: display)
     }
 
     // MARK: - Time

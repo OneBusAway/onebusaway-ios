@@ -6,9 +6,13 @@
 
 /********** Uncategorized **********/
 
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "Pokaż swoją lokalizację na mapie";
+/* Shown when a nearby (proximity) alert asks for Always location access. Opens with the When In Use sentence, then names the background use. */
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Zobacz, gdzie jesteś względem komunikacji miejskiej, i łatwiej się poruszaj. Powiadomienia o zbliżaniu korzystają z Twojej lokalizacji także w tle, aby dać Ci znać, gdy zbliżasz się do wybranego przystanku — nawet gdy aplikacja jest zamknięta.";
 
 "NSLocationWhenInUseUsageDescription" = "Pokaż swoją lokalizację na mapie";
+
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "Zobacz, gdzie jesteś względem transportu publicznego, i łatwiej się przemieszczaj.";
 
 /* Purpose string shown when the app requests HealthKit access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "Wykorzystuje Twoją prędkość chodzenia lub jazdy rowerem z aplikacji Zdrowie, aby dokładniej szacować godziny przyjazdu.";

@@ -1,0 +1,29 @@
+/*
+ * App Intents strings. Hand-maintained: scripts/extract_strings (genstrings -s OBALoc)
+ * does not read LocalizedStringResource, so it neither adds nor removes these keys.
+ * Siri and Shortcuts resolve them out of process from this bundle's Metadata.appintents.
+ */
+
+/* App Intents: type name of a bookmarked trip in Shortcuts and Siri. Singular noun. */
+"bookmark_entity.type_name" = "Segnalibro";
+
+/* App Intents: label of the bookmark parameter on the Track Bookmark and Next Departures actions. */
+"bookmark_entity.parameter_title" = "Segnalibro";
+
+/* App Intents: name of the Shortcuts action that answers when a bookmarked trip departs next. */
+"next_departures_intent.title" = "Prossime partenze";
+
+/* App Intents: description of the Next Departures action in Shortcuts. Siri speaks the answer. */
+"next_departures_intent.description" = "Ascolta quando parte il prossimo viaggio salvato nei segnalibri.";
+
+/* App Shortcuts: short tile label for Next Departures in Shortcuts and Spotlight. */
+"next_departures_intent.short_title" = "Prossime partenze";
+
+/* App Intents: name of the Shortcuts action that starts a Live Activity for a bookmarked trip. */
+"track_bookmark_intent.title" = "Traccia segnalibro";
+
+/* App Intents: description of the Track Bookmark action in Shortcuts. */
+"track_bookmark_intent.description" = "Avvia un'attività in tempo reale per un viaggio salvato nei segnalibri.";
+
+/* App Shortcuts: short tile label for Track Bookmark in Shortcuts and Spotlight. */
+"track_bookmark_intent.short_title" = "Traccia segnalibro";

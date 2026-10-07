@@ -79,6 +79,31 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             selectedGroupTag: viewModel.initialGroupID?.uuidString ?? "",
             showInTodayViewTag: viewModel.initialIsFavorite
         ])
+
+        configureStopIDRowAccessibility()
+    }
+
+    /// A disabled TextRow reads to VoiceOver as a dimmed text field, which says
+    /// neither that it can be activated nor what that does. Present it as one
+    /// button instead: "Stop ID, 1_75403, button", with a hint.
+    ///
+    /// Attached here rather than in `stopIDSection`'s lazy initializer, where the
+    /// compiler rejects a `cellUpdate` closure touching the cell: "default
+    /// argument cannot be both main actor-isolated and @concurrent".
+    private func configureStopIDRowAccessibility() {
+        guard let row = form.rowBy(tag: stopIDTag) as? TextRow else { return }
+        row.cellUpdate { cell, row in
+            cell.isAccessibilityElement = true
+            cell.accessibilityLabel = row.title
+            cell.accessibilityValue = row.value
+            cell.accessibilityTraits = .button
+            cell.accessibilityHint = OBALoc(
+                "edit_bookmark_controller.stop_id_row.accessibility_hint",
+                value: "Copies the stop ID.",
+                comment: "VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID."
+            )
+        }
+        row.updateCell()
     }
 
     /// The `Form` section that contains the Bookmark Name `TextRow`.
@@ -120,11 +145,12 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             $0.onCellSelection { [weak self] _, row in
                 guard let self else { return }
                 UIPasteboard.general.string = self.viewModel.stopID
-                row.value = OBALoc(
+                let confirmation = OBALoc(
                     "clipboard.copied_text_confirmation",
                     value: "Copied to clipboard",
                     comment: "This is displayed to confirm that something has been copied to clipboard."
                 )
+                row.value = confirmation
                 row.reload()
 
                 // Look up by tag after sleep — capturing Eureka's `row` across
@@ -132,6 +158,9 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
                 let tag = self.stopIDTag
                 let stopID = self.viewModel.stopID
                 Task { @MainActor [weak self] in
+                    // The confirmation replaces the row's value, which VoiceOver
+                    // doesn't re-read on its own.
+                    AccessibilityAnnouncement.post(confirmation)
                     try? await Task.sleep(for: .seconds(2))
                     guard let row = self?.form.rowBy(tag: tag) as? TextRow else { return }
                     row.value = stopID

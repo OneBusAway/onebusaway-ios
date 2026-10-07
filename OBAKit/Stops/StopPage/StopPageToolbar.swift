@@ -222,6 +222,9 @@ struct StopPageToolbar: View {
                 .modifier(FrostedCapsuleBackground())
         }
         .accessibilityLabel(Strings.more)
+        .accessibilityShowsLargeContentViewer {
+            Label(Strings.more, systemImage: "ellipsis")
+        }
     }
 
     // MARK: - Item Building
@@ -239,6 +242,11 @@ struct StopPageToolbar: View {
         .buttonStyle(FrostedActionButtonStyle())
         .accessibilityLabel(accessibilityLabel ?? title)
         .accessibilityValue(accessibilityValue ?? "")
+        // The glyph is a fixed 18pt and the caption shrinks to fit its slot, so
+        // at large text sizes a long-press shows the item enlarged instead.
+        .accessibilityShowsLargeContentViewer {
+            Label(title, systemImage: systemImage)
+        }
     }
 
     /// Icon above label, the shape the mockup calls for and the shape a tab-bar-adjacent strip

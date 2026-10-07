@@ -62,7 +62,10 @@ nonisolated enum NextDeparturesSummary {
         guard !later.isEmpty else { return sentence }
 
         let laterFmt = OBALoc("next_departures_intent.later_departures_fmt", value: "Then %@.", comment: "Siri response listing the departures after the next one. {List of 'in X minutes'}")
-        return sentence + " " + String(format: laterFmt, ListFormatter.localizedString(byJoining: later))
+        let laterSentence = String(format: laterFmt, ListFormatter.localizedString(byJoining: later))
+        // Not `sentence + " " + …`: Chinese runs sentences together after "。".
+        let joinFmt = OBALoc("next_departures_intent.sentences_join_fmt", value: "%1$@ %2$@", comment: "Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none.")
+        return String(format: joinFmt, sentence, laterSentence)
     }
 
     static func relativeTime(minutes: Int) -> String {

@@ -13,6 +13,10 @@ struct SearchListRowView: View {
 
     private let brandColor = Color(uiColor: ThemeColors.shared.brand)
 
+    /// Icon sizes below are design points at the default text size; this scales
+    /// them with Dynamic Type so the glyphs keep pace with the row's text.
+    @ScaledMetric(relativeTo: .body) private var iconScale: CGFloat = 1
+
     var body: some View {
         switch row.kind {
         case .loading:
@@ -40,10 +44,11 @@ struct SearchListRowView: View {
                 labelStack()
                 Spacer()
                 if row.accessory == .disclosureIndicator {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.forward")
                         .font(.footnote)
                         .fontWeight(.semibold)
                         .foregroundStyle(brandColor)
+                        .accessibilityHidden(true) // the button trait already says it acts
                 }
             }
             .contentShape(.rect)
@@ -90,7 +95,7 @@ struct SearchListRowView: View {
 
     private var retryBadge: some View {
         Image(systemName: "arrow.clockwise")
-            .font(.system(size: 14, weight: .bold))
+            .font(.system(size: 14 * iconScale, weight: .bold))
             .foregroundStyle(brandColor)
             .padding(8)
             .background(brandColor.opacity(0.1))
@@ -118,6 +123,7 @@ struct SearchListRowView: View {
             HStack(spacing: 12) {
                 if let icon = row.icon, case let .system(name) = icon {
                     Image(systemName: name)
+                        .accessibilityHidden(true)
                 }
                 if let title = row.title {
                     Text(title)
@@ -129,20 +135,24 @@ struct SearchListRowView: View {
 
     // MARK: - Shared Subviews
 
-    @ViewBuilder
+    /// Decorative in every row: the title says what the row is, and a stock
+    /// SF Symbol name ("mappin", "magnifyingglass") spoken ahead of it is noise.
     private var leadingIcon: some View {
-        if let icon = row.icon {
-            switch row.kind {
-            case .placemark:
-                badgedIcon(icon, size: 32, imagePadding: 14)
-            case .quickSearch, .recentStop, .bookmark, .searchResult:
-                badgedIcon(icon, size: 24, imagePadding: 8)
-            case .error:
-                plainIcon(icon, size: 20, tint: .orange)
-            case .clearRecents, .loading, .noResults:
-                plainIcon(icon)
+        Group {
+            if let icon = row.icon {
+                switch row.kind {
+                case .placemark:
+                    badgedIcon(icon, size: 32, imagePadding: 14)
+                case .quickSearch, .recentStop, .bookmark, .searchResult:
+                    badgedIcon(icon, size: 24, imagePadding: 8)
+                case .error:
+                    plainIcon(icon, size: 20, tint: Color(uiColor: ThemeColors.shared.warningText))
+                case .clearRecents, .loading, .noResults:
+                    plainIcon(icon)
+                }
             }
         }
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -176,14 +186,14 @@ struct SearchListRowView: View {
     private func badgedIcon(_ icon: SearchListRow.Icon, size: CGFloat, imagePadding: CGFloat = 0) -> some View {
         iconImage(icon, size: size, padding: imagePadding)
             .foregroundStyle(.white)
-            .frame(width: size, height: size)
+            .frame(width: size * iconScale, height: size * iconScale)
             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8))
     }
 
     /// Plain icon — status rows, loading, and error.
     @ViewBuilder
     private func plainIcon(_ icon: SearchListRow.Icon, size: CGFloat = 16, tint: Color = .secondary) -> some View {
-        let frameSize = max(size, 32)
+        let frameSize = max(size, 32) * iconScale
         iconImage(icon, size: size)
             .frame(width: frameSize, height: frameSize)
             .foregroundStyle(tint)
@@ -195,11 +205,11 @@ struct SearchListRowView: View {
         switch icon {
         case .system(let name):
             Image(systemName: name)
-                .font(.system(size: size - padding, weight: .medium))
+                .font(.system(size: (size - padding) * iconScale, weight: .medium))
         case .uiImage(let image):
             Image(uiImage: image)
                 .resizable()
-                .frame(width: size - padding, height: size - padding)
+                .frame(width: (size - padding) * iconScale, height: (size - padding) * iconScale)
                 .scaledToFit()
         }
     }

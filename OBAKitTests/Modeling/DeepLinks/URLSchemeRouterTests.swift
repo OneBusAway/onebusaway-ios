@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import Foundation
 import Testing
 @testable import OBAKitCore
@@ -770,6 +771,60 @@ final class URLSchemeRouterTests {
         #expect(data?.obaURL.absoluteString == "https://oba.example.com")
         #expect(data?.sidecarURL?.absoluteString == "https://obaco.example.com/api?a=1&b=2")
         #expect(data?.umamiAnalytics?.id == "site-uuid-123")
+    }
+
+    // MARK: - Rentals URL Tests
+
+    @Test func `Decode URL type view rentals decodes a valid coordinate`() {
+        let url = URL(string: "onebusaway://rentals?lat=47.6097&lon=-122.3422")!
+
+        guard case .viewRentals(let coordinate)? = router.decodeURLType(from: url) else {
+            Issue.record("Expected viewRentals URLType")
+            return
+        }
+        #expect(coordinate.latitude == 47.6097)
+        #expect(coordinate.longitude == -122.3422)
+    }
+
+    @Test func `Encode view rentals round trips`() {
+        let url = router.encodeViewRentals(coordinate: CLLocationCoordinate2D(latitude: 47.6097, longitude: -122.3422))
+        #expect(url.scheme == "onebusaway")
+        #expect(url.host == "rentals")
+
+        guard case .viewRentals(let coordinate)? = router.decodeURLType(from: url) else {
+            Issue.record("Expected viewRentals URLType")
+            return
+        }
+        #expect(coordinate.latitude == 47.6097)
+        #expect(coordinate.longitude == -122.3422)
+    }
+
+    /// Boundary values are on the globe and must decode.
+    @Test func `Decode URL type view rentals accepts the poles and antimeridian`() {
+        let url = URL(string: "onebusaway://rentals?lat=-90&lon=180")!
+        guard case .viewRentals? = router.decodeURLType(from: url) else {
+            Issue.record("Expected viewRentals URLType")
+            return
+        }
+    }
+
+    /// A malformed link is not a rentals link: nil, so the app ignores it instead
+    /// of flying the map to (0, 0) or to a coordinate MapKit would reject.
+    @Test(arguments: [
+        "onebusaway://rentals",
+        "onebusaway://rentals?lat=47.6",
+        "onebusaway://rentals?lon=-122.3",
+        "onebusaway://rentals?lat=&lon=-122.3",
+        "onebusaway://rentals?lat=abc&lon=-122.3",
+        "onebusaway://rentals?lat=91&lon=-122.3",
+        "onebusaway://rentals?lat=-90.5&lon=-122.3",
+        "onebusaway://rentals?lat=47.6&lon=180.1",
+        "onebusaway://rentals?lat=nan&lon=-122.3",
+        "onebusaway://rentals?lat=47.6&lon=inf"
+    ])
+    func `Decode URL type view rentals rejects invalid coordinates`(link: String) {
+        let url = URL(string: link)!
+        #expect(router.decodeURLType(from: url) == nil)
     }
 
     @Test func `Decode URL type add region raw string unencoded ampersand truncates`() {

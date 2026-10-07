@@ -43,7 +43,7 @@ class MapViewController: UIViewController,
 
         hover.stackView.addArrangedSubview(HoverBarSeparator())
         hover.stackView.addArrangedSubview(toggleMapTypeButton)
-        setMapTypeButtonImage(toggleMapTypeButton, mapType: viewModel.mapType)
+        updateMapTypeButton(mapType: viewModel.mapType)
 
         if application.features.obaco == .running {
             hover.stackView.addArrangedSubview(HoverBarSeparator())
@@ -52,6 +52,8 @@ class MapViewController: UIViewController,
 
         hover.stackView.addArrangedSubview(HoverBarSeparator())
         hover.stackView.addArrangedSubview(myTripButton)
+
+        configureLargeContentViewer(on: hover, buttons: [locationButton, toggleMapTypeButton, weatherButton, myTripButton])
 
         return hover
     }()
@@ -210,7 +212,7 @@ class MapViewController: UIViewController,
         viewModel.start()
         updateVoiceover()
         showMapLayersTipIfNeeded()
-        showLaunchRouteIfNeeded()
+        showExternallyRequestedContent()
         Task { @MainActor [weak viewModel] in await viewModel?.checkForSurveyPrompt() }
     }
 
@@ -353,7 +355,9 @@ class MapViewController: UIViewController,
     // MARK: - Status View Handlers
 
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
-        if viewModel.showZoomWarning {
+        // The stops zoom target (~1 km tall) is inside the rental window too, so
+        // one zoom serves both hints.
+        if viewModel.showZoomWarning || viewModel.showRentalZoomHint {
             didTapZoomInForStops()
         } else {
             didTapMapStatus(sender)
@@ -451,13 +455,18 @@ class MapViewController: UIViewController,
         // See: https://github.com/OneBusAway/onebusaway-ios/issues/1344
         config.contentInsets.leading = 0
         config.contentInsets.trailing = 0
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+        let button = UIButton(configuration: config)
+        // The title can't grow past what fits in 42pt, so it stops at the largest
+        // non-accessibility size; beyond that the large content viewer (set up
+        // with the toolbar) shows it full size. The font has to be built against
+        // the button's own traits — `preferredFont(forTextStyle:)` alone reads the
+        // app-wide size and ignores this cap.
+        button.maximumContentSizeCategory = .extraExtraExtraLarge
+        button.configuration?.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { [weak button] incoming in
             var outgoing = incoming
-            outgoing.font = UIFont.preferredFont(forTextStyle: .body).bold
+            outgoing.font = UIFont.preferredFont(forTextStyle: .body, compatibleWith: button?.traitCollection).bold
             return outgoing
         }
-
-        let button = UIButton(configuration: config)
         // No `adjustsFontSizeToFitWidth` here, deliberately. Autoshrink only acts
         // on a label pinned to one line, and a `UIButton.Configuration` title is
         // not — so setting it shrinks nothing while reading as though the width
@@ -498,6 +507,8 @@ class MapViewController: UIViewController,
                 config.title = display.buttonTitle
                 weatherButton.configuration = config
                 weatherButton.accessibilityValue = display.buttonAccessibilityValue
+                weatherButton.largeContentTitle = display.buttonTitle
+                weatherButton.largeContentImage = config.image
                 weatherButton.isHidden = false
             } else {
                 weatherButton.isHidden = true
@@ -559,7 +570,7 @@ class MapViewController: UIViewController,
     public lazy var toggleMapTypeButton: UIButton = {
         let button = UIButton(type: .system)
         button.addTarget(self, action: #selector(toggleMapType), for: .touchUpInside)
-        button.accessibilityLabel = OBALoc("map_controller.map_type.accessibility_label", value: "Map type", comment: "Voiceover text indicating that this button toggles the base map type.")
+        button.accessibilityLabel = MapTypeButtonPresentation.accessibilityLabel
 
         button.addSubview(mapLayerBadge)
         NSLayoutConstraint.activate([
@@ -576,14 +587,19 @@ class MapViewController: UIViewController,
     /// lever for the Map sheet: layer state is readable without opening anything.
     lazy var mapLayerBadge: UILabel = {
         let label = UILabel.autolayoutNew()
-        label.font = .systemFont(ofSize: 10, weight: .bold)
-        label.textColor = .white
+        // Scales with Dynamic Type, capped where a digit still fits the badge on
+        // a 42pt button; the large content viewer covers the sizes beyond.
+        label.font = UIFontMetrics(forTextStyle: .caption2).scaledFont(for: .systemFont(ofSize: 10, weight: .bold), maximumPointSize: 13)
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = MapTypeButtonPresentation.badgeTextColor
         label.textAlignment = .center
         label.backgroundColor = ThemeColors.shared.brand
         label.layer.cornerRadius = 7.5
         label.layer.masksToBounds = true
         label.isHidden = true
         label.isUserInteractionEnabled = false
+        // The count is folded into the button's accessibility value instead.
+        label.isAccessibilityElement = false
         return label
     }()
 
@@ -591,16 +607,6 @@ class MapViewController: UIViewController,
     /// standard/hybrid toggle as its basemap tiles.
     @objc private func toggleMapType() {
         presentMapSheet()
-    }
-
-    private func setMapTypeButtonImage(_ button: UIButton, mapType: MapBaseType) {
-        if mapType == .standard {
-            button.setImage(UIImage(systemName: "map"), for: .normal)
-            button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "standard", comment: "Voiceover text indicating the current map type as the standard base map.")
-        } else {
-            button.setImage(UIImage(systemName: "globe"), for: .normal)
-            button.accessibilityValue = OBALoc("map_controller.map_type.hybrid.accessibility_value", value: "hybrid", comment: "Voiceover text indicating the current map type as the hybrid base map (satellite view with labels).")
-        }
     }
 
     // MARK: - Map Layers
@@ -1021,8 +1027,13 @@ class MapViewController: UIViewController,
         return appearance
     }
 
-    func createSemiModalPanel(childController: UIViewController) -> FloatingPanelController {
-        let panel = FloatingPanelController()
+    /// `OBAFloatingPanelController` rather than a plain `FloatingPanelController`
+    /// for its grabber: a labelled element with Expand and Collapse actions, the
+    /// only way a VoiceOver or Switch Control user can resize the card. No
+    /// delegate — `MapViewController`'s delegate methods are written for the main
+    /// map panel and would impose its layout here.
+    func createSemiModalPanel(childController: UIViewController) -> OBAFloatingPanelController {
+        let panel = OBAFloatingPanelController(application, delegate: nil)
         panel.surfaceView.appearance = createFloatingPanelSurfaceAppearance()
 
         // Set a content view controller.
@@ -1051,7 +1062,7 @@ class MapViewController: UIViewController,
         semiModalPanel?.removePanelFromParent(animated: false)
 
         let panel = createSemiModalPanel(childController: childController)
-        panel.addPanel(toParent: self)
+        addSemiModalPanel(panel)
 
         semiModalPanel = panel
     }
@@ -1193,7 +1204,7 @@ class MapViewController: UIViewController,
             }
         )
         let semiModal = createSemiModalPanel(childController: mapItemController)
-        semiModal.addPanel(toParent: self)
+        addSemiModalPanel(semiModal)
         self.semiModalMapItemController = semiModal
     }
 
@@ -1303,7 +1314,7 @@ class MapViewController: UIViewController,
         } else {
             let placemark = MKPlacemark(coordinate: userPin.coordinate)
             let mapItem = MKMapItem(placemark: placemark)
-            mapItem.name = userPin.title ?? "Dropped Pin"
+            mapItem.name = userPin.title ?? UserDroppedPin.defaultTitle
             displayMapItemController(mapItem, userPin: userPin)
         }
     }
@@ -1389,7 +1400,7 @@ class MapViewController: UIViewController,
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
         // EC6: Update ViewModel so both UIKit and future SwiftUI consumers share the same state.
-        viewModel.updateZoomWarning(showStatus)
+        viewModel.updateZoomWarnings(stops: showStatus, rentals: manager.rentalZoomHintStatus)
     }
 
     // MARK: Loading Indicator
@@ -1433,7 +1444,9 @@ class MapViewController: UIViewController,
 
     // MARK: - LocationServiceDelegate
 
-    private var initialMapChangeMade = false
+    /// Internal so `showPendingRentalsIfNeeded()` can latch it: a deep-linked
+    /// camera must not be yanked to the device by the next GPS fix.
+    var initialMapChangeMade = false
 
     private var promptUserOnRegionMismatch = true
 
@@ -1566,6 +1579,17 @@ private extension MapViewController {
                 self.renderMapStatus()
             }
             .store(in: &cancellables)
+
+        viewModel.$showRentalZoomHint
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.renderMapStatus()
+            }
+            .store(in: &cancellables)
+
+        // Not a status binding, but `viewDidLoad`'s other observers live in the class
+        // body, which is at SwiftLint's `type_body_length` limit.
+        application.notificationCenter.addObserver(self, selector: #selector(rentalsDeepLinkPending(_:)), name: .rentalsDeepLinkPending, object: nil)
     }
 
     func bindMapType() {
@@ -1586,7 +1610,7 @@ private extension MapViewController {
                 if isShowingTripPlannerMap {
                     tripPlannerMapView.mapType = mapType.mkMapType
                 }
-                setMapTypeButtonImage(toggleMapTypeButton, mapType: mapType)
+                updateMapTypeButton(mapType: mapType)
             }
             .store(in: &cancellables)
     }
@@ -1597,9 +1621,11 @@ private extension MapViewController {
         // top of the route lines the sheet came up to show, to tell the rider about
         // stops they are no longer looking for. Location warnings still surface —
         // those are actionable, and tapping the pill is how you act on them.
+        // The rental hint follows the same rule, for the same reason.
         mapStatusView.configure(
             for: locationState,
-            zoomInStatus: viewModel.showZoomWarning && stopSheetStopID == nil
+            zoomInStatus: viewModel.showZoomWarning && stopSheetStopID == nil,
+            rentalZoomInStatus: viewModel.showRentalZoomHint && stopSheetStopID == nil
         )
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
         layoutMapMargins()

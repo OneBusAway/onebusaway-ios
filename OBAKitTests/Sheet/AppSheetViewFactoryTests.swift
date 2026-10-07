@@ -317,13 +317,13 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
     // MARK: - Rental "plan a trip using this vehicle"
 
-    /// The rental sheets plan a trip *through* the vehicle: it becomes a via
-    /// point with the mode pinned to `.transitBikeRental`, matching
-    /// `MapViewController.rentalLayer(planTripUsing:)` on the UIKit surface.
-    /// Routing *to* the vehicle would be the wrong trip — a rider wants to ride
-    /// it onward, not arrive at it.
+    /// The rental sheets plan a trip *starting at* the vehicle in bike-rental mode,
+    /// matching `MapViewController.rentalLayer(planTripUsing:)` on the UIKit surface.
+    /// That is what rents it on Puget Sound's server; the old via point with
+    /// `.transitBikeRental` never produced a rental leg. Routing *to* the vehicle
+    /// would be the wrong trip too — a rider wants to ride it onward.
     @Test @MainActor
-    func `Rental plan trip handler pushes the vehicle as a via point in bike rental mode`() throws {
+    func `Rental plan trip handler pushes the vehicle as the origin in bike rental mode`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         #expect(application.regionsService.currentRegion?.supportsOTP == true)
 
@@ -339,9 +339,11 @@ final class AppSheetViewFactoryTests: OBATestCase {
             Issue.record("Expected .tripPlanner stacked, got \(String(describing: coordinator.stackedRoutes.last))")
             return
         }
-        #expect(request.transportMode == .transitBikeRental)
-        #expect(request.viaPoint?.latitude == rental.coordinate.latitude)
-        #expect(request.viaPoint?.longitude == rental.coordinate.longitude)
+        #expect(request.transportMode == .bikeRental)
+        #expect(request.origin?.placemark.coordinate.latitude == rental.coordinate.latitude)
+        #expect(request.origin?.placemark.coordinate.longitude == rental.coordinate.longitude)
+        #expect(request.origin?.name == rental.displayLabel)
+        #expect(request.viaPoint == nil)
         // The vehicle is not the destination — that field stays open for the rider.
         #expect(request.destination == nil)
     }
@@ -354,6 +356,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
     /// store, and doing that mid-suite takes 17 unrelated suites down with it.
     @Test @MainActor
     func `Rental trip planning is offered only when the region has an OTP server`() {
+        let userDataStore = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name)).userDataStore
         let noOTPRegion = Region(
             name: "No OTP Region",
             OBABaseURL: URL(string: "http://example.com")!,
@@ -365,9 +368,21 @@ final class AppSheetViewFactoryTests: OBATestCase {
             contactEmail: "test@example.com"
         )
 
-        #expect(AppSheetViewFactory.offersTripPlanning(in: noOTPRegion) == false)
-        #expect(AppSheetViewFactory.offersTripPlanning(in: nil) == false)
-        #expect(AppSheetViewFactory.offersTripPlanning(in: Fixtures.pugetSoundRegion))
+        #expect(AppSheetViewFactory.offersTripPlanning(in: noOTPRegion, userDataStore: userDataStore) == false)
+        #expect(AppSheetViewFactory.offersTripPlanning(in: nil, userDataStore: userDataStore) == false)
+        #expect(AppSheetViewFactory.offersTripPlanning(in: Fixtures.pugetSoundRegion, userDataStore: userDataStore))
+    }
+
+    /// A rider who switched trip planning off for the region gets no button either:
+    /// the planner would only say "unavailable".
+    @Test @MainActor
+    func `Rental trip planning is not offered when the rider turned trip planning off`() {
+        let userDataStore = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name)).userDataStore
+        let region = Fixtures.pugetSoundRegion
+        userDataStore.setTripPlanningEnabled(false, for: region)
+        defer { userDataStore.setTripPlanningEnabled(true, for: region) }
+
+        #expect(AppSheetViewFactory.offersTripPlanning(in: region, userDataStore: userDataStore) == false)
     }
 
     // MARK: - Rental cluster drill-in
@@ -416,7 +431,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
             Issue.record("Expected .tripPlanner on top, got \(String(describing: coordinator.stackedRoutes.last))")
             return
         }
-        #expect(request.transportMode == .transitBikeRental)
-        #expect(request.viaPoint?.latitude == rental.coordinate.latitude)
+        #expect(request.transportMode == .bikeRental)
+        #expect(request.origin?.placemark.coordinate.latitude == rental.coordinate.latitude)
     }
 }

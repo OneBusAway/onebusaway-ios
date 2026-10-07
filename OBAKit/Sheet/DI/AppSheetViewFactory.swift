@@ -231,7 +231,12 @@ final class AppSheetViewFactory {
     /// gives: a failed request leaves the rider on the list they tapped.
     private func showRouteOnMap(_ route: Route) async {
         let router = searchResultRouter
-        guard let resolved = await router.resolve(result: route) else {
+        let stackAtTap = coordinator.routeStack + coordinator.stackedRoutes
+        let resolved = await router.resolve(result: route)
+        // The rider may have moved on while the route loaded; unwinding now would
+        // tear down whatever they opened instead.
+        guard !Task.isCancelled, coordinator.routeStack + coordinator.stackedRoutes == stackAtTap else { return }
+        guard let resolved else {
             if let error = router.lastError {
                 await application.displayError(error)
             }
@@ -252,10 +257,10 @@ final class AppSheetViewFactory {
                 staleAfter: layersModel.rentalStaleAfter,
                 userLocation: layersModel.rentalUserLocation,
                 onPlanTrip: planTripUsingRental,
-                onOpenURL: openRentalURL
+                onOpenLink: openRentalLink
             )
         } else {
-            rentalUnavailableView
+            rentalGoneView
         }
     }
 
@@ -263,7 +268,7 @@ final class AppSheetViewFactory {
     func rentalClusterView(memberIDs: [VehicleRental.ID]) -> some View {
         let rentals = layersModel.rentals(withIDs: memberIDs)
         if rentals.isEmpty {
-            rentalUnavailableView
+            rentalClusterGoneView
         } else {
             RentalClusterListView(
                 rentals: rentals,
@@ -272,7 +277,7 @@ final class AppSheetViewFactory {
                 userLocation: layersModel.rentalUserLocation,
                 onPlanTrip: planTripUsingRental,
                 onSelectRental: selectRentalFromCluster,
-                onOpenURL: openRentalURL
+                onOpenLink: openRentalLink
             )
         }
     }
@@ -294,28 +299,30 @@ final class AppSheetViewFactory {
         }
     }
 
-    /// Whether the rental sheets should offer trip planning at all.
+    /// Whether the rental sheets should offer trip planning at all: the same
+    /// predicate `TripPlannerSheetView` and the UIKit `showTripPlanner` gate on,
+    /// so the button never pushes a planner that can only say "unavailable".
     ///
     /// Split out from `planTripUsingRental` so the gate is testable against an
     /// arbitrary region. Driving it through `RegionsService` instead would mean
     /// writing a custom region to the shared on-disk regions store, which every
     /// `Application` in the test process reads — it takes down unrelated suites.
-    nonisolated static func offersTripPlanning(in region: Region?) -> Bool {
-        region?.supportsOTP == true
+    static func offersTripPlanning(in region: Region?, userDataStore: UserDataStore) -> Bool {
+        RentalTripPlan.isTripPlanningAvailable(region: region, userDataStore: userDataStore)
     }
 
-    /// Plans a trip *through* this vehicle rather than *to* it.
+    /// Plans a trip starting *at* this vehicle, in bike-rental mode — which is
+    /// what makes OTP rent it. See `RentalTripPlan`. Mirrors
+    /// `MapViewController.rentalLayer(planTripUsing:)` on the UIKit surface,
+    /// analytics event included.
     ///
-    /// The vehicle is a via point, not a destination: a rider wants to walk to
-    /// the bike, ride it, and carry on. OTP will not route through a via point
-    /// in a rental-only mode, which is why the mode is pinned to
-    /// `.transitBikeRental`. Mirrors `MapViewController.rentalLayer(planTripUsing:)`
-    /// on the UIKit surface, analytics event included.
-    ///
-    /// `nil` when the region has no OTP server, which hides the button rather
-    /// than disabling it — a dead primary action is worse than none.
+    /// `nil` when the region cannot open a trip planner, which hides the button
+    /// rather than disabling it — a dead primary action is worse than none.
     var planTripUsingRental: ((VehicleRental) -> Void)? {
-        guard AppSheetViewFactory.offersTripPlanning(in: application.regionsService.currentRegion) else {
+        guard AppSheetViewFactory.offersTripPlanning(
+            in: application.regionsService.currentRegion,
+            userDataStore: application.userDataStore
+        ) else {
             return nil
         }
 
@@ -326,29 +333,42 @@ final class AppSheetViewFactory {
                 value: rental.rentalNetwork?.networkId
             )
             coordinator.push(.tripPlanner(TripPlannerRequest(
-                viaPoint: rental.coordinate,
-                transportMode: .transitBikeRental
+                origin: RentalTripPlan.origin(for: rental),
+                transportMode: RentalTripPlan.transportMode
             )))
         }
     }
 
-    /// Opens a rental's deep link, falling back to the operator's web URL when
-    /// no installed app claims the scheme. Shared by both rental sheets, which
-    /// must behave identically — the cluster list is just a way of reaching the
-    /// same vehicle.
-    private var openRentalURL: (URL, URL?, String?) -> Void {
-        { [weak application] url, webFallback, _ in
-            guard let application else { return }
-            application.open(url, options: [:]) { success in
-                guard !success, let webFallback else { return }
-                application.open(webFallback, options: [:], completionHandler: nil)
-            }
+    /// Opens a rental's deep link through `RentalLinkOpener`, the same opener the
+    /// UIKit map uses — analytics and App Store fallback included. Shared by both
+    /// rental sheets, which must behave identically: the cluster list is just a
+    /// way of reaching the same vehicle.
+    private var openRentalLink: (RentalDeepLink.Target, String?) -> Void {
+        { [application, presentingController] target, networkID in
+            RentalLinkOpener.live(application: application, presenter: presentingController)
+                .open(target, networkID: networkID)
         }
     }
 
-    /// Shown when a rental route outlives the vehicle it points at — the feed
-    /// dropped it while the sheet was open.
-    private var rentalUnavailableView: some View {
+    /// Shown when a rental route outlives the vehicles it points at — the feed
+    /// dropped them while the sheet was open, most often because someone else
+    /// rented the vehicle. Distinct from the layer row's "Not available right
+    /// now", which is about the server; this is about the vehicle.
+    private var rentalGoneView: some View {
+        Text(OBALoc(
+            "map_layers.rental_gone",
+            value: "This vehicle is no longer available",
+            comment: "Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it"
+        ))
+        .font(.headline)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .padding()
+    }
+
+    /// The cluster counterpart: every member left the feed. Kept generic — the
+    /// single-vehicle message would contradict a "3 vehicles here" sheet.
+    private var rentalClusterGoneView: some View {
         Text(OBALoc(
             "map_layers.rental_unavailable",
             value: "Not available right now",

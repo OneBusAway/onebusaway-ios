@@ -183,13 +183,15 @@ class MapStatusView: UIView {
         self.configure(for: state(for: service), zoomInStatus: false)
     }
 
-    func configure(for state: LocationState, zoomInStatus: Bool) {
-        // The zoom-in warning wins over any permission state, matching the
-        // precedence in `MapViewModel.topPillState`. Both the SF Symbol names
-        // and the labels come from the shared `MapStatusIndicator`.
+    func configure(for state: LocationState, zoomInStatus: Bool, rentalZoomInStatus: Bool = false) {
+        // The zoom-in warnings win over any permission state, stops before
+        // rentals, matching the precedence in `MapViewModel.topPillState`. Both
+        // the SF Symbol names and the labels come from the shared `MapStatusIndicator`.
         let indicator: MapStatusIndicator?
         if zoomInStatus {
             indicator = .zoomInForStops
+        } else if rentalZoomInStatus {
+            indicator = .zoomInForRentals
         } else {
             switch state {
             case .locationServicesUnavailable, .locationServicesOff, .notDetermined:

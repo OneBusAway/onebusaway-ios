@@ -38,7 +38,14 @@ enum VehicleCoordinateUpdate {
     /// GPS jitter below this is not worth restarting an in-flight animation.
     static let ignoreBelowMeters: CLLocationDistance = 2
 
-    static func decision(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Decision {
+    /// - Parameter reduceMotion: With Reduce Motion on, a hop that would glide
+    ///   snaps instead — the marker moving on its own across the map every poll
+    ///   is exactly the motion that setting asks to remove.
+    static func decision(
+        from: CLLocationCoordinate2D,
+        to: CLLocationCoordinate2D,
+        reduceMotion: Bool = UIAccessibility.isReduceMotionEnabled
+    ) -> Decision {
         guard CLLocationCoordinate2DIsValid(from), CLLocationCoordinate2DIsValid(to) else {
             return .snap
         }
@@ -48,7 +55,7 @@ enum VehicleCoordinateUpdate {
 
         let meters = from.distance(from: to)
         if meters < ignoreBelowMeters { return .unchanged }
-        if meters > snapBeyondMeters { return .snap }
+        if meters > snapBeyondMeters || reduceMotion { return .snap }
         return .animate(duration: animationDuration)
     }
 
