@@ -14,7 +14,7 @@ import UIKit
  * The manager works like a navigation controller. You can push new items to the stack to display them,
  * and pop existing ones to go back.
  *
- * You must call the `prepare` method before displaying the view controller.
+ * `showBulletin(above:)` prepares the interface itself; interact with the bulletin only while it is shown.
  *
  * `BLTNItemManager` is main-actor isolated.
  */
@@ -81,7 +81,7 @@ import UIKit
     /**
      * The rounded corner radius of the bulletin card. Defaults to 12, and 36 on iPhone X.
      *
-     * Set this value before calling `prepare`. Changing it after will have no effect.
+     * Set this value before presenting the bulletin. Changing it after will have no effect.
      */
 
     @objc var cardCornerRadius: NSNumber?
@@ -404,8 +404,8 @@ extension BLTNItemManager {
     }
 
     /**
-     * Dismisses the bulletin and clears the current page. You will have to call `prepare` before
-     * presenting the bulletin again.
+     * Dismisses the bulletin and clears the current page. Calling it again before the bulletin is
+     * shown again does nothing.
      *
      * This method will call the `dismissalHandler` block of the current item if it was set.
      *
@@ -584,8 +584,12 @@ extension BLTNItemManager {
     /// Whether `controller` is still the one this manager is presenting, i.e.
     /// the bulletin has not been dismissed (or re-shown) since a transition
     /// for it began.
+    ///
+    /// `isPrepared` turns `false` as soon as a dismissal starts, while
+    /// `bulletinController` lingers until it finishes; without it a transition
+    /// ending during the dismissal animation would display the torn-down item.
     private func isPresenting(_ controller: BulletinViewController) -> Bool {
-        controller === bulletinController
+        isPrepared && controller === bulletinController
     }
 
     /// Creates the middle phase of an item change: swaps which arranged
@@ -651,7 +655,9 @@ extension BLTNItemManager {
             // the stack, and the item is no longer on screen to display.
             guard self.isPresenting(controller) else { return }
 
-            controller.isDismissable = self.currentItem.isDismissable && !showActivityIndicator
+            // Read live, not the captured `showActivityIndicator`: an indicator
+            // shown mid-transition has disabled dismissal, and must stay so.
+            controller.isDismissable = self.currentItem.isDismissable && !self.shouldDisplayActivityIndicator
 
             if elementsChanged {
 
@@ -715,7 +721,7 @@ extension BLTNItemManager {
 extension BLTNItemManager {
 
     fileprivate func assertIsPrepared() {
-        precondition(isPrepared, "You must call the `prepare` function before interacting with the bulletin.")
+        precondition(isPrepared, "The bulletin must be shown before interacting with it.")
     }
 
 }

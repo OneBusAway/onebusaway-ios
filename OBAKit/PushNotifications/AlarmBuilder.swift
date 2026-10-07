@@ -94,7 +94,7 @@ class AlarmBuilder: NSObject {
 
     // MARK: - Alarm Creation
 
-    /// `true` from the moment a request starts until its card is dismissed.
+    /// `true` from the moment a request starts until it finishes and the card starts dismissing.
     /// Add Alarm stays live while the request is in flight, so without this a
     /// second tap posted a duplicate alarm.
     private var isCreatingAlarm = false
