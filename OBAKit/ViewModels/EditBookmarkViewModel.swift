@@ -55,7 +55,7 @@ enum DuplicateBookmarkDecision {
 
 /// Shared ViewModel for creating and editing a single bookmark.
 ///
-/// Owns: initial form field values, the live list of bookmark groups, duplicate
+/// Owns: the form's state (name, Today View switch, group), the groups offered, duplicate
 /// detection against the data store, and bookmark persistence (including the
 /// `addBookmark` analytics event for new trip bookmarks).
 @MainActor
@@ -75,7 +75,7 @@ final class EditBookmarkViewModel {
 
     /// The groups offered in the picker, in display order. Refreshed when the
     /// rider adds one, since `BookmarkGroup` isn't observable.
-    private(set) var groups: [BookmarkGroup] = []
+    private(set) var groups: [BookmarkGroup]
 
     // MARK: - Static Context
 
@@ -89,25 +89,9 @@ final class EditBookmarkViewModel {
     /// Used as the fallback when the user leaves the name field empty.
     private let dataObjectName: String
 
-    /// Pre-filled initial value for the bookmark name field.
-    let initialName: String
-
-    /// UUID of the initially selected group, or `nil` for (No Group).
-    let initialGroupID: UUID?
-
-    /// Initial value for the "Show in Today View" toggle.
-    let initialIsFavorite: Bool
-
     /// Stop ID used for arrivals-and-departures requests. Shown in the editor
     /// so a broken bookmark can be identified without trial-and-error deletes (#1421).
     let stopID: StopID
-
-    // MARK: - Live Data Access
-
-    /// The current list of bookmark groups from the data store. Re-read on every call.
-    var bookmarkGroups: [BookmarkGroup] {
-        application.userDataStore.bookmarkGroups
-    }
 
     // MARK: - Private
 
@@ -127,20 +111,17 @@ final class EditBookmarkViewModel {
         self.source = source
         self.mode = bookmark.map(Mode.edit) ?? .add
         self.dataObjectName = source.dataObjectName
-        self.initialName = bookmark?.name ?? source.dataObjectName
-        self.initialIsFavorite = bookmark?.isFavorite ?? true
-        self.initialGroupID = bookmark?.groupID
         self.stopID = bookmark?.stopID ?? source.stopID
+        self.name = bookmark?.name ?? source.dataObjectName
+        self.isFavorite = bookmark?.isFavorite ?? true
 
-        self.name = initialName
-        self.isFavorite = initialIsFavorite
-        self.selectedGroupID = initialGroupID
-        self.groups = bookmarkGroups
-        if bookmark != nil {
-            // The store's view, not `initialGroupID`: the rider may have moved
-            // the bookmark on another screen since it was handed to us.
-            self.selectedGroupID = currentGroupID()
-        }
+        let groups = application.userDataStore.bookmarkGroups
+        self.groups = groups
+        // The store's view of the bookmark's group, not `bookmark.groupID`: the
+        // rider may have moved it on another screen since it was handed to us.
+        // A group that no longer exists shows as (No Group).
+        let storedGroupID = bookmark.flatMap { application.userDataStore.findBookmark(id: $0.id)?.groupID }
+        self.selectedGroupID = groups.contains { $0.id == storedGroupID } ? storedGroupID : nil
     }
 
     // MARK: - Groups
@@ -150,22 +131,7 @@ final class EditBookmarkViewModel {
     func addGroup(named name: String) {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         application.userDataStore.upsert(bookmarkGroup: BookmarkGroup(name: name, sortOrder: Int.max))
-        groups = bookmarkGroups
-    }
-
-    // MARK: - Group Selection
-
-    /// Returns the data store's live view of which group currently contains the
-    /// bookmark being edited, or `nil` if ungrouped or in add mode. Distinct from
-    /// the cached `initialGroupID` captured at init time, which may be stale if
-    /// the user moved the bookmark in another screen.
-    func currentGroupID() -> UUID? {
-        guard case .edit(let bookmark) = mode else { return nil }
-        return application.userDataStore.bookmarkGroups
-            .first { group in
-                application.userDataStore.bookmarksInGroup(group).contains { $0.id == bookmark.id }
-            }?
-            .id
+        groups = application.userDataStore.bookmarkGroups
     }
 
     // MARK: - Save
@@ -173,8 +139,8 @@ final class EditBookmarkViewModel {
     /// Validates that a region is available and, in add mode, builds the `Bookmark`
     /// and checks for duplicates against the data store.
     ///
-    /// Does NOT mutate the existing bookmark or write to the data store. The
-    /// `name` form value is applied inside `persist`.
+    /// Does NOT mutate the existing bookmark or write to the data store; `name`
+    /// is applied inside `persist`.
     func prepareToSave(name: String) -> SaveOutcome {
         guard let region = application.currentRegion else { return .regionUnavailable }
 

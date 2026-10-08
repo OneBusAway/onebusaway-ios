@@ -45,7 +45,7 @@ class EditBookmarkViewController: UIHostingController<EditBookmarkView> {
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(close))
     }
 
-    @MainActor required dynamic init?(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
