@@ -7,12 +7,15 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import SwiftUI
 import UIKit
-import Eureka
 import OBAKitCore
 
 /// This view controller offers support for creating and editing bookmarks.
-class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
+///
+/// The form is `EditBookmarkView`; this controller owns the Save and Cancel
+/// buttons, the save-time alerts, and the delegate callbacks.
+class EditBookmarkViewController: UIHostingController<EditBookmarkView> {
     private let application: Application
     private let viewModel: EditBookmarkViewModel
     private weak var delegate: BookmarkEditorDelegate?
@@ -30,7 +33,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         self.delegate = delegate
         self.viewModel = EditBookmarkViewModel(application: application, source: source, bookmark: bookmark)
 
-        super.init(nibName: nil, bundle: nil)
+        super.init(rootView: EditBookmarkView(viewModel: viewModel))
 
         if viewModel.isAddMode {
             title = Strings.addBookmark
@@ -44,211 +47,6 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        loadForm()
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        refreshGroupSelection()
-    }
-
-    // MARK: - Eureka Form
-
-    private let selectedGroupTag = "groupTag"
-    private let bookmarkNameTag = "name"
-    private let showInTodayViewTag = "todayView"
-    private let stopIDTag = "stopID"
-
-    /// Creates, loads, and populates data in the Eureka Form object.
-    private func loadForm() {
-        form
-            +++ bookmarkNameSection
-            +++ stopIDSection
-            +++ showInTodayViewSection
-            +++ selectedBookmarkGroupSection
-            +++ addGroupSection
-
-        form.setValues([
-            bookmarkNameTag: viewModel.initialName,
-            stopIDTag: viewModel.stopID,
-            selectedGroupTag: viewModel.initialGroupID?.uuidString ?? "",
-            showInTodayViewTag: viewModel.initialIsFavorite
-        ])
-
-        configureStopIDRowAccessibility()
-    }
-
-    /// A disabled TextRow reads to VoiceOver as a dimmed text field, which says
-    /// neither that it can be activated nor what that does. Present it as one
-    /// button instead: "Stop ID, 1_75403, button", with a hint.
-    ///
-    /// Attached here rather than in `stopIDSection`'s lazy initializer, where the
-    /// compiler rejects a `cellUpdate` closure touching the cell: "default
-    /// argument cannot be both main actor-isolated and @concurrent".
-    private func configureStopIDRowAccessibility() {
-        guard let row = form.rowBy(tag: stopIDTag) as? TextRow else { return }
-        row.cellUpdate { cell, row in
-            cell.isAccessibilityElement = true
-            cell.accessibilityLabel = row.title
-            cell.accessibilityValue = row.value
-            cell.accessibilityTraits = .button
-            cell.accessibilityHint = OBALoc(
-                "edit_bookmark_controller.stop_id_row.accessibility_hint",
-                value: "Copies the stop ID.",
-                comment: "VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID."
-            )
-        }
-        row.updateCell()
-    }
-
-    /// The `Form` section that contains the Bookmark Name `TextRow`.
-    private lazy var bookmarkNameSection: Section = {
-        let title = OBALoc("edit_bookmark_controller.name_section.header_title", value: "Bookmark Name", comment: "Title of the Bookmark Name header.")
-        let section = Section(title)
-        section <<< TextRow {
-            $0.tag = bookmarkNameTag
-        }
-
-        return section
-    }()
-
-    /// Read-only stop ID so a failing bookmark can be matched to the API path (#1421).
-    private lazy var stopIDSection: Section = {
-        let footer = OBALoc(
-            "edit_bookmark_controller.stop_id_section.footer",
-            value: "Used when loading arrivals for this bookmark. Tap to copy.",
-            comment: "Footer under the Stop ID row on the Edit Bookmark screen."
-        )
-        let section = Section(
-            header: OBALoc(
-                "edit_bookmark_controller.stop_id_section.header_title",
-                value: "Stop ID",
-                comment: "Header above the read-only Stop ID on the Edit Bookmark screen."
-            ),
-            footer: footer
-        )
-
-        section <<< TextRow {
-            $0.tag = stopIDTag
-            $0.title = OBALoc(
-                "edit_bookmark_controller.stop_id_row.title",
-                value: "Stop ID",
-                comment: "Title of the read-only Stop ID row on the Edit Bookmark screen."
-            )
-            $0.value = viewModel.stopID
-            $0.disabled = true
-            $0.onCellSelection { [weak self] _, row in
-                guard let self else { return }
-                UIPasteboard.general.string = self.viewModel.stopID
-                let confirmation = OBALoc(
-                    "clipboard.copied_text_confirmation",
-                    value: "Copied to clipboard",
-                    comment: "This is displayed to confirm that something has been copied to clipboard."
-                )
-                row.value = confirmation
-                row.reload()
-
-                // Look up by tag after sleep — capturing Eureka's `row` across
-                // the await trips Swift 6 "sending risks data races".
-                let tag = self.stopIDTag
-                let stopID = self.viewModel.stopID
-                Task { @MainActor [weak self] in
-                    // The confirmation replaces the row's value, which VoiceOver
-                    // doesn't re-read on its own.
-                    AccessibilityAnnouncement.post(confirmation)
-                    try? await Task.sleep(for: .seconds(2))
-                    guard let row = self?.form.rowBy(tag: tag) as? TextRow else { return }
-                    row.value = stopID
-                    row.reload()
-                }
-            }
-        }
-
-        return section
-    }()
-
-    private lazy var showInTodayViewSection: Section = {
-        let section = Section()
-
-        section <<< SwitchRow(showInTodayViewTag) {
-            $0.tag = showInTodayViewTag
-            $0.title = OBALoc("edit_bookmark_controller.show_in_today_view_switch_title", value: "Show in Today View widget", comment: "Title next to the switch that toggles whether a bookmark will appear in the today view.")
-        }
-
-        return section
-    }()
-
-    /// The `Form` section that contains an 'Add Bookmark Group' button.
-    private lazy var addGroupSection: Section = {
-        let section = Section()
-        section <<< ButtonRow {
-            $0.title = OBALoc("edit_bookmark_controller.add_group_button_title", value: "Add Bookmark Group", comment: "Title of the button that lets the user add a new Bookmark Group.")
-            $0.onCellSelection { [weak self] (_, _) in
-                guard let self = self else { return }
-
-                self.present(self.addGroupAlert.alertController, animated: true, completion: nil)
-            }
-        }
-        return section
-    }()
-
-    /// The `Form` section that contains the list of `BookmarkGroup`s.
-    private lazy var selectedBookmarkGroupSection: SelectableSection<ListCheckRow<String>> = {
-        let section = SelectableSection<ListCheckRow<String>>(
-            OBALoc("edit_bookmark_controller.group_section.header_title", value: "Bookmark Group", comment: "Title of the Bookmark Group header."),
-            selectionType: .singleSelection(enableDeselection: false)
-        )
-
-        for group in viewModel.bookmarkGroups {
-            addRow(for: group, to: section)
-        }
-
-        // `ListCheckRow<String>` requires a non-nil String, so "no group" is
-        // represented as the empty string here and round-tripped back to
-        // `UUID?` via `UUID(optionalUUIDString:)` in `save()`.
-        section <<< ListCheckRow<String>("") {
-            $0.tag = selectedGroupTag
-            $0.title = OBALoc("edit_bookmark_controller.no_group_row", value: "(No Group)", comment: "Don't add this bookmark to a group.")
-            $0.selectableValue = ""
-        }
-
-        return section
-    }()
-
-    /// Adds a new selectable `BookmarkGroup` row to the specified `section`.
-    private func addRow(for group: BookmarkGroup, to section: SelectableSection<ListCheckRow<String>>) {
-        let uuid = group.id.uuidString
-        section <<< ListCheckRow<String>(uuid) {
-            $0.tag = uuid
-            $0.title = group.name
-            $0.selectableValue = uuid
-        }
-    }
-
-    // MARK: - Add Group Alert
-
-    private lazy var addGroupAlert: AddGroupAlertController = {
-        return AddGroupAlertController(dataStore: application.userDataStore, group: nil, delegate: self)
-    }()
-
-    func bookmarkGroupSaved(_ group: BookmarkGroup) {
-        addRow(for: group, to: selectedBookmarkGroupSection)
-    }
-
-    // MARK: - Group Selection
-
-    private func refreshGroupSelection() {
-        let currentGroupID = viewModel.currentGroupID()?.uuidString ?? ""
-        for row in selectedBookmarkGroupSection.allRows {
-            guard let checkRow = row as? ListCheckRow<String> else { continue }
-            checkRow.value = (checkRow.selectableValue == currentGroupID) ? checkRow.selectableValue : nil
-            checkRow.updateCell()
-        }
     }
 
     // MARK: - Actions
@@ -270,10 +68,9 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     }
 
     @objc func save() {
-        let rawName = form.values()[bookmarkNameTag] as? String ?? ""
-        let isFavorite = (form.values()[showInTodayViewTag] as? Bool) ?? true
-        let rawSelectedGroupID = selectedBookmarkGroupSection.selectedRows().first?.value ?? ""
-        let selectedGroupID = UUID(optionalUUIDString: rawSelectedGroupID)
+        let rawName = viewModel.name
+        let isFavorite = viewModel.isFavorite
+        let selectedGroupID = viewModel.selectedGroupID
 
         let notifyEdited: (Bookmark, Bool) -> Void = { [weak self] bookmark, isNew in
             guard let self else { return }
