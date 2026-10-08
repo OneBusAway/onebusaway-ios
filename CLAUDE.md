@@ -246,7 +246,7 @@ scripts/extract_strings               # Extract strings for localization
 
 The codebase supports easy customization through:
 - Separate app configurations in `Apps/` directory
-- Pluggable analytics systems (Firebase, Plausible)
+- Pluggable analytics systems (Firebase, Umami)
 - Custom region support via deep links
 - Theming and branding capabilities
 
