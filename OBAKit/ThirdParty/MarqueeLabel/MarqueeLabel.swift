@@ -234,8 +234,11 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
      The "home" location is the traditional location of `UILabel` text. This property essentially reflects if a scroll animation is underway.
      */
     var awayFromHome: Bool {
+        // OBA: compare the frame's origin, not its center (`position`), with the home
+        // frame's origin. Upstream read every label as away from home, even at rest,
+        // so `tapToScroll` and `triggerScrollStart()` never started a scroll.
         if let presentationLayer = sublabel.layer.presentation() {
-            return !(presentationLayer.position.x == homeLabelFrame.origin.x)
+            return !(presentationLayer.frame.origin.x == homeLabelFrame.origin.x)
         }
 
         return false
@@ -266,7 +269,8 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
             return 0.0
         }
 
-        let progressFraction = abs((presentationLayer.position.x - homeLabelFrame.origin.x) / awayOffset)
+        // OBA: the frame's origin, not its center; see `awayFromHome`.
+        let progressFraction = abs((presentationLayer.frame.origin.x - homeLabelFrame.origin.x) / awayOffset)
         return progressFraction
     }
 

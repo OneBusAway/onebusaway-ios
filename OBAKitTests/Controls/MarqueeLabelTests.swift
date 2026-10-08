@@ -107,27 +107,77 @@ struct MarqueeLabelTests {
         #expect(label.gestureRecognizers?.isEmpty ?? true)
     }
 
+    // MARK: - On screen
+
+    /// Shows `label` in a window. The label needs a rendered window to get a
+    /// presentation layer, which `awayFromHome` and `animationPosition` read.
+    private func show(_ label: MarqueeLabel) throws -> UIWindow {
+        let scene = try #require(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 320, height: 100)
+        window.addSubview(label)
+        window.isHidden = false
+        label.layoutIfNeeded()
+        CATransaction.flush()
+        return window
+    }
+
+    /// Upstream compared the layer's center with the home frame's origin, so a
+    /// label at rest read as away from home.
+    @Test func `A label at rest is at home`() async throws {
+        let label = makeLabel(text: "1")
+        let window = try show(label)
+        defer { window.isHidden = true }
+        try await Task.sleep(for: .milliseconds(100))
+
+        #expect(!label.awayFromHome)
+        #expect(label.animationPosition == 0)
+    }
+
+    @Test func `A scrolling label leaves home`() async throws {
+        try #require(!UIAccessibility.isReduceMotionEnabled)
+        let label = makeLabel()
+        label.animationDelay = 0
+        label.speed = .rate(200)
+        let window = try show(label)
+        defer { window.isHidden = true }
+        try await Task.sleep(for: .milliseconds(300))
+
+        #expect(label.awayFromHome)
+        #expect((label.animationPosition ?? 0) > 0)
+    }
+
+    /// `labelWasTapped` and `triggerScrollStart()` only start a scroll from home,
+    /// which upstream's `awayFromHome` never reported.
+    @Test func `triggerScrollStart starts a held label`() async throws {
+        try #require(!UIAccessibility.isReduceMotionEnabled)
+        let label = makeLabel()
+        label.animationDelay = 0
+        label.speed = .rate(200)
+        label.holdScrolling = true
+        let window = try show(label)
+        defer { window.isHidden = true }
+        try await Task.sleep(for: .milliseconds(300))
+        try #require(!label.awayFromHome)
+
+        label.triggerScrollStart()
+        CATransaction.flush()
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(label.awayFromHome)
+    }
+
     // MARK: - Pausing
 
     /// The fade mask is absent when `fadeLength` is 0, and pausing reaches it
     /// through force unwraps inside optional chains.
     @Test func `Pausing and unpausing a scrolling label without a fade`() async throws {
         try #require(!UIAccessibility.isReduceMotionEnabled)
-        // The label needs a rendered window to get a presentation layer, which is
-        // what `awayFromHome` (and so `pauseLabel()`) reads.
-        let scene = try #require(UIApplication.shared.connectedScenes.first as? UIWindowScene)
-        let window = UIWindow(windowScene: scene)
-        window.frame = CGRect(x: 0, y: 0, width: 320, height: 100)
         let label = makeLabel()
         label.animationDelay = 0
         label.speed = .rate(200)
         label.fadeLength = 0
-        window.addSubview(label)
-        window.isHidden = false
+        let window = try show(label)
         defer { window.isHidden = true }
-        label.layoutIfNeeded()
-        CATransaction.flush()
-
         try await Task.sleep(for: .milliseconds(300))
         try #require(label.awayFromHome)
 
