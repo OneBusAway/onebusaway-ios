@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import Eureka
 @testable import OBAKit
 @testable import OBAKitCore
 import Foundation
@@ -35,71 +34,53 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    private func makeLoadedController() -> SettingsViewController {
-        let controller = SettingsViewController(application: application)
-        controller.loadViewIfNeeded()
-        return controller
-    }
-
-    private func row(_ controller: SettingsViewController, _ tag: String) throws -> SwitchRow {
-        try #require(controller.form.rowBy(tag: tag) as? SwitchRow)
+    private func makeViewModel() -> SettingsViewModel {
+        SettingsViewModel(application: application)
     }
 
     // MARK: - New stop page
 
     @Test func `New stop page seeds on by default`() throws {
-        let controller = makeLoadedController()
-        // `value` is Eureka's `Bool?`; `== true` keeps Nimble's beTrue semantics,
-        // where a nil value is a failure rather than a pass.
-        #expect(try self.row(controller, FeatureFlags.useNewStopPageKey).value == true)
+        let vm = makeViewModel()
+        #expect(vm.usesNewStopPage)
     }
 
     /// The failing case before this was fixed: toggle off, then kill the app to "restart to apply"
     /// without ever dismissing Settings. `viewWillDisappear` never runs, so nothing was written.
     @Test func `New stop page toggling off persists immediately`() throws {
-        let controller = makeLoadedController()
-        try row(controller, FeatureFlags.useNewStopPageKey).value = false
+        let vm = makeViewModel()
+        vm.usesNewStopPage = false
 
         #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     @Test func `New stop page toggling back on persists immediately`() throws {
         application.userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
-        let controller = makeLoadedController()
-        try row(controller, FeatureFlags.useNewStopPageKey).value = true
+        let vm = makeViewModel()
+        vm.usesNewStopPage = true
 
         #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
-    }
-
-    @Test func `New stop page still persists on dismissal`() throws {
-        let controller = makeLoadedController()
-        try row(controller, FeatureFlags.useNewStopPageKey).value = false
-        controller.viewWillDisappear(false)
-
-        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
     }
 
     // MARK: - Map panel
 
     @Test func `Map panel toggling on persists immediately`() throws {
-        let controller = makeLoadedController()
-        try row(controller, FeatureFlags.useMapPanelExperienceKey).value = true
+        let vm = makeViewModel()
+        vm.usesMapPanelExperience = true
 
         #expect(self.application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey))
     }
 
     // MARK: - Accessibility
 
-    /// This row was wired to neither `setValues` nor `saveFormValues`, so it always drew "off" and
+    /// This switch was once wired to neither seeding nor saving, so it always drew "off" and
     /// never wrote anything.
     @Test func `Voiceover full sheet round trips through the form`() throws {
         application.userDefaults.set(true, forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
-        let controller = makeLoadedController()
-        let switchRow = try row(controller, OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
-        #expect(switchRow.value == true)
+        let vm = makeViewModel()
+        #expect(vm.alwaysShowsFullSheetOnVoiceOver == true)
 
-        switchRow.value = false
-        controller.viewWillDisappear(false)
+        vm.alwaysShowsFullSheetOnVoiceOver = false
 
         #expect(!self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey))
     }

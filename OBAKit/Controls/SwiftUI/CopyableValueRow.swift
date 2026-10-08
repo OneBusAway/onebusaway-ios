@@ -21,6 +21,8 @@ struct CopyableValueRow: View {
     let title: String
     let value: String
     var accessibilityHint: String?
+    /// Keeps a long value (a push token) to one line, truncated in the middle.
+    var truncatesValue = false
 
     @State private var showsConfirmation = false
     @State private var revertTask: Task<Void, Never>?
@@ -31,7 +33,17 @@ struct CopyableValueRow: View {
 
     var body: some View {
         Button(action: copy) {
-            LabeledContent(title, value: showsConfirmation ? confirmation : value)
+            LabeledContent {
+                if showsConfirmation {
+                    Text(confirmation)
+                } else {
+                    Text(value)
+                        .lineLimit(truncatesValue ? 1 : nil)
+                        .truncationMode(.middle)
+                }
+            } label: {
+                Text(title)
+            }
         }
         .foregroundStyle(.primary)
         .accessibilityLabel(title)

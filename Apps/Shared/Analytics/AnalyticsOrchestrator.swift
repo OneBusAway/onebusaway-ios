@@ -18,6 +18,9 @@ import FirebaseCrashlytics
     private var firebaseAnalytics: FirebaseAnalytics?
     private var plausibleAnalytics: PlausibleAnalytics?
     private var umami: UmamiAnalytics?
+    /// The region the per-region backends were last built for, so turning
+    /// reporting back on can rebuild them without waiting for a relaunch.
+    private var currentRegion: Region?
 
     @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
@@ -61,6 +64,7 @@ import FirebaseCrashlytics
     }
 
     public func updateServer(region: Region) {
+        currentRegion = region
         // Rebuild per-region analytics backends from scratch on every region change.
         plausibleAnalytics = nil
         umami = nil
@@ -116,7 +120,14 @@ import FirebaseCrashlytics
     @objc public func setReportingEnabled(_ enabled: Bool) {
         userDefaults.set(enabled, forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey)
         firebaseAnalytics?.setReportingEnabled(enabled)
-        if !enabled {
+        if enabled, let currentRegion {
+            // Settings saves as the switch flips, so off-then-on in one visit is
+            // normal; without this the per-region backends stayed off until relaunch.
+            updateServer(region: currentRegion)
+            // The rebuilt backends start with empty default properties; restore the
+            // region name that `Application` set on the old ones after `updateServer`.
+            reportSetRegion(currentRegion.name)
+        } else if !enabled {
             plausibleAnalytics = nil
             umami = nil
         }
