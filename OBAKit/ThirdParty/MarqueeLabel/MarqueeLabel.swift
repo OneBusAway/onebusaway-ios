@@ -1246,7 +1246,9 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
      - SeeAlso: restartLabel
     */
     func triggerScrollStart() {
-        if labelShouldScroll() && !awayFromHome {
+        // OBA: not while a scroll is attached, which `awayFromHome` misses during the
+        // delay at home; restarting there would reset the delay.
+        if labelShouldScroll() && !awayFromHome && !scrollAnimationInFlight {
             updateAndScroll(overrideHold: true)
         }
     }
@@ -1336,7 +1338,8 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
     }
 
     @objc func labelWasTapped(_ recognizer: UIGestureRecognizer) {
-        if labelShouldScroll() && !awayFromHome {
+        // OBA: see `triggerScrollStart()`.
+        if labelShouldScroll() && !awayFromHome && !scrollAnimationInFlight {
             // Set shouldBeginScroll to true to begin single scroll due to tap
             updateAndScroll(overrideHold: true)
         }

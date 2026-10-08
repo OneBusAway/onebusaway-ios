@@ -170,6 +170,25 @@ struct MarqueeLabelTests {
         await poll(until: { label.awayFromHome })
     }
 
+    /// `triggerScrollStart()` during a scroll's delay at home used to tear the
+    /// scroll down and restart the delay, reporting an interrupted scroll.
+    @Test(.reduceMotionOff) func `triggerScrollStart during the home delay leaves the scroll alone`() async throws {
+        let label = InterruptionCountingLabel(frame: CGRect(x: 0, y: 0, width: 100, height: 20))
+        label.font = Self.font
+        label.text = Self.longText
+        label.animationDelay = 10
+        label.speed = .rate(200)
+        let window = try show(label)
+        defer { window.isHidden = true }
+        await spin(0.1)
+        try #require(!label.awayFromHome)
+        // Layout passes while the label goes on screen restart its scroll too.
+        let interruptionsBefore = label.interruptions
+
+        label.triggerScrollStart()
+        #expect(label.interruptions == interruptionsBefore)
+    }
+
     // MARK: - Pausing
 
     /// The fade mask is absent when `fadeLength` is 0, and pausing reaches it
@@ -217,5 +236,16 @@ struct MarqueeLabelTests {
         #expect(label.numberOfLines == 1)
         label.numberOfLines = 3
         #expect(label.numberOfLines == 1)
+    }
+}
+
+/// Counts scrolls that ended without finishing.
+private final class InterruptionCountingLabel: MarqueeLabel {
+    private(set) var interruptions = 0
+
+    override func labelReturnedToHome(_ finished: Bool) {
+        if !finished {
+            interruptions += 1
+        }
     }
 }
