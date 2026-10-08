@@ -129,9 +129,6 @@ packages:
     GRDB:
         url: https://github.com/groue/GRDB.swift.git
         minorVersion: 7.11.0
-    Hyperconnectivity:
-        url: https://github.com/rwbutler/Hyperconnectivity.git
-        exactVersion: 1.2.0
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.5.3

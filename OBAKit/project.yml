@@ -25,14 +25,14 @@ targets:
       # header is carved out of the buildable folder and added as an explicit
       # public header.
       - path: "."
-        # The vendored BulletinBoard license is shown on the Credits screen
-        # (Settings/OBAKit_Credits.plist); keep the raw file out of the bundle.
-        excludes: ["OBAKit.h", "ThirdParty/BulletinBoard/LICENSE"]
+        # The vendored BulletinBoard and Hyperconnectivity licenses are shown on
+        # the Credits screen (Settings/OBAKit_Credits.plist); keep the raw files
+        # out of the bundle.
+        excludes: ["OBAKit.h", "ThirdParty/BulletinBoard/LICENSE", "ThirdParty/Hyperconnectivity/LICENSE"]
       - path: OBAKit.h
         headerVisibility: public
     dependencies:
       - target: OBAKitCore
-      - package: Hyperconnectivity
       - package: FloatingPanel
       - package: MarqueeLabel
       - package: OTPKit

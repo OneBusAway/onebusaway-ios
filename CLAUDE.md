@@ -229,8 +229,8 @@ scripts/extract_strings               # Extract strings for localization
 ## Third-Party Dependencies
 
 **UI Libraries**: FloatingPanel, MarqueeLabel
-**Vendored**: BulletinBoard 5.0.0 (`e8ba81d`) lives in `OBAKit/ThirdParty/BulletinBoard/`, compiled into OBAKit with internal access, so there is no `import BLTNBoard`. It has been modified for Swift 6 and fixes; changes are marked `OBA:` in comments. Its MIT license is in that directory and on the Credits screen (`OBAKit/Settings/OBAKit_Credits.plist`)
-**Networking**: CocoaLumberjack, Hyperconnectivity, SwiftProtobuf
+**Vendored**: BulletinBoard 5.0.0 (`e8ba81d`) lives in `OBAKit/ThirdParty/BulletinBoard/`, compiled into OBAKit with internal access, so there is no `import BLTNBoard`. It has been modified for Swift 6 and fixes; changes are marked `OBA:` in comments. Its MIT license is in that directory and on the Credits screen (`OBAKit/Settings/OBAKit_Credits.plist`). Hyperconnectivity 1.2.0 (`0503595`) is vendored the same way in `OBAKit/ThirdParty/Hyperconnectivity/` (no `import Hyperconnectivity`), trimmed to the connectivity publisher, with the same `OBA:` markers and Credits entry
+**Networking**: CocoaLumberjack, SwiftProtobuf
 **Testing**: Swift Testing (first-party; Nimble was removed)
 
 ## Configuration & Deployment

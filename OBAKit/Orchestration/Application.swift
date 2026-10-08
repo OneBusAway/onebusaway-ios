@@ -10,7 +10,6 @@
 import UIKit
 import Combine
 import CoreTelephony
-import Hyperconnectivity
 import CoreLocation
 import OBAKitCore
 import SafariServices
