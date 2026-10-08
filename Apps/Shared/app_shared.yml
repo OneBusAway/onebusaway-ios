@@ -129,9 +129,6 @@ packages:
     GRDB:
         url: https://github.com/groue/GRDB.swift.git
         minorVersion: 7.11.0
-    MarqueeLabel:
-        url: https://github.com/cbpowell/MarqueeLabel.git
-        exactVersion: 4.5.3
     OTPKit:
         # OneBusAway/otpkit#155 has merged to main but is not in a tagged
         # release yet; track main until one ships, then switch back to a

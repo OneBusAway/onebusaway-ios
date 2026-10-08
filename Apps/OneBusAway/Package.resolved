@@ -1,5 +1,5 @@
 {
-  "originHash": "35b63e0fd467f88c7a5a5f94706eaacd1806b653d73c37c92c4149be2069fc4c",
+  "originHash": "741dfaa4b500f948cd3ae5470bf7cb9b69bf6fbfd0dc3fda28a2f2ceeb0028e7",
   "pins": [
     {
       "identity": "abseil-cpp-binary",
@@ -116,15 +116,6 @@
       "state": {
         "revision": "a0bc79961d7be727d258d33d5a6b2f1023270ba1",
         "version": "1.22.5"
-      }
-    },
-    {
-      "identity": "marqueelabel",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/cbpowell/MarqueeLabel.git",
-      "state": {
-        "revision": "c6b4da400c00dfd5db7a4f6e4915ca531d95fc49",
-        "version": "4.5.3"
       }
     },
     {

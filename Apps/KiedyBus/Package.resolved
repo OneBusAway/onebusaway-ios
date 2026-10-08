@@ -1,5 +1,5 @@
 {
-  "originHash" : "49fcb177872ea5835d2a792c7692772cf290f75321402e110dc1746e8f287514",
+  "originHash" : "b3b582edf21de04eaf26cc18c376013dcef8add5205d4e71713fdd4b81e1bc6a",
   "pins" : [
     {
       "identity" : "floatingpanel",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "b83108d10f42680d78f23fe4d4d80fc88dab3212",
         "version" : "7.11.1"
-      }
-    },
-    {
-      "identity" : "marqueelabel",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/cbpowell/MarqueeLabel.git",
-      "state" : {
-        "revision" : "c6b4da400c00dfd5db7a4f6e4915ca531d95fc49",
-        "version" : "4.5.3"
       }
     },
     {
