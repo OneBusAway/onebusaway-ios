@@ -17,8 +17,8 @@ import FirebaseCrashlytics
     nonisolated(unsafe) private let userDefaults: UserDefaults
     private var firebaseAnalytics: FirebaseAnalytics?
     private var umami: UmamiAnalytics?
-    /// The region the per-region backends were last built for, so turning
-    /// reporting back on can rebuild them without waiting for a relaunch.
+    /// The region Umami was last built for, so turning reporting back on
+    /// can rebuild it without waiting for a relaunch.
     private var currentRegion: Region?
 
     @objc required public init(userDefaults: UserDefaults) {
@@ -64,7 +64,7 @@ import FirebaseCrashlytics
 
     public func updateServer(region: Region) {
         currentRegion = region
-        // Rebuild per-region analytics backends from scratch on every region change.
+        // Rebuild Umami from scratch on every region change.
         umami = nil
 
         guard reportingEnabled() else { return }
@@ -103,7 +103,6 @@ import FirebaseCrashlytics
 
     @objc public func reportSetRegion(_ name: String) {
         setUserProperty(key: "RegionName", value: name)
-        // n/a for Umami (no per-region forwarding needed).
     }
 
     @objc public func setReportingEnabled(_ enabled: Bool) {
@@ -111,10 +110,10 @@ import FirebaseCrashlytics
         firebaseAnalytics?.setReportingEnabled(enabled)
         if enabled, let currentRegion {
             // Settings saves as the switch flips, so off-then-on in one visit is
-            // normal; without this the per-region backends stayed off until relaunch.
+            // normal; without this Umami stayed off until relaunch.
             updateServer(region: currentRegion)
-            // The rebuilt backends start with empty default properties; restore the
-            // region name that `Application` set on the old ones after `updateServer`.
+            // The rebuilt Umami starts with empty default properties; restore the
+            // region name that `Application` set on the old instance after `updateServer`.
             reportSetRegion(currentRegion.name)
         } else if !enabled {
             umami = nil
