@@ -124,6 +124,9 @@ import FirebaseCrashlytics
             // Settings saves as the switch flips, so off-then-on in one visit is
             // normal; without this the per-region backends stayed off until relaunch.
             updateServer(region: currentRegion)
+            // The rebuilt backends start with empty default properties; restore the
+            // region name that `Application` set on the old ones after `updateServer`.
+            reportSetRegion(currentRegion.name)
         } else if !enabled {
             plausibleAnalytics = nil
             umami = nil

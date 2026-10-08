@@ -131,4 +131,21 @@ final class SettingsViewModelTests: OBATestCase {
         #expect(self.application.userDataStore.walkingSpeedSource == .manual)
         expectClose(self.application.userDataStore.walkingSpeedMetersPerSecond, WalkingSpeedPreset.fast.rawValue)
     }
+
+    /// A sync that lands while Settings is open changes the stored speed after `init`
+    /// seeded the picker; turning HealthKit off must snap the synced speed, not the seed.
+    @Test func `Turning walking health kit off snaps the speed synced during this visit`() {
+        application.userDataStore.walkingSpeedSource = .healthKit
+        application.userDataStore.walkingSpeedMetersPerSecond = 0.9
+        let vm = SettingsViewModel(application: application, isHealthKitAvailable: true)
+        #expect(vm.walkingSpeed == .slow)
+
+        // What WalkingSpeedManager writes when a sample lands.
+        application.userDataStore.walkingSpeedMetersPerSecond = 1.75
+
+        vm.walkingSpeedUsesHealthKit = false
+
+        #expect(vm.walkingSpeed == .fast)
+        expectClose(self.application.userDataStore.walkingSpeedMetersPerSecond, WalkingSpeedPreset.fast.rawValue)
+    }
 }

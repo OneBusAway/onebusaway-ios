@@ -214,10 +214,12 @@ final class SettingsViewModel {
             } else {
                 // Invalidate a sync still in flight before persisting `.manual`, so its
                 // trailing write can't resurrect `.healthKit` (#1458.3). Back on manual,
-                // the speed is the preset on screen: the nearest one to the synced speed.
+                // the speed is the nearest preset to the stored speed, re-read here because
+                // a sync during this visit may have changed it since `init` seeded the picker.
+                // Assigning `walkingSpeed` persists it through its own `didSet`.
                 application.walkingSpeedManager.cancelPendingSync()
                 application.userDataStore.walkingSpeedSource = .manual
-                application.userDataStore.walkingSpeedMetersPerSecond = walkingSpeed.rawValue
+                walkingSpeed = WalkingSpeedPreset.nearest(to: application.userDataStore.walkingSpeedMetersPerSecond)
             }
         }
     }
