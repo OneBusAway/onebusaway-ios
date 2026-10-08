@@ -42,6 +42,7 @@ final class AppSheetViewFactory {
     let searchDisplayModel: MapSearchDisplayModel
     let stopsObserver: MapStopsObserver
     let tripPlannerMapDisplayModel: TripPlannerMapDisplayModel
+    let tripFocusMapDisplayModel: TripFocusMapDisplayModel
 
     /// Nothing here is defaulted, on purpose, and for two separate reasons.
     ///
@@ -50,13 +51,13 @@ final class AppSheetViewFactory {
     /// it, so a call site that omitted it would build a factory whose sheet
     /// renders correctly and then silently ignores every button on it.
     ///
-    /// `coordinator`, `searchDisplayModel`, `stopsObserver`, and
-    /// `tripPlannerMapDisplayModel`: they must be the same instances the hosting
-    /// `MapPanelRootView` observes. A factory built with its own private copies
-    /// would push routes onto a coordinator nobody is watching, draw into a
-    /// display model nobody renders, observe a different stop set than the map is
-    /// showing, or push trip state into a model nobody renders — silently, with
-    /// the sheets simply appearing to do nothing.
+    /// `coordinator`, `searchDisplayModel`, `stopsObserver`,
+    /// `tripPlannerMapDisplayModel`, and `tripFocusMapDisplayModel`: they must be
+    /// the same instances the hosting `MapPanelRootView` observes. A factory built
+    /// with its own private copies would push routes onto a coordinator nobody is
+    /// watching, draw into a display model nobody renders, observe a different
+    /// stop set than the map is showing, or push trip state into a model nobody
+    /// renders — silently, with the sheets simply appearing to do nothing.
     init(
         application: Application,
         mapViewModel: MapViewModel,
@@ -67,7 +68,8 @@ final class AppSheetViewFactory {
         coordinator: SheetCoordinator<AppSheetRoute>,
         searchDisplayModel: MapSearchDisplayModel,
         stopsObserver: MapStopsObserver,
-        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel
+        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel,
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel
     ) {
         self.application = application
         self.mapViewModel = mapViewModel
@@ -79,6 +81,7 @@ final class AppSheetViewFactory {
         self.searchDisplayModel = searchDisplayModel
         self.stopsObserver = stopsObserver
         self.tripPlannerMapDisplayModel = tripPlannerMapDisplayModel
+        self.tripFocusMapDisplayModel = tripFocusMapDisplayModel
     }
 
     /// Built once and shared: the search sheet and the results sheet must route a
@@ -120,7 +123,10 @@ final class AppSheetViewFactory {
         case .tripPlanner(let request):
             tripPlannerView(request: request)
 
-        case .tripDetails, .transitAlert, .settings:
+        case .tripDetails(let tripConvertible):
+            tripDetailsView(tripConvertible: tripConvertible)
+
+        case .transitAlert, .settings:
             unimplementedView(for: route)
 
         case .searchResults(let response):
@@ -198,6 +204,38 @@ final class AppSheetViewFactory {
 
     func routePickerView() -> RoutePickerView {
         RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
+    }
+
+    /// The SwiftUI trip page as a stacked sheet over the panel's map.
+    ///
+    /// The page hands its map focus over each time it appears, and the panel's map
+    /// draws the trip from it. The drawing ends when the route leaves the stack
+    /// (`TripFocusMapDisplayModel.clearIfOwnerAbsent(from:)`), so the page's own
+    /// `nil` is ignored.
+    ///
+    /// Both of the page's ways onward go through the coordinator. A tapped stop
+    /// opens the panel's stop sheet above the trip, as a stop does everywhere else
+    /// in the panel. Back pops the route rather than letting the page dismiss
+    /// itself from UIKit: the coordinator's stack is what holds the sheet on
+    /// screen, so it is closed there, as `StopDetailsSheetView`'s Close is.
+    func tripDetailsView(tripConvertible: TripConvertible) -> TripPageSheetHost {
+        TripPageSheetHost(
+            application: application,
+            tripConvertible: tripConvertible,
+            onMapFocusChanged: { [tripFocusMapDisplayModel] focus in
+                // Ending the drawing is the route stack's job, not the page's.
+                guard let focus else { return }
+                // The page reports from `viewWillAppear`, which runs while SwiftUI is
+                // still building this sheet. Publishing the map's state from inside
+                // that update is undefined behaviour, and SwiftUI says so at runtime
+                // ("Publishing changes from within view updates"), so it waits a turn.
+                Task { @MainActor in
+                    tripFocusMapDisplayModel.show(focus: focus, owner: .tripDetails(tripConvertible))
+                }
+            },
+            onSelectStop: { [coordinator] stopID in coordinator.push(.stopDetails(stopID: stopID)) },
+            onClose: { [coordinator] in coordinator.pop() }
+        )
     }
 
     private func currentTripView(route: Route) -> CurrentTripView {

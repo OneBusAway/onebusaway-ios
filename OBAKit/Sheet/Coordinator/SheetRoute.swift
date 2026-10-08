@@ -178,7 +178,9 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     // Stacked layer
     case stopDetails(stopID: Stop.ID)
     case tripPlanner(TripPlannerRequest)
-    case tripDetails(tripID: TripIdentifier)
+    // The convertible, not just its trip ID: the trip page's view model fetches
+    // with the vehicle and service date as well, which an ID can't supply.
+    case tripDetails(TripConvertible)
     case routePicker
     case currentTrip(route: Route)
     case transitAlert(alertID: String)
@@ -242,8 +244,10 @@ nonisolated extension AppSheetRoute {
             }
             let suffix = parts.isEmpty ? "blank" : parts.joined(separator: "_")
             return "\(caseName)_\(suffix)"
-        case .tripDetails(let tripID):
-            return "\(caseName)-\(tripID)"
+        case .tripDetails(let convertible):
+            // Keyed on the trip alone, not on which model carried it, so a trip
+            // reached from an arrival and from a vehicle has one identity.
+            return "\(caseName)-\(convertible.tripID)"
         case .currentTrip(let route):
             return "\(caseName)-\(route.id)"
         case .transitAlert(let alertID):
@@ -388,7 +392,15 @@ nonisolated extension AppSheetRoute {
                 initialDetent: .medium,
                 isDismissDisabled: false
             )
-        case .tripDetails, .routePicker, .currentTrip, .transitAlert, .more, .settings:
+        case .tripDetails:
+            // Opens at `.medium`: the trip page draws no map of its own and relies
+            // on the panel's, so a full-height start would cover the map it needs.
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .routePicker, .currentTrip, .transitAlert, .more, .settings:
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .large,

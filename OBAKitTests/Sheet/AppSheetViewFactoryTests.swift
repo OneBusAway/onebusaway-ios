@@ -36,15 +36,16 @@ final class AppSheetViewFactoryTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    /// The coordinator, display model, stops observer, and trip planner display model are required dependencies,
-    /// so every test builds the factory the same way the app does.
+    /// The coordinator, display model, stops observer, and trip planner and trip focus display models are
+    /// required dependencies, so every test builds the factory the same way the app does.
     @MainActor
     private func makeFactory(
         application: Application,
         coordinator: SheetCoordinator<AppSheetRoute> = SheetCoordinator(root: .home),
         displayModel: MapSearchDisplayModel = MapSearchDisplayModel(),
         stopsObserver: MapStopsObserver? = nil,
-        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel? = nil
+        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel? = nil,
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel? = nil
     ) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
@@ -56,7 +57,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             coordinator: coordinator,
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver ?? MapStopsObserver(application: application),
-            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel()
+            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel(),
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil })
         )
     }
 
@@ -157,6 +159,65 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(view.placeholder == SearchPlaceholder.text(for: application))
         #expect(!view.placeholder.isEmpty)
+    }
+
+    /// The trip sheet's host gets the factory's application and the route's trip,
+    /// and both of the page's ways out land on the coordinator the panel observes.
+    @Test @MainActor
+    func `Trip details view forwards the trip and navigates through the coordinator`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
+        coordinator.push(.recentStopsAll)
+        coordinator.push(.tripDetails(convertible))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: convertible)
+
+        #expect(host.application === application)
+        #expect(host.tripConvertible === convertible)
+
+        // A tapped stop opens the panel's stop sheet above the trip.
+        host.onSelectStop("1_75403")
+        #expect(coordinator.stackedRoutes == [.recentStopsAll, .tripDetails(convertible), .stopDetails(stopID: "1_75403")])
+
+        // The rider drags the stop sheet away, then taps Back on the trip. Only
+        // the trip goes; the sheet it was opened from stays.
+        coordinator.truncateStacked(toDepth: 2)
+        host.onClose()
+        #expect(coordinator.stackedRoutes == [.recentStopsAll])
+    }
+
+    /// The trip page's map focus goes to the panel's display model, owned by the
+    /// trip's route so the drawing lasts exactly as long as the sheet.
+    ///
+    /// Not synchronously: the page reports from inside SwiftUI's update of the
+    /// sheet, so the handoff waits a turn of the main actor.
+    @Test @MainActor
+    func `Trip details view hands the page's map focus to the panel's map a turn later`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let tripFocusMapDisplayModel = TripFocusMapDisplayModel(userLocation: { nil })
+        let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
+        let focus = TripMapFocus()
+
+        let host = makeFactory(application: application, tripFocusMapDisplayModel: tripFocusMapDisplayModel)
+            .tripDetailsView(tripConvertible: convertible)
+        host.onMapFocusChanged(focus)
+
+        #expect(tripFocusMapDisplayModel.owner == nil)
+        for _ in 0..<10 where tripFocusMapDisplayModel.owner == nil {
+            await Task.yield()
+        }
+        #expect(tripFocusMapDisplayModel.owner == .tripDetails(convertible))
+
+        // The page's `nil` doesn't end the drawing. The route leaving the stack does.
+        host.onMapFocusChanged(nil)
+        await Task.yield()
+
+        #expect(tripFocusMapDisplayModel.owner == .tripDetails(convertible))
+        withExtendedLifetime(focus) {}
     }
 
     /// `.bookmarksAll` renders the native index, not the placeholder. With all

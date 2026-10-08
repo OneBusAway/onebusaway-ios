@@ -99,13 +99,13 @@ final class TripStopAnnotationView: MKAnnotationView {
     }
 
     private static func diameter(for stop: TripStopAnnotation) -> CGFloat {
-        if stop.isUserStop { return 16 }
-        if stop.isTerminal { return 14 }
-        return 10
+        if stop.isUserStop { return TripFocusMapLayer.Style.userStopDiameter }
+        if stop.isTerminal { return TripFocusMapLayer.Style.terminalStopDiameter }
+        return TripFocusMapLayer.Style.stopDiameter
     }
 
     private static func dot(diameter: CGFloat, fill: UIColor, stroke: UIColor, isFilled: Bool) -> UIImage {
-        let lineWidth: CGFloat = 2.5
+        let lineWidth = TripFocusMapLayer.Style.stopRingWidth
         let size = CGSize(width: diameter + lineWidth, height: diameter + lineWidth)
 
         return UIGraphicsImageRenderer(size: size).image { context in

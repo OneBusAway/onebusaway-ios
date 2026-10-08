@@ -47,8 +47,9 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// whole Stop page into dead buttons: Schedule, Bookmark, Filter, Report a
     /// Problem, walking directions, alarms, surveys and donations all return
     /// early with nothing on screen. Left silent, that is indistinguishable from
-    /// a UI bug. `TripPresentationBridge.present` logs the same condition, so
-    /// the two halves of the sheet system report failures the same way.
+    /// a UI bug. `TripPresentationBridge` logs the same condition when it can't
+    /// show its vehicle-not-on-trip alert, so the two halves of the sheet system
+    /// report failures the same way.
     ///
     /// Internal rather than `private` because the proximity-alert flow in
     /// `StopPageActionPresenter+ProximityAlerts` presents through it too, and
