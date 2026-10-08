@@ -268,4 +268,78 @@ struct TripStopListModelTests {
 
         #expect(index == 0)
     }
+
+    // MARK: - The rider's rows (#449)
+
+    private func riderStops(
+        _ stops: [StopTimeStub],
+        userStopID: StopID,
+        userStopSequence: Int? = nil,
+        sharedDestinationStopID: StopID? = nil
+    ) -> TripStopListModel.RiderStops {
+        TripStopListModel.riderStops(
+            in: stops,
+            userStopID: userStopID,
+            userStopSequence: userStopSequence,
+            sharedDestinationStopID: sharedDestinationStopID
+        )
+    }
+
+    /// A trip that was never shared: the boarding stop is the rider's stop and
+    /// nothing else is marked.
+    @Test func `Without a shared destination only the boarding stop is marked`() {
+        let stops = riderStops(line(["A", "B", "C", "D"]), userStopID: "B", userStopSequence: 1)
+
+        #expect(stops.boardingIndex == 1)
+        #expect(stops.userStopIndex == 1)
+        #expect(stops.boardingMarkerIndex == nil)
+    }
+
+    @Test func `A shared destination takes the rider's marker and the boarding stop gets its own`() {
+        let stops = riderStops(line(["A", "B", "C", "D"]), userStopID: "B", userStopSequence: 1, sharedDestinationStopID: "D")
+
+        #expect(stops.boardingIndex == 1)
+        #expect(stops.userStopIndex == 3)
+        #expect(stops.boardingMarkerIndex == 1)
+    }
+
+    /// Nothing to mark as the exit, so the trip must read exactly as one that
+    /// was never shared — not as a boarding stop with no destination.
+    @Test func `A shared destination the trip never reaches leaves the boarding stop as the rider's stop`() {
+        let stops = riderStops(line(["A", "B", "C"]), userStopID: "B", userStopSequence: 1, sharedDestinationStopID: "A")
+
+        #expect(stops.boardingIndex == 1)
+        #expect(stops.userStopIndex == 1)
+        #expect(stops.boardingMarkerIndex == nil)
+    }
+
+    /// The sequence pins which visit the rider boards at; the exit is searched
+    /// for from there.
+    @Test func `On a loop the boarding marker follows the stop sequence`() {
+        let stops = riderStops(line(["A", "B", "C", "B", "D"]), userStopID: "B", userStopSequence: 3, sharedDestinationStopID: "D")
+
+        #expect(stops.boardingIndex == 3)
+        #expect(stops.userStopIndex == 4)
+        #expect(stops.boardingMarkerIndex == 3)
+    }
+
+    /// Riding a loop round to where it started. The two markers land on
+    /// different visits; no row is ever both.
+    @Test func `A destination that is the boarding stop resolves to its next call`() {
+        let stops = riderStops(line(["A", "B", "A"]), userStopID: "A", userStopSequence: 0, sharedDestinationStopID: "A")
+
+        #expect(stops.boardingIndex == 0)
+        #expect(stops.userStopIndex == 2)
+        #expect(stops.boardingMarkerIndex == 0)
+    }
+
+    /// A boarding stop the trip doesn't list has no row to mark. The destination
+    /// is still found, by searching the whole trip.
+    @Test func `An unknown boarding stop marks only the destination`() {
+        let stops = riderStops(line(["A", "B", "C"]), userStopID: "Z", sharedDestinationStopID: "C")
+
+        #expect(stops.boardingIndex == nil)
+        #expect(stops.userStopIndex == 2)
+        #expect(stops.boardingMarkerIndex == nil)
+    }
 }

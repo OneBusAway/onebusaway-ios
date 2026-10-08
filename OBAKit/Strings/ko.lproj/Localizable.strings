@@ -1707,6 +1707,9 @@
 /* Shown on the map when the user taps on a vehicle to indicate we don't know the vehicle's ID. */
 "trip_status_annotation.vehicle_id_unavailable" = "차량 ID를 알 수 없음";
 
+/* Voiceover text explaining that this stop is where the rider boarded the vehicle */
+"trip_stop.boarding_stop.accessibility_label" = "승차 정류장";
+
 /* Voiceover text explaining that this stop is the user's destination */
 "trip_stop.user_destination.accessibility_label" = "내 목적지";
 

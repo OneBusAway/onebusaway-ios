@@ -95,26 +95,69 @@ struct TripStopListModel {
         return TripStopListModel(rows: rows, vehicleIndex: vehicleIndex)
     }
 
-    /// Which row is the rider's boarding or destination stop. Shared by the
-    /// SwiftUI trip page and the UIKit stop list.
-    ///
+    /// The rider's rows on a trip, as the UIKit trip page needs them. One
+    /// resolution feeds both the stop list and the progress header, so the two
+    /// cannot disagree about which row is "your stop".
+    struct RiderStops {
+        /// Where the rider boards. `ArrivalDeparture.arrivalDepartureMinutes`
+        /// counts down to this row and no other.
+        let boardingIndex: Int?
+        /// Where a shared trip link says the rider steps off. `nil` when the
+        /// link named no destination, or the trip never reaches it after
+        /// boarding.
+        let destinationIndex: Int?
+
+        /// The row that carries the rider's-stop marker. On a shared trip that
+        /// is the destination: the recipient is being shown someone else's
+        /// journey, and its end is what the marker has always claimed to point
+        /// at. With no destination to mark, the boarding stop stays the rider's
+        /// stop, exactly as on a trip that was never shared. See #449.
+        var userStopIndex: Int? { destinationIndex ?? boardingIndex }
+
+        /// The row that carries the boarding marker: the boarding stop, only once
+        /// the rider's-stop marker has moved off it to a destination. `nil`
+        /// otherwise — on a trip that was never shared the boarding stop already
+        /// carries the rider's-stop marker, and a second badge on the same row
+        /// would say two things about one stop.
+        var boardingMarkerIndex: Int? { destinationIndex == nil ? nil : boardingIndex }
+    }
+
+    /// Resolves the rider's rows from the trip panel's `ArrivalDeparture`.
     /// `sharedDestinationStopID` is set when the trip was opened from a shared
-    /// link that named where the sharer steps off. That stop then carries the
-    /// marker instead of the boarding stop: the recipient is being shown someone
-    /// else's journey, and its end is what the marker has always claimed to
-    /// point at. See #449.
-    static func userStopIndex(
+    /// link that named where the sharer steps off. See #449.
+    static func riderStops(
         in stopTimes: [TripStopTime],
         arrivalDeparture: ArrivalDeparture?,
-        sharedDestinationStopID: StopID? = nil
-    ) -> Int? {
-        guard let arrivalDeparture else { return nil }
-        let boardingIndex = index(in: stopTimes, stopID: arrivalDeparture.stopID, stopSequence: arrivalDeparture.stopSequence)
-        return destinationStopIndex(
+        sharedDestinationStopID: StopID?
+    ) -> RiderStops {
+        guard let arrivalDeparture else {
+            return RiderStops(boardingIndex: nil, destinationIndex: nil)
+        }
+        return riderStops(
             in: stopTimes,
-            destinationStopID: sharedDestinationStopID,
-            boardingIndex: boardingIndex
-        ) ?? boardingIndex
+            userStopID: arrivalDeparture.stopID,
+            userStopSequence: arrivalDeparture.stopSequence,
+            sharedDestinationStopID: sharedDestinationStopID
+        )
+    }
+
+    /// `riderStops(in:arrivalDeparture:sharedDestinationStopID:)` for callers
+    /// that only have IDs, which is what lets the tests drive it with stubs.
+    static func riderStops<S: TripStopListEntry>(
+        in stopTimes: [S],
+        userStopID: StopID,
+        userStopSequence: Int?,
+        sharedDestinationStopID: StopID?
+    ) -> RiderStops {
+        let boardingIndex = index(in: stopTimes, stopID: userStopID, stopSequence: userStopSequence)
+        return RiderStops(
+            boardingIndex: boardingIndex,
+            destinationIndex: destinationStopIndex(
+                in: stopTimes,
+                destinationStopID: sharedDestinationStopID,
+                boardingIndex: boardingIndex
+            )
+        )
     }
 
     /// Which row is the stop a shared trip link says the rider will step off at.
