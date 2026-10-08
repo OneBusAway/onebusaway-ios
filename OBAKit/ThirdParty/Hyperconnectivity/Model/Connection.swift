@@ -8,22 +8,23 @@
 import Foundation
 import Network
 
-protocol Path {
+// OBA: renamed from `Path`, which shadowed SwiftUI's `Path` throughout OBAKit.
+nonisolated protocol NetworkPath {
     var isExpensive: Bool { get }
     func usesInterfaceType(_ type: NWInterface.InterfaceType) -> Bool
 }
 
-extension NWPath: Path {}
+nonisolated extension NWPath: NetworkPath {}
 
-public enum Connection {
+nonisolated enum Connection: Sendable {
     case cellular
     case disconnected
     case ethernet
     case loopback
     case other
     case wifi
-    
-    init(_ path: Path) {
+
+    init(_ path: some NetworkPath) {
         if path.usesInterfaceType(.wiredEthernet) {
             self = .ethernet
         } else if path.usesInterfaceType(.wifi) {

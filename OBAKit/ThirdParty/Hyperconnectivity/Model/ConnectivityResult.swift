@@ -6,38 +6,18 @@
 //
 
 import Foundation
-import Network
 
-public class ConnectivityResult {
-    public let connection: Connection
-    public var isConnected: Bool {
-        isThresholdMet(successPercentage, threshold: successThreshold)
-    }
-    public let isExpensive: Bool
-    public var state: Hyperconnectivity.State {
-        Hyperconnectivity.State(connection: connection, isConnected: isConnected)
-    }
-    private var successfulChecks: UInt = 0
-    private let successThreshold: Percentage
-    private let totalChecks: UInt
-    private var successPercentage: Percentage {
-        Percentage(successfulChecks, outOf: totalChecks)
-    }
-    
-    init(path: Path, successThreshold: Percentage, totalChecks: UInt) {
+// OBA: an immutable value built once a check has finished. Upstream published a
+// class whose success count the in-flight check went on incrementing, from
+// whichever thread each response arrived on.
+nonisolated struct ConnectivityResult: Sendable {
+    let connection: Connection
+    let isConnected: Bool
+    let isExpensive: Bool
+
+    init(path: some NetworkPath, successfulChecks: UInt, totalChecks: UInt, successThreshold: Percentage) {
         connection = Connection(path)
+        isConnected = Percentage(successfulChecks, outOf: totalChecks) >= successThreshold
         isExpensive = path.isExpensive
-        self.successThreshold = successThreshold
-        self.totalChecks = totalChecks
-    }
-    
-    func connectivityCheck(successful: Bool) {
-        if successful {
-            successfulChecks += 1
-        }
-    }
-    
-    private func isThresholdMet(_ percentage: Percentage, threshold: Percentage) -> Bool {
-        return percentage >= threshold
     }
 }

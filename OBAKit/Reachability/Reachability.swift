@@ -9,7 +9,6 @@
 
 import Foundation
 import UIKit
-import Hyperconnectivity
 import OBAKitCore
 
 /// Presents a modal alert that tells the user their Internet connection is compromised and unable to retrieve data.

@@ -7,19 +7,19 @@
 
 import Foundation
 
-public class ResponseStringEqualityValidator: ResponseValidator {
-    
+nonisolated struct ResponseStringEqualityValidator: ResponseValidator {
+
     /// The `String` expected as the response
-    public let expectedResponse: String
+    let expectedResponse: String
 
     /// Initializes the receiver to validate that the response `String` is equal to the expected response.
     ///
     /// - Parameter expectedResponse: The `String` expected as the response.
-    public init(expectedResponse: String = "Success") {
+    init(expectedResponse: String = "Success") {
         self.expectedResponse = expectedResponse
     }
 
-    public func isResponseValid(_ response: URLResponse, data: Data) -> Bool {
+    func isResponseValid(_ response: URLResponse, data: Data) -> Bool {
         guard let responseString = String(data: data, encoding: .utf8) else {
             return false
         }

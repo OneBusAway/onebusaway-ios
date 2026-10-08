@@ -7,20 +7,18 @@
 
 import Foundation
 
-public struct Percentage: Comparable {
+nonisolated struct Percentage: Comparable, Sendable {
     let value: Double
 
-    public init(_ value: Double) {
-        var result = value < 0.0 ? 0.0 : value
-        result = result > 100.0 ? 100.0 : result
-        self.value = result
+    init(_ value: Double) {
+        self.value = min(max(value, 0.0), 100.0)
     }
-    
-    public init(_ value: UInt, outOf total: UInt) {
+
+    init(_ value: UInt, outOf total: UInt) {
         self.init(Double(value), outOf: Double(total))
     }
-    
-    public init(_ value: Double, outOf total: Double) {
+
+    init(_ value: Double, outOf total: Double) {
         guard total > 0 else {
             self.init(0.0)
             return
@@ -28,7 +26,7 @@ public struct Percentage: Comparable {
         self.init((value / total) * 100.0)
     }
 
-    public static func < (lhs: Self, rhs: Self) -> Bool {
+    static func < (lhs: Self, rhs: Self) -> Bool {
         return lhs.value < rhs.value
     }
 }

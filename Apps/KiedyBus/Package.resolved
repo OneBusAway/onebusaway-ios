@@ -1,5 +1,5 @@
 {
-  "originHash" : "c7b92363507186368eb966cbfd00cd9a8fa566f49b05ff9e36ae385193d2bc52",
+  "originHash" : "49fcb177872ea5835d2a792c7692772cf290f75321402e110dc1746e8f287514",
   "pins" : [
     {
       "identity" : "floatingpanel",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "b83108d10f42680d78f23fe4d4d80fc88dab3212",
         "version" : "7.11.1"
-      }
-    },
-    {
-      "identity" : "hyperconnectivity",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/rwbutler/Hyperconnectivity.git",
-      "state" : {
-        "revision" : "0503595f9ab5bfdef6c06c2d8c2712cb50213259",
-        "version" : "1.2.0"
       }
     },
     {

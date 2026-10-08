@@ -8,23 +8,24 @@
 import Combine
 import Foundation
 
-public struct ConnectivityPublisher: Publisher {
-    
+/// Publishes a `ConnectivityResult` on a background queue every time the network
+/// path changes. Never completes; cancel the subscription to stop monitoring.
+nonisolated struct ConnectivityPublisher: Publisher {
+
     // MARK: - Type Definitions
-    public typealias Configuration = Hyperconnectivity.Configuration
-    public typealias Failure = Never
-    public typealias Output = ConnectivityResult
-    
+    typealias Configuration = Hyperconnectivity.Configuration
+    typealias Failure = Never
+    typealias Output = ConnectivityResult
+
     // MARK: State
     private let configuration: Configuration
-    
-    public init(configuration: Configuration = Configuration()) {
+
+    init(configuration: Configuration = Configuration()) {
         self.configuration = configuration
     }
-    
-    public func receive<S>(subscriber: S) where S : Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
+
+    func receive<S>(subscriber: S) where S: Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
         let subscription = ConnectivitySubscription(configuration: configuration, subscriber: subscriber)
         subscriber.receive(subscription: subscription)
     }
 }
-

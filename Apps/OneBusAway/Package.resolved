@@ -1,5 +1,5 @@
 {
-  "originHash": "f34d2f5885993857ba81ebc89adcf1855f3e989a371faaf507bdcb9192d47b23",
+  "originHash": "35b63e0fd467f88c7a5a5f94706eaacd1806b653d73c37c92c4149be2069fc4c",
   "pins": [
     {
       "identity": "abseil-cpp-binary",
@@ -98,15 +98,6 @@
       "state": {
         "revision": "c0ac7575d70050c2973ba2318bd5af47f8e8153a",
         "version": "5.3.0"
-      }
-    },
-    {
-      "identity": "hyperconnectivity",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/rwbutler/Hyperconnectivity.git",
-      "state": {
-        "revision": "0503595f9ab5bfdef6c06c2d8c2712cb50213259",
-        "version": "1.2.0"
       }
     },
     {

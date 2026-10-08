@@ -10,7 +10,6 @@
 import Foundation
 import CoreLocation
 import OBAKitCore
-import Hyperconnectivity
 
 @objc(OBAAppConfig)
 public class AppConfig: CoreAppConfig {
