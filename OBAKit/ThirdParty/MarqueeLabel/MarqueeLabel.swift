@@ -17,7 +17,6 @@
 import UIKit
 import QuartzCore
 
-// swiftlint:disable:next type_body_length
 class MarqueeLabel: UILabel, CAAnimationDelegate {
 
     /**
@@ -739,17 +738,14 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
         }
 
         var labelTooLarge = false
-        if !super.adjustsFontSizeToFitWidth {
+        // OBA: a `minimumScaleFactor` of 0 (UILabel's default) means "don't scale
+        // down", so measure as a label that doesn't shrink. Upstream measured the
+        // text at 0 pt, found that it always fit, and so never scrolled.
+        if !super.adjustsFontSizeToFitWidth || super.minimumScaleFactor <= 0 {
             // Usual logic to check if the label string fits
             labelTooLarge = (sublabel.desiredSize().width + leadingBuffer) > self.bounds.size.width + CGFloat.ulpOfOne
         } else {
             // Logic with auto-scale support
-
-            // OBA: a `minimumScaleFactor` of 0 (UILabel's default) means "don't scale
-            // down", not "scale to nothing". Upstream measured the text at a 0 pt font,
-            // found that it always fit, and so never scrolled.
-            let scaleFactor = super.minimumScaleFactor > 0 ? super.minimumScaleFactor : 1.0
-
             // Create mutable attributed string to modify font sizes in-situ
             let resizedString = NSMutableAttributedString(attributedString: attributedText)
             resizedString.beginEditing()
@@ -757,9 +753,9 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
             resizedString.enumerateAttribute(.font, in: NSRange(location: 0, length: attributedText.length)) { val, rng, _ in
                 if let originalFont = val as? UIFont {
                     // OBA: `withSize` rather than `UIFont(name:size:)`, which cannot
-                    // recreate a system font from its private name: it returned Times
-                    // New Roman, or Helvetica at 0 pt, whose text measures negative.
-                    let resizedFont = originalFont.withSize(originalFont.pointSize * scaleFactor)
+                    // recreate a system font from its private name and returned Times
+                    // New Roman.
+                    let resizedFont = originalFont.withSize(originalFont.pointSize * super.minimumScaleFactor)
                     resizedString.addAttribute(.font, value: resizedFont, range: rng)
                 }
             }
@@ -1247,7 +1243,6 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
     /**
      Immediately resets the label to the home position, cancelling any in-flight scroll animation, and restarts the scroll animation if the appropriate conditions are met.
 
-     - SeeAlso: resetLabel
      - SeeAlso: triggerScrollStart
      */
     @objc func restartLabel() {

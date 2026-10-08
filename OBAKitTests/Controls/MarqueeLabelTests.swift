@@ -12,6 +12,15 @@ import Testing
 import UIKit
 @testable import OBAKit
 
+/// Skips a test that needs the label to scroll, which it won't with Reduce Motion on.
+private extension Trait where Self == ConditionTrait {
+    static var reduceMotionOff: Self {
+        .enabled("Reduce Motion stops MarqueeLabel scrolling") {
+            await MainActor.run { !UIAccessibility.isReduceMotionEnabled }
+        }
+    }
+}
+
 /// Covers the vendored MarqueeLabel in `OBAKit/ThirdParty/MarqueeLabel`,
 /// including regressions for the `OBA:` fixes made there.
 @MainActor
@@ -19,23 +28,45 @@ import UIKit
 struct MarqueeLabelTests {
 
     private static let longText = String(repeating: "Downtown Seattle via Rainier Ave S ", count: 4)
+    private static let font = UIFont.preferredFont(forTextStyle: .footnote)
 
     private func makeLabel(text: String = longText, width: CGFloat = 100) -> MarqueeLabel {
         let label = MarqueeLabel(frame: CGRect(x: 0, y: 0, width: width, height: 20))
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
+        label.font = Self.font
         label.text = text
         return label
     }
 
+    /// Shows `label` in a window. The label needs a rendered window to get a
+    /// presentation layer, which `awayFromHome` and `animationPosition` read.
+    private func show(_ label: MarqueeLabel) throws -> UIWindow {
+        let scene = try #require(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 320, height: 100)
+        window.addSubview(label)
+        window.isHidden = false
+        label.layoutIfNeeded()
+        CATransaction.flush()
+        return window
+    }
+
+    /// Shows a long label that starts scrolling as soon as it's on screen.
+    private func showScrollingLabel(configure: (MarqueeLabel) -> Void = { _ in }) throws -> (MarqueeLabel, UIWindow) {
+        let label = makeLabel()
+        label.animationDelay = 0
+        label.speed = .rate(200)
+        configure(label)
+        return (label, try show(label))
+    }
+
     // MARK: - labelShouldScroll
 
-    @Test func `Text wider than the label scrolls`() throws {
-        try #require(!UIAccessibility.isReduceMotionEnabled)
+    @Test(.reduceMotionOff) func `Text wider than the label scrolls`() {
         #expect(makeLabel().labelShouldScroll())
     }
 
     @Test func `Text that fits does not scroll`() {
-        #expect(!makeLabel(text: "1", width: 100).labelShouldScroll())
+        #expect(!makeLabel(text: "1").labelShouldScroll())
     }
 
     @Test func `Empty text does not scroll`() {
@@ -53,8 +84,7 @@ struct MarqueeLabelTests {
     /// returns 0 pt Helvetica, which measures negative, so a label with
     /// `adjustsFontSizeToFitWidth` never scrolled. `StackedMarqueeTitleView`
     /// configures its labels exactly this way.
-    @Test func `Auto-shrinking label with a zero scale factor scrolls`() throws {
-        try #require(!UIAccessibility.isReduceMotionEnabled)
+    @Test(.reduceMotionOff) func `Auto-shrinking label with a zero scale factor scrolls`() {
         let label = makeLabel()
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0
@@ -63,16 +93,14 @@ struct MarqueeLabelTests {
 
     @Test func `Auto-shrinking label that fits once shrunk does not scroll`() {
         let text = "Rainier Ave S"
-        let font = UIFont.preferredFont(forTextStyle: .footnote)
-        let fullWidth = (text as NSString).size(withAttributes: [.font: font]).width
+        let fullWidth = (text as NSString).size(withAttributes: [.font: Self.font]).width
         let label = makeLabel(text: text, width: ceil(fullWidth * 0.75))
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.5
         #expect(!label.labelShouldScroll())
     }
 
-    @Test func `Auto-shrinking label that is too wide even when shrunk scrolls`() throws {
-        try #require(!UIAccessibility.isReduceMotionEnabled)
+    @Test(.reduceMotionOff) func `Auto-shrinking label that is too wide even when shrunk scrolls`() {
         let label = makeLabel()
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.5
@@ -109,77 +137,47 @@ struct MarqueeLabelTests {
 
     // MARK: - On screen
 
-    /// Shows `label` in a window. The label needs a rendered window to get a
-    /// presentation layer, which `awayFromHome` and `animationPosition` read.
-    private func show(_ label: MarqueeLabel) throws -> UIWindow {
-        let scene = try #require(UIApplication.shared.connectedScenes.first as? UIWindowScene)
-        let window = UIWindow(windowScene: scene)
-        window.frame = CGRect(x: 0, y: 0, width: 320, height: 100)
-        window.addSubview(label)
-        window.isHidden = false
-        label.layoutIfNeeded()
-        CATransaction.flush()
-        return window
-    }
-
     /// Upstream compared the layer's center with the home frame's origin, so a
     /// label at rest read as away from home.
     @Test func `A label at rest is at home`() async throws {
         let label = makeLabel(text: "1")
         let window = try show(label)
         defer { window.isHidden = true }
-        try await Task.sleep(for: .milliseconds(100))
+        await spin(0.1)
 
         #expect(!label.awayFromHome)
         #expect(label.animationPosition == 0)
     }
 
-    @Test func `A scrolling label leaves home`() async throws {
-        try #require(!UIAccessibility.isReduceMotionEnabled)
-        let label = makeLabel()
-        label.animationDelay = 0
-        label.speed = .rate(200)
-        let window = try show(label)
+    @Test(.reduceMotionOff) func `A scrolling label leaves home`() async throws {
+        let (label, window) = try showScrollingLabel()
         defer { window.isHidden = true }
-        try await Task.sleep(for: .milliseconds(300))
 
-        #expect(label.awayFromHome)
+        await poll(until: { label.awayFromHome })
         #expect((label.animationPosition ?? 0) > 0)
     }
 
     /// `labelWasTapped` and `triggerScrollStart()` only start a scroll from home,
     /// which upstream's `awayFromHome` never reported.
-    @Test func `triggerScrollStart starts a held label`() async throws {
-        try #require(!UIAccessibility.isReduceMotionEnabled)
-        let label = makeLabel()
-        label.animationDelay = 0
-        label.speed = .rate(200)
-        label.holdScrolling = true
-        let window = try show(label)
+    @Test(.reduceMotionOff) func `triggerScrollStart starts a held label`() async throws {
+        let (label, window) = try showScrollingLabel { $0.holdScrolling = true }
         defer { window.isHidden = true }
-        try await Task.sleep(for: .milliseconds(300))
+        await spin(0.1)
         try #require(!label.awayFromHome)
 
         label.triggerScrollStart()
         CATransaction.flush()
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(label.awayFromHome)
+        await poll(until: { label.awayFromHome })
     }
 
     // MARK: - Pausing
 
     /// The fade mask is absent when `fadeLength` is 0, and pausing reaches it
     /// through force unwraps inside optional chains.
-    @Test func `Pausing and unpausing a scrolling label without a fade`() async throws {
-        try #require(!UIAccessibility.isReduceMotionEnabled)
-        let label = makeLabel()
-        label.animationDelay = 0
-        label.speed = .rate(200)
-        label.fadeLength = 0
-        let window = try show(label)
+    @Test(.reduceMotionOff) func `Pausing and unpausing a scrolling label without a fade`() async throws {
+        let (label, window) = try showScrollingLabel { $0.fadeLength = 0 }
         defer { window.isHidden = true }
-        try await Task.sleep(for: .milliseconds(300))
-        try #require(label.awayFromHome)
+        await poll(until: { label.awayFromHome })
 
         label.pauseLabel()
         #expect(label.isPaused)
