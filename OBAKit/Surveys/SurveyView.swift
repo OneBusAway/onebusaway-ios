@@ -17,6 +17,18 @@ struct SurveyView: View {
     @ObservedObject var viewModel: SurveyViewModel
     let openExternalSurvey: () -> Void
 
+    /// The questions as of opening, like the Eureka form built once in
+    /// `viewDidLoad`. `questionsToShow` drops the hero question once it has
+    /// been submitted, and re-reading it would yank those rows out from under
+    /// the rider when the follow-up submit fails.
+    @State private var questions: [SurveyQuestion]
+
+    init(viewModel: SurveyViewModel, openExternalSurvey: @escaping () -> Void) {
+        self.viewModel = viewModel
+        self.openExternalSurvey = openExternalSurvey
+        self._questions = State(initialValue: viewModel.questionsToShow)
+    }
+
     var body: some View {
         Form {
             if let description = viewModel.survey.study.description {
@@ -26,7 +38,7 @@ struct SurveyView: View {
             }
 
             Section {
-                ForEach(viewModel.questionsToShow, id: \.id) { question in
+                ForEach(questions, id: \.id) { question in
                     SurveyQuestionRows(question: question, viewModel: viewModel, openExternalSurvey: openExternalSurvey)
                 }
             } header: {
@@ -82,7 +94,7 @@ private struct SurveyQuestionRows: View {
                     if let choice { viewModel.updateAnswer(for: question, answer: choice) }
                 }
             } else {
-                ForEach(options, id: \.self) { option in
+                ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                     CheckmarkRow(title: option, isChecked: choice == option) {
                         choice = option
                         viewModel.updateAnswer(for: question, answer: option)
@@ -92,7 +104,7 @@ private struct SurveyQuestionRows: View {
 
         case .checkbox:
             prompt
-            ForEach(options, id: \.self) { option in
+            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
                 CheckmarkRow(title: option, isChecked: checked.contains(option)) {
                     let isChecked = !checked.contains(option)
                     if isChecked { checked.insert(option) } else { checked.remove(option) }
