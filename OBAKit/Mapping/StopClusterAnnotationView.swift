@@ -28,7 +28,7 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
     // MKMarkerAnnotationView's getter answers its own "Shows more info" and
     // ignores what was assigned, so VoiceOver would never hear the cluster hint.
     override var accessibilityHint: String? {
-        get { StopCluster.accessibilityHint }
+        get { annotation is MKClusterAnnotation ? StopCluster.accessibilityHint : super.accessibilityHint }
         set { super.accessibilityHint = newValue }
     }
 
