@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import SwiftUI
 import UIKit
 import OBAKitCore
 
@@ -95,9 +96,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
         )
 
         let row = OBAListRowView.DefaultViewModel(title: String(format: fmt, stop.name), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            let stopProblemController = StopProblemViewController(application: self.application, stop: self.stop)
-            self.navigationController?.pushViewController(stopProblemController, animated: true)
+            self?.showStopProblemForm()
         }
 
         return OBAListViewSection(id: "stop_problem_section", title: ReportProblemCopy.stopProblemHeader, contents: [row])
@@ -115,8 +114,69 @@ class ReportProblemViewController: TaskController<StopArrivals>,
 
     func onSelectArrivalDeparture(_ arrivalDepartureItem: ArrivalDepartureItem) {
         guard let arrDep = data?.arrivalsAndDepartures.first(where: { $0.id == arrivalDepartureItem.arrivalDepartureID }) else { return }
-        let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
-        self.navigationController?.pushViewController(controller, animated: true)
+        showVehicleProblemForm(for: arrDep)
+    }
+
+    // MARK: - Problem Forms
+
+    private func showStopProblemForm() {
+        application.analytics?.reportEvent(pageURL: "app://localhost/stop-problem", label: AnalyticsLabels.reportProblem, value: "feedback_stop_problem")
+
+        let stopID = stop.id
+        let form = StopProblemView(
+            send: { [weak self] code, comment, shareLocation in
+                guard let self, let apiService = self.application.apiService else {
+                    throw UnstructuredError("No API Service")
+                }
+                let location = shareLocation ? self.application.locationService.currentLocation : nil
+                let report = RESTAPIService.StopProblemReport(stopID: stopID, code: code, comment: comment, location: location)
+                _ = try await apiService.getStopProblem(report: report)
+                self.application.analytics?.reportEvent(pageURL: "app://localhost/stop-problem", label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
+            },
+            onSent: { [weak self] in self?.finishReporting() }
+        )
+
+        pushProblemForm(form, title: OBALoc("stop_problem_controller.title", value: "Report a Problem", comment: "Title for the Report Stop Problem controller"))
+    }
+
+    private func showVehicleProblemForm(for arrivalDeparture: ArrivalDeparture) {
+        application.analytics?.reportEvent(pageURL: "app://localhost/vehicle-problem", label: AnalyticsLabels.reportProblem, value: "feedback_trip_problem")
+
+        let form = VehicleProblemView(
+            vehicleID: arrivalDeparture.vehicleID,
+            send: { [weak self] input in
+                guard let self, let apiService = self.application.apiService else {
+                    throw UnstructuredError("No API Service")
+                }
+                let report = RESTAPIService.TripProblemReport(
+                    tripID: arrivalDeparture.tripID,
+                    serviceDate: arrivalDeparture.serviceDate,
+                    vehicleID: input.vehicleID,
+                    stopID: arrivalDeparture.stopID,
+                    code: input.code,
+                    comment: input.comment,
+                    userOnVehicle: input.isOnVehicle,
+                    location: input.shareLocation ? self.application.locationService.currentLocation : nil
+                )
+                _ = try await apiService.getTripProblem(report: report)
+                self.application.analytics?.reportEvent(pageURL: "app://localhost/vehicle-problem", label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
+            },
+            onSent: { [weak self] in self?.finishReporting() }
+        )
+
+        pushProblemForm(form, title: OBALoc("vehicle_problem_controller.title", value: "Report a Problem", comment: "Title for the Report Vehicle Problem controller"))
+    }
+
+    private func pushProblemForm(_ form: some View, title: String) {
+        let host = UIHostingController(rootView: form.defaultAppStorage(application.userDefaults))
+        host.title = title
+        navigationController?.pushViewController(host, animated: true)
+    }
+
+    /// A report went through: confirm it and close the whole report flow.
+    private func finishReporting() {
+        ProgressHUD.showSuccessAndDismiss()
+        dismiss(animated: true)
     }
 
     // MARK: - Actions
