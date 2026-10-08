@@ -33,7 +33,6 @@ targets:
     dependencies:
       - target: OBAKitCore
       - package: Hyperconnectivity
-      - package: Eureka
       - package: FloatingPanel
       - package: MarqueeLabel
       - package: OTPKit

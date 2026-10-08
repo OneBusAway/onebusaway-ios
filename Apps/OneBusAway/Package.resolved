@@ -1,5 +1,5 @@
 {
-  "originHash": "055362610a029ddb6bc01ff381cd8b16298e6c2a80627c7b598a390adc0b1e65",
+  "originHash": "aab469c80d55b8d3f53227849db9555a4384242c12bae2a126829252c5ac4dca",
   "pins": [
     {
       "identity": "abseil-cpp-binary",
@@ -26,15 +26,6 @@
       "state": {
         "revision": "2de9697acd3c0f86e54b190f151d745361c31f15",
         "version": "1.0.1"
-      }
-    },
-    {
-      "identity": "eureka",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/xmartlabs/Eureka.git",
-      "state": {
-        "revision": "028ef8e3191a256b8f6b8bb6b9496efcb0762dbc",
-        "version": "5.5.0"
       }
     },
     {

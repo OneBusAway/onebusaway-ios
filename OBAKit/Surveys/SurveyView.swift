@@ -17,10 +17,9 @@ struct SurveyView: View {
     @ObservedObject var viewModel: SurveyViewModel
     let openExternalSurvey: () -> Void
 
-    /// The questions as of opening, like the Eureka form built once in
-    /// `viewDidLoad`. `questionsToShow` drops the hero question once it has
-    /// been submitted, and re-reading it would yank those rows out from under
-    /// the rider when the follow-up submit fails.
+    /// The questions as of opening. `questionsToShow` drops the hero question
+    /// once it has been submitted, and re-reading it would yank those rows out
+    /// from under the rider when the follow-up submit fails.
     @State private var questions: [SurveyQuestion]
 
     init(viewModel: SurveyViewModel, openExternalSurvey: @escaping () -> Void) {
