@@ -61,6 +61,7 @@ private struct BookmarkNameRow: View {
 
     var body: some View {
         TextField("", text: $bookmark.name)
+            .accessibilityLabel(OBALoc("edit_bookmark_controller.name_section.header_title", value: "Bookmark Name", comment: "Title of the Bookmark Name header."))
             .onChange(of: bookmark.name) { _, name in
                 save(name)
             }

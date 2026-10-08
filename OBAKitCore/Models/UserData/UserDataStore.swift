@@ -131,7 +131,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Use this rather than `add(_:to:)` for an edit that doesn't change the
     /// bookmark's group: `add` re-appends it and renumbers `sortOrder`, moving it
     /// to the bottom of its group (see `setPinned(_:for:)`). The stored
-    /// `groupID` and `sortOrder` win, and are copied back onto `bookmark`.
+    /// `groupID` and `sortOrder` win, and are copied back onto `bookmark`; every
+    /// other field is taken from `bookmark`, so pass a copy fetched just before
+    /// editing (`findBookmark(id:)`), or a stale one will undo newer changes
+    /// such as `setPinned`.
     ///
     /// Posts `.bookmarksDidChange`. No-op if `bookmark` isn't in the store.
     func update(_ bookmark: Bookmark)
