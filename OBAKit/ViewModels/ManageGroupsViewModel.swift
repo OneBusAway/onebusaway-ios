@@ -63,7 +63,7 @@ final class ManageGroupsViewModel {
     /// Writes `drafts` to the store. Bookmarks in deleted groups are kept and
     /// become ungrouped.
     func commit() {
-        replaceGroups(groups(from: drafts.map { (tag: $0.id.uuidString, value: $0.name) }))
+        replaceGroups(groups(from: drafts))
     }
 
     // MARK: - Data Access
@@ -74,21 +74,14 @@ final class ManageGroupsViewModel {
 
     // MARK: - Group Construction
 
-    /// Converts an ordered sequence of (tag, value) pairs into `BookmarkGroup` objects. Rows with empty or whitespace-only names are skipped.
-    /// Existing groups are identified by their UUID tag and a new `BookmarkGroup` is
-    /// constructed reusing that UUID so identity is preserved when `replaceBookmarkGroups`
-    /// later merges these into the store; rows without a valid UUID tag produce a new
-    /// group with a fresh ID.
-    func groups(from rows: [(tag: String?, value: String?)]) -> [BookmarkGroup] {
-        var result = [BookmarkGroup]()
-        var sortOrder = 0
-        for row in rows {
-            guard let name = row.value, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
-            let id = UUID(optionalUUIDString: row.tag) ?? UUID()
-            result.append(BookmarkGroup(name: name, id: id, sortOrder: sortOrder))
-            sortOrder += 1
-        }
-        return result
+    /// Converts drafts into `BookmarkGroup`s numbered in order, skipping drafts
+    /// with empty or whitespace-only names. Each group keeps its draft's `id`, so
+    /// `replaceBookmarkGroups` updates existing groups rather than replacing them.
+    func groups(from drafts: [GroupDraft]) -> [BookmarkGroup] {
+        drafts
+            .filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .enumerated()
+            .map { BookmarkGroup(name: $1.name, id: $1.id, sortOrder: $0) }
     }
 
     // MARK: - Mutation

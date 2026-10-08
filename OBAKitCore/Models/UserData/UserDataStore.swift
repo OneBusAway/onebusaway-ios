@@ -125,6 +125,17 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - bookmark: The `Bookmark` to update.
     func setPinned(_ isPinned: Bool, for bookmark: Bookmark)
 
+    /// Saves `bookmark`'s edited fields (its name, favorite flag and so on) over
+    /// the stored copy with the same `id`, without moving it.
+    ///
+    /// Use this rather than `add(_:to:)` for an edit that doesn't change the
+    /// bookmark's group: `add` re-appends it and renumbers `sortOrder`, moving it
+    /// to the bottom of its group (see `setPinned(_:for:)`). The stored
+    /// `groupID` and `sortOrder` win, and are copied back onto `bookmark`.
+    ///
+    /// Posts `.bookmarksDidChange`. No-op if `bookmark` isn't in the store.
+    func update(_ bookmark: Bookmark)
+
     /// Deletes the specified `Bookmark` from the `UserDataStore`.
     /// - Parameter bookmark: The `Bookmark` to delete.
     func delete(bookmark: Bookmark)
@@ -736,6 +747,18 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         // stale to whoever kept a reference.
         bookmark.isPinned = isPinned
         bookmarks = allBookmarks
+
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
+    }
+
+    public func update(_ bookmark: Bookmark) {
+        var all = bookmarks
+        guard let index = all.firstIndex(where: { $0.id == bookmark.id }) else { return }
+
+        bookmark.groupID = all[index].groupID
+        bookmark.sortOrder = all[index].sortOrder
+        all[index] = bookmark
+        bookmarks = all
 
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }

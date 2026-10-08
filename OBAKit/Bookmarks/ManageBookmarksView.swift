@@ -23,8 +23,8 @@ struct ManageBookmarksView: View {
                     case .header(_, let title):
                         GroupHeaderRow(title: title)
                     case .bookmark(let bookmark):
-                        BookmarkNameRow(bookmark: bookmark) { id, name in
-                            viewModel.saveNameChange(bookmarkID: id, newName: name)
+                        BookmarkNameRow(bookmark: bookmark) { name in
+                            viewModel.saveNameChange(bookmarkID: bookmark.id, newName: name)
                         }
                     }
                 }
@@ -57,12 +57,12 @@ private struct GroupHeaderRow: View {
 
 private struct BookmarkNameRow: View {
     @Bindable var bookmark: ManageBookmarksViewModel.EditableBookmark
-    let save: (_ id: UUID, _ name: String) -> Void
+    let save: (_ name: String) -> Void
 
     var body: some View {
         TextField("", text: $bookmark.name)
             .onChange(of: bookmark.name) { _, name in
-                save(bookmark.id, name)
+                save(name)
             }
     }
 }

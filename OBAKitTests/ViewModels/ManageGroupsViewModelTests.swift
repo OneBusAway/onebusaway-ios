@@ -137,17 +137,15 @@ final class ManageGroupsViewModelTests: OBATestCase {
 
     // MARK: - groups(from:)
 
+    private typealias Draft = ManageGroupsViewModel.GroupDraft
+
     @Test @MainActor
-    func `Groups from converts rows to bookmark groups`() {
+    func `Groups from numbers drafts in order`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: nil, value: "Alpha"),
-            (tag: nil, value: "Beta")
-        ]
-        let groups = vm.groups(from: rows)
+        let groups = vm.groups(from: [Draft(id: UUID(), name: "Alpha"), Draft(id: UUID(), name: "Beta")])
 
         #expect(groups.count == 2)
         #expect(groups[0].name == "Alpha")
@@ -162,49 +160,27 @@ final class ManageGroupsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: nil, value: "Valid"),
-            (tag: nil, value: ""),
-            (tag: nil, value: "   "),
-            (tag: nil, value: nil)
-        ]
-        let groups = vm.groups(from: rows)
+        let groups = vm.groups(from: [
+            Draft(id: UUID(), name: ""),
+            Draft(id: UUID(), name: "Valid"),
+            Draft(id: UUID(), name: " \n ")
+        ])
 
-        #expect(groups.count == 1)
-        #expect(groups[0].name == "Valid")
+        #expect(groups.map(\.name) == ["Valid"])
+        #expect(groups.first?.sortOrder == 0)
     }
 
     @Test @MainActor
-    func `Groups from preserves existing UUID tags`() {
+    func `Groups from keeps each draft's ID`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
         let existingID = UUID()
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: existingID.uuidString, value: "Renamed Group")
-        ]
-        let groups = vm.groups(from: rows)
+        let groups = vm.groups(from: [Draft(id: existingID, name: "Renamed Group")])
 
         #expect(groups.first?.id == existingID)
         #expect(groups.first?.name == "Renamed Group")
-    }
-
-    @Test @MainActor
-    func `Groups from assigns fresh ID when tag is nil or invalid`() {
-        let dataLoader = MockDataLoader(testName: name)
-        let app = createApplication(dataLoader: dataLoader)
-        let vm = ManageGroupsViewModel(application: app)
-
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: nil, value: "New Group"),
-            (tag: "not-a-uuid", value: "Another New Group")
-        ]
-        let groups = vm.groups(from: rows)
-
-        #expect(groups.count == 2)
-        // IDs should be valid UUIDs (non-nil), just not the same as each other
-        #expect(groups[0].id != groups[1].id)
     }
 
     // MARK: - Drafts

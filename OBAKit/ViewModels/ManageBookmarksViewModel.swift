@@ -61,7 +61,7 @@ final class ManageBookmarksViewModel {
 
     private(set) var rows: [Row] = []
 
-    init(application: Application, ungroupedTitle: String = Strings.bookmark) {
+    init(application: Application, ungroupedTitle: String = BookmarksViewModel.ungroupedSectionTitle) {
         self.application = application
         self.ungroupedTitle = ungroupedTitle
         reloadRows()
@@ -73,12 +73,14 @@ final class ManageBookmarksViewModel {
     /// ungrouped header and bookmarks. Existing `EditableBookmark`s are reused, so
     /// a field being typed into keeps its identity.
     func reloadRows() {
-        let existing = Dictionary(uniqueKeysWithValues: rows.compactMap { row -> (UUID, EditableBookmark)? in
-            guard case .bookmark(let bookmark) = row else { return nil }
-            return (bookmark.id, bookmark)
-        })
+        var existing = [UUID: EditableBookmark]()
+        for case .bookmark(let bookmark) in rows {
+            existing[bookmark.id] = bookmark
+        }
+        // One decode of the store, rather than one per group via `bookmarksInGroup`.
+        let bookmarksByGroup = Dictionary(grouping: application.userDataStore.bookmarks, by: \.groupID)
         func bookmarkRows(_ group: BookmarkGroup?) -> [Row] {
-            bookmarksInGroup(group).map { bookmark in
+            (bookmarksByGroup[group?.id] ?? []).sorted { $0.sortOrder < $1.sortOrder }.map { bookmark in
                 let editable = existing[bookmark.id] ?? EditableBookmark(id: bookmark.id, name: bookmark.name)
                 return .bookmark(editable)
             }
@@ -107,24 +109,24 @@ final class ManageBookmarksViewModel {
 
         var reordered = rows
         reordered.move(fromOffsets: source, toOffset: destination)
-        guard let landedAt = reordered.firstIndex(where: { $0.id == moving.id.uuidString }) else { return }
+        let landedAt = destination > sourceIndex ? destination - 1 : destination
 
-        func headerGroupID(_ row: Row) -> UUID?? {
-            if case .header(let id, _) = row { id } else { nil }
-        }
-        let groupID: UUID?
-        let indexInGroup: Int
-        if let headerIndex = reordered[..<landedAt].lastIndex(where: { headerGroupID($0) != nil }) {
-            groupID = headerGroupID(reordered[headerIndex])!
-            indexInGroup = landedAt - headerIndex - 1
-        } else if let firstHeader = reordered[landedAt...].lazy.compactMap(headerGroupID).first {
-            groupID = firstHeader
-            indexInGroup = 0
-        } else {
-            return
+        // Walk down to where it landed, tracking the current group and the
+        // position within it. Rows always open with a header, so a bookmark that
+        // lands above every header starts out in the first group.
+        guard case .header(var groupID, _) = rows[0] else { return }
+        var indexInGroup = 0
+        for row in reordered[..<landedAt] {
+            switch row {
+            case .header(let id, _):
+                groupID = id
+                indexInGroup = 0
+            case .bookmark:
+                indexInGroup += 1
+            }
         }
 
-        moveBookmark(bookmark, to: groupID.flatMap { findGroup(id: $0) }, at: indexInGroup)
+        moveBookmark(bookmark, to: findGroup(id: groupID), at: indexInGroup)
         reloadRows()
     }
 
@@ -196,6 +198,8 @@ final class ManageBookmarksViewModel {
             return
         }
 
+        guard bookmark.name != newName else { return }
+
         bookmark.name = newName
         resaveInPlace(bookmark)
     }
@@ -220,10 +224,7 @@ final class ManageBookmarksViewModel {
         resaveInPlace(bookmark)
     }
 
-    /// Persists `bookmark` without moving it: re-adding at its own `sortOrder`
-    /// keeps its place, where `add(_:to:)` would append it to the end of its group.
     private func resaveInPlace(_ bookmark: Bookmark) {
-        let currentGroup = bookmark.groupID.flatMap { application.userDataStore.findGroup(id: $0) }
-        application.userDataStore.add(bookmark, to: currentGroup, index: bookmark.sortOrder)
+        application.userDataStore.update(bookmark)
     }
 }
