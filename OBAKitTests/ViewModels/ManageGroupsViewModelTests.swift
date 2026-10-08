@@ -137,17 +137,15 @@ final class ManageGroupsViewModelTests: OBATestCase {
 
     // MARK: - groups(from:)
 
+    private typealias Draft = ManageGroupsViewModel.GroupDraft
+
     @Test @MainActor
-    func `Groups from converts rows to bookmark groups`() {
+    func `Groups from numbers drafts in order`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: nil, value: "Alpha"),
-            (tag: nil, value: "Beta")
-        ]
-        let groups = vm.groups(from: rows)
+        let groups = vm.groups(from: [Draft(id: UUID(), name: "Alpha"), Draft(id: UUID(), name: "Beta")])
 
         #expect(groups.count == 2)
         #expect(groups[0].name == "Alpha")
@@ -162,48 +160,80 @@ final class ManageGroupsViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: nil, value: "Valid"),
-            (tag: nil, value: ""),
-            (tag: nil, value: "   "),
-            (tag: nil, value: nil)
-        ]
-        let groups = vm.groups(from: rows)
+        let groups = vm.groups(from: [
+            Draft(id: UUID(), name: ""),
+            Draft(id: UUID(), name: "Valid"),
+            Draft(id: UUID(), name: " \n ")
+        ])
 
-        #expect(groups.count == 1)
-        #expect(groups[0].name == "Valid")
+        #expect(groups.map(\.name) == ["Valid"])
+        #expect(groups.first?.sortOrder == 0)
     }
 
     @Test @MainActor
-    func `Groups from preserves existing UUID tags`() {
+    func `Groups from keeps each draft's ID`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
         let existingID = UUID()
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: existingID.uuidString, value: "Renamed Group")
-        ]
-        let groups = vm.groups(from: rows)
+        let groups = vm.groups(from: [Draft(id: existingID, name: "Renamed Group")])
 
         #expect(groups.first?.id == existingID)
         #expect(groups.first?.name == "Renamed Group")
     }
 
+    // MARK: - Drafts
+
     @Test @MainActor
-    func `Groups from assigns fresh ID when tag is nil or invalid`() {
+    func `Drafts offer one blank row when there are no groups`() {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let vm = ManageGroupsViewModel(application: app)
 
-        let rows: [(tag: String?, value: String?)] = [
-            (tag: nil, value: "New Group"),
-            (tag: "not-a-uuid", value: "Another New Group")
-        ]
-        let groups = vm.groups(from: rows)
+        #expect(vm.drafts.count == 1)
+        #expect(vm.drafts.first?.name == "")
+    }
 
-        #expect(groups.count == 2)
-        // IDs should be valid UUIDs (non-nil), just not the same as each other
-        #expect(groups[0].id != groups[1].id)
+    @Test @MainActor
+    func `Commit writes renamed, reordered, added and deleted drafts`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let work = BookmarkGroup(name: "Work", sortOrder: 0)
+        let home = BookmarkGroup(name: "Home", sortOrder: 1)
+        let gym = BookmarkGroup(name: "Gym", sortOrder: 2)
+        app.userDataStore.replaceBookmarkGroups(with: [work, home, gym])
+        let vm = ManageGroupsViewModel(application: app)
+
+        vm.drafts[0].name = "Office"
+        vm.moveDrafts(from: IndexSet(integer: 1), to: 0)
+        vm.deleteDrafts(at: IndexSet(integer: 2))
+        vm.addDraft()
+        vm.drafts[vm.drafts.count - 1].name = "School"
+        vm.addDraft() // left blank: skipped
+        vm.commit()
+
+        let stored = app.userDataStore.bookmarkGroups.sorted { $0.sortOrder < $1.sortOrder }
+        #expect(stored.map(\.name) == ["Home", "Office", "School"])
+        #expect(stored[0].id == home.id)
+        #expect(stored[1].id == work.id)
+    }
+
+    @Test @MainActor
+    func `Commit keeps bookmarks from a deleted group`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let work = BookmarkGroup(name: "Work", sortOrder: 0)
+        app.userDataStore.replaceBookmarkGroups(with: [work])
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        app.userDataStore.add(bookmark, to: work)
+        let vm = ManageGroupsViewModel(application: app)
+
+        vm.deleteDrafts(at: IndexSet(integer: 0))
+        vm.commit()
+
+        #expect(app.userDataStore.bookmarkGroups.isEmpty)
+        #expect(app.userDataStore.findBookmark(id: bookmark.id) != nil)
     }
 }

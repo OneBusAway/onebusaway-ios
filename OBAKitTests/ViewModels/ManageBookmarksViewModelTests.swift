@@ -302,4 +302,159 @@ final class ManageBookmarksViewModelTests: OBATestCase {
         #expect(bookmarks.count == 3)
         #expect(bookmarks[1].id == incoming.id)
     }
+
+    // MARK: - Rows
+
+    /// Builds groups "Work" (bookmarks A, B) and "Home" (C), plus ungrouped D.
+    @MainActor
+    private func makeGroupedBookmarks(_ app: Application) throws -> (work: BookmarkGroup, home: BookmarkGroup, a: Bookmark, b: Bookmark, c: Bookmark, d: Bookmark) {
+        let stop = try makeStop()
+        let work = BookmarkGroup(name: "Work", sortOrder: 0)
+        let home = BookmarkGroup(name: "Home", sortOrder: 1)
+        app.userDataStore.replaceBookmarkGroups(with: [work, home])
+        func make(_ name: String, _ group: BookmarkGroup?) -> Bookmark {
+            let bookmark = Bookmark(name: name, regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+            app.userDataStore.add(bookmark, to: group)
+            return bookmark
+        }
+        return (work, home, make("A", work), make("B", work), make("C", home), make("D", nil))
+    }
+
+    @MainActor
+    private func rowSummary(_ vm: ManageBookmarksViewModel) -> [String] {
+        vm.rows.map { row in
+            switch row {
+            case .header(_, let title): "[\(title)]"
+            case .bookmark(let bookmark): bookmark.name
+            }
+        }
+    }
+
+    @Test @MainActor
+    func `Rows list each group's header and bookmarks, then ungrouped`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        _ = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+
+        #expect(rowSummary(vm) == ["[Work]", "A", "B", "[Home]", "C", "[Bookmarks]", "D"])
+    }
+
+    @Test @MainActor
+    func `Move rows reorders within a group`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let fixture = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+
+        // Drag B (row 2) above A (row 1).
+        vm.moveRows(from: IndexSet(integer: 2), to: 1)
+
+        #expect(vm.bookmarksInGroup(fixture.work).map(\.name) == ["B", "A"])
+        #expect(rowSummary(vm) == ["[Work]", "B", "A", "[Home]", "C", "[Bookmarks]", "D"])
+    }
+
+    @Test @MainActor
+    func `Move rows moves a bookmark into another group`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let fixture = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+
+        // Drag A (row 1) to just below C (end of Home, before the ungrouped header at 5).
+        vm.moveRows(from: IndexSet(integer: 1), to: 5)
+
+        #expect(vm.bookmarksInGroup(fixture.work).map(\.name) == ["B"])
+        #expect(vm.bookmarksInGroup(fixture.home).map(\.name) == ["C", "A"])
+    }
+
+    @Test @MainActor
+    func `Move rows into the ungrouped section clears the group`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let fixture = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+
+        // Drag C (row 4) to the very end.
+        vm.moveRows(from: IndexSet(integer: 4), to: vm.rows.count)
+
+        #expect(vm.bookmarksInGroup(fixture.home).isEmpty)
+        #expect(vm.bookmarksInGroup(nil).map(\.name) == ["D", "C"])
+    }
+
+    @Test @MainActor
+    func `Move rows above every header lands first in the first group`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let fixture = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+
+        // Drag D (last row) to the very top, above the Work header.
+        vm.moveRows(from: IndexSet(integer: 6), to: 0)
+
+        #expect(vm.bookmarksInGroup(fixture.work).map(\.name) == ["D", "A", "B"])
+        #expect(rowSummary(vm).first == "[Work]")
+    }
+
+    @Test @MainActor
+    func `Move rows ignores header rows`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        _ = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+        let before = rowSummary(vm)
+
+        vm.moveRows(from: IndexSet(integer: 3), to: 0)
+
+        #expect(rowSummary(vm) == before)
+    }
+
+    @Test @MainActor
+    func `Delete rows deletes bookmarks and skips headers`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let fixture = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+
+        vm.deleteRows(at: IndexSet([0, 1]))
+
+        #expect(app.userDataStore.findBookmark(id: fixture.a.id) == nil)
+        #expect(app.userDataStore.bookmarkGroups.count == 2)
+        #expect(rowSummary(vm) == ["[Work]", "B", "[Home]", "C", "[Bookmarks]", "D"])
+    }
+
+    @Test @MainActor
+    func `Restore empty bookmark names restores only blank rows`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let fixture = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+        let editable = vm.rows.compactMap { row -> ManageBookmarksViewModel.EditableBookmark? in
+            if case .bookmark(let bookmark) = row { bookmark } else { nil }
+        }
+
+        editable[0].name = "   "
+        vm.restoreEmptyBookmarkNames()
+
+        let restored = try #require(app.userDataStore.findBookmark(id: fixture.a.id))
+        #expect(restored.name == Formatters.formattedTitle(stop: restored.stop))
+        #expect(editable[0].name == restored.name)
+        #expect(app.userDataStore.findBookmark(id: fixture.b.id)?.name == "B")
+    }
+
+    @Test @MainActor
+    func `Reload rows keeps the same editable instance for a bookmark`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        _ = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app, ungroupedTitle: "Bookmarks")
+        guard case .bookmark(let before) = vm.rows[1] else { Issue.record("expected a bookmark row"); return }
+
+        vm.reloadRows()
+
+        guard case .bookmark(let after) = vm.rows[1] else { Issue.record("expected a bookmark row"); return }
+        #expect(before === after)
+    }
+
+    @Test @MainActor
+    func `Save name change keeps the bookmark's position`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let fixture = try makeGroupedBookmarks(app)
+        let vm = ManageBookmarksViewModel(application: app)
+
+        vm.saveNameChange(bookmarkID: fixture.a.id, newName: "Renamed")
+
+        #expect(vm.bookmarksInGroup(fixture.work).map(\.name) == ["Renamed", "B"])
+    }
 }

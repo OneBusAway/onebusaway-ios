@@ -8,20 +8,149 @@
 //
 
 import Foundation
+import Observation
 import OBAKitCore
 
 /// Shared ViewModel for reordering and deleting bookmarks.
 ///
-/// Owns: bookmark reordering, deletion (with the `removeBookmark` analytics event),
-/// name persistence, and resetting a bookmark's name back to its transit-derived
-/// default when the user clears the field.
+/// Owns: the flat list of rows the Bookmarks screen shows, bookmark reordering
+/// (within and across groups), deletion (with the `removeBookmark` analytics
+/// event), name persistence, and resetting a bookmark's name back to its
+/// transit-derived default when the user clears the field.
 @MainActor
+@Observable
 final class ManageBookmarksViewModel {
 
-    private let application: Application
+    /// A bookmark row's editable name. A class so each row observes only its own
+    /// name, and so the instance survives `reloadRows()` while its field has focus.
+    @MainActor
+    @Observable
+    final class EditableBookmark: Identifiable {
+        let id: UUID
+        var name: String
 
-    init(application: Application) {
+        init(id: UUID, name: String) {
+            self.id = id
+            self.name = name
+        }
+    }
+
+    /// One row on the Bookmarks screen.
+    ///
+    /// Groups are header rows in the same list as bookmarks, not `Section`s: SwiftUI
+    /// list moves stay within one `ForEach` before iOS 27, and riders drag
+    /// bookmarks from one group into another. A bookmark belongs to the nearest
+    /// header above it.
+    enum Row: Identifiable {
+        /// `groupID` is nil for the trailing ungrouped section.
+        case header(groupID: UUID?, title: String)
+        case bookmark(EditableBookmark)
+
+        var id: String {
+            switch self {
+            case .header(let groupID, _): "header-\(groupID?.uuidString ?? "ungrouped")"
+            case .bookmark(let bookmark): bookmark.id.uuidString
+            }
+        }
+    }
+
+    @ObservationIgnored private let application: Application
+
+    /// The headers' title for bookmarks that aren't in a group.
+    @ObservationIgnored private let ungroupedTitle: String
+
+    private(set) var rows: [Row] = []
+
+    init(application: Application, ungroupedTitle: String = BookmarksViewModel.ungroupedSectionTitle) {
         self.application = application
+        self.ungroupedTitle = ungroupedTitle
+        reloadRows()
+    }
+
+    // MARK: - Rows
+
+    /// Rebuilds `rows` from the store: each group's header and bookmarks, then the
+    /// ungrouped header and bookmarks. Existing `EditableBookmark`s are reused, so
+    /// a field being typed into keeps its identity.
+    func reloadRows() {
+        var existing = [UUID: EditableBookmark]()
+        for case .bookmark(let bookmark) in rows {
+            existing[bookmark.id] = bookmark
+        }
+        // One decode of the store, rather than one per group via `bookmarksInGroup`.
+        let bookmarksByGroup = Dictionary(grouping: application.userDataStore.bookmarks, by: \.groupID)
+        func bookmarkRows(_ group: BookmarkGroup?) -> [Row] {
+            (bookmarksByGroup[group?.id] ?? []).sorted { $0.sortOrder < $1.sortOrder }.map { bookmark in
+                let editable = existing[bookmark.id] ?? EditableBookmark(id: bookmark.id, name: bookmark.name)
+                return .bookmark(editable)
+            }
+        }
+
+        var newRows = [Row]()
+        for group in bookmarkGroups {
+            newRows.append(.header(groupID: group.id, title: group.name))
+            newRows.append(contentsOf: bookmarkRows(group))
+        }
+        newRows.append(.header(groupID: nil, title: ungroupedTitle))
+        newRows.append(contentsOf: bookmarkRows(nil))
+        rows = newRows
+    }
+
+    /// Applies a list move. Headers can't be moved, so `source` is a bookmark; its
+    /// destination group is the nearest header above where it lands (the first
+    /// group, if it lands above every header).
+    func moveRows(from source: IndexSet, to destination: Int) {
+        guard
+            source.count == 1,
+            let sourceIndex = source.first,
+            case .bookmark(let moving) = rows[sourceIndex],
+            let bookmark = findBookmark(id: moving.id)
+        else { return }
+
+        var reordered = rows
+        reordered.move(fromOffsets: source, toOffset: destination)
+        let landedAt = destination > sourceIndex ? destination - 1 : destination
+
+        // Walk down to where it landed, tracking the current group and the
+        // position within it. Rows always open with a header, so a bookmark that
+        // lands above every header starts out in the first group.
+        guard case .header(var groupID, _) = rows[0] else { return }
+        var indexInGroup = 0
+        for row in reordered[..<landedAt] {
+            switch row {
+            case .header(let id, _):
+                groupID = id
+                indexInGroup = 0
+            case .bookmark:
+                indexInGroup += 1
+            }
+        }
+
+        moveBookmark(bookmark, to: findGroup(id: groupID), at: indexInGroup)
+        reloadRows()
+    }
+
+    /// Deletes the bookmarks at `offsets`; header rows are skipped.
+    func deleteRows(at offsets: IndexSet) {
+        for index in offsets {
+            guard case .bookmark(let row) = rows[index], let bookmark = findBookmark(id: row.id) else { continue }
+            deleteBookmark(bookmark)
+        }
+        reloadRows()
+    }
+
+    /// Restores the transit-derived name of every bookmark whose field was left
+    /// blank. Call when the rider leaves the screen.
+    func restoreEmptyBookmarkNames() {
+        for row in rows {
+            guard case .bookmark(let editable) = row, editable.name.trimmingCharacters(in: .whitespaces).isEmpty else { continue }
+            guard let bookmark = findBookmark(id: editable.id) else {
+                Logger.warn("restoreEmptyBookmarkNames: bookmark \(editable.id) not found in data store; skipping name restore")
+                continue
+            }
+            restoreTransitName(for: bookmark)
+            editable.name = bookmark.name
+        }
     }
 
     // MARK: - Data Access
@@ -69,6 +198,8 @@ final class ManageBookmarksViewModel {
             return
         }
 
+        guard bookmark.name != newName else { return }
+
         bookmark.name = newName
         resaveInPlace(bookmark)
     }
@@ -94,7 +225,6 @@ final class ManageBookmarksViewModel {
     }
 
     private func resaveInPlace(_ bookmark: Bookmark) {
-        let currentGroup = bookmark.groupID.flatMap { application.userDataStore.findGroup(id: $0) }
-        application.userDataStore.add(bookmark, to: currentGroup)
+        application.userDataStore.update(bookmark)
     }
 }
