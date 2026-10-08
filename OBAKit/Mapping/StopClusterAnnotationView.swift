@@ -25,6 +25,13 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MKMarkerAnnotationView's getter answers its own "Shows more info" and
+    // ignores what was assigned, so VoiceOver would never hear the cluster hint.
+    override var accessibilityHint: String? {
+        get { annotation is MKClusterAnnotation ? StopCluster.accessibilityHint : super.accessibilityHint }
+        set { super.accessibilityHint = newValue }
+    }
+
     override func prepareForDisplay() {
         super.prepareForDisplay()
 
@@ -33,7 +40,6 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
         glyphText = String(stops.count)
         accessibilityLabel = StopCluster.accessibilityLabel(stopCount: stops.count)
         accessibilityValue = StopCluster.accessibilityValue(for: stops)
-        accessibilityHint = StopCluster.accessibilityHint
         accessibilityTraits = .button
     }
 }
