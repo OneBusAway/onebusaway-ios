@@ -8,7 +8,7 @@
 //
 
 import Foundation
-import Combine
+import Observation
 import OBAKitCore
 
 /// Describes what is being bookmarked. Using a tagged enum instead of two optionals
@@ -59,7 +59,23 @@ enum DuplicateBookmarkDecision {
 /// detection against the data store, and bookmark persistence (including the
 /// `addBookmark` analytics event for new trip bookmarks).
 @MainActor
+@Observable
 final class EditBookmarkViewModel {
+
+    // MARK: - Form State
+
+    /// The name field's text. Blank saves as the transit-derived name.
+    var name: String
+
+    /// The "Show in Today View widget" switch.
+    var isFavorite: Bool
+
+    /// The checked group, or `nil` for (No Group).
+    var selectedGroupID: UUID?
+
+    /// The groups offered in the picker, in display order. Refreshed when the
+    /// rider adds one, since `BookmarkGroup` isn't observable.
+    private(set) var groups: [BookmarkGroup] = []
 
     // MARK: - Static Context
 
@@ -100,9 +116,9 @@ final class EditBookmarkViewModel {
         case edit(Bookmark)
     }
 
-    private let application: Application
-    private let source: BookmarkSource
-    private let mode: Mode
+    @ObservationIgnored private let application: Application
+    @ObservationIgnored private let source: BookmarkSource
+    @ObservationIgnored private let mode: Mode
 
     // MARK: - Init
 
@@ -115,6 +131,26 @@ final class EditBookmarkViewModel {
         self.initialIsFavorite = bookmark?.isFavorite ?? true
         self.initialGroupID = bookmark?.groupID
         self.stopID = bookmark?.stopID ?? source.stopID
+
+        self.name = initialName
+        self.isFavorite = initialIsFavorite
+        self.selectedGroupID = initialGroupID
+        self.groups = bookmarkGroups
+        if bookmark != nil {
+            // The store's view, not `initialGroupID`: the rider may have moved
+            // the bookmark on another screen since it was handed to us.
+            self.selectedGroupID = currentGroupID()
+        }
+    }
+
+    // MARK: - Groups
+
+    /// Creates a group named `name`, appended after the existing ones, and
+    /// offers it in the picker. Blank names are ignored.
+    func addGroup(named name: String) {
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        application.userDataStore.upsert(bookmarkGroup: BookmarkGroup(name: name, sortOrder: Int.max))
+        groups = bookmarkGroups
     }
 
     // MARK: - Group Selection
@@ -197,8 +233,16 @@ final class EditBookmarkViewModel {
         bookmark.name = resolveName(name)
         bookmark.isFavorite = isFavorite
 
-        let group = groupID.flatMap { application.userDataStore.findGroup(id: $0) }
-        application.userDataStore.add(bookmark, to: group)
+        let store = application.userDataStore
+        if let stored = store.findBookmark(id: bookmark.id), stored.groupID == groupID {
+            // Same group: save in place. `add(_:to:)` would move it to the
+            // bottom of its group.
+            stored.name = bookmark.name
+            stored.isFavorite = bookmark.isFavorite
+            store.update(stored)
+        } else {
+            store.add(bookmark, to: groupID.flatMap { store.findGroup(id: $0) })
+        }
 
         if reportAddAnalytics, case .arrivalDeparture(let ad) = source {
             let value = AnalyticsLabels.addRemoveBookmarkValue(

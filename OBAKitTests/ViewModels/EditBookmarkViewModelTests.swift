@@ -101,6 +101,72 @@ final class EditBookmarkViewModelTests: OBATestCase {
         return try #require(stopArrivals.arrivalsAndDepartures.first)
     }
 
+    // MARK: - Form State
+
+    @Test @MainActor
+    func `Form state starts from the initial values`() throws {
+        let stop = try makeStop()
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let group = BookmarkGroup(name: "Work", sortOrder: 0)
+        app.userDataStore.upsert(bookmarkGroup: group)
+
+        let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
+
+        #expect(vm.name == vm.initialName)
+        #expect(vm.isFavorite)
+        #expect(vm.selectedGroupID == nil)
+        #expect(vm.groups.map(\.id) == [group.id])
+    }
+
+    @Test @MainActor
+    func `Edit mode selects the bookmark's current group, not the stale one`() throws {
+        let stop = try makeStop()
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let groupA = BookmarkGroup(name: "A", sortOrder: 0)
+        let groupB = BookmarkGroup(name: "B", sortOrder: 1)
+        let bookmark = Bookmark(name: "Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        app.userDataStore.add(bookmark, to: groupA)
+        // Moved on another screen; the instance we hold still says A.
+        app.userDataStore.add(try #require(app.userDataStore.findBookmark(id: bookmark.id)), to: groupB)
+        bookmark.groupID = groupA.id
+
+        let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: bookmark)
+
+        #expect(vm.selectedGroupID == groupB.id)
+    }
+
+    @Test @MainActor
+    func `Add group creates it after the existing groups and offers it`() throws {
+        let stop = try makeStop()
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        app.userDataStore.upsert(bookmarkGroup: BookmarkGroup(name: "Work", sortOrder: 0))
+        let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
+
+        vm.addGroup(named: "Home")
+        vm.addGroup(named: "   ")
+
+        #expect(vm.groups.map(\.name) == ["Work", "Home"])
+        #expect(app.userDataStore.bookmarkGroups.count == 2)
+    }
+
+    @Test @MainActor
+    func `Persist existing in the same group keeps the bookmark's position`() throws {
+        let stop = try makeStop()
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let group = BookmarkGroup(name: "Work", sortOrder: 0)
+        let first = Bookmark(name: "First", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        let second = Bookmark(name: "Second", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        app.userDataStore.add(first, to: group)
+        app.userDataStore.add(second, to: group)
+        let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: first)
+
+        vm.persistExisting(first, name: "Renamed", isFavorite: false, to: group.id)
+
+        let stored = app.userDataStore.bookmarksInGroup(group)
+        #expect(stored.map(\.name) == ["Renamed", "Second"])
+        #expect(stored.first?.isFavorite == false)
+    }
+
     // MARK: - Initial State (Add Mode)
 
     @Test @MainActor
