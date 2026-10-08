@@ -323,16 +323,18 @@ final class SurveyViewModelTests: OBATestCase {
         }
     }
 
-    // MARK: - clearAnswer
+    // MARK: - Blank answers
 
     @Test @MainActor
-    func `Clear answer forgets the stored answer so validation fails`() async {
+    func `A cleared or whitespace text answer counts as unanswered`() async {
         let question = SurveysTestHelpers.makeSurveyQuestion(id: 1, required: true, type: .text)
         let vm = SurveyViewModel(survey: SurveysTestHelpers.makeSurvey(questions: [question]), surveyService: surveyService)
 
         vm.updateAnswer(for: question, answer: "Typed then deleted")
-        vm.clearAnswer(for: question)
+        vm.updateAnswer(for: question, answer: "")
+        #expect(vm.storedAnswer(for: question) == nil)
 
+        vm.updateAnswer(for: question, answer: "  \n ")
         #expect(vm.storedAnswer(for: question) == nil)
     }
 

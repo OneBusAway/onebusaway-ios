@@ -109,14 +109,7 @@ private struct SurveyQuestionRows: View {
             )
             .lineLimit(3...8)
             .onChange(of: text) { _, text in
-                // A cleared field takes the answer back, so a required question
-                // emptied by the rider fails validation instead of submitting
-                // what they deleted.
-                if text.isEmpty {
-                    viewModel.clearAnswer(for: question)
-                } else {
-                    viewModel.updateAnswer(for: question, answer: text)
-                }
+                viewModel.updateAnswer(for: question, answer: text)
             }
 
         case .externalSurvey:
