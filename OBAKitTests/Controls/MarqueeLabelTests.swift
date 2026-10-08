@@ -185,6 +185,19 @@ struct MarqueeLabelTests {
         #expect(!label.isPaused)
     }
 
+    /// A scroll sits at home during its delay; pausing then still has to work.
+    @Test(.reduceMotionOff) func `Pausing a scrolling label during its delay at home`() async throws {
+        let (label, window) = try showScrollingLabel { $0.animationDelay = 10 }
+        defer { window.isHidden = true }
+        await spin(0.1)
+        try #require(!label.awayFromHome)
+
+        label.pauseLabel()
+        #expect(label.isPaused)
+        label.unpauseLabel()
+        #expect(!label.isPaused)
+    }
+
     // MARK: - UILabel overrides
 
     /// Upstream handed super the old value (read back through the overridden

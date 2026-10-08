@@ -7,7 +7,8 @@
 //  OBA: vendored from MarqueeLabel 4.5.3 (c6b4da4), the last upstream release, and
 //  compiled into OBAKit with internal access. Interface Builder support, the debug
 //  overlay, the tvOS/visionOS branches and the deprecated API are removed; changes
-//  are marked `OBA:`.
+//  are marked `OBA:`. Mechanical cleanups (force unwraps replaced, `guard let self`,
+//  the selector observers' redundant `deinit`) are not marked individually.
 //
 
 // OBA: upstream ships as one long, heavily documented file. Keep it whole so it
@@ -17,6 +18,7 @@
 import UIKit
 import QuartzCore
 
+// swiftlint:disable:next type_body_length
 class MarqueeLabel: UILabel, CAAnimationDelegate {
 
     /**
@@ -552,6 +554,7 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
         updateAndScroll(overrideHold: false)
     }
 
+    // swiftlint:disable:next function_body_length
     private func updateAndScroll(overrideHold: Bool) {
         // Check if scrolling can occur
         if !labelReadyForScroll() {
@@ -797,7 +800,9 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
 
     private func returnLabelToHome() {
         // Store if label is away from home at time of call
-        let away = awayFromHome
+        // OBA: or mid-scroll at home, during a delay. Upstream's `awayFromHome` was
+        // always true, so an interrupted scroll always reported `labelReturnedToHome(false)`.
+        let away = awayFromHome || scrollAnimationInFlight
 
         // Remove any gradient animation
         maskLayer?.removeAllAnimations()
@@ -822,6 +827,7 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
         scroll(scroller, fader: fader)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func scroll(_ scroller: MLAnimation, fader: MLAnimation?) {
         // Check for conditions which would prevent scrolling
         if !labelReadyForScroll() {
@@ -1160,6 +1166,11 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
         return self.layer.mask as? CAGradientLayer
     }
 
+    // OBA: whether a scroll animation is attached, including its pauses at home.
+    private var scrollAnimationInFlight: Bool {
+        sublabel.layer.animation(forKey: "position") != nil
+    }
+
     // OBA: the recognizer `tapToScroll` adds, so turning it off removes that one.
     private var tapRecognizer: UITapGestureRecognizer?
 
@@ -1281,7 +1292,9 @@ class MarqueeLabel: UILabel, CAAnimationDelegate {
      */
     func pauseLabel() {
         // Prevent pausing label while not in scrolling animation, or when already paused
-        guard !isPaused && awayFromHome else {
+        // OBA: test for the animation, not `awayFromHome`, so a scroll can be paused
+        // during its delay at home too, as upstream's always-true `awayFromHome` allowed.
+        guard !isPaused && scrollAnimationInFlight else {
             return
         }
 
