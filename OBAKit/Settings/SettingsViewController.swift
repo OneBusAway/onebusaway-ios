@@ -14,24 +14,19 @@ import OBAKitCore
 /// Hosts `SettingsView`, and owns what it can't: the Done button, error toasts
 /// and the share sheet for exported data.
 class SettingsViewController: UIHostingController<SettingsView> {
-    private let application: Application
-    private let viewModel: SettingsViewModel
-
     init(application: Application) {
-        self.application = application
         let viewModel = SettingsViewModel(application: application)
-        self.viewModel = viewModel
-
-        super.init(rootView: SettingsView(viewModel: viewModel, exportData: {}))
-        // The export button needs `self`, which doesn't exist until `super.init` returns.
-        rootView = SettingsView(viewModel: viewModel, exportData: { [weak self] in self?.exportData() })
+        super.init(rootView: SettingsView(viewModel: viewModel))
 
         title = Strings.settings
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissModal))
 
+        let toastManager = application.toastManager
         viewModel.showErrorToast = { [weak self] message in
-            guard let self else { return }
-            self.showErrorToast(message, using: self.application.toastManager)
+            self?.showErrorToast(message, using: toastManager)
+        }
+        viewModel.share = { [weak self] result in
+            self?.share(result)
         }
     }
 
@@ -41,11 +36,15 @@ class SettingsViewController: UIHostingController<SettingsView> {
 
     // MARK: - Actions
 
-    private func exportData() {
-        do {
-            let url = try viewModel.exportUserDefaults()
-            present(UIActivityViewController(activityItems: [url], applicationActivities: nil), animated: true)
-        } catch {
+    private func share(_ result: Result<URL, Error>) {
+        switch result {
+        case .success(let url):
+            let activity = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+            // Required on iPad, where the share sheet is a popover.
+            activity.popoverPresentationController?.sourceView = view
+            activity.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.maxY, width: 0, height: 0)
+            present(activity, animated: true)
+        case .failure(let error):
             Task { await AlertPresenter.show(error: error, presentingController: self) }
         }
     }

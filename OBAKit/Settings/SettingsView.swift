@@ -11,10 +11,9 @@ import SwiftUI
 import OBAKitCore
 
 /// The Settings form. Every switch writes through `SettingsViewModel` as it
-/// changes; the Done button and the share sheet belong to `SettingsViewController`.
+/// changes; the Done button, toasts and the share sheet belong to `SettingsViewController`.
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
-    let exportData: () -> Void
 
     var body: some View {
         Form {
@@ -40,7 +39,7 @@ struct SettingsView: View {
                 }
             }
             Section {
-                Button(Strings.exportData, action: exportData)
+                Button(Strings.exportData, action: viewModel.exportData)
             }
         }
         .tint(Color(ThemeColors.shared.brand))
@@ -125,7 +124,7 @@ struct SettingsView: View {
                     Text(preset.localizedTitle).tag(preset)
                 }
             }
-            .disabled(viewModel.walkingSpeedUsesHealthKit)
+            .disabled(viewModel.isHealthKitAvailable && viewModel.walkingSpeedUsesHealthKit)
             if viewModel.isHealthKitAvailable {
                 Toggle(OBALoc("settings_controller.walking_speed.use_healthkit", value: "Use Health app data", comment: "Settings > Walking Speed section > HealthKit toggle"), isOn: $viewModel.walkingSpeedUsesHealthKit)
             }
@@ -201,7 +200,7 @@ struct SettingsView: View {
 
                 let pushIDTitle = OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller")
                 if let pushUserID = viewModel.pushUserID {
-                    CopyableValueRow(title: pushIDTitle, value: pushUserID)
+                    CopyableValueRow(title: pushIDTitle, value: pushUserID, truncatesValue: true)
                 } else {
                     LabeledContent(pushIDTitle, value: OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available."))
                 }

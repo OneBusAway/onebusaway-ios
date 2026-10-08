@@ -119,4 +119,16 @@ final class SettingsViewModelTests: OBATestCase {
         #expect(self.application.userDataStore.stopUIReducedColors)
         #expect(self.application.mapRegionManager.mapViewShowsScale)
     }
+
+    @Test func `Turning walking health kit off saves manual at the preset on screen`() {
+        application.userDataStore.walkingSpeedSource = .healthKit
+        application.userDataStore.walkingSpeedMetersPerSecond = 1.65
+        let vm = SettingsViewModel(application: application, isHealthKitAvailable: true)
+        #expect(vm.walkingSpeed == .fast)
+
+        vm.walkingSpeedUsesHealthKit = false
+
+        #expect(self.application.userDataStore.walkingSpeedSource == .manual)
+        expectClose(self.application.userDataStore.walkingSpeedMetersPerSecond, WalkingSpeedPreset.fast.rawValue)
+    }
 }
