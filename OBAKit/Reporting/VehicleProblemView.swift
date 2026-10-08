@@ -21,7 +21,8 @@ struct VehicleProblemInput {
 
 /// The "Report a Problem" form for a trip: pick a problem, say whether you're
 /// aboard (and which vehicle), choose whether to share location, optionally
-/// comment, send. Failures keep the form up with the rider's input intact;
+/// comment, send. Failures keep the form up with the rider's input intact and
+/// show the error `send` throws, so `send` should throw it already classified;
 /// success hands off to `onSent`.
 ///
 /// Reads the share-location preference through `@AppStorage`, so the host must
@@ -39,6 +40,9 @@ struct VehicleProblemView: View {
     @State private var vehicleID: String
     @State private var comment = ""
     @State private var error: Error?
+    /// Holds the rider on the form while a send is in flight; the old
+    /// full-screen HUD did the same, and leaving would orphan the outcome.
+    @State private var isSending = false
 
     init(vehicleID: String?, send: @escaping (VehicleProblemInput) async throws -> Void, onSent: @escaping () -> Void) {
         self.send = send
@@ -71,7 +75,7 @@ struct VehicleProblemView: View {
                     isOn: $isOnVehicle
                 )
                 LabeledContent(vehicleIDTitle) {
-                    TextField(vehicleIDTitle, text: $vehicleID)
+                    TextField("", text: $vehicleID)
                         .multilineTextAlignment(.trailing)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
@@ -107,9 +111,12 @@ struct VehicleProblemView: View {
             }
         }
         .errorAlert(error: $error, buttonTitle: Strings.dismiss)
+        .navigationBarBackButtonHidden(isSending)
     }
 
     private func submit() async {
+        isSending = true
+        defer { isSending = false }
         let input = VehicleProblemInput(
             code: code,
             isOnVehicle: isOnVehicle,
@@ -121,7 +128,7 @@ struct VehicleProblemView: View {
             try await send(input)
             onSent()
         } catch {
-            self.error = ErrorClassifier.classify(error, regionName: nil)
+            self.error = error
         }
     }
 }

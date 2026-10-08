@@ -131,7 +131,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
                 }
                 let location = shareLocation ? self.application.locationService.currentLocation : nil
                 let report = RESTAPIService.StopProblemReport(stopID: stopID, code: code, comment: comment, location: location)
-                _ = try await apiService.getStopProblem(report: report)
+                _ = try await self.classifyingErrors { try await apiService.getStopProblem(report: report) }
                 self.application.analytics?.reportEvent(pageURL: pageURL, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
             },
             onSent: { [weak self] in self?.finishReporting() }
@@ -161,7 +161,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
                     userOnVehicle: input.isOnVehicle,
                     location: input.shareLocation ? self.application.locationService.currentLocation : nil
                 )
-                _ = try await apiService.getTripProblem(report: report)
+                _ = try await self.classifyingErrors { try await apiService.getTripProblem(report: report) }
                 self.application.analytics?.reportEvent(pageURL: pageURL, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
             },
             onSent: { [weak self] in self?.finishReporting() }
@@ -174,6 +174,16 @@ class ReportProblemViewController: TaskController<StopArrivals>,
         let host = UIHostingController(rootView: form.defaultAppStorage(application.userDefaults))
         host.title = title
         navigationController?.pushViewController(host, animated: true)
+    }
+
+    /// Runs `body`, rethrowing any failure in its rider-facing form — with this
+    /// region's name in server-down copy, and cellular restriction recognized.
+    private func classifyingErrors<T>(_ body: () async throws -> T) async throws -> T {
+        do {
+            return try await body()
+        } catch {
+            throw ErrorClassifier.classify(error, regionName: application.currentRegionName, isCellularDataRestricted: application.isCellularDataRestricted)
+        }
     }
 
     /// A report went through: confirm it and close the whole report flow.

@@ -12,7 +12,8 @@ import OBAKitCore
 
 /// The "Report a Problem" form for a stop: pick a problem, optionally comment,
 /// choose whether to share location, send. Failures keep the form up with the
-/// rider's input intact; success hands off to `onSent`.
+/// rider's input intact and show the error `send` throws, so `send` should
+/// throw it already classified; success hands off to `onSent`.
 ///
 /// Reads the share-location preference through `@AppStorage`, so the host must
 /// apply `.defaultAppStorage(application.userDefaults)`.
@@ -27,6 +28,9 @@ struct StopProblemView: View {
     @State private var code = StopProblemCode.allCases[0]
     @State private var comment = ""
     @State private var error: Error?
+    /// Holds the rider on the form while a send is in flight; the old
+    /// full-screen HUD did the same, and leaving would orphan the outcome.
+    @State private var isSending = false
 
     private var commentsTitle: String { OBALoc("stop_problem_controller.comments_section.section_title", value: "Additional comments (optional)", comment: "The section header to a free-form comments field that the user does not have to add text to in order to submit this form.") }
 
@@ -72,14 +76,17 @@ struct StopProblemView: View {
             }
         }
         .errorAlert(error: $error, buttonTitle: Strings.dismiss)
+        .navigationBarBackButtonHidden(isSending)
     }
 
     private func submit() async {
+        isSending = true
+        defer { isSending = false }
         do {
             try await send(code, String.nilifyBlankValue(comment.strip()), shareLocation)
             onSent()
         } catch {
-            self.error = ErrorClassifier.classify(error, regionName: nil)
+            self.error = error
         }
     }
 }
