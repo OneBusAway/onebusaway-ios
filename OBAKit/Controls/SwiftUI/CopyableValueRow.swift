@@ -31,7 +31,15 @@ struct CopyableValueRow: View {
 
     var body: some View {
         Button(action: copy) {
-            LabeledContent(title, value: showsConfirmation ? confirmation : value)
+            LabeledContent {
+                // One line, like a table cell: a long ID (a push token) would
+                // otherwise wrap across half the screen.
+                Text(showsConfirmation ? confirmation : value)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            } label: {
+                Text(title)
+            }
         }
         .foregroundStyle(.primary)
         .accessibilityLabel(title)
