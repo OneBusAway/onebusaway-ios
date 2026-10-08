@@ -120,7 +120,8 @@ class ReportProblemViewController: TaskController<StopArrivals>,
     // MARK: - Problem Forms
 
     private func showStopProblemForm() {
-        application.analytics?.reportEvent(pageURL: "app://localhost/stop-problem", label: AnalyticsLabels.reportProblem, value: "feedback_stop_problem")
+        let pageURL = "app://localhost/stop-problem"
+        application.analytics?.reportEvent(pageURL: pageURL, label: AnalyticsLabels.reportProblem, value: "feedback_stop_problem")
 
         let stopID = stop.id
         let form = StopProblemView(
@@ -131,7 +132,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
                 let location = shareLocation ? self.application.locationService.currentLocation : nil
                 let report = RESTAPIService.StopProblemReport(stopID: stopID, code: code, comment: comment, location: location)
                 _ = try await apiService.getStopProblem(report: report)
-                self.application.analytics?.reportEvent(pageURL: "app://localhost/stop-problem", label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
+                self.application.analytics?.reportEvent(pageURL: pageURL, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
             },
             onSent: { [weak self] in self?.finishReporting() }
         )
@@ -140,8 +141,10 @@ class ReportProblemViewController: TaskController<StopArrivals>,
     }
 
     private func showVehicleProblemForm(for arrivalDeparture: ArrivalDeparture) {
-        application.analytics?.reportEvent(pageURL: "app://localhost/vehicle-problem", label: AnalyticsLabels.reportProblem, value: "feedback_trip_problem")
+        let pageURL = "app://localhost/vehicle-problem"
+        application.analytics?.reportEvent(pageURL: pageURL, label: AnalyticsLabels.reportProblem, value: "feedback_trip_problem")
 
+        let (tripID, serviceDate, stopID) = (arrivalDeparture.tripID, arrivalDeparture.serviceDate, arrivalDeparture.stopID)
         let form = VehicleProblemView(
             vehicleID: arrivalDeparture.vehicleID,
             send: { [weak self] input in
@@ -149,17 +152,17 @@ class ReportProblemViewController: TaskController<StopArrivals>,
                     throw UnstructuredError("No API Service")
                 }
                 let report = RESTAPIService.TripProblemReport(
-                    tripID: arrivalDeparture.tripID,
-                    serviceDate: arrivalDeparture.serviceDate,
+                    tripID: tripID,
+                    serviceDate: serviceDate,
                     vehicleID: input.vehicleID,
-                    stopID: arrivalDeparture.stopID,
+                    stopID: stopID,
                     code: input.code,
                     comment: input.comment,
                     userOnVehicle: input.isOnVehicle,
                     location: input.shareLocation ? self.application.locationService.currentLocation : nil
                 )
                 _ = try await apiService.getTripProblem(report: report)
-                self.application.analytics?.reportEvent(pageURL: "app://localhost/vehicle-problem", label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
+                self.application.analytics?.reportEvent(pageURL: pageURL, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
             },
             onSent: { [weak self] in self?.finishReporting() }
         )

@@ -18,7 +18,7 @@ import OBAKitCore
 /// apply `.defaultAppStorage(application.userDefaults)`.
 struct StopProblemView: View {
     /// The key predates this view; it's kept so riders' saved choice carries over.
-    static let shareLocationKey = "StopProblemViewController.shareLocationForStopProblemReporting"
+    private static let shareLocationKey = "StopProblemViewController.shareLocationForStopProblemReporting"
 
     let send: (_ code: StopProblemCode, _ comment: String?, _ shareLocation: Bool) async throws -> Void
     let onSent: () -> Void
@@ -26,7 +26,7 @@ struct StopProblemView: View {
     @AppStorage(Self.shareLocationKey) private var shareLocation = true
     @State private var code = StopProblemCode.allCases[0]
     @State private var comment = ""
-    @State private var submission = ProblemReportSubmission()
+    @State private var error: Error?
 
     private var commentsTitle: String { OBALoc("stop_problem_controller.comments_section.section_title", value: "Additional comments (optional)", comment: "The section header to a free-form comments field that the user does not have to add text to in order to submit this form.") }
 
@@ -65,19 +65,21 @@ struct StopProblemView: View {
             }
 
             Section {
-                SubmitButton(
-                    title: OBALoc("stop_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report."),
-                    isSubmitting: submission.isSubmitting
-                ) {
-                    Task {
-                        let comment = ProblemReportSubmission.trimmedOrNil(comment)
-                        if await submission.run({ try await send(code, comment, shareLocation) }) {
-                            onSent()
-                        }
-                    }
+                TaskButton(action: submit) {
+                    Text(OBALoc("stop_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report."))
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
-        .problemReportErrorAlert(submission)
+        .errorAlert(error: $error, buttonTitle: Strings.dismiss)
+    }
+
+    private func submit() async {
+        do {
+            try await send(code, String.nilifyBlankValue(comment.strip()), shareLocation)
+            onSent()
+        } catch {
+            self.error = ErrorClassifier.classify(error, regionName: nil)
+        }
     }
 }

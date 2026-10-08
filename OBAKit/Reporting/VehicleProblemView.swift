@@ -28,7 +28,7 @@ struct VehicleProblemInput {
 /// apply `.defaultAppStorage(application.userDefaults)`.
 struct VehicleProblemView: View {
     /// The key predates this view; it's kept so riders' saved choice carries over.
-    static let shareLocationKey = "VehicleProblemViewController.shareLocationForVehicleProblemReporting"
+    private static let shareLocationKey = "VehicleProblemViewController.shareLocationForVehicleProblemReporting"
 
     let send: (VehicleProblemInput) async throws -> Void
     let onSent: () -> Void
@@ -38,7 +38,7 @@ struct VehicleProblemView: View {
     @State private var isOnVehicle = false
     @State private var vehicleID: String
     @State private var comment = ""
-    @State private var submission = ProblemReportSubmission()
+    @State private var error: Error?
 
     init(vehicleID: String?, send: @escaping (VehicleProblemInput) async throws -> Void, onSent: @escaping () -> Void) {
         self.send = send
@@ -100,25 +100,28 @@ struct VehicleProblemView: View {
             }
 
             Section {
-                SubmitButton(
-                    title: OBALoc("vehicle_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report."),
-                    isSubmitting: submission.isSubmitting
-                ) {
-                    Task {
-                        let input = VehicleProblemInput(
-                            code: code,
-                            isOnVehicle: isOnVehicle,
-                            vehicleID: ProblemReportSubmission.trimmedOrNil(vehicleID),
-                            comment: ProblemReportSubmission.trimmedOrNil(comment),
-                            shareLocation: shareLocation
-                        )
-                        if await submission.run({ try await send(input) }) {
-                            onSent()
-                        }
-                    }
+                TaskButton(action: submit) {
+                    Text(OBALoc("vehicle_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report."))
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
-        .problemReportErrorAlert(submission)
+        .errorAlert(error: $error, buttonTitle: Strings.dismiss)
+    }
+
+    private func submit() async {
+        let input = VehicleProblemInput(
+            code: code,
+            isOnVehicle: isOnVehicle,
+            vehicleID: String.nilifyBlankValue(vehicleID.strip()),
+            comment: String.nilifyBlankValue(comment.strip()),
+            shareLocation: shareLocation
+        )
+        do {
+            try await send(input)
+            onSent()
+        } catch {
+            self.error = ErrorClassifier.classify(error, regionName: nil)
+        }
     }
 }
