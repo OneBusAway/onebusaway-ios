@@ -25,6 +25,14 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MKMarkerAnnotationView's getter answers its own "Shows more info" and
+    // ignores what was assigned, so VoiceOver would never hear the cluster hint.
+    private var clusterHint: String?
+    override var accessibilityHint: String? {
+        get { clusterHint ?? super.accessibilityHint }
+        set { clusterHint = newValue }
+    }
+
     override func prepareForDisplay() {
         super.prepareForDisplay()
 
