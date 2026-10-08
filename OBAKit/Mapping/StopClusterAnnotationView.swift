@@ -27,10 +27,9 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
 
     // MKMarkerAnnotationView's getter answers its own "Shows more info" and
     // ignores what was assigned, so VoiceOver would never hear the cluster hint.
-    private var clusterHint: String?
     override var accessibilityHint: String? {
-        get { clusterHint ?? super.accessibilityHint }
-        set { clusterHint = newValue }
+        get { StopCluster.accessibilityHint }
+        set { super.accessibilityHint = newValue }
     }
 
     override func prepareForDisplay() {
@@ -41,7 +40,6 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
         glyphText = String(stops.count)
         accessibilityLabel = StopCluster.accessibilityLabel(stopCount: stops.count)
         accessibilityValue = StopCluster.accessibilityValue(for: stops)
-        accessibilityHint = StopCluster.accessibilityHint
         accessibilityTraits = .button
     }
 }
