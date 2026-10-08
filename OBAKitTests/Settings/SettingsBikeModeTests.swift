@@ -79,7 +79,7 @@ final class SettingsBikeModeTests: OBATestCase {
     }
 
     /// The regression: opening Settings with Bike Mode on used to start a HealthKit sync (and,
-    /// when it failed, a toast) every single time, because seeding the Eureka switch fired its `onChange`.
+    /// when it failed, a toast) every single time, because seeding the old form's switch fired its change handler.
     @Test func `Opening settings with bike mode on makes no health kit request`() async throws {
         store.bikeModeEnabled = true
         store.bikeSpeedSource = .manual
