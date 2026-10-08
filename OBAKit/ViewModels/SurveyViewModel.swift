@@ -16,7 +16,7 @@ import OBAKitCore
 ///
 /// Owns survey answer state, validation, and the two-stage submission flow
 /// (hero question first, additional questions second). The VC keeps only
-/// Eureka form layout and alert presentation.
+/// alert presentation; `SurveyView` lays out the form.
 @MainActor
 final class SurveyViewModel: ObservableObject {
 
@@ -96,6 +96,11 @@ final class SurveyViewModel: ObservableObject {
     func updateAnswer(for question: SurveyQuestion, answer: String) {
         responses.removeAll { $0.questionId == question.id }
         responses.append(SurveyService.createQuestionResponse(question: question, answer: answer))
+    }
+
+    /// Forgets any answer to `question`, as when the rider clears a text field.
+    func clearAnswer(for question: SurveyQuestion) {
+        responses.removeAll { $0.questionId == question.id }
     }
 
     /// Updates checkbox selection state and stores the JSON-encoded array as the answer.
