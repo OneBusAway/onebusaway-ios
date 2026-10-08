@@ -37,7 +37,12 @@ struct CopyableValueRow: View {
         .accessibilityLabel(title)
         .accessibilityValue(value)
         .accessibilityHint(accessibilityHint ?? "")
-        .onDisappear { revertTask?.cancel() }
+        .onDisappear {
+            // Form rows disappear when scrolled away; reset too, or the
+            // cancelled revert leaves "Copied to clipboard" showing for good.
+            revertTask?.cancel()
+            showsConfirmation = false
+        }
     }
 
     private func copy() {

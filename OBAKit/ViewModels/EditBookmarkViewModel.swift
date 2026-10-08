@@ -129,7 +129,8 @@ final class EditBookmarkViewModel {
     /// Creates a group named `name`, appended after the existing ones, and
     /// offers it in the picker. Blank names are ignored.
     func addGroup(named name: String) {
-        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
         application.userDataStore.upsert(bookmarkGroup: BookmarkGroup(name: name, sortOrder: Int.max))
         groups = application.userDataStore.bookmarkGroups
     }
@@ -200,12 +201,18 @@ final class EditBookmarkViewModel {
         bookmark.isFavorite = isFavorite
 
         let store = application.userDataStore
-        if let stored = store.findBookmark(id: bookmark.id), stored.groupID == groupID {
-            // Same group: save in place. `add(_:to:)` would move it to the
-            // bottom of its group.
+        if let stored = store.findBookmark(id: bookmark.id) {
+            // Write through the store's copy so fields changed on another
+            // screen since `bookmark` was handed to us (pinning, say) survive.
             stored.name = bookmark.name
             stored.isFavorite = bookmark.isFavorite
-            store.update(stored)
+            if stored.groupID == groupID {
+                // Same group: save in place. `add(_:to:)` would move it to the
+                // bottom of its group.
+                store.update(stored)
+            } else {
+                store.add(stored, to: groupID.flatMap { store.findGroup(id: $0) })
+            }
         } else {
             store.add(bookmark, to: groupID.flatMap { store.findGroup(id: $0) })
         }
