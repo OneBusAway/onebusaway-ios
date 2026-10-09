@@ -191,10 +191,15 @@ final class AppSheetViewFactory {
             stopID: stopID,
             makeViewModel: { StopViewModel(environment: self.application, stopID: stopID) },
             makePresenter: {
-                StopPageActionPresenter(
+                let presenter = StopPageActionPresenter(
                     application: self.application,
                     presentingController: self.presentingController
                 )
+                // The same handoff `currentTripView` makes, so a departure tapped
+                // on the Stop page reaches the map panel's sheet stack rather than
+                // the UIKit presentation that covers the map behind it.
+                presenter.onShowTripInSheet = self.onPresentTrip
+                return presenter
             },
             feedback: DataLoadFeedbackGenerator(application: self.application),
             formatters: self.application.formatters,
