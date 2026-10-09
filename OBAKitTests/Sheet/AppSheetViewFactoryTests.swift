@@ -198,12 +198,17 @@ final class AppSheetViewFactoryTests: OBATestCase {
     func `Trip details view hands the page's map focus to the panel's map a turn later`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
         let tripFocusMapDisplayModel = TripFocusMapDisplayModel(userLocation: { nil })
         let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
         let focus = TripMapFocus()
+        coordinator.push(.tripDetails(convertible))
 
-        let host = makeFactory(application: application, tripFocusMapDisplayModel: tripFocusMapDisplayModel)
-            .tripDetailsView(tripConvertible: convertible)
+        let host = makeFactory(
+            application: application,
+            coordinator: coordinator,
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel
+        ).tripDetailsView(tripConvertible: convertible)
         host.onMapFocusChanged(focus)
 
         #expect(tripFocusMapDisplayModel.owner == nil)
@@ -217,6 +222,37 @@ final class AppSheetViewFactoryTests: OBATestCase {
         await Task.yield()
 
         #expect(tripFocusMapDisplayModel.owner == .tripDetails(convertible))
+        withExtendedLifetime(focus) {}
+    }
+
+    /// The sheet can close in the turn the handoff waits, and the stack change that
+    /// would clear the drawing has passed by the time it runs. Drawing then would
+    /// leave the trip on the map, and the ambient stops hidden, until the next one.
+    @Test @MainActor
+    func `Trip details view drops the map focus when the sheet closed before the handoff`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let tripFocusMapDisplayModel = TripFocusMapDisplayModel(userLocation: { nil })
+        let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
+        // Something to draw, so a handoff that ran anyway would show up as a trip.
+        let focus = TripMapFocus()
+        focus.apply(TripMapFocusFixture.content(shape: TripMapFocusFixture.shape(), progress: 0.5))
+        coordinator.push(.tripDetails(convertible))
+
+        let host = makeFactory(
+            application: application,
+            coordinator: coordinator,
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel
+        ).tripDetailsView(tripConvertible: convertible)
+        host.onMapFocusChanged(focus)
+        coordinator.pop()
+        for _ in 0..<10 {
+            await Task.yield()
+        }
+
+        #expect(tripFocusMapDisplayModel.owner == nil)
+        #expect(tripFocusMapDisplayModel.isShowingTrip == false)
         withExtendedLifetime(focus) {}
     }
 

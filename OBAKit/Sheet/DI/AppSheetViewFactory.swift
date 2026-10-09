@@ -222,15 +222,21 @@ final class AppSheetViewFactory {
         TripPageSheetHost(
             application: application,
             tripConvertible: tripConvertible,
-            onMapFocusChanged: { [tripFocusMapDisplayModel] focus in
+            onMapFocusChanged: { [tripFocusMapDisplayModel, coordinator] focus in
                 // Ending the drawing is the route stack's job, not the page's.
                 guard let focus else { return }
+                let owner = AppSheetRoute.tripDetails(tripConvertible)
                 // The page reports from `viewWillAppear`, which runs while SwiftUI is
                 // still building this sheet. Publishing the map's state from inside
                 // that update is undefined behaviour, and SwiftUI says so at runtime
                 // ("Publishing changes from within view updates"), so it waits a turn.
                 Task { @MainActor in
-                    tripFocusMapDisplayModel.show(focus: focus, owner: .tripDetails(tripConvertible))
+                    // The sheet can close during that turn. The stack change that
+                    // would have cleared the drawing has already been handled by
+                    // then, so drawing now would leave the trip on the map, and the
+                    // ambient stops hidden, until the next one.
+                    guard coordinator.allRoutes.contains(owner) else { return }
+                    tripFocusMapDisplayModel.show(focus: focus, owner: owner)
                 }
             },
             onSelectStop: { [coordinator] stopID in coordinator.push(.stopDetails(stopID: stopID)) },
