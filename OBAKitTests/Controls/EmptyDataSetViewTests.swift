@@ -92,7 +92,7 @@ final class EmptyDataSetViewTests {
         let emptyView = EmptyDataSetView()
         let icon = UIImage(systemName: "exclamationmark.triangle")
         let error = NSError(domain: "TestDomain", code: 42, userInfo: [NSLocalizedDescriptionKey: "Something went wrong."])
-        let config = ActivityIndicatedButton.Configuration(text: "Retry", action: {})
+        let config = ActivityIndicatedButton.Configuration(text: "Retry", largeContentImage: nil, action: {})
 
         emptyView.configure(with: error, icon: icon, buttonConfig: config)
 

@@ -110,6 +110,7 @@ public class EmptyDataSetView: UIView {
     // MARK: - Initializers
 
     public init(alignment: EmptyDataSetAlignment = .center) {
+        self.alignment = alignment
         super.init(frame: .zero)
 
         addSubview(stackView)
