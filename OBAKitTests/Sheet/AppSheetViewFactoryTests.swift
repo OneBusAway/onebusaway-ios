@@ -45,13 +45,14 @@ final class AppSheetViewFactoryTests: OBATestCase {
         displayModel: MapSearchDisplayModel = MapSearchDisplayModel(),
         stopsObserver: MapStopsObserver? = nil,
         tripPlannerMapDisplayModel: TripPlannerMapDisplayModel? = nil,
-        tripFocusMapDisplayModel: TripFocusMapDisplayModel? = nil
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel? = nil,
+        onPresentTrip: @escaping (ArrivalDeparture) -> Void = { _ in }
     ) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
             mapViewModel: MapViewModel(application: application),
             layersModel: MapPanelLayersModel(application: application),
-            onPresentTrip: { _ in },
+            onPresentTrip: onPresentTrip,
             onPresentVehicleTrip: { _ in },
             presentingController: { nil },
             coordinator: coordinator,
@@ -106,6 +107,30 @@ final class AppSheetViewFactoryTests: OBATestCase {
         // be compared directly.
         #expect(view.formatters === application.formatters)
         #expect(view.userDefaults === application.userDefaults)
+    }
+
+    /// A departure tapped on the Stop sheet has to reach the panel's sheet
+    /// stack, the same `onPresentTrip` handoff `currentTripView` gets. Without
+    /// the wiring the Stop page falls back to presenting the trip over the map
+    /// the panel is showing.
+    @Test @MainActor
+    func `Stop detail view hands departures to the panel's trip presentation`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let departure = try Fixtures.loadRESTAPIPayload(
+            type: ArrivalDeparture.self,
+            fileName: "arrival-and-departure-for-stop-1_11420.json"
+        )
+        var presentedTripIDs: [TripIdentifier] = []
+        let factory = makeFactory(
+            application: application,
+            onPresentTrip: { presentedTripIDs.append($0.tripID) }
+        )
+
+        let presenter = factory.stopDetailView(stopID: "1_10914").makePresenter()
+        presenter.onShowTripInSheet?(departure)
+
+        #expect(presentedTripIDs == [departure.tripID])
     }
 
     @Test @MainActor

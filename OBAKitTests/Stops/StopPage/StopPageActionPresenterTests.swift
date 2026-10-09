@@ -282,6 +282,31 @@ final class StopPageActionPresenterTests: OBATestCase {
         #expect(root.presentedViewController == nil)
     }
 
+    /// The map panel sets `onShowTripInSheet`, and a tapped departure has to
+    /// reach that sheet stack rather than being presented on top of the sheet
+    /// already on screen. This host has no navigation stack, so before the hook
+    /// existed the trip went up as a modal over the panel's map.
+    ///
+    /// Only this side of the fork is covered. Exercising the fallback would
+    /// present a live `TripPageViewController`, which reads
+    /// `TripConvertible.trip` — implicitly unwrapped and nil until the
+    /// departure's references load — and traps on a decoded fixture.
+    @Test func `A departure opens in the sheet when the host offers one`() async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        let departure = try makeDepartureWithRoute()
+
+        var openedTripIDs: [TripIdentifier] = []
+        presenter.onShowTripInSheet = { openedTripIDs.append($0.tripID) }
+
+        presenter.showTripPage(for: departure, originTitle: "Mercer St & 3rd Ave N")
+
+        #expect(openedTripIDs == [departure.tripID])
+        // The sheet host owns the presentation from here, so the presenter must
+        // not also put the page up itself.
+        #expect(await waitForPresentation(on: host) == nil)
+    }
+
     @Test func `Presenting resolves the provider at call time not at init`() async {
         let host = makeHost()
         let dataLoader = MockDataLoader(testName: name)

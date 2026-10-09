@@ -93,6 +93,15 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// full-screen — there is no map behind it to focus.
     var onTripPagePush: ((TripPageViewController) -> Void)?
 
+    /// Set by a host that shows trips as a sheet over its own map, so a tapped
+    /// departure joins that sheet stack instead of being presented on top of it.
+    ///
+    /// Takes precedence over `onTripPagePush`: the sheet host builds its own
+    /// `TripPageViewController` and wires its own map focus, so there is no page
+    /// here to hand over. Left nil everywhere else, where `showTripPage` keeps
+    /// the pushed and modal presentations below.
+    var onShowTripInSheet: ((ArrivalDeparture) -> Void)?
+
     // MARK: - Navigation Handler
 
     /// Builds the handler the SwiftUI layer consumes. `closeSheet` is a no-op
@@ -263,6 +272,17 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// full-screen with no map behind them. Routed here instead, so every way out
     /// of the Stop page reaches the same screen.
     func showTripPage(for arrivalDeparture: ArrivalDeparture, originTitle: String?) {
+        // A host with a sheet stack takes the trip whole: it opens the page as a
+        // sheet over its own map and draws the trip on that map. Falling through
+        // to the UIKit presentations below would cover the map the panel just
+        // focused. `originTitle` is dropped on this path — the sheet's back row
+        // returns to the sheet underneath, which is the stop the rider came from,
+        // so naming it again would be redundant.
+        if let onShowTripInSheet {
+            onShowTripInSheet(arrivalDeparture)
+            return
+        }
+
         guard let host = presentationHost(for: "trip") else { return }
         let tripPage = TripPageViewController(
             application: application,
