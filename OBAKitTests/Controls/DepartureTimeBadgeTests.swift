@@ -65,17 +65,16 @@ final class DepartureTimeBadgeTests {
         let badge = DepartureTimeBadge(frame: .zero)
         badge.text = "NOW"
         badge.font = UIFont.systemFont(ofSize: 15)
-        badge.sizeToFit()
         
-        let size = badge.intrinsicContentSize
+        badge.contentMargin = .zero
+        let sizeWithoutMargins = badge.intrinsicContentSize
         
-        let plainLabel = UILabel()
-        plainLabel.text = badge.text
-        plainLabel.font = badge.font
-        let superSize = plainLabel.intrinsicContentSize
+        let margins = UIEdgeInsets(top: 2, left: 4, bottom: 2, right: 4)
+        badge.contentMargin = margins
+        let sizeWithMargins = badge.intrinsicContentSize
         
-        #expect(size.width == superSize.width + badge.contentMargin.left + badge.contentMargin.right)
-        #expect(size.height == superSize.height + badge.contentMargin.top + badge.contentMargin.bottom)
+        #expect(sizeWithMargins.width == sizeWithoutMargins.width + margins.left + margins.right)
+        #expect(sizeWithMargins.height == sizeWithoutMargins.height + margins.top + margins.bottom)
     }
 
     @Test func testConfigureAppliesConfiguration() {
