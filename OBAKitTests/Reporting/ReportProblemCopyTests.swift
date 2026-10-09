@@ -14,13 +14,20 @@ import Testing
 @MainActor
 final class ReportProblemCopyTests {
 
-    @Test func `Stop problem header matches the English catalog`() {
-        // Asserting the exact literal catches missing keys and prevents
-        // test drift if both the copy property and test evaluate the same key.
-        #expect(ReportProblemCopy.stopProblemHeader == "Problem with the Stop")
+    private func englishBundle() -> Bundle? {
+        guard let path = Bundle(for: DonationCell.self).path(forResource: "en", ofType: "lproj") else { return nil }
+        return Bundle(path: path)
     }
 
-    @Test func `Vehicle problem header matches the English catalog`() {
-        #expect(ReportProblemCopy.vehicleProblemHeader == "Problem with a Trip")
+    @Test func `Stop problem header exists in the English catalog`() throws {
+        let bundle = try #require(englishBundle())
+        let value = bundle.localizedString(forKey: "report_problem_controller.stop_problem.header", value: "MISSING", table: nil)
+        #expect(value == "Problem with the Stop")
+    }
+
+    @Test func `Vehicle problem header exists in the English catalog`() throws {
+        let bundle = try #require(englishBundle())
+        let value = bundle.localizedString(forKey: "report_problem_controller.trip_problem.header", value: "MISSING", table: nil)
+        #expect(value == "Problem with a Trip")
     }
 }
