@@ -229,7 +229,7 @@ final class PushRegistrationManagerTests: OBATestCase {
         await manager.registerIfNeeded()
 
         #expect(registrationRequestCount == 1)
-        let body = capture.bodies.first
+        let body = try? #require(capture.bodies.first)
         #expect(capture.bodies.count == 1)
         #expect(body?.contains("test_device=false") ?? false, "Body: \(String(describing: body))")
         #expect(!(body?.contains("description=") ?? true), "Body: \(String(describing: body))")

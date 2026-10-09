@@ -38,11 +38,13 @@ final class ProminentButtonTests {
 
     @Test func testLayoutSubviewsAddsHighlightLayer() {
         let button = ProminentButton(frame: CGRect(x: 0, y: 0, width: 100, height: 50))
+        #expect(button.highlightLayer.superlayer == nil)
         
         button.setNeedsLayout()
         button.layoutIfNeeded()
         
         let highlightLayer = button.highlightLayer
+        #expect(highlightLayer.superlayer === button.layer)
         #expect(highlightLayer.backgroundColor == button.prominentColor.cgColor)
         #expect(highlightLayer.cornerRadius == ThemeMetrics.compactCornerRadius)
     }
