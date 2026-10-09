@@ -42,7 +42,7 @@ final class DocumentWebViewTests {
         private var hasResumed = false
         private let lock = NSLock()
 
-        func set(_ c: CheckedContinuation<Void, Error>) {
+        nonisolated func set(_ c: CheckedContinuation<Void, Error>) {
             var storedResult: Result<Void, Error>?
             lock.lock()
             if hasResumed {
@@ -65,7 +65,7 @@ final class DocumentWebViewTests {
             }
         }
 
-        func resume() {
+        nonisolated func resume() {
             var cToResume: CheckedContinuation<Void, Error>?
             lock.lock()
             if hasResumed || result != nil {
@@ -84,7 +84,7 @@ final class DocumentWebViewTests {
             cToResume?.resume()
         }
 
-        func resume(throwing error: Error) {
+        nonisolated func resume(throwing error: Error) {
             var cToResume: CheckedContinuation<Void, Error>?
             lock.lock()
             if hasResumed || result != nil {
@@ -115,20 +115,17 @@ final class DocumentWebViewTests {
     @Test func testSetPageContentRendersHTMLWithButton() async throws {
         let webView = DocumentWebView()
         let delegate = NavigationDelegate()
+        let cancellable = CancellableContinuation()
+        
+        delegate.onFinish = { _ in cancellable.resume() }
+        delegate.onError = { error in cancellable.resume(throwing: error) }
         webView.navigationDelegate = delegate
 
-        let cancellable = CancellableContinuation()
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
                 try await withTaskCancellationHandler {
                     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                         cancellable.set(continuation)
-                        delegate.onFinish = { _ in
-                            cancellable.resume()
-                        }
-                        delegate.onError = { error in
-                            cancellable.resume(throwing: error)
-                        }
 
                         DispatchQueue.main.async {
                             webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: "Test Button")
@@ -161,20 +158,17 @@ final class DocumentWebViewTests {
     @Test func testSetPageContentRendersHTMLWithoutButton() async throws {
         let webView = DocumentWebView()
         let delegate = NavigationDelegate()
+        let cancellable = CancellableContinuation()
+        
+        delegate.onFinish = { _ in cancellable.resume() }
+        delegate.onError = { error in cancellable.resume(throwing: error) }
         webView.navigationDelegate = delegate
 
-        let cancellable = CancellableContinuation()
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
                 try await withTaskCancellationHandler {
                     try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                         cancellable.set(continuation)
-                        delegate.onFinish = { _ in
-                            cancellable.resume()
-                        }
-                        delegate.onError = { error in
-                            cancellable.resume(throwing: error)
-                        }
 
                         DispatchQueue.main.async {
                             webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: nil)
