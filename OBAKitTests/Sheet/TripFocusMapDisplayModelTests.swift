@@ -180,8 +180,7 @@ final class TripFocusMapDisplayModelTests {
         let (model, focus) = try show(TripMapFocusFixture.content(shape: TripMapFocusFixture.shape(), progress: 0.5))
         let trip = try owner()
 
-        // The page owns its focus and the model holds it weakly, so keep it alive
-        // here as the open page would.
+        // Kept alive as the open page would keep it, so the stack alone decides.
         withExtendedLifetime(focus) {
             model.clearIfOwnerAbsent(from: [.home, trip, .stopDetails(stopID: "1_75403")])
 
@@ -189,30 +188,35 @@ final class TripFocusMapDisplayModelTests {
         }
     }
 
-    /// My Trip can open a second trip over the first. Closing it goes back to the
-    /// first, whose sheet is uncovered but never appears again to say so.
-    @Test func `Closing a trip opened over another goes back to drawing the first`() throws {
+    /// Only one trip sheet is ever open, because the bridge closes the open one
+    /// before opening another. So a new trip takes the drawing over, frames the
+    /// camera for itself, and leaves nothing of the old one to fall back to.
+    @Test func `Showing another trip replaces the one drawn`() throws {
         let coordinate = CLLocationCoordinate2D(latitude: 47, longitude: -122)
         let (model, firstFocus) = try show(TripMapFocusFixture.content(
             shape: TripMapFocusFixture.shape(),
             progress: 0.5,
             stops: [TripMapFocusFixture.row(0, stopID: "A", coordinate: coordinate)]
         ))
+        model.consumeCameraTarget()
         let first = try owner()
         let second = try owner(tripID: "trip_2")
+        let secondFocus = TripMapFocus()
+        secondFocus.apply(TripMapFocusFixture.content(tripID: "trip_2", shape: TripMapFocusFixture.shape(), progress: 0.5))
 
-        // The first page is still open under the second, so its focus is alive.
+        // The first page stays alive, so only the model decides whether its trip
+        // comes back once the second one closes.
         withExtendedLifetime(firstFocus) {
-            let secondFocus = TripMapFocus()
-            secondFocus.apply(TripMapFocusFixture.content(tripID: "trip_2", shape: TripMapFocusFixture.shape(), progress: 0.5))
             model.show(focus: secondFocus, owner: second)
+
             #expect(model.owner == second)
             #expect(model.display?.stops.isEmpty == true)
+            #expect(model.cameraTarget != nil)
 
             model.clearIfOwnerAbsent(from: [.home, first])
 
-            #expect(model.owner == first)
-            #expect(model.display?.stops.map(\.id) == ["0-A"])
+            #expect(model.owner == nil)
+            #expect(model.isShowingTrip == false)
         }
     }
 
