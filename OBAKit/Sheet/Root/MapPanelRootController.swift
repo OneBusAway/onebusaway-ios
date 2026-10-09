@@ -151,7 +151,7 @@ public final class MapPanelRootController: UIViewController {
         private func open(_ convertible: TripConvertible) {
             let route = AppSheetRoute.tripDetails(convertible)
             // Already open: unwinding would close it only to open it again.
-            guard !(coordinator.routeStack + coordinator.stackedRoutes).contains(route) else { return }
+            guard !coordinator.allRoutes.contains(route) else { return }
 
             coordinator.popToRoot()
             coordinator.push(route)
