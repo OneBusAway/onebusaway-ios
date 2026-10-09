@@ -47,6 +47,10 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     var stackedRoutes: [Route] { stackedEntries.map(\.route) }
     var stackedDetents: [PresentationDetent] { stackedEntries.map(\.detent) }
 
+    /// Every route on screen: the base sheet's stack from its root up, then the
+    /// stacked sheets from the bottom up.
+    var allRoutes: [Route] { routeStack + stackedRoutes }
+
     // MARK: - Init
 
     init(root: Route) {

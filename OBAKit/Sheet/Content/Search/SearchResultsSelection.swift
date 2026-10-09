@@ -52,10 +52,10 @@ final class SearchResultsSelection: ObservableObject {
 
         // Snapshotted so a slow resolve can't act on a stack the rider has since
         // changed: unwinding then would tear down whatever sheet they opened next.
-        let stackAtTap = coordinator.routeStack + coordinator.stackedRoutes
+        let stackAtTap = coordinator.allRoutes
 
         let resolved = await router.resolve(result: result)
-        guard !Task.isCancelled, coordinator.routeStack + coordinator.stackedRoutes == stackAtTap else { return }
+        guard !Task.isCancelled, coordinator.allRoutes == stackAtTap else { return }
 
         guard let resolved else {
             // `router.lastError` is nil only for a result type `resolve` doesn't

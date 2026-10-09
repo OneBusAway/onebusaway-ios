@@ -77,6 +77,19 @@ final class SheetCoordinatorTests {
         #expect(coordinator.stackedDetents.count == 3)
     }
 
+    // MARK: - All routes
+
+    /// Base layer first, then the stacked sheets in the order they were pushed, so
+    /// a check like "is this sheet still open?" sees both layers.
+    @Test func `All routes lists the base stack and then the stacked sheets`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.search)
+        coordinator.push(.stopDetails(stopID: "1_75403"))
+        coordinator.push(.mapSettings)
+
+        #expect(coordinator.allRoutes == [.home, .search, .stopDetails(stopID: "1_75403"), .mapSettings])
+    }
+
     // MARK: - Pop removes topmost layer
 
     @Test func `Pop with stacked presented removes top stacked and preserves content stack`() {
