@@ -28,7 +28,7 @@ public class ProminentButton: UIButton {
         }
     }
 
-    private let highlightLayer: CALayer = {
+    let highlightLayer: CALayer = {
         let layer = CALayer()
         layer.cornerRadius = ThemeMetrics.compactCornerRadius
 
