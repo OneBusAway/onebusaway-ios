@@ -86,21 +86,17 @@ final class TripFocusMapDisplayModel: ObservableObject {
     /// planned trip or a searched route: the trip's own stops are drawn instead.
     var isShowingTrip: Bool { display != nil }
 
-    /// The trip sheet whose trip is drawn.
-    var owner: AppSheetRoute? { entries.last?.owner }
-
-    /// One entry per open trip sheet, newest last, and the newest is the one drawn.
+    /// The trip sheet whose trip is drawn. Its lifetime is the route stack's, for the
+    /// reason `MapSearchDisplayModel.owner` gives; see `clearIfOwnerAbsent(from:)`.
     ///
-    /// A stack, not a single slot, because My Trip can open a second trip over the
-    /// first, and a covered sheet never appears again to hand its focus back when
-    /// the one above it closes. Lifetime is the route stack's, for the reason
-    /// `MapSearchDisplayModel.owner` gives; see `clearIfOwnerAbsent(from:)`.
-    private var entries: [Entry] = []
+    /// One trip, not a stack of them, because only one trip sheet is ever open:
+    /// `MapPanelRootController.TripPresentationBridge` is the only thing that opens
+    /// one, and it unwinds to the home sheet first.
+    private(set) var owner: AppSheetRoute?
 
-    private struct Entry {
-        let owner: AppSheetRoute
-        weak var focus: TripMapFocus?
-    }
+    /// Weak because the trip page owns it. The drawing ends with the page's sheet,
+    /// not with this reference.
+    private weak var focus: TripMapFocus?
 
     private var focusCancellable: AnyCancellable?
 
@@ -117,41 +113,38 @@ final class TripFocusMapDisplayModel: ObservableObject {
     }
 
     /// Draws the trip `focus` describes, for as long as `owner` is on the sheet
-    /// stack or until another trip sheet opens over it.
+    /// stack.
     func show(focus: TripMapFocus, owner: AppSheetRoute) {
         // The page reports its focus every time it appears, including on the way
         // back from a sheet it presented over itself. Starting over then would
         // re-frame a camera the rider may have moved.
-        guard focus !== entries.last?.focus else { return }
+        guard focus !== self.focus else { return }
 
-        entries.removeAll { $0.owner == owner }
-        entries.append(Entry(owner: owner, focus: focus))
-        draw(focus)
+        self.focus = focus
+        self.owner = owner
+        focusCancellable = focus.$content.sink { [weak self] content in
+            self?.render(content)
+        }
     }
 
-    /// Drops every trip whose sheet is no longer on the stack, and goes back to
-    /// drawing the newest one left. Called on every change to that stack, so a
-    /// drag-down, a Back tap and a `popToRoot` all end a drawing the same way.
+    /// Drops the drawing once its trip sheet is no longer anywhere on the stack.
+    /// Called on every change to that stack, so a drag-down, a Back tap and a
+    /// `popToRoot` all end it the same way.
     ///
     /// The trip page isn't asked instead. It sends a `nil` focus from
     /// `viewWillDisappear` only when `isMovingFromParent`, a navigation-stack signal
     /// that says nothing reliable about a page hosted in a SwiftUI sheet.
     ///
-    /// - Parameter routes: Every route currently on screen — both sheet layers.
+    /// - Parameter routes: Every route on screen, on both sheet layers; see
+    ///   `SheetCoordinator.allRoutes`.
     func clearIfOwnerAbsent(from routes: [AppSheetRoute]) {
-        let drawnOwner = owner
-        entries.removeAll { !routes.contains($0.owner) || $0.focus == nil }
-        guard owner != drawnOwner else { return }
-
-        if let focus = entries.last?.focus {
-            draw(focus)
-        } else {
-            clear()
-        }
+        guard let owner, !routes.contains(owner) else { return }
+        clear()
     }
 
     func clear() {
-        entries.removeAll()
+        owner = nil
+        focus = nil
         focusCancellable = nil
         framedTripID = nil
         display = nil
@@ -163,12 +156,6 @@ final class TripFocusMapDisplayModel: ObservableObject {
     }
 
     // MARK: - Rendering
-
-    private func draw(_ focus: TripMapFocus) {
-        focusCancellable = focus.$content.sink { [weak self] content in
-            self?.render(content)
-        }
-    }
 
     private func render(_ content: TripMapFocus.Content?) {
         guard let content else {

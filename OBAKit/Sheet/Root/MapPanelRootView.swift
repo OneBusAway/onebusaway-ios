@@ -353,12 +353,12 @@ struct MapPanelRootView: View {
         // without dismissing anything, and still clears on a real exit, including
         // the drag-down the OS routes through `truncateStacked`.
         .onChange(of: coordinator.stackedRoutes) { _, _ in
-            searchDisplay.clearIfOwnerAbsent(from: coordinator.routeStack + coordinator.stackedRoutes)
+            searchDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
             // Clear the trip planner when `.tripPlanner` is no longer on the stack.
             // Unlike searchDisplay which uses `.clearIfOwnerAbsent`, the trip planner
             // has no owner concept — it has a plain `clear()`. The check is simple: if
             // the trip planner route isn't on the stack, clear the model.
-            let hasActiveTripPlanner = (coordinator.routeStack + coordinator.stackedRoutes)
+            let hasActiveTripPlanner = coordinator.allRoutes
                 .contains { route in
                     if case .tripPlanner = route {
                         return true
@@ -368,7 +368,7 @@ struct MapPanelRootView: View {
             if !hasActiveTripPlanner {
                 tripPlannerDisplay.clear()
             }
-            tripFocusDisplay.clearIfOwnerAbsent(from: coordinator.routeStack + coordinator.stackedRoutes)
+            tripFocusDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
         }
         .onChange(of: searchDisplay.cameraTarget) { _, target in
             guard let target else { return }

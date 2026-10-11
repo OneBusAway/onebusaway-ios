@@ -222,15 +222,21 @@ final class AppSheetViewFactory {
         TripPageSheetHost(
             application: application,
             tripConvertible: tripConvertible,
-            onMapFocusChanged: { [tripFocusMapDisplayModel] focus in
+            onMapFocusChanged: { [tripFocusMapDisplayModel, coordinator] focus in
                 // Ending the drawing is the route stack's job, not the page's.
                 guard let focus else { return }
+                let owner = AppSheetRoute.tripDetails(tripConvertible)
                 // The page reports from `viewWillAppear`, which runs while SwiftUI is
                 // still building this sheet. Publishing the map's state from inside
                 // that update is undefined behaviour, and SwiftUI says so at runtime
                 // ("Publishing changes from within view updates"), so it waits a turn.
                 Task { @MainActor in
-                    tripFocusMapDisplayModel.show(focus: focus, owner: .tripDetails(tripConvertible))
+                    // The sheet can close during that turn. The stack change that
+                    // would have cleared the drawing has already been handled by
+                    // then, so drawing now would leave the trip on the map, and the
+                    // ambient stops hidden, until the next one.
+                    guard coordinator.allRoutes.contains(owner) else { return }
+                    tripFocusMapDisplayModel.show(focus: focus, owner: owner)
                 }
             },
             onSelectStop: { [coordinator] stopID in coordinator.push(.stopDetails(stopID: stopID)) },
@@ -269,11 +275,11 @@ final class AppSheetViewFactory {
     /// gives: a failed request leaves the rider on the list they tapped.
     private func showRouteOnMap(_ route: Route) async {
         let router = searchResultRouter
-        let stackAtTap = coordinator.routeStack + coordinator.stackedRoutes
+        let stackAtTap = coordinator.allRoutes
         let resolved = await router.resolve(result: route)
         // The rider may have moved on while the route loaded; unwinding now would
         // tear down whatever they opened instead.
-        guard !Task.isCancelled, coordinator.routeStack + coordinator.stackedRoutes == stackAtTap else { return }
+        guard !Task.isCancelled, coordinator.allRoutes == stackAtTap else { return }
         guard let resolved else {
             if let error = router.lastError {
                 await application.displayError(error)
