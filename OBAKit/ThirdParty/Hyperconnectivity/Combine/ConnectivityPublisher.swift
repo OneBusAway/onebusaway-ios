@@ -25,7 +25,7 @@ nonisolated struct ConnectivityPublisher: Publisher {
     }
 
     func receive<S>(subscriber: S) where S: Subscriber, Self.Failure == S.Failure, Self.Output == S.Input {
-        let subscription = ConnectivitySubscription(configuration: configuration, subscriber: subscriber)
+        let subscription = ConnectivitySubscription(configuration: configuration, subscriber: AnySubscriber(subscriber))
         subscriber.receive(subscription: subscription)
     }
 }
