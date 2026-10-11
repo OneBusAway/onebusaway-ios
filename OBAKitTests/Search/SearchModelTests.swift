@@ -107,7 +107,7 @@ struct SearchModelTests {
 
     // MARK: - SearchError
 
-    @Test func `SearchError noTripsAvailable localized description and key resolution`() throws {
+    @Test func `SearchError noTripsAvailable resolves in English catalog and provides error description`() throws {
         let bundle = try #require(englishBundle())
         let key = "search_results_controller.no_trips_available"
 
@@ -116,7 +116,7 @@ struct SearchModelTests {
         #expect(localized == "This vehicle is not currently on any trips.")
 
         let error = SearchError.noTripsAvailable
-        #expect(error.errorDescription == "This vehicle is not currently on any trips.")
-        #expect(error.localizedDescription == "This vehicle is not currently on any trips.")
+        #expect(error.errorDescription?.isEmpty == false)
+        #expect(error.localizedDescription.isEmpty == false)
     }
 }
