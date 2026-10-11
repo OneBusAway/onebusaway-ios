@@ -36,7 +36,7 @@ final class DocumentWebViewTests {
     }
 
     /// Thread-safe wrapper to ensure the continuation is resumed exactly once.
-    private final class CancellableContinuation: @unchecked Sendable {
+    private nonisolated final class CancellableContinuation: @unchecked Sendable {
         private var continuation: CheckedContinuation<Void, Error>?
         private var result: Result<Void, Error>?
         private var hasResumed = false
@@ -121,31 +121,33 @@ final class DocumentWebViewTests {
         delegate.onError = { error in cancellable.resume(throwing: error) }
         webView.navigationDelegate = delegate
 
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                try await withTaskCancellationHandler {
-                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                        cancellable.set(continuation)
+        try await withExtendedLifetime(delegate) {
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    try await withTaskCancellationHandler {
+                        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                            cancellable.set(continuation)
 
+                            DispatchQueue.main.async {
+                                webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: "Test Button")
+                            }
+                        }
+                    } onCancel: {
+                        cancellable.resume(throwing: CancellationError())
                         DispatchQueue.main.async {
-                            webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: "Test Button")
+                            webView.stopLoading()
                         }
                     }
-                } onCancel: {
-                    cancellable.resume(throwing: CancellationError())
-                    DispatchQueue.main.async {
-                        webView.stopLoading()
-                    }
                 }
-            }
 
-            group.addTask {
-                try await Task.sleep(nanoseconds: 3_000_000_000)
-                throw TimeoutError()
-            }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 3_000_000_000)
+                    throw TimeoutError()
+                }
 
-            try await group.next()
-            group.cancelAll()
+                try await group.next()
+                group.cancelAll()
+            }
         }
 
         let html = try await webView.evaluateJavaScript("document.documentElement.outerHTML") as? String ?? ""
@@ -164,31 +166,33 @@ final class DocumentWebViewTests {
         delegate.onError = { error in cancellable.resume(throwing: error) }
         webView.navigationDelegate = delegate
 
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            group.addTask {
-                try await withTaskCancellationHandler {
-                    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                        cancellable.set(continuation)
+        try await withExtendedLifetime(delegate) {
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    try await withTaskCancellationHandler {
+                        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                            cancellable.set(continuation)
 
+                            DispatchQueue.main.async {
+                                webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: nil)
+                            }
+                        }
+                    } onCancel: {
+                        cancellable.resume(throwing: CancellationError())
                         DispatchQueue.main.async {
-                            webView.setPageContent("<h1>Test Content</h1>", actionButtonTitle: nil)
+                            webView.stopLoading()
                         }
                     }
-                } onCancel: {
-                    cancellable.resume(throwing: CancellationError())
-                    DispatchQueue.main.async {
-                        webView.stopLoading()
-                    }
                 }
-            }
 
-            group.addTask {
-                try await Task.sleep(nanoseconds: 3_000_000_000)
-                throw TimeoutError()
-            }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 3_000_000_000)
+                    throw TimeoutError()
+                }
 
-            try await group.next()
-            group.cancelAll()
+                try await group.next()
+                group.cancelAll()
+            }
         }
 
         let html = try await webView.evaluateJavaScript("document.documentElement.outerHTML") as? String ?? ""
