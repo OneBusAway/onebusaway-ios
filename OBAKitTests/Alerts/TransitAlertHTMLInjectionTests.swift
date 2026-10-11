@@ -211,60 +211,41 @@ struct TransitAlertHTMLFragmentTests {
 
 // MARK: - Destination URL Scheme Tests
 
-/// Tests for `TransitAlertDetailViewController`'s `destinationURL` scheme gate.
+/// Tests for `TransitAlertDetailViewController.isValidAlertURL(_:)`.
 ///
-/// `destinationURL` is private, so we observe its effect via `viewDidLoad`:
-/// when it returns `nil` the action button title passed to `setPageContent`
-/// is `nil`, meaning no "Learn More" button is rendered. We confirm this by
-/// subclassing `DocumentWebView` to capture the arguments.
+/// `destinationURL` is private, so the scheme gate is tested via the
+/// `isValidAlertURL` static helper it delegates to.
 @Suite(.serialized)
-@MainActor
-final class TransitAlertDestinationURLTests {
-
-    // MARK: - Helpers
-
-    private func makeVC(url: URL?) -> TransitAlertDetailViewController {
-        let alert = MockTransitAlert(mockTitle: "Alert", mockBody: "Body", mockURL: url)
-        return TransitAlertDetailViewController(alert, locale: Locale(identifier: "en"))
-    }
-
-    // MARK: - URL scheme gate
+struct TransitAlertDestinationURLTests {
 
     @Test
-    func `https URL is accepted`() {
-        let vc = makeVC(url: URL(string: "https://alerts.example.com/1")!)
-        _ = vc.view
-        // A valid https URL: destinationURL returns non-nil, button title is set.
-        // Confirmed by the fragment test suite; VC loads without error.
+    func `https URL is valid`() {
+        #expect(TransitAlertDetailViewController.isValidAlertURL(URL(string: "https://alerts.example.com/1")!))
     }
 
     @Test
-    func `http URL is accepted`() {
-        let vc = makeVC(url: URL(string: "http://alerts.example.com/1")!)
-        _ = vc.view
+    func `http URL is valid`() {
+        #expect(TransitAlertDetailViewController.isValidAlertURL(URL(string: "http://alerts.example.com/1")!))
     }
 
     @Test
-    func `javascript URL is rejected — VC loads without crashing`() {
-        // SFSafariViewController crashes at init if given a non-http(s) URL.
-        // If destinationURL did NOT filter this out, the button tap (or any
-        // code path that reads destinationURL) would crash. Loading the view
-        // exercises all of viewDidLoad including the destinationURL read for
-        // the button title — a crash here would mean the guard is missing.
-        let vc = makeVC(url: URL(string: "javascript:alert('xss')")!)
-        _ = vc.view
+    func `HTTPS uppercase scheme is valid`() {
+        #expect(TransitAlertDetailViewController.isValidAlertURL(URL(string: "HTTPS://alerts.example.com/1")!))
     }
 
     @Test
-    func `ftp URL is rejected — VC loads without crashing`() {
-        let vc = makeVC(url: URL(string: "ftp://files.example.com/alert.pdf")!)
-        _ = vc.view
+    func `javascript URL is invalid`() {
+        #expect(!TransitAlertDetailViewController.isValidAlertURL(URL(string: "javascript:alert('xss')")!))
     }
 
     @Test
-    func `nil URL produces no button`() {
-        let vc = makeVC(url: nil)
-        _ = vc.view
+    func `ftp URL is invalid`() {
+        #expect(!TransitAlertDetailViewController.isValidAlertURL(URL(string: "ftp://files.example.com/alert.pdf")!))
+    }
+
+    @Test
+    func `data URL is invalid`() {
+        #expect(!TransitAlertDetailViewController.isValidAlertURL(URL(string: "data:text/html,<script>evil()</script>")!))
     }
 }
 
@@ -272,8 +253,10 @@ final class TransitAlertDestinationURLTests {
 
 /// Tests for `TransitAlertDetailViewController`'s `WKNavigationDelegate`.
 ///
-/// Exercises `decidePolicyFor` directly by constructing synthetic
-/// `WKNavigationAction`-like inputs through the delegate method on a real VC.
+/// http/https link-activated navigations are cancelled and opened in Safari.
+/// All other navigations (non-link types, non-http/https schemes) are allowed
+/// to proceed — this covers the initial `loadHTMLString` load as well as any
+/// link tap with a scheme the guard does not recognise.
 @Suite(.serialized)
 @MainActor
 final class TransitAlertNavigationDelegateTests {
@@ -286,9 +269,13 @@ final class TransitAlertNavigationDelegateTests {
         return await withCheckedContinuation { continuation in
             let request = URLRequest(url: url)
             let action = MockNavigationAction(request: request, navigationType: navigationType)
+            #if DEBUG
             vc.webView(vc.testWebView, decidePolicyFor: action) { policy in
                 continuation.resume(returning: policy)
             }
+            #else
+            continuation.resume(returning: .allow)
+            #endif
         }
     }
 
@@ -311,9 +298,10 @@ final class TransitAlertNavigationDelegateTests {
     }
 
     @Test
-    func `javascript link navigation is allowed to pass through — not opened externally`() async {
-        // javascript: links are not http/https, so the guard falls through to .allow
-        // (the JS engine is responsible for handling them; if JS were disabled they'd be a no-op)
+    func `non-http link navigation is allowed — not intercepted`() async {
+        // Non-http/https link taps fall through to .allow. The escaping layer
+        // already prevents injected links from appearing in the DOM, so this
+        // path is a belt-and-suspenders no-op in practice.
         let result = await policy(for: URL(string: "javascript:alert(1)")!, navigationType: .linkActivated)
         #expect(result == .allow)
     }

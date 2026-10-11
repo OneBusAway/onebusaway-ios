@@ -63,16 +63,25 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
     /// Any other scheme (e.g. `javascript:`) is silently dropped.
     private var destinationURL: URL? {
         guard let url = transitAlert.url(forLocale: locale),
-              url.scheme == "https" || url.scheme == "http" else {
+              Self.isValidAlertURL(url) else {
             return nil
         }
         return url
     }
 
+    /// Returns `true` when `url` has an `http` or `https` scheme (case-insensitive).
+    /// Exposed as `internal` so tests can assert on scheme-gating directly.
+    static func isValidAlertURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "https" || scheme == "http"
+    }
+
     // MARK: - Web View
 
+    #if DEBUG
     /// Exposes `webView` for unit tests that need to drive the navigation delegate directly.
     var testWebView: DocumentWebView { webView }
+    #endif
 
     private lazy var webView: DocumentWebView = {
         let configuration = WKWebViewConfiguration()
@@ -104,13 +113,14 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
 
     // MARK: - WKNavigationDelegate
 
-    /// Only explicit user-tapped http/https links are allowed to navigate.
-    /// All other navigations (including the initial `loadHTMLString` load and
-    /// any injected link with a non-http scheme) are blocked.
+    /// Intercepts link taps: http/https links are opened in Safari (navigation cancelled
+    /// in the web view itself); all other navigations — including the initial
+    /// `loadHTMLString` load and any non-http/https link taps — are allowed to proceed
+    /// as normal (or are no-ops, since no external navigation occurs for them).
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
         guard navigationAction.navigationType == .linkActivated,
               let url = navigationAction.request.url,
-              url.scheme == "https" || url.scheme == "http" else {
+              Self.isValidAlertURL(url) else {
             decisionHandler(.allow)
             return
         }

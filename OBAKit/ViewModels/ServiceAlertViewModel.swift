@@ -100,9 +100,7 @@ final class ServiceAlertViewModel: ObservableObject {
             }
         }
 
-        if let urlString = alert.urlString?.value,
-           let url = URL(string: urlString),
-           url.scheme == "https" || url.scheme == "http" {
+        if let urlString = alert.urlString?.value {
             let fmt = OBALoc(
                 "service_alert_controller.learn_more_fmt",
                 value: "Learn more: %@",
@@ -200,19 +198,3 @@ nonisolated fileprivate struct HTMLBuilder {
     }
 }
 
-// MARK: - HTML Escaping
-
-extension String {
-    /// Escapes the five characters that carry special meaning in HTML content
-    /// (`&`, `<`, `>`, `"`, `'`). Use this before interpolating any untrusted
-    /// string into an HTML document.
-    nonisolated var htmlEscaped: String {
-        var result = self
-        result = result.replacingOccurrences(of: "&", with: "&amp;")
-        result = result.replacingOccurrences(of: "<", with: "&lt;")
-        result = result.replacingOccurrences(of: ">", with: "&gt;")
-        result = result.replacingOccurrences(of: "\"", with: "&quot;")
-        result = result.replacingOccurrences(of: "'", with: "&#x27;")
-        return result
-    }
-}
