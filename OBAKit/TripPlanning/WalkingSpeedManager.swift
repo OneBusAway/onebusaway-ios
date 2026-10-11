@@ -17,9 +17,19 @@ final class WalkingSpeedManager {
     private let healthKit: WalkingSpeedHealthKitProviding
     private let userDataStore: UserDataStore
 
+    /// Bumped every time the user opts out of HealthKit so a sync that started earlier
+    /// cannot write `.healthKit` back over the `.manual` the opt-out persisted (#1458.3).
+    private var syncGeneration = 0
+
     init(userDataStore: UserDataStore, healthKit: WalkingSpeedHealthKitProviding = HKHealthStoreWalkingSpeedProvider()) {
         self.userDataStore = userDataStore
         self.healthKit = healthKit
+    }
+
+    /// Invalidates any sync still in flight. Call it before persisting a HealthKit opt-out
+    /// so the stale sync's trailing write is abandoned instead of resurrecting `.healthKit`.
+    func cancelPendingSync() {
+        syncGeneration += 1
     }
 
     /// Requests HealthKit authorization and attempts to sync the latest walking speed.
@@ -30,6 +40,8 @@ final class WalkingSpeedManager {
     /// for a denying user, success here is defined as "actually retrieved a usable
     /// sample". A user who genuinely granted access but has no recent walking-speed
     /// samples (e.g. no Apple Watch) is also routed to `.manual` — that's intentional.
+    /// A sync invalidated by `cancelPendingSync()` (the user opted out while it was in
+    /// flight) abandons without touching the store, so the opt-out wins.
     @discardableResult
     func requestHealthKitAuthorizationAndSync() async -> Bool {
         guard healthKit.isAvailable else {
@@ -37,16 +49,21 @@ final class WalkingSpeedManager {
             return false
         }
 
+        let generation = syncGeneration
+
         do {
             try await healthKit.requestAuthorization()
         } catch {
             Logger.error("WalkingSpeedManager: HealthKit requestAuthorization failed: \(error)")
+            guard generation == syncGeneration else { return false }
             userDataStore.walkingSpeedSource = .manual
             return false
         }
 
-        let didSync = await syncLatestWalkingSpeed()
-        if !didSync {
+        guard generation == syncGeneration else { return false }
+
+        let didSync = await syncLatestWalkingSpeed(expectedGeneration: generation)
+        if !didSync, generation == syncGeneration {
             userDataStore.walkingSpeedSource = .manual
         }
         return didSync
@@ -59,17 +76,24 @@ final class WalkingSpeedManager {
     /// Only the active toggle-on path in Settings can downgrade the source.
     func refreshFromHealthKitIfPossible() async {
         guard healthKit.isAvailable else { return }
-        await syncLatestWalkingSpeed()
+        let generation = syncGeneration
+        await syncLatestWalkingSpeed(expectedGeneration: generation)
     }
 
     /// Fetches the latest walking-speed sample and writes it to the store if it's in `WalkingSpeed.validRange`.
     /// Returns `true` on a successful write; otherwise leaves the stored speed and source untouched
     /// and returns `false`. Callers decide how to react to a `false` result.
+    /// When `expectedGeneration` no longer matches (opt-out raced the sync), the write is
+    /// abandoned and `false` is returned without touching the store.
     @discardableResult
-    private func syncLatestWalkingSpeed() async -> Bool {
+    private func syncLatestWalkingSpeed(expectedGeneration: Int? = nil) async -> Bool {
         guard let mps = await healthKit.fetchLatestWalkingSpeed(),
               WalkingSpeed.validRange.contains(mps)
         else {
+            return false
+        }
+
+        if let expectedGeneration, expectedGeneration != syncGeneration {
             return false
         }
 

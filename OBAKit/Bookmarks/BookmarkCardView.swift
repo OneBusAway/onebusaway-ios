@@ -204,7 +204,7 @@ struct BookmarkCardView: View {
         let minutes = max(0, departure.arrivalDepartureMinutes)
         return Text(minutes == 0
              ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
-             : "\(minutes)m")
+             : Formatters.shortMinutesText(minutes))
             .font(.caption.weight(.heavy))
             .monospacedDigit()
             .foregroundStyle(color)

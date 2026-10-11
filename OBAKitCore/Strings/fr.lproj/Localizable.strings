@@ -430,6 +430,9 @@
 /* Title for the schedule/timetable feature tip */
 "schedule_tip.title" = "Consultez les horaires de votre ligne";
 
+/* VoiceOver lead-in before the spoken list of the next departures on a Live Activity, e.g. '…, later departures, 15 minutes, 22 minutes'. */
+"live_activity.a11y_later_departures" = "départs suivants";
+
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "Ces données peuvent être obsolètes.";
 
@@ -515,8 +518,8 @@
 /* GMT offset with whole hours, e.g. GMT+5 or GMT-8. First argument is + or -. Second is the hour count. */
 "timezone.gmt_offset_hours_fmt" = "GMT%1$@%2$d";
 
-/* GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and zero-padded minutes. */
-"timezone.gmt_offset_hours_minutes_fmt" = "GMT%1$@%2$d:%3$02d";
+/* GMT offset with hours and minutes, e.g. GMT+5:30. Arguments are sign, hours, and the two-digit minutes. */
+"timezone.gmt_offset_hours_minutes_fmt" = "GMT%1$@%2$d:%3$@";
 
 /* Message for the trip planner tip */
 "trip_planner_tip.message" = "Touchez ici pour rechercher des lieux et planifier votre voyage avec des itinéraires en transports en commun.";
@@ -595,3 +598,21 @@
 
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "Venteux";
+
+/* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
+"widget.empty_state" = "Activez « Afficher dans le widget Aujourd'hui » pour un favori afin de le voir ici.";
+
+/* Description of the bookmarks widget in the iOS Add Widget gallery. */
+"widget.gallery.description" = "Consultez les prochains départs de vos favoris.";
+
+/* Name of the bookmarks widget in the iOS Add Widget gallery. */
+"widget.gallery.display_name" = "Favoris";
+
+/* Widget header showing when departures were last fetched. %@ is a clock time such as 9:41 AM. */
+"widget.last_updated_fmt" = "Dernière mise à jour : %@";
+
+/* Widget row subtitle when a bookmark has no departures soon. %d is a number of minutes (currently always 60); the abbreviation avoids plural agreement. */
+"widget.no_departures_in_next_minutes_fmt" = "Aucun départ dans les %d prochaines min";
+
+/* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
+"widget.tap_for_more_information" = "Touchez pour en savoir plus";

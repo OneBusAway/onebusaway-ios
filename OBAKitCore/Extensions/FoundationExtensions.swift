@@ -141,6 +141,12 @@ public extension Bundle {
         return URL(string: str)
     }
 
+    /// The raw ID of a route the map should open on, from `OBAKitConfig.LaunchRouteID`.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/617
+    var launchRouteID: String? {
+        OBAKitConfig?["LaunchRouteID"] as? String
+    }
+
     /// The brand's default arrival/departure filter, from
     /// `OBAKitConfig.DefaultArrivalDepartureFilter` (`all`, `estimatedOnly`, or
     /// `scheduledOnly`). Absent or unrecognized values degrade to `.all`, which

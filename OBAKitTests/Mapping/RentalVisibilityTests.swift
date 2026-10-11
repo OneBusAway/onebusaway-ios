@@ -239,4 +239,51 @@ final class RentalVisibilityTests {
         #expect(visibility.formFactors == scooters)
         #expect(visibility.filter == RentalRangeFilter(minimumRangeMeters: 5_000))
     }
+
+    // MARK: - Virtual stations
+
+    /// Puget Sound's phantom `lime_seattle:seattle`: 0 vehicles, 999999 spaces.
+    /// It would draw as a purple "0" at Westlake that rents nothing.
+    @Test func hidesVirtualStations() throws {
+        var visibility = RentalVisibility()
+        _ = visibility.setFormFactors(bikes.union(scooters))
+
+        let phantom = try RentalFixtures.station(id: "lime_seattle:seattle", vehiclesAvailable: 0, spacesAvailable: 999_999)
+        let real = try RentalFixtures.station(id: "dock", vehiclesAvailable: 3, spacesAvailable: 12)
+        let changes = visibility.apply(RentalFixtures.snapshot(added: [phantom, real]))
+
+        #expect(changes.added.map(\.id) == ["dock"])
+    }
+
+    /// The threshold is inclusive, and no real dock bank comes near it.
+    @Test func virtualStationThresholdIsInclusive() throws {
+        let atThreshold = try RentalFixtures.station(spacesAvailable: 10_000)
+        let below = try RentalFixtures.station(spacesAvailable: 9_999)
+
+        #expect(atThreshold.isVirtualStation)
+        #expect(below.isVirtualStation == false)
+        #expect(try RentalFixtures.vehicle().isVirtualStation == false)
+    }
+
+    /// A station that turns virtual in an update leaves the map, like any other
+    /// update that crosses the visibility boundary.
+    @Test func stationBecomingVirtualIsRemoved() throws {
+        var visibility = RentalVisibility()
+        _ = visibility.setFormFactors(bikes)
+        _ = visibility.apply(RentalFixtures.snapshot(added: [try RentalFixtures.station(id: "s1", spacesAvailable: 5)]))
+
+        let changes = visibility.apply(RentalFixtures.snapshot(updated: [try RentalFixtures.station(id: "s1", spacesAvailable: 999_999)]))
+        #expect(changes.removed == ["s1"])
+    }
+
+    /// The detail sheet's docks figure goes through `displayableDocksCount`.
+    @Test func sentinelDockCountsAreNeverDisplayable() throws {
+        guard case .station(let phantom) = try RentalFixtures.station(spacesAvailable: 999_999),
+              case .station(let real) = try RentalFixtures.station(spacesAvailable: 12) else {
+            Issue.record("Expected stations")
+            return
+        }
+        #expect(phantom.displayableDocksCount == nil)
+        #expect(real.displayableDocksCount == 12)
+    }
 }

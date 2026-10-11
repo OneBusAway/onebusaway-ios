@@ -21,7 +21,7 @@ final class TripFocusMapLayerTests {
     private let mapView = MKMapView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
 
     private func shape(points: Int = 5) -> [CLLocationCoordinate2D] {
-        (0..<points).map { CLLocationCoordinate2D(latitude: 47, longitude: -122 + Double($0) * 0.01) }
+        TripMapFocusFixture.shape(points: points)
     }
 
     private func row(
@@ -31,17 +31,7 @@ final class TripFocusMapLayerTests {
         isPassed: Bool = false,
         isTerminal: Bool = false
     ) -> TripStopListModel.Row {
-        TripStopListModel.Row(
-            id: "\(index)-\(stopID)",
-            stopID: stopID,
-            name: "Stop \(stopID)",
-            coordinate: coordinate,
-            date: nil,
-            isPassed: isPassed,
-            isVehicleHere: false,
-            isUserStop: false,
-            isTerminal: isTerminal
-        )
+        TripMapFocusFixture.row(index, stopID: stopID, coordinate: coordinate, isPassed: isPassed, isTerminal: isTerminal)
     }
 
     private func content(
@@ -50,25 +40,11 @@ final class TripFocusMapLayerTests {
         stops: [TripStopListModel.Row] = [],
         vehicle: TripStatus? = nil
     ) -> TripMapFocus.Content {
-        TripMapFocus.Content(
-            tripID: "trip_1",
-            routeColor: .systemRed,
-            routeType: .bus,
-            shape: shape,
-            progress: progress,
-            stops: stops,
-            vehicle: vehicle
-        )
+        TripMapFocusFixture.content(shape: shape, progress: progress, stops: stops, vehicle: vehicle)
     }
 
-    /// A real `TripStatus`, which only decodes from JSON — see
-    /// `StopVehicleAnnotationTests.makeTripStatus` for why this fixture and why
-    /// the reference-loading step matters.
     private func vehicle() throws -> TripStatus {
-        try Fixtures.loadRESTAPIPayload(
-            type: VehicleStatus.self,
-            fileName: "api_where_vehicle_1_4351.json"
-        ).tripStatus
+        try TripMapFocusFixture.vehicle()
     }
 
     /// Held for the length of the test. The layer's subscription to the focus

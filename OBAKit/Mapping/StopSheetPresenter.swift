@@ -155,6 +155,12 @@ final class StopSheetPresenter: NSObject {
         trackScrollView(in: contentController)
     }
 
+    /// Lowers the sheet to `.tip`, handing the rider the map behind it. Unlike the raise in
+    /// `revealPushedContent`, this is something the rider asked for, so it moves from any detent.
+    func collapseToTip(animated: Bool = true) {
+        panel?.move(to: .tip, animated: animated)
+    }
+
     /// Tears down the sheet if one is showing, running its dismissal handler and putting the tab
     /// bar back.
     func dismiss(animated: Bool = true) {

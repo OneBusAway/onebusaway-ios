@@ -232,6 +232,9 @@ struct StopPageSheetHeaderView: View {
         .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
         .contentShape(Capsule())
         .onTapGesture(perform: onWalkingDirections)
+        // `.onTapGesture` is invisible to assistive tech: without a default action
+        // the pill announces "button" and activating it does nothing.
+        .accessibilityAction { onWalkingDirections() }
         // `.accessibilityHidden(true)` on the glyph above was not enough on its
         // own: this view adds a trait but named no element, and the walk glyph
         // surfaced as a second, sibling stop — a 10x16pt target whose whole spoken
@@ -320,8 +323,17 @@ struct StopPageSheetHeaderView: View {
         // this view.
         .contentShape(Rectangle())
         .onTapGesture { chip.toggleFocus(in: mapFocus) }
+        // One element per chip: the dash and dot are drawn shapes the label
+        // already describes, and the action below needs a single target.
+        .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(chip.isInteractive(in: mapFocus) ? .isButton : [])
+        // `.isSelected` alongside the spoken suffix: the trait is what VoiceOver
+        // users learn to listen for on a toggle, the suffix says what it toggles.
+        .accessibilityAddTraits(isFocused ? .isSelected : [])
         .accessibilityLabel(chipAccessibilityLabel(for: chip, drawn: drawn, isFocused: isFocused))
+        // `.onTapGesture` is invisible to assistive tech. `toggleFocus` is a no-op
+        // for a chip with nothing on the map, matching its missing button trait.
+        .accessibilityAction { chip.toggleFocus(in: mapFocus) }
     }
 
     private func chipAccessibilityLabel(
@@ -442,7 +454,10 @@ struct StopSheetCloseButton: View {
                 .foregroundStyle(.secondary)
                 .frame(width: StopSheetHeaderMetrics.closeButtonSize, height: StopSheetHeaderMetrics.closeButtonSize)
                 .background(Color(uiColor: .secondarySystemFill), in: Circle())
-                .contentShape(Circle())
+                // 44pt hit area around the 30pt glyph. A negative inset grows the
+                // shape past the frame, so `collapsedHeight(for:)` — which is sized
+                // off `closeButtonSize` — and the header's layout are unchanged.
+                .contentShape(Circle().inset(by: -7))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Strings.close)

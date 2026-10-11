@@ -25,10 +25,11 @@ struct OBAWidgetEntryView: View {
         VStack(alignment: .leading) {
             // MARK: Header View
             HStack {
-                Text(
-                    "Last updated at: \(entry.lastUpdatedAt(with: formatters))"
-                )
-                    .font(.system(size: 13))
+                // `Text(verbatim:)`: the string is already localized, and an
+                // interpolated literal would be looked up as its own key.
+                Text(verbatim: WidgetStrings.lastUpdated(at: entry.lastUpdatedAt(with: formatters)))
+                    // A text style rather than a fixed 13pt, so it follows Dynamic Type.
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fontWeight(.medium)
 

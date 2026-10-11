@@ -41,7 +41,8 @@ targets:
               NSTemporaryExceptionAllowsInsecureHTTPLoads: true
               NSIncludesSubdomains: true
         NSHumanReadableCopyright: © goEuropa
-        NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
+        # Shown when a nearby (proximity) alert asks for Always; see app_shared.yml.
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Show your location on the map. Nearby alerts also use your location in the background to let you know when you're approaching a stop you chose, even when the app is closed."
         NSLocationWhenInUseUsageDescription: Show your location on the map
         NSUserActivityTypes:
           - pl.kiedybus.iphone.user_activity.stop

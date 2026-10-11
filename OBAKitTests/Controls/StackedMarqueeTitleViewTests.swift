@@ -10,7 +10,6 @@
 import Foundation
 import Testing
 import UIKit
-import MarqueeLabel
 @testable import OBAKit
 @testable import OBAKitCore
 

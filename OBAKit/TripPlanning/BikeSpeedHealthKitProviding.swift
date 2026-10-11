@@ -21,9 +21,11 @@ protocol BikeSpeedHealthKitProviding {
     /// May complete successfully even when the user denies — denial is detected by the absence of samples.
     func requestAuthorization() async throws
 
-    /// Returns the most recent cycling-speed sample (m/s) from the last 30 days, or `nil` if none exists or the query fails.
+    /// Returns the average cycling speed (m/s) over the last 30 days, or `nil` if none exists or the query fails.
+    /// Uses an `HKStatisticsQuery` with `.discreteAverage`: cycling-speed samples are moment-by-moment
+    /// readings from a ride, so the single newest sample is often taken as the rider slows to a stop.
     /// Does not apply range validation; the caller decides what counts as a usable sample.
-    func fetchLatestBikeSpeed() async -> Double?
+    func fetchAverageBikeSpeed() async -> Double?
 }
 
 struct HKHealthStoreBikeSpeedProvider: BikeSpeedHealthKitProviding {
@@ -42,30 +44,28 @@ struct HKHealthStoreBikeSpeedProvider: BikeSpeedHealthKitProviding {
         try await healthStore.requestAuthorization(toShare: [], read: [type])
     }
 
-    func fetchLatestBikeSpeed() async -> Double? {
+    func fetchAverageBikeSpeed() async -> Double? {
         guard let type = Self.cyclingSpeedType else { return nil }
 
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? .distantPast
         let predicate = HKQuery.predicateForSamples(withStart: thirtyDaysAgo, end: Date())
-        let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
 
         return await withCheckedContinuation { continuation in
-            let query = HKSampleQuery(
-                sampleType: type,
-                predicate: predicate,
-                limit: 1,
-                sortDescriptors: [sort]
-            ) { _, samples, error in
+            let query = HKStatisticsQuery(
+                quantityType: type,
+                quantitySamplePredicate: predicate,
+                options: .discreteAverage
+            ) { _, statistics, error in
                 if let error {
-                    Logger.error("BikeModeManager: HealthKit sample query failed: \(error)")
+                    Logger.error("BikeModeManager: HealthKit average query failed: \(error)")
                     continuation.resume(returning: nil)
                     return
                 }
-                guard let sample = samples?.first as? HKQuantitySample else {
+                guard let average = statistics?.averageQuantity() else {
                     continuation.resume(returning: nil)
                     return
                 }
-                let mps = sample.quantity.doubleValue(for: HKUnit.meter().unitDivided(by: .second()))
+                let mps = average.doubleValue(for: HKUnit.meter().unitDivided(by: .second()))
                 continuation.resume(returning: mps)
             }
             healthStore.execute(query)

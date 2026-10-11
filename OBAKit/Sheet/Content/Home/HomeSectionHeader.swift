@@ -30,7 +30,7 @@ struct HomeSectionHeader: View {
                     // Use explicit .label color instead of .primary, which would be remapped to secondary by the List's muted treatment
                     .foregroundStyle(Color(uiColor: .label))
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.footnote)
                     .fontWeight(.semibold)
                     .foregroundStyle(brandColor)

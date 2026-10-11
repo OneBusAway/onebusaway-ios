@@ -25,7 +25,19 @@ import OBAKitCore
 @objc(OBACloudPushService)
 public class OBACloudPushService: NSObject, PushServiceProvider {
     /// Called when a push notification is received. Set by ``PushService`` during initialization.
-    public var notificationReceivedHandler: PushServiceNotificationReceivedHandler!
+    ///
+    /// Setting it delivers any notification tap that arrived before it was set.
+    public var notificationReceivedHandler: PushServiceNotificationReceivedHandler! {
+        didSet { deliverPendingNotifications() }
+    }
+
+    /// Notification taps received before ``notificationReceivedHandler`` was set.
+    ///
+    /// A tap that cold-launches the app is delivered as soon as the app finishes
+    /// launching, but ``PushService`` — which sets the handler — is built later,
+    /// when the scene connects. Holding the tap here is what lets it still open
+    /// the stop the notification was about instead of landing on the map.
+    private var pendingNotifications: [(message: String, userInfo: [AnyHashable: Any])] = []
 
     /// Called when an error occurs during push registration or authorization. Set by ``PushService`` during initialization.
     public var errorHandler: PushServiceErrorHandler!
@@ -38,6 +50,17 @@ public class OBACloudPushService: NSObject, PushServiceProvider {
 
     /// Callbacks waiting for the device token to become available.
     private var pendingCallbacks: [PushManagerUserIDCallback] = []
+
+    /// Becomes the notification center's delegate immediately.
+    ///
+    /// Apple requires the delegate to be set before the app finishes launching, or
+    /// the tap that launched it is never delivered. The app delegate builds this
+    /// object in its `init`, so doing it here meets that deadline; ``start(launchOptions:)``
+    /// runs only once the scene connects, which is too late.
+    public override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
 
     // MARK: - PushServiceProvider
 
@@ -152,9 +175,28 @@ extension OBACloudPushService: UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo
-        let message = response.notification.request.content.body
-        notificationReceivedHandler?(message, userInfo)
+        let content = response.notification.request.content
+        receiveNotificationTap(message: content.body, userInfo: content.userInfo)
         completionHandler()
+    }
+
+    /// Hands a tapped notification to ``notificationReceivedHandler``, or holds it
+    /// until one is set. Split from the delegate callback, whose
+    /// `UNNotificationResponse` can't be built in a test.
+    func receiveNotificationTap(message: String, userInfo: [AnyHashable: Any]) {
+        if let notificationReceivedHandler {
+            notificationReceivedHandler(message, userInfo)
+        } else {
+            pendingNotifications.append((message, userInfo))
+        }
+    }
+
+    private func deliverPendingNotifications() {
+        guard let notificationReceivedHandler, !pendingNotifications.isEmpty else { return }
+        let pending = pendingNotifications
+        pendingNotifications.removeAll()
+        for notification in pending {
+            notificationReceivedHandler(notification.message, notification.userInfo)
+        }
     }
 }

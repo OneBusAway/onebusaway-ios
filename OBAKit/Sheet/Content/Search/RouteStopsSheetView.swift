@@ -111,7 +111,7 @@ struct RouteStopsSheetView: View {
                             }
                         }
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(.footnote)
                             .fontWeight(.semibold)
                             .foregroundStyle(Color(uiColor: ThemeColors.shared.brand))

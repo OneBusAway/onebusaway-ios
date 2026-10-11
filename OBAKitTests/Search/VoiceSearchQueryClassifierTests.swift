@@ -101,4 +101,52 @@ struct VoiceSearchQueryClassifierTests {
         #expect(request.searchType == .address)
         #expect(request.query == "business district")
     }
+
+    @Test(arguments: [
+        ("ruta 40", "40"),          // es
+        ("Autobús 8", "8"),         // es
+        ("linha 509", "509"),       // pt-BR
+        ("ônibus 8", "8"),          // pt-BR
+        ("autobus 64", "64"),       // it
+        ("tuyến 32", "32"),         // vi
+        ("خط 7", "7"),              // ar
+        ("linya 4", "4"),           // fil
+        ("버스 720", "720")          // ko
+    ])
+    func `Locale route cues search by route`(utterance: String, query: String) {
+        let request = VoiceSearchQueryClassifier.request(from: utterance)
+
+        #expect(request.searchType == .route)
+        #expect(request.query == query)
+    }
+
+    @Test
+    func `Multi-word cue wins over its shorter prefix`() {
+        // "tuyến" alone would leave "xe buýt 32" as the query.
+        let request = VoiceSearchQueryClassifier.request(from: "tuyến xe buýt 32")
+
+        #expect(request.searchType == .route)
+        #expect(request.query == "32")
+    }
+
+    @Test(arguments: [
+        ("veículo 4351", "4351"),   // pt-BR
+        ("veicolo 4351", "4351"),   // it
+        ("phương tiện 4351", "4351"), // vi
+        ("مركبة 4351", "4351"),     // ar
+        ("sasakyan 4351", "4351")   // fil
+    ])
+    func `Locale vehicle cues search by vehicle ID`(utterance: String, query: String) {
+        let request = VoiceSearchQueryClassifier.request(from: utterance)
+
+        #expect(request.searchType == .vehicleID)
+        #expect(request.query == query)
+    }
+
+    @Test
+    func `Rutabaga is not treated as a ruta cue`() {
+        let request = VoiceSearchQueryClassifier.request(from: "rutabaga farm")
+
+        #expect(request.searchType == .address)
+    }
 }

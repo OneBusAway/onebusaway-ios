@@ -57,5 +57,16 @@ final class ToastManagerTests {
         
         #expect(manager.toast == nil)
     }
+
+    /// Under VoiceOver the message is spoken queued behind current speech, so a
+    /// 3-second toast could vanish before it was ever read.
+    @Test func `Under VoiceOver a toast stays up long enough to be heard`() {
+        #expect(ToastManager.dwell(for: 3, isVoiceOverRunning: true) == ToastManager.minimumVoiceOverDwell)
+        #expect(ToastManager.dwell(for: 3, isVoiceOverRunning: false) == 3)
+    }
+
+    @Test func `A toast already longer than the VoiceOver minimum keeps its duration`() {
+        #expect(ToastManager.dwell(for: 12, isVoiceOverRunning: true) == 12)
+    }
 }
 

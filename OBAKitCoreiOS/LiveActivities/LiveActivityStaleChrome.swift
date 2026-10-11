@@ -7,7 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import Foundation
+import SwiftUI
 
 /// User-visible treatment when ActivityKit marks a Live Activity stale.
 ///
@@ -23,6 +23,13 @@ public enum LiveActivityStaleChrome {
             value: "This data may be out of date.",
             comment: "Shown on a Live Activity when ActivityKit marks it stale (no recent update)."
         )
+    }
+
+    /// The warning's color on the lock-screen card. Plain `.orange` was 2.2:1
+    /// on the light card; `warningText` holds AA in both appearances. The
+    /// Dynamic Island is always dark, where `.orange` is already fine.
+    public static var warningColor: Color {
+        Color(uiColor: ThemeColors.shared.warningText)
     }
 
     /// Dim the minutes/route chrome so a stale card cannot be mistaken for live.
