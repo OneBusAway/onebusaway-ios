@@ -99,8 +99,8 @@ struct TripStopListModel {
     /// resolution feeds both the stop list and the progress header, so the two
     /// cannot disagree about which row is "your stop".
     struct RiderStops {
-        /// Where the rider boards. `ArrivalDeparture.arrivalDepartureMinutes`
-        /// counts down to this row and no other.
+        /// Where the rider boards: the row the trip's own `ArrivalDeparture` is
+        /// for, so its `arrivalDepartureMinutes` count down to this row.
         let boardingIndex: Int?
         /// Where a shared trip link says the rider steps off. `nil` when the
         /// link named no destination, or the trip never reaches it after
@@ -120,6 +120,29 @@ struct TripStopListModel {
         /// carries the rider's-stop marker, and a second badge on the same row
         /// would say two things about one stop.
         var boardingMarkerIndex: Int? { destinationIndex == nil ? nil : boardingIndex }
+
+        /// The progress header's countdown. On a shared trip, the destination's
+        /// own prediction once it has loaded. Until then, and on every other
+        /// trip, the boarding stop's, which `TripProgressViewModel` shows only
+        /// while the boarding stop is also the rider's stop. See #449.
+        ///
+        /// - Parameters:
+        ///   - boardingMinutes: Minutes until the vehicle reaches the boarding stop.
+        ///   - destinationMinutes: Minutes until it reaches the shared
+        ///     destination, or `nil` until that prediction has loaded.
+        func countdown(boardingMinutes: Int?, destinationMinutes: Int?) -> Countdown {
+            if let destinationIndex, let destinationMinutes {
+                return Countdown(stopIndex: destinationIndex, minutes: destinationMinutes)
+            }
+            return Countdown(stopIndex: boardingIndex, minutes: boardingMinutes)
+        }
+    }
+
+    /// What the progress header counts down to: a row, and the minutes until
+    /// the vehicle reaches it. Built by `RiderStops.countdown`.
+    struct Countdown {
+        let stopIndex: Int?
+        let minutes: Int?
     }
 
     /// Resolves the rider's rows from the trip panel's `ArrivalDeparture`.
