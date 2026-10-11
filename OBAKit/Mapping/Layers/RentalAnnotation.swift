@@ -29,9 +29,7 @@ public final class RentalAnnotation: NSObject, MKAnnotation {
               let available = station.vehiclesAvailableCount else {
             return nil
         }
-        return String(format: OBALoc("rental_annotation.vehicles_available_fmt",
-                                     value: "%d available",
-                                     comment: "Number of rental vehicles available at a station"), available)
+        return RentalFormat.stationAvailableText(available)
     }
 
     /// Whether the view should render its fuel label.

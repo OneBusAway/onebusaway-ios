@@ -1,0 +1,29 @@
+/*
+ * App Intents strings. Hand-maintained: scripts/extract_strings (genstrings -s OBALoc)
+ * does not read LocalizedStringResource, so it neither adds nor removes these keys.
+ * Siri and Shortcuts resolve them out of process from this bundle's Metadata.appintents.
+ */
+
+/* App Intents: type name of a bookmarked trip in Shortcuts and Siri. Singular noun. */
+"bookmark_entity.type_name" = "書籤";
+
+/* App Intents: label of the bookmark parameter on the Track Bookmark and Next Departures actions. */
+"bookmark_entity.parameter_title" = "書籤";
+
+/* App Intents: name of the Shortcuts action that answers when a bookmarked trip departs next. */
+"next_departures_intent.title" = "下一班發車";
+
+/* App Intents: description of the Next Departures action in Shortcuts. Siri speaks the answer. */
+"next_departures_intent.description" = "收聽已加入書籤的行程下一班何時發車。";
+
+/* App Shortcuts: short tile label for Next Departures in Shortcuts and Spotlight. */
+"next_departures_intent.short_title" = "下一班發車";
+
+/* App Intents: name of the Shortcuts action that starts a Live Activity for a bookmarked trip. */
+"track_bookmark_intent.title" = "追蹤書籤";
+
+/* App Intents: description of the Track Bookmark action in Shortcuts. */
+"track_bookmark_intent.description" = "為已加入書籤的行程啟動即時動態。";
+
+/* App Shortcuts: short tile label for Track Bookmark in Shortcuts and Spotlight. */
+"track_bookmark_intent.short_title" = "追蹤書籤";

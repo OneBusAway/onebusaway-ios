@@ -178,7 +178,10 @@ public class ScheduleForRoute: NSObject, Identifiable, Decodable, HasReferences 
 
             stopID = try container.decode(String.self, forKey: .stopID)
             tripID = try container.decode(String.self, forKey: .tripID)
+            // Seconds since midnight, not an epoch value — fits a 32-bit Int.
+            // swiftlint:disable:next epoch_decoded_as_int
             arrivalTime = try container.decode(Int.self, forKey: .arrivalTime)
+            // swiftlint:disable:next epoch_decoded_as_int
             departureTime = try container.decode(Int.self, forKey: .departureTime)
             arrivalEnabled = try container.decode(Bool.self, forKey: .arrivalEnabled)
             departureEnabled = try container.decode(Bool.self, forKey: .departureEnabled)

@@ -1,0 +1,50 @@
+/* Empty state */
+"arrivals.empty" = "Walang pag-alis sa susunod na 60 minuto.";
+
+/* Progress text */
+"arrivals.loading" = "Naglo-load ng mga pag-alis…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Walang napiling rehiyon ng transit.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ papuntang %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Na-update noong %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Payagan ang access sa lokasyon para makita ang mga hintuan malapit sa iyo.";
+
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "Walang aalis na malapit sa susunod na oras.";
+
+/* Progress text */
+"nearby.locating" = "Hinahanap ang iyong lokasyon…";
+
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Hindi mahanap ang iyong lokasyon. Subukang muli.";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "Naka-off ang access sa lokasyon. Kailangan ang iyong lokasyon para makita ang mga kalapit na hintuan.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "Walang rehiyon ng transit dito.";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "Malapit";
+
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "Hinahanap ang mga kalapit na ruta…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ papuntang %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "Malapit din";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "Lahat ng pagdating sa hintuang ito";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "Palitan ang direksyon";

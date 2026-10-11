@@ -52,6 +52,11 @@ final class BookmarkDataLoaderTests: OBATestCase {
     /// name, route id, and trip headsign, which only a decoded `ArrivalDeparture`
     /// supplies. A bookmark that isn't a trip bookmark is skipped by the loader
     /// without a request, which would silently zero out the counts below.
+    ///
+    /// Each bookmark gets its **own stop**. The loader fetches a stop once
+    /// however many bookmarks share it, so bookmarks at a single stop would
+    /// collapse into one request and the counts below would stop measuring
+    /// what they are there to measure: which bookmarks were fetched.
     @MainActor
     private func makeTripBookmarks(count: Int, application: Application) throws -> [Bookmark] {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
@@ -59,12 +64,15 @@ final class BookmarkDataLoaderTests: OBATestCase {
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
         let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let stops = try Fixtures.loadSomeStops()
+        try #require(stops.count >= count)
 
         return (0..<count).map { index in
             let bookmark = Bookmark(
                 name: "Bookmark \(index)",
                 regionIdentifier: pugetSoundRegionIdentifier,
-                arrivalDeparture: arrivalDeparture
+                arrivalDeparture: arrivalDeparture,
+                stop: stops[index]
             )
             bookmark.sortOrder = index
             application.userDataStore.add(bookmark, to: nil)
@@ -151,5 +159,52 @@ final class BookmarkDataLoaderTests: OBATestCase {
         #expect(loader.hasScheduledRefresh)
 
         loader.cancelUpdates()
+    }
+
+    /// Two trip bookmarks at one stop are one request — and both still settle,
+    /// or `loadDataAndWait()` would hang on the second bookmark's slot.
+    @Test @MainActor
+    func `Bookmarks sharing a stop are fetched once and both settle`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let requestCounter = RequestCounter()
+        dataLoader.mock(data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_75414.json")) { request in
+            let matches = request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            if matches { requestCounter.increment() }
+            return matches
+        }
+
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures-for-stop-1_10914.json")
+        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let shared = (0..<2).map { index in
+            Bookmark(name: "Shared \(index)", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDeparture)
+        }
+
+        let delegate = RecordingDelegate()
+        let loader = BookmarkDataLoader(application: application, delegate: delegate, bookmarkProvider: { shared }, autoRefreshes: false)
+
+        await loader.loadDataAndWait()
+
+        #expect(requestCounter.count == 1)
+        #expect(loader.isLoading == false)
+        #expect(loader.hasFetchedData(forStopID: arrivalDeparture.stopID))
+        #expect(delegate.updateCount == 1)
+    }
+
+    /// A stop bookmark reserves a slot and never fetches; it must release it.
+    @Test @MainActor
+    func `A batch of only stop bookmarks completes without a request`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let stopBookmark = Bookmark(name: "Stop", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+
+        let loader = BookmarkDataLoader(application: application, delegate: RecordingDelegate(), bookmarkProvider: { [stopBookmark] }, autoRefreshes: false)
+
+        await loader.loadDataAndWait()
+
+        #expect(loader.isLoading == false)
+        #expect(loader.hasFetchedData(forStopID: stop.id) == false)
     }
 }

@@ -32,6 +32,12 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// something unrelated happened to invalidate the view.
     @Published private(set) var searchPlaceholder: String
 
+    /// Whether the trip planner is reachable from this region at all, which is
+    /// what decides if the discovery tip pointing at the search bar has anything
+    /// to introduce. Same gate the placeholder copy uses, published for the same
+    /// reason — a region change has to repaint it.
+    @Published private(set) var offersTripPlanning: Bool
+
     /// Sections that currently have something to show, in render order. Empty
     /// sections are dropped entirely — header included.
     @Published private(set) var visibleSections: [HomeSheetSection] = []
@@ -52,6 +58,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     init(application: Application, stopsObserver: MapStopsObserver) {
         self.application = application
         self.searchPlaceholder = SearchPlaceholder.text(for: application)
+        self.offersTripPlanning = application.features.tripPlanning == .running
         self.nearby = HomeNearbyStopsSectionModel(observer: stopsObserver)
         self.recent = HomeRecentStopsSectionModel(application: application)
         self.bookmarks = HomeBookmarksSectionModel(application: application)
@@ -131,6 +138,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
 
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         searchPlaceholder = SearchPlaceholder.text(for: application)
+        offersTripPlanning = application.features.tripPlanning == .running
         // Which recents and bookmarks are "current" changed, and neither store
         // posts a notification for it.
         recent.reload()

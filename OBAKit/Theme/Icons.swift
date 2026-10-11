@@ -84,9 +84,9 @@ nonisolated class Icons: NSObject {
         }
     }
 
-    /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
+    /// A trailing-pointing chevron (right in LTR, left in RTL), like the kind used as a disclosure indicator on a table cell.
     public class var chevron: UIImage {
-        return systemImage(named: "chevron.right")
+        return systemImage(named: "chevron.forward")
                 .withTintColor(.systemGray, renderingMode: .alwaysOriginal)
                 .withConfiguration(UIImage.SymbolConfiguration.init(weight: .bold))
     }
@@ -201,6 +201,25 @@ nonisolated class Icons: NSObject {
     /// can stand in for the other.
     public class func departureType(isActive: Bool) -> UIImage {
         systemImage(named: departureTypeSymbolName(isActive: isActive))
+    }
+
+    /// The symbol name behind ``proximityAlert(isActive:)``, for the SwiftUI
+    /// stop page's `Label(_:systemImage:)`. Same split as
+    /// ``departureTypeSymbolName(isActive:)``: the two Stop-page presentations
+    /// build their menus from different frameworks and have to show one glyph.
+    public class func proximityAlertSymbolName(isActive: Bool) -> String {
+        isActive
+            ? "bell.and.waves.left.and.right.fill"
+            : "bell.and.waves.left.and.right"
+    }
+
+    /// An icon for the destination proximity alert menu item.
+    ///
+    /// Fills while an alert is armed on the stop, the same filled/unfilled pair
+    /// the departure rows' alarm bell uses — the rider reads "this is on" off the
+    /// glyph without opening the menu.
+    public class func proximityAlert(isActive: Bool) -> UIImage {
+        systemImage(named: proximityAlertSymbolName(isActive: isActive))
     }
 
     /// An icon for the sort-order menu (up/down arrows).

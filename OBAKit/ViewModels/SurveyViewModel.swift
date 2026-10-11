@@ -16,7 +16,7 @@ import OBAKitCore
 ///
 /// Owns survey answer state, validation, and the two-stage submission flow
 /// (hero question first, additional questions second). The VC keeps only
-/// Eureka form layout and alert presentation.
+/// alert presentation; `SurveyView` lays out the form.
 @MainActor
 final class SurveyViewModel: ObservableObject {
 
@@ -35,7 +35,7 @@ final class SurveyViewModel: ObservableObject {
         case submissionFailed(Error)
     }
 
-    // MARK: - Public Inputs (VC reads for form layout)
+    // MARK: - Public Inputs (SurveyView reads for layout)
 
     let survey: Survey
 
@@ -53,9 +53,9 @@ final class SurveyViewModel: ObservableObject {
     }
     private let submissionResultSubject = PassthroughSubject<Result<Void, SubmissionError>, Never>()
 
-    /// `true` while a submit is in flight. Mirrors `submitInFlight` for VC binding so the
-    /// submit button can be disabled and a spinner shown — without it, the in-flight guard
-    /// silently drops a second tap on a slow network and the user sees nothing happen.
+    /// `true` while a submit is in flight. `SurveyView` disables the submit button and
+    /// retitles it from this; `submit()` also guards on it, so a second tap on a slow
+    /// network is visibly unavailable rather than silently dropped.
     @Published private(set) var isSubmitting: Bool = false
 
     // MARK: - Private State
@@ -70,7 +70,6 @@ final class SurveyViewModel: ObservableObject {
     private(set) var heroResponseID: String?
     private var responses: [SurveyQuestionResponse] = []
     private var checkboxSelections: [Int: Set<String>] = [:]
-    private var submitInFlight = false
 
     // MARK: - Init
 
@@ -93,8 +92,11 @@ final class SurveyViewModel: ObservableObject {
     // MARK: - Intent
 
     /// Replaces any prior response for `question` with the given answer.
+    /// A blank or whitespace-only answer counts as no answer, so a required question
+    /// the rider emptied fails validation instead of submitting nothing.
     func updateAnswer(for question: SurveyQuestion, answer: String) {
         responses.removeAll { $0.questionId == question.id }
+        guard !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         responses.append(SurveyService.createQuestionResponse(question: question, answer: answer))
     }
 
@@ -147,19 +149,15 @@ final class SurveyViewModel: ObservableObject {
     /// Validates required answers and runs the two-stage submission. Emits the outcome
     /// on `submissionResult`.
     func submit() async {
-        guard !submitInFlight else { return }
+        guard !isSubmitting else { return }
 
         guard validateResponses() else {
             submissionResultSubject.send(.failure(.validationFailed))
             return
         }
 
-        submitInFlight = true
         isSubmitting = true
-        defer {
-            submitInFlight = false
-            isSubmitting = false
-        }
+        defer { isSubmitting = false }
 
         do {
             if let heroResponseID = heroResponseID {

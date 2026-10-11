@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# Fails when the generated OBAKit.xcodeproj contains the WatchApp target.
+# Run after `scripts/generate_project` for an app, or a flag, that must not
+# produce the watch stack (an app without watch.yml; `--no-watch`).
+#
+# Reads the *generated* project, not `xcodegen dump`: the watch include is
+# `enable: ${OBA_WATCH}`, which a dump re-evaluates from this shell's
+# environment, where generate_project never set it, so a dump never contains
+# WatchApp and the check could not fail.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# Capture first, on its own line: a failed listing fails the script under
+# `set -e` instead of reading as "no WatchApp". The check exits 1 (message on
+# stderr) only when WatchApp is present; malformed output makes json.load
+# raise, which also exits non-zero.
+list=$(xcodebuild -list -json -project OBAKit.xcodeproj)
+printf '%s' "$list" | python3 -c 'import json,sys; t=json.load(sys.stdin)["project"]["targets"]; sys.exit("generated project unexpectedly contains WatchApp" if "WatchApp" in t else 0)'
+
+echo "no watch targets"

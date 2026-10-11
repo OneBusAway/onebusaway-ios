@@ -136,6 +136,7 @@ struct StopPageActionRow: View {
             Button(action: onSchedule) { glyph("calendar") }
                 .glassCircleSurface()
                 .accessibilityLabel(Strings.schedules)
+                .largeContentViewer(Strings.schedules, systemImage: "calendar")
         }
     }
 
@@ -147,6 +148,7 @@ struct StopPageActionRow: View {
                 .accessibilityValue(state.isFilterOn
                     ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
                     : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive."))
+                .largeContentViewer(Strings.filter, systemImage: state.filterSystemImage)
         }
     }
 
@@ -156,6 +158,7 @@ struct StopPageActionRow: View {
                 .glassCircleSurface()
                 .disabled(!state.canActOnStop)
                 .accessibilityLabel(Self.bookmarkTitle)
+                .largeContentViewer(Self.bookmarkTitle, systemImage: "bookmark")
         }
     }
 
@@ -167,6 +170,7 @@ struct StopPageActionRow: View {
             Menu { moreMenu } label: { glyph("ellipsis") }
                 .glassCircleSurface()
                 .accessibilityLabel(Strings.more)
+                .largeContentViewer(Strings.more, systemImage: "ellipsis")
         }
     }
 
@@ -341,6 +345,16 @@ struct StopPageActionRow: View {
     }
 
     private static let glyphSize: CGFloat = 34
+}
+
+private extension View {
+    /// The glyphs are fixed-size and uncaptioned, so at large text sizes a
+    /// long-press shows the control's name enlarged.
+    func largeContentViewer(_ title: String, systemImage: String) -> some View {
+        accessibilityShowsLargeContentViewer {
+            Label(title, systemImage: systemImage)
+        }
+    }
 }
 
 #Preview("Action row") {

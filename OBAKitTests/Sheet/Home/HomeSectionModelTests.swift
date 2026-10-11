@@ -237,6 +237,11 @@ final class HomeSectionModelTests: OBATestCase {
     /// Real *trip* bookmarks. `BookmarkDataLoader` skips anything that isn't one
     /// without issuing a request, so the stop bookmarks `seedBookmarks` builds
     /// would silently zero out any request-count assertion.
+    ///
+    /// Each bookmark gets its **own stop**, the way `seedBookmarks` does. The
+    /// loader fetches a stop once however many bookmarks share it, so bookmarks
+    /// at a single stop would collapse into one request and the request counts
+    /// below would stop measuring which bookmarks were fetched.
     @MainActor
     private func makeTripBookmarks(count: Int, application: Application, startingAt offset: Int = 0) throws -> [Bookmark] {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
@@ -244,12 +249,14 @@ final class HomeSectionModelTests: OBATestCase {
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
         let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let stops = try Fixtures.loadSomeStops()
 
         return (0..<count).map { index in
             let bookmark = Bookmark(
                 name: "Trip Bookmark \(offset + index)",
                 regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier,
                 arrivalDeparture: arrivalDeparture,
+                stop: stops[(offset + index) % stops.count],
                 dateCreated: Self.seedEpoch.addingTimeInterval(Double(offset + index) * 60)
             )
             bookmark.sortOrder = offset + index

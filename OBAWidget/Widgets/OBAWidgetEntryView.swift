@@ -13,22 +13,23 @@ struct OBAWidgetEntryView: View {
 
     var entry: BookmarkTimelineProvider.Entry
 
-    let dataProvider: WidgetDataProvider
+    let formatters: Formatters
 
     @Environment(\.widgetFamily) var widgetFamily
 
     private var maxBookmarkCount: Int {
-        widgetFamily == .systemLarge ? 7 : 2
+        BookmarkEntry.maximumBookmarks(for: widgetFamily)
     }
 
     var body: some View {
         VStack(alignment: .leading) {
             // MARK: Header View
             HStack {
-                Text(
-                    "Last updated at: \(entry.lastUpdatedAt(with: dataProvider.formatters))"
-                )
-                    .font(.system(size: 13))
+                // `Text(verbatim:)`: the string is already localized, and an
+                // interpolated literal would be looked up as its own key.
+                Text(verbatim: WidgetStrings.lastUpdated(at: entry.lastUpdatedAt(with: formatters)))
+                    // A text style rather than a fixed 13pt, so it follows Dynamic Type.
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fontWeight(.medium)
 
@@ -44,7 +45,7 @@ struct OBAWidgetEntryView: View {
                         Link(destination: constructDeepLink(for: bookmark)) {
                             WidgetRowView(
                                 bookmark: bookmark,
-                                formatters: dataProvider.formatters,
+                                formatters: formatters,
                                 departures: loadArrivalDeparture(with: bookmark)
                             )
                         }
@@ -61,13 +62,7 @@ struct OBAWidgetEntryView: View {
 
     // MARK: Helper functions
     private func loadArrivalDeparture(with bookmark: Bookmark) -> [ArrivalDeparture]? {
-        if bookmark.isTripBookmark {
-            return TripBookmarkKey(bookmark: bookmark).flatMap {
-                dataProvider.lookupArrivalDeparture(with: $0)
-            }
-        } else {
-            return dataProvider.lookupStopArrivals(for: bookmark.stopID)
-        }
+        entry.departures[bookmark.id]
     }
 
     private func constructDeepLink(for bookmark: Bookmark) -> URL {

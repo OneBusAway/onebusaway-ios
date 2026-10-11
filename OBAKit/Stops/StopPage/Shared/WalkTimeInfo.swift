@@ -7,10 +7,17 @@
 import Foundation
 import CoreLocation
 
-/// The single source of walk time on the Stop page (§4.5): the header chip
-/// and the chronological walk line must both read from the same instance.
+/// A travel-time estimate at a given speed (§4.5) — walking or cycling, whichever
+/// `compute(...)` was called with. `StopViewModel` computes three independent
+/// instances from this one type: `headerWalkTime` and `headerBikeTime` (always
+/// their own fixed speed, for the header's two chips) and the mode-aware `walkTime`
+/// (walking or cycling speed depending on Bike Mode, for the chronological
+/// partition and divider) — so unlike this type's single-source origin, the header
+/// chips and the divider do NOT necessarily share one instance anymore; they only
+/// have to agree when Bike Mode is off, or the header and the divider would show
+/// different rounded minutes for what should read as the same walk-speed estimate.
 struct WalkTimeInfo: Equatable {
-    /// Rounded up — never promise a shorter walk than reality.
+    /// Rounded up — never promise a shorter walk (or bike ride) than reality.
     let walkMinutes: Int
     let distance: CLLocationDistance
 

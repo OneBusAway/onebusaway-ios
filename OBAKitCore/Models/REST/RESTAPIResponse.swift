@@ -15,7 +15,9 @@ import Foundation
 /// problems. Responses that lack a `list` or `entry` key in their response body are represented by this class.
 public class CoreRESTAPIResponse: NSObject, Decodable {
     public let code: Int
-    public let currentTime: Int?
+    /// Epoch milliseconds. `Int64`, not `Int`: `Int` is 32 bits on `arm64_32`
+    /// Apple Watches and this value does not fit.
+    public let currentTime: Int64?
     public let text: String?
     public let version: Int
 
@@ -26,7 +28,7 @@ public class CoreRESTAPIResponse: NSObject, Decodable {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         code = try container.decode(Int.self, forKey: .code)
-        currentTime = try container.decodeIfPresent(Int.self, forKey: .currentTime)
+        currentTime = try container.decodeIfPresent(Int64.self, forKey: .currentTime)
         text = try container.decodeIfPresent(String.self, forKey: .text)
         version = try container.decode(Int.self, forKey: .version)
     }

@@ -51,24 +51,21 @@ public protocol LocationManager {
     func stopUpdatingLocation()
     var location: CLLocation? { get }
 
+    // MARK: - One-shot location
+
+    /// Delivers a single fix through `didUpdateLocations`, or an error through
+    /// `didFailWithError`. Available on every platform this module builds for;
+    /// `CLLocationManager` implements it. No default implementation on purpose:
+    /// a mock that forgot it would silently never deliver.
+    func requestLocation()
+
+    /// The accuracy the next fix should aim for. `CLLocationManager` implements it.
+    var desiredAccuracy: CLLocationAccuracy { get set }
+
     // MARK: - Heading
     var isHeadingAvailable: Bool { get }
     func startUpdatingHeading()
     func stopUpdatingHeading()
-
-    // MARK: - Region Monitoring
-    func startMonitoring(for region: CLRegion)
-    func stopMonitoring(for region: CLRegion)
-    var monitoredRegions: Set<CLRegion> { get }
-
-    /// The largest radius, in meters, this device will actually monitor.
-    ///
-    /// An oversize region is not silently clamped: Core Location answers it with
-    /// `CLError.regionMonitoringFailure`, delivered asynchronously through
-    /// `monitoringDidFailFor` and carrying no radius. Reading the limit up front
-    /// is what lets a caller clamp deliberately and report it, rather than learn
-    /// later that something failed without learning what.
-    var maximumRegionMonitoringDistance: CLLocationDistance { get }
 }
 
 extension CLLocationManager: LocationManager {

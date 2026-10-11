@@ -48,6 +48,9 @@ struct WeatherDetailPopup: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
                     .onTapGesture { dismiss() }
+                    // The scrim is a dismiss target for touch only; VoiceOver uses
+                    // the close button or the escape gesture below.
+                    .accessibilityHidden(true)
 
                 stackLayout {
                     WeatherCard(display: current, shape: cardShape)
@@ -56,6 +59,11 @@ struct WeatherDetailPopup: View {
                 .frame(maxWidth: 500)
                 .padding(.horizontal, 16)
                 .transition(.scale(scale: 0.92).combined(with: .opacity))
+                // A popup over the map: keep VoiceOver inside it, and let the
+                // two-finger scrub dismiss it like any other modal.
+                .accessibilityElement(children: .contain)
+                .accessibilityAddTraits(.isModal)
+                .accessibilityAction(.escape) { dismiss() }
             }
         }
         .animation(.smooth(duration: 0.25), value: isShowing)
@@ -76,6 +84,8 @@ struct WeatherDetailPopup: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(width: 36, height: 36)
+                // 44pt hit area without growing the drawn circle.
+                .contentShape(Circle().inset(by: -4))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(Strings.close))
@@ -225,7 +235,10 @@ private struct StatsRow: View {
                 .font(.subheadline)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("\(label): \(value)"))
+        .accessibilityLabel(Text(String(
+            format: OBALoc("weather.stat.a11y_fmt", value: "%1$@: %2$@", comment: "VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention."),
+            label, value
+        )))
     }
 }
 

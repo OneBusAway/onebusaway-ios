@@ -8,6 +8,7 @@
 import Foundation
 import WidgetKit
 import SwiftUI
+import OBAKitCore
 
 struct OBAWidget: Widget {
     let kind: String = "OBAWidget"
@@ -21,9 +22,11 @@ struct OBAWidget: Widget {
             kind: kind,
             provider: BookmarkTimelineProvider(dataProvider: dataProvider)
         ) { entry in
-            OBAWidgetEntryView(entry: entry, dataProvider: dataProvider)
+            OBAWidgetEntryView(entry: entry, formatters: dataProvider.formatters)
                 .containerBackground(.fill.quaternary, for: .widget)
         }
+        .configurationDisplayName(WidgetStrings.galleryDisplayName)
+        .description(WidgetStrings.galleryDescription)
         .supportedFamilies([.systemMedium, .systemLarge])
 
     }

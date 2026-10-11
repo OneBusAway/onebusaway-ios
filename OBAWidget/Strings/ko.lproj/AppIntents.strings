@@ -1,0 +1,14 @@
+/*
+ * App Intents strings. Hand-maintained: scripts/extract_strings (genstrings -s OBALoc)
+ * does not read LocalizedStringResource, so it neither adds nor removes these keys.
+ * Siri and Shortcuts resolve them out of process from this bundle's Metadata.appintents.
+ */
+
+/* App Intents: name of the widget action that reloads departures. */
+"refresh_widget_intent.title" = "위젯 새로고침";
+
+/* App Intents: title of the bookmarks widget configuration. */
+"widget_configuration_intent.title" = "즐겨찾기";
+
+/* App Intents: description of the bookmarks widget configuration. */
+"widget_configuration_intent.description" = "즐겨찾기의 다가오는 출발 시간을 확인하세요.";

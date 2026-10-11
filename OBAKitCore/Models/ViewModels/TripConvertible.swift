@@ -51,6 +51,15 @@ public final class TripConvertible: NSObject, @unchecked Sendable {
         return arrivalDeparture?.trip ?? vehicleStatus?.trip ?? tripDetails!.trip
     }
 
+    /// The ID of the trip this wraps.
+    ///
+    /// An arrival and trip details are read through their own `tripID`, not `trip`: theirs
+    /// is implicitly unwrapped and nil until their references load, so asking too early
+    /// traps. A vehicle status is only ever wrapped once its `trip` has loaded.
+    public var tripID: TripIdentifier {
+        return arrivalDeparture?.tripID ?? vehicleStatus?.trip?.id ?? tripDetails!.tripID
+    }
+
     public var serviceDate: Date {
         return arrivalDeparture?.serviceDate ?? vehicleStatus?.tripStatus.serviceDate ?? tripDetails!.serviceDate
     }

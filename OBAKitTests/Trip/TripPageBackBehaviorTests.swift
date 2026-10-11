@@ -88,4 +88,17 @@ final class TripPageBackWiringTests: OBATestCase {
         #expect(navigation.viewControllers.count == 2)
         #expect(page.backBehavior == .pop)
     }
+
+    /// The map panel's sheet, which hosts the page with no stack at all. SwiftUI
+    /// presented it and the sheet coordinator holds its route, so Back asks the
+    /// host rather than dismissing from UIKit.
+    @Test func `With no stack, Back asks a host that owns the presentation to close`() throws {
+        let page = try makeTripPage()
+        var closeCount = 0
+        page.onClose = { closeCount += 1 }
+
+        page.rootView.actions.onBack()
+
+        #expect(closeCount == 1)
+    }
 }

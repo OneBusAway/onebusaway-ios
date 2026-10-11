@@ -1,0 +1,50 @@
+/* Empty state */
+"arrivals.empty" = "Brak odjazdów w ciągu najbliższych 60 minut.";
+
+/* Progress text */
+"arrivals.loading" = "Wczytywanie odjazdów…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Nie wybrano regionu transportowego.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ do %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Zaktualizowano o %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Zezwól na dostęp do lokalizacji, aby zobaczyć przystanki w pobliżu.";
+
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "Brak odjazdów w pobliżu w ciągu najbliższej godziny.";
+
+/* Progress text */
+"nearby.locating" = "Ustalanie Twojej lokalizacji…";
+
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Nie udało się ustalić Twojej lokalizacji. Spróbuj ponownie.";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "Dostęp do lokalizacji jest wyłączony. Przystanki w pobliżu wymagają Twojej lokalizacji.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "Brak regionu transportowego w tym miejscu.";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "W pobliżu";
+
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "Wyszukiwanie pobliskich linii…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ do %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "Także w pobliżu";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "Wszystkie przyjazdy na tym przystanku";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "Zmień kierunek";

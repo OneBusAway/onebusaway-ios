@@ -6,39 +6,29 @@
 
 import Foundation
 import OBAKitCore
-import CoreLocation
 
-/// `WidgetDataProvider` is responsible for fetching and providing relevant data to the widget timeline provider.
-/// Main-actor-isolated because it owns a `CoreApplication` (itself `@MainActor`).
+/// What one fetch produced, ready to be sliced into timeline entries.
+struct WidgetContent {
+    let bookmarks: [Bookmark]
+    let departures: [UUID: [ArrivalDeparture]]
+    let fetchedAt: Date?
+
+    static let empty = WidgetContent(bookmarks: [], departures: [:], fetchedAt: nil)
+}
+
+/// Loads the widget's bookmarks and their arrivals from the app-group suite.
+///
+/// Deliberately does **not** build a `CoreApplication`. That would start a
+/// regions fetch, open and migrate the stop cache, and increment the launch
+/// counter that survey gating reads — on every timeline reload, from an
+/// extension. Everything the widget needs is in the suite: the bookmarks, the
+/// client UUID, and the region the app resolved (`ResolvedRegionStore`), which
+/// is also the only way an extension can see a custom region.
 @MainActor
-class WidgetDataProvider: NSObject, ObservableObject {
+final class WidgetDataProvider {
     static let shared = WidgetDataProvider()
 
     private let userDefaults = UserDefaults(suiteName: Bundle.main.appGroup!)!
-    private lazy var locationManager = CLLocationManager()
-    private lazy var locationService = LocationService(
-        userDefaults: userDefaults,
-        locationManager: locationManager
-    )
-
-    private lazy var app: CoreApplication = {
-        let config = CoreAppConfig(
-            appBundle: Bundle.main,
-            userDefaults: userDefaults,
-            bundledRegionsFilePath: Bundle.main.path(forResource: "regions", ofType: "json")!
-        )
-        return CoreApplication(config: config)
-    }()
-
-    private var bestAvailableBookmarks: [Bookmark] {
-        return app.userDataStore.favoritedBookmarks
-    }
-
-    /// Dictionary mapping trip bookmark keys to arrival/departure data.
-    private var arrDepDic = [TripBookmarkKey: [ArrivalDeparture]]()
-
-    /// Dictionary mapping stop IDs to all upcoming arrivals/departures (for stop bookmarks).
-    private var stopArrDepDic = [StopID: [ArrivalDeparture]]()
 
     /// Formatters for localization and styling.
     let formatters = Formatters(
@@ -47,73 +37,44 @@ class WidgetDataProvider: NSObject, ObservableObject {
         themeColors: ThemeColors.shared
     )
 
-    /// Loads arrivals and departures for all favorited bookmarks for the widget.
-    func loadData() async {
+    /// Favorited bookmarks in `region`, in stored order.
+    private func bookmarks(in region: Region) -> [Bookmark] {
+        UserDefaultsStore(userDefaults: userDefaults).favoritedBookmarks
+            .filter { $0.regionIdentifier == region.regionIdentifier }
+    }
 
-        arrDepDic = [:]
-        stopArrDepDic = [:]
-        app.refreshServices()
-
-        guard let apiService = app.apiService else {
-            Logger.error("Failed to get REST API Service.")
-            return
+    /// - Parameter maximumBookmarks: How many bookmarks the widget can show
+    ///   (`BookmarkEntry.maximumBookmarks(for:)`). Fetching more is wasted
+    ///   network on every reload, and reloads now run up to 48 times a day.
+    func load(maximumBookmarks: Int) async -> WidgetContent {
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        guard let region = store.region(bundledRegionsFilePath: Bundle.main.path(forResource: "regions", ofType: "json")) else {
+            Logger.error("Widget: no region available.")
+            return .empty
         }
 
-        let bookmarks = getBookmarks()
+        let bookmarks = Array(bookmarks(in: region).prefix(maximumBookmarks))
         guard !bookmarks.isEmpty else {
-            Logger.info("No bookmarks found to load data.")
-            return
+            Logger.info("Widget: no bookmarks to load data for.")
+            return .empty
         }
 
-        await withTaskGroup(of: Void.self) { group in
-            bookmarks.forEach { bookmark in
-                group.addTask { [weak self] in
-                    await self?.fetchArrivalData(for: bookmark, apiService: apiService)
-                }
-            }
+        guard let apiKey = Bundle.main.restServerAPIKey else {
+            Logger.error("Widget: no REST API key in the extension's Info.plist.")
+            return WidgetContent(bookmarks: bookmarks, departures: [:], fetchedAt: nil)
         }
-    }
 
-    /// Fetch arrival data for a specific bookmark and update the dictionary.
-    private func fetchArrivalData(for bookmark: Bookmark, apiService: RESTAPIService) async {
-        do {
-            let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(
-                id: bookmark.stopID,
-                minutesBefore: 0,
-                minutesAfter: 60
-            ).entry
+        let service = RESTAPIService.standalone(
+            region: region,
+            apiKey: apiKey,
+            appVersion: Bundle.main.appVersion,
+            uuid: UserUUID.value(in: userDefaults)
+        )
 
-            await MainActor.run {
-                if bookmark.isTripBookmark {
-                    stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements.forEach { key, deps in
-                        arrDepDic[key] = deps
-                    }
-                } else {
-                    stopArrDepDic[bookmark.stopID] = stopArrivals.arrivalsAndDepartures
-                        .filter { $0.temporalState != .past }
-                        .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
-                }
-            }
-        } catch {
-            Logger.error("""
-            Error fetching data for bookmark: '\(bookmark.name)'
-            (ID: \(bookmark.id)). Error: \(error.localizedDescription)
-            """)
-        }
-    }
-
-    /// Looks up arrival and departure data for a given trip key.
-    func lookupArrivalDeparture(with key: TripBookmarkKey) -> [ArrivalDeparture] {
-        arrDepDic[key, default: []]
-    }
-
-    /// Looks up all upcoming arrivals/departures for a stop bookmark.
-    func lookupStopArrivals(for stopID: StopID) -> [ArrivalDeparture] {
-        stopArrDepDic[stopID, default: []]
-    }
-
-    /// Gets bookmarks of the selected region.
-    public func getBookmarks() -> [Bookmark] {
-        return bestAvailableBookmarks.filter { $0.regionIdentifier == app.regionsService.currentRegion?.id }
+        // 90, not the default 60: entries run up to 30 minutes past the fetch,
+        // so every one of them still knows a full hour ahead — which is what a
+        // row's "no departures in the next 60 minutes" fallback claims.
+        let departures = await BookmarkArrivalsLoader(minutesAfter: 90).departuresByBookmark(for: bookmarks, using: service)
+        return WidgetContent(bookmarks: bookmarks, departures: departures, fetchedAt: departures.isEmpty ? nil : Date())
     }
 }

@@ -224,7 +224,7 @@ struct StopPageListHeaderRow: View {
         onTogglePast()
         let message = showPast
             ? OBALoc("stop_page.a11y.past_hidden", value: "Past departures hidden", comment: "VoiceOver announcement when the Past disclosure is closed.")
-            : CountPlural.format(OBALoc("stop_page.a11y.past_shown_fmt", value: "Showing %d past departures", comment: "VoiceOver announcement when the Past disclosure is opened. %d is the count. English has a stringsdict entry; other locales still use the flat .strings form."), count: pastCount)
+            : CountPlural.format(OBALoc("stop_page.a11y.past_shown_fmt", value: "Showing %d past departures", comment: "VoiceOver announcement when the Past disclosure is opened. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), count: pastCount)
         AccessibilityNotification.Announcement(message).post()
     }
 }

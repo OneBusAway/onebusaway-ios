@@ -13,7 +13,10 @@ OneBusAway iOS (OBAKit) is a white-label transit app framework written in Swift.
 scripts/generate_project [APP_NAME]     # Generate Xcode project for specific app
 scripts/generate_project OneBusAway     # Generate default OneBusAway app
 scripts/generate_project                # Defaults to OneBusAway if no app specified
+scripts/generate_project OneBusAway --no-watch   # iOS only; no watchOS platform needed
 ```
+
+The OneBusAway project includes two watchOS targets, `OBAKitWatch` (framework) and `WatchApp` (shell), opted in through `Apps/OneBusAway/watch.yml`. Building the `App` scheme also builds them, so a machine without the watchOS platform must pass `--no-watch`. Build the watch app with `WATCH_UDID=$(scripts/resolve_watch_simulator_udid)` and `-scheme WatchApp -destination "platform=watchOS Simulator,id=$WATCH_UDID"`; `scripts/watch_smoke_test` installs, launches, and asserts it stays alive, which a compile cannot. Watch code never builds a `CoreApplication` and never reads `\.coreApplication`; `OBAKitWatch/Host/WatchAppHost.swift` is the assembly.
 
 **Available Apps**: OneBusAway, KiedyBus
 
@@ -160,7 +163,12 @@ scripts/extract_strings               # Extract strings for localization
 ## Architecture
 
 ### Framework Structure
-- **OBAKitCore**: Core business logic, networking, data models (application extension safe)
+- **OBAKitCore**: Core business logic, networking, data models (application extension safe). One module, two directories:
+  - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region-monitoring API calls.
+  - `OBAKitCoreiOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. It is an XcodeGen `group`, so run `scripts/generate_project` after adding a file here.
+  - **If a file in `OBAKitCore/` needs a platform `#if`, move the iOS-only part to `OBAKitCoreiOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
+- **OBAKitWatch**: watchOS UI framework (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it.
+- **WatchApp**: watchOS application shell. White-label; per-app identity comes from Apps/<App>/watch.yml.
 - **OBAKit**: UI framework with view controllers and user interface components
 - **App**: Main application target that combines the frameworks
 
@@ -184,6 +192,10 @@ scripts/extract_strings               # Extract strings for localization
   - `Network/`: API services and networking
   - `Location/`: Location services and region management
   - `Orchestration/`: Application setup and configuration
+- `OBAKitCoreiOS/`: iOS-only files of the OBAKitCore module (same module, no separate import)
+  - `UIKit/`: UIKit view code
+  - `LiveActivities/`: Everything that imports or renders ActivityKit
+  - `Location/`: Region monitoring / geofencing
 - `OBAKit/`: UI framework
   - `Controls/`: Reusable UI components
   - `Mapping/`: Map views and location features
@@ -216,8 +228,9 @@ scripts/extract_strings               # Extract strings for localization
 
 ## Third-Party Dependencies
 
-**UI Libraries**: BulletinBoard, Eureka, FloatingPanel, MarqueeLabel
-**Networking**: CocoaLumberjack, Hyperconnectivity, SwiftProtobuf
+**UI Libraries**: FloatingPanel
+**Vendored**: BulletinBoard 5.0.0 (`e8ba81d`) lives in `OBAKit/ThirdParty/BulletinBoard/`, compiled into OBAKit with internal access, so there is no `import BLTNBoard`. It has been modified for Swift 6 and fixes; changes are marked `OBA:` in comments. Its MIT license is in that directory and on the Credits screen (`OBAKit/Settings/OBAKit_Credits.plist`). Hyperconnectivity 1.2.0 (`0503595`) is vendored the same way in `OBAKit/ThirdParty/Hyperconnectivity/` (no `import Hyperconnectivity`), trimmed to the connectivity publisher, with the same `OBA:` markers and Credits entry. MarqueeLabel 4.5.3 (`c6b4da4`, the last upstream release) is vendored the same way in `OBAKit/ThirdParty/MarqueeLabel/` (no `import MarqueeLabel`), with Interface Builder support and deprecated API removed. Unlike upstream, it does not scroll while Reduce Motion is on
+**Networking**: CocoaLumberjack, SwiftProtobuf
 **Testing**: Swift Testing (first-party; Nimble was removed)
 
 ## Configuration & Deployment
@@ -233,7 +246,7 @@ scripts/extract_strings               # Extract strings for localization
 
 The codebase supports easy customization through:
 - Separate app configurations in `Apps/` directory
-- Pluggable analytics systems (Firebase, Plausible)
+- Pluggable analytics systems (Firebase, Umami)
 - Custom region support via deep links
 - Theming and branding capabilities
 
@@ -243,7 +256,10 @@ Custom region addition:
 ```
 onebusaway://add-region?name=REGION_NAME
     &oba-url=ENCODED_OBA_URL
+    &region-id=SIDECAR_REGION_ID
     &otp-url=ENCODED_OTP_URL
+    &otp-graphql-url=ENCODED_OTP_GRAPHQL_URL
+    &otp-graphql-bikeshare=true
     &sidecar-url=ENCODED_SIDECAR_URL
     &umami-url=ENCODED_UMAMI_URL
     &umami-id=UMAMI_WEBSITE_ID
@@ -252,7 +268,10 @@ onebusaway://add-region?name=REGION_NAME
 **Parameter details:**
 - `name` (required): Region display name
 - `oba-url` (required): OneBusAway server base URL
-- `otp-url` (optional): OpenTripPlanner server URL
+- `region-id` (optional): the region's id on the Obaco sidecar. Without it the region gets a random id, and every sidecar feature (alerts, alarms, push, surveys) 404s
+- `otp-url` (optional): OpenTripPlanner 1.x REST server URL
+- `otp-graphql-url` (optional): OTP 2.x GTFS GraphQL server URL (e.g. `https://…/otp/gtfs/v1`). Preferred over `otp-url` for trip planning when both are set
+- `otp-graphql-bikeshare` (optional): `true` or `1` when the GraphQL server serves vehicle rental data. Turns on the map's Bikes and Scooters layers and the rental trip modes; meaningless without `otp-graphql-url`
 - `sidecar-url` (optional): Obaco sidecar server URL for OneBusAway.co features
 - `umami-url` and `umami-id` (optional, both required together): Umami analytics URL and website ID—omit both to disable analytics
 
@@ -262,6 +281,17 @@ onebusaway://add-region?name=REGION_NAME
 3. URL parameters must be percent-encoded (e.g., query strings in nested URLs: `https://example.com/api?a=1&b=2` must be encoded as `https%3A%2F%2Fexample.com%2Fapi%3Fa%3D1%26b%3D2`)
 4. New URL fields are validated for well-formedness only; invalid optional URLs degrade to nil. The Add Custom Region form live-validates the base URL on save; the deep link path checks well-formedness only
 
+Bikes and scooters on the map:
+```
+onebusaway://rentals?lat=47.6097&lon=-122.3422
+```
+
+- `lat` and `lon` (both required): decimal degrees, on the globe. A missing, non-numeric, non-finite, or out-of-range value makes the link undecodable, and the app ignores it
+- Switches on the Bikes and Scooters layers and centres the map on the coordinate, close enough that rentals draw
+- Ignored, with a log line, when the current region has no rental layers or the coordinate is outside it
+- Arriving before the map exists (cold launch, onboarding), it is held in `Application.pendingRentalsCoordinate` and applied once the map appears and the region has loaded — the same stash pattern as `pendingStopID`. Both map surfaces claim it with `Application.claimPendingRentalsFocus()`
+- `URLSchemeRouter.encodeViewRentals(coordinate:)` builds one
+
 ## Development Notes
 
 - Always run `scripts/generate_project` before building
@@ -269,3 +299,5 @@ onebusaway://add-region?name=REGION_NAME
 - Core framework (OBAKitCore) must remain application extension safe
 - UI tests are minimal - focus is on unit tests
 - Documentation is generated with DocC via `scripts/docs`
+- **`Int` is 32 bits on most Apple Watches** (`arm64_32`), and watch simulators hide it. In `OBAKitCore/`, never decode an epoch value as `Int` — use `Int64` or `Date`. Check with `xcodebuild build -scheme OBAKitCore -destination 'generic/platform=watchOS' CODE_SIGNING_ALLOWED=NO`; CI runs the same build.
+- **Extensions do not build a `CoreApplication`.** It starts a regions fetch, opens the stop cache, and bumps the launch counter. A widget reads the app-group suite instead: `ResolvedRegionStore` for the region (the app writes it via `ResolvedRegionPersister`; extensions only read), `UserUUID` for the client id, `RESTAPIService.standalone(…)` for the API, and `BookmarkArrivalsLoader` for arrivals.

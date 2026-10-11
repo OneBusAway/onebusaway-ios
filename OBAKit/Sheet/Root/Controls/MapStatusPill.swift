@@ -51,7 +51,8 @@ struct MapStatusPill: View {
             // `.locationServicesUnavailable` is a restricted/unknown status the
             // user can't resolve in Settings, so the pill is display-only.
             return
-        case .zoomInForStops:
+        case .zoomInForStops, .zoomInForRentals:
+            // The stops zoom target sits inside the rental window too.
             onZoomInForStops()
         case .notDetermined, .locationServicesOff, .impreciseLocation:
             onPermissionTap(state)
@@ -89,6 +90,8 @@ extension MapStatusIndicator {
             return nil
         case .zoomInForStops:
             self = .zoomInForStops
+        case .zoomInForRentals:
+            self = .zoomInForRentals
         case .notDetermined, .locationServicesOff, .locationServicesUnavailable:
             self = .locationUnavailable
         case .impreciseLocation:
