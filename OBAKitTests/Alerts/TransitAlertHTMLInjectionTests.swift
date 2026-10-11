@@ -298,11 +298,11 @@ final class TransitAlertNavigationDelegateTests {
     }
 
     @Test
-    func `non-http link navigation is allowed — not intercepted`() async {
-        // Non-http/https link taps fall through to .allow. The escaping layer
-        // already prevents injected links from appearing in the DOM, so this
-        // path is a belt-and-suspenders no-op in practice.
+    func `non-http link activation is cancelled`() async {
+        // Non-http/https link taps are cancelled — the web view does not navigate
+        // and no external app is opened. The escaping layer already prevents
+        // injected links from appearing in the DOM; this is the belt-and-suspenders layer.
         let result = await policy(for: URL(string: "javascript:alert(1)")!, navigationType: .linkActivated)
-        #expect(result == .allow)
+        #expect(result == .cancel)
     }
 }

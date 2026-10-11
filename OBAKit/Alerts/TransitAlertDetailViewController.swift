@@ -113,20 +113,23 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
 
     // MARK: - WKNavigationDelegate
 
-    /// Intercepts link taps: http/https links are opened in Safari (navigation cancelled
-    /// in the web view itself); all other navigations — including the initial
-    /// `loadHTMLString` load and any non-http/https link taps — are allowed to proceed
-    /// as normal (or are no-ops, since no external navigation occurs for them).
+    /// Handles navigation policy for the alert web view:
+    /// - Non-link navigations (e.g. the initial `loadHTMLString` load) are allowed.
+    /// - User-tapped links with a valid http/https URL are opened in Safari; the
+    ///   in-app navigation is cancelled.
+    /// - User-tapped links with any other scheme are cancelled without opening anything.
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
-        guard navigationAction.navigationType == .linkActivated,
-              let url = navigationAction.request.url,
-              Self.isValidAlertURL(url) else {
+        // Allow non-link navigations (page load, form submits, etc.).
+        guard navigationAction.navigationType == .linkActivated else {
             decisionHandler(.allow)
             return
         }
 
-        let safari = SFSafariViewController(url: url)
-        present(safari, animated: true)
+        // For link taps, only open http/https URLs in Safari; cancel everything else.
+        if let url = navigationAction.request.url, Self.isValidAlertURL(url) {
+            let safari = SFSafariViewController(url: url)
+            present(safari, animated: true)
+        }
         decisionHandler(.cancel)
     }
 
