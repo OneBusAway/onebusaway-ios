@@ -14,18 +14,21 @@ import os
 /// OBA: `cancel()` arrives on the subscriber's thread and results on
 /// `Hyperconnectivity`'s queue, so the subscriber sits behind a lock. Upstream
 /// read and cleared it unguarded.
-nonisolated final class ConnectivitySubscription<S: Subscriber>: Subscription, @unchecked Sendable
-where S.Input == ConnectivityResult, S.Failure == Never {
+///
+/// OBA: the subscriber is type-erased so this class isn't generic. Upstream was
+/// generic over it, and the `@Sendable` notifier closure then captured a
+/// non-Sendable `S.Type` (#SendableMetatypes).
+nonisolated final class ConnectivitySubscription: Subscription, @unchecked Sendable {
 
     private struct State {
-        var subscriber: S?
+        var subscriber: AnySubscriber<ConnectivityResult, Never>?
         var isStarted = false
     }
 
     private let connectivity: Hyperconnectivity
     private let state: OSAllocatedUnfairLock<State>
 
-    init(configuration: Hyperconnectivity.Configuration, subscriber: S) {
+    init(configuration: Hyperconnectivity.Configuration, subscriber: AnySubscriber<ConnectivityResult, Never>) {
         self.connectivity = Hyperconnectivity(configuration: configuration)
         self.state = OSAllocatedUnfairLock(uncheckedState: State(subscriber: subscriber))
     }
