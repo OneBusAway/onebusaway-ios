@@ -49,6 +49,9 @@
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "This screen is coming soon.";
 
+/* Shown when the rider taps a link or notification for a stop that belongs to a transit region other than the currently selected one. */
+"application.stop_in_other_region" = "This stop is in a different region than the one you're using, so it can't be opened.";
+
 /* Filter option to show all departures regardless of real-time data availability */
 "arrival_departure_filter.all_departures" = "All Departures";
 
@@ -317,6 +320,9 @@
 /* Title of the read-only Stop ID row on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_row.title" = "Stop ID";
 
+/* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
+"edit_bookmark_controller.stop_id_row.accessibility_hint" = "Copies the stop ID.";
+
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(No Group)";
@@ -408,8 +414,8 @@
 /* Title of the ghost bus submission error alert. */
 "ghost_bus_report.error.title" = "Unable to Submit";
 
-/* Footer text under the submit button on the ghost bus form. */
-"ghost_bus_report.footer" = "Your report is anonymous and goes to the agency that runs this service.";
+/* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
+"ghost_bus_report.footer_recipients_fmt" = "Your report, and your location if you choose to share it, goes to %@ and the transit agency to help improve service.";
 
 /* Toggle on the ghost bus form for including the rider's location with the report. */
 "ghost_bus_report.share_location" = "Share my location";
@@ -522,6 +528,9 @@
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "Center map on current location";
 
+/* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
+"map_controller.dropped_pin_title" = "Dropped Pin";
+
 /* Change Region button on the alert that appears when the user is updating their current region manually. */
 "map_controller.change_region_alert.button" = "Change Region";
 
@@ -557,6 +566,12 @@
 
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "Show Weather Forecast";
+
+/* Title of the list shown when tapping a map pin that groups several stops at the same location. */
+"map_controller.stop_cluster_picker.title" = "Choose a Stop";
+
+/* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
+"map_controller.stop_cluster.accessibility_hint" = "Lists the stops here.";
 
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.";
@@ -594,6 +609,9 @@
 /* Button to remove a dropped pin from the map */
 "map_item_controller.remove_pin" = "Remove Pin";
 
+/* Name shown in the trip planner for a destination that has no name of its own, such as a point on the map. */
+"map_item_controller.destination_fallback_title" = "Destination";
+
 /* Accessibility label for remove pin button */
 "map_item_controller.remove_pin_accessibility" = "Remove this pin from the map";
 
@@ -614,6 +632,9 @@
 
 /* Reason shown on a dimmed rental layer row when its server is unreachable */
 "map_layers.rental_unavailable" = "Not available right now";
+
+/* Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it */
+"map_layers.rental_gone" = "This vehicle is no longer available";
 
 /* Map sheet row for the rental scooters layer */
 "map_layers.scooters" = "Scooters";
@@ -648,6 +669,21 @@
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "Reset";
 
+/* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
+"map_sheet.routes_on_map" = "Routes on Map";
+
+/* Empty state on the Routes on Map screen when no stops with routes are loaded for the visible map area. */
+"map_sheet.routes_on_map_empty" = "No routes on this part of the map";
+
+/* Footer under the Routes on Map row explaining what picking a route does and how to undo it. */
+"map_sheet.routes_on_map_footer" = "Show only one route's path and stops. Close the route to see every stop again.";
+
+/* VoiceOver hint on a route row in the Routes on Map list. */
+"map_sheet.routes_on_map_row_hint" = "Shows only this route on the map.";
+
+/* Empty state on the Routes on Map screen when the map is zoomed out too far to load stops. */
+"map_sheet.routes_on_map_zoomed_out" = "Zoom in to see the routes serving this area";
+
 /* Map sheet toggle for Apple MapKit Points of Interest (restaurants, shops, etc.) */
 "map_sheet.shows_points_of_interest" = "Points of Interest";
 
@@ -671,6 +707,9 @@
 
 /* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
 "map_status_view.zoom_in_for_stops" = "Zoom in for stops";
+
+/* Displayed in the map status view at the top of the map when a bikes or scooters layer is on but the map is zoomed out too far to show rental vehicles */
+"map_status_view.zoom_in_for_rentals" = "Zoom in to see bikes and scooters";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "About this App";
@@ -788,6 +827,39 @@
 
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Move the map or turn on location services to see stops near you.";
+
+/* Siri response when the requested bookmark was deleted or belongs to a different region. */
+"next_departures_intent.bookmark_unavailable" = "That bookmark isn't available in your current region.";
+
+/* Siri asks which trip bookmark to report departures for when the user has more than one. */
+"next_departures_intent.choose_bookmark" = "Which bookmark?";
+
+/* Siri response naming the next departure. {Route short name} to {Headsign} departs {'now' or 'in X minutes'}. */
+"next_departures_intent.first_departure_fmt" = "%1$@ to %2$@ departs %3$@.";
+
+/* Siri response: a vehicle departs in {X} minutes. Plural forms in Localizable.stringsdict. */
+"next_departures_intent.in_minutes_fmt" = "in %d minutes";
+
+/* Siri response listing the departures after the next one. {List of 'in X minutes'} */
+"next_departures_intent.later_departures_fmt" = "Then %@.";
+
+/* Siri response when departures could not be fetched. {Bookmark name} */
+"next_departures_intent.load_failed_fmt" = "Couldn't load departures for %@. Check your connection and try again.";
+
+/* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
+"next_departures_intent.no_bookmarks" = "You don't have any bookmarked trips. Bookmark a route at a stop first.";
+
+/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
+"next_departures_intent.no_departures_fmt" = "No departures for %@ in the next hour.";
+
+/* Siri response when the user asks for their next departures before the app knows their region. */
+"next_departures_intent.no_region" = "Choose a transit region in the app first.";
+
+/* Siri response: a vehicle departs now. Completes 'Route 550 to Seattle departs {now}'. */
+"next_departures_intent.now" = "now";
+
+/* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
+"next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Crushed standing room only";
@@ -921,6 +993,9 @@
 /* Accessibility label for the onboarding progress bar */
 "onboarding.progress.accessibility_label" = "Onboarding progress";
 
+/* VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps} */
+"onboarding.progress.accessibility_value_fmt" = "Step %1$d of %2$d";
+
 /* Body of the region onboarding screen when the region was detected from the rider's location */
 "onboarding.region.body" = "We found the transit network closest to you.";
 
@@ -1047,6 +1122,12 @@
 /* Label for the number of bikes available at a station */
 "rental_detail.bikes_available" = "Bikes";
 
+/* Label for the number of scooters available at a station that only holds scooters */
+"rental_detail.scooters_available" = "Scooters";
+
+/* Label for the number of rental vehicles available at a station whose vehicle types are mixed or unknown */
+"rental_detail.vehicles_available" = "Available";
+
 /* Label for the number of open docks at a station */
 "rental_detail.docks_available" = "Docks";
 
@@ -1061,6 +1142,12 @@
 
 /* Button opening the rental operator's app or website */
 "rental_detail.open_in_fmt" = "Open in %@";
+
+/* VoiceOver hint on the button opening a rental operator's app. %@ is the operator, e.g. Lime. */
+"rental_detail.open_in_hint_fmt" = "Opens %@, or its App Store page if it isn't installed.";
+
+/* Button opening a rental operator's app when the operator's name is unknown */
+"rental_detail.open_rental_app" = "Open rental app";
 
 /* Label for whether picking up a vehicle is currently allowed */
 "rental_detail.pickup" = "Pickup";
@@ -1266,14 +1353,32 @@
 /* Settings > Arrival & Departure Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
 "settings_controller.arrival_display_section.transfer_banner" = "Show transfer arrival banner";
 
-/* Settings > Arrival & Departure Display > Footer for the Show transfer arrival banner switch only, not the Show Departures filter */
-"settings_controller.arrival_display_section.transfer_banner.footer" = "Show transfer arrival banner: when on, opening a stop from a trip shows times relative to when you arrive. Turn that switch off for ordinary clock times and every departure.";
+/* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
+"settings_controller.arrival_display_section.footer" = "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.";
+
+/* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
+"settings_controller.arrival_display_section.region_time_zone" = "Show times in region time zone";
 
 /* Title for the departure filter selection alert */
 "settings_controller.arrival_filter.selector_title" = "Show Departures";
 
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Show Departures";
+
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Couldn't sync cycling speed from Health. Using a standard biking speed instead.";
+
+/* Settings > Bike Mode > on/off toggle */
+"settings_controller.bike_mode.title" = "Bike Mode";
+
+/* Settings > Bike Mode section > HealthKit toggle */
+"settings_controller.bike_mode.use_healthkit" = "Use Health app data";
+
+/* Settings > Bike Mode section footer */
+"settings_controller.bike_mode_section.footer" = "Uses a faster travel speed for walk-time estimates, arrival ETAs, and the Stop page.";
+
+/* Settings > Bike Mode section title */
+"settings_controller.bike_mode_section.title" = "Bike Mode";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Refresh regions on every launch";
@@ -1377,6 +1482,9 @@
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.";
 
+/* Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop. */
+"stop_controller.bad_bookmark_error_title" = "Broken Bookmark";
+
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Data provided by %@";
 
@@ -1442,6 +1550,15 @@
 
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "Notifications Are Off";
+
+/* Bike chip on the header card. %d is the bike time in minutes. */
+"stop_page.bike_chip_minutes_fmt" = "%d min bike";
+
+/* VoiceOver description of the bike divider. %d is bike minutes. */
+"stop_page.bike_divider_a11y_fmt" = "Departures above this point leave sooner than your %d minute bike ride to the stop";
+
+/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
+"stop_page.bike_divider_fmt" = "%d MIN BIKE — CATCH BELOW";
 
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "NOW";
@@ -1527,6 +1644,50 @@
 /* VoiceOver label for the button revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.past_toggle_show_a11y_fmt" = "Show %d past departures";
 
+/* Body of the alert shown when location is denied for the app. %@ is the app name. */
+"stop_page.proximity_alert.location_denied.message_fmt" = "To get nearby alerts, allow location for %@ in Settings.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but location is denied for the app. */
+"stop_page.proximity_alert.location_denied.title" = "Location Is Off";
+
+/* Body of the alert shown when location access is restricted on the device. */
+"stop_page.proximity_alert.location_restricted.message" = "Nearby alerts need location access, which may be limited by a setting on this device.";
+
+/* Title of the alert shown when location may be limited by a device restriction the rider does not control. */
+"stop_page.proximity_alert.location_restricted.title" = "Location Isn't Available";
+
+/* Body of the alert asking the rider to widen location access from While Using to Always. %@ is the app name. */
+"stop_page.proximity_alert.location_when_in_use.message_fmt" = "%@ has location access only while it's open. Nearby alerts need it in the background too, so they can work with your phone in your pocket.";
+
+/* Title of the alert shown when the rider has granted location only While Using, which nearby alerts cannot work with. */
+"stop_page.proximity_alert.location_when_in_use.title" = "Allow Location Always";
+
+/* Stop Location menu action that takes down the approach notification already set on this stop. */
+"stop_page.proximity_alert.menu.cancel" = "Cancel Nearby Alert";
+
+/* Stop Location menu action that sets a notification for when the rider approaches this stop. */
+"stop_page.proximity_alert.menu.set" = "Alert Me When Nearby";
+
+/* Body of the alert shown when notifications are denied. %@ is the app name. */
+"stop_page.proximity_alert.notifications_denied.message_fmt" = "Nearby alerts arrive as notifications. Allow them for %@ in Settings.";
+
+/* Title of the alert shown when the rider tries to set a nearby alert but notifications are denied in Settings. */
+"stop_page.proximity_alert.notifications_denied.title" = "Notifications Are Off";
+
+/* Button that opens the system Settings app so the rider can grant what a nearby alert needs. */
+"stop_page.proximity_alert.open_settings" = "Open Settings";
+
+/* Body of the alert shown when the app is already monitoring every region iOS allows. %1$@ is the app name and %2$d is the number of regions. */
+"stop_page.proximity_alert.region_limit.message_fmt" = "iOS lets %1$@ watch for %2$d places at once. Cancel one to add another.";
+
+/* Title of the alert shown when iOS will not monitor another region because the app is already at its limit. */
+"stop_page.proximity_alert.region_limit.title" = "Too Many Alerts";
+
+/* Toast confirming the rider's nearby alert for this stop was taken down. */
+"stop_page.proximity_alert.toast.cancelled" = "Nearby alert cancelled";
+
+/* Toast confirming a nearby alert was set. %@ is the name of the stop. */
+"stop_page.proximity_alert.toast.set_fmt" = "We'll let you know when you're near %@";
 /* VoiceOver suffix indicating a departure alarm is active */
 "stop_page.row.a11y_alarm_set" = "alarm set";
 
@@ -1680,6 +1841,15 @@
 /* Title of the row that will show stops that are near this one. */
 "stops_controller.nearby_stops" = "Nearby Stops";
 
+/* Section heading in the stop screen's More menu, over the Add Bookmark and Service Alerts items. */
+"stops_controller.menu.file_title" = "File";
+
+/* Section heading in the stop screen's More menu, over the nearby stops, walking directions and trip planning items. */
+"stops_controller.menu.location_title" = "Location";
+
+/* Section heading in the stop screen's More menu, over the Report a Problem item. */
+"stops_controller.menu.help_title" = "Help";
+
 /* Button that launches the 'Report Problem' UI. */
 "stops_controller.report_problem" = "Report a Problem";
 
@@ -1788,6 +1958,15 @@
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
 "trip_page.card.a11y_no_arrival_fmt" = "Route %1$@ to %2$@";
 
+/* Trip card line shown in place of the vehicle's distance once its next stop is the rider's stop. */
+"trip_page.card.arriving_at_stop" = "Arriving at your stop";
+
+/* VoiceOver version of the trip card's distance line. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_a11y_fmt" = "%1$@ away, %2$d stops away";
+
+/* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.card.distance_stops_fmt" = "%1$@ away · %2$d stops";
+
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.";
 
@@ -1805,6 +1984,9 @@
 
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Report Ghost Bus";
+
+/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
+"trip_page.show_on_map" = "Show on Map";
 
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "already passed";
@@ -1856,6 +2038,9 @@
 
 /* Shown on the map when the user taps on a vehicle to indicate we don't know the vehicle's ID. */
 "trip_status_annotation.vehicle_id_unavailable" = "Vehicle ID Unavailable";
+
+/* Voiceover text explaining that this stop is where the rider boarded the vehicle */
+"trip_stop.boarding_stop.accessibility_label" = "Boarding stop";
 
 /* Voiceover text explaining that the vehicle has already passed this stop */
 "trip_stop.passed_stop.accessibility_label" = "Passed stop";
@@ -1947,10 +2132,16 @@
 /* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
 "walk_time_view.accessibility_label" = "Time to walk to stop";
 
+/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
+"walk_time_view.accessibility_label_bike" = "Time to bike to stop";
+
 /* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
 "walk_time_view.accessibility_value" = "%1$@. Takes %2$@ to walk, arriving at %3$@";
 
-/* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
+/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
+"walk_time_view.accessibility_value_bike" = "%1$@. Takes %2$@ to bike, arriving at %3$@";
+
+/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: arriving at %3$@";
 
 /* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
@@ -1970,6 +2161,9 @@
 
 /* Bare percentage shown in the precipitation stat on the weather card. %d is the integer percent. */
 "weather.percent_format" = "%d%%";
+
+/* VoiceOver label for a weather card stat: {stat name}: {value}, e.g. Wind speed: 10 mph. Use the language's colon convention. */
+"weather.stat.a11y_fmt" = "%1$@: %2$@";
 
 /* VoiceOver label for the feels-like temperature stat on the weather card. */
 "weather.stat.feels_like" = "Feels like";

@@ -1,0 +1,50 @@
+/* Empty state */
+"arrivals.empty" = "Нет отправлений в ближайшие 60 минут.";
+
+/* Progress text */
+"arrivals.loading" = "Загрузка отправлений…";
+
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Транспортный регион не выбран.";
+
+/* VoiceOver: route, headsign, time until departure */
+"arrivals.row.a11y_fmt" = "%1$@ до %2$@, %3$@";
+
+/* %@ is a short time, e.g. 3:42 PM */
+"arrivals.updated_at_fmt" = "Обновлено в %@";
+
+/* Shown while the system location prompt is up */
+"nearby.awaiting_authorization" = "Разрешите доступ к геопозиции, чтобы увидеть остановки рядом с вами.";
+
+/* No nearby stop has a departure in the next 60 minutes */
+"nearby.empty" = "Поблизости нет отправлений в ближайший час.";
+
+/* Progress text */
+"nearby.locating" = "Определение вашего местоположения…";
+
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Не удалось определить ваше местоположение. Попробуйте ещё раз.";
+
+/* Shown when location is denied or restricted */
+"nearby.location_denied" = "Доступ к геопозиции отключён. Чтобы показать остановки рядом, нужно ваше местоположение.";
+
+/* The fix is outside every supported region */
+"nearby.no_region" = "Здесь нет транспортного региона.";
+
+/* Screen title before a transit region is known */
+"nearby.title" = "Рядом";
+
+/* Progress text while nearby stops' departures load */
+"nearby.loading" = "Поиск маршрутов поблизости…";
+
+/* VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union' */
+"nearby.card.a11y_fmt" = "%1$@ до %2$@";
+
+/* Section header: other nearby stops served by the same route and direction */
+"route.also_nearby" = "Также поблизости";
+
+/* Opens every route's departures at the nearest stop */
+"route.all_arrivals" = "Все прибытия на этой остановке";
+
+/* Button: show the same route heading the other way */
+"route.switch_direction" = "Сменить направление";

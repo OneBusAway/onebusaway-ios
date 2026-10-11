@@ -120,6 +120,26 @@ extension RESTAPIService {
         )
     }
 
+    /// Retrieves stops matching `query` within `region`.
+    ///
+    /// Prefer this over ``getStops(circularRegion:query:)`` for stop-number search:
+    /// the circular overload caps radius at 15 km and can miss same-code stops
+    /// elsewhere in a multi-agency region (#1432).
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
+    ///
+    /// - parameter region: A coordinate region from which to search for stops.
+    /// - parameter query: A search query for a specific stop code.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for [``Stop``].
+    public nonisolated func getStops(region: MKCoordinateRegion, query: String) async throws -> RESTAPIResponse<[Stop]> {
+        return try await getData(
+            for: urlBuilder.getStops(region: region, query: query),
+            decodeRESTAPIResponseAs: [Stop].self
+        )
+    }
+
     /// Retrieves the stop with the specified ID.
     ///
     /// - API Endpoint: `/api/where/stop/{id}.json`

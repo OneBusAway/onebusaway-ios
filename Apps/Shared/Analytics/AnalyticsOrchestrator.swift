@@ -16,8 +16,10 @@ import FirebaseCrashlytics
     /// UserDefaults is documented thread-safe.
     nonisolated(unsafe) private let userDefaults: UserDefaults
     private var firebaseAnalytics: FirebaseAnalytics?
-    private var plausibleAnalytics: PlausibleAnalytics?
     private var umami: UmamiAnalytics?
+    /// The region Umami was last built for, so turning reporting back on
+    /// can rebuild it without waiting for a relaunch.
+    private var currentRegion: Region?
 
     @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
@@ -61,61 +63,59 @@ import FirebaseCrashlytics
     }
 
     public func updateServer(region: Region) {
-        // Rebuild per-region analytics backends from scratch on every region change.
-        plausibleAnalytics = nil
+        currentRegion = region
+        // Rebuild Umami from scratch on every region change.
         umami = nil
 
         guard reportingEnabled() else { return }
 
-        if let plausibleURL = region.plausibleAnalyticsServerURL {
-            plausibleAnalytics = PlausibleAnalytics(defaultDomainURL: region.OBABaseURL, analyticsServerURL: plausibleURL)
-        }
-
         if let umamiConfig = region.umamiAnalytics {
+            // One install ID for every region, read once per process.
             umami = UmamiAnalytics(serverURL: umamiConfig.url,
                                    websiteID: umamiConfig.id,
-                                   hostname: region.OBABaseURL.host ?? "")
+                                   hostname: region.OBABaseURL.host ?? "",
+                                   installID: AnalyticsInstallID.current)
         }
     }
 
     @objc public func reportError(_ error: any Error) {
         firebaseAnalytics?.reportError(error)
 
-        // TODO: figure out how to report errors to an umami/plausible-compatible destination.
+        // TODO: figure out how to report errors to an Umami-compatible destination.
     }
 
     @objc public func reportEvent(pageURL: String, label: String, value: Any?) {
         firebaseAnalytics?.reportEvent(label: label, value: value)
-        // Independent Tasks so a stall in one backend can't delay the other.
-        Task { await plausibleAnalytics?.reportEvent(pageURL: pageURL, label: label, value: value) }
         Task { await umami?.reportEvent(pageURL: pageURL, label: label, value: value) }
     }
 
     @objc public func reportSearchQuery(_ query: String) {
         firebaseAnalytics?.reportSearchQuery(query)
 
-        Task { await plausibleAnalytics?.reportSearchQuery(query) }
         Task { await umami?.reportSearchQuery(query) }
     }
 
     @objc public func reportStopViewed(name: String, id: String, stopDistance: String) {
         firebaseAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
 
-        Task { await plausibleAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance) }
         Task { await umami?.reportStopViewed(name: name, id: id, stopDistance: stopDistance) }
     }
 
     @objc public func reportSetRegion(_ name: String) {
         setUserProperty(key: "RegionName", value: name)
-        // n/a for Plausible since it'll be constrained on a per-region basis by the server URL.
-        // n/a for Umami (no per-region forwarding needed).
     }
 
     @objc public func setReportingEnabled(_ enabled: Bool) {
         userDefaults.set(enabled, forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey)
         firebaseAnalytics?.setReportingEnabled(enabled)
-        if !enabled {
-            plausibleAnalytics = nil
+        if enabled, let currentRegion {
+            // Settings saves as the switch flips, so off-then-on in one visit is
+            // normal; without this Umami stayed off until relaunch.
+            updateServer(region: currentRegion)
+            // The rebuilt Umami starts with empty default properties; restore the
+            // region name that `Application` set on the old instance after `updateServer`.
+            reportSetRegion(currentRegion.name)
+        } else if !enabled {
             umami = nil
         }
     }
@@ -128,7 +128,6 @@ import FirebaseCrashlytics
 
     @objc public func setUserProperty(key: String, value: String?) {
         firebaseAnalytics?.setUserProperty(key: key, value: value)
-        plausibleAnalytics?.setUserProperty(key: key, value: value)
         umami?.setUserProperty(key: key, value: value)
     }
 }

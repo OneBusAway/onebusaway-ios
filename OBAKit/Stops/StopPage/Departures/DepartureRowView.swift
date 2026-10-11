@@ -38,6 +38,7 @@ struct DepartureRowView: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.obaFormatters) private var formatters
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @ScaledMetric(relativeTo: .body) private var alarmCircleSize: CGFloat = 34
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
     @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
@@ -91,7 +92,9 @@ struct DepartureRowView: View {
                 }
             }
         }
-        .opacity(dimmed ? 0.55 : 1.0)
+        // Past rows fade to say "gone", but at 0.55 their secondary text falls
+        // well under 4.5:1. Increase Contrast keeps the cue and the legibility.
+        .opacity(dimmed ? (colorSchemeContrast == .increased ? 0.8 : 0.55) : 1.0)
         .overlay(alignment: .leading) {
             if isTransferHighlight {
                 RoundedRectangle(cornerRadius: 2)
@@ -158,7 +161,7 @@ struct DepartureRowView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(hasAlarm ? Color.white : Color.secondary)
                 .frame(width: alarmCircleSize, height: alarmCircleSize)
-                .background(hasAlarm ? Color(uiColor: ThemeColors.shared.departureOnTime) : Color.clear, in: Circle())
+                .background(hasAlarm ? Color(uiColor: ThemeColors.shared.departureOnTimeFill) : Color.clear, in: Circle())
                 .overlay(Circle().strokeBorder(Color(uiColor: .separator), lineWidth: hasAlarm ? 0 : 1.5))
                 // Use onTapGesture, not Button: inner gestures beat the outer
                 // .onTapGesture(perform: onTap) on the row VStack, so tapping the

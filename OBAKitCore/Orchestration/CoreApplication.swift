@@ -198,6 +198,65 @@ open class CoreApplication: NSObject,
             APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier, surveyBaseURL: region.sidecarBaseURL),
             dataLoader: config.dataLoader
         )
+        refreshFormattersTimeZone()
+    }
+
+    /// Applies or clears region-zone clock display from the Settings toggle.
+    /// Default is off (#1102 / #332): device zone, no badge.
+    public func setShowRegionTimeZone(_ enabled: Bool) {
+        userDefaultsStore.showRegionTimeZone = enabled
+        refreshFormattersTimeZone()
+    }
+
+    /// Points `formatters` at the region's dominant agency zone when the rider
+    /// has opted in; otherwise keeps (or resets to) the device zone.
+    ///
+    /// Opt-in always resets to the device zone first. A failed / empty
+    /// agencies-with-coverage lookup must not leave the *previous* region's
+    /// zone stuck (and mis-badged) for the rest of the session.
+    private func refreshFormattersTimeZone() {
+        guard userDefaultsStore.showRegionTimeZone else {
+            formatters.timeZone = .autoupdatingCurrent
+            return
+        }
+
+        // Reset before the async lookup so a nil/failed resolution can't leave
+        // the prior region's zone in place.
+        formatters.timeZone = .autoupdatingCurrent
+
+        // Capture the region this lookup is for. A later region change must not
+        // let this Task write A's zone after B has already taken over.
+        let regionIDAtStart = currentRegion?.regionIdentifier
+
+        Task {
+            // Setting may have been turned off while this request was in flight.
+            guard self.userDefaultsStore.showRegionTimeZone else {
+                self.formatters.timeZone = .autoupdatingCurrent
+                return
+            }
+            guard self.currentRegion?.regionIdentifier == regionIDAtStart else {
+                return
+            }
+            guard let apiService else { return }
+            do {
+                let agencies = try await apiService.getAgenciesWithCoverage().list
+                guard self.userDefaultsStore.showRegionTimeZone else {
+                    self.formatters.timeZone = .autoupdatingCurrent
+                    return
+                }
+                guard self.currentRegion?.regionIdentifier == regionIDAtStart else {
+                    return
+                }
+                let identifiers = agencies.compactMap { $0.agency?.timeZone }
+                if let timeZone = TimeZone.preferredScheduleTimeZone(identifiers: identifiers) {
+                    self.formatters.timeZone = timeZone
+                }
+                // else: leave the device-zone reset above in place
+            } catch {
+                Logger.info("Unable to resolve region time zone from agencies-with-coverage: \(error)")
+                // Already reset to `.autoupdatingCurrent` above; keep it.
+            }
+        }
     }
 
     // MARK: - Obaco
@@ -213,6 +272,12 @@ open class CoreApplication: NSObject,
 
     public let obacoServiceUpdatedNotification = NSNotification.Name("ObacoServiceUpdatedNotification")
 
+    // ActivityKit is iOS/iPadOS only, and `import ActivityKit` fails watchOS
+    // dependency scanning outright, so `LiveActivityRegistry` and
+    // `LiveActivityTracker` are not compiled for the watch. These are stored
+    // lazy properties and cannot move to an extension — hence the one
+    // conditional this file carries.
+    #if canImport(ActivityKit)
     // MARK: - Live Activities
 
     /// Owns the Live Activity push subscriptions registered with OBACloud: registration,
@@ -230,6 +295,7 @@ open class CoreApplication: NSObject,
     /// per-screen on purpose: a Live Activity outlives the view controller that started it, and
     /// so must the observer that unregisters it. See `LiveActivityTracker`.
     public private(set) lazy var liveActivityTracker = LiveActivityTracker(registry: liveActivityRegistry)
+    #endif
 
     /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
     /// This must be called when the region changes.
@@ -245,19 +311,10 @@ open class CoreApplication: NSObject,
 
     // MARK: - UUID
 
-    private let userUUIDDefaultsKey = "userUUIDDefaultsKey"
-
     /// A unique (but not personally-identifying) identifier for the current user that is used
     /// to correlate crash logs and other events to a single person.
     @objc public var userUUID: String {
-        if let uuid = userDefaults.object(forKey: userUUIDDefaultsKey) as? String {
-            return uuid
-        }
-        else {
-            let uuid = UUID().uuidString
-            userDefaults.set(uuid, forKey: userUUIDDefaultsKey)
-            return uuid
-        }
+        UserUUID.value(in: userDefaults)
     }
 
     // MARK: - Regions Service
@@ -289,7 +346,7 @@ open class CoreApplication: NSObject,
     // MARK: - Migration
 
     public func migrate(userID: String) {
-        userDefaults.set(userID, forKey: userUUIDDefaultsKey)
+        userDefaults.set(userID, forKey: UserUUID.defaultsKey)
     }
 
     public func migrate(region: MigrationRegion) {

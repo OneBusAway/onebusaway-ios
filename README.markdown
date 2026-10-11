@@ -22,6 +22,7 @@ You can generate the project without opening Xcode first:
 brew install xcodegen          # required to generate OBAKit.xcodeproj
 ./scripts/setup                # checks deps, runs generate_project for OneBusAway
 # or: ./scripts/setup KiedyBus
+# add --no-watch to scripts/generate_project for iOS-only builds without the watchOS platform
 open OBAKit.xcodeproj
 ```
 

@@ -9,7 +9,6 @@
 
 import Foundation
 import Testing
-import BLTNBoard
 @testable import OBAKit
 
 /// Regression tests for the `BulletinOverlayWindow` handler-management fix from

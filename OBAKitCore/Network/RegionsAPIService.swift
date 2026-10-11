@@ -32,3 +32,32 @@ public class RegionsAPIService: APIService {
         )
     }
 }
+
+extension RegionsAPIService {
+    /// Builds a regions-list service without a `CoreApplication`.
+    ///
+    /// The watch app's counterpart to `RESTAPIService.standalone`. It exists
+    /// because `APIServiceConfiguration`'s initializers are internal, so no
+    /// host outside this module can otherwise construct one. Mirrors
+    /// `CoreApplication.regionsAPIService` (`regionIdentifier: nil`). The
+    /// regions file path is a per-call argument of `getRegions(apiPath:)`, not
+    /// part of the configuration.
+    public static func standalone(
+        baseURL: URL,
+        apiKey: String,
+        appVersion: String,
+        uuid: String,
+        dataLoader: URLDataLoader = URLSession.shared
+    ) -> RegionsAPIService {
+        RegionsAPIService(
+            APIServiceConfiguration(
+                baseURL: baseURL,
+                apiKey: apiKey,
+                uuid: uuid,
+                appVersion: appVersion,
+                regionIdentifier: nil
+            ),
+            dataLoader: dataLoader
+        )
+    }
+}

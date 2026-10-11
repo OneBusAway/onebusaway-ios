@@ -98,7 +98,17 @@ final class WeatherFormatterTests {
 
     @Test func `Format wind speed metric locale uses kmh`() {
         let result = WeatherFormatter.formatWindSpeed(10, locale: Locale(identifier: "fr_FR"))
-        #expect(result == "10 km/h")
+        // French separates number and unit with a narrow no-break space, not ASCII.
+        #expect(result == "10\u{202F}km/h")
+    }
+
+    @Test func `Format wind speed uses the locale's unit symbol and digits`() {
+        let russian = WeatherFormatter.formatWindSpeed(10, locale: Locale(identifier: "ru_RU"))
+        #expect(russian.contains("км/ч"))
+
+        let arabic = WeatherFormatter.formatWindSpeed(10, locale: Locale(identifier: "ar_SA"))
+        #expect(arabic.contains("١٠"))
+        #expect(!arabic.contains("km/h"))
     }
 
     // MARK: - formatTime

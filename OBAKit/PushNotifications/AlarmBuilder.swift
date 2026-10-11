@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import BLTNBoard
 import OBAKitCore
 
 /// The `AlarmBuilder` shows the loading HUD itself when it begins its request;
@@ -88,21 +87,27 @@ class AlarmBuilder: NSObject {
 
     // MARK: - Public Methods
 
+    /// A no-op while the bulletin is already showing; `BLTNItemManager` enforces that.
     public func showBulletin(above viewController: UIViewController) {
-        guard !bulletinManager.isShowingBulletin else {
-            return
-        }
-
         bulletinManager.showBulletin(above: viewController)
     }
 
     // MARK: - Alarm Creation
+
+    /// `true` from the moment a request starts until it finishes and the card starts dismissing.
+    /// Add Alarm stays live while the request is in flight, so without this a
+    /// second tap posted a duplicate alarm.
+    private var isCreatingAlarm = false
+
     private func createAlarm(minutes: Int) async {
         guard
+            !isCreatingAlarm,
             let modelService = application.obacoService,
             let pushService = application.pushService,
             let currentRegion = application.currentRegion
         else { return }
+
+        isCreatingAlarm = true
 
         let arrivalDeparture = self.arrivalDeparture
 
@@ -122,6 +127,7 @@ class AlarmBuilder: NSObject {
                     ProgressHUD.dismiss()
                 }
                 self.bulletinManager.dismissBulletin(animated: true)
+                self.isCreatingAlarm = false
             }
         }
 
@@ -164,12 +170,6 @@ class AlarmTimePickerItem: ThemedBulletinPage {
     /// The current value of the "Track on Lock Screen" toggle.
     var trackOnLockScreen: Bool { userDefaults.bool(forKey: Self.trackOnLockScreenKey) }
 
-    // Required by ThemedBulletinPage's initializer contract (see its init(title:)).
-    @available(*, unavailable)
-    nonisolated override init(title: String) {
-        fatalError("Use init(arrivalDeparture:initialMinutes:userDefaults:)")
-    }
-
     init(arrivalDeparture: ArrivalDeparture, initialMinutes: Int, userDefaults: UserDefaults) {
         self.arrivalDeparture = arrivalDeparture
         self.userDefaults = userDefaults
@@ -185,13 +185,9 @@ class AlarmTimePickerItem: ThemedBulletinPage {
         actionButtonTitle = Strings.addAlarm
     }
 
-    // nonisolated to match BLTNPageItem's nonisolated declaration; BLTNBoard only
-    // calls this while presenting UI on the main thread.
-    nonisolated override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
-        MainActor.assumeIsolated {
-            timePickerManager.prepareForDisplay()
-            return [timePickerManager.pickerView, makeTrackOnLockScreenRow()]
-        }
+    override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
+        timePickerManager.prepareForDisplay()
+        return [timePickerManager.pickerView, makeTrackOnLockScreenRow()]
     }
 
     private func makeTrackOnLockScreenRow() -> UIView {

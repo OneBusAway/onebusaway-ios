@@ -39,6 +39,32 @@ struct TripCountdownFormatStyleTests {
         #expect(style.format(now) == formatters.shortFormattedTime(untilMinutes: 8, temporalState: .future))
     }
 
+    // MARK: - Spoken form
+
+    private var spoken: TripCountdownFormatStyle { .spoken(departure: departure) }
+
+    /// VoiceOver reads the visual "8m" as "8 meters"; the spoken form spells
+    /// the unit out, matching what the Stop page speaks.
+    @Test func `Spoken form spells out minutes`() {
+        #expect(spoken.format(departure.addingTimeInterval(-510)) == "8 minutes")
+    }
+
+    @Test func `Spoken form says one minute in the singular`() {
+        #expect(spoken.format(departure.addingTimeInterval(-90)) == "One minute")
+    }
+
+    @Test func `Spoken form says now under a minute`() {
+        #expect(spoken.format(departure.addingTimeInterval(-30)) == "NOW")
+    }
+
+    /// The spoken label must flip on the same instants as the visible text, or
+    /// a focused element says a different number than the screen shows.
+    @Test func `Spoken form ticks on the same boundaries as the visual form`() {
+        let now = departure.addingTimeInterval(-510)
+        #expect(spoken.discreteInput(after: now) == style.discreteInput(after: now))
+        #expect(spoken.discreteInput(before: now) == style.discreteInput(before: now))
+    }
+
     @Test func `Under a minute formats as NOW`() {
         #expect(style.format(departure.addingTimeInterval(-30)) == "NOW")
         #expect(style.format(departure) == "NOW")

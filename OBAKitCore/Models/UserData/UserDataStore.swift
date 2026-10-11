@@ -50,6 +50,11 @@ public protocol UserDataStore: NSObjectProtocol {
     /// riders keep current behavior; Settings > Arrival & Departure Display can turn it off.
     var showTransferArrivalBanner: Bool { get set }
 
+    /// Whether arrival/departure clock times use the transit region's time
+    /// zone (with a short offset badge when the phone differs). Default
+    /// `false` — opt-in per #1102 / #332; Settings > Arrival & Departure Display.
+    var showRegionTimeZone: Bool { get set }
+
     // MARK: - Bookmark Groups
 
     /// Retrieves a list of `BookmarkGroup` objects.
@@ -119,6 +124,20 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - isPinned: The new pinned state.
     ///   - bookmark: The `Bookmark` to update.
     func setPinned(_ isPinned: Bool, for bookmark: Bookmark)
+
+    /// Saves `bookmark`'s edited fields (its name, favorite flag and so on) over
+    /// the stored copy with the same `id`, without moving it.
+    ///
+    /// Use this rather than `add(_:to:)` for an edit that doesn't change the
+    /// bookmark's group: `add` re-appends it and renumbers `sortOrder`, moving it
+    /// to the bottom of its group (see `setPinned(_:for:)`). The stored
+    /// `groupID` and `sortOrder` win, and are copied back onto `bookmark`; every
+    /// other field is taken from `bookmark`, so pass a copy fetched just before
+    /// editing (`findBookmark(id:)`), or a stale one will undo newer changes
+    /// such as `setPinned`.
+    ///
+    /// Posts `.bookmarksDidChange`. No-op if `bookmark` isn't in the store.
+    func update(_ bookmark: Bookmark)
 
     /// Deletes the specified `Bookmark` from the `UserDataStore`.
     /// - Parameter bookmark: The `Bookmark` to delete.
@@ -333,6 +352,19 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The source of the walking speed value (manual preset or HealthKit).
     var walkingSpeedSource: WalkingSpeedSource { get set }
 
+    // MARK: - Bike Mode
+
+    /// Whether Bike Mode is enabled. When `true`, walk-time-to-stop calculations
+    /// app-wide should use `bikeSpeedMetersPerSecond` instead of `walkingSpeedMetersPerSecond`.
+    var bikeModeEnabled: Bool { get set }
+
+    /// The user's effective cycling speed in meters per second (HealthKit-synced value,
+    /// or `BikeSpeed.defaultMetersPerSecond` when no sync has ever succeeded).
+    var bikeSpeedMetersPerSecond: Double { get set }
+
+    /// The source of the bike speed value (fixed fallback constant or HealthKit).
+    var bikeSpeedSource: BikeSpeedSource { get set }
+
     // MARK: - Alarm Lead Time
 
     /// The alarm lead time in minutes for one-tap alarms on the Stop page.
@@ -348,6 +380,16 @@ extension UserDataStore {
     /// `TransferContext` is a Swift struct and cannot appear in an ObjC requirement.
     public func displayedTransferContext(_ context: TransferContext?) -> TransferContext? {
         showTransferArrivalBanner ? context : nil
+    }
+}
+
+public extension UserDataStore {
+    /// The velocity (m/s) that all walk-time-to-stop calculations should use.
+    /// Bike Mode, when enabled, takes priority over the walking speed. This is the
+    /// single place call sites should read from instead of branching on
+    /// `bikeModeEnabled` themselves.
+    var effectiveTravelVelocityMetersPerSecond: Double {
+        bikeModeEnabled ? bikeSpeedMetersPerSecond : walkingSpeedMetersPerSecond
     }
 }
 
@@ -443,10 +485,14 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let alwaysShowSurveysOnStops = "UserDataStore.alwaysShowSurveysOnStops"
         static let walkingSpeedMetersPerSecond = "UserDataStore.walkingSpeedMetersPerSecond"
         static let walkingSpeedSource = "UserDataStore.walkingSpeedSource"
+        static let bikeModeEnabled = "UserDataStore.bikeModeEnabled"
+        static let bikeSpeedMetersPerSecond = "UserDataStore.bikeSpeedMetersPerSecond"
+        static let bikeSpeedSource = "UserDataStore.bikeSpeedSource"
         static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
         static let stopUIReducedColors = UserDefaultsStore.stopUIReducedColorsKey
         static let stopTripCompactMode = UserDefaultsStore.stopTripCompactModeKey
         static let showTransferArrivalBanner = UserDefaultsStore.showTransferArrivalBannerKey
+        static let showRegionTimeZone = UserDefaultsStore.showRegionTimeZoneKey
     }
 
     /// The defaults key backing `stopUIReducedColors`, public so the stop
@@ -465,6 +511,9 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// `@AppStorage` reader can observe it; see `stopUIReducedColorsKey`.
     public static let showTransferArrivalBannerKey = "showTransferArrivalBanner"
 
+    /// Defaults key for `showRegionTimeZone`. Dot-free; see `stopUIReducedColorsKey`.
+    public static let showRegionTimeZoneKey = "showRegionTimeZone"
+
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
@@ -473,8 +522,12 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             UserDefaultsKeys.stopUIReducedColors: false,
             UserDefaultsKeys.stopTripCompactMode: false,
             UserDefaultsKeys.showTransferArrivalBanner: true,
+            UserDefaultsKeys.showRegionTimeZone: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
-            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue
+            UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue,
+            UserDefaultsKeys.bikeModeEnabled: false,
+            UserDefaultsKeys.bikeSpeedMetersPerSecond: BikeSpeed.defaultMetersPerSecond,
+            UserDefaultsKeys.bikeSpeedSource: BikeSpeedSource.manual.rawValue
         ])
 
         // The alarm lead time used to be user-configurable; the setting has been removed
@@ -523,6 +576,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.showTransferArrivalBanner)
+        }
+    }
+
+    // MARK: - Region Time Zone Display
+
+    public var showRegionTimeZone: Bool {
+        get {
+            return userDefaults.bool(forKey: UserDefaultsKeys.showRegionTimeZone)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.showRegionTimeZone)
         }
     }
 
@@ -675,7 +739,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func setPinned(_ isPinned: Bool, for bookmark: Bookmark) {
-        var allBookmarks = bookmarks
+        let allBookmarks = bookmarks
         guard let index = allBookmarks.firstIndex(where: { $0.id == bookmark.id }) else { return }
         guard allBookmarks[index].isPinned != isPinned else { return }
 
@@ -686,6 +750,18 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         // stale to whoever kept a reference.
         bookmark.isPinned = isPinned
         bookmarks = allBookmarks
+
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
+    }
+
+    public func update(_ bookmark: Bookmark) {
+        var all = bookmarks
+        guard let index = all.firstIndex(where: { $0.id == bookmark.id }) else { return }
+
+        bookmark.groupID = all[index].groupID
+        bookmark.sortOrder = all[index].sortOrder
+        all[index] = bookmark
+        bookmarks = all
 
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
@@ -1223,6 +1299,36 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.walkingSpeedSource)
+        }
+    }
+
+    // MARK: - Bike Mode
+
+    public var bikeModeEnabled: Bool {
+        get { userDefaults.bool(forKey: UserDefaultsKeys.bikeModeEnabled) }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.bikeModeEnabled) }
+    }
+
+    /// Reads clamp into BikeSpeed.validRange. Stored values below the 2.0 floor
+    /// from the earlier 1.0 range read back as 2.0 without changing the stored
+    /// value or the source. The next successful HealthKit sync overwrites them.
+    public var bikeSpeedMetersPerSecond: Double {
+        get {
+            let stored = userDefaults.double(forKey: UserDefaultsKeys.bikeSpeedMetersPerSecond)
+            return min(max(stored, BikeSpeed.validRange.lowerBound), BikeSpeed.validRange.upperBound)
+        }
+        set {
+            let clamped = min(max(newValue, BikeSpeed.validRange.lowerBound), BikeSpeed.validRange.upperBound)
+            userDefaults.set(clamped, forKey: UserDefaultsKeys.bikeSpeedMetersPerSecond)
+        }
+    }
+
+    public var bikeSpeedSource: BikeSpeedSource {
+        get {
+            BikeSpeedSource(rawValue: userDefaults.integer(forKey: UserDefaultsKeys.bikeSpeedSource)) ?? .manual
+        }
+        set {
+            userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.bikeSpeedSource)
         }
     }
 

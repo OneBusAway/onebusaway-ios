@@ -1,0 +1,14 @@
+/*
+ * App Intents strings. Hand-maintained: scripts/extract_strings (genstrings -s OBALoc)
+ * does not read LocalizedStringResource, so it neither adds nor removes these keys.
+ * Siri and Shortcuts resolve them out of process from this bundle's Metadata.appintents.
+ */
+
+/* App Intents: name of the widget action that reloads departures. */
+"refresh_widget_intent.title" = "Odśwież widget";
+
+/* App Intents: title of the bookmarks widget configuration. */
+"widget_configuration_intent.title" = "Zakładki";
+
+/* App Intents: description of the bookmarks widget configuration. */
+"widget_configuration_intent.description" = "Zobacz najbliższe odjazdy ze swoich zakładek.";

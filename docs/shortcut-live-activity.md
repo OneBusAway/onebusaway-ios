@@ -45,6 +45,21 @@ failure also shows the Track error alert.
 
 Arbitrary stop IDs that are not bookmarked are out of scope for this change.
 
+## Next Departures (#456)
+
+`NextDeparturesIntent` answers "when is my next bus?" from Siri without
+opening the app (`openAppWhenRun = false`). It takes the same `BookmarkEntity`,
+so Siri offers the same trip bookmarks as Track. With no bookmark spoken it
+uses the only one, asks which when there are several, and says so when there
+are none.
+
+`NextDeparturesLoader` fetches like `WidgetDataProvider`: region from
+`ResolvedRegionStore`, a standalone `RESTAPIService`, and
+`BookmarkArrivalsLoader` — the intent has no route to `Application`. The
+wording lives in `NextDeparturesSummary` (pure, unit tested): up to three
+departures, already-departed vehicles dropped, minute counts pluralized via
+`Localizable.stringsdict`.
+
 ## Tests
 
 `LiveActivityShortcutRequestTests` pin store / peek / expiry, that `store`

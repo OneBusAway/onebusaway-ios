@@ -311,7 +311,7 @@ public class StopViewController: UIViewController,
         }
 
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
-        let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
+        let moreMenuButton = UIBarButtonItem(title: Strings.more, image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
         let schedulesBtn = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
         schedulesBtn.accessibilityLabel = Strings.schedules
         self.schedulesButton = schedulesBtn
@@ -375,7 +375,7 @@ public class StopViewController: UIViewController,
             alertsAction.attributes = .disabled
         }
 
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+        return UIMenu(title: StopMenuTitles.file, options: .displayInline, children: [bookmarkAction, alertsAction])
     }
 
     fileprivate func locationMenu() -> UIMenu {
@@ -436,7 +436,7 @@ public class StopViewController: UIViewController,
             locationChildren.append(contentsOf: [directionsToHere, directionsFromHere])
         }
 
-        return UIMenu(title: "Location", options: .displayInline, children: locationChildren)
+        return UIMenu(title: StopMenuTitles.location, options: .displayInline, children: locationChildren)
     }
 
     fileprivate func sortMenu() -> UIMenu {
@@ -487,7 +487,7 @@ public class StopViewController: UIViewController,
             self.showReportProblem()
         }
 
-        return UIMenu(title: "Help", options: .displayInline, children: [reportButton])
+        return UIMenu(title: StopMenuTitles.help, options: .displayInline, children: [reportButton])
     }
 
     // MARK: - NSUserActivity
@@ -565,7 +565,7 @@ public class StopViewController: UIViewController,
             let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
 
             let bookmarkBrokenImage = UIImage(systemName: "bookmark.slash.fill")?.withTintColor(.systemRed)    // iOS 14+ only.
-            return .standard(.init(alignment: .center, title: "Broken Bookmark", body: message, image: bookmarkBrokenImage, buttonConfig: .none))
+            return .standard(.init(alignment: .center, title: OBALoc("stop_controller.bad_bookmark_error_title", value: "Broken Bookmark", comment: "Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop."), body: message, image: bookmarkBrokenImage, buttonConfig: .none))
         }
 
         // No bookmark to repair, but the server still has no stop at this ID. Say so
@@ -1044,12 +1044,12 @@ public class StopViewController: UIViewController,
         guard items.count > 0,
               let currentLocation = application.locationService.currentLocation,
               let stopLocation = stop?.location,
-              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation, velocity: application.userDataStore.walkingSpeedMetersPerSecond)
+              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation, velocity: application.userDataStore.effectiveTravelVelocityMetersPerSecond)
         else { return }
 
         if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, items: items) {
             let distance = currentLocation.distance(from: stopLocation)
-            let walkItem = StopArrivalWalkItem(id: "walk_item", distance: distance, timeToWalk: walkingTime)
+            let walkItem = StopArrivalWalkItem(id: "walk_item", distance: distance, timeToWalk: walkingTime, isBikeMode: application.userDataStore.bikeModeEnabled)
             items.insert(walkItem.typeErased, at: insertionIndex)
         }
     }
@@ -1110,7 +1110,7 @@ public class StopViewController: UIViewController,
         self.configureTabBarButtons()
     }
 
-    lazy var operationRetryButton = ActivityIndicatedButton.Configuration(text: "Retry", largeContentImage: Icons.refresh, showsActivityIndicatorOnTap: true) { [weak self] in
+    lazy var operationRetryButton = ActivityIndicatedButton.Configuration(text: Strings.retry, largeContentImage: Icons.refresh, showsActivityIndicatorOnTap: true) { [weak self] in
         self?.refresh()
     }
 
@@ -1405,6 +1405,13 @@ private extension StopViewController {
                     self?.listView.applyData(animated: false)
                     self?.configureTabBarButtons()
                 }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$formattersTimeZoneGeneration
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.listView.applyData(animated: false)
             }
             .store(in: &cancellables)
     }

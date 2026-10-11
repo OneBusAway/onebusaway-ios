@@ -10,6 +10,7 @@
 import Foundation
 import Testing
 import UIKit
+import OBAKitCore
 @testable import OBAKit
 
 @MainActor
@@ -29,8 +30,18 @@ final class ProgressHUDExtensionsTests {
     
     @Test func `Show success and dismiss without message`() {
         ProgressHUD.showSuccessAndDismiss(dismissAfter: 0.1)
-        
+
         // Verify the method completes without throwing
         #expect(true)
+    }
+
+    /// The HUD never takes VoiceOver focus, so its message is announced.
+    @Test func `The success announcement is the HUD's message`() {
+        #expect(ProgressHUD.successAnnouncement(for: "Bookmark added") == "Bookmark added")
+    }
+
+    @Test func `A bare checkmark is announced as Done`() {
+        #expect(ProgressHUD.successAnnouncement(for: nil) == Strings.done)
+        #expect(ProgressHUD.successAnnouncement(for: "") == Strings.done)
     }
 }

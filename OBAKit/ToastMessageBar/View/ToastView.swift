@@ -22,17 +22,22 @@ struct ToastView: View {
         .padding(16)
         .background(containerBackground)
         .padding(.horizontal, 20)
+        // One element: the icon is decoration, and the message is the toast.
+        .accessibilityElement(children: .combine)
     }
 
+    // Text styles rather than fixed point sizes, so the toast follows Dynamic
+    // Type: `.title3` and `.subheadline` are the 20pt and ~14pt of the default size.
     private var messageIcon: some View {
         Image(systemName: toast.type.icon)
             .foregroundColor(.white)
-            .font(.system(size: 20))
+            .font(.title3)
+            .accessibilityHidden(true)
     }
 
     private var messageText: some View {
         Text(toast.message)
-            .font(.system(size: 14, weight: .medium))
+            .font(.subheadline.weight(.medium))
             .foregroundColor(.white)
             .lineSpacing(3)
     }

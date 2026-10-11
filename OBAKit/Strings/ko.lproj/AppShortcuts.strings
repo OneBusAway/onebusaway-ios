@@ -1,0 +1,19 @@
+/*
+ * App Shortcuts phrases (Siri). Keys are the English phrases from OBAAppShortcuts in
+ * TrackBookmarkIntent.swift, with ${applicationName} and ${bookmark} tokens. Every
+ * value must keep ${applicationName}, or Siri drops the phrase. Hand-maintained.
+ */
+
+"Track ${bookmark} with ${applicationName}" = "${applicationName}에서 ${bookmark} 추적해 줘";
+
+"Track ${applicationName} bookmark" = "${applicationName}에서 즐겨찾기 추적해 줘";
+
+"Start ${applicationName} Live Activity" = "${applicationName}에서 실시간 액티비티 시작해 줘";
+
+"When is my next ${bookmark} in ${applicationName}" = "${applicationName}에서 다음 ${bookmark} 언제 출발해";
+
+"Next departures for ${bookmark} in ${applicationName}" = "${applicationName}에서 ${bookmark} 다음 출발 시간 알려 줘";
+
+"When is my next bus in ${applicationName}" = "${applicationName}에서 다음 버스 언제 와";
+
+"Do I have time to catch the bus with ${applicationName}" = "${applicationName}에서 버스 탈 시간 있는지 알려 줘";

@@ -47,6 +47,10 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     var stackedRoutes: [Route] { stackedEntries.map(\.route) }
     var stackedDetents: [PresentationDetent] { stackedEntries.map(\.detent) }
 
+    /// Every route on screen: the base sheet's stack from its root up, then the
+    /// stacked sheets from the bottom up.
+    var allRoutes: [Route] { routeStack + stackedRoutes }
+
     // MARK: - Init
 
     init(root: Route) {
@@ -110,6 +114,28 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     func setStackedDetent(_ detent: PresentationDetent, at depth: Int) {
         guard stackedEntries.indices.contains(depth) else { return }
         stackedEntries[depth].detent = detent
+    }
+
+    /// Moves the topmost stacked sheet whose route matches `predicate` to `detent`.
+    ///
+    /// Depth-free on purpose: a sheet's own content knows *which route it is* but has
+    /// no way to learn its index in the pile, and that content is exactly what needs to
+    /// resize itself in response to something happening inside it.
+    ///
+    /// Refuses a detent the route doesn't declare — `presentationDetents(_:selection:)`
+    /// ignores a selection outside its set, so writing one would leave stored state
+    /// disagreeing with what is on screen. Returns whether the move was applied.
+    @discardableResult
+    func setStackedDetent(
+        _ detent: PresentationDetent,
+        forTopmostRouteMatching predicate: (Route) -> Bool
+    ) -> Bool {
+        guard let depth = stackedEntries.lastIndex(where: { predicate($0.route) }),
+              stackedEntries[depth].route.detentConfiguration.detents.contains(detent) else {
+            return false
+        }
+        stackedEntries[depth].detent = detent
+        return true
     }
 
     /// Bounds-checked accessor for the stacked route at `depth`.

@@ -168,7 +168,12 @@ public class SearchManager: NSObject {
             let serviceRect = application.regionsService.currentRegion?.serviceRect
         else { return nil }
 
-        let stops = try await apiService.getStops(circularRegion: CLCircularRegion(mapRect: serviceRect), query: request.query).list
+        // Span over the region's full service rect — not a 15 km radius bubble.
+        // Same stop codes at distant agencies otherwise never reach disambiguation (#1432).
+        let stops = try await apiService.getStops(
+            region: MKCoordinateRegion(serviceRect),
+            query: request.query
+        ).list
         return SearchResponse(request: request, results: stops, boundingRegion: nil, error: nil)
     }
 

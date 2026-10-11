@@ -108,6 +108,12 @@ class Fixtures {
         return try dictionaryToModel(type: ArrivalDeparture.self, dictionary: dictionary)
     }
 
+    /// A trip carried by an arrival from `arrivalDeparture(...)`, with the same caveat:
+    /// no references are loaded, so `trip` is nil on it and only `tripID` is safe to read.
+    class func tripConvertible(stopID: String = "stop_1", tripID: String = "trip_1") throws -> TripConvertible {
+        TripConvertible(arrivalDeparture: try arrivalDeparture(stopID: stopID, tripID: tripID))
+    }
+
     class func loadAlarm(id: String = "1234567890", region: String = "1") throws -> Alarm {
         return try dictionaryToModel(type: Alarm.self, dictionary: ["url": String(format: "https://alerts.example.com/regions/%@/alarms/%@", region, id)])
     }

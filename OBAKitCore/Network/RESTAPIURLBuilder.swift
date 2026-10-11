@@ -159,6 +159,28 @@ extension RESTAPIURLBuilder {
         ])
     }
 
+    /// Creates a full URL for a stop-code search across a coordinate region.
+    ///
+    /// Uses `latSpan`/`lonSpan` instead of `radius` so the query can cover an
+    /// entire agency region. The circular overload caps radius at 15 km, which
+    /// drops same-code stops at distant agencies (#1432).
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    ///
+    /// - Parameters:
+    ///   - region: The coordinate region to search within.
+    ///   - query: A stop code / stop number query.
+    /// - Returns: An URL suitable for making a request to retrieve information.
+    public func getStops(region: MKCoordinateRegion, query: String) -> URL {
+        generateURL(path: getStopsAPIPath, params: [
+            "lat": region.center.latitude,
+            "lon": region.center.longitude,
+            "latSpan": region.span.latitudeDelta,
+            "lonSpan": region.span.longitudeDelta,
+            "query": query
+        ])
+    }
+
     /// Creates a full URL for the `getStop` API call, including query params.
     ///
     /// - API Endpoint: `/api/where/stop/{id}.json`

@@ -41,6 +41,8 @@ final class AppSheetViewFactory {
     let coordinator: SheetCoordinator<AppSheetRoute>
     let searchDisplayModel: MapSearchDisplayModel
     let stopsObserver: MapStopsObserver
+    let tripPlannerMapDisplayModel: TripPlannerMapDisplayModel
+    let tripFocusMapDisplayModel: TripFocusMapDisplayModel
 
     /// Nothing here is defaulted, on purpose, and for two separate reasons.
     ///
@@ -49,12 +51,13 @@ final class AppSheetViewFactory {
     /// it, so a call site that omitted it would build a factory whose sheet
     /// renders correctly and then silently ignores every button on it.
     ///
-    /// `coordinator`, `searchDisplayModel`, and `stopsObserver`: they must be the
-    /// same instances the hosting `MapPanelRootView` observes. A factory built with
-    /// its own private copies would push routes onto a coordinator nobody is
-    /// watching, draw into a display model nobody renders, or observe a different
-    /// stop set than the map is showing — silently, with the search sheet simply
-    /// appearing to do nothing.
+    /// `coordinator`, `searchDisplayModel`, `stopsObserver`,
+    /// `tripPlannerMapDisplayModel`, and `tripFocusMapDisplayModel`: they must be
+    /// the same instances the hosting `MapPanelRootView` observes. A factory built
+    /// with its own private copies would push routes onto a coordinator nobody is
+    /// watching, draw into a display model nobody renders, observe a different
+    /// stop set than the map is showing, or push trip state into a model nobody
+    /// renders — silently, with the sheets simply appearing to do nothing.
     init(
         application: Application,
         mapViewModel: MapViewModel,
@@ -64,7 +67,9 @@ final class AppSheetViewFactory {
         presentingController: @escaping () -> UIViewController?,
         coordinator: SheetCoordinator<AppSheetRoute>,
         searchDisplayModel: MapSearchDisplayModel,
-        stopsObserver: MapStopsObserver
+        stopsObserver: MapStopsObserver,
+        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel,
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel
     ) {
         self.application = application
         self.mapViewModel = mapViewModel
@@ -75,6 +80,8 @@ final class AppSheetViewFactory {
         self.coordinator = coordinator
         self.searchDisplayModel = searchDisplayModel
         self.stopsObserver = stopsObserver
+        self.tripPlannerMapDisplayModel = tripPlannerMapDisplayModel
+        self.tripFocusMapDisplayModel = tripFocusMapDisplayModel
     }
 
     /// Built once and shared: the search sheet and the results sheet must route a
@@ -113,7 +120,13 @@ final class AppSheetViewFactory {
         // Wiring a push for one of these routes before its view exists will
         // trip the debug assertion in `unimplementedView(for:)` — register the
         // view here before reaching for `SheetCoordinator.push(...)`.
-        case .tripPlanner, .tripDetails, .transitAlert, .settings:
+        case .tripPlanner(let request):
+            tripPlannerView(request: request)
+
+        case .tripDetails(let tripConvertible):
+            tripDetailsView(tripConvertible: tripConvertible)
+
+        case .transitAlert, .settings:
             unimplementedView(for: route)
 
         case .searchResults(let response):
@@ -193,6 +206,44 @@ final class AppSheetViewFactory {
         RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
     }
 
+    /// The SwiftUI trip page as a stacked sheet over the panel's map.
+    ///
+    /// The page hands its map focus over each time it appears, and the panel's map
+    /// draws the trip from it. The drawing ends when the route leaves the stack
+    /// (`TripFocusMapDisplayModel.clearIfOwnerAbsent(from:)`), so the page's own
+    /// `nil` is ignored.
+    ///
+    /// Both of the page's ways onward go through the coordinator. A tapped stop
+    /// opens the panel's stop sheet above the trip, as a stop does everywhere else
+    /// in the panel. Back pops the route rather than letting the page dismiss
+    /// itself from UIKit: the coordinator's stack is what holds the sheet on
+    /// screen, so it is closed there, as `StopDetailsSheetView`'s Close is.
+    func tripDetailsView(tripConvertible: TripConvertible) -> TripPageSheetHost {
+        TripPageSheetHost(
+            application: application,
+            tripConvertible: tripConvertible,
+            onMapFocusChanged: { [tripFocusMapDisplayModel, coordinator] focus in
+                // Ending the drawing is the route stack's job, not the page's.
+                guard let focus else { return }
+                let owner = AppSheetRoute.tripDetails(tripConvertible)
+                // The page reports from `viewWillAppear`, which runs while SwiftUI is
+                // still building this sheet. Publishing the map's state from inside
+                // that update is undefined behaviour, and SwiftUI says so at runtime
+                // ("Publishing changes from within view updates"), so it waits a turn.
+                Task { @MainActor in
+                    // The sheet can close during that turn. The stack change that
+                    // would have cleared the drawing has already been handled by
+                    // then, so drawing now would leave the trip on the map, and the
+                    // ambient stops hidden, until the next one.
+                    guard coordinator.allRoutes.contains(owner) else { return }
+                    tripFocusMapDisplayModel.show(focus: focus, owner: owner)
+                }
+            },
+            onSelectStop: { [coordinator] stopID in coordinator.push(.stopDetails(stopID: stopID)) },
+            onClose: { [coordinator] in coordinator.pop() }
+        )
+    }
+
     private func currentTripView(route: Route) -> CurrentTripView {
         CurrentTripView(
             viewModel: CurrentTripViewModel(application: self.application, route: route),
@@ -208,15 +259,39 @@ final class AppSheetViewFactory {
     func mapSettingsView() -> MapSheetView {
         MapSheetView(model: MapSheetModel(
             mapRegionManager: self.application.mapRegionManager,
-            mapViewModel: self.mapViewModel
+            mapViewModel: self.mapViewModel,
+            onSelectRoute: { [weak self] route in
+                guard let self else { return }
+                Task { await self.showRouteOnMap(route) }
+            }
         ))
+    }
+
+    /// A route picked from the Map sheet's Routes on Map list takes the same
+    /// resolve-then-present path as a route picked from search results, so the
+    /// route sheet's Close is what restores the ambient stops here too.
+    ///
+    /// Resolved before unwinding, for the reason `SearchResultsSelection.select`
+    /// gives: a failed request leaves the rider on the list they tapped.
+    private func showRouteOnMap(_ route: Route) async {
+        let router = searchResultRouter
+        let stackAtTap = coordinator.allRoutes
+        let resolved = await router.resolve(result: route)
+        // The rider may have moved on while the route loaded; unwinding now would
+        // tear down whatever they opened instead.
+        guard !Task.isCancelled, coordinator.allRoutes == stackAtTap else { return }
+        guard let resolved else {
+            if let error = router.lastError {
+                await application.displayError(error)
+            }
+            return
+        }
+        coordinator.popToRoot()
+        router.present(resolved)
     }
 
     /// Resolves the id to a live model, so a vehicle that leaves the feed while
     /// the sheet is open reads as gone rather than as a stale row.
-    ///
-    /// `onPlanTrip` is nil: the panel has no trip planner to route into. See
-    /// the doc comment on `RentalDetailView.onPlanTrip`.
     @ViewBuilder
     func rentalDetailView(rentalID: VehicleRental.ID) -> some View {
         if let rental = layersModel.rental(withID: rentalID) {
@@ -225,11 +300,11 @@ final class AppSheetViewFactory {
                 fetchedAt: layersModel.rentalFetchedAt,
                 staleAfter: layersModel.rentalStaleAfter,
                 userLocation: layersModel.rentalUserLocation,
-                onPlanTrip: nil,
-                onOpenURL: openRentalURL
+                onPlanTrip: planTripUsingRental,
+                onOpenLink: openRentalLink
             )
         } else {
-            rentalUnavailableView
+            rentalGoneView
         }
     }
 
@@ -237,36 +312,107 @@ final class AppSheetViewFactory {
     func rentalClusterView(memberIDs: [VehicleRental.ID]) -> some View {
         let rentals = layersModel.rentals(withIDs: memberIDs)
         if rentals.isEmpty {
-            rentalUnavailableView
+            rentalClusterGoneView
         } else {
             RentalClusterListView(
                 rentals: rentals,
                 fetchedAt: layersModel.rentalFetchedAt,
                 staleAfter: layersModel.rentalStaleAfter,
                 userLocation: layersModel.rentalUserLocation,
-                onPlanTrip: nil,
-                onOpenURL: openRentalURL
+                onPlanTrip: planTripUsingRental,
+                onSelectRental: selectRentalFromCluster,
+                onOpenLink: openRentalLink
             )
         }
     }
 
-    /// Opens a rental's deep link, falling back to the operator's web URL when
-    /// no installed app claims the scheme. Shared by both rental sheets, which
-    /// must behave identically — the cluster list is just a way of reaching the
-    /// same vehicle.
-    private var openRentalURL: (URL, URL?, String?) -> Void {
-        { [weak application] url, webFallback, _ in
-            guard let application else { return }
-            application.open(url, options: [:]) { success in
-                guard !success, let webFallback else { return }
-                application.open(webFallback, options: [:], completionHandler: nil)
-            }
+    /// Drills from the cluster list into one vehicle's sheet, as a pushed route.
+    ///
+    /// The cluster list can present its own rental sheet, and does on the UIKit surface.
+    /// Here it must not: that sheet and the stacked layer's next route would be two
+    /// presentations from one view, which SwiftUI answers with "Currently, only presenting
+    /// a single sheet is supported" — leaving anything pushed from the rental sheet (the
+    /// trip planner, in particular) queued until the rider dismissed it by hand.
+    ///
+    /// Routing through the coordinator instead keeps one presentation owner, and lands on
+    /// the same `.rentalDetail` route a tap on a lone map pin opens.
+    var selectRentalFromCluster: (VehicleRental) -> Void {
+        { [coordinator, layersModel] rental in
+            layersModel.pinForOpenSheet([rental])
+            coordinator.push(.rentalDetail(rentalID: rental.id))
         }
     }
 
-    /// Shown when a rental route outlives the vehicle it points at — the feed
-    /// dropped it while the sheet was open.
-    private var rentalUnavailableView: some View {
+    /// Whether the rental sheets should offer trip planning at all: the same
+    /// predicate `TripPlannerSheetView` and the UIKit `showTripPlanner` gate on,
+    /// so the button never pushes a planner that can only say "unavailable".
+    ///
+    /// Split out from `planTripUsingRental` so the gate is testable against an
+    /// arbitrary region. Driving it through `RegionsService` instead would mean
+    /// writing a custom region to the shared on-disk regions store, which every
+    /// `Application` in the test process reads — it takes down unrelated suites.
+    static func offersTripPlanning(in region: Region?, userDataStore: UserDataStore) -> Bool {
+        RentalTripPlan.isTripPlanningAvailable(region: region, userDataStore: userDataStore)
+    }
+
+    /// Plans a trip starting *at* this vehicle, in bike-rental mode — which is
+    /// what makes OTP rent it. See `RentalTripPlan`. Mirrors
+    /// `MapViewController.rentalLayer(planTripUsing:)` on the UIKit surface,
+    /// analytics event included.
+    ///
+    /// `nil` when the region cannot open a trip planner, which hides the button
+    /// rather than disabling it — a dead primary action is worse than none.
+    var planTripUsingRental: ((VehicleRental) -> Void)? {
+        guard AppSheetViewFactory.offersTripPlanning(
+            in: application.regionsService.currentRegion,
+            userDataStore: application.userDataStore
+        ) else {
+            return nil
+        }
+
+        return { [weak application, coordinator] rental in
+            application?.analytics?.reportEvent(
+                pageURL: "app://localhost/bikeshare",
+                label: AnalyticsLabels.rentalPlanTripTapped,
+                value: rental.rentalNetwork?.networkId
+            )
+            coordinator.push(.tripPlanner(TripPlannerRequest(
+                origin: RentalTripPlan.origin(for: rental),
+                transportMode: RentalTripPlan.transportMode
+            )))
+        }
+    }
+
+    /// Opens a rental's deep link through `RentalLinkOpener`, the same opener the
+    /// UIKit map uses — analytics and App Store fallback included. Shared by both
+    /// rental sheets, which must behave identically: the cluster list is just a
+    /// way of reaching the same vehicle.
+    private var openRentalLink: (RentalDeepLink.Target, String?) -> Void {
+        { [application, presentingController] target, networkID in
+            RentalLinkOpener.live(application: application, presenter: presentingController)
+                .open(target, networkID: networkID)
+        }
+    }
+
+    /// Shown when a rental route outlives the vehicles it points at — the feed
+    /// dropped them while the sheet was open, most often because someone else
+    /// rented the vehicle. Distinct from the layer row's "Not available right
+    /// now", which is about the server; this is about the vehicle.
+    private var rentalGoneView: some View {
+        Text(OBALoc(
+            "map_layers.rental_gone",
+            value: "This vehicle is no longer available",
+            comment: "Shown on a rental vehicle's sheet when the vehicle has left the feed while the sheet was open, e.g. because someone else rented it"
+        ))
+        .font(.headline)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .padding()
+    }
+
+    /// The cluster counterpart: every member left the feed. Kept generic — the
+    /// single-vehicle message would contradict a "3 vehicles here" sheet.
+    private var rentalClusterGoneView: some View {
         Text(OBALoc(
             "map_layers.rental_unavailable",
             value: "Not available right now",
@@ -328,6 +474,14 @@ final class AppSheetViewFactory {
                 router: self.searchResultRouter
             ),
             placeholder: SearchPlaceholder.text(for: self.application)
+        )
+    }
+
+    func tripPlannerView(request: TripPlannerRequest) -> TripPlannerSheetView {
+        TripPlannerSheetView(
+            application: application,
+            request: request,
+            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel
         )
     }
 

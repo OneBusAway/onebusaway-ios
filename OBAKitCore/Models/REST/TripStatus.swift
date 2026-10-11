@@ -61,7 +61,8 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
     /// from lastUpdateTime in that it reflects the last known location update. An update from
     /// a vehicle might not contain location info, which means this field will not be updated.
     /// Will be zero if we haven't had a location update from the vehicle.
-    public let lastLocationUpdateTime: Int
+    /// `Int64`, not `Int`: this is epoch milliseconds and `Int` is 32 bits on `arm64_32` watches.
+    public let lastLocationUpdateTime: Int64
 
     /// The last known real-time update from the transit vehicle. Will be `nil` if we haven't heard anything from the vehicle.
     public let lastUpdate: Date?
@@ -169,7 +170,7 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
         lastKnownDistanceAlongTrip = try container.decodeIfPresent(Int.self, forKey: .lastKnownDistanceAlongTrip)
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
         lastKnownOrientation = try container.decodeIfPresent(CLLocationDirection.self, forKey: .lastKnownOrientation)
-        lastLocationUpdateTime = try container.decode(Int.self, forKey: .lastLocationUpdateTime)
+        lastLocationUpdateTime = try container.decode(Int64.self, forKey: .lastLocationUpdateTime)
 
         let lastUpdateTime = try container.decode(TimeInterval.self, forKey: .lastUpdate)
         lastUpdate = ModelHelpers.epochMillisecondsToDate(lastUpdateTime)

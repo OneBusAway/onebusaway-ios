@@ -24,6 +24,11 @@ import OBAKitCore
 @MainActor
 class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
 
+    /// Title of the section for bookmarks that aren't in a group.
+    static var ungroupedSectionTitle: String {
+        OBALoc("bookmarks_controller.ungrouped_bookmarks_section.title", value: "Bookmarks", comment: "The title for the bookmarks controller section that shows bookmarks that aren't in a group.")
+    }
+
     // MARK: - Published State
 
     /// Fires each time arrival data is refreshed, after `sections` has been
@@ -206,7 +211,7 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         buildSection(
             bookmarks: application.userDataStore.bookmarksInGroup(group),
             id: group?.id.uuidString ?? "unknown_group",
-            title: group?.name ?? OBALoc("bookmarks_controller.ungrouped_bookmarks_section.title", value: "Bookmarks", comment: "The title for the bookmarks controller section that shows bookmarks that aren't in a group.")
+            title: group?.name ?? Self.ungroupedSectionTitle
         )
     }
 
@@ -284,9 +289,10 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     // MARK: - BookmarkDataDelegate
 
     nonisolated func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        // BookmarkDataLoader dispatches this callback inside `await MainActor.run`, so
-        // we're already on the main actor. `assumeIsolated` confirms that without the
-        // round-trip Task hop. Traps loudly if the loader's contract ever changes.
+        // BookmarkDataLoader calls this from its `@MainActor`
+        // `settle(_:stopID:slots:batchID:)`, so we're already on the main actor.
+        // `assumeIsolated` confirms that without the round-trip Task hop. Traps
+        // loudly if the loader's contract ever changes.
         MainActor.assumeIsolated {
             rebuildSections()
             didUpdateSubject.send()

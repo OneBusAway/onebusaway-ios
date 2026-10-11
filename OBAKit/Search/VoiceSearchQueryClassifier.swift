@@ -33,19 +33,42 @@ enum VoiceSearchQueryClassifier {
         return SearchRequest(query: trimmed, type: .address)
     }
 
-    // English first; a few locale cues for the languages the app ships.
-    private static let routeCues = [
-        "route", "bus", "line",
-        "linia", "ligne", "linea", "línea",
-        "маршрут", "линия",
-        "노선", "路線", "线路", "tuyến"
-    ]
+    // A few cues per language the app ships. Matching is first-prefix-wins, so
+    // the lists are sorted longest-first: "tuyến xe buýt 7" must strip the whole
+    // phrase, not just "tuyến", and "línea" must not lose to a shorter cue.
+    private static let routeCues = longestFirst([
+        "route", "bus", "line",                         // en (also fr "bus")
+        "ruta", "línea", "linea", "autobús", "autobus", // es
+        "ligne",                                        // fr
+        "autobus",                                      // it ("linea" above)
+        "linia",                                        // pl
+        "linha", "rota", "ônibus", "onibus",            // pt-BR
+        "маршрут", "линия", "автобус",                  // ru
+        "tuyến xe buýt", "tuyến", "xe buýt",            // vi
+        "خط", "مسار", "الحافلة", "حافلة", "باص",        // ar
+        "linya",                                        // fil ("ruta", "bus" above)
+        "노선", "버스", "路線", "线路", "公交"              // ko, zh
+    ])
 
-    private static let vehicleCues = [
+    private static let vehicleCues = longestFirst([
         "vehicle",
-        "pojazd", "vehículo", "véhicule",
-        "транспорт", "车辆", "車輛", "차량"
-    ]
+        "vehículo", "véhicule", "veicolo", "pojazd",
+        "veículo", "veiculo",
+        "транспорт",
+        "phương tiện",
+        "المركبة", "مركبة",
+        "sasakyan",
+        "车辆", "車輛", "차량"
+    ])
+
+    private static func longestFirst(_ cues: [String]) -> [String] {
+        // Dedupe (es and it share "autobus") and keep the order stable for ties.
+        var seen = Set<String>()
+        return cues.filter { seen.insert($0).inserted }
+            .enumerated()
+            .sorted { ($0.element.count, $1.offset) > ($1.element.count, $0.offset) }
+            .map(\.element)
+    }
 
     /// Cue match is case-insensitive; the returned remainder keeps the original
     /// casing (so "Route Rapid Ride D" searches `Rapid Ride D`, not lowercased).

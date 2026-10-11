@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import Foundation
 
 /// A data object for viewing a stop from decoding an URL with `URLSchemeRouter`.
@@ -63,9 +64,13 @@ public struct AddRegionURLData {
 /// - addRegion: A URL type for adding a new region.
 ///   Contains an optional `AddRegionURLData` object with the necessary information for adding the region.
 ///   If the data is nil, it indicates that the URL didn't contain valid or complete data for adding a region.
+/// - viewRentals: A URL type for showing bikeshare and scooter rentals on the map around a
+///   coordinate (`onebusaway://rentals?lat=47.61&lon=-122.34`). Only produced for a valid
+///   coordinate; a malformed link decodes to nil, like an unknown host.
 public enum URLType {
     case viewStop(StopURLData)
     case addRegion(AddRegionURLData?)
+    case viewRentals(CLLocationCoordinate2D)
 }
 /// Provides support for deep linking into the app by way of a custom URL scheme.
 ///
@@ -79,6 +84,7 @@ public class URLSchemeRouter: NSObject {
 
     private let viewStopHost = "view-stop"
     private let addRegionHost = "add-region"
+    private let viewRentalsHost = "rentals"
 
     /// Creates a new URL Scheme Router.
     /// - Parameter scheme: The app bundle's `extensionURLScheme` value.
@@ -97,9 +103,43 @@ public class URLSchemeRouter: NSObject {
             return decodeViewStop(from: components)
         case addRegionHost:
             return decodeAddRegion(from: components)
+        case viewRentalsHost:
+            return decodeViewRentals(from: components)
         default:
             return nil
         }
+    }
+
+    // MARK: - Rentals URLs
+
+    /// Encodes a link that opens the map's bike and scooter layers around `coordinate`.
+    public func encodeViewRentals(coordinate: CLLocationCoordinate2D) -> URL {
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = viewRentalsHost
+        components.queryItems = [
+            URLQueryItem(name: "lat", value: String(coordinate.latitude)),
+            URLQueryItem(name: "lon", value: String(coordinate.longitude))
+        ]
+        return components.url!
+    }
+
+    /// Decodes `rentals?lat=…&lon=…`. Both are required, must parse as finite
+    /// numbers, and must lie on the globe; anything else is not a rentals link
+    /// (nil), so the app ignores it rather than flying the map to (0, 0) or to a
+    /// coordinate MapKit would reject.
+    private func decodeViewRentals(from components: URLComponents) -> URLType? {
+        guard
+            let latString = components.queryItem(named: "lat")?.value?.strip(),
+            let lonString = components.queryItem(named: "lon")?.value?.strip(),
+            let latitude = Double(latString),
+            let longitude = Double(lonString),
+            latitude.isFinite, longitude.isFinite,
+            (-90.0...90.0).contains(latitude),
+            (-180.0...180.0).contains(longitude) else {
+            return nil
+        }
+        return .viewRentals(CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
     }
 
     // MARK: - Stop URLs
