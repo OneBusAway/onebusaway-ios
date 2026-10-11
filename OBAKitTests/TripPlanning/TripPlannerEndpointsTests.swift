@@ -41,12 +41,16 @@ final class TripPlannerEndpointsTests: OBATestCase {
         #expect(location.longitude == coordinate.longitude)
     }
 
-    @Test func `Current CLLocation maps to Current Location titled OTP Location`() {
+    /// OTPKit's own entry, whose title and subtitle are localized — these were
+    /// English literals that VoiceOver read in every language.
+    @Test func `Current CLLocation maps to OTPKit's localized current location entry`() {
         let current = CLLocation(latitude: 47.61, longitude: -122.33)
         let location = TripPlannerEndpoints.location(fromCurrentLocation: current)
+        let expected = Location.currentLocation(from: current.coordinate)
 
-        #expect(location.title == "Current Location")
-        #expect(location.subTitle == "Your current location")
+        #expect(!location.title.isEmpty)
+        #expect(location.title == expected.title)
+        #expect(location.subTitle == expected.subTitle)
         #expect(location.latitude == 47.61)
         #expect(location.longitude == -122.33)
     }
@@ -68,7 +72,7 @@ final class TripPlannerEndpointsTests: OBATestCase {
 
         let origin = TripPlannerEndpoints.origin(explicit: nil, currentLocation: current)
 
-        #expect(origin?.title == "Current Location")
+        #expect(origin?.title == Location.currentLocation(from: current.coordinate).title)
         #expect(origin?.latitude == 47.61)
         #expect(origin?.longitude == -122.33)
     }

@@ -539,8 +539,34 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         // does not clear accessory views, so an `if let` here left the previous
         // vehicle's callout attached whenever the new annotation's departure failed
         // to resolve — one vehicle's callout on another vehicle's marker.
-        view.detailCalloutAccessoryView = departureProvider?(annotation.departureID)
-            .map { makeCallout(for: $0, annotation: annotation) }
+        let departure = departureProvider?(annotation.departureID)
+        view.detailCalloutAccessoryView = departure.map { makeCallout(for: $0, annotation: annotation) }
+
+        // MapKit labels an annotation view from its annotation's `title`, which
+        // `StopVehicleAnnotation` suppresses to keep the callout clean — leaving
+        // the marker silent. Set here, unconditionally, for the same reuse reason
+        // as the callout above.
+        view.accessibilityLabel = Self.accessibilityLabel(
+            routeShortName: departure?.route?.shortName,
+            headsign: departure?.tripHeadsign,
+            vehicleID: annotation.id,
+            formatters: formatters
+        )
+        view.accessibilityValue = departure.map { formatters.accessibilityValue(for: $0) }
+    }
+
+    /// "Route 8 - Seattle Center, Vehicle 1234", falling back to the vehicle
+    /// alone when the departure it serves didn't resolve.
+    ///
+    /// Built from `route?.shortName` rather than `ArrivalDeparture.routeAndHeadsign`,
+    /// which force-unwraps `route` through `routeShortName`.
+    static func accessibilityLabel(routeShortName: String?, headsign: String?, vehicleID: String, formatters: Formatters) -> String {
+        let vehicle = String(format: vehicleLabelFormat, vehicleID)
+        let routeAndHeadsign = [routeShortName, headsign]
+            .compactMap { String.nilifyBlankValue($0) }
+            .joined(separator: " - ")
+        guard !routeAndHeadsign.isEmpty else { return vehicle }
+        return [formatters.accessibilityLabelForArrivalDeparture(routeAndHeadsign: routeAndHeadsign), vehicle].joined(separator: ", ")
     }
 
     /// Relative-time formatter for "position updated 12s ago". Held statically —

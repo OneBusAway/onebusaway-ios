@@ -66,6 +66,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         super.init(rootView: TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
+            formatters: application.formatters,
             originTitle: originTitle,
             actions: TripPageActions()
         ))
@@ -155,6 +156,17 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// and with `nil` when it leaves the stack.
     var onMapFocusChanged: ((TripMapFocus?) -> Void)?
 
+    /// Set by a host whose map is behind this page: brings that map, already focused on the
+    /// trip, into view. `nil` keeps the Show on Map button off the page.
+    var onShowMap: (() -> Void)? {
+        didSet { render() }
+    }
+
+    /// Set by a host that opens stops itself: the map panel, which shows a stop as a
+    /// sheet of its own. `nil` pushes the stop through `ViewRouter`, which needs this
+    /// page to be on a navigation stack.
+    var onSelectStop: ((StopID) -> Void)?
+
     private func publishMapFocus(
         convertible: TripConvertible,
         details: TripDetails?,
@@ -201,6 +213,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
+            formatters: application.formatters,
             originTitle: originTitle,
             actions: makeActions(),
             backBehavior: backBehavior,
@@ -228,17 +241,30 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         TripPageBackBehavior.forStackDepth(navigationController?.viewControllers.count ?? 0)
     }
 
+    /// Set by a host that has to end this page's presentation itself: the map panel's
+    /// sheet, which stays up for as long as its route is on `SheetCoordinator`'s stack.
+    /// Answers Back when there is nothing to pop to. `nil` falls back to UIKit's
+    /// `dismiss`, which is right where UIKit did the presenting.
+    var onClose: (() -> Void)?
+
     /// Back, resolved against the stack rather than assumed.
     ///
     /// The page is pushed from the Stop page and presented from the map sheet,
     /// and `popViewController` only works for the first — as the root of its own
     /// navigation controller it returns nil and leaves the rider pressing a
     /// button that does nothing.
+    ///
+    /// The map panel's sheet hosts the page with no stack at all, and closes it
+    /// through `onClose`.
     private func goBack() {
         switch backBehavior {
         case .pop:
             navigationController?.popViewController(animated: true)
         case .dismiss:
+            if let onClose {
+                onClose()
+                return
+            }
             // UIKit forwards this up to whoever did the presenting, so it takes
             // the wrapping navigation controller with it. The Done button
             // `StopPageActionPresenter.presentWrappedInNavigation` installs
@@ -260,6 +286,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.onBack = { [weak self] in self?.goBack() }
         actions.onSelectStop = { [weak self] stopID in
             guard let self else { return }
+            if let onSelectStop {
+                onSelectStop(stopID)
+                return
+            }
             application.viewRouter.navigateTo(stopID: stopID, from: self)
         }
         actions.onBookmark = { [weak self] in self?.showBookmarkEditor() }
@@ -267,6 +297,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
         actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
+        actions.onShowMap = onShowMap
 
         return actions
     }

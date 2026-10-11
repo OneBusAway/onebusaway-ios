@@ -193,7 +193,7 @@ final class VehicleCalloutView: UIView {
         config.title = OBALoc("vehicle_callout.follow_this_trip", value: "Follow this trip",
                               comment: "Button in the live-vehicle map callout that opens the trip screen.")
         config.image = UIImage(
-            systemName: "chevron.right",
+            systemName: "chevron.forward",
             withConfiguration: UIImage.SymbolConfiguration(scale: .small)
         )
         config.imagePlacement = .trailing

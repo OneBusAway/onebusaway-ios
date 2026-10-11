@@ -63,7 +63,7 @@ public struct MapItemView: View {
                                         Text(OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button that shows the stops near this map item."))
                                             .bold()
                                         Spacer()
-                                        Image(systemName: "chevron.right")
+                                        Image(systemName: "chevron.forward")
                                             .font(.caption)
                                             .bold()
                                     }
@@ -276,6 +276,11 @@ public struct MapItemView: View {
             }
             .accessibilityLabel(OBALoc("map_item_controller.look_around", value: "Look Around preview. Tap to open full screen viewer", comment: "Accessibility label for Look Around preview"))
             .accessibilityAddTraits(.isButton)
+            // `.onTapGesture` is invisible to assistive tech; without a default
+            // action the preview announces "button" and activating does nothing.
+            .accessibilityAction {
+                showLookAroundViewer = true
+            }
     }
 
     /// The "About" section displaying location details such as address, phone, and URL.
@@ -283,6 +288,7 @@ public struct MapItemView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text(OBALoc("map_item_controller.about_header", value: "About", comment: "About section header"))
                 .font(.headline)
+                .accessibilityAddTraits(.isHeader)
                 .padding(.leading, 4)
 
             VStack(spacing: 0) {

@@ -189,6 +189,23 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
         showZoomWarning = show
     }
 
+    /// The rental counterpart of `showZoomWarning`: "Zoom in to see bikes and
+    /// scooters". Computed by `MapRegionManager.shouldShowRentalZoomHint`.
+    @Published private(set) var showRentalZoomHint = false
+
+    /// Same publish-only-on-change guard as `updateZoomWarning`, for the same
+    /// camera-event feedback loop.
+    func updateRentalZoomHint(_ show: Bool) {
+        guard showRentalZoomHint != show else { return }
+        showRentalZoomHint = show
+    }
+
+    /// Both zoom pills from one camera settle.
+    func updateZoomWarnings(stops: Bool, rentals: Bool) {
+        updateZoomWarning(stops)
+        updateRentalZoomHint(rentals)
+    }
+
     // MARK: - Zoom Constants
 
     /// Latitude/longitude span used when the user taps the "Zoom in for stops"
@@ -218,6 +235,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
     enum TopPillState: Equatable {
         case hidden
         case zoomInForStops
+        case zoomInForRentals
         case notDetermined
         case locationServicesOff
         /// Location services can't be changed by the user (MDM/parental
@@ -231,6 +249,7 @@ class MapViewModel: NSObject, ObservableObject, LocationServiceDelegate {
 
     var topPillState: TopPillState {
         if showZoomWarning { return .zoomInForStops }
+        if showRentalZoomHint { return .zoomInForRentals }
         switch locationAuthStatus {
         case .notDetermined:
             return .notDetermined

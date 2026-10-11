@@ -1,6 +1,10 @@
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "Показывает, где вы находитесь относительно общественного транспорта, и помогает вам проще ориентироваться.";
+/* Shown when a nearby (proximity) alert asks for Always location access. Opens with the When In Use sentence, then names the background use. */
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Показывает, где вы находитесь относительно общественного транспорта, и помогает вам проще ориентироваться. Оповещения о приближении также используют вашу геопозицию в фоновом режиме, чтобы сообщить, когда вы приближаетесь к выбранной остановке, даже если приложение закрыто.";
 
 "NSLocationWhenInUseUsageDescription" = "Показывает, где вы находитесь относительно общественного транспорта, и помогает вам проще ориентироваться.";
+
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "Показывает, где вы находитесь относительно общественного транспорта, и помогает вам проще ориентироваться.";
 
 /* Purpose string shown when the app requests HealthKit access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "Использует вашу скорость ходьбы или езды на велосипеде из приложения «Здоровье», чтобы точнее прогнозировать время прибытия.";

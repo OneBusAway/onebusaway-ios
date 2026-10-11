@@ -98,6 +98,54 @@
 			<string>لا توجد طبقات مفعّلة</string>
 		</dict>
 	</dict>
+	<key>map_controller.stop_cluster.accessibility_label_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d مواقف</string>
+			<key>many</key>
+			<string>%d موقفًا</string>
+			<key>one</key>
+			<string>موقف واحد</string>
+			<key>other</key>
+			<string>%d موقف</string>
+			<key>two</key>
+			<string>موقفان</string>
+			<key>zero</key>
+			<string>لا توجد مواقف</string>
+		</dict>
+	</dict>
+	<key>next_departures_intent.in_minutes_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>خلال %d دقائق</string>
+			<key>many</key>
+			<string>خلال %d دقيقة</string>
+			<key>one</key>
+			<string>خلال دقيقة واحدة</string>
+			<key>other</key>
+			<string>خلال %d دقيقة</string>
+			<key>two</key>
+			<string>خلال دقيقتين</string>
+			<key>zero</key>
+			<string>خلال %d دقيقة</string>
+		</dict>
+	</dict>
 	<key>rental_cluster.title_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -120,6 +168,54 @@
 			<string>مركبتان هنا</string>
 			<key>zero</key>
 			<string>لا توجد مركبات هنا</string>
+		</dict>
+	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d مركبات متاحة</string>
+			<key>many</key>
+			<string>%d مركبة متاحة</string>
+			<key>one</key>
+			<string>مركبة واحدة متاحة</string>
+			<key>other</key>
+			<string>%d مركبة متاحة</string>
+			<key>two</key>
+			<string>مركبتان متاحتان</string>
+			<key>zero</key>
+			<string>لا توجد مركبات متاحة</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d دقائق مشيًا</string>
+			<key>many</key>
+			<string>%d دقيقة مشيًا</string>
+			<key>one</key>
+			<string>دقيقة واحدة مشيًا</string>
+			<key>other</key>
+			<string>%d دقيقة مشيًا</string>
+			<key>two</key>
+			<string>دقيقتان مشيًا</string>
+			<key>zero</key>
+			<string>%d دقيقة مشيًا</string>
 		</dict>
 	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
@@ -168,6 +264,30 @@
 			<string>إظهار مغادرتين أبكر</string>
 			<key>zero</key>
 			<string>لا توجد مغادرات أبكر</string>
+		</dict>
+	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>يتم عرض %d مغادرات سابقة</string>
+			<key>many</key>
+			<string>يتم عرض %d مغادرة سابقة</string>
+			<key>one</key>
+			<string>يتم عرض مغادرة سابقة واحدة</string>
+			<key>other</key>
+			<string>يتم عرض %d مغادرة سابقة</string>
+			<key>two</key>
+			<string>يتم عرض مغادرتين سابقتين</string>
+			<key>zero</key>
+			<string>لا تُعرض أي مغادرة سابقة</string>
 		</dict>
 	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>
@@ -470,6 +590,54 @@
 			<string>دقيقتين</string>
 			<key>zero</key>
 			<string>أقل من دقيقة</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.distance_stops_a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>على بُعد %1$@، على بُعد %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%2$d مواقف</string>
+			<key>many</key>
+			<string>%2$d موقفًا</string>
+			<key>one</key>
+			<string>موقف واحد</string>
+			<key>other</key>
+			<string>%2$d موقف</string>
+			<key>two</key>
+			<string>موقفين</string>
+			<key>zero</key>
+			<string>%2$d موقف</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.distance_stops_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>على بُعد %1$@ · %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%2$d مواقف</string>
+			<key>many</key>
+			<string>%2$d موقفًا</string>
+			<key>one</key>
+			<string>موقف واحد</string>
+			<key>other</key>
+			<string>%2$d موقف</string>
+			<key>two</key>
+			<string>موقفين</string>
+			<key>zero</key>
+			<string>%2$d موقف</string>
 		</dict>
 	</dict>
 </dict>

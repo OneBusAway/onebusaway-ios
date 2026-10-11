@@ -169,6 +169,12 @@ struct BookmarksListView: View {
         .onTapGesture {
             navigation.selectBookmark(row.bookmark)
         }
+        // Both row views announce `.isButton`, but `.onTapGesture` is invisible
+        // to assistive tech — without a default action VoiceOver says "button"
+        // and activating does nothing. Same contract as `DepartureRowView`.
+        .accessibilityAction {
+            navigation.selectBookmark(row.bookmark)
+        }
         .contextMenu {
             contextMenuItems(for: row)
         } preview: {

@@ -25,7 +25,10 @@ public enum BikeSpeed {
     /// Fallback cycling speed when HealthKit is unavailable, denied, or has no samples (≈15 km/h).
     public static let defaultMetersPerSecond: Double = 4.2
 
-    /// Acceptable range for a stored bike speed, in meters per second (≈3.6–72 km/h).
-    /// Values outside this range are treated as invalid (divide-hostile or implausible).
-    public static let validRange: ClosedRange<Double> = 1.0...20.0
+    /// Acceptable range for a stored bike speed, in meters per second (≈7–72 km/h).
+    /// The lower bound sits above the fastest walking preset (1.8 m/s). It does not
+    /// cover a HealthKit synced walking speed, which WalkingSpeed.validRange allows
+    /// up to 5.0 m/s, so a bike average near 2.0 can still read slower than a fast
+    /// walk sample. Values outside this range are invalid.
+    public static let validRange: ClosedRange<Double> = 2.0...20.0
 }

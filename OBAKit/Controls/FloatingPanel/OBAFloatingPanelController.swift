@@ -61,6 +61,14 @@ class OBAFloatingPanelController: FloatingPanelController {
         return alert
     }
 
+    /// Re-reads the grabber's position value. The custom actions refresh it
+    /// themselves; a drag doesn't pass through them, so this also runs on layout,
+    /// which every move of the surface triggers.
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateAccessibilityValue()
+    }
+
     private func updateAccessibilityValue() {
         let accessibilityValue: String?
         switch self.state {
@@ -80,32 +88,46 @@ class OBAFloatingPanelController: FloatingPanelController {
     }
 
     @objc private func accessibilityActionExpandPanel() -> Bool {
-        let availableAnchors = self.layout.anchors
-
-        guard let currentAnchorIndex = availableAnchors.index(forKey: self.state),
-              let newAnchorIndex = availableAnchors.index(currentAnchorIndex, offsetBy: 1, limitedBy: availableAnchors.endIndex) else {
-            return false
-        }
-
-        self.move(to: availableAnchors[newAnchorIndex].key, animated: true) { [weak self] in
-            self?.updateAccessibilityValue()
-        }
-
-        return true
+        moveForAccessibilityAction(.expand)
     }
 
     @objc private func accessibilityActionCollapsePanel() -> Bool {
-        let availableAnchors = self.layout.anchors
+        moveForAccessibilityAction(.collapse)
+    }
 
-        guard let currentAnchorIndex = availableAnchors.index(forKey: self.state),
-              let newAnchorIndex = availableAnchors.index(currentAnchorIndex, offsetBy: -1, limitedBy: availableAnchors.endIndex) else {
+    private func moveForAccessibilityAction(_ direction: AccessibilityMoveDirection) -> Bool {
+        guard let target = Self.accessibilityTargetState(from: state, among: Array(layout.anchors.keys), direction: direction) else {
             return false
         }
 
-        self.move(to: availableAnchors[newAnchorIndex].key, animated: true) { [weak self] in
+        move(to: target, animated: true) { [weak self] in
             self?.updateAccessibilityValue()
         }
-
         return true
+    }
+
+    enum AccessibilityMoveDirection {
+        case expand, collapse
+    }
+
+    /// The neighboring position one step up or down from `current`.
+    ///
+    /// Ordered by `FloatingPanelState.order`. `layout.anchors` is a dictionary,
+    /// whose iteration order says nothing about tip/half/full; stepping through
+    /// its indices — what this used to do — moved to an arbitrary position, could
+    /// step onto `endIndex` and trap, and trapped outright on Collapse, because a
+    /// dictionary index can't be offset backwards. `.hidden` is never a target: a
+    /// VoiceOver user who collapsed a card off the screen would have no grabber
+    /// left to bring it back with.
+    static func accessibilityTargetState(
+        from current: FloatingPanelState,
+        among anchors: [FloatingPanelState],
+        direction: AccessibilityMoveDirection
+    ) -> FloatingPanelState? {
+        let ordered = anchors.filter { $0 != .hidden }.sorted { $0.order < $1.order }
+        guard let index = ordered.firstIndex(of: current) else { return nil }
+
+        let targetIndex = direction == .expand ? index + 1 : index - 1
+        return ordered.indices.contains(targetIndex) ? ordered[targetIndex] : nil
     }
 }

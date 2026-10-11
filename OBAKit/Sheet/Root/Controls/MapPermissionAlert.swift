@@ -95,7 +95,7 @@ struct MapPermissionAlert: ViewModifier {
                 value: "Precise Location Off",
                 comment: "Title of the alert shown when the user has restricted the app to reduced-accuracy location."
             )
-        case .hidden, .zoomInForStops, .locationServicesUnavailable:
+        case .hidden, .zoomInForStops, .zoomInForRentals, .locationServicesUnavailable:
             return ""
         }
     }
@@ -135,7 +135,7 @@ struct MapPermissionAlert: ViewModifier {
                 value: "Keep Precise Location Off",
                 comment: "Cancel button in the precise-location alert; dismisses without raising accuracy from reduced to full."
             ), role: .cancel) {}
-        case .hidden, .zoomInForStops, .locationServicesUnavailable:
+        case .hidden, .zoomInForStops, .zoomInForRentals, .locationServicesUnavailable:
             EmptyView()
         }
     }

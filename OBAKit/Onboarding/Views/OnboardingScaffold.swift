@@ -82,7 +82,10 @@ struct OnboardingScaffold<Content: View>: View {
                 .padding(.top, 12)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(OBALoc("onboarding.progress.accessibility_label", value: "Onboarding progress", comment: "Accessibility label for the onboarding progress bar")))
-                .accessibilityValue(Text("\(progress.index + 1)/\(progress.total)"))
+                .accessibilityValue(Text(String(
+                    format: OBALoc("onboarding.progress.accessibility_value_fmt", value: "Step %1$d of %2$d", comment: "VoiceOver value of the onboarding progress bar, e.g. Step 1 of 3. {current step} of {total steps}"),
+                    progress.index + 1, progress.total
+                )))
             }
 
             ScrollView {

@@ -107,10 +107,13 @@ struct StopPageHeaderView: View {
             if walkTime != nil || bikeTime != nil {
                 FlowLayout(hSpacing: 8, vSpacing: 8) {
                     if let walkTime {
-                        travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTime)
+                        travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTimeFill)
                             .onTapGesture(perform: onWalkingDirections)
                             .accessibilityAddTraits(.isButton)
                             .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
+                            // `.onTapGesture` is invisible to assistive tech: the
+                            // default action is what makes "button" activatable.
+                            .accessibilityAction { onWalkingDirections() }
                     }
                     if let bikeTime {
                         travelChip(bikeChipText(bikeTime), systemImage: "bicycle", background: ThemeColors.shared.blue)

@@ -54,7 +54,7 @@ public struct CountdownView: View {
                 color: color
             )
         } else {
-            Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : "\(minutes)m")
+            Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : Formatters.shortMinutesText(minutes))
         }
     }
 }

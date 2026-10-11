@@ -50,6 +50,10 @@ struct StopPageToolbar: View {
     /// Non-nil when OTP trip planning is available for the current region.
     let onDirectionsToHere: (() -> Void)?
     let onDirectionsFromHere: (() -> Void)?
+    /// Drives the nearby-alert item's title and glyph, so a rider reads whether
+    /// one is armed off the menu rather than by tapping to find out.
+    let isProximityAlertActive: Bool
+    let onToggleProximityAlert: () -> Void
     let onReportProblem: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -191,6 +195,17 @@ struct StopPageToolbar: View {
                         Label(StopTripPlannerAction.directionsFromHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond.fill")
                     }
                 }
+                // Last in the Location group, and never disabled. Its siblings
+                // are all "getting to this stop"; this is "tell me when I've got
+                // there". A rider who can't use it yet needs to be told why,
+                // which is what the tap does — a greyed row would reproduce the
+                // silent no-op the authorization step exists to prevent.
+                Button(action: onToggleProximityAlert) {
+                    Label(
+                        ProximityAlertMenuItem.title(isActive: isProximityAlertActive),
+                        systemImage: Icons.proximityAlertSymbolName(isActive: isProximityAlertActive)
+                    )
+                }
             }
 
             Section {
@@ -207,6 +222,9 @@ struct StopPageToolbar: View {
                 .modifier(FrostedCapsuleBackground())
         }
         .accessibilityLabel(Strings.more)
+        .accessibilityShowsLargeContentViewer {
+            Label(Strings.more, systemImage: "ellipsis")
+        }
     }
 
     // MARK: - Item Building
@@ -224,6 +242,11 @@ struct StopPageToolbar: View {
         .buttonStyle(FrostedActionButtonStyle())
         .accessibilityLabel(accessibilityLabel ?? title)
         .accessibilityValue(accessibilityValue ?? "")
+        // The glyph is a fixed 18pt and the caption shrinks to fit its slot, so
+        // at large text sizes a long-press shows the item enlarged instead.
+        .accessibilityShowsLargeContentViewer {
+            Label(title, systemImage: systemImage)
+        }
     }
 
     /// Icon above label, the shape the mockup calls for and the shape a tab-bar-adjacent strip
@@ -275,6 +298,7 @@ struct StopPageToolbar: View {
             onBookmark: {}, onSchedule: {},
             onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
             onDirectionsToHere: nil, onDirectionsFromHere: nil,
+            isProximityAlertActive: false, onToggleProximityAlert: {},
             onReportProblem: {}
         )
     }

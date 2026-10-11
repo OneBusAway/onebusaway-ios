@@ -10,7 +10,6 @@
 import UIKit
 import Combine
 import CoreTelephony
-import Hyperconnectivity
 import CoreLocation
 import OBAKitCore
 import SafariServices
@@ -146,7 +145,11 @@ public class Application: CoreApplication, PushServiceDelegate {
 
                     await MainActor.run {
                         if let topViewController = self.topViewController {
-                            self.viewRouter.navigateTo(arrivalDeparture: arrDep, from: topViewController)
+                            self.viewRouter.navigateTo(
+                                arrivalDeparture: arrDep,
+                                from: topViewController,
+                                destinationStopID: deepLink.destinationStopID
+                            )
                         }
                     }
                 } catch {
@@ -271,7 +274,10 @@ public class Application: CoreApplication, PushServiceDelegate {
     ///
     /// Tapping the 'Crash' button will crash the app, which is useful for testing your integration of third-party
     /// crash reporter libraries, like Crashlytics.
-    /// - Note: This method always returns `false` when running on a device. It will only ever return `true` on the Simulator.
+    /// - Note: This is not limited to the Simulator or to Debug builds. It returns `true` on
+    ///   devices and in Release builds whenever the delegate implements `performTestCrash()`,
+    ///   which both shipping app delegates do. Users reach the Settings row that calls it only
+    ///   after they turn on Debug mode.
     var shouldShowCrashButton: Bool {
         guard let delegate = delegate as? NSObject & ApplicationDelegate else {
             return false
@@ -384,10 +390,14 @@ public class Application: CoreApplication, PushServiceDelegate {
             // update their alarm index via the notification.
             self.deleteMatchingAlarm(for: pushBody)
             NotificationCenter.default.post(name: .alarmFired, object: nil)
+            self.launchRouteGate.suppress()
 
             guard let topViewController = self.topViewController else {
                 // UI not ready yet (cold launch). Navigate once the scene activates.
                 self.pendingStopID = pushBody.stopID
+                // A region left by an earlier stash would make the drain refuse
+                // this stop as belonging to somewhere else.
+                self.pendingStopRegionID = nil
                 return
             }
             self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
@@ -454,6 +464,15 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// historically did not carry a region. When set, drain refuses to open the
     /// stop against a different region's API.
     var pendingStopRegionID: Int?
+    /// The coordinate of an `onebusaway://rentals` link, held until a map can show
+    /// it — the map's counterpart of `pendingStopID`. Whichever map surface is
+    /// installed takes it with `claimPendingRentalsFocus()`, on appearing or on
+    /// `.rentalsDeepLinkPending`, so a link that arrives on a cold launch or during
+    /// onboarding is applied once the map exists and the region has loaded.
+    var pendingRentalsCoordinate: CLLocationCoordinate2D?
+    /// Lives here rather than on the map so it survives root reloads and sees every
+    /// deep link, which arrive here before (or instead of) any map appearing.
+    lazy var launchRouteGate = LaunchRouteGate(configValue: config.launchRouteID)
     private var presentDonationUIOnActive = false
     private var presentAddRegionAlertOnActive = false
     private var donationPromptID: String?
@@ -656,6 +675,10 @@ public class Application: CoreApplication, PushServiceDelegate {
             pendingStopRegionID = nil
         }
 
+        if pendingRentalsCoordinate != nil, topViewController != nil {
+            showMapForPendingRentals()
+        }
+
         if presentDonationUIOnActive, let topViewController {
             presentDonationUI(topViewController, id: donationPromptID)
             presentDonationUIOnActive = false
@@ -762,10 +785,22 @@ public class Application: CoreApplication, PushServiceDelegate {
             // of the line for something the rider actually tapped, and the
             // no-region branch that defers instead already logs its reasoning.
             Logger.warn("Stop \(destination.stopID) belongs to region \(destination.regionID) but region \(current) is selected; dropping the tap.")
+            Task { @MainActor in
+                await self.displayError(UnstructuredError(OBALoc(
+                    "application.stop_in_other_region",
+                    value: "This stop is in a different region than the one you're using, so it can't be opened.",
+                    comment: "Shown when the rider taps a link or notification for a stop that belongs to a transit region other than the currently selected one."
+                )))
+            }
             return
         }
 
-        if let topViewController, currentRegion?.regionIdentifier == destination.regionID {
+        launchRouteGate.suppress()
+
+        // Not while onboarding is the root: there is no API service to load the
+        // stop with yet, and the page would be pushed over the region picker. The
+        // drain picks the stash up once onboarding finishes.
+        if let topViewController, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
             viewRouter.navigateTo(stopID: destination.stopID, from: topViewController)
             return
         }
@@ -779,7 +814,11 @@ public class Application: CoreApplication, PushServiceDelegate {
             return false
         }
 
-        return appLinksRouter.route(userActivity: userActivity)
+        let handled = appLinksRouter.route(userActivity: userActivity)
+        if handled {
+            launchRouteGate.suppress()
+        }
+        return handled
     }
 
     @MainActor
@@ -788,20 +827,25 @@ public class Application: CoreApplication, PushServiceDelegate {
             return false
         }
 
-        let router = URLSchemeRouter(scheme: scheme)
-
-        guard let urlType = router.decodeURLType(from: url) else {
+        guard let urlType = URLSchemeRouter(scheme: scheme).decodeURLType(from: url) else {
             return false
         }
 
+        launchRouteGate.suppress()
+
         switch urlType {
         case .viewStop(let stopData):
-            guard let topViewController = self.topViewController else {
-                // UI not ready yet (cold launch). Navigate once the scene activates.
-                pendingStopID = stopData.stopID
-                return true
+            // Shares the stash, region check, and onboarding guard every other
+            // stop entry point uses, rather than navigating against whichever
+            // region happens to be selected.
+            queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
+            return true
+        case .viewRentals(let coordinate):
+            pendingRentalsCoordinate = coordinate
+            // UI not ready yet (cold launch) or onboarding up: the drain applies it.
+            if topViewController != nil, !isOnboardingRoot {
+                showMapForPendingRentals()
             }
-            viewRouter.navigateTo(stopID: stopData.stopID, from: topViewController)
             return true
         case .addRegion(let regionData):
             viewRouter.rootNavigateTo(page: .map)

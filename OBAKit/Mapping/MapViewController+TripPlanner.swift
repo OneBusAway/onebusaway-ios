@@ -22,6 +22,8 @@ import UIKit
 extension MapViewController {
 
     func showTripPlannerMapView() {
+        isShowingTripPlannerMap = true
+
         tripPlannerMapView.mapType = mapRegionManager.mapView.mapType
 
         tripPlannerMapView.isHidden = false
@@ -35,7 +37,14 @@ extension MapViewController {
     }
 
     func hideTripPlannerMapView() {
-        mapRegionManager.mapView.mapType = tripPlannerMapView.mapType
+        isShowingTripPlannerMap = false
+
+        // Only the region comes back. `mapType` used to be copied here too, which
+        // overwrote any choice the rider made during the trip: the picker writes to
+        // the main map, the trip map only received the value once on the way in,
+        // and this line then put the stale one back. Both maps now track the
+        // rider's choice while route mode is up (`bindMapType`), so the main map
+        // already holds it. See #1451.
         mapRegionManager.mapView.region = tripPlannerMapView.region
 
         mapRegionManager.mapView.isHidden = false
@@ -84,6 +93,14 @@ extension MapViewController {
 
         let mapViewProvider = MKMapViewAdapter(mapView: tripPlannerMapView)
 
+        let mapDelegate = TripPlannerMapDelegate(
+            forwardingTo: mapViewProvider,
+            locationService: application.locationService,
+            showsHeading: mapRegionManager.mapViewShowsHeading
+        )
+        mapDelegate.attach(to: tripPlannerMapView)
+        tripPlannerMapDelegate = mapDelegate
+
         let tripPlanner = TripPlanner(
             otpConfig: config,
             apiService: apiService,
@@ -97,11 +114,12 @@ extension MapViewController {
     /// Presents the trip planner.
     /// - Parameters:
     ///   - origin: Optional prefilled origin. When set, current location is not
-    ///     used as origin — stop-page "Directions from Here" relies on that.
+    ///     used as origin — stop-page "Directions from Here" and the rental sheet's
+    ///     "Plan a trip using this vehicle" both rely on that.
     ///   - destination: Optional prefilled destination.
-    ///   - viaPoint: Optional coordinate every planned trip must pass through — used by
-    ///     "Plan a trip using this bike" with the vehicle's location.
-    ///   - preselectedMode: Optional transport mode to preselect, e.g. `.transitBikeRental`.
+    ///   - viaPoint: Optional coordinate every planned trip must pass through. The
+    ///     rental sheet no longer uses it: a via point never produced a rental leg.
+    ///   - preselectedMode: Optional transport mode to preselect, e.g. `.bikeRental`.
     func showTripPlanner(
         origin: MKMapItem? = nil,
         destination: MKMapItem? = nil,
@@ -122,6 +140,11 @@ extension MapViewController {
 
         guard let tripPlanner = buildTripPlanner(region: currentRegion) else { return }
 
+        // One planner at a time. A second panel stacked on the first overwrote the
+        // references to it, so closing the top one stranded the bottom one with no
+        // way to dismiss it, and the notification observers were registered twice.
+        dismissTripPlannerController()
+
         subscribeToTripPlannerNotifications()
 
         let tripPlannerView = tripPlanner.createTripPlannerView(
@@ -140,7 +163,7 @@ extension MapViewController {
         hostingController.view.backgroundColor = .clear
 
         let semiModal = createSemiModalPanel(childController: hostingController)
-        semiModal.addPanel(toParent: self)
+        addSemiModalPanel(semiModal)
         self.semiModalTripPlannerController = semiModal
         self.tripPlanner = tripPlanner
         self.tripPlannerHostingController = hostingController
@@ -153,6 +176,7 @@ extension MapViewController {
         self.semiModalTripPlannerController = nil
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
+        self.tripPlannerMapDelegate = nil
         hideTripPlannerMapView()
 
         unsubscribeFromTripPlannerNotifications()
@@ -175,6 +199,13 @@ extension MapViewController {
     @objc func tripStarted(_ note: NSNotification) {
         showTripPlannerMapView()
 
-        semiModalTripPlannerController?.move(to: .tip, animated: true)
+        semiModalTripPlannerController?.move(to: Self.tripStartedPanelState(isVoiceOverRunning: UIAccessibility.isVoiceOverRunning), animated: true)
+    }
+
+    /// Starting a trip drops the planner to `.tip` so the route map shows. Under
+    /// VoiceOver the map is nothing to look at and `.tip` leaves barely more than
+    /// the grabber, so the itinerary the rider just chose stays readable at `.half`.
+    static func tripStartedPanelState(isVoiceOverRunning: Bool) -> FloatingPanelState {
+        isVoiceOverRunning ? .half : .tip
     }
 }

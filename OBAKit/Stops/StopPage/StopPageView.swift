@@ -71,6 +71,11 @@ struct StopPageNavigationHandler {
     let showNearbyStops: () -> Void
     /// Presents the report-a-problem flow.
     let showReportProblem: () -> Void
+    /// Sets or cancels this stop's destination proximity alert. One closure for
+    /// both directions: the item is one item, and which way it goes is read off
+    /// the view model's `proximityAlert` at the moment of the tap rather than
+    /// captured when the menu was built.
+    let toggleProximityAlert: () -> Void
     /// Dismisses the sheet (its header's close button). No-op in the pushed presentation, which
     /// leaves instead through the navigation bar's back button.
     let closeSheet: () -> Void
@@ -248,7 +253,7 @@ struct StopPageView: View {
         .stopPageLifecycle(
             viewModel: viewModel,
             userDefaults: userDefaults,
-            liveActivityStarted: viewModel.liveActivityStarted
+            transientToast: viewModel.transientToast
         )
         // Reconcile the open route card against the live feed: when a refresh
         // drops the expanded route from the list, clear the stale expansion.
@@ -304,6 +309,8 @@ struct StopPageView: View {
             onWalkingDirections: navigation.showWalkingDirections,
             onDirectionsToHere: navigation.showDirectionsToHere,
             onDirectionsFromHere: navigation.showDirectionsFromHere,
+            isProximityAlertActive: viewModel.proximityAlert != nil,
+            onToggleProximityAlert: navigation.toggleProximityAlert,
             onReportProblem: navigation.showReportProblem
         )
     }
@@ -453,6 +460,7 @@ struct StopPageView: View {
             onBookmark: {}, onSchedule: {},
             onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
             onDirectionsToHere: nil, onDirectionsFromHere: nil,
+            isProximityAlertActive: false, onToggleProximityAlert: {},
             onReportProblem: {}
         )
     }

@@ -17,7 +17,8 @@ enum StopPageLifecycleKeys {
 }
 
 /// Lifecycle every Stop page presentation shares: start and stop the view
-/// model, seed the last-used list mode, and show the Live Activity toast.
+/// model, seed the last-used list mode, and show the transient confirmation
+/// toast.
 ///
 /// `.refreshable` is deliberately absent — the pushed screen and the
 /// FloatingPanel sheet offer pull-to-refresh, the map sheet refreshes from its
@@ -25,7 +26,11 @@ enum StopPageLifecycleKeys {
 private struct StopPageLifecycleModifier: ViewModifier {
     @ObservedObject var viewModel: StopViewModel
     let userDefaults: UserDefaults
-    let liveActivityStarted: Bool
+    /// The confirmation to show, or `nil` for none. The text arrives already
+    /// localized: the occasions that raise it — a Live Activity starting, a
+    /// proximity alert set or cancelled — share this one capsule rather than
+    /// each adding a flag and a branch.
+    let transientToast: String?
 
     @State private var didSeedMode = false
 
@@ -35,19 +40,39 @@ private struct StopPageLifecycleModifier: ViewModifier {
             .onAppear(perform: seedLastUsedModeIfNeeded)
             .onDisappear { viewModel.deactivate() }
             .overlay(alignment: .bottom) {
-                if liveActivityStarted {
-                    Text(OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Toast shown when a Live Activity starts on the Lock Screen"))
+                if let transientToast {
+                    Text(transientToast)
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.white)
+                        // Inverted label colors rather than white on the tint: the
+                        // stop page tints with the brand green, which white text
+                        // clears at only 2.8:1. `label` on `systemBackground` holds
+                        // well past 4.5:1 in both appearances, for any brand.
+                        .foregroundStyle(Color(uiColor: .systemBackground))
+                        .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(.tint, in: Capsule())
+                        .background(Color(uiColor: .label), in: Capsule())
                         .padding(.bottom, 16)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.spring(duration: 0.3), value: liveActivityStarted)
+            .animation(.spring(duration: 0.3), value: transientToast)
+            .onChange(of: transientToast) { _, newValue in
+                if let newValue {
+                    Self.announce(newValue)
+                }
+            }
+    }
+
+    /// The toast confirms an action the rider just took (Track, a nearby
+    /// alert), and it appears away from VoiceOver focus, so without an
+    /// announcement a VoiceOver user never hears it. High priority so the
+    /// activation feedback for the button they pressed doesn't swallow it.
+    private static func announce(_ text: String) {
+        var announcement = AttributedString(text)
+        announcement.accessibilitySpeechAnnouncementPriority = .high
+        AccessibilityNotification.Announcement(announcement).post()
     }
 
     /// One-shot: a stop the user has never customised opens in the last mode
@@ -70,12 +95,12 @@ extension View {
     func stopPageLifecycle(
         viewModel: StopViewModel,
         userDefaults: UserDefaults,
-        liveActivityStarted: Bool
+        transientToast: String?
     ) -> some View {
         modifier(StopPageLifecycleModifier(
             viewModel: viewModel,
             userDefaults: userDefaults,
-            liveActivityStarted: liveActivityStarted
+            transientToast: transientToast
         ))
     }
 }

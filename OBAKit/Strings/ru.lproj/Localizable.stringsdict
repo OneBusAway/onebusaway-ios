@@ -82,6 +82,46 @@
 			<string>включено %2$d слоя</string>
 		</dict>
 	</dict>
+	<key>map_controller.stop_cluster.accessibility_label_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d остановки</string>
+			<key>many</key>
+			<string>%d остановок</string>
+			<key>one</key>
+			<string>%d остановка</string>
+			<key>other</key>
+			<string>%d остановки</string>
+		</dict>
+	</dict>
+	<key>next_departures_intent.in_minutes_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>через %d минуты</string>
+			<key>many</key>
+			<string>через %d минут</string>
+			<key>one</key>
+			<string>через %d минуту</string>
+			<key>other</key>
+			<string>через %d минуты</string>
+		</dict>
+	</dict>
 	<key>rental_cluster.title_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -100,6 +140,46 @@
 			<string>Здесь %d транспортное средство</string>
 			<key>other</key>
 			<string>Здесь %d транспортного средства</string>
+		</dict>
+	</dict>
+	<key>rental_annotation.vehicles_available_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Доступно: %d</string>
+			<key>many</key>
+			<string>Доступно: %d</string>
+			<key>one</key>
+			<string>Доступно: %d</string>
+			<key>other</key>
+			<string>Доступно: %d</string>
+		</dict>
+	</dict>
+	<key>rental_detail.walk_time_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d минуты пешком</string>
+			<key>many</key>
+			<string>%d минут пешком</string>
+			<key>one</key>
+			<string>%d минута пешком</string>
+			<key>other</key>
+			<string>%d минуты пешком</string>
 		</dict>
 	</dict>
 	<key>search_results_sheet.result_count_fmt</key>
@@ -140,6 +220,26 @@
 			<string>Показать %d более раннее отправление</string>
 			<key>other</key>
 			<string>Показать %d более раннего отправления</string>
+		</dict>
+	</dict>
+	<key>stop_page.a11y.past_shown_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Показано %d прошедших отправления</string>
+			<key>many</key>
+			<string>Показано %d прошедших отправлений</string>
+			<key>one</key>
+			<string>Показано %d прошедшее отправление</string>
+			<key>other</key>
+			<string>Показано %d прошедшего отправления</string>
 		</dict>
 	</dict>
 	<key>stop_page.empty.no_departures_fmt</key>
@@ -390,6 +490,46 @@
 			<string>%3$d минуту</string>
 			<key>other</key>
 			<string>%3$d минуты</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.distance_stops_a11y_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>ещё %1$@, %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%2$d остановки</string>
+			<key>many</key>
+			<string>%2$d остановок</string>
+			<key>one</key>
+			<string>%2$d остановка</string>
+			<key>other</key>
+			<string>%2$d остановки</string>
+		</dict>
+	</dict>
+	<key>trip_page.card.distance_stops_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>ещё %1$@ · %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%2$d остановки</string>
+			<key>many</key>
+			<string>%2$d остановок</string>
+			<key>one</key>
+			<string>%2$d остановка</string>
+			<key>other</key>
+			<string>%2$d остановки</string>
 		</dict>
 	</dict>
 </dict>

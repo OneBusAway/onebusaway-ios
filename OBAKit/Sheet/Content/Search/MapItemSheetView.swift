@@ -55,6 +55,10 @@ struct MapItemSheetView: View {
         // drag frame.
         .onAppear {
             guard viewModel == nil else { return }
+            let planTripHandler: (() -> Void)? = application.regionsService.currentRegion?.supportsOTP == true ? {
+                coordinator.push(.tripPlanner(TripPlannerRequest(destination: mapItem)))
+            } : nil
+
             viewModel = MapItemViewModel(
                 mapItem: mapItem,
                 application: application,
@@ -64,11 +68,9 @@ struct MapItemSheetView: View {
                     dismiss: { dismiss() }
                 ),
                 removePinHandler: nil,
-                // Map-panel mode has no classic `MapViewController` to present the
-                // OTP trip planner on. Leave `nil` so the Plan Trip button stays
-                // hidden rather than shipping a no-op; wire when the panel can
-                // host the planner (see #883 / StopPageActionPresenter).
-                planTripHandler: nil
+                // When the current region supports OTP, push the trip planner with this
+                // map item as the destination. Otherwise, `nil` hides the button entirely.
+                planTripHandler: planTripHandler
             )
         }
         .sheet(item: $website) { link in

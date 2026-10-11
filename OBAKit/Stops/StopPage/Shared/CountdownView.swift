@@ -5,6 +5,7 @@
 //
 
 import SwiftUI
+import OBAKitCore
 
 /// The "{n}m" countdown with its real-time glyph. Color encodes adherence
 /// status, never route (§4.3).
@@ -21,7 +22,7 @@ struct CountdownView: View {
     var body: some View {
         VStack(spacing: 1) {
             HStack(alignment: .top, spacing: 2) {
-                Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : "\(minutes)m")
+                Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : Formatters.shortMinutesText(minutes))
                     .font(emphasized ? .system(.title2, design: .rounded, weight: .heavy) : .system(.callout, design: .rounded, weight: .heavy))
                     .monospacedDigit()
                     .foregroundStyle(color)

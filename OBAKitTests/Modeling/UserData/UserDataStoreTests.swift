@@ -208,7 +208,7 @@ final class UserDefaultsStoreTests: OBATestCase {
     @Test func `Stop UI reduced colors set value persists under the app storage key`() {
         userDefaultsStore.stopUIReducedColors = true
         #expect(self.userDefaultsStore.stopUIReducedColors)
-        // The @AppStorage readers and the Eureka form must see the same key,
+        // The @AppStorage readers and Settings must see the same key,
         // and it must stay dot-free or KVO observation silently stops firing.
         #expect(UserDefaultsStore.stopUIReducedColorsKey == "stopUIReducedColors")
         #expect(self.userDefaultsStore.userDefaults.bool(forKey: UserDefaultsStore.stopUIReducedColorsKey))

@@ -7,24 +7,16 @@
 
 import UIKit
 import OBAKitCore
-import BLTNBoard
 
 /// A `BLTNPageItem` subclass that applies the app's brand colors to the buttons and image view.
 class ThemedBulletinPage: BLTNPageItem {
 
-    // nonisolated to match BLTNPageItem's nonisolated designated initializer; only
-    // touches BLTNBoard state and the Sendable ThemeColors.
-    //
-    // Subclasses that declare their own designated initializer must also
-    // re-declare this one as `@available(*, unavailable) nonisolated override`:
-    // the implicitly-synthesized override would otherwise get main-actor
-    // isolation and mismatch this nonisolated declaration.
-    nonisolated override init(title: String) {
+    override init(title: String) {
         super.init(title: title)
         customizeAppearance()
     }
 
-    nonisolated private func customizeAppearance() {
+    private func customizeAppearance() {
         appearance.actionButtonColor = ThemeColors.shared.brand
         appearance.alternativeButtonTitleColor = ThemeColors.shared.brand
         appearance.imageViewTintColor = ThemeColors.shared.brand
@@ -45,9 +37,6 @@ extension BLTNItemManager {
     /// pre-#1163 presentation — `keyWindowFromScene?.topViewController`. The
     /// clamping bug doesn't exist there, so the extra window path (and its
     /// singleton lifecycle) is unnecessary.
-    ///
-    /// Avoid BLTNBoard's built-in `showBulletin(in:)`: it creates a `UIWindow`
-    /// without a `windowScene`, which iOS won't display in a scene-based app.
     ///
     /// `rootItem` is the item passed to `BLTNItemManager.init(rootItem:)`; it
     /// has to be supplied here because the manager keeps its reference private,
