@@ -81,7 +81,8 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
         segment.insertSegment(withTitle: OBALoc("manage_bookmarks_groups.toggle.groups", value: "Groups", comment: "Segmented control item for Groups"), at: 0, animated: false)
         segment.insertSegment(withTitle: OBALoc("manage_bookmarks_groups.toggle.bookmarks", value: "Bookmarks", comment: "Segmented control item for bookmarks"), at: 1, animated: false)
 
-        segment.selectedSegmentIndex = 0
+        // Open on Bookmarks: deleting or renaming one is the common reason to tap Edit (#481).
+        segment.selectedSegmentIndex = 1
 
         segment.addTarget(self, action: #selector(toggleControllers), for: .valueChanged)
 

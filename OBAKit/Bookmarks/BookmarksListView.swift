@@ -18,8 +18,9 @@ struct BookmarksNavigationHandler {
     let selectBookmark: (Bookmark) -> Void
     /// Presents the bookmark editor modal (row context menu).
     let editBookmark: (Bookmark) -> Void
-    /// Deletes the bookmark, reporting analytics first (row context menu; the
-    /// menu's nested confirm step has already happened by the time this runs).
+    /// Deletes the bookmark, reporting analytics first (row swipe action, or row
+    /// context menu, whose nested confirm step has already happened by the time
+    /// this runs).
     let deleteBookmark: (Bookmark) -> Void
     /// Starts a Live Activity tracking the bookmark on the Lock Screen.
     let trackBookmark: (Bookmark) -> Void
@@ -174,6 +175,11 @@ struct BookmarksListView: View {
         // and activating does nothing. Same contract as `DepartureRowView`.
         .accessibilityAction {
             navigation.selectBookmark(row.bookmark)
+        }
+        .swipeActions(edge: .trailing) {
+            Button(Strings.delete, role: .destructive) {
+                navigation.deleteBookmark(row.bookmark)
+            }
         }
         .contextMenu {
             contextMenuItems(for: row)
