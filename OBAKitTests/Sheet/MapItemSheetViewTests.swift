@@ -43,7 +43,8 @@ final class MapItemSheetViewTests: OBATestCase {
             coordinator: SheetCoordinator(root: .home),
             searchDisplayModel: MapSearchDisplayModel(),
             stopsObserver: MapStopsObserver(application: application),
-            tripPlannerMapDisplayModel: TripPlannerMapDisplayModel()
+            tripPlannerMapDisplayModel: TripPlannerMapDisplayModel(),
+            tripFocusMapDisplayModel: TripFocusMapDisplayModel(userLocation: { nil })
         )
     }
 

@@ -202,6 +202,34 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         }
     }
 
+    /// An edit saved with `update(_:)` keeps the bookmark where it was;
+    /// `add(_:to:)` would have moved it to the bottom of its group.
+    @Test func `Update saves edits without moving the bookmark`() {
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+        let first = Bookmark(name: "First", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        let second = Bookmark(name: "Second", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        userDefaultsStore.add(first, to: group)
+        userDefaultsStore.add(second, to: group)
+
+        let edited = userDefaultsStore.findBookmark(id: first.id)!
+        edited.name = "Renamed"
+        edited.isFavorite = false
+        userDefaultsStore.update(edited)
+
+        let stored = userDefaultsStore.bookmarksInGroup(group)
+        #expect(stored.map(\.name) == ["Renamed", "Second"])
+        #expect(stored.map(\.sortOrder) == [0, 1])
+        #expect(stored.first?.isFavorite == false)
+    }
+
+    @Test func `Update ignores a bookmark that isn't stored`() {
+        let stray = Bookmark(name: "Stray", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+
+        userDefaultsStore.update(stray)
+
+        #expect(self.userDefaultsStore.bookmarks.isEmpty)
+    }
+
     /// Thread-safe flag — notification delivery isn't actor-isolated.
     private final class NotifiedFlag {
         private let lock = NSLock()

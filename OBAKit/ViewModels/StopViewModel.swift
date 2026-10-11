@@ -10,6 +10,7 @@
 import Foundation
 import Combine
 import CoreLocation
+import UIKit
 import UserNotifications
 import OBAKitCore
 
@@ -151,7 +152,7 @@ class StopViewModel: ObservableObject {
     @Published private(set) var alarmPermissionDenied = false
 
     /// The text of a transient confirmation the SwiftUI stop page shows as a
-    /// non-blocking toast, or `nil` for none. Auto-clears after 2 seconds.
+    /// non-blocking toast, or `nil` for none. Auto-clears after `toastDwell`.
     ///
     /// Carries the message rather than naming the occasion: a Live Activity
     /// starting, a proximity alert being set and the same alert being cancelled
@@ -953,6 +954,13 @@ class StopViewModel: ObservableObject {
         alarmPermissionDenied = false
     }
 
+    /// How long a toast stays up. Two seconds is a glance; under VoiceOver it
+    /// is less than the announcement takes to speak, and a Switch Control user
+    /// may need to scan to it, so assistive tech gets long enough to finish.
+    nonisolated static func toastDwell(isAssistiveTechRunning: Bool) -> Duration {
+        isAssistiveTechRunning ? .seconds(6) : .seconds(2)
+    }
+
     /// Briefly shows `text` as a non-blocking toast on the SwiftUI stop page.
     ///
     /// Called after a successful `Activity.request()`, again when a duplicate
@@ -966,9 +974,10 @@ class StopViewModel: ObservableObject {
     func signalToast(_ text: String) {
         transientToastDismissTask?.cancel()
         transientToast = text
+        let dwell = Self.toastDwell(isAssistiveTechRunning: UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning)
         transientToastDismissTask = Task { [weak self] in
             do {
-                try await Task.sleep(for: .seconds(2))
+                try await Task.sleep(for: dwell)
                 // `cancel()` only interrupts the sleep while it is still
                 // suspended. Once it has resumed, this continuation is already
                 // queued on the main actor behind the newer signal that cancelled

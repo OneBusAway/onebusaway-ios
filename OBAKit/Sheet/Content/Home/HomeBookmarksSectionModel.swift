@@ -14,8 +14,10 @@ import OBAKitCore
 /// own ordering, with live arrivals for those few only.
 ///
 /// Reuses `BookmarkDataLoader` — the same loader the Bookmarks tab uses — but
-/// scoped to the displayed bookmarks and with auto-refresh off, so this screen
-/// costs at most `limit` requests per activation and installs no polling timer.
+/// scoped to the displayed bookmarks and with the loader's own auto-refresh off:
+/// `HomeSheetView` activates this on a 30-second cadence while it is on screen
+/// and on return to the foreground, and `loadIfNeeded()` gates each activation,
+/// so this screen costs at most `limit` requests per staleness window.
 ///
 /// Subclasses `NSObject` to adopt `BookmarkDataDelegate`.
 @MainActor
@@ -171,7 +173,7 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     /// Rebuilds the row snapshots from the loader's current arrival data.
     ///
     /// `highlightedTripIDs` is always empty: the flash-on-change affordance
-    /// belongs to the polling Bookmarks tab, and nothing polls here.
+    /// belongs to the Bookmarks tab.
     ///
     /// Guarded against a no-op write for the same reason
     /// `HomeRecentStopsSectionModel.reload()` is: this runs on every activation

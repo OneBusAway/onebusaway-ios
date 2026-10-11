@@ -188,15 +188,25 @@ class StopAnnotationView: MKAnnotationView {
 
     override var accessibilityLabel: String? {
         get {
-            guard let stop = annotation as? Stop else {
-                return nil
-            }
-
-            return Formatters.formattedAccessibilityLabel(stop: stop)
+            Self.accessibilityLabel(for: annotation) ?? super.accessibilityLabel
         }
 
         set {
             super.accessibilityLabel = newValue
+        }
+    }
+
+    /// Bookmarks share this view with stops, and used to fall through to `nil` —
+    /// an unlabelled pin. They now read as the stop does, led by the bookmark's
+    /// own name when the rider gave it one.
+    static func accessibilityLabel(for annotation: MKAnnotation?) -> String? {
+        switch annotation {
+        case let stop as Stop:
+            return Formatters.formattedAccessibilityLabel(stop: stop)
+        case let bookmark as Bookmark:
+            return Formatters.formattedAccessibilityLabel(stop: bookmark.stop, bookmarkName: bookmark.name)
+        default:
+            return nil
         }
     }
 

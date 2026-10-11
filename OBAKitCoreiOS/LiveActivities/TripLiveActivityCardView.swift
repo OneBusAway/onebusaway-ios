@@ -54,13 +54,41 @@ public struct TripLiveActivityCardView: View {
                     Text(LiveActivityStaleChrome.warningText)
                 }
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.orange)
-                .accessibilityElement(children: .combine)
+                .foregroundStyle(LiveActivityStaleChrome.warningColor)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(Color(uiColor: .systemBackground))
+        // One element with a long-form label: see `accessibilitySegments`.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel(now: now))
+        // A focused card re-speaks as its countdown ticks.
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
+
+    /// Splices ticking spoken countdowns between the static segments, so the
+    /// label keeps pace with the visible minutes between pushes.
+    private func accessibilityLabel(now: Date) -> Text {
+        let segments = presenter.accessibilitySegments(
+            staticData: staticData,
+            contentState: contentState,
+            isStale: isStale,
+            now: now
+        )
+        let pieces = segments.map { segment -> Text in
+            switch segment {
+            case .text(let text):
+                Text(verbatim: text)
+            case .countdown(let departure):
+                TickingCountdownText.spokenText(departure: departure, isLuminanceReduced: isLuminanceReduced)
+            }
+        }
+        // Same ", " joiner as `TripActivityPresenter.spokenString`, which the tests pin.
+        guard let first = pieces.first else { return Text(verbatim: "") }
+        return pieces.dropFirst().reduce(first) { $0 + Text(verbatim: ", ") + $1 }
     }
 
     @ViewBuilder

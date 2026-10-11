@@ -1,5 +1,5 @@
 {
-  "originHash": "055362610a029ddb6bc01ff381cd8b16298e6c2a80627c7b598a390adc0b1e65",
+  "originHash": "741dfaa4b500f948cd3ae5470bf7cb9b69bf6fbfd0dc3fda28a2f2ceeb0028e7",
   "pins": [
     {
       "identity": "abseil-cpp-binary",
@@ -17,33 +17,6 @@
       "state": {
         "revision": "3e33dd27dd4c69bd81c7c81fe61d8ccf58846902",
         "version": "11.3.1"
-      }
-    },
-    {
-      "identity": "aviaryinsights",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/brightdigit/AviaryInsights.git",
-      "state": {
-        "revision": "2de9697acd3c0f86e54b190f151d745361c31f15",
-        "version": "1.0.1"
-      }
-    },
-    {
-      "identity": "bulletinboard",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/alexaubry/BulletinBoard.git",
-      "state": {
-        "revision": "e8ba81d25e41e5d24d6a4f404ed28443d728723b",
-        "version": "5.0.0"
-      }
-    },
-    {
-      "identity": "eureka",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/xmartlabs/Eureka.git",
-      "state": {
-        "revision": "028ef8e3191a256b8f6b8bb6b9496efcb0762dbc",
-        "version": "5.5.0"
       }
     },
     {
@@ -128,15 +101,6 @@
       }
     },
     {
-      "identity": "hyperconnectivity",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/rwbutler/Hyperconnectivity.git",
-      "state": {
-        "revision": "0503595f9ab5bfdef6c06c2d8c2712cb50213259",
-        "version": "1.2.0"
-      }
-    },
-    {
       "identity": "interop-ios-for-google-sdks",
       "kind": "remoteSourceControl",
       "location": "https://github.com/google/interop-ios-for-google-sdks.git",
@@ -152,15 +116,6 @@
       "state": {
         "revision": "a0bc79961d7be727d258d33d5a6b2f1023270ba1",
         "version": "1.22.5"
-      }
-    },
-    {
-      "identity": "marqueelabel",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/cbpowell/MarqueeLabel.git",
-      "state": {
-        "revision": "c6b4da400c00dfd5db7a4f6e4915ca531d95fc49",
-        "version": "4.5.3"
       }
     },
     {
@@ -188,42 +143,6 @@
       "state": {
         "revision": "f4a19a3c313dc2616c70bb49d29a799fb16be837",
         "version": "2.4.1"
-      }
-    },
-    {
-      "identity": "swift-collections",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/apple/swift-collections",
-      "state": {
-        "revision": "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
-        "version": "1.6.0"
-      }
-    },
-    {
-      "identity": "swift-http-types",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/apple/swift-http-types",
-      "state": {
-        "revision": "db774a277f60063a32d854f2980299caf06da041",
-        "version": "1.6.0"
-      }
-    },
-    {
-      "identity": "swift-openapi-runtime",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/apple/swift-openapi-runtime",
-      "state": {
-        "revision": "3d3a8457661daf7fb260ceeb9f0e24e5204ba5fb",
-        "version": "1.12.0"
-      }
-    },
-    {
-      "identity": "swift-openapi-urlsession",
-      "kind": "remoteSourceControl",
-      "location": "https://github.com/apple/swift-openapi-urlsession",
-      "state": {
-        "revision": "08796d36c99ad2318929bfa1d1e40f82194b65cc",
-        "version": "1.3.1"
       }
     },
     {

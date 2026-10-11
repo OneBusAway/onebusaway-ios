@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import SwiftUI
 import UIKit
 import OBAKitCore
 
@@ -18,21 +19,27 @@ protocol ManageBookmarksDelegate: NSObjectProtocol {
 /// view controllers. It provides the user with access to both sets of
 /// features through a toggle control.
 ///
-/// See `ManageGroupsViewController` and `ManageBookmarksViewController`
-/// for particulars on how the actual management works.
+/// See `ManageGroupsView` and `ManageBookmarksView` for particulars on how
+/// the actual management works.
 class ManageBookmarksAndGroupsViewController: UIViewController {
     private let application: Application
     weak var delegate: (ModalDelegate & ManageBookmarksDelegate)?
 
-    private let groupsController: ManageGroupsViewController
-    private let bookmarksController: ManageBookmarksViewController
+    private let groupsViewModel: ManageGroupsViewModel
+    private let bookmarksViewModel: ManageBookmarksViewModel
+    private let groupsController: UIViewController
+    private let bookmarksController: UIViewController
 
     init(application: Application, delegate: (ModalDelegate & ManageBookmarksDelegate)?) {
         self.application = application
         self.delegate = delegate
 
-        self.groupsController = ManageGroupsViewController(application: application)
-        self.bookmarksController = ManageBookmarksViewController(application: application)
+        let groupsViewModel = ManageGroupsViewModel(application: application)
+        let bookmarksViewModel = ManageBookmarksViewModel(application: application)
+        self.groupsViewModel = groupsViewModel
+        self.bookmarksViewModel = bookmarksViewModel
+        self.groupsController = UIHostingController(rootView: ManageGroupsView(viewModel: groupsViewModel))
+        self.bookmarksController = UIHostingController(rootView: ManageBookmarksView(viewModel: bookmarksViewModel))
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -54,8 +61,8 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        groupsController.updateModelState()
-        bookmarksController.restoreEmptyBookmarkNames()
+        groupsViewModel.commit()
+        bookmarksViewModel.restoreEmptyBookmarkNames()
         delegate?.manageBookmarksReloadData(self)
     }
 
@@ -83,7 +90,7 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
 
     @objc private func toggleControllers() {
         if controllerToggle.selectedSegmentIndex == 0 {
-            bookmarksController.restoreEmptyBookmarkNames()
+            bookmarksViewModel.restoreEmptyBookmarkNames()
             removeChildController(bookmarksController)
             addChildController(groupsController)
             groupsController.view.pinToSuperview(.edges)
@@ -91,11 +98,11 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
         else {
             // Persist group additions/deletions/renames so the bookmarks
             // tab sees the current groups when it rebuilds its sections.
-            groupsController.updateModelState()
+            groupsViewModel.commit()
+            bookmarksViewModel.reloadRows()
             removeChildController(groupsController)
             addChildController(bookmarksController)
             bookmarksController.view.pinToSuperview(.edges)
-            bookmarksController.reloadFormFromStore()
         }
     }
 }

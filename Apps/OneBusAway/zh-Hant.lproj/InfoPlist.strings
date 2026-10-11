@@ -1,5 +1,9 @@
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "查看您與大眾運輸的相對位置，協助您更輕鬆地前往目的地。";
+/* Shown when a nearby (proximity) alert asks for Always location access. Opens with the When In Use sentence, then names the background use. */
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "查看您與大眾運輸的相對位置，協助您更輕鬆地前往目的地。接近提醒還會在背景使用您的位置，在您接近所選站點時通知您，即使 App 已關閉也是如此。";
 "NSLocationWhenInUseUsageDescription" = "查看您與大眾運輸的相對位置，協助您更輕鬆地前往目的地。";
+
+/* Purpose string for the one-time precise location request (NSLocationTemporaryUsageDescriptionDictionary key "MapStatusView"). */
+"MapStatusView" = "查看您與大眾運輸的相對位置，協助您更輕鬆地前往目的地。";
 
 /* Purpose string shown when the app requests HealthKit access to your walking and cycling speed. */
 "NSHealthShareUsageDescription" = "使用「健康」App 中的步行或騎乘速度，為您提供更準確的到站時間預估。";

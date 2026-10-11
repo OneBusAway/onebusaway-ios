@@ -49,9 +49,6 @@ public class Region: NSObject, Identifiable, Codable {
     /// The base URL for sidecar server (i.e. OneBusAway.co/Obaco) REST API requests
     public let sidecarBaseURL: URL?
 
-    /// The base URL for reporting analytics to a Plausible Analytics server
-    public let plausibleAnalyticsServerURL: URL?
-
     /// Per-region Umami analytics config, or `nil` when analytics is disabled for this region.
     public let umamiAnalytics: UmamiAnalyticsConfig?
 
@@ -185,7 +182,6 @@ public class Region: NSObject, Identifiable, Codable {
         case isCustom = "custom"
         case isExperimental = "experimental"
         case sidecarBaseURL = "sidecarBaseUrl"
-        case plausibleAnalyticsServerURL = "plausibleAnalyticsServerUrl"
         case umamiAnalytics
         case OBABaseURL = "obaBaseUrl"
         case siriBaseURL = "siriBaseUrl"
@@ -255,7 +251,6 @@ public class Region: NSObject, Identifiable, Codable {
         paymentWarningTitle = nil
         paymentiOSAppStoreIdentifier = nil
         paymentiOSAppURLScheme = nil
-        plausibleAnalyticsServerURL = nil
         self.umamiAnalytics = umamiAnalytics
         siriBaseURL = nil
         stopInfoURL = nil
@@ -283,7 +278,6 @@ public class Region: NSObject, Identifiable, Codable {
         openTripPlannerURL = try? container.decodeIfPresent(URL.self, forKey: .openTripPlannerURL)
         openTripPlannerGraphQLURL = try? container.decodeIfPresent(URL.self, forKey: .openTripPlannerGraphQLURL)
         stopInfoURL = try? container.decodeIfPresent(URL.self, forKey: .stopInfoURL)
-        plausibleAnalyticsServerURL = try? container.decodeIfPresent(URL.self, forKey: .plausibleAnalyticsServerURL)
         umamiAnalytics = try? container.decodeIfPresent(UmamiAnalyticsConfig.self, forKey: .umamiAnalytics)
 
         regionBounds = try container.decode([RegionBound].self, forKey: .regionBounds)
@@ -323,7 +317,6 @@ public class Region: NSObject, Identifiable, Codable {
         try container.encode(isCustom, forKey: .isCustom)
         try container.encode(OBABaseURL, forKey: .OBABaseURL)
         try container.encode(sidecarBaseURL, forKey: .sidecarBaseURL)
-        try container.encode(plausibleAnalyticsServerURL, forKey: .plausibleAnalyticsServerURL)
         try container.encodeIfPresent(umamiAnalytics, forKey: .umamiAnalytics)
         try container.encodeIfPresent(siriBaseURL, forKey: .siriBaseURL)
         try container.encodeIfPresent(openTripPlannerURL, forKey: .openTripPlannerURL)
@@ -370,7 +363,6 @@ public class Region: NSObject, Identifiable, Codable {
             siriBaseURL == rhs.siriBaseURL &&
             openTripPlannerURL == rhs.openTripPlannerURL &&
             openTripPlannerGraphQLURL == rhs.openTripPlannerGraphQLURL &&
-            plausibleAnalyticsServerURL == rhs.plausibleAnalyticsServerURL &&
             umamiAnalytics == rhs.umamiAnalytics &&
             stopInfoURL == rhs.stopInfoURL &&
             open311Servers == rhs.open311Servers &&
@@ -403,7 +395,6 @@ public class Region: NSObject, Identifiable, Codable {
         hasher.combine(OBABaseURL)
         hasher.combine(sidecarBaseURL)
         hasher.combine(siriBaseURL)
-        hasher.combine(plausibleAnalyticsServerURL)
         hasher.combine(umamiAnalytics)
         hasher.combine(openTripPlannerURL)
         hasher.combine(openTripPlannerGraphQLURL)

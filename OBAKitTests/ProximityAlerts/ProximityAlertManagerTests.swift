@@ -481,6 +481,21 @@ final class ProximityAlertManagerTests: OBATestCase {
         #expect(self.store.proximityAlerts.count == 1)
     }
 
+    @Test func `Reconcile does not re-arm an alert that is already armed`() async {
+        // Re-arming resets Core Location's entry baseline, so a reconcile on
+        // foreground while the rider is already inside the region would swallow
+        // the entry. Counted, because `monitoredRegions` is a Set and hides it.
+        let manager = makeManager()
+        _ = await manager.createProximityAlert(for: stop)
+        locationManagerMock.resetStartMonitoringCallCount()
+
+        manager.reconcileMonitoredRegions()
+        manager.reconcileMonitoredRegions()
+
+        #expect(self.locationManagerMock.startMonitoringCallCount == 0)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+    }
+
     @Test func `Reconcile does not re enter itself while reaping`() {
         // Reaping an expired alert makes the store post `.proximityAlertsDidChange`,
         // which this manager observes synchronously — landing back inside the pass

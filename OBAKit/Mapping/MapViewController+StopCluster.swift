@@ -17,11 +17,12 @@ import UIKit
 extension MapViewController {
 
     /// Zooms in on a cluster that zooming can separate. Stops at the same spot
-    /// stay clustered at any zoom, so for those it lists the stops instead.
+    /// stay clustered at any zoom, so for those it lists the stops instead — as it
+    /// does for every cluster under VoiceOver; see `StopCluster.listsStopsOnSelection`.
     func selectStopCluster(_ cluster: MKClusterAnnotation, view: MKAnnotationView, in mapView: MKMapView) {
         let members = cluster.memberAnnotations
 
-        guard StopCluster.areCoLocated(members.map(\.coordinate)) else {
+        guard StopCluster.listsStopsOnSelection(members.map(\.coordinate), isVoiceOverRunning: UIAccessibility.isVoiceOverRunning) else {
             mapView.deselectAnnotation(cluster, animated: false)
             let enclosingRect = members.reduce(MKMapRect.null) {
                 $0.union(MKMapRect(origin: MKMapPoint($1.coordinate), size: MKMapSize(width: 0, height: 0)))
@@ -30,7 +31,7 @@ extension MapViewController {
             mapView.setVisibleMapRect(
                 enclosingRect,
                 edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset),
-                animated: true
+                animated: !UIAccessibility.isReduceMotionEnabled
             )
             return
         }
@@ -56,6 +57,8 @@ extension MapViewController {
         picker.popoverPresentationController?.sourceView = view
         picker.popoverPresentationController?.sourceRect = view.bounds
 
-        present(picker, animated: true)
+        // From the top of the presentation stack: `self` already presenting a
+        // sheet or alert makes `present` a silent no-op, and the tap does nothing.
+        topmostPresentedController.present(picker, animated: true)
     }
 }

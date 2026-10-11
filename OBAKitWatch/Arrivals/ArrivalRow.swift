@@ -51,5 +51,10 @@ struct ArrivalRow: View {
                 arrival.routeShortName, headsign, formatters.formattedTime(until: arrival)
             )
         )
+        // The countdown's color is the row's only adherence cue, and color is
+        // inaudible: say it ("2 min late", "Scheduled/not real-time").
+        .accessibilityValue(formatters.deviationLabel(for: arrival))
+        // A focused row re-speaks as its countdown ticks.
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }

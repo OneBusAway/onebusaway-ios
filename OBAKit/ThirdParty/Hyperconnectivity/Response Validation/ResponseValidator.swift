@@ -1,0 +1,20 @@
+//
+//  ResponseValidation.swift
+//  Hyperconnectivity
+//
+//  Created by Ross Butler on 08/05/2020.
+//
+
+import Foundation
+
+/// The contract for a response validator used to determine
+/// connectivity based on a network response
+nonisolated protocol ResponseValidator: Sendable {
+
+    /// Determines whether or not the response is valid
+    /// and expected for a given `URL`
+    ///
+    /// - Parameter _ response: The `URLResponse` returned by url
+    /// - Parameter data: The data in the response returned by url
+    func isResponseValid(_ response: URLResponse, data: Data) -> Bool
+}

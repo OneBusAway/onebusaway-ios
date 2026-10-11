@@ -37,10 +37,9 @@ targets:
         NSSupportsLiveActivitiesFrequentUpdates: true
         CFBundleDisplayName: OneBusAway
         CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "onebusaway", CFBundleURLSchemes: ["onebusaway"]}]
+        # fb, twitter and comgooglemaps come from Apps/Shared/app_shared.yml;
+        # XcodeGen concatenates the two lists, so repeating them here duplicated them.
         LSApplicationQueriesSchemes:
-          - fb
-          - twitter
-          - comgooglemaps
           - fb313213768708402HART
           - org.sdmts.riderapp.compassmobile.payments
           - org.sdmts.pronto

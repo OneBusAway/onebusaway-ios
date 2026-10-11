@@ -28,8 +28,20 @@ final class TripPlannerObservableWrapper: ObservableObject {
 
     private var didPrefill = false
 
-    init(tripPlanner: OTPKit.TripPlanner) {
+    /// - Parameter origin: Applied here, at construction, rather than with the rest of
+    ///   the prefill in `applyPrefillIfNeeded`. OTPKit's planner view starts its own
+    ///   `.task` that, finding no origin, awaits the device location and writes it as
+    ///   the origin — and the order of two `.task`s on one appearance is unspecified.
+    ///   Applied late, a rental origin could be overwritten by the rider's location a
+    ///   moment after it appeared. Writing it now is safe from the "publishing changes
+    ///   from within view updates" trap that `applyPrefillIfNeeded` avoids: the view
+    ///   model is brand new, and nothing observes it yet.
+    init(tripPlanner: OTPKit.TripPlanner, origin: Location? = nil) {
         self.tripPlanner = tripPlanner
+
+        if let origin {
+            _ = tripPlanner.createTripPlannerView(origin: origin, chrome: .embedded, onClose: nil)
+        }
     }
 
     /// Applies the route's prefill to the planner, exactly once.
@@ -177,7 +189,8 @@ private struct TripPlannerSheetContent: View {
             tripPlanner: Self.buildTripPlanner(
                 application: application,
                 tripPlannerMapDisplayModel: tripPlannerMapDisplayModel
-            )!
+            )!,
+            origin: Self.mapItemToLocation(request.origin)
         ))
     }
 
@@ -185,10 +198,15 @@ private struct TripPlannerSheetContent: View {
         // Built with no prefill so this pass writes nothing to the planner's view
         // model — see `applyPrefillIfNeeded`, which does the writing from `.task`.
         // Every nil argument is a documented no-op inside OTPKit.
+        //
+        // No `onDisappear` cleanup: the sheet system rebuilds content without
+        // dismissing it, and a reset there wiped a planned trip off a sheet that was
+        // still showing. `MapPanelRootView` clears the map when `.tripPlanner` leaves
+        // the route stack, and the planner's own state goes with this `@StateObject`.
         plannerWrapper.tripPlanner.createTripPlannerView(chrome: .embedded)
             .task {
                 plannerWrapper.applyPrefillIfNeeded(
-                    destination: mapItemToLocation(request.destination),
+                    destination: Self.mapItemToLocation(request.destination),
                     viaPoint: request.viaPoint,
                     transportMode: request.transportMode
                 )
@@ -209,15 +227,12 @@ private struct TripPlannerSheetContent: View {
                     return false
                 }
             }
-            .onDisappear {
-                cleanupPlanner()
-            }
     }
 
-    /// Converts an `MKMapItem` destination to OTPKit's `Location` type.
+    /// Converts an `MKMapItem` origin or destination to OTPKit's `Location` type.
     ///
     /// Follows the same pattern as `MapViewController.showTripPlanner(_:)`.
-    private func mapItemToLocation(_ mapItem: MKMapItem?) -> Location? {
+    private static func mapItemToLocation(_ mapItem: MKMapItem?) -> Location? {
         guard let mapItem else { return nil }
         return Location(
             title: mapItem.name ?? OTPLoc(
@@ -284,17 +299,5 @@ private struct TripPlannerSheetContent: View {
         )
 
         return tripPlanner
-    }
-
-    /// Cleans up planner state when the view disappears.
-    private func cleanupPlanner() {
-        // Reset the planner: clears origin, destination, via point, plan response,
-        // selected itinerary, errors, and any routes/annotations drawn on the map.
-        plannerWrapper.tripPlanner.reset()
-
-        // Clear the display model: removes any remaining routes and annotations.
-        // Task 3 may already call this when the route leaves the stack; if it does,
-        // this call is redundant but harmless.
-        tripPlannerMapDisplayModel.clear()
     }
 }

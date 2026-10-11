@@ -1088,6 +1088,14 @@ final class StopViewModelTests: OBATestCase {
         #expect(viewModel.transientToast == "Nearby alert cancelled")
     }
 
+    /// Two seconds is shorter than VoiceOver takes to speak the announcement,
+    /// so assistive tech gets a longer window; everyone else keeps the glance.
+    @Test
+    func `Toast dwells longer while assistive tech is running`() {
+        #expect(StopViewModel.toastDwell(isAssistiveTechRunning: false) == .seconds(2))
+        #expect(StopViewModel.toastDwell(isAssistiveTechRunning: true) > .seconds(2))
+    }
+
     // MARK: - Proximity Alert
 
     @Test @MainActor

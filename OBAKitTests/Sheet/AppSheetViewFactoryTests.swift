@@ -36,15 +36,16 @@ final class AppSheetViewFactoryTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    /// The coordinator, display model, stops observer, and trip planner display model are required dependencies,
-    /// so every test builds the factory the same way the app does.
+    /// The coordinator, display model, stops observer, and trip planner and trip focus display models are
+    /// required dependencies, so every test builds the factory the same way the app does.
     @MainActor
     private func makeFactory(
         application: Application,
         coordinator: SheetCoordinator<AppSheetRoute> = SheetCoordinator(root: .home),
         displayModel: MapSearchDisplayModel = MapSearchDisplayModel(),
         stopsObserver: MapStopsObserver? = nil,
-        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel? = nil
+        tripPlannerMapDisplayModel: TripPlannerMapDisplayModel? = nil,
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel? = nil
     ) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
@@ -56,7 +57,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             coordinator: coordinator,
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver ?? MapStopsObserver(application: application),
-            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel()
+            tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel(),
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil })
         )
     }
 
@@ -157,6 +159,65 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(view.placeholder == SearchPlaceholder.text(for: application))
         #expect(!view.placeholder.isEmpty)
+    }
+
+    /// The trip sheet's host gets the factory's application and the route's trip,
+    /// and both of the page's ways out land on the coordinator the panel observes.
+    @Test @MainActor
+    func `Trip details view forwards the trip and navigates through the coordinator`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
+        coordinator.push(.recentStopsAll)
+        coordinator.push(.tripDetails(convertible))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: convertible)
+
+        #expect(host.application === application)
+        #expect(host.tripConvertible === convertible)
+
+        // A tapped stop opens the panel's stop sheet above the trip.
+        host.onSelectStop("1_75403")
+        #expect(coordinator.stackedRoutes == [.recentStopsAll, .tripDetails(convertible), .stopDetails(stopID: "1_75403")])
+
+        // The rider drags the stop sheet away, then taps Back on the trip. Only
+        // the trip goes; the sheet it was opened from stays.
+        coordinator.truncateStacked(toDepth: 2)
+        host.onClose()
+        #expect(coordinator.stackedRoutes == [.recentStopsAll])
+    }
+
+    /// The trip page's map focus goes to the panel's display model, owned by the
+    /// trip's route so the drawing lasts exactly as long as the sheet.
+    ///
+    /// Not synchronously: the page reports from inside SwiftUI's update of the
+    /// sheet, so the handoff waits a turn of the main actor.
+    @Test @MainActor
+    func `Trip details view hands the page's map focus to the panel's map a turn later`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let tripFocusMapDisplayModel = TripFocusMapDisplayModel(userLocation: { nil })
+        let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
+        let focus = TripMapFocus()
+
+        let host = makeFactory(application: application, tripFocusMapDisplayModel: tripFocusMapDisplayModel)
+            .tripDetailsView(tripConvertible: convertible)
+        host.onMapFocusChanged(focus)
+
+        #expect(tripFocusMapDisplayModel.owner == nil)
+        for _ in 0..<10 where tripFocusMapDisplayModel.owner == nil {
+            await Task.yield()
+        }
+        #expect(tripFocusMapDisplayModel.owner == .tripDetails(convertible))
+
+        // The page's `nil` doesn't end the drawing. The route leaving the stack does.
+        host.onMapFocusChanged(nil)
+        await Task.yield()
+
+        #expect(tripFocusMapDisplayModel.owner == .tripDetails(convertible))
+        withExtendedLifetime(focus) {}
     }
 
     /// `.bookmarksAll` renders the native index, not the placeholder. With all
@@ -317,13 +378,13 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
     // MARK: - Rental "plan a trip using this vehicle"
 
-    /// The rental sheets plan a trip *through* the vehicle: it becomes a via
-    /// point with the mode pinned to `.transitBikeRental`, matching
-    /// `MapViewController.rentalLayer(planTripUsing:)` on the UIKit surface.
-    /// Routing *to* the vehicle would be the wrong trip — a rider wants to ride
-    /// it onward, not arrive at it.
+    /// The rental sheets plan a trip *starting at* the vehicle in bike-rental mode,
+    /// matching `MapViewController.rentalLayer(planTripUsing:)` on the UIKit surface.
+    /// That is what rents it on Puget Sound's server; the old via point with
+    /// `.transitBikeRental` never produced a rental leg. Routing *to* the vehicle
+    /// would be the wrong trip too — a rider wants to ride it onward.
     @Test @MainActor
-    func `Rental plan trip handler pushes the vehicle as a via point in bike rental mode`() throws {
+    func `Rental plan trip handler pushes the vehicle as the origin in bike rental mode`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         #expect(application.regionsService.currentRegion?.supportsOTP == true)
 
@@ -339,9 +400,11 @@ final class AppSheetViewFactoryTests: OBATestCase {
             Issue.record("Expected .tripPlanner stacked, got \(String(describing: coordinator.stackedRoutes.last))")
             return
         }
-        #expect(request.transportMode == .transitBikeRental)
-        #expect(request.viaPoint?.latitude == rental.coordinate.latitude)
-        #expect(request.viaPoint?.longitude == rental.coordinate.longitude)
+        #expect(request.transportMode == .bikeRental)
+        #expect(request.origin?.placemark.coordinate.latitude == rental.coordinate.latitude)
+        #expect(request.origin?.placemark.coordinate.longitude == rental.coordinate.longitude)
+        #expect(request.origin?.name == rental.displayLabel)
+        #expect(request.viaPoint == nil)
         // The vehicle is not the destination — that field stays open for the rider.
         #expect(request.destination == nil)
     }
@@ -354,6 +417,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
     /// store, and doing that mid-suite takes 17 unrelated suites down with it.
     @Test @MainActor
     func `Rental trip planning is offered only when the region has an OTP server`() {
+        let userDataStore = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name)).userDataStore
         let noOTPRegion = Region(
             name: "No OTP Region",
             OBABaseURL: URL(string: "http://example.com")!,
@@ -365,9 +429,21 @@ final class AppSheetViewFactoryTests: OBATestCase {
             contactEmail: "test@example.com"
         )
 
-        #expect(AppSheetViewFactory.offersTripPlanning(in: noOTPRegion) == false)
-        #expect(AppSheetViewFactory.offersTripPlanning(in: nil) == false)
-        #expect(AppSheetViewFactory.offersTripPlanning(in: Fixtures.pugetSoundRegion))
+        #expect(AppSheetViewFactory.offersTripPlanning(in: noOTPRegion, userDataStore: userDataStore) == false)
+        #expect(AppSheetViewFactory.offersTripPlanning(in: nil, userDataStore: userDataStore) == false)
+        #expect(AppSheetViewFactory.offersTripPlanning(in: Fixtures.pugetSoundRegion, userDataStore: userDataStore))
+    }
+
+    /// A rider who switched trip planning off for the region gets no button either:
+    /// the planner would only say "unavailable".
+    @Test @MainActor
+    func `Rental trip planning is not offered when the rider turned trip planning off`() {
+        let userDataStore = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name)).userDataStore
+        let region = Fixtures.pugetSoundRegion
+        userDataStore.setTripPlanningEnabled(false, for: region)
+        defer { userDataStore.setTripPlanningEnabled(true, for: region) }
+
+        #expect(AppSheetViewFactory.offersTripPlanning(in: region, userDataStore: userDataStore) == false)
     }
 
     // MARK: - Rental cluster drill-in
@@ -416,7 +492,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
             Issue.record("Expected .tripPlanner on top, got \(String(describing: coordinator.stackedRoutes.last))")
             return
         }
-        #expect(request.transportMode == .transitBikeRental)
-        #expect(request.viaPoint?.latitude == rental.coordinate.latitude)
+        #expect(request.transportMode == .bikeRental)
+        #expect(request.origin?.placemark.coordinate.latitude == rental.coordinate.latitude)
     }
 }

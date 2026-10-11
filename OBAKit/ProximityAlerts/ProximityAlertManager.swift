@@ -288,8 +288,12 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
     /// They all repair the same disagreement, so they all run the same comparison
     /// rather than each patching the case it happens to know about.
     ///
-    /// Idempotent: arming an alert that is already monitored replaces its region
-    /// instead of adding one, so extra calls cost nothing.
+    /// Idempotent, and deliberately leaves an already-armed alert alone. Re-arming
+    /// replaces the region, and Core Location treats a replaced region as new: it
+    /// takes the device's current position as the baseline and sends no entry for
+    /// a region the device is already inside. Because this runs on every return to
+    /// the foreground, re-arming everything would swallow the entry for a rider who
+    /// opens the app as the bus pulls up to their stop.
     public func reconcileMonitoredRegions() {
         guard !isReconciling else { return }
         isReconciling = true
@@ -309,7 +313,8 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
             locationService.stopMonitoringProximityAlert(id: orphanedID)
         }
 
-        for alert in alerts {
+        let alreadyArmed = locationService.monitoredProximityAlertIDs
+        for alert in alerts where !alreadyArmed.contains(alert.id) {
             let result = locationService.startMonitoringProximity(for: alert)
             guard !result.isMonitoring else { continue }
             // `startMonitoringProximity` logs the specifics. This says which alert

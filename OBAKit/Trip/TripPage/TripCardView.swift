@@ -97,6 +97,8 @@ struct TripCardView: View {
         // page exists to tell you — reached VoiceOver from nowhere at all.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
+        // A focused card re-speaks as its countdown changes, like the Stop page rows.
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     /// "Arrives" rather than the departure list's "departs": this card is the one

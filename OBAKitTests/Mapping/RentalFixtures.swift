@@ -76,9 +76,16 @@ enum RentalFixtures {
     }
 
     /// A docked station. Stations never carry fuel data.
+    ///
+    /// `formFactors` fills `availableVehicles.byType`, one entry per form factor;
+    /// nil omits the typed breakdown, as many feeds do. `spacesAvailable` set to
+    /// 999999 with no vehicles is the shape of a dockless operator's virtual
+    /// station, like Puget Sound's `lime_seattle:seattle`.
     static func station(
         id: String = "s1",
         vehiclesAvailable: Int? = 4,
+        spacesAvailable: Int? = nil,
+        formFactors: [String]? = nil,
         operative: Bool = true,
         lat: Double = 47.6,
         lon: Double = -122.3,
@@ -96,6 +103,15 @@ enum RentalFixtures {
             dictionary["vehiclesAvailable"] = vehiclesAvailable
         } else {
             dictionary["vehiclesAvailable"] = NSNull()
+        }
+        if let spacesAvailable {
+            dictionary["spacesAvailable"] = spacesAvailable
+        }
+        if let formFactors {
+            dictionary["availableVehicles"] = [
+                "total": vehiclesAvailable ?? 0,
+                "byType": formFactors.map { ["count": 1, "vehicleType": ["formFactor": $0]] }
+            ] as [String: Any]
         }
         if let networkId {
             dictionary["rentalNetwork"] = ["networkId": networkId, "url": NSNull()] as [String: Any]

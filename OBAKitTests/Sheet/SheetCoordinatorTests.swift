@@ -62,16 +62,17 @@ final class SheetCoordinatorTests {
         #expect(coordinator.stackedDetents == [AppSheetRoute.tripPlanner(TripPlannerRequest()).detentConfiguration.initialDetent])
     }
 
-    @Test func `Push stacking route stacks multiple sheets`() {
+    @Test func `Push stacking route stacks multiple sheets`() throws {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t1"))
         coordinator.push(.recentStopsAll)
         coordinator.push(.stopDetails(stopID: "1_75403"))
-        coordinator.push(.tripDetails(tripID: "t1"))
+        coordinator.push(trip)
 
         #expect(coordinator.stackedRoutes == [
             .recentStopsAll,
             .stopDetails(stopID: "1_75403"),
-            .tripDetails(tripID: "t1")
+            trip
         ])
         #expect(coordinator.stackedDetents.count == 3)
     }
@@ -128,11 +129,12 @@ final class SheetCoordinatorTests {
 
     // MARK: - truncateStacked (OS-driven dismiss)
 
-    @Test func `Truncate stacked removes everything at and above depth`() {
+    @Test func `Truncate stacked removes everything at and above depth`() throws {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t"))
         coordinator.push(.recentStopsAll)
         coordinator.push(.stopDetails(stopID: "1"))
-        coordinator.push(.tripDetails(tripID: "t"))
+        coordinator.push(trip)
 
         coordinator.truncateStacked(toDepth: 1)
 

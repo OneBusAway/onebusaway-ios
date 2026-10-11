@@ -7,17 +7,15 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import Eureka
 import HealthKit
 @testable import OBAKit
 @testable import OBAKitCore
 import Foundation
 import Testing
 
-/// Mirrors SettingsBikeModeTests for the walking row. `form.setValues` fires
-/// `onChange` while it seeds, so both HealthKit rows ignore the seed via
-/// `isSeedingForm`. Opening Settings must never sync, never downgrade the
-/// source, and never toast. Only an explicit toggle-on reaches the manager.
+/// Mirrors SettingsBikeModeTests for the walking switch. Opening Settings must
+/// never sync, never downgrade the source, and never toast. Only an explicit
+/// toggle-on reaches the manager.
 @MainActor
 @Suite(.serialized)
 final class SettingsWalkingModeTests: OBATestCase {
@@ -55,14 +53,8 @@ final class SettingsWalkingModeTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
-    private func makeLoadedController() -> SettingsViewController {
-        let controller = SettingsViewController(application: application)
-        controller.loadViewIfNeeded()
-        return controller
-    }
-
-    private func row(_ controller: SettingsViewController, _ tag: String) throws -> SwitchRow {
-        try #require(controller.form.rowBy(tag: tag) as? SwitchRow)
+    private func makeViewModel() -> SettingsViewModel {
+        SettingsViewModel(application: application)
     }
 
     private func settle(until condition: () -> Bool = { true }) async throws {
@@ -76,7 +68,7 @@ final class SettingsWalkingModeTests: OBATestCase {
         store.walkingSpeedSource = .manual
         provider.sampleSpeed = nil
 
-        _ = makeLoadedController()
+        _ = makeViewModel()
         try await settle()
 
         #expect(self.provider.requestAuthorizationCount == 0)
@@ -91,13 +83,13 @@ final class SettingsWalkingModeTests: OBATestCase {
         store.walkingSpeedSource = .healthKit
         store.walkingSpeedMetersPerSecond = 1.65
         provider.sampleSpeed = nil
-        let controller = makeLoadedController()
+        let vm = makeViewModel()
 
         try await settle()
 
         #expect(self.provider.requestAuthorizationCount == 0)
         #expect(self.store.walkingSpeedSource == .healthKit)
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.65)
-        #expect(try self.row(controller, "walkingSpeedUseHealthKit").value == true)
+        #expect(vm.walkingSpeedUsesHealthKit == true)
     }
 }
