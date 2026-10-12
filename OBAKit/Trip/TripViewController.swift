@@ -25,8 +25,9 @@ class TripViewController: UIViewController,
     let viewModel: TripViewModel
 
     /// The stop a shared trip link named as the sharer's exit, or `nil` for every
-    /// other way into this screen. Read by `TripFloatingPanelController` when it
-    /// decides which row carries the destination marker. See #449.
+    /// other way into this screen. Read by `TripFloatingPanelController` and the
+    /// map's stop pins when they decide which row carries the destination marker.
+    /// See #449.
     var destinationStopID: StopID? { viewModel.destinationStopID }
 
     var tripConvertible: TripConvertible { viewModel.tripConvertible }
@@ -426,7 +427,6 @@ class TripViewController: UIViewController,
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
 
         let isSpent = (overlay as? TripShapeOverlay)?.isSpent ?? false
-        let routeColor = tripConvertible.arrivalDeparture?.route.color ?? ThemeColors.shared.brand
         let needsIncreasedVisibility =
             traitCollection.userInterfaceStyle == .dark ||
             traitCollection.accessibilityContrast == .high ||
@@ -466,12 +466,17 @@ class TripViewController: UIViewController,
         else if let annotationView = annotationView as? PulsingAnnotationView {
             userLocationAnnotationView = annotationView
         }
-        else if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
-            view.selectedArrivalDeparture = arrivalDeparture
+        else if let view = annotationView as? MinimalStopAnnotationView, let stopTime = annotation as? TripStopTime {
             TripMapAnnotationPolicy.apply(to: view)
+            markStopPin(view, for: stopTime)
         }
 
         return annotationView
+    }
+
+    /// The route's color, for its line and the stop pins marked on it.
+    private var routeColor: UIColor {
+        tripConvertible.arrivalDeparture?.route?.color ?? ThemeColors.shared.brand
     }
 
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
@@ -527,6 +532,51 @@ class TripViewController: UIViewController,
         hasAppliedOriginStopSelection = true
         selectedStopTime = origin
     }
+
+    // MARK: - Stop Pin Marks
+
+    /// What the stop pins are marked from. Kept here rather than read off
+    /// `viewModel`: `@Published` emits before its property changes, so inside a
+    /// sink the view model still holds the previous load.
+    private var stopMarks = TripMapAnnotationPolicy.StopMarks()
+
+    /// Resolves which pins to mark from a load, and re-marks the pins already on
+    /// the map. Run before `updateAnnotations`, so the pins it adds are marked
+    /// from this load too. See #449.
+    func applyStopMarks(from details: TripDetails) {
+        stopMarks.stopTimes = details.stopTimes
+        stopMarks.riderStops = TripStopListModel.riderStops(
+            in: details.stopTimes,
+            arrivalDeparture: tripConvertible.arrivalDeparture,
+            sharedDestinationStopID: destinationStopID
+        )
+        remarkStopPins()
+    }
+
+    /// Puts the shared destination's arrival on its pin, or takes it off when `nil`.
+    func applyDestinationArrival(_ arrival: ArrivalDeparture?) {
+        stopMarks.destinationArrival = arrival
+        remarkStopPins()
+    }
+
+    private func markStopPin(_ view: MinimalStopAnnotationView, for stopTime: TripStopTime) {
+        view.configure(
+            marking: stopMarks.marking(for: stopTime),
+            routeColor: routeColor,
+            arrival: stopMarks.arrival(for: stopTime).map {
+                DepartureTimeBadge.Configuration(withArrivalDeparture: $0, formatters: application.formatters)
+            }
+        )
+    }
+
+    /// `viewFor` marks a pin when MapKit makes its view, but a refresh keeps every
+    /// annotation whose stop time did not change, and the view along with it.
+    private func remarkStopPins() {
+        for stopTime in mapView.annotations.filter(type: TripStopTime.self) {
+            guard let view = mapView.view(for: stopTime) as? MinimalStopAnnotationView else { continue }
+            markStopPin(view, for: stopTime)
+        }
+    }
 }
 
 // MARK: - ViewModel Binding
@@ -547,6 +597,7 @@ private extension TripViewController {
                 floatingPanel.surfaceView.grabberHandle.isHidden = details == nil
                 guard let details else { return }
                 tripDetailsController.tripDetails = details
+                applyStopMarks(from: details)
                 mapView.updateAnnotations(with: details.stopTimes)
                 currentTripStatus = details.status
 
@@ -564,6 +615,7 @@ private extension TripViewController {
             .sink { [weak self] arrival in
                 guard let self else { return }
                 tripDetailsController.destinationArrivalDeparture = arrival
+                applyDestinationArrival(arrival)
             }
             .store(in: &cancellables)
     }

@@ -96,8 +96,8 @@ struct TripStopListModel {
     }
 
     /// The rider's rows on a trip, as the UIKit trip page needs them. One
-    /// resolution feeds both the stop list and the progress header, so the two
-    /// cannot disagree about which row is "your stop".
+    /// resolution feeds the stop list, the progress header, and the map's stop
+    /// pins, so none of them can disagree about which row is "your stop".
     struct RiderStops {
         /// Where the rider boards: the row the trip's own `ArrivalDeparture` is
         /// for, so its `arrivalDepartureMinutes` count down to this row.
