@@ -188,7 +188,7 @@ nonisolated fileprivate struct HTMLBuilder {
     mutating func append(_ tag: Tag, value: String? = nil, closure: ((inout HTMLBuilder) -> Void)? = nil) {
         HTML.append(tag.opening)
         if let value = value {
-            HTML.append(value)
+            HTML.append(value.htmlEscaped)
         } else if let closure = closure {
             var builder = HTMLBuilder()
             closure(&builder)
@@ -197,3 +197,4 @@ nonisolated fileprivate struct HTMLBuilder {
         HTML.append(tag.closing)
     }
 }
+
