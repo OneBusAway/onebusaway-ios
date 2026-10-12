@@ -165,6 +165,30 @@ final class SheetCoordinatorTests {
         #expect(coordinator.stackedDetents == [.large, .large])
     }
 
+    // MARK: - isStackedSheetCovered(atDepth:)
+
+    /// Only the frontmost stacked sheet can be swiped away. The rest have a sheet
+    /// over them, and an index past the pile has nothing there to cover.
+    @Test func `Every stacked sheet but the frontmost is covered`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.stopDetails(stopID: "1_75403"))
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+        coordinator.push(.mapSettings)
+
+        #expect(coordinator.isStackedSheetCovered(atDepth: 0))
+        #expect(coordinator.isStackedSheetCovered(atDepth: 1))
+        #expect(coordinator.isStackedSheetCovered(atDepth: 2) == false)
+        #expect(coordinator.isStackedSheetCovered(atDepth: 3) == false)
+    }
+
+    @Test func `A lone stacked sheet is not covered`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        #expect(coordinator.isStackedSheetCovered(atDepth: 0) == false)
+
+        coordinator.push(.mapSettings)
+        #expect(coordinator.isStackedSheetCovered(atDepth: 0) == false)
+    }
+
     // MARK: - Pop removes topmost layer
 
     @Test func `Pop with stacked presented removes top stacked and preserves content stack`() {

@@ -157,6 +157,16 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         return true
     }
 
+    /// Whether another stacked sheet is presented over the one at `depth`.
+    ///
+    /// The container keeps a covered sheet from being swiped away. A sheet on top
+    /// that lets touches through (a `.medium` trip sheet, say) leaves the one under
+    /// it draggable, and swiping that one away left the sheet on top on screen with
+    /// no route behind it in the pile.
+    func isStackedSheetCovered(atDepth depth: Int) -> Bool {
+        depth < stackedEntries.count - 1
+    }
+
     /// Bounds-checked accessor for the stacked route at `depth`.
     /// Returns `nil` when `depth` is past the current pile.
     func stackedRoute(at depth: Int) -> Route? {

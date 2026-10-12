@@ -146,8 +146,7 @@ public final class MapPanelRootController: UIViewController {
         /// The sheets that led here are closed first, as search closes itself
         /// before opening a result. The trip is drawn on the map, and My Trip's
         /// route picker and results sit at full height under a `.medium` trip
-        /// sheet, covering that map. They would also stay draggable through it,
-        /// and dragging one away strands the trip sheet with no route behind it.
+        /// sheet, covering that map.
         private func open(_ convertible: TripConvertible) {
             let route = AppSheetRoute.tripDetails(convertible)
             // Already open: unwinding would close it only to open it again.
