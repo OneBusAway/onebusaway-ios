@@ -18,9 +18,9 @@ import WebKit
 final class DocumentWebViewTests {
 
     /// Helper delegate to bridge WKNavigationDelegate callbacks to async/await.
-    private final class NavigationDelegate: NSObject, WKNavigationDelegate, @unchecked Sendable {
-        var onFinish: ((WKWebView) -> Void)?
-        var onError: ((Error) -> Void)?
+    private nonisolated final class NavigationDelegate: NSObject, WKNavigationDelegate, @unchecked Sendable {
+        var onFinish: (@Sendable (WKWebView) -> Void)?
+        var onError: (@Sendable (Error) -> Void)?
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             onFinish?(webView)
