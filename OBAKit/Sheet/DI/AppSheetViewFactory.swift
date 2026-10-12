@@ -195,10 +195,16 @@ final class AppSheetViewFactory {
                     application: self.application,
                     presentingController: self.presentingController
                 )
-                // The same handoff `currentTripView` makes, so a departure tapped
-                // on the Stop page reaches the map panel's sheet stack rather than
-                // the UIKit presentation that covers the map behind it.
-                presenter.onShowTripInSheet = self.onPresentTrip
+                // Not `onPresentTrip`: that unwinds to Home, which is right for My
+                // Trip and vehicle search. A departure tapped here opens its trip
+                // on top of this Stop sheet so Back returns to the stop, and goes
+                // back to the trip instead if it's already open further down.
+                presenter.onShowTripInSheet = { [coordinator = self.coordinator] departure in
+                    coordinator.open(
+                        .tripDetails(TripConvertible(arrivalDeparture: departure)),
+                        from: .stopDetails(stopID: stopID)
+                    )
+                }
                 return presenter
             },
             feedback: DataLoadFeedbackGenerator(application: self.application),
@@ -244,7 +250,12 @@ final class AppSheetViewFactory {
                     tripFocusMapDisplayModel.show(focus: focus, owner: owner)
                 }
             },
-            onSelectStop: { [coordinator] stopID in coordinator.push(.stopDetails(stopID: stopID)) },
+            // The stop can already be open further down, when the rider came to
+            // this trip from that stop's sheet. `open` goes back to it rather than
+            // stacking a second copy.
+            onSelectStop: { [coordinator] stopID in
+                coordinator.open(.stopDetails(stopID: stopID), from: .tripDetails(tripConvertible))
+            },
             onClose: { [coordinator] in coordinator.pop() }
         )
     }

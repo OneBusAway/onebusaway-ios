@@ -289,8 +289,8 @@ final class StopPageActionPresenterTests: OBATestCase {
     ///
     /// Only this side of the fork is covered. Exercising the fallback would
     /// present a live `TripPageViewController`, which reads
-    /// `TripConvertible.trip` — implicitly unwrapped and nil until the
-    /// departure's references load — and traps on a decoded fixture.
+    /// `TripConvertible.trip`. That is implicitly unwrapped and nil until the
+    /// departure's references load, so it traps on a decoded fixture.
     @Test func `A departure opens in the sheet when the host offers one`() async throws {
         let host = makeHost()
         let (presenter, _) = makePresenter(host: host)

@@ -275,9 +275,9 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         // A host with a sheet stack takes the trip whole: it opens the page as a
         // sheet over its own map and draws the trip on that map. Falling through
         // to the UIKit presentations below would cover the map the panel just
-        // focused. `originTitle` is dropped on this path — the sheet's back row
-        // returns to the sheet underneath, which is the stop the rider came from,
-        // so naming it again would be redundant.
+        // focused. `originTitle` is dropped on this path. The trip sheet opens on
+        // top of the Stop sheet, so its back row returns to the stop the rider
+        // came from, and naming it again would be redundant.
         if let onShowTripInSheet {
             onShowTripInSheet(arrivalDeparture)
             return

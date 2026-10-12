@@ -45,14 +45,13 @@ final class AppSheetViewFactoryTests: OBATestCase {
         displayModel: MapSearchDisplayModel = MapSearchDisplayModel(),
         stopsObserver: MapStopsObserver? = nil,
         tripPlannerMapDisplayModel: TripPlannerMapDisplayModel? = nil,
-        tripFocusMapDisplayModel: TripFocusMapDisplayModel? = nil,
-        onPresentTrip: @escaping (ArrivalDeparture) -> Void = { _ in }
+        tripFocusMapDisplayModel: TripFocusMapDisplayModel? = nil
     ) -> AppSheetViewFactory {
         AppSheetViewFactory(
             application: application,
             mapViewModel: MapViewModel(application: application),
             layersModel: MapPanelLayersModel(application: application),
-            onPresentTrip: onPresentTrip,
+            onPresentTrip: { _ in },
             onPresentVehicleTrip: { _ in },
             presentingController: { nil },
             coordinator: coordinator,
@@ -109,28 +108,72 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(view.userDefaults === application.userDefaults)
     }
 
-    /// A departure tapped on the Stop sheet has to reach the panel's sheet
-    /// stack, the same `onPresentTrip` handoff `currentTripView` gets. Without
-    /// the wiring the Stop page falls back to presenting the trip over the map
-    /// the panel is showing.
-    @Test @MainActor
-    func `Stop detail view hands departures to the panel's trip presentation`() throws {
-        let dataLoader = MockDataLoader(testName: name)
-        let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let departure = try Fixtures.loadRESTAPIPayload(
+    private func makeDeparture() throws -> ArrivalDeparture {
+        try Fixtures.loadRESTAPIPayload(
             type: ArrivalDeparture.self,
             fileName: "arrival-and-departure-for-stop-1_11420.json"
         )
-        var presentedTripIDs: [TripIdentifier] = []
-        let factory = makeFactory(
-            application: application,
-            onPresentTrip: { presentedTripIDs.append($0.tripID) }
-        )
+    }
 
-        let presenter = factory.stopDetailView(stopID: "1_10914").makePresenter()
+    /// A departure tapped on the Stop sheet opens its trip on top of that sheet,
+    /// so Back from the trip returns to the stop. Going through `onPresentTrip`
+    /// instead unwound to Home, which is what My Trip and vehicle search want.
+    @Test @MainActor
+    func `A Stop sheet departure opens its trip on top, and Back returns to the stop`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_10914")
+        let departure = try makeDeparture()
+        coordinator.push(stop)
+
+        let presenter = makeFactory(application: application, coordinator: coordinator)
+            .stopDetailView(stopID: "1_10914")
+            .makePresenter()
         presenter.onShowTripInSheet?(departure)
 
-        #expect(presentedTripIDs == [departure.tripID])
+        #expect(coordinator.stackedRoutes == [stop, .tripDetails(TripConvertible(arrivalDeparture: departure))])
+
+        coordinator.pop()
+
+        #expect(coordinator.stackedRoutes == [stop])
+    }
+
+    /// Trip X, one of its stops, then trip X's departure at that stop. The trip is
+    /// already open under the Stop sheet, so the tap goes back to it rather than
+    /// doing nothing and leaving it buried.
+    @Test @MainActor
+    func `A Stop sheet departure for a trip already open goes back to that trip`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let departure = try makeDeparture()
+        let trip = AppSheetRoute.tripDetails(TripConvertible(arrivalDeparture: departure))
+        coordinator.push(trip)
+        coordinator.push(.stopDetails(stopID: "1_10914"))
+
+        let presenter = makeFactory(application: application, coordinator: coordinator)
+            .stopDetailView(stopID: "1_10914")
+            .makePresenter()
+        presenter.onShowTripInSheet?(departure)
+
+        #expect(coordinator.stackedRoutes == [trip])
+    }
+
+    /// The rider came to the trip from this stop's sheet, so tapping the stop in
+    /// the trip's list goes back to it rather than stacking a second copy.
+    @Test @MainActor
+    func `A stop tapped in a trip goes back to that stop when it's already open`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_10914")
+        let convertible = try Fixtures.tripConvertible(tripID: "trip_42")
+        coordinator.push(stop)
+        coordinator.push(.tripDetails(convertible))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: convertible)
+        host.onSelectStop("1_10914")
+
+        #expect(coordinator.stackedRoutes == [stop])
     }
 
     @Test @MainActor
