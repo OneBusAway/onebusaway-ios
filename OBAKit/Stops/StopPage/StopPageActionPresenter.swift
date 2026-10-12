@@ -113,7 +113,6 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showTrip: trip.showTrip,
             showScheduleForStop: trip.showScheduleForStop,
             showScheduleForRoute: trip.showScheduleForRoute,
-            canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
             showWalkingDirections: stop.showWalkingDirections,
             showDirectionsToHere: stop.showDirectionsToHere,
             showDirectionsFromHere: stop.showDirectionsFromHere,
@@ -304,8 +303,15 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         presentationHost(for: "schedule for stop")?.present(controller, animated: true)
     }
 
+    /// Presents the schedule for a route, falling back to the stop's schedule
+    /// filtered to the selected route when the region lacks route schedule support.
+    /// - Parameter arrivalDeparture: The arrival/departure item providing route and stop context.
     func showScheduleForRoute(_ arrivalDeparture: ArrivalDeparture) {
-        let controller = ScheduleForRouteViewController(routeID: arrivalDeparture.routeID, application: application)
+        guard let controller = ScheduleViewControllerFactory.makeScheduleViewController(
+            routeID: arrivalDeparture.routeID,
+            stopID: arrivalDeparture.stopID,
+            application: application
+        ) else { return }
         presentationHost(for: "schedule for route")?.present(controller, animated: true)
     }
 

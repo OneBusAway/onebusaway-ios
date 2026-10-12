@@ -34,10 +34,15 @@ struct ScheduleForStopView: View {
 
     private let application: Application
 
-    init(stopID: StopID, application: Application) {
+    /// Creates a schedule view for a stop with an optional pre-selected route.
+    /// - Parameters:
+    ///   - stopID: The ID of the stop whose schedule is displayed.
+    ///   - routeID: An optional route ID to pre-select in the schedule view.
+    ///   - application: The application context providing network and service access.
+    init(stopID: StopID, routeID: RouteID? = nil, application: Application) {
         self.application = application
         _stopViewModel = StateObject(
-            wrappedValue: ScheduleForStopViewModel(stopID: stopID, application: application)
+            wrappedValue: ScheduleForStopViewModel(stopID: stopID, routeID: routeID, application: application)
         )
     }
 
@@ -55,6 +60,9 @@ struct ScheduleForStopView: View {
                 }
                 .task(id: stopViewModel.selectedDate) {
                     await stopViewModel.fetchSchedule()
+                    if routeViewModel?.routeID != stopViewModel.selectedRouteID {
+                        updateRouteViewModel(for: stopViewModel.selectedRouteID)
+                    }
                 }
                 .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
                     // Reset the toggle so the user starts fresh on the new route
@@ -223,6 +231,8 @@ struct ScheduleForStopView: View {
 
     // MARK: - Helper Methods
 
+    /// Updates or recreates the embedded route schedule view model for the specified route.
+    /// - Parameter routeID: The route ID to show the schedule for, or `nil` to clear it.
     private func updateRouteViewModel(for routeID: RouteID?) {
         guard let routeID = routeID else {
             routeViewModel = nil

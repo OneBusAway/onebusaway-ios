@@ -235,7 +235,6 @@ struct DepartureRowView: View {
 /// menu actions (Alarm / Schedule / Save).
 struct DepartureRowActions {
     let canAlarm: Bool
-    let canSchedule: Bool
     let hasAlarm: Bool
     let onAlarmToggle: () -> Void
     let onSchedule: () -> Void
@@ -261,10 +260,8 @@ extension View {
                         Label(actions.hasAlarm ? removeAlarmTitle : Strings.addAlarm, systemImage: "bell")
                     }
                 }
-                if actions.canSchedule {
-                    Button(action: actions.onSchedule) {
-                        Label(Strings.schedules, systemImage: "calendar")
-                    }
+                Button(action: actions.onSchedule) {
+                    Label(Strings.schedules, systemImage: "calendar")
                 }
                 Button(action: actions.onBookmark) {
                     Label(Strings.addBookmark, systemImage: "bookmark")
