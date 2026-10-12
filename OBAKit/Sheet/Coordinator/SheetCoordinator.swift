@@ -102,6 +102,25 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         currentDetent = currentRoute.detentConfiguration.initialDetent
     }
 
+    /// Opens `route` from the stacked sheet showing `source`, where a tap inside that
+    /// sheet should land.
+    ///
+    /// If `route` is already open further down, the sheets above it close and the
+    /// rider goes back to it, rather than getting a second copy or nothing at all.
+    /// Otherwise any sheets above `source` close and `route` goes on top of it, so
+    /// Back returns to `source`. A `source` that is no longer in the pile changes
+    /// nothing below, and `route` is pushed on top.
+    func open(_ route: Route, from source: Route) {
+        if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
+            truncateStacked(toDepth: existing + 1)
+            return
+        }
+        if let sourceDepth = stackedEntries.lastIndex(where: { $0.route == source }) {
+            truncateStacked(toDepth: sourceDepth + 1)
+        }
+        push(route)
+    }
+
     /// Removes every stacked sheet at or above the given depth. Called by the
     /// container when the OS dismisses a sheet (drag-down) so storage stays in
     /// sync with what's actually on screen.
