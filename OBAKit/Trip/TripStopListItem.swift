@@ -73,6 +73,12 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
     /// marker. See `TripStopListModel.RiderStops.boardingMarkerIndex`.
     let isBoardingStop: Bool
 
+    /// Before the rider boards or after they step off, on a trip shared with a
+    /// destination. Drawn like a passed stop, except the vehicle's own row: the
+    /// list always shows where the vehicle is. See
+    /// `TripStopListModel.RiderStops.rideIndices`.
+    let isOutsideRide: Bool
+
     /// Whether this stop is in the past, present, or future relative to the vehicle position.
     let temporalState: TripStopTemporalState
 
@@ -97,6 +103,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         closestStopIndex: Int?,
         userStopIndex: Int?,
         boardingMarkerIndex: Int?,
+        rideIndices: ClosedRange<Int>?,
         onSelectAction: OBAListViewAction<TripStopViewModel>?
     ) {
         self.stopTime = stopTime
@@ -105,6 +112,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
 
         isUserDestination = userStopIndex.map { stopIndex == $0 } ?? false
         isBoardingStop = boardingMarkerIndex.map { stopIndex == $0 } ?? false
+        isOutsideRide = rideIndices.map { !$0.contains(stopIndex) } ?? false
 
         // Derive isCurrentVehicleLocation from the same closestStopIndex used for
         // temporalState so both properties always agree on which stop is "current".
@@ -125,6 +133,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         hasher.combine(isCurrentVehicleLocation)
         hasher.combine(isUserDestination)
         hasher.combine(isBoardingStop)
+        hasher.combine(isOutsideRide)
         hasher.combine(temporalState)
         hasher.combine(title)
         hasher.combine(date)
@@ -136,6 +145,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
             lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
             lhs.isUserDestination == rhs.isUserDestination &&
             lhs.isBoardingStop == rhs.isBoardingStop &&
+            lhs.isOutsideRide == rhs.isOutsideRide &&
             lhs.temporalState == rhs.temporalState &&
             lhs.title == rhs.title &&
             lhs.date == rhs.date &&
@@ -175,6 +185,7 @@ final class TripStopCell: OBAListViewCell {
         tripSegmentView.image = nil
         tripSegmentView.adjacentTripOrder = nil
         tripSegmentView.temporalState = .future
+        tripSegmentView.isOutsideRide = false
         accessibilityLabel = nil
         accessibilityValue = nil
     }
@@ -251,6 +262,7 @@ final class TripStopCell: OBAListViewCell {
         timeLabel.text = config.formatters?.timeFormatter.string(from: viewModel.date) ?? ""
         tripSegmentView.routeType = viewModel.routeType
         tripSegmentView.temporalState = viewModel.temporalState
+        tripSegmentView.isOutsideRide = viewModel.isOutsideRide
         tripSegmentView.setDestinationStatus(user: viewModel.isUserDestination, vehicle: viewModel.isCurrentVehicleLocation, boarding: viewModel.isBoardingStop)
 
         applyTemporalStateStyling(viewModel)
@@ -288,14 +300,7 @@ final class TripStopCell: OBAListViewCell {
     private func applyTemporalStateStyling(_ viewModel: TripStopViewModel) {
         switch viewModel.temporalState {
         case .past:
-            // Reduced opacity supplements the secondaryLabel color so past stops
-            // remain distinguishable for low-vision users not running VoiceOver,
-            // where a color change alone would not be perceivable.
-            titleLabel.font = .preferredFont(forTextStyle: .body)
-            titleLabel.textColor = ThemeColors.shared.secondaryLabel
-            titleLabel.alpha = 0.7
-            timeLabel.textColor = ThemeColors.shared.secondaryLabel
-            timeLabel.alpha = 0.7
+            applyFadedStyling()
 
         case .current:
             titleLabel.font = .preferredFont(forTextStyle: .headline)
@@ -303,6 +308,9 @@ final class TripStopCell: OBAListViewCell {
             titleLabel.alpha = 1.0
             timeLabel.textColor = ThemeColors.shared.label
             timeLabel.alpha = 1.0
+
+        case .future where viewModel.isOutsideRide:
+            applyFadedStyling()
 
         case .future:
             titleLabel.font = viewModel.isUserDestination
@@ -313,6 +321,18 @@ final class TripStopCell: OBAListViewCell {
             timeLabel.textColor = ThemeColors.shared.secondaryLabel
             timeLabel.alpha = 1.0
         }
+    }
+
+    /// A stop the vehicle has passed, or one outside a shared trip's ride.
+    private func applyFadedStyling() {
+        // Reduced opacity supplements the secondaryLabel color so faded stops
+        // remain distinguishable for low-vision users not running VoiceOver,
+        // where a color change alone would not be perceivable.
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.textColor = ThemeColors.shared.secondaryLabel
+        titleLabel.alpha = 0.7
+        timeLabel.textColor = ThemeColors.shared.secondaryLabel
+        timeLabel.alpha = 0.7
     }
 
     private func apply(adjacentTripConfiguration config: AdjacentTripRowConfiguration) {
