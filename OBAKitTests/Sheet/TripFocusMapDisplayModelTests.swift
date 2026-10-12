@@ -188,10 +188,10 @@ final class TripFocusMapDisplayModelTests {
         }
     }
 
-    /// Only one trip sheet is ever open, because the bridge closes the open one
-    /// before opening another. So a new trip takes the drawing over, frames the
-    /// camera for itself, and leaves nothing of the old one to fall back to.
-    @Test func `Showing another trip replaces the one drawn`() throws {
+    /// A Stop sheet's trip goes on top of what's open, so a second trip can open
+    /// over the first through one of its stops. Closing the second goes back to
+    /// drawing the first, whose sheet is uncovered but never appears again to say so.
+    @Test func `Closing a trip opened over another goes back to drawing the first`() throws {
         let coordinate = CLLocationCoordinate2D(latitude: 47, longitude: -122)
         let (model, firstFocus) = try show(TripMapFocusFixture.content(
             shape: TripMapFocusFixture.shape(),
@@ -204,20 +204,32 @@ final class TripFocusMapDisplayModelTests {
         let secondFocus = TripMapFocus()
         secondFocus.apply(TripMapFocusFixture.content(tripID: "trip_2", shape: TripMapFocusFixture.shape(), progress: 0.5))
 
-        // The first page stays alive, so only the model decides whether its trip
-        // comes back once the second one closes.
+        // The first page is still open under the second, so its focus is alive.
         withExtendedLifetime(firstFocus) {
             model.show(focus: secondFocus, owner: second)
-
             #expect(model.owner == second)
             #expect(model.display?.stops.isEmpty == true)
+            // A different trip frames the camera for itself.
             #expect(model.cameraTarget != nil)
 
-            model.clearIfOwnerAbsent(from: [.home, first])
+            model.clearIfOwnerAbsent(from: [.home, first, .stopDetails(stopID: "1_75403")])
 
-            #expect(model.owner == nil)
-            #expect(model.isShowingTrip == false)
+            #expect(model.owner == first)
+            #expect(model.display?.stops.map(\.id) == ["0-A"])
         }
+    }
+
+    /// A trip whose page is gone can't send another update, so its entry goes even
+    /// while its route is still on the stack, and nothing is left drawn from it.
+    @Test func `A trip whose page has gone stops being drawn`() throws {
+        let (model, _) = try show(TripMapFocusFixture.content(shape: TripMapFocusFixture.shape(), progress: 0.5))
+        let trip = try owner()
+        #expect(model.isShowingTrip)
+
+        model.clearIfOwnerAbsent(from: [.home, trip])
+
+        #expect(model.owner == nil)
+        #expect(model.isShowingTrip == false)
     }
 
     @Test func `A cleared drawing stops listening to the page`() throws {
