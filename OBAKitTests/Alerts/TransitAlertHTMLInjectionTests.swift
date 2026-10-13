@@ -253,10 +253,9 @@ struct TransitAlertDestinationURLTests {
 
 /// Tests for `TransitAlertDetailViewController`'s `WKNavigationDelegate`.
 ///
-/// http/https link-activated navigations are cancelled and opened in Safari.
-/// All other navigations (non-link types, non-http/https schemes) are allowed
-/// to proceed — this covers the initial `loadHTMLString` load as well as any
-/// link tap with a scheme the guard does not recognise.
+/// - Non-link navigations (e.g. the initial `loadHTMLString` load) are allowed.
+/// - `http`/`https` link taps are cancelled in the web view and opened in Safari.
+/// - Link taps with any other scheme (e.g. `javascript:`) are cancelled without opening anything.
 @Suite(.serialized)
 @MainActor
 final class TransitAlertNavigationDelegateTests {
@@ -269,13 +268,9 @@ final class TransitAlertNavigationDelegateTests {
         return await withCheckedContinuation { continuation in
             let request = URLRequest(url: url)
             let action = MockNavigationAction(request: request, navigationType: navigationType)
-            #if DEBUG
             vc.webView(vc.testWebView, decidePolicyFor: action) { policy in
                 continuation.resume(returning: policy)
             }
-            #else
-            continuation.resume(returning: .allow)
-            #endif
         }
     }
 
@@ -304,5 +299,112 @@ final class TransitAlertNavigationDelegateTests {
         // injected links from appearing in the DOM; this is the belt-and-suspenders layer.
         let result = await policy(for: URL(string: "javascript:alert(1)")!, navigationType: .linkActivated)
         #expect(result == .cancel)
+    }
+}
+
+// MARK: - ServiceAlert HTMLBuilder Tests
+
+/// Tests for `HTMLBuilder.append(_:value:)` used by `ServiceAlertViewModel`.
+///
+/// `buildDocument` is now internal, but these tests target the builder
+/// directly: if `.htmlEscaped` were removed from `append`, every test below
+/// with attacker-controlled input would fail. This closes the gap where the
+/// main ServiceAlert rendering path had no escaping coverage.
+@Suite(.serialized)
+struct ServiceAlertHTMLBuilderTests {
+
+    private func rendered(tag: HTMLBuilder.Tag = .p, value: String) -> String {
+        var builder = HTMLBuilder()
+        builder.append(tag, value: value)
+        return builder.HTML
+    }
+
+    @Test
+    func `Script payload in value is escaped`() {
+        let html = rendered(value: "<script>alert('xss')</script>")
+        #expect(!html.contains("<script>"))
+        #expect(html.contains("&lt;script&gt;"))
+    }
+
+    @Test
+    func `img onerror payload in value is escaped`() {
+        let html = rendered(value: #"<img src=x onerror="evil()">"#)
+        #expect(!html.contains("<img"))
+        #expect(html.contains("&lt;img"))
+    }
+
+    @Test
+    func `Ampersand and quotes in value are escaped`() {
+        let html = rendered(value: #"Buses & Trains "express" 'local'"#)
+        #expect(html.contains("&amp;"))
+        #expect(html.contains("&quot;"))
+        #expect(html.contains("&#x27;"))
+    }
+
+    @Test
+    func `Tag structure survives escaping`() {
+        let html = rendered(tag: .h1, value: "Hello <b>world</b>")
+        #expect(html.hasPrefix("<h1>"))
+        #expect(html.hasSuffix("</h1>"))
+        #expect(html.contains("Hello &lt;b&gt;world&lt;/b&gt;"))
+    }
+
+    @Test
+    func `Plain text passes through with tags only`() {
+        let html = rendered(value: "Route 44 delayed.")
+        #expect(html == "<p>Route 44 delayed.</p>")
+    }
+}
+
+// MARK: - ServiceAlert URL Routing Tests
+
+/// Tests for `ServiceAlertViewController`'s URL routing.
+///
+/// `SFSafariViewController(url:)` raises on non-http(s) schemes. With
+/// `dataDetectorTypes = [.all]`, auto-detected `tel:`/`mailto:` links reach
+/// the navigation delegate, so they must go through `Application.open`
+/// instead of Safari. `javascript:`/`data:` links are dropped entirely.
+@Suite(.serialized)
+struct ServiceAlertURLRoutingTests {
+
+    @Test
+    func `https URL routes to Safari`() {
+        let url = URL(string: "https://example.com/alert")!
+        #expect(ServiceAlertViewController.isSafariURL(url))
+        #expect(!ServiceAlertViewController.isSystemOpenURL(url))
+    }
+
+    @Test
+    func `http URL routes to Safari`() {
+        let url = URL(string: "http://example.com/alert")!
+        #expect(ServiceAlertViewController.isSafariURL(url))
+    }
+
+    @Test
+    func `tel URL routes to system open, not Safari`() {
+        let url = URL(string: "tel:+12065550100")!
+        #expect(!ServiceAlertViewController.isSafariURL(url))
+        #expect(ServiceAlertViewController.isSystemOpenURL(url))
+    }
+
+    @Test
+    func `mailto URL routes to system open, not Safari`() {
+        let url = URL(string: "mailto:info@example.com")!
+        #expect(!ServiceAlertViewController.isSafariURL(url))
+        #expect(ServiceAlertViewController.isSystemOpenURL(url))
+    }
+
+    @Test
+    func `javascript URL is dropped`() {
+        let url = URL(string: "javascript:alert(1)")!
+        #expect(!ServiceAlertViewController.isSafariURL(url))
+        #expect(!ServiceAlertViewController.isSystemOpenURL(url))
+    }
+
+    @Test
+    func `data URL is dropped`() {
+        let url = URL(string: "data:text/html,<script>evil()</script>")!
+        #expect(!ServiceAlertViewController.isSafariURL(url))
+        #expect(!ServiceAlertViewController.isSystemOpenURL(url))
     }
 }

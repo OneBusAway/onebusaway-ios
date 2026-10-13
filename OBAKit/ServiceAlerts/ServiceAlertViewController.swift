@@ -64,15 +64,39 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
 
     // MARK: - WKNavigationDelegate
 
+    /// `SFSafariViewController(url:)` raises on non-http(s) schemes. With
+    /// `dataDetectorTypes = [.all]`, auto-detected `tel:`/`mailto:` links can
+    /// reach this delegate, so only http(s) goes to Safari. Dial and mail
+    /// links go through `Application.open` (which proxies `UIApplication`),
+    /// and everything else (e.g. `javascript:`, `data:`) is dropped.
+    static func isSafariURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
+    }
+
+    /// Returns `true` for schemes that must open in the system handler
+    /// (`tel:`, `mailto:`, `sms:`) rather than in an in-app Safari view.
+    static func isSystemOpenURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "tel" || scheme == "mailto" || scheme == "sms"
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
         guard navigationAction.navigationType == .linkActivated else {
             decisionHandler(.allow)
             return
         }
 
-        if let url = navigationAction.request.url {
+        guard let url = navigationAction.request.url else {
+            decisionHandler(.cancel)
+            return
+        }
+
+        if Self.isSafariURL(url) {
             let safari = SFSafariViewController(url: url)
             application.viewRouter.present(safari, from: self)
+        } else if Self.isSystemOpenURL(url) {
+            application.open(url, options: [:], completionHandler: nil)
         }
 
         decisionHandler(.cancel)

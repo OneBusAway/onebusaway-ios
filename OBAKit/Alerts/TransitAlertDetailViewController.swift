@@ -78,10 +78,9 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
 
     // MARK: - Web View
 
-    #if DEBUG
-    /// Exposes `webView` for unit tests that need to drive the navigation delegate directly.
+    /// Exposes `webView` so unit tests can drive the navigation delegate directly.
+    /// Internal (not `#if DEBUG`) so Debug and Release test configurations exercise the same code path.
     var testWebView: DocumentWebView { webView }
-    #endif
 
     private lazy var webView: DocumentWebView = {
         let configuration = WKWebViewConfiguration()
