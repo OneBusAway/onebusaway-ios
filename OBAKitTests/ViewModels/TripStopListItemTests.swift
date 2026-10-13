@@ -9,6 +9,7 @@
 
 import Foundation
 import Testing
+import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -65,6 +66,7 @@ final class TripStopTemporalStateTests {
             closestStopIndex: nil,
             userStopIndex: nil,
             boardingMarkerIndex: nil,
+            rideIndices: nil,
             onSelectAction: nil
         )
         #expect(viewModel.temporalState == .future)
@@ -91,6 +93,7 @@ final class TripStopViewModelIdentityTests {
             closestStopIndex: nil,
             userStopIndex: nil,
             boardingMarkerIndex: nil,
+            rideIndices: nil,
             onSelectAction: nil
         )
         let second = TripStopViewModel(
@@ -100,6 +103,7 @@ final class TripStopViewModelIdentityTests {
             closestStopIndex: nil,
             userStopIndex: nil,
             boardingMarkerIndex: nil,
+            rideIndices: nil,
             onSelectAction: nil
         )
 
@@ -134,6 +138,7 @@ final class TripStopViewModelIdentityTests {
                 closestStopIndex: nil,
                 userStopIndex: nil,
                 boardingMarkerIndex: nil,
+                rideIndices: nil,
                 onSelectAction: nil
             ).id
         }
@@ -166,6 +171,7 @@ final class TripStopViewModelIdentityTests {
             closestStopIndex: nil,
             userStopIndex: userStopIndex,
             boardingMarkerIndex: nil,
+            rideIndices: nil,
             onSelectAction: nil
         )
         let secondVisit = TripStopViewModel(
@@ -175,6 +181,7 @@ final class TripStopViewModelIdentityTests {
             closestStopIndex: nil,
             userStopIndex: userStopIndex,
             boardingMarkerIndex: nil,
+            rideIndices: nil,
             onSelectAction: nil
         )
         #expect(!firstVisit.isUserDestination)
@@ -201,6 +208,7 @@ final class TripStopBoardingMarkerTests {
             closestStopIndex: nil,
             userStopIndex: userStopIndex,
             boardingMarkerIndex: boardingMarkerIndex,
+            rideIndices: nil,
             onSelectAction: nil
         )
     }
@@ -262,6 +270,139 @@ final class TripStopBoardingMarkerTests {
 
         #expect(view.isAccessibilityElement)
         #expect(view.accessibilityLabel == "Boarding stop")
+    }
+}
+
+/// The rows a shared trip fades: before the sharer boards and after they step
+/// off (#449).
+@MainActor
+@Suite(.serialized)
+final class TripStopOutsideRideTests {
+
+    private let boardingRow = 4
+    private let destinationRow = 10
+
+    /// Has no vehicle status, so every row is in the future unless a test
+    /// places the vehicle.
+    private func stopTimes() throws -> [TripStopTime] {
+        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_status.json")
+        return try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data).entry.stopTimes
+    }
+
+    private func makeRiderStops(_ stopTimes: [TripStopTime], shared: Bool) throws -> TripStopListModel.RiderStops {
+        let arrivalDeparture = try Fixtures.arrivalDeparture(stopSequence: boardingRow, stopID: stopTimes[boardingRow].stopID)
+        return TripStopListModel.riderStops(
+            in: stopTimes,
+            arrivalDeparture: arrivalDeparture,
+            sharedDestinationStopID: shared ? stopTimes[destinationRow].stopID : nil
+        )
+    }
+
+    /// Built the way `TripFloatingPanelController` builds each row.
+    private func row(
+        _ stopTimes: [TripStopTime],
+        at stopIndex: Int,
+        riderStops: TripStopListModel.RiderStops,
+        closestStopIndex: Int? = nil
+    ) -> TripStopViewModel {
+        TripStopViewModel(
+            stopTime: stopTimes[stopIndex],
+            arrivalDeparture: nil,
+            stopIndex: stopIndex,
+            closestStopIndex: closestStopIndex,
+            userStopIndex: riderStops.userStopIndex,
+            boardingMarkerIndex: riderStops.boardingMarkerIndex,
+            rideIndices: riderStops.rideIndices,
+            onSelectAction: nil
+        )
+    }
+
+    private func makeCell(showing row: TripStopViewModel) -> TripStopCell {
+        let cell = TripStopCell(frame: .zero)
+        cell.apply(TripStopListItemRowConfiguration(viewModel: row))
+        return cell
+    }
+
+    @Test func `A shared trip fades the rows before boarding and after the exit`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: true)
+        let outside = [0, boardingRow - 1, destinationRow + 1, stopTimes.count - 1]
+        let inside = [boardingRow, boardingRow + 1, destinationRow - 1, destinationRow]
+
+        for index in outside {
+            #expect(row(stopTimes, at: index, riderStops: riderStops).isOutsideRide, "row \(index)")
+        }
+        for index in inside {
+            #expect(!row(stopTimes, at: index, riderStops: riderStops).isOutsideRide, "row \(index)")
+        }
+    }
+
+    /// Every trip that was never shared must look exactly as it did.
+    @Test func `A trip that was never shared fades no row`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: false)
+
+        for index in stopTimes.indices {
+            #expect(!row(stopTimes, at: index, riderStops: riderStops).isOutsideRide, "row \(index)")
+        }
+    }
+
+    /// `NSDiffableDataSource` only reconfigures a row whose item changed, so a
+    /// row that leaves the ride on a refresh must not compare equal.
+    @Test func `Rows that differ only in being outside the ride are not equal`() throws {
+        let stopTimes = try stopTimes()
+        let unshared = row(stopTimes, at: destinationRow + 1, riderStops: try makeRiderStops(stopTimes, shared: false))
+        let shared = row(stopTimes, at: destinationRow + 1, riderStops: try makeRiderStops(stopTimes, shared: true))
+
+        #expect(unshared != shared)
+    }
+
+    @Test func `A row outside the ride is drawn like a passed stop`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: true)
+
+        let faded = makeCell(showing: row(stopTimes, at: destinationRow + 1, riderStops: riderStops))
+        #expect(faded.titleLabel.textColor == ThemeColors.shared.secondaryLabel)
+        // Approximate: a view's alpha is stored as the layer's `Float` opacity.
+        #expect(abs(faded.titleLabel.alpha - 0.7) < 0.001)
+        #expect(abs(faded.timeLabel.alpha - 0.7) < 0.001)
+        #expect(faded.tripSegmentView.isOutsideRide)
+
+        let ridden = makeCell(showing: row(stopTimes, at: destinationRow - 1, riderStops: riderStops))
+        #expect(ridden.titleLabel.textColor == ThemeColors.shared.label)
+        #expect(ridden.titleLabel.alpha == 1.0)
+        #expect(ridden.timeLabel.alpha == 1.0)
+        #expect(!ridden.tripSegmentView.isOutsideRide)
+    }
+
+    /// Where the vehicle is matters wherever it is, so its row is not faded
+    /// even before the sharer has boarded.
+    @Test func `The vehicle's row outside the ride keeps its emphasis`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: true)
+        let vehicleRow = boardingRow - 2
+
+        let vehicle = row(stopTimes, at: vehicleRow, riderStops: riderStops, closestStopIndex: vehicleRow)
+        #expect(vehicle.isOutsideRide)
+        #expect(vehicle.temporalState == .current)
+
+        let cell = makeCell(showing: vehicle)
+        #expect(cell.titleLabel.textColor == ThemeColors.shared.label)
+        #expect(cell.titleLabel.font == UIFont.preferredFont(forTextStyle: .headline))
+        #expect(cell.titleLabel.alpha == 1.0)
+    }
+
+    @Test func `A reused cell forgets the fade`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: true)
+        let cell = makeCell(showing: row(stopTimes, at: destinationRow + 1, riderStops: riderStops))
+
+        cell.prepareForReuse()
+
+        #expect(!cell.tripSegmentView.isOutsideRide)
+        #expect(cell.titleLabel.textColor == ThemeColors.shared.label)
+        #expect(cell.titleLabel.alpha == 1.0)
+        #expect(cell.timeLabel.alpha == 1.0)
     }
 }
 

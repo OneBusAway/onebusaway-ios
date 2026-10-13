@@ -24,8 +24,8 @@ import UIKit
 @MainActor
 final class TripFocusMapLayer: NSObject, MapLayer {
 
-    /// Shared with the map panel's `tripFocusMapContent`, so a trip is drawn the
-    /// same on both maps.
+    /// Shared with the map panel's `tripFocusMapContent` and the trip screen's
+    /// `MinimalStopAnnotationView`, so a trip is drawn the same on every map.
     enum Style {
         static let coreWidth: CGFloat = 6
         static let casingExtraWidth: CGFloat = 4

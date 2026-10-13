@@ -209,7 +209,7 @@ class TripViewModel: ObservableObject {
         }
 
         do {
-            destinationArrivalDeparture = try await apiService.getTripArrivalDepartureAtStop(
+            let arrival = try await apiService.getTripArrivalDepartureAtStop(
                 stopID: destinationStopID,
                 tripID: arrivalDeparture.tripID,
                 serviceDate: arrivalDeparture.serviceDate,
@@ -218,6 +218,11 @@ class TripViewModel: ObservableObject {
                 // destination more than once.
                 stopSequence: destinationIndex
             ).entry
+            // Cancellation is cooperative: a request already answered when this
+            // load was cancelled, by a newer refresh or `deactivate()`, still
+            // returns. Publishing it could overwrite the newer refresh's arrival.
+            guard !Task.isCancelled else { return }
+            destinationArrivalDeparture = arrival
         } catch {
             if Task.isCancelled || error.isCancellation { return }
             Logger.error("Failed to load the arrival at shared destination \(destinationStopID) on trip \(arrivalDeparture.tripID): \(error)")

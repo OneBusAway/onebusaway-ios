@@ -343,6 +343,42 @@ struct TripStopListModelTests {
         #expect(stops.boardingMarkerIndex == nil)
     }
 
+    // MARK: - The ride the list fades around (#449)
+
+    @Test func `A shared trip's ride runs from boarding to the destination`() {
+        let stops = riderStops(line(["A", "B", "C", "D", "E"]), userStopID: "B", userStopSequence: 1, sharedDestinationStopID: "D")
+
+        #expect(stops.rideIndices == 1...3)
+    }
+
+    @Test func `A trip that was never shared has no ride`() {
+        let stops = riderStops(line(["A", "B", "C", "D"]), userStopID: "B", userStopSequence: 1)
+
+        #expect(stops.rideIndices == nil)
+    }
+
+    @Test func `A shared destination the trip never reaches leaves no ride`() {
+        let stops = riderStops(line(["A", "B", "C"]), userStopID: "B", userStopSequence: 1, sharedDestinationStopID: "A")
+
+        #expect(stops.rideIndices == nil)
+    }
+
+    /// The destination is found, but the ride has no known start, so nothing
+    /// is faded rather than guessing one.
+    @Test func `An unknown boarding stop leaves no ride`() {
+        let stops = riderStops(line(["A", "B", "C"]), userStopID: "Z", sharedDestinationStopID: "C")
+
+        #expect(stops.destinationIndex == 2)
+        #expect(stops.rideIndices == nil)
+    }
+
+    /// `riderStops` never produces this, but forming `3...1` would trap.
+    @Test func `A destination before boarding forms no ride`() {
+        let stops = TripStopListModel.RiderStops(boardingIndex: 3, destinationIndex: 1)
+
+        #expect(stops.rideIndices == nil)
+    }
+
     // MARK: - The header's countdown (#449)
 
     /// A trip that was never shared counts down to the boarding stop. A
