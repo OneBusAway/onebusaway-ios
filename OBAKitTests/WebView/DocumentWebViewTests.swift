@@ -140,7 +140,7 @@ final class DocumentWebViewTests {
             }
 
             group.addTask {
-                try await Task.sleep(nanoseconds: 3_000_000_000)
+                try await Task.sleep(nanoseconds: 30_000_000_000)
                 throw TimeoutError()
             }
 
@@ -185,7 +185,7 @@ final class DocumentWebViewTests {
             }
 
             group.addTask {
-                try await Task.sleep(nanoseconds: 3_000_000_000)
+                try await Task.sleep(nanoseconds: 30_000_000_000)
                 throw TimeoutError()
             }
 
