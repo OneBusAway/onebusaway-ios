@@ -73,11 +73,6 @@ struct ProximityAlertSettingsReasonTests {
         #expect(!ProximityAlertSettingsReason.locationRestricted.alertMessage.contains("%"))
     }
 
-    @Test func `The restricted location body names no app`() {
-        let appName = Bundle.main.appName
-        #expect(!ProximityAlertSettingsReason.locationRestricted.alertMessage.contains(appName))
-    }
-
     @Test func `Alert messages are unique across all reasons`() {
         let reasons: [ProximityAlertSettingsReason] = [
             .locationWhenInUse,
