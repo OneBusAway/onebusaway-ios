@@ -116,7 +116,7 @@ struct SearchModelTests {
         #expect(localized == "This vehicle is not currently on any trips.")
 
         let error = SearchError.noTripsAvailable
-        #expect(error.errorDescription?.isEmpty == false)
-        #expect(error.localizedDescription.isEmpty == false)
+        let expectedDescription = Bundle(for: DonationCell.self).localizedString(forKey: key, value: nil, table: nil)
+        #expect(error.errorDescription == expectedDescription)
     }
 }
