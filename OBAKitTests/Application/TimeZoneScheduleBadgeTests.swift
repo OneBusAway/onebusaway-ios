@@ -28,14 +28,20 @@ struct TimeZoneScheduleBadgeTests {
     private let taipei = TimeZone(identifier: "Asia/Taipei")!
     private let gmt = TimeZone(secondsFromGMT: 0)!
 
+    /// What Los Angeles in winter may render as. `TimeZone.abbreviation(for:)`
+    /// follows the host locale: `en_US` gives `PST`, but locales such as
+    /// `en_IN` give `GMT-8`, which `scheduleBadge` keeps via its GMT fallback.
+    /// Both are short; a long name like "Pacific Time" is the #1102 failure.
+    private let pacificWinterBadges = ["PST", "GMT-8"]
+
     @Test func `Same offset produces no badge`() {
         #expect(losAngeles.scheduleBadge(at: winterAfternoonUTC, versus: losAngeles) == nil)
         #expect(gmt.scheduleBadge(at: winterAfternoonUTC, versus: TimeZone(identifier: "UTC")!) == nil)
     }
 
-    @Test func `Puget Sound from Taipei shows a short US abbreviation`() throws {
+    @Test func `Puget Sound from Taipei shows a short Pacific badge`() throws {
         let badge = try #require(losAngeles.scheduleBadge(at: winterAfternoonUTC, versus: taipei))
-        #expect(badge == "PST")
+        #expect(pacificWinterBadges.contains(badge))
         #expect(!badge.contains("Time"))
         #expect(!badge.contains("Pacific"))
     }
@@ -144,7 +150,7 @@ struct TimeZoneScheduleBadgeTests {
         )
         formatters.timeZone = losAngeles
         let clock = formatters.formattedClockTime(winterAfternoonUTC, deviceTimeZone: taipei)
-        #expect(clock.hasSuffix(" (PST)"))
+        #expect(pacificWinterBadges.contains { clock.hasSuffix(" (\($0))") })
         // The clock itself is Pacific noon, not Taipei 04:00 the next morning.
         #expect(clock.contains("12:00"))
         #expect(!clock.localizedCaseInsensitiveContains("time"))
@@ -220,7 +226,7 @@ struct TimeZoneScheduleBadgeTests {
         let fixedClock = formatters.formattedClockTime(fixedDate, deviceTimeZone: taipei)
 
         #expect(fixedClock.hasPrefix("8:00") || fixedClock.hasPrefix("08:00"))
-        #expect(fixedClock.hasSuffix(" (PST)"))
+        #expect(pacificWinterBadges.contains { fixedClock.hasSuffix(" (\($0))") })
         // Proves the device-calendar path really diverges — this test fails if
         // someone reverts synthesis to Calendar.current while OBATestCase has
         // pinned GMT and both zones accidentally cancel out.
