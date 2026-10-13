@@ -259,8 +259,16 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
             bookmark: bookmark,
             arrivalDepartures: arrDeps,
             highlightedTripIDs: highlighted,
-            hasLoadedArrivalData: dataLoader.hasFetchedData(forStopID: bookmark.stopID)
+            hasLoadedArrivalData: dataLoader.hasFetchedData(forStopID: bookmark.stopID),
+            destinationLookup: destinationLookup(for: bookmark)
         )
+    }
+
+    /// Resolves departures against `bookmark`'s destination; `nil` when it has none.
+    private func destinationLookup(for bookmark: Bookmark) -> ((ArrivalDeparture) -> DestinationArrivalLookup)? {
+        guard let destinationStopID = bookmark.destinationStopID, bookmark.hasDestination else { return nil }
+        let dataLoader: BookmarkDataLoader = self.dataLoader
+        return { dataLoader.destinationArrival(for: $0, destinationStopID: destinationStopID) }
     }
 
     // MARK: - Arrival departure highlight updates

@@ -26,6 +26,20 @@ enum BookmarkSource {
         }
     }
 
+    /// The departure a trip bookmark is built from; `nil` for a stop bookmark.
+    var arrivalDeparture: ArrivalDeparture? {
+        if case .arrivalDeparture(let arrival) = self { return arrival }
+        return nil
+    }
+
+    /// The default bookmark name once a destination is chosen, e.g.
+    /// "Pine St → Main St (10)". Falls back to `dataObjectName` without one.
+    func dataObjectName(destination: Stop?) -> String {
+        guard let destination, let arrival = arrivalDeparture else { return dataObjectName }
+        let format = OBALoc("edit_bookmark_controller.destination_default_name_fmt", value: "%1$@ → %2$@ (%3$@)", comment: "Default name for a trip bookmark with a destination stop. 1st placeholder is the boarding stop's name, 2nd is the destination stop's name, 3rd is the route's short name, e.g. 'Pine St → Main St (10)'.")
+        return String(format: format, arrival.stop.name, destination.name, arrival.routeShortName)
+    }
+
     /// Stop ID the bookmark will (or already does) request arrivals for.
     var stopID: StopID {
         switch self {
@@ -73,6 +87,9 @@ final class EditBookmarkViewModel {
     /// The checked group, or `nil` for (No Group).
     var selectedGroupID: UUID?
 
+    /// The destination stop chosen for a new trip bookmark, if any (#1080).
+    private(set) var destinationStop: Stop?
+
     /// The groups offered in the picker, in display order. Refreshed when the
     /// rider adds one, since `BookmarkGroup` isn't observable.
     private(set) var groups: [BookmarkGroup]
@@ -85,9 +102,36 @@ final class EditBookmarkViewModel {
         return false
     }
 
-    /// Transit-derived name (stop title or route + headsign).
-    /// Used as the fallback when the user leaves the name field empty.
-    private let dataObjectName: String
+    /// Transit-derived name (stop title or route + headsign, plus the
+    /// destination when one is chosen). Used as the fallback when the user
+    /// leaves the name field empty.
+    private var dataObjectName: String {
+        source.dataObjectName(destination: destinationStop)
+    }
+
+    /// Whether the rider can pick a destination stop: only when creating a trip bookmark.
+    /// A saved bookmark's destination is part of its identity, like its route.
+    var canChooseDestination: Bool {
+        isAddMode && source.arrivalDeparture != nil
+    }
+
+    /// The departure the destination picker lists stops for.
+    var destinationPickerArrivalDeparture: ArrivalDeparture? {
+        canChooseDestination ? source.arrivalDeparture : nil
+    }
+
+    /// The destination name to show: the one being chosen, or the saved bookmark's.
+    var destinationName: String? {
+        destinationStop?.name ?? existingDestinationName
+    }
+
+    /// Whether the form shows the destination section at all.
+    var showsDestinationSection: Bool {
+        canChooseDestination || existingDestinationName != nil
+    }
+
+    /// The saved bookmark's destination, shown read-only in edit mode.
+    private let existingDestinationName: String?
 
     /// Stop ID used for arrivals-and-departures requests. Shown in the editor
     /// so a broken bookmark can be identified without trial-and-error deletes (#1421).
@@ -110,7 +154,7 @@ final class EditBookmarkViewModel {
         self.application = application
         self.source = source
         self.mode = bookmark.map(Mode.edit) ?? .add
-        self.dataObjectName = source.dataObjectName
+        self.existingDestinationName = bookmark.flatMap { $0.hasDestination ? $0.destinationStopName : nil }
         self.stopID = bookmark?.stopID ?? source.stopID
         self.name = bookmark?.name ?? source.dataObjectName
         self.isFavorite = bookmark?.isFavorite ?? true
@@ -122,6 +166,24 @@ final class EditBookmarkViewModel {
         // A group that no longer exists shows as (No Group).
         let storedGroupID = bookmark.flatMap { application.userDataStore.findBookmark(id: $0.id)?.groupID }
         self.selectedGroupID = groups.contains { $0.id == storedGroupID } ? storedGroupID : nil
+    }
+
+    // MARK: - Destination
+
+    /// Sets (or, with `nil`, clears) the destination of a new trip bookmark.
+    ///
+    /// A name the rider hasn't touched follows the destination, so the default
+    /// says where the trip goes; a name they typed is left alone.
+    func setDestination(_ stop: Stop?) {
+        guard canChooseDestination else { return }
+
+        let previousDefault = dataObjectName
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        destinationStop = stop
+
+        if trimmedName.isEmpty || trimmedName == previousDefault {
+            name = dataObjectName
+        }
     }
 
     // MARK: - Groups
@@ -153,7 +215,7 @@ final class EditBookmarkViewModel {
             case .stop(let stop):
                 bookmark = Bookmark(name: resolvedName, regionIdentifier: region.regionIdentifier, stop: stop)
             case .arrivalDeparture(let ad):
-                bookmark = Bookmark(name: resolvedName, regionIdentifier: region.regionIdentifier, arrivalDeparture: ad, stop: ad.stop)
+                bookmark = Bookmark(name: resolvedName, regionIdentifier: region.regionIdentifier, arrivalDeparture: ad, stop: ad.stop, destinationStop: destinationStop)
             }
             if application.userDataStore.checkForDuplicates(bookmark: bookmark) {
                 return .duplicateRequiresConfirmation(bookmark)

@@ -167,6 +167,104 @@ final class EditBookmarkViewModelTests: OBATestCase {
         #expect(stored.first?.isFavorite == false)
     }
 
+    // MARK: - Destination (#1080)
+
+    @Test @MainActor
+    func `Only a new trip bookmark can choose a destination`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let arrDep = try makeArrivalDeparture()
+
+        let newTrip = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrDep), bookmark: nil)
+        let newStop = EditBookmarkViewModel(application: app, source: .stop(try makeStop()), bookmark: nil)
+        let existing = Bookmark(name: "Trip", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrDep)
+        let editTrip = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrDep), bookmark: existing)
+
+        #expect(newTrip.canChooseDestination)
+        #expect(newTrip.showsDestinationSection)
+        #expect(newStop.canChooseDestination == false)
+        #expect(newStop.showsDestinationSection == false)
+        #expect(editTrip.canChooseDestination == false)
+        #expect(editTrip.showsDestinationSection == false, "No destination saved, so nothing to show")
+    }
+
+    @Test @MainActor
+    func `Edit mode shows a saved destination read-only`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let arrDep = try makeArrivalDeparture()
+        let destination = try makeStop()
+        let existing = Bookmark(name: "Commute", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrDep, destinationStop: destination)
+
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrDep), bookmark: existing)
+
+        #expect(vm.showsDestinationSection)
+        #expect(vm.canChooseDestination == false)
+        #expect(vm.destinationName == destination.name)
+    }
+
+    @Test @MainActor
+    func `Choosing a destination renames an untouched default name`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let arrDep = try makeArrivalDeparture()
+        let destination = try makeStop()
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrDep), bookmark: nil)
+        #expect(vm.name == arrDep.routeAndHeadsign)
+
+        vm.setDestination(destination)
+
+        #expect(vm.name == "\(arrDep.stop.name) → \(destination.name) (\(arrDep.routeShortName))")
+        #expect(vm.destinationName == destination.name)
+
+        vm.setDestination(nil)
+
+        #expect(vm.name == arrDep.routeAndHeadsign, "Clearing the destination restores the plain default")
+        #expect(vm.destinationName == nil)
+    }
+
+    @Test @MainActor
+    func `Choosing a destination keeps a name the rider typed`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(try makeArrivalDeparture()), bookmark: nil)
+        vm.name = "My commute"
+
+        vm.setDestination(try makeStop())
+
+        #expect(vm.name == "My commute")
+    }
+
+    @Test @MainActor
+    func `Saving a new trip bookmark includes the chosen destination`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let destination = try makeStop()
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(try makeArrivalDeparture()), bookmark: nil)
+        vm.setDestination(destination)
+
+        guard case .readyToSaveNew(let bookmark) = vm.prepareToSave(name: vm.name) else {
+            Issue.record("Expected a new bookmark ready to save")
+            return
+        }
+
+        #expect(bookmark.hasDestination)
+        #expect(bookmark.destinationStopID == destination.id)
+        #expect(bookmark.name == vm.name)
+    }
+
+    /// The same route to a different destination is a different commute, not a duplicate.
+    @Test @MainActor
+    func `A trip bookmark to a new destination is not a duplicate`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let arrDep = try makeArrivalDeparture()
+        app.userDataStore.add(Bookmark(name: arrDep.routeAndHeadsign, regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrDep), to: nil)
+
+        let vm = EditBookmarkViewModel(application: app, source: .arrivalDeparture(arrDep), bookmark: nil)
+        vm.setDestination(try makeStop())
+        let renamed = vm.prepareToSave(name: arrDep.routeAndHeadsign)
+
+        guard case .readyToSaveNew = renamed else {
+            Issue.record("Expected no duplicate prompt for a different destination")
+            return
+        }
+    }
+
     // MARK: - Initial State (Add Mode)
 
     @Test @MainActor

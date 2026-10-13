@@ -27,8 +27,10 @@ protocol DestinationStopPickerDelegate: AnyObject {
 
 // MARK: - Controller
 
-/// Presents a list of stops along a trip so the user can select their destination before sharing.
+/// Presents a list of stops along a trip so the user can select their destination,
+/// either before sharing the trip or when bookmarking it with a destination.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/449
+/// See: https://github.com/OneBusAway/onebusaway-ios/issues/1080
 @MainActor
 class DestinationStopPickerController: UIViewController, AppContext, OBAListViewDataSource {
 
@@ -37,6 +39,11 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
     let arrivalDeparture: ArrivalDeparture
 
     weak var delegate: DestinationStopPickerDelegate?
+
+    /// Whether the picker offers to continue without a destination ("Share
+    /// Anyway"). Sharing works without one; a destination bookmark doesn't, so
+    /// the bookmark flow turns this off and leaves Cancel as the only exit.
+    let allowsSkippingDestination: Bool
 
     // MARK: - State
 
@@ -59,9 +66,10 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
 
     // MARK: - Init/Deinit
 
-    init(application: Application, arrivalDeparture: ArrivalDeparture) {
+    init(application: Application, arrivalDeparture: ArrivalDeparture, allowsSkippingDestination: Bool = true) {
         self.application = application
         self.arrivalDeparture = arrivalDeparture
+        self.allowsSkippingDestination = allowsSkippingDestination
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -272,6 +280,11 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
     /// twice reads as a bug. `.loading` and `.data` are not dead ends — the list
     /// is still coming, or it has arrived and the user should pick a stop.
     private func updateShareEscapeVisibility() {
+        guard allowsSkippingDestination else {
+            navigationItem.rightBarButtonItem = nil
+            return
+        }
+
         switch state {
         case .error:
             navigationItem.rightBarButtonItem = shareWithoutDestinationButton
@@ -343,7 +356,7 @@ class DestinationStopPickerController: UIViewController, AppContext, OBAListView
     private var emptyViewModel: OBAListView.StandardEmptyDataViewModel {
         // Without this button the empty state would be a dead end: the
         // only exit is Cancel, with no way to share the trip at all.
-        let shareConfig = ActivityIndicatedButton.Configuration(
+        let shareConfig = !allowsSkippingDestination ? nil : ActivityIndicatedButton.Configuration(
             text: Self.shareWithoutDestinationTitle,
             largeContentImage: nil,
             showsActivityIndicatorOnTap: false,

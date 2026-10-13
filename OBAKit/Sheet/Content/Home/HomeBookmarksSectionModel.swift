@@ -185,7 +185,8 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
                 bookmark: bookmark,
                 arrivalDepartures: arrivalDepartures(for: bookmark),
                 highlightedTripIDs: [],
-                hasLoadedArrivalData: loader.hasFetchedData(forStopID: bookmark.stopID)
+                hasLoadedArrivalData: loader.hasFetchedData(forStopID: bookmark.stopID),
+                destinationLookup: destinationLookup(for: bookmark)
             )
         }
         guard rebuilt != rows else { return }
@@ -195,6 +196,13 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     private func arrivalDepartures(for bookmark: Bookmark) -> [ArrivalDeparture] {
         guard let key = TripBookmarkKey(bookmark: bookmark) else { return [] }
         return loader.dataForKey(key)
+    }
+
+    /// Resolves departures against `bookmark`'s destination; `nil` when it has none.
+    private func destinationLookup(for bookmark: Bookmark) -> ((ArrivalDeparture) -> DestinationArrivalLookup)? {
+        guard let destinationStopID = bookmark.destinationStopID, bookmark.hasDestination else { return nil }
+        let loader: BookmarkDataLoader = self.loader
+        return { loader.destinationArrival(for: $0, destinationStopID: destinationStopID) }
     }
 
     // MARK: - BookmarkDataDelegate

@@ -145,5 +145,79 @@ final class BookmarkTests: OBATestCase {
         let arrDep = try #require(stopArrivals.arrivalsAndDepartures.first)
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, arrivalDeparture: arrDep)
         #expect(bookmark.isTripBookmark)
+        #expect(bookmark.hasDestination == false)
+    }
+
+    // MARK: - Destination (#1080)
+
+    private func makeArrivalDeparture() throws -> ArrivalDeparture {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        return try #require(stopArrivals.arrivalsAndDepartures.first)
+    }
+
+    @Test func `Trip bookmark with a destination records it`() throws {
+        let destination = stops[1]
+        let bookmark = Bookmark(name: "Commute", regionIdentifier: region.regionIdentifier, arrivalDeparture: try makeArrivalDeparture(), destinationStop: destination)
+
+        #expect(bookmark.hasDestination)
+        #expect(bookmark.destinationStopID == destination.id)
+        #expect(bookmark.destinationStopName == destination.name)
+    }
+
+    /// A destination only means something for a trip; a stop bookmark drops it.
+    @Test func `Stop bookmark ignores a destination`() {
+        let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, arrivalDeparture: nil, stop: stops[0], destinationStop: stops[1])
+
+        #expect(bookmark.hasDestination == false)
+        #expect(bookmark.destinationStopID == nil)
+        #expect(bookmark.destinationStopName == nil)
+    }
+
+    @Test func `Codable roundtripping preserves the destination`() throws {
+        let bookmark = Bookmark(name: "Commute", regionIdentifier: region.regionIdentifier, arrivalDeparture: try makeArrivalDeparture(), destinationStop: stops[1])
+
+        let roundtripped = try Fixtures.roundtripCodable(type: Bookmark.self, model: bookmark)
+
+        #expect(roundtripped.destinationStopID == stops[1].id)
+        #expect(roundtripped.destinationStopName == stops[1].name)
+        #expect(roundtripped.hasDestination)
+        #expect(roundtripped == bookmark)
+    }
+
+    /// Trip bookmarks saved before destinations existed have neither key, and
+    /// must keep decoding as ordinary trip bookmarks.
+    @Test func `Decoding a trip bookmark saved without a destination yields none`() throws {
+        let bookmark = Bookmark(name: "Commute", regionIdentifier: region.regionIdentifier, arrivalDeparture: try makeArrivalDeparture(), destinationStop: stops[1])
+
+        let encoded = try PropertyListEncoder().encode(bookmark)
+        var plist = try #require(
+            try PropertyListSerialization.propertyList(from: encoded, format: nil) as? [String: Any]
+        )
+        try #require(plist.removeValue(forKey: "destinationStopID") != nil, "Expected destinationStopID in the encoded form")
+        try #require(plist.removeValue(forKey: "destinationStopName") != nil, "Expected destinationStopName in the encoded form")
+
+        let legacy = try PropertyListSerialization.data(fromPropertyList: plist, format: .binary, options: 0)
+        let decoded = try PropertyListDecoder().decode(Bookmark.self, from: legacy)
+
+        #expect(decoded.isTripBookmark)
+        #expect(decoded.hasDestination == false)
+        #expect(decoded.destinationStopID == nil)
+    }
+
+    /// The same route to two different destinations is two different
+    /// commutes, so it must not trip the duplicate-bookmark alert.
+    @Test func `Bookmarks differing only by destination are not duplicates`() throws {
+        let arrDep = try makeArrivalDeparture()
+        let toWork = Bookmark(name: "Commute", regionIdentifier: region.regionIdentifier, arrivalDeparture: arrDep, destinationStop: stops[1])
+        let toHome = Bookmark(name: "Commute", regionIdentifier: region.regionIdentifier, arrivalDeparture: arrDep, destinationStop: stops[2])
+        let noDestination = Bookmark(name: "Commute", regionIdentifier: region.regionIdentifier, arrivalDeparture: arrDep)
+        let toWorkAgain = Bookmark(name: "Commute", regionIdentifier: region.regionIdentifier, arrivalDeparture: arrDep, destinationStop: stops[1])
+
+        #expect(toWork.isEqualish(toHome) == false)
+        #expect(toWork.isEqualish(noDestination) == false)
+        #expect(toWork.isEqualish(toWorkAgain))
     }
 }

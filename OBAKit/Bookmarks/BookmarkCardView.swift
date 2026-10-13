@@ -67,6 +67,7 @@ struct BookmarkCardView: View {
             VStack(alignment: .leading, spacing: 3) {
                 nameText
                 statusLine
+                destinationLine
             }
             Spacer(minLength: 8)
             if let primary {
@@ -98,6 +99,7 @@ struct BookmarkCardView: View {
             } else {
                 loadingText
             }
+            destinationLine
         }
     }
 
@@ -145,11 +147,46 @@ struct BookmarkCardView: View {
             .foregroundStyle(Color(uiColor: status.color))
     }
 
+    /// Arrival at the bookmark's destination stop, below the departure it belongs
+    /// to. Shown only for destination bookmarks with a departure to describe;
+    /// the "no trip stops there" case replaces the status line instead (#1080).
+    @ViewBuilder
+    private var destinationLine: some View {
+        if primary != nil, let text = formatters.destinationText(for: row) {
+            Label {
+                Text(text)
+                    .lineLimit(isAccessibilitySize ? nil : 2)
+            } icon: {
+                Image(systemName: "arrow.turn.down.right")
+            }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(destinationColor)
+        }
+    }
+
+    private var destinationColor: Color {
+        if case .arrives(let arrival) = row.destinationStatus, arrival.isRealTime {
+            return .primary
+        }
+        return .secondary
+    }
+
     /// Placeholder for the status line while there's no primary departure:
     /// "Loading..." until the stop's fetch completes, then an explicit
     /// no-departures message — a fetched-but-empty result must not look like
     /// it's loading forever.
+    @ViewBuilder
     private var loadingText: some View {
+        if row.destinationStatus == .notServed, let text = formatters.destinationText(for: row) {
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } else {
+            noDeparturesText
+        }
+    }
+
+    private var noDeparturesText: some View {
         Text(row.hasLoadedArrivalData
             ? OBALoc("bookmarks_controller.no_upcoming_departures", value: "No upcoming departures", comment: "Shown on a bookmark card when arrival data has loaded but there are no departures in the near future")
             : OBALoc("loading", value: "Loading...", comment: "Loading state text"))

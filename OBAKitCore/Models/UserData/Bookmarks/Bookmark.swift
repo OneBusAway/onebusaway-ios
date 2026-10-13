@@ -86,14 +86,28 @@ import Foundation
     public let tripHeadsign: String?
     public let routeID: RouteID?
 
+    // MARK: - Destination Properties
+
+    /// Optional. The stop where the rider gets off, for a trip bookmark that tracks
+    /// a commute from `stopID` to a destination on the same route.
+    ///
+    /// Only trip bookmarks carry a destination; it is ignored for whole-stop bookmarks.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1080
+    public let destinationStopID: StopID?
+
+    /// The destination stop's name, captured when the bookmark was created so the
+    /// card can label the arrival without fetching the stop.
+    public let destinationStopName: String?
+
     // MARK: - Init
 
-    public convenience init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture, dateCreated: Date = Date()) {
+    public convenience init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture, destinationStop: Stop? = nil, dateCreated: Date = Date()) {
         self.init(
             name: name,
             regionIdentifier: regionIdentifier,
             arrivalDeparture: arrivalDeparture,
             stop: arrivalDeparture.stop,
+            destinationStop: destinationStop,
             dateCreated: dateCreated
         )
     }
@@ -110,16 +124,23 @@ import Foundation
 
     /// `dateCreated` is injectable so tests can pin an ordering instead of
     /// racing the clock; production callers take the default.
-    public init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture?, stop: Stop, dateCreated: Date = Date()) {
+    ///
+    /// `destinationStop` is kept only when `arrivalDeparture` is provided: a
+    /// destination is meaningless without the trip that reaches it.
+    public init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture?, stop: Stop, destinationStop: Stop? = nil, dateCreated: Date = Date()) {
         if let arrivalDeparture = arrivalDeparture {
             self.routeShortName = arrivalDeparture.routeShortName
             self.routeID = arrivalDeparture.routeID
             self.tripHeadsign = arrivalDeparture.tripHeadsign
+            self.destinationStopID = destinationStop?.id
+            self.destinationStopName = destinationStop?.name
         }
         else {
             self.routeShortName = nil
             self.routeID = nil
             self.tripHeadsign = nil
+            self.destinationStopID = nil
+            self.destinationStopName = nil
         }
 
         self.stop = stop
@@ -138,6 +159,9 @@ import Foundation
 
         // Trip bookmark keys
         case routeShortName, tripHeadsign, routeID
+
+        // Destination keys
+        case destinationStopID, destinationStopName
     }
 
     public required init(from decoder: Decoder) throws {
@@ -163,6 +187,11 @@ import Foundation
         routeShortName = try container.decodeIfPresent(String.self, forKey: .routeShortName)
         tripHeadsign = try container.decodeIfPresent(String.self, forKey: .tripHeadsign)
         routeID = try container.decodeIfPresent(RouteID.self, forKey: .routeID)
+
+        // Absent from bookmarks written before destinations existed; those are
+        // ordinary trip (or stop) bookmarks.
+        destinationStopID = try container.decodeIfPresent(StopID.self, forKey: .destinationStopID)
+        destinationStopName = try container.decodeIfPresent(String.self, forKey: .destinationStopName)
     }
 
     /// Returns `true` if the receiver's contents match the contents of `bookmark`.
@@ -176,7 +205,8 @@ import Foundation
             stopID == bookmark.stopID &&
             routeShortName == bookmark.routeShortName &&
             tripHeadsign == bookmark.tripHeadsign &&
-            routeID == bookmark.routeID
+            routeID == bookmark.routeID &&
+            destinationStopID == bookmark.destinationStopID
     }
 
     /// - Note: `dateCreated` is deliberately excluded here and from `hash`. It's
@@ -199,7 +229,9 @@ import Foundation
             isPinned == rhs.isPinned &&
             routeShortName == rhs.routeShortName &&
             routeID == rhs.routeID &&
-            tripHeadsign == rhs.tripHeadsign
+            tripHeadsign == rhs.tripHeadsign &&
+            destinationStopID == rhs.destinationStopID &&
+            destinationStopName == rhs.destinationStopName
     }
 
     public override var hash: Int {
@@ -216,6 +248,8 @@ import Foundation
         hasher.combine(routeID)
         hasher.combine(sortOrder)
         hasher.combine(tripHeadsign)
+        hasher.combine(destinationStopID)
+        hasher.combine(destinationStopName)
         return hasher.finalize()
     }
 
@@ -234,10 +268,17 @@ import Foundation
         descriptionBuilder.add(key: "sortOrder", value: sortOrder)
         descriptionBuilder.add(key: "dateCreated", value: dateCreated)
         descriptionBuilder.add(key: "tripHeadsign", value: tripHeadsign)
+        descriptionBuilder.add(key: "destinationStopID", value: destinationStopID)
+        descriptionBuilder.add(key: "destinationStopName", value: destinationStopName)
         return descriptionBuilder.description
     }
 
     public var isTripBookmark: Bool {
         routeShortName != nil && routeID != nil && tripHeadsign != nil
+    }
+
+    /// `true` for a trip bookmark that also tracks the rider's arrival at a destination stop.
+    public var hasDestination: Bool {
+        isTripBookmark && destinationStopID != nil
     }
 }
