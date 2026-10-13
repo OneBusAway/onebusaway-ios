@@ -13,6 +13,7 @@ import OBAKitCore
 /// The line/squircle adornment on the leading side of a cell on the `TripFloatingPanelController`.
 ///
 /// Depicts if the associated stop is the user's destination, where the rider boarded, or the current location of the transit vehicle.
+/// Stops the vehicle has passed, and stops outside a shared trip's ride, are drawn faded.
 class TripSegmentView: UIView {
 
     private let lineWidth: CGFloat = 1.0
@@ -48,6 +49,21 @@ class TripSegmentView: UIView {
     /// The temporal state of this stop relative to the vehicle's current position.
     var temporalState: TripStopTemporalState = .future {
         didSet { setNeedsDisplay() }
+    }
+
+    /// See `TripStopViewModel.isOutsideRide`.
+    var isOutsideRide: Bool = false {
+        didSet { setNeedsDisplay() }
+    }
+
+    /// Drawn in the passed stops' gray. The vehicle's own stop never is, even
+    /// outside a ride.
+    private var isFaded: Bool {
+        switch temporalState {
+        case .past: return true
+        case .current: return false
+        case .future: return isOutsideRide
+        }
     }
 
     private var isUserDestination: Bool = false
@@ -106,14 +122,15 @@ class TripSegmentView: UIView {
 
     private func drawRegularTripSegment(_ rect: CGRect, context: CGContext?) {
         // Top line color depends on temporal state:
-        // past/current → gray (the vehicle has reached or passed here)
-        // future → brand color
+        // past/current → gray (the vehicle has reached or passed here). A
+        // current row is never faded, so only its top line is gray.
+        // future → brand color, unless faded
         let topColor: UIColor
         switch temporalState {
         case .past, .current:
             topColor = pastLineColor
         case .future:
-            topColor = lineColor
+            topColor = isFaded ? pastLineColor : lineColor
         }
 
         topColor.setFill()
@@ -122,7 +139,7 @@ class TripSegmentView: UIView {
 
         let bezierFrame = CGRect(origin: CGPoint(x: rect.midX - halfRadius, y: rect.midY - halfRadius), size: CGSize(width: circleRadius, height: circleRadius))
 
-        let strokeColor: UIColor = temporalState == .past ? pastLineColor : lineColor
+        let strokeColor: UIColor = isFaded ? pastLineColor : lineColor
         strokeColor.setStroke()
 
         let bezierPath = UIBezierPath(roundedRect: bezierFrame, cornerRadius: ThemeMetrics.compactCornerRadius)
@@ -142,8 +159,8 @@ class TripSegmentView: UIView {
 
         bezierPath.stroke()
 
-        // Bottom line: past → gray, current/future → brand color
-        let bottomColor: UIColor = temporalState == .past ? pastLineColor : lineColor
+        // Bottom line: faded → gray, otherwise brand color
+        let bottomColor: UIColor = isFaded ? pastLineColor : lineColor
         bottomColor.setFill()
         let bottomLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.midY + halfRadius), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         bottomLine.fill()

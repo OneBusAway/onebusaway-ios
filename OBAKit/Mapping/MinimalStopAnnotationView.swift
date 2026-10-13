@@ -11,19 +11,38 @@ import UIKit
 import MapKit
 import OBAKitCore
 
+/// The dot for each stop on the trip map. The rider's stops are drawn larger in
+/// the route's color, the same sizes the panel's trip map uses.
 class MinimalStopAnnotationView: MKAnnotationView {
 
-    public var selectedArrivalDeparture: ArrivalDeparture?
+    /// How a stop's pin stands out from the rest of the trip. The trip map marks
+    /// the stops the stop list marks; `TripMapAnnotationPolicy.StopMarks` decides
+    /// which. See #449.
+    enum Marking {
+        /// A stop the rider neither boards nor leaves at.
+        case ordinary
+        /// The rider's stop: where they board, or on a shared trip, where the
+        /// sharer steps off. Filled with the route's color.
+        case riderStop
+        /// Where the sharer boards, once a shared trip's rider's stop has moved
+        /// to their destination. A ring in the route's color.
+        case boardingStop
+    }
 
     private let shapeLayer = CAShapeLayer()
+
+    /// An arrival above the pin. Outside the pin's bounds, so a tap on it
+    /// reaches the map rather than opening the stop.
+    private let arrivalBadge = DepartureTimeBadge()
 
     // MARK: - Init
 
     public override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         layer.addSublayer(shapeLayer)
+        addSubview(arrivalBadge)
 
-        annotationSize = 10.0
+        configure(marking: .ordinary, routeColor: strokeColor, arrival: nil)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -33,22 +52,34 @@ class MinimalStopAnnotationView: MKAnnotationView {
     public override func prepareForReuse() {
         super.prepareForReuse()
 
-        shapeLayer.strokeColor = strokeColor.cgColor
+        configure(marking: .ordinary, routeColor: strokeColor, arrival: nil)
     }
 
-    public override func prepareForDisplay() {
-        super.prepareForDisplay()
+    // MARK: - Marking
 
-        guard
-            let stop = annotation as? Stop,
-            let selectedArrivalDeparture = selectedArrivalDeparture
-        else {
-            return
+    /// - Parameters:
+    ///   - routeColor: What a marked pin is drawn in. Unused by an ordinary pin.
+    ///   - arrival: Shown above the pin, or no badge when `nil`.
+    func configure(marking: Marking, routeColor: UIColor, arrival: DepartureTimeBadge.Configuration?) {
+        let isMarked = marking != .ordinary
+        annotationSize = isMarked ? TripFocusMapLayer.Style.userStopDiameter : TripFocusMapLayer.Style.stopDiameter
+        shapeLayer.lineWidth = isMarked ? TripFocusMapLayer.Style.stopRingWidth : Self.ordinaryRingWidth
+
+        switch marking {
+        case .ordinary:
+            shapeLayer.fillColor = fillColor.cgColor
+            shapeLayer.strokeColor = strokeColor.cgColor
+        case .riderStop:
+            shapeLayer.fillColor = routeColor.cgColor
+            shapeLayer.strokeColor = fillColor.cgColor
+        case .boardingStop:
+            shapeLayer.fillColor = fillColor.cgColor
+            shapeLayer.strokeColor = routeColor.cgColor
         }
 
-        if selectedArrivalDeparture.stopID == stop.id {
-            shapeLayer.strokeColor = highlightedStrokeColor.cgColor
-        }
+        arrivalBadge.configure(arrival)
+        arrivalBadge.isHidden = arrival == nil
+        setNeedsLayout()
     }
 
     // MARK: - Layout
@@ -60,8 +91,13 @@ class MinimalStopAnnotationView: MKAnnotationView {
         shapeLayer.path = bezierPath.cgPath
         shapeLayer.frame = bounds
 
-        shapeLayer.strokeColor = strokeColor.cgColor
-        shapeLayer.fillColor = fillColor.cgColor
+        let badgeSize = arrivalBadge.intrinsicContentSize
+        arrivalBadge.frame = CGRect(
+            x: bounds.midX - badgeSize.width / 2.0,
+            y: bounds.minY - badgeSize.height - ThemeMetrics.compactPadding,
+            width: badgeSize.width,
+            height: badgeSize.height
+        )
     }
 
     // MARK: - Appearance
@@ -81,6 +117,5 @@ class MinimalStopAnnotationView: MKAnnotationView {
     /// Stroke color for this annotation view and its directional arrow.
     public var strokeColor: UIColor = .gray
 
-    /// Stroke color for this annotation view when it is highlighted.
-    public var highlightedStrokeColor: UIColor = .blue
+    private static let ordinaryRingWidth: CGFloat = 1.0
 }

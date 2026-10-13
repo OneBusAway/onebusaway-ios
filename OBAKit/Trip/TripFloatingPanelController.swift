@@ -455,6 +455,7 @@ class TripFloatingPanelController: UIViewController,
                 closestStopIndex: closestStopIdx,
                 userStopIndex: riderStops.userStopIndex,
                 boardingMarkerIndex: riderStops.boardingMarkerIndex,
+                rideIndices: riderStops.rideIndices,
                 onSelectAction: selectTripStopAction
             ).typeErased
         }

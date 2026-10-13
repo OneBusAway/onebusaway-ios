@@ -82,7 +82,9 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
                 .applyDetentConfig(
                     route.detentConfiguration,
                     selection: detentBinding(for: route),
+                    // See `SheetCoordinator.isStackedSheetCovered(atDepth:)`.
                     interactiveDismissDisabled: route.detentConfiguration.isDismissDisabled
+                        || coordinator.isStackedSheetCovered(atDepth: depth)
                 )
                 .environmentObject(coordinator)
                 .modifier(StackedSheetLayer(

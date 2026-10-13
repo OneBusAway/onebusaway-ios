@@ -90,6 +90,105 @@ final class SheetCoordinatorTests {
         #expect(coordinator.allRoutes == [.home, .search, .stopDetails(stopID: "1_75403"), .mapSettings])
     }
 
+    // MARK: - open(_:from:)
+
+    /// A trip opened from the Stop sheet sits on top of it, so Back from the trip
+    /// returns to the stop the rider came from.
+    @Test func `Open from a sheet pushes on top of it, and pop returns to it`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t1"))
+        coordinator.push(stop)
+
+        coordinator.open(trip, from: stop)
+        #expect(coordinator.stackedRoutes == [stop, trip])
+
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes == [stop])
+    }
+
+    /// The sheet the tap came from has already closed: nothing below is touched,
+    /// and the route still opens on top.
+    @Test func `Open from a sheet no longer in the pile pushes on top`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t1"))
+        coordinator.push(stop)
+
+        coordinator.open(trip, from: .stopDetails(stopID: "1_99999"))
+
+        #expect(coordinator.stackedRoutes == [stop, trip])
+    }
+
+    /// A tap in a sheet with another sheet over it, such as a departure on a Stop
+    /// sheet under a half-height trip, replaces what was over it instead of
+    /// stacking a second trip on the first.
+    @Test func `Open from a covered sheet closes what was above it first`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        let firstTrip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t1"))
+        let secondTrip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t2"))
+        coordinator.push(stop)
+        coordinator.push(firstTrip)
+
+        coordinator.open(secondTrip, from: stop)
+
+        #expect(coordinator.stackedRoutes == [stop, secondTrip])
+    }
+
+    /// Trip X, one of its stops, then trip X's departure at that stop: the trip is
+    /// already open underneath, so the rider goes back to it instead of the tap
+    /// doing nothing.
+    @Test func `Open goes back to a route already open further down`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(stopID: "stop_1", tripID: "t1"))
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        coordinator.push(trip)
+        coordinator.push(stop)
+
+        coordinator.open(.tripDetails(try Fixtures.tripConvertible(stopID: "stop_2", tripID: "t1")), from: stop)
+
+        #expect(coordinator.stackedRoutes == [trip])
+    }
+
+    @Test func `Open leaves a route already on top as it is`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t1"))
+        coordinator.push(stop)
+        coordinator.push(trip)
+        coordinator.setStackedDetent(.large, at: 1)
+
+        coordinator.open(trip, from: stop)
+
+        #expect(coordinator.stackedRoutes == [stop, trip])
+        #expect(coordinator.stackedDetents == [.large, .large])
+    }
+
+    // MARK: - isStackedSheetCovered(atDepth:)
+
+    /// Only the frontmost stacked sheet can be swiped away. The rest have a sheet
+    /// over them, and an index past the pile has nothing there to cover.
+    @Test func `Every stacked sheet but the frontmost is covered`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.stopDetails(stopID: "1_75403"))
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+        coordinator.push(.mapSettings)
+
+        #expect(coordinator.isStackedSheetCovered(atDepth: 0))
+        #expect(coordinator.isStackedSheetCovered(atDepth: 1))
+        #expect(coordinator.isStackedSheetCovered(atDepth: 2) == false)
+        #expect(coordinator.isStackedSheetCovered(atDepth: 3) == false)
+    }
+
+    @Test func `A lone stacked sheet is not covered`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        #expect(coordinator.isStackedSheetCovered(atDepth: 0) == false)
+
+        coordinator.push(.mapSettings)
+        #expect(coordinator.isStackedSheetCovered(atDepth: 0) == false)
+    }
+
     // MARK: - Pop removes topmost layer
 
     @Test func `Pop with stacked presented removes top stacked and preserves content stack`() {

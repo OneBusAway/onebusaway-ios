@@ -8,8 +8,9 @@
 //
 
 import MapKit
+import OBAKitCore
 
-/// Callout behavior for stop annotations on the trip map.
+/// Callout behavior and marks for stop annotations on the trip map.
 ///
 /// Schedule-time callouts duplicated the trip list and obscured the vehicle.
 /// Pins therefore have `canShowCallout = false`. A rider tap opens the stop
@@ -23,5 +24,38 @@ enum TripMapAnnotationPolicy {
         view.canShowCallout = false
         view.rightCalloutAccessoryView = nil
         view.detailCalloutAccessoryView = nil
+    }
+
+    /// Which of the trip map's pins stand out, and the arrival shown on one.
+    ///
+    /// The pins mark the rows the stop list marks, resolved by the same
+    /// `TripStopListModel.riderStops`, so the map and the list cannot disagree
+    /// about which stop is the rider's. See #449.
+    ///
+    /// Visual only. The trip map is hidden from VoiceOver, which reads the same
+    /// marks from the stop list and the destination's arrival from the header.
+    struct StopMarks {
+        /// The trip's stop times in trip order, so a pin can find its row.
+        var stopTimes: [TripStopTime] = []
+        var riderStops = TripStopListModel.RiderStops(boardingIndex: nil, destinationIndex: nil)
+        /// The shared destination's live arrival, or `nil` until it loads.
+        var destinationArrival: ArrivalDeparture?
+
+        func marking(for stopTime: TripStopTime) -> MinimalStopAnnotationView.Marking {
+            // By row, not stop ID: a loop route calls at a stop more than once,
+            // and only one of those calls is the rider's. A stop time's equality
+            // includes its times, so each call finds its own row.
+            guard let row = stopTimes.firstIndex(of: stopTime) else { return .ordinary }
+            if row == riderStops.userStopIndex { return .riderStop }
+            if row == riderStops.boardingMarkerIndex { return .boardingStop }
+            return .ordinary
+        }
+
+        /// The shared destination's arrival, for the destination's pin and no other.
+        func arrival(for stopTime: TripStopTime) -> ArrivalDeparture? {
+            guard let destinationIndex = riderStops.destinationIndex,
+                  stopTimes.firstIndex(of: stopTime) == destinationIndex else { return nil }
+            return destinationArrival
+        }
     }
 }

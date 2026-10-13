@@ -237,4 +237,37 @@ final class TripViewModelTests: OBATestCase {
         #expect(viewModel.operationError == nil)
         #expect(viewModel.tripDetails != nil)
     }
+
+    /// A load cancelled while the destination's request is in flight, by a
+    /// newer refresh or by leaving the screen, publishes nothing, even though
+    /// the request still comes back with an arrival.
+    @Test @MainActor
+    func `A cancelled load does not publish the destination's arrival`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        // Ahead of the shared trip's stubs, so it is the one served. The
+        // matcher runs inside the load's own task, after `MockDataLoader`'s
+        // cancellation check, so the request is answered normally.
+        dataLoader.mock(data: Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")) { request in
+            guard request.url?.path.hasSuffix("/arrival-and-departure-for-stop/1_29930.json") ?? false else { return false }
+            withUnsafeCurrentTask { $0?.cancel() }
+            return true
+        }
+        stubSharedTripArrivals(dataLoader: dataLoader, destinationFails: false)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let trip = try boardingTrip()
+        let viewModel = TripViewModel(application: app, tripConvertible: trip, destinationStopID: "1_29930")
+
+        viewModel.loadData()
+        await poll(
+            until: { !destinationRequests(in: dataLoader).isEmpty && !viewModel.isLoading },
+            timeout: .seconds(10),
+            "the load never finished asking for the destination's arrival"
+        )
+
+        #expect(viewModel.destinationArrivalDeparture == nil)
+        #expect(viewModel.operationError == nil)
+        // The load got as far as the destination: only the arrival was dropped.
+        #expect(viewModel.tripDetails != nil)
+    }
 }

@@ -96,8 +96,8 @@ struct TripStopListModel {
     }
 
     /// The rider's rows on a trip, as the UIKit trip page needs them. One
-    /// resolution feeds both the stop list and the progress header, so the two
-    /// cannot disagree about which row is "your stop".
+    /// resolution feeds the stop list, the progress header, and the map's stop
+    /// pins, so none of them can disagree about which row is "your stop".
     struct RiderStops {
         /// Where the rider boards: the row the trip's own `ArrivalDeparture` is
         /// for, so its `arrivalDepartureMinutes` count down to this row.
@@ -120,6 +120,18 @@ struct TripStopListModel {
         /// carries the rider's-stop marker, and a second badge on the same row
         /// would say two things about one stop.
         var boardingMarkerIndex: Int? { destinationIndex == nil ? nil : boardingIndex }
+
+        /// The rows of a shared trip's ride, boarding through destination. The
+        /// list fades every row outside them. See #449.
+        ///
+        /// `nil` unless both ends are known: with no exit there is no "after the
+        /// ride", so a trip that was never shared fades nothing. The ordering
+        /// check keeps a hand-built value from forming an invalid range, which
+        /// traps; `riderStops` always finds the destination after boarding.
+        var rideIndices: ClosedRange<Int>? {
+            guard let boardingIndex, let destinationIndex, boardingIndex < destinationIndex else { return nil }
+            return boardingIndex...destinationIndex
+        }
 
         /// The progress header's countdown. On a shared trip, the destination's
         /// own prediction once it has loaded. Until then, and on every other
