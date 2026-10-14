@@ -124,6 +124,12 @@ final class FarePaymentsTests: OBATestCase {
         // Cancel action
         let cancelAction = alert.actions[0]
         #expect(cancelAction.style == .cancel)
+        #expect(cancelAction.title == Strings.cancel)
+        let warningDefaultsKey = "ShowPaymentWarning_Region_\(Fixtures.pugetSoundRegion.regionIdentifier)"
+        triggerAlertAction(cancelAction)
+        #expect(application.userDefaults.bool(forKey: warningDefaultsKey))
+        #expect(mockApplicationDelegate.openedURLs.isEmpty)
+        #expect(analyticsMock.reportedEvents.isEmpty)
 
         // Continue and Don't Show Again action
         let expectedDontShowAgainTitle = Bundle(for: FarePayments.self).localizedString(forKey: "fare_payments.dont_show_again", value: nil, table: nil)
