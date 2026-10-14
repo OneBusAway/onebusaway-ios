@@ -84,11 +84,21 @@ struct AgencyFeedStatusTests {
         let notFound = AgencyFeedStatus.FeedError.httpError(404)
         #expect(notFound.userFriendlyDescription == "This agency doesn't provide a vehicle feed.")
 
+        // Boundary tests for the 500...599 HTTP server error range
+        let serverError499 = AgencyFeedStatus.FeedError.httpError(499)
+        #expect(serverError499.userFriendlyDescription == "Server returned an error (code 499).")
+
         let serverError500 = AgencyFeedStatus.FeedError.httpError(500)
         #expect(serverError500.userFriendlyDescription == "The server is having problems. Please try again later.")
 
         let serverError503 = AgencyFeedStatus.FeedError.httpError(503)
         #expect(serverError503.userFriendlyDescription == "The server is having problems. Please try again later.")
+
+        let serverError599 = AgencyFeedStatus.FeedError.httpError(599)
+        #expect(serverError599.userFriendlyDescription == "The server is having problems. Please try again later.")
+
+        let serverError600 = AgencyFeedStatus.FeedError.httpError(600)
+        #expect(serverError600.userFriendlyDescription == "Server returned an error (code 600).")
 
         let unauthorized = AgencyFeedStatus.FeedError.httpError(401)
         #expect(unauthorized.userFriendlyDescription == "Server returned an error (code 401).")

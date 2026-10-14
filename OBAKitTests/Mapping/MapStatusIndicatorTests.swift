@@ -9,6 +9,7 @@
 
 import Foundation
 import Testing
+import UIKit
 @testable import OBAKit
 
 @Suite(.serialized)
@@ -22,45 +23,54 @@ struct MapStatusIndicatorTests {
 
     // MARK: - Symbol Names
 
-    @Test func `Compact symbol names match expected SF Symbols`() {
-        #expect(MapStatusIndicator.locationUnavailable.symbolName == "location.slash")
-        #expect(MapStatusIndicator.preciseLocationUnavailable.symbolName == "location.circle")
-        #expect(MapStatusIndicator.zoomInForStops.symbolName == "plus.magnifyingglass")
-        #expect(MapStatusIndicator.zoomInForRentals.symbolName == "plus.magnifyingglass")
-    }
-
-    @Test func `Large accessibility symbol names match expected filled variants`() {
-        #expect(MapStatusIndicator.locationUnavailable.largeSymbolName == "location.slash.fill")
-        #expect(MapStatusIndicator.preciseLocationUnavailable.largeSymbolName == "location.circle.fill")
-        #expect(MapStatusIndicator.zoomInForStops.largeSymbolName == "plus.magnifyingglass")
-        #expect(MapStatusIndicator.zoomInForRentals.largeSymbolName == "plus.magnifyingglass")
-    }
-
-    // MARK: - Localized Text
-
-    @Test func `Localized text returns expected strings for each indicator state`() {
-        #expect(MapStatusIndicator.locationUnavailable.localizedText == "Location services unavailable")
-        #expect(MapStatusIndicator.preciseLocationUnavailable.localizedText == "Precise location unavailable")
-        #expect(MapStatusIndicator.zoomInForStops.localizedText == "Zoom in for stops")
-        #expect(MapStatusIndicator.zoomInForRentals.localizedText == "Zoom in to see bikes and scooters")
-    }
-
-    // MARK: - String Catalog Integrity
-
-    @Test func `Localization keys exist in the English string bundle`() throws {
-        let bundle = try #require(englishBundle())
-
-        let keys = [
-            "map_status_view.location_services_unavailable": "Location services unavailable",
-            "map_status_view.precise_location_unavailable": "Precise location unavailable",
-            "map_status_view.zoom_in_for_stops": "Zoom in for stops",
-            "map_status_view.zoom_in_for_rentals": "Zoom in to see bikes and scooters"
+    @Test func `Compact symbol names match expected SF Symbols and resolve to valid system images`() {
+        let cases: [(indicator: MapStatusIndicator, expectedName: String)] = [
+            (.locationUnavailable, "location.slash"),
+            (.preciseLocationUnavailable, "location.circle"),
+            (.zoomInForStops, "plus.magnifyingglass"),
+            (.zoomInForRentals, "plus.magnifyingglass")
         ]
 
-        for (key, expectedValue) in keys {
-            let localized = bundle.localizedString(forKey: key, value: "MISSING", table: nil)
-            #expect(localized != "MISSING", "\(key) is missing from the English catalog")
-            #expect(localized == expectedValue, "\(key) has unexpected translation in English catalog")
+        for (indicator, expectedName) in cases {
+            #expect(indicator.symbolName == expectedName)
+            #expect(UIImage(systemName: indicator.symbolName) != nil, "\(indicator) symbol '\(expectedName)' is not a valid SF Symbol")
+        }
+    }
+
+    @Test func `Large accessibility symbol names match expected filled variants and resolve to valid system images`() {
+        let cases: [(indicator: MapStatusIndicator, expectedName: String)] = [
+            (.locationUnavailable, "location.slash.fill"),
+            (.preciseLocationUnavailable, "location.circle.fill"),
+            (.zoomInForStops, "plus.magnifyingglass"),
+            (.zoomInForRentals, "plus.magnifyingglass")
+        ]
+
+        for (indicator, expectedName) in cases {
+            #expect(indicator.largeSymbolName == expectedName)
+            #expect(UIImage(systemName: indicator.largeSymbolName) != nil, "\(indicator) large symbol '\(expectedName)' is not a valid SF Symbol")
+        }
+    }
+
+    // MARK: - Localized Text & String Catalog
+
+    @Test func `Indicator localized text matches English string catalog`() throws {
+        let bundle = try #require(englishBundle())
+        let activeBundle = Bundle(for: DonationCell.self)
+
+        let indicators: [(indicator: MapStatusIndicator, key: String, expectedEnglish: String)] = [
+            (.locationUnavailable, "map_status_view.location_services_unavailable", "Location services unavailable"),
+            (.preciseLocationUnavailable, "map_status_view.precise_location_unavailable", "Precise location unavailable"),
+            (.zoomInForStops, "map_status_view.zoom_in_for_stops", "Zoom in for stops"),
+            (.zoomInForRentals, "map_status_view.zoom_in_for_rentals", "Zoom in to see bikes and scooters")
+        ]
+
+        for (indicator, key, expectedEnglish) in indicators {
+            let catalogString = bundle.localizedString(forKey: key, value: "MISSING", table: nil)
+            #expect(catalogString != "MISSING", "\(key) is missing from the English catalog")
+            #expect(catalogString == expectedEnglish, "\(key) has unexpected translation in English catalog")
+
+            let activeString = activeBundle.localizedString(forKey: key, value: "MISSING", table: nil)
+            #expect(indicator.localizedText == activeString, "\(indicator) localizedText did not match catalog translation for \(key)")
         }
     }
 }
