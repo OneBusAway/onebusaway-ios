@@ -11,8 +11,9 @@ import SwiftUI
 struct GridTimetable: View {
     @EnvironmentObject var viewModel: ScheduleForRouteViewModel
 
-    /// Column width for each stop in the timetable
-    private let columnWidth: CGFloat = 80
+    /// Column width for each stop in the timetable. Scales with Dynamic Type so the
+    /// monospaced times and the stop names keep fitting at larger text sizes.
+    @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 80
 
     var body: some View {
         // `formattersTimeZoneGeneration` forces a rebuild when the region zone
@@ -58,19 +59,60 @@ struct GridTimetable: View {
     private var stopHeaderRow: some View {
         HStack(spacing: 0) {
             ForEach(Array(viewModel.stopNames.enumerated()), id: \.offset) { index, stopName in
-                Text(stopName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .lineLimit(2)
-                    .frame(width: columnWidth, alignment: .leading)
+                stopHeader(TimetableStopName(stopName))
+                    .frame(width: columnWidth, alignment: .topLeading)
+                    .frame(maxHeight: .infinity, alignment: .top)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 4)
+                    .accessibilityElement(children: .ignore)
                     .accessibilityLabel(stopName)
                 if index < viewModel.stopNames.count - 1 {
                     Divider()
                 }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .background(Color(.systemGroupedBackground))
+    }
+
+    /// Runs of consecutive stops often share a street ("Sand Point Way NE & NE 70th St",
+    /// "Sand Point Way NE & NE 74th St", …), so the cross street is what tells columns
+    /// apart. Show it in full and emphasized, with the shared street de-emphasized above it.
+    private func stopHeader(_ name: TimetableStopName) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let street = name.street {
+                Text(street)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Text(name.crossStreet)
+                .font(.caption)
+                .fontWeight(.semibold)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// A stop name split for display in a timetable column header.
+///
+/// GTFS intersection stops are conventionally named "Street & Cross Street". For those,
+/// `street` is "Street &" and `crossStreet` is "Cross Street". Any other name (a station,
+/// a landmark) is left whole in `crossStreet` with a `nil` street.
+struct TimetableStopName: Equatable {
+    let street: String?
+    let crossStreet: String
+
+    init(_ name: String) {
+        if let range = name.range(of: " & ") {
+            let street = name[..<range.lowerBound].trimmingCharacters(in: .whitespaces)
+            let crossStreet = name[range.upperBound...].trimmingCharacters(in: .whitespaces)
+            if !street.isEmpty, !crossStreet.isEmpty {
+                self.street = street + " &"
+                self.crossStreet = crossStreet
+                return
+            }
+        }
+        self.street = nil
+        self.crossStreet = name
     }
 }
