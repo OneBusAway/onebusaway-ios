@@ -57,7 +57,12 @@ class TripViewModel: ObservableObject {
     private let application: Application
     private static let refreshInterval: TimeInterval = 30.0
     private var refreshTimer: Timer?
-    private var loadDataTask: Task<Void, Never>?
+
+    /// The in-flight load started by `loadData()`.
+    ///
+    /// Held so a newer load or teardown can cancel it, and so tests have a
+    /// completion to await instead of polling for its side effects.
+    private(set) var loadDataTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -113,6 +118,11 @@ class TripViewModel: ObservableObject {
                 // async-lets. No @Published state has been mutated up to this point.
                 let (newConvertible, newDetails, newPolyline) = try await (convertible, details, polyline)
 
+                // Cancellation is cooperative: a load cancelled by a newer one or
+                // by `deactivate()` can still get its responses back. Applying
+                // them could overwrite the newer load's trip.
+                guard !Task.isCancelled else { return }
+
                 // All three fetches succeeded — apply atomically.
                 if let newConvertible { tripConvertible = newConvertible }
                 if let newDetails { tripDetails = newDetails }
@@ -124,8 +134,8 @@ class TripViewModel: ObservableObject {
                 await loadDestinationArrival()
             } catch {
                 // A cancelled load (e.g. dismissing a context menu preview)
-                // should never surface an error to the user. The view is being
-                // torn down, so leaving `isLoading` as-is is fine.
+                // should never surface an error to the user. It leaves
+                // `isLoading` to the load that replaced it, or to `deactivate()`.
                 if Task.isCancelled {
                     return
                 }
@@ -139,6 +149,9 @@ class TripViewModel: ObservableObject {
                 }
                 operationError = error
             }
+            // Same for a load cancelled while it waited for the destination's
+            // arrival: the load that replaced it may still be running.
+            guard !Task.isCancelled else { return }
             isLoading = false
         }
     }

@@ -259,15 +259,63 @@ final class TripViewModelTests: OBATestCase {
         let viewModel = TripViewModel(application: app, tripConvertible: trip, destinationStopID: "1_29930")
 
         viewModel.loadData()
-        await poll(
-            until: { !destinationRequests(in: dataLoader).isEmpty && !viewModel.isLoading },
-            timeout: .seconds(10),
-            "the load never finished asking for the destination's arrival"
-        )
+        await viewModel.loadDataTask?.value
+        #expect(!destinationRequests(in: dataLoader).isEmpty, "the load never asked for the destination's arrival")
 
         #expect(viewModel.destinationArrivalDeparture == nil)
         #expect(viewModel.operationError == nil)
         // The load got as far as the destination: only the arrival was dropped.
         #expect(viewModel.tripDetails != nil)
+    }
+
+    // MARK: - Cancelled loads (#1514)
+
+    /// A load cancelled after its response came back, by a newer refresh or by
+    /// leaving the screen, publishes nothing: not the trip it fetched, and not
+    /// the end of the spinner, which belongs to the load that replaced it.
+    @Test @MainActor
+    func `A cancelled load does not publish the trip or clear the spinner`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+        let firstServiceDate = try #require(viewModel.tripDetails?.serviceDate)
+
+        // From here a load asks only for the trip's details: the route line is
+        // already loaded, and a trip opened without an arrival has none to
+        // refresh. They come back for the next day's service, so the first
+        // load's trip can be told apart. The matcher runs after
+        // `MockDataLoader`'s cancellation check, so the request is answered
+        // normally.
+        let nextDaysTrip = try #require(String(bytes: Fixtures.loadData(file: "trip_details_1_18196913.json"), encoding: .utf8))
+            .replacingOccurrences(of: #""serviceDate": 1343631600000"#, with: #""serviceDate": 1343718000000"#)
+        let load = SendableBox<Task<Void, Never>?>(nil)
+        dataLoader.replaceMappedResponses { staging in
+            staging.mock(data: Data(nextDaysTrip.utf8)) { request in
+                guard request.url?.path.contains("/api/where/trip-details") ?? false else { return false }
+                load.value?.cancel()
+                return true
+            }
+            stubCommonEndpoints(dataLoader: staging)
+        }
+
+        viewModel.refresh()
+        // The task's body runs on the main actor, so it cannot reach the
+        // matcher before this line hands the task over.
+        load.value = viewModel.loadDataTask
+        await load.value?.value
+
+        #expect(viewModel.tripDetails?.serviceDate == firstServiceDate)
+        #expect(viewModel.isLoading, "Only the load that replaced it may clear the spinner")
+        #expect(viewModel.operationError == nil)
+
+        // The load that replaced it publishes as usual.
+        viewModel.refresh()
+        await viewModel.loadDataTask?.value
+        #expect(viewModel.operationError == nil)
+        #expect(viewModel.tripDetails?.serviceDate == firstServiceDate.addingTimeInterval(86400))
+        #expect(!viewModel.isLoading)
     }
 }
