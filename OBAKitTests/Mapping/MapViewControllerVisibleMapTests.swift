@@ -26,6 +26,8 @@ final class MapViewControllerVisibleMapTests: OBATestCase {
         try await super.init()
         let queue = OperationQueue()
         let dataLoader = MockDataLoader(testName: name)
+        // The map probes for on-demand services when it settles.
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
         application = buildApplication(queue: queue, dataLoader: dataLoader)
     }
 
