@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import MapKit
 
 extension RESTAPIService {
@@ -49,9 +50,10 @@ extension RESTAPIService {
     ///
     /// This is the **only** call that probes for the namespace: a
     /// `.requestNotFound` here — a real HTTP 404, or the blank 200 that
-    /// `APIService+GetData` maps to the same case — records the server in
+    /// `APIService+GetData` maps to the same case — or an HTML page (see
+    /// ``APIError/meansOnDemandUnsupported``) records the server in
     /// ``onDemandSupport`` for the rest of the process. Every other failure,
-    /// including `.invalidContentType` and decode errors, is transient and is
+    /// including other content types and decode errors, is transient and is
     /// simply rethrown.
     ///
     /// - API Endpoint: `/api/ondemand/services-for-location.json`
@@ -60,13 +62,27 @@ extension RESTAPIService {
     /// - returns: The ``RESTAPIResponse`` for [``OnDemandService``]; each
     ///   element carries a ``MatchReason``.
     public nonisolated func getOnDemandServices(region: MKCoordinateRegion, geometryDetail: OnDemandGeometryDetail = .simplified) async throws -> RESTAPIResponse<[OnDemandService]> {
+        try await getOnDemandServicesRecordingAbsence(url: urlBuilder.getOnDemandServices(region: region, geometryDetail: geometryDetail))
+    }
+
+    /// Retrieves the on-demand services around one point (the server's point
+    /// mode): every service whose zone contains the point, whose boundary is
+    /// within `radiusMeters`, or one of whose stops is. Each list element
+    /// carries a ``MatchReason`` and each area a `distanceToArea`.
+    ///
+    /// Probes the namespace exactly as the viewport call does: a
+    /// `.requestNotFound` or an HTML page records the server in ``onDemandSupport``.
+    ///
+    /// - API Endpoint: `/api/ondemand/services-for-location.json`
+    public nonisolated func getOnDemandServices(near coordinate: CLLocationCoordinate2D, radiusMeters: Double, geometryDetail: OnDemandGeometryDetail = .none) async throws -> RESTAPIResponse<[OnDemandService]> {
+        try await getOnDemandServicesRecordingAbsence(url: urlBuilder.getOnDemandServices(near: coordinate, radiusMeters: radiusMeters, geometryDetail: geometryDetail))
+    }
+
+    private nonisolated func getOnDemandServicesRecordingAbsence(url: URL) async throws -> RESTAPIResponse<[OnDemandService]> {
         do {
-            return try await getData(
-                for: urlBuilder.getOnDemandServices(region: region, geometryDetail: geometryDetail),
-                decodeRESTAPIResponseAs: [OnDemandService].self
-            )
+            return try await getData(for: url, decodeRESTAPIResponseAs: [OnDemandService].self)
         } catch let error as APIError {
-            if case .requestNotFound = error {
+            if error.meansOnDemandUnsupported {
                 onDemandSupport.recordAbsent(baseURL: baseURL)
             }
             throw error

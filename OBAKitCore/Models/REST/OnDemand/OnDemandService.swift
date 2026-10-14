@@ -29,6 +29,8 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
     public let rules: [AvailabilityRule]
     /// Only on `services-for-location` list elements.
     public let matchReason: MatchReason?
+    /// Reserved; decoded only when a server sends it (spec 2.9).
+    public let eligibility: OnDemandEligibility?
 
     // Resolved by `loadReferences`.
     public private(set) var route: Route?
@@ -41,7 +43,7 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
     public private(set) var regionIdentifier: Int?
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, serviceKind, url, rules, matchReason
+        case id, name, serviceKind, url, rules, matchReason, eligibility
         case agencyID = "agencyId"
         case routeID = "routeId"
         case serviceDescription = "description"
@@ -58,6 +60,7 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
         url = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .url)).flatMap(URL.init(string:))
         rules = try container.decodeIfPresent([AvailabilityRule].self, forKey: .rules) ?? []
         matchReason = try container.decodeIfPresent(MatchReason.self, forKey: .matchReason)
+        eligibility = try container.decodeIfPresent(OnDemandEligibility.self, forKey: .eligibility)
         super.init()
     }
 
@@ -90,6 +93,13 @@ public final class OnDemandService: NSObject, Identifiable, Decodable, HasRefere
     public func bookingRule(id: String?) -> OnDemandBookingRule? {
         guard let id else { return nil }
         return bookingRules.first { $0.id == id }
+    }
+
+    /// The booking rule riders contact: the first rule whose pickup booking
+    /// rule resolves (a rule without one, or with a dangling id, is skipped).
+    /// The summary, the zone card, the bar and the planner all read this.
+    public var contactBookingRule: OnDemandBookingRule? {
+        rules.lazy.compactMap { self.bookingRule(id: $0.pickupBookingRuleID) }.first
     }
 
     /// The agency's time zone — the zone every service-day value is interpreted

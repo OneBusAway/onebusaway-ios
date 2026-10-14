@@ -58,7 +58,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver ?? MapStopsObserver(application: application),
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel(),
-            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil })
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil }),
+            onDemandProbeController: OnDemandProbeController.make(application: application)
         )
     }
 
@@ -90,6 +91,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         #expect(host.application === application)
         #expect(host.service === service)
+        #expect(host.geometry != nil, "a probe service's page draws the probe's full geometry")
     }
 
     @Test @MainActor

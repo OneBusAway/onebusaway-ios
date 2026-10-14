@@ -154,8 +154,8 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
         return nil
     }
 
-    func mock(data: Data, statusCode: Int = 200, matcher: @escaping MockDataLoaderMatcher) {
-        let urlResponse = buildURLResponse(URL: URL(string: "https://mockdataloader.example.com")!, statusCode: statusCode, contentLength: data.count)
+    func mock(data: Data, statusCode: Int = 200, contentType: String = "application/json", matcher: @escaping MockDataLoaderMatcher) {
+        let urlResponse = buildURLResponse(URL: URL(string: "https://mockdataloader.example.com")!, statusCode: statusCode, contentLength: data.count, contentType: contentType)
         let mockResponse = MockDataResponse(data: data, urlResponse: urlResponse, error: nil, matcher: matcher)
         mock(response: mockResponse)
     }
@@ -201,8 +201,8 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     /// `expectedContentLength` at `NSURLResponseUnknownLength`, which no real server does —
     /// pass the mocked body's `count` so response-length checks in `APIService` see what
     /// they'd see in production.
-    func buildURLResponse(URL: URL, statusCode: Int, contentLength: Int? = nil) -> HTTPURLResponse {
-        var headerFields = ["Content-Type": "application/json"]
+    func buildURLResponse(URL: URL, statusCode: Int, contentLength: Int? = nil, contentType: String = "application/json") -> HTTPURLResponse {
+        var headerFields = ["Content-Type": contentType]
 
         if let contentLength {
             headerFields["Content-Length"] = String(contentLength)

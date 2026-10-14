@@ -65,6 +65,29 @@ final class OnDemandSupportTests: OBATestCase {
         #expect(support.isKnownUnsupported(baseURL: baseURL))
     }
 
+    @Test func `An HTML 200 on the location probe marks the server unsupported`() async {
+        // A stock maglev answers unknown /api/ondemand paths with its index page.
+        dataLoader.mock(data: Data("<!doctype html><html><body>maglev</body></html>".utf8), contentType: "text/html; charset=utf-8") { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+        await #expect(throws: APIError.self) {
+            _ = try await service.getOnDemandServices(region: region)
+        }
+        #expect(support.isKnownUnsupported(baseURL: baseURL))
+    }
+
+    @Test func `A plain-text 200 on the location probe is transient`() async {
+        // Only an HTML page is a stock server's catch-all; other content types
+        // are a misbehaving proxy or server and must not hide the layer.
+        dataLoader.mock(data: Data("upstream timeout".utf8), contentType: "text/plain") { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+        await #expect(throws: APIError.self) {
+            _ = try await service.getOnDemandServices(region: region)
+        }
+        #expect(!support.isKnownUnsupported(baseURL: baseURL))
+    }
+
     @Test func `404 on service by id is not-found, not unsupported`() async {
         mock(path: "/api/ondemand/service/", statusCode: 404)
         await #expect(throws: APIError.self) {

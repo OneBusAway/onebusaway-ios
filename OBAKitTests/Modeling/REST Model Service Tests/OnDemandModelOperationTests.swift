@@ -79,4 +79,62 @@ final class OnDemandModelOperationTests: OBATestCase {
         let requested = dataLoader.recordedRequestURLs.last!
         #expect(URLComponents(url: requested, resolvingAgainstBaseURL: false)?.queryItems?.contains(URLQueryItem(name: "geometryDetail", value: "simplified")) == true)
     }
+
+    @Test func `Loading services near a point`() async throws {
+        dataLoader.mock(
+            URLString: "https://www.example.com/api/ondemand/services-for-location.json",
+            with: Fixtures.loadData(file: "ondemand_services_for_location_point_near.json")
+        )
+
+        let response = try await restService.getOnDemandServices(
+            near: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2),
+            radiusMeters: 5000
+        )
+        #expect(response.list.map(\.id) == ["CC_CC1"])
+        #expect(response.list[0].matchReason == .areaNearby)
+        #expect(response.list[0].areas.first?.distanceToArea == 850)
+        #expect(response.list[0].areas.first?.nearestPointOnBoundary?.latitude == 45.30765)
+        #expect(response.list[0].areas.first?.nearestPointOnBoundary?.longitude == -85.2)
+
+        let requested = dataLoader.recordedRequestURLs.last!
+        let items = URLComponents(url: requested, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        #expect(items.contains(URLQueryItem(name: "radius", value: "5000.0")))
+        #expect(items.contains(URLQueryItem(name: "geometryDetail", value: "none")))
+    }
+
+    @Test func `A 404 near a point records the server as unsupported`() async throws {
+        let support = OnDemandSupport()
+        let service = buildRESTService(dataLoader: dataLoader, onDemandSupport: support)
+        dataLoader.mock(data: Data(), statusCode: 404) { request in
+            request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+
+        await #expect(throws: APIError.self) {
+            _ = try await service.getOnDemandServices(near: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2), radiusMeters: 5000)
+        }
+        #expect(support.isKnownUnsupported(baseURL: baseURL))
+    }
+
+    @Test func `Eligibility decodes when present and is nil when absent`() throws {
+        let data = Fixtures.loadData(file: "ondemand_service_alexandria.json")
+        let absent = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<OnDemandService>.self, from: data).entry
+        #expect(absent.eligibility == nil)
+
+        var json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        var body = json["data"] as! [String: Any]
+        var entry = body["entry"] as! [String: Any]
+        entry["eligibility"] = ["requirement": "certificationRequired", "infoUrl": "https://example.com/apply"]
+        body["entry"] = entry
+        json["data"] = body
+        let present = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<OnDemandService>.self, from: JSONSerialization.data(withJSONObject: json)).entry
+        #expect(present.eligibility?.requirement == .certificationRequired)
+        #expect(present.eligibility?.infoURL == URL(string: "https://example.com/apply"))
+
+        entry["eligibility"] = ["requirement": "somethingNewer", "infoUrl": nil]
+        body["entry"] = entry
+        json["data"] = body
+        let newer = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<OnDemandService>.self, from: JSONSerialization.data(withJSONObject: json)).entry
+        #expect(newer.eligibility?.requirement == .unknown)
+        #expect(newer.eligibility?.infoURL == nil)
+    }
 }
