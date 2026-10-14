@@ -15,28 +15,29 @@ import UIKit
 @MainActor
 @Suite(.serialized)
 final class UIApplicationExtensionsTests {
-    
-    @Test func `Key window from scene returns key window`() {
-        // This test is limited in unit test environment since we can't easily create real scenes
-        // We'll test that the property exists and returns a window when available
+
+    @Test func `Active windows only includes windows from foreground active window scenes`() {
         let app = UIApplication.shared
-        
-        // The property should exist and be accessible
-        let keyWindow = app.keyWindowFromScene
-        // In test environment, this might be nil, but the property should be accessible
-        // keyWindow can be nil or a UIWindow instance
-        if let keyWindow = keyWindow {
-            #expect(type(of: keyWindow) == UIWindow.self)
-        } else {
-            #expect(keyWindow == nil)
-        }
+        let expectedWindows = app.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive }
+            .flatMap { $0.windows }
+
+        #expect(app.activeWindows == expectedWindows)
     }
-    
-    @Test func `Active windows returns window array`() {
+
+    @Test func `Key window from scene matches key window from active or connected scenes`() {
         let app = UIApplication.shared
-        
-        // The property should exist and return an array
-        let windows = app.activeWindows
-        #expect(type(of: windows) == [UIWindow].self)
+        let expectedKeyWindow = app.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive }
+            .flatMap { $0.windows }
+            .first(where: \.isKeyWindow)
+            ?? app.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first(where: \.isKeyWindow)
+
+        #expect(app.keyWindowFromScene == expectedKeyWindow)
     }
 }

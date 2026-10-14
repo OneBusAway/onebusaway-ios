@@ -440,7 +440,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// Switches to the map tab and opens the classic trip planner with this stop
     /// as origin or destination. Shared by the pushed Stop page and the map sheet.
     func showTripPlanner(action: StopTripPlannerAction, stop: Stop) {
-        StopTripPlannerAction.present(action, stop: stop, application: application)
+        StopTripPlannerAction.present(action, stop: stop, application: application, from: presentingController())
     }
 
     /// An unanchored action sheet is a hard crash on a regular-width device.

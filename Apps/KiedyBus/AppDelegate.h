@@ -28,5 +28,8 @@ NS_SWIFT_UI_ACTOR
 /// `SceneDelegate` can forward them when it finishes launching the app.
 @property (copy, nonatomic, nullable) NSDictionary *launchOptions;
 
+/// Tracks whether the app stack has been launched by a scene delegate.
+@property (assign, nonatomic) BOOL hasFinishedLaunching;
+
 @end
 

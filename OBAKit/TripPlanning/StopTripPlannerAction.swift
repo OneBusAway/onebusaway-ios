@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import UIKit
 import OBAKitCore
 
 /// Stop-page trip-planner menu actions. Menus and toolbars can gate on
@@ -34,22 +35,27 @@ enum StopTripPlannerAction {
     /// `MapViewController.showTripPlanner`. Map-panel mode leaves
     /// `viewRouter.rootController` nil; showing the rows there would be a
     /// dead button.
-    static func canPresent(application: Application) -> Bool {
-        isAvailable(application: application) && application.viewRouter.rootController != nil
+    static func canPresent(application: Application, from fromController: UIViewController? = nil) -> Bool {
+        isAvailable(application: application) && application.viewRouter.rootController(from: fromController) != nil
     }
 
     /// Pops to the map tab and opens the existing trip planner. No-ops (with
     /// a log) when `canPresent` is false.
-    static func present(_ action: StopTripPlannerAction, stop: Stop, application: Application) {
-        guard canPresent(application: application),
-              let rootController = application.viewRouter.rootController else {
+    static func present(
+        _ action: StopTripPlannerAction,
+        stop: Stop,
+        application: Application,
+        from fromController: UIViewController? = nil
+    ) {
+        guard canPresent(application: application, from: fromController),
+              let rootController = application.viewRouter.rootController(from: fromController) else {
             if isAvailable(application: application) {
                 Logger.error("StopTripPlannerAction: present dropped — no classic root controller (map-panel mode is active)")
             }
             return
         }
 
-        application.viewRouter.rootNavigateTo(page: .map)
+        application.viewRouter.rootNavigateTo(page: .map, from: fromController)
 
         let mapController = rootController.mapController
         mapController.navigationController?.popToRootViewController(animated: false)

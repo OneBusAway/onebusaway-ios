@@ -28,11 +28,116 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     private let application: Application
 
-    /// Set by `ClassicApplicationRootController.init`. `nil` when the
-    /// experimental SwiftUI map-panel experience is the active root —
-    /// `SheetCoordinator` owns navigation in that mode and bypasses
-    /// `ViewRouter` entirely.
-    var rootController: ClassicApplicationRootController?
+    private let registeredRootControllers = NSHashTable<ClassicApplicationRootController>.weakObjects()
+
+    func register(rootController: ClassicApplicationRootController) {
+        registeredRootControllers.add(rootController)
+    }
+
+    /// Resolves the active or context-specific `ClassicApplicationRootController`.
+    ///
+    /// Rather than holding a single strong reference to a root controller (which would
+    /// overwrite across windows and leak closed windows in multi-window environments),
+    /// this dynamically resolves the root controller from the calling context, active
+    /// window scene, or connected scenes.
+    public func rootController(from context: UIViewController? = nil) -> ClassicApplicationRootController? {
+        if let context = context {
+            if let classic = findClassicRoot(from: context) {
+                return classic
+            }
+            if let windowScene = context.viewIfLoaded?.window?.windowScene {
+                for window in windowScene.windows {
+                    if let classic = findClassicRoot(in: window.rootViewController) {
+                        return classic
+                    }
+                }
+                return nil
+            }
+        }
+
+        // Check active foreground window scenes first
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene,
+                  windowScene.activationState == .foregroundActive else { continue }
+            if let keyWindow = windowScene.windows.first(where: \.isKeyWindow),
+               let classic = findClassicRoot(in: keyWindow.rootViewController) {
+                return classic
+            }
+            for window in windowScene.windows {
+                if let classic = findClassicRoot(in: window.rootViewController) {
+                    return classic
+                }
+            }
+        }
+
+        // Check any connected window scene
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            if let keyWindow = windowScene.windows.first(where: \.isKeyWindow),
+               let classic = findClassicRoot(in: keyWindow.rootViewController) {
+                return classic
+            }
+            for window in windowScene.windows {
+                if let classic = findClassicRoot(in: window.rootViewController) {
+                    return classic
+                }
+            }
+        }
+
+        // Fallback for tests or environments without window scenes:
+        // check registered controllers (held weakly).
+        for root in registeredRootControllers.allObjects {
+            if root.viewIfLoaded?.window?.isKeyWindow == true {
+                return root
+            }
+        }
+        return registeredRootControllers.allObjects.first
+    }
+
+    /// Backwards-compatible computed accessor that resolves the root controller without context.
+    public var rootController: ClassicApplicationRootController? {
+        rootController(from: nil)
+    }
+
+    private func findClassicRoot(from context: UIViewController?) -> ClassicApplicationRootController? {
+        guard let context = context else { return nil }
+        if let classic = context as? ClassicApplicationRootController {
+            return classic
+        }
+        if let classic = context.tabBarController as? ClassicApplicationRootController {
+            return classic
+        }
+        if let window = context.viewIfLoaded?.window,
+           let classic = findClassicRoot(in: window.rootViewController) {
+            return classic
+        }
+        if let nav = context.navigationController,
+           let classic = findClassicRoot(from: nav) {
+            return classic
+        }
+        if let presenting = context.presentingViewController,
+           let classic = findClassicRoot(from: presenting) {
+            return classic
+        }
+        return nil
+    }
+
+    private func findClassicRoot(in viewController: UIViewController?) -> ClassicApplicationRootController? {
+        guard let viewController = viewController else { return nil }
+        if let classic = viewController as? ClassicApplicationRootController {
+            return classic
+        }
+        if let presented = viewController.presentedViewController,
+           let classic = findClassicRoot(in: presented) {
+            return classic
+        }
+        for child in viewController.children {
+            if let classic = findClassicRoot(in: child) {
+                return classic
+            }
+        }
+        return nil
+    }
 
     public init(application: Application) {
         self.application = application
@@ -141,8 +246,8 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: tripController, from: fromController)
     }
 
-    public func rootNavigateTo(page: ClassicApplicationRootController.Page) {
-        guard let rootController = self.rootController else {
+    public func rootNavigateTo(page: ClassicApplicationRootController.Page, from context: UIViewController? = nil) {
+        guard let rootController = self.rootController(from: context) else {
             // Map-panel mode bypasses ViewRouter — `SheetCoordinator` owns
             // navigation. Log so deep-link / recent-stops paths that still
             // call this don't silently degrade. (No `assertionFailure`: test
