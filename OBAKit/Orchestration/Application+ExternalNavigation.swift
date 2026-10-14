@@ -24,26 +24,61 @@ extension Application {
     /// Map-panel mode has no classic root, and its sheets are presented
     /// controllers that must not be torn down, so there it logs and drops; see
     /// the deep-link TODO on `ViewRouter.rootNavigateTo(page:)`.
+    ///
+    /// UIKit ignores a `dismiss` issued while a presentation or dismissal is still
+    /// animating, and never calls its completion, so a call that lands mid-transition
+    /// (a cold-launch popup still sliding in, a second link right behind the first)
+    /// waits for that transition and tries again.
+    ///
+    /// - Parameter afterDismissal: runs once a dismissal started here has finished,
+    ///   whether or not `push` could then be called.
+    /// - Returns: true when `push` waits on a dismissal, so `topViewController` is
+    ///   still the outgoing modal and nothing else should be presented from it yet.
     @MainActor
-    func withPushableTopViewController(_ push: @escaping @MainActor (UIViewController) -> Void) {
-        guard let top = topViewController else { return }
+    @discardableResult
+    func withPushableTopViewController(
+        _ push: @escaping @MainActor (UIViewController) -> Void,
+        afterDismissal: (@MainActor () -> Void)? = nil
+    ) -> Bool {
+        guard let top = topViewController else { return false }
         if top.navigationController != nil {
             push(top)
-            return
+            return false
         }
 
         guard viewRouter.rootController != nil, let presenter = Self.basePresenter(of: top) else {
             Logger.error("Dropping navigation: \(type(of: top)) has no navigation controller to push from.")
-            return
+            return false
+        }
+
+        if let transition = top.transitionCoordinator ?? presenter.transitionCoordinator {
+            transition.animate(alongsideTransition: nil) { [weak self] _ in
+                guard let self else { return }
+                if !self.withPushableTopViewController(push, afterDismissal: afterDismissal) {
+                    afterDismissal?()
+                }
+            }
+            return true
         }
 
         presenter.dismiss(animated: true) { [weak self] in
+            defer { afterDismissal?() }
             guard let top = self?.topViewController, top.navigationController != nil else {
                 Logger.error("Dropping navigation: nothing to push from after dismissing the presented controller.")
                 return
             }
             push(top)
         }
+        return true
+    }
+
+    /// Pushes the stop page for `stopID` by way of `withPushableTopViewController`.
+    @MainActor
+    @discardableResult
+    func pushStopFromOutside(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
+        withPushableTopViewController({ [weak self] from in
+            self?.viewRouter.navigateTo(stopID: stopID, from: from)
+        }, afterDismissal: afterDismissal)
     }
 
     /// The controller at the bottom of `controller`'s presentation chain, or nil

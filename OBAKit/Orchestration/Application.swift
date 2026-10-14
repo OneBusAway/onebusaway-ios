@@ -400,9 +400,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                 self.pendingStopRegionID = nil
                 return
             }
-            self.withPushableTopViewController { from in
-                self.viewRouter.navigateTo(stopID: pushBody.stopID, from: from)
-            }
+            self.pushStopFromOutside(pushBody.stopID)
         }
     }
 
@@ -672,11 +670,14 @@ public class Application: CoreApplication, PushServiceDelegate {
                     return
                 }
             }
-            withPushableTopViewController { [weak self] from in
-                self?.viewRouter.navigateTo(stopID: stopID, from: from)
-            }
             pendingStopID = nil
             pendingStopRegionID = nil
+            // While a modal is on its way out, anything presented from it goes with
+            // it, so stop here; the dismissal re-runs this drain for the rest.
+            let dismissing = pushStopFromOutside(stopID) { [weak self] in
+                self?.drainPendingUIPresentations()
+            }
+            if dismissing { return }
         }
 
         if pendingRentalsCoordinate != nil, topViewController != nil {
@@ -805,9 +806,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         // stop with yet, and the page would be pushed over the region picker. The
         // drain picks the stash up once onboarding finishes.
         if topViewController != nil, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
-            withPushableTopViewController { [weak self] from in
-                self?.viewRouter.navigateTo(stopID: destination.stopID, from: from)
-            }
+            pushStopFromOutside(destination.stopID)
             return
         }
 
