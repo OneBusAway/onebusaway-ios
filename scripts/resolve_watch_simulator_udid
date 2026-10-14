@@ -33,7 +33,7 @@ except (json.JSONDecodeError, KeyError, TypeError) as error:
 
 available_runtimes = set()
 for r in runtimes:
-    if r.get("platform") == "watchOS" and r.get("isAvailable", False):
+    if ("watchOS" in r.get("identifier", "") or r.get("platform") == "watchOS") and r.get("isAvailable", False):
         if "identifier" in r:
             available_runtimes.add(r["identifier"])
         if "name" in r:
@@ -59,7 +59,7 @@ if [ -z "$udid" ]; then
     runtime=$(printf '%s' "$list_json" | python3 -c '
 import json, re, sys
 try:
-    runtimes = [r for r in json.load(sys.stdin).get("runtimes", []) if r.get("platform") == "watchOS" and r.get("isAvailable", False)]
+    runtimes = [r for r in json.load(sys.stdin).get("runtimes", []) if ("watchOS" in r.get("identifier", "") or r.get("platform") == "watchOS") and r.get("isAvailable", False)]
 except Exception as error:
     sys.exit("error parsing runtimes: " + str(error))
 if not runtimes:
