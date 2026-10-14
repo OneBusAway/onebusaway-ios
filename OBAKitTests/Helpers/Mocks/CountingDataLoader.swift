@@ -24,10 +24,6 @@ class CountingDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
 
     init(_ inner: MockDataLoader) { self.inner = inner }
 
-    func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
-        inner.dataTask(with: request, completionHandler: completionHandler)
-    }
-
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         callCountLock.withLock { _callCount += 1 }
         await Task.yield()

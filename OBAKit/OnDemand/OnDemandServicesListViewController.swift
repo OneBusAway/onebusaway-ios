@@ -20,7 +20,7 @@ final class OnDemandServicesListViewController: UIHostingController<OnDemandServ
             apiService: application.apiService,
             regionName: application.currentRegionName
         )
-        weak var weakApplication = application
+        weak let weakApplication = application
         // `self` isn't available before super.init; the closure resolves the
         // host lazily through the hosting controller it is installed in.
         var pushFromHost: ((OnDemandService) -> Void)?

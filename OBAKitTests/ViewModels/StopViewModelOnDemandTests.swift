@@ -339,7 +339,7 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let task = try #require(viewModel?.onDemandLoader.task)
         await gate.waitForRequest()
 
-        weak var released = viewModel
+        weak let released = viewModel
         viewModel = nil
         #expect(released == nil)
         #expect(task.isCancelled)

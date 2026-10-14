@@ -12,6 +12,8 @@ targets:
     info:
       path: Info.plist
       properties:
+        # An extension's version must match its containing app's.
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 

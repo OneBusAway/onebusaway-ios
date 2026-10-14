@@ -495,7 +495,8 @@ final class DestinationStopPickerControllerTests: OBATestCase {
         )
 
         let target = try #require(shareItem.target as? NSObject)
-        _ = target.perform(try #require(shareItem.action))
+        let action = try #require(shareItem.action)
+        _ = target.perform(action)
 
         #expect(recorder.didSkipDestination, "The escape shares without a destination")
         #expect(recorder.selectedStopTime == nil)

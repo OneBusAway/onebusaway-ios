@@ -44,7 +44,7 @@ final class RentalDetailViewController: UIHostingController<RentalDetailView> {
         userLocation: CLLocation? = nil,
         actionsDelegate: RentalLayerActionsDelegate? = nil
     ) {
-        weak var delegate = actionsDelegate
+        weak let delegate = actionsDelegate
         super.init(rootView: RentalDetailView(
             rental: rental,
             fetchedAt: fetchedAt,
@@ -313,7 +313,7 @@ final class RentalClusterListViewController: UIHostingController<RentalClusterLi
         userLocation: CLLocation? = nil,
         actionsDelegate: RentalLayerActionsDelegate? = nil
     ) {
-        weak var delegate = actionsDelegate
+        weak let delegate = actionsDelegate
         super.init(rootView: RentalClusterListView(
             rentals: rentals,
             fetchedAt: fetchedAt,

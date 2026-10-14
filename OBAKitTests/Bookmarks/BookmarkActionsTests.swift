@@ -336,10 +336,10 @@ final class BookmarkActionsTests: OBATestCase {
             departureEpoch: 1_700_000_840
         )
 
-        let state = try #require(BookmarkActions.buildContentState(
+        let state = BookmarkActions.buildContentState(
             from: [earlier, later],
             matching: later
-        ))
+        )
 
         #expect(state.arrivals.count == 1)
         #expect(state.arrivals[0].departureTime == Int(later.arrivalDepartureDate.timeIntervalSince1970))

@@ -82,7 +82,8 @@ final class ResolvedRegionStoreTests: OBATestCase {
 
     @Test @MainActor func `Trigger 1, launch: writes the current region on init`() throws {
         let service = makeRegionsService(fileStorage: MockRegionsFileStorage())
-        service.currentRegion = try #require(service.find(id: pugetSoundRegionIdentifier))
+        let pugetSound = try #require(service.find(id: pugetSoundRegionIdentifier))
+        service.currentRegion = pugetSound
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         store.write(nil)
 
@@ -108,7 +109,8 @@ final class ResolvedRegionStoreTests: OBATestCase {
     /// edit to the current region arrives only as a list update.
     @Test @MainActor func `Trigger 3, updatedRegionsList: rewrites even though the identifier is unchanged`() throws {
         let service = makeRegionsService(fileStorage: MockRegionsFileStorage())
-        service.currentRegion = try #require(service.find(id: pugetSoundRegionIdentifier))
+        let pugetSound = try #require(service.find(id: pugetSoundRegionIdentifier))
+        service.currentRegion = pugetSound
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         let persister = ResolvedRegionPersister(regionsService: service, store: store)
 

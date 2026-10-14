@@ -74,10 +74,6 @@ nonisolated final class GatedDataLoader: NSObject, URLDataLoader, @unchecked Sen
         continuation?.resume()
     }
 
-    func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
-        inner.dataTask(with: request, completionHandler: completionHandler)
-    }
-
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         guard isGated(request) else {
             // `MockDataLoader` answers without suspending, so without this a chain
