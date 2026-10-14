@@ -20,7 +20,7 @@ struct MapLayerTileView: View {
     let onTap: () -> Void
 
     private static let height: CGFloat = 62
-    private static let cornerRadius: CGFloat = 16
+    static let cornerRadius: CGFloat = 16
     private static let wellSize: CGFloat = 34
     static let offWell = Color(uiColor: .tertiarySystemFill)
     static let offBackground = Color(uiColor: .secondarySystemGroupedBackground)

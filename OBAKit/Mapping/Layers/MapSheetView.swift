@@ -295,9 +295,7 @@ struct MapSheetView: View {
                         .foregroundStyle(.tertiary)
                         .accessibilityHidden(true)
                 }
-                .padding(16)
-                .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .mapSheetCard()
             }
             .buttonStyle(.plain)
             Text(Strings.routesOnMapFooter)
@@ -333,7 +331,17 @@ struct MapSheetView: View {
                 systemImage: "mappin.and.ellipse"
             )
         }
-        .padding(16)
-        .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .mapSheetCard()
+    }
+}
+
+private extension View {
+    /// The sheet's full-width cards share the layer tiles' fill and corners, so
+    /// they stand out from the grouped background in dark mode too.
+    func mapSheetCard() -> some View {
+        let shape = RoundedRectangle(cornerRadius: MapLayerTileView.cornerRadius, style: .continuous)
+        return padding(16)
+            .background(MapLayerTileView.offBackground, in: shape)
+            .contentShape(shape)
     }
 }

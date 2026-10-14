@@ -478,7 +478,7 @@ struct MapPanelRootView: View {
         .overlay(alignment: .bottom) {
             onDemandDock
         }
-        .onChange(of: coordinator.routeStack.map(\.id) + coordinator.stackedRoutes.map(\.id)) { _, _ in
+        .onChange(of: sheetRoutes.map(\.id)) { _, _ in
             // The focus hides the dock, and leaving the bar drops the highlight;
             // a zone detail page keeps it until the page closes (spec 2.3, ruling F15).
             let heldHighlight = probeController.highlightedServiceID

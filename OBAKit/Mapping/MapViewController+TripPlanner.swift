@@ -162,8 +162,8 @@ extension MapViewController {
             currentLocation: application.locationService.currentLocation
         )
         let destinationLocation = TripPlannerEndpoints.destination(from: destination)
-        tripPlannerFallback.origin = originLocation.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
-        tripPlannerFallback.destination = destinationLocation.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+        tripPlannerFallback.origin = originLocation?.coordinate
+        tripPlannerFallback.destination = destinationLocation?.coordinate
 
         guard let tripPlanner = buildTripPlanner(region: currentRegion) else { return }
 

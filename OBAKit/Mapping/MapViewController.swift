@@ -1039,9 +1039,10 @@ class MapViewController: UIViewController,
 
     /// `OBAFloatingPanelController` rather than a plain `FloatingPanelController`
     /// for its grabber: a labelled element with Expand and Collapse actions, the
-    /// only way a VoiceOver or Switch Control user can resize the card. No
-    /// delegate — `MapViewController`'s delegate methods are written for the main
-    /// map panel and would impose its layout here.
+    /// only way a VoiceOver or Switch Control user can resize the card. Not
+    /// `MapViewController` as delegate — its delegate methods are written for the
+    /// main map panel and would impose its layout here; callers that need panel
+    /// events (the trip planner) set their own.
     func createSemiModalPanel(childController: UIViewController) -> OBAFloatingPanelController {
         let panel = OBAFloatingPanelController(application, delegate: nil)
         panel.surfaceView.appearance = createFloatingPanelSurfaceAppearance()
