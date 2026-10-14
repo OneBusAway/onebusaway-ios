@@ -24,14 +24,14 @@ final class DataMigrator_Tests: OBATestCase {
 
         // Load user defaults from the plist fixture.
         let userDefaults = buildUserDefaults()
-        let migrationPrefs: [String: Any] = try! Dictionary(plistPath: Fixtures.path(to: "migration_test_preferences.plist"))!
+        let migrationPrefs: [String: Any] = try #require(try Dictionary(plistPath: Fixtures.path(to: "migration_test_preferences.plist")))
 
         for (key, value) in migrationPrefs {
             userDefaults.set(value, forKey: key)
         }
 
         // Get API service ready
-        self.dataLoader = (restService.dataLoader as! MockDataLoader)
+        self.dataLoader = try #require(restService.dataLoader as? MockDataLoader)
 
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -169,60 +169,55 @@ final class DataMigrator_Tests: OBATestCase {
         }
 
         #expect(bookmarks.count == 5)
-        #expect(bookmarks[0].id != nil)
         #expect(bookmarks[0].groupID?.uuidString == "C8AD00F0-8C30-48B1-B194-E5167E45C80E")
         #expect(bookmarks[0].name == "10 to Home")
         #expect(bookmarks[0].regionIdentifier == pugetSoundRegionIdentifier)
         #expect(bookmarks[0].stopID == "1_29270")
-        #expect(bookmarks[0].stop != nil)
+        #expect(bookmarks[0].stop.id == bookmarks[0].stopID)
         #expect(!bookmarks[0].isFavorite)
         #expect(bookmarks[0].routeShortName == "10")
         #expect(bookmarks[0].routeID == "1_100002")
         #expect(bookmarks[0].sortOrder == Int.max)
         #expect(bookmarks[0].tripHeadsign == "Capitol Hill Via 15th Ave E")
 
-        #expect(bookmarks[1].id != nil)
         #expect(bookmarks[1].groupID?.uuidString == "E87AFBD5-6B61-4916-947F-458476ACBF98")
         #expect(bookmarks[1].name == "10 to Work")
         #expect(bookmarks[1].regionIdentifier == pugetSoundRegionIdentifier)
         #expect(bookmarks[1].stopID == "1_11370")
-        #expect(bookmarks[1].stop != nil)
+        #expect(bookmarks[1].stop.id == bookmarks[1].stopID)
         #expect(!bookmarks[1].isFavorite)
         #expect(bookmarks[1].routeShortName == "10")
         #expect(bookmarks[1].routeID == "1_100002")
         #expect(bookmarks[1].sortOrder == Int.max)
         #expect(bookmarks[1].tripHeadsign == "Downtown Seattle")
 
-        #expect(bookmarks[2].id != nil)
         #expect(bookmarks[2].groupID?.uuidString == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
         #expect(bookmarks[2].name == "48 to UW")
         #expect(bookmarks[2].regionIdentifier == pugetSoundRegionIdentifier)
         #expect(bookmarks[2].stopID == "1_29320")
-        #expect(bookmarks[2].stop != nil)
+        #expect(bookmarks[2].stop.id == bookmarks[2].stopID)
         #expect(!bookmarks[2].isFavorite)
         #expect(bookmarks[2].routeShortName == "48")
         #expect(bookmarks[2].routeID == "1_100228")
         #expect(bookmarks[2].sortOrder == Int.max)
         #expect(bookmarks[2].tripHeadsign == "University District")
 
-        #expect(bookmarks[3].id != nil)
         #expect(bookmarks[3].groupID?.uuidString == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
         #expect(bookmarks[3].name == "49 to UW")
         #expect(bookmarks[3].regionIdentifier == pugetSoundRegionIdentifier)
         #expect(bookmarks[3].stopID == "1_11250")
-        #expect(bookmarks[3].stop != nil)
+        #expect(bookmarks[3].stop.id == bookmarks[3].stopID)
         #expect(!bookmarks[3].isFavorite)
         #expect(bookmarks[3].routeShortName == "49")
         #expect(bookmarks[3].routeID == "1_100447")
         #expect(bookmarks[3].sortOrder == Int.max)
         #expect(bookmarks[3].tripHeadsign == "University District")
 
-        #expect(bookmarks[4].id != nil)
         #expect(bookmarks[4].groupID == nil)
         #expect(bookmarks[4].name == "Link to CHS")
         #expect(bookmarks[4].regionIdentifier == pugetSoundRegionIdentifier)
         #expect(bookmarks[4].stopID == "1_1121")
-        #expect(bookmarks[4].stop != nil)
+        #expect(bookmarks[4].stop.id == bookmarks[4].stopID)
         #expect(!bookmarks[4].isFavorite)
         #expect(bookmarks[4].routeShortName == "Link")
         #expect(bookmarks[4].routeID == "40_100479")

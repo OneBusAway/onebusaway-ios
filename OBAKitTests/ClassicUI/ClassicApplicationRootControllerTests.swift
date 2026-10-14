@@ -23,12 +23,6 @@ final class ClassicApplicationRootControllerTests: OBATestCase {
         
         let rootController = ClassicApplicationRootController(application: application)
         
-        // Assert that view controllers are correctly created
-        #expect(rootController.mapController != nil)
-        #expect(rootController.recentStopsController != nil)
-        #expect(rootController.bookmarksController != nil)
-        #expect(rootController.moreController != nil)
-        
         // Assert that view controllers are wrapped in UINavigationController
         let navControllers = rootController.viewControllers as? [UINavigationController]
         #expect(navControllers?.count == 4)

@@ -81,7 +81,7 @@ final class MapItemSheetViewTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Nearby stops routes through the injected action with the item coordinate`() {
+    func `Nearby stops routes through the injected action with the item coordinate`() throws {
         var received: CLLocationCoordinate2D?
         let viewModel = makeViewModel(actions: MapItemActions(
             openWebsite: { _ in },
@@ -91,8 +91,8 @@ final class MapItemSheetViewTests: OBATestCase {
 
         viewModel.showNearbyStops()
 
-        let coordinate = try? #require(received)
-        #expect(coordinate?.latitude == 47.6)
+        let coordinate = try #require(received)
+        #expect(coordinate.latitude == 47.6)
     }
 
     /// The sheet header uses a native `ShareLink`, so the view model exposes the URL
