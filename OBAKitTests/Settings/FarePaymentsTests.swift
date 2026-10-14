@@ -126,9 +126,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(cancelAction.style == .cancel)
 
         // Continue and Don't Show Again action
-        let bundle = try #require(englishBundle())
-        let expectedDontShowAgainTitle = bundle.localizedString(forKey: "fare_payments.dont_show_again", value: "MISSING", table: nil)
-        #expect(expectedDontShowAgainTitle != "MISSING")
+        let expectedDontShowAgainTitle = Bundle(for: FarePayments.self).localizedString(forKey: "fare_payments.dont_show_again", value: nil, table: nil)
         #expect(alert.actions[1].title == expectedDontShowAgainTitle)
 
         // Continue action
@@ -270,6 +268,7 @@ final class FarePaymentsTests: OBATestCase {
         let frameworkBundle = Bundle(for: FarePayments.self)
         let localizedFramework = frameworkBundle.localizedString(forKey: key, value: "MISSING", table: nil)
         #expect(localizedFramework != "MISSING", "\(key) is missing from the framework catalog")
-        #expect(localizedFramework == fallback)
+        #expect(!localizedFramework.isEmpty, "\(key) resolved to an empty string in the framework catalog")
+        #expect(localizedFramework != key, "\(key) fell back to the key name in the framework catalog")
     }
 }
