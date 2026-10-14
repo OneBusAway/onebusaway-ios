@@ -141,7 +141,6 @@ struct StopDeparturesBuilder {
     func makeActions(for departure: ArrivalDeparture) -> DepartureRowActions {
         DepartureRowActions(
             canAlarm: viewModel.canCreateAlarm(for: departure),
-            canSchedule: navigation.canScheduleForRoute,
             hasAlarm: viewModel.alarm(for: departure) != nil,
             onAlarmToggle: { toggleAlarm(for: departure) },
             onSchedule: { navigation.showScheduleForRoute(departure) },

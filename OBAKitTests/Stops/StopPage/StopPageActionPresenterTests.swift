@@ -47,8 +47,11 @@ final class StopPageActionPresenterTests: OBATestCase {
     private func makePresenter(host: UIViewController) -> (StopPageActionPresenter, Application) {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForStop(dataLoader: dataLoader)
+        stubScheduleForRoute(dataLoader: dataLoader)
         stubArrivalsAndDepartures(dataLoader: dataLoader)
         stubStopsForLocation(dataLoader: dataLoader)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        stubAllAgenciesWithCoverage(dataLoader: dataLoader)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let presenter = StopPageActionPresenter(
             application: application,
@@ -57,12 +60,28 @@ final class StopPageActionPresenterTests: OBATestCase {
         return (presenter, application)
     }
 
+    private func stubAllAgenciesWithCoverage(dataLoader: MockDataLoader) {
+        let coverageData = Fixtures.loadData(file: "agencies_with_coverage.json")
+        dataLoader.mock(data: coverageData) { request in
+            guard let path = request.url?.path else { return false }
+            return path.hasSuffix("/agencies-with-coverage.json")
+        }
+    }
+
     private func stubScheduleForStop(dataLoader: MockDataLoader) {
         // Match any schedule-for-stop path and return fixture data (ignore query params and stop ID)
         let scheduleData = Fixtures.loadData(file: "schedule-for-stop_1_75403.json")
         dataLoader.mock(data: scheduleData) { request in
             guard let path = request.url?.path else { return false }
             return path.contains("/schedule-for-stop/") && path.hasSuffix(".json")
+        }
+    }
+
+    private func stubScheduleForRoute(dataLoader: MockDataLoader) {
+        let scheduleData = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
+        dataLoader.mock(data: scheduleData) { request in
+            guard let path = request.url?.path else { return false }
+            return path.contains("/schedule-for-route/") && path.hasSuffix(".json")
         }
     }
 
@@ -84,20 +103,13 @@ final class StopPageActionPresenterTests: OBATestCase {
         )
     }
 
-    /// Helper to create a valid ArrivalDeparture with route data (Fixtures.arrivalDeparture() is incomplete)
+    /// Helper to create a valid ArrivalDeparture with references resolved
     private func makeDepartureWithRoute() throws -> ArrivalDeparture {
-        // Load fixture directly from file and extract first arrival
-        let data = Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let responseData = json?["data"] as? [String: Any]
-        let entry = responseData?["entry"] as? [String: Any]
-        let arrivalsArray = entry?["arrivalsAndDepartures"] as? [[String: Any]]
-        guard let firstArrivalDict = arrivalsArray?.first else {
-            throw NSError(domain: "test", code: -1, userInfo: [NSLocalizedDescriptionKey: "No departures in fixture"])
-        }
-        let arrivalData = try JSONSerialization.data(withJSONObject: firstArrivalDict)
-        let departure = try JSONDecoder().decode(ArrivalDeparture.self, from: arrivalData)
-        return departure
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        return try #require(stopArrivals.arrivalsAndDepartures.first)
     }
 
     /// `present` is asynchronous; poll briefly rather than assuming one runloop
@@ -118,6 +130,60 @@ final class StopPageActionPresenterTests: OBATestCase {
 
         let presented = await waitForPresentation(on: host)
         #expect(presented is ScheduleForStopViewController)
+    }
+
+    @Test func `Schedule for route presents route schedule when region supports it`() async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        let departure = try makeDepartureWithRoute()
+
+        presenter.showScheduleForRoute(departure)
+
+        let presented = await waitForPresentation(on: host)
+        let scheduleVC = try #require(presented as? ScheduleForRouteViewController)
+        #expect(scheduleVC.routeID == departure.routeID)
+    }
+
+    @Test func `Schedule for route falls back to stop schedule when region does not support it`() async throws {
+        let host = makeHost()
+        let (presenter, app) = makePresenter(host: host)
+        let departure = try makeDepartureWithRoute()
+
+        let sanDiego: Region
+        if let existing = app.regionsService.find(id: 11) {
+            sanDiego = existing
+        } else {
+            let unsupportedRegionDict: [String: Any] = [
+                "regionName": "San Diego",
+                "id": 11,
+                "obaBaseUrl": "https://realtime.sdmts.com/api/",
+                "siriBaseUrl": "",
+                "bounds": [
+                    ["lat": 32.7, "lon": -117.1, "latSpan": 0.5, "lonSpan": 0.5]
+                ],
+                "language": "en_US",
+                "contactEmail": "test@example.com",
+                "supportsObaDiscoveryApis": true,
+                "supportsObaRealtimeApis": true,
+                "supportsSiriRealtimeApis": false,
+                "supportsEmbeddedSocial": false,
+                "supportsOtpBikeshare": false,
+                "active": true,
+                "experimental": false,
+                "obaVersionInfo": "2.0.0-SNAPSHOT|2|0|0|SNAPSHOT|abc"
+            ]
+            let unsupported = try Fixtures.dictionaryToModel(type: Region.self, dictionary: unsupportedRegionDict)
+            try await app.regionsService.add(customRegion: unsupported)
+            sanDiego = unsupported
+        }
+        app.regionsService.currentRegion = sanDiego
+
+        presenter.showScheduleForRoute(departure)
+
+        let presented = await waitForPresentation(on: host)
+        let scheduleVC = try #require(presented as? ScheduleForStopViewController)
+        #expect(scheduleVC.stopID == departure.stopID)
+        #expect(scheduleVC.routeID == departure.routeID)
     }
 
     @Test func `Stop level bookmark presents the add bookmark controller`() async throws {
