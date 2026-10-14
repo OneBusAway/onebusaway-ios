@@ -40,6 +40,10 @@ open class CoreAppConfig: NSObject {
     /// The OBA base URL for a fixed region, used as a fallback when `fixedRegionName` doesn't match.
     public let fixedRegionOBABaseURL: URL?
 
+    /// Where the REST service records servers that lack `/api/ondemand`.
+    /// Injectable so tests never share the process-wide cache.
+    public let onDemandSupport: OnDemandSupport
+
     /// Convenience initializer that pulls from the host application's main `Bundle`.
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
@@ -74,6 +78,7 @@ open class CoreAppConfig: NSObject {
     /// - Parameter locationService: The location service object.
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
+    /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
     public init(
         regionsBaseURL: URL?,
         apiKey: String,
@@ -86,7 +91,8 @@ open class CoreAppConfig: NSObject {
         dataLoader: URLDataLoader,
         fixedRegionName: String? = nil,
         fixedRegionOBABaseURL: URL? = nil,
-        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
+        onDemandSupport: OnDemandSupport = .shared
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
@@ -100,5 +106,6 @@ open class CoreAppConfig: NSObject {
         self.fixedRegionName = fixedRegionName
         self.fixedRegionOBABaseURL = fixedRegionOBABaseURL
         self.defaultArrivalDepartureFilter = defaultArrivalDepartureFilter
+        self.onDemandSupport = onDemandSupport
     }
 }

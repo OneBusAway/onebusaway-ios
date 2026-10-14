@@ -10,6 +10,11 @@
 import Foundation
 import OBAKitCore
 
+extension Notification.Name {
+    /// Posted when an alarm's push arrives, so open stop pages drop the fired alarm.
+    static let alarmFired = Notification.Name("OBA.AlarmFired")
+}
+
 /// Represent the body of a push notification for an alarm.
 public struct AlarmPushBody: Codable {
     let tripID: TripIdentifier

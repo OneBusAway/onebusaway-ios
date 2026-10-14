@@ -127,6 +127,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showDirectionsToHere: stop.showDirectionsToHere,
             showDirectionsFromHere: stop.showDirectionsFromHere,
             showAlertDetail: stop.showAlertDetail,
+            showOnDemandService: stop.showOnDemandService,
             showBookmarkEditor: stop.showBookmarkEditor,
             shareTrip: trip.shareTrip,
             showAlarmPicker: alarms.showAlarmPicker,
@@ -203,6 +204,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         let showDirectionsToHere: (() -> Void)?
         let showDirectionsFromHere: (() -> Void)?
         let showAlertDetail: (ServiceAlert) -> Void
+        let showOnDemandService: (OnDemandService) -> Void
         let showBookmarkEditor: (ArrivalDeparture?) -> Void
         let showRouteFilter: () -> Void
         let showServiceAlerts: () -> Void
@@ -229,6 +231,10 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showAlertDetail: { [weak self] alert in
                 guard let self, let host = self.presentationHost(for: "alert detail") else { return }
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
+            },
+            showOnDemandService: { [weak self] service in
+                guard let self, let host = self.presentationHost(for: "on-demand service") else { return }
+                self.application.viewRouter.navigateTo(onDemandService: service, from: host)
             },
             showBookmarkEditor: { [weak self] departure in
                 self?.showBookmarkEditor(

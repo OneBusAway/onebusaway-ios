@@ -70,6 +70,15 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
     }
 
     func showAgencyOptions(_ agency: AgencyWithCoverage) {
+        application.viewRouter.present(
+            agencyOptionsAlert(agency),
+            from: self,
+            isPopover: traitCollection.userInterfaceIdiom == .pad,
+            popoverBarButtonItem: nil
+        )
+    }
+
+    func agencyOptionsAlert(_ agency: AgencyWithCoverage) -> UIAlertController {
         let alert = UIAlertController(title: agency.agency.name, message: nil, preferredStyle: .actionSheet)
 
         alert.addAction(UIAlertAction(
@@ -88,13 +97,27 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
             })
         }
 
+        if showsOnDemandAction {
+            alert.addAction(UIAlertAction(title: Strings.agenciesOnDemandServices, style: .default) { [weak self] _ in
+                self?.showOnDemandServices(agency)
+            })
+        }
+
         alert.addAction(UIAlertAction.cancelAction)
-        application.viewRouter.present(
-            alert,
-            from: self,
-            isPopover: traitCollection.userInterfaceIdiom == .pad,
-            popoverBarButtonItem: nil
-        )
+        return alert
+    }
+
+    /// Hidden once the current server has proven it lacks `/api/ondemand`.
+    /// Whether an agency has zero services is only known after fetching, so
+    /// the list itself shows the empty state in that case.
+    var showsOnDemandAction: Bool {
+        guard let apiService = application.apiService else { return false }
+        return !apiService.onDemandSupport.isKnownUnsupported(baseURL: apiService.baseURL)
+    }
+
+    func showOnDemandServices(_ agency: AgencyWithCoverage) {
+        let controller = OnDemandServicesListViewController(application: application, agency: agency.agency)
+        application.viewRouter.navigate(to: controller, from: self)
     }
 
     func openAgencyWebsite(_ agency: AgencyWithCoverage) {

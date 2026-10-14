@@ -186,6 +186,7 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case transitAlert(alertID: String)
     case rentalDetail(rentalID: VehicleRental.ID)
     case rentalCluster(memberIDs: [VehicleRental.ID])
+    case onDemandService(OnDemandService)
     case searchResults(SearchResponse)
     case mapItem(MKMapItem)
     case routeStops(StopsForRoute)
@@ -259,6 +260,8 @@ nonisolated extension AppSheetRoute {
             // must produce the same route regardless of feed ordering, which is
             // what keeps an open sheet bound to its marker across a camera move.
             return "\(caseName)-\(memberIDs.sorted().joined(separator: ","))"
+        case .onDemandService(let service):
+            return "\(caseName)-\(service.id)"
         case .searchResults(let response):
             return "\(caseName)-\(response.request.searchType.rawValue)-\(response.request.query)"
         case .mapItem(let item):
@@ -288,7 +291,7 @@ nonisolated extension AppSheetRoute {
         switch self {
         case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll,
              .recentStopsAll, .bookmarksAll, .settings, .mapSettings, .rentalDetail, .rentalCluster,
-             .searchResults, .mapItem, .routeStops, .nearbyStops:
+             .onDemandService, .searchResults, .mapItem, .routeStops, .nearbyStops:
             return true
         case .home, .search, .routePicker:
             return false
@@ -409,6 +412,14 @@ nonisolated extension AppSheetRoute {
         case .rentalDetail, .rentalCluster:
             // `.medium` first: a rental sheet is a glance, and the map behind it
             // is the context for "is this one near me?".
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
+                isDismissDisabled: false
+            )
+        case .onDemandService:
+            // `.medium` first, like a rental: the zone the rider tapped stays in
+            // view above the sheet, and `.large` shows the whole page.
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .medium,

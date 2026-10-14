@@ -14,10 +14,6 @@ import UIKit
 import UserNotifications
 import OBAKitCore
 
-extension Notification.Name {
-    static let alarmFired = Notification.Name("OBA.AlarmFired")
-}
-
 /// Shared ViewModel for the stop arrivals/departures screen.
 ///
 /// Consumed by `StopViewController` (UIKit, via Combine `sink`) and by
@@ -70,6 +66,10 @@ class StopViewModel: ObservableObject {
 
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
+
+    /// On-demand services this stop references, for the on-demand card; see `StopOnDemandServicesLoader`.
+    @Published private(set) var onDemandServices: [OnDemandService] = []
+    private(set) lazy var onDemandLoader = StopOnDemandServicesLoader { [weak self] in self?.onDemandServices = $0 }
 
     /// `true` while a network request is in-flight.
     @Published private(set) var isLoading = false
@@ -378,6 +378,7 @@ class StopViewModel: ObservableObject {
             stopArrivals = nil
             lastUpdated = nil
             updateStatus()
+            onDemandLoader.clear()
 
             // With a bookmark behind it, a server that has no stop at this ID is the
             // broken-bookmark path: the page explains itself and offers a way out, and
@@ -425,6 +426,7 @@ class StopViewModel: ObservableObject {
             self.stop = stop
         }
         stopArrivals = arrivals
+        onDemandLoader.refresh(for: stop, apiService: environment.apiService)
         rebuildAlarmIndex()
         recomputeCurrentSurvey()
         recordReviewSuccessIfNeeded(arrivals: arrivals)

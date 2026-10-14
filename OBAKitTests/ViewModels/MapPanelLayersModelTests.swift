@@ -34,6 +34,7 @@ final class MapPanelLayersModelTests: OBATestCase {
         // that region's base URL.
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
         application = buildApplication(queue: queue, dataLoader: dataLoader)
         model = MapPanelLayersModel(application: application)
     }
@@ -70,10 +71,10 @@ final class MapPanelLayersModelTests: OBATestCase {
     /// has to move with the toggles.
     @Test func `Badge count follows enabled layers`() {
         let initial = model.enabledLayerCount
-        #expect(initial == 2)
+        #expect(initial == 3)
 
         application.mapRegionManager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
-        #expect(model.enabledLayerCount == 1)
+        #expect(model.enabledLayerCount == 2)
     }
 
     /// Reset restores stops on and points of interest on in one write; the model
@@ -94,6 +95,60 @@ final class MapPanelLayersModelTests: OBATestCase {
         model.viewportDidChange(rect)
 
         #expect(application.mapRegionManager.currentVisibleMapRect.height == 10_000)
+    }
+
+    // MARK: - On-demand zones
+
+    /// A ~100 km viewport over Alexandria, inside the zones layer's zoom window.
+    private let alexandriaViewport = MKMapRect(
+        origin: MKMapPoint(CLLocationCoordinate2D(latitude: 39.1, longitude: -77.6)),
+        size: MKMapSize(width: 100_000, height: 100_000)
+    )
+
+    /// The panel has no `MKMapView`, so the zones reach its `Map` only through
+    /// the model; without this the layer fetched on every pan and drew nothing.
+    @Test func `A viewport fetch publishes the on-demand zones to the panel`() async throws {
+        model.viewportDidChange(alexandriaViewport)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+
+        #expect(model.onDemandZones.count == 1)
+        #expect(model.onDemandMarkers.map(\.service.id) == ["5088_77652"])
+        let marker = try #require(model.onDemandMarkers.first)
+        #expect(model.onDemandMarker(withID: marker.id) === marker)
+    }
+
+    /// A zone marker tap pushes the service page through the sheet coordinator,
+    /// like every other marker, at medium with a grabber.
+    @Test func `A zone marker resolves to the service page's sheet route`() async throws {
+        model.viewportDidChange(alexandriaViewport)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+        let marker = try #require(model.onDemandMarkers.first)
+
+        let route = try #require(model.onDemandServiceRoute(forMarkerID: marker.id))
+        guard case .onDemandService(let service) = route else {
+            Issue.record("expected an on-demand service route, got \(route.id)")
+            return
+        }
+        #expect(service === marker.service)
+        #expect(route.id == "onDemandService-5088_77652")
+        #expect(route.prefersStacking)
+        #expect(route.detentConfiguration.detents == [.medium, .large])
+        #expect(route.detentConfiguration.initialDetent == .medium)
+        #expect(route.detentConfiguration.showDragIndicator)
+
+        model.viewportDidChange(MKMapRect(x: 0, y: 0, width: 5_000_000, height: 5_000_000))
+        #expect(model.onDemandServiceRoute(forMarkerID: marker.id) == nil, "a marker that left the map resolves to nothing")
+    }
+
+    @Test func `Zooming out clears the panel's on-demand zones`() async {
+        model.viewportDidChange(alexandriaViewport)
+        await model.registrar.onDemandLayer?.fetchTask?.value
+        #expect(!model.onDemandZones.isEmpty)
+
+        model.viewportDidChange(MKMapRect(x: 0, y: 0, width: 5_000_000, height: 5_000_000))
+
+        #expect(model.onDemandZones.isEmpty)
+        #expect(model.onDemandMarkers.isEmpty)
     }
 
     /// Leaving bikeshare must *empty* the panel, or the rider keeps seeing the
