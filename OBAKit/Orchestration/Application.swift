@@ -179,6 +179,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// read it. Retained here because `RegionsService` holds delegates weakly.
     private var resolvedRegionPersister: ResolvedRegionPersister?
 
+    /// Created in `application(_:didFinishLaunching:)`, so only the launched app refreshes Shortcuts.
+    private var appShortcutParametersRefresher: AppShortcutParametersRefresher?
+
     // MARK: - Init
 
     /// Creates a new `Application` object.
@@ -560,7 +563,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         reportAnalyticsUserProperties()
 
         configureTipKit()
-        OBAAppShortcuts.updateAppShortcutParameters()
+        appShortcutParametersRefresher = AppShortcutParametersRefresher()
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
@@ -713,8 +716,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// `openAppWhenRun` activates the app before `perform()` stores, so
     /// `applicationDidBecomeActive` / `rootUserInterfaceDidLoad` peek an empty
-    /// queue. Observe the store notification (warm launch) and bookmark
-    /// changes (Shortcut parameter list).
+    /// queue. Observe the store notification (warm launch).
     private func observeShortcutLifecycle() {
         notificationCenter.addObserver(
             forName: .liveActivityShortcutRequestDidStore,
@@ -725,14 +727,6 @@ public class Application: CoreApplication, PushServiceDelegate {
             MainActor.assumeIsolated {
                 self.consumePendingLiveActivityShortcut()
             }
-        }
-
-        notificationCenter.addObserver(
-            forName: .bookmarksDidChange,
-            object: nil,
-            queue: .main
-        ) { _ in
-            OBAAppShortcuts.updateAppShortcutParameters()
         }
     }
 
@@ -957,7 +951,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         // Region change does not post `.bookmarksDidChange`, so Shortcuts
         // would keep offering the previous region's trip bookmarks.
-        OBAAppShortcuts.updateAppShortcutParameters()
+        appShortcutParametersRefresher?.refresh()
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {
