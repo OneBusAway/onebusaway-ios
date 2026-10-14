@@ -92,19 +92,19 @@ extension UIApplication {
     ///
     /// A replacement for the deprecated `UIApplication.windows` property.
     var keyWindowFromScene: UIWindow? {
-        activeWindows.first(where: \.isKeyWindow)
+        if let keyWindow = activeWindows.first(where: \.isKeyWindow) {
+            return keyWindow
+        }
+        return connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: \.isKeyWindow)
     }
 
     var activeWindows: [UIWindow] {
-        // Get connected scenes
-        let windows = self.connectedScenes
-            // Keep only active scenes, onscreen and visible to the user
+        self.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
             .filter { $0.activationState == .foregroundActive }
-            // Keep only the first `UIWindowScene`
-            .first(where: { $0 is UIWindowScene })
-            // Get its associated windows
-            .flatMap({ $0 as? UIWindowScene })?.windows
-
-        return windows ?? []
+            .flatMap { $0.windows }
     }
 }

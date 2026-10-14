@@ -203,7 +203,7 @@ jobs:
     # Build. Output is teed to a log so the concurrency ratchet step can count
     # strict-concurrency warnings (`-quiet` still prints warnings and errors).
     - name: Build OneBusAway
-      timeout-minutes: 20
+      timeout-minutes: 35
       run: |
         set -o pipefail
         xcodebuild build-for-testing \

@@ -16,14 +16,18 @@ class UserActivityBuilder: NSObject {
     private let application: Application
 
     /// Creates the `UserActivityBuilder` object
-    /// - Parameter application: The application object.
-    public init?(application: Application) {
-        let activityTypes = application.applicationBundle.userActivityTypes ?? []
-        guard
-            activityTypes.contains(UserActivityBuilder.stopActivityType(application: application)),
-            activityTypes.contains(UserActivityBuilder.tripActivityType(application: application))
-        else {
-            return nil
+    /// - Parameters:
+    ///   - application: The application object.
+    ///   - validatingActivityTypes: Whether to validate that the application bundle declares the required user activity types. Defaults to `true`.
+    public init?(application: Application, validatingActivityTypes: Bool = true) {
+        if validatingActivityTypes {
+            let activityTypes = application.applicationBundle.userActivityTypes ?? []
+            guard
+                activityTypes.contains(UserActivityBuilder.stopActivityType(application: application)),
+                activityTypes.contains(UserActivityBuilder.tripActivityType(application: application))
+            else {
+                return nil
+            }
         }
 
         self.application = application
@@ -62,6 +66,7 @@ class UserActivityBuilder: NSObject {
         activity.isEligibleForPrediction = true
         activity.suggestedInvocationPhrase = OBALoc("user_activity_builder.show_me_my_bus", value: "Show me my bus", comment: "Suggested invocation phrase for Siri Shortcut")
         activity.persistentIdentifier = "region_\(region.regionIdentifier)_stop_\(stop.id)"
+        activity.targetContentIdentifier = activity.persistentIdentifier
 
         activity.requiredUserInfoKeys = [UserInfoKeys.stopID, UserInfoKeys.regionID]
         activity.userInfo = [UserInfoKeys.stopID: stop.id, UserInfoKeys.regionID: region.regionIdentifier]
@@ -102,6 +107,7 @@ class UserActivityBuilder: NSObject {
 
         activity.isEligibleForHandoff = true
         activity.persistentIdentifier = "region_\(region.regionIdentifier)_trip_\(arrDep.tripID)"
+        activity.targetContentIdentifier = activity.persistentIdentifier
 
         activity.requiredUserInfoKeys = [UserInfoKeys.regionID, UserInfoKeys.serviceDate, UserInfoKeys.stopID, UserInfoKeys.stopSequence, UserInfoKeys.tripID]
 
