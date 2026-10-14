@@ -122,11 +122,11 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showTrip: trip.showTrip,
             showScheduleForStop: trip.showScheduleForStop,
             showScheduleForRoute: trip.showScheduleForRoute,
-            canScheduleForRoute: application.currentRegion?.supportsScheduleForRoute ?? true,
             showWalkingDirections: stop.showWalkingDirections,
             showDirectionsToHere: stop.showDirectionsToHere,
             showDirectionsFromHere: stop.showDirectionsFromHere,
             showAlertDetail: stop.showAlertDetail,
+            showOnDemandService: stop.showOnDemandService,
             showBookmarkEditor: stop.showBookmarkEditor,
             shareTrip: trip.shareTrip,
             showAlarmPicker: alarms.showAlarmPicker,
@@ -203,6 +203,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         let showDirectionsToHere: (() -> Void)?
         let showDirectionsFromHere: (() -> Void)?
         let showAlertDetail: (ServiceAlert) -> Void
+        let showOnDemandService: (OnDemandService) -> Void
         let showBookmarkEditor: (ArrivalDeparture?) -> Void
         let showRouteFilter: () -> Void
         let showServiceAlerts: () -> Void
@@ -229,6 +230,10 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showAlertDetail: { [weak self] alert in
                 guard let self, let host = self.presentationHost(for: "alert detail") else { return }
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
+            },
+            showOnDemandService: { [weak self] service in
+                guard let self, let host = self.presentationHost(for: "on-demand service") else { return }
+                self.application.viewRouter.navigateTo(onDemandService: service, from: host)
             },
             showBookmarkEditor: { [weak self] departure in
                 self?.showBookmarkEditor(
@@ -324,8 +329,15 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         presentationHost(for: "schedule for stop")?.present(controller, animated: true)
     }
 
+    /// Presents the schedule for a route, falling back to the stop's schedule
+    /// filtered to the selected route when the region lacks route schedule support.
+    /// - Parameter arrivalDeparture: The arrival/departure item providing route and stop context.
     func showScheduleForRoute(_ arrivalDeparture: ArrivalDeparture) {
-        let controller = ScheduleForRouteViewController(routeID: arrivalDeparture.routeID, application: application)
+        guard let controller = ScheduleViewControllerFactory.makeScheduleViewController(
+            routeID: arrivalDeparture.routeID,
+            stopID: arrivalDeparture.stopID,
+            application: application
+        ) else { return }
         presentationHost(for: "schedule for route")?.present(controller, animated: true)
     }
 
@@ -460,7 +472,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// Switches to the map tab and opens the classic trip planner with this stop
     /// as origin or destination. Shared by the pushed Stop page and the map sheet.
     func showTripPlanner(action: StopTripPlannerAction, stop: Stop) {
-        StopTripPlannerAction.present(action, stop: stop, application: application)
+        StopTripPlannerAction.present(action, stop: stop, application: application, from: presentingController())
     }
 
     /// An unanchored action sheet is a hard crash on a regular-width device.

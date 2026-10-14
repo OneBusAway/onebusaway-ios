@@ -8,6 +8,7 @@
 //
 
 #import "AppDelegate.h"
+#import "SceneDelegate.h"
 #import "OBARootInterfaceLauncher.h"
 @import OBAKitCore;
 @import OBAKit;
@@ -99,10 +100,36 @@
 }
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    [OBARootInterfaceLauncher reloadRootInterfaceWithApplication:application window:self.window showRootController:^{
-        self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
-        self.window.rootViewController = self.rootController;
-    }];
+    BOOL reloadedAnyScene = NO;
+    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
+        if ([scene isKindOfClass:[UIWindowScene class]]) {
+            UIWindowScene *windowScene = (UIWindowScene *)scene;
+            UIWindow *window = nil;
+            if ([windowScene.delegate isKindOfClass:[SceneDelegate class]]) {
+                window = ((SceneDelegate *)windowScene.delegate).window;
+            }
+            if (!window) {
+                window = windowScene.windows.firstObject;
+            }
+            if (window) {
+                reloadedAnyScene = YES;
+                [OBARootInterfaceLauncher reloadRootInterfaceWithApplication:application window:window showRootController:^{
+                    UIViewController *controller = [OBAApplicationRootControllerFactory makeWithApplication:application];
+                    window.rootViewController = controller;
+                    if (window == self.window) {
+                        self.rootController = controller;
+                    }
+                }];
+            }
+        }
+    }
+
+    if (!reloadedAnyScene && self.window) {
+        [OBARootInterfaceLauncher reloadRootInterfaceWithApplication:application window:self.window showRootController:^{
+            self.rootController = [OBAApplicationRootControllerFactory makeWithApplication:application];
+            self.window.rootViewController = self.rootController;
+        }];
+    }
 }
 
 - (BOOL)canOpenURL:(NSURL*)url {

@@ -26,6 +26,9 @@ import OTPKit
     @Published private(set) var isStopsLayerEnabled = true
     @Published private(set) var showsPointsOfInterest = true
 
+    /// The on-demand zones layer's toggle, for the dock's layer-off rule.
+    @Published private(set) var isOnDemandLayerEnabled = true
+
     /// Drives the badge on the map-type button — the panel's only at-a-glance
     /// readout of layer state.
     @Published private(set) var enabledLayerCount = 0
@@ -35,6 +38,16 @@ import OTPKit
 
     /// Whether the current zoom is tight enough to show fuel figures.
     @Published private(set) var showsFuelLabels = false
+
+    /// On-demand zone polygons the panel's `Map` draws as `MapPolygon`s.
+    @Published private(set) var onDemandZones: [OnDemandZoneShape] = []
+
+    /// The zones' tappable markers.
+    @Published private(set) var onDemandMarkers: [OnDemandZoneAnnotation] = []
+
+    /// The layer whose `onMapContentDidChange` points here. `MapLayerRegistrar`
+    /// builds a fresh one per region, so `refresh()` rebinds on a change.
+    private weak var boundOnDemandLayer: OnDemandMapLayer?
 
     /// Every rental currently visible, before clustering. Backs id resolution
     /// for the rental sheet routes.
@@ -101,7 +114,9 @@ import OTPKit
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
         showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
+        isOnDemandLayerEnabled = mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID)
         subscribeToRentalCoordinator()
+        bindOnDemandLayer()
 
         // The Map sheet writes the threshold through `MapRegionManager` and
         // posts `.rentalRangeFilterDidChange`; on this surface nothing else
@@ -155,6 +170,30 @@ import OTPKit
         coordinator.$showsFuelLabels
             .sink { [weak self] shows in self?.showsFuelLabels = shows }
             .store(in: &rentalCancellables)
+    }
+
+    private func bindOnDemandLayer() {
+        let layer = registrar.onDemandLayer
+        guard layer !== boundOnDemandLayer else { return }
+        boundOnDemandLayer = layer
+        layer?.onMapContentDidChange = { [weak self] in self?.syncOnDemandZones() }
+        syncOnDemandZones()
+    }
+
+    private func syncOnDemandZones() {
+        onDemandZones = boundOnDemandLayer?.zoneShapes ?? []
+        onDemandMarkers = boundOnDemandLayer?.annotations ?? []
+    }
+
+    /// The on-demand layer's drawn zone colours by service id, so a picker
+    /// row's icon matches the zone it highlights.
+    var onDemandServiceColors: [String: UIColor] {
+        boundOnDemandLayer?.serviceColors ?? [:]
+    }
+
+    /// Spec 2.3 Highlight, driven by the dock: the bar page or picker row.
+    func setHighlightedService(_ serviceID: String?) {
+        boundOnDemandLayer?.setHighlightedService(serviceID)
     }
 
     /// Records the viewport geometry clustering needs and recomputes.
@@ -290,6 +329,21 @@ import OTPKit
     private func offViewportPin(withID id: VehicleRental.ID) -> VehicleRental? {
         guard let rental = pinnedRentals[id] else { return nil }
         return registrar.rentalCoordinator?.isReportingVehicle(at: rental.coordinate) == true ? nil : rental
+    }
+
+    /// Resolves a tapped marker's selection tag back to its annotation.
+    func onDemandMarker(withID id: OnDemandZoneAnnotation.ID) -> OnDemandZoneAnnotation? {
+        onDemandMarkers.first { $0.id == id }
+    }
+
+    /// The sheet route for a tapped zone marker's service page; nil once the
+    /// marker has left the map. `locationCheck` supplies the probe result for
+    /// the marker's service id when it has one (spec 3.6 item 3).
+    func onDemandServiceRoute(
+        forMarkerID id: OnDemandZoneAnnotation.ID,
+        locationCheck: (String) -> OnDemandLocationCheck? = { _ in nil }
+    ) -> AppSheetRoute? {
+        onDemandMarker(withID: id).map { .onDemandService($0.service, locationCheck: locationCheck($0.service.id)) }
     }
 
     /// Feeds the panel's camera into the layer pipeline. The `MKMapView` this

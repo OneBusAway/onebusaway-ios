@@ -41,6 +41,11 @@ import OTPKit
     /// order: Bikes then Scooters.
     private(set) var rentalLayers: [RentalMapLayer] = []
 
+    /// The on-demand zones layer built by the most recent `configure()`.
+    /// Registered for every region: the server, not a region flag, decides
+    /// support (`OnDemandSupport`).
+    private(set) var onDemandLayer: OnDemandMapLayer?
+
     init(application: Application, onDidConfigure: @escaping (MapLayerRegistrar) -> Void) {
         self.application = application
         self.onDidConfigure = onDidConfigure
@@ -57,6 +62,7 @@ import OTPKit
             mapRegionManager.registerMapLayer(StopsMapLayer(manager: mapRegionManager))
         }
         configureRentalLayers()
+        configureOnDemandLayer()
         onDidConfigure(self)
     }
 
@@ -90,6 +96,15 @@ import OTPKit
 
         mapRegionManager.registerMapLayer(bikes)
         mapRegionManager.registerMapLayer(scooters)
+    }
+
+    /// Rebuilt per region like the rental layers, so the fresh layer re-reads
+    /// `OnDemandSupport` for the new server on activation.
+    private func configureOnDemandLayer() {
+        mapRegionManager.removeMapLayer(id: OnDemandMapLayer.layerID)
+        let layer = OnDemandMapLayer(application: application)
+        onDemandLayer = layer
+        mapRegionManager.registerMapLayer(layer)
     }
 }
 

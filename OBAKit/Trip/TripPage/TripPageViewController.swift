@@ -273,10 +273,13 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         }
     }
 
+    /// Constructs the actions available to the trip page based on available departure details and region capabilities.
+    /// - Returns: Configured `TripPageActions` for user interactions on the trip sheet.
     private func makeActions() -> TripPageActions {
         var actions = TripPageActions()
 
-        actions.canSchedule = application.currentRegion?.supportsScheduleForRoute ?? true
+        let stopID = departure?.stopID ?? viewModel.tripDetails?.stopTimes.first?.stopID
+        actions.canSchedule = routeID != nil && ScheduleViewControllerFactory.canPresentSchedule(stopID: stopID, application: application)
         actions.canAlarm = departure.map(canCreateAlarm) ?? false
         // A Live Activity reports a countdown to a stop. Without a departure
         // there is no stop and nothing to count down to.
@@ -302,6 +305,26 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         return actions
     }
 
+    /// Resolves the route identifier from available departure or trip information.
+    private var routeID: RouteID? {
+        if let departure {
+            return departure.routeID
+        }
+        if let trip = viewModel.tripDetails?.trip {
+            return trip.routeID
+        }
+        if let trip = viewModel.tripConvertible.tripDetails?.trip {
+            return trip.routeID
+        }
+        if let trip = viewModel.tripConvertible.vehicleStatus?.trip {
+            return trip.routeID
+        }
+        if let arrivalDeparture = viewModel.tripConvertible.arrivalDeparture {
+            return arrivalDeparture.routeID
+        }
+        return nil
+    }
+
     /// Mirrors `StopViewModel.canCreateAlarm(for:)`. Alarms are an Obaco push
     /// feature, and one that can't be scheduled for a bus already inside the
     /// one-minute floor.
@@ -313,11 +336,17 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
     // MARK: - Actions
 
+    /// Presents the schedule for the trip's route, or falls back to the stop schedule
+    /// when the region lacks route schedule support and a stop identifier is available.
     private func showSchedule() {
-        let scheduleVC = ScheduleForRouteViewController(
-            routeID: viewModel.tripConvertible.trip.routeID,
-            application: application
-        )
+        let stopID = departure?.stopID ?? viewModel.tripDetails?.stopTimes.first?.stopID
+        guard let routeID,
+              let scheduleVC = ScheduleViewControllerFactory.makeScheduleViewController(
+                  routeID: routeID,
+                  stopID: stopID,
+                  application: application
+              )
+        else { return }
         present(scheduleVC, animated: true)
     }
 

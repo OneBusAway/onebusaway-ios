@@ -20,12 +20,9 @@ struct StopPageNavigationHandler {
     /// Presents the whole-stop schedule (nav-bar Schedules button).
     let showScheduleForStop: () -> Void
     /// Presents the schedule for a specific departure's route (row swipe/menu and
-    /// trip panel). Mirrors the legacy row `Schedule` action, which is
-    /// route-scoped rather than stop-scoped.
+    /// trip panel). Mirrors the legacy row `Schedule` action, falling back to a stop
+    /// schedule when route schedules are unsupported.
     let showScheduleForRoute: (ArrivalDeparture) -> Void
-    /// Region gate for the route-schedule affordances
-    /// (`Region.supportsScheduleForRoute`); hides them where unsupported.
-    let canScheduleForRoute: Bool
     /// Opens walking directions to the stop in an external maps app (header
     /// walk pill). Presents a choice sheet when more than one app is available.
     let showWalkingDirections: () -> Void
@@ -37,6 +34,8 @@ struct StopPageNavigationHandler {
     let showDirectionsFromHere: (() -> Void)?
     /// Pushes the alert-detail screen for a tapped service alert.
     let showAlertDetail: (ServiceAlert) -> Void
+    /// Pushes the on-demand service page for a row of the stop's on-demand card.
+    let showOnDemandService: (OnDemandService) -> Void
     /// Opens the bookmark editor: `nil` for a stop-level bookmark, an
     /// `ArrivalDeparture` for a trip-level bookmark (row swipe/menu).
     let showBookmarkEditor: (ArrivalDeparture?) -> Void

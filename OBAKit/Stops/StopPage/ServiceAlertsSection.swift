@@ -33,38 +33,23 @@ struct ServiceAlertsSection: View {
     /// Per-visit "show all" expansion for the >2 case (not persisted).
     @State private var showAllAlerts = false
 
-    /// The warning badge scales with Dynamic Type so its glyph never clips.
-    @ScaledMetric(relativeTo: .subheadline) private var warningBadgeSize: CGFloat = 30
-
     private var visibleAlerts: [ServiceAlert] {
         showAllAlerts ? alerts : Array(alerts.prefix(2))
     }
 
-    private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-    }
-
     var body: some View {
-        Section {
-            VStack(spacing: 0) {
-                headerRow
-                if showsServiceAlerts {
-                    ForEach(visibleAlerts) { alert in
-                        Divider().padding(.leading, 14)
-                        alertRow(alert)
-                    }
-                    if alerts.count > 2 && !showAllAlerts {
-                        Divider().padding(.leading, 14)
-                        showAllRow
-                    }
+        StopPageTintedCard(tint: .orange) {
+            headerRow
+            if showsServiceAlerts {
+                ForEach(visibleAlerts) { alert in
+                    StopPageCardDivider()
+                    alertRow(alert)
+                }
+                if alerts.count > 2 && !showAllAlerts {
+                    StopPageCardDivider()
+                    showAllRow
                 }
             }
-            .background(cardShape.fill(Color.orange.opacity(0.08)))
-            .overlay(cardShape.strokeBorder(Color.orange.opacity(0.22), lineWidth: 1))
-            .clipShape(cardShape)
-            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
         }
     }
 
@@ -76,17 +61,9 @@ struct ServiceAlertsSection: View {
                 if !showsServiceAlerts { showAllAlerts = false }
             }
         } label: {
-            HStack(spacing: 12) {
-                // Black on orange, like a road warning sign: white on systemOrange
-                // is 2.2:1, black is 9.5:1 in both appearances.
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.black)
-                    .frame(width: warningBadgeSize, height: warningBadgeSize)
-                    .background(Color.orange.gradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                Text(Strings.serviceAlerts)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+            // Black on orange, like a road warning sign: white on systemOrange
+            // is 2.2:1, black is 9.5:1 in both appearances.
+            StopPageCardHeader(systemImage: "exclamationmark.triangle.fill", title: Strings.serviceAlerts, tint: .orange, glyphColor: .black) {
                 Text("\(alerts.count)")
                     .font(.caption.weight(.heavy))
                     .monospacedDigit()
@@ -94,14 +71,12 @@ struct ServiceAlertsSection: View {
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
                     .background(Color.orange, in: Capsule())
-                Spacer(minLength: 0)
+            } trailing: {
                 Image(systemName: "chevron.down")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(showsServiceAlerts ? 180 : 0))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -136,25 +111,14 @@ struct ServiceAlertsSection: View {
     }
 
     private func alertRow(_ alert: ServiceAlert) -> some View {
-        Button {
+        StopPageCardRow {
             onSelect(alert)
         } label: {
-            HStack(spacing: 10) {
-                Text(alert.title(forLocale: .current) ?? OBALoc("stop_page.service_alert_fallback", value: "Service alert", comment: "Fallback title for a service alert that has no summary text."))
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.forward")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true) // decorative; the alert title labels the button
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
-            .contentShape(Rectangle())
+            Text(alert.title(forLocale: .current) ?? OBALoc("stop_page.service_alert_fallback", value: "Service alert", comment: "Fallback title for a service alert that has no summary text."))
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
         }
-        .buttonStyle(.plain)
     }
 }

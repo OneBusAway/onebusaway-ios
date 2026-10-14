@@ -14,6 +14,31 @@ import OTPKit
 import SwiftUI
 import UIKit
 
+/// The planner fallback's state (spec 3.8): the endpoints passed to the
+/// planner, used when `tripPlanEmpty` carries none, and the probe in flight.
+struct TripPlannerFallbackContext {
+    var origin: CLLocationCoordinate2D?
+    var destination: CLLocationCoordinate2D?
+    var task: Task<Void, Never>?
+    /// The planner panel's delegate, held here because the panel keeps it weakly.
+    var panelObserver: TripPlannerPanelObserver?
+}
+
+/// Tells the map when the trip planner panel changes detent, so the planner
+/// card re-lays out against it (and hides at full height). Only the state
+/// callback is implemented; the panel keeps its default layout.
+final class TripPlannerPanelObserver: NSObject, FloatingPanelControllerDelegate {
+    private let onStateChange: () -> Void
+
+    init(onStateChange: @escaping () -> Void) {
+        self.onStateChange = onStateChange
+    }
+
+    func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
+        onStateChange()
+    }
+}
+
 /// Trip planner presentation. An extension rather than more of `MapViewController`
 /// because presenting one feature is a separate concern from the map state that
 /// class holds — not because of a lint limit. `type_body_length` reports nothing
@@ -137,6 +162,8 @@ extension MapViewController {
             currentLocation: application.locationService.currentLocation
         )
         let destinationLocation = TripPlannerEndpoints.destination(from: destination)
+        tripPlannerFallback.origin = originLocation?.coordinate
+        tripPlannerFallback.destination = destinationLocation?.coordinate
 
         guard let tripPlanner = buildTripPlanner(region: currentRegion) else { return }
 
@@ -163,10 +190,14 @@ extension MapViewController {
         hostingController.view.backgroundColor = .clear
 
         let semiModal = createSemiModalPanel(childController: hostingController)
+        let panelObserver = TripPlannerPanelObserver { [weak self] in self?.layoutOnDemandDock() }
+        semiModal.delegate = panelObserver
+        tripPlannerFallback.panelObserver = panelObserver
         addSemiModalPanel(semiModal)
         self.semiModalTripPlannerController = semiModal
         self.tripPlanner = tripPlanner
         self.tripPlannerHostingController = hostingController
+        updateOnDemandDockContext()
     }
 
     func dismissTripPlannerController() {
@@ -174,26 +205,72 @@ extension MapViewController {
         dismissModalController(tripPlannerHostingController)
 
         self.semiModalTripPlannerController = nil
+        tripPlannerFallback.panelObserver = nil
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
         self.tripPlannerMapDelegate = nil
         hideTripPlannerMapView()
 
+        tripPlannerFallback.task?.cancel()
+        tripPlannerFallback.task = nil
+        onDemandProbeController.clearPlanner()
         unsubscribeFromTripPlannerNotifications()
+        updateOnDemandDockContext()
     }
 
     func subscribeToTripPlannerNotifications() {
         application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(tripStarted), name: Notifications.tripStarted, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(tripPlanEmpty), name: Notifications.tripPlanEmpty, object: nil)
     }
 
     func unsubscribeFromTripPlannerNotifications() {
         application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
         application.notificationCenter.removeObserver(self, name: Notifications.tripStarted, object: nil)
+        application.notificationCenter.removeObserver(self, name: Notifications.tripPlanEmpty, object: nil)
     }
 
     @objc func itinerariesUpdated(_ note: NSNotification) {
+        tripPlannerFallback.task?.cancel()
+        onDemandProbeController.clearPlanner()
+        layoutOnDemandDock()
         semiModalTripPlannerController?.move(to: .full, animated: true)
+    }
+
+    /// R11: the planner came back empty (an OTP error or zero itineraries).
+    /// Probe both ends and dock the on-demand options above the planner panel.
+    @objc func tripPlanEmpty(_ note: NSNotification) {
+        tripPlannerFallback.task?.cancel()
+        // An OTP error posts no `itinerariesUpdated`, so nothing else removes a
+        // card from an earlier empty plan; one for other endpoints must not
+        // outlive a re-plan whose own card can't be built.
+        guard let endpoints = TripPlanEmptyEndpoints.resolve(
+            userInfo: note.userInfo,
+            fallbackOrigin: tripPlannerFallback.origin,
+            fallbackDestination: tripPlannerFallback.destination
+        ) else {
+            onDemandProbeController.clearPlanner()
+            layoutOnDemandDock()
+            return
+        }
+
+        tripPlannerFallback.task = Task { [weak self] in
+            guard let self else { return }
+            let result = await onDemandProbeController.plannerResult(origin: endpoints.origin, destination: endpoints.destination)
+            guard !Task.isCancelled else { return }
+            guard let result else {
+                onDemandProbeController.clearPlanner()
+                layoutOnDemandDock()
+                return
+            }
+            onDemandProbeController.showPlanner(result)
+            // An empty plan also posts `itinerariesUpdated` first, which moves
+            // the panel to full height, where the card is hidden.
+            if semiModalTripPlannerController?.state == .full {
+                semiModalTripPlannerController?.move(to: .half, animated: true)
+            }
+            layoutOnDemandDock()
+        }
     }
 
     @objc func tripStarted(_ note: NSNotification) {

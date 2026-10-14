@@ -37,7 +37,7 @@ public class ClassicApplicationRootController: UITabBarController {
             self.tabBar.isTranslucent = false
         }
 
-        self.application.viewRouter.rootController = self
+        self.application.viewRouter.register(rootController: self)
 
         let mapNav = application.viewRouter.buildNavigation(controller: self.mapController, prefersLargeTitles: false)
         let recentStopsNav = application.viewRouter.buildNavigation(controller: self.recentStopsController)

@@ -43,6 +43,7 @@ public class StopViewController: UIViewController,
         case survey
         case emptyData
         case serviceAlerts
+        case onDemandServices
         case pastArrivalDepartures(suffix: String)
         case arrivalDepartures(suffix: String)
         case loadMoreButton
@@ -117,6 +118,10 @@ public class StopViewController: UIViewController,
 
     /// Controls whether departures before the transfer arrival time are visible (local UI state).
     private var showAllTransferDepartures = false
+
+    /// What `$onDemandServices` last emitted. `@Published` emits before the
+    /// view model stores the value, so the list reads this copy instead.
+    private var displayedOnDemandServices: [OnDemandService] = []
 
     private var schedulesButton: UIBarButtonItem?
 
@@ -420,18 +425,18 @@ public class StopViewController: UIViewController,
 
         var locationChildren: [UIMenuElement] = [nearbyAction, walkingDirectionsElement]
 
-        if StopTripPlannerAction.canPresent(application: application), let stop {
+        if StopTripPlannerAction.canPresent(application: application, from: self), let stop {
             let directionsToHere = UIAction(
                 title: StopTripPlannerAction.directionsToHereTitle,
                 image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond")
             ) { [unowned self] _ in
-                StopTripPlannerAction.present(.directionsToStop, stop: stop, application: self.application)
+                StopTripPlannerAction.present(.directionsToStop, stop: stop, application: self.application, from: self)
             }
             let directionsFromHere = UIAction(
                 title: StopTripPlannerAction.directionsFromHereTitle,
                 image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond.fill")
             ) { [unowned self] _ in
-                StopTripPlannerAction.present(.directionsFromStop, stop: stop, application: self.application)
+                StopTripPlannerAction.present(.directionsFromStop, stop: stop, application: self.application, from: self)
             }
             locationChildren.append(contentsOf: [directionsToHere, directionsFromHere])
         }
@@ -543,6 +548,7 @@ public class StopViewController: UIViewController,
         }
 
         sections.append(serviceAlertsSection)
+        sections.append(onDemandServicesSection)
         sections.append(contentsOf: stopArrivalsSection)
 
         if self.stopPreferences.sortType == .route {
@@ -835,12 +841,8 @@ public class StopViewController: UIViewController,
         let addAlarmAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addAlarm(viewModel: item) }
         let bookmarkAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addBookmark(viewModel: item) }
 
-        // Only show the schedule-for-route action if the current region supports it.
-        let scheduleAction: OBAListViewAction<ArrivalDepartureItem>?
-        if application.currentRegion?.supportsScheduleForRoute ?? true {
-            scheduleAction = { [unowned self] item in self.showScheduleForRoute(viewModel: item) }
-        } else {
-            scheduleAction = nil
+        let scheduleAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in
+            self.showScheduleForRoute(viewModel: item)
         }
 
         return ArrivalDepartureItem(
@@ -960,13 +962,10 @@ public class StopViewController: UIViewController,
             }
             actions.append(addBookmark)
 
-            // Only show the schedule-for-route action if the current region supports it.
-            if application.currentRegion?.supportsScheduleForRoute ?? true {
-                let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
-                    self.showScheduleForRoute(viewModel: viewModel)
-                }
-                actions.append(schedule)
+            let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
+                self.showScheduleForRoute(viewModel: viewModel)
             }
+            actions.append(schedule)
 
             let shareTrip = UIAction(title: Strings.shareTrip, image: Icons.share) { [weak self] _ in
                 self?.shareTripStatus(viewModel: viewModel)
@@ -1250,8 +1249,14 @@ public class StopViewController: UIViewController,
 
     // MARK: - Schedules
 
+    /// Presents the schedule for a route or falls back to the stop schedule when the current region lacks route schedule support.
+    /// - Parameter viewModel: The arrival departure item containing route and stop identifiers.
     func showScheduleForRoute(viewModel: ArrivalDepartureItem) {
-        let scheduleVC = ScheduleForRouteViewController(routeID: viewModel.routeID, application: application)
+        guard let scheduleVC = ScheduleViewControllerFactory.makeScheduleViewController(
+            routeID: viewModel.routeID,
+            stopID: viewModel.stopID,
+            application: application
+        ) else { return }
         present(scheduleVC, animated: true)
     }
 
@@ -1333,8 +1338,32 @@ public class StopViewController: UIViewController,
 // MARK: - ViewModel Binding
 
 private extension StopViewController {
+    // MARK: - Data/On-demand services
+
+    /// Mirrors the redesigned page's `OnDemandServicesSection`: one row per
+    /// service, named after it.
+    var onDemandServicesSection: OBAListViewSection? {
+        let services = displayedOnDemandServices
+        guard !services.isEmpty else { return nil }
+
+        let rows = services.map { service in
+            let listing = OnDemandServiceListing(service)
+            return OBAListRowView.DefaultViewModel(
+                title: listing.title,
+                onSelectAction: { [weak self] _ in
+                    guard let self else { return }
+                    self.application.viewRouter.navigateTo(onDemandService: service, from: self)
+                }
+            )
+        }
+        return listViewSection(for: .onDemandServices, title: Strings.onDemandSectionTitle, items: rows)
+    }
+
+    // MARK: - List data bindings
+
     func bindListData() {
         bindArrivalsSink()
+        bindOnDemandServicesSink()
         bindStopSink()
         bindSurveysSink()
         bindPreferencesSinks()
@@ -1352,6 +1381,17 @@ private extension StopViewController {
                 listView.applyData(animated: false)
                 configureTabBarButtons()
                 beginUserActivity()
+            }
+            .store(in: &cancellables)
+    }
+
+    func bindOnDemandServicesSink() {
+        viewModel.$onDemandServices
+            .dropFirst()
+            .sink { [weak self] services in
+                guard let self else { return }
+                displayedOnDemandServices = services
+                listView.applyData(animated: false)
             }
             .store(in: &cancellables)
     }

@@ -172,8 +172,9 @@ public class RecentStopsViewController: UIViewController,
         let button = ActivityIndicatedButton.Configuration(
             text: buttonText,
             largeContentImage: Icons.mapTabIcon,
-            showsActivityIndicatorOnTap: false) {
-            self.application.viewRouter.rootNavigateTo(page: .map)
+            showsActivityIndicatorOnTap: false) { [weak self] in
+            guard let self = self else { return }
+            self.application.viewRouter.rootNavigateTo(page: .map, from: self)
         }
 
         return .standard(.init(title: title, body: subtitle, buttonConfig: button))

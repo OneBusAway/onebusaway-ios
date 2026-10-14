@@ -214,11 +214,11 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         showTrip: { _ in },
         showScheduleForStop: {},
         showScheduleForRoute: { _ in },
-        canScheduleForRoute: false,
         showWalkingDirections: {},
         showDirectionsToHere: nil,
         showDirectionsFromHere: nil,
         showAlertDetail: { _ in },
+        showOnDemandService: { _ in },
         showBookmarkEditor: { _ in },
         shareTrip: { _ in },
         showAlarmPicker: { _ in },
@@ -575,7 +575,7 @@ private extension StopPageViewController {
 
         var locationChildren: [UIMenuElement] = [nearbyAction, walkingDirectionsElement]
 
-        if StopTripPlannerAction.canPresent(application: application), let stop = viewModel.stop {
+        if StopTripPlannerAction.canPresent(application: application, from: self), let stop = viewModel.stop {
             let directionsToHere = UIAction(
                 title: StopTripPlannerAction.directionsToHereTitle,
                 image: UIImage(systemName: "arrow.triangle.turn.up.right.diamond")

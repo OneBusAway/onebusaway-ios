@@ -57,6 +57,7 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter locationService: The location service object.
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
+    /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
     public init(
         regionsBaseURL: URL?,
         apiKey: String,
@@ -71,7 +72,8 @@ public class AppConfig: CoreAppConfig {
         fixedRegionName: String? = nil,
         fixedRegionOBABaseURL: URL? = nil,
         defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
-        launchRouteID: String? = nil
+        launchRouteID: String? = nil,
+        onDemandSupport: OnDemandSupport = .shared
     ) {
         self.analytics = analytics
         self.launchRouteID = launchRouteID
@@ -87,7 +89,8 @@ public class AppConfig: CoreAppConfig {
             dataLoader: dataLoader,
             fixedRegionName: fixedRegionName,
             fixedRegionOBABaseURL: fixedRegionOBABaseURL,
-            defaultArrivalDepartureFilter: defaultArrivalDepartureFilter
+            defaultArrivalDepartureFilter: defaultArrivalDepartureFilter,
+            onDemandSupport: onDemandSupport
         )
     }
 }

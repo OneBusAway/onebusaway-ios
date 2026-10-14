@@ -93,8 +93,15 @@ class ScheduleForStopViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(stopID: StopID, application: Application, initialDate: Date = Date()) {
+    /// Initializes a view model for a stop's schedule.
+    /// - Parameters:
+    ///   - stopID: The stop ID to display schedules for.
+    ///   - routeID: Optional route ID to pre-select upon opening.
+    ///   - application: The application environment object.
+    ///   - initialDate: The date to load the schedule for, defaulting to today.
+    init(stopID: StopID, routeID: RouteID? = nil, application: Application, initialDate: Date = Date()) {
         self.stopID = stopID
+        self.selectedRouteID = routeID
         self.application = application
         self.selectedDate = initialDate
     }

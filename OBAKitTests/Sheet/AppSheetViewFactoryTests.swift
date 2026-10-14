@@ -58,7 +58,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             searchDisplayModel: displayModel,
             stopsObserver: stopsObserver ?? MapStopsObserver(application: application),
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel(),
-            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil })
+            tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil }),
+            onDemandProbeController: OnDemandProbeController.make(application: application)
         )
     }
 
@@ -75,6 +76,22 @@ final class AppSheetViewFactoryTests: OBATestCase {
         // MoreViewController) is covered by MoreSheetHostTests — this test
         // owns the factory-to-host handoff only.
         #expect(host.application === application)
+    }
+
+    @Test @MainActor
+    func `On-demand service view hosts the service page for the route's service`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let service = try JSONDecoder.RESTDecoder().decode(
+            RESTAPIResponse<OnDemandService>.self,
+            from: Fixtures.loadData(file: "ondemand_service_alexandria.json")
+        ).entry
+
+        let host = makeFactory(application: application).onDemandServiceView(service: service)
+
+        #expect(host.application === application)
+        #expect(host.service === service)
+        #expect(host.geometry != nil, "a probe service's page draws the probe's full geometry")
     }
 
     @Test @MainActor

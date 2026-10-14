@@ -25,6 +25,8 @@ class MapItemViewController: UIViewController, AppContext {
     private weak var modalDelegate: ModalDelegate?
     private let removePinHandler: (() -> Void)?
     private let planTripHandler: () -> Void
+    private let coverageProbe: OnDemandCoverageProbe?
+    private let openOnDemandDetail: ((OnDemandServiceMatch, OnDemandLocationCheck) -> Void)?
 
     /// The hosting controller that embeds the SwiftUI view
     private var hostingController: UIHostingController<AnyView>?
@@ -39,13 +41,17 @@ class MapItemViewController: UIViewController, AppContext {
         mapItem: MKMapItem,
         delegate: ModalDelegate?,
         removePinHandler: (() -> Void)? = nil,
-        planTripHandler: @escaping () -> Void
+        planTripHandler: @escaping () -> Void,
+        coverageProbe: OnDemandCoverageProbe? = nil,
+        openOnDemandDetail: ((OnDemandServiceMatch, OnDemandLocationCheck) -> Void)? = nil
     ) {
         self.application = application
         self.mapItem = mapItem
         self.modalDelegate = delegate
         self.removePinHandler = removePinHandler
         self.planTripHandler = planTripHandler
+        self.coverageProbe = coverageProbe
+        self.openOnDemandDetail = openOnDemandDetail
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -54,12 +60,15 @@ class MapItemViewController: UIViewController, AppContext {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        var actions = MapItemActions.uiKit(presenter: self, delegate: modalDelegate, application: application)
+        actions.openOnDemandDetail = openOnDemandDetail
         let viewModel = MapItemViewModel(
             mapItem: mapItem,
             application: application,
-            actions: .uiKit(presenter: self, delegate: modalDelegate, application: application),
+            actions: actions,
             removePinHandler: removePinHandler,
-            planTripHandler: planTripHandler
+            planTripHandler: planTripHandler,
+            coverageProbe: coverageProbe
         )
         self.viewModel = viewModel
 
