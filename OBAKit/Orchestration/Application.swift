@@ -144,10 +144,10 @@ public class Application: CoreApplication, PushServiceDelegate {
                     let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
                     await MainActor.run {
-                        if let topViewController = self.topViewController {
+                        self.withPushableTopViewController { from in
                             self.viewRouter.navigateTo(
                                 arrivalDeparture: arrDep,
-                                from: topViewController,
+                                from: from,
                                 destinationStopID: deepLink.destinationStopID
                             )
                         }
@@ -392,7 +392,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             NotificationCenter.default.post(name: .alarmFired, object: nil)
             self.launchRouteGate.suppress()
 
-            guard let topViewController = self.topViewController else {
+            guard self.topViewController != nil else {
                 // UI not ready yet (cold launch). Navigate once the scene activates.
                 self.pendingStopID = pushBody.stopID
                 // A region left by an earlier stash would make the drain refuse
@@ -400,7 +400,9 @@ public class Application: CoreApplication, PushServiceDelegate {
                 self.pendingStopRegionID = nil
                 return
             }
-            self.viewRouter.navigateTo(stopID: pushBody.stopID, from: topViewController)
+            self.withPushableTopViewController { from in
+                self.viewRouter.navigateTo(stopID: pushBody.stopID, from: from)
+            }
         }
     }
 
@@ -549,7 +551,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     // MARK: - UIApplication Hooks
 
     /// Provides access the topmost view controller in the app, if one exists.
-    private var topViewController: UIViewController? {
+    var topViewController: UIViewController? {
         delegate?.uiApplication?.keyWindowFromScene?.topViewController
     }
 
@@ -659,7 +661,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     private func drainPendingUIPresentations() {
         guard !isOnboardingRoot else { return }
 
-        if let stopID = pendingStopID, let topViewController {
+        if let stopID = pendingStopID, topViewController != nil {
             if let neededRegion = pendingStopRegionID {
                 // Region still loading: wait. Loaded but different: drop — do not
                 // fetch this stop against the wrong region's API.
@@ -670,7 +672,9 @@ public class Application: CoreApplication, PushServiceDelegate {
                     return
                 }
             }
-            viewRouter.navigateTo(stopID: stopID, from: topViewController)
+            withPushableTopViewController { [weak self] from in
+                self?.viewRouter.navigateTo(stopID: stopID, from: from)
+            }
             pendingStopID = nil
             pendingStopRegionID = nil
         }
@@ -800,8 +804,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Not while onboarding is the root: there is no API service to load the
         // stop with yet, and the page would be pushed over the region picker. The
         // drain picks the stash up once onboarding finishes.
-        if let topViewController, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
-            viewRouter.navigateTo(stopID: destination.stopID, from: topViewController)
+        if topViewController != nil, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
+            withPushableTopViewController { [weak self] from in
+                self?.viewRouter.navigateTo(stopID: destination.stopID, from: from)
+            }
             return
         }
 
