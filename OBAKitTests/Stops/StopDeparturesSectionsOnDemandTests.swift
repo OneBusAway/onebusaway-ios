@@ -61,7 +61,7 @@ final class StopDeparturesSectionsOnDemandTests: OBATestCase {
             showBookmarkEditor: { _ in }, shareTrip: { _ in }, showAlarmPicker: { _ in }, startLiveActivity: { _ in },
             showExternalSurveyError: {}, showDonation: {}, dismissDonation: { _ in },
             makeTripPreview: { _ in AnyView(EmptyView()) },
-            showRouteFilter: {}, showServiceAlerts: {}, showNearbyStops: {}, showReportProblem: {}, closeSheet: {}
+            showRouteFilter: {}, showServiceAlerts: {}, showNearbyStops: {}, showReportProblem: {}, toggleProximityAlert: {}, closeSheet: {}
         )
         let service = try alexandria()
         handler.showOnDemandService(service)
@@ -89,7 +89,7 @@ final class StopDeparturesSectionsOnDemandTests: OBATestCase {
         let controller = StopViewController(application: application, stopID: "1_TEST")
         controller.loadViewIfNeeded()
         await controller.viewModel.refresh()
-        await controller.viewModel.onDemandFetchTask?.value
+        await controller.viewModel.onDemandLoader.task?.value
         return controller
     }
 

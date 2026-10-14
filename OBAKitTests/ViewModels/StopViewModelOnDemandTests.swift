@@ -90,13 +90,13 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
         #expect(viewModel.onDemandServices[0].areas.first?.hasGeometry == true, "rows fetch simplified geometry for the service page")
         #expect(onDemandRequestCount(dataLoader) == 1)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(onDemandRequestCount(dataLoader) == 1, "same pointer set → no refetch")
     }
 
@@ -106,7 +106,7 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        #expect(viewModel.onDemandFetchTask == nil)
+        #expect(viewModel.onDemandLoader.task == nil)
         #expect(viewModel.onDemandServices.isEmpty)
         #expect(onDemandRequestCount(dataLoader) == 0)
     }
@@ -124,15 +124,15 @@ final class StopViewModelOnDemandTests: OBATestCase {
 
         let refreshChain = Task { await viewModel.refresh() }
         await gate.waitForRequest()
-        let firstLoad = try #require(viewModel.onDemandFetchTask)
+        let firstLoad = try #require(viewModel.onDemandLoader.task)
         await refreshChain.value
         #expect(viewModel.stopArrivals?.arrivalsAndDepartures.isEmpty == true)
         #expect(viewModel.isLoadMoreExhausted, "fixture premise: the window was walked out to its cap")
-        #expect(viewModel.onDemandFetchTask == firstLoad)
+        #expect(viewModel.onDemandLoader.task == firstLoad)
         #expect(!firstLoad.isCancelled)
 
         gate.releaseRequest()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
         #expect(onDemandRequestCount(dataLoader) == 1)
     }
@@ -157,7 +157,7 @@ final class StopViewModelOnDemandTests: OBATestCase {
         #expect(onDemandRequestCount(dataLoader) == 2, "the second request doesn't wait for the first")
 
         gate.releaseRequest()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID, Self.secondServiceID])
     }
 
@@ -170,13 +170,13 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.isEmpty)
         #expect(viewModel.operationError == nil, "on-demand failures never fail the arrivals page")
         #expect(onDemandRequestCount(dataLoader) == 1)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(onDemandRequestCount(dataLoader) == 2)
     }
 
@@ -190,12 +190,12 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.isEmpty)
         #expect(onDemandRequestCount(dataLoader) == 1)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(onDemandRequestCount(dataLoader) == 2)
     }
 
@@ -209,13 +209,13 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
         #expect(viewModel.operationError == nil)
         #expect(onDemandRequestCount(dataLoader) == 2)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(onDemandRequestCount(dataLoader) == 2, "a partly loaded set is not retried")
     }
 
@@ -232,18 +232,18 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
 
         phase.value = 1
         await viewModel.refresh()
         #expect(viewModel.stopIsMissing, "fixture premise: the 404 reads as a missing stop")
         #expect(viewModel.onDemandServices.isEmpty)
-        #expect(viewModel.onDemandFetchTask == nil)
+        #expect(viewModel.onDemandLoader.task == nil)
 
         phase.value = 2
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.map(\.id) == [Self.alexandriaServiceID])
         #expect(onDemandRequestCount(dataLoader) == 2)
     }
@@ -263,13 +263,13 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader, gate: gate), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        let staleTask = try #require(viewModel.onDemandFetchTask)
+        let staleTask = try #require(viewModel.onDemandLoader.task)
         await gate.waitForRequest()
 
         phase.value = 1
         await viewModel.refresh()
         #expect(staleTask.isCancelled)
-        #expect(viewModel.onDemandFetchTask == nil)
+        #expect(viewModel.onDemandLoader.task == nil)
 
         gate.releaseRequest()
         await staleTask.value
@@ -289,7 +289,7 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader, gate: gate), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        let staleTask = try #require(viewModel.onDemandFetchTask)
+        let staleTask = try #require(viewModel.onDemandLoader.task)
         await gate.waitForRequest()
         #expect(onDemandRequestCount(dataLoader) == 1, "the held request has its response")
 
@@ -313,12 +313,12 @@ final class StopViewModelOnDemandTests: OBATestCase {
         let viewModel = StopViewModel(application: makeApplication(dataLoader: dataLoader, gate: gate), stopID: Self.fixedRouteStopID)
 
         await viewModel.refresh()
-        let staleTask = try #require(viewModel.onDemandFetchTask)
+        let staleTask = try #require(viewModel.onDemandLoader.task)
         await gate.waitForRequest()
 
         phase.value = 1
         await viewModel.refresh()
-        await viewModel.onDemandFetchTask?.value
+        await viewModel.onDemandLoader.task?.value
         #expect(viewModel.onDemandServices.map(\.id) == [Self.secondServiceID])
 
         gate.releaseRequest()
@@ -336,7 +336,7 @@ final class StopViewModelOnDemandTests: OBATestCase {
         await viewModel?.refresh()
         // The survey fetch holds the view model strongly while it runs.
         await viewModel?.surveyRefreshTask?.value
-        let task = try #require(viewModel?.onDemandFetchTask)
+        let task = try #require(viewModel?.onDemandLoader.task)
         await gate.waitForRequest()
 
         weak var released = viewModel

@@ -14,10 +14,6 @@ import UIKit
 import UserNotifications
 import OBAKitCore
 
-extension Notification.Name {
-    static let alarmFired = Notification.Name("OBA.AlarmFired")
-}
-
 /// Shared ViewModel for the stop arrivals/departures screen.
 ///
 /// Consumed by `StopViewController` (UIKit, via Combine `sink`) and by
@@ -71,19 +67,9 @@ class StopViewModel: ObservableObject {
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
 
-    /// On-demand services referencing this stop (`Stop.onDemandServiceIDs`),
-    /// loaded once per distinct pointer set and rendered as the on-demand card.
-    /// Empty for non-flex stops, while the first load is in flight, and when
-    /// every service failed to load.
+    /// On-demand services this stop references, for the on-demand card; see `StopOnDemandServicesLoader`.
     @Published private(set) var onDemandServices: [OnDemandService] = []
-
-    /// The in-flight on-demand load; held for cancellation and so tests can await it.
-    private(set) var onDemandFetchTask: Task<Void, Never>?
-
-    /// The pointer set the current or last load was started for — recorded at the
-    /// start so refreshes landing mid-load (auto-extension fires several) don't
-    /// restart it. Nil after a load that produced nothing, so the next refresh retries.
-    private var requestedOnDemandServiceIDs: [String]?
+    private(set) lazy var onDemandLoader = StopOnDemandServicesLoader { [weak self] in self?.onDemandServices = $0 }
 
     /// `true` while a network request is in-flight.
     @Published private(set) var isLoading = false
@@ -332,7 +318,6 @@ class StopViewModel: ObservableObject {
         statusTimer?.invalidate()
         surveyRefreshTask?.cancel()
         transientToastDismissTask?.cancel()
-        onDemandFetchTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -393,7 +378,7 @@ class StopViewModel: ObservableObject {
             stopArrivals = nil
             lastUpdated = nil
             updateStatus()
-            clearOnDemandServices()
+            onDemandLoader.clear()
 
             // With a bookmark behind it, a server that has no stop at this ID is the
             // broken-bookmark path: the page explains itself and offers a way out, and
@@ -441,7 +426,7 @@ class StopViewModel: ObservableObject {
             self.stop = stop
         }
         stopArrivals = arrivals
-        refreshOnDemandServices(for: stop)
+        onDemandLoader.refresh(for: stop, apiService: environment.apiService)
         rebuildAlarmIndex()
         recomputeCurrentSurvey()
         recordReviewSuccessIfNeeded(arrivals: arrivals)
@@ -695,44 +680,6 @@ class StopViewModel: ObservableObject {
     }
 
     // MARK: - Private Helpers
-
-    /// Loads the services behind `stop.onDemandServiceIDs` when the set changes,
-    /// cancelling a load still running for the previous set so its result never
-    /// lands. Failures never surface as `operationError`: the departures list is
-    /// the page, and this card is an addition to it.
-    private func refreshOnDemandServices(for stop: Stop) {
-        let ids = stop.onDemandServiceIDs
-        guard ids != requestedOnDemandServiceIDs else { return }
-
-        onDemandFetchTask?.cancel()
-        onDemandFetchTask = nil
-        requestedOnDemandServiceIDs = ids
-
-        guard !ids.isEmpty, let apiService = environment.apiService else {
-            onDemandServices = []
-            return
-        }
-
-        onDemandFetchTask = Task { [weak self] in
-            // Simplified geometry: the service page this row opens draws the zones.
-            let loaded = await apiService.loadOnDemandServices(ids: ids, geometryDetail: .simplified)
-            // The task's flag, not an error: a `URLError.cancelled` this task
-            // didn't ask for is an ordinary failure that must still allow a retry.
-            guard !Task.isCancelled, let self else { return }
-            self.onDemandServices = loaded.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-            if loaded.isEmpty {
-                self.requestedOnDemandServiceIDs = nil
-            }
-        }
-    }
-
-    /// Drops the on-demand card and forgets its pointer set, so a later fetch reloads it.
-    private func clearOnDemandServices() {
-        onDemandFetchTask?.cancel()
-        onDemandFetchTask = nil
-        requestedOnDemandServiceIDs = nil
-        onDemandServices = []
-    }
 
     private func loadMore(minutes: UInt) async {
         let cappedMinutes = min(minutesAfter + minutes, 720)
