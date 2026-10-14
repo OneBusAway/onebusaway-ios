@@ -128,6 +128,8 @@ final class OnDemandPickerTests: OBATestCase {
             coordinator: SheetCoordinator(root: .home),
             searchDisplayModel: MapSearchDisplayModel(),
             stopsObserver: MapStopsObserver(application: application),
+            tripPlannerMapDisplayModel: TripPlannerMapDisplayModel(),
+            tripFocusMapDisplayModel: TripFocusMapDisplayModel(userLocation: { nil }),
             onDemandProbeController: OnDemandProbeController.make(application: application)
         )
         let payload = try dialARidePayload(source: .mapCenter, locality: "Boyne City")
@@ -189,6 +191,8 @@ final class OnDemandPickerTests: OBATestCase {
             coordinator: coordinator,
             searchDisplayModel: MapSearchDisplayModel(),
             stopsObserver: MapStopsObserver(application: application),
+            tripPlannerMapDisplayModel: TripPlannerMapDisplayModel(),
+            tripFocusMapDisplayModel: TripFocusMapDisplayModel(userLocation: { nil }),
             onDemandProbeController: probeController
         )
         let payload = try dialARidePayload()

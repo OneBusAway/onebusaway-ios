@@ -33,7 +33,7 @@ final class MapSheetModelTests: OBATestCase {
         application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
         registrar = MapLayerRegistrar(application: application) { _ in }
         registrar.configure()
-        model = MapSheetModel(mapRegionManager: application.mapRegionManager, mapViewModel: MapViewModel(application: application))
+        model = MapSheetModel(mapRegionManager: application.mapRegionManager, mapViewModel: MapViewModel(application: application)) { _ in }
     }
 
     /// A layer whose availability the test controls.
