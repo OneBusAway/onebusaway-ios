@@ -101,7 +101,10 @@ public enum OnDemandBookingResolution: Equatable, Sendable {
                 bookable = Candidate(travelDate: date, evaluation: evaluation)
                 return false
             case .notYetOpen:
-                firstOpenInstant = firstOpenInstant ?? evaluation.openInstant
+                // A later date's opening is never earlier than this one's, so
+                // none of them can be open now; the walk has its answer.
+                firstOpenInstant = evaluation.openInstant
+                return false
             case .unknown:
                 sawUnknown = true
             case .closedForDate:

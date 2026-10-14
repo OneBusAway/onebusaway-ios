@@ -305,7 +305,8 @@ final class OnDemandProbeController: NSObject, ObservableObject {
             deriveDockState()
             return
         }
-        probeSource = point.source
+        // `probeSource` is left to `didProbe`: it describes `probePoint`, which
+        // a skipped or failed probe keeps from the earlier, possibly other-source, point.
         if !reason.ignoresMovementThreshold, let lastProbePoint,
            lastProbePoint.distance(from: point.coordinate) < configuration.movementThresholdMeters {
             deriveDockState()

@@ -176,46 +176,54 @@ public struct OnDemandServiceSummary: Equatable, Sendable {
     // MARK: - Formatting
 
     /// Named to avoid shadowing OBAKitCore's `Formatters` inside this type.
-    private struct SummaryFormatters {
-        let wallClockFormatter: DateFormatter
-        let deadlineFormatterRelative: DateFormatter
-        let deadlineFormatterAbsolute: DateFormatter
-        let deadlineFormatterAbsoluteNoYear: DateFormatter
-        let travelDateFormatter: DateFormatter
-        let shortWeekdaySymbols: [String]
+    ///
+    /// Each formatter is built on first use: `formattedRelativeDateTime` makes
+    /// one of these per status string the dock, card and picker render, and
+    /// needs only one or two of the six.
+    private final class SummaryFormatters {
+        private let timeZone: TimeZone
+        private let locale: Locale
         let calendar: Calendar
         let now: Date
 
-        init(timeZone: TimeZone, locale: Locale, now: Date) {
-            wallClockFormatter = DateFormatter()
-            wallClockFormatter.locale = locale
-            wallClockFormatter.timeZone = .gmt
-            wallClockFormatter.dateStyle = .none
-            wallClockFormatter.timeStyle = .short
+        lazy var wallClockFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.locale = locale
+            formatter.timeZone = .gmt
+            formatter.dateStyle = .none
+            formatter.timeStyle = .short
+            return formatter
+        }()
 
-            // The relative one is used only when `relativeProbe` can vouch
-            // for a "Today"/"Tomorrow" label (see `deadline(_:today:)`); the
-            // absolute one never reads the live wall clock.
-            deadlineFormatterRelative = Self.makeDeadlineFormatter(relative: true, timeZone: timeZone, locale: locale)
-            deadlineFormatterAbsolute = Self.makeDeadlineFormatter(relative: false, timeZone: timeZone, locale: locale)
-            deadlineFormatterAbsoluteNoYear = DateFormatter()
-            deadlineFormatterAbsoluteNoYear.locale = locale
-            deadlineFormatterAbsoluteNoYear.timeZone = timeZone
-            deadlineFormatterAbsoluteNoYear.setLocalizedDateFormatFromTemplate("MMMdjmm")
+        // The relative one is used only when `relativeProbe` can vouch
+        // for a "Today"/"Tomorrow" label (see `deadline(_:today:)`); the
+        // absolute one never reads the live wall clock.
+        lazy var deadlineFormatterRelative = Self.makeDeadlineFormatter(relative: true, timeZone: timeZone, locale: locale)
+        lazy var deadlineFormatterAbsolute = Self.makeDeadlineFormatter(relative: false, timeZone: timeZone, locale: locale)
+        lazy var deadlineFormatterAbsoluteNoYear = Self.makeTemplateFormatter("MMMdjmm", timeZone: timeZone, locale: locale)
+        lazy var travelDateFormatter = Self.makeTemplateFormatter("EEEMMMd", timeZone: timeZone, locale: locale)
 
-            travelDateFormatter = DateFormatter()
-            travelDateFormatter.locale = locale
-            travelDateFormatter.timeZone = timeZone
-            travelDateFormatter.setLocalizedDateFormatFromTemplate("EEEMMMd")
-
+        lazy var shortWeekdaySymbols: [String] = {
             let symbols = DateFormatter()
             symbols.locale = locale
-            shortWeekdaySymbols = symbols.shortWeekdaySymbols ?? Weekday.allCases.map(\.rawValue)
+            return symbols.shortWeekdaySymbols ?? Weekday.allCases.map(\.rawValue)
+        }()
 
+        init(timeZone: TimeZone, locale: Locale, now: Date) {
+            self.timeZone = timeZone
+            self.locale = locale
             var gregorian = Calendar(identifier: .gregorian)
             gregorian.timeZone = timeZone
             calendar = gregorian
             self.now = now
+        }
+
+        private static func makeTemplateFormatter(_ template: String, timeZone: TimeZone, locale: Locale) -> DateFormatter {
+            let formatter = DateFormatter()
+            formatter.locale = locale
+            formatter.timeZone = timeZone
+            formatter.setLocalizedDateFormatFromTemplate(template)
+            return formatter
         }
 
         private static func makeDeadlineFormatter(relative: Bool, timeZone: TimeZone, locale: Locale) -> DateFormatter {

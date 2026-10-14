@@ -240,16 +240,29 @@ extension MapViewController {
     /// R11: the planner came back empty (an OTP error or zero itineraries).
     /// Probe both ends and dock the on-demand options above the planner panel.
     @objc func tripPlanEmpty(_ note: NSNotification) {
+        tripPlannerFallback.task?.cancel()
+        // An OTP error posts no `itinerariesUpdated`, so nothing else removes a
+        // card from an earlier empty plan; one for other endpoints must not
+        // outlive a re-plan whose own card can't be built.
         guard let endpoints = TripPlanEmptyEndpoints.resolve(
             userInfo: note.userInfo,
             fallbackOrigin: tripPlannerFallback.origin,
             fallbackDestination: tripPlannerFallback.destination
-        ) else { return }
+        ) else {
+            onDemandProbeController.clearPlanner()
+            layoutOnDemandDock()
+            return
+        }
 
-        tripPlannerFallback.task?.cancel()
         tripPlannerFallback.task = Task { [weak self] in
-            guard let self, let result = await onDemandProbeController.plannerResult(origin: endpoints.origin, destination: endpoints.destination) else { return }
+            guard let self else { return }
+            let result = await onDemandProbeController.plannerResult(origin: endpoints.origin, destination: endpoints.destination)
             guard !Task.isCancelled else { return }
+            guard let result else {
+                onDemandProbeController.clearPlanner()
+                layoutOnDemandDock()
+                return
+            }
             onDemandProbeController.showPlanner(result)
             // An empty plan also posts `itinerariesUpdated` first, which moves
             // the panel to full height, where the card is hidden.
