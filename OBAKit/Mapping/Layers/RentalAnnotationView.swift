@@ -88,6 +88,11 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         ])
 
         configure()
+
+        // Attributed stroke bakes the font in; rebuild when Dynamic Type changes.
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (self: Self, _) in
+            self.configure()
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -102,15 +107,6 @@ public class RentalAnnotationView: MKMarkerAnnotationView {
         // state that isn't reset here leaks into the next annotation.
         fuelLabel.attributedText = nil
         fuelLabel.isHidden = true
-    }
-
-    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        guard previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory else {
-            return
-        }
-        // Attributed stroke bakes the font in; rebuild when Dynamic Type changes.
-        configure()
     }
 
     private func configure() {

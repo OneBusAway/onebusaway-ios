@@ -143,14 +143,12 @@ public class Application: CoreApplication, PushServiceDelegate {
                 do {
                     let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
-                    await MainActor.run {
-                        self.withPushableTopViewController { from in
-                            self.viewRouter.navigateTo(
-                                arrivalDeparture: arrDep,
-                                from: from,
-                                destinationStopID: deepLink.destinationStopID
-                            )
-                        }
+                    self.withPushableTopViewController { from in
+                        self.viewRouter.navigateTo(
+                            arrivalDeparture: arrDep,
+                            from: from,
+                            destinationStopID: deepLink.destinationStopID
+                        )
                     }
                 } catch {
                     await self.displayError(error)
