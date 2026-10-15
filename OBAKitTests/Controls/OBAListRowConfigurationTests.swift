@@ -52,19 +52,46 @@ struct OBAListRowConfigurationTests {
 
     /// Tests base UIListContentConfiguration generation across appearances.
     @Test func testListConfigurationAppearances() {
+        func expectedBase(from base: UIListContentConfiguration) -> UIListContentConfiguration {
+            var expected = base
+            expected.image = nil
+            OBAImageViewConfiguration().apply(to: &expected)
+            expected.labelText = nil
+            OBALabelConfiguration().applyToText(&expected)
+            expected.secondaryLabelText = nil
+            OBALabelConfiguration(textColor: .secondaryLabel).applyToSecondaryText(&expected)
+            expected.textToSecondaryTextVerticalPadding = ThemeMetrics.compactPadding
+            return expected
+        }
+
         var config = OBAListRowConfiguration()
 
         config.appearance = .default
-        _ = config.listConfiguration
+        let defaultConfig = config.listConfiguration
+        #expect(defaultConfig == expectedBase(from: .cell()))
+        #expect(defaultConfig.textProperties.font == UIListContentConfiguration.cell().textProperties.font)
 
         config.appearance = .subtitle
-        _ = config.listConfiguration
+        let subtitleConfig = config.listConfiguration
+        #expect(subtitleConfig == expectedBase(from: .subtitleCell()))
+        #expect(subtitleConfig.secondaryTextProperties.font == UIListContentConfiguration.subtitleCell().secondaryTextProperties.font)
 
         config.appearance = .value
-        _ = config.listConfiguration
+        let valueConfig = config.listConfiguration
+        #expect(valueConfig == expectedBase(from: .valueCell()))
+        #expect(valueConfig.secondaryTextProperties.font == UIListContentConfiguration.valueCell().secondaryTextProperties.font)
 
         config.appearance = .header
-        _ = config.listConfiguration
+        let headerConfig = config.listConfiguration
+        #expect(headerConfig == expectedBase(from: .header()))
+        #expect(headerConfig.textProperties.font == UIListContentConfiguration.header().textProperties.font)
+
+        #expect(defaultConfig != subtitleConfig)
+        #expect(defaultConfig != valueConfig)
+        #expect(defaultConfig != headerConfig)
+        #expect(subtitleConfig != valueConfig)
+        #expect(subtitleConfig != headerConfig)
+        #expect(valueConfig != headerConfig)
     }
 
     /// Tests propagation of row configuration properties to UIListContentConfiguration.
