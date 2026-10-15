@@ -304,12 +304,6 @@ final class TransitAlertNavigationDelegateTests {
 
 // MARK: - ServiceAlert HTMLBuilder Tests
 
-/// Tests for `HTMLBuilder.append(_:value:)` used by `ServiceAlertViewModel`.
-///
-/// `buildDocument` is now internal, but these tests target the builder
-/// directly: if `.htmlEscaped` were removed from `append`, every test below
-/// with attacker-controlled input would fail. This closes the gap where the
-/// main ServiceAlert rendering path had no escaping coverage.
 @Suite(.serialized)
 struct ServiceAlertHTMLBuilderTests {
 
@@ -358,12 +352,6 @@ struct ServiceAlertHTMLBuilderTests {
 
 // MARK: - ServiceAlert URL Routing Tests
 
-/// Tests for `ServiceAlertViewController`'s URL routing.
-///
-/// `SFSafariViewController(url:)` raises on non-http(s) schemes. With
-/// `dataDetectorTypes = [.all]`, auto-detected `tel:`/`mailto:` links reach
-/// the navigation delegate, so they must go through `Application.open`
-/// instead of Safari. `javascript:`/`data:` links are dropped entirely.
 @Suite(.serialized)
 struct ServiceAlertURLRoutingTests {
 
@@ -371,7 +359,7 @@ struct ServiceAlertURLRoutingTests {
     func `https URL routes to Safari`() {
         let url = URL(string: "https://example.com/alert")!
         #expect(ServiceAlertViewController.isSafariURL(url))
-        #expect(!ServiceAlertViewController.isSystemOpenURL(url))
+        #expect(!ServiceAlertViewController.isBlockedURL(url))
     }
 
     @Test
@@ -384,27 +372,34 @@ struct ServiceAlertURLRoutingTests {
     func `tel URL routes to system open, not Safari`() {
         let url = URL(string: "tel:+12065550100")!
         #expect(!ServiceAlertViewController.isSafariURL(url))
-        #expect(ServiceAlertViewController.isSystemOpenURL(url))
+        #expect(!ServiceAlertViewController.isBlockedURL(url))
     }
 
     @Test
     func `mailto URL routes to system open, not Safari`() {
         let url = URL(string: "mailto:info@example.com")!
         #expect(!ServiceAlertViewController.isSafariURL(url))
-        #expect(ServiceAlertViewController.isSystemOpenURL(url))
+        #expect(!ServiceAlertViewController.isBlockedURL(url))
+    }
+
+    @Test
+    func `custom app scheme routes to system open`() {
+        let url = URL(string: "onebusaway://add-region?name=test")!
+        #expect(!ServiceAlertViewController.isSafariURL(url))
+        #expect(!ServiceAlertViewController.isBlockedURL(url))
     }
 
     @Test
     func `javascript URL is dropped`() {
         let url = URL(string: "javascript:alert(1)")!
         #expect(!ServiceAlertViewController.isSafariURL(url))
-        #expect(!ServiceAlertViewController.isSystemOpenURL(url))
+        #expect(ServiceAlertViewController.isBlockedURL(url))
     }
 
     @Test
     func `data URL is dropped`() {
         let url = URL(string: "data:text/html,<script>evil()</script>")!
         #expect(!ServiceAlertViewController.isSafariURL(url))
-        #expect(!ServiceAlertViewController.isSystemOpenURL(url))
+        #expect(ServiceAlertViewController.isBlockedURL(url))
     }
 }
