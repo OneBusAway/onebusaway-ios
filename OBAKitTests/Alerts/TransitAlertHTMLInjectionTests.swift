@@ -384,9 +384,20 @@ struct ServiceAlertURLRoutingTests {
 
     @Test
     func `custom app scheme routes to system open`() {
-        let url = URL(string: "onebusaway://add-region?name=test")!
+        let url = URL(string: "transitapp://open?stop=123")!
         #expect(!ServiceAlertViewController.isSafariURL(url))
         #expect(!ServiceAlertViewController.isBlockedURL(url))
+    }
+
+    @Test
+    func `own app scheme is dropped`() {
+        guard let scheme = Bundle.main.extensionURLScheme else {
+            Issue.record("missing extensionURLScheme")
+            return
+        }
+        let url = URL(string: "\(scheme)://add-region?name=test")!
+        #expect(!ServiceAlertViewController.isSafariURL(url))
+        #expect(ServiceAlertViewController.isBlockedURL(url))
     }
 
     @Test

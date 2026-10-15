@@ -71,7 +71,9 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
 
     static func isBlockedURL(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return true }
-        return scheme == "javascript" || scheme == "data"
+        if scheme == "javascript" || scheme == "data" { return true }
+        if let own = Bundle.main.extensionURLScheme?.lowercased(), scheme == own { return true }
+        return false
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
