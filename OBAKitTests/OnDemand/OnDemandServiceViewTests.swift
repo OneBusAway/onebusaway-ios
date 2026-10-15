@@ -82,6 +82,24 @@ final class OnDemandServiceViewTests: OBATestCase {
         string?.replacingOccurrences(of: "\u{202F}", with: " ")
     }
 
+    /// The `.short` time style and the `j` date template follow the device's
+    /// 12/24-hour preference even when the formatter's locale is pinned to
+    /// `en_US` (a simulator or phone set to "24-Hour Time", for one). So the
+    /// same instant renders as "4:40 PM" on one machine and "16:40" on another;
+    /// a test that hard-codes either only passes on the machine that matches.
+    /// Pass both renderings of the expected text.
+    private func matches(_ text: String?, twelveHour: String, twentyFourHour: String) -> Bool {
+        guard let text = normalizeSpaces(text) else { return false }
+        return text == twelveHour || text == twentyFourHour
+    }
+
+    /// Whether `text` mentions 5 PM — "5:00 PM" or "17:00" depending on the
+    /// device's 12/24-hour preference (see `matches`).
+    private func mentionsFivePM(_ text: String?) -> Bool {
+        guard let text = normalizeSpaces(text) else { return false }
+        return text.contains("5:00 PM") || text.contains("17:00")
+    }
+
     @Test func `MKPolygon carries interior rings`() throws {
         let json = """
         {"id":"x","name":null,"description":null,"bbox":[0,0,10,10],
@@ -228,7 +246,7 @@ final class OnDemandServiceViewTests: OBATestCase {
     @Test func `Refreshing past the cutoff replaces the book-by line`() async throws {
         let clock = SendableBox(now)
         let controller = makeController(service: try alexandriaEndingWednesday(), clock: clock)
-        #expect(controller.rootView.bookingLineText?.contains("5:00") == true)
+        #expect(mentionsFivePM(controller.rootView.bookingLineText), "\(String(describing: controller.rootView.bookingLineText))")
 
         // 2026-03-10 17:30 in Los Angeles.
         clock.value = ISO8601DateFormatter().date(from: "2026-03-11T00:30:00Z")!
@@ -279,7 +297,7 @@ final class OnDemandServiceViewTests: OBATestCase {
         await controller.summaryBuildTask?.value
 
         #expect(staleBuild.isCancelled)
-        #expect(controller.rootView.bookingLineText?.contains("5:00") == true)
+        #expect(mentionsFivePM(controller.rootView.bookingLineText), "\(String(describing: controller.rootView.bookingLineText))")
     }
 
     /// The one-shot timer fires at the earliest instant the line can change.
@@ -308,7 +326,7 @@ final class OnDemandServiceViewTests: OBATestCase {
 
         let afterMidnight = try #require(controller.rootView.bookingLineText)
         #expect(afterMidnight != beforeMidnight, "the deadline moved from tomorrow to today")
-        #expect(afterMidnight.contains("5:00"), "\(afterMidnight)")
+        #expect(mentionsFivePM(afterMidnight), "\(afterMidnight)")
     }
 
     // MARK: - Header card (spec 3.6 item 1)
@@ -317,7 +335,10 @@ final class OnDemandServiceViewTests: OBATestCase {
     @Test func `Tier one shows the status line in the header and no promoted deadline`() throws {
         let view = makeView(try charlevoix("CC_CC1"), now: instant("2026-03-10T16:00:00Z"))
         #expect(view.tags == [.sameDayBooking])
-        #expect(normalizeSpaces(view.statusLineText) == "Open now · until 4:40 PM")
+        #expect(
+            matches(view.statusLineText, twelveHour: "Open now · until 4:40 PM", twentyFourHour: "Open now · until 16:40"),
+            "\(String(describing: view.statusLineText))"
+        )
         #expect(view.promotedDeadlineText == nil)
         guard case .call(let phone, _) = view.primaryContact else {
             Issue.record("expected a call pill, got \(String(describing: view.primaryContact))")
@@ -475,7 +496,10 @@ final class OnDemandServiceViewTests: OBATestCase {
         let check = OnDemandLocationCheck(source: .rider, isInside: true, locality: "Boyne City", coordinate: charlevoixPoint)
         let controller = OnDemandServiceViewController(application: application, service: try charlevoix("CC_CC1"), locationCheck: check, now: { self.instant("2026-03-10T16:00:00Z") })
         #expect(controller.rootView.locationRowText == Strings.onDemandDetailLocationInside)
-        #expect(normalizeSpaces(controller.rootView.statusLineText) == "Open now · until 4:40 PM")
+        #expect(
+            matches(controller.rootView.statusLineText, twelveHour: "Open now · until 4:40 PM", twentyFourHour: "Open now · until 16:40"),
+            "\(String(describing: controller.rootView.statusLineText))"
+        )
     }
 
     // MARK: - Dismissal (spec 2.3, ruling F15)
