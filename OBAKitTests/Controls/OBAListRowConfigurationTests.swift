@@ -193,4 +193,44 @@ struct OBAListRowConfigurationTests {
 
         #expect(stringVariant != attributedVariant)
     }
+
+    // MARK: - OBAListRowSeparatorConfiguration
+
+    @Test func testSeparatorConfigurationInitializers() {
+        let defaultSep = OBAListRowSeparatorConfiguration()
+        #expect(defaultSep.showsSeparator == true)
+        #expect(defaultSep.insets == .zero)
+
+        let hiddenSep = OBAListRowSeparatorConfiguration.hidden()
+        #expect(hiddenSep.showsSeparator == false)
+        #expect(hiddenSep.insets == .zero)
+
+        let customInsets = NSDirectionalEdgeInsets(top: 2, leading: 16, bottom: 4, trailing: 20)
+        let insetSep = OBAListRowSeparatorConfiguration.withInset(top: 2, leading: 16, bottom: 4, trailing: 20)
+        #expect(insetSep.showsSeparator == true)
+        #expect(insetSep.insets == customInsets)
+
+        #expect(defaultSep != hiddenSep)
+        #expect(defaultSep != insetSep)
+        #expect(defaultSep == OBAListRowSeparatorConfiguration(showsSeparator: true, insets: .zero))
+    }
+
+    @Test func testUIListSeparatorConfigurationApplying() {
+        var listSepConfig = UIListSeparatorConfiguration(listAppearance: .plain)
+
+        let visibleConfig = OBAListRowSeparatorConfiguration(
+            showsSeparator: true,
+            insets: NSDirectionalEdgeInsets(top: 1, leading: 10, bottom: 2, trailing: 12)
+        )
+        listSepConfig.applying(visibleConfig)
+        #expect(listSepConfig.topSeparatorVisibility == .automatic)
+        #expect(listSepConfig.bottomSeparatorVisibility == .automatic)
+        #expect(listSepConfig.topSeparatorInsets == visibleConfig.insets)
+        #expect(listSepConfig.bottomSeparatorInsets == visibleConfig.insets)
+
+        let hiddenConfig = OBAListRowSeparatorConfiguration.hidden()
+        listSepConfig.applying(hiddenConfig)
+        #expect(listSepConfig.topSeparatorVisibility == .hidden)
+        #expect(listSepConfig.bottomSeparatorVisibility == .hidden)
+    }
 }
