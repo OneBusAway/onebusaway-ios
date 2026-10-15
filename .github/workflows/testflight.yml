@@ -6,13 +6,20 @@ on:
     types: [completed]
     branches: [main]
 
-# Prevent multiple deploys from running simultaneously. This also guarantees
-# unique build numbers: scripts/version stamps CFBundleVersion with a
-# minute-resolution timestamp, so two archives would only collide if they ran
-# concurrently, which this group forbids.
+# One deploy at a time, and the newest wins. Merging a batch of PRs starts one
+# of these per merge; each new run cancels whichever deploy is running or
+# queued, so the batch produces a single TestFlight build of the latest main
+# rather than one per merge. (With cancel-in-progress off, GitHub already drops
+# all but the newest *queued* run, but the one already running still uploads.)
+# A cancelled run still reaches the keychain clean-up step, which runs on
+# `always()`.
+#
+# Never running two at once also keeps build numbers unique: scripts/version
+# stamps CFBundleVersion with a minute-resolution timestamp, so two archives
+# could only collide if they ran concurrently.
 concurrency:
   group: testflight-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
