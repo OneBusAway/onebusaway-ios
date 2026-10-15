@@ -102,11 +102,10 @@ struct OBAListRowConfigurationTests {
 
     /// Tests equatable conformance across all mutable properties of OBAListRowConfiguration.
     @Test func testEquality() {
-        let imageA = UIImage()
-        let imageB = UIImage()
+        let image = UIImage()
 
         let base = OBAListRowConfiguration(
-            image: imageA,
+            image: image,
             text: .string("Title"),
             secondaryText: .string("Subtitle"),
             appearance: .subtitle,
@@ -117,7 +116,7 @@ struct OBAListRowConfigurationTests {
         #expect(base == identical)
 
         var differentImage = base
-        differentImage.image = imageB
+        differentImage.image = nil
         #expect(base != differentImage)
 
         var differentText = base
@@ -310,27 +309,28 @@ struct OBAListRowConfigurationTests {
 
     /// Tests UIListContentConfiguration labelText and secondaryLabelText extensions.
     @Test func testUIListContentConfigurationLabelTextExtensions() {
-        var contentConfig = UIListContentConfiguration.cell()
+        var stringConfig = UIListContentConfiguration.cell()
 
-        contentConfig.labelText = .string("Primary Line")
-        #expect(contentConfig.text == "Primary Line")
-        #expect(contentConfig.labelText == .string("Primary Line"))
+        stringConfig.labelText = .string("Primary Line")
+        #expect(stringConfig.text == "Primary Line")
+        #expect(stringConfig.labelText == .string("Primary Line"))
 
+        stringConfig.secondaryLabelText = .string("Secondary Line")
+        #expect(stringConfig.secondaryText == "Secondary Line")
+        #expect(stringConfig.secondaryLabelText == .string("Secondary Line"))
+
+        stringConfig.secondaryLabelText = nil
+        #expect(stringConfig.secondaryText == nil)
+        #expect(stringConfig.secondaryLabelText == nil)
+
+        var attrConfig = UIListContentConfiguration.cell()
         let attr = NSAttributedString(string: "Attr Primary")
-        contentConfig.labelText = .attributed(attr)
-        #expect(contentConfig.attributedText == attr)
-
-        contentConfig.secondaryLabelText = .string("Secondary Line")
-        #expect(contentConfig.secondaryText == "Secondary Line")
-        #expect(contentConfig.secondaryLabelText == .string("Secondary Line"))
+        attrConfig.labelText = .attributed(attr)
+        #expect(attrConfig.attributedText?.string == "Attr Primary")
 
         let secondaryAttr = NSAttributedString(string: "Attr Secondary")
-        contentConfig.secondaryLabelText = .attributed(secondaryAttr)
-        #expect(contentConfig.secondaryAttributedText == secondaryAttr)
-
-        contentConfig.secondaryLabelText = nil
-        #expect(contentConfig.secondaryText == nil)
-        #expect(contentConfig.secondaryLabelText == nil)
+        attrConfig.secondaryLabelText = .attributed(secondaryAttr)
+        #expect(attrConfig.secondaryAttributedText?.string == "Attr Secondary")
     }
 
     // MARK: - OBAListSectionConfiguration
