@@ -132,19 +132,9 @@ final class OnDemandServiceViewController: UIHostingController<OnDemandServiceVi
         rootView = Self.makeView(service: service, mapAreas: mapAreas, page: page, locationCheck: locationCheck, now: pageNow, onOpenURL: onOpenURL)
     }
 
-    private var isLeavingForGood = false
-
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        isLeavingForGood = false
         refreshSummary()
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if isBeingDismissed || (isMovingFromParent && parent == nil) {
-            isLeavingForGood = true
-        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -163,7 +153,7 @@ final class OnDemandServiceViewController: UIHostingController<OnDemandServiceVi
     /// by a push has been seen to report `isMovingFromParent`, so a pop is
     /// recognised by the page no longer having a parent.
     private var hasLeftForGood: Bool {
-        isLeavingForGood || isBeingDismissed || (isMovingFromParent && parent == nil)
+        isBeingDismissed || (isMovingFromParent && parent == nil)
     }
 
     /// An off-screen page (pushed under another, or in a dismissed sheet
