@@ -74,6 +74,8 @@ final class FarePaymentsTests: OBATestCase {
         stubAllAgenciesWithCoverage(dataLoader: dataLoader)
 
         application = buildApplication(queue: queue, dataLoader: dataLoader)
+        application.alertsStore.suppressLiveAlertFetchesForTesting()
+        application.regionsService.automaticallySelectRegion = false
         mockApplicationDelegate = MockApplicationDelegate()
         application.delegate = mockApplicationDelegate
         delegate = MockFarePaymentsDelegate()
@@ -271,7 +273,7 @@ final class FarePaymentsTests: OBATestCase {
     @Test func `When region has no payment app deep link URL workflow returns early`() throws {
         let mtaRegion = try #require(application.regionsService.find(id: 2))
         application.regionsService.currentRegion = mtaRegion
-        #expect(application.currentRegion != nil)
+        #expect(application.currentRegion?.regionIdentifier == 2)
         #expect(mtaRegion.paymentAppDeepLinkURL == nil)
 
         let farePayments = FarePayments(application: application, delegate: delegate)
