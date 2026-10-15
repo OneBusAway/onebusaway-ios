@@ -75,7 +75,7 @@ final class FarePaymentsTests: OBATestCase {
 
         application = buildApplication(queue: queue, dataLoader: dataLoader)
         application.alertsStore.suppressLiveAlertFetchesForTesting()
-        application.regionsService.automaticallySelectRegion = false
+        application.userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
         mockApplicationDelegate = MockApplicationDelegate()
         application.delegate = mockApplicationDelegate
         delegate = MockFarePaymentsDelegate()
@@ -95,6 +95,10 @@ final class FarePaymentsTests: OBATestCase {
 
     private var analyticsMock: AnalyticsMock {
         application.analytics as! AnalyticsMock
+    }
+
+    private var farePaymentEvents: [ReportedEvent] {
+        analyticsMock.reportedEvents.filter { $0.pageURL == "app://localhost/fare-payments" }
     }
 
     private func englishBundle() -> Bundle? {
@@ -120,7 +124,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(delegate.presentedViewController == nil)
         #expect(delegate.presentedError == nil)
         #expect(mockApplicationDelegate.openedURLs.isEmpty)
-        #expect(analyticsMock.reportedEvents.isEmpty)
+        #expect(farePaymentEvents.isEmpty)
     }
 
     // MARK: - Warning Alert
@@ -147,7 +151,7 @@ final class FarePaymentsTests: OBATestCase {
         }
         #expect(application.userDefaults.bool(forKey: warningDefaultsKey))
         #expect(mockApplicationDelegate.openedURLs.isEmpty)
-        #expect(analyticsMock.reportedEvents.isEmpty)
+        #expect(farePaymentEvents.isEmpty)
 
         // Continue and Don't Show Again action
         let expectedDontShowAgainTitle = Bundle(for: FarePayments.self).localizedString(forKey: "fare_payments.dont_show_again", value: nil, table: nil)
@@ -176,8 +180,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(!application.userDefaults.bool(forKey: warningDefaultsKey))
         #expect(mockApplicationDelegate.openedURLs == [Fixtures.pugetSoundRegion.paymentAppDeepLinkURL!])
 
-        let hasOpenEvent = analyticsMock.reportedEvents.contains { event in
-            event.pageURL == "app://localhost/fare-payments" &&
+        let hasOpenEvent = farePaymentEvents.contains { event in
             event.label == AnalyticsLabels.farePayment &&
             (event.value as? String) == "open_app"
         }
@@ -200,8 +203,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(application.userDefaults.bool(forKey: warningDefaultsKey))
         #expect(mockApplicationDelegate.openedURLs == [Fixtures.pugetSoundRegion.paymentAppDeepLinkURL!])
 
-        let hasOpenEvent = analyticsMock.reportedEvents.contains { event in
-            event.pageURL == "app://localhost/fare-payments" &&
+        let hasOpenEvent = farePaymentEvents.contains { event in
             event.label == AnalyticsLabels.farePayment &&
             (event.value as? String) == "open_app"
         }
@@ -219,8 +221,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(delegate.presentedViewController == nil)
         #expect(mockApplicationDelegate.openedURLs == [Fixtures.pugetSoundRegion.paymentAppDeepLinkURL!])
 
-        let hasOpenEvent = analyticsMock.reportedEvents.contains { event in
-            event.pageURL == "app://localhost/fare-payments" &&
+        let hasOpenEvent = farePaymentEvents.contains { event in
             event.label == AnalyticsLabels.farePayment &&
             (event.value as? String) == "open_app"
         }
@@ -238,8 +239,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(delegate.presentedViewController == nil)
         #expect(mockApplicationDelegate.openedURLs == [Fixtures.tampaRegion.paymentAppDeepLinkURL!])
 
-        let hasOpenEvent = analyticsMock.reportedEvents.contains { event in
-            event.pageURL == "app://localhost/fare-payments" &&
+        let hasOpenEvent = farePaymentEvents.contains { event in
             event.label == AnalyticsLabels.farePayment &&
             (event.value as? String) == "open_app"
         }
@@ -258,8 +258,7 @@ final class FarePaymentsTests: OBATestCase {
 
         #expect(mockApplicationDelegate.openedURLs.isEmpty)
 
-        let hasDownloadEvent = analyticsMock.reportedEvents.contains { event in
-            event.pageURL == "app://localhost/fare-payments" &&
+        let hasDownloadEvent = farePaymentEvents.contains { event in
             event.label == AnalyticsLabels.farePayment &&
             (event.value as? String) == "download_app"
         }
@@ -281,7 +280,7 @@ final class FarePaymentsTests: OBATestCase {
 
         #expect(delegate.presentedViewController == nil)
         #expect(mockApplicationDelegate.openedURLs.isEmpty)
-        #expect(analyticsMock.reportedEvents.isEmpty)
+        #expect(farePaymentEvents.isEmpty)
     }
 
     // MARK: - String Catalog Integrity
