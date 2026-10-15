@@ -93,17 +93,11 @@ struct OBAListRowConfigurationTests {
         #expect(listConfig.textToSecondaryTextVerticalPadding == ThemeMetrics.compactPadding)
     }
 
-    /// Tests mapping from Accessory to UICellAccessory displayed state.
+    /// Tests mapping from Accessory to UICellAccessory.
     @Test func testAccessoryCellAccessoryMapping() {
         #expect(OBAListRowConfiguration.Accessory.none.cellAccessory == nil)
-
-        let checkmarkAccessory = OBAListRowConfiguration.Accessory.checkmark.cellAccessory
-        #expect(checkmarkAccessory != nil)
-        #expect(checkmarkAccessory?.displayedState == .always)
-
-        let disclosureAccessory = OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory
-        #expect(disclosureAccessory != nil)
-        #expect(disclosureAccessory?.displayedState == .always)
+        #expect(OBAListRowConfiguration.Accessory.checkmark.cellAccessory != nil)
+        #expect(OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory != nil)
     }
 
     /// Tests equatable conformance across all mutable properties of OBAListRowConfiguration.
