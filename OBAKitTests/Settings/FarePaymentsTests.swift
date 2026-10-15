@@ -68,10 +68,23 @@ final class FarePaymentsTests: OBATestCase {
         try await super.init()
 
         queue = OperationQueue()
-        application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
+        stubAllAgenciesWithCoverage(dataLoader: dataLoader)
+
+        application = buildApplication(queue: queue, dataLoader: dataLoader)
         mockApplicationDelegate = MockApplicationDelegate()
         application.delegate = mockApplicationDelegate
         delegate = MockFarePaymentsDelegate()
+    }
+
+    private func stubAllAgenciesWithCoverage(dataLoader: MockDataLoader) {
+        let coverageData = Fixtures.loadData(file: "agencies_with_coverage.json")
+        dataLoader.mock(data: coverageData) { request in
+            guard let path = request.url?.path else { return false }
+            return path.hasSuffix("/agencies-with-coverage.json")
+        }
     }
 
     isolated deinit {
