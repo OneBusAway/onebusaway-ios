@@ -274,7 +274,8 @@ nonisolated final class RouteLineRenderer: MKPolylineRenderer {
         super.init(overlay: polyline)
     }
 
-    /// Test seam: the arrows a draw at `zoomScale` would place, over the whole line.
+    /// Test seam: the arrows placed over the whole line when `zoomScale` screen points
+    /// span one map point.
     func arrows(zoomScale: MKZoomScale) -> [RouteArrowLayout.Arrow] {
         layout.arrows(scale: zoomScale, avoiding: markers.points)
     }
@@ -283,11 +284,15 @@ nonisolated final class RouteLineRenderer: MKPolylineRenderer {
         super.draw(mapRect, zoomScale: zoomScale, in: context)
         guard lineWidth >= RouteArrowStyle.minimumLineWidth else { return }
 
+        // `zoomScale` counts tile pixels, not screen points: MapKit widens the line
+        // by `contentScaleFactor` to match, so the chevrons have to as well.
+        let scale = zoomScale / contentScaleFactor
+
         // Grown by a chevron's reach, so one centered just outside the tile still
         // draws its part inside it.
-        let reach = RouteArrowStyle.extent / zoomScale
+        let reach = RouteArrowStyle.extent / scale
         let tile = CGRect(x: mapRect.origin.x, y: mapRect.origin.y, width: mapRect.size.width, height: mapRect.size.height)
-        let arrows = layout.arrows(scale: zoomScale, avoiding: markers.points, in: tile.insetBy(dx: -reach, dy: -reach))
+        let arrows = layout.arrows(scale: scale, avoiding: markers.points, in: tile.insetBy(dx: -reach, dy: -reach))
         guard !arrows.isEmpty else { return }
 
         let path = CGMutablePath()
@@ -295,14 +300,14 @@ nonisolated final class RouteLineRenderer: MKPolylineRenderer {
             let center = point(for: MKMapPoint(x: arrow.point.x, y: arrow.point.y))
             let transform = CGAffineTransform(translationX: center.x, y: center.y)
                 .rotated(by: arrow.angle)
-                .scaledBy(x: 1 / zoomScale, y: 1 / zoomScale)
+                .scaledBy(x: 1 / scale, y: 1 / scale)
             path.addLines(between: RouteArrowStyle.chevron, transform: transform)
         }
 
         context.saveGState()
         context.addPath(path)
         context.setStrokeColor(arrowColor)
-        context.setLineWidth(RouteArrowStyle.strokeWidth / zoomScale)
+        context.setLineWidth(RouteArrowStyle.strokeWidth / scale)
         context.setLineCap(.round)
         context.setLineJoin(.round)
         context.strokePath()
