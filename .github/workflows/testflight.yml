@@ -16,7 +16,13 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # `branches: [main]` above matches the triggering run's head branch *name*,
+    # and a fork's pull request from a branch called `main` matches it too. Only
+    # a push to this repository's main is a deploy.
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
     runs-on: xcode-27
     timeout-minutes: 45
 
@@ -47,12 +53,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gems-
 
-    # Matches obakittests.yml — see the longer rationale there. In short: the
+    # Matches tests.yml — see the longer rationale there. In short: the
     # `xcode-27` image ships exactly one Xcode and it is a beta, so `latest`
     # (not `latest-stable`, which filters betas out and fails) picks it. The
     # previous `sudo xcode-select -switch /Applications/Xcode_26.2.app` was left
     # over from the `macos-15` image and cannot work here — that Xcode is not
-    # installed on `xcode-27`. Keeping this in step with obakittests.yml matters:
+    # installed on `xcode-27`. Keeping this in step with tests.yml matters:
     # a build that archives on a different toolchain than the one the tests
     # gated on is not the artifact anybody reviewed.
     - name: Setup Xcode
