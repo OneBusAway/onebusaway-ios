@@ -79,6 +79,9 @@ class MinimalStopAnnotationView: MKAnnotationView {
 
         arrivalBadge.configure(arrival)
         arrivalBadge.isHidden = arrival == nil
+        // A pin displaying an arrival badge sits above neighbouring stop dots
+        // and the vehicle pin so its badge is never obscured. See #1513.
+        zPriority = arrival != nil ? .max : .defaultUnselected
         setNeedsLayout()
     }
 

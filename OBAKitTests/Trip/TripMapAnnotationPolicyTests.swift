@@ -326,6 +326,7 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         #expect(badge.text == "7m")
         #expect(badge.frame.maxY < view.bounds.minY)
         #expect(abs(badge.frame.midX - view.bounds.midX) < 0.001)
+        #expect(view.zPriority == .max)
     }
 
     /// On a shared trip the sharer's boarding stop is a ring in the route's
@@ -341,6 +342,7 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         #expect(shape.fillColor == UIColor.white.cgColor)
         #expect(shape.strokeColor == UIColor.red.cgColor)
         #expect(try arrivalBadge(of: view).isHidden)
+        #expect(view.zPriority == .defaultUnselected)
     }
 
     /// A reused view must not carry the last stop's mark or arrival to the next.
@@ -360,6 +362,7 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         let badge = try arrivalBadge(of: view)
         #expect(badge.isHidden)
         #expect(badge.text == nil)
+        #expect(view.zPriority == .defaultUnselected)
     }
 
     /// The controller marks the pins MapKit asks it for from the trip's own
@@ -387,15 +390,63 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         #expect(destinationView.bounds.width == 16)
         #expect(try shapeLayer(of: destinationView).fillColor == markColor)
         #expect(try !arrivalBadge(of: destinationView).isHidden)
+        #expect(destinationView.zPriority == .max)
 
         let boardingView = try #require(controller.mapView(mapView, viewFor: boarding) as? MinimalStopAnnotationView)
         #expect(boardingView.bounds.width == 16)
         #expect(try shapeLayer(of: boardingView).strokeColor == markColor)
         #expect(try shapeLayer(of: boardingView).fillColor == UIColor.white.cgColor)
         #expect(try arrivalBadge(of: boardingView).isHidden)
+        #expect(boardingView.zPriority == .defaultUnselected)
 
         let ordinaryView = try #require(controller.mapView(mapView, viewFor: details.stopTimes[0]) as? MinimalStopAnnotationView)
         #expect(ordinaryView.bounds.width == 10)
         #expect(try arrivalBadge(of: ordinaryView).isHidden)
+        #expect(ordinaryView.zPriority == .defaultUnselected)
+    }
+
+    /// A refresh applies new trip details before fetching the replacement
+    /// destination arrival. `applyStopMarks(from:)` clears the retained destination
+    /// arrival so stale arrival predictions are not shown on new details. See #1513.
+    @Test @MainActor
+    func `Applying stop marks clears the retained destination arrival`() throws {
+        let details = try loadTripDetails()
+        let boarding = details.stopTimes[boardingRow]
+        let destination = details.stopTimes[destinationRow]
+        let controller = makeController(
+            arrivalDeparture: try Fixtures.arrivalDeparture(stopSequence: boardingRow, stopID: boarding.stopID),
+            destinationStopID: destination.stopID
+        )
+        let mapView = MKMapView()
+        mapView.registerAnnotationView(MinimalStopAnnotationView.self)
+
+        controller.applyStopMarks(from: details)
+        controller.applyDestinationArrival(try Fixtures.arrivalDeparture(stopSequence: destinationRow, stopID: destination.stopID))
+
+        let destinationView = try #require(controller.mapView(mapView, viewFor: destination) as? MinimalStopAnnotationView)
+        #expect(try !arrivalBadge(of: destinationView).isHidden)
+        #expect(destinationView.zPriority == .max)
+
+        // Refreshed details arrive before the replacement arrival:
+        controller.applyStopMarks(from: details)
+        let refreshedView = try #require(controller.mapView(mapView, viewFor: destination) as? MinimalStopAnnotationView)
+        #expect(try arrivalBadge(of: refreshedView).isHidden)
+        #expect(refreshedView.zPriority == .defaultUnselected)
+    }
+
+    /// Refreshed trip details clear any retained destination arrival so the
+    /// progress header does not calculate its countdown using stale arrival data. See #1513.
+    @Test @MainActor
+    func `Updating trip details clears the progress header destination arrival`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let panel = TripFloatingPanelController(application: application)
+        panel.destinationArrivalDeparture = try Fixtures.arrivalDeparture()
+
+        #expect(panel.destinationArrivalDeparture != nil)
+
+        panel.tripDetails = try loadTripDetails()
+
+        #expect(panel.destinationArrivalDeparture == nil)
     }
 }

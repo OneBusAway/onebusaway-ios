@@ -42,6 +42,16 @@ for runtime in sorted(devices, key=version, reverse=True):
         break
 ')
 
+if [ -n "$udid" ]; then
+    # In CI runners with multiple runtime slices, pre-installed devices may be
+    # bound to an unusable or unmounted runtime. If the simulator cannot boot,
+    # delete it and create a fresh one from an available runtime.
+    if ! xcrun simctl boot "$udid" 2>/dev/null && ! xcrun simctl bootstatus "$udid" -b >/dev/null 2>&1; then
+        xcrun simctl delete "$udid" 2>/dev/null || true
+        udid=""
+    fi
+fi
+
 if [ -z "$udid" ]; then
     # No device on any watchOS runtime: create one from the newest runtime and
     # the first Apple Watch device type it supports.

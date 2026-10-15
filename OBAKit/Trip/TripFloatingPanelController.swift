@@ -106,6 +106,7 @@ class TripFloatingPanelController: UIViewController,
 
     var tripDetails: TripDetails? {
         didSet {
+            destinationArrivalDeparture = nil
             if isLoadedAndOnScreen {
                 listView.applyData(animated: false)
                 updateProgressView()
