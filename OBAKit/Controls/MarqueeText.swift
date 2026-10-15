@@ -15,14 +15,13 @@ import OBAKitCore
 /// still when it fits. With Reduce Motion on it truncates instead; see `MarqueeLabel`.
 struct MarqueeText: UIViewRepresentable {
     let text: String
-    var textStyle: UIFont.TextStyle = .body
+    let textStyle: UIFont.TextStyle
 
     func makeUIView(context: Context) -> MarqueeLabel {
         let label = MarqueeLabel(frame: .zero)
         label.adjustsFontForContentSizeCategory = true
         label.trailingBuffer = ThemeMetrics.padding
         label.fadeLength = ThemeMetrics.padding
-        label.textColor = .label
         // Leave the width to SwiftUI's proposal: the text's natural width would
         // otherwise push the row's other content aside.
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -30,14 +29,10 @@ struct MarqueeText: UIViewRepresentable {
         return label
     }
 
+    // MarqueeLabel's setters ignore unchanged values, so an update doesn't restart the scroll.
     func updateUIView(_ label: MarqueeLabel, context: Context) {
-        let font = UIFont.preferredFont(forTextStyle: textStyle)
-        if label.font != font {
-            label.font = font
-        }
-        if label.text != text {
-            label.text = text
-        }
+        label.font = UIFont.preferredFont(forTextStyle: textStyle)
+        label.text = text
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView label: MarqueeLabel, context: Context) -> CGSize? {
