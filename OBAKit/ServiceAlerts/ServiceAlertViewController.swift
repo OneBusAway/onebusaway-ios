@@ -64,15 +64,34 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
 
     // MARK: - WKNavigationDelegate
 
+    static func isSafariURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
+    }
+
+    static func isBlockedURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased() else { return true }
+        if scheme == "javascript" || scheme == "data" { return true }
+        if let own = Bundle.main.extensionURLScheme?.lowercased(), scheme == own { return true }
+        return false
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
         guard navigationAction.navigationType == .linkActivated else {
             decisionHandler(.allow)
             return
         }
 
-        if let url = navigationAction.request.url {
+        guard let url = navigationAction.request.url else {
+            decisionHandler(.cancel)
+            return
+        }
+
+        if Self.isSafariURL(url) {
             let safari = SFSafariViewController(url: url)
             application.viewRouter.present(safari, from: self)
+        } else if !Self.isBlockedURL(url) {
+            application.open(url, options: [:], completionHandler: nil)
         }
 
         decisionHandler(.cancel)
