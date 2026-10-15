@@ -354,4 +354,111 @@ struct OBAListRowConfigurationTests {
         #expect(defaultSection != insetGrouped)
         #expect(insetGrouped != colored)
     }
+
+    // MARK: - OBAListRowView ViewModels
+
+    @Test func testDefaultViewModel() {
+        let stringModel = OBAListRowView.DefaultViewModel(
+            title: "Departures",
+            accessoryType: .none
+        )
+        #expect(stringModel.title == .string("Departures"))
+        #expect(stringModel.accessoryType == .none)
+        #expect(stringModel.image == nil)
+
+        guard case let .custom(contentConfig) = stringModel.configuration,
+              let rowConfig = contentConfig as? OBAListRowConfiguration else {
+            Issue.record("Expected OBAListRowConfiguration inside .custom")
+            return
+        }
+        #expect(rowConfig.appearance == .default)
+        #expect(rowConfig.text == .string("Departures"))
+        #expect(rowConfig.accessoryType == .none)
+
+        let attrTitle = NSAttributedString(string: "Attributed Departures")
+        let attrModel = OBAListRowView.DefaultViewModel(title: attrTitle)
+        #expect(attrModel.title == .attributed(attrTitle))
+        #expect(attrModel.accessoryType == .disclosureIndicator)
+
+        #expect(stringModel != attrModel)
+    }
+
+    @Test func testSubtitleViewModel() {
+        let stringModel = OBAListRowView.SubtitleViewModel(
+            title: "Stop #1234",
+            subtitle: "Northbound to Downtown",
+            accessoryType: .disclosureIndicator
+        )
+        #expect(stringModel.title == .string("Stop #1234"))
+        #expect(stringModel.subtitle == .string("Northbound to Downtown"))
+
+        guard case let .custom(contentConfig) = stringModel.configuration,
+              let rowConfig = contentConfig as? OBAListRowConfiguration else {
+            Issue.record("Expected OBAListRowConfiguration inside .custom")
+            return
+        }
+        #expect(rowConfig.appearance == .subtitle)
+        #expect(rowConfig.text == .string("Stop #1234"))
+        #expect(rowConfig.secondaryText == .string("Northbound to Downtown"))
+        #expect(rowConfig.accessoryType == .disclosureIndicator)
+
+        let attrTitle = NSAttributedString(string: "Stop Attributed")
+        let attrSubtitle = NSAttributedString(string: "Details Attributed")
+        let attrModel = OBAListRowView.SubtitleViewModel(
+            title: attrTitle,
+            subtitle: attrSubtitle
+        )
+        #expect(attrModel.title == .attributed(attrTitle))
+        #expect(attrModel.subtitle == .attributed(attrSubtitle))
+
+        let labelModel = OBAListRowView.SubtitleViewModel(
+            image: nil,
+            title: .string("Label Title"),
+            subtitle: nil,
+            accessoryType: .none
+        )
+        #expect(labelModel.title == .string("Label Title"))
+        #expect(labelModel.subtitle == nil)
+        #expect(labelModel.accessoryType == .none)
+    }
+
+    @Test func testValueViewModel() {
+        let stringModel = OBAListRowView.ValueViewModel(
+            title: "Transfer Fare",
+            subtitle: "$2.75",
+            accessoryType: .disclosureIndicator
+        )
+        #expect(stringModel.title == .string("Transfer Fare"))
+        #expect(stringModel.subtitle == .string("$2.75"))
+        #expect(stringModel.accessoryType == .disclosureIndicator)
+
+        guard case let .custom(contentConfig) = stringModel.configuration,
+              let rowConfig = contentConfig as? OBAListRowConfiguration else {
+            Issue.record("Expected OBAListRowConfiguration inside .custom")
+            return
+        }
+        #expect(rowConfig.appearance == .value)
+        #expect(rowConfig.text == .string("Transfer Fare"))
+        #expect(rowConfig.secondaryText == .string("$2.75"))
+        #expect(rowConfig.accessoryType == .disclosureIndicator)
+
+        let attrTitle = NSAttributedString(string: "Fare Title")
+        let attrSubtitle = NSAttributedString(string: "$0.00")
+        let attrModel = OBAListRowView.ValueViewModel(
+            title: attrTitle,
+            subtitle: attrSubtitle
+        )
+        #expect(attrModel.title == .attributed(attrTitle))
+        #expect(attrModel.subtitle == .attributed(attrSubtitle))
+
+        let labelModel = OBAListRowView.ValueViewModel(
+            image: nil,
+            title: .string("Direct Title"),
+            subtitle: .string("Direct Subtitle"),
+            accessoryType: .none
+        )
+        #expect(labelModel.title == .string("Direct Title"))
+        #expect(labelModel.subtitle == .string("Direct Subtitle"))
+        #expect(labelModel.accessoryType == .none)
+    }
 }
