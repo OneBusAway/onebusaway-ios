@@ -225,9 +225,21 @@ class Fixtures {
     /// an `Application` whose `MapLayerRegistrar` has registered that layer:
     /// the layer is on by default and probes on every viewport inside its zoom
     /// window, and an unstubbed probe is a `MockDataLoader` fatalError.
+    ///
+    /// Also answers the full-geometry fetch for that zone's service. The
+    /// fixture's service matches any probe point, so once a viewport settles in
+    /// front of a `MapViewController`, `OnDemandProbeController` follows its
+    /// point probe with `service/5088_77652.json?geometryDetail=full`. That
+    /// fetch runs in an unstructured task inside `OnDemandGeometryCache`, so it
+    /// can land after the test body has returned and outlive the controller
+    /// that asked for it; a stub is the only thing that keeps it from trapping
+    /// whenever it arrives.
     class func stubOnDemandViewportProbe(dataLoader: MockDataLoader) {
         dataLoader.mock(data: loadData(file: "ondemand_services_for_location_viewport.json")) { request in
             request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+        dataLoader.mock(data: loadData(file: "ondemand_service_alexandria.json")) { request in
+            request.url?.path.contains("/api/ondemand/service/5088_77652.json") ?? false
         }
     }
 
