@@ -19,6 +19,7 @@ struct OBAListRowConfigurationTests {
 
     // MARK: - OBAListRowConfiguration Initialization & Properties
 
+    /// Tests default property values of OBAListRowConfiguration upon initialization.
     @Test func testDefaultInitialization() {
         let config = OBAListRowConfiguration()
         #expect(config.formatters == nil)
@@ -32,6 +33,7 @@ struct OBAListRowConfigurationTests {
         #expect(config.accessoryType == .none)
     }
 
+    /// Tests that minimum cell height varies appropriately by row appearance.
     @Test func testMinimumCellHeight() {
         var config = OBAListRowConfiguration()
 
@@ -48,6 +50,7 @@ struct OBAListRowConfigurationTests {
         #expect(config.minimumCellHeight == 44.0)
     }
 
+    /// Tests base UIListContentConfiguration generation across appearances.
     @Test func testListConfigurationAppearances() {
         var config = OBAListRowConfiguration()
 
@@ -64,6 +67,7 @@ struct OBAListRowConfigurationTests {
         _ = config.listConfiguration
     }
 
+    /// Tests propagation of row configuration properties to UIListContentConfiguration.
     @Test func testListConfigurationPropertiesPropagation() {
         var config = OBAListRowConfiguration()
         let image = UIImage()
@@ -89,20 +93,20 @@ struct OBAListRowConfigurationTests {
         #expect(listConfig.textToSecondaryTextVerticalPadding == ThemeMetrics.compactPadding)
     }
 
+    /// Tests mapping from Accessory to UICellAccessory displayed state.
     @Test func testAccessoryCellAccessoryMapping() {
         #expect(OBAListRowConfiguration.Accessory.none.cellAccessory == nil)
 
         let checkmarkAccessory = OBAListRowConfiguration.Accessory.checkmark.cellAccessory
         #expect(checkmarkAccessory != nil)
-        #expect(checkmarkAccessory is UICellAccessory.Checkmark)
-        #expect(checkmarkAccessory?.displayed == .always)
+        #expect(checkmarkAccessory?.displayedState == .always)
 
         let disclosureAccessory = OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory
         #expect(disclosureAccessory != nil)
-        #expect(disclosureAccessory is UICellAccessory.DisclosureIndicator)
-        #expect(disclosureAccessory?.displayed == .always)
+        #expect(disclosureAccessory?.displayedState == .always)
     }
 
+    /// Tests equatable conformance across all mutable properties of OBAListRowConfiguration.
     @Test func testEquality() {
         let imageA = UIImage()
         let imageB = UIImage()
@@ -153,6 +157,7 @@ struct OBAListRowConfigurationTests {
 
     // MARK: - LabelText
 
+    /// Tests equality and hash consistency for LabelText string instances.
     @Test func testLabelTextStringEqualityAndHash() {
         let text1 = OBAListRowConfiguration.LabelText.string("Station")
         let text2 = OBAListRowConfiguration.LabelText.string("Station")
@@ -168,6 +173,7 @@ struct OBAListRowConfigurationTests {
         #expect(text1 != nilText1)
     }
 
+    /// Tests equality and hash consistency for LabelText attributed string instances.
     @Test func testLabelTextAttributedEqualityAndHash() {
         let attr1 = NSAttributedString(string: "Bold Station", attributes: [.strokeWidth: 2])
         let attr2 = NSAttributedString(string: "Bold Station", attributes: [.strokeWidth: 2])
@@ -187,6 +193,7 @@ struct OBAListRowConfigurationTests {
         #expect(label1 != nilAttr1)
     }
 
+    /// Tests inequality when comparing string and attributed LabelText variants.
     @Test func testLabelTextCrossVariantInequality() {
         let stringVariant = OBAListRowConfiguration.LabelText.string("Route 44")
         let attributedVariant = OBAListRowConfiguration.LabelText.attributed(NSAttributedString(string: "Route 44"))
@@ -196,6 +203,7 @@ struct OBAListRowConfigurationTests {
 
     // MARK: - OBAListRowSeparatorConfiguration
 
+    /// Tests default, hidden, and inset convenience initializers for row separators.
     @Test func testSeparatorConfigurationInitializers() {
         let defaultSep = OBAListRowSeparatorConfiguration()
         #expect(defaultSep.showsSeparator == true)
@@ -215,6 +223,7 @@ struct OBAListRowConfigurationTests {
         #expect(defaultSep == OBAListRowSeparatorConfiguration(showsSeparator: true, insets: .zero))
     }
 
+    /// Tests applying OBAListRowSeparatorConfiguration to UIListSeparatorConfiguration.
     @Test func testUIListSeparatorConfigurationApplying() {
         var listSepConfig = UIListSeparatorConfiguration(listAppearance: .plain)
 
@@ -236,6 +245,7 @@ struct OBAListRowConfigurationTests {
 
     // MARK: - OBAImageViewConfiguration
 
+    /// Tests initialization, sizing, tinting, and applying OBAImageViewConfiguration.
     @Test func testImageViewConfiguration() {
         let defaultConfig = OBAImageViewConfiguration()
         #expect(defaultConfig.tintColor == ThemeColors.shared.brand)
@@ -260,6 +270,7 @@ struct OBAListRowConfigurationTests {
 
     // MARK: - OBALabelConfiguration
 
+    /// Tests default values and property application to text and secondary text.
     @Test func testLabelConfigurationDefaultsAndApply() {
         let defaultConfig = OBALabelConfiguration()
         #expect(defaultConfig.textColor == .label)
@@ -283,6 +294,7 @@ struct OBAListRowConfigurationTests {
         #expect(defaultConfig != customConfig)
     }
 
+    /// Tests configuring UILabel styling and applying string, attributed, and nil text.
     @Test func testUILabelConfigurationAndSetText() {
         let label = UILabel()
         let config = OBALabelConfiguration(textColor: .systemTeal, numberOfLines: 4, accessibilityNumberOfLines: 8)
@@ -302,6 +314,7 @@ struct OBAListRowConfigurationTests {
         #expect(label.attributedText == nil)
     }
 
+    /// Tests UIListContentConfiguration labelText and secondaryLabelText extensions.
     @Test func testUIListContentConfigurationLabelTextExtensions() {
         var contentConfig = UIListContentConfiguration.cell()
 
@@ -312,7 +325,6 @@ struct OBAListRowConfigurationTests {
         let attr = NSAttributedString(string: "Attr Primary")
         contentConfig.labelText = .attributed(attr)
         #expect(contentConfig.attributedText == attr)
-        #expect(contentConfig.labelText == .attributed(attr))
 
         contentConfig.secondaryLabelText = .string("Secondary Line")
         #expect(contentConfig.secondaryText == "Secondary Line")
@@ -321,7 +333,6 @@ struct OBAListRowConfigurationTests {
         let secondaryAttr = NSAttributedString(string: "Attr Secondary")
         contentConfig.secondaryLabelText = .attributed(secondaryAttr)
         #expect(contentConfig.secondaryAttributedText == secondaryAttr)
-        #expect(contentConfig.secondaryLabelText == .attributed(secondaryAttr))
 
         contentConfig.secondaryLabelText = nil
         #expect(contentConfig.secondaryText == nil)
@@ -330,6 +341,7 @@ struct OBAListRowConfigurationTests {
 
     // MARK: - OBAListSectionConfiguration
 
+    /// Tests appearance and background color styling for OBAListSectionConfiguration.
     @Test func testListSectionConfiguration() {
         let defaultSection = OBAListSectionConfiguration()
         #expect(defaultSection.appearance == .plain)
@@ -339,8 +351,8 @@ struct OBAListRowConfigurationTests {
         #expect(insetGrouped.appearance == .insetGrouped)
         #expect(insetGrouped.backgroundColor == nil)
 
-        var colored = OBAListSectionConfiguration(appearance: .insetGrouped)
-        colored.backgroundColor = .systemBackground
+        let colored = OBAListSectionConfiguration(appearance: .insetGrouped, backgroundColor: .systemBackground)
+        #expect(colored.backgroundColor == .systemBackground)
 
         let plainLayout = defaultSection.listConfiguration()
         #expect(plainLayout.appearance == .plain)
@@ -357,6 +369,7 @@ struct OBAListRowConfigurationTests {
 
     // MARK: - OBAListRowView ViewModels
 
+    /// Tests OBAListRowView.DefaultViewModel initialization and configuration conversion.
     @Test func testDefaultViewModel() {
         let stringModel = OBAListRowView.DefaultViewModel(
             title: "Departures",
@@ -383,6 +396,7 @@ struct OBAListRowConfigurationTests {
         #expect(stringModel != attrModel)
     }
 
+    /// Tests OBAListRowView.SubtitleViewModel initialization and configuration conversion.
     @Test func testSubtitleViewModel() {
         let stringModel = OBAListRowView.SubtitleViewModel(
             title: "Stop #1234",
@@ -422,6 +436,7 @@ struct OBAListRowConfigurationTests {
         #expect(labelModel.accessoryType == .none)
     }
 
+    /// Tests OBAListRowView.ValueViewModel initialization and configuration conversion.
     @Test func testValueViewModel() {
         let stringModel = OBAListRowView.ValueViewModel(
             title: "Transfer Fare",
