@@ -11,28 +11,46 @@ on:
 # The `xcode-27` image (arm64, public preview) is documented at:
 # https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-Readme.md
 #
-# Performance note (figures observed 2026-06 — a dated snapshot, not an invariant;
-# they will drift as the suite, runner images, and Xcode change): the OBAKitTests
-# suite itself executes in ~5s locally / ~2-3 min in CI. Everything beyond that is
-# CI infrastructure, not the tests:
-#   - iOS Simulator runtime prep / first boot (can silently download a multi-GB
-#     runtime if the image lags the targeted Xcode point release)
-#   - build-for-testing (~5 min)
-#   - the test-results upload step (~9 min; see the gated upload step below)
-# The steps below make each of those visible and time-boxed so a slow run is
-# obvious rather than a mystery 20-minute gap. If you're investigating "slow
-# tests", check the step timings first — it is almost never the tests.
+# Four jobs that start together, so wall time is the slowest one, not the sum.
+# `build` builds the shipping iOS app and its tests, `test` runs them on a
+# runner of its own, `watch` compiles and launches the watch stack and checks
+# project generation, and `lint` lints. None `needs:` another (`test` waits for
+# `build`'s products itself); GitHub still requires them all to pass.
+#
+# The build jobs carry Xcode's compilation cache (the CAS) between runs; it is
+# off unless COMPILATION_CACHE_ENABLE_CACHING is set. A cached DerivedData
+# would not do the same job: a fresh checkout gives every source file a new
+# mtime, and the build system recompiles everything. The CAS is keyed by
+# content, so it survives a fresh checkout.
+#
+# If a run is slow, check the step timings first — it is almost never the tests.
+
+# A new commit on a PR cancels that PR's run in progress: macOS runners are
+# capped per org, and a superseded run would hold them while the current one
+# queues. On main a newer push only replaces a *queued* run, never cancels one
+# in progress, so each started run reaches its cache save.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # One place for the CAS location; both build jobs pass it to xcodebuild, and
+  # scripts/watch_smoke_test reads it.
+  # Inside the workspace: actions/cache rejects paths containing `..`, and
+  # only warns when it does, so the cache silently never saves.
+  CAS_PATH: ${{ github.workspace }}/CompilationCache
 
 jobs:
-  # Its own job, not a step inside `build`. As a step it ran before
-  # build-for-testing in the same job, so one lint error failed the job and took
-  # every test result for that run with it — the two answer different questions
-  # and a PR wants both. Parallel jobs also overlap lint with the build instead
-  # of serialising them. No `needs:`: neither gates the other, and GitHub still
-  # requires both to pass.
-  # See https://github.com/OneBusAway/onebusaway-ios/issues/1340
+  # Its own job so a lint error cannot cost a run its test results (#1340).
+  # On Linux, so it does not take one of the org's capped macOS runners. The
+  # Linux SwiftLint runs inside the official Swift image: the dynamic binary
+  # needs its SourceKit, and the static one silently skips `custom_rules`,
+  # which hold this repo's error-tier rules (hardcoded_app_name,
+  # epoch_decoded_as_int, …). Checked 2026-10-14 against the macOS portable
+  # build: identical output on this tree, the same planted custom-rule error,
+  # and the same exit codes.
   lint:
-    runs-on: xcode-27
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
@@ -47,15 +65,19 @@ jobs:
     # See https://github.com/OneBusAway/onebusaway-ios/issues/1303
     - name: SwiftLint (errors only)
       run: |
-        # Pin via the official portable release so a Homebrew formula bump cannot
-        # promote a new error-severity rule and turn main red with no app change
-        # (#1340). Bump SWIFTLINT_PIN deliberately after reviewing new rules.
+        # Pin the release so a new error-severity rule cannot turn main red with
+        # no app change (#1340). Bump SWIFTLINT_PIN deliberately after reviewing
+        # new rules.
         SWIFTLINT_PIN="0.65.1"
+        # Swift 6.1.3; pinned by digest like the actions above.
+        SWIFT_IMAGE="swift@sha256:6e43114610e161e38ad41636ebcafd6940dc67dfab355eace3a0ca100b2263db"
         # GitHub release asset downloads occasionally return a truncated/HTML body
         # (unzip exit 9: "End-of-central-directory signature not found"). Retry
         # and refuse to unzip until the payload looks like a zip.
         for attempt in 1 2 3; do
-          curl -fL --retry 3 --retry-delay 2             "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_PIN}/portable_swiftlint.zip"             -o /tmp/swiftlint.zip
+          curl -fL --retry 3 --retry-delay 2 \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_PIN}/swiftlint_linux_amd64.zip" \
+            -o /tmp/swiftlint.zip
           if file /tmp/swiftlint.zip | grep -qi 'Zip archive'; then
             break
           fi
@@ -64,24 +86,28 @@ jobs:
         done
         file /tmp/swiftlint.zip | grep -qi 'Zip archive'
         unzip -qo /tmp/swiftlint.zip -d /tmp/swiftlint
-        /tmp/swiftlint/swiftlint version | grep -qx "$SWIFTLINT_PIN"
-        /tmp/swiftlint/swiftlint lint --reporter github-actions-logging
+        # The reporter prints paths relative to the working directory, so they
+        # resolve to PR annotations whatever the mount point.
+        docker run --rm \
+          -v "$PWD:/src:ro" -v /tmp/swiftlint:/swiftlint:ro -w /src \
+          "$SWIFT_IMAGE" \
+          sh -c "/swiftlint/swiftlint version | grep -qx '$SWIFTLINT_PIN' && /swiftlint/swiftlint lint --reporter github-actions-logging"
 
+  # Builds the shipping iOS app and its tests, generated with --no-watch exactly
+  # as the release lane generates it (fastlane/Fastfile), and hands the test
+  # products to the `test` job. The watch stack has its own job below.
   build:
     runs-on: xcode-27
     permissions:
-      checks: write
       contents: read
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: .build
-        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-spm-
+    # Spotlight indexing on the host competes with every step here for the
+    # runner's three cores, indexing build output nobody will search.
+    - name: Turn off Spotlight indexing
+      run: sudo mdutil -a -i off
 
     # The `xcode-27` image ships exactly one Xcode (a 27.x beta), so this is close to
     # a no-op today — it's here so that if the image ever carries a second Xcode,
@@ -89,42 +115,60 @@ jobs:
     # `latest`, not `latest-stable`: the only installed Xcode is a beta, and
     # `latest-stable` filters betas out and fails. Following the image forward is
     # deliberate — the Swift 6 migration needs a compiler of the same generation as
-    # local development (docs/swift6-migration-plan.md), which the older pinned
-    # Xcode 26.6 was not: it rejected code Xcode 27 accepts and turned main red
-    # (see a1244c48). The trade-off is that the toolchain is no longer pinned, so a
-    # new beta landing in the image can move the concurrency warning count below.
+    # local development (docs/swift6-migration-plan.md).
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
       with:
         xcode-version: 'latest'
 
-    # Keys the DerivedData cache below, which is why Setup Xcode runs first.
-    - name: Record Xcode build version
-      id: xcode
-      run: echo "build=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+    # Keys the caches below, which is why Setup Xcode runs first. The runner
+    # image version is in the CAS key because compile-cache entries made on one
+    # image miss on another, even with the same Xcode build: during an image
+    # rollout, runs land on either version, and a cache restored across them
+    # was mostly misses. The month is in the key so the cache starts over
+    # monthly instead of growing forever.
+    - name: Record cache keys
+      id: keys
+      run: |
+        echo "xcode=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+        echo "image=${ImageVersion:?runner image version not set}" >> "$GITHUB_OUTPUT"
+        echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
 
-    # DerivedData cache. Exact-match restores only — there is deliberately no
-    # restore-keys fallback. The fallback used to restore whatever older
-    # DerivedData was newest on main, and an inexact restore across a project-spec
-    # change can fail the build: after #1456 moved files out of OBAKitCore/,
-    # OBAWidget failed to link against OBAKitCore (undefined symbols for every file
-    # added since the cache was built). A failed run saves nothing, so main kept
-    # restoring that Aug 14 cache and stayed red. A cold build costs a few minutes
-    # once per key; a poisoned fallback cost every run until someone deleted it
-    # by hand. (Without a fallback, the old step that purged stale precompiled
-    # modules on inexact restores has nothing to do, so it is gone.)
+    # The build targets a concrete simulator so it compiles one architecture;
+    # the `test` job picks the same device type on its own runner.
+    - name: Pick the iOS Simulator
+      run: |
+        set -euo pipefail
+        UDID=$(scripts/resolve_simulator_udid)
+        echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+        echo "Using simulator UDID: $UDID"
+
+    # Xcode's compilation cache. Content-addressed, so an older restore cannot
+    # poison a build: an entry is found only by the hash of its exact inputs,
+    # and anything that changed is a miss and compiles. That makes a
+    # `restore-keys` fallback safe, which is what lets each PR start from
+    # main's newest cache.
     #
-    # The key busts when the resolved dependency graph, any XcodeGen spec, this
-    # workflow, or the Xcode build changes. Specs live in each target directory
-    # (OBAKitCore/project.yml, …) and under Apps/ (app_shared.yml and watch.yml
-    # define targets too, not just project.yml). Narrow globs on purpose:
-    # `**/*.yml` also matched vendored yml under .build/checkouts and missed the
-    # cache for no reason; `*/project.yml` stays one directory deep.
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      id: deriveddata-cache
+    # Hits need the same absolute checkout and DerivedData paths as the build
+    # that filled the cache: a checkout at another path missed on every compile
+    # (measured 2026-10-14). GitHub's runners always check out to the same path.
+    #
+    # Restored here, saved (on main only) at the end of the job. PRs read main's
+    # caches but never write their own: per-PR caches would evict main's from
+    # the 10 GB repo budget.
+    - name: Restore compilation cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: DerivedData
-        key: ${{ runner.os }}-deriveddata-${{ steps.xcode.outputs.build }}-${{ hashFiles('**/Package.resolved', 'project.yml', '*/project.yml', 'Apps/**/*.yml', '.github/workflows/tests.yml') }}
+        path: ${{ env.CAS_PATH }}
+        key: cas-ios-${{ steps.keys.outputs.xcode }}-${{ steps.keys.outputs.image }}-${{ steps.keys.outputs.month }}-${{ github.run_id }}
+        restore-keys: cas-ios-${{ steps.keys.outputs.xcode }}-${{ steps.keys.outputs.image }}-${{ steps.keys.outputs.month }}-
+
+    # Package checkouts, so the build does not re-clone every dependency. Exact
+    # key on the resolved graph; packages live in DerivedData/SourcePackages.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: DerivedData/SourcePackages
+        key: spm-${{ hashFiles('Apps/*/Package.resolved') }}
 
     - name: Install xcodegen
       env:
@@ -132,182 +176,169 @@ jobs:
         HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: brew install xcodegen
 
-    # Make iOS runtime acquisition explicit and time-boxed. An SDK-matched runtime
-    # is REQUIRED, not merely preferred: on an older runtime every MainActor class
-    # deinit routes through the isolated-deinit back-deployment shim instead of the
-    # native runtime entry point, and that path double-freed in TaskLocal teardown
-    # under Xcode 26.2's codegen (crash:
-    # swift_task_deinitOnExecutorMainActorBackDeploy → BUG_IN_CLIENT_OF_LIBMALLOC,
-    # seen 2026-07-16). Xcode 27 no longer emits those implicit isolated deinits,
-    # but the 11 explicit `isolated deinit` sites still take the shim. The
-    # `xcode-27` image ships only iOS 27 runtimes, so this normally skips.
-    - name: Download iOS platform (if needed)
-      timeout-minutes: 30
-      run: |
-        if xcrun simctl runtime list 2>/dev/null | grep -qE "iOS (2[7-9]|[3-9][0-9])[0-9.]*.*\(Ready\)"; then
-          echo "An iOS 27+ simulator runtime is already installed; skipping download:"
-          xcrun simctl runtime list | grep -E "iOS [0-9]" || true
-        else
-          echo "No iOS 27+ simulator runtime found; downloading…"
-          xcodebuild -downloadPlatform iOS
-        fi
-
-    # Diagnostic preflight: logs whether the iOS runtime is actually installed.
-    # If `simctl runtime list` doesn't show the targeted iOS version as Ready,
-    # the slow runs are paying for a runtime download (see header note).
-    - name: Simulator diagnostics
-      run: |
-        echo "=== Installed simulator runtimes ==="
-        xcrun simctl runtime list || true
-        echo "=== Available SDKs ==="
-        xcodebuild -showsdks || true
-
-    # Pick an iPhone simulator on the NEWEST installed iOS runtime and capture its
-    # UDID. Using `id=` in the destination (rather than `name=iPhone 17 Pro`) avoids
-    # the "multiple matching destinations" ambiguity. Newest-runtime matters: should
-    # the image ever carry a pre-SDK runtime alongside iOS 27, the tests must not
-    # land on it — that's the isolated-deinit shim crash described in the download
-    # step's note. Booting it here isolates first-boot cost from the test step.
-    #
-    # The selection itself lives in scripts/resolve_simulator_udid, shared with the
-    # commands CLAUDE.md documents so the two cannot drift apart. Note that the
-    # script's UDID reaches later steps only because it is written to $GITHUB_ENV
-    # here; a plain shell variable would not survive the step boundary.
-    - name: Prepare iOS Simulator
-      run: |
-        set -euo pipefail
-        UDID=$(scripts/resolve_simulator_udid)
-        echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
-        echo "Using simulator UDID: $UDID"
-        xcrun simctl boot "$UDID" || true
-        xcrun simctl bootstatus "$UDID" || true
-
-    # Needed before the iOS build now: App depends on WatchApp, so building the
-    # App scheme compiles the watch stack's simulator slices. Ask the same
-    # question the iOS step above asks — is a platform actually installed and
-    # Ready — and time-box the download the same way.
-    - name: Download watchOS platform (if needed)
-      timeout-minutes: 30
-      run: |
-        if xcrun simctl runtime list 2>/dev/null | grep -qE "watchOS .*\(Ready\)"; then
-          echo "A watchOS platform is already installed; skipping download:"
-          xcrun simctl runtime list | grep -E "watchOS [0-9]" || true
-        else
-          echo "No watchOS platform found; downloading…"
-          xcodebuild -downloadPlatform watchOS
-        fi
-
     - name: Generate xcodeproj for OneBusAway
-      run: scripts/generate_project OneBusAway
+      run: scripts/generate_project OneBusAway --no-watch
 
-    # Build. Output is teed to a log so the concurrency ratchet step can count
-    # strict-concurrency warnings (`-quiet` still prints warnings and errors).
     - name: Build OneBusAway
       timeout-minutes: 35
       run: |
-        set -o pipefail
         xcodebuild build-for-testing \
           -scheme 'App' \
           -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
           -derivedDataPath DerivedData \
-          -quiet \
-          | tee xcodebuild-build.log
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
+          -quiet
 
-    # Swift 6 migration ratchet (docs/swift6-migration-plan.md): the number of
-    # strict-concurrency warnings may only go down. Enforcing since 2026-07-16.
-    # The checked-in baseline (0 as of 2026-07-28) was measured on Xcode 27 beta
-    # 3, which is what the `xcode-27` image ships — so CI and local development
-    # now count the same code the same way. The baseline is still a ceiling
-    # across supported toolchains (the previously pinned Xcode 26.6 counted 37
-    # when the baseline was 39), so don't lower it to match whatever a single
-    # toolchain reports, or builds on the others fail.
+    # What a test run needs: the .xctestrun file and the built products it
+    # names, all relative to __TESTROOT__, so they run from any directory.
+    # Object files, Swift modules and dSYMs stay behind (~370 MB → ~70 MB).
+    - name: Package the test products
+      run: |
+        set -euo pipefail
+        cd DerivedData/Build/Products
+        tar --exclude='*.o' --exclude='*.swiftmodule' --exclude='*.dSYM' --exclude='*.a' \
+          -czf "$RUNNER_TEMP/test-products.tgz" *.xctestrun Debug-iphonesimulator
+        ls -lh "$RUNNER_TEMP/test-products.tgz"
+
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: test-products-${{ github.run_attempt }}
+        path: ${{ runner.temp }}/test-products.tgz
+        compression-level: 0
+        retention-days: 1
+
+    # main only; see "Restore compilation cache". Saved even when the build
+    # fails: the CAS holds only what compiled, so a failure cannot poison it.
+    - name: Save compilation cache
+      if: (success() || failure()) && github.event_name == 'push'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.CAS_PATH }}
+        key: cas-ios-${{ steps.keys.outputs.xcode }}-${{ steps.keys.outputs.image }}-${{ steps.keys.outputs.month }}-${{ github.run_id }}
+
+  # Runs the unit tests on a runner of its own. A simulator's first boot keeps
+  # a three-core runner saturated for five to eight minutes while its system
+  # services start, and anything else on that machine slows to a crawl beside
+  # it; booted alongside the build, it tripled the build and the cache
+  # restores. So this job starts with the boot and then only waits: for the
+  # simulator to settle, and for `build` to upload the products. No `needs:`,
+  # which would start the boot only after the build finished.
+  test:
+    runs-on: xcode-27
+    permissions:
+      actions: read
+      checks: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    # A simulator's first boot can starve the runner's own agent badly
+    # enough that GitHub loses contact with it and fails the job ("The hosted
+    # runner lost communication with the server"), which happened to a watch
+    # smoke test. The agent's processes, and mDNSResponder, which every
+    # network call waits on for DNS, go ahead of the simulator's services.
+    - name: Keep the runner agent responsive
+      run: |
+        # -a: macOS pgrep otherwise skips its own ancestors, which the
+        # agent's processes are.
+        pids=$(pgrep -a -f 'Runner\.(Listener|Worker)|provjobd|hosted-compute-agent|mDNSResponder' | tr '\n' ' ' || true)
+        echo "runner agent: $(ps -o pid=,comm= -p "$(echo ${pids:-0} | tr ' ' ',')" 2>/dev/null | tr '\n' ' ')"
+        [ -n "$pids" ] && sudo renice -n -15 -p $pids || echo "::warning::runner agent processes not found"
+
+    - name: Turn off Spotlight indexing
+      run: sudo mdutil -a -i off
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+      with:
+        xcode-version: 'latest'
+
+    # resolve_simulator_udid picks an iPhone on the NEWEST installed runtime — an
+    # SDK-matched runtime is required, since an older one routes `isolated
+    # deinit` through the back-deployment shim that double-freed under Xcode
+    # 26.2 (2026-07-16). The UDID reaches later steps only through $GITHUB_ENV.
+    # `simctl boot` itself blocks for minutes, so it runs in the background.
+    - name: Pick the iOS Simulator and start booting it
+      run: |
+        set -euo pipefail
+        if ! xcrun simctl runtime list 2>/dev/null | grep -qE "iOS (2[7-9]|[3-9][0-9])[0-9.]*.*\(Ready\)"; then
+          echo "No iOS 27+ simulator runtime found; downloading…"
+          xcodebuild -downloadPlatform iOS
+        fi
+        UDID=$(scripts/resolve_simulator_udid)
+        echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
+        echo "Using simulator UDID: $UDID"
+        nohup xcrun simctl boot "$UDID" > "$RUNNER_TEMP/simctl-boot.log" 2>&1 &
+
+    # Waits for this attempt's `build` job, then downloads the newest
+    # test-products artifact. Newest rather than this attempt's: re-running
+    # only the failed jobs re-runs `test` without `build`.
     #
-    # This step counts correctly only because the runner starts with an empty
-    # compilation cache. Cache hits replay object files WITHOUT re-emitting
-    # diagnostics, so a warm cache silently undercounts (locally: 4/12/16/17 for
-    # a tree whose true count was 38). The cache lives at
-    # COMPILATION_CACHE_CAS_PATH — a machine-global path, NOT the DerivedData
-    # directory cached above — so today it is never restored between runs. If
-    # anyone ever adds it to actions/cache, this ratchet stops being meaningful:
-    # pass COMPILATION_CACHE_CAS_PATH to a scratch dir here, as
-    # scripts/measure_concurrency does locally.
-    # The baseline is 0: every target, OBAKitTests included, is at zero and
-    # additionally locked by SWIFT_WARNINGS_AS_ERRORS_GROUPS in
-    # Apps/Shared/app_shared.yml, which escalates the five concurrency
-    # diagnostic groups to errors so the compiler — not this grep — is the
-    # real gate.
-    - name: Concurrency warning ratchet
-      run: scripts/concurrency_ratchet xcodebuild-build.log
+    # This step and the next two raise their own priority (`renice` on the
+    # step's shell; what it starts inherits it, still as the runner user):
+    # beside the booting simulator's services, each poll and the download
+    # and unpack were several times slower.
+    - name: Wait for the test products
+      timeout-minutes: 40
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        sudo renice -n -10 -p $$ >/dev/null
+        jobs_url="repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}/jobs"
+        # A failed poll is retried, not fatal: one transient API error would
+        # otherwise fail the job while `build` is still compiling.
+        while :; do
+          if out=$(curl -fsS --max-time 30 -H "Authorization: Bearer $GH_TOKEN" \
+                "https://api.github.com/$jobs_url" \
+                | jq -r '.jobs[] | select(.name == "build") | "\(.status) \(.conclusion // "-")"' 2>&1); then
+            read -r status conclusion <<< "$out" || true
+            [ "${status:-}" = completed ] && break
+          else
+            echo "polling the build job failed, retrying: $out"
+          fi
+          sleep 5
+        done
+        if [ "$conclusion" != success ]; then
+          echo "::error::the build job finished with '$conclusion'; there is nothing to test"
+          exit 1
+        fi
+        name=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+          --jq '[.artifacts[] | select(.name | startswith("test-products-"))] | sort_by(.name | ltrimstr("test-products-") | tonumber) | last | .name')
+        echo "Downloading $name"
+        gh run download "${{ github.run_id }}" -n "$name" -D "$RUNNER_TEMP/products-download"
+        mkdir -p "$RUNNER_TEMP/products"
+        tar -xzf "$RUNNER_TEMP/products-download/test-products.tgz" -C "$RUNNER_TEMP/products"
 
-    # Unit Test. Output is teed to a log so the "Report slowest tests" step can
-    # surface per-test timing. `set -o pipefail` keeps xcodebuild's exit code
-    # through the pipe so a test failure still fails the step.
+    - name: Wait for the iOS Simulator
+      run: |
+        sudo renice -n -10 -p $$ >/dev/null
+        xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+        cat "$RUNNER_TEMP/simctl-boot.log" || true
+
+    # Output is teed to a log so the "Report slowest tests" step can surface
+    # per-test timing; `set -o pipefail` keeps xcodebuild's exit code through
+    # the pipe. `-collect-test-diagnostics never`: on any failure xcodebuild
+    # otherwise runs `simctl diagnose` and waits on it until this step times
+    # out — it cost failing runs ~9 idle minutes, and the per-test failures
+    # are already in the log and the result bundle.
     - name: OBAKit Unit Test
       timeout-minutes: 15
       run: |
         set -o pipefail
+        sudo renice -n -10 -p $$ >/dev/null
+        XCTESTRUN=$(ls "$RUNNER_TEMP"/products/*.xctestrun)
+        [ "$(echo "$XCTESTRUN" | wc -l)" -eq 1 ] || { echo "expected one .xctestrun, found: $XCTESTRUN" >&2; exit 1; }
         xcodebuild test-without-building \
+          -xctestrun "$XCTESTRUN" \
           -only-testing:OBAKitTests \
-          -project 'OBAKit.xcodeproj' \
-          -scheme 'App' \
           -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
-          -derivedDataPath DerivedData \
           -enableCodeCoverage NO \
+          -collect-test-diagnostics never \
           -resultBundlePath OBAKitTests.xcresult \
           | tee xcodebuild-test.log
-
-    # watchOS device-architecture compile of every watch target (see the watchOS
-    # architecture design spec, §5 "Testing, CI, and staying watch-clean").
-    # Permanent, and deliberately a DEVICE build: `Int` is 32 bits on arm64_32
-    # Apple Watches, watch simulators on Apple silicon are 64-bit, and an
-    # overflowing literal builds green for the simulator and red here. This is
-    # the only check in the repo that compiles for a 32-bit Int. It also stops a
-    # UIView landing in the portable OBAKitCore/ tree on green iOS CI.
-    # The iOS App build never replaces it: that compiles simulator slices only.
-    #
-    # These two steps sit after `OBAKit Unit Test` so a watchOS compile failure
-    # cannot cost a run its test results — the same reasoning the header gives
-    # for making lint a separate job. They also run when the tests fail
-    # (`if: success() || failure()`), so one run gives a PR both signals.
-    #
-    - name: Build WatchApp for watchOS devices (arm64 + arm64_32)
-      if: success() || failure()
-      timeout-minutes: 25
-      run: |
-        set -o pipefail
-        xcodebuild build \
-          -project 'OBAKit.xcodeproj' \
-          -scheme 'WatchApp' \
-          -destination 'generic/platform=watchOS' \
-          -derivedDataPath DerivedData \
-          CODE_SIGNING_ALLOWED=NO \
-          -quiet \
-          | tee xcodebuild-watchos.log
-
-    # A compile cannot catch dyld, Info.plist, or embedding failures: the
-    # missing-LD_RUNPATH_SEARCH_PATHS crash builds green. `simctl launch` and
-    # XcodeBuildMCP both report success for an app dyld kills, so the script
-    # asserts liveness after a delay. Unpaired watch simulator; OneBusAway only.
-    - name: Watch app launch smoke test
-      if: success() || failure()
-      timeout-minutes: 15
-      run: scripts/watch_smoke_test DerivedData
-
-    # Last, because generating another app replaces the root project.yml and
-    # OBAKit.xcodeproj. An app with no watch.yml must generate exactly the
-    # project it generated before the watch targets existed.
-    - name: KiedyBus generates no watch targets
-      if: success() || failure()
-      run: |
-        scripts/generate_project KiedyBus
-        scripts/assert_no_watch_target
-
-    # Same assertion, for the flag the release lane depends on.
-    - name: OneBusAway --no-watch generates no watch targets
-      if: success() || failure()
-      run: |
-        scripts/generate_project OneBusAway --no-watch
-        scripts/assert_no_watch_target
 
     # Surface the slowest tests in the job summary so a regression in *test*
     # time (vs. infra time) is easy to spot without re-running the investigation.
@@ -338,12 +369,10 @@ jobs:
         } >> "$GITHUB_STEP_SUMMARY" || true
 
     # Upload results only when the run fails — parsing/uploading the xcresult
-    # bundle takes ~9 min and is wasted effort on green runs. Trade-off: this is
-    # the only consumer of the `checks: write` permission, so green runs no longer
+    # bundle takes minutes and is wasted effort on green runs. Trade-off: this is
+    # the only consumer of the `checks: write` permission, so green runs do not
     # publish the per-test GitHub Checks summary; the "Report slowest tests" step
-    # writes a lighter summary to $GITHUB_STEP_SUMMARY instead. If test-retry flags
-    # are ever added, broaden this to `always()` so flaky-but-passing runs still
-    # surface which tests retried.
+    # writes a lighter summary to $GITHUB_STEP_SUMMARY instead.
     - uses: slidoapp/xcresulttool@0930e06ae335d8c5e2d2f311ee98d495889a6103 # v3.1.1
       continue-on-error: true
       if: failure()
@@ -351,3 +380,140 @@ jobs:
          path: OBAKitTests.xcresult
          show-passed-tests: false
          show-code-coverage: false
+
+  # The watch stack: a device-architecture compile and a launch on the
+  # simulator, then the project-generation checks. Its own job, so it neither
+  # waits on the iOS tests nor can cost them their results.
+  watch:
+    runs-on: xcode-27
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    # A simulator's first boot can starve the runner's own agent badly
+    # enough that GitHub loses contact with it and fails the job ("The hosted
+    # runner lost communication with the server"), which happened to this job's
+    # smoke test. The agent's processes, and mDNSResponder, which every
+    # network call waits on for DNS, go ahead of the simulator's services.
+    - name: Keep the runner agent responsive
+      run: |
+        # -a: macOS pgrep otherwise skips its own ancestors, which the
+        # agent's processes are.
+        pids=$(pgrep -a -f 'Runner\.(Listener|Worker)|provjobd|hosted-compute-agent|mDNSResponder' | tr '\n' ' ' || true)
+        echo "runner agent: $(ps -o pid=,comm= -p "$(echo ${pids:-0} | tr ' ' ',')" 2>/dev/null | tr '\n' ' ')"
+        [ -n "$pids" ] && sudo renice -n -15 -p $pids || echo "::warning::runner agent processes not found"
+
+    - name: Turn off Spotlight indexing
+      run: sudo mdutil -a -i off
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+      with:
+        xcode-version: 'latest'
+
+    - name: Record cache keys
+      id: keys
+      run: |
+        echo "xcode=$(xcodebuild -version | awk '/Build version/ {print $3}')" >> "$GITHUB_OUTPUT"
+        echo "image=${ImageVersion:?runner image version not set}" >> "$GITHUB_OUTPUT"
+        echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+    # Same reasoning as the build job's cache; a separate key because the two
+    # jobs compile different slices and would otherwise race to save one key.
+    - name: Restore compilation cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.CAS_PATH }}
+        key: cas-watch-${{ steps.keys.outputs.xcode }}-${{ steps.keys.outputs.image }}-${{ steps.keys.outputs.month }}-${{ github.run_id }}
+        restore-keys: cas-watch-${{ steps.keys.outputs.xcode }}-${{ steps.keys.outputs.image }}-${{ steps.keys.outputs.month }}-
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: DerivedData/SourcePackages
+        key: spm-${{ hashFiles('Apps/*/Package.resolved') }}
+
+    - name: Download watchOS platform (if needed)
+      timeout-minutes: 30
+      run: |
+        if xcrun simctl runtime list 2>/dev/null | grep -qE "watchOS .*\(Ready\)"; then
+          echo "A watchOS platform is already installed; skipping download."
+        else
+          echo "No watchOS platform found; downloading…"
+          xcodebuild -downloadPlatform watchOS
+        fi
+
+    - name: Install xcodegen
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+        HOMEBREW_NO_INSTALL_CLEANUP: 1
+      run: brew install xcodegen
+
+    - name: Generate xcodeproj for OneBusAway
+      run: scripts/generate_project OneBusAway
+
+    # Deliberately a DEVICE build: `Int` is 32 bits on arm64_32 Apple Watches,
+    # watch simulators on Apple silicon are 64-bit, and an overflowing literal
+    # builds green for the simulator and red here. This is the only check in
+    # the repo that compiles for a 32-bit Int. It also stops a UIView landing in
+    # the portable OBAKitCore/ tree on green iOS CI.
+    - name: Build WatchApp for watchOS devices (arm64 + arm64_32)
+      timeout-minutes: 25
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -project 'OBAKit.xcodeproj' \
+          -scheme 'WatchApp' \
+          -destination 'generic/platform=watchOS' \
+          -derivedDataPath DerivedData \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
+          CODE_SIGNING_ALLOWED=NO \
+          -quiet
+
+    # `simctl runtime list` can report the watchOS runtime Ready before its
+    # simulators are usable (each reports `runtime=(null)`), and a fast job
+    # can get here first. Wait until a watch simulator resolves.
+    - name: Wait for a watch simulator
+      if: success() || failure()
+      timeout-minutes: 6
+      run: |
+        until scripts/resolve_watch_simulator_udid >/dev/null 2>&1; do
+          echo "watchOS simulators not available yet; waiting…"
+          sleep 10
+        done
+        echo "Watch simulator: $(scripts/resolve_watch_simulator_udid)"
+
+    # A compile cannot catch dyld, Info.plist, or embedding failures: the
+    # missing-LD_RUNPATH_SEARCH_PATHS crash builds green. `simctl launch` and
+    # XcodeBuildMCP both report success for an app dyld kills, so the script
+    # asserts liveness after a delay.
+    - name: Watch app launch smoke test
+      if: success() || failure()
+      timeout-minutes: 15
+      run: scripts/watch_smoke_test DerivedData
+
+    # main only; see the build job's "Restore compilation cache".
+    - name: Save compilation cache
+      if: (success() || failure()) && github.event_name == 'push'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.CAS_PATH }}
+        key: cas-watch-${{ steps.keys.outputs.xcode }}-${{ steps.keys.outputs.image }}-${{ steps.keys.outputs.month }}-${{ github.run_id }}
+
+    # Last, because generating another app replaces the root project.yml and
+    # OBAKit.xcodeproj. An app with no watch.yml must generate exactly the
+    # project it generated before the watch targets existed.
+    - name: KiedyBus generates no watch targets
+      if: success() || failure()
+      run: |
+        scripts/generate_project KiedyBus
+        scripts/assert_no_watch_target
+
+    # Same assertion, for the flag the release lane depends on.
+    - name: OneBusAway --no-watch generates no watch targets
+      if: success() || failure()
+      run: |
+        scripts/generate_project OneBusAway --no-watch
+        scripts/assert_no_watch_target
