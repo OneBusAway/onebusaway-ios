@@ -233,4 +233,98 @@ struct OBAListRowConfigurationTests {
         #expect(listSepConfig.topSeparatorVisibility == .hidden)
         #expect(listSepConfig.bottomSeparatorVisibility == .hidden)
     }
+
+    // MARK: - OBAImageViewConfiguration
+
+    @Test func testImageViewConfiguration() {
+        let defaultConfig = OBAImageViewConfiguration()
+        #expect(defaultConfig.tintColor == ThemeColors.shared.brand)
+        #expect(defaultConfig.maximumSize == .zero)
+
+        let tinted = OBAImageViewConfiguration.tinted(.systemPurple)
+        #expect(tinted.tintColor == .systemPurple)
+        #expect(tinted.maximumSize == .zero)
+
+        let sized = OBAImageViewConfiguration.maximumSize(squared: 32.0)
+        #expect(sized.tintColor == ThemeColors.shared.brand)
+        #expect(sized.maximumSize == CGSize(width: 32.0, height: 32.0))
+
+        #expect(tinted != sized)
+        #expect(defaultConfig == OBAImageViewConfiguration(tintColor: ThemeColors.shared.brand, maximumSize: .zero))
+
+        var contentConfig = UIListContentConfiguration.cell()
+        sized.apply(to: &contentConfig)
+        #expect(contentConfig.imageProperties.tintColor == ThemeColors.shared.brand)
+        #expect(contentConfig.imageProperties.maximumSize == CGSize(width: 32.0, height: 32.0))
+    }
+
+    // MARK: - OBALabelConfiguration
+
+    @Test func testLabelConfigurationDefaultsAndApply() {
+        let defaultConfig = OBALabelConfiguration()
+        #expect(defaultConfig.textColor == .label)
+        #expect(defaultConfig.numberOfLines == 0)
+        #expect(defaultConfig.accessibilityNumberOfLines == 0)
+
+        var customConfig = OBALabelConfiguration()
+        customConfig.textColor = .systemIndigo
+        customConfig.numberOfLines = 3
+        customConfig.accessibilityNumberOfLines = 6
+
+        var contentConfig = UIListContentConfiguration.subtitleCell()
+        customConfig.applyToText(&contentConfig)
+        #expect(contentConfig.textProperties.color == .systemIndigo)
+        #expect(contentConfig.textProperties.numberOfLines == 3)
+
+        customConfig.applyToSecondaryText(&contentConfig)
+        #expect(contentConfig.secondaryTextProperties.color == .systemIndigo)
+        #expect(contentConfig.secondaryTextProperties.numberOfLines == 3)
+
+        #expect(defaultConfig != customConfig)
+    }
+
+    @Test func testUILabelConfigurationAndSetText() {
+        let label = UILabel()
+        let config = OBALabelConfiguration(textColor: .systemTeal, numberOfLines: 4, accessibilityNumberOfLines: 8)
+        label.configure(with: config)
+        #expect(label.textColor == .systemTeal)
+        #expect(label.numberOfLines == 4)
+
+        label.setText(.string("Standard String"))
+        #expect(label.text == "Standard String")
+
+        let attr = NSAttributedString(string: "Attributed String", attributes: [.underlineStyle: NSUnderlineStyle.single.rawValue])
+        label.setText(.attributed(attr))
+        #expect(label.attributedText?.string == "Attributed String")
+
+        label.setText(nil)
+        #expect(label.text == nil)
+        #expect(label.attributedText == nil)
+    }
+
+    @Test func testUIListContentConfigurationLabelTextExtensions() {
+        var contentConfig = UIListContentConfiguration.cell()
+
+        contentConfig.labelText = .string("Primary Line")
+        #expect(contentConfig.text == "Primary Line")
+        #expect(contentConfig.labelText == .string("Primary Line"))
+
+        let attr = NSAttributedString(string: "Attr Primary")
+        contentConfig.labelText = .attributed(attr)
+        #expect(contentConfig.attributedText == attr)
+        #expect(contentConfig.labelText == .attributed(attr))
+
+        contentConfig.secondaryLabelText = .string("Secondary Line")
+        #expect(contentConfig.secondaryText == "Secondary Line")
+        #expect(contentConfig.secondaryLabelText == .string("Secondary Line"))
+
+        let secondaryAttr = NSAttributedString(string: "Attr Secondary")
+        contentConfig.secondaryLabelText = .attributed(secondaryAttr)
+        #expect(contentConfig.secondaryAttributedText == secondaryAttr)
+        #expect(contentConfig.secondaryLabelText == .attributed(secondaryAttr))
+
+        contentConfig.secondaryLabelText = nil
+        #expect(contentConfig.secondaryText == nil)
+        #expect(contentConfig.secondaryLabelText == nil)
+    }
 }
