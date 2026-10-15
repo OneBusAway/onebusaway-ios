@@ -156,12 +156,6 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// and with `nil` when it leaves the stack.
     var onMapFocusChanged: ((TripMapFocus?) -> Void)?
 
-    /// Set by a host whose map is behind this page: brings that map, already focused on the
-    /// trip, into view. `nil` keeps the Show on Map button off the page.
-    var onShowMap: (() -> Void)? {
-        didSet { render() }
-    }
-
     /// Set by a host that opens stops itself: the map panel, which shows a stop as a
     /// sheet of its own. `nil` pushes the stop through `ViewRouter`, which needs this
     /// page to be on a navigation stack.
@@ -300,7 +294,6 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
         actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
-        actions.onShowMap = onShowMap
 
         return actions
     }
