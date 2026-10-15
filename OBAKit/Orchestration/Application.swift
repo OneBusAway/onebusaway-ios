@@ -143,14 +143,12 @@ public class Application: CoreApplication, PushServiceDelegate {
                 do {
                     let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
-                    await MainActor.run {
-                        self.withPushableTopViewController { from in
-                            self.viewRouter.navigateTo(
-                                arrivalDeparture: arrDep,
-                                from: from,
-                                destinationStopID: deepLink.destinationStopID
-                            )
-                        }
+                    self.withPushableTopViewController { from in
+                        self.viewRouter.navigateTo(
+                            arrivalDeparture: arrDep,
+                            from: from,
+                            destinationStopID: deepLink.destinationStopID
+                        )
                     }
                 } catch {
                     await self.displayError(error)
@@ -180,6 +178,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// widget extension — which cannot see this process's custom regions — can
     /// read it. Retained here because `RegionsService` holds delegates weakly.
     private var resolvedRegionPersister: ResolvedRegionPersister?
+
+    /// Created in `application(_:didFinishLaunching:)`, so only the launched app refreshes Shortcuts.
+    private var appShortcutParametersRefresher: AppShortcutParametersRefresher?
 
     // MARK: - Init
 
@@ -562,7 +563,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         reportAnalyticsUserProperties()
 
         configureTipKit()
-        OBAAppShortcuts.updateAppShortcutParameters()
+        appShortcutParametersRefresher = AppShortcutParametersRefresher()
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
@@ -715,8 +716,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// `openAppWhenRun` activates the app before `perform()` stores, so
     /// `applicationDidBecomeActive` / `rootUserInterfaceDidLoad` peek an empty
-    /// queue. Observe the store notification (warm launch) and bookmark
-    /// changes (Shortcut parameter list).
+    /// queue. Observe the store notification (warm launch).
     private func observeShortcutLifecycle() {
         notificationCenter.addObserver(
             forName: .liveActivityShortcutRequestDidStore,
@@ -727,14 +727,6 @@ public class Application: CoreApplication, PushServiceDelegate {
             MainActor.assumeIsolated {
                 self.consumePendingLiveActivityShortcut()
             }
-        }
-
-        notificationCenter.addObserver(
-            forName: .bookmarksDidChange,
-            object: nil,
-            queue: .main
-        ) { _ in
-            OBAAppShortcuts.updateAppShortcutParameters()
         }
     }
 
@@ -959,7 +951,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         // Region change does not post `.bookmarksDidChange`, so Shortcuts
         // would keep offering the previous region's trip bookmarks.
-        OBAAppShortcuts.updateAppShortcutParameters()
+        appShortcutParametersRefresher?.refresh()
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {

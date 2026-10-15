@@ -538,11 +538,10 @@ final class StopRouteFocusMapLayerTests {
     @Test func `Renderer styles the casing wider than the core`() {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
-        var coords = [CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+        let coords = [CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
                       CLLocationCoordinate2D(latitude: 47.7, longitude: -122.4)]
         let casing = RouteShapeOverlay.make(coordinates: coords, routeID: "H", isCasing: true)
         let core = RouteShapeOverlay.make(coordinates: coords, routeID: "H", isCasing: false)
-        _ = coords
 
         let casingWidth = (layer.renderer(for: casing, in: mapView) as? MKPolylineRenderer)?.lineWidth
         let coreWidth = (layer.renderer(for: core, in: mapView) as? MKPolylineRenderer)?.lineWidth

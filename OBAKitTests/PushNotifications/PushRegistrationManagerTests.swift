@@ -219,7 +219,7 @@ final class PushRegistrationManagerTests: OBATestCase {
     /// The server rejects `test_device=true` without a `description` — a test device that
     /// hasn't been named yet must register as a regular device rather than POST a
     /// guaranteed 422.
-    @Test func `Register if needed downgrades test device without description`() async {
+    @Test func `Register if needed downgrades test device without description`() async throws {
         let capture = mockRegistrationResponseCapturingBody()
         controls.testDevice = true
         controls.testDeviceDescription = nil
@@ -229,10 +229,10 @@ final class PushRegistrationManagerTests: OBATestCase {
         await manager.registerIfNeeded()
 
         #expect(registrationRequestCount == 1)
-        let body = try? #require(capture.bodies.first)
+        let body = try #require(capture.bodies.first)
         #expect(capture.bodies.count == 1)
-        #expect(body?.contains("test_device=false") ?? false, "Body: \(String(describing: body))")
-        #expect(!(body?.contains("description=") ?? true), "Body: \(String(describing: body))")
+        #expect(body.contains("test_device=false"), "Body: \(body)")
+        #expect(!body.contains("description="), "Body: \(body)")
     }
 
     /// A changed description is a real change to the wire payload (it identifies the device

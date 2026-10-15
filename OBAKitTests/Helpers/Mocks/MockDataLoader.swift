@@ -28,32 +28,6 @@ nonisolated struct MockDataResponse {
     let matcher: MockDataLoaderMatcher
 }
 
-// `nonisolated`: every member here overrides a nonisolated URLSessionDataTask
-// declaration, so main-actor isolation would be an isolation mismatch.
-nonisolated class MockTask: URLSessionDataTask, @unchecked Sendable {
-    override var progress: Progress {
-        return Progress()
-    }
-
-    private var closure: (Data?, URLResponse?, Error?) -> Void
-    private let mockResponse: MockDataResponse
-
-    init(mockResponse: MockDataResponse, closure: @escaping (Data?, URLResponse?, Error?) -> Void) {
-        self.mockResponse = mockResponse
-        self.closure = closure
-    }
-
-    // We override the 'resume' method and simply call our closure
-    // instead of actually resuming any task.
-    override func resume() {
-        closure(mockResponse.data, mockResponse.urlResponse, mockResponse.error)
-    }
-
-    override func cancel() {
-        // nop
-    }
-}
-
 // @unchecked Sendable: all mutable state is guarded by the locks below.
 // `nonisolated` for the same reason the locks exist — this is read concurrently
 // by background tasks, so it must not pick up the target's main-actor default.
@@ -64,7 +38,7 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     private var mockResponses = [MockDataResponse]()
     private let mockResponsesLock = NSLock()
 
-    /// URLs of every request seen by `dataTask(with:)` or `data(for:)`.
+    /// URLs of every request seen by `data(for:)`.
     /// Lets tests assert that no network call was made (e.g. when a fetch should be
     /// short-circuited by cached/preloaded data). Reads/writes go through
     /// `recordedRequestURLsLock` because real callers fan out across multiple
@@ -90,15 +64,6 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
 
     init(testName: String) {
         self.testName = testName
-    }
-
-    func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
-        recordRequest(request.url)
-        guard let response = matchResponse(to: request) else {
-            fatalError("\(testName): Missing response to URL: \(request.url!)")
-        }
-
-        return MockTask(mockResponse: response, closure: completionHandler)
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {

@@ -176,11 +176,47 @@ class Fixtures {
         return regions[0]
     }
 
+    /// Stubs the alerts feeds from `puget_sound_alerts.pb`, shaped the way the
+    /// servers shape them: each agency's REST feed holds only that agency's
+    /// alerts (plus any region-wide ones), and the Obaco regional feed holds
+    /// the whole file.
+    ///
+    /// Answering every agency with the whole file would make the client drop
+    /// the other agencies' alerts as `unknownAgency` and log an error for each
+    /// one — tens of thousands of lines per test run.
     class func stubAllAgencyAlerts(dataLoader: MockDataLoader) {
-        let agencyAlertsData = loadData(file: "puget_sound_alerts.pb")
-        dataLoader.mock(data: agencyAlertsData) { (request) -> Bool in
-            request.url!.absoluteString.contains("/api/gtfs_realtime/alerts-for-agency")
-            || request.url!.absoluteString.contains("alerts.pb")
+        let regionalData = loadData(file: "puget_sound_alerts.pb")
+        let regionalFeed = try! TransitRealtime_FeedMessage(serializedBytes: regionalData)
+
+        // The same selector AgencyAlert matches on: the first informed entity
+        // that names an agency. An empty ID is a region-wide alert.
+        func agencyID(_ entity: TransitRealtime_FeedEntity) -> String {
+            entity.alert.informedEntity.first(where: \.hasAgencyID)?.agencyID ?? ""
+        }
+        let regionWide = regionalFeed.entity.filter { agencyID($0).isEmpty }
+        let byAgency = Dictionary(grouping: regionalFeed.entity.filter { !agencyID($0).isEmpty }, by: agencyID)
+
+        func feedData(_ entities: [TransitRealtime_FeedEntity]) -> Data {
+            var feed = regionalFeed
+            feed.entity = entities + regionWide
+            return try! feed.serializedData()
+        }
+
+        for (id, entities) in byAgency {
+            let suffix = "/api/gtfs_realtime/alerts-for-agency/\(id).pb"
+            dataLoader.mock(data: feedData(entities)) { request in
+                request.url?.path.hasSuffix(suffix) ?? false
+            }
+        }
+
+        // Agencies with no alerts of their own. Registered after the
+        // per-agency mocks, since the first matching mock wins.
+        dataLoader.mock(data: feedData([])) { request in
+            request.url?.path.contains("/api/gtfs_realtime/alerts-for-agency/") ?? false
+        }
+
+        dataLoader.mock(data: regionalData) { request in
+            request.url?.absoluteString.contains("alerts.pb") ?? false
         }
     }
 
@@ -189,9 +225,21 @@ class Fixtures {
     /// an `Application` whose `MapLayerRegistrar` has registered that layer:
     /// the layer is on by default and probes on every viewport inside its zoom
     /// window, and an unstubbed probe is a `MockDataLoader` fatalError.
+    ///
+    /// Also answers the full-geometry fetch for that zone's service. The
+    /// fixture's service matches any probe point, so once a viewport settles in
+    /// front of a `MapViewController`, `OnDemandProbeController` follows its
+    /// point probe with `service/5088_77652.json?geometryDetail=full`. That
+    /// fetch runs in an unstructured task inside `OnDemandGeometryCache`, so it
+    /// can land after the test body has returned and outlive the controller
+    /// that asked for it; a stub is the only thing that keeps it from trapping
+    /// whenever it arrives.
     class func stubOnDemandViewportProbe(dataLoader: MockDataLoader) {
         dataLoader.mock(data: loadData(file: "ondemand_services_for_location_viewport.json")) { request in
             request.url?.path.contains("/api/ondemand/services-for-location") ?? false
+        }
+        dataLoader.mock(data: loadData(file: "ondemand_service_alexandria.json")) { request in
+            request.url?.path.contains("/api/ondemand/service/5088_77652.json") ?? false
         }
     }
 

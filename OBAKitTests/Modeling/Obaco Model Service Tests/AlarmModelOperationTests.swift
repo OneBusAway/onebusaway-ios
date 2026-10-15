@@ -66,7 +66,6 @@ final class AlarmModelOperationTests: OBATestCase {
     /// The sidecar answers a successful `DELETE` with an empty `204`.
     @Test func `Successful alarm deletion`() async throws {
         let alarm = try Fixtures.loadAlarm()
-        #expect(alarm != nil)
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
         // Hoisted out of the closure: matchers are @Sendable and `Alarm` is not,
