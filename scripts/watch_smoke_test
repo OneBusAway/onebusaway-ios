@@ -10,6 +10,7 @@
 #
 # Usage: scripts/watch_smoke_test [DERIVED_DATA_PATH]
 #   Assumes OBAKit.xcodeproj was generated with the watch targets enabled.
+#   When $CAS_PATH is set (CI), builds with Xcode's compilation cache there.
 #
 # On FAIL, the dyld/library-load query runs first and is printed up to 20
 # lines: the daemons that re-announce the dead bundle ID to Spotlight/
@@ -47,6 +48,7 @@ xcodebuild build \
   -configuration Debug \
   -destination "platform=watchOS Simulator,id=$udid" \
   -derivedDataPath "$derived" \
+  ${CAS_PATH:+COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH="$CAS_PATH"} \
   -quiet
 
 # The exact product path for -configuration Debug, rather than a `find` that

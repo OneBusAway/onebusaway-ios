@@ -1710,6 +1710,9 @@
 /* Voiceover text explaining that this stop is where the rider boarded the vehicle */
 "trip_stop.boarding_stop.accessibility_label" = "上車站";
 
+/* Voiceover text explaining that this stop is not part of the shared ride */
+"trip_stop.outside_ride.accessibility_label" = "不屬於共享行程";
+
 /* Voiceover text explaining that this stop is the user's destination */
 "trip_stop.user_destination.accessibility_label" = "您的目的地";
 
