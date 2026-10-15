@@ -19,22 +19,26 @@ struct MarqueeText: UIViewRepresentable {
 
     func makeUIView(context: Context) -> MarqueeLabel {
         let label = MarqueeLabel(frame: .zero)
-        label.adjustsFontForContentSizeCategory = true
         label.trailingBuffer = ThemeMetrics.padding
         label.fadeLength = ThemeMetrics.padding
-        // Leave the width to SwiftUI's proposal: the text's natural width would
-        // otherwise push the row's other content aside.
-        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return label
     }
 
-    // MarqueeLabel's setters ignore unchanged values, so an update doesn't restart the scroll.
+    // The font follows SwiftUI's environment rather than `adjustsFontForContentSizeCategory`:
+    // SwiftUI re-measures after an update, but not after the label rescales itself, which
+    // would leave the row sized for the old font. MarqueeLabel's setters ignore unchanged
+    // values, so an update doesn't restart the scroll.
     func updateUIView(_ label: MarqueeLabel, context: Context) {
-        label.font = UIFont.preferredFont(forTextStyle: textStyle)
+        let environment = context.environment
+        let traits = UITraitCollection { traits in
+            traits.preferredContentSizeCategory = UIContentSizeCategory(environment.dynamicTypeSize)
+            traits.legibilityWeight = environment.legibilityWeight == .bold ? .bold : .regular
+        }
+        label.font = UIFont.preferredFont(forTextStyle: textStyle, compatibleWith: traits)
         label.text = text
     }
 
+    // Never wider than the proposal, so a long title scrolls instead of pushing the row apart.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView label: MarqueeLabel, context: Context) -> CGSize? {
         let natural = label.intrinsicContentSize
         guard let width = proposal.width, width.isFinite else { return natural }
