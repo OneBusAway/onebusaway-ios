@@ -150,4 +150,47 @@ struct OBAListRowConfigurationTests {
         differentSecTextConfig.secondaryTextConfig = OBALabelConfiguration(textColor: .yellow)
         #expect(base != differentSecTextConfig)
     }
+
+    // MARK: - LabelText
+
+    @Test func testLabelTextStringEqualityAndHash() {
+        let text1 = OBAListRowConfiguration.LabelText.string("Station")
+        let text2 = OBAListRowConfiguration.LabelText.string("Station")
+        let text3 = OBAListRowConfiguration.LabelText.string("Other")
+        let nilText1 = OBAListRowConfiguration.LabelText.string(nil)
+        let nilText2 = OBAListRowConfiguration.LabelText.string(nil)
+
+        #expect(text1 == text2)
+        #expect(text1.hashValue == text2.hashValue)
+        #expect(text1 != text3)
+        #expect(nilText1 == nilText2)
+        #expect(nilText1.hashValue == nilText2.hashValue)
+        #expect(text1 != nilText1)
+    }
+
+    @Test func testLabelTextAttributedEqualityAndHash() {
+        let attr1 = NSAttributedString(string: "Bold Station", attributes: [.strokeWidth: 2])
+        let attr2 = NSAttributedString(string: "Bold Station", attributes: [.strokeWidth: 2])
+        let attr3 = NSAttributedString(string: "Italic Station", attributes: [.obliqueness: 0.5])
+
+        let label1 = OBAListRowConfiguration.LabelText.attributed(attr1)
+        let label2 = OBAListRowConfiguration.LabelText.attributed(attr2)
+        let label3 = OBAListRowConfiguration.LabelText.attributed(attr3)
+        let nilAttr1 = OBAListRowConfiguration.LabelText.attributed(nil)
+        let nilAttr2 = OBAListRowConfiguration.LabelText.attributed(nil)
+
+        #expect(label1 == label2)
+        #expect(label1.hashValue == label2.hashValue)
+        #expect(label1 != label3)
+        #expect(nilAttr1 == nilAttr2)
+        #expect(nilAttr1.hashValue == nilAttr2.hashValue)
+        #expect(label1 != nilAttr1)
+    }
+
+    @Test func testLabelTextCrossVariantInequality() {
+        let stringVariant = OBAListRowConfiguration.LabelText.string("Route 44")
+        let attributedVariant = OBAListRowConfiguration.LabelText.attributed(NSAttributedString(string: "Route 44"))
+
+        #expect(stringVariant != attributedVariant)
+    }
 }
