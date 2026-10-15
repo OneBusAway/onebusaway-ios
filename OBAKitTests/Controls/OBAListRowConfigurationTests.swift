@@ -123,8 +123,9 @@ struct OBAListRowConfigurationTests {
     /// Tests mapping from Accessory to UICellAccessory.
     @Test func testAccessoryCellAccessoryMapping() {
         #expect(OBAListRowConfiguration.Accessory.none.cellAccessory == nil)
-        #expect(OBAListRowConfiguration.Accessory.checkmark.cellAccessory != nil)
-        #expect(OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory != nil)
+        #expect(OBAListRowConfiguration.Accessory.checkmark.cellAccessory == .checkmark(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand)))
+        #expect(OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory == .disclosureIndicator(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand)))
+        #expect(OBAListRowConfiguration.Accessory.checkmark.cellAccessory != OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory)
     }
 
     /// Tests equatable conformance across all mutable properties of OBAListRowConfiguration.
@@ -351,13 +352,13 @@ struct OBAListRowConfigurationTests {
         #expect(stringConfig.secondaryLabelText == nil)
 
         var attrConfig = UIListContentConfiguration.cell()
-        let attr = NSAttributedString(string: "Attr Primary")
+        let attr = NSAttributedString(string: "Attr Primary", attributes: [.underlineStyle: NSUnderlineStyle.single.rawValue])
         attrConfig.labelText = .attributed(attr)
-        #expect(attrConfig.attributedText?.string == "Attr Primary")
+        #expect(attrConfig.attributedText == attr)
 
-        let secondaryAttr = NSAttributedString(string: "Attr Secondary")
+        let secondaryAttr = NSAttributedString(string: "Attr Secondary", attributes: [.strokeWidth: 2])
         attrConfig.secondaryLabelText = .attributed(secondaryAttr)
-        #expect(attrConfig.secondaryAttributedText?.string == "Attr Secondary")
+        #expect(attrConfig.secondaryAttributedText == secondaryAttr)
     }
 
     // MARK: - OBAListSectionConfiguration
