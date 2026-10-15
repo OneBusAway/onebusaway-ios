@@ -32,6 +32,43 @@ extension Formatters {
     func accessibilityValue(for bookmarkArrivalData: BookmarkRowViewModel) -> String? {
         guard bookmarkArrivalData.isTripBookmark else { return nil }
 
+        guard var value = departuresAccessibilityValue(for: bookmarkArrivalData) else {
+            return nil
+        }
+
+        // Spoken as its own sentence after the departures, matching the card,
+        // where the arrival line sits below the departure line (#1080).
+        if let destinationText = destinationText(for: bookmarkArrivalData) {
+            value += " " + destinationText + "."
+        }
+
+        return value
+    }
+
+    /// The line a destination bookmark's card shows about arriving at its
+    /// destination, e.g. "Arrives Home at 5:41 PM". `nil` for bookmarks
+    /// without a destination, or while there are no departures to describe.
+    func destinationText(for row: BookmarkRowViewModel) -> String? {
+        guard let name = row.destinationStopName, let status = row.destinationStatus else { return nil }
+
+        switch status {
+        case .loading:
+            let format = OBALoc("bookmark_card.destination.loading_fmt", value: "Loading arrival at %@…", comment: "Shown on a trip bookmark card while the arrival time at the bookmark's destination stop is loading. The placeholder is the destination stop's name.")
+            return String(format: format, name)
+        case .arrives(let arrival):
+            let time = timeFormatter.string(from: arrival.arrivalDate)
+            let format = arrival.isRealTime
+                ? OBALoc("bookmark_card.destination.arrives_fmt", value: "Arrives %1$@ at %2$@", comment: "Shown on a trip bookmark card with the estimated arrival time at the bookmark's destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives Pine St at 5:41 PM'.")
+                : OBALoc("bookmark_card.destination.arrives_scheduled_fmt", value: "Arrives %1$@ at %2$@ (scheduled)", comment: "Shown on a trip bookmark card with the scheduled arrival time at the bookmark's destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time.")
+            return String(format: format, name, time)
+        case .notServed:
+            let format = OBALoc("bookmark_card.destination.not_served_fmt", value: "Upcoming trips don't stop at %@", comment: "Shown on a trip bookmark card when none of the upcoming trips on the route stop at the bookmark's destination stop. The placeholder is the destination stop's name.")
+            return String(format: format, name)
+        }
+    }
+
+    /// The departures part of `accessibilityValue(for:)`.
+    private func departuresAccessibilityValue(for bookmarkArrivalData: BookmarkRowViewModel) -> String? {
         let arrivalDepartures = bookmarkArrivalData.arrivalDepartures
         guard let firstArrivalDeparture = arrivalDepartures.first else {
             return OBALoc("voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt", value: "No upcoming departures", comment: "Voiceover text describing no departures in the near-future.")

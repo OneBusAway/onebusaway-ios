@@ -10,10 +10,15 @@
 import SwiftUI
 import OBAKitCore
 
-/// The bookmark editor's form: name, stop ID, Today View switch, and group.
-/// Saving and cancelling belong to `EditBookmarkViewController`.
+/// The bookmark editor's form: name, destination, stop ID, Today View switch,
+/// and group. Saving, cancelling, and presenting the destination picker belong
+/// to `EditBookmarkViewController`.
 struct EditBookmarkView: View {
     @Bindable var viewModel: EditBookmarkViewModel
+
+    /// Shows the destination stop picker. Supplied by the hosting controller,
+    /// which owns navigation.
+    var chooseDestination: () -> Void = {}
 
     @State private var isAddingGroup = false
     @State private var newGroupName = ""
@@ -29,6 +34,10 @@ struct EditBookmarkView: View {
                     .accessibilityLabel(nameTitle)
             } header: {
                 Text(nameTitle)
+            }
+
+            if viewModel.showsDestinationSection {
+                destinationSection
             }
 
             // Read-only stop ID so a failing bookmark can be matched to the API path (#1421).
@@ -79,6 +88,41 @@ struct EditBookmarkView: View {
             Button(Strings.cancel, role: .cancel) {}
             Button(Strings.save) {
                 viewModel.addGroup(named: newGroupName)
+            }
+        }
+    }
+
+    // MARK: - Destination
+
+    /// Optional destination for a trip bookmark, so the card can show when the
+    /// trip reaches the rider's stop as well as when it leaves (#1080).
+    private var destinationSection: some View {
+        Section {
+            if viewModel.canChooseDestination {
+                Button(action: chooseDestination) {
+                    LabeledContent(
+                        OBALoc("edit_bookmark_controller.destination_row.title", value: "Destination Stop", comment: "Title of the row on the Add Bookmark screen that opens the list of stops to choose the trip's destination from."),
+                        value: viewModel.destinationName ?? OBALoc("edit_bookmark_controller.destination_row.none", value: "None", comment: "Value of the Destination Stop row on the Add Bookmark screen when no destination stop has been chosen.")
+                    )
+                }
+                .foregroundStyle(.primary)
+
+                if viewModel.destinationName != nil {
+                    Button(OBALoc("edit_bookmark_controller.remove_destination_button", value: "Remove Destination", comment: "Button on the Add Bookmark screen that clears the chosen destination stop."), role: .destructive) {
+                        viewModel.setDestination(nil)
+                    }
+                }
+            } else if let destinationName = viewModel.destinationName {
+                LabeledContent(
+                    OBALoc("edit_bookmark_controller.destination_row.title", value: "Destination Stop", comment: "Title of the row on the Add Bookmark screen that opens the list of stops to choose the trip's destination from."),
+                    value: destinationName
+                )
+            }
+        } header: {
+            Text(OBALoc("edit_bookmark_controller.destination_section.header_title", value: "Destination", comment: "Header above the destination stop on the Add/Edit Bookmark screen."))
+        } footer: {
+            if viewModel.canChooseDestination {
+                Text(OBALoc("edit_bookmark_controller.destination_section.footer", value: "Optional. Choose where you get off to also see when this trip arrives there.", comment: "Footer under the destination stop row on the Add Bookmark screen."))
             }
         }
     }

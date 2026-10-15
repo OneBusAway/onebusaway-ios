@@ -562,4 +562,58 @@ final class DestinationStopPickerControllerTests: OBATestCase {
             "The empty state's body button is the only share escape it needs"
         )
     }
+
+    // MARK: - Bookmark Mode (#1080)
+
+    /// Bookmarking with a destination can't proceed without one, so the picker
+    /// must not offer a share-without-destination button when the trip has no
+    /// stops left. Cancel remains the way out.
+    @Test @MainActor
+    func `Without skipping the empty state offers no share button`() async throws {
+        let arrivalDeparture = try makeArrivalDeparture()
+
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: try makeTripDetailsData(stopIDs: stopIDsWithBoarding(arrivalDeparture.stopID, forward: []))) {
+            $0.url?.path.contains("/api/where/trip-details") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+
+        let controller = DestinationStopPickerController(application: app, arrivalDeparture: arrivalDeparture, allowsSkippingDestination: false)
+        controller.loadViewIfNeeded()
+
+        let listView = OBAListView()
+        await poll(
+            until: { self.standardEmptyData(controller, listView)?.title == "No Stops Available" },
+            "picker never entered the empty state"
+        )
+
+        #expect(standardEmptyData(controller, listView)?.buttonConfig == nil)
+        #expect(controller.navigationItem.rightBarButtonItem == nil)
+        #expect(controller.navigationItem.leftBarButtonItem != nil, "Cancel stays available")
+    }
+
+    @Test @MainActor
+    func `Without skipping the error state keeps retry but offers no share escape`() async throws {
+        let arrivalDeparture = try makeArrivalDeparture()
+
+        let dataLoader = MockDataLoader(testName: name)
+        let networkError = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet,
+                                   userInfo: [NSLocalizedDescriptionKey: "The Internet connection appears to be offline."])
+        dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: networkError) {
+            $0.url?.path.contains("/api/where/trip-details") ?? false
+        })
+        let app = createApplication(dataLoader: dataLoader)
+
+        let controller = DestinationStopPickerController(application: app, arrivalDeparture: arrivalDeparture, allowsSkippingDestination: false)
+        controller.loadViewIfNeeded()
+
+        let listView = OBAListView()
+        await poll(
+            until: { self.standardEmptyData(controller, listView)?.buttonConfig != nil },
+            "picker never entered the error state"
+        )
+
+        #expect(standardEmptyData(controller, listView)?.buttonConfig?.text == "Try Again")
+        #expect(controller.navigationItem.rightBarButtonItem == nil)
+    }
 }

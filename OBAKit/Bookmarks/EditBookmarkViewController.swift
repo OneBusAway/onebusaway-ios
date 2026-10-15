@@ -15,7 +15,7 @@ import OBAKitCore
 ///
 /// The form is `EditBookmarkView`; this controller owns the Save and Cancel
 /// buttons, the save-time alerts, and the delegate callbacks.
-class EditBookmarkViewController: UIHostingController<EditBookmarkView> {
+class EditBookmarkViewController: UIHostingController<EditBookmarkView>, DestinationStopPickerDelegate {
     private let application: Application
     private let viewModel: EditBookmarkViewModel
     private weak var delegate: BookmarkEditorDelegate?
@@ -35,6 +35,10 @@ class EditBookmarkViewController: UIHostingController<EditBookmarkView> {
 
         super.init(rootView: EditBookmarkView(viewModel: viewModel))
 
+        rootView.chooseDestination = { [weak self] in
+            self?.showDestinationPicker()
+        }
+
         if viewModel.isAddMode {
             title = Strings.addBookmark
         } else {
@@ -47,6 +51,35 @@ class EditBookmarkViewController: UIHostingController<EditBookmarkView> {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Destination
+
+    private func showDestinationPicker() {
+        guard let arrivalDeparture = viewModel.destinationPickerArrivalDeparture else { return }
+
+        let picker = DestinationStopPickerController(
+            application: application,
+            arrivalDeparture: arrivalDeparture,
+            allowsSkippingDestination: false
+        )
+        picker.delegate = self
+        navigationController?.pushViewController(picker, animated: true)
+    }
+
+    func destinationStopPicker(_ controller: DestinationStopPickerController, didSelectStop stopTime: TripStopTime) {
+        viewModel.setDestination(stopTime.stop)
+        navigationController?.popToViewController(self, animated: true)
+    }
+
+    /// Unreachable while the picker is built with `allowsSkippingDestination: false`;
+    /// handled as a cancel so the flow can't strand the rider if that changes.
+    func destinationStopPickerDidSkipDestination(_ controller: DestinationStopPickerController) {
+        navigationController?.popToViewController(self, animated: true)
+    }
+
+    func destinationStopPickerDidCancel(_ controller: DestinationStopPickerController) {
+        navigationController?.popToViewController(self, animated: true)
     }
 
     // MARK: - Actions

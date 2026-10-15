@@ -61,6 +61,18 @@
 /* Filter option to show only departures with scheduled data and no real-time information */
 "arrival_departure_filter.scheduled_only" = "Solo Programadas";
 
+/* Shown on a trip bookmark card with the estimated arrival time at the bookmark's destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives Pine St at 5:41 PM'. */
+"bookmark_card.destination.arrives_fmt" = "Arrives %1$@ at %2$@";
+
+/* Shown on a trip bookmark card with the scheduled arrival time at the bookmark's destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time. */
+"bookmark_card.destination.arrives_scheduled_fmt" = "Arrives %1$@ at %2$@ (scheduled)";
+
+/* Shown on a trip bookmark card while the arrival time at the bookmark's destination stop is loading. The placeholder is the destination stop's name. */
+"bookmark_card.destination.loading_fmt" = "Loading arrival at %@…";
+
+/* Shown on a trip bookmark card when none of the upcoming trips on the route stop at the bookmark's destination stop. The placeholder is the destination stop's name. */
+"bookmark_card.destination.not_served_fmt" = "Upcoming trips don't stop at %@";
+
 /* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
 "bookmarks_controller.context_menu.pin" = "Fijar";
 
@@ -280,6 +292,21 @@
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Agregar grupo de marcadores";
 
+/* Default name for a trip bookmark with a destination stop. 1st placeholder is the boarding stop's name, 2nd is the destination stop's name, 3rd is the route's short name, e.g. 'Pine St → Main St (10)'. */
+"edit_bookmark_controller.destination_default_name_fmt" = "%1$@ → %2$@ (%3$@)";
+
+/* Value of the Destination Stop row on the Add Bookmark screen when no destination stop has been chosen. */
+"edit_bookmark_controller.destination_row.none" = "None";
+
+/* Title of the row on the Add Bookmark screen that opens the list of stops to choose the trip's destination from. */
+"edit_bookmark_controller.destination_row.title" = "Destination Stop";
+
+/* Footer under the destination stop row on the Add Bookmark screen. */
+"edit_bookmark_controller.destination_section.footer" = "Optional. Choose where you get off to also see when this trip arrives there.";
+
+/* Header above the destination stop on the Add/Edit Bookmark screen. */
+"edit_bookmark_controller.destination_section.header_title" = "Destination";
+
 /* Indicates that the user wants to create a duplicate bookmark. */
 "edit_bookmark_controller.duplicate_alert.affirmative_button" = "Crear un Duplicado";
 
@@ -294,6 +321,9 @@
 
 /* Title of the Bookmark Name header. */
 "edit_bookmark_controller.name_section.header_title" = "Nombre del Mardador";
+
+/* Button on the Add Bookmark screen that clears the chosen destination stop. */
+"edit_bookmark_controller.remove_destination_button" = "Remove Destination";
 
 
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */

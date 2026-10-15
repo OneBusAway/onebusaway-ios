@@ -21,6 +21,18 @@ struct BookmarkListSection: Identifiable, Equatable {
     let rows: [BookmarkRowViewModel]
 }
 
+/// What a destination bookmark's card says about arriving at the destination.
+enum BookmarkDestinationStatus: Equatable {
+    /// The next departure's trip schedule hasn't loaded yet.
+    case loading
+
+    /// The next departure reaches the destination at this time.
+    case arrives(DestinationArrival)
+
+    /// None of the upcoming departures stop at the destination.
+    case notServed
+}
+
 /// Immutable per-row snapshot for the Bookmarks list, built by
 /// `BookmarksViewModel.rebuildSections()` from a `Bookmark` plus the data
 /// loader's current arrival/departures. Views receive plain values only.
@@ -60,7 +72,23 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
     /// `nil` for trip bookmarks.
     let routesSubtitle: String?
 
-    init(bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture], highlightedTripIDs: Set<TripIdentifier>, hasLoadedArrivalData: Bool = false) {
+    /// The destination stop's name for a bookmark that tracks one; `nil` otherwise.
+    let destinationStopName: String?
+
+    /// Arrival at the destination for the first departure in `arrivalDepartures`.
+    /// `nil` for bookmarks without a destination, and while there are no departures.
+    let destinationStatus: BookmarkDestinationStatus?
+
+    /// - Parameter destinationLookup: For a bookmark with a destination, reports
+    ///   whether each departure reaches it. Departures known not to reach it are
+    ///   dropped, so the card never offers a bus that won't get the rider home.
+    init(
+        bookmark: Bookmark,
+        arrivalDepartures: [ArrivalDeparture],
+        highlightedTripIDs: Set<TripIdentifier>,
+        hasLoadedArrivalData: Bool = false,
+        destinationLookup: ((ArrivalDeparture) -> DestinationArrivalLookup)? = nil
+    ) {
         self.bookmark = bookmark
         self.id = bookmark.id
         self.name = bookmark.name
@@ -71,7 +99,32 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         self.routeShortName = bookmark.routeShortName
         // Self-enforce "always empty for whole-stop bookmarks" rather than
         // trusting the caller.
-        self.arrivalDepartures = bookmark.isTripBookmark ? arrivalDepartures : []
+        let tripArrivalDepartures = bookmark.isTripBookmark ? arrivalDepartures : []
+
+        if bookmark.hasDestination, let destinationLookup {
+            let lookups = tripArrivalDepartures.map { ($0, destinationLookup($0)) }
+            let reachable = lookups.filter { $0.1 != .notServed }
+            self.arrivalDepartures = reachable.map(\.0)
+            self.destinationStopName = bookmark.destinationStopName
+
+            switch reachable.first?.1 {
+            case .arrives(let arrival):
+                self.destinationStatus = .arrives(arrival)
+            case .pending:
+                self.destinationStatus = .loading
+            case .unavailable:
+                // The schedule couldn't be loaded; the departure still stands,
+                // so show it without an arrival line rather than a spinner
+                // that will never resolve.
+                self.destinationStatus = nil
+            case .notServed, nil:
+                self.destinationStatus = lookups.isEmpty ? nil : .notServed
+            }
+        } else {
+            self.arrivalDepartures = tripArrivalDepartures
+            self.destinationStopName = bookmark.hasDestination ? bookmark.destinationStopName : nil
+            self.destinationStatus = nil
+        }
         self.hasLoadedArrivalData = bookmark.isTripBookmark && hasLoadedArrivalData
         self.highlightedTripIDs = highlightedTripIDs
         self.routesSubtitle = bookmark.isTripBookmark ? nil : Formatters.formattedRoutes(bookmark.stop.routes)
@@ -88,6 +141,8 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         lhs.arrivalDepartures == rhs.arrivalDepartures &&
         lhs.hasLoadedArrivalData == rhs.hasLoadedArrivalData &&
         lhs.highlightedTripIDs == rhs.highlightedTripIDs &&
-        lhs.routesSubtitle == rhs.routesSubtitle
+        lhs.routesSubtitle == rhs.routesSubtitle &&
+        lhs.destinationStopName == rhs.destinationStopName &&
+        lhs.destinationStatus == rhs.destinationStatus
     }
 }
