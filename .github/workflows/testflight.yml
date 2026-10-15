@@ -31,7 +31,7 @@ jobs:
           github.event.workflow_run.event == 'push' &&
           github.event.workflow_run.head_repository.full_name == github.repository }}
     runs-on: xcode-27
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
     # SECURITY — read before changing this step. `workflow_run` jobs run with the

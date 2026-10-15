@@ -3,12 +3,13 @@ default_platform(:ios)
 TEAM_ID = "4ZQCMA634J"
 APP_BUNDLE_ID = "org.onebusaway.iphone"
 WIDGET_BUNDLE_ID = "org.onebusaway.iphone.OBAWidget"
+EXTERNAL_TESTER_GROUP = "Public Beta Testers"
 
 platform :ios do
   desc "Build and upload to TestFlight"
   lane :beta do
     # The archive is signed manually rather than by Xcode's automatic signing.
-    # That keeps the App Store Connect API key below scoped to uploading builds:
+    # That keeps the App Store Connect API key below away from signing assets:
     # automatic signing would need -allowProvisioningUpdates, which in turn needs
     # a key that can mint and revoke the team's certificates and profiles.
     # .github/workflows/testflight.yml installs the profiles and exports their
@@ -87,10 +88,32 @@ platform :ios do
       }
     )
 
-    # Upload the archive to TestFlight.
+    # Upload the archive, wait for App Store Connect to process it, then add it
+    # to the external group and submit it for Beta App Review. Internal testers
+    # get every build automatically (the group's "Automatic for Xcode Builds"
+    # setting); external testers get it once Apple approves the submission.
+    # reject_build_waiting_for_review withdraws an older build still waiting for
+    # review, so a busy day of merges doesn't queue a backlog behind Apple.
     upload_to_testflight(
       api_key: api_key,
-      skip_waiting_for_build_processing: true
+      changelog: testflight_changelog,
+      distribute_external: true,
+      groups: [EXTERNAL_TESTER_GROUP],
+      notify_external_testers: true,
+      reject_build_waiting_for_review: true
     )
+  end
+
+  # "What to Test" text: the merge commit that triggered this deploy, plus a link
+  # to the history so testers can see everything since their last build.
+  def testflight_changelog
+    sha = sh("git", "rev-parse", "HEAD", log: false).strip
+    message = sh("git", "log", "-1", "--format=%B", log: false).strip
+    # "Merge pull request #123 from owner/branch\n\nTitle" reads better as "Title (#123)".
+    if (match = message.match(/\AMerge pull request (#\d+) from \S+\s+(.+)/m))
+      message = "#{match[2].strip} (#{match[1]})"
+    end
+    "Latest change: #{message[0, 3000]}\n\n" \
+      "Full history: https://github.com/OneBusAway/onebusaway-ios/commits/#{sha}"
   end
 end
