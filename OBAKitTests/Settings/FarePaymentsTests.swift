@@ -127,7 +127,9 @@ final class FarePaymentsTests: OBATestCase {
         #expect(cancelAction.style == .cancel)
         #expect(cancelAction.title == Strings.cancel)
         let warningDefaultsKey = "ShowPaymentWarning_Region_\(Fixtures.pugetSoundRegion.regionIdentifier)"
-        triggerAlertAction(cancelAction)
+        withExtendedLifetime(farePayments) {
+            triggerAlertAction(cancelAction)
+        }
         #expect(application.userDefaults.bool(forKey: warningDefaultsKey))
         #expect(mockApplicationDelegate.openedURLs.isEmpty)
         #expect(analyticsMock.reportedEvents.isEmpty)
@@ -152,7 +154,9 @@ final class FarePaymentsTests: OBATestCase {
         let warningDefaultsKey = "ShowPaymentWarning_Region_\(Fixtures.pugetSoundRegion.regionIdentifier)"
         #expect(application.userDefaults.bool(forKey: warningDefaultsKey))
 
-        triggerAlertAction(alert.actions[1])
+        withExtendedLifetime(farePayments) {
+            triggerAlertAction(alert.actions[1])
+        }
 
         #expect(!application.userDefaults.bool(forKey: warningDefaultsKey))
         #expect(mockApplicationDelegate.openedURLs == [Fixtures.pugetSoundRegion.paymentAppDeepLinkURL!])
@@ -174,7 +178,9 @@ final class FarePaymentsTests: OBATestCase {
         let alert = try #require(delegate.presentedViewController as? UIAlertController)
         let warningDefaultsKey = "ShowPaymentWarning_Region_\(Fixtures.pugetSoundRegion.regionIdentifier)"
 
-        triggerAlertAction(alert.actions[2])
+        withExtendedLifetime(farePayments) {
+            triggerAlertAction(alert.actions[2])
+        }
 
         #expect(application.userDefaults.bool(forKey: warningDefaultsKey))
         #expect(mockApplicationDelegate.openedURLs == [Fixtures.pugetSoundRegion.paymentAppDeepLinkURL!])
@@ -249,9 +255,11 @@ final class FarePaymentsTests: OBATestCase {
         #expect(delegate.presentedAnimated == true)
     }
 
-    @Test func `When region has no payment app deep link URL workflow returns early`() {
-        application.regionsService.currentRegion = Fixtures.customMinneapolisRegion
-        #expect(Fixtures.customMinneapolisRegion.paymentAppDeepLinkURL == nil)
+    @Test func `When region has no payment app deep link URL workflow returns early`() throws {
+        let mtaRegion = try #require(application.regionsService.find(id: 2))
+        application.regionsService.currentRegion = mtaRegion
+        #expect(application.currentRegion != nil)
+        #expect(mtaRegion.paymentAppDeepLinkURL == nil)
 
         let farePayments = FarePayments(application: application, delegate: delegate)
         farePayments.beginFarePaymentsWorkflow()
