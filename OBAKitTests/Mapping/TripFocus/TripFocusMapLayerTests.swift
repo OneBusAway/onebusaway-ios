@@ -122,7 +122,7 @@ final class TripFocusMapLayerTests {
         let zoomScale: MKZoomScale = 0.05
         let stopPoint = MKMapPoint(stop)
         func isClear(_ arrow: RouteArrowLayout.Arrow) -> Bool {
-            hypot(arrow.point.x - stopPoint.x, arrow.point.y - stopPoint.y) * zoomScale >= RouteArrowLayout.Rules.standard.markerClearance
+            hypot(arrow.point.x - stopPoint.x, arrow.point.y - stopPoint.y) * zoomScale >= RouteArrowLayout.Rules.markerClearance
         }
 
         // Without the stop, a chevron would land on it — so a clear result below is

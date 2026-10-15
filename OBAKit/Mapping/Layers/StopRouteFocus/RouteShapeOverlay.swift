@@ -13,8 +13,8 @@ import OBAKitCore
 /// One route's drawn shape. Carries its identity so the layer's renderer can
 /// style it without a side table.
 ///
-/// Each route draws twice: a white casing underneath and the route-colored core
-/// on top. The casing is what keeps a route-colored line legible over the
+/// Each route draws twice: a casing of the route color darkened underneath and the
+/// route-colored core on top. The casing is what keeps a route-colored line legible over the
 /// basemap, and `isCasing` is how the renderer tells them apart.
 final class RouteShapeOverlay: MKPolyline {
     /// Matches the isolation of the nonisolated MKPolyline initializer it

@@ -10,6 +10,7 @@
 import CoreGraphics
 import Testing
 import UIKit
+import OBAKitCore
 @testable import OBAKit
 
 /// The placement rules from the redesign (#1545). Lines here are in screen points
@@ -107,7 +108,7 @@ struct RouteDirectionArrowsTests {
         for column in 0..<4 {
             for row in 0..<4 {
                 let tile = CGRect(x: CGFloat(column) * 200 - 10, y: CGFloat(row) * 200 - 10, width: 200, height: 200)
-                for arrow in line.arrows(scale: 1, avoiding: markers, in: tile, margin: RouteArrowStyle.extent) {
+                for arrow in line.arrows(scale: 1, avoiding: markers, in: tile) {
                     #expect(fromTiles[arrow.index] == nil || fromTiles[arrow.index] == arrow)
                     fromTiles[arrow.index] = arrow
                 }
@@ -121,7 +122,7 @@ struct RouteDirectionArrowsTests {
     // MARK: - Style
 
     @Test func `Chevrons are white on a dark route color and near-black on a pale one`() {
-        let crimson = UIColor(red: 0x9B / 255, green: 0x1B / 255, blue: 0x30 / 255, alpha: 1)
+        let crimson = UIColor(hex: "9B1B30")!
         let pale = UIColor(red: 1, green: 0.9, blue: 0.3, alpha: 1)
 
         #expect(RouteArrowStyle.chevronColor(on: crimson) == .white)
@@ -131,7 +132,7 @@ struct RouteDirectionArrowsTests {
 
     /// The brief's example: #9b1b30 darkens to about #6e0f20.
     @Test func `The casing is the route color about 30 percent darker`() {
-        let crimson = UIColor(red: 0x9B / 255, green: 0x1B / 255, blue: 0x30 / 255, alpha: 1)
+        let crimson = UIColor(hex: "9B1B30")!
         var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
         RouteArrowStyle.casingColor(for: crimson).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
 

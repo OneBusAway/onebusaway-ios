@@ -28,19 +28,18 @@ import UIKit
 /// in both.
 nonisolated struct RouteArrowLayout {
 
-    struct Rules {
+    /// In screen points.
+    enum Rules {
         /// From the start of the line to the first candidate.
-        var startOffset: CGFloat = 30
-        var spacing: CGFloat = 64
+        static let startOffset: CGFloat = 30
+        static let spacing: CGFloat = 64
         /// How far a candidate may move, either way, to find a clear spot.
-        var maximumShift: CGFloat = 8
-        var minimumSegmentLength: CGFloat = 40
+        static let maximumShift: CGFloat = 8
+        static let minimumSegmentLength: CGFloat = 40
         /// From either end of the segment.
-        var cornerClearance: CGFloat = 12
+        static let cornerClearance: CGFloat = 12
         /// From the center of any stop marker.
-        var markerClearance: CGFloat = 22
-
-        static let standard = Rules()
+        static let markerClearance: CGFloat = 22
     }
 
     struct Arrow: Equatable {
@@ -73,36 +72,36 @@ nonisolated struct RouteArrowLayout {
     /// - Parameters:
     ///   - scale: Screen points per unit of the line.
     ///   - markers: Stop marker centers, in the line's units.
-    ///   - rect: When set, only arrows that could reach this rect, in the line's
-    ///     units. An arrow is returned whole even when only part of it is inside.
-    func arrows(
-        scale: CGFloat,
-        avoiding markers: [CGPoint] = [],
-        in rect: CGRect? = nil,
-        margin: CGFloat = 0,
-        rules: Rules = .standard
-    ) -> [Arrow] {
-        guard points.count >= 2, scale.isFinite, scale > 0, rules.spacing > 0 else { return [] }
+    ///   - rect: When set, only the arrows that land in this rect, in the line's
+    ///     units, placed as they would be for the whole line.
+    func arrows(scale: CGFloat, avoiding markers: [CGPoint] = [], in rect: CGRect? = nil) -> [Arrow] {
+        guard points.count >= 2, scale.isFinite, scale > 0 else { return [] }
 
         let length = (distances.last ?? 0) * scale
-        guard length >= rules.startOffset else { return [] }
-        let lastIndex = Int(((length - rules.startOffset) / rules.spacing).rounded(.down))
+        guard length >= Rules.startOffset else { return [] }
+        let lastIndex = Int(((length - Rules.startOffset) / Rules.spacing).rounded(.down))
 
-        let candidates: [Int]
-        if let rect {
-            candidates = candidateIndices(near: rect, margin: margin, scale: scale, lastIndex: lastIndex, rules: rules)
-        } else {
-            candidates = Array(0...lastIndex)
+        guard let rect else {
+            return (0...lastIndex).compactMap { resolve($0, scale: scale, markers: markers) }
         }
 
-        return candidates.compactMap { resolve($0, scale: scale, markers: markers, rules: rules) }
+        // Only a marker this close can decide where an arrow in the rect goes. A spot
+        // tried outside the rect is at most two shifts from one the whole line would
+        // place inside it, and must be judged against the same markers.
+        let reach = (2 * Rules.maximumShift + Rules.markerClearance) / scale
+        let nearby = rect.insetBy(dx: -reach, dy: -reach)
+        let markers = markers.filter { nearby.contains($0) }
+        return candidateIndices(near: rect, scale: scale, lastIndex: lastIndex)
+            .compactMap { resolve($0, scale: scale, markers: markers) }
+            // A candidate from a segment that crosses the rect can still land
+            // outside it, judged against markers filtered for the rect.
+            .filter { rect.contains($0.point) }
     }
 
     /// The candidates whose search window overlaps a segment that crosses `rect`.
     /// A placed arrow sits on a segment, so a segment that misses the rect can't
     /// put one in it.
-    private func candidateIndices(near rect: CGRect, margin: CGFloat, scale: CGFloat, lastIndex: Int, rules: Rules) -> [Int] {
-        let reach = rect.insetBy(dx: -margin / scale, dy: -margin / scale)
+    private func candidateIndices(near reach: CGRect, scale: CGFloat, lastIndex: Int) -> IndexSet {
         var indices = IndexSet()
         for segment in 0..<(points.count - 1) {
             // Edges rather than `CGRect.intersects`, which misses a segment that runs
@@ -111,48 +110,47 @@ nonisolated struct RouteArrowLayout {
             guard min(start.x, end.x) <= reach.maxX, max(start.x, end.x) >= reach.minX,
                   min(start.y, end.y) <= reach.maxY, max(start.y, end.y) >= reach.minY else { continue }
 
-            let low = distances[segment] * scale - rules.maximumShift - rules.startOffset
-            let high = distances[segment + 1] * scale + rules.maximumShift - rules.startOffset
-            let first = max(0, Int((low / rules.spacing).rounded(.up)))
-            let last = min(lastIndex, Int((high / rules.spacing).rounded(.down)))
+            let low = distances[segment] * scale - Rules.maximumShift - Rules.startOffset
+            let high = distances[segment + 1] * scale + Rules.maximumShift - Rules.startOffset
+            let first = max(0, Int((low / Rules.spacing).rounded(.up)))
+            let last = min(lastIndex, Int((high / Rules.spacing).rounded(.down)))
             if first <= last {
                 indices.insert(integersIn: first...last)
             }
         }
-        return Array(indices)
+        return indices
     }
 
     /// The nearest clear spot to candidate `index`, trying the exact spot first and
     /// then a point further each way, or nil when none is within reach.
-    private func resolve(_ index: Int, scale: CGFloat, markers: [CGPoint], rules: Rules) -> Arrow? {
-        let target = rules.startOffset + CGFloat(index) * rules.spacing
-        let steps = Int(rules.maximumShift.rounded(.down))
-        for step in 0...steps {
-            for offset in step == 0 ? [CGFloat(0)] : [CGFloat(-step), CGFloat(step)] {
-                if let arrow = arrow(index: index, at: target + offset, scale: scale, markers: markers, rules: rules) {
-                    return arrow
-                }
+    private func resolve(_ index: Int, scale: CGFloat, markers: [CGPoint]) -> Arrow? {
+        let target = Rules.startOffset + CGFloat(index) * Rules.spacing
+        // 0, -1, +1, -2, +2, …: the nearest spot wins, and backward breaks a tie.
+        for attempt in 0...(2 * Int(Rules.maximumShift)) {
+            let offset = CGFloat((attempt + 1) / 2) * (attempt.isMultiple(of: 2) ? 1 : -1)
+            if let arrow = arrow(index: index, at: target + offset, scale: scale, markers: markers) {
+                return arrow
             }
         }
         return nil
     }
 
-    private func arrow(index: Int, at position: CGFloat, scale: CGFloat, markers: [CGPoint], rules: Rules) -> Arrow? {
+    private func arrow(index: Int, at position: CGFloat, scale: CGFloat, markers: [CGPoint]) -> Arrow? {
         let along = position / scale
         guard along >= 0, along <= distances[distances.count - 1] else { return nil }
 
         let segment = segmentIndex(containing: along)
         let segmentLength = (distances[segment + 1] - distances[segment]) * scale
         let fromStart = (along - distances[segment]) * scale
-        guard segmentLength >= rules.minimumSegmentLength,
-              fromStart >= rules.cornerClearance,
-              segmentLength - fromStart >= rules.cornerClearance else { return nil }
+        guard segmentLength >= Rules.minimumSegmentLength,
+              fromStart >= Rules.cornerClearance,
+              segmentLength - fromStart >= Rules.cornerClearance else { return nil }
 
         let start = points[segment], end = points[segment + 1]
         let fraction = fromStart / segmentLength
         let point = CGPoint(x: start.x + (end.x - start.x) * fraction, y: start.y + (end.y - start.y) * fraction)
 
-        let clearance = rules.markerClearance / scale
+        let clearance = Rules.markerClearance / scale
         guard markers.allSatisfy({ Self.distance($0, point) >= clearance }) else { return nil }
 
         return Arrow(index: index, point: point, angle: atan2(end.y - start.y, end.x - start.x))
@@ -198,15 +196,15 @@ nonisolated enum RouteArrowStyle {
 
     /// White reads on every route color but the palest; those get near-black.
     static func chevronColor(on routeColor: UIColor) -> UIColor {
-        routeColor.wcagContrastRatio(against: .white) < 3 ? UIColor(red: 0x1C / 255, green: 0x1C / 255, blue: 0x1E / 255, alpha: 1) : .white
+        routeColor.wcagContrastRatio(against: .white) < 3 ? nearBlack : .white
     }
+
+    private static let nearBlack = UIColor(hex: "1C1C1E") ?? .black
 
     /// The route color darkened by about 30%, so the line keeps an edge over the
     /// basemap in light mode and dark mode alike.
     static func casingColor(for routeColor: UIColor) -> UIColor {
-        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
-        guard routeColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return routeColor }
-        return UIColor(red: red * 0.7, green: green * 0.7, blue: blue * 0.7, alpha: alpha)
+        routeColor.blended(with: .black, amount: 0.3)
     }
 }
 
@@ -221,12 +219,24 @@ nonisolated final class RouteArrowMarkers: Sendable {
     var points: [CGPoint] { state.withLock { $0 } }
 
     /// Returns whether anything changed, so the caller only redraws when it must.
+    /// Order doesn't count: `MKMapView.annotations` promises none.
     @discardableResult
     func update(_ points: [CGPoint]) -> Bool {
-        state.withLock { current in
+        let points = points.sorted { ($0.x, $0.y) < ($1.x, $1.y) }
+        return state.withLock { current in
             guard current != points else { return false }
             current = points
             return true
+        }
+    }
+
+    /// Reads the stop markers on `mapView` again, and redraws any of `overlays`
+    /// that carry arrows if the markers moved.
+    @MainActor
+    func refresh(from mapView: MKMapView, redrawing overlays: [MKOverlay]) {
+        guard update(Self.positions(in: mapView.annotations)) else { return }
+        for overlay in overlays {
+            (mapView.renderer(for: overlay) as? RouteLineRenderer)?.setNeedsDisplay()
         }
     }
 
@@ -273,12 +283,11 @@ nonisolated final class RouteLineRenderer: MKPolylineRenderer {
         super.draw(mapRect, zoomScale: zoomScale, in: context)
         guard lineWidth >= RouteArrowStyle.minimumLineWidth else { return }
 
-        let arrows = layout.arrows(
-            scale: zoomScale,
-            avoiding: markers.points,
-            in: CGRect(x: mapRect.origin.x, y: mapRect.origin.y, width: mapRect.size.width, height: mapRect.size.height),
-            margin: RouteArrowStyle.extent
-        )
+        // Grown by a chevron's reach, so one centered just outside the tile still
+        // draws its part inside it.
+        let reach = RouteArrowStyle.extent / zoomScale
+        let tile = CGRect(x: mapRect.origin.x, y: mapRect.origin.y, width: mapRect.size.width, height: mapRect.size.height)
+        let arrows = layout.arrows(scale: zoomScale, avoiding: markers.points, in: tile.insetBy(dx: -reach, dy: -reach))
         guard !arrows.isEmpty else { return }
 
         let path = CGMutablePath()

@@ -29,7 +29,6 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         /// its direction chevrons, not just the focused one's.
         static let coreWidth: CGFloat = 6
         static let focusedCoreWidth: CGFloat = 9
-        static let casingExtraWidth = RouteArrowStyle.casingExtraWidth
         static let dimmedAlpha: CGFloat = 0.32
         static let normalAlpha: CGFloat = 1.0
     }
@@ -416,12 +415,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         mapView.addOverlays([casing, core], level: .aboveRoads)
     }
 
-    /// Reads the stop markers' positions again, and redraws the lines if they moved.
     private func refreshArrowMarkers() {
-        guard arrowMarkers.update(RouteArrowMarkers.positions(in: mapView.annotations)) else { return }
-        for overlay in overlays where !overlay.isCasing {
-            mapView.renderer(for: overlay)?.setNeedsDisplay()
-        }
+        arrowMarkers.refresh(from: mapView, redrawing: overlays)
     }
 
     // MARK: - Focus restyling
@@ -460,7 +455,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         let color = model.routes.first { $0.routeID == overlay.routeID }?.color ?? tintColor
 
         let coreWidth = isFocused ? Style.focusedCoreWidth : Style.coreWidth
-        renderer.lineWidth = overlay.isCasing ? coreWidth + Style.casingExtraWidth : coreWidth
+        renderer.lineWidth = overlay.isCasing ? coreWidth + RouteArrowStyle.casingExtraWidth : coreWidth
         // The casing is what keeps a route-colored line legible over the basemap.
         renderer.strokeColor = overlay.isCasing ? RouteArrowStyle.casingColor(for: color) : color
         renderer.lineCap = .round

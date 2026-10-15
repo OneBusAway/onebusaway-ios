@@ -906,6 +906,7 @@ public class MapRegionManager: NSObject,
 
     private func displaySearchResult(stop: Stop) {
         mapView.addAnnotation(stop)
+        notifyMapLayersStopMarkersChanged()
         mapView.setCenterCoordinate(centerCoordinate: stop.coordinate, zoomLevel: 18, animated: true)
         mapView.selectAnnotation(stop, animated: false)
 

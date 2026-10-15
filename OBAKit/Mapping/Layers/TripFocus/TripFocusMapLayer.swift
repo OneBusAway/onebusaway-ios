@@ -165,13 +165,10 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.addOverlays([casing, core], level: .aboveRoads)
     }
 
-    /// Reads the stop markers' positions again, and redraws the line ahead if they
-    /// moved. The stops are this trip's dots and whatever stops the map shows.
+    /// The stops the line ahead keeps clear of: this trip's dots and whatever stops
+    /// the map shows.
     private func refreshArrowMarkers() {
-        guard arrowMarkers.update(RouteArrowMarkers.positions(in: mapView.annotations)) else { return }
-        for overlay in shapeOverlays where !overlay.isSpent && !overlay.isCasing {
-            mapView.renderer(for: overlay)?.setNeedsDisplay()
-        }
+        arrowMarkers.refresh(from: mapView, redrawing: shapeOverlays)
     }
 
     private func drawStops(_ content: TripMapFocus.Content) {
