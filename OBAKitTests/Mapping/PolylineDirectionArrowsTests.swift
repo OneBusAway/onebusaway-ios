@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import CoreGraphics
 import CoreLocation
 import Testing
 @testable import OBAKit
@@ -71,20 +70,5 @@ struct PolylineDirectionArrowsTests {
 
         #expect(!placements.isEmpty)
         #expect(placements.count <= 24)
-    }
-
-    /// `chevron.up` points north at identity. UIKit view space has y down, so a
-    /// positive `CGAffineTransform` rotation is clockwise — the same sense as a
-    /// compass heading. East must send the up-vector to the right, not the left.
-    @Test func `View transform maps compass heading onto UIKit rotation`() {
-        let up = CGPoint(x: 0, y: -1)
-
-        let north = up.applying(PolylineDirectionArrows.viewTransform(headingDegrees: 0))
-        #expect(abs(north.x) < 0.001)
-        #expect(north.y < -0.99)
-
-        let east = up.applying(PolylineDirectionArrows.viewTransform(headingDegrees: 90))
-        #expect(east.x > 0.99)
-        #expect(abs(east.y) < 0.001)
     }
 }

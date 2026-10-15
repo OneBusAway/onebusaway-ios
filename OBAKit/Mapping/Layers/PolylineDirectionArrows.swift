@@ -10,7 +10,6 @@
 import CoreLocation
 import MapKit
 import OBAKitCore
-import UIKit
 
 nonisolated struct PolylineArrowPlacement: Equatable {
     let coordinate: CLLocationCoordinate2D
@@ -23,6 +22,10 @@ nonisolated struct PolylineArrowPlacement: Equatable {
     }
 }
 
+/// Direction arrows for the map panel's SwiftUI `Map`, which draws them as
+/// annotations and so has to place them in meters: it has no renderer to hand it
+/// the zoom. The map tab draws its arrows in the line's renderer, spaced in screen
+/// points; see `RouteLineRenderer`.
 nonisolated enum PolylineDirectionArrows {
     private static let maximumPlacementCount = 24
 
@@ -92,13 +95,6 @@ nonisolated enum PolylineDirectionArrows {
         return placements
     }
 
-    /// `chevron.up` points north at identity. Compass heading is clockwise from
-    /// north; UIKit view space has y down, so a positive `CGAffineTransform`
-    /// rotation is clockwise too. Do not negate — that mirrored east/west.
-    static func viewTransform(headingDegrees: CLLocationDirection) -> CGAffineTransform {
-        CGAffineTransform(rotationAngle: CGFloat(headingDegrees.radians))
-    }
-
     private static func mapPoint(at distance: CLLocationDistance, in segments: [Segment]) -> MKMapPoint? {
         guard let segment = segments.first(where: { distance <= $0.endDistance }) ?? segments.last else {
             return nil
@@ -111,63 +107,5 @@ nonisolated enum PolylineDirectionArrows {
     private static func heading(from start: MKMapPoint, to end: MKMapPoint) -> CLLocationDirection {
         let degrees = atan2(end.x - start.x, -(end.y - start.y)) * 180 / .pi
         return degrees >= 0 ? degrees : degrees + 360
-    }
-}
-
-final class PolylineArrowAnnotation: NSObject, MKAnnotation {
-    let coordinate: CLLocationCoordinate2D
-    let headingDegrees: CLLocationDirection
-    let tintColor: UIColor
-    let routeID: RouteID?
-    var alpha: CGFloat
-
-    init(
-        placement: PolylineArrowPlacement,
-        tintColor: UIColor,
-        routeID: RouteID? = nil,
-        alpha: CGFloat = 1
-    ) {
-        coordinate = placement.coordinate
-        headingDegrees = placement.headingDegrees
-        self.tintColor = tintColor
-        self.routeID = routeID
-        self.alpha = alpha
-        super.init()
-    }
-}
-
-final class PolylineArrowAnnotationView: MKAnnotationView {
-    static let reuseIdentifier = "PolylineArrowAnnotationView"
-
-    override var annotation: MKAnnotation? {
-        didSet { applyAnnotation() }
-    }
-
-    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
-        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        canShowCallout = false
-        isEnabled = false
-        // Decorative only — no title/subtitle. Same opt-out as
-        // BackgroundDotAnnotationView: unlabeled chevrons would flood the
-        // VoiceOver rotor (up to ~144 on a busy stop).
-        isAccessibilityElement = false
-        displayPriority = .defaultLow
-        collisionMode = .none
-        applyAnnotation()
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func applyAnnotation() {
-        guard let arrow = annotation as? PolylineArrowAnnotation else { return }
-
-        let configuration = UIImage.SymbolConfiguration(pointSize: 13, weight: .bold)
-        image = UIImage(systemName: "chevron.up", withConfiguration: configuration)?
-            .withTintColor(arrow.tintColor, renderingMode: .alwaysOriginal)
-        transform = PolylineDirectionArrows.viewTransform(headingDegrees: arrow.headingDegrees)
-        alpha = arrow.alpha
-        centerOffset = .zero
     }
 }

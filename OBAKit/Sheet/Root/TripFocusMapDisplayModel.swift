@@ -26,6 +26,9 @@ final class TripFocusMapDisplayModel: ObservableObject {
     /// Same reason as `MapSearchDisplayModel.RouteDisplay`.
     struct Display {
         let routeColor: Color
+        /// Under the line ahead; see `RouteArrowStyle.casingColor(for:)`.
+        let casingColor: Color
+        let arrowColor: Color
         /// Behind the vehicle. `nil` when less than two points of the shape are.
         let spent: ShapeLine?
         /// Ahead of the vehicle. `nil` when less than two points of the shape are.
@@ -40,7 +43,7 @@ final class TripFocusMapDisplayModel: ObservableObject {
         }
     }
 
-    /// One half of the shape, as the white casing and the colored core drawn over
+    /// One half of the shape, as the casing and the colored core drawn over
     /// it. Two polylines rather than one stroked twice, matching the separate
     /// overlays `TripFocusMapLayer` adds for each.
     struct ShapeLine {
@@ -183,6 +186,8 @@ final class TripFocusMapDisplayModel: ObservableObject {
         let split = content.shapeSplit
         let display = Display(
             routeColor: Color(uiColor: content.routeColor),
+            casingColor: Color(uiColor: RouteArrowStyle.casingColor(for: content.routeColor)),
+            arrowColor: Color(uiColor: RouteArrowStyle.chevronColor(on: content.routeColor)),
             spent: Self.shapeLine(split.spent),
             ahead: Self.shapeLine(split.ahead),
             arrows: PolylineDirectionArrows.placements(along: split.ahead),

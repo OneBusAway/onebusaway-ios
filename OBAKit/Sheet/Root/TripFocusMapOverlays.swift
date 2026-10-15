@@ -26,7 +26,7 @@ func tripFocusMapContent(for display: TripFocusMapDisplayModel.Display?) -> some
         if let spent = display.spent {
             MapPolyline(spent.casing)
                 .stroke(Color.white.opacity(TripFocusMapLayer.Style.spentAlpha), style: tripShapeStroke(
-                    width: TripFocusMapLayer.Style.spentCoreWidth + TripFocusMapLayer.Style.casingExtraWidth
+                    width: TripFocusMapLayer.Style.spentCoreWidth + TripFocusMapLayer.Style.spentCasingExtraWidth
                 ))
             MapPolyline(spent.core)
                 .stroke(Color(uiColor: .systemGray3).opacity(TripFocusMapLayer.Style.spentAlpha), style: tripShapeStroke(
@@ -35,7 +35,7 @@ func tripFocusMapContent(for display: TripFocusMapDisplayModel.Display?) -> some
         }
         if let ahead = display.ahead {
             MapPolyline(ahead.casing)
-                .stroke(.white, style: tripShapeStroke(
+                .stroke(display.casingColor, style: tripShapeStroke(
                     width: TripFocusMapLayer.Style.coreWidth + TripFocusMapLayer.Style.casingExtraWidth
                 ))
             MapPolyline(ahead.core)
@@ -44,7 +44,7 @@ func tripFocusMapContent(for display: TripFocusMapDisplayModel.Display?) -> some
 
         ForEach(Array(display.arrows.enumerated()), id: \.offset) { _, arrow in
             Annotation("", coordinate: arrow.coordinate, anchor: .center) {
-                TripDirectionArrow(headingDegrees: arrow.headingDegrees, color: display.routeColor)
+                TripDirectionArrow(headingDegrees: arrow.headingDegrees, color: display.arrowColor)
             }
         }
 
@@ -66,23 +66,26 @@ private func tripShapeStroke(width: CGFloat) -> StrokeStyle {
     StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round)
 }
 
-/// A chevron pointing the way the trip runs, as `PolylineArrowAnnotationView` draws
-/// it on the map tab.
+/// A chevron pointing the way the trip runs, as `RouteLineRenderer` draws it on the
+/// map tab.
 private struct TripDirectionArrow: View {
     let headingDegrees: CLLocationDirection
     let color: Color
 
     var body: some View {
-        // `chevron.up` points north unrotated, and compass headings run clockwise,
-        // as a positive rotation does here. See `PolylineDirectionArrows.viewTransform`.
-        Image(systemName: "chevron.up")
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(color)
-            .rotationEffect(.degrees(headingDegrees))
-            // Decorative, as on the map tab: dozens of unlabeled chevrons would
-            // flood the VoiceOver rotor.
-            .accessibilityHidden(true)
-            .allowsHitTesting(false)
+        let size = RouteArrowStyle.extent * 2
+        Path { path in
+            path.addLines(RouteArrowStyle.chevron.map { CGPoint(x: $0.x + size / 2, y: $0.y + size / 2) })
+        }
+        .stroke(color, style: StrokeStyle(lineWidth: RouteArrowStyle.strokeWidth, lineCap: .round, lineJoin: .round))
+        .frame(width: size, height: size)
+        // The chevron points east unrotated, and compass headings run clockwise
+        // from north, as a positive rotation does here.
+        .rotationEffect(.degrees(headingDegrees - 90))
+        // Decorative, as on the map tab: dozens of unlabeled chevrons would
+        // flood the VoiceOver rotor.
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
     }
 }
 

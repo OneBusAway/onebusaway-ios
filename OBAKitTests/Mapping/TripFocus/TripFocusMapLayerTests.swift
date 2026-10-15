@@ -73,8 +73,8 @@ final class TripFocusMapLayerTests {
         mapView.annotations.compactMap { $0 as? TripStopAnnotation }
     }
 
-    private var directionArrowAnnotations: [PolylineArrowAnnotation] {
-        mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
+    private func renderer(for overlay: TripShapeOverlay) -> MKOverlayRenderer? {
+        layer.renderer(for: overlay, in: mapView)
     }
 
     // MARK: - The shape
@@ -103,12 +103,36 @@ final class TripFocusMapLayerTests {
         #expect(shapeOverlays.allSatisfy { !$0.isSpent })
     }
 
-    @Test func `Direction arrows are placed only on the part of the trip still ahead`() {
-        let line = shape()
-        focus(content(shape: line, progress: 0.5))
+    @Test func `Only the line still ahead draws direction arrows`() {
+        focus(content(shape: shape(), progress: 0.5))
 
-        #expect(!directionArrowAnnotations.isEmpty)
-        #expect(directionArrowAnnotations.allSatisfy { $0.coordinate.longitude > line[2].longitude })
+        let arrowLines = shapeOverlays.filter { renderer(for: $0) is RouteLineRenderer }
+        #expect(arrowLines.count == 1)
+        #expect(arrowLines.allSatisfy { !$0.isSpent && !$0.isCasing })
+    }
+
+    /// The issue that prompted the redesign: chevrons landing on top of stop dots.
+    @Test func `Direction arrows keep clear of the trip's stops`() throws {
+        let stop = CLLocationCoordinate2D(latitude: 47, longitude: -121.985)
+        focus(content(shape: shape(), progress: 0, stops: [row(0, stopID: "A", coordinate: stop)]))
+
+        let line = try #require(shapeOverlays.first { !$0.isCasing })
+        let lineRenderer = try #require(renderer(for: line) as? RouteLineRenderer)
+        // Close enough that the stop sits among several candidates.
+        let zoomScale: MKZoomScale = 0.05
+        let stopPoint = MKMapPoint(stop)
+        func isClear(_ arrow: RouteArrowLayout.Arrow) -> Bool {
+            hypot(arrow.point.x - stopPoint.x, arrow.point.y - stopPoint.y) * zoomScale >= RouteArrowLayout.Rules.standard.markerClearance
+        }
+
+        // Without the stop, a chevron would land on it — so a clear result below is
+        // the layer's doing, not luck.
+        let unobstructed = RouteArrowLayout(points: shape().map { CGPoint(x: MKMapPoint($0).x, y: MKMapPoint($0).y) })
+        #expect(!unobstructed.arrows(scale: zoomScale).allSatisfy(isClear))
+
+        let arrows = lineRenderer.arrows(zoomScale: zoomScale)
+        #expect(!arrows.isEmpty)
+        #expect(arrows.allSatisfy(isClear))
     }
 
     /// An agency that publishes no shape still gets a usable map: the stops carry
@@ -212,7 +236,6 @@ final class TripFocusMapLayerTests {
 
         #expect(shapeOverlays.isEmpty)
         #expect(stopAnnotations.isEmpty)
-        #expect(directionArrowAnnotations.isEmpty)
     }
 
     /// A refresh replaces what's drawn rather than adding to it — otherwise every

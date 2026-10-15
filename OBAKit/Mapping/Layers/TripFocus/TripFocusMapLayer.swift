@@ -27,11 +27,15 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// Shared with the map panel's `tripFocusMapContent` and the trip screen's
     /// `MinimalStopAnnotationView`, so a trip is drawn the same on every map.
     enum Style {
-        static let coreWidth: CGFloat = 6
-        static let casingExtraWidth: CGFloat = 4
+        /// The half still ahead: wide enough to carry its direction chevrons, over a
+        /// casing of the route color darkened. See `RouteArrowStyle`.
+        static let coreWidth: CGFloat = 9
+        static let casingExtraWidth = RouteArrowStyle.casingExtraWidth
         /// The travelled half is thinner as well as gray: it is context, not the
-        /// thing the rider is tracking.
+        /// thing the rider is tracking. It keeps a white casing, which reads on a
+        /// gray line where a darkened gray would not.
         static let spentCoreWidth: CGFloat = 4
+        static let spentCasingExtraWidth: CGFloat = 4
         static let spentAlpha: CGFloat = 0.85
 
         /// Stop dots: the rider's own stop largest, then the terminals, then the rest.
@@ -74,7 +78,8 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
     private var shapeOverlays: [TripShapeOverlay] = []
     private var stopAnnotations: [TripStopAnnotation] = []
-    private var directionArrowAnnotations: [PolylineArrowAnnotation] = []
+    /// What the direction chevrons on the line ahead keep clear of.
+    private let arrowMarkers = RouteArrowMarkers()
     private var vehicleAnnotation: VehicleAnnotation?
 
     /// The trip the camera has already been framed for. Framing happens once per
@@ -92,10 +97,6 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.register(
             TripStopAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: TripStopAnnotationView.reuseIdentifier
-        )
-        mapView.register(
-            PolylineArrowAnnotationView.self,
-            forAnnotationViewWithReuseIdentifier: PolylineArrowAnnotationView.reuseIdentifier
         )
     }
 
@@ -140,9 +141,10 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         // of the shape is still ahead of the bus.
         let split = content.shapeSplit
 
-        drawShape(split)
-        drawDirectionArrows(along: split.ahead, color: content.routeColor)
         drawStops(content)
+        // Before the shape, so its first draw already knows where this trip's stops are.
+        refreshArrowMarkers()
+        drawShape(split)
         drawVehicle(content)
         frameCameraIfNeeded(content, split: split)
     }
@@ -163,11 +165,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.addOverlays([casing, core], level: .aboveRoads)
     }
 
-    private func drawDirectionArrows(along coordinates: [CLLocationCoordinate2D], color: UIColor) {
-        directionArrowAnnotations = PolylineDirectionArrows.placements(along: coordinates).map {
-            PolylineArrowAnnotation(placement: $0, tintColor: color)
+    /// Reads the stop markers' positions again, and redraws the line ahead if they
+    /// moved. The stops are this trip's dots and whatever stops the map shows.
+    private func refreshArrowMarkers() {
+        guard arrowMarkers.update(RouteArrowMarkers.positions(in: mapView.annotations)) else { return }
+        for overlay in shapeOverlays where !overlay.isSpent && !overlay.isCasing {
+            mapView.renderer(for: overlay)?.setNeedsDisplay()
         }
-        mapView.addAnnotations(directionArrowAnnotations)
     }
 
     private func drawStops(_ content: TripMapFocus.Content) {
@@ -252,10 +256,8 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     private func removeShapeAndStops() {
         mapView.removeOverlays(shapeOverlays)
         mapView.removeAnnotations(stopAnnotations)
-        mapView.removeAnnotations(directionArrowAnnotations)
         shapeOverlays.removeAll()
         stopAnnotations.removeAll()
-        directionArrowAnnotations.removeAll()
     }
 
     private func removeVehicle() {
@@ -270,12 +272,22 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? {
         guard let overlay = overlay as? TripShapeOverlay else { return nil }
 
-        let renderer = MKPolylineRenderer(polyline: overlay)
-        let coreWidth = overlay.isSpent ? Style.spentCoreWidth : Style.coreWidth
         let color = focus?.content?.routeColor ?? tintColor
-
-        renderer.lineWidth = overlay.isCasing ? coreWidth + Style.casingExtraWidth : coreWidth
-        renderer.strokeColor = overlay.isCasing ? .white : (overlay.isSpent ? .systemGray3 : color)
+        let renderer: MKPolylineRenderer
+        if overlay.isSpent {
+            renderer = MKPolylineRenderer(polyline: overlay)
+            renderer.lineWidth = overlay.isCasing ? Style.spentCoreWidth + Style.spentCasingExtraWidth : Style.spentCoreWidth
+            renderer.strokeColor = overlay.isCasing ? .white : .systemGray3
+        } else if overlay.isCasing {
+            renderer = MKPolylineRenderer(polyline: overlay)
+            renderer.lineWidth = Style.coreWidth + Style.casingExtraWidth
+            renderer.strokeColor = RouteArrowStyle.casingColor(for: color)
+        } else {
+            // Only the half ahead points the way: behind the bus, there is no way left to go.
+            renderer = RouteLineRenderer(polyline: overlay, routeColor: color, markers: arrowMarkers)
+            renderer.lineWidth = Style.coreWidth
+            renderer.strokeColor = color
+        }
         renderer.lineCap = .round
         renderer.lineJoin = .round
         renderer.alpha = overlay.isSpent ? Style.spentAlpha : 1
@@ -287,13 +299,6 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         if annotation is TripStopAnnotation {
             return mapView.dequeueReusableAnnotationView(
                 withIdentifier: TripStopAnnotationView.reuseIdentifier,
-                for: annotation
-            )
-        }
-
-        if annotation is PolylineArrowAnnotation {
-            return mapView.dequeueReusableAnnotationView(
-                withIdentifier: PolylineArrowAnnotationView.reuseIdentifier,
                 for: annotation
             )
         }
@@ -319,13 +324,17 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// Selection-driven, not viewport-driven — see the type doc.
     func viewportDidChange(_ mapRect: MKMapRect?) { }
 
+    func stopMarkersDidChange() {
+        guard focus != nil else { return }
+        refreshArrowMarkers()
+    }
+
     /// The map can be cleared out from under a layer (a region change, a search
     /// reset). Drop the bookkeeping rather than leave it pointing at annotations
     /// the map no longer has, which would make the next `removeAllContent` a
     /// no-op and leak the following trip's markers on top.
     func mapAnnotationsWereCleared() {
         stopAnnotations.removeAll()
-        directionArrowAnnotations.removeAll()
         vehicleAnnotation = nil
     }
 

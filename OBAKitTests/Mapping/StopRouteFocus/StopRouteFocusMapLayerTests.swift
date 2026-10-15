@@ -490,32 +490,34 @@ final class StopRouteFocusMapLayerTests {
         }
     }
 
-    @Test func `Update adds direction arrows once per route shape`() async {
+    /// The chevrons are drawn by the line's own renderer, so they dim with it and
+    /// leave with it; there is nothing separate to keep in step.
+    @Test func `Every route's core line draws direction arrows and its casing does not`() {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
-        layer.begin(focus: StopMapFocus())
+        let coords = [CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+                      CLLocationCoordinate2D(latitude: 47.7, longitude: -122.4)]
+        let casing = RouteShapeOverlay.make(coordinates: coords, routeID: "H", isCasing: true)
+        let core = RouteShapeOverlay.make(coordinates: coords, routeID: "H", isCasing: false)
 
-        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: []))
-        await layer.awaitPendingShapeWork()
+        let coreRenderer = layer.renderer(for: core, in: mapView) as? RouteLineRenderer
 
-        let arrows = mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
-        #expect(!arrows.isEmpty)
-        #expect(arrows.allSatisfy { $0.routeID == "H" })
+        #expect(coreRenderer != nil)
+        #expect(coreRenderer!.lineWidth >= RouteArrowStyle.minimumLineWidth)
+        #expect(!(layer.renderer(for: casing, in: mapView) is RouteLineRenderer))
     }
 
-    @Test func `Direction arrows dim with their unfocused route`() async {
+    @Test func `The casing is the route color darkened, not white`() {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
-        let focus = StopMapFocus()
-        layer.begin(focus: focus)
-        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: ["H", "62"]))
-        await layer.awaitPendingShapeWork()
+        let coords = [CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+                      CLLocationCoordinate2D(latitude: 47.7, longitude: -122.4)]
+        let casing = RouteShapeOverlay.make(coordinates: coords, routeID: "H", isCasing: true)
 
-        focus.toggleFocus(routeID: "H")
+        let stroke = (layer.renderer(for: casing, in: mapView) as? MKPolylineRenderer)?.strokeColor
 
-        let arrows = mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
-        #expect(arrows.filter { $0.routeID == "H" }.allSatisfy { $0.alpha == 1 })
-        #expect(arrows.filter { $0.routeID == "62" }.allSatisfy { $0.alpha < 1 })
+        #expect(stroke != nil)
+        #expect(stroke != .white)
     }
 
     @Test func `end removes everything the layer added`() async {

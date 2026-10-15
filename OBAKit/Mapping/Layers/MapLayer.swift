@@ -148,11 +148,16 @@ public enum MapLayerRefreshPolicy: Equatable {
     /// Called when something removed every overlay from the map wholesale. The
     /// layer re-adds its own. Mirrors `mapAnnotationsWereCleared()`.
     func mapOverlaysWereCleared()
+
+    /// Called after stop markers were added to the map or taken off it. A layer
+    /// that draws around them reads their positions again.
+    func stopMarkersDidChange()
 }
 
 public extension MapLayer {
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? { nil }
     func mapOverlaysWereCleared() { }
+    func stopMarkersDidChange() { }
     func recedesBehindStopSheet(_ annotation: MKAnnotation) -> Bool { false }
 }
 
