@@ -56,6 +56,11 @@ class TripSegmentView: UIView {
         didSet { setNeedsDisplay() }
     }
 
+    /// Whether this stop is the destination of a shared ride.
+    var isRideDestination: Bool = false {
+        didSet { setNeedsDisplay() }
+    }
+
     /// Drawn in the passed stops' gray. The vehicle's own stop never is, even
     /// outside a ride.
     private var isFaded: Bool {
@@ -66,8 +71,8 @@ class TripSegmentView: UIView {
         }
     }
 
+    private(set) var isBoardingStop: Bool = false
     private var isUserDestination: Bool = false
-    private var isBoardingStop: Bool = false
     private var isCurrentVehicleLocation: Bool = false
 
     public func setDestinationStatus(user: Bool, vehicle: Bool, boarding: Bool) {
@@ -85,8 +90,26 @@ class TripSegmentView: UIView {
         CGSize(width: circleRadius + (2.0 * lineWidth), height: UIView.noIntrinsicMetric)
     }
 
-    private var pastLineColor: UIColor {
+    var pastLineColor: UIColor {
         ThemeColors.shared.secondaryLabel.withAlphaComponent(0.4)
+    }
+
+    /// Gray once the vehicle has reached this row, or when the segment leads
+    /// into the boarding stop from outside the shared ride.
+    var topLineColor: UIColor {
+        switch temporalState {
+        case .past, .current:
+            return pastLineColor
+        case .future:
+            return (isFaded || isBoardingStop) ? pastLineColor : lineColor
+        }
+    }
+
+    /// Gray whenever the segment below lies outside the shared ride, leads away
+    /// from the destination, or has already been traversed by the vehicle.
+    /// This includes the vehicle's own row when it is outside the ride.
+    var bottomLineColor: UIColor {
+        (isOutsideRide || isFaded || isRideDestination) ? pastLineColor : lineColor
     }
 
     override public func draw(_ rect: CGRect) {
@@ -121,19 +144,7 @@ class TripSegmentView: UIView {
     }
 
     private func drawRegularTripSegment(_ rect: CGRect, context: CGContext?) {
-        // Top line color depends on temporal state:
-        // past/current → gray (the vehicle has reached or passed here). A
-        // current row is never faded, so only its top line is gray.
-        // future → brand color, unless faded
-        let topColor: UIColor
-        switch temporalState {
-        case .past, .current:
-            topColor = pastLineColor
-        case .future:
-            topColor = isFaded ? pastLineColor : lineColor
-        }
-
-        topColor.setFill()
+        topLineColor.setFill()
         let topLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.minY), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         topLine.fill()
 
@@ -159,9 +170,7 @@ class TripSegmentView: UIView {
 
         bezierPath.stroke()
 
-        // Bottom line: faded → gray, otherwise brand color
-        let bottomColor: UIColor = isFaded ? pastLineColor : lineColor
-        bottomColor.setFill()
+        bottomLineColor.setFill()
         let bottomLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.midY + halfRadius), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         bottomLine.fill()
     }

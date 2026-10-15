@@ -73,6 +73,9 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
     /// marker. See `TripStopListModel.RiderStops.boardingMarkerIndex`.
     let isBoardingStop: Bool
 
+    /// Is this the destination stop of a shared ride?
+    let isRideDestination: Bool
+
     /// Before the rider boards or after they step off, on a trip shared with a
     /// destination. Drawn like a passed stop, except the vehicle's own row: the
     /// list always shows where the vehicle is. See
@@ -112,6 +115,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
 
         isUserDestination = userStopIndex.map { stopIndex == $0 } ?? false
         isBoardingStop = boardingMarkerIndex.map { stopIndex == $0 } ?? false
+        isRideDestination = rideIndices.map { stopIndex == $0.upperBound } ?? false
         isOutsideRide = rideIndices.map { !$0.contains(stopIndex) } ?? false
 
         // Derive isCurrentVehicleLocation from the same closestStopIndex used for
@@ -133,6 +137,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
         hasher.combine(isCurrentVehicleLocation)
         hasher.combine(isUserDestination)
         hasher.combine(isBoardingStop)
+        hasher.combine(isRideDestination)
         hasher.combine(isOutsideRide)
         hasher.combine(temporalState)
         hasher.combine(title)
@@ -145,6 +150,7 @@ nonisolated struct TripStopViewModel: OBAListViewItem {
             lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
             lhs.isUserDestination == rhs.isUserDestination &&
             lhs.isBoardingStop == rhs.isBoardingStop &&
+            lhs.isRideDestination == rhs.isRideDestination &&
             lhs.isOutsideRide == rhs.isOutsideRide &&
             lhs.temporalState == rhs.temporalState &&
             lhs.title == rhs.title &&
@@ -186,6 +192,7 @@ final class TripStopCell: OBAListViewCell {
         tripSegmentView.adjacentTripOrder = nil
         tripSegmentView.temporalState = .future
         tripSegmentView.isOutsideRide = false
+        tripSegmentView.isRideDestination = false
         accessibilityLabel = nil
         accessibilityValue = nil
     }
@@ -263,6 +270,7 @@ final class TripStopCell: OBAListViewCell {
         tripSegmentView.routeType = viewModel.routeType
         tripSegmentView.temporalState = viewModel.temporalState
         tripSegmentView.isOutsideRide = viewModel.isOutsideRide
+        tripSegmentView.isRideDestination = viewModel.isRideDestination
         tripSegmentView.setDestinationStatus(user: viewModel.isUserDestination, vehicle: viewModel.isCurrentVehicleLocation, boarding: viewModel.isBoardingStop)
 
         applyTemporalStateStyling(viewModel)
@@ -279,6 +287,10 @@ final class TripStopCell: OBAListViewCell {
             break
         case .future:
             break
+        }
+
+        if viewModel.isOutsideRide {
+            accessibilityValueFlags.append(OBALoc("trip_stop.outside_ride.accessibility_label", value: "Not part of the shared ride", comment: "VoiceOver text for a stop outside the part of a trip that someone shared with you by link (before they board or after they get off)"))
         }
 
         if viewModel.isUserDestination {

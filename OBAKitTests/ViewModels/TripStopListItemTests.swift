@@ -390,6 +390,8 @@ final class TripStopOutsideRideTests {
         #expect(cell.titleLabel.textColor == ThemeColors.shared.label)
         #expect(cell.titleLabel.font == UIFont.preferredFont(forTextStyle: .headline))
         #expect(cell.titleLabel.alpha == 1.0)
+        #expect(cell.tripSegmentView.topLineColor == cell.tripSegmentView.pastLineColor)
+        #expect(cell.tripSegmentView.bottomLineColor == cell.tripSegmentView.pastLineColor)
     }
 
     @Test func `A reused cell forgets the fade`() throws {
@@ -400,9 +402,60 @@ final class TripStopOutsideRideTests {
         cell.prepareForReuse()
 
         #expect(!cell.tripSegmentView.isOutsideRide)
+        #expect(!cell.tripSegmentView.isRideDestination)
+        #expect(cell.accessibilityValue == nil)
         #expect(cell.titleLabel.textColor == ThemeColors.shared.label)
         #expect(cell.titleLabel.alpha == 1.0)
         #expect(cell.timeLabel.alpha == 1.0)
+    }
+
+    @Test func `A row outside the ride announces it is not part of the shared ride`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: true)
+
+        let outsideCell = makeCell(showing: row(stopTimes, at: destinationRow + 1, riderStops: riderStops))
+        #expect(outsideCell.accessibilityValue?.contains("Not part of the shared ride") == true)
+
+        let insideCell = makeCell(showing: row(stopTimes, at: destinationRow - 1, riderStops: riderStops))
+        #expect(insideCell.accessibilityValue?.contains("Not part of the shared ride") != true)
+
+        let boardingCell = makeCell(showing: row(stopTimes, at: boardingRow, riderStops: riderStops))
+        #expect(boardingCell.accessibilityValue?.contains("Not part of the shared ride") != true)
+        #expect(boardingCell.accessibilityValue?.contains("Boarding stop") == true)
+
+        let destinationCell = makeCell(showing: row(stopTimes, at: destinationRow, riderStops: riderStops))
+        #expect(destinationCell.accessibilityValue?.contains("Not part of the shared ride") != true)
+        #expect(destinationCell.accessibilityValue?.contains("Your destination") == true)
+    }
+
+    @Test func `Connector lines at the ride's ends match the ride boundary`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: true)
+
+        let boardingCell = makeCell(showing: row(stopTimes, at: boardingRow, riderStops: riderStops))
+        #expect(boardingCell.tripSegmentView.topLineColor == boardingCell.tripSegmentView.pastLineColor)
+        #expect(boardingCell.tripSegmentView.bottomLineColor == boardingCell.tripSegmentView.lineColor)
+
+        let destinationCell = makeCell(showing: row(stopTimes, at: destinationRow, riderStops: riderStops))
+        #expect(destinationCell.tripSegmentView.topLineColor == destinationCell.tripSegmentView.lineColor)
+        #expect(destinationCell.tripSegmentView.bottomLineColor == destinationCell.tripSegmentView.pastLineColor)
+
+        let outsideBefore = makeCell(showing: row(stopTimes, at: boardingRow - 1, riderStops: riderStops))
+        #expect(outsideBefore.tripSegmentView.topLineColor == outsideBefore.tripSegmentView.pastLineColor)
+        #expect(outsideBefore.tripSegmentView.bottomLineColor == outsideBefore.tripSegmentView.pastLineColor)
+
+        let outsideAfter = makeCell(showing: row(stopTimes, at: destinationRow + 1, riderStops: riderStops))
+        #expect(outsideAfter.tripSegmentView.topLineColor == outsideAfter.tripSegmentView.pastLineColor)
+        #expect(outsideAfter.tripSegmentView.bottomLineColor == outsideAfter.tripSegmentView.pastLineColor)
+    }
+
+    @Test func `A trip that was never shared uses brand line colors across rider stop`() throws {
+        let stopTimes = try stopTimes()
+        let riderStops = try makeRiderStops(stopTimes, shared: false)
+
+        let cell = makeCell(showing: row(stopTimes, at: boardingRow, riderStops: riderStops))
+        #expect(cell.tripSegmentView.topLineColor == cell.tripSegmentView.lineColor)
+        #expect(cell.tripSegmentView.bottomLineColor == cell.tripSegmentView.lineColor)
     }
 }
 
