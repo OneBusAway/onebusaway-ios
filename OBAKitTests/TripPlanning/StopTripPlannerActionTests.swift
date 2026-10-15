@@ -98,11 +98,6 @@ final class StopTripPlannerActionTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         stubStopsForLocation(dataLoader: dataLoader)
         Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
-        // The viewport fixture's service unconditionally matches the probe
-        // point (the client applies no client-side distance filtering), so
-        // the probe controller follows up with a full-geometry fetch; fail
-        // it like OnDemandDockHostTests does rather than leave it unstubbed.
-        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path.contains("/api/ondemand/service/") ?? false }
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let region = try #require(await waitForRegion(application))
         #expect(region.supportsOTP)
