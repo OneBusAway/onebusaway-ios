@@ -114,7 +114,7 @@ jobs:
         # so try both. Purely diagnostic — never fail the deploy over it.
         echo "=== Distribution certificate details ==="
         for flag in "-legacy" ""; do
-          if openssl pkcs12 -in "$CERT_PATH" -passin pass:"$CERTIFICATE_PASSWORD" \
+          if openssl pkcs12 -in "$CERT_PATH" -passin env:CERTIFICATE_PASSWORD \
                -clcerts -nokeys $flag 2>/dev/null \
                | openssl x509 -noout -serial -enddate -subject 2>/dev/null; then
             break
