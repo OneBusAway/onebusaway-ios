@@ -17,7 +17,7 @@ import UIKit
 // MARK: - Mocks
 
 @MainActor
-private final class MockFarePaymentsDelegate: FarePaymentsDelegate {
+private final class MockFarePaymentsDelegate: NSObject, FarePaymentsDelegate {
     var presentedViewController: UIViewController?
     var presentedAnimated: Bool?
     var presentedError: Error?
@@ -35,6 +35,7 @@ private final class MockFarePaymentsDelegate: FarePaymentsDelegate {
 
 @MainActor
 private final class MockApplicationDelegate: NSObject, ApplicationDelegate {
+    var uiApplication: UIApplication?
     var canOpenURLResult: Bool = false
     var openedURLs: [URL] = []
     var isIdleTimerDisabled: Bool = false
