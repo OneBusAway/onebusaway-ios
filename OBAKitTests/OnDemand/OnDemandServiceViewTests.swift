@@ -508,7 +508,8 @@ final class OnDemandServiceViewTests: OBATestCase {
     private func withSceneWindow(_ root: UIViewController, _ body: () async throws -> Void) async throws {
         let window = UIWindow(windowScene: try testWindowScene())
         window.rootViewController = root
-        window.isHidden = false
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
         defer {
             root.presentedViewController?.dismiss(animated: false)
             window.rootViewController = nil
@@ -551,11 +552,18 @@ final class OnDemandServiceViewTests: OBATestCase {
         let detail = try makeDetail(countingDismissalsIn: dismissals)
         let host = UIViewController()
         try await withSceneWindow(host) {
-            host.present(detail, animated: false)
-            await poll(until: { detail.viewIfLoaded?.window != nil && !detail.isBeingPresented }, "the detail is presented")
+            await withCheckedContinuation { continuation in
+                host.present(detail, animated: false) {
+                    continuation.resume()
+                }
+            }
             #expect(dismissals.value == 0)
 
-            detail.dismiss(animated: false)
+            await withCheckedContinuation { continuation in
+                detail.dismiss(animated: false) {
+                    continuation.resume()
+                }
+            }
             await poll(until: { dismissals.value > 0 }, "dismissing reports the dismissal")
             #expect(dismissals.value == 1)
         }
