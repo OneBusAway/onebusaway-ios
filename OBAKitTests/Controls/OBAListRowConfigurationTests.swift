@@ -327,4 +327,31 @@ struct OBAListRowConfigurationTests {
         #expect(contentConfig.secondaryText == nil)
         #expect(contentConfig.secondaryLabelText == nil)
     }
+
+    // MARK: - OBAListSectionConfiguration
+
+    @Test func testListSectionConfiguration() {
+        let defaultSection = OBAListSectionConfiguration()
+        #expect(defaultSection.appearance == .plain)
+        #expect(defaultSection.backgroundColor == nil)
+
+        let insetGrouped = OBAListSectionConfiguration.appearance(.insetGrouped)
+        #expect(insetGrouped.appearance == .insetGrouped)
+        #expect(insetGrouped.backgroundColor == nil)
+
+        var colored = OBAListSectionConfiguration(appearance: .insetGrouped)
+        colored.backgroundColor = .systemBackground
+
+        let plainLayout = defaultSection.listConfiguration()
+        #expect(plainLayout.appearance == .plain)
+        #expect(plainLayout.backgroundColor == nil)
+
+        let insetLayout = colored.listConfiguration()
+        #expect(insetLayout.appearance == .insetGrouped)
+        #expect(insetLayout.backgroundColor == .systemBackground)
+
+        #expect(defaultSection == OBAListSectionConfiguration(appearance: .plain))
+        #expect(defaultSection != insetGrouped)
+        #expect(insetGrouped != colored)
+    }
 }
