@@ -452,7 +452,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private func apply(style overlay: RouteShapeOverlay, to renderer: MKPolylineRenderer, focusedRouteID: RouteID? = nil) {
         let focusedRouteID = focusedRouteID ?? focus?.focusedRouteID
         let isFocused = overlay.routeID == focusedRouteID
-        let color = model.routes.first { $0.routeID == overlay.routeID }?.color ?? tintColor
+        let color = routeColor(for: overlay.routeID)
 
         let coreWidth = isFocused ? Style.focusedCoreWidth : Style.coreWidth
         renderer.lineWidth = overlay.isCasing ? coreWidth + RouteArrowStyle.casingExtraWidth : coreWidth
@@ -461,6 +461,10 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         renderer.lineCap = .round
         renderer.lineJoin = .round
         renderer.alpha = (focusedRouteID == nil || isFocused) ? Style.normalAlpha : Style.dimmedAlpha
+    }
+
+    private func routeColor(for routeID: RouteID) -> UIColor {
+        model.routes.first { $0.routeID == routeID }?.color ?? tintColor
     }
 
     private func removeAllContent() {
@@ -478,7 +482,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             ? MKPolylineRenderer(polyline: overlay)
             : RouteLineRenderer(
                 polyline: overlay,
-                routeColor: model.routes.first { $0.routeID == overlay.routeID }?.color ?? tintColor,
+                routeColor: routeColor(for: overlay.routeID),
                 markers: arrowMarkers
             )
         apply(style: overlay, to: renderer)

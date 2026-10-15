@@ -802,6 +802,9 @@ public class MapRegionManager: NSObject,
         reloadStopAnnotations()
         notifyMapLayersAnnotationsCleared()
         notifyMapLayersOverlaysCleared()
+        // The wholesale removal took stop markers with it; layers that keep clear
+        // of them must stop avoiding markers that are gone.
+        notifyMapLayersStopMarkersChanged()
     }
 
     /// `removeAllAnnotations` strips layer annotations behind the layers' backs;

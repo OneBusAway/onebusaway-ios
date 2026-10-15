@@ -33,7 +33,8 @@ final class TripFocusMapDisplayModel: ObservableObject {
         let spent: ShapeLine?
         /// Ahead of the vehicle. `nil` when less than two points of the shape are.
         let ahead: ShapeLine?
-        /// Along the part still ahead, as `TripFocusMapLayer` places them.
+        /// Along the part still ahead, spaced in meters. `TripFocusMapLayer` places
+        /// its own in screen points with `RouteArrowLayout`, which this map can't.
         let arrows: [PolylineArrowPlacement]
         let stops: [TripStop]
         let vehicle: TripVehicle?

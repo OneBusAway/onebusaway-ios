@@ -492,7 +492,7 @@ final class StopRouteFocusMapLayerTests {
 
     /// The chevrons are drawn by the line's own renderer, so they dim with it and
     /// leave with it; there is nothing separate to keep in step.
-    @Test func `Every route's core line draws direction arrows and its casing does not`() {
+    @Test func `Every route's core line draws direction arrows and its casing does not`() throws {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
         let coords = [CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
@@ -500,10 +500,9 @@ final class StopRouteFocusMapLayerTests {
         let casing = RouteShapeOverlay.make(coordinates: coords, routeID: "H", isCasing: true)
         let core = RouteShapeOverlay.make(coordinates: coords, routeID: "H", isCasing: false)
 
-        let coreRenderer = layer.renderer(for: core, in: mapView) as? RouteLineRenderer
+        let coreRenderer = try #require(layer.renderer(for: core, in: mapView) as? RouteLineRenderer)
 
-        #expect(coreRenderer != nil)
-        #expect(coreRenderer!.lineWidth >= RouteArrowStyle.minimumLineWidth)
+        #expect(coreRenderer.lineWidth >= RouteArrowStyle.minimumLineWidth)
         #expect(!(layer.renderer(for: casing, in: mapView) is RouteLineRenderer))
     }
 
