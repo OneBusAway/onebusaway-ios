@@ -174,6 +174,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// screen went away.
     let bookmarkWidgetRefresher: BookmarkWidgetRefresher
 
+    /// Synchronizes bookmark changes to the Apple Watch companion app.
+    public private(set) var bookmarkWatchSyncSender: BookmarkWatchSyncSender?
+
     /// Mirrors the resolved current region into the app-group suite so the
     /// widget extension — which cannot see this process's custom regions — can
     /// read it. Retained here because `RegionsService` holds delegates weakly.
@@ -193,6 +196,11 @@ public class Application: CoreApplication, PushServiceDelegate {
         bookmarkWidgetRefresher = BookmarkWidgetRefresher()
 
         super.init(config: config)
+
+        bookmarkWatchSyncSender = BookmarkWatchSyncSender(
+            userDataStore: userDataStore,
+            regionsService: regionsService
+        )
 
         resolvedRegionPersister = ResolvedRegionPersister(
             regionsService: regionsService,

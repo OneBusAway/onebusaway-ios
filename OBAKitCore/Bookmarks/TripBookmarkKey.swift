@@ -27,6 +27,17 @@ public struct TripBookmarkKey: Hashable, Equatable, Sendable {
         self.init(stopID: bookmark.stopID, routeShortName: routeShortName, routeID: routeID, tripHeadsign: tripHeadsign)
     }
 
+    public init?(watchBookmark: WatchBookmark) {
+        guard
+            let routeShortName = watchBookmark.routeShortName,
+            let routeID = watchBookmark.routeID,
+            let tripHeadsign = watchBookmark.tripHeadsign
+        else {
+            return nil
+        }
+        self.init(stopID: watchBookmark.stopID, routeShortName: routeShortName, routeID: routeID, tripHeadsign: tripHeadsign)
+    }
+
     public init(arrivalDeparture: ArrivalDeparture) {
         self.init(stopID: arrivalDeparture.stopID, routeShortName: arrivalDeparture.routeShortName, routeID: arrivalDeparture.routeID, tripHeadsign: arrivalDeparture.tripHeadsign ?? "")
     }

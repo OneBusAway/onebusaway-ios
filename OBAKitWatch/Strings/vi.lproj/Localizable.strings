@@ -48,3 +48,9 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Đổi chiều";
+
+"bookmarks.title" = "Dấu trang";
+"bookmarks.tab" = "Dấu trang";
+"nearby.tab" = "Lân cận";
+"bookmarks.empty" = "Chưa có dấu trang nào. Hãy thêm dấu trang trên iPhone để xem tại đây.";
+"bookmarks.loading" = "Đang tải dấu trang…";

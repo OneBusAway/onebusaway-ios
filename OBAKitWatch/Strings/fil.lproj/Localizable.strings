@@ -48,3 +48,9 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Palitan ang direksyon";
+
+"bookmarks.title" = "Mga Bookmark";
+"bookmarks.tab" = "Mga Bookmark";
+"nearby.tab" = "Malapit";
+"bookmarks.empty" = "Wala pang mga bookmark. Magdagdag ng mga bookmark sa iyong iPhone para makita ang mga ito rito.";
+"bookmarks.loading" = "Naglo-load ng mga bookmark…";

@@ -48,3 +48,9 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Zmień kierunek";
+
+"bookmarks.title" = "Zakładki";
+"bookmarks.tab" = "Zakładki";
+"nearby.tab" = "W pobliżu";
+"bookmarks.empty" = "Brak zakładek. Dodaj zakładki na iPhonie, aby zobaczyć je tutaj.";
+"bookmarks.loading" = "Wczytywanie zakładek…";

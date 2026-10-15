@@ -26,6 +26,7 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
     public let locationService: LocationService
     public let regionsService: RegionsService
     public let formatters: Formatters
+    public let bookmarkStore: WatchBookmarkStore
 
     /// Follows `regionsService.currentRegion`; nil until a region is known.
     public var apiService: RESTAPIService? { apiServiceProvider.apiService }
@@ -33,9 +34,16 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
     /// Mirrors `locationService.authorizationStatus` so views can react to a grant.
     public private(set) var authorizationStatus: CLAuthorizationStatus
 
+    /// Cached bookmarks received from the companion iPhone app.
+    public var bookmarks: [WatchBookmark] { bookmarkStore.bookmarks }
+
+    /// Cached bookmark groups received from the companion iPhone app.
+    public var bookmarkGroups: [WatchBookmarkGroup] { bookmarkStore.groups }
+
     // `RegionsService` holds its delegates weakly; the host retains both.
     @ObservationIgnored private let apiServiceProvider: StandaloneAPIServiceProvider
     @ObservationIgnored private let resolvedRegionPersister: ResolvedRegionPersister
+    @ObservationIgnored private var syncObserverTask: Task<Void, Never>?
 
     public init(
         userDefaults: UserDefaults,
@@ -81,11 +89,33 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
             store: ResolvedRegionStore(userDefaults: userDefaults)
         )
 
+        let bookmarkStore = WatchBookmarkStore(userDefaults: userDefaults)
+        self.bookmarkStore = bookmarkStore
+
         self.authorizationStatus = locationService.authorizationStatus
 
         super.init()
 
         locationService.addDelegate(self)
+
+        WatchSessionBridge.shared.activate()
+
+        if let latest = WatchSessionBridge.shared.latestReceivedPayload {
+            bookmarkStore.update(payload: latest)
+            if regionsService.currentRegion == nil, let region = latest.region {
+                regionsService.currentRegion = region
+            }
+        }
+
+        self.syncObserverTask = Task { @MainActor [weak self] in
+            for await payload in WatchSessionBridge.shared.payloads {
+                guard let self else { break }
+                self.bookmarkStore.update(payload: payload)
+                if self.regionsService.currentRegion == nil, let syncedRegion = payload.region {
+                    self.regionsService.currentRegion = syncedRegion
+                }
+            }
+        }
     }
 
     /// Builds the host from `Bundle.main`'s `OBAKitConfig`, the way an app's

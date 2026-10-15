@@ -48,3 +48,9 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Switch direction";
+
+"bookmarks.title" = "Bookmarks";
+"bookmarks.tab" = "Bookmarks";
+"nearby.tab" = "Nearby";
+"bookmarks.empty" = "No bookmarks yet. Add bookmarks on your iPhone to see them here.";
+"bookmarks.loading" = "Loading bookmarks…";

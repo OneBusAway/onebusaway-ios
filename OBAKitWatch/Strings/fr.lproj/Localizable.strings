@@ -48,3 +48,9 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Changer de sens";
+
+"bookmarks.title" = "Favoris";
+"bookmarks.tab" = "Favoris";
+"nearby.tab" = "À proximité";
+"bookmarks.empty" = "Aucun favori pour le moment. Ajoutez des favoris sur votre iPhone pour les voir ici.";
+"bookmarks.loading" = "Chargement des favoris…";

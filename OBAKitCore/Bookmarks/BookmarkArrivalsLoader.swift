@@ -23,6 +23,10 @@ public struct BookmarkArrivalsRequest: Hashable, Sendable {
         self.init(stopID: bookmark.stopID, tripKey: TripBookmarkKey(bookmark: bookmark))
     }
 
+    public init(watchBookmark: WatchBookmark) {
+        self.init(stopID: watchBookmark.stopID, tripKey: TripBookmarkKey(watchBookmark: watchBookmark))
+    }
+
     /// The part of a stop's arrivals this request is about: one trip's
     /// departures for a trip request, every upcoming departure (soonest first)
     /// for a stop request.
@@ -98,6 +102,32 @@ public struct BookmarkArrivalsLoader: Sendable {
         using apiService: RESTAPIService
     ) async -> [UUID: [ArrivalDeparture]] {
         let requests = bookmarks.map { ($0.id, BookmarkArrivalsRequest(bookmark: $0)) }
+
+        var arrivalsByStop = [StopID: [ArrivalDeparture]]()
+        for await (stopID, result) in arrivals(for: requests.map(\.1), using: apiService) {
+            switch result {
+            case .success(let arrivals):
+                arrivalsByStop[stopID] = arrivals
+            case .failure(let error):
+                Logger.error("BookmarkArrivalsLoader: arrivals failed for stop \(stopID): \(error.localizedDescription)")
+            }
+        }
+
+        var result = [UUID: [ArrivalDeparture]]()
+        for (bookmarkID, request) in requests {
+            if let arrivals = arrivalsByStop[request.stopID] {
+                result[bookmarkID] = request.matching(arrivals)
+            }
+        }
+        return result
+    }
+
+    /// Collects the stream into per-bookmark departures for watch bookmarks.
+    public func departuresByWatchBookmark(
+        for bookmarks: [WatchBookmark],
+        using apiService: RESTAPIService
+    ) async -> [UUID: [ArrivalDeparture]] {
+        let requests = bookmarks.map { ($0.id, BookmarkArrivalsRequest(watchBookmark: $0)) }
 
         var arrivalsByStop = [StopID: [ArrivalDeparture]]()
         for await (stopID, result) in arrivals(for: requests.map(\.1), using: apiService) {

@@ -163,6 +163,42 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
         case wheelchairBoarding
     }
 
+    public init(
+        id: StopID,
+        name: String,
+        code: String = "",
+        direction: String? = nil,
+        location: CLLocation = CLLocation(latitude: 0, longitude: 0),
+        locationType: StopLocationType = .stop,
+        routeIDs: [String] = [],
+        onDemandServiceIDs: [String] = [],
+        regionIdentifier: Int? = nil,
+        wheelchairBoarding: WheelchairBoarding = .unknown
+    ) {
+        self.id = id
+        self.name = name
+        self.code = code
+        self._direction = direction
+        self.location = location
+        self.locationType = locationType
+        self.routeIDs = routeIDs
+        self.onDemandServiceIDs = onDemandServiceIDs
+        self.routes = []
+        self.regionIdentifier = regionIdentifier
+        self.wheelchairBoarding = wheelchairBoarding
+        super.init()
+    }
+
+    public convenience init(watchBookmark: WatchBookmark) {
+        self.init(
+            id: watchBookmark.stopID,
+            name: watchBookmark.stopName,
+            direction: watchBookmark.stopDirection,
+            location: CLLocation(latitude: watchBookmark.latitude, longitude: watchBookmark.longitude),
+            regionIdentifier: Int(watchBookmark.regionIdentifier)
+        )
+    }
+
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 

@@ -48,3 +48,9 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "切换方向";
+
+"bookmarks.title" = "书签";
+"bookmarks.tab" = "书签";
+"nearby.tab" = "附近";
+"bookmarks.empty" = "暂无书签。在 iPhone 上添加书签即可在此查看。";
+"bookmarks.loading" = "正在加载书签……";
