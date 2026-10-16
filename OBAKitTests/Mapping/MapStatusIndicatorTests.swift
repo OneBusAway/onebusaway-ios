@@ -17,7 +17,7 @@ import UIKit
 struct MapStatusIndicatorTests {
 
     private func englishBundle() -> Bundle? {
-        guard let path = Bundle(for: DonationCell.self).path(forResource: "en", ofType: "lproj") else { return nil }
+        guard let path = Bundle.obaKit.path(forResource: "en", ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
@@ -55,7 +55,7 @@ struct MapStatusIndicatorTests {
 
     @Test func `Indicator localized text matches English string catalog`() throws {
         let bundle = try #require(englishBundle())
-        let activeBundle = Bundle(for: DonationCell.self)
+        let activeBundle = Bundle.obaKit
 
         let indicators: [(indicator: MapStatusIndicator, key: String, expectedEnglish: String)] = [
             (.locationUnavailable, "map_status_view.location_services_unavailable", "Location services unavailable"),

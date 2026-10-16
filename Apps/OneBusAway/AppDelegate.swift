@@ -54,6 +54,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, ApplicationDelegate
         analyticsClient = AnalyticsOrchestrator(userDefaults: userDefaults)
 
         let appConfig = AppConfig(appBundle: .main, userDefaults: userDefaults, analytics: analyticsClient)
+        appConfig.appShortcutsProvider = OBAAppShortcuts.self
 
         pushService = OBACloudPushService()
         appConfig.pushServiceProvider = pushService

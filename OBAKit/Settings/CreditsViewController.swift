@@ -22,7 +22,7 @@ class CreditsViewController: UIViewController, AppContext, OBAListViewDataSource
     init(application: Application) {
         self.application = application
 
-        let creditsPath = Bundle(for: CreditsViewController.self).path(forResource: "OBAKit_Credits", ofType: "plist")!
+        let creditsPath = Bundle.module.path(forResource: "OBAKit_Credits", ofType: "plist")!
         let dict = (try? Dictionary<String, Any>(plistPath: creditsPath)) ?? [:] // swiftlint:disable:this syntactic_sugar
         credits = dict.merging(application.credits) { (_, new) in new }
 

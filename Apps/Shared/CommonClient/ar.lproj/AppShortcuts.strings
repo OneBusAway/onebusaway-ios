@@ -1,6 +1,6 @@
 /*
  * App Shortcuts phrases (Siri). Keys are the English phrases from OBAAppShortcuts in
- * TrackBookmarkIntent.swift, with ${applicationName} and ${bookmark} tokens. Every
+ * OBAAppShortcuts.swift, with ${applicationName} and ${bookmark} tokens. Every
  * value must keep ${applicationName}, or Siri drops the phrase. Hand-maintained.
  */
 

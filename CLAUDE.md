@@ -171,7 +171,9 @@ scripts/extract_strings               # Extract strings for localization
   - Extension safety is not enforced by the package itself (it has no `APPLICATION_EXTENSION_API_ONLY`); CI builds the `OBAKitCore` scheme with `APPLICATION_EXTENSION_API_ONLY=YES` to catch it.
 - **OBAKitWatch**: watchOS UI framework (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it.
 - **WatchApp**: watchOS application shell. White-label; per-app identity comes from Apps/<App>/watch.yml.
-- **OBAKit**: UI framework with view controllers and user interface components
+- **OBAKit**: UI framework with view controllers and user interface components. Also a **Swift package target** in the root `Package.swift` (iOS only), with main-actor default isolation.
+  - Resources load from `Bundle.module` (`Bundle.obaKit` from `@testable` tests). String tables, the asset catalog and the privacy manifest are picked up automatically; any other file it loads (`OBAKit_Credits.plist`, `document_web_view_content.html`) must be listed in `resources:` in `Package.swift`, or it is silently left out of the bundle.
+  - **App Intents**: Xcode merges OBAKit's intent metadata into the app's own `Metadata.appintents`. Do **not** add an `AppIntentsPackage` that includes OBAKit: the indexer looks for framework metadata that a package doesn't have, and then ignores every intent in the app. The `AppShortcutsProvider` (`Apps/Shared/CommonClient/OBAAppShortcuts.swift`) and the `AppIntents`/`AppShortcuts` string tables live in the app for the same reason; OBAKit gets the provider through `AppConfig.appShortcutsProvider`. `scripts/check_app_intents`, run in CI, fails on any of these.
 - **App**: Main application target that combines the frameworks
 
 ### Key Architectural Patterns
@@ -239,10 +241,10 @@ scripts/extract_strings               # Extract strings for localization
 ## Configuration & Deployment
 
 - **Target iOS Version**: 18.0+
-- **Swift Version**: every target builds in the **Swift 6 language mode** with main-actor default isolation (`Apps/Shared/app_shared.yml`); OBAKitCore is the one target that pins `SWIFT_DEFAULT_ACTOR_ISOLATION` back to `nonisolated`. The five concurrency diagnostic groups are escalated to errors, so a data-race warning fails the build. Modern syntax (shorthand optional binding, `URL.host()`) is fine — the iOS 18 deployment target exceeds their requirements.
+- **Swift Version**: every target builds in the **Swift 6 language mode** with main-actor default isolation (`Apps/Shared/app_shared.yml`); OBAKitCore and OBAKit are package targets, and `Package.swift` reproduces these settings for them, except that OBAKitCore's default isolation stays `nonisolated`. The five concurrency diagnostic groups are escalated to errors, so a data-race warning fails the build. Modern syntax (shorthand optional binding, `URL.host()`) is fine — the iOS 18 deployment target exceeds their requirements.
 - **Package Manager**: Swift Package Manager
 - **Project Generation**: XcodeGen from YAML configurations
-- **Localization**: in-repo .strings files (OBAKit/Strings, OBAKitCore/Strings)
+- **Localization**: in-repo .strings files (OBAKit/Strings, OBAKitCore/Strings; App Intents tables in Apps/Shared/CommonClient)
 - **Linting**: SwiftLint with relaxed rules for flexibility
 
 ## White-Label Features

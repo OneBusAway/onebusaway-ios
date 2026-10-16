@@ -33,7 +33,7 @@ final class OnDemandStringsTests {
     ] + CompassDirection.allCases.flatMap { ["on_demand.bar.inside_near_edge.\($0.rawValue)", "on_demand.bar.outside.\($0.rawValue)"] }
 
     private var english: [String: String] {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.obaKit
         let url = bundle.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: "en")!
         return NSDictionary(contentsOf: url) as! [String: String]
     }

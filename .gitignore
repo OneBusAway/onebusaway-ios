@@ -6,7 +6,6 @@ DerivedData/
 Apps/**/Info.plist
 Apps/**/*.entitlements
 OBAWidget/**/*.entitlements
-OBAKit/Info.plist
 OBAKitTests/Info.plist
 OBAWidget/Info.plist
 OBAKitWatch/Info.plist

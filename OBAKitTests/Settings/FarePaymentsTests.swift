@@ -102,7 +102,7 @@ final class FarePaymentsTests: OBATestCase {
     }
 
     private func englishBundle() -> Bundle? {
-        guard let path = Bundle(for: FarePayments.self).path(forResource: "en", ofType: "lproj") else { return nil }
+        guard let path = Bundle.obaKit.path(forResource: "en", ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
@@ -154,7 +154,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(farePaymentEvents.isEmpty)
 
         // Continue and Don't Show Again action
-        let expectedDontShowAgainTitle = Bundle(for: FarePayments.self).localizedString(forKey: "fare_payments.dont_show_again", value: nil, table: nil)
+        let expectedDontShowAgainTitle = Bundle.obaKit.localizedString(forKey: "fare_payments.dont_show_again", value: nil, table: nil)
         #expect(alert.actions[1].title == expectedDontShowAgainTitle)
 
         // Continue action
@@ -294,7 +294,7 @@ final class FarePaymentsTests: OBATestCase {
         #expect(localizedEnglish != "MISSING", "\(key) is missing from the English catalog")
         #expect(localizedEnglish == fallback)
 
-        let frameworkBundle = Bundle(for: FarePayments.self)
+        let frameworkBundle = Bundle.obaKit
         let localizedFramework = frameworkBundle.localizedString(forKey: key, value: "MISSING", table: nil)
         #expect(localizedFramework != "MISSING", "\(key) is missing from the framework catalog")
         #expect(!localizedFramework.isEmpty, "\(key) resolved to an empty string in the framework catalog")

@@ -16,7 +16,7 @@ import Testing
 final class ReportProblemCopyTests {
 
     private func englishBundle() -> Bundle? {
-        guard let path = Bundle(for: DonationCell.self).path(forResource: "en", ofType: "lproj") else { return nil }
+        guard let path = Bundle.obaKit.path(forResource: "en", ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
