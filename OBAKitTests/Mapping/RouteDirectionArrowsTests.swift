@@ -143,20 +143,38 @@ struct RouteDirectionArrowsTests {
     }
 
     @Test func `Marker updates report whether anything moved`() {
-        let markers = RouteArrowMarkers()
+        let context = RouteArrowContext()
 
-        #expect(markers.update([CGPoint(x: 1, y: 2)]))
-        #expect(!markers.update([CGPoint(x: 1, y: 2)]))
-        #expect(markers.points == [CGPoint(x: 1, y: 2)])
+        let first = context.update(markers: [CGPoint(x: 1, y: 2)])
+        let again = context.update(markers: [CGPoint(x: 1, y: 2)])
+
+        #expect(first)
+        #expect(!again)
+        #expect(context.snapshot.markers == [CGPoint(x: 1, y: 2)])
     }
 
     /// Chevrons are sized from the zoom the map shows, so a new zoom alone redraws.
-    @Test func `A new zoom counts as a change`() {
-        let markers = RouteArrowMarkers()
-        markers.update([CGPoint(x: 1, y: 2)], screenScale: 0.05)
+    @Test func `A new zoom counts as a change, and a pan's rounding noise does not`() {
+        let context = RouteArrowContext()
 
-        #expect(markers.update([CGPoint(x: 1, y: 2)], screenScale: 0.1))
-        #expect(!markers.update([CGPoint(x: 1, y: 2)], screenScale: 0.1))
-        #expect(markers.screenScale == 0.1)
+        let first = context.update(screenScale: 0.05)
+        let panned = context.update(screenScale: 0.05 * (1 + 1e-9))
+        let zoomed = context.update(screenScale: 0.1)
+
+        #expect(first)
+        #expect(!panned)
+        #expect(zoomed)
+        #expect(abs(context.snapshot.screenScale! - 0.1) < 0.001)
+    }
+
+    @Test func `A zoom that can't be measured is ignored`() {
+        let context = RouteArrowContext()
+
+        let nan = context.update(screenScale: .nan)
+        let zero = context.update(screenScale: 0)
+
+        #expect(!nan)
+        #expect(!zero)
+        #expect(context.snapshot.screenScale == nil)
     }
 }

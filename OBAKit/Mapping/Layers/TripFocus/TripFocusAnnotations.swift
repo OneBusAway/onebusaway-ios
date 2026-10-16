@@ -26,15 +26,17 @@ final class TripShapeOverlay: MKPolyline {
     /// Behind the vehicle. Drawn gray, so the rider can see at a glance how much
     /// of the trip is already gone.
     var isSpent: Bool = false
-    /// The white line drawn underneath the colored one, which is what keeps a
-    /// route-colored shape legible over the basemap.
-    var isCasing: Bool = false
+    /// The casing under the colored line keeps a route-colored shape legible over
+    /// the basemap; see `RouteLinePart`.
+    var part: RouteLinePart = .core
 
-    static func make(coordinates: [CLLocationCoordinate2D], isSpent: Bool, isCasing: Bool) -> TripShapeOverlay {
+    var isCasing: Bool { part == .casing }
+
+    static func make(coordinates: [CLLocationCoordinate2D], isSpent: Bool, part: RouteLinePart) -> TripShapeOverlay {
         var coordinates = coordinates
         let overlay = TripShapeOverlay(coordinates: &coordinates, count: coordinates.count)
         overlay.isSpent = isSpent
-        overlay.isCasing = isCasing
+        overlay.part = part
         return overlay
     }
 }

@@ -23,7 +23,7 @@ import UIKit
 ///
 /// Candidates sit at fixed distances along the whole line and each is resolved on
 /// its own, so asking about one part of the line gives the same arrows there as
-/// asking about all of it. `RouteLineRenderer` depends on that: MapKit draws a line
+/// asking about all of it. `RouteArrowRenderer` depends on that: MapKit draws a line
 /// tile by tile, and an arrow straddling two tiles has to land in the same place
 /// in both.
 nonisolated struct RouteArrowLayout {
@@ -208,52 +208,91 @@ nonisolated enum RouteArrowStyle {
     }
 }
 
-/// Where stop markers are on the map, for direction arrows to keep clear of, and
-/// how far the map is zoomed.
+/// The overlays one route line draws as, bottom to top.
+///
+/// The chevrons get an overlay of their own so the line under them stays a plain
+/// `MKPolylineRenderer`. MapKit draws those as vectors at the zoom the map shows;
+/// a renderer that overrides `draw` is drawn in raster tiles instead, and its line
+/// would swell and shrink against the casing as the tiles stretch.
+nonisolated enum RouteLinePart {
+    case casing
+    case core
+    case arrows
+}
+
+/// What direction arrows need from the map: where the stop markers are, to keep
+/// clear of them, and how far the map is zoomed.
 ///
 /// Written on the main actor by the layer that owns the line, read by
-/// `RouteLineRenderer` from MapKit's drawing threads.
-nonisolated final class RouteArrowMarkers: Sendable {
-    private struct State: Equatable {
-        var points: [CGPoint] = []
+/// `RouteArrowRenderer` from MapKit's drawing threads.
+nonisolated final class RouteArrowContext: Sendable {
+    struct Snapshot: Equatable {
+        /// Stop markers, in map points.
+        var markers: [CGPoint] = []
+
+        /// Screen points per map point when the map last settled.
+        ///
+        /// A renderer can't work this out from its `zoomScale`: MapKit draws tiles
+        /// at whole zoom levels and stretches them to the zoom in between, up to
+        /// double, so chevrons sized from it come out anywhere from half to twice
+        /// their size.
         var screenScale: CGFloat?
     }
 
-    private let state = Mutex(State())
+    private let state = Mutex(Snapshot())
 
-    /// In map points.
-    var points: [CGPoint] { state.withLock { $0.points } }
-
-    /// Screen points per map point when the map last settled.
-    ///
-    /// A renderer can't work this out from its `zoomScale`: MapKit draws tiles at
-    /// whole zoom levels and stretches them to the zoom in between, up to double.
-    /// The line's width is stretched with them, so it looks right; chevrons sized
-    /// from `zoomScale` would come out anywhere from half to twice their size.
-    var screenScale: CGFloat? { state.withLock { $0.screenScale } }
+    var snapshot: Snapshot { state.withLock { $0 } }
 
     /// Returns whether anything changed, so the caller only redraws when it must.
     /// Order doesn't count: `MKMapView.annotations` promises none.
     @discardableResult
-    func update(_ points: [CGPoint], screenScale: CGFloat? = nil) -> Bool {
-        let new = State(points: points.sorted { ($0.x, $0.y) < ($1.x, $1.y) }, screenScale: screenScale)
+    func update(markers: [CGPoint]) -> Bool {
+        let markers = markers.sorted { ($0.x, $0.y) < ($1.x, $1.y) }
         return state.withLock { current in
-            guard current != new else { return false }
-            current = new
+            guard current.markers != markers else { return false }
+            current.markers = markers
             return true
         }
     }
 
-    /// Reads the stop markers and zoom of `mapView` again, and redraws any of
-    /// `overlays` that carry arrows if either moved.
+    /// Returns whether the scale changed. It is rounded to a 256th of a zoom level,
+    /// so a pan, which leaves the zoom alone, never redraws over floating-point noise.
+    @discardableResult
+    func update(screenScale: CGFloat) -> Bool {
+        guard screenScale.isFinite, screenScale > 0 else { return false }
+        let rounded = exp2((log2(screenScale) * 256).rounded() / 256)
+        return state.withLock { current in
+            guard current.screenScale != rounded else { return false }
+            current.screenScale = rounded
+            return true
+        }
+    }
+
+    /// Reads the stop markers and zoom of `mapView` again, and redraws the arrows
+    /// among `overlays` if either moved.
     @MainActor
     func refresh(from mapView: MKMapView, redrawing overlays: [MKOverlay]) {
-        let visibleWidth = mapView.visibleMapRect.size.width
-        let screenScale: CGFloat? = visibleWidth > 0 && mapView.bounds.width > 0 ? mapView.bounds.width / visibleWidth : nil
-        guard update(Self.positions(in: mapView.annotations), screenScale: screenScale) else { return }
+        let markersMoved = update(markers: Self.positions(in: mapView.annotations))
+        let zoomMoved = update(screenScale: Self.screenScale(of: mapView))
+        if markersMoved || zoomMoved { redraw(overlays, in: mapView) }
+    }
+
+    /// Reads only the zoom: what a settled pan or pinch changes.
+    @MainActor
+    func refreshScale(from mapView: MKMapView, redrawing overlays: [MKOverlay]) {
+        if update(screenScale: Self.screenScale(of: mapView)) { redraw(overlays, in: mapView) }
+    }
+
+    @MainActor
+    private func redraw(_ overlays: [MKOverlay], in mapView: MKMapView) {
         for overlay in overlays {
-            (mapView.renderer(for: overlay) as? RouteLineRenderer)?.setNeedsDisplay()
+            (mapView.renderer(for: overlay) as? RouteArrowRenderer)?.setNeedsDisplay()
         }
+    }
+
+    @MainActor
+    private static func screenScale(of mapView: MKMapView) -> CGFloat {
+        mapView.bounds.width / mapView.visibleMapRect.size.width
     }
 
     /// The annotations that draw as stop markers: stops, bookmarked stops, and a
@@ -268,72 +307,59 @@ nonisolated final class RouteArrowMarkers: Sendable {
     }
 }
 
-/// A route line with direction chevrons drawn on it.
+/// Draws a route line's direction chevrons, and nothing else; see `RouteLinePart`.
 ///
-/// The chevrons belong to the line's renderer rather than being annotations, for
-/// two reasons. Overlays always draw under annotations, so the chevrons sit above
-/// the line and below the stop markers. And the renderer redraws whenever the zoom
-/// changes, which is what lets the spacing be in screen points: MapKit hands each
-/// draw its zoom scale.
-nonisolated final class RouteLineRenderer: MKPolylineRenderer {
+/// The chevrons are an overlay rather than annotations because overlays always
+/// draw under annotations, so they sit above the line and below the stop markers.
+/// Style it like the line's core: `lineWidth` decides whether there is room for
+/// chevrons, and `alpha` dims them with the line.
+nonisolated final class RouteArrowRenderer: MKPolylineRenderer {
     private let layout: RouteArrowLayout
     private let arrowColor: CGColor
-    private let markers: RouteArrowMarkers
+    private let context: RouteArrowContext
 
-    init(polyline: MKPolyline, routeColor: UIColor, markers: RouteArrowMarkers) {
+    init(polyline: MKPolyline, routeColor: UIColor, context: RouteArrowContext) {
         let mapPoints = UnsafeBufferPointer(start: polyline.points(), count: polyline.pointCount)
         layout = RouteArrowLayout(points: mapPoints.map { CGPoint(x: $0.x, y: $0.y) })
         arrowColor = RouteArrowStyle.chevronColor(on: routeColor).cgColor
-        self.markers = markers
+        self.context = context
         // `init(overlay:)`, the designated initializer: `init(polyline:)` is a convenience
         // that calls back into `init(overlay:)` on the subclass, which this one lacks.
         super.init(overlay: polyline)
     }
 
-    /// Test seam: the arrows placed over the whole line when `zoomScale` screen points
+    /// Test seam: the arrows placed over the whole line when `scale` screen points
     /// span one map point.
-    func arrows(zoomScale: MKZoomScale) -> [RouteArrowLayout.Arrow] {
-        layout.arrows(scale: zoomScale, avoiding: markers.points)
+    func arrows(scale: CGFloat) -> [RouteArrowLayout.Arrow] {
+        layout.arrows(scale: scale, avoiding: context.snapshot.markers)
     }
 
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
+        guard lineWidth >= RouteArrowStyle.minimumLineWidth else { return }
+
+        let snapshot = self.context.snapshot
         // Laid out at the zoom the map shows, not the tile's; see `screenScale`.
         // Before the map has settled once, the tile's is the best guess.
-        let scale = markers.screenScale ?? zoomScale / contentScaleFactor
-
-        // The line too: `super` sizes it from the tile's zoom, which strays from the
-        // casing under it, drawn by MapKit at the zoom the map shows.
-        if path == nil { createPath() }
-        if let path {
-            context.saveGState()
-            context.addPath(path)
-            context.setStrokeColor(strokeColor?.cgColor ?? UIColor.clear.cgColor)
-            context.setLineWidth(lineWidth / scale)
-            context.setLineCap(lineCap)
-            context.setLineJoin(lineJoin)
-            context.strokePath()
-            context.restoreGState()
-        }
-        guard lineWidth >= RouteArrowStyle.minimumLineWidth else { return }
+        let scale = snapshot.screenScale ?? zoomScale / contentScaleFactor
 
         // Grown by a chevron's reach, so one centered just outside the tile still
         // draws its part inside it.
         let reach = RouteArrowStyle.extent / scale
         let tile = CGRect(x: mapRect.origin.x, y: mapRect.origin.y, width: mapRect.size.width, height: mapRect.size.height)
-        let arrows = layout.arrows(scale: scale, avoiding: markers.points, in: tile.insetBy(dx: -reach, dy: -reach))
+        let arrows = layout.arrows(scale: scale, avoiding: snapshot.markers, in: tile.insetBy(dx: -reach, dy: -reach))
         guard !arrows.isEmpty else { return }
 
-        let path = CGMutablePath()
+        let chevrons = CGMutablePath()
         for arrow in arrows {
             let center = point(for: MKMapPoint(x: arrow.point.x, y: arrow.point.y))
             let transform = CGAffineTransform(translationX: center.x, y: center.y)
                 .rotated(by: arrow.angle)
                 .scaledBy(x: 1 / scale, y: 1 / scale)
-            path.addLines(between: RouteArrowStyle.chevron, transform: transform)
+            chevrons.addLines(between: RouteArrowStyle.chevron, transform: transform)
         }
 
         context.saveGState()
-        context.addPath(path)
+        context.addPath(chevrons)
         context.setStrokeColor(arrowColor)
         context.setLineWidth(RouteArrowStyle.strokeWidth / scale)
         context.setLineCap(.round)

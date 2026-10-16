@@ -79,13 +79,13 @@ final class TripFocusMapLayerTests {
 
     // MARK: - The shape
 
-    /// Each half draws twice — a white casing under a colored core — so a split
-    /// trip is four overlays, not two.
+    /// Each half draws as a casing under a core, and the half ahead adds its
+    /// chevrons on top, so a split trip is five overlays, not two.
     @Test func `A trip in progress draws both halves of its shape`() {
         focus(content(shape: shape(), progress: 0.5))
 
-        #expect(shapeOverlays.filter { $0.isSpent }.count == 2)
-        #expect(shapeOverlays.filter { !$0.isSpent }.count == 2)
+        #expect(shapeOverlays.filter { $0.isSpent }.map(\.part) == [.casing, .core])
+        #expect(shapeOverlays.filter { !$0.isSpent }.map(\.part) == [.casing, .core, .arrows])
     }
 
     /// No reported progress is not zero progress. Nothing is known to have been
@@ -94,7 +94,7 @@ final class TripFocusMapLayerTests {
         focus(content(shape: shape(), progress: nil))
 
         #expect(shapeOverlays.allSatisfy { !$0.isSpent })
-        #expect(shapeOverlays.count == 2)
+        #expect(shapeOverlays.count == 3)
     }
 
     @Test func `A trip that has not started draws no travelled half`() {
@@ -106,9 +106,11 @@ final class TripFocusMapLayerTests {
     @Test func `Only the line still ahead draws direction arrows`() {
         focus(content(shape: shape(), progress: 0.5))
 
-        let arrowLines = shapeOverlays.filter { renderer(for: $0) is RouteLineRenderer }
+        let arrowLines = shapeOverlays.filter { renderer(for: $0) is RouteArrowRenderer }
         #expect(arrowLines.count == 1)
-        #expect(arrowLines.allSatisfy { !$0.isSpent && !$0.isCasing })
+        #expect(arrowLines.allSatisfy { !$0.isSpent && $0.part == .arrows })
+        // The lines themselves stay MapKit's own, drawn as vectors at the zoom shown.
+        #expect(shapeOverlays.filter { $0.part != .arrows }.allSatisfy { type(of: renderer(for: $0)!) == MKPolylineRenderer.self })
     }
 
     /// The issue that prompted the redesign: chevrons landing on top of stop dots.
@@ -116,8 +118,8 @@ final class TripFocusMapLayerTests {
         let stop = CLLocationCoordinate2D(latitude: 47, longitude: -121.985)
         focus(content(shape: shape(), progress: 0, stops: [row(0, stopID: "A", coordinate: stop)]))
 
-        let line = try #require(shapeOverlays.first { !$0.isCasing })
-        let lineRenderer = try #require(renderer(for: line) as? RouteLineRenderer)
+        let line = try #require(shapeOverlays.first { $0.part == .arrows })
+        let lineRenderer = try #require(renderer(for: line) as? RouteArrowRenderer)
         // Close enough that the stop sits among several candidates.
         let zoomScale: MKZoomScale = 0.05
         let stopPoint = MKMapPoint(stop)
@@ -130,7 +132,7 @@ final class TripFocusMapLayerTests {
         let unobstructed = RouteArrowLayout(points: shape().map { CGPoint(x: MKMapPoint($0).x, y: MKMapPoint($0).y) })
         #expect(!unobstructed.arrows(scale: zoomScale).allSatisfy(isClear))
 
-        let arrows = lineRenderer.arrows(zoomScale: zoomScale)
+        let arrows = lineRenderer.arrows(scale: zoomScale)
         #expect(!arrows.isEmpty)
         #expect(arrows.allSatisfy(isClear))
     }

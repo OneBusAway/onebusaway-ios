@@ -79,7 +79,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     private var shapeOverlays: [TripShapeOverlay] = []
     private var stopAnnotations: [TripStopAnnotation] = []
     /// What the direction chevrons on the line ahead keep clear of.
-    private let arrowMarkers = RouteArrowMarkers()
+    private let arrowContext = RouteArrowContext()
     private var vehicleAnnotation: VehicleAnnotation?
 
     /// The trip the camera has already been framed for. Framing happens once per
@@ -159,16 +159,17 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     private func add(coordinates: [CLLocationCoordinate2D], isSpent: Bool) {
         guard coordinates.count >= 2 else { return }
 
-        let casing = TripShapeOverlay.make(coordinates: coordinates, isSpent: isSpent, isCasing: true)
-        let core = TripShapeOverlay.make(coordinates: coordinates, isSpent: isSpent, isCasing: false)
-        shapeOverlays.append(contentsOf: [casing, core])
-        mapView.addOverlays([casing, core], level: .aboveRoads)
+        // Only the half ahead points the way: behind the bus, there is no way left to go.
+        let parts: [RouteLinePart] = isSpent ? [.casing, .core] : [.casing, .core, .arrows]
+        let overlays = parts.map { TripShapeOverlay.make(coordinates: coordinates, isSpent: isSpent, part: $0) }
+        shapeOverlays.append(contentsOf: overlays)
+        mapView.addOverlays(overlays, level: .aboveRoads)
     }
 
     /// The stops the line ahead keeps clear of: this trip's dots and whatever stops
     /// the map shows.
     private func refreshArrowMarkers() {
-        arrowMarkers.refresh(from: mapView, redrawing: shapeOverlays)
+        arrowContext.refresh(from: mapView, redrawing: shapeOverlays)
     }
 
     private func drawStops(_ content: TripMapFocus.Content) {
@@ -275,15 +276,20 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             renderer = MKPolylineRenderer(polyline: overlay)
             renderer.lineWidth = overlay.isCasing ? Style.spentCoreWidth + Style.spentCasingExtraWidth : Style.spentCoreWidth
             renderer.strokeColor = overlay.isCasing ? .white : .systemGray3
-        } else if overlay.isCasing {
-            renderer = MKPolylineRenderer(polyline: overlay)
-            renderer.lineWidth = Style.coreWidth + Style.casingExtraWidth
-            renderer.strokeColor = RouteArrowStyle.casingColor(for: color)
         } else {
-            // Only the half ahead points the way: behind the bus, there is no way left to go.
-            renderer = RouteLineRenderer(polyline: overlay, routeColor: color, markers: arrowMarkers)
-            renderer.lineWidth = Style.coreWidth
-            renderer.strokeColor = color
+            switch overlay.part {
+            case .casing:
+                renderer = MKPolylineRenderer(polyline: overlay)
+                renderer.lineWidth = Style.coreWidth + Style.casingExtraWidth
+                renderer.strokeColor = RouteArrowStyle.casingColor(for: color)
+            case .core:
+                renderer = MKPolylineRenderer(polyline: overlay)
+                renderer.lineWidth = Style.coreWidth
+                renderer.strokeColor = color
+            case .arrows:
+                renderer = RouteArrowRenderer(polyline: overlay, routeColor: color, context: arrowContext)
+                renderer.lineWidth = Style.coreWidth
+            }
         }
         renderer.lineCap = .round
         renderer.lineJoin = .round
@@ -318,8 +324,12 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
     func deactivate() { end() }
 
-    /// Selection-driven, not viewport-driven — see the type doc.
-    func viewportDidChange(_ mapRect: MKMapRect?) { }
+    /// Selection-driven, not viewport-driven — see the type doc. A new zoom only
+    /// lays the arrows out again: they are sized and spaced in screen points.
+    func viewportDidChange(_ mapRect: MKMapRect?) {
+        guard focus != nil else { return }
+        arrowContext.refreshScale(from: mapView, redrawing: shapeOverlays)
+    }
 
     func stopMarkersDidChange() {
         guard focus != nil else { return }

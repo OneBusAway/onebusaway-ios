@@ -30,10 +30,10 @@ enum TripRouteOverlays {
 
         var overlays: [TripShapeOverlay] = []
         if split.spent.count >= 2 {
-            overlays.append(TripShapeOverlay.make(coordinates: split.spent, isSpent: true, isCasing: false))
+            overlays.append(TripShapeOverlay.make(coordinates: split.spent, isSpent: true, part: .core))
         }
         if split.ahead.count >= 2 {
-            overlays.append(TripShapeOverlay.make(coordinates: split.ahead, isSpent: false, isCasing: false))
+            overlays.append(TripShapeOverlay.make(coordinates: split.ahead, isSpent: false, part: .core))
         }
         return overlays
     }

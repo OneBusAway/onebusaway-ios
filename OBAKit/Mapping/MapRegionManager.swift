@@ -1090,9 +1090,6 @@ public class MapRegionManager: NSObject,
         reloadRegionAnnotations()
         reloadStopAnnotations()
         mapLayersViewportDidChange(mapView.visibleMapRect)
-        // Direction arrows are spaced and sized in screen points, so a new zoom
-        // lays them out again even when no stop came or went.
-        notifyMapLayersStopMarkersChanged()
 
         for delegate in delegates.allObjects {
             delegate.mapRegionManager?(self, viewportDidSettle: mapView.visibleMapRect)

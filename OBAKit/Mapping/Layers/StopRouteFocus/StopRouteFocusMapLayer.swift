@@ -68,7 +68,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private var overlays: [RouteShapeOverlay] = []
     private var annotations: [StopVehicleAnnotation] = []
     /// What the direction chevrons keep clear of.
-    private let arrowMarkers = RouteArrowMarkers()
+    private let arrowContext = RouteArrowContext()
     private var model: StopRouteFocusModel = .empty
 
     /// Which vehicle the focused route is currently standing on — the one whose
@@ -406,17 +406,18 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     }
 
     private func addShape(coordinates: [CLLocationCoordinate2D], routeID: RouteID) {
-        // Casing first so the colored core draws above it.
-        let casing = RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, isCasing: true)
-        let core = RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, isCasing: false)
-        // Before the overlays, so the line's first draw already knows where the stops are.
+        // Bottom to top: casing, the colored core above it, then its chevrons.
+        let parts = [RouteLinePart.casing, .core, .arrows].map {
+            RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, part: $0)
+        }
+        // Before the overlays, so the arrows' first draw already knows where the stops are.
         refreshArrowMarkers()
-        overlays.append(contentsOf: [casing, core])
-        mapView.addOverlays([casing, core], level: .aboveRoads)
+        overlays.append(contentsOf: parts)
+        mapView.addOverlays(parts, level: .aboveRoads)
     }
 
     private func refreshArrowMarkers() {
-        arrowMarkers.refresh(from: mapView, redrawing: overlays)
+        arrowContext.refresh(from: mapView, redrawing: overlays)
     }
 
     // MARK: - Focus restyling
@@ -437,11 +438,10 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             }
         }
         if !routesNeedingReadd.isEmpty {
-            // Re-add a route's casing AND core together, in their original
-            // casing-first order — even when only one half actually needed a
-            // fresh `rendererFor` round trip. Re-adding just one half would move
-            // only it to the top of the overlay stack and invert the pair's
-            // z-order.
+            // Re-add all of a route's parts together, in their original
+            // casing-first order — even when only one actually needed a fresh
+            // `rendererFor` round trip. Re-adding just one would move only it
+            // to the top of the overlay stack and invert the route's z-order.
             let needsReadd = overlays.filter { routesNeedingReadd.contains($0.routeID) }
             mapView.removeOverlays(needsReadd)
             mapView.addOverlays(needsReadd, level: .aboveRoads)
@@ -478,13 +478,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? {
         guard let overlay = overlay as? RouteShapeOverlay else { return nil }
-        let renderer = overlay.isCasing
-            ? MKPolylineRenderer(polyline: overlay)
-            : RouteLineRenderer(
-                polyline: overlay,
-                routeColor: routeColor(for: overlay.routeID),
-                markers: arrowMarkers
-            )
+        let renderer = overlay.part == .arrows
+            ? RouteArrowRenderer(polyline: overlay, routeColor: routeColor(for: overlay.routeID), context: arrowContext)
+            : MKPolylineRenderer(polyline: overlay)
         apply(style: overlay, to: renderer)
         return renderer
     }
@@ -594,8 +590,12 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     func deactivate() { end() }
 
-    /// Selection-driven, not viewport-driven.
-    func viewportDidChange(_ mapRect: MKMapRect?) { }
+    /// Selection-driven, not viewport-driven. A new zoom only lays the arrows out
+    /// again: they are sized and spaced in screen points.
+    func viewportDidChange(_ mapRect: MKMapRect?) {
+        guard focus != nil else { return }
+        arrowContext.refreshScale(from: mapView, redrawing: overlays)
+    }
 
     func stopMarkersDidChange() {
         guard focus != nil else { return }

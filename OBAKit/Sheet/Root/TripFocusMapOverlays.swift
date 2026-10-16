@@ -66,7 +66,7 @@ private func tripShapeStroke(width: CGFloat) -> StrokeStyle {
     StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round)
 }
 
-/// A chevron pointing the way the trip runs, as `RouteLineRenderer` draws it on the
+/// A chevron pointing the way the trip runs, as `RouteArrowRenderer` draws it on the
 /// map tab.
 private struct TripDirectionArrow: View {
     let headingDegrees: CLLocationDirection
