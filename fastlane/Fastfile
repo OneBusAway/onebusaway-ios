@@ -93,7 +93,8 @@ platform :ios do
     # get every build automatically (the group's "Automatic for Xcode Builds"
     # setting); external testers get it once Apple approves the submission.
     # reject_build_waiting_for_review withdraws an older build still waiting for
-    # review, so a busy day of merges doesn't queue a backlog behind Apple.
+    # review, so builds don't queue up behind Apple when Beta App Review takes
+    # longer than a night.
     upload_to_testflight(
       api_key: api_key,
       changelog: testflight_changelog,
@@ -104,16 +105,48 @@ platform :ios do
     )
   end
 
-  # "What to Test" text: the merge commit that triggered this deploy, plus a link
-  # to the history so testers can see everything since their last build.
+  # TestFlight rejects "What to Test" text longer than this.
+  CHANGELOG_LIMIT = 4000
+
+  # "What to Test" text: every change merged to main since the last TestFlight
+  # build, plus a link to the history. Builds are nightly, so one build usually
+  # carries several pull requests. The workflow's gate job passes the commit of
+  # the last build in TESTFLIGHT_PREVIOUS_SHA; without it (first build, or that
+  # commit is gone from main's history) only the newest change is listed.
   def testflight_changelog
     sha = sh("git", "rev-parse", "HEAD", log: false).strip
-    message = sh("git", "log", "-1", "--format=%B", log: false).strip
-    # "Merge pull request #123 from owner/branch\n\nTitle" reads better as "Title (#123)".
-    if (match = message.match(/\AMerge pull request (#\d+) from \S+\s+(.+)/m))
-      message = "#{match[2].strip} (#{match[1]})"
+    previous = ENV.fetch("TESTFLIGHT_PREVIOUS_SHA", "").strip
+    since_previous = !previous.empty? &&
+                     system("git", "merge-base", "--is-ancestor", previous, sha,
+                            out: File::NULL, err: File::NULL)
+    range = since_previous ? ["#{previous}..#{sha}"] : ["-1", sha]
+
+    # --first-parent walks main itself: one entry per merged pull request (or
+    # direct push), not every commit inside each pull request.
+    log = sh("git", "log", "--first-parent", "--format=%B%x00", *range, log: false)
+    changes = log.split("\0").map(&:strip).reject(&:empty?).map { |m| "• #{change_summary(m)}" }
+
+    header = since_previous ? "Changes since the last TestFlight build:" : "Latest change:"
+    footer = "Full history: https://github.com/OneBusAway/onebusaway-ios/commits/#{sha}"
+    # Leave room for the header, the footer, and an "…and N more" line.
+    budget = CHANGELOG_LIMIT - header.length - footer.length - 40
+    listed = []
+    changes.each do |line|
+      break if listed.sum { |l| l.length + 1 } + line.length + 1 > budget
+      listed << line
     end
-    "Latest change: #{message[0, 3000]}\n\n" \
-      "Full history: https://github.com/OneBusAway/onebusaway-ios/commits/#{sha}"
+    listed << "…and #{changes.length - listed.length} more" if listed.length < changes.length
+
+    "#{header}\n#{listed.join("\n")}\n\n#{footer}"
+  end
+
+  # One line per change. "Merge pull request #123 from owner/branch\n\nTitle"
+  # reads better as "Title (#123)"; anything else is its subject line.
+  def change_summary(message)
+    if (match = message.match(/\AMerge pull request (#\d+) from \S+\s+(.+)/m))
+      "#{match[2].lines.first.strip} (#{match[1]})"
+    else
+      message.lines.first.strip
+    end
   end
 end
