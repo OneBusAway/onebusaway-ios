@@ -2036,6 +2036,9 @@
 /* VoiceOver clause on the rider's own stop. */
 "trip_page.stop_list.a11y_your_stop" = "your stop";
 
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "Couldn't load this trip's stops.";
+
 /* Header above the trip's stop list before the stops are known. */
 "trip_page.stops_header" = "Stops";
 

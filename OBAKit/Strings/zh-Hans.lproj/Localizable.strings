@@ -1734,6 +1734,9 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "以%@为名启程";
 
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "无法加载此行程的站点。";
+
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "准备车程链接时出错。请重试。";
 

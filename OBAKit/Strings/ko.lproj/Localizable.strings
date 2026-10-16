@@ -1734,6 +1734,9 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "%@(으)로 운행 시작";
 
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "이 운행의 정류장을 불러오지 못했습니다.";
+
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "여정 링크를 준비하는 중 문제가 발생했습니다. 다시 시도해 주세요.";
 

@@ -1734,6 +1734,9 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Magsisimula bilang %@";
 
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "Hindi ma-load ang mga hintuan ng biyaheng ito.";
+
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "May naganap na problema sa paghahanda ng link ng biyahe. Pakisubukang muli.";
 

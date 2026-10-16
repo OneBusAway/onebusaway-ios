@@ -1734,6 +1734,9 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "先前行駛 %@";
 
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "無法載入此行程的站牌。";
+
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "準備行程連結時發生錯誤，請再試一次。";
 

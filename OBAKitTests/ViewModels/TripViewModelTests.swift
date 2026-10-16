@@ -318,4 +318,59 @@ final class TripViewModelTests: OBATestCase {
         #expect(viewModel.tripDetails?.serviceDate == firstServiceDate.addingTimeInterval(86400))
         #expect(!viewModel.isLoading)
     }
+
+    // MARK: - Partial loads (#1548)
+
+    /// Registered before `createApplication`'s broad stubs, which answer the same
+    /// paths: `MockDataLoader` serves the first stub that matches.
+    private func failRequests(to path: String, dataLoader: MockDataLoader) {
+        dataLoader.mock(data: Data(), statusCode: 500) { request in
+            request.url?.path.contains(path) ?? false
+        }
+    }
+
+    /// The shape only draws the line on the map. Losing it used to throw away the
+    /// trip's details too, and with them the stop list.
+    @Test @MainActor
+    func `A failed route line still shows the stop list`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        failRequests(to: "/api/where/shape", dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        #expect(viewModel.tripDetails?.stopTimes.count == 53)
+        #expect(viewModel.stopListState == .loaded)
+        #expect(viewModel.routePolylineCoordinates == nil)
+    }
+
+    /// A stop list that failed to load is not one that doesn't exist: the rider
+    /// gets a retry, never "isn't available".
+    @Test @MainActor
+    func `A failed stop list offers a retry, and the retry shows it`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        failRequests(to: "/api/where/trip-details", dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        #expect(viewModel.stopListState == .loading)
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        #expect(viewModel.tripDetails == nil)
+        #expect(viewModel.stopListState == .failed)
+
+        dataLoader.replaceMappedResponses { staging in
+            stubCommonEndpoints(dataLoader: staging)
+        }
+        viewModel.refresh()
+        await viewModel.loadDataTask?.value
+
+        #expect(viewModel.stopListState == .loaded)
+        #expect(viewModel.tripDetails?.stopTimes.count == 53)
+    }
 }

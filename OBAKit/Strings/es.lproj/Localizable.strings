@@ -1734,6 +1734,9 @@
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Comienza como %@";
 
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "No se pudieron cargar las paradas de este viaje.";
+
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "Algo salió mal al preparar el enlace del viaje. Inténtalo de nuevo.";
 

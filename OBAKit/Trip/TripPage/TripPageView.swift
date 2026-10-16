@@ -157,12 +157,18 @@ struct TripPageView: View {
                         // reads as a broken screen rather than one still working.
                         sectionHeader(stopsSectionPlaceholderTitle)
 
-                        Text(stopsUnavailableMessage)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(14)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+                        HStack {
+                            Text(stopsPlaceholderMessage)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if viewModel.stopListState == .failed {
+                                Button(Strings.retry) { viewModel.refresh() }
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                        }
+                        .padding(14)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
                     }
                 }
                 .padding(.horizontal, 16)
@@ -262,13 +268,19 @@ struct TripPageView: View {
         OBALoc("trip_page.stops_header", value: "Stops", comment: "Header above the trip's stop list before the stops are known.")
     }
 
-    /// Deliberately distinguishes "still loading" from "we asked and got nothing":
-    /// the second is a real answer and the rider shouldn't sit waiting on it.
-    private var stopsUnavailableMessage: String {
-        if viewModel.isLoading {
-            return OBALoc("trip_page.stops_loading", value: "Loading this trip's stops…", comment: "Shown while the trip's stop list is being fetched.")
+    /// Keeps "still loading", "couldn't load, try again" and "we asked and got
+    /// nothing" apart. Only the last is a real answer the rider shouldn't wait on;
+    /// a load that failed is one a retry may fix, and saying the list doesn't
+    /// exist sent riders away from a page that was about to fill in (#1548).
+    private var stopsPlaceholderMessage: String {
+        switch viewModel.stopListState {
+        case .loading, .loaded:
+            OBALoc("trip_page.stops_loading", value: "Loading this trip's stops…", comment: "Shown while the trip's stop list is being fetched.")
+        case .failed:
+            OBALoc("trip_page.stops_failed", value: "Couldn't load this trip's stops.", comment: "Shown beside a Retry button when loading the trip's stop list failed.")
+        case .unavailable:
+            OBALoc("trip_page.stops_unavailable", value: "This trip's stop list isn't available right now.", comment: "Shown when the trip's stop list could not be loaded.")
         }
-        return OBALoc("trip_page.stops_unavailable", value: "This trip's stop list isn't available right now.", comment: "Shown when the trip's stop list could not be loaded.")
     }
 
     private func stopCountTitle(_ count: Int) -> String {
