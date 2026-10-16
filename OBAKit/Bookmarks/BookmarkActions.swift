@@ -241,11 +241,11 @@ final class BookmarkActions {
             return .failed
         }
 
-        let attributes = TripAttributes(staticData: staticData)
         do {
             let activity = try Activity<TripAttributes>.requestProminent(
-                attributes: attributes,
-                state: contentState
+                staticData: staticData,
+                state: contentState,
+                userDefaults: application.userDefaults
             )
             trackLiveActivity(activity, arrivalDepartures: arrivalDepartures)
             Logger.info("Started Live Activity with ID: \(activity.id)")

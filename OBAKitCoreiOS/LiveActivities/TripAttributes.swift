@@ -143,8 +143,25 @@ public struct TripAttributes: ActivityAttributes, Sendable {
 
     public let staticData: StaticData
 
-    public init(staticData: StaticData) {
+    /// Draw the "swipe to dismiss" line on the Lock Screen card. Set only on a
+    /// rider's first activity; see `LiveActivityDismissHint`.
+    public let showsDismissHint: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case staticData, showsDismissHint
+    }
+
+    public init(staticData: StaticData, showsDismissHint: Bool = false) {
         self.staticData = staticData
+        self.showsDismissHint = showsDismissHint
+    }
+
+    /// `showsDismissHint` is optional on the wire: activities started before it
+    /// existed must still decode.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        staticData = try c.decode(StaticData.self, forKey: .staticData)
+        showsDismissHint = try c.decodeIfPresent(Bool.self, forKey: .showsDismissHint) ?? false
     }
 }
 

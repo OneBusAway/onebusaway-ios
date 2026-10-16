@@ -18,17 +18,21 @@ public struct TripLiveActivityCardView: View {
     public let contentState: TripAttributes.ContentState
     /// From `ActivityViewContext.isStale` — ActivityKit flips this after `staleDate`.
     public let isStale: Bool
+    /// From `TripAttributes.showsDismissHint`.
+    public let showsDismissHint: Bool
 
     private let presenter = TripActivityPresenter()
 
     public init(
         staticData: TripAttributes.StaticData,
         contentState: TripAttributes.ContentState,
-        isStale: Bool = false
+        isStale: Bool = false,
+        showsDismissHint: Bool = false
     ) {
         self.staticData = staticData
         self.contentState = contentState
         self.isStale = isStale
+        self.showsDismissHint = showsDismissHint
     }
 
     public var body: some View {
@@ -55,6 +59,19 @@ public struct TripLiveActivityCardView: View {
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(LiveActivityStaleChrome.warningColor)
+            }
+
+            // One quiet line under everything else, so the arrivals keep the top
+            // of the card. Not spoken: it describes a touch gesture, which isn't
+            // how a VoiceOver user removes the card. Gives way to the stale
+            // warning, which matters more and would push the card past the Lock
+            // Screen's 160 pt.
+            if showsDismissHint, !isStale {
+                Label(LiveActivityDismissHint.text, systemImage: "hand.draw")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    // Wraps rather than truncating the longer translations.
+                    .lineLimit(2)
             }
         }
         .padding(.horizontal, 16)
