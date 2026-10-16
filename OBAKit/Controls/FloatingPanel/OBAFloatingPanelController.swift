@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 8/3/21.
 //
 
+import UIKit
 import FloatingPanel
 
 /// A subclass of `FloatingPanelController` with additional accessibility features.

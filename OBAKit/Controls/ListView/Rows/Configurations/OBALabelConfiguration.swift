@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 6/28/21.
 //
 
-import Foundation
+import UIKit
 
 /// A view model defining `UILabel` properties.
 ///

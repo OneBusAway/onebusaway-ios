@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
+import UIKit
+
 nonisolated public enum OBAListViewItemConfiguration {
     case custom(OBAContentConfiguration)
     case list(UIListContentConfiguration, [UICellAccessory?])

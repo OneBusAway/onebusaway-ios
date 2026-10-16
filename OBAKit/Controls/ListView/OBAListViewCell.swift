@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 10/10/20.
 //
 
+import UIKit
 import OBAKitCore
 
 /// The base cell for all `OBAListView` cells.

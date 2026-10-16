@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+#
+# Checks that a built app still exposes every App Intent, entity, query and App
+# Shortcut that OBAKit and the widget define, and that the strings tables those
+# phrases name sit in the same bundle as the metadata that names them.
+#
+# Usage: scripts/check_app_intents <path/to/App.app>
+#
+# Why: Xcode extracts App Intents metadata at build time into
+# Metadata.appintents/ folders in the products. Nothing fails when that
+# extraction quietly drops an intent: the app builds, launches and passes its
+# tests, and the action is simply gone from Shortcuts and Siri. Moving OBAKit
+# from a framework to a Swift package changes how it is linked, which is exactly
+# the kind of change that can do this. This turns that silent loss into a
+# failing CI step.
+#
+# When you add, rename or remove an intent, update EXPECTED below.
+
+import json
+import pathlib
+import sys
+
+EXPECTED = {
+    "actions": {
+        "NextDeparturesIntent",
+        "TrackBookmarkIntent",
+        # OBAWidget
+        "ConfigurationAppIntent",
+        "RefreshWidgetIntent",
+    },
+    "entities": {"BookmarkEntity"},
+    "queries": {"BookmarkEntityQuery"},
+    "autoShortcuts": {"NextDeparturesIntent", "TrackBookmarkIntent"},
+}
+
+
+def keys(value):
+    """actionsdata stores some collections as dicts keyed by identifier."""
+    if isinstance(value, dict):
+        return set(value)
+    return {item.get("identifier") for item in value or []}
+
+
+def string_tables(node, found):
+    """Collects every `table` a localized string in the metadata names."""
+    if isinstance(node, dict):
+        if isinstance(node.get("table"), str):
+            found.add(node["table"])
+        for child in node.values():
+            string_tables(child, found)
+    elif isinstance(node, list):
+        for child in node:
+            string_tables(child, found)
+    return found
+
+
+def main():
+    if len(sys.argv) != 2:
+        sys.exit("Usage: scripts/check_app_intents <path/to/App.app>")
+
+    app = pathlib.Path(sys.argv[1])
+    metadata = sorted(app.rglob("Metadata.appintents/extract.actionsdata"))
+    if not metadata:
+        sys.exit(f"error: no App Intents metadata anywhere in {app}")
+
+    found = {kind: set() for kind in EXPECTED}
+    problems = []
+
+    for path in metadata:
+        data = json.loads(path.read_text())
+        bundle = path.parent.parent
+        found["actions"] |= keys(data.get("actions"))
+        found["entities"] |= keys(data.get("entities"))
+        found["queries"] |= keys(data.get("queries"))
+        found["autoShortcuts"] |= {s.get("actionIdentifier") for s in data.get("autoShortcuts") or []}
+
+        # The system resolves a phrase's `table` in the bundle that carries the
+        # metadata. If the metadata lands in one bundle and the .strings in
+        # another, the shortcut shows its raw key, or nothing.
+        for table in sorted(string_tables(data, set())):
+            if not list(bundle.glob(f"en.lproj/{table}.strings")):
+                problems.append(f"{path.relative_to(app.parent)} names strings table '{table}', "
+                                f"but {bundle.relative_to(app.parent)}/en.lproj/{table}.strings does not exist")
+
+    for kind, expected in EXPECTED.items():
+        for name in sorted(expected - found[kind]):
+            problems.append(f"missing {kind[:-1] if kind != 'queries' else 'query'}: {name}")
+
+    for path in metadata:
+        print(f"  read {path.relative_to(app.parent)}")
+    for kind in EXPECTED:
+        print(f"  {kind}: {', '.join(sorted(found[kind])) or '(none)'}")
+
+    if problems:
+        for problem in problems:
+            print(f"error: {problem}", file=sys.stderr)
+        sys.exit(1)
+
+    print("App Intents metadata OK")
+
+
+if __name__ == "__main__":
+    main()

@@ -7,6 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Foundation
+
 extension String {
     /// Escapes the five characters that carry special meaning in HTML content
     /// (`&`, `<`, `>`, `"`, `'`). Use this before interpolating any untrusted

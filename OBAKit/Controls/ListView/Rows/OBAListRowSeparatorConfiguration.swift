@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 6/20/21.
 //
 
+import UIKit
+
 nonisolated public struct OBAListRowSeparatorConfiguration: Equatable {
     public let showsSeparator: Bool
     public let insets: NSDirectionalEdgeInsets

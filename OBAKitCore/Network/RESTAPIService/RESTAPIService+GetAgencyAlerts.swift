@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 12/29/22.
 //
 
+import Foundation
+
 extension RESTAPIService {
     // MARK: - Regional Alerts
     public nonisolated func getAlerts(agencies: [AgencyWithCoverage]) async -> [AgencyAlert] {

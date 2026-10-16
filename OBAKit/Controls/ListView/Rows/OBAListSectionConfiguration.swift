@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 6/20/21.
 //
 
+import UIKit
+
 nonisolated public struct OBAListSectionConfiguration: Equatable {
     public enum ListAppearance: Equatable {
         case plain
