@@ -1,48 +1,131 @@
 name: TestFlight Deploy
 
 on:
-  workflow_run:
-    workflows: ["OBAKitTests"]
-    types: [completed]
-    branches: [main]
+  # At most one TestFlight build a day, at 1 AM Pacific. Cron is UTC-only, and
+  # 1 AM Pacific is 08:00 UTC under daylight time (PDT) and 09:00 UTC under
+  # standard time (PST), so both fire and the gate job keeps the one that is
+  # 1 AM today. Minute 7 rather than 0 because GitHub delays, and sometimes
+  # drops, scheduled runs at the top of the hour.
+  #
+  # Scheduled workflows always run the copy of this file on the default branch.
+  schedule:
+    - cron: '7 8 * * *'   # 01:07 PDT
+    - cron: '7 9 * * *'   # 01:07 PST
+  # Ship now, without waiting for 1 AM. Still subject to the gate's other checks.
+  workflow_dispatch:
 
-# One deploy at a time, and the newest wins. Merging a batch of PRs starts one
-# of these per merge; each new run cancels whichever deploy is running or
-# queued, so the batch produces a single TestFlight build of the latest main
-# rather than one per merge. (With cancel-in-progress off, GitHub already drops
-# all but the newest *queued* run, but the one already running still uploads.)
-# A cancelled run still reaches the keychain clean-up step, which runs on
-# `always()`.
+# The gate reads workflow runs through the API; nothing here writes to the repo.
+permissions:
+  contents: read
+  actions: read
+
+# One deploy at a time. A manual run started during the nightly one queues
+# behind it rather than cancelling it halfway through an upload, and then finds
+# main already deployed. A cancelled run would still reach the keychain clean-up
+# step, which runs on `always()`.
 #
 # Never running two at once also keeps build numbers unique: scripts/version
 # stamps CFBundleVersion with a minute-resolution timestamp, so two archives
 # could only collide if they ran concurrently.
 concurrency:
   group: testflight-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  # Decides whether tonight's build happens, on a cheap Linux runner so the
+  # nights it says no never start a macOS one.
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+      sha: ${{ steps.decide.outputs.sha }}
+      previous_sha: ${{ steps.decide.outputs.previous_sha }}
+    steps:
+    - id: decide
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        EVENT: ${{ github.event_name }}
+        CRON: ${{ github.event.schedule }}
+      run: |
+        set -euo pipefail
+
+        skip() {
+          echo "::notice::No TestFlight build: $1"
+          echo "deploy=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        }
+
+        # 1. Of the two crons, keep the one that is 1 AM Pacific today. Decided
+        # by which cron fired and whether Pacific is on daylight time, not by
+        # reading the clock: a run GitHub delays past 2 AM still counts, and no
+        # night is skipped or doubled. (Daylight time changes at 2 AM local,
+        # after both crons have fired.)
+        if [[ "$EVENT" == "schedule" ]]; then
+          offset=$(TZ=America/Los_Angeles date +%z)
+          case "$CRON:$offset" in
+            "7 8 * * *:-0700" | "7 9 * * *:-0800") ;;
+            *) skip "the '$CRON' schedule is not 1 AM Pacific while the offset is $offset." ;;
+          esac
+        fi
+
+        # 2. Build exactly the commit at the head of main now, and pin the
+        # deploy job's checkout to it, so the archive is the commit the tests
+        # below passed on even if a merge lands mid-deploy.
+        sha=$(gh api "repos/$REPO/commits/main" --jq .sha)
+        echo "main is at $sha"
+
+        # 3. Only ship a commit OBAKitTests passed on, from its push to main.
+        # A run still in progress counts as not passed: tomorrow night picks
+        # it up.
+        tests=$(gh api "repos/$REPO/actions/workflows/tests.yml/runs?head_sha=$sha&event=push&per_page=1" \
+          --jq '.workflow_runs[0] | "\(.status)/\(.conclusion)"')
+        [[ "$tests" == "completed/success" ]] \
+          || skip "OBAKitTests on $sha is '${tests:-not found}', not completed/success."
+
+        # 4. Skip a night with nothing new: it would only re-notify external
+        # testers about an identical build. The last deploy is the newest run
+        # of this workflow whose `deploy` job succeeded (runs the gate turned
+        # away succeed too, so the run's own conclusion is not enough).
+        previous_sha=""
+        for run in $(gh api "repos/$REPO/actions/workflows/testflight.yml/runs?status=success&per_page=100" \
+                       --jq '.workflow_runs[] | "\(.id):\(.head_sha)"'); do
+          if [[ $(gh api "repos/$REPO/actions/runs/${run%%:*}/jobs" \
+                    --jq '[.jobs[] | select(.name == "deploy" and .conclusion == "success")] | length') -gt 0 ]]; then
+            previous_sha=${run#*:}
+            break
+          fi
+        done
+        echo "Last deployed: ${previous_sha:-unknown}"
+        [[ "$sha" != "$previous_sha" ]] || skip "$sha is already on TestFlight."
+
+        {
+          echo "deploy=true"
+          echo "sha=$sha"
+          echo "previous_sha=$previous_sha"
+        } >> "$GITHUB_OUTPUT"
+
   deploy:
-    # `branches: [main]` above matches the triggering run's head branch *name*,
-    # and a fork's pull request from a branch called `main` matches it too. Only
-    # a push to this repository's main is a deploy.
-    if: >-
-      ${{ github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.event == 'push' &&
-          github.event.workflow_run.head_repository.full_name == github.repository }}
+    needs: gate
+    if: ${{ needs.gate.outputs.deploy == 'true' }}
     runs-on: xcode-27
     timeout-minutes: 60
 
     steps:
-    # SECURITY — read before changing this step. `workflow_run` jobs run with the
-    # repository's secrets available, and the run that triggers them can
-    # originate from a fork's pull request. This is only safe because the
-    # checkout below takes no `ref:`, so it always checks out the default branch
-    # and never the pull request head. Do NOT add
-    # `ref: ${{ github.event.workflow_run.head_sha }}` or equivalent: that would
-    # execute untrusted fork code on a runner holding the signing certificate
-    # and the App Store Connect API key.
+    # SECURITY — this job holds the signing certificate and the App Store
+    # Connect API key. It is safe because neither trigger can carry fork code:
+    # `schedule` and `workflow_dispatch` both run this repository's own
+    # workflow, and `ref:` is a SHA the gate read from the head of this
+    # repository's main. Never take the ref from anything a pull request can
+    # set (a `workflow_run` head SHA, a `pull_request` ref, a dispatch input).
+    #
+    # Full history, so the Fastfile can list every change since the last
+    # TestFlight build in "What to Test".
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        ref: ${{ needs.gate.outputs.sha }}
+        fetch-depth: 0
 
     # Cache Swift Package Manager dependencies.
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -267,6 +350,7 @@ jobs:
         APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
         APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
+        TESTFLIGHT_PREVIOUS_SHA: ${{ needs.gate.outputs.previous_sha }}
       run: bundle exec fastlane beta
 
     - name: Clean up keychain and provisioning profiles
