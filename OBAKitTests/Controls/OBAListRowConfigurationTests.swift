@@ -463,7 +463,7 @@ struct OBAListRowConfigurationTests {
         // Verify accessoryType forwarding across string and attributed initializers (#1561)
         let stringNone = OBAListRowView.SubtitleViewModel(title: "Stop #1234", subtitle: "Northbound", accessoryType: .none)
         #expect(stringNone.accessoryType == .none)
-        #expect(rowConfiguration(from: stringNone)?.accessoryType == UITableViewCell.AccessoryType.none)
+        #expect(rowConfiguration(from: stringNone)?.accessoryType == OBAListRowConfiguration.Accessory.none)
 
         let stringCheckmark = OBAListRowView.SubtitleViewModel(title: "Stop #1234", subtitle: "Northbound", accessoryType: .checkmark)
         #expect(stringCheckmark.accessoryType == .checkmark)
@@ -471,7 +471,7 @@ struct OBAListRowConfigurationTests {
 
         let attrNone = OBAListRowView.SubtitleViewModel(title: attrTitle, subtitle: attrSubtitle, accessoryType: .none)
         #expect(attrNone.accessoryType == .none)
-        #expect(rowConfiguration(from: attrNone)?.accessoryType == UITableViewCell.AccessoryType.none)
+        #expect(rowConfiguration(from: attrNone)?.accessoryType == OBAListRowConfiguration.Accessory.none)
 
         let attrCheckmark = OBAListRowView.SubtitleViewModel(title: attrTitle, subtitle: attrSubtitle, accessoryType: .checkmark)
         #expect(attrCheckmark.accessoryType == .checkmark)
@@ -521,7 +521,7 @@ struct OBAListRowConfigurationTests {
         // Verify accessoryType forwarding across string and attributed initializers (#1561)
         let stringNone = OBAListRowView.ValueViewModel(title: "Transfer Fare", subtitle: "$2.75", accessoryType: .none)
         #expect(stringNone.accessoryType == .none)
-        #expect(rowConfiguration(from: stringNone)?.accessoryType == UITableViewCell.AccessoryType.none)
+        #expect(rowConfiguration(from: stringNone)?.accessoryType == OBAListRowConfiguration.Accessory.none)
 
         let stringCheckmark = OBAListRowView.ValueViewModel(title: "Transfer Fare", subtitle: "$2.75", accessoryType: .checkmark)
         #expect(stringCheckmark.accessoryType == .checkmark)
@@ -529,7 +529,7 @@ struct OBAListRowConfigurationTests {
 
         let attrNone = OBAListRowView.ValueViewModel(title: attrTitle, subtitle: attrSubtitle, accessoryType: .none)
         #expect(attrNone.accessoryType == .none)
-        #expect(rowConfiguration(from: attrNone)?.accessoryType == UITableViewCell.AccessoryType.none)
+        #expect(rowConfiguration(from: attrNone)?.accessoryType == OBAListRowConfiguration.Accessory.none)
 
         let attrCheckmark = OBAListRowView.ValueViewModel(title: attrTitle, subtitle: attrSubtitle, accessoryType: .checkmark)
         #expect(attrCheckmark.accessoryType == .checkmark)
