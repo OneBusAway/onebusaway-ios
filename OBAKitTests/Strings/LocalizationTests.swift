@@ -76,7 +76,7 @@ final class LocalizationTests {
 
     private var frameworks: [(name: String, bundle: Bundle)] {
         [("OBAKit", Bundle(for: DonationCell.self)),
-         ("OBAKitCore", Bundle(for: Strings.self))]
+         ("OBAKitCore", Bundle.obaKitCore)]
     }
 
     private func strings(in bundle: Bundle, localization: String) -> [String: String]? {
@@ -267,7 +267,7 @@ final class LocalizationTests {
     /// what matters is that the same word for the vehicle appears in both.
     @Test func `Both modules use the same word for a scooter`() throws {
         let kit = Bundle(for: DonationCell.self)
-        let core = Bundle(for: Strings.self)
+        let core = Bundle.obaKitCore
 
         func sharesRun(_ a: String, _ b: String, minimum: Int) -> Bool {
             let x = Array(a.lowercased()), y = b.lowercased()
@@ -280,13 +280,17 @@ final class LocalizationTests {
             return false
         }
 
+        var compared = 0
         for localization in kit.localizations where localization != "Base" {
             guard let row = strings(in: kit, localization: localization)?["map_layers.scooters"],
                   let tip = strings(in: core, localization: localization)?["map_layers_tip.title"]
             else { continue }
+            compared += 1
             #expect(sharesRun(row, tip, minimum: 3),
                     "\(localization): OBAKit says \"\(row)\" but OBAKitCore's tip says \"\(tip)\"")
         }
+        // Without this, a bundle lookup that finds no strings skips every locale and passes.
+        #expect(compared == kit.localizations.filter { $0 != "Base" }.count)
     }
 
     /// Proves the production formatter goes through `Localizable.stringsdict` at all.

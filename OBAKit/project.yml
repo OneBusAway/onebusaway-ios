@@ -21,23 +21,19 @@ targets:
     type: framework
     platform: iOS
     sources:
-      # XcodeGen's synced folders can't mark headers public, so the umbrella
-      # header is carved out of the buildable folder and added as an explicit
-      # public header.
       - path: "."
         # The vendored BulletinBoard, Hyperconnectivity and MarqueeLabel licenses
         # are shown on the Credits screen (Settings/OBAKit_Credits.plist); keep
         # the raw files out of the bundle.
         excludes:
-          - "OBAKit.h"
           - "ThirdParty/BulletinBoard/LICENSE"
           - "ThirdParty/Hyperconnectivity/LICENSE"
           - "ThirdParty/MarqueeLabel/LICENSE"
-      - path: OBAKit.h
-        headerVisibility: public
     dependencies:
-      - target: OBAKitCore
+      - package: OBAKit
+        product: OBAKitCore
       - package: FloatingPanel
+      - package: SwiftProtobuf
       - package: OTPKit
       - sdk: HealthKit.framework
     postBuildScripts:
@@ -51,6 +47,11 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: false
+        # Swift-only: no umbrella header and no generated -Swift.h. That header
+        # would import OBAKitCore as a Clang module, which a Swift package
+        # target doesn't provide.
+        SWIFT_INSTALL_OBJC_HEADER: NO
+        DEFINES_MODULE: NO
         # Swift language mode, checking level, and MainActor default isolation
         # come from the project-wide base in Apps/Shared/app_shared.yml.
       configs:

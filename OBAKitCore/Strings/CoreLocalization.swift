@@ -9,8 +9,14 @@
 
 import Foundation
 
-fileprivate class CoreLocalization: NSObject {}
+extension Bundle {
+    /// OBAKitCore's resources: its string tables and privacy manifest. A package
+    /// target's resources live in a bundle of their own, so `Bundle(for:)` on a
+    /// Core type finds the code, not these. Tests reach this through
+    /// `@testable import`.
+    static var obaKitCore: Bundle { .module }
+}
 
 internal func OBALoc(_ key: String, value: String, comment: String) -> String {
-    return NSLocalizedString(key, tableName: nil, bundle: Bundle(for: CoreLocalization.self), value: value, comment: comment)
+    return NSLocalizedString(key, tableName: nil, bundle: .module, value: value, comment: comment)
 }
