@@ -206,6 +206,9 @@ class MapStatusView: UIView {
             }
         }
 
+        // Nothing changed: skip the animation, and the layout of the whole map it
+        // forces.
+        guard indicator != self.indicator || isHidden != (indicator == nil) else { return }
         self.indicator = indicator
         let shouldHide = indicator == nil
         let setImage = indicator.map { UIImage(systemName: $0.symbolName) } ?? nil

@@ -561,7 +561,12 @@ class MapViewController: UIViewController,
     /// True while `tripPlannerMapView` is the map on screen. Set by
     /// `showTripPlannerMapView()` and `hideTripPlannerMapView()`, which live in
     /// `MapViewController+TripPlanner.swift` — hence internal, not `private(set)`.
-    var isShowingTripPlannerMap = false
+    var isShowingTripPlannerMap = false {
+        didSet {
+            // The zoom pills stand down in route mode; see `renderMapStatus()`.
+            if isViewLoaded, oldValue != isShowingTripPlannerMap { renderMapStatus() }
+        }
+    }
 
     /// The map the rider is actually looking at. `tripPlannerMapView` stands in for
     /// the main map for the duration of route mode, so anything that moves or reads
@@ -1413,7 +1418,6 @@ class MapViewController: UIViewController,
     }
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
-        // EC6: Update ViewModel so both UIKit and future SwiftUI consumers share the same state.
         viewModel.updateZoomWarnings(stops: showStatus, rentals: manager.rentalZoomHintStatus)
     }
 
@@ -1579,23 +1583,18 @@ private extension MapViewController {
     }
 
     func bindMapStatus() {
-        // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
-        //
         // Redrawn on the next main-queue turn, not inside the change (#1547), for two
-        // reasons. `@Published` sends before it stores, so a redraw reading the view
-        // model from inside the send draws the value being replaced. And drawing lays
-        // the map out, which can settle its region and update the warning again from
-        // inside this sink, where Combine drops the nested value. Either way "Zoom in
-        // for stops" stayed up at street level with stops on screen. A redraw after
-        // the change reads the settled state, however many changes led to it.
-        Publishers.Merge3(
-            viewModel.$showZoomWarning.map { _ in },
-            viewModel.$showRentalZoomHint.map { _ in },
-            viewModel.$locationAuthStatus.map { _ in }
-        )
-        .receive(on: DispatchQueue.main)
-        .sink { [weak self] in self?.renderMapStatus() }
-        .store(in: &cancellables)
+        // reasons. `objectWillChange` fires before the new state lands, so a redraw
+        // from inside it draws the value being replaced. And drawing lays the map
+        // out, which can settle its region and update the warning again from inside
+        // the send, where Combine drops the nested value. Either way "Zoom in for
+        // stops" stayed up at street level with stops on screen. A redraw after the
+        // change reads the settled state, however many changes led to it, and
+        // `objectWillChange` covers every input without a list to keep in step.
+        viewModel.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.renderMapStatus() }
+            .store(in: &cancellables)
 
         // Not a status binding, but `viewDidLoad`'s other observers live in the class
         // body, which is at SwiftLint's `type_body_length` limit.
@@ -1632,10 +1631,15 @@ private extension MapViewController {
         // stops they are no longer looking for. Location warnings still surface —
         // those are actionable, and tapping the pill is how you act on them.
         // The rental hint follows the same rule, for the same reason.
+        //
+        // Both stay down in route mode too. The warnings describe the main map,
+        // which is hidden behind the trip planner's then, and tapping one would zoom
+        // that hidden map.
+        let showsZoomHints = stopSheetStopID == nil && !isShowingTripPlannerMap
         mapStatusView.configure(
             for: locationState,
-            zoomInStatus: viewModel.showZoomWarning && stopSheetStopID == nil,
-            rentalZoomInStatus: viewModel.showRentalZoomHint && stopSheetStopID == nil
+            zoomInStatus: viewModel.showZoomWarning && showsZoomHints,
+            rentalZoomInStatus: viewModel.showRentalZoomHint && showsZoomHints
         )
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
         layoutMapMargins()
