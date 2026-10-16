@@ -436,6 +436,9 @@
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "Estes dados podem estar desatualizados.";
 
+/* Shown under the arrivals on a rider's first Live Activity on the Lock Screen, explaining how to remove it. The direction is the Lock Screen's swipe; in right-to-left languages it is mirrored. */
+"live_activity.dismiss_hint" = "Deslize para a esquerda para dispensar";
+
 /* Error shown when a location request is made without authorization */
 "location_service.error.not_authorized" = "O acesso à localização não está autorizado.";
 

@@ -33,7 +33,8 @@ struct TripLiveActivity: Widget {
             TripLiveActivityCardView(
                 staticData: context.attributes.staticData,
                 contentState: context.state,
-                isStale: context.isStale
+                isStale: context.isStale,
+                showsDismissHint: context.attributes.showsDismissHint
             )
             .activityBackgroundTint(Color(UIColor.systemBackground))
             .widgetURL(

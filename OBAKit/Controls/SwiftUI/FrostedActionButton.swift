@@ -9,7 +9,7 @@
 
 import SwiftUI
 
-/// The frosted capsule behind an action-bar control: `Material` — the
+/// The frosted shape behind an action-bar control: `Material` — the
 /// `UIVisualEffectView` blur — with a translucent fill over it and a hairline rim.
 ///
 /// The blur alone is not enough where these are used, and measuring says so: a
@@ -22,8 +22,8 @@ import SwiftUI
 /// underneath still does its work.
 ///
 /// A `ViewModifier` and not only a `ButtonStyle` because `Menu` takes no button
-/// style: the Stop page toolbar's "More" item has to apply this to its label
-/// directly. Buttons should use `FrostedActionButtonStyle` instead, which adds
+/// style: the "More" item on the Stop page toolbar and the Trip page bar has to
+/// apply this to its label directly. Buttons should use `FrostedActionButtonStyle` instead, which adds
 /// the pressed and disabled states on top of this.
 ///
 /// Deliberately flat `Material` rather than Liquid Glass. The rest of this app's
@@ -34,38 +34,49 @@ import SwiftUI
 /// toggle and "Load more" chip above them render as glass. That split is
 /// intentional. The measured contrast figures above were taken against material
 /// and would need retaking if this ever moves to glass.
-struct FrostedCapsuleBackground: ViewModifier {
+///
+/// A capsule by default. The trip page's bar passes a rounded rectangle instead:
+/// its captions wrap to two lines, and a capsule that tall curves in most of the
+/// way down its sides, under the text.
+struct FrostedBackground<S: InsettableShape>: ViewModifier {
+    let shape: S
+
     func body(content: Content) -> some View {
         content
             // Two fills in the builder's implicit ZStack rather than a nested
             // overlay: same result, one less layer to reason about.
             .background {
-                Capsule().fill(.regularMaterial)
-                Capsule().fill(Color(uiColor: .tertiarySystemFill))
+                shape.fill(.regularMaterial)
+                shape.fill(Color(uiColor: .tertiarySystemFill))
             }
             .overlay(
-                Capsule().strokeBorder(Color(uiColor: .separator).opacity(0.6), lineWidth: 0.5)
+                shape.strokeBorder(Color(uiColor: .separator).opacity(0.6), lineWidth: 0.5)
             )
-            .contentShape(Capsule())
+            .contentShape(shape)
     }
 }
 
-/// A button drawn as a frosted capsule with a full-strength `label` foreground.
+extension FrostedBackground where S == Capsule {
+    init() { self.init(shape: Capsule()) }
+}
+
+/// A button drawn on a `FrostedBackground` with a full-strength `label` foreground.
 ///
 /// The foreground is deliberately `.label` rather than the app tint: tinted
 /// glyphs on the near-white bar these sit on is the low-contrast treatment this
-/// style exists to replace. The capsule carries the affordance; the content
+/// style exists to replace. The shape carries the affordance; the content
 /// carries the meaning.
 ///
 /// `.bordered` — which this stands in for — dimmed itself when pressed and when
 /// disabled. A custom style gets neither for free, so both are stated here.
-struct FrostedActionButtonStyle: ButtonStyle {
+struct FrostedActionButtonStyle<S: InsettableShape>: ButtonStyle {
+    let shape: S
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(Color(uiColor: .label))
-            .modifier(FrostedCapsuleBackground())
+            .modifier(FrostedBackground(shape: shape))
             .opacity(opacity(isPressed: configuration.isPressed))
     }
 
@@ -73,4 +84,8 @@ struct FrostedActionButtonStyle: ButtonStyle {
         if !isEnabled { return 0.4 }
         return isPressed ? 0.55 : 1
     }
+}
+
+extension FrostedActionButtonStyle where S == Capsule {
+    init() { self.init(shape: Capsule()) }
 }

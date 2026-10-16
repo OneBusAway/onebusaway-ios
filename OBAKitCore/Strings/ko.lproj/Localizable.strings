@@ -436,6 +436,9 @@
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "이 데이터가 오래되었을 수 있습니다.";
 
+/* Shown under the arrivals on a rider's first Live Activity on the Lock Screen, explaining how to remove it. The direction is the Lock Screen's swipe; in right-to-left languages it is mirrored. */
+"live_activity.dismiss_hint" = "왼쪽으로 쓸어서 닫기";
+
 /* Error shown when a location request is made without authorization */
 "location_service.error.not_authorized" = "위치 접근 권한이 없습니다.";
 

@@ -15,12 +15,24 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
 
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+        applyStyle()
+    }
+
+    /// `MKMarkerAnnotationView` resets both tints to MapKit's stock red here, and
+    /// recycled clusters drew in it (#1552). Everything `init` sets is reapplied,
+    /// not just the tints, so nothing else it resets goes stale the same way.
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        applyStyle()
+    }
+
+    private func applyStyle() {
+        displayPriority = .defaultHigh
+        collisionMode = .circle
         markerTintColor = ThemeColors.shared.brand
         // White on OneBusAway's green is under 3:1; take whichever of white or
         // black clears 4.5:1 on the white-label app's brand.
         glyphTintColor = ThemeColors.shared.brand.badgeTextColor(preferring: .white, minimumRatio: 4.5)
-        displayPriority = .defaultHigh
-        collisionMode = .circle
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }

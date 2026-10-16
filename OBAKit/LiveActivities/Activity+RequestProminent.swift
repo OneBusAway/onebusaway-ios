@@ -29,12 +29,18 @@ extension Activity where Attributes == TripAttributes {
     ///
     /// Callers keep their own tracking and UI feedback — those are the parts
     /// that legitimately differ between the bookmark, stop, and trip paths.
+    ///
+    /// Owns the first-activity dismiss hint for the same reason it owns
+    /// prominence: every start path passes through here (#1553).
     static func requestProminent(
-        attributes: TripAttributes,
+        staticData: TripAttributes.StaticData,
         state: TripAttributes.ContentState,
+        userDefaults: UserDefaults,
         staleDate: Date? = nil
     ) throws -> Activity<TripAttributes> {
         let prominence = TripLiveActivityRelevance.prominenceScore()
+        let dismissHint = LiveActivityDismissHint(userDefaults: userDefaults)
+        let attributes = TripAttributes(staticData: staticData, showsDismissHint: dismissHint.isPending)
 
         let activity = try Activity.request(
             attributes: attributes,
@@ -45,6 +51,7 @@ extension Activity where Attributes == TripAttributes {
             ),
             pushType: .token
         )
+        dismissHint.markShown()
 
         // Hop with the id rather than the activity: `Activity` is not `Sendable`,
         // and the demotion only ever needed the identity to skip.

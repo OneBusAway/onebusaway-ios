@@ -45,6 +45,24 @@ enum StopDirectionsPill {
         }
     }
 
+    var systemImage: String {
+        switch self {
+        case .walk: "figure.walk"
+        case .bike: "bicycle"
+        }
+    }
+
+    /// "12 min walk" / "12 min bike". Both headers show the same words in different chrome.
+    func text(for info: WalkTimeInfo) -> String {
+        let fmt = switch self {
+        case .walk:
+            OBALoc("stop_page.walk_chip_minutes_fmt", value: "%d min walk", comment: "Walk chip on the header card. %d is the walk time in minutes.")
+        case .bike:
+            OBALoc("stop_page.bike_chip_minutes_fmt", value: "%d min bike", comment: "Bike chip on the header card. %d is the bike time in minutes.")
+        }
+        return String(format: fmt, info.walkMinutes)
+    }
+
     /// `nil` when a tap does nothing, so the pill isn't a button.
     func behavior(tripPlannerAvailable: Bool) -> Behavior? {
         if tripPlannerAvailable { return .askThenPlanTrip(self) }

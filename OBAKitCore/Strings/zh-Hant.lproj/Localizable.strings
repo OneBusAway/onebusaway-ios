@@ -436,6 +436,9 @@
 /* Shown on a Live Activity when ActivityKit marks it stale (no recent update). */
 "live_activity.stale_warning" = "此資料可能已過期。";
 
+/* Shown under the arrivals on a rider's first Live Activity on the Lock Screen, explaining how to remove it. The direction is the Lock Screen's swipe; in right-to-left languages it is mirrored. */
+"live_activity.dismiss_hint" = "向左滑動即可關閉";
+
 /* Error shown when a location request is made without authorization */
 "location_service.error.not_authorized" = "未獲得位置存取授權。";
 

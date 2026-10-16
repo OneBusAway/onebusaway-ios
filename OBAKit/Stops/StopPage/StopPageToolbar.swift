@@ -215,11 +215,11 @@ struct StopPageToolbar: View {
             }
         } label: {
             // Forgoes the pressed dimming the real buttons get; a menu opening over
-            // the tap is its own feedback. See `FrostedCapsuleBackground` for why a
+            // the tap is its own feedback. See `FrostedBackground` for why a
             // `Menu` can't take the button style.
             label(title: Strings.more, systemImage: "ellipsis")
                 .foregroundStyle(Color(uiColor: .label))
-                .modifier(FrostedCapsuleBackground())
+                .modifier(FrostedBackground())
         }
         .accessibilityLabel(Strings.more)
         .accessibilityShowsLargeContentViewer {

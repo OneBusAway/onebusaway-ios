@@ -163,10 +163,10 @@ struct StopPageSheetHeaderView: View {
                     // `chipView(_:)`.
                     FlowLayout(hSpacing: 6, vSpacing: 6) {
                         if let walkTime {
-                            walkPill(walkTime)
+                            travelPill(.walk, walkTime, color: ThemeColors.shared.departureOnTime)
                         }
                         if let bikeTime {
-                            bikePill(bikeTime)
+                            travelPill(.bike, bikeTime, color: ThemeColors.shared.blue)
                         }
                         if (walkTime != nil || bikeTime != nil) && !chips.isEmpty {
                             rowSeparator
@@ -204,70 +204,26 @@ struct StopPageSheetHeaderView: View {
             .accessibilityHidden(true)
     }
 
-    /// The walk-time pill: a tinted capsule rather than the dark card's solid green one. The
-    /// foreground keeps the full-strength on-time color, which is already tuned per-appearance
-    /// for legibility at small sizes (see `ThemeColors.departureOnTime`).
+    /// A tinted capsule rather than the dark card's solid one: the foreground keeps the
+    /// full-strength color (walk: on-time green, already tuned per-appearance for legibility
+    /// at small sizes; bike: blue, matching the pushed header's bike chip) over a 14% fill.
     ///
-    /// Deliberately NOT a `Button`, and deliberately the same font and padding as a chip.
-    /// `FlowLayout` places its subviews top-anchored, so pill and chips must resolve to the same
-    /// height or the row reads as ragged — matching their type ramp is what holds that at every
-    /// Dynamic Type size, where a hardcoded height would not.
-    private func walkPill(_ info: WalkTimeInfo) -> some View {
-        let text = walkPillText(info)
-        return HStack(spacing: 4) {
-            Image(systemName: "figure.walk")
-                .accessibilityHidden(true) // the text below carries the meaning
-            // Pinning the text to one unwrappable line makes the pill's width a function of its
-            // content. Without it the pill came out 60pt wide and 168pt tall, with "2 min walk"
-            // broken one character per line.
-            Text(text)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .font(chipFont)
-        .foregroundStyle(Color(uiColor: ThemeColors.shared.departureOnTime))
-        .padding(.horizontal, chipHorizontalPadding)
-        .padding(.vertical, chipVerticalPadding)
-        .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
-        .contentShape(Capsule())
-        // `.accessibilityHidden(true)` on the glyph above was not enough on its
-        // own: a view that adds a trait but names no element let the walk glyph
-        // surfaced as a second, sibling stop — a 10x16pt target whose whole spoken
-        // content was the symbol's stock name, "Walk". Naming the element is what
-        // collapses the subtree. `chipView(_:)` below never had the bug because it
-        // has always set an explicit `.accessibilityLabel`.
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
-        .directionsAction(.walk, pillDirections)
-    }
-
-    /// The bike-time pill: same shape as `walkPill(_:)`, tinted blue (matching the pushed
-    /// header's bike chip) instead of on-time green. A button only where the trip planner can
-    /// open: no maps app takes a cycling deep link (Apple's Maps URL scheme has no documented
-    /// bike mode), so without the planner this is a static value.
-    private func bikePill(_ info: WalkTimeInfo) -> some View {
-        let text = bikePillText(info)
-        return HStack(spacing: 4) {
-            Image(systemName: "bicycle")
-                .accessibilityHidden(true) // the text below carries the meaning
-            Text(text)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .font(chipFont)
-        .foregroundStyle(Color(uiColor: ThemeColors.shared.blue))
-        .padding(.horizontal, chipHorizontalPadding)
-        .padding(.vertical, chipVerticalPadding)
-        .background(Color(uiColor: ThemeColors.shared.blue).opacity(0.14), in: Capsule())
-        .contentShape(Capsule())
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
-        .directionsAction(.bike, pillDirections)
+    /// Deliberately the same font and padding as a chip. `FlowLayout` places its subviews
+    /// top-anchored, so pill and chips must resolve to the same height or the row reads as
+    /// ragged — matching their type ramp is what holds that at every Dynamic Type size, where
+    /// a hardcoded height would not.
+    private func travelPill(_ pill: StopDirectionsPill, _ info: WalkTimeInfo, color: UIColor) -> some View {
+        StopTravelPill(
+            pill: pill, info: info,
+            font: chipFont, foreground: Color(uiColor: color), fill: Color(uiColor: color).opacity(0.14),
+            horizontalPadding: chipHorizontalPadding, verticalPadding: chipVerticalPadding,
+            directions: pillDirections
+        )
     }
 
     // MARK: - Shared pill metrics
 
-    /// One type ramp for the pill and the chips — see `walkPill(_:)` on why they must match.
+    /// One type ramp for the pill and the chips — see `travelPill(_:_:color:)` on why they must match.
     private var chipFont: Font { .footnote.weight(.semibold) }
     private var chipHorizontalPadding: CGFloat { 10 }
     private var chipVerticalPadding: CGFloat { 5 }
@@ -351,26 +307,6 @@ struct StopPageSheetHeaderView: View {
     private var highlightedLabel: String {
         OBALoc("stop_header.chip.highlighted", value: "highlighted on map",
                comment: "Spoken suffix on the currently-focused route chip.")
-    }
-
-    private func walkPillText(_ info: WalkTimeInfo) -> String {
-        let fmt = OBALoc(
-            "stop_page.walk_chip_minutes_fmt",
-            value: "%d min walk",
-            comment: "Walk chip on the header card. %d is the walk time in minutes."
-        )
-        return String(format: fmt, info.walkMinutes)
-    }
-
-    /// Shares its localization key with `StopPageHeaderView`'s bike chip — same wording,
-    /// different chrome, same string.
-    private func bikePillText(_ info: WalkTimeInfo) -> String {
-        let fmt = OBALoc(
-            "stop_page.bike_chip_minutes_fmt",
-            value: "%d min bike",
-            comment: "Bike chip on the header card. %d is the bike time in minutes."
-        )
-        return String(format: fmt, info.walkMinutes)
     }
 
     private var routeListAccessibilityLabel: String {
