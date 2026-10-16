@@ -6,7 +6,6 @@ DerivedData/
 Apps/**/Info.plist
 Apps/**/*.entitlements
 OBAWidget/**/*.entitlements
-OBAKit/Info.plist
 OBAKitTests/Info.plist
 # Left behind by the framework targets these package targets replaced.
 # SwiftPM ignores them, so keep them out of commits.

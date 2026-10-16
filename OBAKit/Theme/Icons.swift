@@ -398,10 +398,6 @@ nonisolated class Icons: NSObject {
     }
 
     private class var resourceBundle: Bundle {
-        #if SWIFT_PACKAGE
-        return Bundle.module
-        #else
-        return Bundle(for: self)
-        #endif
+        Bundle.module
     }
 }

@@ -18,7 +18,7 @@ import Testing
 struct SearchModelTests {
 
     private func englishBundle() -> Bundle? {
-        guard let path = Bundle(for: DonationCell.self).path(forResource: "en", ofType: "lproj") else { return nil }
+        guard let path = Bundle.obaKit.path(forResource: "en", ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
@@ -116,7 +116,7 @@ struct SearchModelTests {
         #expect(localized == "This vehicle is not currently on any trips.")
 
         let error = SearchError.noTripsAvailable
-        let expectedDescription = Bundle(for: DonationCell.self).localizedString(forKey: key, value: nil, table: nil)
+        let expectedDescription = Bundle.obaKit.localizedString(forKey: key, value: nil, table: nil)
         #expect(error.errorDescription == expectedDescription)
     }
 }

@@ -27,6 +27,13 @@ targets:
       - package: OBAKit
         product: OBAKitCore
         embed: false
+      - package: OBAKit
+        product: OBAKit
+        embed: false
+      - package: FloatingPanel
+        embed: false
+      - package: OTPKit
+        embed: false
       - package: GRDB
         embed: false
       - package: SwiftProtobuf

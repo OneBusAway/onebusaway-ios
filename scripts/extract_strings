@@ -13,7 +13,8 @@ mv -f OBAKitWatch/Strings/en.lproj/Localizable.strings.new OBAKitWatch/Strings/e
 
 # OBAWidget has no Localizable.strings of its own: its copy lives in OBAKitCore
 # (OBAKitCore/iOS/Widget/WidgetStrings.swift) and is extracted with that module above.
-# AppIntents.strings (OBAKit, OBAWidget) and AppShortcuts.strings (OBAKit) are
+# AppIntents.strings (Apps/Shared/CommonClient, OBAWidget) and AppShortcuts.strings
+# (Apps/Shared/CommonClient) are
 # hand-maintained: genstrings cannot read LocalizedStringResource keys or App
 # Shortcut phrases, and this script must not overwrite them. Fail if someone adds
 # an OBALoc table to the widget, so it cannot silently go unextracted.

@@ -54,12 +54,24 @@ def string_tables(node, found):
     return found
 
 
+def module_name(mangled):
+    """The module in a mangled type name such as `6OBAKit0A17AppIntentsPackageV`."""
+    digits = len(mangled) - len(mangled.lstrip("0123456789"))
+    length = int(mangled[:digits])
+    return mangled[digits:digits + length]
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: scripts/check_app_intents <path/to/App.app>")
 
     app = pathlib.Path(sys.argv[1])
-    metadata = sorted(app.rglob("Metadata.appintents/extract.actionsdata"))
+    # A Debug build embeds OBAKitTests.xctest, which merges its own copy of the
+    # metadata. It never ships, so only the app and its extensions count.
+    metadata = sorted(
+        m for m in app.rglob("Metadata.appintents/extract.actionsdata")
+        if not any(part.endswith(".xctest") for part in m.parts)
+    )
     if not metadata:
         sys.exit(f"error: no App Intents metadata anywhere in {app}")
 
@@ -81,6 +93,23 @@ def main():
             if not list(bundle.glob(f"en.lproj/{table}.strings")):
                 problems.append(f"{path.relative_to(app.parent)} names strings table '{table}', "
                                 f"but {bundle.relative_to(app.parent)}/en.lproj/{table}.strings does not exist")
+
+        # `extract.packagedata` lists the AppIntentsPackage types the bundle
+        # includes. The indexer (linkd) looks for each one's metadata in the
+        # framework named after its module, and if any is missing it rejects
+        # the whole bundle: "Bundle did not provide any metadata sources". A
+        # Swift package target has no framework metadata of its own (Xcode
+        # merges it into the app), so including its package does exactly that.
+        packagedata = path.parent / "extract.packagedata"
+        if packagedata.exists():
+            for mangled in json.loads(packagedata.read_text()).get("includes") or []:
+                module = module_name(mangled)
+                candidates = [b / "Frameworks" / f"{module}.framework" / "Metadata.appintents"
+                              for b in (bundle, app)]
+                if not any(c.is_dir() for c in candidates):
+                    problems.append(f"{packagedata.relative_to(app.parent)} includes {mangled}, but no "
+                                    f"{module}.framework carries Metadata.appintents; the system will "
+                                    f"ignore every intent in {bundle.name}")
 
     for kind, expected in EXPECTED.items():
         for name in sorted(expected - found[kind]):
