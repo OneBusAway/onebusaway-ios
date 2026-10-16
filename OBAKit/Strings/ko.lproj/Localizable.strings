@@ -1353,9 +1353,6 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "지금";
 
-/* Button in the stop header's directions prompt that opens the in-app trip planner. */
-"stop_page.directions_prompt.confirm" = "경로 확인";
-
 /* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
 "stop_page.directions_prompt.title" = "앱에서 이 정류장까지의 경로를 확인하시겠습니까?";
 

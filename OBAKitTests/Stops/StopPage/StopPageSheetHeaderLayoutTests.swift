@@ -73,7 +73,7 @@ final class StopPageSheetHeaderLayoutTests {
                 StopPageSheetHeaderView(
                     stop: stop,
                     walkTime: nil,
-                    onPillDirections: { _ in },
+                    pillDirections: .none,
                     onClose: {},
                     isCollapsed: isCollapsed,
                     mapFocus: StopMapFocus()

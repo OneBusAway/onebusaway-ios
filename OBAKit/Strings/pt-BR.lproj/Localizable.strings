@@ -1353,9 +1353,6 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "AGORA";
 
-/* Button in the stop header's directions prompt that opens the in-app trip planner. */
-"stop_page.directions_prompt.confirm" = "Obter rotas";
-
 /* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
 "stop_page.directions_prompt.title" = "Obter rotas para esta parada no app?";
 

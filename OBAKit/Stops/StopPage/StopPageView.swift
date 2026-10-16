@@ -23,14 +23,11 @@ struct StopPageNavigationHandler {
     /// trip panel). Mirrors the legacy row `Schedule` action, falling back to a stop
     /// schedule when route schedules are unsupported.
     let showScheduleForRoute: (ArrivalDeparture) -> Void
-    /// Opens walking directions to the stop in an external maps app (toolbar).
-    /// Presents a choice sheet when more than one app is available.
+    /// Opens walking directions to the stop in an external maps app. Presents a
+    /// choice sheet when more than one app is available.
     let showWalkingDirections: () -> Void
-    /// Whether the region's trip planner can open from here, which decides what
-    /// the header's walk and bike pills do; see `StopDirectionsPill`.
-    let pillsUseTripPlanner: Bool
-    /// Runs a tap on the header's walk or bike pill.
-    let showPillDirections: (StopDirectionsPill) -> Void
+    /// What the header's walk and bike pills do; see `StopDirectionsPill`.
+    let pillDirections: StopPillDirections
     /// Opens the in-app OTP trip planner with this stop as the destination
     /// (origin = current location). `nil` when trip planning is unavailable.
     let showDirectionsToHere: (() -> Void)?
@@ -197,7 +194,7 @@ struct StopPageView: View {
             if let stop = viewModel.stop {
                 if !showToolbarOnBottom {
                     Section {
-                        StopPageHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, pillsUseTripPlanner: navigation.pillsUseTripPlanner, onPillDirections: navigation.showPillDirections)
+                        StopPageHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, statusText: viewModel.statusText, snapshotLoader: snapshotLoader, pillDirections: navigation.pillDirections)
                             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
@@ -237,7 +234,7 @@ struct StopPageView: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
                 if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, pillsUseTripPlanner: navigation.pillsUseTripPlanner, onPillDirections: navigation.showPillDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
+                    StopPageSheetHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, pillDirections: navigation.pillDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
                 } else {
                     // Unconditional, unlike the pushed presentation's header: with no navigation
                     // bar behind the sheet, this strip carries the only close button, so a stop

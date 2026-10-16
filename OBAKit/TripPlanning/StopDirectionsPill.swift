@@ -25,38 +25,46 @@ enum StopDirectionsPill {
         /// Confirm with `promptTitle`, then open the trip planner in this mode.
         case askThenPlanTrip(TransportMode)
         case openMapsWalkingDirections
+
+        var accessibilityHint: String {
+            switch self {
+            case .askThenPlanTrip(.bike):
+                OBALoc("stop_page.header.bike_trip_planner_a11y_hint", value: "Plans a bike trip to this stop in the app.", comment: "VoiceOver hint on the stop header's bike-time button when the region has a trip planner.")
+            case .askThenPlanTrip:
+                OBALoc("stop_page.header.walk_trip_planner_a11y_hint", value: "Plans a walk to this stop in the app.", comment: "VoiceOver hint on the stop header's walk-time button when the region has a trip planner.")
+            case .openMapsWalkingDirections:
+                OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button.")
+            }
+        }
+    }
+
+    var mode: TransportMode {
+        switch self {
+        case .walk: .walk
+        case .bike: .bike
+        }
     }
 
     /// `nil` when a tap does nothing, so the pill isn't a button.
     func behavior(tripPlannerAvailable: Bool) -> Behavior? {
-        switch (self, tripPlannerAvailable) {
-        case (.walk, true): .askThenPlanTrip(.walk)
-        case (.bike, true): .askThenPlanTrip(.bike)
-        case (.walk, false): .openMapsWalkingDirections
-        case (.bike, false): nil
-        }
-    }
-
-    func accessibilityHint(tripPlannerAvailable: Bool) -> String? {
-        switch behavior(tripPlannerAvailable: tripPlannerAvailable) {
-        case .askThenPlanTrip(.bike):
-            OBALoc("stop_page.header.bike_trip_planner_a11y_hint", value: "Plans a bike trip to this stop in the app.", comment: "VoiceOver hint on the stop header's bike-time button when the region has a trip planner.")
-        case .askThenPlanTrip:
-            OBALoc("stop_page.header.walk_trip_planner_a11y_hint", value: "Plans a walk to this stop in the app.", comment: "VoiceOver hint on the stop header's walk-time button when the region has a trip planner.")
-        case .openMapsWalkingDirections:
-            OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button.")
-        case nil:
-            nil
-        }
+        if tripPlannerAvailable { return .askThenPlanTrip(mode) }
+        return self == .walk ? .openMapsWalkingDirections : nil
     }
 
     static var promptTitle: String {
         OBALoc("stop_page.directions_prompt.title", value: "Get directions to this stop in the app?", comment: "Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner.")
     }
+}
 
-    static var confirmTitle: String {
-        OBALoc("stop_page.directions_prompt.confirm", value: "Get Directions", comment: "Button in the stop header's directions prompt that opens the in-app trip planner.")
-    }
+/// What the stop header's walk and bike pills do, as one value so the gate and the
+/// action can't disagree.
+struct StopPillDirections {
+    /// Whether the region's trip planner can open from here.
+    let tripPlannerAvailable: Bool
+    let perform: (StopDirectionsPill.Behavior) -> Void
+
+    /// Plain values, for previews and placeholders.
+    static let none = StopPillDirections(tripPlannerAvailable: false, perform: { _ in })
 }
 
 extension View {
@@ -66,19 +74,15 @@ extension View {
     /// A tap gesture rather than a `Button`: the pills sit in a `FlowLayout`, which a
     /// `Button` answers with a greedy height (see `StopPageHeaderView`).
     @ViewBuilder
-    func directionsAction(
-        _ pill: StopDirectionsPill,
-        tripPlannerAvailable: Bool,
-        perform: @escaping (StopDirectionsPill) -> Void
-    ) -> some View {
-        if pill.behavior(tripPlannerAvailable: tripPlannerAvailable) != nil {
+    func directionsAction(_ pill: StopDirectionsPill, _ directions: StopPillDirections) -> some View {
+        if let behavior = pill.behavior(tripPlannerAvailable: directions.tripPlannerAvailable) {
             self
-                .onTapGesture { perform(pill) }
+                .onTapGesture { directions.perform(behavior) }
                 // `.onTapGesture` is invisible to assistive tech: the default action
                 // is what makes the "button" trait activatable.
-                .accessibilityAction { perform(pill) }
+                .accessibilityAction { directions.perform(behavior) }
                 .accessibilityAddTraits(.isButton)
-                .accessibilityHint(pill.accessibilityHint(tripPlannerAvailable: tripPlannerAvailable) ?? "")
+                .accessibilityHint(behavior.accessibilityHint)
         } else {
             self
         }

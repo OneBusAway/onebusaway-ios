@@ -1353,9 +1353,6 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "NGAY";
 
-/* Button in the stop header's directions prompt that opens the in-app trip planner. */
-"stop_page.directions_prompt.confirm" = "Xem chỉ đường";
-
 /* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
 "stop_page.directions_prompt.title" = "Xem chỉ đường đến điểm dừng này trong ứng dụng?";
 

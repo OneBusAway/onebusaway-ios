@@ -27,21 +27,15 @@ struct StopDirectionsPillTests {
         #expect(StopDirectionsPill.bike.behavior(tripPlannerAvailable: false) == nil)
     }
 
-    @Test func `The prompt names the stop's directions and offers a way out`() {
-        let prompt = StopDirectionsPill.promptTitle
-        #expect(prompt == "Get directions to this stop in the app?")
-        #expect(!StopDirectionsPill.confirmTitle.isEmpty)
-    }
-
     /// VoiceOver says what a tap will actually do, which differs with the planner.
-    @Test func `Each pill's VoiceOver hint matches what a tap does`() {
-        let walkInApp = StopDirectionsPill.walk.accessibilityHint(tripPlannerAvailable: true)
-        let walkMaps = StopDirectionsPill.walk.accessibilityHint(tripPlannerAvailable: false)
-        let bikeInApp = StopDirectionsPill.bike.accessibilityHint(tripPlannerAvailable: true)
+    @Test func `Each behaviour's VoiceOver hint says what a tap does`() {
+        let hints = [
+            StopDirectionsPill.Behavior.askThenPlanTrip(.walk),
+            .askThenPlanTrip(.bike),
+            .openMapsWalkingDirections
+        ].map(\.accessibilityHint)
 
-        #expect(walkInApp != walkMaps)
-        #expect(walkInApp != bikeInApp)
-        #expect(walkMaps == "Opens walking directions to this stop.")
-        #expect(StopDirectionsPill.bike.accessibilityHint(tripPlannerAvailable: false) == nil)
+        #expect(Set(hints).count == 3)
+        #expect(hints[2] == "Opens walking directions to this stop.")
     }
 }

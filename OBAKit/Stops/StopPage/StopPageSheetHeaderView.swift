@@ -51,10 +51,8 @@ struct StopPageSheetHeaderView: View {
     let walkTime: WalkTimeInfo?
     /// Bike time at the user's cycling speed — always shown, independent of Bike Mode.
     var bikeTime: WalkTimeInfo?
-    /// Whether the walk and bike pills open the trip planner; see `StopDirectionsPill`.
-    var pillsUseTripPlanner = false
-    /// Runs a tap on the walk or bike pill (VC-owned).
-    let onPillDirections: (StopDirectionsPill) -> Void
+    /// What the walk and bike pills do (VC-owned); see `StopDirectionsPill`.
+    let pillDirections: StopPillDirections
     /// Dismisses the sheet. The close button lives here rather than in a navigation bar: the
     /// sheet's root has no bar (see `StopSheetPresenter`), because a bar would impose a top safe
     /// area on the hosting controller that this header would absorb as dead space above the name.
@@ -240,7 +238,7 @@ struct StopPageSheetHeaderView: View {
         // has always set an explicit `.accessibilityLabel`.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
-        .directionsAction(.walk, tripPlannerAvailable: pillsUseTripPlanner, perform: onPillDirections)
+        .directionsAction(.walk, pillDirections)
     }
 
     /// The bike-time pill: same shape as `walkPill(_:)`, tinted blue (matching the pushed
@@ -264,7 +262,7 @@ struct StopPageSheetHeaderView: View {
         .contentShape(Capsule())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
-        .directionsAction(.bike, tripPlannerAvailable: pillsUseTripPlanner, perform: onPillDirections)
+        .directionsAction(.bike, pillDirections)
     }
 
     // MARK: - Shared pill metrics

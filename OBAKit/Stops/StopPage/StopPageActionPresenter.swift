@@ -12,6 +12,7 @@ import SwiftUI
 import ActivityKit
 import CoreLocation
 import OBAKitCore
+import OTPKit
 
 /// Every flow that leaves the Stop page or presents a modal over it.
 ///
@@ -123,8 +124,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showScheduleForStop: trip.showScheduleForStop,
             showScheduleForRoute: trip.showScheduleForRoute,
             showWalkingDirections: stop.showWalkingDirections,
-            pillsUseTripPlanner: stop.pillsUseTripPlanner,
-            showPillDirections: stop.showPillDirections,
+            pillDirections: stop.pillDirections,
             showDirectionsToHere: stop.showDirectionsToHere,
             showDirectionsFromHere: stop.showDirectionsFromHere,
             showAlertDetail: stop.showAlertDetail,
@@ -202,8 +202,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// Everything scoped to the stop as a whole.
     private struct StopClosures {
         let showWalkingDirections: () -> Void
-        let pillsUseTripPlanner: Bool
-        let showPillDirections: (StopDirectionsPill) -> Void
+        let pillDirections: StopPillDirections
         let showDirectionsToHere: (() -> Void)?
         let showDirectionsFromHere: (() -> Void)?
         let showAlertDetail: (ServiceAlert) -> Void
@@ -223,11 +222,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
                 guard let coordinate = viewModel.stop?.coordinate else { return }
                 self?.showWalkingDirections(coordinate: coordinate)
             },
-            pillsUseTripPlanner: tripPlannerAvailable,
-            showPillDirections: { [weak self] pill in
-                guard let stop = viewModel.stop else { return }
-                self?.showDirections(pill, stop: stop, tripPlannerAvailable: tripPlannerAvailable)
-            },
+            pillDirections: makePillDirections(viewModel: viewModel, tripPlannerAvailable: tripPlannerAvailable),
             showDirectionsToHere: tripPlannerAvailable ? { [weak self] in
                 guard let stop = viewModel.stop else { return }
                 self?.showTripPlanner(action: .directionsToStop, stop: stop)
@@ -478,31 +473,36 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         present(actionSheet: sheet)
     }
 
+    private func makePillDirections(viewModel: StopViewModel, tripPlannerAvailable: Bool) -> StopPillDirections {
+        StopPillDirections(tripPlannerAvailable: tripPlannerAvailable) { [weak self] behavior in
+            guard let stop = viewModel.stop else { return }
+            self?.showDirections(behavior, stop: stop)
+        }
+    }
+
     /// A tap on the header's walk or bike pill (#1546). With a trip planner it asks
     /// before leaving the stop page; "walk" and "bike" read as information first,
     /// and the planner replaces the whole screen.
-    func showDirections(_ pill: StopDirectionsPill, stop: Stop, tripPlannerAvailable: Bool) {
-        switch pill.behavior(tripPlannerAvailable: tripPlannerAvailable) {
+    func showDirections(_ behavior: StopDirectionsPill.Behavior, stop: Stop) {
+        switch behavior {
         case .askThenPlanTrip(let mode):
             guard let host = presentationHost(for: "directions prompt") else { return }
             let prompt = UIAlertController(title: StopDirectionsPill.promptTitle, message: nil, preferredStyle: .alert)
-            prompt.addAction(UIAlertAction(title: StopDirectionsPill.confirmTitle, style: .default) { [weak self] _ in
-                guard let self else { return }
-                StopTripPlannerAction.present(.directionsToStop, stop: stop, mode: mode, application: application, from: presentingController())
+            prompt.addAction(UIAlertAction(title: StopTripPlannerAction.directionsToHereTitle, style: .default) { [weak self] _ in
+                self?.showTripPlanner(action: .directionsToStop, stop: stop, mode: mode)
             })
-            prompt.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
+            prompt.addAction(.cancelAction)
             host.present(prompt, animated: true)
         case .openMapsWalkingDirections:
             showWalkingDirections(coordinate: stop.coordinate)
-        case nil:
-            break
         }
     }
 
     /// Switches to the map tab and opens the classic trip planner with this stop
-    /// as origin or destination. Shared by the pushed Stop page and the map sheet.
-    func showTripPlanner(action: StopTripPlannerAction, stop: Stop) {
-        StopTripPlannerAction.present(action, stop: stop, application: application, from: presentingController())
+    /// as origin or destination, and `mode` chosen when given. Shared by the pushed
+    /// Stop page and the map sheet.
+    func showTripPlanner(action: StopTripPlannerAction, stop: Stop, mode: TransportMode? = nil) {
+        StopTripPlannerAction.present(action, stop: stop, mode: mode, application: application, from: presentingController())
     }
 
     /// An unanchored action sheet is a hard crash on a regular-width device.

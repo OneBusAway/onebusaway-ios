@@ -32,7 +32,7 @@ struct StopPageSheetHeaderCloseButtonTests {
         let header = StopPageSheetHeaderView(
             stop: try someStop(),
             walkTime: nil,
-            onPillDirections: { _ in },
+            pillDirections: .none,
             onClose: {},
             mapFocus: StopMapFocus()
         )
@@ -43,7 +43,7 @@ struct StopPageSheetHeaderCloseButtonTests {
         let header = StopPageSheetHeaderView(
             stop: try someStop(),
             walkTime: nil,
-            onPillDirections: { _ in },
+            pillDirections: .none,
             onClose: {},
             showsCloseButton: false,
             mapFocus: StopMapFocus()

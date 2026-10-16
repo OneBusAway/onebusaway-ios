@@ -421,25 +421,12 @@ final class StopPageActionPresenterTests: OBATestCase {
         let (presenter, _) = makePresenter(host: host)
         let stop = try #require(Fixtures.loadSomeStops().first)
 
-        presenter.showDirections(pill, stop: stop, tripPlannerAvailable: true)
+        presenter.showDirections(.askThenPlanTrip(pill.mode), stop: stop)
 
         let alert = try #require(await waitForPresentation(on: host) as? UIAlertController)
         #expect(alert.title == StopDirectionsPill.promptTitle)
         #expect(alert.preferredStyle == .alert)
-        #expect(alert.actions.map(\.title) == [StopDirectionsPill.confirmTitle, Strings.cancel])
+        #expect(alert.actions.map(\.title) == [StopTripPlannerAction.directionsToHereTitle, Strings.cancel])
         #expect(alert.actions.last?.style == .cancel)
-    }
-
-    /// Without a trip planner, the bike pill isn't a button, and nothing it is
-    /// asked to do may leave the stop page.
-    @Test func `Without a trip planner, the bike pill does nothing`() async throws {
-        let host = makeHost()
-        let (presenter, _) = makePresenter(host: host)
-        let stop = try #require(Fixtures.loadSomeStops().first)
-
-        presenter.showDirections(.bike, stop: stop, tripPlannerAvailable: false)
-
-        try await Task.sleep(for: .milliseconds(200))
-        #expect(host.presentedViewController == nil)
     }
 }

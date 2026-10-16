@@ -1596,9 +1596,6 @@
 /* VoiceOver-only heading that anchors the departures list in the Headings rotor, and the title of the rotor itself; not shown on screen. */
 "stop_page.departures_heading" = "Departures";
 
-/* Button in the stop header's directions prompt that opens the in-app trip planner. */
-"stop_page.directions_prompt.confirm" = "Get Directions";
-
 /* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
 "stop_page.directions_prompt.title" = "Get directions to this stop in the app?";
 
