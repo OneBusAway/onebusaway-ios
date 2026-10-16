@@ -7,6 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Foundation
+
 /// Transfers a non-Sendable value across an isolation boundary when the sender
 /// provably relinquishes ownership — e.g. handing a one-shot MapKit request
 /// into a detached task and receiving its non-Sendable result back (see

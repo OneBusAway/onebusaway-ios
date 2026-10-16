@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 4/7/23.
 //
 
-import Foundation
+import UIKit
 
 extension NSCollectionLayoutSection {
     /// `NSCollectionLayoutSection.list` with content insets set to the Readable Content Guide.

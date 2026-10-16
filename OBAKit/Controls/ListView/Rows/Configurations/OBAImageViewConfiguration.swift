@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 6/28/21.
 //
 
+import UIKit
 import OBAKitCore
 
 /// A view model defining `UIListContentConfiguration.ImageProperties` properties.

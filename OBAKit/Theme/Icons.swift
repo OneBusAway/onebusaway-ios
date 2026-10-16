@@ -234,6 +234,11 @@ nonisolated class Icons: NSObject {
         imageNamed("no_internet")
     }
 
+    /// The arrow that points from a spotlight's caption down to the highlighted view.
+    class var spotlightArrowDown: UIImage {
+        imageNamed("arrowDownIcon")
+    }
+
     /// An image used to represent an error condition.
     public class var errorOutline: UIImage {
         systemImage(named: "exclamationmark.circle")

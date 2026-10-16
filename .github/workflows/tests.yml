@@ -191,6 +191,11 @@ jobs:
           COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
           -quiet
 
+    # A dropped App Intent fails nothing else: the app builds, launches and
+    # passes its tests, and the action is just gone from Shortcuts and Siri.
+    - name: Check App Intents metadata
+      run: scripts/check_app_intents DerivedData/Build/Products/Debug-iphonesimulator/App.app
+
     # What a test run needs: the .xctestrun file and the built products it
     # names, all relative to __TESTROOT__, so they run from any directory.
     # Object files, Swift modules and dSYMs stay behind (~370 MB → ~70 MB).

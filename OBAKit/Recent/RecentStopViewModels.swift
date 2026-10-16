@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 11/3/20.
 //
 
+import UIKit
 import OBAKitCore
 
 /// A view model for use with OBAListView for displaying basic stop details.

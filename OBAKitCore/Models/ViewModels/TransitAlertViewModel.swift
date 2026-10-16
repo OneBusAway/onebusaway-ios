@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 1/18/21.
 //
 
+import Foundation
+
 /// Wraps `AgencyAlert` and `ServiceAlert` into a common view model for displaying alert details in-app.
 public protocol TransitAlertViewModel {
     /// The closest matching localized title text for the specified `Locale`.

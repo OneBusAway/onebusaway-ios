@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
+import UIKit
 import OBAKitCore
 
 // MARK: - Default ViewModel for convenience
