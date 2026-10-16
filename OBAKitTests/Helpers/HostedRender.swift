@@ -63,6 +63,13 @@ struct HostedRender {
         self.bytes = buffer
     }
 
+    /// Unweighted mean of a pixel's RGB channels, 0...255 — a brightness, not WCAG
+    /// relative luminance. `(0, 0)` is the top-left.
+    func luminance(x: Int, y: Int) -> Int {
+        let i = (y * width + x) * 4
+        return (Int(bytes[i]) + Int(bytes[i + 1]) + Int(bytes[i + 2])) / 3
+    }
+
     /// The bounding box, in pixels, of every pixel within 6/255 of `color` on each
     /// channel. `nil` if none match.
     func boundingBox(of color: UIColor) throws -> CGRect? {

@@ -49,6 +49,13 @@ struct TripActionBar: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    /// Every icon gets this much height, whatever its symbol's own height, so the
+    /// captions under them start on one line (#1551).
+    @ScaledMetric(relativeTo: .body) private var iconHeight: CGFloat = 22
+
+    /// Less round than a capsule; see `FrostedBackground`.
+    private static let buttonShape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+
     /// Used until the page's first geometry reading lands, and if it ever reads zero.
     private static let fallbackMaxHeight: CGFloat = 300
 
@@ -111,37 +118,47 @@ struct TripActionBar: View {
         .disabled(isTrackingLiveActivity)
     }
 
-    /// Side by side at normal sizes; stacked once the labels need the width, so
-    /// each stays a full-width target rather than truncating to an icon.
+    /// As many columns as leave each button room for its caption: four across, then two,
+    /// then one, rather than truncating or shrinking the captions. A word like "Bookmark"
+    /// can't wrap, so the room needed grows with the text size, and the room available
+    /// with the screen. Stacked full-width at accessibility sizes, as ever.
     private var secondaryActions: some View {
-        let layout = dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 10))
-            : AnyLayout(HStackLayout(spacing: 10))
+        ActionButtonGrid(
+            minimumColumnWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : minimumColumnWidth,
+            spacing: 10
+        ) {
+            secondaryButtons
+        }
+    }
 
-        return layout {
-            secondaryButton(title: Strings.addBookmark, systemImage: "bookmark", action: onBookmark)
+    /// Room for "Bookmark" at caption size plus the label's padding, with a little to
+    /// spare; scales with the caption.
+    @ScaledMetric(relativeTo: .caption) private var minimumColumnWidth: CGFloat = 74
 
-            if canSchedule {
-                secondaryButton(
-                    title: OBALoc("trip_page.view_schedule", value: "View schedule", comment: "Trip page button opening the route's schedule."),
-                    systemImage: "calendar",
-                    action: onSchedule
-                )
-            }
+    @ViewBuilder
+    private var secondaryButtons: some View {
+        secondaryButton(title: Strings.addBookmark, systemImage: "bookmark", action: onBookmark)
 
-            if canAlarm {
-                secondaryButton(
-                    title: hasAlarm
-                        ? OBALoc("trip_page.remove_alarm", value: "Remove alarm", comment: "Trip page button cancelling this trip's arrival alarm.")
-                        : Strings.addAlarm,
-                    systemImage: hasAlarm ? "bell.fill" : "bell",
-                    action: onAlarm
-                )
-            }
+        if canSchedule {
+            secondaryButton(
+                title: OBALoc("trip_page.view_schedule", value: "View schedule", comment: "Trip page button opening the route's schedule."),
+                systemImage: "calendar",
+                action: onSchedule
+            )
+        }
 
-            if canReportGhostBus {
-                moreMenu
-            }
+        if canAlarm {
+            secondaryButton(
+                title: hasAlarm
+                    ? OBALoc("trip_page.remove_alarm", value: "Remove alarm", comment: "Trip page button cancelling this trip's arrival alarm.")
+                    : Strings.addAlarm,
+                systemImage: hasAlarm ? "bell.fill" : "bell",
+                action: onAlarm
+            )
+        }
+
+        if canReportGhostBus {
+            moreMenu
         }
     }
 
@@ -159,11 +176,11 @@ struct TripActionBar: View {
             }
         } label: {
             // Forgoes the pressed dimming the real buttons get; a menu opening over
-            // the tap is its own feedback. See `FrostedCapsuleBackground` for why a
+            // the tap is its own feedback. See `FrostedBackground` for why a
             // `Menu` can't take the button style.
             actionLabel(title: Strings.more, systemImage: "ellipsis")
                 .foregroundStyle(Color(uiColor: .label))
-                .modifier(FrostedCapsuleBackground())
+                .modifier(FrostedBackground(shape: Self.buttonShape))
         }
         .accessibilityLabel(Strings.more)
     }
@@ -172,21 +189,98 @@ struct TripActionBar: View {
         Button(action: action) {
             actionLabel(title: title, systemImage: systemImage)
         }
-        .buttonStyle(FrostedActionButtonStyle())
+        .buttonStyle(FrostedActionButtonStyle(shape: Self.buttonShape))
     }
 
     /// The shared icon-over-caption layout for everything in the bar's secondary row —
     /// plain buttons and the More menu's label alike.
+    ///
+    /// Top-aligned under a fixed-height icon, so every caption's first line sits on
+    /// one baseline whatever the symbol. A caption too wide for its button wraps to a
+    /// second line rather than shrinking or running under the button's ends; the
+    /// button grows to hold it (#1551).
     private func actionLabel(title: String, systemImage: String) -> some View {
         VStack(spacing: 4) {
             Image(systemName: systemImage)
+                .frame(height: iconHeight)
                 .accessibilityHidden(true) // the caption names the action
             Text(title)
                 .font(.caption)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, minHeight: 44)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, minHeight: 44, maxHeight: .infinity, alignment: .top)
+    }
+}
+
+/// Equal-width columns of buttons, as many as `minimumColumnWidth` allows, each row as
+/// tall as its tallest button so the frosted shapes line up.
+///
+/// A `Layout` rather than an `HStack` or a grid view, because the column count depends
+/// on the width the bar is offered — which only a layout knows — and because neither
+/// `LazyVGrid` nor an `HStack` stretches its cells to a shared row height on its own.
+struct ActionButtonGrid: Layout {
+    var minimumColumnWidth: CGFloat
+    var spacing: CGFloat
+
+    /// All of them, two, or one: the largest that keeps every column at least
+    /// `minimumColumnWidth` wide.
+    func columnCount(for count: Int, width: CGFloat) -> Int {
+        let fits = { columnWidth(columns: $0, width: width) >= minimumColumnWidth }
+        if count > 1, fits(count) { return count }
+        if count > 2, fits(2) { return 2 }
+        return 1
+    }
+
+    private func columnWidth(columns: Int, width: CGFloat) -> CGFloat {
+        (width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+    }
+
+    private struct Grid {
+        let columns: Int
+        let columnWidth: CGFloat
+        let rowHeights: [CGFloat]
+    }
+
+    /// Column count, column width and per-row heights for a given offered width.
+    private func grid(width: CGFloat, subviews: Subviews) -> Grid {
+        let columns = columnCount(for: subviews.count, width: width)
+        let columnWidth = columnWidth(columns: columns, width: width)
+        let rowHeights = stride(from: 0, to: subviews.count, by: columns).map { start in
+            subviews[start..<min(start + columns, subviews.count)]
+                .map { $0.sizeThatFits(ProposedViewSize(width: columnWidth, height: nil)).height }
+                .max() ?? 0
+        }
+        return Grid(columns: columns, columnWidth: columnWidth, rowHeights: rowHeights)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        // Without a finite offered width, fall back to one row at the buttons' own widths:
+        // answering an `.infinity` probe with an infinite width would hand it back unchanged.
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? subviews.reduce(spacing * CGFloat(max(subviews.count - 1, 0))) {
+            $0 + $1.sizeThatFits(.unspecified).width
+        }
+        let rows = grid(width: width, subviews: subviews).rowHeights
+        return CGSize(width: width, height: rows.reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0)))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let grid = grid(width: bounds.width, subviews: subviews)
+        var y = bounds.minY
+        for (row, height) in grid.rowHeights.enumerated() {
+            for column in 0..<grid.columns {
+                let index = row * grid.columns + column
+                guard index < subviews.count else { break }
+                let x = bounds.minX + CGFloat(column) * (grid.columnWidth + spacing)
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y),
+                    proposal: ProposedViewSize(width: grid.columnWidth, height: height)
+                )
+            }
+            y += height + spacing
+        }
     }
 }
