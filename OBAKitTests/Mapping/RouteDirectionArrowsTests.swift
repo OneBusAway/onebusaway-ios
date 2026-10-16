@@ -149,4 +149,14 @@ struct RouteDirectionArrowsTests {
         #expect(!markers.update([CGPoint(x: 1, y: 2)]))
         #expect(markers.points == [CGPoint(x: 1, y: 2)])
     }
+
+    /// Chevrons are sized from the zoom the map shows, so a new zoom alone redraws.
+    @Test func `A new zoom counts as a change`() {
+        let markers = RouteArrowMarkers()
+        markers.update([CGPoint(x: 1, y: 2)], screenScale: 0.05)
+
+        #expect(markers.update([CGPoint(x: 1, y: 2)], screenScale: 0.1))
+        #expect(!markers.update([CGPoint(x: 1, y: 2)], screenScale: 0.1))
+        #expect(markers.screenScale == 0.1)
+    }
 }

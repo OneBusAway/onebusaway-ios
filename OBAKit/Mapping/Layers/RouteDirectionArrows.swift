@@ -208,33 +208,49 @@ nonisolated enum RouteArrowStyle {
     }
 }
 
-/// Where stop markers are on the map, for direction arrows to keep clear of.
+/// Where stop markers are on the map, for direction arrows to keep clear of, and
+/// how far the map is zoomed.
 ///
 /// Written on the main actor by the layer that owns the line, read by
 /// `RouteLineRenderer` from MapKit's drawing threads.
 nonisolated final class RouteArrowMarkers: Sendable {
-    private let state = Mutex<[CGPoint]>([])
+    private struct State: Equatable {
+        var points: [CGPoint] = []
+        var screenScale: CGFloat?
+    }
+
+    private let state = Mutex(State())
 
     /// In map points.
-    var points: [CGPoint] { state.withLock { $0 } }
+    var points: [CGPoint] { state.withLock { $0.points } }
+
+    /// Screen points per map point when the map last settled.
+    ///
+    /// A renderer can't work this out from its `zoomScale`: MapKit draws tiles at
+    /// whole zoom levels and stretches them to the zoom in between, up to double.
+    /// The line's width is stretched with them, so it looks right; chevrons sized
+    /// from `zoomScale` would come out anywhere from half to twice their size.
+    var screenScale: CGFloat? { state.withLock { $0.screenScale } }
 
     /// Returns whether anything changed, so the caller only redraws when it must.
     /// Order doesn't count: `MKMapView.annotations` promises none.
     @discardableResult
-    func update(_ points: [CGPoint]) -> Bool {
-        let points = points.sorted { ($0.x, $0.y) < ($1.x, $1.y) }
+    func update(_ points: [CGPoint], screenScale: CGFloat? = nil) -> Bool {
+        let new = State(points: points.sorted { ($0.x, $0.y) < ($1.x, $1.y) }, screenScale: screenScale)
         return state.withLock { current in
-            guard current != points else { return false }
-            current = points
+            guard current != new else { return false }
+            current = new
             return true
         }
     }
 
-    /// Reads the stop markers on `mapView` again, and redraws any of `overlays`
-    /// that carry arrows if the markers moved.
+    /// Reads the stop markers and zoom of `mapView` again, and redraws any of
+    /// `overlays` that carry arrows if either moved.
     @MainActor
     func refresh(from mapView: MKMapView, redrawing overlays: [MKOverlay]) {
-        guard update(Self.positions(in: mapView.annotations)) else { return }
+        let visibleWidth = mapView.visibleMapRect.size.width
+        let screenScale: CGFloat? = visibleWidth > 0 && mapView.bounds.width > 0 ? mapView.bounds.width / visibleWidth : nil
+        guard update(Self.positions(in: mapView.annotations), screenScale: screenScale) else { return }
         for overlay in overlays {
             (mapView.renderer(for: overlay) as? RouteLineRenderer)?.setNeedsDisplay()
         }
@@ -281,12 +297,24 @@ nonisolated final class RouteLineRenderer: MKPolylineRenderer {
     }
 
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
-        super.draw(mapRect, zoomScale: zoomScale, in: context)
-        guard lineWidth >= RouteArrowStyle.minimumLineWidth else { return }
+        // Laid out at the zoom the map shows, not the tile's; see `screenScale`.
+        // Before the map has settled once, the tile's is the best guess.
+        let scale = markers.screenScale ?? zoomScale / contentScaleFactor
 
-        // `zoomScale` counts tile pixels, not screen points: MapKit widens the line
-        // by `contentScaleFactor` to match, so the chevrons have to as well.
-        let scale = zoomScale / contentScaleFactor
+        // The line too: `super` sizes it from the tile's zoom, which strays from the
+        // casing under it, drawn by MapKit at the zoom the map shows.
+        if path == nil { createPath() }
+        if let path {
+            context.saveGState()
+            context.addPath(path)
+            context.setStrokeColor(strokeColor?.cgColor ?? UIColor.clear.cgColor)
+            context.setLineWidth(lineWidth / scale)
+            context.setLineCap(lineCap)
+            context.setLineJoin(lineJoin)
+            context.strokePath()
+            context.restoreGState()
+        }
+        guard lineWidth >= RouteArrowStyle.minimumLineWidth else { return }
 
         // Grown by a chevron's reach, so one centered just outside the tile still
         // draws its part inside it.

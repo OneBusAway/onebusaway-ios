@@ -149,8 +149,9 @@ public enum MapLayerRefreshPolicy: Equatable {
     /// layer re-adds its own. Mirrors `mapAnnotationsWereCleared()`.
     func mapOverlaysWereCleared()
 
-    /// Called after stop markers were added to the map or taken off it. A layer
-    /// that draws around them reads their positions again.
+    /// Called after stop markers were added to the map or taken off it, and after
+    /// the map settles at a new viewport, which moves them on screen. A layer that
+    /// draws around them reads their positions again.
     func stopMarkersDidChange()
 }
 
