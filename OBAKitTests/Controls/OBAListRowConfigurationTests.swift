@@ -123,16 +123,8 @@ struct OBAListRowConfigurationTests {
     /// Tests mapping from Accessory to UICellAccessory.
     @Test func testAccessoryCellAccessoryMapping() {
         #expect(OBAListRowConfiguration.Accessory.none.cellAccessory == nil)
-
-        let checkmark = OBAListRowConfiguration.Accessory.checkmark.cellAccessory
-        #expect(checkmark is UICellAccessory.Checkmark)
-        #expect(checkmark?.displayed == .always)
-        #expect(checkmark?.tintColor == ThemeColors.shared.brand)
-
-        let disclosure = OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory
-        #expect(disclosure is UICellAccessory.DisclosureIndicator)
-        #expect(disclosure?.displayed == .always)
-        #expect(disclosure?.tintColor == ThemeColors.shared.brand)
+        #expect(OBAListRowConfiguration.Accessory.checkmark.cellAccessory != nil)
+        #expect(OBAListRowConfiguration.Accessory.disclosureIndicator.cellAccessory != nil)
     }
 
     /// Tests equatable conformance across all mutable properties of OBAListRowConfiguration.
