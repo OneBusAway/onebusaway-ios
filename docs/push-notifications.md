@@ -239,22 +239,20 @@ Everything in §4 is already wired. You need to:
 1. **Provide APNs capability** — add the Push Notifications entitlement and an APNs key/cert for your bundle ID in your Apple Developer account; the OBACloud operator configures the matching credentials in gorush.
 2. **Create the provider and forward the delegate callbacks** in your `AppDelegate`:
 
-```objc
-// AppDelegate.m (see Apps/OneBusAway/AppDelegate.m for the full version)
-- (instancetype)init {
+```swift
+// AppDelegate.swift (see Apps/OneBusAway/AppDelegate.swift for the full version)
+override init() {
     // …
-    _pushService = [[OBACloudPushService alloc] init];
-    appConfig.pushServiceProvider = _pushService;
+    pushService = OBACloudPushService()
+    appConfig.pushServiceProvider = pushService
 }
 
-- (void)application:(UIApplication *)application
-        didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    [self.pushService didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    pushService.didRegisterForRemoteNotifications(withDeviceToken: deviceToken)
 }
 
-- (void)application:(UIApplication *)application
-        didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
-    [self.pushService didFailToRegisterForRemoteNotificationsWithError:error];
+func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    pushService.didFailToRegisterForRemoteNotifications(withError: error)
 }
 ```
 
@@ -307,5 +305,5 @@ Implement the server contract directly:
 | Alarm creation UX | `OBAKit/PushNotifications/AlarmBuilder.swift` |
 | Alarm push payload model | `OBAKit/PushNotifications/AlarmPushBody.swift` |
 | App wiring, lifecycle triggers, delegate impls | `OBAKit/Orchestration/Application.swift` |
-| Reference AppDelegate forwarding | `Apps/OneBusAway/AppDelegate.m` |
+| Reference AppDelegate forwarding | `Apps/OneBusAway/AppDelegate.swift` |
 | Tests worth reading first | `OBAKitTests/PushNotifications/PushRegistrationManagerTests.swift`, `OBAKitTests/Modeling/Obaco Model Service Tests/PushRegistrationModelOperationTests.swift` |
