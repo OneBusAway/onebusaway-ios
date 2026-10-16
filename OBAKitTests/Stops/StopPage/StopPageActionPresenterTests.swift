@@ -421,7 +421,7 @@ final class StopPageActionPresenterTests: OBATestCase {
         let (presenter, _) = makePresenter(host: host)
         let stop = try #require(Fixtures.loadSomeStops().first)
 
-        presenter.showDirections(.askThenPlanTrip(pill.mode), stop: stop)
+        presenter.showDirections(.askThenPlanTrip(pill), stop: stop)
 
         let alert = try #require(await waitForPresentation(on: host) as? UIAlertController)
         #expect(alert.title == StopDirectionsPill.promptTitle)

@@ -485,11 +485,11 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// and the planner replaces the whole screen.
     func showDirections(_ behavior: StopDirectionsPill.Behavior, stop: Stop) {
         switch behavior {
-        case .askThenPlanTrip(let mode):
+        case .askThenPlanTrip(let pill):
             guard let host = presentationHost(for: "directions prompt") else { return }
             let prompt = UIAlertController(title: StopDirectionsPill.promptTitle, message: nil, preferredStyle: .alert)
             prompt.addAction(UIAlertAction(title: StopTripPlannerAction.directionsToHereTitle, style: .default) { [weak self] _ in
-                self?.showTripPlanner(action: .directionsToStop, stop: stop, mode: mode)
+                self?.showTripPlanner(action: .directionsToStop, stop: stop, mode: pill.mode)
             })
             prompt.addAction(.cancelAction)
             host.present(prompt, animated: true)

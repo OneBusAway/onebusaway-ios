@@ -22,15 +22,15 @@ enum StopDirectionsPill {
     case bike
 
     enum Behavior: Equatable {
-        /// Confirm with `promptTitle`, then open the trip planner in this mode.
-        case askThenPlanTrip(TransportMode)
+        /// Confirm with `promptTitle`, then open the trip planner in this pill's mode.
+        case askThenPlanTrip(StopDirectionsPill)
         case openMapsWalkingDirections
 
         var accessibilityHint: String {
             switch self {
             case .askThenPlanTrip(.bike):
                 OBALoc("stop_page.header.bike_trip_planner_a11y_hint", value: "Plans a bike trip to this stop in the app.", comment: "VoiceOver hint on the stop header's bike-time button when the region has a trip planner.")
-            case .askThenPlanTrip:
+            case .askThenPlanTrip(.walk):
                 OBALoc("stop_page.header.walk_trip_planner_a11y_hint", value: "Plans a walk to this stop in the app.", comment: "VoiceOver hint on the stop header's walk-time button when the region has a trip planner.")
             case .openMapsWalkingDirections:
                 OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button.")
@@ -47,7 +47,7 @@ enum StopDirectionsPill {
 
     /// `nil` when a tap does nothing, so the pill isn't a button.
     func behavior(tripPlannerAvailable: Bool) -> Behavior? {
-        if tripPlannerAvailable { return .askThenPlanTrip(mode) }
+        if tripPlannerAvailable { return .askThenPlanTrip(self) }
         return self == .walk ? .openMapsWalkingDirections : nil
     }
 
