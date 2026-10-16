@@ -206,8 +206,8 @@ Gains argument parsing: the app name stays positional (default `OneBusAway`);
 `system("xcodegen")` unless `--no-watch` was passed; an unset variable disables
 the include. The four existing callers (`scripts/setup`, `scripts/docs`,
 `fastlane/Fastfile`, `tests.yml`) keep working unchanged, except the Fastfile,
-which now passes `--no-watch` (Decisions; it dropped the flag again on
-2026-10-15).
+which passed `--no-watch` until the watch app shipped in TestFlight (Decisions;
+the flag was dropped on 2026-10-15).
 
 Consequences, documented in `CLAUDE.md` and README: with the watch enabled,
 building the iOS `App` scheme also builds the watch stack's simulator slices,
