@@ -15,10 +15,10 @@ import UIKit
 /// Draws the routes serving the selected stop and the vehicles arriving on them.
 ///
 /// Selection-driven, not viewport-driven: it is activated when a stop sheet opens
-/// and torn down when it closes, so `viewportDidChange` is a no-op and there is
-/// no zoom gate — a trip shape spans far more than a stop-density viewport, and
-/// culling it by visible-rect height would hide the line exactly when it is most
-/// useful.
+/// and torn down when it closes, so `viewportDidChange` only lays the direction
+/// chevrons out again for the new zoom, and there is no zoom gate — a trip shape
+/// spans far more than a stop-density viewport, and culling it by visible-rect
+/// height would hide the line exactly when it is most useful.
 @MainActor
 final class StopRouteFocusMapLayer: NSObject, MapLayer {
 

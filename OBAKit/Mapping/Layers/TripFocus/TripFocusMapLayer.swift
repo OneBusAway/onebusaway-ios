@@ -17,10 +17,10 @@ import UIKit
 /// terminal, and the vehicle.
 ///
 /// Presentation-driven like `StopRouteFocusMapLayer` — begun when the trip page
-/// is pushed and ended when it goes away — so `viewportDidChange` is a no-op and
-/// there is no zoom gate. A trip spans far more than a stop-density viewport, and
-/// culling it by visible-rect height would hide the line exactly when it is most
-/// useful.
+/// is pushed and ended when it goes away — so `viewportDidChange` only lays the
+/// direction chevrons out again for the new zoom, and there is no zoom gate. A trip
+/// spans far more than a stop-density viewport, and culling it by visible-rect
+/// height would hide the line exactly when it is most useful.
 @MainActor
 final class TripFocusMapLayer: NSObject, MapLayer {
 

@@ -167,6 +167,27 @@ struct RouteDirectionArrowsTests {
         #expect(abs(context.snapshot.screenScale! - 0.1) < 0.001)
     }
 
+    // MARK: - Draw scale
+
+    /// MapKit's `zoomScale` counts tile pixels, two to a point on a 2x screen.
+    @Test func `Before the map settles, chevrons are sized from the tile's zoom in points`() {
+        #expect(RouteArrowRenderer.layoutScale(settled: nil, zoomScale: 0.25, contentScaleFactor: 2) == 0.125)
+    }
+
+    /// A tile stretches to at most double or half its zoom, so the settled zoom wins
+    /// within that and is held to it beyond: mid-pinch tiles for another zoom level,
+    /// or a pitched map whose visible rect runs to the horizon.
+    @Test func `The settled zoom sizes chevrons, held within a tile's stretch`() {
+        let tile: (CGFloat?) -> CGFloat = {
+            RouteArrowRenderer.layoutScale(settled: $0, zoomScale: 0.25, contentScaleFactor: 2)
+        }
+
+        #expect(tile(0.2) == 0.2)
+        #expect(tile(0.07) == 0.07)
+        #expect(tile(1) == 0.25)
+        #expect(tile(0.001) == 0.0625)
+    }
+
     @Test func `A zoom that can't be measured is ignored`() {
         let context = RouteArrowContext()
 

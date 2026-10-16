@@ -334,13 +334,24 @@ nonisolated final class RouteArrowRenderer: MKPolylineRenderer {
         layout.arrows(scale: scale, avoiding: context.snapshot.markers)
     }
 
+    /// The screen points per map point a tile lays its chevrons out at.
+    ///
+    /// The zoom the map settled at, not the tile's; see `screenScale`. Before the
+    /// map has settled once, the tile's, in points, is the best guess. The settled
+    /// zoom is held within the tile's stretch, which is the most a tile can be off:
+    /// mid-pinch MapKit draws tiles for a zoom the map hasn't settled on yet, and a
+    /// pitched map's `visibleMapRect` runs to the horizon.
+    static func layoutScale(settled: CGFloat?, zoomScale: MKZoomScale, contentScaleFactor: CGFloat) -> CGFloat {
+        let tileScale = zoomScale / contentScaleFactor
+        guard let settled else { return tileScale }
+        return min(max(settled, tileScale / 2), tileScale * 2)
+    }
+
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
         guard lineWidth >= RouteArrowStyle.minimumLineWidth else { return }
 
         let snapshot = self.context.snapshot
-        // Laid out at the zoom the map shows, not the tile's; see `screenScale`.
-        // Before the map has settled once, the tile's is the best guess.
-        let scale = snapshot.screenScale ?? zoomScale / contentScaleFactor
+        let scale = Self.layoutScale(settled: snapshot.screenScale, zoomScale: zoomScale, contentScaleFactor: contentScaleFactor)
 
         // Grown by a chevron's reach, so one centered just outside the tile still
         // draws its part inside it.

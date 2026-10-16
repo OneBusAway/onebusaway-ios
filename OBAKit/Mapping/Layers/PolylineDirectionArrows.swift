@@ -24,8 +24,8 @@ nonisolated struct PolylineArrowPlacement: Equatable {
 
 /// Direction arrows for the map panel's SwiftUI `Map`, which draws them as
 /// annotations and so has to place them in meters: it has no renderer to hand it
-/// the zoom. The map tab draws its arrows in the line's renderer, spaced in screen
-/// points; see `RouteArrowRenderer`.
+/// the zoom. The map tab draws its arrows in an overlay renderer of their own,
+/// spaced in screen points; see `RouteArrowRenderer`.
 nonisolated enum PolylineDirectionArrows {
     private static let maximumPlacementCount = 24
 
