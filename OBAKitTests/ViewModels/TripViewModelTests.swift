@@ -344,6 +344,7 @@ final class TripViewModelTests: OBATestCase {
         #expect(viewModel.tripDetails?.stopTimes.count == 53)
         #expect(viewModel.stopListState == .loaded)
         #expect(viewModel.routePolylineCoordinates == nil)
+        #expect(viewModel.operationError != nil)
     }
 
     /// A stop list that failed to load is not one that doesn't exist: the rider

@@ -42,7 +42,8 @@ class TripViewModel: ObservableObject {
     /// Non-nil when a network error occurred.
     @Published private(set) var operationError: Error?
 
-    /// `true` when the last attempt to load `tripDetails` failed.
+    /// `true` when the running load's `tripDetails` fetch failed. Reset when a
+    /// load starts, so a retry reads as loading again.
     @Published private(set) var stopListLoadFailed = false
 
     /// What the trip page can say about the stop list.
@@ -58,7 +59,9 @@ class TripViewModel: ObservableObject {
 
     var stopListState: StopListState {
         if let tripDetails { return tripDetails.stopTimes.isEmpty ? .unavailable : .loaded }
-        return stopListLoadFailed && !isLoading ? .failed : .loading
+        // Not gated on `isLoading`: that waits on the route line and the
+        // destination's arrival too, and a slow one would hold back the Retry.
+        return stopListLoadFailed ? .failed : .loading
     }
 
     // MARK: - Configuration
@@ -128,6 +131,7 @@ class TripViewModel: ObservableObject {
         loadDataTask = Task { [weak self] in
             guard let self else { return }
             isLoading = true
+            stopListLoadFailed = false
 
             // One failing loses none of the others (#1548). The stop list used to
             // wait on the route line and the arrival, and go down with either of
@@ -138,6 +142,11 @@ class TripViewModel: ObservableObject {
             async let convertible = fetchTripConvertible()
             async let polyline = fetchMapPolyline()
             var failure: Error?
+            // The first failure the rider should hear about. A lower-layer
+            // cancellation never is, so it must not hide a real error after it.
+            func record(_ error: Error) {
+                if failure == nil || failure?.isCancellation == true { failure = error }
+            }
 
             // The stop list first: it is most of the page, and the others run
             // alongside it rather than ahead of it.
@@ -155,8 +164,10 @@ class TripViewModel: ObservableObject {
                 stopListLoadFailed = false
             } catch {
                 guard !Task.isCancelled else { return }
-                if !error.isCancellation { stopListLoadFailed = true }
-                failure = error
+                // Even for a lower-layer cancellation: there is still no list, and
+                // without this the page would say "Loading" with nothing loading.
+                stopListLoadFailed = true
+                record(error)
             }
             do {
                 let newConvertible = try await convertible
@@ -164,7 +175,7 @@ class TripViewModel: ObservableObject {
                 if let newConvertible { tripConvertible = newConvertible }
             } catch {
                 guard !Task.isCancelled else { return }
-                failure = failure ?? error
+                record(error)
             }
             do {
                 let newPolyline = try await polyline
@@ -172,7 +183,7 @@ class TripViewModel: ObservableObject {
                 if let newPolyline { routePolylineCoordinates = newPolyline }
             } catch {
                 guard !Task.isCancelled else { return }
-                failure = failure ?? error
+                record(error)
             }
 
             // URLSession can report NSURLErrorCancelled without this task being
@@ -292,4 +303,3 @@ class TripViewModel: ObservableObject {
         }
     }
 }
-
