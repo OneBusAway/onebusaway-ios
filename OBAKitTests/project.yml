@@ -20,6 +20,17 @@ targets:
     # See docs/swift6-migration-plan.md, "Phase 4".
     dependencies:
       - target: App
+      # The test bundle links these itself: a package product is not reachable
+      # through the host app the way an embedded framework was. It must not
+      # embed them, though. The host app already carries each one, and a second
+      # copy would load a second OBAKitCore with its own singletons.
+      - package: OBAKit
+        product: OBAKitCore
+        embed: false
+      - package: GRDB
+        embed: false
+      - package: SwiftProtobuf
+        embed: false
     info:
       path: "Info.plist"
       properties: {}

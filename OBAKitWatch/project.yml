@@ -4,15 +4,12 @@ targets:
     platform: watchOS
     deploymentTarget: "11.0"
     sources:
-      # XcodeGen's synced folders can't mark headers public, so the umbrella
-      # header is carved out of the buildable folder and added as an explicit
-      # public header. project.yml is excluded so it does not ship as a resource.
+      # project.yml is excluded so it does not ship as a resource.
       - path: "."
-        excludes: ["OBAKitWatch.h", "project.yml"]
-      - path: OBAKitWatch.h
-        headerVisibility: public
+        excludes: ["project.yml"]
     dependencies:
-      - target: OBAKitCore
+      - package: OBAKit
+        product: OBAKitCore
     # A declared scheme so `xcodebuild -scheme OBAKitWatch` exists on a fresh
     # checkout; XcodeGen writes shared schemes only for targets that ask.
     scheme:
@@ -29,5 +26,10 @@ targets:
       base:
         # The step 6 watch widget extension links this framework.
         APPLICATION_EXTENSION_API_ONLY: true
+        # Swift-only: no umbrella header and no generated -Swift.h. That header
+        # would import OBAKitCore as a Clang module, which a Swift package
+        # target doesn't provide.
+        SWIFT_INSTALL_OBJC_HEADER: NO
+        DEFINES_MODULE: NO
         # Swift language mode, checking level, and MainActor default isolation
         # come from the project-wide base in Apps/Shared/app_shared.yml.

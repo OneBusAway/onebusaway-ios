@@ -7,7 +7,6 @@ Apps/**/Info.plist
 Apps/**/*.entitlements
 OBAWidget/**/*.entitlements
 OBAKit/Info.plist
-OBAKitCore/Info.plist
 OBAKitTests/Info.plist
 OBAWidget/Info.plist
 OBAKitWatch/Info.plist
@@ -16,6 +15,8 @@ WatchApp/Info.plist
 /project.local.yml
 
 ## SwiftPM
+.build/
+.swiftpm/
 OBAKit.xcodeproj/**
 
 ## Various settings

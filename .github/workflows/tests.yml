@@ -214,6 +214,27 @@ jobs:
         compression-level: 0
         retention-days: 1
 
+    # OBAKitCore is linked by the widget extension, so it must not call API that
+    # extensions can't use (UIApplication.shared and friends). As a framework it
+    # enforced that with APPLICATION_EXTENSION_API_ONLY; a Swift package target
+    # has no such setting, and a package can't pass -application-extension
+    # itself without unsafeFlags, which would stop anyone depending on it by
+    # version. Setting it on the command line reaches the package target. After
+    # the upload, so the test job isn't kept waiting.
+    - name: Build OBAKitCore as extension-safe
+      timeout-minutes: 15
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -scheme 'OBAKitCore' \
+          -destination 'generic/platform=iOS' \
+          -derivedDataPath DerivedData-ExtensionSafe \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
+          CODE_SIGNING_ALLOWED=NO \
+          APPLICATION_EXTENSION_API_ONLY=YES \
+          -quiet
+
     # main only; see "Restore compilation cache". Saved even when the build
     # fails: the CAS holds only what compiled, so a failure cannot poison it.
     - name: Save compilation cache

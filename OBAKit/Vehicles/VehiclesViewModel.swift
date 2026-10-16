@@ -12,6 +12,7 @@ import Combine
 import MapKit
 import SwiftUI
 import OBAKitCore
+import SwiftProtobuf
 
 /// View model that manages vehicle positions state and auto-refresh
 @MainActor

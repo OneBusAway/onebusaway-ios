@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import OBAKitCore
 import Foundation
 import Testing
 import UIKit

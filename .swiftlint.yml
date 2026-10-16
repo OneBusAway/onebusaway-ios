@@ -15,7 +15,6 @@ opt_in_rules: # some rules are only opt-in
 included: # paths to include during linting. `--path` is ignored if present.
   - OBAKit
   - OBAKitCore
-  - OBAKitCoreiOS
   - OBAWidget
   - OBAKitWatch
   - WatchApp
@@ -34,7 +33,7 @@ type_body_length:
 custom_rules:
   hardcoded_app_name:
     name: "Hardcoded app name"
-    # OBAKit/OBAKitCore/OBAKitCoreiOS/OBAWidget/OBAKitWatch/WatchApp are the white-label frameworks and shells — the same code ships
+    # OBAKit/OBAKitCore/OBAWidget/OBAKitWatch/WatchApp are the white-label frameworks and shells — the same code ships
     # as KiedyBus. A brand name baked into a string literal renders the wrong app name.
     # `included:` above already scopes linting to the frameworks, so the app targets
     # under Apps/ remain free to name themselves.
@@ -62,13 +61,13 @@ custom_rules:
     # (it would not have caught ServiceAlert.TimeWindow's `.from` / `.to`). The
     # watchOS device build catches overflowing literals; nothing but review catches
     # an epoch decoded into Int under an innocuous key name.
-    included: "OBAKitCore(iOS)?/.*\\.swift"
+    included: "OBAKitCore/.*\\.swift"
     regex: 'decode(IfPresent)?\(Int\.self, forKey: \.\w*([Tt]ime|[Dd]ate|[Tt]imestamp)\b'
     message: "Decode epoch values as Int64 or Date — Int is 32 bits on arm64_32 Apple Watches."
     severity: error
   epoch_narrowed_to_int:
     name: "timeIntervalSince1970 narrowed to Int"
-    included: "OBAKitCore(iOS)?/.*\\.swift"
+    included: "OBAKitCore/.*\\.swift"
     regex: '\bU?Int\((?:[^()]|\([^()]*\))*timeIntervalSince1970'
     message: "Use Int64(…) or UInt64(…) — Int is 32 bits on arm64_32 Apple Watches, and seconds-since-1970 overflows it in 2038."
     severity: error
