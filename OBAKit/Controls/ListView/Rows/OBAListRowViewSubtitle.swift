@@ -32,7 +32,7 @@ extension OBAListRowView {
             accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
             onSelectAction: OBAListViewAction<SubtitleViewModel>? = nil) {
 
-            self.init(image: image, title: .string(title), subtitle: .string(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
+            self.init(image: image, title: .string(title), subtitle: .string(subtitle), accessoryType: accessoryType, onSelectAction: onSelectAction)
         }
 
         /// Convenience initializer for `SubtitleViewModel` using `NSAttributedString` as text.
@@ -43,7 +43,7 @@ extension OBAListRowView {
             accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
             onSelectAction: OBAListViewAction<SubtitleViewModel>? = nil) {
 
-            self.init(image: image, title: .attributed(title), subtitle: .attributed(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
+            self.init(image: image, title: .attributed(title), subtitle: .attributed(subtitle), accessoryType: accessoryType, onSelectAction: onSelectAction)
         }
 
         public init(
