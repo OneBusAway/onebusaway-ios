@@ -95,4 +95,35 @@ final class MapViewControllerVisibleMapTests: OBATestCase {
 
         #expect(application.mapRegionManager.mapView.mapType == .satellite)
     }
+
+    // MARK: - Zoom in for stops (#1547)
+
+    /// Seen on device: zoomed in to the street, stops on screen, and the pill still
+    /// said "Zoom in for stops". The redraw ran inside the change: `@Published` sends
+    /// before it stores, and drawing settles the map, which updates the warning
+    /// again from inside the send, where Combine drops it. Only the stops flag
+    /// flips here, as it does whenever the rentals hint doesn't flip with it.
+    @Test func `The stops pill follows each zoom change, not the one before it`() async {
+        let controller = MapViewController(application: application)
+        controller.loadViewIfNeeded()
+
+        controller.viewModel.updateZoomWarnings(stops: true, rentals: false)
+        await mainQueueTurn()
+        #expect(controller.mapStatusView.indicator == .zoomInForStops)
+
+        controller.viewModel.updateZoomWarnings(stops: false, rentals: false)
+        await mainQueueTurn()
+        #expect(controller.mapStatusView.indicator != .zoomInForStops)
+
+        controller.viewModel.updateZoomWarnings(stops: true, rentals: false)
+        await mainQueueTurn()
+        #expect(controller.mapStatusView.indicator == .zoomInForStops)
+    }
+
+    /// Lets the pill's redraw, queued behind the change, run.
+    private func mainQueueTurn() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
 }

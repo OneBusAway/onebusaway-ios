@@ -55,6 +55,9 @@ class MapStatusView: UIView {
     private var iconView: UIImageView!
     private var detailLabel: UILabel!
 
+    /// What the pill last showed; `nil` when it is hidden.
+    private(set) var indicator: MapStatusIndicator?
+
     // MARK: - Layout Constants
 
     private enum Layout {
@@ -203,6 +206,7 @@ class MapStatusView: UIView {
             }
         }
 
+        self.indicator = indicator
         let shouldHide = indicator == nil
         let setImage = indicator.map { UIImage(systemName: $0.symbolName) } ?? nil
         let setLargeImage = indicator.map { UIImage(systemName: $0.largeSymbolName) } ?? nil

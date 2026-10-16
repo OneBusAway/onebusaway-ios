@@ -1000,7 +1000,8 @@ class MapViewController: UIViewController,
 
     // MARK: - Overlays
 
-    private let mapStatusView = MapStatusView.autolayoutNew()
+    /// Internal for tests.
+    let mapStatusView = MapStatusView.autolayoutNew()
 
     /// Sets the margins for the map view to keep the scale and legal info within the viewable area.
     /// Call this when you modify top level UI.
@@ -1579,26 +1580,22 @@ private extension MapViewController {
 
     func bindMapStatus() {
         // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
-        viewModel.$showZoomWarning
-            .sink { [weak self] _  in
-                guard let self else { return }
-                self.renderMapStatus()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$locationAuthStatus
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.renderMapStatus()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$showRentalZoomHint
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.renderMapStatus()
-            }
-            .store(in: &cancellables)
+        //
+        // Redrawn on the next main-queue turn, not inside the change (#1547), for two
+        // reasons. `@Published` sends before it stores, so a redraw reading the view
+        // model from inside the send draws the value being replaced. And drawing lays
+        // the map out, which can settle its region and update the warning again from
+        // inside this sink, where Combine drops the nested value. Either way "Zoom in
+        // for stops" stayed up at street level with stops on screen. A redraw after
+        // the change reads the settled state, however many changes led to it.
+        Publishers.Merge3(
+            viewModel.$showZoomWarning.map { _ in },
+            viewModel.$showRentalZoomHint.map { _ in },
+            viewModel.$locationAuthStatus.map { _ in }
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] in self?.renderMapStatus() }
+        .store(in: &cancellables)
 
         // Not a status binding, but `viewDidLoad`'s other observers live in the class
         // body, which is at SwiftLint's `type_body_length` limit.
