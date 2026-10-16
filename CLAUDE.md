@@ -16,7 +16,7 @@ scripts/generate_project                # Defaults to OneBusAway if no app speci
 scripts/generate_project OneBusAway --no-watch   # iOS only; no watchOS platform needed
 ```
 
-The OneBusAway project includes two watchOS targets, `OBAKitWatch` (framework) and `WatchApp` (shell), opted in through `Apps/OneBusAway/watch.yml`. Building the `App` scheme also builds them, so a machine without the watchOS platform must pass `--no-watch`. Build the watch app with `WATCH_UDID=$(scripts/resolve_watch_simulator_udid)` and `-scheme WatchApp -destination "platform=watchOS Simulator,id=$WATCH_UDID"`; `scripts/watch_smoke_test` installs, launches, and asserts it stays alive, which a compile cannot. Watch code never builds a `CoreApplication` and never reads `\.coreApplication`; `OBAKitWatch/Host/WatchAppHost.swift` is the assembly.
+The OneBusAway project includes two watchOS targets, `OBAKitWatch` (framework) and `WatchApp` (shell), opted in through `Apps/OneBusAway/watch.yml`. Building the `App` scheme also builds them, so a machine without the watchOS platform must pass `--no-watch`. TestFlight builds embed the watch app (`fastlane/Fastfile` generates without `--no-watch`); the `build` job in `tests.yml` still uses it, and the `watch` job covers the watch stack. Build the watch app with `WATCH_UDID=$(scripts/resolve_watch_simulator_udid)` and `-scheme WatchApp -destination "platform=watchOS Simulator,id=$WATCH_UDID"`; `scripts/watch_smoke_test` installs, launches, and asserts it stays alive, which a compile cannot. Watch code never builds a `CoreApplication` and never reads `\.coreApplication`; `OBAKitWatch/Host/WatchAppHost.swift` is the assembly.
 
 **Available Apps**: OneBusAway, KiedyBus
 

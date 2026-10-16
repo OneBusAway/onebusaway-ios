@@ -34,6 +34,8 @@ targets:
         # App-neutral: the system prefixes the app name. Translations live in
         # <locale>.lproj/InfoPlist.strings beside this file.
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
+        # Export compliance, matching the iOS app (Apps/Shared/app_shared.yml).
+        ITSAppUsesNonExemptEncryption: false
     settings:
       base:
         # XcodeGen's watchOS application preset omits this; without it the app

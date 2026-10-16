@@ -33,7 +33,7 @@ Made with the maintainer, 2026-09-22.
 | Target shape | **The architecture spec's shape, from the start:** `OBAKitWatch` framework, thin `WatchApp` shell, per-app opt-in through `Apps/<App>/watch.yml`. |
 | Core host | **No `CoreApplication` on the watch.** A `WatchAppHost` assembles the standalone services the step 3 widget path already proved. Reverses the architecture spec's "configured with surveys, Obaco, and agency alerts disabled". |
 | Verification hardware | **Simulator only.** Runtime on a 32-bit watch stays in "Still unknown". |
-| Release lane | **The TestFlight lane passes `--no-watch`** until a hardware pass and App Store Connect setup exist. The watch app never ships by accident. |
+| Release lane | **The TestFlight lane passes `--no-watch`** until a hardware pass and App Store Connect setup exist. The watch app never ships by accident. **Superseded 2026-10-15:** the hardware pass is done and the lane embeds the watch app, signed with its own App Store profile (`WATCH_PROVISIONING_PROFILE_BASE64`). |
 | Sequencing | Step 4 = this app. Step 5 = sync plus the Bookmarks tab. Step 6 = the widget, unchanged. |
 | Nearby shape (2026-09-24) | **Route-and-direction cards, route + headsign only.** Times live one tap away on the route screen: nearest stop's next 3 departures, up to 2 "Also nearby" stops, ⇆ to the opposite direction, and a link to the stop's full arrivals. Tapping a departure does nothing yet (trip details deferred). |
 
@@ -206,7 +206,8 @@ Gains argument parsing: the app name stays positional (default `OneBusAway`);
 `system("xcodegen")` unless `--no-watch` was passed; an unset variable disables
 the include. The four existing callers (`scripts/setup`, `scripts/docs`,
 `fastlane/Fastfile`, `tests.yml`) keep working unchanged, except the Fastfile,
-which now passes `--no-watch` (Decisions).
+which passed `--no-watch` until the watch app shipped in TestFlight (Decisions;
+the flag was dropped on 2026-10-15).
 
 Consequences, documented in `CLAUDE.md` and README: with the watch enabled,
 building the iOS `App` scheme also builds the watch stack's simulator slices,
@@ -542,8 +543,8 @@ architecture spec (0 independent; 1–3 open as #1446, #1447, #1448).
    `.bookmarkGroupsDidChange`, the watch receiver, a Bookmarks tab, the
    synced-region fallback, background refresh with its arrivals cache, the
    configurable timeout, App Store Connect setup and removing `--no-watch`
-   from the release lane after a hardware pass, and the size measurement of
-   the thinned app.
+   from the release lane after a hardware pass (done 2026-10-15, ahead of the
+   rest of step 5), and the size measurement of the thinned app.
 6. OBAWatchWidget, unchanged.
 
 ## Alternatives considered
