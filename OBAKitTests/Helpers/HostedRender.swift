@@ -25,9 +25,7 @@ struct HostedRender {
 
     init<V: View>(_ view: V, size: CGSize) throws {
         let host = UIHostingController(rootView: view)
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let scene = try #require(scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)
-        let window = UIWindow(windowScene: scene)
+        let window = UIWindow(windowScene: try testWindowScene())
         window.overrideUserInterfaceStyle = .light
         window.frame = CGRect(origin: .zero, size: size)
         window.rootViewController = host

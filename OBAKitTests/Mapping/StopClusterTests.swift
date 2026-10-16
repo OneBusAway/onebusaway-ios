@@ -122,6 +122,65 @@ final class StopClusterTests {
         #expect(view.glyphText == "3")
     }
 
+    // MARK: - Brand tint (#1552)
+
+    /// `prepareForReuse()` resets a marker's tints to MapKit's stock red.
+    @Test func `A recycled cluster view keeps the brand tint`() {
+        let view = StopClusterAnnotationView(annotation: cluster([stops[0], stops[1]]), reuseIdentifier: nil)
+        view.prepareForDisplay()
+        let brandGlyph = view.glyphTintColor
+
+        view.prepareForReuse()
+        view.annotation = cluster([stops[2], stops[3]])
+
+        #expect(view.markerTintColor == ThemeColors.shared.brand)
+        #expect(view.glyphTintColor == brandGlyph)
+    }
+
+    /// The same through real MapKit: the second zoom-out builds its clusters from
+    /// recycled views.
+    @Test func `Clusters keep the brand tint across zoom cycles`() async throws {
+        let mapView = MKMapView(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+        mapView.registerAnnotationView(StopAnnotationView.self)
+        mapView.registerAnnotationView(StopClusterAnnotationView.self)
+        let delegate = StopClusterMapDelegate()
+        mapView.delegate = delegate
+
+        let window = UIWindow(windowScene: try testWindowScene())
+        window.frame = mapView.frame
+        window.rootViewController = UIViewController()
+        window.rootViewController?.view.addSubview(mapView)
+        window.isHidden = false
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        func clusterViews() -> [StopClusterAnnotationView] {
+            mapView.annotations(in: mapView.visibleMapRect)
+                .compactMap { $0 as? MKClusterAnnotation }
+                .compactMap { mapView.view(for: $0) as? StopClusterAnnotationView }
+        }
+
+        mapView.addAnnotations(stops)
+        var firstPass: Set<ObjectIdentifier> = []
+        for (span, clustered) in [(0.06, true), (0.004, false), (0.06, true)] {
+            mapView.setRegion(
+                MKCoordinateRegion(center: stops[0].coordinate, span: MKCoordinateSpan(latitudeDelta: span, longitudeDelta: span)),
+                animated: false
+            )
+            await poll(until: { clusterViews().isEmpty != clustered }, timeout: .seconds(5), "clusters never \(clustered ? "formed" : "broke up")")
+            if firstPass.isEmpty { firstPass = Set(clusterViews().map(ObjectIdentifier.init)) }
+        }
+        let views = clusterViews()
+        try #require(!views.isEmpty, "the fixture's stops formed no clusters")
+        // Without a recycled view this would pass on fresh ones and prove nothing.
+        try #require(views.contains { firstPass.contains(ObjectIdentifier($0)) }, "no cluster view was recycled")
+        for view in views {
+            #expect(view.markerTintColor == ThemeColors.shared.brand)
+        }
+    }
+
     // MARK: - Accessibility
 
     @Test func `Under VoiceOver every cluster lists its stops instead of zooming`() {
@@ -176,5 +235,20 @@ final class StopClusterTests {
     @Test func `A stop pin keeps its stop label, and anything else falls back`() {
         #expect(StopAnnotationView.accessibilityLabel(for: stops[0]) == Formatters.formattedAccessibilityLabel(stop: stops[0]))
         #expect(StopAnnotationView.accessibilityLabel(for: MKPointAnnotation()) == nil)
+    }
+}
+
+/// Stands in for `MapRegionManager.mapView(_:viewFor:)` for stops and their clusters.
+@MainActor
+private final class StopClusterMapDelegate: NSObject, MKMapViewDelegate {
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        switch annotation {
+        case is MKClusterAnnotation:
+            mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopClusterAnnotationView.self), for: annotation)
+        case is Stop:
+            mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopAnnotationView.self), for: annotation)
+        default:
+            nil
+        }
     }
 }

@@ -39,14 +39,8 @@ final class ErrorBulletinLifetimeTests: OBATestCase {
         // A real `UIWindowScene` is required: UIKit won't run a presentation
         // into a scene-less window, and `isShowing` reads the result of that
         // presentation.
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let scene = try #require(
-            scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first,
-            "No UIWindowScene in the test host."
-        )
-
         hostVC = UIViewController()
-        window = UIWindow(windowScene: scene)
+        window = UIWindow(windowScene: try testWindowScene())
         // Above the test host's own UI, matching where the app puts bulletins.
         window.windowLevel = .alert
         window.rootViewController = hostVC

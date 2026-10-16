@@ -506,9 +506,7 @@ final class OnDemandServiceViewTests: OBATestCase {
 
     /// Appearance callbacks only run in a window with a real scene.
     private func withSceneWindow(_ root: UIViewController, _ body: () async throws -> Void) async throws {
-        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let scene = try #require(scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first, "No UIWindowScene in the test host.")
-        let window = UIWindow(windowScene: scene)
+        let window = UIWindow(windowScene: try testWindowScene())
         window.rootViewController = root
         window.isHidden = false
         defer {

@@ -40,8 +40,7 @@ struct MarqueeLabelTests {
     /// Shows `label` in a window. The label needs a rendered window to get a
     /// presentation layer, which `awayFromHome` and `animationPosition` read.
     private func show(_ label: MarqueeLabel) throws -> UIWindow {
-        let scene = try #require(UIApplication.shared.connectedScenes.first as? UIWindowScene)
-        let window = UIWindow(windowScene: scene)
+        let window = UIWindow(windowScene: try testWindowScene())
         window.frame = CGRect(x: 0, y: 0, width: 320, height: 100)
         window.addSubview(label)
         window.isHidden = false
