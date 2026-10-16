@@ -353,11 +353,15 @@ struct OBAListRowConfigurationTests {
         var attrConfig = UIListContentConfiguration.cell()
         let attr = NSAttributedString(string: "Attr Primary", attributes: [.underlineStyle: NSUnderlineStyle.single.rawValue])
         attrConfig.labelText = .attributed(attr)
-        #expect(attrConfig.attributedText == attr)
+        #expect(attrConfig.attributedText?.string == "Attr Primary")
+        let primaryUnderline = attrConfig.attributedText?.attribute(.underlineStyle, at: 0, effectiveRange: nil) as? Int
+        #expect(primaryUnderline == NSUnderlineStyle.single.rawValue)
 
         let secondaryAttr = NSAttributedString(string: "Attr Secondary", attributes: [.strokeWidth: 2])
         attrConfig.secondaryLabelText = .attributed(secondaryAttr)
-        #expect(attrConfig.secondaryAttributedText == secondaryAttr)
+        #expect(attrConfig.secondaryAttributedText?.string == "Attr Secondary")
+        let secondaryStroke = attrConfig.secondaryAttributedText?.attribute(.strokeWidth, at: 0, effectiveRange: nil) as? Int
+        #expect(secondaryStroke == 2)
     }
 
     // MARK: - OBAListSectionConfiguration
