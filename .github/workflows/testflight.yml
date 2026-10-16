@@ -220,6 +220,7 @@ jobs:
       env:
         PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
         WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
+        WATCH_PROVISIONING_PROFILE_BASE64: ${{ secrets.WATCH_PROVISIONING_PROFILE_BASE64 }}
       run: |
         set -euo pipefail
         python3 <<'PY'
@@ -253,6 +254,8 @@ jobs:
              "org.onebusaway.iphone", "APP_PROVISIONING_PROFILE_NAME"),
             ("widget", "WIDGET_PROVISIONING_PROFILE_BASE64",
              "org.onebusaway.iphone.OBAWidget", "WIDGET_PROVISIONING_PROFILE_NAME"),
+            ("watch", "WATCH_PROVISIONING_PROFILE_BASE64",
+             "org.onebusaway.iphone.watchkitapp", "WATCH_PROVISIONING_PROFILE_NAME"),
         ]
 
         for label, secret, expected_bundle_id, env_var in PROFILES:

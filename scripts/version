@@ -18,7 +18,15 @@ def update_all_apps
   # upload as a duplicate build. Still monotonically increasing against the
   # hour-resolution numbers already uploaded, because CFBundleVersion components
   # compare numerically (20260726.1502 > 20260726.15).
-  build_version = DateTime.now.strftime("%Y%m%d.%H%M")
+  #
+  # OBA_BUILD_VERSION pins the number across every stamp of one archive. This
+  # script runs from generate_project and again from the App target's
+  # Versioning pre-build phase, but WatchApp and OBAWidget are built before
+  # that phase and keep the earlier stamp; App Store Connect rejects a watch
+  # app whose CFBundleVersion differs from its iOS app's. fastlane/Fastfile
+  # sets it; without it, each run stamps the current minute.
+  build_version = ENV["OBA_BUILD_VERSION"].to_s.strip
+  build_version = DateTime.now.strftime("%Y%m%d.%H%M") if build_version.empty?
 
   puts "Updating bundle build number to #{build_version}."
 

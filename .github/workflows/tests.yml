@@ -93,9 +93,10 @@ jobs:
           "$SWIFT_IMAGE" \
           sh -c "/swiftlint/swiftlint version | grep -qx '$SWIFTLINT_PIN' && /swiftlint/swiftlint lint --reporter github-actions-logging"
 
-  # Builds the shipping iOS app and its tests, generated with --no-watch exactly
-  # as the release lane generates it (fastlane/Fastfile), and hands the test
-  # products to the `test` job. The watch stack has its own job below.
+  # Builds the shipping iOS app and its tests, generated with --no-watch, and
+  # hands the test products to the `test` job. The release lane
+  # (fastlane/Fastfile) embeds the watch app; the watch stack is checked by its
+  # own job below.
   build:
     runs-on: xcode-27
     permissions:

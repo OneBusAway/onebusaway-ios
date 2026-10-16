@@ -3,6 +3,7 @@ default_platform(:ios)
 TEAM_ID = "4ZQCMA634J"
 APP_BUNDLE_ID = "org.onebusaway.iphone"
 WIDGET_BUNDLE_ID = "org.onebusaway.iphone.OBAWidget"
+WATCH_BUNDLE_ID = "org.onebusaway.iphone.watchkitapp"
 EXTERNAL_TESTER_GROUP = "Public Beta Testers"
 
 platform :ios do
@@ -23,6 +24,10 @@ platform :ios do
       UI.user_error!("WIDGET_PROVISIONING_PROFILE_NAME is not set. See the note " \
                      "on APP_PROVISIONING_PROFILE_NAME above.")
     end
+    watch_profile = ENV.fetch("WATCH_PROVISIONING_PROFILE_NAME") do
+      UI.user_error!("WATCH_PROVISIONING_PROFILE_NAME is not set. See the note " \
+                     "on APP_PROVISIONING_PROFILE_NAME above.")
+    end
 
     # Authenticate with App Store Connect using API key from environment.
     # Secrets are configured in the repository's GitHub Actions settings.
@@ -33,13 +38,20 @@ platform :ios do
       is_key_content_base64: true
     )
 
+    # One build number for every bundle in the archive. scripts/version stamps
+    # CFBundleVersion twice: once from generate_project, and again from the App
+    # target's `Versioning` pre-build script during the archive. WatchApp and
+    # OBAWidget are dependencies of App, so they are built before that second
+    # stamp and keep the first, minutes older. App Store Connect rejects an
+    # embedded watch app whose CFBundleVersion differs from the iOS app's. With
+    # OBA_BUILD_VERSION set, both stamps write this one value.
+    ENV["OBA_BUILD_VERSION"] = Time.now.strftime("%Y%m%d.%H%M")
+
     # Generate the Xcode project via XcodeGen (required before any build).
     # Run from the project root so the script can find Apps/OneBusAway/project.yml.
+    # No --no-watch: the archive embeds the watch app.
     Dir.chdir("..") do
-      # --no-watch until the watch app has a hardware pass and App Store Connect
-      # identifiers (see docs/superpowers/specs/2026-09-22-watchos-mvp-app-design.md,
-      # Decisions). Without it every TestFlight build would embed the watch app.
-      sh("scripts/generate_project", "OneBusAway", "--no-watch")
+      sh("scripts/generate_project", "OneBusAway")
     end
 
     # Apply signing settings *after* generate_project, since it rewrites the
@@ -48,12 +60,14 @@ platform :ios do
     # Xcode reads as manual signing with no profile — the cause of the "no iOS App
     # Development provisioning profiles were found" archive failure. Only the
     # Release configuration is touched, so local simulator debugging is
-    # unaffected. This has to be per-target: App and OBAWidget are different
-    # bundle IDs needing different profiles, which a global xcargs override
-    # cannot express.
+    # unaffected. This has to be per-target: App, OBAWidget and WatchApp are
+    # different bundle IDs needing different profiles, which a global xcargs
+    # override cannot express. The OBAKitWatch framework is signed when it is
+    # embedded and needs no profile of its own.
     {
       "App" => app_profile,
-      "OBAWidget" => widget_profile
+      "OBAWidget" => widget_profile,
+      "WatchApp" => watch_profile
     }.each do |target, profile_name|
       update_code_signing_settings(
         path: "OBAKit.xcodeproj",
@@ -66,10 +80,9 @@ platform :ios do
       )
     end
 
-    # Archive the app for App Store distribution. The build number is deliberately
-    # not set here: the App target's `Versioning` pre-build script runs during the
-    # archive (runOnlyWhenInstalling) and stamps CFBundleVersion itself, so
-    # anything written beforehand is overwritten. See scripts/version.
+    # Archive the app for App Store distribution. The build number is not passed
+    # here: scripts/version stamps every Info.plist with OBA_BUILD_VERSION (set
+    # above), including from the App target's `Versioning` pre-build script.
     build_app(
       project: "OBAKit.xcodeproj",
       scheme: "App",
@@ -83,7 +96,8 @@ platform :ios do
         teamID: TEAM_ID,
         provisioningProfiles: {
           APP_BUNDLE_ID => app_profile,
-          WIDGET_BUNDLE_ID => widget_profile
+          WIDGET_BUNDLE_ID => widget_profile,
+          WATCH_BUNDLE_ID => watch_profile
         }
       }
     )
