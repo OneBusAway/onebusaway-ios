@@ -32,9 +32,10 @@ struct StopPageHeaderView: View {
     /// The "Updated: …" line; empty hides it.
     let statusText: String
     let snapshotLoader: (CGSize) async -> UIImage?
-    /// Opens walking directions to the stop (VC-owned; disambiguates between
-    /// maps apps when more than one is available).
-    let onWalkingDirections: () -> Void
+    /// Whether the walk and bike chips open the trip planner; see `StopDirectionsPill`.
+    var pillsUseTripPlanner = false
+    /// Runs a tap on the walk or bike chip (VC-owned).
+    let onPillDirections: (StopDirectionsPill) -> Void
 
     @State private var snapshot: UIImage?
     @State private var cardWidth: CGFloat = 0
@@ -108,15 +109,11 @@ struct StopPageHeaderView: View {
                 FlowLayout(hSpacing: 8, vSpacing: 8) {
                     if let walkTime {
                         travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTimeFill)
-                            .onTapGesture(perform: onWalkingDirections)
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
-                            // `.onTapGesture` is invisible to assistive tech: the
-                            // default action is what makes "button" activatable.
-                            .accessibilityAction { onWalkingDirections() }
+                            .directionsAction(.walk, tripPlannerAvailable: pillsUseTripPlanner, perform: onPillDirections)
                     }
                     if let bikeTime {
                         travelChip(bikeChipText(bikeTime), systemImage: "bicycle", background: ThemeColors.shared.blue)
+                            .directionsAction(.bike, tripPlannerAvailable: pillsUseTripPlanner, perform: onPillDirections)
                     }
                 }
             }
@@ -325,7 +322,7 @@ private struct HeaderStatusLine: View {
             bikeTime: WalkTimeInfo(walkMinutes: 3, distance: 520),
             statusText: "Updated: 2 min ago",
             snapshotLoader: { _ in nil },
-            onWalkingDirections: {}
+            onPillDirections: { _ in }
         )
         StopPageHeaderView(
             stop: stop,
@@ -333,7 +330,7 @@ private struct HeaderStatusLine: View {
             bikeTime: nil,
             statusText: "",
             snapshotLoader: { _ in nil },
-            onWalkingDirections: {}
+            onPillDirections: { _ in }
         )
         StopPageHeaderPlaceholderView()
     }

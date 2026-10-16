@@ -9,6 +9,7 @@
 
 import UIKit
 import OBAKitCore
+import OTPKit
 
 /// Stop-page trip-planner menu actions. Menus and toolbars can gate on
 /// `canPresent` without instantiating a view controller.
@@ -39,11 +40,12 @@ enum StopTripPlannerAction {
         isAvailable(application: application) && application.viewRouter.rootController(from: fromController) != nil
     }
 
-    /// Pops to the map tab and opens the existing trip planner. No-ops (with
-    /// a log) when `canPresent` is false.
+    /// Pops to the map tab and opens the existing trip planner, with `mode`
+    /// preselected when given. No-ops (with a log) when `canPresent` is false.
     static func present(
         _ action: StopTripPlannerAction,
         stop: Stop,
+        mode: TransportMode? = nil,
         application: Application,
         from fromController: UIViewController? = nil
     ) {
@@ -66,9 +68,9 @@ enum StopTripPlannerAction {
         let stopMapItem = TripPlannerEndpoints.mapItem(from: stop)
         switch action {
         case .directionsToStop:
-            mapController.showTripPlanner(destination: stopMapItem)
+            mapController.showTripPlanner(destination: stopMapItem, preselectedMode: mode)
         case .directionsFromStop:
-            mapController.showTripPlanner(origin: stopMapItem, destination: nil)
+            mapController.showTripPlanner(origin: stopMapItem, destination: nil, preselectedMode: mode)
         }
     }
 

@@ -123,6 +123,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showScheduleForStop: trip.showScheduleForStop,
             showScheduleForRoute: trip.showScheduleForRoute,
             showWalkingDirections: stop.showWalkingDirections,
+            pillsUseTripPlanner: stop.pillsUseTripPlanner,
+            showPillDirections: stop.showPillDirections,
             showDirectionsToHere: stop.showDirectionsToHere,
             showDirectionsFromHere: stop.showDirectionsFromHere,
             showAlertDetail: stop.showAlertDetail,
@@ -200,6 +202,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// Everything scoped to the stop as a whole.
     private struct StopClosures {
         let showWalkingDirections: () -> Void
+        let pillsUseTripPlanner: Bool
+        let showPillDirections: (StopDirectionsPill) -> Void
         let showDirectionsToHere: (() -> Void)?
         let showDirectionsFromHere: (() -> Void)?
         let showAlertDetail: (ServiceAlert) -> Void
@@ -218,6 +222,11 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             showWalkingDirections: { [weak self] in
                 guard let coordinate = viewModel.stop?.coordinate else { return }
                 self?.showWalkingDirections(coordinate: coordinate)
+            },
+            pillsUseTripPlanner: tripPlannerAvailable,
+            showPillDirections: { [weak self] pill in
+                guard let stop = viewModel.stop else { return }
+                self?.showDirections(pill, stop: stop, tripPlannerAvailable: tripPlannerAvailable)
             },
             showDirectionsToHere: tripPlannerAvailable ? { [weak self] in
                 guard let stop = viewModel.stop else { return }
@@ -467,6 +476,27 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         }
         sheet.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
         present(actionSheet: sheet)
+    }
+
+    /// A tap on the header's walk or bike pill (#1546). With a trip planner it asks
+    /// before leaving the stop page; "walk" and "bike" read as information first,
+    /// and the planner replaces the whole screen.
+    func showDirections(_ pill: StopDirectionsPill, stop: Stop, tripPlannerAvailable: Bool) {
+        switch pill.behavior(tripPlannerAvailable: tripPlannerAvailable) {
+        case .askThenPlanTrip(let mode):
+            guard let host = presentationHost(for: "directions prompt") else { return }
+            let prompt = UIAlertController(title: StopDirectionsPill.promptTitle, message: nil, preferredStyle: .alert)
+            prompt.addAction(UIAlertAction(title: StopDirectionsPill.confirmTitle, style: .default) { [weak self] _ in
+                guard let self else { return }
+                StopTripPlannerAction.present(.directionsToStop, stop: stop, mode: mode, application: application, from: presentingController())
+            })
+            prompt.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
+            host.present(prompt, animated: true)
+        case .openMapsWalkingDirections:
+            showWalkingDirections(coordinate: stop.coordinate)
+        case nil:
+            break
+        }
     }
 
     /// Switches to the map tab and opens the classic trip planner with this stop

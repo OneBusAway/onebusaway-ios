@@ -384,7 +384,8 @@ struct StopDetailsSheetView: View {
                         stop: stop,
                         walkTime: viewModel.headerWalkTime,
                         bikeTime: viewModel.headerBikeTime,
-                        onWalkingDirections: navigation.showWalkingDirections,
+                        pillsUseTripPlanner: navigation.pillsUseTripPlanner,
+                        onPillDirections: navigation.showPillDirections,
                         onClose: { coordinator.pop() },
                         showsCloseButton: false,
                         mapFocus: mapFocus

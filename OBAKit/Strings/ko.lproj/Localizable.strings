@@ -1353,6 +1353,12 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "지금";
 
+/* Button in the stop header's directions prompt that opens the in-app trip planner. */
+"stop_page.directions_prompt.confirm" = "경로 확인";
+
+/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
+"stop_page.directions_prompt.title" = "앱에서 이 정류장까지의 경로를 확인하시겠습니까?";
+
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "이 정류장의 모든 노선이 필터링되었습니다";
 
@@ -1397,8 +1403,14 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "다음 출발";
 
+/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
+"stop_page.header.bike_trip_planner_a11y_hint" = "앱에서 이 정류장까지의 자전거 경로를 계획합니다.";
+
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "이 정류장까지의 도보 경로를 엽니다.";
+
+/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
+"stop_page.header.walk_trip_planner_a11y_hint" = "앱에서 이 정류장까지의 도보 경로를 계획합니다.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
 "stop_page.live_activity.track" = "추적";

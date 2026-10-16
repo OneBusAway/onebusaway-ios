@@ -1353,6 +1353,12 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "TERAZ";
 
+/* Button in the stop header's directions prompt that opens the in-app trip planner. */
+"stop_page.directions_prompt.confirm" = "Wyznacz trasę";
+
+/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
+"stop_page.directions_prompt.title" = "Wyznaczyć trasę do tego przystanku w aplikacji?";
+
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "Wszystkie linie na tym przystanku są ukryte przez filtr";
 
@@ -1397,8 +1403,14 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Najbliższe odjazdy";
 
+/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
+"stop_page.header.bike_trip_planner_a11y_hint" = "Planuje w aplikacji trasę rowerową do tego przystanku.";
+
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "Otwiera wskazówki dojścia do tego przystanku.";
+
+/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
+"stop_page.header.walk_trip_planner_a11y_hint" = "Planuje w aplikacji trasę pieszą do tego przystanku.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
 "stop_page.live_activity.track" = "Śledź";

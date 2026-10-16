@@ -411,4 +411,35 @@ final class StopPageActionPresenterTests: OBATestCase {
         presenter.showTripPlanner(action: .directionsToStop, stop: stop)
         presenter.showTripPlanner(action: .directionsFromStop, stop: stop)
     }
+
+    // MARK: - Walk and bike pills (#1546)
+
+    /// With a trip planner, a pill asks before it leaves the stop page.
+    @Test(arguments: [StopDirectionsPill.walk, .bike])
+    func `A pill asks before opening the trip planner`(pill: StopDirectionsPill) async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        let stop = try #require(Fixtures.loadSomeStops().first)
+
+        presenter.showDirections(pill, stop: stop, tripPlannerAvailable: true)
+
+        let alert = try #require(await waitForPresentation(on: host) as? UIAlertController)
+        #expect(alert.title == StopDirectionsPill.promptTitle)
+        #expect(alert.preferredStyle == .alert)
+        #expect(alert.actions.map(\.title) == [StopDirectionsPill.confirmTitle, Strings.cancel])
+        #expect(alert.actions.last?.style == .cancel)
+    }
+
+    /// Without a trip planner, the bike pill isn't a button, and nothing it is
+    /// asked to do may leave the stop page.
+    @Test func `Without a trip planner, the bike pill does nothing`() async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        let stop = try #require(Fixtures.loadSomeStops().first)
+
+        presenter.showDirections(.bike, stop: stop, tripPlannerAvailable: false)
+
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(host.presentedViewController == nil)
+    }
 }
