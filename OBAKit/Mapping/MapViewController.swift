@@ -366,9 +366,15 @@ class MapViewController: UIViewController,
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
         // The stops zoom target (~1 km tall) is inside the rental window too, so
         // one zoom serves both hints.
-        if viewModel.showZoomWarning || viewModel.showRentalZoomHint {
+        //
+        // Branch on what the pill shows, not on the view model: while a stop sheet
+        // is up or in route mode the zoom hints stand down and a location warning
+        // can show in their place, and tapping that must open its alert rather
+        // than zoom the map behind it.
+        switch mapStatusView.indicator {
+        case .zoomInForStops, .zoomInForRentals:
             didTapZoomInForStops()
-        } else {
+        default:
             didTapMapStatus(sender)
         }
     }
@@ -561,7 +567,12 @@ class MapViewController: UIViewController,
     /// True while `tripPlannerMapView` is the map on screen. Set by
     /// `showTripPlannerMapView()` and `hideTripPlannerMapView()`, which live in
     /// `MapViewController+TripPlanner.swift` — hence internal, not `private(set)`.
-    var isShowingTripPlannerMap = false
+    var isShowingTripPlannerMap = false {
+        didSet {
+            // The zoom pills stand down in route mode; see `renderMapStatus()`.
+            if isViewLoaded, oldValue != isShowingTripPlannerMap { renderMapStatus() }
+        }
+    }
 
     /// The map the rider is actually looking at. `tripPlannerMapView` stands in for
     /// the main map for the duration of route mode, so anything that moves or reads
@@ -819,7 +830,7 @@ class MapViewController: UIViewController,
     /// rider pops out. Suppression rather than `end()` — the stop sheet
     /// underneath is still presented.
     private func wireTripFocus(for tripPage: TripPageViewController) {
-        tripPage.onMapFocusChanged = { [weak self, weak tripPage] tripFocus in
+        tripPage.onMapFocusChanged = { [weak self] tripFocus in
             guard let self else { return }
 
             // Gated on the layer's own Map-sheet toggle, for the same reason
@@ -839,12 +850,6 @@ class MapViewController: UIViewController,
                 // animating up at this point.
                 tripLayer.cameraInsets = { [weak self] in self?.sheetCameraInsets() ?? .zero }
                 tripLayer.begin(focus: tripFocus)
-
-                // Offered only while the layer is drawing the trip; with it off,
-                // lowering the sheet would reveal a map that doesn't show it.
-                // The route was framed above the `.half` sheet, so it stays in
-                // view as the sheet drops below it.
-                tripPage?.onShowMap = { [weak self] in self?.stopSheet.collapseToTip() }
             } else {
                 tripLayer.end()
             }
@@ -1006,7 +1011,8 @@ class MapViewController: UIViewController,
 
     // MARK: - Overlays
 
-    private let mapStatusView = MapStatusView.autolayoutNew()
+    /// Internal for tests.
+    let mapStatusView = MapStatusView.autolayoutNew()
 
     /// Sets the margins for the map view to keep the scale and legal info within the viewable area.
     /// Call this when you modify top level UI.
@@ -1418,7 +1424,6 @@ class MapViewController: UIViewController,
     }
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
-        // EC6: Update ViewModel so both UIKit and future SwiftUI consumers share the same state.
         viewModel.updateZoomWarnings(stops: showStatus, rentals: manager.rentalZoomHintStatus)
     }
 
@@ -1584,26 +1589,17 @@ private extension MapViewController {
     }
 
     func bindMapStatus() {
-        // EC6: Observe zoom-warning state from ViewModel so UIKit and future SwiftUI share the same source of truth.
-        viewModel.$showZoomWarning
-            .sink { [weak self] _  in
-                guard let self else { return }
-                self.renderMapStatus()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$locationAuthStatus
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.renderMapStatus()
-            }
-            .store(in: &cancellables)
-
-        viewModel.$showRentalZoomHint
-            .sink { [weak self] _ in
-                guard let self else { return }
-                self.renderMapStatus()
-            }
+        // Redrawn on the next main-queue turn, not inside the change (#1547), for two
+        // reasons. `objectWillChange` fires before the new state lands, so a redraw
+        // from inside it draws the value being replaced. And drawing lays the map
+        // out, which can settle its region and update the warning again from inside
+        // the send, where Combine drops the nested value. Either way "Zoom in for
+        // stops" stayed up at street level with stops on screen. A redraw after the
+        // change reads the settled state, however many changes led to it, and
+        // `objectWillChange` covers every input without a list to keep in step.
+        viewModel.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.renderMapStatus() }
             .store(in: &cancellables)
 
         // Not a status binding, but `viewDidLoad`'s other observers live in the class
@@ -1641,10 +1637,15 @@ private extension MapViewController {
         // stops they are no longer looking for. Location warnings still surface —
         // those are actionable, and tapping the pill is how you act on them.
         // The rental hint follows the same rule, for the same reason.
+        //
+        // Both stay down in route mode too. The warnings describe the main map,
+        // which is hidden behind the trip planner's then, and tapping one would zoom
+        // that hidden map.
+        let showsZoomHints = stopSheetStopID == nil && !isShowingTripPlannerMap
         mapStatusView.configure(
             for: locationState,
-            zoomInStatus: viewModel.showZoomWarning && stopSheetStopID == nil,
-            rentalZoomInStatus: viewModel.showRentalZoomHint && stopSheetStopID == nil
+            zoomInStatus: viewModel.showZoomWarning && showsZoomHints,
+            rentalZoomInStatus: viewModel.showRentalZoomHint && showsZoomHints
         )
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
         layoutMapMargins()

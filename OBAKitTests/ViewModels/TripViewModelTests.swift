@@ -14,8 +14,8 @@ import Testing
 
 // swiftlint:disable force_cast force_try
 
-/// Tests for `TripViewModel`. Regression coverage for the `catch is CancellationError`
-/// branch added in the VM refactor.
+/// Tests for `TripViewModel`: cancellation, the shared destination, and loads
+/// that fail in part.
 @Suite(.serialized)
 final class TripViewModelTests: OBATestCase {
     var queue: OperationQueue!
@@ -105,9 +105,8 @@ final class TripViewModelTests: OBATestCase {
 
     // MARK: - Tests
 
-    /// A cancelled `loadData()` task must not surface a user-facing error. The `catch is
-    /// CancellationError { return }` branch in `loadData()` handles this; if it's removed,
-    /// the cancellation would fall through to the generic `catch { operationError = error }`.
+    /// A cancelled `loadData()` task must not surface a user-facing error: its
+    /// fetches fail with cancellation, which is not something the rider did.
     @Test @MainActor
     func `Load data does not surface cancellation error`() async throws {
         let dataLoader = MockDataLoader(testName: name)
@@ -317,5 +316,61 @@ final class TripViewModelTests: OBATestCase {
         #expect(viewModel.operationError == nil)
         #expect(viewModel.tripDetails?.serviceDate == firstServiceDate.addingTimeInterval(86400))
         #expect(!viewModel.isLoading)
+    }
+
+    // MARK: - Partial loads (#1548)
+
+    /// Registered before `createApplication`'s broad stubs, which answer the same
+    /// paths: `MockDataLoader` serves the first stub that matches.
+    private func failRequests(to path: String, dataLoader: MockDataLoader) {
+        dataLoader.mock(data: Data(), statusCode: 500) { request in
+            request.url?.path.contains(path) ?? false
+        }
+    }
+
+    /// The shape only draws the line on the map. Losing it used to throw away the
+    /// trip's details too, and with them the stop list.
+    @Test @MainActor
+    func `A failed route line still shows the stop list`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        failRequests(to: "/api/where/shape", dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        #expect(viewModel.tripDetails?.stopTimes.count == 53)
+        #expect(viewModel.stopListState == .loaded)
+        #expect(viewModel.routePolylineCoordinates == nil)
+        #expect(viewModel.operationError != nil)
+    }
+
+    /// A stop list that failed to load is not one that doesn't exist: the rider
+    /// gets a retry, never "isn't available".
+    @Test @MainActor
+    func `A failed stop list offers a retry, and the retry shows it`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        failRequests(to: "/api/where/trip-details", dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        #expect(viewModel.stopListState == .loading)
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        #expect(viewModel.tripDetails == nil)
+        #expect(viewModel.stopListState == .failed)
+
+        dataLoader.replaceMappedResponses { staging in
+            stubCommonEndpoints(dataLoader: staging)
+        }
+        viewModel.refresh()
+        await viewModel.loadDataTask?.value
+
+        #expect(viewModel.stopListState == .loaded)
+        #expect(viewModel.tripDetails?.stopTimes.count == 53)
     }
 }

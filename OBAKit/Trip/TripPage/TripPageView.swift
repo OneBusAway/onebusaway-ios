@@ -26,8 +26,6 @@ struct TripPageActions {
     var onSchedule: () -> Void = {}
     var onAlarm: () -> Void = {}
     var onReportGhostBus: () -> Void = {}
-    /// `nil` hides the Show on Map button: only a host with a map behind the page can answer it.
-    var onShowMap: (() -> Void)?
 }
 
 /// Thin hosting wrapper for `TripPageView`. Its only job is to apply
@@ -133,12 +131,10 @@ struct TripPageView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // At `.tip` the map is already showing, so the button would have nothing left to do.
             TripPageBackRow(
                 title: originTitle,
                 behavior: backBehavior,
-                onBack: actions.onBack,
-                onShowMap: isCollapsed ? nil : actions.onShowMap
+                onBack: actions.onBack
             )
 
             ScrollView {
@@ -161,12 +157,18 @@ struct TripPageView: View {
                         // reads as a broken screen rather than one still working.
                         sectionHeader(stopsSectionPlaceholderTitle)
 
-                        Text(stopsUnavailableMessage)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(14)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+                        HStack {
+                            Text(stopsPlaceholderMessage)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if viewModel.stopListState == .failed {
+                                Button(Strings.retry) { viewModel.refresh() }
+                                    .font(.subheadline.weight(.semibold))
+                            }
+                        }
+                        .padding(14)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
                     }
                 }
                 .padding(.horizontal, 16)
@@ -266,13 +268,19 @@ struct TripPageView: View {
         OBALoc("trip_page.stops_header", value: "Stops", comment: "Header above the trip's stop list before the stops are known.")
     }
 
-    /// Deliberately distinguishes "still loading" from "we asked and got nothing":
-    /// the second is a real answer and the rider shouldn't sit waiting on it.
-    private var stopsUnavailableMessage: String {
-        if viewModel.isLoading {
-            return OBALoc("trip_page.stops_loading", value: "Loading this trip's stops…", comment: "Shown while the trip's stop list is being fetched.")
+    /// Keeps "still loading", "couldn't load, try again" and "we asked and got
+    /// nothing" apart. Only the last is a real answer the rider shouldn't wait on;
+    /// a load that failed is one a retry may fix, and saying the list doesn't
+    /// exist sent riders away from a page that was about to fill in (#1548).
+    private var stopsPlaceholderMessage: String {
+        switch viewModel.stopListState {
+        case .loading, .loaded:
+            OBALoc("trip_page.stops_loading", value: "Loading this trip's stops…", comment: "Shown while the trip's stop list is being fetched.")
+        case .failed:
+            OBALoc("trip_page.stops_failed", value: "Couldn't load this trip's stops.", comment: "Shown beside a Retry button when loading the trip's stop list failed.")
+        case .unavailable:
+            OBALoc("trip_page.stops_unavailable", value: "This trip's stop list isn't available right now.", comment: "Shown when the trip's details came back with no stops in them.")
         }
-        return OBALoc("trip_page.stops_unavailable", value: "This trip's stop list isn't available right now.", comment: "Shown when the trip's stop list could not be loaded.")
     }
 
     private func stopCountTitle(_ count: Int) -> String {
@@ -293,7 +301,6 @@ private struct TripPageBackRow: View {
     /// disagree about whether this goes back or closes.
     let behavior: TripPageBackBehavior
     let onBack: () -> Void
-    var onShowMap: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -303,21 +310,12 @@ private struct TripPageBackRow: View {
             .tint(Color(uiColor: .label))
             .accessibilityLabel(behavior == .pop ? Strings.back : Strings.close)
 
+            // Stop names routinely outrun the row, so the title scrolls rather than truncating.
             if let title {
-                Text(title)
-                    .font(.headline)
-                    .lineLimit(1)
+                MarqueeText(text: title, textStyle: .headline)
             }
 
             Spacer(minLength: 0)
-
-            if let onShowMap {
-                Button(action: onShowMap) {
-                    circleGlyph("map")
-                }
-                .tint(Color(uiColor: .label))
-                .accessibilityLabel(OBALoc("trip_page.show_on_map", value: "Show on Map", comment: "Trip page button that lowers the sheet to reveal the trip's route on the map behind it."))
-            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

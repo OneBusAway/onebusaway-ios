@@ -1353,6 +1353,9 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "TERAZ";
 
+/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
+"stop_page.directions_prompt.title" = "Wyznaczyć trasę do tego przystanku w aplikacji?";
+
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "Wszystkie linie na tym przystanku są ukryte przez filtr";
 
@@ -1397,8 +1400,14 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Najbliższe odjazdy";
 
+/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
+"stop_page.header.bike_trip_planner_a11y_hint" = "Planuje w aplikacji trasę rowerową do tego przystanku.";
+
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "Otwiera wskazówki dojścia do tego przystanku.";
+
+/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
+"stop_page.header.walk_trip_planner_a11y_hint" = "Planuje w aplikacji trasę pieszą do tego przystanku.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
 "stop_page.live_activity.track" = "Śledź";
@@ -1724,6 +1733,9 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Rozpoczyna jako %@";
+
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "Nie udało się wczytać przystanków tego kursu.";
 
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "Coś poszło nie tak podczas przygotowywania linku do kursu. Spróbuj ponownie.";
@@ -2070,8 +2082,6 @@
 "trip_page.remove_alarm" = "Usuń alarm";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Zgłoś autobus widmo";
-/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
-"trip_page.show_on_map" = "Pokaż na mapie";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "już minięty";
 /* VoiceOver clause on the final stop of the trip. */
@@ -2084,7 +2094,7 @@
 "trip_page.stops_header" = "Przystanki";
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "Wczytywanie przystanków tego kursu…";
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "Lista przystanków tego kursu jest teraz niedostępna.";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Pojazd %@";

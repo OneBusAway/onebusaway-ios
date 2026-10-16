@@ -73,19 +73,19 @@ final class TripFocusMapLayerTests {
         mapView.annotations.compactMap { $0 as? TripStopAnnotation }
     }
 
-    private var directionArrowAnnotations: [PolylineArrowAnnotation] {
-        mapView.annotations.compactMap { $0 as? PolylineArrowAnnotation }
+    private func renderer(for overlay: TripShapeOverlay) -> MKOverlayRenderer? {
+        layer.renderer(for: overlay, in: mapView)
     }
 
     // MARK: - The shape
 
-    /// Each half draws twice — a white casing under a colored core — so a split
-    /// trip is four overlays, not two.
+    /// Each half draws as a casing under a core, and the half ahead adds its
+    /// chevrons on top, so a split trip is five overlays, not two.
     @Test func `A trip in progress draws both halves of its shape`() {
         focus(content(shape: shape(), progress: 0.5))
 
-        #expect(shapeOverlays.filter { $0.isSpent }.count == 2)
-        #expect(shapeOverlays.filter { !$0.isSpent }.count == 2)
+        #expect(shapeOverlays.filter { $0.isSpent }.map(\.part) == [.casing, .core])
+        #expect(shapeOverlays.filter { !$0.isSpent }.map(\.part) == [.casing, .core, .arrows])
     }
 
     /// No reported progress is not zero progress. Nothing is known to have been
@@ -94,7 +94,7 @@ final class TripFocusMapLayerTests {
         focus(content(shape: shape(), progress: nil))
 
         #expect(shapeOverlays.allSatisfy { !$0.isSpent })
-        #expect(shapeOverlays.count == 2)
+        #expect(shapeOverlays.count == 3)
     }
 
     @Test func `A trip that has not started draws no travelled half`() {
@@ -103,12 +103,38 @@ final class TripFocusMapLayerTests {
         #expect(shapeOverlays.allSatisfy { !$0.isSpent })
     }
 
-    @Test func `Direction arrows are placed only on the part of the trip still ahead`() {
-        let line = shape()
-        focus(content(shape: line, progress: 0.5))
+    @Test func `Only the line still ahead draws direction arrows`() {
+        focus(content(shape: shape(), progress: 0.5))
 
-        #expect(!directionArrowAnnotations.isEmpty)
-        #expect(directionArrowAnnotations.allSatisfy { $0.coordinate.longitude > line[2].longitude })
+        let arrowLines = shapeOverlays.filter { renderer(for: $0) is RouteArrowRenderer }
+        #expect(arrowLines.count == 1)
+        #expect(arrowLines.allSatisfy { !$0.isSpent && $0.part == .arrows })
+        // The lines themselves stay MapKit's own, drawn as vectors at the zoom shown.
+        #expect(shapeOverlays.filter { $0.part != .arrows }.allSatisfy { type(of: renderer(for: $0)!) == MKPolylineRenderer.self })
+    }
+
+    /// The issue that prompted the redesign: chevrons landing on top of stop dots.
+    @Test func `Direction arrows keep clear of the trip's stops`() throws {
+        let stop = CLLocationCoordinate2D(latitude: 47, longitude: -121.985)
+        focus(content(shape: shape(), progress: 0, stops: [row(0, stopID: "A", coordinate: stop)]))
+
+        let line = try #require(shapeOverlays.first { $0.part == .arrows })
+        let lineRenderer = try #require(renderer(for: line) as? RouteArrowRenderer)
+        // Close enough that the stop sits among several candidates.
+        let zoomScale: MKZoomScale = 0.05
+        let stopPoint = MKMapPoint(stop)
+        func isClear(_ arrow: RouteArrowLayout.Arrow) -> Bool {
+            hypot(arrow.point.x - stopPoint.x, arrow.point.y - stopPoint.y) * zoomScale >= RouteArrowLayout.Rules.markerClearance
+        }
+
+        // Without the stop, a chevron would land on it — so a clear result below is
+        // the layer's doing, not luck.
+        let unobstructed = RouteArrowLayout(points: shape().map { CGPoint(x: MKMapPoint($0).x, y: MKMapPoint($0).y) })
+        #expect(!unobstructed.arrows(scale: zoomScale).allSatisfy(isClear))
+
+        let arrows = lineRenderer.arrows(scale: zoomScale)
+        #expect(!arrows.isEmpty)
+        #expect(arrows.allSatisfy(isClear))
     }
 
     /// An agency that publishes no shape still gets a usable map: the stops carry
@@ -212,7 +238,6 @@ final class TripFocusMapLayerTests {
 
         #expect(shapeOverlays.isEmpty)
         #expect(stopAnnotations.isEmpty)
-        #expect(directionArrowAnnotations.isEmpty)
     }
 
     /// A refresh replaces what's drawn rather than adding to it — otherwise every

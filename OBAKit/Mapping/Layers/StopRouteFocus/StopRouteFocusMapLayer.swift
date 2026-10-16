@@ -15,19 +15,20 @@ import UIKit
 /// Draws the routes serving the selected stop and the vehicles arriving on them.
 ///
 /// Selection-driven, not viewport-driven: it is activated when a stop sheet opens
-/// and torn down when it closes, so `viewportDidChange` is a no-op and there is
-/// no zoom gate — a trip shape spans far more than a stop-density viewport, and
-/// culling it by visible-rect height would hide the line exactly when it is most
-/// useful.
+/// and torn down when it closes, so `viewportDidChange` only lays the direction
+/// chevrons out again for the new zoom, and there is no zoom gate — a trip shape
+/// spans far more than a stop-density viewport, and culling it by visible-rect
+/// height would hide the line exactly when it is most useful.
 @MainActor
 final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     // MARK: - Styling
 
     private enum Style {
-        static let coreWidth: CGFloat = 5
-        static let focusedCoreWidth: CGFloat = 7
-        static let casingExtraWidth: CGFloat = 4
+        /// At least `RouteArrowStyle.minimumLineWidth`, so every route's line keeps
+        /// its direction chevrons, not just the focused one's.
+        static let coreWidth: CGFloat = 6
+        static let focusedCoreWidth: CGFloat = 9
         static let dimmedAlpha: CGFloat = 0.32
         static let normalAlpha: CGFloat = 1.0
     }
@@ -66,7 +67,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     private var overlays: [RouteShapeOverlay] = []
     private var annotations: [StopVehicleAnnotation] = []
-    private var directionArrowAnnotations: [PolylineArrowAnnotation] = []
+    /// What the direction chevrons keep clear of.
+    private let arrowContext = RouteArrowContext()
     private var model: StopRouteFocusModel = .empty
 
     /// Which vehicle the focused route is currently standing on — the one whose
@@ -94,10 +96,6 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         self.shapeCache = shapeCache
         self.formatters = formatters
         super.init()
-        mapView.register(
-            PolylineArrowAnnotationView.self,
-            forAnnotationViewWithReuseIdentifier: PolylineArrowAnnotationView.reuseIdentifier
-        )
     }
 
     /// Cancels and drops every cached shape. Called by `MapViewController` when
@@ -363,17 +361,6 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             mapView.removeOverlays(stale)
             overlays.removeAll { !wantedRouteIDs.contains($0.routeID) }
         }
-        let staleArrows = directionArrowAnnotations.filter {
-            guard let routeID = $0.routeID else { return true }
-            return !wantedRouteIDs.contains(routeID)
-        }
-        if !staleArrows.isEmpty {
-            mapView.removeAnnotations(staleArrows)
-            directionArrowAnnotations.removeAll {
-                guard let routeID = $0.routeID else { return true }
-                return !wantedRouteIDs.contains(routeID)
-            }
-        }
         drawnShapeIDsByRoute = drawnShapeIDsByRoute.filter { wantedRouteIDs.contains($0.key) }
 
         for route in model.routes {
@@ -419,19 +406,18 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     }
 
     private func addShape(coordinates: [CLLocationCoordinate2D], routeID: RouteID) {
-        // Casing first so the colored core draws above it.
-        let casing = RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, isCasing: true)
-        let core = RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, isCasing: false)
-        overlays.append(contentsOf: [casing, core])
-        mapView.addOverlays([casing, core], level: .aboveRoads)
-
-        let color = model.routes.first { $0.routeID == routeID }?.color ?? tintColor
-        let arrows = PolylineDirectionArrows.placements(along: coordinates).map {
-            PolylineArrowAnnotation(placement: $0, tintColor: color, routeID: routeID)
+        // Bottom to top: casing, the colored core above it, then its chevrons.
+        let parts = [RouteLinePart.casing, .core, .arrows].map {
+            RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, part: $0)
         }
-        directionArrowAnnotations.append(contentsOf: arrows)
-        mapView.addAnnotations(arrows)
-        restyleDirectionArrows(focusedRouteID: focus?.focusedRouteID)
+        // Before the overlays, so the arrows' first draw already knows where the stops are.
+        refreshArrowMarkers()
+        overlays.append(contentsOf: parts)
+        mapView.addOverlays(parts, level: .aboveRoads)
+    }
+
+    private func refreshArrowMarkers() {
+        arrowContext.refresh(from: mapView, redrawing: overlays)
     }
 
     // MARK: - Focus restyling
@@ -452,68 +438,54 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             }
         }
         if !routesNeedingReadd.isEmpty {
-            // Re-add a route's casing AND core together, in their original
-            // casing-first order — even when only one half actually needed a
-            // fresh `rendererFor` round trip. Re-adding just one half would move
-            // only it to the top of the overlay stack and invert the pair's
-            // z-order.
+            // Re-add all of a route's parts together, in their original
+            // casing-first order — even when only one actually needed a fresh
+            // `rendererFor` round trip. Re-adding just one would move only it
+            // to the top of the overlay stack and invert the route's z-order.
             let needsReadd = overlays.filter { routesNeedingReadd.contains($0.routeID) }
             mapView.removeOverlays(needsReadd)
             mapView.addOverlays(needsReadd, level: .aboveRoads)
         }
-        restyleDirectionArrows(focusedRouteID: focusedRouteID)
         applyVehicleZPriority()
-    }
-
-    private func restyleDirectionArrows(focusedRouteID: RouteID?) {
-        for annotation in directionArrowAnnotations {
-            annotation.alpha = (focusedRouteID == nil || annotation.routeID == focusedRouteID)
-                ? Style.normalAlpha
-                : Style.dimmedAlpha
-            mapView.view(for: annotation)?.alpha = annotation.alpha
-        }
     }
 
     private func apply(style overlay: RouteShapeOverlay, to renderer: MKPolylineRenderer, focusedRouteID: RouteID? = nil) {
         let focusedRouteID = focusedRouteID ?? focus?.focusedRouteID
         let isFocused = overlay.routeID == focusedRouteID
-        let color = model.routes.first { $0.routeID == overlay.routeID }?.color ?? tintColor
+        let color = routeColor(for: overlay.routeID)
 
         let coreWidth = isFocused ? Style.focusedCoreWidth : Style.coreWidth
-        renderer.lineWidth = overlay.isCasing ? coreWidth + Style.casingExtraWidth : coreWidth
+        renderer.lineWidth = overlay.isCasing ? coreWidth + RouteArrowStyle.casingExtraWidth : coreWidth
         // The casing is what keeps a route-colored line legible over the basemap.
-        renderer.strokeColor = overlay.isCasing ? .white : color
+        renderer.strokeColor = overlay.isCasing ? RouteArrowStyle.casingColor(for: color) : color
         renderer.lineCap = .round
         renderer.lineJoin = .round
         renderer.alpha = (focusedRouteID == nil || isFocused) ? Style.normalAlpha : Style.dimmedAlpha
     }
 
+    private func routeColor(for routeID: RouteID) -> UIColor {
+        model.routes.first { $0.routeID == routeID }?.color ?? tintColor
+    }
+
     private func removeAllContent() {
         mapView.removeOverlays(overlays)
         mapView.removeAnnotations(annotations)
-        mapView.removeAnnotations(directionArrowAnnotations)
         overlays.removeAll()
         annotations.removeAll()
-        directionArrowAnnotations.removeAll()
     }
 
     // MARK: - MapLayer conformance
 
     func renderer(for overlay: MKOverlay, in mapView: MKMapView) -> MKOverlayRenderer? {
         guard let overlay = overlay as? RouteShapeOverlay else { return nil }
-        let renderer = MKPolylineRenderer(polyline: overlay)
+        let renderer = overlay.part == .arrows
+            ? RouteArrowRenderer(polyline: overlay, routeColor: routeColor(for: overlay.routeID), context: arrowContext)
+            : MKPolylineRenderer(polyline: overlay)
         apply(style: overlay, to: renderer)
         return renderer
     }
 
     func annotationView(for annotation: MKAnnotation, in mapView: MKMapView) -> MKAnnotationView? {
-        if annotation is PolylineArrowAnnotation {
-            return mapView.dequeueReusableAnnotationView(
-                withIdentifier: PolylineArrowAnnotationView.reuseIdentifier,
-                for: annotation
-            )
-        }
-
         guard let annotation = annotation as? StopVehicleAnnotation else { return nil }
         let view = mapView.dequeueReusableAnnotationView(
             withIdentifier: MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self),
@@ -618,12 +590,21 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     func deactivate() { end() }
 
-    /// Selection-driven, not viewport-driven.
-    func viewportDidChange(_ mapRect: MKMapRect?) { }
+    /// Selection-driven, not viewport-driven. A new zoom only lays the arrows out
+    /// again: they are sized and spaced in screen points.
+    func viewportDidChange(_ mapRect: MKMapRect?) {
+        guard focus != nil else { return }
+        arrowContext.refreshScale(from: mapView, redrawing: overlays)
+    }
+
+    func stopMarkersDidChange() {
+        guard focus != nil else { return }
+        refreshArrowMarkers()
+    }
 
     func mapAnnotationsWereCleared() {
         guard focus != nil else { return }
-        mapView.addAnnotations(annotations + directionArrowAnnotations)
+        mapView.addAnnotations(annotations)
     }
 
     func mapOverlaysWereCleared() {

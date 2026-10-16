@@ -13,9 +13,10 @@ import OBAKitCore
 /// One route's drawn shape. Carries its identity so the layer's renderer can
 /// style it without a side table.
 ///
-/// Each route draws twice: a white casing underneath and the route-colored core
-/// on top. The casing is what keeps a route-colored line legible over the
-/// basemap, and `isCasing` is how the renderer tells them apart.
+/// Each route draws three times: a casing of the route color darkened underneath, the
+/// route-colored core on top, and its direction chevrons over both; see `RouteLinePart`.
+/// The casing is what keeps a route-colored line legible over the basemap, and `part`
+/// is how the renderer tells them apart.
 final class RouteShapeOverlay: MKPolyline {
     /// Matches the isolation of the nonisolated MKPolyline initializer it
     /// overrides — see VehicleAnnotation.swift for the established pattern.
@@ -26,13 +27,15 @@ final class RouteShapeOverlay: MKPolyline {
     /// Assigned immediately after construction — `MKPolyline`'s initializers are
     /// imported class factories, so there is no init to thread these through.
     var routeID: RouteID = ""
-    var isCasing: Bool = false
+    var part: RouteLinePart = .core
 
-    static func make(coordinates: [CLLocationCoordinate2D], routeID: RouteID, isCasing: Bool) -> RouteShapeOverlay {
+    var isCasing: Bool { part == .casing }
+
+    static func make(coordinates: [CLLocationCoordinate2D], routeID: RouteID, part: RouteLinePart) -> RouteShapeOverlay {
         var coordinates = coordinates
         let overlay = RouteShapeOverlay(coordinates: &coordinates, count: coordinates.count)
         overlay.routeID = routeID
-        overlay.isCasing = isCasing
+        overlay.part = part
         return overlay
     }
 }

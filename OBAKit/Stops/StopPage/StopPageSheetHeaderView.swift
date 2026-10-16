@@ -51,9 +51,8 @@ struct StopPageSheetHeaderView: View {
     let walkTime: WalkTimeInfo?
     /// Bike time at the user's cycling speed — always shown, independent of Bike Mode.
     var bikeTime: WalkTimeInfo?
-    /// Opens walking directions to the stop (VC-owned; disambiguates between maps apps when more
-    /// than one is available).
-    let onWalkingDirections: () -> Void
+    /// What the walk and bike pills do (VC-owned); see `StopDirectionsPill`.
+    let pillDirections: StopPillDirections
     /// Dismisses the sheet. The close button lives here rather than in a navigation bar: the
     /// sheet's root has no bar (see `StopSheetPresenter`), because a bar would impose a top safe
     /// area on the hosting controller that this header would absorb as dead space above the name.
@@ -231,26 +230,21 @@ struct StopPageSheetHeaderView: View {
         .padding(.vertical, chipVerticalPadding)
         .background(Color(uiColor: ThemeColors.shared.departureOnTime).opacity(0.14), in: Capsule())
         .contentShape(Capsule())
-        .onTapGesture(perform: onWalkingDirections)
-        // `.onTapGesture` is invisible to assistive tech: without a default action
-        // the pill announces "button" and activating it does nothing.
-        .accessibilityAction { onWalkingDirections() }
         // `.accessibilityHidden(true)` on the glyph above was not enough on its
-        // own: this view adds a trait but named no element, and the walk glyph
+        // own: a view that adds a trait but names no element let the walk glyph
         // surfaced as a second, sibling stop — a 10x16pt target whose whole spoken
         // content was the symbol's stock name, "Walk". Naming the element is what
         // collapses the subtree. `chipView(_:)` below never had the bug because it
         // has always set an explicit `.accessibilityLabel`.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
+        .directionsAction(.walk, pillDirections)
     }
 
     /// The bike-time pill: same shape as `walkPill(_:)`, tinted blue (matching the pushed
-    /// header's bike chip) instead of on-time green. Not tappable — there's no cycling-directions
-    /// deep link to open (see the walk pill's `onWalkingDirections`; Apple's Maps URL scheme has
-    /// no documented bike mode), so unlike the walk pill this is a static value, not a button.
+    /// header's bike chip) instead of on-time green. A button only where the trip planner can
+    /// open: no maps app takes a cycling deep link (Apple's Maps URL scheme has no documented
+    /// bike mode), so without the planner this is a static value.
     private func bikePill(_ info: WalkTimeInfo) -> some View {
         let text = bikePillText(info)
         return HStack(spacing: 4) {
@@ -265,8 +259,10 @@ struct StopPageSheetHeaderView: View {
         .padding(.horizontal, chipHorizontalPadding)
         .padding(.vertical, chipVerticalPadding)
         .background(Color(uiColor: ThemeColors.shared.blue).opacity(0.14), in: Capsule())
+        .contentShape(Capsule())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
+        .directionsAction(.bike, pillDirections)
     }
 
     // MARK: - Shared pill metrics

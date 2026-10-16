@@ -551,6 +551,7 @@ public class MapRegionManager: NSObject,
     private func removeStopAnnotationsPreservingSelection() {
         let stopsToRemove = mapView.annotations.compactMap { $0 as? Stop }.filter { !selectedStopIDs.contains($0.id) }
         mapView.removeAnnotations(stopsToRemove)
+        notifyMapLayersStopMarkersChanged()
     }
 
     /// Feeds the current viewport to a layer, applying its zoom window: outside
@@ -730,6 +731,7 @@ public class MapRegionManager: NSObject,
 
         refreshAnnotationViews(for: Array(affectedStopIDs))
         notifyDelegatesStopsChanged()
+        notifyMapLayersStopMarkersChanged()
     }
 
     private func refreshAnnotationViews(for affectedStopIDs: [StopID]) {
@@ -800,6 +802,9 @@ public class MapRegionManager: NSObject,
         reloadStopAnnotations()
         notifyMapLayersAnnotationsCleared()
         notifyMapLayersOverlaysCleared()
+        // The wholesale removal took stop markers with it; layers that keep clear
+        // of them must stop avoiding markers that are gone.
+        notifyMapLayersStopMarkersChanged()
     }
 
     /// `removeAllAnnotations` strips layer annotations behind the layers' backs;
@@ -807,6 +812,15 @@ public class MapRegionManager: NSObject,
     private func notifyMapLayersAnnotationsCleared() {
         for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
             layer.mapAnnotationsWereCleared()
+        }
+    }
+
+    /// Stops arrive with a fetch, well after the region change that asked for them,
+    /// so a layer that has to keep clear of their markers can't learn where they
+    /// are from `viewportDidChange`.
+    private func notifyMapLayersStopMarkersChanged() {
+        for layer in mapLayers where isMapLayerEnabled(id: layer.id) {
+            layer.stopMarkersDidChange()
         }
     }
 
@@ -887,6 +901,7 @@ public class MapRegionManager: NSObject,
 
         mapView.addOverlays(stopsForRoute.polylines)
         mapView.addAnnotations(stopsForRoute.stops)
+        notifyMapLayersStopMarkersChanged()
 
         let inset: CGFloat = 40.0
         mapView.visibleMapRect = self.mapView.mapRectThatFits(stopsForRoute.mapRect, edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset))
@@ -894,6 +909,7 @@ public class MapRegionManager: NSObject,
 
     private func displaySearchResult(stop: Stop) {
         mapView.addAnnotation(stop)
+        notifyMapLayersStopMarkersChanged()
         mapView.setCenterCoordinate(centerCoordinate: stop.coordinate, zoomLevel: 18, animated: true)
         mapView.selectAnnotation(stop, animated: false)
 
@@ -1029,6 +1045,7 @@ public class MapRegionManager: NSObject,
         // region-scale bounding box is exactly what the 40,000-height gate prevents.
         guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
             mapView.removeAnnotations(type: Stop.self)
+            notifyMapLayersStopMarkersChanged()
             return
         }
 

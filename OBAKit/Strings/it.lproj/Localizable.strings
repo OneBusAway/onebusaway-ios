@@ -1353,6 +1353,9 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "ADESSO";
 
+/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
+"stop_page.directions_prompt.title" = "Ottenere le indicazioni per questa fermata nell'app?";
+
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "Tutte le linee di questa fermata sono filtrate";
 
@@ -1397,8 +1400,14 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Prossime partenze";
 
+/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
+"stop_page.header.bike_trip_planner_a11y_hint" = "Pianifica nell'app un percorso in bicicletta verso questa fermata.";
+
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "Apre le indicazioni del percorso pedonale verso questa fermata.";
+
+/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
+"stop_page.header.walk_trip_planner_a11y_hint" = "Pianifica nell'app un percorso a piedi verso questa fermata.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
 "stop_page.live_activity.track" = "Traccia";
@@ -1724,6 +1733,9 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Parte come: %@";
+
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "Impossibile caricare le fermate di questa corsa.";
 
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "Si è verificato un errore durante la preparazione del link dell'itinerario. Riprova.";
@@ -2070,8 +2082,6 @@
 "trip_page.remove_alarm" = "Rimuovi sveglia";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Segnala corsa fantasma";
-/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
-"trip_page.show_on_map" = "Mostra sulla mappa";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "già superata";
 /* VoiceOver clause on the final stop of the trip. */
@@ -2084,7 +2094,7 @@
 "trip_page.stops_header" = "Fermate";
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "Caricamento delle fermate di questa corsa…";
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "L'elenco delle fermate di questa corsa non è disponibile al momento.";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Veicolo %@";

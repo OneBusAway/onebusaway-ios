@@ -55,6 +55,9 @@ class MapStatusView: UIView {
     private var iconView: UIImageView!
     private var detailLabel: UILabel!
 
+    /// What the pill last showed; `nil` when it is hidden.
+    private(set) var indicator: MapStatusIndicator?
+
     // MARK: - Layout Constants
 
     private enum Layout {
@@ -203,6 +206,12 @@ class MapStatusView: UIView {
             }
         }
 
+        // Nothing changed: skip the animation, and the layout of the whole map it
+        // forces. Against the alpha it is headed for, which `UIView.animate` sets at
+        // once, not `isHidden`, which a hide sets only when it finishes: a repeat
+        // hide in the meantime would restart it, and a run of them never let it end.
+        guard indicator != self.indicator || alpha != (indicator == nil ? 0 : 1) else { return }
+        self.indicator = indicator
         let shouldHide = indicator == nil
         let setImage = indicator.map { UIImage(systemName: $0.symbolName) } ?? nil
         let setLargeImage = indicator.map { UIImage(systemName: $0.largeSymbolName) } ?? nil

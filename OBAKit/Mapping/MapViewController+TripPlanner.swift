@@ -62,8 +62,6 @@ extension MapViewController {
     }
 
     func hideTripPlannerMapView() {
-        isShowingTripPlannerMap = false
-
         // Only the region comes back. `mapType` used to be copied here too, which
         // overwrote any choice the rider made during the trip: the picker writes to
         // the main map, the trip map only received the value once on the way in,
@@ -71,6 +69,12 @@ extension MapViewController {
         // rider's choice while route mode is up (`bindMapType`), so the main map
         // already holds it. See #1451.
         mapRegionManager.mapView.region = tripPlannerMapView.region
+
+        // The zoom pills come back with the main map, so judge the region it is
+        // coming back at before the flag below redraws them; until it settles, its
+        // warnings still describe where it was when route mode began (#1547).
+        viewModel.updateZoomWarnings(stops: mapRegionManager.zoomInStatus, rentals: mapRegionManager.rentalZoomHintStatus)
+        isShowingTripPlannerMap = false
 
         mapRegionManager.mapView.isHidden = false
 

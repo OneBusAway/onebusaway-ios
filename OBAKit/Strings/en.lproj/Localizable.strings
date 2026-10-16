@@ -1596,6 +1596,9 @@
 /* VoiceOver-only heading that anchors the departures list in the Headings rotor, and the title of the rotor itself; not shown on screen. */
 "stop_page.departures_heading" = "Departures";
 
+/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
+"stop_page.directions_prompt.title" = "Get directions to this stop in the app?";
+
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "All routes at this stop are filtered";
 
@@ -1644,8 +1647,14 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Next departures";
 
+/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
+"stop_page.header.bike_trip_planner_a11y_hint" = "Plans a bike trip to this stop in the app.";
+
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "Opens walking directions to this stop.";
+
+/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
+"stop_page.header.walk_trip_planner_a11y_hint" = "Plans a walk to this stop in the app.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
 "stop_page.live_activity.track" = "Track on Lock Screen";
@@ -2015,9 +2024,6 @@
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Report Ghost Bus";
 
-/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
-"trip_page.show_on_map" = "Show on Map";
-
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "already passed";
 
@@ -2030,13 +2036,16 @@
 /* VoiceOver clause on the rider's own stop. */
 "trip_page.stop_list.a11y_your_stop" = "your stop";
 
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "Couldn't load this trip's stops.";
+
 /* Header above the trip's stop list before the stops are known. */
 "trip_page.stops_header" = "Stops";
 
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "Loading this trip's stops…";
 
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "This trip's stop list isn't available right now.";
 
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */

@@ -15,8 +15,8 @@ import OBAKitCore
 /// updated" status line, stop name, the code/direction subtitle with inline
 /// route chips (wrapping onto as many lines as needed, never truncated), and
 /// the travel pills — a walk estimate and a bike estimate, each at the user's
-/// respective speed and always shown regardless of Bike Mode (§4.5). Tapping
-/// the walk pill opens walking directions in an external maps app.
+/// respective speed and always shown regardless of Bike Mode (§4.5). What
+/// tapping one does is up to `StopDirectionsPill`.
 ///
 /// A plain-value view: it never touches `StopViewModel`. The map snapshot is
 /// produced by a `snapshotLoader` closure supplied by the hosting VC, so the
@@ -32,9 +32,8 @@ struct StopPageHeaderView: View {
     /// The "Updated: …" line; empty hides it.
     let statusText: String
     let snapshotLoader: (CGSize) async -> UIImage?
-    /// Opens walking directions to the stop (VC-owned; disambiguates between
-    /// maps apps when more than one is available).
-    let onWalkingDirections: () -> Void
+    /// What the walk and bike chips do (VC-owned); see `StopDirectionsPill`.
+    let pillDirections: StopPillDirections
 
     @State private var snapshot: UIImage?
     @State private var cardWidth: CGFloat = 0
@@ -108,15 +107,11 @@ struct StopPageHeaderView: View {
                 FlowLayout(hSpacing: 8, vSpacing: 8) {
                     if let walkTime {
                         travelChip(walkChipText(walkTime), systemImage: "figure.walk", background: ThemeColors.shared.departureOnTimeFill)
-                            .onTapGesture(perform: onWalkingDirections)
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityHint(OBALoc("stop_page.header.walk_a11y_hint", value: "Opens walking directions to this stop.", comment: "VoiceOver hint on the header card's walk-time button."))
-                            // `.onTapGesture` is invisible to assistive tech: the
-                            // default action is what makes "button" activatable.
-                            .accessibilityAction { onWalkingDirections() }
+                            .directionsAction(.walk, pillDirections)
                     }
                     if let bikeTime {
                         travelChip(bikeChipText(bikeTime), systemImage: "bicycle", background: ThemeColors.shared.blue)
+                            .directionsAction(.bike, pillDirections)
                     }
                 }
             }
@@ -325,7 +320,7 @@ private struct HeaderStatusLine: View {
             bikeTime: WalkTimeInfo(walkMinutes: 3, distance: 520),
             statusText: "Updated: 2 min ago",
             snapshotLoader: { _ in nil },
-            onWalkingDirections: {}
+            pillDirections: .none
         )
         StopPageHeaderView(
             stop: stop,
@@ -333,7 +328,7 @@ private struct HeaderStatusLine: View {
             bikeTime: nil,
             statusText: "",
             snapshotLoader: { _ in nil },
-            onWalkingDirections: {}
+            pillDirections: .none
         )
         StopPageHeaderPlaceholderView()
     }

@@ -411,4 +411,22 @@ final class StopPageActionPresenterTests: OBATestCase {
         presenter.showTripPlanner(action: .directionsToStop, stop: stop)
         presenter.showTripPlanner(action: .directionsFromStop, stop: stop)
     }
+
+    // MARK: - Walk and bike pills (#1546)
+
+    /// With a trip planner, a pill asks before it leaves the stop page.
+    @Test(arguments: [StopDirectionsPill.walk, .bike])
+    func `A pill asks before opening the trip planner`(pill: StopDirectionsPill) async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        let stop = try #require(Fixtures.loadSomeStops().first)
+
+        presenter.showDirections(.askThenPlanTrip(pill), stop: stop)
+
+        let alert = try #require(await waitForPresentation(on: host) as? UIAlertController)
+        #expect(alert.title == StopDirectionsPill.promptTitle)
+        #expect(alert.preferredStyle == .alert)
+        #expect(alert.actions.map(\.title) == [StopTripPlannerAction.directionsToHereTitle, Strings.cancel])
+        #expect(alert.actions.last?.style == .cancel)
+    }
 }

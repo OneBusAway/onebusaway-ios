@@ -1353,6 +1353,9 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "MAINT.";
 
+/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
+"stop_page.directions_prompt.title" = "Obtenir l'itinéraire vers cet arrêt dans l'app ?";
+
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "Toutes les lignes de cet arrêt sont filtrées";
 
@@ -1397,8 +1400,14 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Prochains départs";
 
+/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
+"stop_page.header.bike_trip_planner_a11y_hint" = "Planifie dans l'app un trajet à vélo jusqu'à cet arrêt.";
+
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "Ouvre l'itinéraire à pied jusqu'à cet arrêt.";
+
+/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
+"stop_page.header.walk_trip_planner_a11y_hint" = "Planifie dans l'app un trajet à pied jusqu'à cet arrêt.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
 "stop_page.live_activity.track" = "Suivre";
@@ -1724,6 +1733,9 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Commence en tant que %@";
+
+/* Shown beside a Retry button when loading the trip's stop list failed. */
+"trip_page.stops_failed" = "Impossible de charger les arrêts de ce trajet.";
 
 /* Alert message when trip sharing fails. */
 "trip_sharing.share_error.message" = "Une erreur s'est produite lors de la préparation du lien du trajet. Veuillez réessayer.";
@@ -2070,8 +2082,6 @@
 "trip_page.remove_alarm" = "Supprimer le rappel";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Signaler un bus fantôme";
-/* Trip page button that lowers the sheet to reveal the trip's route on the map behind it. */
-"trip_page.show_on_map" = "Afficher sur la carte";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "déjà passé";
 /* VoiceOver clause on the final stop of the trip. */
@@ -2084,7 +2094,7 @@
 "trip_page.stops_header" = "Arrêts";
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "Chargement des arrêts de ce trajet…";
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "La liste des arrêts de ce trajet n'est pas disponible pour le moment.";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Véhicule %@";
