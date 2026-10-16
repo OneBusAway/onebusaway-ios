@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import MapKit
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -24,8 +25,12 @@ final class MapViewControllerStatusPillTests: OBATestCase {
         try await super.init()
         let queue = OperationQueue()
         let dataLoader = MockDataLoader(testName: name)
-        // The map probes for on-demand services when it settles.
+        // The map probes for on-demand services when it settles, and loads stops
+        // once it settles at street level.
         Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
+            request.url?.path.hasSuffix("/stops-for-location.json") ?? false
+        }
         application = buildApplication(queue: queue, dataLoader: dataLoader)
     }
 
@@ -73,5 +78,29 @@ final class MapViewControllerStatusPillTests: OBATestCase {
 
         controller.hideTripPlannerMapView()
         #expect(controller.mapStatusView.indicator == .zoomInForStops)
+    }
+
+    /// Leaving route mode brings back the main map at the trip map's region. The
+    /// pill has to judge that region, not the one the main map had on the way in:
+    /// zoomed in on the trip map, it would otherwise come back saying "Zoom in for
+    /// stops" over a street-level map.
+    @Test func `Leaving route mode judges the region the main map comes back at`() async {
+        let controller = MapViewController(application: application)
+        controller.loadViewIfNeeded()
+        controller.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        controller.view.layoutIfNeeded()
+        controller.viewModel.updateZoomWarnings(stops: true, rentals: false)
+        await mainQueueTurn()
+
+        controller.showTripPlannerMapView()
+        controller.view.layoutIfNeeded()
+        controller.tripPlannerMapView.region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321),
+            latitudinalMeters: 400,
+            longitudinalMeters: 400
+        )
+        controller.hideTripPlannerMapView()
+
+        #expect(controller.mapStatusView.indicator != .zoomInForStops)
     }
 }

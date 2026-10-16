@@ -366,9 +366,15 @@ class MapViewController: UIViewController,
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
         // The stops zoom target (~1 km tall) is inside the rental window too, so
         // one zoom serves both hints.
-        if viewModel.showZoomWarning || viewModel.showRentalZoomHint {
+        //
+        // Branch on what the pill shows, not on the view model: while a stop sheet
+        // is up or in route mode the zoom hints stand down and a location warning
+        // can show in their place, and tapping that must open its alert rather
+        // than zoom the map behind it.
+        switch mapStatusView.indicator {
+        case .zoomInForStops, .zoomInForRentals:
             didTapZoomInForStops()
-        } else {
+        default:
             didTapMapStatus(sender)
         }
     }
