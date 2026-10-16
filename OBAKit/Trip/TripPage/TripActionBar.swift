@@ -118,8 +118,8 @@ struct TripActionBar: View {
         .disabled(isTrackingLiveActivity)
     }
 
-    /// As many columns as leave each button room for its caption: four across, then two,
-    /// then one, rather than truncating or shrinking the captions. A word like "Bookmark"
+    /// As many columns as leave each button room for its caption: all in one row, then
+    /// two across, then one, rather than truncating or shrinking the captions. A word like "Bookmark"
     /// can't wrap, so the room needed grows with the text size, and the room available
     /// with the screen. Stacked full-width at accessibility sizes, as ever.
     private var secondaryActions: some View {
