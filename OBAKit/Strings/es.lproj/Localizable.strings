@@ -2094,7 +2094,7 @@
 "trip_page.stops_header" = "Paradas";
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "Cargando las paradas de este viaje…";
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "La lista de paradas de este viaje no está disponible en este momento.";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Vehículo %@";

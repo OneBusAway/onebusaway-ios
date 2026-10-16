@@ -279,7 +279,7 @@ struct TripPageView: View {
         case .failed:
             OBALoc("trip_page.stops_failed", value: "Couldn't load this trip's stops.", comment: "Shown beside a Retry button when loading the trip's stop list failed.")
         case .unavailable:
-            OBALoc("trip_page.stops_unavailable", value: "This trip's stop list isn't available right now.", comment: "Shown when the trip's stop list could not be loaded.")
+            OBALoc("trip_page.stops_unavailable", value: "This trip's stop list isn't available right now.", comment: "Shown when the trip's details came back with no stops in them.")
         }
     }
 

@@ -2094,7 +2094,7 @@
 "trip_page.stops_header" = "Mga Hintuan";
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "Nilo-load ang mga hintuan ng biyaheng ito…";
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "Hindi available ngayon ang listahan ng mga hintuan ng biyaheng ito.";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Sasakyan %@";

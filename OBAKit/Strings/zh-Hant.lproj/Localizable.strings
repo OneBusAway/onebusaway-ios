@@ -2094,7 +2094,7 @@
 "trip_page.stops_header" = "站牌";
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "正在載入此班次的站牌…";
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "目前無法取得此班次的站牌列表。";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "車輛 %@";

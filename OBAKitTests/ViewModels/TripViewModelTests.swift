@@ -14,8 +14,8 @@ import Testing
 
 // swiftlint:disable force_cast force_try
 
-/// Tests for `TripViewModel`. Regression coverage for the `catch is CancellationError`
-/// branch added in the VM refactor.
+/// Tests for `TripViewModel`: cancellation, the shared destination, and loads
+/// that fail in part.
 @Suite(.serialized)
 final class TripViewModelTests: OBATestCase {
     var queue: OperationQueue!
@@ -105,9 +105,8 @@ final class TripViewModelTests: OBATestCase {
 
     // MARK: - Tests
 
-    /// A cancelled `loadData()` task must not surface a user-facing error. The `catch is
-    /// CancellationError { return }` branch in `loadData()` handles this; if it's removed,
-    /// the cancellation would fall through to the generic `catch { operationError = error }`.
+    /// A cancelled `loadData()` task must not surface a user-facing error: its
+    /// fetches fail with cancellation, which is not something the rider did.
     @Test @MainActor
     func `Load data does not surface cancellation error`() async throws {
         let dataLoader = MockDataLoader(testName: name)

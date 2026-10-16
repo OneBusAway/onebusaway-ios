@@ -2094,7 +2094,7 @@
 "trip_page.stops_header" = "المواقف";
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "جارٍ تحميل مواقف هذه الرحلة…";
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "قائمة مواقف هذه الرحلة غير متاحة حاليًا.";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "المركبة %@";

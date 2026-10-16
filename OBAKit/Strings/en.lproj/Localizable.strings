@@ -2045,7 +2045,7 @@
 /* Shown while the trip's stop list is being fetched. */
 "trip_page.stops_loading" = "Loading this trip's stops…";
 
-/* Shown when the trip's stop list could not be loaded. */
+/* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "This trip's stop list isn't available right now.";
 
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
