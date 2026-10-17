@@ -28,7 +28,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, ApplicationDelegate
     var hasFinishedLaunching = false
 
     private let userDefaults: UserDefaults
-    private var rootController: UIViewController?
     private let analyticsClient: AnalyticsOrchestrator
     private let pushService: OBACloudPushService
 
@@ -100,30 +99,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, ApplicationDelegate
     }
 
     func applicationReloadRootInterface(_ application: Application) {
-        var reloadedAnyScene = false
-
-        for case let windowScene as UIWindowScene in UIApplication.shared.connectedScenes {
-            guard let window = (windowScene.delegate as? SceneDelegate)?.window ?? windowScene.windows.first else {
-                continue
-            }
-
-            reloadedAnyScene = true
-            RootInterfaceLauncher.reloadRootInterface(application: application, window: window) { [weak self] in
-                let controller = ApplicationRootControllerFactory.make(application: application)
-                window.rootViewController = controller
-                if window === self?.window {
-                    self?.rootController = controller
-                }
-            }
-        }
-
-        if !reloadedAnyScene, let window {
-            RootInterfaceLauncher.reloadRootInterface(application: application, window: window) { [weak self] in
-                let controller = ApplicationRootControllerFactory.make(application: application)
-                self?.rootController = controller
-                window.rootViewController = controller
-            }
-        }
+        RootInterfaceLauncher.reloadAllScenes(application: application, fallbackWindow: window)
     }
 
     func canOpenURL(_ url: URL) -> Bool {

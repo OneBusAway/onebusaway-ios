@@ -168,7 +168,7 @@ scripts/extract_strings               # Extract strings for localization
   - `OBAKitCore/iOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. SwiftPM can't include a file on one platform only, so **every file here is wrapped in `#if os(iOS)` … `#endif // os(iOS)`**; a new file needs the same wrapper or the watchOS build breaks.
   - **If a file outside `OBAKitCore/iOS/` needs a platform `#if`, move the iOS-only part into `OBAKitCore/iOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
   - Its resources (string tables, privacy manifest) are in a resource bundle of their own: use `Bundle.module` in Core and `Bundle.obaKitCore` from `@testable` tests. `Bundle(for:)` on a Core type finds the code, not the resources.
-  - Extension safety is not enforced by the package itself (it has no `APPLICATION_EXTENSION_API_ONLY`); CI builds the `OBAKitCore` scheme with `APPLICATION_EXTENSION_API_ONLY=YES` to catch it.
+  - Extension safety is not enforced by the package itself (it has no `APPLICATION_EXTENSION_API_ONLY`); the `watch` CI job builds it from the bare `Package.swift` with `APPLICATION_EXTENSION_API_ONLY=YES` to catch it.
 - **OBAKitWatch**: watchOS UI framework (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it.
 - **WatchApp**: watchOS application shell. White-label; per-app identity comes from Apps/<App>/watch.yml.
 - **OBAKit**: UI framework with view controllers and user interface components. Also a **Swift package target** in the root `Package.swift` (iOS only), with main-actor default isolation.
