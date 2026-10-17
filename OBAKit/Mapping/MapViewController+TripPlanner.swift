@@ -178,14 +178,19 @@ extension MapViewController {
 
         subscribeToTripPlannerNotifications()
 
-        let tripPlannerView = tripPlanner.createTripPlannerView(
+        // `.embedded`, inside a stack built here rather than OTPKit's own, so the
+        // stack's bars can be kept horizontal in the panel. See `TripPlannerPanelView`.
+        let plannerBody = tripPlanner.createTripPlannerView(
             origin: originLocation,
             destination: destinationLocation,
             viaPoint: viaPoint,
-            transportMode: preselectedMode
-        ) { [weak self] in
-            guard let self else { return }
-            self.dismissTripPlannerController()
+            transportMode: preselectedMode,
+            chrome: .embedded
+        )
+        let tripPlannerView = TripPlannerPanelView(planner: plannerBody) { [weak self, weak tripPlanner] in
+            // The cleanup OTPKit's own close button performs in `.standalone`.
+            tripPlanner?.reset()
+            self?.dismissTripPlannerController()
         }
 
         self.floatingPanel.move(to: .tip, animated: true)
@@ -288,5 +293,58 @@ extension MapViewController {
     /// the grabber, so the itinerary the rider just chose stays readable at `.half`.
     static func tripStartedPanelState(isVoiceOverRunning: Bool) -> FloatingPanelState {
         isVoiceOverRunning ? .half : .tip
+    }
+}
+
+/// OTPKit's planner under a title and close button, in place of the navigation
+/// stack OTPKit's `.standalone` chrome wraps it in.
+///
+/// In a floating panel on iPhone Duo that stack reserved a vertical-bar column at
+/// the panel's trailing edge — an 84pt safe area inset no toolbar modifier
+/// removed — and squeezed the itineraries until "Depart:" wrapped mid-word. The
+/// planner pushes nothing, so a stack only ever supplied the header, and a plain
+/// one takes the panel's full width on every device.
+struct TripPlannerPanelView<Planner: View>: View {
+    let planner: Planner
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                Text(OTPLoc("trip_planner.title", comment: "Title of the trip planning screen"))
+                    .font(.largeTitle.bold())
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.75)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 0)
+                closeButton
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 4)
+
+            planner
+        }
+        // The panel's surface and the hosting view are both clear; the navigation
+        // stack this replaces painted the background.
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+    }
+
+    @ViewBuilder
+    private var closeButton: some View {
+        let button = Button(action: onClose) {
+            Label(OTPLoc("common.close", comment: "Close button"), systemImage: "xmark")
+                .labelStyle(.iconOnly)
+                .font(.title3.weight(.medium))
+                .frame(width: 32, height: 32)
+        }
+        .buttonBorderShape(.circle)
+        .tint(.primary)
+
+        if #available(iOS 26.0, *) {
+            button.buttonStyle(.glass)
+        } else {
+            button.buttonStyle(.bordered)
+        }
     }
 }
