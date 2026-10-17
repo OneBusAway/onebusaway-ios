@@ -36,14 +36,14 @@ First, duplicate the `Apps/OneBusAway` directory and rename it as you see fit. I
 Second, update the files that are explicitly tied to OneBusAway with your own custom changes:
 
 * App Icon
-* AppDelegate.m
+* AppDelegate.swift
 * project.yml
 * GoogleService-Info.plist (if you want to use Firebase and Crashlytics)
 * regions.json
 
 (List is known to be incomplete. Pull requests welcome.)
 
-Most of the changes you will need to make should be in the files `AppDelegate.m` and `project.yml`.
+Most of the changes you will need to make should be in the files `AppDelegate.swift` and `project.yml`.
 
 ### 3. Generate Your App
 
@@ -63,7 +63,7 @@ Some features that are present within OneBusAway will require you to create and 
 
 (List accurate as of September 1, 2022.)
 
-If you do not wish to use these services in your app, you may disable them by excluding the relevant pieces of data in your `AppDelegate.m` and `project.yml` files. Furthermore, both analytics and push notifications are designed to support integration of other third party services. Please contact the OBAKit project maintainer for more information on how you can add support for other third party services.
+If you do not wish to use these services in your app, you may disable them by excluding the relevant pieces of data in your `AppDelegate.swift` and `project.yml` files. Furthermore, both analytics and push notifications are designed to support integration of other third party services. Please contact the OBAKit project maintainer for more information on how you can add support for other third party services.
 
 ## Embeddable Frameworks
 

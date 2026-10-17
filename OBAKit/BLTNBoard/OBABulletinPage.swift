@@ -50,7 +50,7 @@ extension BLTNItemManager {
         guard !isShowingBulletin else { return }
 
         // Settings writes this flag to `application.userDefaults`, which the
-        // OBA app initializes as an app-group suite (see `AppDelegate.m` and
+        // OBA app initializes as an app-group suite (see `AppDelegate.swift` and
         // `CoreApplicationKey.defaultValue`). `UserDefaults.standard` reads a
         // different suite and would always see the flag as OFF. Resolve the
         // same suite here; if it can't be resolved (unlikely outside tests),

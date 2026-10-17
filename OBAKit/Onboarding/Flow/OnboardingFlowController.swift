@@ -15,8 +15,8 @@ import OBAKitCore
 /// `UIHostingController` child, because `UIHostingController` subclasses can't be exposed
 /// to Objective-C.
 ///
-/// Usage (see `OBARootInterfaceLauncher`, called from each app delegate's
-/// `applicationReloadRootInterface:`): call ``evaluate(application:completion:)``;
+/// Usage (see `RootInterfaceLauncher`, called from each app delegate's
+/// `applicationReloadRootInterface(_:)`): call ``evaluate(application:completion:)``;
 /// if the completion hands you a controller, set its ``onFinished`` block and install
 /// it as the window's root view controller.
 @objc(OBAOnboardingFlowController)

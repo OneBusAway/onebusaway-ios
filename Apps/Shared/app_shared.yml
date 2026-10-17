@@ -99,7 +99,7 @@ targets:
           UISceneConfigurations:
             UIWindowSceneSessionRoleApplication:
               - UISceneConfigurationName: Default Configuration
-                UISceneDelegateClassName: SceneDelegate
+                UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).SceneDelegate"
     preBuildScripts:
       - name: Versioning
         script: "${PROJECT_DIR}/scripts/version"
