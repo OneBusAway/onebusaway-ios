@@ -1,8 +1,8 @@
 // swift-tools-version: 6.2
 //
-// OBAKitCore and OBAKit as a Swift package. The apps in this repo consume it as
-// a local package (see `packages:` in Apps/Shared/app_shared.yml); anyone else
-// can add this repository as a package dependency.
+// OBAKitCore, OBAKit and OBAKitWatch as a Swift package. The apps in this repo
+// consume it as a local package (see `packages:` in Apps/Shared/app_shared.yml);
+// anyone else can add this repository as a package dependency.
 //
 // Every target builds in the Swift 6 language mode, which the 6.2 tools
 // version implies. The settings below reproduce the rest of the project-wide
@@ -36,6 +36,8 @@ let package = Package(
         .library(name: "OBAKitCore", targets: ["OBAKitCore"]),
         // iOS only: OBAKit is UIKit throughout.
         .library(name: "OBAKit", targets: ["OBAKit"]),
+        // watchOS only: the watch app's screens and host.
+        .library(name: "OBAKitWatch", targets: ["OBAKitWatch"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.1"),
@@ -100,6 +102,16 @@ let package = Package(
             // Health-based features read HealthKit; the app declares the purpose
             // strings.
             linkerSettings: [.linkedFramework("HealthKit")]
+        ),
+
+        // The watch app's SwiftUI screens and host. Logic stays in OBAKitCore,
+        // where OBAKitTests covers it. Main-actor default isolation, as in
+        // every Xcode target.
+        .target(
+            name: "OBAKitWatch",
+            dependencies: ["OBAKitCore"],
+            path: "OBAKitWatch",
+            swiftSettings: strictConcurrency + [.defaultIsolation(MainActor.self)]
         ),
     ]
 )

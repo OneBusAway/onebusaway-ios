@@ -453,13 +453,14 @@ jobs:
     # Builds the Swift package from Package.swift alone, before the project
     # exists, which is what an app that depends on this repository gets.
     #
-    # OBAKitCore is linked by the widget extension, so it must not call API
-    # that extensions can't use (UIApplication.shared and friends). As a
-    # framework it enforced that with APPLICATION_EXTENSION_API_ONLY; a package
-    # target has no such setting, and a package can't pass
-    # -application-extension itself without unsafeFlags, which would stop
-    # anyone depending on it by version. Setting it on the command line reaches
-    # the package target. In this job, not `build`, which the test job waits on.
+    # OBAKitCore is linked by the widget extension, and OBAKitWatch will be
+    # linked by a watch widget, so neither may call API that extensions can't
+    # use (UIApplication.shared and friends). As frameworks they enforced that
+    # with APPLICATION_EXTENSION_API_ONLY; a package target has no such
+    # setting, and a package can't pass -application-extension itself without
+    # unsafeFlags, which would stop anyone depending on it by version. Setting
+    # it on the command line reaches the package targets. In this job, not
+    # `build`, which the test job waits on.
     - name: Build the Swift package on its own
       timeout-minutes: 30
       run: |
@@ -474,6 +475,7 @@ jobs:
             -quiet
         }
         build OBAKitCore generic/platform=iOS APPLICATION_EXTENSION_API_ONLY=YES
+        build OBAKitWatch generic/platform=watchOS APPLICATION_EXTENSION_API_ONLY=YES
 
     - name: Install xcodegen
       env:

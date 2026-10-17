@@ -7,11 +7,17 @@ targets:
       - path: "."
         excludes: ["project.yml"]
     dependencies:
-      - target: OBAKitWatch
+      - package: OBAKit
+        product: OBAKitWatch
       - package: OBAKit
         product: OBAKitCore
     scheme:
       gatherCoverageData: false
+    # Lints the whole repository, for watch-only builds; App does the same.
+    postBuildScripts:
+      - name: Swiftlint
+        script: 'sh "${PROJECT_DIR}/scripts/swiftlint.sh"'
+        basedOnDependencyAnalysis: false
     info:
       path: Info.plist
       properties:
@@ -40,7 +46,8 @@ targets:
     settings:
       base:
         # XcodeGen's watchOS application preset omits this; without it the app
-        # installs and dies in dyld ("Library not loaded: @rpath/OBAKitWatch").
+        # installs and dies in dyld when a package product is linked
+        # dynamically ("Library not loaded: @rpath/…").
         # A compile cannot catch it — scripts/watch_smoke_test does.
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
         # White-label convention: each app names its watch icon set WatchAppIcon in its own catalog.

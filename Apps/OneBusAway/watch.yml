@@ -8,9 +8,9 @@
 
 # This file is included with `relativePaths: false`, so these paths resolve
 # from the repo root. The nested includes keep the default (paths inside
-# OBAKitWatch/project.yml resolve from OBAKitWatch/, as OBAKitCore's do).
+# WatchApp/project.yml resolve from WatchApp/). OBAKitWatch is a product of the
+# root Package.swift.
 include:
-  - path: OBAKitWatch/project.yml
   - path: WatchApp/project.yml
 
 targets:

@@ -9,10 +9,8 @@
 
 import Foundation
 
-fileprivate class OBAKitWatchLocalization: NSObject {}
-
-/// Looks a string up in this framework's bundle. Same shape as OBAKitCore's
-/// and OBAWidget's helpers, which are `internal` to their modules.
+/// Looks a string up in this module's resource bundle. Same shape as
+/// OBAKitCore's and OBAWidget's helpers, which are `internal` to their modules.
 internal func OBALoc(_ key: String, value: String, comment: String) -> String {
-    NSLocalizedString(key, tableName: nil, bundle: Bundle(for: OBAKitWatchLocalization.self), value: value, comment: comment)
+    NSLocalizedString(key, tableName: nil, bundle: .module, value: value, comment: comment)
 }
