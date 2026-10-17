@@ -14,8 +14,9 @@ on:
 # Four jobs that start together, so wall time is the slowest one, not the sum.
 # `build` builds the shipping iOS app and its tests, `test` runs them on a
 # runner of its own, `watch` builds the Swift package on its own, compiles and
-# launches the watch stack, and checks project generation, and `lint` lints. None `needs:` another (`test` waits for
-# `build`'s products itself); GitHub still requires them all to pass.
+# launches the watch stack, and checks project generation, and `lint` lints.
+# None `needs:` another (`test` waits for `build`'s products itself); GitHub
+# still requires them all to pass.
 #
 # The build jobs carry Xcode's compilation cache (the CAS) between runs; it is
 # off unless COMPILATION_CACHE_ENABLE_CACHING is set. A cached DerivedData
