@@ -163,10 +163,12 @@ scripts/extract_strings               # Extract strings for localization
 ## Architecture
 
 ### Framework Structure
-- **OBAKitCore**: Core business logic, networking, data models (application extension safe). One module, two directories:
+- **OBAKitCore**: Core business logic, networking, data models (application extension safe). A **Swift package target**, declared in the root `Package.swift`; the apps consume it as a local package (`packages:` in `Apps/Shared/app_shared.yml`). One module, two directories:
   - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region-monitoring API calls.
-  - `OBAKitCoreiOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. It is an XcodeGen `group`, so run `scripts/generate_project` after adding a file here.
-  - **If a file in `OBAKitCore/` needs a platform `#if`, move the iOS-only part to `OBAKitCoreiOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
+  - `OBAKitCore/iOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. SwiftPM can't include a file on one platform only, so **every file here is wrapped in `#if os(iOS)` … `#endif // os(iOS)`**; a new file needs the same wrapper or the watchOS build breaks.
+  - **If a file outside `OBAKitCore/iOS/` needs a platform `#if`, move the iOS-only part into `OBAKitCore/iOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
+  - Its resources (string tables, privacy manifest) are in a resource bundle of their own: use `Bundle.module` in Core and `Bundle.obaKitCore` from `@testable` tests. `Bundle(for:)` on a Core type finds the code, not the resources.
+  - Extension safety is not enforced by the package itself (it has no `APPLICATION_EXTENSION_API_ONLY`); the `watch` CI job builds it from the bare `Package.swift` with `APPLICATION_EXTENSION_API_ONLY=YES` to catch it.
 - **OBAKitWatch**: watchOS UI framework (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it.
 - **WatchApp**: watchOS application shell. White-label; per-app identity comes from Apps/<App>/watch.yml.
 - **OBAKit**: UI framework with view controllers and user interface components
@@ -193,7 +195,7 @@ scripts/extract_strings               # Extract strings for localization
   - `Network/`: API services and networking
   - `Location/`: Location services and region management
   - `Orchestration/`: Application setup and configuration
-- `OBAKitCoreiOS/`: iOS-only files of the OBAKitCore module (same module, no separate import)
+- `OBAKitCore/iOS/`: iOS-only files of the OBAKitCore module (same module, no separate import; each file wrapped in `#if os(iOS)`)
   - `UIKit/`: UIKit view code
   - `LiveActivities/`: Everything that imports or renders ActivityKit
   - `Location/`: Region monitoring / geofencing
@@ -300,5 +302,5 @@ onebusaway://rentals?lat=47.6097&lon=-122.3422
 - Core framework (OBAKitCore) must remain application extension safe
 - UI tests are minimal - focus is on unit tests
 - Documentation is generated with DocC via `scripts/docs`
-- **`Int` is 32 bits on most Apple Watches** (`arm64_32`), and watch simulators hide it. In `OBAKitCore/`, never decode an epoch value as `Int` — use `Int64` or `Date`. Check with `xcodebuild build -scheme OBAKitCore -destination 'generic/platform=watchOS' CODE_SIGNING_ALLOWED=NO`; CI runs the same build.
+- **`Int` is 32 bits on most Apple Watches** (`arm64_32`), and watch simulators hide it. In `OBAKitCore/`, never decode an epoch value as `Int` — use `Int64` or `Date`. Check with `xcodebuild build -scheme OBAKitCore -destination 'generic/platform=watchOS' CODE_SIGNING_ALLOWED=NO` (the package's scheme, listed in the generated project); CI builds the watch app for watchOS devices, which compiles Core the same way.
 - **Extensions do not build a `CoreApplication`.** It starts a regions fetch, opens the stop cache, and bumps the launch counter. A widget reads the app-group suite instead: `ResolvedRegionStore` for the region (the app writes it via `ResolvedRegionPersister`; extensions only read), `UserUUID` for the client id, `RESTAPIService.standalone(…)` for the API, and `BookmarkArrivalsLoader` for arrivals.

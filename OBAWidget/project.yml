@@ -2,9 +2,13 @@ targets:
   OBAWidget:
     type: app-extension
     platform: iOS
-    sources: ["."]
+    sources:
+      - path: "."
+        # Not a resource; without this it ships inside the .appex.
+        excludes: ["project.yml"]
     dependencies:
-      - target: OBAKitCore
+      - package: OBAKit
+        product: OBAKitCore
       - sdk: SwiftUI.framework
       - sdk: WidgetKit.framework
     entitlements:

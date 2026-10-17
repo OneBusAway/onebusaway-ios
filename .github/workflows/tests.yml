@@ -450,6 +450,33 @@ jobs:
           xcodebuild -downloadPlatform watchOS
         fi
 
+    # Builds the Swift package from Package.swift alone, before the project
+    # exists, which is what an app that depends on this repository gets.
+    #
+    # OBAKitCore is linked by the widget extension, so it must not call API
+    # that extensions can't use (UIApplication.shared and friends). As a
+    # framework it enforced that with APPLICATION_EXTENSION_API_ONLY; a package
+    # target has no such setting, and a package can't pass
+    # -application-extension itself without unsafeFlags, which would stop
+    # anyone depending on it by version. Setting it on the command line reaches
+    # the package target. In this job, not `build`, which the test job waits on.
+    - name: Build the Swift package on its own
+      timeout-minutes: 30
+      run: |
+        set -o pipefail
+        test ! -e OBAKit.xcodeproj
+        build() { # scheme, destination, then extra build settings
+          xcodebuild build -scheme "$1" -destination "$2" "${@:3}" \
+            -derivedDataPath DerivedData-Package \
+            COMPILATION_CACHE_ENABLE_CACHING=YES \
+            COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+        }
+        # While OBAKitCore is the package's only product, its scheme takes the
+        # package's name.
+        build OBAKit generic/platform=iOS APPLICATION_EXTENSION_API_ONLY=YES
+
     - name: Install xcodegen
       env:
         HOMEBREW_NO_AUTO_UPDATE: 1

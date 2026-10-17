@@ -8,7 +8,8 @@ targets:
         excludes: ["project.yml"]
     dependencies:
       - target: OBAKitWatch
-      - target: OBAKitCore
+      - package: OBAKit
+        product: OBAKitCore
     scheme:
       gatherCoverageData: false
     info:

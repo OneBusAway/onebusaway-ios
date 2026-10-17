@@ -5,6 +5,7 @@
 //  Created by Mohamed Sliem on 18/02/2026.
 //
 
+import Foundation
 import OBAKitCore
 
 final class MockExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
