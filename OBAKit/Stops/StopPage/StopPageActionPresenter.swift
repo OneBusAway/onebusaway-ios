@@ -374,7 +374,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         stopPreferencesUpdate = onUpdate
         let view = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
             .environment(\.coreApplication, application)
-        presentationHost(for: "route filter")?.present(UIHostingController(rootView: view), animated: true)
+        presentationHost(for: "route filter")?.present(SheetHostingController(rootView: view), animated: true)
     }
 
     private var stopPreferencesUpdate: ((StopPreferences) -> Void)?

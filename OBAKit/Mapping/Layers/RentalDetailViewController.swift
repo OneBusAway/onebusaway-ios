@@ -35,7 +35,7 @@ import UIKit
 
 /// Bottom sheet for a single rental vehicle or station — same visual family as
 /// the stop page, so vehicles and stops behave identically.
-final class RentalDetailViewController: UIHostingController<RentalDetailView> {
+final class RentalDetailViewController: SheetHostingController<RentalDetailView> {
 
     init(
         rental: VehicleRental,
@@ -304,7 +304,7 @@ struct RentalDetailView: View {
 
 /// "N vehicles here": dockless vehicles genuinely pile up at corners, and a list
 /// is the honest representation — never a forced zoom.
-final class RentalClusterListViewController: UIHostingController<RentalClusterListView> {
+final class RentalClusterListViewController: SheetHostingController<RentalClusterListView> {
 
     init(
         rentals: [VehicleRental],
@@ -388,6 +388,7 @@ struct RentalClusterListView: View {
                     onOpenLink: onOpenLink
                 )
                 .presentationDetents([.medium])
+                .sheetKeepsBarsHorizontal()
             }
         }
     }

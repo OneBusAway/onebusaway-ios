@@ -98,7 +98,7 @@ final class StopSheetPresenter: NSObject {
         // would flash it back into place for a turn, behind the incoming sheet.
         tearDown(animated: false, restoringTabBar: false)
 
-        let navigation = UINavigationController(rootViewController: contentController)
+        let navigation = SheetNavigationController(rootViewController: contentController)
         navigation.delegate = self
         configureNavigationBar(navigation.navigationBar)
         // Seeded here as well as in `willShow` so the bar is already gone on the first layout

@@ -13,7 +13,7 @@ import UIKit
 
 /// Classic-shell host for the overlap picker: a navigation controller so a
 /// row tap pushes the service page inside the same sheet.
-final class OnDemandPickerViewController: UINavigationController {
+final class OnDemandPickerViewController: SheetNavigationController {
 
     private let makeDetail: (OnDemandServiceMatch, OnDemandLocationCheck) -> OnDemandServiceViewController?
     private let onHighlight: (String?) -> Void

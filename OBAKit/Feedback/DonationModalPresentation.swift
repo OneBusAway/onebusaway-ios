@@ -23,7 +23,7 @@ extension UIViewController {
     /// suppress the review prompt for 14 days. Routing all three through here means a
     /// fourth call site can't get the ordering wrong.
     func presentDonationModal(_ rootView: some View, coordinator: PromptCoordinator) {
-        present(UIHostingController(rootView: rootView), animated: true) {
+        present(SheetHostingController(rootView: rootView), animated: true) {
             coordinator.noteShown(.donationModal)
         }
     }
