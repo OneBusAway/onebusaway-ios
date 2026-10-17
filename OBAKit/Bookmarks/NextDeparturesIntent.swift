@@ -23,13 +23,13 @@ import OBAKitCore
 ///
 /// Strings come from `AppIntents.strings`; see `TrackBookmarkIntent` for why.
 public struct NextDeparturesIntent: AppIntent {
-    public static let title = LocalizedStringResource("next_departures_intent.title", defaultValue: "Next Departures", table: "AppIntents", bundle: #bundle)
-    public static let description = IntentDescription(LocalizedStringResource("next_departures_intent.description", defaultValue: "Hear when a bookmarked trip departs next.", table: "AppIntents", bundle: #bundle))
+    public static let title = LocalizedStringResource("next_departures_intent.title", defaultValue: "Next Departures", table: "AppIntents")
+    public static let description = IntentDescription(LocalizedStringResource("next_departures_intent.description", defaultValue: "Hear when a bookmarked trip departs next.", table: "AppIntents"))
     public static let openAppWhenRun = false
 
     public init() {}
 
-    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle))
+    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents"))
     public var bookmark: BookmarkEntity?
 
     @MainActor
