@@ -30,11 +30,13 @@ nonisolated private struct MockListItem: OBAListViewItem {
         return .list(config, [])
     }
 
+    /// Hashes the mock item by its ID and title.
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(title)
     }
 
+    /// Compares two mock list items for equality by ID and title.
     static func == (lhs: MockListItem, rhs: MockListItem) -> Bool {
         lhs.id == rhs.id && lhs.title == rhs.title
     }
@@ -51,10 +53,12 @@ nonisolated private struct CustomCellMockItem: OBAListViewItem {
         MockListViewCell.self
     }
 
+    /// Hashes the custom cell mock item by its ID.
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 
+    /// Compares two custom cell mock items for equality by ID.
     static func == (lhs: CustomCellMockItem, rhs: CustomCellMockItem) -> Bool {
         lhs.id == rhs.id
     }
@@ -77,6 +81,7 @@ struct OBAListViewItemTests {
 
     // MARK: - Default Protocol Implementations
 
+    /// Tests protocol default values for OBAListViewItem conformance.
     @Test func testProtocolDefaultImplementations() {
         nonisolated struct DefaultItem: OBAListViewItem {
             let id: String = "default"
@@ -97,6 +102,7 @@ struct OBAListViewItemTests {
 
     // MARK: - AnyOBAListViewItem Identity & Type Erasure
 
+    /// Tests type erasure and property propagation into AnyOBAListViewItem.
     @Test func testTypeErasureProperties() {
         let separator = OBAListRowSeparatorConfiguration.hidden()
         let item = MockListItem(
@@ -117,6 +123,7 @@ struct OBAListViewItemTests {
         }
     }
 
+    /// Tests downcasting AnyOBAListViewItem back to its underlying concrete type.
     @Test func testTypeCasting() {
         let item = MockListItem(id: "item_cast", title: "Casting Test")
         let anyItem = item.typeErased
@@ -130,6 +137,7 @@ struct OBAListViewItemTests {
         #expect(wrongCast == nil)
     }
 
+    /// Tests AnyOBAListViewItem wrapping an item with a custom cell type.
     @Test func testCustomCellTypeItem() {
         let customItem = CustomCellMockItem(id: "custom_cell_item")
         #expect(CustomCellMockItem.customCellType == MockListViewCell.self)
@@ -145,6 +153,7 @@ struct OBAListViewItemTests {
 
     // MARK: - AnyOBAListViewItem Equality & Hashing
 
+    /// Tests AnyOBAListViewItem equality, hash consistency, and Set uniqueness.
     @Test func testEqualityAndHashing() {
         let itemA1 = MockListItem(id: "item_1", title: "Title A")
         let itemA2 = MockListItem(id: "item_1", title: "Title A")
@@ -169,6 +178,7 @@ struct OBAListViewItemTests {
         #expect(!set.contains(anyC))
     }
 
+    /// Tests inequality between different item types sharing the same ID.
     @Test func testInequalityAcrossDifferentTypesWithSameID() {
         let mockItem = MockListItem(id: "same_id", title: "Same ID")
         let headerItem = OBAListViewHeader(id: "same_id", title: "Same ID", isCollapsible: false)
@@ -181,6 +191,7 @@ struct OBAListViewItemTests {
 
     // MARK: - Action Type Erasure & Execution
 
+    /// Tests type-erased onSelectAction execution and item forwarding.
     @Test func testOnSelectActionExecution() {
         var selectedItemTitle: String?
         let onSelect: OBAListViewAction<MockListItem> = { item in
@@ -197,6 +208,7 @@ struct OBAListViewItemTests {
         #expect(selectedItemTitle == "Selected Title")
     }
 
+    /// Tests type-erased onDeleteAction execution and item forwarding.
     @Test func testOnDeleteActionExecution() {
         var deletedItemID: String?
         let onDelete: OBAListViewAction<MockListItem> = { item in
@@ -213,6 +225,7 @@ struct OBAListViewItemTests {
         #expect(deletedItemID == "delete_test")
     }
 
+    /// Tests that unconfigured action closures remain nil on AnyOBAListViewItem.
     @Test func testNilActionsWhenUnset() {
         let item = MockListItem(id: "nil_actions", title: "No Actions")
         let anyItem = AnyOBAListViewItem(item)
@@ -225,6 +238,7 @@ struct OBAListViewItemTests {
 
     // MARK: - Contextual Actions
 
+    /// Tests default properties and custom configurations of OBAListViewContextualAction.
     @Test func testContextualActionDefaultsAndCustomization() {
         let defaultAction = OBAListViewContextualAction<MockListItem>()
         #expect(defaultAction.style == .normal)
@@ -252,6 +266,7 @@ struct OBAListViewItemTests {
         #expect(customAction.hidesWhenSelected == true)
     }
 
+    /// Tests bridging an OBAListViewContextualAction to a UIKit UIContextualAction and executing its handler.
     @Test func testUIContextualActionBridge() {
         var handlerInvoked = false
         var invokedItemTitle: String?
@@ -285,6 +300,7 @@ struct OBAListViewItemTests {
         #expect(completionSuccess == true)
     }
 
+    /// Tests type erasure of contextual actions and invocation on AnyOBAListViewItem.
     @Test func testContextualActionsTypeErasureAndInvocation() {
         var triggeredActionTitle: String?
         let contextualAction = OBAListViewContextualAction<MockListItem>(
@@ -328,6 +344,7 @@ struct OBAListViewItemTests {
 
     // MARK: - OBAListViewHeader
 
+    /// Tests configuration generation for collapsible and static section headers.
     @Test func testListViewHeaderConfiguration() {
         let collapsibleHeader = OBAListViewHeader(id: "sec_1", title: "Departures", isCollapsible: true)
         #expect(collapsibleHeader.id == "sec_1")
@@ -354,6 +371,7 @@ struct OBAListViewItemTests {
         }
     }
 
+    /// Tests equality and hash consistency of OBAListViewHeader across varying IDs, titles, and collapse states.
     @Test func testListViewHeaderEqualityAndHashing() {
         let h1 = OBAListViewHeader(id: "h_1", title: "Header", isCollapsible: true)
         let h2 = OBAListViewHeader(id: "h_1", title: "Header", isCollapsible: true)
@@ -371,6 +389,7 @@ struct OBAListViewItemTests {
 
     // MARK: - EmptyDataSetItem (Production OBAListViewItem)
 
+    /// Tests custom cell type and content configuration for EmptyDataSetItem.
     @Test func testEmptyDataSetItemConfigurationAndCustomCellType() {
         let item = EmptyDataSetItem(id: "empty_1", title: "No Data", body: "Try again later")
         #expect(EmptyDataSetItem.customCellType == EmptyDataSetCell.self)
@@ -386,6 +405,7 @@ struct OBAListViewItemTests {
         }
     }
 
+    /// Tests that EmptyDataSetItem maps various APIError cases to their appropriate SF Symbols.
     @Test func testEmptyDataSetItemErrorMappingIcons() {
         let networkErrorItem = EmptyDataSetItem(
             id: "net_err",
@@ -420,6 +440,7 @@ struct OBAListViewItemTests {
         #expect(explicitIconItem.image == customIcon)
     }
 
+    /// Tests equality, hashing, and ID discrimination for EmptyDataSetItem.
     @Test func testEmptyDataSetItemEqualityAndHashing() {
         let item1 = EmptyDataSetItem(id: "e1", title: "Title", body: "Body")
         let item2 = EmptyDataSetItem(id: "e1", title: "Title", body: "Body")
