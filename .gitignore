@@ -8,7 +8,6 @@ Apps/**/*.entitlements
 OBAWidget/**/*.entitlements
 OBAKitTests/Info.plist
 OBAWidget/Info.plist
-OBAKitWatch/Info.plist
 WatchApp/Info.plist
 /project.yml
 /project.local.yml

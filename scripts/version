@@ -10,7 +10,9 @@ end
 
 def update_all_apps
   apps = Dir.glob("Apps/*") - ["Apps/Shared"]
-  apps += ["OBAKit", "OBAKitCore", "OBAWidget", "OBAKitWatch", "WatchApp"]
+  # OBAKitCore, OBAKit and OBAKitWatch are Swift package targets, with no
+  # Info.plist to stamp.
+  apps += ["OBAWidget", "WatchApp"]
   launch_directory = Dir.pwd
 
   # Minute resolution, not hour: two merges to main within the same hour would

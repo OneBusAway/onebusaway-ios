@@ -499,6 +499,24 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           -quiet
 
+    # OBAKitWatch is a package target, which doesn't get the extension-safe
+    # flag the framework had; a future watch widget will link it. Same check
+    # as the build job's for OBAKitCore.
+    - name: Build OBAKitWatch as extension-safe
+      timeout-minutes: 15
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -project 'OBAKit.xcodeproj' \
+          -scheme 'OBAKitWatch' \
+          -destination 'generic/platform=watchOS' \
+          -derivedDataPath DerivedData-ExtensionSafe \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
+          CODE_SIGNING_ALLOWED=NO \
+          APPLICATION_EXTENSION_API_ONLY=YES \
+          -quiet
+
     # `simctl runtime list` can report the watchOS runtime Ready before its
     # simulators are usable (each reports `runtime=(null)`), and a fast job
     # can get here first. Wait until a watch simulator resolves.
