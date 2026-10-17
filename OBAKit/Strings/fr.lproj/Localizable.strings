@@ -46,6 +46,9 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "Suivre sur l'écran verrouillé";
 
+/* VoiceOver announcement after the rider removes a departure alarm. */
+"alarms.a11y_removed" = "Rappel supprimé";
+
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "Cet écran arrive bientôt.";
 
@@ -698,6 +701,9 @@
 
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "Aucun arrêt à proximité";
+
+/* How far a nearby stop is from the rider, read by VoiceOver after the stop's name. e.g. '500 feet away' */
+"nearby_stops.accessibility_distance_fmt" = "à %@";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "Il n'y a pas d'autres arrêts dans les environs.";
@@ -2060,6 +2066,8 @@
 "stops_controller.directions_to_here" = "Itinéraire vers cet arrêt";
 /* Header above the trip's full stop list. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.all_stops_fmt" = "Tous les %d arrêts";
+/* VoiceOver label for the trip page's back button. %@ is the name of the screen it goes back to, usually a stop, e.g. 'Back to 3rd Ave & Pike St'. */
+"trip_page.back_to_fmt" = "Retour à %@";
 /* Short caption on the trip page button that bookmarks this trip. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.bookmark" = "Favori";
 /* VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status. */
@@ -2112,6 +2120,8 @@
 "trip_page.stops_loading" = "Chargement des arrêts de ce trajet…";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "La liste des arrêts de ce trajet n'est pas disponible pour le moment.";
+/* The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'. */
+"trip_page.title_fmt" = "Ligne %1$@ vers %2$@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Véhicule %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
