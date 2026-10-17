@@ -85,16 +85,26 @@ nonisolated enum RouteLaneLayout {
         var lines: [RouteID: Line] = [:]
         for (routeIndex, route) in sampled.enumerated() {
             let lanes = route.points.indices.map { pointIndex -> Double in
-                let direction = tangent(at: pointIndex, in: route.points)
-                // Every other route sharing the street here, with whether it runs
-                // the same way as this one.
-                var sharers: [(route: Int, sameWay: Bool)] = []
-                for match in index.nearest(to: route.points[pointIndex], within: reach, excluding: routeIndex) {
-                    let alignment = direction.dx * match.direction.dx + direction.dy * match.direction.dy
-                    if abs(alignment) >= minimumAlignment {
-                        sharers.append((match.line, alignment > 0))
+                // Each other route's segment here that runs most nearly along this
+                // route's, as a signed cosine. All the segments in reach, not just the
+                // nearest: by a corner, that's on the cross street. Both of this
+                // route's segments at the point, not their average: at a corner, that
+                // runs diagonally, along neither street.
+                let directions = segmentDirections(at: pointIndex, in: route.points)
+                var alignments: [Int: Double] = [:]
+                for match in index.segments(near: route.points[pointIndex], within: reach, excluding: routeIndex) {
+                    for direction in directions {
+                        let alignment = direction.dx * match.direction.dx + direction.dy * match.direction.dy
+                        if abs(alignment) > abs(alignments[match.line] ?? 0) {
+                            alignments[match.line] = alignment
+                        }
                     }
                 }
+                // Every other route sharing the street here, with whether it runs
+                // the same way as this one.
+                var sharers: [(route: Int, sameWay: Bool)] = alignments
+                    .filter { abs($0.value) >= minimumAlignment }
+                    .map { (route: $0.key, sameWay: $0.value > 0) }
                 guard !sharers.isEmpty else { return 0 }
 
                 sharers.append((routeIndex, true))
@@ -148,10 +158,13 @@ nonisolated enum RouteLaneLayout {
         return resampled
     }
 
-    /// The direction of travel through point `index`, from its neighbors.
-    private static func tangent(at index: Int, in points: [MKMapPoint]) -> Vector {
-        let before = points[max(index - 1, 0)], after = points[min(index + 1, points.count - 1)]
-        return Vector(dx: after.x - before.x, dy: after.y - before.y).normalized ?? Vector(dx: 1, dy: 0)
+    /// The directions of travel into and out of point `index`: one at either end
+    /// of the line, two everywhere else.
+    private static func segmentDirections(at index: Int, in points: [MKMapPoint]) -> [Vector] {
+        [(index - 1, index), (index, index + 1)].compactMap { from, to in
+            guard from >= 0, to < points.count else { return nil }
+            return Vector(dx: points[to].x - points[from].x, dy: points[to].y - points[from].y).normalized
+        }
     }
 
     /// Which way, and how far, one lane width at point `index` moves it: to the right
@@ -214,24 +227,23 @@ nonisolated private struct SegmentIndex {
         Cell(x: Int((point.x / cellSize).rounded(.down)), y: Int((point.y / cellSize).rounded(.down)))
     }
 
-    /// Each other line's nearest segment to `point`, among those within `reach`.
-    func nearest(to point: MKMapPoint, within reach: Double, excluding excluded: Int) -> [Match] {
+    /// Every other line's segments within `reach` of `point`. A segment spanning
+    /// several cells can come back more than once.
+    func segments(near point: MKMapPoint, within reach: Double, excluding excluded: Int) -> [Match] {
         let center = cell(point)
-        var nearest: [Int: (distance: Double, segment: Segment)] = [:]
+        var matches: [Match] = []
         for x in (center.x - 1)...(center.x + 1) {
             for y in (center.y - 1)...(center.y + 1) {
-                for segment in cells[Cell(x: x, y: y)] ?? [] where segment.line != excluded {
-                    let distance = Self.distance(from: point, to: segment)
-                    guard distance <= reach, distance < nearest[segment.line]?.distance ?? .infinity else { continue }
-                    nearest[segment.line] = (distance, segment)
+                for segment in cells[Cell(x: x, y: y)] ?? []
+                where segment.line != excluded && Self.distance(from: point, to: segment) <= reach {
+                    let direction = RouteLaneLayout.Vector(dx: segment.end.x - segment.start.x, dy: segment.end.y - segment.start.y)
+                    if let direction = direction.normalized {
+                        matches.append(Match(line: segment.line, direction: direction))
+                    }
                 }
             }
         }
-        return nearest.compactMap { line, found in
-            RouteLaneLayout.Vector(dx: found.segment.end.x - found.segment.start.x, dy: found.segment.end.y - found.segment.start.y)
-                .normalized
-                .map { Match(line: line, direction: $0) }
-        }
+        return matches
     }
 
     private static func distance(from point: MKMapPoint, to segment: Segment) -> Double {

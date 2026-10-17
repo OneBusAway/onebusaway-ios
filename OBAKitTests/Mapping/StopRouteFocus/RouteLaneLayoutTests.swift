@@ -151,6 +151,26 @@ struct RouteLaneLayoutTests {
         #expect(Self.distance(from: alone, to: Self.eastbound) < 0.5)
     }
 
+    /// Regression, seen at 44th Ave SW & SW Alaska St: two routes turning the same
+    /// corner pinched together into it and kinked out of it. Near the corner the
+    /// nearest piece of the other route is on the cross street, and the corner
+    /// itself runs diagonally, parallel to neither; both read as not sharing.
+    @Test func `Routes turning the same corner stay a lane apart around it`() throws {
+        let corner = { (shift: Double) in
+            [Self.point(east: shift, north: 300), Self.point(east: shift, north: shift), Self.point(east: 300, north: shift)]
+        }
+        let lines = RouteLaneLayout.lines(for: [("A", corner(0)), ("B", corner(3))])
+        let a = try #require(lines["A"]), b = try #require(lines["B"])
+
+        #expect(a.lanes.allSatisfy { $0 != 0 })
+        #expect(b.lanes.allSatisfy { $0 != 0 })
+
+        let width = 10.0
+        let offsetB = Self.offset(b, laneWidthMeters: width)
+        let closest = Self.offset(a, laneWidthMeters: width).map { Self.distance(from: $0, to: offsetB) }.min() ?? 0
+        #expect(closest > width * 0.6)
+    }
+
     @Test func `Three routes on one street take three different lanes`() throws {
         let lines = RouteLaneLayout.lines(for: [("A", Self.eastbound), ("B", Self.westbound), ("C", Self.eastbound)])
 
