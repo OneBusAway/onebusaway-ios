@@ -219,6 +219,10 @@ struct TripActionBar: View {
         }
         .buttonStyle(FrostedActionButtonStyle(shape: Self.buttonShape))
         .accessibilityLabel(accessibilityLabel ?? title)
+        // Voice Control matches spoken phrases against these, not the label. When the
+        // label is longer than the caption, "Tap Schedule" — the word on screen — would
+        // otherwise match nothing in locales where the two share no words.
+        .accessibilityInputLabels([title, accessibilityLabel].compactMap { $0 })
     }
 
     /// The shared icon-over-caption layout for everything in the bar's secondary row —

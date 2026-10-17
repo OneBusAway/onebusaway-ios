@@ -493,6 +493,16 @@ struct TripStopListModelTests {
         #expect(before.groups.map(\.id) == after.groups.map(\.id))
     }
 
+    /// The run that ends at the vehicle is the same run as the vehicle passes
+    /// the rider's stop and splits it off, so it keeps its id.
+    @Test func `The run behind the vehicle keeps its id when it passes your stop`() {
+        let before = make(long, userStopID: "D", closestStopID: "D")
+        let after = make(long, userStopID: "D", closestStopID: "H")
+
+        #expect(before.groups.map(\.id) == after.groups.map(\.id).suffix(1))
+        #expect(shape(after, expanded: Set(before.groups.map(\.id))) == ["[3]", "D", "[3+]", "E", "F", "G", "H", "I", "J", "K", "L"])
+    }
+
     @Test func `A run spans its first and last stops' times`() throws {
         let model = make(long, closestStopID: "F")
         let group = try #require(model.groups.first)

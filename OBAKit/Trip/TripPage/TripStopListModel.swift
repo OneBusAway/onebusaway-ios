@@ -312,7 +312,7 @@ extension TripStopListModel {
         let kind: CollapsedGroupKind
         /// Where the run sits in the model's rows. Never empty.
         let range: Range<Int>
-        let rows: [Row]
+        let rows: ArraySlice<Row>
 
         var isPassed: Bool { kind == .passed }
         var firstDate: Date? { rows.lazy.compactMap(\.date).first }
@@ -353,14 +353,18 @@ extension TripStopListModel {
         guard let vehicleIndex else { return [] }
 
         // Passed stops, split around the rider's stop when the vehicle has
-        // already been through it.
-        var passedRuns = [0..<vehicleIndex]
+        // already been through it. The run that ends at the vehicle is named
+        // the same either way: it is the run that grows as the vehicle moves.
+        var passedRuns = [(id: "passed", range: 0..<vehicleIndex)]
         if let userIndex, userIndex < vehicleIndex {
-            passedRuns = [0..<userIndex, (userIndex + 1)..<vehicleIndex]
+            passedRuns = [
+                (id: "passed-before-your-stop", range: 0..<userIndex),
+                (id: "passed", range: (userIndex + 1)..<vehicleIndex)
+            ]
         }
-        var groups = passedRuns.enumerated()
-            .filter { $0.element.count >= Self.minimumPassedRun }
-            .map { group(id: "passed-\($0.offset)", kind: .passed, range: $0.element) }
+        var groups = passedRuns
+            .filter { $0.range.count >= Self.minimumPassedRun }
+            .map { group(id: $0.id, kind: .passed, range: $0.range) }
 
         if let userIndex, userIndex - vehicleIndex - 1 > Self.maximumApproachingStops {
             groups.append(group(id: "approaching", kind: .approaching, range: (vehicleIndex + 1)..<userIndex))
@@ -387,7 +391,7 @@ extension TripStopListModel {
     }
 
     private func group(id: String, kind: CollapsedGroupKind, range: Range<Int>) -> CollapsedGroup {
-        CollapsedGroup(id: id, kind: kind, range: range, rows: Array(rows[range]))
+        CollapsedGroup(id: id, kind: kind, range: range, rows: rows[range])
     }
 }
 
