@@ -73,7 +73,7 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
         application.viewRouter.present(
             agencyOptionsAlert(agency),
             from: self,
-            isPopover: traitCollection.userInterfaceIdiom == .pad,
+            isPopover: traitCollection.horizontalSizeClass == .regular,
             popoverBarButtonItem: nil
         )
     }

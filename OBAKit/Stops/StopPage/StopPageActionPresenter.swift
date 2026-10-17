@@ -768,7 +768,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         // scrim), so render in dark style regardless of the system appearance.
         let traits = traitCollection.modifyingTraits { $0.userInterfaceStyle = .dark }
         return await withCheckedContinuation { continuation in
-            let snapshotter = MapSnapshotter(size: size, stopIconFactory: factory)
+            let snapshotter = MapSnapshotter(size: size, traitCollection: traits, stopIconFactory: factory)
             snapshotter.snapshot(stop: stop, traitCollection: traits) { image in
                 // `MapSnapshotter`'s internal `MKMapSnapshotter.start`
                 // completion is `[weak self]`, so the wrapper must outlive the

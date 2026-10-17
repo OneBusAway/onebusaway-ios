@@ -80,7 +80,11 @@ final class VehicleCalloutView: UIView {
 
         let rule = UIView()
         rule.backgroundColor = .separator
-        rule.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale).isActive = true
+        let ruleHeight = rule.heightAnchor.constraint(equalToConstant: 1.0 / traitCollection.displayScale)
+        ruleHeight.isActive = true
+        registerForTraitChanges([UITraitDisplayScale.self]) { (self: Self, _) in
+            ruleHeight.constant = 1.0 / self.traitCollection.displayScale
+        }
 
         let stack = UIStackView(arrangedSubviews: [header, rule, countdown, updated, followButton])
         stack.axis = .vertical

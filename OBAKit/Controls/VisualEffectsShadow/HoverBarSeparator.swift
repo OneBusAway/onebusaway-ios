@@ -11,8 +11,10 @@ import OBAKitCore
 /// A view for visually separating buttons in HoverBar.
 class HoverBarSeparator: UIView {
     private var separatorHeight: CGFloat {
-        1.0 / UIScreen.main.scale
+        1.0 / traitCollection.displayScale
     }
+
+    private lazy var heightConstraint = heightAnchor.constraint(equalToConstant: separatorHeight)
 
     override var intrinsicContentSize: CGSize {
         return CGSize(width: UIView.noIntrinsicMetric, height: separatorHeight)
@@ -36,9 +38,12 @@ class HoverBarSeparator: UIView {
     fileprivate func configure() {
         self.backgroundColor = ThemeColors.shared.separator
 
-        NSLayoutConstraint.activate([
-            self.heightAnchor.constraint(equalToConstant: separatorHeight)
-        ])
+        heightConstraint.isActive = true
+
+        registerForTraitChanges([UITraitDisplayScale.self]) { (self: Self, _) in
+            self.heightConstraint.constant = self.separatorHeight
+            self.invalidateIntrinsicContentSize()
+        }
     }
 }
 

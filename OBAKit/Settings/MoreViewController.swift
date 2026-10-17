@@ -427,7 +427,7 @@ public class MoreViewController: UIViewController,
         application.viewRouter.present(
             sheet,
             from: self,
-            isPopover: traitCollection.userInterfaceIdiom == .pad,
+            isPopover: traitCollection.horizontalSizeClass == .regular,
             popoverBarButtonItem: sender
         )
     }
