@@ -74,8 +74,8 @@ public final class WatchBookmarksModel {
     }
 
     private func loadBookmarks(from host: WatchAppHost) async {
-        let bookmarks = host.bookmarkStore.bookmarks
-        guard !bookmarks.isEmpty else {
+        let allBookmarks = host.bookmarkStore.bookmarks
+        guard !allBookmarks.isEmpty else {
             self.phase = .empty
             return
         }
@@ -85,9 +85,22 @@ public final class WatchBookmarksModel {
             return
         }
 
+        let bookmarks: [WatchBookmark]
+        if let currentRegionID = host.currentRegion?.regionIdentifier {
+            bookmarks = allBookmarks.filter { Int($0.regionIdentifier) == currentRegionID }
+        } else {
+            bookmarks = allBookmarks
+        }
+
+        guard !bookmarks.isEmpty else {
+            self.phase = .empty
+            return
+        }
+
         self.phase = .loading
 
         let departures = await loader.departuresByWatchBookmark(for: bookmarks, using: apiService)
+        guard !Task.isCancelled else { return }
 
         var sections: [WatchBookmarkSection] = []
         let groups = host.bookmarkStore.groups

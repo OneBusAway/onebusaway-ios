@@ -14,10 +14,13 @@ import OBAKitCore
 /// `WatchSyncPayload` to paired Apple Watches via `WatchSessionBridge`.
 @MainActor
 public final class BookmarkWatchSyncSender: NSObject, RegionsServiceDelegate {
+    public typealias TransportHandler = @MainActor (WatchSyncPayload) throws -> Void
+
     private let userDataStore: UserDataStore
     private let regionsService: RegionsService
     private let bridge: WatchSessionBridge
     private let debounceInterval: Duration
+    private let transport: TransportHandler?
 
     private var debounceTask: Task<Void, Never>?
 
@@ -25,12 +28,14 @@ public final class BookmarkWatchSyncSender: NSObject, RegionsServiceDelegate {
         userDataStore: UserDataStore,
         regionsService: RegionsService,
         bridge: WatchSessionBridge = .shared,
-        debounceInterval: Duration = .milliseconds(1500)
+        debounceInterval: Duration = .milliseconds(1500),
+        transport: TransportHandler? = nil
     ) {
         self.userDataStore = userDataStore
         self.regionsService = regionsService
         self.bridge = bridge
         self.debounceInterval = debounceInterval
+        self.transport = transport
         super.init()
 
         NotificationCenter.default.addObserver(
@@ -47,8 +52,19 @@ public final class BookmarkWatchSyncSender: NSObject, RegionsServiceDelegate {
             object: nil
         )
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(sessionStateDidChange),
+            name: .watchSessionStateDidChange,
+            object: nil
+        )
+
         regionsService.addDelegate(self)
         bridge.activate()
+
+        if bridge.canSendToWatch {
+            syncNow(force: true)
+        }
     }
 
     @objc private nonisolated func dataDidChange() {
@@ -57,26 +73,37 @@ public final class BookmarkWatchSyncSender: NSObject, RegionsServiceDelegate {
         }
     }
 
-    public func scheduleSync() {
+    @objc private nonisolated func sessionStateDidChange() {
+        Task { @MainActor in
+            guard self.bridge.canSendToWatch else { return }
+            self.syncNow(force: true)
+        }
+    }
+
+    public func scheduleSync(force: Bool = false) {
         debounceTask?.cancel()
         debounceTask = Task { @MainActor [weak self] in
             guard let self else { return }
             try? await Task.sleep(for: self.debounceInterval)
             guard !Task.isCancelled else { return }
-            self.syncNow()
+            self.syncNow(force: force)
         }
     }
 
-    public func syncNow() {
+    public func syncNow(force: Bool = false) {
         guard let payload = buildPayload() else { return }
 
-        // Skip sending if revision matches last sent
-        if let lastRevision = bridge.lastSentRevision, lastRevision == payload.revision {
+        // Skip sending if revision matches last sent, unless forced (e.g. watch activation or watch app installed)
+        if !force, let lastRevision = bridge.lastSentRevision, lastRevision == payload.revision {
             return
         }
 
         do {
-            try bridge.send(payload: payload)
+            if let transport {
+                try transport(payload)
+            } else {
+                try bridge.send(payload: payload)
+            }
         } catch {
             Logger.error("BookmarkWatchSyncSender: send failed: \(error.localizedDescription)")
         }

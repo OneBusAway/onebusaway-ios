@@ -22,7 +22,7 @@ import OBAKitCore
 /// default value builds one.
 @MainActor
 @Observable
-public final class WatchAppHost: NSObject, LocationServiceDelegate {
+public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServiceDelegate {
     public let locationService: LocationService
     public let regionsService: RegionsService
     public let formatters: Formatters
@@ -30,6 +30,9 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
 
     /// Follows `regionsService.currentRegion`; nil until a region is known.
     public var apiService: RESTAPIService? { apiServiceProvider.apiService }
+
+    /// Mirrors `regionsService.currentRegion` so views can react to region changes.
+    public private(set) var currentRegion: Region?
 
     /// Mirrors `locationService.authorizationStatus` so views can react to a grant.
     public private(set) var authorizationStatus: CLAuthorizationStatus
@@ -92,11 +95,13 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
         let bookmarkStore = WatchBookmarkStore(userDefaults: userDefaults)
         self.bookmarkStore = bookmarkStore
 
+        self.currentRegion = regionsService.currentRegion
         self.authorizationStatus = locationService.authorizationStatus
 
         super.init()
 
         locationService.addDelegate(self)
+        regionsService.addDelegate(self)
 
         WatchSessionBridge.shared.activate()
 
@@ -104,6 +109,7 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
             bookmarkStore.update(payload: latest)
             if regionsService.currentRegion == nil, let region = latest.region {
                 regionsService.currentRegion = region
+                currentRegion = region
             }
         }
 
@@ -113,6 +119,7 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
                 self.bookmarkStore.update(payload: payload)
                 if self.regionsService.currentRegion == nil, let syncedRegion = payload.region {
                     self.regionsService.currentRegion = syncedRegion
+                    self.currentRegion = syncedRegion
                 }
             }
         }
@@ -157,5 +164,15 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate {
 
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         authorizationStatus = status
+    }
+
+    // MARK: - RegionsServiceDelegate
+
+    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        currentRegion = region
+    }
+
+    public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
+        currentRegion = nil
     }
 }

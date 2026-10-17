@@ -72,18 +72,23 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
 
+        var sendCount = 0
         let sender = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
-            debounceInterval: .milliseconds(100)
+            debounceInterval: .milliseconds(100),
+            transport: { _ in
+                sendCount += 1
+            }
         )
 
         NotificationCenter.default.post(name: .bookmarksDidChange, object: nil)
         NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: nil)
         NotificationCenter.default.post(name: .bookmarksDidChange, object: nil)
 
-        try? await Task.sleep(for: .milliseconds(200))
+        try await Task.sleep(for: .milliseconds(250))
 
+        #expect(sendCount == 1)
         #expect(sender.buildPayload() != nil)
     }
 }

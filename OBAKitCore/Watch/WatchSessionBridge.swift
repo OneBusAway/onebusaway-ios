@@ -34,50 +34,10 @@ public final class WatchSessionBridge: NSObject, WCSessionDelegate, @unchecked S
         WCSession.isSupported()
     }
 
-    public var canSendToWatch: Bool {
-        guard WCSession.isSupported() else { return false }
-        let session = WCSession.default
-        #if os(iOS)
-        return session.activationState == .activated && session.isPaired && session.isWatchAppInstalled
-        #else
-        return session.activationState == .activated
-        #endif
-    }
-
-    public var lastSentPayload: WatchSyncPayload? {
-        guard WCSession.isSupported() else { return nil }
-        guard let data = WCSession.default.applicationContext["payload"] as? Data else { return nil }
-        return try? WatchSyncPayload.decode(fromBinaryPlist: data)
-    }
-
-    public var lastSentRevision: String? {
-        lastSentPayload?.revision
-    }
-
     public var latestReceivedPayload: WatchSyncPayload? {
         guard WCSession.isSupported() else { return nil }
         guard let data = WCSession.default.receivedApplicationContext["payload"] as? Data else { return nil }
         return try? WatchSyncPayload.decode(fromBinaryPlist: data)
-    }
-
-    public func updateApplicationContext(data: Data) throws {
-        guard WCSession.isSupported() else { return }
-        let session = WCSession.default
-        #if os(iOS)
-        guard session.activationState == .activated && session.isPaired && session.isWatchAppInstalled else {
-            return
-        }
-        #else
-        guard session.activationState == .activated else {
-            return
-        }
-        #endif
-        try session.updateApplicationContext(["payload": data])
-    }
-
-    public func send(payload: WatchSyncPayload) throws {
-        let data = try payload.encodeToBinaryPlist()
-        try updateApplicationContext(data: data)
     }
 
     // MARK: - WCSessionDelegate
@@ -89,6 +49,9 @@ public final class WatchSessionBridge: NSObject, WCSessionDelegate, @unchecked S
     ) {
         if let error {
             Logger.warn("WatchSessionBridge: activation failed with error: \(error.localizedDescription)")
+        }
+        if activationState == .activated {
+            notifySessionStateDidChange()
         }
     }
 
@@ -102,18 +65,12 @@ public final class WatchSessionBridge: NSObject, WCSessionDelegate, @unchecked S
         payloadContinuation.yield(payload)
     }
 
-    #if os(iOS)
-    nonisolated public func sessionDidBecomeInactive(_ session: WCSession) {
-        // Protocol requirement on iOS
+    nonisolated func notifySessionStateDidChange() {
+        NotificationCenter.default.post(name: .watchSessionStateDidChange, object: self)
     }
+}
 
-    nonisolated public func sessionDidDeactivate(_ session: WCSession) {
-        // Required for multi-watch switching on iOS
-        session.activate()
-    }
-
-    nonisolated public func sessionWatchStateDidChange(_ session: WCSession) {
-        // State changed (e.g. watch app installed or pairing changed)
-    }
-    #endif
+extension Notification.Name {
+    /// Posted when a WatchConnectivity session activates or when the companion watch state changes.
+    public static let watchSessionStateDidChange = Notification.Name("OBAWatchSessionStateDidChangeNotification")
 }

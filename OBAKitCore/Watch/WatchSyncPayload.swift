@@ -69,7 +69,7 @@ public struct WatchBookmark: Codable, Sendable, Identifiable, Equatable {
         self.regionIdentifier = Int32(clamping: bookmark.regionIdentifier)
         self.stopID = bookmark.stopID
         self.stopName = bookmark.stop.name
-        self.stopDirection = Formatters.directionAbbreviation(bookmark.stop.direction)
+        self.stopDirection = bookmark.stop.direction.canonicalAbbreviation
         self.latitude = bookmark.stop.location.coordinate.latitude
         self.longitude = bookmark.stop.location.coordinate.longitude
         self.isFavorite = bookmark.isFavorite

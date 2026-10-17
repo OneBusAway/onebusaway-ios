@@ -49,8 +49,17 @@
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Сменить направление";
 
+/* Section title for ungrouped bookmarks */
 "bookmarks.title" = "Закладки";
+
+/* Bookmarks tab bar item title */
 "bookmarks.tab" = "Закладки";
+
+/* Nearby tab bar item title */
 "nearby.tab" = "Рядом";
+
+/* Empty state message when no bookmarks have been saved */
 "bookmarks.empty" = "Закладок пока нет. Добавьте закладки на iPhone, чтобы увидеть их здесь.";
+
+/* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Загрузка закладок…";

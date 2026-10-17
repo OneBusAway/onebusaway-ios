@@ -49,8 +49,17 @@
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Đổi chiều";
 
+/* Section title for ungrouped bookmarks */
 "bookmarks.title" = "Dấu trang";
+
+/* Bookmarks tab bar item title */
 "bookmarks.tab" = "Dấu trang";
+
+/* Nearby tab bar item title */
 "nearby.tab" = "Lân cận";
+
+/* Empty state message when no bookmarks have been saved */
 "bookmarks.empty" = "Chưa có dấu trang nào. Hãy thêm dấu trang trên iPhone để xem tại đây.";
+
+/* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Đang tải dấu trang…";

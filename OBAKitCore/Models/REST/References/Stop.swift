@@ -29,6 +29,21 @@ public enum Direction: Int, Comparable {
     public static func < (lhs: Direction, rhs: Direction) -> Bool {
         return lhs.rawValue < rhs.rawValue
     }
+
+    /// The canonical unlocalized cardinal direction abbreviation (e.g. "N", "S", "W"), or nil if unknown.
+    public var canonicalAbbreviation: String? {
+        switch self {
+        case .n: return "N"
+        case .ne: return "NE"
+        case .e: return "E"
+        case .se: return "SE"
+        case .s: return "S"
+        case .sw: return "SW"
+        case .w: return "W"
+        case .nw: return "NW"
+        case .unknown: return nil
+        }
+    }
 }
 
 public enum StopLocationType: Int, Decodable {

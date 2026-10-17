@@ -49,8 +49,17 @@
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Palitan ang direksyon";
 
+/* Section title for ungrouped bookmarks */
 "bookmarks.title" = "Mga Bookmark";
+
+/* Bookmarks tab bar item title */
 "bookmarks.tab" = "Mga Bookmark";
+
+/* Nearby tab bar item title */
 "nearby.tab" = "Malapit";
+
+/* Empty state message when no bookmarks have been saved */
 "bookmarks.empty" = "Wala pang mga bookmark. Magdagdag ng mga bookmark sa iyong iPhone para makita ang mga ito rito.";
+
+/* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Naglo-load ng mga bookmark…";

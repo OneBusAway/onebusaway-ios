@@ -49,8 +49,17 @@
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "방향 전환";
 
+/* Section title for ungrouped bookmarks */
 "bookmarks.title" = "즐겨찾기";
+
+/* Bookmarks tab bar item title */
 "bookmarks.tab" = "즐겨찾기";
+
+/* Nearby tab bar item title */
 "nearby.tab" = "주변";
+
+/* Empty state message when no bookmarks have been saved */
 "bookmarks.empty" = "아직 즐겨찾기가 없습니다. iPhone에서 즐겨찾기를 추가하면 여기에 표시됩니다.";
+
+/* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "즐겨찾기를 불러오는 중…";

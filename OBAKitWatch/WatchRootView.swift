@@ -83,5 +83,11 @@ public struct WatchRootView: View {
         .onChange(of: host.authorizationStatus) { _, _ in
             nearby?.refresh()
         }
+        .onChange(of: host.bookmarkStore.payload?.revision) { _, _ in
+            bookmarksModel?.refresh()
+        }
+        .onChange(of: host.currentRegion) { _, _ in
+            bookmarksModel?.refresh()
+        }
     }
 }

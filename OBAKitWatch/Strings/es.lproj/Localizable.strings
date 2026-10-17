@@ -49,8 +49,17 @@
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Cambiar sentido";
 
+/* Section title for ungrouped bookmarks */
 "bookmarks.title" = "Marcadores";
+
+/* Bookmarks tab bar item title */
 "bookmarks.tab" = "Marcadores";
+
+/* Nearby tab bar item title */
 "nearby.tab" = "Cercanas";
+
+/* Empty state message when no bookmarks have been saved */
 "bookmarks.empty" = "Aún no hay marcadores. Agrega marcadores en tu iPhone para verlos aquí.";
+
+/* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Cargando marcadores…";

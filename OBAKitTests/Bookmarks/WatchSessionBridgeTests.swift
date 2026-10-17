@@ -78,13 +78,11 @@ struct WatchSessionBridgeTests {
         #expect(receivedNames == ["PayloadA", "PayloadB"])
     }
 
-    @Test func `Bridge handles unsupported or inactive session safely`() {
+    @Test func `Bridge handles unsupported or inactive session safely`() throws {
         let bridge = WatchSessionBridge()
-        let dummyPayload = try? makePayload(name: "Dummy")
-        if let dummyPayload {
-            #expect(throws: Never.self) {
-                try? bridge.send(payload: dummyPayload)
-            }
+        let dummyPayload = try makePayload(name: "Dummy")
+        #expect(throws: Never.self) {
+            try bridge.send(payload: dummyPayload)
         }
     }
 }
