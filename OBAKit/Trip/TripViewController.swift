@@ -542,8 +542,9 @@ class TripViewController: UIViewController,
 
     /// Resolves which pins to mark from a load, and re-marks the pins already on
     /// the map. Run before `updateAnnotations`, so the pins it adds are marked
-    /// from this load too. See #449.
+    /// from this load too. See #449, #1513.
     func applyStopMarks(from details: TripDetails) {
+        stopMarks.destinationArrival = nil
         stopMarks.stopTimes = details.stopTimes
         stopMarks.riderStops = TripStopListModel.riderStops(
             in: details.stopTimes,
