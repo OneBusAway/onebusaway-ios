@@ -21,6 +21,8 @@ protocol NearbyStopsListDelegate: AnyObject {
 protocol NearbyStopsListDataSource: AnyObject {
     var highSeverityAlerts: [AgencyAlert] { get }
     var stops: [Stop] { get }
+    /// Where the rider is, for the distance VoiceOver reads on each stop row.
+    var userLocation: CLLocation? { get }
 }
 
 /// Displays a list of stops and high-priority alerts.
@@ -56,19 +58,23 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
         let subtitle: String?
         let image: UIImage?
         let type: ItemType
+        /// What VoiceOver reads instead of the title and subtitle, when they'd say less.
+        let accessibilityLabel: String?
 
         init(headerForSection section: Section) {
             self.title = section.localizedTitle
             self.subtitle = nil
             self.image = nil
             self.type = .header
+            self.accessibilityLabel = nil
         }
 
-        init(_ stop: Stop) {
+        init(_ stop: Stop, accessibilityLabel: String) {
             self.title = stop.nameWithLocalizedDirectionAbbreviation
             self.subtitle = stop.subtitle
             self.image = Icons.transportIcon(from: stop.prioritizedRouteTypeForDisplay)
             self.type = .stop(stopID: stop.id)
+            self.accessibilityLabel = accessibilityLabel
         }
 
         init(_ alert: AgencyAlert) {
@@ -76,6 +82,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             self.subtitle = nil
             self.image = Icons.unreadAlert
             self.type = .alert(alert)
+            self.accessibilityLabel = nil
         }
     }
 
@@ -107,6 +114,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             config.text = item.title
             config.textProperties.font = .preferredFont(forTextStyle: .headline)
             cell.contentConfiguration = config
+            cell.accessibilityTraits.insert(.header)
         }
 
         self.cellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, ItemType> { cell, _, item in
@@ -118,6 +126,10 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             config.imageProperties.maximumSize = CGSize(width: 24, height: 24)
 
             cell.contentConfiguration = config
+            // The title abbreviates the direction, "(W)", which VoiceOver reads as a letter.
+            cell.accessibilityLabel = item.accessibilityLabel
+            // Activating a row opens the stop or the alert.
+            cell.accessibilityTraits.insert(.button)
         }
 
         self.collectionView = .init(frame: .zero, collectionViewLayout: createLayout())
@@ -229,7 +241,8 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             let nearbyStopsHeader = Item(headerForSection: .nearbyStops)
             sectionSnapshot.append([nearbyStopsHeader])
 
-            let nearbyStops = dataSource.stops.map(Item.init)
+            let userLocation = dataSource.userLocation
+            let nearbyStops = dataSource.stops.map { Item($0, accessibilityLabel: Self.accessibilityLabel(for: $0, from: userLocation)) }
             sectionSnapshot.append(nearbyStops)
 
             stopsSectionSnapshot = sectionSnapshot
@@ -250,6 +263,24 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
         }
 
         toggleEmptyDataView(isShowing: sections.isEmpty)
+    }
+
+    // MARK: - Accessibility
+
+    static let distanceFormatter: MKDistanceFormatter = {
+        let formatter = MKDistanceFormatter()
+        formatter.unitStyle = .full
+        return formatter
+    }()
+
+    /// The map pin's label (name, direction, routes, stop ID), then how far away the stop is.
+    static func accessibilityLabel(for stop: Stop, from userLocation: CLLocation?) -> String {
+        let label = Formatters.formattedAccessibilityLabel(stop: stop)
+        guard let userLocation else { return label }
+
+        let distance = distanceFormatter.string(fromDistance: stop.location.distance(from: userLocation))
+        let fmt = OBALoc("nearby_stops.accessibility_distance_fmt", value: "%@ away", comment: "How far a nearby stop is from the rider, read by VoiceOver after the stop's name. e.g. '500 feet away'")
+        return [label, String(format: fmt, distance)].joined(separator: "; ")
     }
 
     // MARK: - UICollectionViewDelegate methods

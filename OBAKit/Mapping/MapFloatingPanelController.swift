@@ -51,6 +51,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     // NearbyStopsListDataSource — forwarded from ViewModel
     var highSeverityAlerts: [AgencyAlert] { viewModel.highSeverityAlerts }
     var stops: [Stop] { viewModel.nearbyStops }
+    var userLocation: CLLocation? { application.locationService.currentLocation }
 
     private var resetFudgeFactorWorkItem: DispatchWorkItem?
 

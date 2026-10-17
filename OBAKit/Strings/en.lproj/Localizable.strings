@@ -843,6 +843,9 @@
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "No Nearby Stops";
 
+/* How far a nearby stop is from the rider, read by VoiceOver after the stop's name. e.g. '500 feet away' */
+"nearby_stops.accessibility_distance_fmt" = "%@ away";
+
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "There are no other stops in the vicinity.";
 
