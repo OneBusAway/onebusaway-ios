@@ -54,7 +54,7 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
         super.viewDidLoad()
 
         navigationItem.titleView = controllerToggle
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: Strings.close, style: .plain, target: self, action: #selector(close))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(close))
 
         toggleControllers()
     }

@@ -48,7 +48,7 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
         super.viewDidLoad()
 
         navigationItem.titleView = titleView
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.close, style: .plain, target: self, action: #selector(close))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(close))
 
         view.backgroundColor = ThemeColors.shared.systemBackground
 

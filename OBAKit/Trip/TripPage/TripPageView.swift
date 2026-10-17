@@ -46,6 +46,7 @@ struct TripPageRootView: View {
     let originTitle: String?
     let actions: TripPageActions
     var backBehavior: TripPageBackBehavior = .pop
+    var showsBackRow = true
     var hasAlarm = false
     var isTrackingLiveActivity = false
     /// Mutable so `TripPageViewController.setAtTip` can flip it without rebuilding.
@@ -57,6 +58,7 @@ struct TripPageRootView: View {
             originTitle: originTitle,
             actions: actions,
             backBehavior: backBehavior,
+            showsBackRow: showsBackRow,
             hasAlarm: hasAlarm,
             isTrackingLiveActivity: isTrackingLiveActivity,
             isCollapsed: isCollapsed
@@ -83,6 +85,10 @@ struct TripPageView: View {
     /// Which way out the back row offers. Set by the host, which is the only
     /// thing that knows whether this page was pushed or presented.
     var backBehavior: TripPageBackBehavior = .pop
+
+    /// `false` where the host shows the system navigation bar instead, whose back
+    /// button would duplicate the row. See `TripPageViewController.showsSystemNavigationBar`.
+    var showsBackRow = true
 
     /// Set by the host so the alarm and Live Activity buttons render their
     /// current state rather than always offering to start something.
@@ -131,11 +137,13 @@ struct TripPageView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TripPageBackRow(
-                title: originTitle,
-                behavior: backBehavior,
-                onBack: actions.onBack
-            )
+            if showsBackRow {
+                TripPageBackRow(
+                    title: originTitle,
+                    behavior: backBehavior,
+                    onBack: actions.onBack
+                )
+            }
 
             ScrollView {
                 VStack(alignment: .leading, spacing: StopTripSpacing.tripPage(compactMode)) {

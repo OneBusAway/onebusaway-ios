@@ -71,7 +71,7 @@ struct RouteStopsSheetView: View {
                         }
                     }
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(Strings.close) { dismiss() }
+                        SheetDismissButton(.close) { dismiss() }
                     }
                 }
         }

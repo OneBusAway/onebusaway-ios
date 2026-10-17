@@ -110,6 +110,9 @@ final class OnDemandDockHostController: UIHostingController<OnDemandDockView> {
     /// The panel surface `placementConstraints` pin to: the search panel's,
     /// or the trip planner's while the planner card shows (spec 3.8).
     weak var placementSurface: UIView?
+    /// Whether `placementConstraints` cap the planner card at the hover bar,
+    /// which hides while the map's controls are in a vertical bar.
+    var placementCeilsAtToolbar = false
     var placementConstraints: [NSLayoutConstraint] = []
     var cancellables = Set<AnyCancellable>()
 

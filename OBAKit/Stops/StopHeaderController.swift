@@ -119,6 +119,27 @@ class StopHeaderView: UIView {
 
     private var snapshotter: MapSnapshotter?
 
+    /// The width the current map snapshot was taken at.
+    private var snapshotWidth: CGFloat = 0
+
+    /// Snapshots the map at this view's own width, rounded up so a live resize
+    /// doesn't start a snapshot on every pass. `layoutSubviews` retakes it only
+    /// when the view grows past that width; the image view centres the snapshot,
+    /// so a narrower view crops it evenly from both sides.
+    private func updateSnapshot() {
+        guard let config, bounds.width > 0 else { return }
+
+        let widthStep: CGFloat = 128
+        snapshotWidth = (bounds.width / widthStep).rounded(.up) * widthStep
+        let size = CGSize(width: snapshotWidth, height: StopHeaderView.maximumHeight)
+
+        snapshotter = MapSnapshotter(size: size, traitCollection: traitCollection, stopIconFactory: config.viewModel.stopIconFactory)
+
+        snapshotter?.snapshot(stop: config.viewModel.stop, traitCollection: traitCollection) { [weak self] image in
+            self?.backgroundImageView.image = image
+        }
+    }
+
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -170,14 +191,7 @@ class StopHeaderView: UIView {
     public func configureView() {
         guard let config = config else { return }
 
-        let width = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let size = CGSize(width: width, height: StopHeaderView.maximumHeight)
-
-        snapshotter = MapSnapshotter(size: size, stopIconFactory: config.viewModel.stopIconFactory)
-
-        snapshotter?.snapshot(stop: config.viewModel.stop, traitCollection: traitCollection) { [weak self] image in
-            self?.backgroundImageView.image = image
-        }
+        updateSnapshot()
 
         stopNameLabel.text = config.viewModel.stopName
         stopNumberLabel.text = config.viewModel.stopNumber
@@ -208,6 +222,10 @@ class StopHeaderView: UIView {
         }
 
         self.stackPaddingBottomHeight.constant = suggestedHeight
+
+        if bounds.width > snapshotWidth {
+            updateSnapshot()
+        }
     }
 
     @objc private func toggleRouteDetails(_ sender: UITapGestureRecognizer) {

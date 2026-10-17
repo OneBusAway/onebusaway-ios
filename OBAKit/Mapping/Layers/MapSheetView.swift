@@ -241,13 +241,16 @@ struct MapSheetView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if model.showsResetButton {
-                        Button(OBALoc("map_sheet.reset", value: "Reset", comment: "Button restoring the default map layer configuration")) {
+                        Button {
                             model.resetToDefaults()
+                        } label: {
+                            // The icon lets the item join a vertical bar (iPhone Duo).
+                            Label(OBALoc("map_sheet.reset", value: "Reset", comment: "Button restoring the default map layer configuration"), systemImage: "arrow.counterclockwise")
                         }
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(Strings.done) { dismiss() }
+                    SheetDismissButton(.done) { dismiss() }
                 }
             }
         }

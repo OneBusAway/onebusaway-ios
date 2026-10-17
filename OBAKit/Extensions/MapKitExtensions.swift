@@ -312,3 +312,12 @@ extension MKUserLocation {
         return location.coordinate.latitude != 0 && location.coordinate.longitude != 0
     }
 }
+
+extension MKMapView {
+    /// Padding for framing content, with each horizontal side clearing its own
+    /// safe area. A vertical bar (iPhone Duo) covers one edge only, and MapKit
+    /// measures padding from the bounds.
+    func edgePadding(top: CGFloat, horizontal: CGFloat, bottom: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: top, left: safeAreaInsets.left + horizontal, bottom: bottom, right: safeAreaInsets.right + horizontal)
+    }
+}

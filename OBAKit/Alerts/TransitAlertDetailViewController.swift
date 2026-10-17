@@ -52,7 +52,7 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         guard isModalInPresentation else { return }
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.close, style: .done, target: self, action: #selector(close))
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(close))
     }
 
     // MARK: - Transit Alert

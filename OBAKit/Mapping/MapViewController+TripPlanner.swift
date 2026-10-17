@@ -178,14 +178,19 @@ extension MapViewController {
 
         subscribeToTripPlannerNotifications()
 
-        let tripPlannerView = tripPlanner.createTripPlannerView(
+        // `.embedded`, under a plain header rather than OTPKit's navigation stack,
+        // which reserved an empty vertical-bar column in the panel. See `TripPlannerPanelView`.
+        let plannerBody = tripPlanner.createTripPlannerView(
             origin: originLocation,
             destination: destinationLocation,
             viaPoint: viaPoint,
-            transportMode: preselectedMode
-        ) { [weak self] in
-            guard let self else { return }
-            self.dismissTripPlannerController()
+            transportMode: preselectedMode,
+            chrome: .embedded
+        )
+        let tripPlannerView = TripPlannerPanelView(planner: plannerBody) { [weak self, weak tripPlanner] in
+            // The cleanup OTPKit's own close button performs in `.standalone`.
+            tripPlanner?.reset()
+            self?.dismissTripPlannerController()
         }
 
         self.floatingPanel.move(to: .tip, animated: true)
@@ -288,5 +293,47 @@ extension MapViewController {
     /// the grabber, so the itinerary the rider just chose stays readable at `.half`.
     static func tripStartedPanelState(isVoiceOverRunning: Bool) -> FloatingPanelState {
         isVoiceOverRunning ? .half : .tip
+    }
+}
+
+/// OTPKit's planner under a title and close button, in place of the
+/// navigation stack OTPKit's `.standalone` chrome wraps it in. In a floating
+/// panel on iPhone Duo that stack reserved an empty vertical-bar column; the
+/// planner pushes nothing, so a plain header loses nothing.
+struct TripPlannerPanelView<Planner: View>: View {
+    let planner: Planner
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                Text(OTPLoc("trip_planner.title", comment: "Title of the trip planning screen"))
+                    .font(.largeTitle.bold())
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.75)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 0)
+                closeButton
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 4)
+
+            planner
+        }
+        // The panel's surface and the hosting view are both clear; the navigation
+        // stack this replaces painted the background.
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+    }
+
+    private var closeButton: some View {
+        Button(action: onClose) {
+            Image(systemName: "xmark")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
+                .glassCircleLabel(diameter: 44)
+        }
+        .glassCircleSurface()
+        .accessibilityLabel(Strings.close)
     }
 }

@@ -23,13 +23,14 @@ class MapSnapshotter: NSObject {
     private let zoomLevel: Int
     private let stopIconFactory: StopIconFactory
 
-    public convenience init(size: CGSize, stopIconFactory: StopIconFactory) {
-        self.init(size: size, screen: UIScreen.main, mapType: .mutedStandard, zoomLevel: 15, stopIconFactory: stopIconFactory)
+    /// - Parameter traitCollection: The traits of the view the snapshot is for; supplies its display scale.
+    public convenience init(size: CGSize, traitCollection: UITraitCollection, stopIconFactory: StopIconFactory) {
+        self.init(size: size, displayScale: traitCollection.displayScale, mapType: .mutedStandard, zoomLevel: 15, stopIconFactory: stopIconFactory)
     }
 
-    public init(size: CGSize, screen: UIScreen, mapType: MKMapType, zoomLevel: Int, stopIconFactory: StopIconFactory) {
+    public init(size: CGSize, displayScale: CGFloat, mapType: MKMapType, zoomLevel: Int, stopIconFactory: StopIconFactory) {
         self.size = size
-        self.scale = screen.scale
+        self.scale = displayScale
         self.mapType = mapType
         self.zoomLevel = zoomLevel
         self.stopIconFactory = stopIconFactory

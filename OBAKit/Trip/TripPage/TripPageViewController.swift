@@ -95,6 +95,16 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // on the first layout pass.
         hideNavigationBar(animated: false)
 
+        registerForVerticalBarChanges { [weak self] in
+            guard let self else { return }
+            // Render even while covered: `viewWillAppear` puts the bar back to
+            // match `showsSystemNavigationBar` on the way back, and a stale back
+            // row would leave the page with two back controls, or none.
+            render()
+            guard navigationController?.topViewController === self else { return }
+            hideNavigationBar(animated: true)
+        }
+
         // Re-render now that there is a `navigationController` to ask. `init`
         // runs before this page is on anyone's stack, so the back row's glyph
         // was built from an unanswerable question — and a modal would have come
@@ -148,6 +158,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
     // MARK: - Navigation bar
 
+    /// Internal for tests: stands in for `traitCollection.presentsBarsVertically`,
+    /// a system trait a test can't set.
+    var presentsBarsVerticallyOverride: Bool?
+
     /// Whether the bar was hidden before this page hid it, so it can be put back
     /// the way it was. `nil` while the page isn't hiding it.
     private var navigationBarWasHidden: Bool?
@@ -159,12 +173,25 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// Only where nothing else decides the bar. The stop sheet's presenter, the
     /// stack's delegate, decides it on every push and pop, from
     /// `providesOwnSheetChrome`; a second owner would fight it.
+    ///
+    /// Except where `showsSystemNavigationBar`, which shows it instead.
     private func hideNavigationBar(animated: Bool) {
         guard let navigationController, navigationController.delegate == nil else { return }
         if navigationBarWasHidden == nil {
             navigationBarWasHidden = navigationController.isNavigationBarHidden
         }
-        navigationController.setNavigationBarHidden(true, animated: animated)
+        navigationController.setNavigationBarHidden(!showsSystemNavigationBar, animated: animated)
+    }
+
+    /// `true` when the system puts navigation bars in a vertical column beside the
+    /// page (iPhone Duo) and the page was pushed onto an ordinary stack. There the
+    /// bar costs the page no height, and its back button belongs in the column with
+    /// the tabs — the page's own back row put a second back control, horizontally,
+    /// at the top of the page. A sheet's stack has a delegate deciding the bar, and
+    /// a modal root closes rather than goes back; both keep the row.
+    private var showsSystemNavigationBar: Bool {
+        guard presentsBarsVerticallyOverride ?? traitCollection.presentsBarsVertically, let navigationController, navigationController.delegate == nil else { return false }
+        return backBehavior == .pop
     }
 
     /// Hands the bar back when navigation takes this page off screen (#1570):
@@ -250,6 +277,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             originTitle: originTitle,
             actions: makeActions(),
             backBehavior: backBehavior,
+            showsBackRow: !showsSystemNavigationBar,
             hasAlarm: false,
             isTrackingLiveActivity: isTrackingLiveActivity,
             isCollapsed: isAtTip

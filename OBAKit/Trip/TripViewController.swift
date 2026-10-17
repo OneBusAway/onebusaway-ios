@@ -643,7 +643,7 @@ private extension TripViewController {
                     guard !fit.isNull else { return }
                     mapView.visibleMapRect = mapView.mapRectThatFits(
                         fit,
-                        edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20)
+                        edgePadding: mapView.edgePadding(top: 60, horizontal: 20, bottom: 128)
                     )
                 }
             }

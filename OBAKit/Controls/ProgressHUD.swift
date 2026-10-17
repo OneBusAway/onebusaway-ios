@@ -278,7 +278,9 @@ public class ProgressHUD: UIView {
 	//---------------------------------------------------------------------------------------------------------------------------------------------
 	convenience private init() {
 
-		self.init(frame: UIScreen.main.bounds)
+		// Sized to the window it joins in `setupBackground`, not to a screen: on iPad
+		// and iPhone Duo the window can be any size.
+		self.init(frame: .zero)
 		self.alpha = 0
 	}
 
@@ -339,7 +341,8 @@ public class ProgressHUD: UIView {
 
 		if (viewBackground == nil) {
 			let mainWindow = UIApplication.shared.keyWindowFromScene ?? UIWindow()
-			viewBackground = UIView(frame: self.bounds)
+			viewBackground = UIView(frame: mainWindow.bounds)
+			viewBackground?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 			mainWindow.addSubview(viewBackground!)
 		}
 
@@ -356,6 +359,8 @@ public class ProgressHUD: UIView {
 			toolbarHUD?.clipsToBounds = true
 			toolbarHUD?.layer.cornerRadius = 10
 			toolbarHUD?.layer.masksToBounds = true
+			// Stays centred when the window resizes, which posts no orientation change.
+			toolbarHUD?.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
 			viewBackground?.addSubview(toolbarHUD!)
 		}
 
@@ -534,7 +539,7 @@ public class ProgressHUD: UIView {
 			heightKeyboard = keyboardHeight()
 		}
 
-		let screen = UIScreen.main.bounds
+		let screen = viewBackground?.superview?.bounds ?? bounds
 		let center = CGPoint(x: screen.size.width/2, y: (screen.size.height-heightKeyboard)/2)
 
 		UIView.animate(withDuration: animationDuration, delay: 0, options: .allowUserInteraction, animations: {

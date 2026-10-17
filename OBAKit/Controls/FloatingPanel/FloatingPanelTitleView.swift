@@ -56,6 +56,16 @@ class FloatingPanelTitleView: UIView {
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
+        // Set explicitly: inside a floating panel the inherited margins resolve to
+        // zero, which left the title flush against the panel's leading edge while
+        // the list beneath it is inset. These line it up with the list.
+        directionalLayoutMargins = NSDirectionalEdgeInsets(
+            top: ThemeMetrics.padding,
+            leading: ThemeMetrics.controllerMargin,
+            bottom: ThemeMetrics.padding,
+            trailing: ThemeMetrics.controllerMargin
+        )
+
         let topStack = UIStackView.horizontalStack(arrangedSubviews: [labelStackWrapper, closeButtonWrapper])
         addSubview(topStack)
         topStack.pinToSuperview(.layoutMargins)

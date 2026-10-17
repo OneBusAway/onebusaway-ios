@@ -73,7 +73,10 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
         application.viewRouter.present(
             agencyOptionsAlert(agency),
             from: self,
-            isPopover: traitCollection.userInterfaceIdiom == .pad,
+            isPopover: traitCollection.horizontalSizeClass == .regular,
+            // An action sheet presented as a popover with no source raises.
+            popoverSourceView: view,
+            popoverSourceFrame: CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0),
             popoverBarButtonItem: nil
         )
     }

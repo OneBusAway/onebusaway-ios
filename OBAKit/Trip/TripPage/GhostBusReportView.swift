@@ -147,7 +147,7 @@ struct GhostBusReportView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(Strings.cancel, action: onDismiss)
+                    SheetDismissButton(.cancel, action: onDismiss)
                 }
             }
             .alert(

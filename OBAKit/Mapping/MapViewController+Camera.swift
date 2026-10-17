@@ -47,15 +47,18 @@ extension MapViewController {
         // The toolbar follows the *trailing* edge, which is the left one in a
         // right-to-left layout. MapKit's padding is physical, so which edge it
         // covers is read off the toolbar's frame rather than assumed.
+        // A hidden toolbar (its items are in the vertical bar) covers nothing; the
+        // bar itself is already in the safe area.
         let toolbarFrame = mapView.convert(toolbar.bounds, from: toolbar)
         let isOnLeft = toolbarFrame.midX < mapView.bounds.midX
+        let toolbarObstruction = toolbar.isHidden ? 0 : (isOnLeft ? toolbarFrame.maxX : mapView.bounds.maxX - toolbarFrame.minX)
 
         return MapCameraInsets.insets(
             mapSize: mapView.bounds.size,
             safeArea: safeArea,
             bottomObstruction: sheet,
-            leftObstruction: isOnLeft ? toolbarFrame.maxX : 0,
-            rightObstruction: isOnLeft ? 0 : mapView.bounds.maxX - toolbarFrame.minX
+            leftObstruction: isOnLeft ? toolbarObstruction : 0,
+            rightObstruction: isOnLeft ? 0 : toolbarObstruction
         )
     }
 }

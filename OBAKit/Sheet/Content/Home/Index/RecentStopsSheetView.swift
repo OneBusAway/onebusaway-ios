@@ -61,7 +61,7 @@ struct RecentStopsSheetView: View {
                 .searchable(text: $searchText)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(Strings.close) { dismiss() }
+                        SheetDismissButton(.close) { dismiss() }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(OBALoc(

@@ -161,7 +161,7 @@ struct ScheduleForRouteView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(Strings.close) {
+                        SheetDismissButton(.close) {
                             dismiss()
                         }
                     }

@@ -203,6 +203,11 @@ extension MapViewController {
             mapType: mapType,
             layerCount: mapRegionManager.enabledMapLayerCount
         )
+        verticalBarItems.updateMapLayers(
+            image: toggleMapTypeButton.image(for: .normal),
+            accessibilityValue: toggleMapTypeButton.accessibilityValue,
+            layerCount: mapRegionManager.enabledMapLayerCount
+        )
     }
 
     func updateMapLayerBadge() {
@@ -244,7 +249,8 @@ extension MapViewController {
     func showMapLayersTipIfNeeded() {
         guard viewIfLoaded?.window != nil, rentalLayerCoordinator != nil else { return }
 
-        mapLayersTipPresenter.showIfNeeded(in: self, sourceItem: toggleMapTypeButton)
+        let sourceItem: any UIPopoverPresentationControllerSourceItem = presentsBarsVertically ? verticalBarItems.mapLayers : toggleMapTypeButton
+        mapLayersTipPresenter.showIfNeeded(in: self, sourceItem: sourceItem)
     }
 }
 

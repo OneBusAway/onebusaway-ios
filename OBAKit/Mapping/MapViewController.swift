@@ -58,6 +58,20 @@ class MapViewController: UIViewController,
         return hover
     }()
 
+    /// The hover bar's controls as system toolbar items, for a vertical bar. See
+    /// `MapViewController+VerticalBar.swift`.
+    lazy var verticalBarItems: MapToolbarItems = {
+        let items = MapToolbarItems(
+            location: locationButton,
+            mapLayers: toggleMapTypeButton,
+            weather: weatherButton,
+            myTrip: myTripButton,
+            showsWeather: application.features.obaco == .running
+        )
+        items.setLocationAvailable(application.locationService.isLocationUseAuthorized)
+        return items
+    }()
+
     // MARK: - Data
 
     let application: Application
@@ -152,6 +166,7 @@ class MapViewController: UIViewController,
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
             myTripButton.heightAnchor.constraint(equalTo: myTripButton.widthAnchor)
         ])
+        observeVerticalBarEdge()
 
         // Status pill: centered horizontally, anchored to safe area top.
         // Max width prevents overflow on long status text or large Dynamic Type.
@@ -207,6 +222,7 @@ class MapViewController: UIViewController,
         application.mapRegionManager.refreshStopAnnotationCallouts()
 
         navigationController?.setNavigationBarHidden(true, animated: false)
+        updateControlsPlacement(animated: false)
 
         updateVisibleMapRect()
         layoutMapMargins()
@@ -227,6 +243,8 @@ class MapViewController: UIViewController,
         super.viewWillDisappear(animated)
 
         navigationController?.setNavigationBarHidden(false, animated: false)
+        // Pushed pages bring their own bar items; they shouldn't inherit the map's.
+        navigationController?.setToolbarHidden(true, animated: false)
 
         // A rider who dismisses a stop sheet and immediately switches tabs shouldn't be
         // chased by an alert from a screen they've left.
@@ -525,8 +543,14 @@ class MapViewController: UIViewController,
                 weatherButton.largeContentTitle = display.buttonTitle
                 weatherButton.largeContentImage = config.image
                 weatherButton.isHidden = false
+                verticalBarItems.updateWeather(
+                    symbolName: WeatherFormatter.systemImageName(for: display.header.iconName),
+                    temperature: display.buttonTitle,
+                    accessibilityValue: display.buttonAccessibilityValue
+                )
             } else {
                 weatherButton.isHidden = true
+                verticalBarItems.updateWeather(symbolName: nil, temperature: nil, accessibilityValue: nil)
             }
         }
     }
@@ -1648,6 +1672,7 @@ private extension MapViewController {
             rentalZoomInStatus: viewModel.showRentalZoomHint && showsZoomHints
         )
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
+        verticalBarItems.setLocationAvailable(application.locationService.isLocationUseAuthorized)
         layoutMapMargins()
     }
 }

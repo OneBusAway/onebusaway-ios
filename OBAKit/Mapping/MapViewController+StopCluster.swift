@@ -30,7 +30,7 @@ extension MapViewController {
             let inset: CGFloat = 60
             mapView.setVisibleMapRect(
                 enclosingRect,
-                edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset),
+                edgePadding: mapView.edgePadding(top: inset, horizontal: inset, bottom: 200),
                 animated: !UIAccessibility.isReduceMotionEnabled
             )
             return

@@ -134,7 +134,7 @@ struct BookmarksSheetView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(Strings.close) { dismiss() }
+                        SheetDismissButton(.close) { dismiss() }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         refreshButton

@@ -40,7 +40,7 @@ struct NearbyStopsSheetView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(Strings.close) { dismiss() }
+                        SheetDismissButton(.close) { dismiss() }
                     }
                 }
         }
