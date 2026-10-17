@@ -13,8 +13,8 @@ on:
 #
 # Four jobs that start together, so wall time is the slowest one, not the sum.
 # `build` builds the shipping iOS app and its tests, `test` runs them on a
-# runner of its own, `watch` compiles and launches the watch stack and checks
-# project generation, and `lint` lints. None `needs:` another (`test` waits for
+# runner of its own, `watch` builds the Swift package on its own, compiles and
+# launches the watch stack, and checks project generation, and `lint` lints. None `needs:` another (`test` waits for
 # `build`'s products itself); GitHub still requires them all to pass.
 #
 # The build jobs carry Xcode's compilation cache (the CAS) between runs; it is
@@ -470,6 +470,28 @@ jobs:
           echo "No watchOS platform found; downloading…"
           xcodebuild -downloadPlatform watchOS
         fi
+
+    # Before the project exists, xcodebuild in the repo root builds the package
+    # itself, as an app that depends on this repository would: from
+    # Package.swift alone, with dependencies resolved fresh from its version
+    # ranges rather than the apps' Package.resolved pins. OBAKit covers
+    # OBAKitCore too.
+    - name: Build the Swift package as a dependent would
+      timeout-minutes: 30
+      run: |
+        set -o pipefail
+        test ! -e OBAKit.xcodeproj
+        for target in "OBAKit generic/platform=iOS" "OBAKitWatch generic/platform=watchOS"; do
+          set -- $target
+          xcodebuild build \
+            -scheme "$1" \
+            -destination "$2" \
+            -derivedDataPath DerivedData-Package \
+            COMPILATION_CACHE_ENABLE_CACHING=YES \
+            COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+        done
 
     - name: Install xcodegen
       env:
