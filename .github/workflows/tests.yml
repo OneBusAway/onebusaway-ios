@@ -508,6 +508,9 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           -quiet
 
+    # `simctl runtime list` can report the watchOS runtime Ready before its
+    # simulators are usable (each reports `runtime=(null)`), and a fast job
+    # can get here first. Wait until a watch simulator resolves.
     - name: Wait for a watch simulator
       if: success() || failure()
       timeout-minutes: 6

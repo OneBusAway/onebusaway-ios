@@ -1,8 +1,8 @@
 // swift-tools-version: 6.2
 //
-// OBAKitCore and OBAKit as a Swift package. The apps in this repo consume it as
-// a local package (see `packages:` in Apps/Shared/app_shared.yml); anyone else
-// can add this repository as a package dependency.
+// OBAKitCore, OBAKit and OBAKitWatch as a Swift package. The apps in this repo
+// consume it as a local package (see `packages:` in Apps/Shared/app_shared.yml);
+// anyone else can add this repository as a package dependency.
 //
 // Every target builds in the Swift 6 language mode, which the 6.2 tools
 // version implies. The settings below reproduce the rest of the project-wide
