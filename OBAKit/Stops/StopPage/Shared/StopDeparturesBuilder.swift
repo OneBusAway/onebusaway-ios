@@ -126,7 +126,10 @@ struct StopDeparturesBuilder {
 
     private func toggleAlarm(for departure: ArrivalDeparture) {
         if viewModel.alarm(for: departure) != nil {
-            Task { await viewModel.cancelAlarm(for: departure) }
+            Task {
+                guard await viewModel.cancelAlarm(for: departure) else { return }
+                AccessibilityNotification.Announcement(AlarmVisitIdentity.removedAnnouncement).post()
+            }
         } else {
             navigation.showAlarmPicker(departure)
         }

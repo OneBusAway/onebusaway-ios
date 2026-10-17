@@ -894,8 +894,10 @@ class StopViewModel: ObservableObject {
         }
     }
 
-    func cancelAlarm(for arrivalDeparture: ArrivalDeparture) async {
-        guard let alarm = alarm(for: arrivalDeparture) else { return }
+    /// - Returns: Whether the alarm is gone, so the caller can tell the rider.
+    @discardableResult
+    func cancelAlarm(for arrivalDeparture: ArrivalDeparture) async -> Bool {
+        guard let alarm = alarm(for: arrivalDeparture) else { return false }
         // Optimistic removal; restore on failure.
         alarmsByDepartureID[arrivalDeparture.id] = nil
         do {
@@ -912,16 +914,19 @@ class StopViewModel: ObservableObject {
             // re-assert the removal now that the alarm is actually deleted.
             alarmsByDepartureID[arrivalDeparture.id] = nil
             alarmError = nil
+            return true
         } catch APIError.requestNotFound {
             // The alarm already fired and was deleted server-side. The optimistic
             // removal already cleared the UI — just clean up the local store and
             // stay silent (no error banner).
             environment.deleteAlarm(alarm)
             alarmError = nil
+            return true
         } catch {
             Logger.error("Alarm cancel failed for \(arrivalDeparture.id): \(error)")
             alarmsByDepartureID[arrivalDeparture.id] = alarm
             alarmError = error
+            return false
         }
     }
 
@@ -1073,27 +1078,5 @@ class StopViewModel: ObservableObject {
             }
         }
         alarmsByDepartureID = index
-    }
-
-    /// The trip visit an alarm was armed on. Deliberately narrower than
-    /// `ArrivalDepartureDeepLink`'s own equality, which also compares `vehicleID`
-    /// and `title`: both change the moment a scheduled trip goes real-time and the
-    /// feed assigns it a coach, which would drop a live alarm out of the index —
-    /// flipping the row back to "Set an alarm" and letting the rider arm a second,
-    /// uncancellable alarm on the same departure.
-    private struct AlarmVisitIdentity: Hashable {
-        let regionID: Int
-        let stopID: StopID
-        let tripID: TripIdentifier
-        let serviceDate: Date
-        let stopSequence: Int
-
-        init(_ deepLink: ArrivalDepartureDeepLink) {
-            self.regionID = deepLink.regionID
-            self.stopID = deepLink.stopID
-            self.tripID = deepLink.tripID
-            self.serviceDate = deepLink.serviceDate
-            self.stopSequence = deepLink.stopSequence
-        }
     }
 }

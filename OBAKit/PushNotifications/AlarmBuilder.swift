@@ -202,6 +202,10 @@ class AlarmTimePickerItem: ThemedBulletinPage {
         label.numberOfLines = 0
 
         let toggle = UISwitch()
+        // The label beside it isn't read with it, so VoiceOver said only
+        // "Switch button, on".
+        toggle.accessibilityLabel = label.text
+        label.isAccessibilityElement = false
         toggle.isOn = trackOnLockScreen
         toggle.addTarget(self, action: #selector(trackSwitchChanged(_:)), for: .valueChanged)
         trackSwitch = toggle

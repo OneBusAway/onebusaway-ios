@@ -46,6 +46,9 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "Track on Lock Screen";
 
+/* VoiceOver announcement after the rider removes a departure alarm. */
+"alarms.a11y_removed" = "Alarm removed";
+
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "This screen is coming soon.";
 

@@ -279,7 +279,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             actions: makeActions(),
             backBehavior: backBehavior,
             showsBackRow: !showsSystemNavigationBar,
-            hasAlarm: false,
+            hasAlarm: existingAlarm != nil,
             isTrackingLiveActivity: isTrackingLiveActivity,
             isCollapsed: isAtTip
         )
@@ -353,7 +353,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
         let stopID = departure?.stopID ?? viewModel.tripDetails?.stopTimes.first?.stopID
         actions.canSchedule = routeID != nil && ScheduleViewControllerFactory.canPresentSchedule(stopID: stopID, application: application)
-        actions.canAlarm = departure.map(canCreateAlarm) ?? false
+        // An alarm already set can always be removed, even once it's too late to set one.
+        actions.canAlarm = existingAlarm != nil || (departure.map(canCreateAlarm) ?? false)
         // A Live Activity reports a countdown to a stop. Without a departure
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
@@ -370,7 +371,14 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         }
         actions.onBookmark = { [weak self] in self?.showBookmarkEditor() }
         actions.onSchedule = { [weak self] in self?.showSchedule() }
-        actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
+        actions.onAlarm = { [weak self] in
+            guard let self else { return }
+            if let existingAlarm {
+                removeAlarm(existingAlarm)
+            } else {
+                showAlarmPicker()
+            }
+        }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
         actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
 
@@ -531,6 +539,35 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         alarmBuilder?.showBulletin(above: self)
     }
 
+    /// The alarm the rider set on this departure, from this page or the stop page.
+    /// The button said "Add alarm" whether or not there was one, so pressing it
+    /// again armed a second alarm, and the first couldn't be removed from here.
+    private var existingAlarm: Alarm? {
+        guard let departure, let regionID = application.currentRegion?.regionIdentifier else { return nil }
+        return AlarmVisitIdentity.alarm(for: departure, regionID: regionID, in: application.userDataStore.alarms)
+    }
+
+    /// Mirrors `StopViewModel.cancelAlarm(for:)`: the server copy goes first, so
+    /// a failure leaves the rider an alarm they can still see and cancel.
+    private func removeAlarm(_ alarm: Alarm) {
+        Task { @MainActor in
+            do {
+                guard let obacoService = application.obacoService else {
+                    throw StopViewModel.AlarmCancellationError.serviceUnavailable
+                }
+                try await obacoService.deleteAlarm(url: alarm.url)
+            } catch APIError.requestNotFound {
+                // It already fired, and the server deleted it.
+            } catch {
+                await AlertPresenter.show(error: error, presentingController: self)
+                return
+            }
+            application.userDataStore.delete(alarm: alarm)
+            render()
+            AccessibilityNotification.Announcement(AlarmVisitIdentity.removedAnnouncement).post()
+        }
+    }
+
     // MARK: - AlarmBuilderDelegate
 
     func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
@@ -544,6 +581,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
         let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
         ProgressHUD.showSuccessAndDismiss(message: message)
+        render()
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {

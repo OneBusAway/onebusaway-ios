@@ -1043,7 +1043,7 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         #expect(viewModel.alarm(for: departure) != nil)
 
-        await viewModel.cancelAlarm(for: departure)
+        #expect(await viewModel.cancelAlarm(for: departure) == false)
 
         #expect(viewModel.alarmError != nil)
         #expect(viewModel.alarm(for: departure) != nil)

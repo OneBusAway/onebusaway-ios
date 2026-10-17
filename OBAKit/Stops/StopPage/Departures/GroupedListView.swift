@@ -423,6 +423,10 @@ struct GroupedListView: View {
         if isTransferTrip(group.next) {
             label += ", " + OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip.")
         }
+        // The alarm pill shows a set alarm only as a filled bell.
+        if alarmLookup(group.next) != nil {
+            label += ", " + OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active")
+        }
         // The chips, which otherwise reach VoiceOver only as a count.
         if let following = StopPageAccessibilityCopy.followingDepartures(group.chips, formatters: formatters, status: statusProvider) {
             label += " " + following
