@@ -1,5 +1,5 @@
 //
-//  StopSheetNavigationControllerTests.swift
+//  SheetNavigationControllerTests.swift
 //  OBAKitTests
 //
 //  Copyright © Open Transit Software Foundation
@@ -7,17 +7,18 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import SwiftUI
 import Testing
 import UIKit
 @testable import OBAKit
 
 /// The vertical tab bar column that causes the excess inset only exists on an iPhone Duo with
-/// a tab bar controller at the window's root, which a hosted test can't set up; this covers
-/// the arithmetic that removes it.
+/// a tab bar controller at the window's root, which a hosted test can't set up; these cover
+/// the arithmetic that removes it, and when a sheet opts out of vertical bars.
 @Suite(.serialized)
-struct StopSheetNavigationControllerTests {
+struct SheetNavigationControllerTests {
     private func corrected(page: UIEdgeInsets, additional: UIEdgeInsets = .zero, container: UIEdgeInsets) -> UIEdgeInsets {
-        StopSheetNavigationController.correctedAdditionalSafeArea(page: page, additional: additional, container: container)
+        SheetNavigationController.correctedAdditionalSafeArea(page: page, additional: additional, container: container)
     }
 
     @Test func removesTrailingInsetTheSheetDoesNotHave() {
@@ -53,5 +54,14 @@ struct StopSheetNavigationControllerTests {
             container: .zero
         )
         #expect(result == UIEdgeInsets(top: 8, left: 0, bottom: 4, right: 0))
+    }
+
+    @Test @MainActor func onlyAPresentedSheetOptsOutOfVerticalBars() {
+        guard #available(iOS 27.1, *) else { return }
+        // Pushed onto the window's own stack, the preference would reach the window and lay
+        // the tab bar out horizontally.
+        let unpresented = SheetHostingController(rootView: EmptyView())
+        #expect(unpresented.preferredVerticalBarBehavior == .automatic)
+        #expect(SheetNavigationController().preferredVerticalBarBehavior == .automatic)
     }
 }

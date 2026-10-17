@@ -32,7 +32,7 @@ struct OnDemandDetailGeometry {
 /// Those rebuilds walk up to a year of service dates per rule, so they run
 /// off the main actor; only the first, in `init`, is synchronous, because the
 /// hosting controller needs a complete root view to show.
-final class OnDemandServiceViewController: UIHostingController<OnDemandServiceView> {
+final class OnDemandServiceViewController: SheetHostingController<OnDemandServiceView> {
 
     private let service: OnDemandService
     /// The probe result the page was opened with, if any (spec 3.6 item 3).
