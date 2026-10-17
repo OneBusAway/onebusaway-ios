@@ -81,12 +81,16 @@ nonisolated struct EmptyDataSetItem: OBAListViewItem {
         self.init(id: id, alignment: .center, title: nil, body: error.localizedDescription, image: icon, buttonConfig: buttonConfig)
     }
 
+    /// Hashes the empty data set item into the specified hasher, incorporating its unique identifier.
     func hash(into hasher: inout Hasher) {
         hasher.combine("EmptyDataSetItem")
+        hasher.combine(id)
     }
 
+    /// Determines equality between two `EmptyDataSetItem` instances based on ID, alignment, content, and button configuration.
     static func == (_ lhs: EmptyDataSetItem, _ rhs: EmptyDataSetItem) -> Bool {
-        return lhs.alignment == rhs.alignment &&
+        return lhs.id == rhs.id &&
+            lhs.alignment == rhs.alignment &&
             lhs.title == rhs.title &&
             lhs.body == rhs.body &&
             lhs.image == rhs.image &&
