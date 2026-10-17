@@ -38,10 +38,14 @@ final class TripPageNavigationBarTests: OBATestCase {
         window?.isHidden = true
     }
 
-    private func makeTripPage() throws -> TripPageViewController {
-        try TripPageFixture.makeOnScreenPage(
+    /// - Parameter barsVertical: Whether the system presents bars vertically, as on
+    ///   iPhone Duo. Pinned either way so the suite means the same on every simulator.
+    private func makeTripPage(barsVertical: Bool = false) throws -> TripPageViewController {
+        let page = try TripPageFixture.makeOnScreenPage(
             application: buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         )
+        page.presentsBarsVerticallyOverride = barsVertical
+        return page
     }
 
     /// A stack on screen, so pushes and pops run the appearance callbacks.
@@ -150,6 +154,33 @@ final class TripPageNavigationBarTests: OBATestCase {
         pop(navigation, in: window)
 
         #expect(!navigation.isNavigationBarHidden)
+    }
+
+    // MARK: - Vertical bars (iPhone Duo)
+
+    /// The bar costs no height in a vertical column, and its back button belongs
+    /// there with the tabs, so the page shows it and drops its own back row.
+    @Test func `With vertical bars the page shows the system bar instead of its back row`() throws {
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        navigation.setNavigationBarHidden(true, animated: false)
+        let window = try show(navigation)
+
+        let page = try makeTripPage(barsVertical: true)
+        push(page, onto: navigation, in: window)
+
+        #expect(!navigation.isNavigationBarHidden)
+        #expect(!page.rootView.showsBackRow)
+    }
+
+    @Test func `With vertical bars, popping the page still restores the host's bar`() throws {
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        navigation.setNavigationBarHidden(true, animated: false)
+        let window = try show(navigation)
+
+        push(try makeTripPage(barsVertical: true), onto: navigation, in: window)
+        pop(navigation, in: window)
+
+        #expect(navigation.isNavigationBarHidden)
     }
 
     // MARK: - A stack whose delegate decides the bar

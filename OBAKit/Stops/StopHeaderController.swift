@@ -119,12 +119,12 @@ class StopHeaderView: UIView {
 
     private var snapshotter: MapSnapshotter?
 
-    /// The width the current map snapshot was taken at, so a resize takes a new one.
+    /// The width the current map snapshot was taken at.
     private var snapshotWidth: CGFloat = 0
 
-    /// Snapshots the map at this view's own width. It used to take the screen's
-    /// longest side to cover any rotation, but a window on iPad or iPhone Duo is
-    /// not the screen; `layoutSubviews` retakes it whenever the width changes.
+    /// Snapshots the map at this view's own width. `layoutSubviews` retakes it
+    /// only when the view grows past that width; aspect-fill covers shrinking,
+    /// and a live resize would otherwise render a snapshot on every pass.
     private func updateSnapshot() {
         guard let config, bounds.width > 0 else { return }
 
@@ -221,7 +221,7 @@ class StopHeaderView: UIView {
 
         self.stackPaddingBottomHeight.constant = suggestedHeight
 
-        if bounds.width != snapshotWidth {
+        if bounds.width > snapshotWidth {
             updateSnapshot()
         }
     }

@@ -904,9 +904,7 @@ public class MapRegionManager: NSObject,
         notifyMapLayersStopMarkersChanged()
 
         let inset: CGFloat = 40.0
-        // Per side, so stops don't land under a vertical bar on one edge (iPhone Duo).
-        let safeArea = mapView.safeAreaInsets
-        mapView.visibleMapRect = self.mapView.mapRectThatFits(stopsForRoute.mapRect, edgePadding: UIEdgeInsets(top: inset, left: safeArea.left + inset, bottom: 200, right: safeArea.right + inset))
+        mapView.visibleMapRect = self.mapView.mapRectThatFits(stopsForRoute.mapRect, edgePadding: mapView.edgePadding(top: inset, horizontal: inset, bottom: 200))
     }
 
     private func displaySearchResult(stop: Stop) {

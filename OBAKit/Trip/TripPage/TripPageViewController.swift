@@ -95,12 +95,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // on the first layout pass.
         hideNavigationBar(animated: false)
 
-        if #available(iOS 27.1, *) {
-            registerForTraitChanges(UITraitCollection.systemTraitsAffectingVerticalBarEdge) { (self: Self, _) in
-                guard self.navigationController?.topViewController === self else { return }
-                self.hideNavigationBar(animated: true)
-                self.render()
-            }
+        registerForVerticalBarChanges { [weak self] in
+            guard let self, navigationController?.topViewController === self else { return }
+            hideNavigationBar(animated: true)
+            render()
         }
 
         // Re-render now that there is a `navigationController` to ask. `init`
@@ -156,6 +154,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
     // MARK: - Navigation bar
 
+    /// Internal for tests: stands in for `traitCollection.presentsBarsVertically`,
+    /// a system trait a test can't set.
+    var presentsBarsVerticallyOverride: Bool?
+
     /// Whether the bar was hidden before this page hid it, so it can be put back
     /// the way it was. `nil` while the page isn't hiding it.
     private var navigationBarWasHidden: Bool?
@@ -184,8 +186,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// at the top of the page. A sheet's stack has a delegate deciding the bar, and
     /// a modal root closes rather than goes back; both keep the row.
     private var showsSystemNavigationBar: Bool {
-        guard #available(iOS 27.1, *), traitCollection.verticalBarEdge != .unspecified else { return false }
-        guard let navigationController, navigationController.delegate == nil else { return false }
+        guard presentsBarsVerticallyOverride ?? traitCollection.presentsBarsVertically, let navigationController, navigationController.delegate == nil else { return false }
         return backBehavior == .pop
     }
 

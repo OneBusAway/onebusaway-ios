@@ -69,7 +69,6 @@ class MapViewController: UIViewController,
             showsWeather: application.features.obaco == .running
         )
         items.setLocationAvailable(application.locationService.isLocationUseAuthorized)
-        items.updateWeather(symbol: nil, temperature: nil, accessibilityValue: nil)
         return items
     }()
 
@@ -545,13 +544,13 @@ class MapViewController: UIViewController,
                 weatherButton.largeContentImage = config.image
                 weatherButton.isHidden = false
                 verticalBarItems.updateWeather(
-                    symbol: config.image,
+                    symbolName: WeatherFormatter.systemImageName(for: display.header.iconName),
                     temperature: display.buttonTitle,
                     accessibilityValue: display.buttonAccessibilityValue
                 )
             } else {
                 weatherButton.isHidden = true
-                verticalBarItems.updateWeather(symbol: nil, temperature: nil, accessibilityValue: nil)
+                verticalBarItems.updateWeather(symbolName: nil, temperature: nil, accessibilityValue: nil)
             }
         }
     }

@@ -85,9 +85,6 @@ struct ToastContainerView: View {
                 Spacer()
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: manager.isShowing)
-            // Inside the safe area rather than under it with a guessed 60pt for the
-            // status bar: the top inset is the real one, and a vertical bar on one
-            // side (iPhone Duo) keeps the toast clear of it.
         }
     }
 }

@@ -10,17 +10,11 @@
 import UIKit
 import OBAKitCore
 
-/// The map's controls as navigation-controller toolbar items, for when the system
-/// presents bars vertically on the side of the display (iPhone Duo).
+/// The map's controls as navigation-controller toolbar items, which the system
+/// stacks above the tab bar when it presents bars vertically (iPhone Duo).
 ///
-/// There the floating `HoverBar` sits beside the vertical tab bar and collides with
-/// the status bar, and Apple asks for system toolbar items instead of a custom bar:
-/// only those are stacked above the tabs. The hover bar stays everywhere else.
-///
-/// Each item has an image and a title. Vertically the system shows the image alone,
-/// and an item without one is left out; the title appears when an item overflows
-/// into the menu. The titles reuse the hover bar buttons' accessibility labels, so
-/// both forms say the same thing in every locale.
+/// Each item has an image, which a vertical bar requires, and a title for the
+/// overflow menu. Titles reuse the hover bar buttons' accessibility labels.
 final class MapToolbarItems {
     let location: UIBarButtonItem
     let mapLayers: UIBarButtonItem
@@ -39,6 +33,7 @@ final class MapToolbarItems {
         self.weather = Self.item(mirroring: weather)
         self.myTrip = Self.item(mirroring: myTrip)
         self.showsWeather = showsWeather
+        self.weather.isHidden = true
 
         // The layers sheet and the location button are what riders reach for most;
         // the forecast is first to fold into the overflow menu.
@@ -88,11 +83,20 @@ final class MapToolbarItems {
         }
     }
 
+    private var renderedWeather: (symbolName: String, temperature: String?)?
+
     /// Vertically only the image shows, so the temperature is drawn into it.
-    func updateWeather(symbol: UIImage?, temperature: String?, accessibilityValue: String?) {
-        weather.isHidden = symbol == nil
-        weather.image = symbol.map { Self.weatherImage(symbol: $0, temperature: temperature) }
+    func updateWeather(symbolName: String?, temperature: String?, accessibilityValue: String?) {
+        weather.isHidden = symbolName == nil
         weather.accessibilityValue = accessibilityValue
+        guard let symbolName, let symbol = UIImage(systemName: symbolName) else {
+            renderedWeather = nil
+            weather.image = nil
+            return
+        }
+        if let renderedWeather, renderedWeather.symbolName == symbolName, renderedWeather.temperature == temperature { return }
+        renderedWeather = (symbolName, temperature)
+        weather.image = Self.weatherImage(symbol: symbol, temperature: temperature)
     }
 
     /// The condition symbol over the temperature, as one template image, to match

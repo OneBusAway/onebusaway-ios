@@ -296,14 +296,10 @@ extension MapViewController {
     }
 }
 
-/// OTPKit's planner under a title and close button, in place of the navigation
-/// stack OTPKit's `.standalone` chrome wraps it in.
-///
-/// In a floating panel on iPhone Duo that stack reserved a vertical-bar column at
-/// the panel's trailing edge — an 84pt safe area inset no toolbar modifier
-/// removed — and squeezed the itineraries until "Depart:" wrapped mid-word. The
-/// planner pushes nothing, so a stack only ever supplied the header, and a plain
-/// one takes the panel's full width on every device.
+/// OTPKit's planner under a title and close button, in place of the
+/// navigation stack OTPKit's `.standalone` chrome wraps it in. In a floating
+/// panel on iPhone Duo that stack reserved an empty vertical-bar column; the
+/// planner pushes nothing, so a plain header loses nothing.
 struct TripPlannerPanelView<Planner: View>: View {
     let planner: Planner
     let onClose: () -> Void
@@ -330,21 +326,14 @@ struct TripPlannerPanelView<Planner: View>: View {
         .background(Color(uiColor: .systemBackground).ignoresSafeArea())
     }
 
-    @ViewBuilder
     private var closeButton: some View {
-        let button = Button(action: onClose) {
-            Label(OTPLoc("common.close", comment: "Close button"), systemImage: "xmark")
-                .labelStyle(.iconOnly)
-                .font(.title3.weight(.medium))
-                .frame(width: 32, height: 32)
+        Button(action: onClose) {
+            Image(systemName: "xmark")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.primary)
+                .glassCircleLabel(diameter: 44)
         }
-        .buttonBorderShape(.circle)
-        .tint(.primary)
-
-        if #available(iOS 26.0, *) {
-            button.buttonStyle(.glass)
-        } else {
-            button.buttonStyle(.bordered)
-        }
+        .glassCircleSurface()
+        .accessibilityLabel(Strings.close)
     }
 }

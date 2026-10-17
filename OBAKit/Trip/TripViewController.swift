@@ -641,12 +641,9 @@ private extension TripViewController {
                 if !mapView.hasBeenTouched {
                     let fit = overlays.reduce(MKMapRect.null) { $0.union($1.boundingMapRect) }
                     guard !fit.isNull else { return }
-                    // Per side, so the shape doesn't run under a vertical bar on
-                    // one edge (iPhone Duo).
-                    let safeArea = mapView.safeAreaInsets
                     mapView.visibleMapRect = mapView.mapRectThatFits(
                         fit,
-                        edgePadding: UIEdgeInsets(top: 60, left: safeArea.left + 20, bottom: 128, right: safeArea.right + 20)
+                        edgePadding: mapView.edgePadding(top: 60, horizontal: 20, bottom: 128)
                     )
                 }
             }

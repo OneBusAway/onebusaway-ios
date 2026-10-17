@@ -13,18 +13,13 @@ import UIKit
 /// presents bars vertically on the side of the display — the navigation
 /// controller's toolbar, which the system stacks above the tab bar.
 extension MapViewController {
-    /// Whether the system puts bars in a vertical column beside this view, as on
-    /// iPhone Duo. `verticalBarEdge` reports the system's preferred edge whether or
-    /// not a bar is showing, so deciding from it doesn't depend on our own toolbar.
     var presentsBarsVertically: Bool {
-        guard #available(iOS 27.1, *) else { return false }
-        return traitCollection.verticalBarEdge != .unspecified
+        traitCollection.presentsBarsVertically
     }
 
     func observeVerticalBarEdge() {
-        guard #available(iOS 27.1, *) else { return }
-        registerForTraitChanges(UITraitCollection.systemTraitsAffectingVerticalBarEdge) { (self: Self, _) in
-            self.updateControlsPlacement(animated: true)
+        registerForVerticalBarChanges { [weak self] in
+            self?.updateControlsPlacement(animated: true)
         }
     }
 
