@@ -51,6 +51,7 @@ public final class WatchBookmarksModel {
     @ObservationIgnored private let host: WatchAppHost?
     @ObservationIgnored private let loader: BookmarkArrivalsLoader
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
+    @ObservationIgnored private var autoRefreshTask: Task<Void, Never>?
 
     public init(host: WatchAppHost, loader: BookmarkArrivalsLoader = BookmarkArrivalsLoader()) {
         self.host = host
@@ -64,9 +65,20 @@ public final class WatchBookmarksModel {
         self.phase = phase
     }
 
+    deinit {
+        refreshTask?.cancel()
+        autoRefreshTask?.cancel()
+    }
+
+    public func cancel() {
+        refreshTask?.cancel()
+        autoRefreshTask?.cancel()
+    }
+
     public func refresh() {
         guard let host else { return }
         refreshTask?.cancel()
+        autoRefreshTask?.cancel()
         refreshTask = Task { @MainActor [weak self] in
             guard let self else { return }
             await self.loadBookmarks(from: host)
@@ -103,21 +115,31 @@ public final class WatchBookmarksModel {
         guard !Task.isCancelled else { return }
 
         var sections: [WatchBookmarkSection] = []
+        var upcomingDepartureDates: [Date] = []
+        let now = Date()
         let groups = host.bookmarkStore.groups
 
         for group in groups {
             let groupBookmarks = bookmarks.filter { $0.groupID == group.id }
             guard !groupBookmarks.isEmpty else { continue }
-            let bookmarkArrivals = groupBookmarks.map { bm in
-                WatchBookmarkArrival(bookmark: bm, nextArrival: departures[bm.id]?.first)
+            let bookmarkArrivals = groupBookmarks.map { bm -> WatchBookmarkArrival in
+                let nextArrival = departures[bm.id]?.first
+                if let arrivalDate = nextArrival?.arrivalDepartureDate {
+                    upcomingDepartureDates.append(arrivalDate > now ? arrivalDate : now.addingTimeInterval(5.0))
+                }
+                return WatchBookmarkArrival(bookmark: bm, nextArrival: nextArrival)
             }
             sections.append(WatchBookmarkSection(id: group.id, title: group.name, bookmarks: bookmarkArrivals))
         }
 
         let ungrouped = bookmarks.filter { $0.groupID == nil }
         if !ungrouped.isEmpty {
-            let bookmarkArrivals = ungrouped.map { bm in
-                WatchBookmarkArrival(bookmark: bm, nextArrival: departures[bm.id]?.first)
+            let bookmarkArrivals = ungrouped.map { bm -> WatchBookmarkArrival in
+                let nextArrival = departures[bm.id]?.first
+                if let arrivalDate = nextArrival?.arrivalDepartureDate {
+                    upcomingDepartureDates.append(arrivalDate > now ? arrivalDate : now.addingTimeInterval(5.0))
+                }
+                return WatchBookmarkArrival(bookmark: bm, nextArrival: nextArrival)
             }
             let title = sections.isEmpty ? "" : OBALoc("bookmarks.title", value: "Bookmarks", comment: "Section title for ungrouped bookmarks")
             let sectionID = UUID(uuidString: "00000000-0000-0000-0000-000000000000") ?? UUID()
@@ -125,5 +147,17 @@ public final class WatchBookmarksModel {
         }
 
         self.phase = sections.isEmpty ? .empty : .loaded(sections)
+        scheduleAutoRefresh(at: upcomingDepartureDates.min())
+    }
+
+    private func scheduleAutoRefresh(at earliestDate: Date?) {
+        autoRefreshTask?.cancel()
+        guard let earliestDate else { return }
+        let delay = max(1.0, earliestDate.timeIntervalSinceNow + 1.0)
+        autoRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            self?.refresh()
+        }
     }
 }
