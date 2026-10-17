@@ -45,6 +45,8 @@ Second, update the files that are explicitly tied to OneBusAway with your own cu
 
 Most of the changes you will need to make should be in the files `AppDelegate.swift` and `project.yml`.
 
+Keep the `Apps/Shared/CommonClient` entry in your `project.yml`'s `sources`. That directory holds the code every app shares: the entry point, the scene delegate, and the Siri and Shortcuts setup described in <doc:WhiteLabel#Siri-and-Shortcuts>. Your app compiles it in place, so it picks up fixes there with no copying.
+
 ### 3. Generate Your App
 
 Third, once you are satisfied with your initial changes, run the command `scripts/generate_project MyApp` from the root of the project. This will generate a new `OBAKit.xcodeproj` project that contains MyApp's custom design.
@@ -67,25 +69,54 @@ If you do not wish to use these services in your app, you may disable them by ex
 
 ## Embeddable Frameworks
 
-The new OneBusAway for iOS app is built on top of two frameworks as part of a project called OBAKit. These frameworks, OBAKitCore and OBAKit, provide all of the OneBusAway application's functionality, and they are designed to be reused in other applications.
+This repository is a Swift package with three library products, which other apps can add as a dependency. See "Using OBAKit as a Swift Package" in the README for how to add it, and for a warning: the API is not stable.
 
-### OBAKitCore.framework
+### OBAKitCore
 
-This is a lower-level framework whose primary function is to provide networking and data modeling services. It is a dependency of `OBAKit.framework`.
+A lower-level module for networking, data models, regions, and persistence, for iOS and watchOS. It is safe to use in app extensions. `OBAKit` and `OBAKitWatch` depend on it.
 
 Example use cases:
 
-* I want to access OneBusAway data from an AWS Lambda service.
-* I want to build a new OneBusAway UI for macOS or watchOS.
+* I want to build a new OneBusAway UI for watchOS.
 * I want to build a custom user interface for displaying OneBusAway data within my iOS app.
+* I want to show OneBusAway data in a widget.
 
-### OBAKit.framework
+### OBAKit
 
-This is a higher-level framework that contains almost all of the OneBusAway application UI. It depends on `OBAKitCore.framework`.
+A higher-level module that contains almost all of the OneBusAway application UI, for iOS.
 
 Example use cases:
 
 * I want to embed OneBusAway application screens, like stops or trip information, into my existing app.
+
+### OBAKitWatch
+
+The watch app's screens and host, for watchOS.
+
+## Siri and Shortcuts
+
+OBAKit defines two Siri and Shortcuts actions: **Track Bookmark**, which starts a Live Activity for a bookmarked trip, and **Next Departures**, which answers "when is my next bus?". Apple's tools put three requirements on where their pieces live, and each one fails silently: the app builds, launches and passes its tests, and the actions simply never appear in Siri or the Shortcuts app.
+
+1. **The App Shortcuts provider must be in your app target.** Xcode drops an `AppShortcutsProvider` compiled into a Swift package. Ours is `Apps/Shared/CommonClient/OBAAppShortcuts.swift`.
+2. **Your app must hand the provider to OBAKit**, so OBAKit can keep the list of bookmarks that Siri offers up to date. In your `AppDelegate`, after creating the `AppConfig`:
+
+   ```swift
+   appConfig.appShortcutsProvider = OBAAppShortcuts.self
+   ```
+
+3. **The strings must be in your app bundle.** The system looks up an action's strings in the bundle that carries the App Intents metadata, which is your app. Two tables, in every language you ship:
+   * `AppIntents.strings`: titles and descriptions of the actions.
+   * `AppShortcuts.strings`: the Siri phrases. Every phrase must contain `${applicationName}`, or Siri drops it.
+
+   Ours are in `Apps/Shared/CommonClient/<language>.lproj/`.
+
+Do **not** add an `AppIntentsPackage` type that includes OBAKit. Xcode already merges OBAKit's actions into your app. With that type, the system looks for metadata in an OBAKit framework that doesn't exist, and then ignores every action in your app.
+
+**A white-label app in this repository** gets all of this from `Apps/Shared/CommonClient` and from the `AppDelegate.swift` you copied in step 2. There is nothing to copy.
+
+**An app outside this repository** that depends on the OBAKit package has to provide the three pieces itself. Copy `OBAAppShortcuts.swift` and both tables into your app target, and add the `AppConfig` line.
+
+To check a build, run `scripts/check_app_intents path/to/YourApp.app`. It fails if an action, the shortcuts, or a strings table is missing, or if the app includes a package's actions the system can't find. CI runs it on the OneBusAway app. After installing on a simulator or device, the Shortcuts app should list your app with "Track bookmark" and "Next departures".
 
 ## Apple Developer Accounts and Settings
 
