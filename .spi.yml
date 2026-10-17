@@ -1,0 +1,15 @@
+# Swift Package Index build and documentation settings.
+# https://swiftpackageindex.com/swiftpackageindex/spimanifest/documentation/spimanifest
+#
+# The package builds for iOS and watchOS only, and each UI product for one of
+# the two, so name the scheme per platform rather than let the index pick the
+# package-wide one. Documentation is built on iOS, since the default platform,
+# macOS, can't build the package at all.
+version: 1
+builder:
+  configs:
+    - platform: ios
+      scheme: OBAKit
+      documentation_targets: [OBAKitCore, OBAKit]
+    - platform: watchos
+      scheme: OBAKitWatch

@@ -302,6 +302,7 @@ onebusaway://rentals?lat=47.6097&lon=-122.3422
 - Always run `scripts/generate_project` before building
 - SwiftLint has relaxed rules - check `.swiftlint.yml` for disabled rules
 - Core framework (OBAKitCore) must remain application extension safe
+- **The root `Package.swift` is published** (Swift Package Index reads `.spi.yml`). Other apps depend on it by version, resolving dependencies from its version ranges, not the apps' `Package.resolved`. The `watch` CI job builds `OBAKit` and `OBAKitWatch` from the bare manifest, before the project is generated, to keep that working. A dependency added to the apps that OBAKit code imports must also go in `Package.swift`.
 - UI tests are minimal - focus is on unit tests
 - Documentation is generated with DocC via `scripts/docs`
 - **`Int` is 32 bits on most Apple Watches** (`arm64_32`), and watch simulators hide it. In `OBAKitCore/`, never decode an epoch value as `Int` — use `Int64` or `Date`. Check with `xcodebuild build -scheme OBAKitCore -destination 'generic/platform=watchOS' CODE_SIGNING_ALLOWED=NO` (the package's scheme, listed in the generated project); CI builds the watch app for watchOS devices, which compiles Core the same way.

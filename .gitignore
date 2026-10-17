@@ -19,6 +19,10 @@ WatchApp/Info.plist
 
 ## SwiftPM
 .build/
+# Written when the package is built on its own (see the watch job in
+# tests.yml). The apps pin their dependencies in Apps/<App>/Package.resolved,
+# and a library's pins don't reach the apps that depend on it.
+/Package.resolved
 .swiftpm/
 OBAKit.xcodeproj/**
 

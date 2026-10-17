@@ -13,9 +13,10 @@ on:
 #
 # Four jobs that start together, so wall time is the slowest one, not the sum.
 # `build` builds the shipping iOS app and its tests, `test` runs them on a
-# runner of its own, `watch` compiles and launches the watch stack and checks
-# project generation, and `lint` lints. None `needs:` another (`test` waits for
-# `build`'s products itself); GitHub still requires them all to pass.
+# runner of its own, `watch` builds the Swift package on its own, compiles and
+# launches the watch stack, and checks project generation, and `lint` lints.
+# None `needs:` another (`test` waits for `build`'s products itself); GitHub
+# still requires them all to pass.
 #
 # The build jobs carry Xcode's compilation cache (the CAS) between runs; it is
 # off unless COMPILATION_CACHE_ENABLE_CACHING is set. A cached DerivedData
@@ -451,7 +452,9 @@ jobs:
         fi
 
     # Builds the Swift package from Package.swift alone, before the project
-    # exists, which is what an app that depends on this repository gets.
+    # exists, as an app that depends on this repository would: dependencies
+    # resolve fresh from the manifest's version ranges, not the apps'
+    # Package.resolved pins. OBAKit covers its dependency on OBAKitCore.
     #
     # OBAKitCore is linked by the widget extension, and OBAKitWatch will be
     # linked by a watch widget, so neither may call API that extensions can't
@@ -476,6 +479,7 @@ jobs:
         }
         build OBAKitCore generic/platform=iOS APPLICATION_EXTENSION_API_ONLY=YES
         build OBAKitWatch generic/platform=watchOS APPLICATION_EXTENSION_API_ONLY=YES
+        build OBAKit generic/platform=iOS
 
     - name: Install xcodegen
       env:
