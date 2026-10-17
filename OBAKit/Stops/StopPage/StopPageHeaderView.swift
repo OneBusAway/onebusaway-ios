@@ -59,6 +59,10 @@ struct StopPageHeaderView: View {
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
+    private var accessibilityHeader: (label: String, value: String?) {
+        StopPageAccessibilityCopy.header(stop: stop, statusText: statusText)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
@@ -87,6 +91,8 @@ struct StopPageHeaderView: View {
             // button below stays separate so it remains individually
             // focusable and activatable.
             .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilityHeader.label)
+            .accessibilityValue(accessibilityHeader.value ?? "")
             // The screen's title: mark it a heading so it anchors VoiceOver's
             // Headings rotor for quick top-of-page navigation.
             .accessibilityAddTraits(.isHeader)

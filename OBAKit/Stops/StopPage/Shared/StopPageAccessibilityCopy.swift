@@ -21,6 +21,14 @@ import OBAKitCore
 /// "5 minut". `locale` is injectable so tests can exercise a locale whose categories
 /// differ from the root's.
 enum StopPageAccessibilityCopy {
+    /// The pushed header's heading. The label is what the map pin says (name,
+    /// direction, "Routes: …", stop ID) so the Headings rotor lists the stop by
+    /// name. The "Updated: …" line is the value: it changes every few seconds,
+    /// and as the start of the label it read before the stop's name.
+    static func header(stop: Stop, statusText: String) -> (label: String, value: String?) {
+        (Formatters.formattedAccessibilityLabel(stop: stop), statusText.isEmpty ? nil : statusText)
+    }
+
     static func upcomingIdentity(
         routeShortName: String,
         headsign: String,
