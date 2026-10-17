@@ -214,27 +214,6 @@ jobs:
         compression-level: 0
         retention-days: 1
 
-    # OBAKitCore is linked by the widget extension, so it must not call API that
-    # extensions can't use (UIApplication.shared and friends). As a framework it
-    # enforced that with APPLICATION_EXTENSION_API_ONLY; a Swift package target
-    # has no such setting, and a package can't pass -application-extension
-    # itself without unsafeFlags, which would stop anyone depending on it by
-    # version. Setting it on the command line reaches the package target. After
-    # the upload, so the test job isn't kept waiting.
-    - name: Build OBAKitCore as extension-safe
-      timeout-minutes: 15
-      run: |
-        set -o pipefail
-        xcodebuild build \
-          -scheme 'OBAKitCore' \
-          -destination 'generic/platform=iOS' \
-          -derivedDataPath DerivedData-ExtensionSafe \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
-          CODE_SIGNING_ALLOWED=NO \
-          APPLICATION_EXTENSION_API_ONLY=YES \
-          -quiet
-
     # main only; see "Restore compilation cache". Saved even when the build
     # fails: the CAS holds only what compiled, so a failure cannot poison it.
     - name: Save compilation cache
@@ -471,27 +450,35 @@ jobs:
           xcodebuild -downloadPlatform watchOS
         fi
 
-    # Before the project exists, xcodebuild in the repo root builds the package
-    # itself, as an app that depends on this repository would: from
-    # Package.swift alone, with dependencies resolved fresh from its version
-    # ranges rather than the apps' Package.resolved pins. OBAKit covers
-    # OBAKitCore too.
-    - name: Build the Swift package as a dependent would
+    # Builds the Swift package from Package.swift alone, before the project
+    # exists, as an app that depends on this repository would: dependencies
+    # resolve fresh from the manifest's version ranges, not the apps'
+    # Package.resolved pins. OBAKit covers its dependency on OBAKitCore.
+    #
+    # OBAKitCore is linked by the widget extension, and OBAKitWatch will be
+    # linked by a watch widget, so neither may call API that extensions can't
+    # use (UIApplication.shared and friends). As frameworks they enforced that
+    # with APPLICATION_EXTENSION_API_ONLY; a package target has no such
+    # setting, and a package can't pass -application-extension itself without
+    # unsafeFlags, which would stop anyone depending on it by version. Setting
+    # it on the command line reaches the package targets. In this job, not
+    # `build`, which the test job waits on.
+    - name: Build the Swift package on its own
       timeout-minutes: 30
       run: |
         set -o pipefail
         test ! -e OBAKit.xcodeproj
-        for target in "OBAKit generic/platform=iOS" "OBAKitWatch generic/platform=watchOS"; do
-          set -- $target
-          xcodebuild build \
-            -scheme "$1" \
-            -destination "$2" \
+        build() { # scheme, destination, then extra build settings
+          xcodebuild build -scheme "$1" -destination "$2" "${@:3}" \
             -derivedDataPath DerivedData-Package \
             COMPILATION_CACHE_ENABLE_CACHING=YES \
             COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
             CODE_SIGNING_ALLOWED=NO \
             -quiet
-        done
+        }
+        build OBAKitCore generic/platform=iOS APPLICATION_EXTENSION_API_ONLY=YES
+        build OBAKitWatch generic/platform=watchOS APPLICATION_EXTENSION_API_ONLY=YES
+        build OBAKit generic/platform=iOS
 
     - name: Install xcodegen
       env:
@@ -521,27 +508,6 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           -quiet
 
-    # OBAKitWatch is a package target, which doesn't get the extension-safe
-    # flag the framework had; a future watch widget will link it. Same check
-    # as the build job's for OBAKitCore.
-    - name: Build OBAKitWatch as extension-safe
-      timeout-minutes: 15
-      run: |
-        set -o pipefail
-        xcodebuild build \
-          -project 'OBAKit.xcodeproj' \
-          -scheme 'OBAKitWatch' \
-          -destination 'generic/platform=watchOS' \
-          -derivedDataPath DerivedData-ExtensionSafe \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          COMPILATION_CACHE_CAS_PATH="$CAS_PATH" \
-          CODE_SIGNING_ALLOWED=NO \
-          APPLICATION_EXTENSION_API_ONLY=YES \
-          -quiet
-
-    # `simctl runtime list` can report the watchOS runtime Ready before its
-    # simulators are usable (each reports `runtime=(null)`), and a fast job
-    # can get here first. Wait until a watch simulator resolves.
     - name: Wait for a watch simulator
       if: success() || failure()
       timeout-minutes: 6

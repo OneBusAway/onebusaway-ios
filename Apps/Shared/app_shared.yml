@@ -11,11 +11,12 @@ settings:
     # target in the project — frameworks, apps, widget, OBAKitTests and
     # OBAKitUITests — builds in the Swift 6 language mode with main-actor
     # default isolation.
-    # OBAKitCore and OBAKit are the exception: they are Swift package targets
-    # (Package.swift at the repo root), so none of these settings reach them.
-    # Package.swift reproduces them, except that Core's default isolation stays
-    # nonisolated because Core owns the actors and the background decode. OBAKitTests used to override it too;
-    # that pin went away when the suite moved to Swift Testing (see Phase 4).
+    # OBAKitCore, OBAKit and OBAKitWatch are the exception: they are Swift
+    # package targets (Package.swift at the repo root), so none of these
+    # settings reach them. Package.swift reproduces them, except that Core's
+    # default isolation stays nonisolated because Core owns the actors and the
+    # background decode. OBAKitTests used to override it too; that pin went
+    # away when the suite moved to Swift Testing (see Phase 4).
     # Approachable concurrency stays on permanently for Swift 6 targets (two
     # of its five features are not part of the Swift 6 language mode).
     SWIFT_STRICT_CONCURRENCY: complete
@@ -132,9 +133,9 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
 
 packages:
-    # This repository's own Package.swift, which builds OBAKitCore and OBAKit.
-    # Their dependencies are declared there. The path is relative to this file,
-    # as included paths are.
+    # This repository's own Package.swift, which builds OBAKitCore, OBAKit and
+    # OBAKitWatch. Their dependencies are declared there. The path is relative
+    # to this file, as included paths are.
     OBAKit:
         path: ../..
     FloatingPanel:
