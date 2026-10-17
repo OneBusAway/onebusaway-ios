@@ -555,6 +555,24 @@ final class LocalizationTests {
         }
     }
 
+    /// The intents' strings name no bundle, so in-process lookups read the
+    /// app's table, the one Shortcuts reads. `#bundle` would point at OBAKit's
+    /// resource bundle, which has no `AppIntents` table, and every lookup would
+    /// quietly fall back to its English default.
+    @Test func `App Intents strings resolve in process from the app's table`() throws {
+        var title = TrackBookmarkIntent.title
+        title.locale = Locale(identifier: "pl")
+        let polish = try #require(lprojBundleInMain("pl"))
+            .localizedString(forKey: "track_bookmark_intent.title", value: nil, table: "AppIntents")
+
+        #expect(polish != "Track Bookmark")
+        #expect(String(localized: title) == polish)
+    }
+
+    private func lprojBundleInMain(_ localization: String) -> Bundle? {
+        Bundle.main.path(forResource: localization, ofType: "lproj").flatMap(Bundle.init(path:))
+    }
+
     /// Siri drops an App Shortcut phrase that lacks `${applicationName}`, and a
     /// phrase that loses `${bookmark}` can no longer pick a bookmark by name.
     /// Keys are the English phrases, so a renamed English phrase orphans every

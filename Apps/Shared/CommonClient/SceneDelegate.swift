@@ -48,9 +48,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         } else {
             // The application stack has already launched (e.g. secondary scene on iPad).
             // Directly initialize the root interface for this window.
-            RootInterfaceLauncher.reloadRootInterface(application: app, window: window) {
-                window.rootViewController = ApplicationRootControllerFactory.make(application: app)
-            }
+            RootInterfaceLauncher.reloadRootInterface(application: app, window: window)
         }
 
         // Handle any URLs or user activities this scene was launched to handle.

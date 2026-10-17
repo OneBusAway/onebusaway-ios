@@ -25,19 +25,20 @@ import OBAKitCore
 /// process from the app's `Metadata.appintents` (OBAKit's is merged into it),
 /// which records only key, table, and default value; the lookup bundle is
 /// implicitly the one holding that metadata, so the table ships in the app,
-/// from `Apps/Shared/CommonClient`. The processor
-/// rejects any bundle but the module's own (`#bundle`; `.forClass` fails the
-/// build with "requires 'LocalizedStringResource' to use the main bundle").
+/// from `Apps/Shared/CommonClient`. In-process lookups use the default bundle,
+/// `.main`, to read the same table; `#bundle` would name OBAKit's resource
+/// bundle, which doesn't have it. (The processor rejects any explicit bundle,
+/// even `.main`: "requires 'LocalizedStringResource' to use the main bundle".)
 /// A separate table keeps `scripts/extract_strings`, which regenerates
 /// `Localizable.strings` from `OBALoc` calls only, from deleting these keys.
 public struct TrackBookmarkIntent: AppIntent {
-    public static let title = LocalizedStringResource("track_bookmark_intent.title", defaultValue: "Track Bookmark", table: "AppIntents", bundle: #bundle)
-    public static let description = IntentDescription(LocalizedStringResource("track_bookmark_intent.description", defaultValue: "Start a Live Activity for a bookmarked trip.", table: "AppIntents", bundle: #bundle))
+    public static let title = LocalizedStringResource("track_bookmark_intent.title", defaultValue: "Track Bookmark", table: "AppIntents")
+    public static let description = IntentDescription(LocalizedStringResource("track_bookmark_intent.description", defaultValue: "Start a Live Activity for a bookmarked trip.", table: "AppIntents"))
     public static let openAppWhenRun = true
 
     public init() {}
 
-    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle))
+    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents"))
     public var bookmark: BookmarkEntity
 
     public func perform() async throws -> some IntentResult {
@@ -54,7 +55,7 @@ public struct TrackBookmarkIntent: AppIntent {
 /// App Entity types are extracted off the main actor; OBAKit defaults to `@MainActor`.
 nonisolated public struct BookmarkEntity: AppEntity {
     public static let typeDisplayRepresentation = TypeDisplayRepresentation(
-        name: LocalizedStringResource("bookmark_entity.type_name", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle)
+        name: LocalizedStringResource("bookmark_entity.type_name", defaultValue: "Bookmark", table: "AppIntents")
     )
     public static let defaultQuery = BookmarkEntityQuery()
 
