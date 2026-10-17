@@ -784,5 +784,77 @@
 			<string>%d أخرى</string>
 		</dict>
 	</dict>
+	<key>trip_page.stop_list.run_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d مواقف</string>
+			<key>many</key>
+			<string>%d موقفًا</string>
+			<key>one</key>
+			<string>موقف واحد</string>
+			<key>other</key>
+			<string>%d موقف</string>
+			<key>two</key>
+			<string>موقفين</string>
+			<key>zero</key>
+			<string>%d موقف</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_passed_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d مواقف تم تجاوزها</string>
+			<key>many</key>
+			<string>%d موقفًا تم تجاوزه</string>
+			<key>one</key>
+			<string>موقف واحد تم تجاوزه</string>
+			<key>other</key>
+			<string>%d موقف تم تجاوزه</string>
+			<key>two</key>
+			<string>موقفين تم تجاوزهما</string>
+			<key>zero</key>
+			<string>%d موقف تم تجاوزه</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d مواقف قبل موقفك</string>
+			<key>many</key>
+			<string>%d موقفًا قبل موقفك</string>
+			<key>one</key>
+			<string>موقف واحد قبل موقفك</string>
+			<key>other</key>
+			<string>%d موقف قبل موقفك</string>
+			<key>two</key>
+			<string>موقفين قبل موقفك</string>
+			<key>zero</key>
+			<string>%d موقف قبل موقفك</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

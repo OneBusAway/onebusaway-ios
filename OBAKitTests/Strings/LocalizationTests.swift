@@ -67,7 +67,11 @@ final class LocalizationTests {
         "on_demand.picker.title_nearby",
         "on_demand.detail.zone_count",
         "on_demand.address.inside_more",
-        "on_demand.planner.more_serving_both"
+        "on_demand.planner.more_serving_both",
+        // The trip page's collapsed runs of stops (#1576).
+        "trip_page.stop_list.run_count_fmt",
+        "trip_page.stop_list.a11y_run_passed_fmt",
+        "trip_page.stop_list.a11y_run_approaching_fmt"
     ]
 
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
@@ -527,6 +531,45 @@ final class LocalizationTests {
         #expect(String(format: format, locale: polish, "2 km", 1) == "jeszcze 2 km · 1 przystanek")
         #expect(String(format: format, locale: polish, "2 km", 3) == "jeszcze 2 km · 3 przystanki")
         #expect(String(format: format, locale: polish, "2 km", 5) == "jeszcze 2 km · 5 przystanków")
+    }
+
+    /// The trip page's action captions were shortened so four fit on one line (#1577).
+    /// A locale whose caption still reads as the long form ("View schedule", "Add
+    /// Bookmark") wraps again, and nothing else would notice.
+    @Test func `Trip page action captions are shorter than their VoiceOver labels in every locale`() throws {
+        let kit = Bundle.obaKit
+        let english = try #require(strings(in: kit, localization: "en"))
+        #expect(english["trip_page.bookmark"] == "Bookmark")
+        #expect(english["trip_page.schedule"] == "Schedule")
+
+        var compared = 0
+        for localization in kit.localizations where localization != "Base" {
+            guard let table = strings(in: kit, localization: localization),
+                  let addBookmark = strings(in: Bundle.obaKitCore, localization: localization)?["common.add_bookmark"]
+            else { continue }
+            compared += 1
+            let bookmark = try #require(table["trip_page.bookmark"], "\(localization)/trip_page.bookmark is missing")
+            let schedule = try #require(table["trip_page.schedule"], "\(localization)/trip_page.schedule is missing")
+            let viewSchedule = try #require(table["trip_page.view_schedule"], "\(localization)/trip_page.view_schedule is missing")
+
+            #expect(bookmark.count < addBookmark.count, "\(localization): caption \"\(bookmark)\" is no shorter than \"\(addBookmark)\"")
+            #expect(schedule.count < viewSchedule.count, "\(localization): caption \"\(schedule)\" is no shorter than \"\(viewSchedule)\"")
+            if localization != "en" {
+                #expect(schedule != english["trip_page.schedule"], "\(localization): trip_page.schedule is still English")
+            }
+        }
+        #expect(compared == kit.localizations.filter { $0 != "Base" }.count)
+    }
+
+    @Test func `Polish collapsed stop runs reach their few and many forms`() throws {
+        let polish = Locale(identifier: "pl")
+        let count = try #require(localizedFormat(forKey: "trip_page.stop_list.run_count_fmt", localization: "pl"))
+        #expect(CountPlural.format(count, count: 3, locale: polish) == "3 przystanki")
+        #expect(CountPlural.format(count, count: 5, locale: polish) == "5 przystanków")
+
+        let passed = try #require(localizedFormat(forKey: "trip_page.stop_list.a11y_run_passed_fmt", localization: "pl"))
+        #expect(CountPlural.format(passed, count: 3, locale: polish) == "3 minięte przystanki")
+        #expect(CountPlural.format(passed, count: 5, locale: polish) == "5 miniętych przystanków")
     }
 
     // MARK: - App Intents and App Shortcuts

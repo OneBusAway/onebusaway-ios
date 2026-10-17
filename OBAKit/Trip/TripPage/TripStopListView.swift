@@ -14,34 +14,63 @@ import OBAKitCore
 ///
 /// Shares its visual language with `ApproachTimelineView` — gray behind the
 /// vehicle, route color ahead, a filled dot carrying the transport glyph at the
-/// vehicle's position — but not its code: that view windows to five stops and
-/// renders an elision marker, both of which a full list must not do.
+/// vehicle's position — but not its code: that view windows to five stops,
+/// where this one keeps every stop reachable and folds the passed stops and a
+/// long approach into rows the rider can expand (`TripStopRunRow`, #1576).
 struct TripStopListView: View {
-    let rows: [TripStopListModel.Row]
+    let model: TripStopListModel
     let routeColor: Color
     let routeType: Route.RouteType
     let onSelect: (TripStopListModel.Row) -> Void
 
     @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
+    /// Runs the rider has opened. Every run starts collapsed (#1576).
+    @State private var expandedGroups: Set<TripStopListModel.CollapsedGroup.ID> = []
+
     var body: some View {
+        let items = model.items(expanded: expandedGroups)
+
         // Lazy because a long trip runs to sixty-odd stops and only a handful
         // are ever on screen.
         LazyVStack(spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                TripStopRow(
-                    row: row,
-                    isFirst: index == 0,
-                    isLast: index == rows.count - 1,
-                    segmentAboveIsSpent: index > 0 && rows[index - 1].isPassed,
-                    routeColor: routeColor,
-                    routeType: routeType,
-                    compactMode: compactMode,
-                    onSelect: { onSelect(row) }
-                )
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                // The connector into a line takes its color from the line above.
+                let segmentAboveIsSpent = index > 0 && items[index - 1].isPassed
+                switch item {
+                case .stop(let row):
+                    TripStopRow(
+                        row: row,
+                        isFirst: index == 0,
+                        isLast: index == items.count - 1,
+                        segmentAboveIsSpent: segmentAboveIsSpent,
+                        routeColor: routeColor,
+                        routeType: routeType,
+                        compactMode: compactMode,
+                        onSelect: { onSelect(row) }
+                    )
+                case .group(let group, let isExpanded):
+                    TripStopRunRow(
+                        group: group,
+                        isExpanded: isExpanded,
+                        isFirst: index == 0,
+                        segmentAboveIsSpent: segmentAboveIsSpent,
+                        routeColor: routeColor,
+                        compactMode: compactMode,
+                        onToggle: { toggle(group) }
+                    )
+                }
             }
         }
         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func toggle(_ group: TripStopListModel.CollapsedGroup) {
+        withAnimation(.snappy) {
+            if expandedGroups.remove(group.id) == nil {
+                expandedGroups.insert(group.id)
+            }
+        }
     }
 }
 

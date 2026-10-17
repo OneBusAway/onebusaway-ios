@@ -149,12 +149,12 @@ struct TripPageView: View {
                 VStack(alignment: .leading, spacing: StopTripSpacing.tripPage(compactMode)) {
                     card
 
-                    let rows = stopList.rows
-                    if !rows.isEmpty {
-                        sectionHeader(stopCountTitle(rows.count))
+                    let list = stopList
+                    if !list.rows.isEmpty {
+                        sectionHeader(stopCountTitle(list.rows.count))
 
                         TripStopListView(
-                            rows: rows,
+                            model: list,
                             routeColor: routeColor,
                             routeType: route?.routeType ?? .unknown,
                             onSelect: { actions.onSelectStop($0.stopID) }

@@ -652,5 +652,65 @@
 			<string>jeszcze %d</string>
 		</dict>
 	</dict>
+	<key>trip_page.stop_list.run_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d przystanki</string>
+			<key>many</key>
+			<string>%d przystanków</string>
+			<key>one</key>
+			<string>1 przystanek</string>
+			<key>other</key>
+			<string>%d przystanku</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_passed_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d minięte przystanki</string>
+			<key>many</key>
+			<string>%d miniętych przystanków</string>
+			<key>one</key>
+			<string>1 minięty przystanek</string>
+			<key>other</key>
+			<string>%d miniętego przystanku</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d przystanki przed Twoim przystankiem</string>
+			<key>many</key>
+			<string>%d przystanków przed Twoim przystankiem</string>
+			<key>one</key>
+			<string>1 przystanek przed Twoim przystankiem</string>
+			<key>other</key>
+			<string>%d przystanku przed Twoim przystankiem</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
