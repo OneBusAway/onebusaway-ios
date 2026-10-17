@@ -910,17 +910,20 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
     /// proxies instead.
     private func configureAppearanceProxies() {
+        // `brandTint`, not `brand`: these colour text and controls, and `brand`
+        // is too pale on white to read (2.76:1 in the OneBusAway app).
+        let tint = ThemeColors.shared.brandTint
         for t in [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self] {
-            t.appearance().tintColor = ThemeColors.shared.brand
+            t.appearance().tintColor = tint
         }
 
-        UISwitch.appearance().onTintColor = ThemeColors.shared.brand
+        UISwitch.appearance().onTintColor = tint
 
         StopArrivalView.appearance().notificationCenter = notificationCenter
 
         MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
 
-        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: ThemeColors.shared.brand], for: .normal)
+        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tint], for: .normal)
     }
 
     // MARK: - Regions Management
