@@ -290,8 +290,9 @@ nonisolated final class RouteArrowContext: Sendable {
         }
     }
 
+    /// Screen points per map point.
     @MainActor
-    private static func screenScale(of mapView: MKMapView) -> CGFloat {
+    static func screenScale(of mapView: MKMapView) -> CGFloat {
         mapView.bounds.width / mapView.visibleMapRect.size.width
     }
 

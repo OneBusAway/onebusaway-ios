@@ -46,7 +46,13 @@ nonisolated enum RouteLaneLayout {
         /// At each point, in lane widths. Positive is to the right of travel.
         let lanes: [Double]
 
-        var isShared: Bool { lanes.contains { $0 != 0 } }
+        let isShared: Bool
+
+        init(points: [MKMapPoint], lanes: [Double]) {
+            self.points = points
+            self.lanes = lanes
+            isShared = lanes.contains { $0 != 0 }
+        }
 
         /// The line, moved off the middle of the street wherever it shares it.
         ///
@@ -92,28 +98,24 @@ nonisolated enum RouteLaneLayout {
                 // runs diagonally, along neither street.
                 let directions = segmentDirections(at: pointIndex, in: route.points)
                 var alignments: [Int: Double] = [:]
-                for match in index.segments(near: route.points[pointIndex], within: reach, excluding: routeIndex) {
+                for segment in index.segments(near: route.points[pointIndex], within: reach, excluding: routeIndex) {
                     for direction in directions {
-                        let alignment = direction.dx * match.direction.dx + direction.dy * match.direction.dy
-                        if abs(alignment) > abs(alignments[match.line] ?? 0) {
-                            alignments[match.line] = alignment
+                        let alignment = direction.dot(segment.direction)
+                        if abs(alignment) > abs(alignments[segment.line] ?? 0) {
+                            alignments[segment.line] = alignment
                         }
                     }
                 }
                 // Every other route sharing the street here, with whether it runs
                 // the same way as this one.
-                var sharers: [(route: Int, sameWay: Bool)] = alignments
-                    .filter { abs($0.value) >= minimumAlignment }
-                    .map { (route: $0.key, sameWay: $0.value > 0) }
-                guard !sharers.isEmpty else { return 0 }
+                let sharers = alignments.filter { abs($0.value) >= minimumAlignment }
+                guard let first = sharers.min(by: { $0.key < $1.key }) else { return 0 }
 
-                sharers.append((routeIndex, true))
-                sharers.sort { $0.route < $1.route }
-                let slot = Double(sharers.firstIndex { $0.route == routeIndex } ?? 0)
-                let centered = slot - Double(sharers.count - 1) / 2
+                let slot = Double(sharers.keys.count(where: { $0 < routeIndex }))
+                let centered = slot - Double(sharers.count) / 2
                 // Counted from the first sharer's right, which is this route's left
                 // when the two run opposite ways.
-                return sharers[0].sameWay ? centered : -centered
+                return first.key < routeIndex && first.value < 0 ? -centered : centered
             }
             lines[route.routeID] = Line(points: route.points, lanes: lanes)
         }
@@ -122,24 +124,41 @@ nonisolated enum RouteLaneLayout {
 
     // MARK: - Geometry
 
-    struct Vector {
+    fileprivate struct Vector {
         var dx: Double
         var dy: Double
 
-        var length: Double { hypot(dx, dy) }
+        init(dx: Double, dy: Double) {
+            self.dx = dx
+            self.dy = dy
+        }
+
+        init(from start: MKMapPoint, to end: MKMapPoint) {
+            self.init(dx: end.x - start.x, dy: end.y - start.y)
+        }
 
         var normalized: Vector? {
-            let length = length
+            let length = hypot(dx, dy)
             return length > 0 ? Vector(dx: dx / length, dy: dy / length) : nil
         }
 
         /// A quarter turn clockwise on screen, where y runs down: the right of travel.
         var right: Vector { Vector(dx: -dy, dy: dx) }
+
+        func dot(_ other: Vector) -> Double { dx * other.dx + dy * other.dy }
+    }
+
+    /// The distance from `point` to the segment from `start` to `end`, in map points.
+    static func distance(from point: MKMapPoint, toSegmentFrom start: MKMapPoint, to end: MKMapPoint) -> Double {
+        let segment = Vector(from: start, to: end)
+        let lengthSquared = segment.dot(segment)
+        let fraction = lengthSquared == 0 ? 0 : max(0, min(1, Vector(from: start, to: point).dot(segment) / lengthSquared))
+        return hypot(point.x - (start.x + fraction * segment.dx), point.y - (start.y + fraction * segment.dy))
     }
 
     /// `points` with any repeats dropped and every segment longer than `spacing` cut
     /// into equal pieces no longer than it.
-    static func resample(_ points: [MKMapPoint], spacing: Double) -> [MKMapPoint] {
+    private static func resample(_ points: [MKMapPoint], spacing: Double) -> [MKMapPoint] {
         guard var previous = points.first else { return [] }
         var resampled = [previous]
         for point in points.dropFirst() {
@@ -163,45 +182,37 @@ nonisolated enum RouteLaneLayout {
     private static func segmentDirections(at index: Int, in points: [MKMapPoint]) -> [Vector] {
         [(index - 1, index), (index, index + 1)].compactMap { from, to in
             guard from >= 0, to < points.count else { return nil }
-            return Vector(dx: points[to].x - points[from].x, dy: points[to].y - points[from].y).normalized
+            return Vector(from: points[from], to: points[to]).normalized
         }
     }
 
     /// Which way, and how far, one lane width at point `index` moves it: to the right
     /// of travel, lengthened at a corner so the line beside it keeps its width.
-    fileprivate static func normal(at index: Int, in points: [MKMapPoint]) -> Vector {
-        func segmentRight(_ from: Int, _ to: Int) -> Vector? {
-            guard from >= 0, to < points.count else { return nil }
-            return Vector(dx: points[to].x - points[from].x, dy: points[to].y - points[from].y).normalized?.right
-        }
-        let incoming = segmentRight(index - 1, index), outgoing = segmentRight(index, index + 1)
-        guard let incoming else { return outgoing ?? Vector(dx: 0, dy: 0) }
-        guard let outgoing else { return incoming }
-        guard let bisector = Vector(dx: incoming.dx + outgoing.dx, dy: incoming.dy + outgoing.dy).normalized else {
+    private static func normal(at index: Int, in points: [MKMapPoint]) -> Vector {
+        let rights = segmentDirections(at: index, in: points).map(\.right)
+        guard rights.count == 2 else { return rights.first ?? Vector(dx: 0, dy: 0) }
+        let incoming = rights[0]
+        guard let bisector = Vector(dx: incoming.dx + rights[1].dx, dy: incoming.dy + rights[1].dy).normalized else {
             return incoming
         }
         // A miter, capped so a hairpin doesn't throw the point off into the distance.
-        let alignment = max(bisector.dx * incoming.dx + bisector.dy * incoming.dy, 0.5)
+        let alignment = max(bisector.dot(incoming), 0.5)
         return Vector(dx: bisector.dx / alignment, dy: bisector.dy / alignment)
     }
 }
 
 /// Finds the routes near a point without measuring every segment of every route.
 nonisolated private struct SegmentIndex {
-    struct Match {
+    struct Segment {
         let line: Int
+        let start: MKMapPoint
+        let end: MKMapPoint
         let direction: RouteLaneLayout.Vector
     }
 
     private struct Cell: Hashable {
         let x: Int
         let y: Int
-    }
-
-    private struct Segment {
-        let line: Int
-        let start: MKMapPoint
-        let end: MKMapPoint
     }
 
     private let cellSize: Double
@@ -211,7 +222,8 @@ nonisolated private struct SegmentIndex {
         self.cellSize = cellSize
         for (line, points) in lines.enumerated() {
             for (start, end) in zip(points, points.dropFirst()) {
-                let segment = Segment(line: line, start: start, end: end)
+                guard let direction = RouteLaneLayout.Vector(from: start, to: end).normalized else { continue }
+                let segment = Segment(line: line, start: start, end: end, direction: direction)
                 let low = cell(MKMapPoint(x: min(start.x, end.x), y: min(start.y, end.y)))
                 let high = cell(MKMapPoint(x: max(start.x, end.x), y: max(start.y, end.y)))
                 for x in low.x...high.x {
@@ -229,27 +241,16 @@ nonisolated private struct SegmentIndex {
 
     /// Every other line's segments within `reach` of `point`. A segment spanning
     /// several cells can come back more than once.
-    func segments(near point: MKMapPoint, within reach: Double, excluding excluded: Int) -> [Match] {
+    func segments(near point: MKMapPoint, within reach: Double, excluding excluded: Int) -> [Segment] {
         let center = cell(point)
-        var matches: [Match] = []
+        var found: [Segment] = []
         for x in (center.x - 1)...(center.x + 1) {
             for y in (center.y - 1)...(center.y + 1) {
-                for segment in cells[Cell(x: x, y: y)] ?? []
-                where segment.line != excluded && Self.distance(from: point, to: segment) <= reach {
-                    let direction = RouteLaneLayout.Vector(dx: segment.end.x - segment.start.x, dy: segment.end.y - segment.start.y)
-                    if let direction = direction.normalized {
-                        matches.append(Match(line: segment.line, direction: direction))
-                    }
+                found += (cells[Cell(x: x, y: y)] ?? []).filter {
+                    $0.line != excluded && RouteLaneLayout.distance(from: point, toSegmentFrom: $0.start, to: $0.end) <= reach
                 }
             }
         }
-        return matches
-    }
-
-    private static func distance(from point: MKMapPoint, to segment: Segment) -> Double {
-        let dx = segment.end.x - segment.start.x, dy = segment.end.y - segment.start.y
-        let lengthSquared = dx * dx + dy * dy
-        let t = lengthSquared == 0 ? 0 : max(0, min(1, ((point.x - segment.start.x) * dx + (point.y - segment.start.y) * dy) / lengthSquared))
-        return hypot(point.x - (segment.start.x + t * dx), point.y - (segment.start.y + t * dy))
+        return found
     }
 }

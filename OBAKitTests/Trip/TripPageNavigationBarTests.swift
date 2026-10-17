@@ -24,6 +24,7 @@ import OBAKitCore
 final class TripPageNavigationBarTests: OBATestCase {
 
     private var queue: OperationQueue!
+    private var window: UIWindow?
 
     override init() async throws {
         try await super.init()
@@ -33,27 +34,24 @@ final class TripPageNavigationBarTests: OBATestCase {
 
     isolated deinit {
         queue.cancelAllOperations()
+        window?.rootViewController = nil
+        window?.isHidden = true
     }
 
-    /// Built from a departure whose trip has loaded: on screen, the page reads it.
     private func makeTripPage() throws -> TripPageViewController {
-        let stopArrivals = try Fixtures.loadRESTAPIPayload(
-            type: StopArrivals.self,
-            fileName: "arrivals-and-departures-for-stop-1_10914.json"
-        )
-        return TripPageViewController(
-            application: buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name)),
-            arrivalDeparture: try #require(stopArrivals.arrivalsAndDepartures.first),
-            originTitle: TripPageFixture.originTitle
+        try TripPageFixture.makeOnScreenPage(
+            application: buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         )
     }
 
     /// A stack on screen, so pushes and pops run the appearance callbacks.
-    private func show(_ navigation: UINavigationController) -> UIWindow {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+    private func show(_ navigation: UINavigationController) throws -> UIWindow {
+        let window = UIWindow(windowScene: try testWindowScene())
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         window.rootViewController = navigation
-        window.makeKeyAndVisible()
+        window.isHidden = false
         window.layoutIfNeeded()
+        self.window = window
         return window
     }
 
@@ -69,7 +67,7 @@ final class TripPageNavigationBarTests: OBATestCase {
 
     @Test func `The page hides the bar while it is on screen`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
-        let window = show(navigation)
+        let window = try show(navigation)
 
         push(try makeTripPage(), onto: navigation, in: window)
 
@@ -79,7 +77,7 @@ final class TripPageNavigationBarTests: OBATestCase {
     /// The Recent and Bookmarks path: the page the rider backs out to had a bar.
     @Test func `Popping the page gives the page underneath its bar back`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
-        let window = show(navigation)
+        let window = try show(navigation)
         #expect(!navigation.isNavigationBarHidden)
 
         push(try makeTripPage(), onto: navigation, in: window)
@@ -92,7 +90,7 @@ final class TripPageNavigationBarTests: OBATestCase {
     @Test func `Popping the page leaves a bar the host had hidden still hidden`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
         navigation.setNavigationBarHidden(true, animated: false)
-        let window = show(navigation)
+        let window = try show(navigation)
 
         push(try makeTripPage(), onto: navigation, in: window)
         pop(navigation, in: window)
@@ -104,7 +102,7 @@ final class TripPageNavigationBarTests: OBATestCase {
     /// its own bar for its back button and actions.
     @Test func `A page pushed on top of the trip page gets the bar`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
-        let window = show(navigation)
+        let window = try show(navigation)
 
         push(try makeTripPage(), onto: navigation, in: window)
         push(UIViewController(), onto: navigation, in: window)
@@ -114,7 +112,7 @@ final class TripPageNavigationBarTests: OBATestCase {
 
     @Test func `Coming back to the trip page hides the bar again`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
-        let window = show(navigation)
+        let window = try show(navigation)
 
         push(try makeTripPage(), onto: navigation, in: window)
         push(UIViewController(), onto: navigation, in: window)
@@ -127,7 +125,7 @@ final class TripPageNavigationBarTests: OBATestCase {
     /// page, then out of the trip page.
     @Test func `Backing all the way out restores the original bar`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
-        let window = show(navigation)
+        let window = try show(navigation)
 
         push(try makeTripPage(), onto: navigation, in: window)
         push(UIViewController(), onto: navigation, in: window)
@@ -135,5 +133,35 @@ final class TripPageNavigationBarTests: OBATestCase {
         pop(navigation, in: window)
 
         #expect(!navigation.isNavigationBarHidden)
+    }
+
+    // MARK: - A stack whose delegate decides the bar
+
+    /// What `StopSheetPresenter` does: decides the bar on every push and pop.
+    private final class BarDecidingDelegate: NSObject, UINavigationControllerDelegate {
+        func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+            navigationController.setNavigationBarHidden(viewController is SelfChromedRoot || viewController is TripPageViewController, animated: animated)
+        }
+    }
+
+    /// Like the stop sheet's own root, which draws its own header.
+    private final class SelfChromedRoot: UIViewController {}
+
+    /// The stop sheet: its root hides the bar, so the trip page would have saved
+    /// "hidden" and put it back over a page that wants it.
+    @Test func `In a stack whose delegate decides the bar, a page pushed on top gets it`() throws {
+        let delegate = BarDecidingDelegate()
+        let navigation = UINavigationController(rootViewController: SelfChromedRoot())
+        navigation.delegate = delegate
+        navigation.setNavigationBarHidden(true, animated: false)
+        let window = try show(navigation)
+
+        push(try makeTripPage(), onto: navigation, in: window)
+        #expect(navigation.isNavigationBarHidden)
+        push(UIViewController(), onto: navigation, in: window)
+        #expect(!navigation.isNavigationBarHidden)
+        pop(navigation, in: window)
+        #expect(navigation.isNavigationBarHidden)
+        withExtendedLifetime(delegate) {}
     }
 }

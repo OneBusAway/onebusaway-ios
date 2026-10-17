@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Testing
 import UIKit
 import OBAKitCore
 @testable import OBAKit
@@ -30,6 +31,21 @@ enum TripPageFixture {
         TripPageViewController(
             application: application,
             tripConvertible: TripConvertible(arrivalDeparture: try Fixtures.arrivalDeparture()),
+            originTitle: originTitle
+        )
+    }
+
+    /// A page that can go on screen. `makePage`'s departure has no trip loaded,
+    /// which the page reads once it appears; this one's does.
+    @MainActor
+    static func makeOnScreenPage(application: Application) throws -> TripPageViewController {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        return TripPageViewController(
+            application: application,
+            arrivalDeparture: try #require(stopArrivals.arrivalsAndDepartures.first),
             originTitle: originTitle
         )
     }

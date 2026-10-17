@@ -16,15 +16,20 @@ import Testing
 @Suite
 struct RouteLaneLayoutTests {
 
-    /// A point `east` and `north` meters from a fixed spot in West Seattle.
+    /// A fixed spot in West Seattle.
+    private static let origin = MKMapPoint(CLLocationCoordinate2D(latitude: 47.5615, longitude: -122.3870))
+
+    /// Map points per meter here, so a test can work in meters.
+    private static let mapPointsPerMeter = MKMapPointsPerMeterAtLatitude(origin.coordinate.latitude)
+
+    /// A point `east` and `north` meters from `origin`. Map points' y runs south.
     private static func point(east: Double, north: Double) -> CLLocationCoordinate2D {
-        let origin = CLLocationCoordinate2D(latitude: 47.5615, longitude: -122.3870)
-        let metersPerDegreeLatitude = 111_320.0
-        let metersPerDegreeLongitude = metersPerDegreeLatitude * cos(origin.latitude * .pi / 180)
-        return CLLocationCoordinate2D(
-            latitude: origin.latitude + north / metersPerDegreeLatitude,
-            longitude: origin.longitude + east / metersPerDegreeLongitude
-        )
+        MKMapPoint(x: origin.x + east * mapPointsPerMeter, y: origin.y - north * mapPointsPerMeter).coordinate
+    }
+
+    /// How far north of `origin` `coordinate` lies, in meters.
+    private static func northing(of coordinate: CLLocationCoordinate2D) -> Double {
+        (origin.y - MKMapPoint(coordinate).y) / mapPointsPerMeter
     }
 
     /// An east–west street, 1 km long.
@@ -38,20 +43,10 @@ struct RouteLaneLayoutTests {
 
     /// The point on `line` nearest to `coordinate`, in meters.
     private static func distance(from coordinate: CLLocationCoordinate2D, to line: [CLLocationCoordinate2D]) -> CLLocationDistance {
-        let target = MKMapPoint(coordinate)
-        var best = CLLocationDistance.greatestFiniteMagnitude
-        for (start, end) in zip(line, line.dropFirst()) {
-            let a = MKMapPoint(start), b = MKMapPoint(end)
-            let dx = b.x - a.x, dy = b.y - a.y
-            let lengthSquared = dx * dx + dy * dy
-            let t = lengthSquared == 0 ? 0 : max(0, min(1, ((target.x - a.x) * dx + (target.y - a.y) * dy) / lengthSquared))
-            best = min(best, target.distance(to: MKMapPoint(x: a.x + t * dx, y: a.y + t * dy)))
-        }
-        return best
+        zip(line, line.dropFirst()).map { start, end in
+            RouteLaneLayout.distance(from: MKMapPoint(coordinate), toSegmentFrom: MKMapPoint(start), to: MKMapPoint(end))
+        }.min().map { $0 / mapPointsPerMeter } ?? .greatestFiniteMagnitude
     }
-
-    /// Map points per meter here, so a test can ask for a lane width in meters.
-    private static let mapPointsPerMeter = MKMapPointsPerMeterAtLatitude(eastbound[0].latitude)
 
     private static func offset(_ line: RouteLaneLayout.Line, laneWidthMeters: Double) -> [CLLocationCoordinate2D] {
         line.offsetCoordinates(laneWidth: laneWidthMeters * mapPointsPerMeter)
@@ -176,7 +171,7 @@ struct RouteLaneLayoutTests {
 
         let width = 10.0
         let middles = try ["A", "B", "C"].map { Self.middle(Self.offset(try #require(lines[$0]), laneWidthMeters: width)) }
-        let northings = middles.map { ($0.latitude - Self.eastbound[0].latitude) * 111_320 }.sorted()
+        let northings = middles.map(Self.northing).sorted()
 
         #expect(abs(northings[1] - northings[0] - width) < 0.5)
         #expect(abs(northings[2] - northings[1] - width) < 0.5)
