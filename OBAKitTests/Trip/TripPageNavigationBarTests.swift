@@ -110,6 +110,23 @@ final class TripPageNavigationBarTests: OBATestCase {
         #expect(!navigation.isNavigationBarHidden)
     }
 
+    /// The host's "hidden" is for the host, not for a page pushed over the trip page,
+    /// which still needs its bar; it's handed back only when the trip page goes.
+    @Test func `Over a host that had hidden the bar, a page pushed on top still gets it`() throws {
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        navigation.setNavigationBarHidden(true, animated: false)
+        let window = try show(navigation)
+
+        push(try makeTripPage(), onto: navigation, in: window)
+        push(UIViewController(), onto: navigation, in: window)
+        #expect(!navigation.isNavigationBarHidden)
+
+        pop(navigation, in: window)
+        #expect(navigation.isNavigationBarHidden)
+        pop(navigation, in: window)
+        #expect(navigation.isNavigationBarHidden)
+    }
+
     @Test func `Coming back to the trip page hides the bar again`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
         let window = try show(navigation)

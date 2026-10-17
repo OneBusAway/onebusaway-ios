@@ -167,16 +167,22 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         navigationController.setNavigationBarHidden(true, animated: animated)
     }
 
-    /// Hands the bar back when navigation takes this page off screen: popped, or
-    /// covered by a page pushed on top, which needs the bar for its back button
-    /// (#1570). Not on a modal over the page or a tab switch, which leave it on
-    /// top of its stack.
+    /// Hands the bar back when navigation takes this page off screen (#1570):
+    /// popped, it goes back the way the host had it; covered by a page pushed on
+    /// top, it shows, since that page needs it for its back button, and the host's
+    /// state waits for the pop. Not on a modal over the page or a tab switch,
+    /// which leave it on top of its stack.
+    ///
+    /// Popped is read from the stack rather than `isMovingFromParent`, which a
+    /// page covered by a push can report too.
     private func restoreNavigationBar(animated: Bool) {
-        guard let wasHidden = navigationBarWasHidden,
-              let navigationController,
-              isMovingFromParent || navigationController.topViewController !== self else { return }
-        navigationBarWasHidden = nil
-        navigationController.setNavigationBarHidden(wasHidden, animated: animated)
+        guard let wasHidden = navigationBarWasHidden, let navigationController else { return }
+        if !navigationController.viewControllers.contains(self) {
+            navigationBarWasHidden = nil
+            navigationController.setNavigationBarHidden(wasHidden, animated: animated)
+        } else if navigationController.topViewController !== self {
+            navigationController.setNavigationBarHidden(false, animated: animated)
+        }
     }
 
     // MARK: - Map focus
