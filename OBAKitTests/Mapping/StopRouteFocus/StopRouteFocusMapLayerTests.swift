@@ -799,6 +799,77 @@ final class StopRouteFocusMapLayerTests {
         #expect(focus.isFocusable(routeID: "H"))
     }
 
+    // MARK: - Shared streets (#1569)
+
+    /// A map with a size, framed on `encodedSeattleLine`, so screen distances mean something.
+    private func makeSizedMapView(latitudeSpan: CLLocationDegrees = 0.02) -> MKMapView {
+        let mapView = MKMapView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        mapView.setRegion(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.605, longitude: -122.335),
+            span: MKCoordinateSpan(latitudeDelta: latitudeSpan, longitudeDelta: latitudeSpan)
+        ), animated: false)
+        return mapView
+    }
+
+    private func coreOverlay(for routeID: RouteID, on mapView: MKMapView) throws -> RouteShapeOverlay {
+        try #require(mapView.overlays.compactMap { $0 as? RouteShapeOverlay }.first { $0.routeID == routeID && $0.part == .core })
+    }
+
+    /// The overlay's middle point, in the map view's points.
+    private func screenMiddle(of overlay: RouteShapeOverlay, on mapView: MKMapView) -> CGPoint {
+        mapView.convert(overlay.points()[overlay.pointCount / 2].coordinate, toPointTo: mapView)
+    }
+
+    /// Every route in `model` gets the same shape from the default cache.
+    @Test func `Two routes on the same street draw side by side`() async throws {
+        let mapView = makeSizedMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+
+        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: []))
+        await layer.awaitPendingShapeWork()
+
+        let h = screenMiddle(of: try coreOverlay(for: "H", on: mapView), on: mapView)
+        let sixtyTwo = screenMiddle(of: try coreOverlay(for: "62", on: mapView), on: mapView)
+        #expect(abs(hypot(h.x - sixtyTwo.x, h.y - sixtyTwo.y) - StopRouteFocusMapLayer.laneWidth) < 1.5)
+    }
+
+    @Test func `A route on its own street draws exactly its shape`() async throws {
+        let mapView = makeSizedMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: []))
+        await layer.awaitPendingShapeWork()
+
+        let core = try coreOverlay(for: "H", on: mapView)
+        let shape = try #require(Polyline(encodedPolyline: encodedSeattleLine()).coordinates)
+        let first = core.points()[0].coordinate, last = core.points()[core.pointCount - 1].coordinate
+        #expect(abs(first.latitude - shape[0].latitude) < 1e-9 && abs(first.longitude - shape[0].longitude) < 1e-9)
+        #expect(abs(last.latitude - shape[1].latitude) < 1e-9 && abs(last.longitude - shape[1].longitude) < 1e-9)
+    }
+
+    /// The lanes are a line's width apart on screen, so a new zoom has to move them.
+    @Test func `Zooming in keeps shared routes a lane apart`() async throws {
+        let mapView = makeSizedMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H", "62"], vehicleRouteIDs: []))
+        await layer.awaitPendingShapeWork()
+
+        mapView.setRegion(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 47.605, longitude: -122.335),
+            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+        ), animated: false)
+        layer.viewportDidChange(mapView.visibleMapRect)
+
+        let h = screenMiddle(of: try coreOverlay(for: "H", on: mapView), on: mapView)
+        let sixtyTwo = screenMiddle(of: try coreOverlay(for: "62", on: mapView), on: mapView)
+        #expect(abs(hypot(h.x - sixtyTwo.x, h.y - sixtyTwo.y) - StopRouteFocusMapLayer.laneWidth) < 1.5)
+        // Redrawn, not stacked on top of the old lines.
+        #expect(mapView.overlays.compactMap { $0 as? RouteShapeOverlay }.count == 6)
+    }
+
     @Test func `Ending the presentation clears suppression`() async {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)
