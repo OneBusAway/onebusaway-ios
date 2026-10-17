@@ -241,7 +241,7 @@ scripts/extract_strings               # Extract strings for localization
 ## Configuration & Deployment
 
 - **Target iOS Version**: 18.0+
-- **Swift Version**: every target builds in the **Swift 6 language mode** with main-actor default isolation (`Apps/Shared/app_shared.yml`); OBAKitCore and OBAKit are package targets, and `Package.swift` reproduces these settings for them, except that OBAKitCore's default isolation stays `nonisolated`. The five concurrency diagnostic groups are escalated to errors, so a data-race warning fails the build. Modern syntax (shorthand optional binding, `URL.host()`) is fine — the iOS 18 deployment target exceeds their requirements.
+- **Swift Version**: every target builds in the **Swift 6 language mode** with main-actor default isolation (`Apps/Shared/app_shared.yml`); OBAKitCore, OBAKit and OBAKitWatch are package targets, and `Package.swift` reproduces these settings for them, except that OBAKitCore's default isolation stays `nonisolated`. The five concurrency diagnostic groups are escalated to errors, so a data-race warning fails the build. Modern syntax (shorthand optional binding, `URL.host()`) is fine — the iOS 18 deployment target exceeds their requirements.
 - **Package Manager**: Swift Package Manager
 - **Project Generation**: XcodeGen from YAML configurations
 - **Localization**: in-repo .strings files (OBAKit/Strings, OBAKitCore/Strings; App Intents tables in Apps/Shared/CommonClient)

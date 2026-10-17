@@ -11,6 +11,7 @@ OBAKitTests/Info.plist
 # SwiftPM ignores them, so keep them out of commits.
 OBAKit/Info.plist
 OBAKitCore/Info.plist
+OBAKitWatch/Info.plist
 OBAWidget/Info.plist
 WatchApp/Info.plist
 /project.yml
