@@ -28,7 +28,7 @@ class StackedButton: UIControl {
     public let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 1
-        label.textColor = ThemeColors.shared.brand
+        label.textColor = ThemeColors.shared.brandTint
         label.text = "LABEL"
         label.textAlignment = .center
         label.isUserInteractionEnabled = false
@@ -47,7 +47,7 @@ class StackedButton: UIControl {
         imageView.setContentHuggingPriority(.required, for: .horizontal)
         imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
         imageView.isUserInteractionEnabled = false
-        imageView.tintColor = ThemeColors.shared.brand
+        imageView.tintColor = ThemeColors.shared.brandTint
 
         return imageView
     }()

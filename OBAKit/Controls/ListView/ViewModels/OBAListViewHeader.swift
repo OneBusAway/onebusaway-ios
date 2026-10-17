@@ -18,7 +18,7 @@ nonisolated struct OBAListViewHeader: OBAListViewItem {
         config.text = title
         config.textProperties.font = .preferredFont(forTextStyle: .headline)
 
-        let options = UICellAccessory.OutlineDisclosureOptions(style: .header, isHidden: !isCollapsible, reservedLayoutWidth: nil, tintColor: ThemeColors.shared.brand)
+        let options = UICellAccessory.OutlineDisclosureOptions(style: .header, isHidden: !isCollapsible, reservedLayoutWidth: nil, tintColor: ThemeColors.shared.brandTint)
         return .list(config, [.outlineDisclosure(displayed: .always, options: options)])
     }
 }

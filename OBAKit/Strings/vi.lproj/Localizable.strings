@@ -2120,8 +2120,6 @@
 "trip_page.stops_loading" = "Đang tải điểm dừng của chuyến đi này…";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "Danh sách điểm dừng của chuyến đi này hiện không khả dụng.";
-/* The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'. */
-"trip_page.title_fmt" = "Tuyến %1$@ đi %2$@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Xe %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */

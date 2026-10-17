@@ -270,6 +270,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// view model is observed directly by the view, so this is only for the
     /// action gates and the two pieces of state this controller owns.
     private func render() {
+        existingAlarm = lookUpAlarm()
         title = pageTitle
         rootView = TripPageRootView(
             viewModel: viewModel,
@@ -295,8 +296,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         let route = departure.routeShortName
         guard !route.isEmpty else { return nil }
         guard let headsign = departure.tripHeadsign, !headsign.isEmpty else { return route }
-        let fmt = OBALoc("trip_page.title_fmt", value: "Route %@ to %@", comment: "The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'.")
-        return String(format: fmt, route, headsign)
+        return TripCardView.routeToHeadsign(route, headsign)
     }
 
     // MARK: - StopSheetCollapsibleContent
@@ -376,7 +376,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.onSchedule = { [weak self] in self?.showSchedule() }
         actions.onAlarm = { [weak self] in
             guard let self else { return }
-            if let existingAlarm {
+            if let existingAlarm = self.existingAlarm {
                 removeAlarm(existingAlarm)
             } else {
                 showAlarmPicker()
@@ -545,9 +545,17 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// The alarm the rider set on this departure, from this page or the stop page.
     /// The button said "Add alarm" whether or not there was one, so pressing it
     /// again armed a second alarm, and the first couldn't be removed from here.
-    private var existingAlarm: Alarm? {
+    ///
+    /// Looked up once per `render()`: reading `alarms` decodes the whole store.
+    private var existingAlarm: Alarm?
+
+    private func lookUpAlarm() -> Alarm? {
         guard let departure, let regionID = application.currentRegion?.regionIdentifier else { return nil }
-        return AlarmVisitIdentity.alarm(for: departure, regionID: regionID, in: application.userDataStore.alarms)
+        let store = application.userDataStore
+        guard !store.alarms.isEmpty else { return nil }
+        // As the stop page does: an expired alarm has fired, so it's nothing to remove.
+        store.deleteExpiredAlarms()
+        return AlarmVisitIdentity.alarm(for: departure, regionID: regionID, in: store.alarms)
     }
 
     /// Mirrors `StopViewModel.cancelAlarm(for:)`: the server copy goes first, so

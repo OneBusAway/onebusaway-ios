@@ -30,7 +30,7 @@ struct AlarmControlView: View {
                 .frame(maxWidth: .infinity, minHeight: 46)
         }
         .buttonStyle(.borderedProminent)
-        .tint(Color(uiColor: ThemeColors.shared.brand))
+        .tint(Color(uiColor: ThemeColors.shared.brandTint))
         .foregroundStyle(.white)
         .font(.body.weight(.semibold))
     }

@@ -42,7 +42,7 @@ struct SettingsView: View {
                 Button(Strings.exportData, action: viewModel.exportData)
             }
         }
-        .tint(Color(ThemeColors.shared.brand))
+        .tint(Color(ThemeColors.shared.brandTint))
     }
 
     // MARK: - Map

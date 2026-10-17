@@ -2120,8 +2120,6 @@
 "trip_page.stops_loading" = "Загрузка остановок этого рейса…";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "Список остановок этого рейса сейчас недоступен.";
-/* The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'. */
-"trip_page.title_fmt" = "Маршрут %1$@ до %2$@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Транспорт %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */

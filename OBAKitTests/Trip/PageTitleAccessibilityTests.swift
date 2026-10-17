@@ -19,17 +19,11 @@ import OBAKitCore
 @Suite(.serialized)
 final class PageTitleAccessibilityTests: OBATestCase {
 
-    private var queue: OperationQueue!
     private var application: Application!
 
     override init() async throws {
         try await super.init()
-        queue = OperationQueue()
-        application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-    }
-
-    isolated deinit {
-        queue.cancelAllOperations()
+        application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: name))
     }
 
     /// The pushed stop page has no title in its bar (the header card carries the

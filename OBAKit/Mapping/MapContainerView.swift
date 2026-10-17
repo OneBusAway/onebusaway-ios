@@ -20,6 +20,7 @@ import UIKit
 final class MapContainerView: UIView {
     override var accessibilityElements: [Any]? {
         get { subviews.filter { !($0 is MKMapView) } + subviews.filter { $0 is MKMapView } }
-        set { super.accessibilityElements = newValue }
+        // Required to override a settable property; the order is always derived.
+        set {}
     }
 }

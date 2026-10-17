@@ -1072,8 +1072,7 @@ class StopViewModel: ObservableObject {
 
         var index: [String: Alarm] = [:]
         for departure in departures {
-            let candidate = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
-            if let match = alarmsByVisit[AlarmVisitIdentity(candidate)] {
+            if let match = alarmsByVisit[AlarmVisitIdentity(departure, regionID: region.regionIdentifier)] {
                 index[departure.id] = match
             }
         }

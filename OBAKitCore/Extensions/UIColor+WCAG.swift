@@ -36,31 +36,6 @@ public extension UIColor {
         return (lighter + 0.05) / (darker + 0.05)
     }
 
-    /// The receiver, darkened over a light `background` or lightened over a dark
-    /// one, in small steps until it reaches `minimumRatio` against it. Unchanged
-    /// when it already does. Mixing toward black or white keeps the hue, so a
-    /// brand colour stays recognisably itself.
-    func adjusted(toContrast minimumRatio: CGFloat, against background: UIColor) -> UIColor {
-        guard wcagContrastRatio(against: background) < minimumRatio else { return self }
-
-        let target: CGFloat = background.wcagRelativeLuminance > 0.18 ? 0 : 1
-        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
-        getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-
-        var candidate = self
-        for step in 1...20 {
-            let amount = CGFloat(step) / 20
-            candidate = UIColor(
-                red: red + (target - red) * amount,
-                green: green + (target - green) * amount,
-                blue: blue + (target - blue) * amount,
-                alpha: alpha
-            )
-            if candidate.wcagContrastRatio(against: background) >= minimumRatio { break }
-        }
-        return candidate
-    }
-
     /// Text color for content drawn over the receiver. Honors `preferred`
     /// (e.g. the agency's GTFS `route_text_color`) when it clears
     /// `minimumRatio`; otherwise returns black or white, whichever contrasts

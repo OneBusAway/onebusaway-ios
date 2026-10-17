@@ -2120,8 +2120,6 @@
 "trip_page.stops_loading" = "Chargement des arrêts de ce trajet…";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "La liste des arrêts de ce trajet n'est pas disponible pour le moment.";
-/* The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'. */
-"trip_page.title_fmt" = "Ligne %1$@ vers %2$@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Véhicule %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */

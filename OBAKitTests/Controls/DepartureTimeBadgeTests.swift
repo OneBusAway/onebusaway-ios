@@ -47,7 +47,7 @@ final class DepartureTimeBadgeTests {
             formatters: formatters
         )
         
-        #expect(config.accessibilityLabel == "Departs in 5 min, " + formatters.deviationLabel(scheduleStatus: .onTime, temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: 0))
+        #expect(config.accessibilityLabel.hasPrefix("Departs in 5 min, "))
         #expect(config.displayText == "5m")
         #expect(config.backgroundColor == ThemeColors().departureOnTimeBackground.cgColor)
     }

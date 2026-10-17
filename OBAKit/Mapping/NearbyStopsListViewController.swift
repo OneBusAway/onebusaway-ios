@@ -59,7 +59,21 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
         let image: UIImage?
         let type: ItemType
         /// What VoiceOver reads instead of the title and subtitle, when they'd say less.
+        /// Not part of the row's identity (see `==`): it carries the live distance, and
+        /// a row that changed identity on every location fix would be deleted and
+        /// re-inserted, taking VoiceOver focus with it.
         let accessibilityLabel: String?
+
+        static func == (lhs: Item, rhs: Item) -> Bool {
+            lhs.title == rhs.title && lhs.subtitle == rhs.subtitle && lhs.image == rhs.image && lhs.type == rhs.type
+        }
+
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(title)
+            hasher.combine(subtitle)
+            hasher.combine(image)
+            hasher.combine(type)
+        }
 
         init(headerForSection section: Section) {
             self.title = section.localizedTitle
@@ -182,7 +196,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
                     self?.onExpandSearchTapped?()
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(ThemeColors.shared.brand))
+                .tint(Color(ThemeColors.shared.brandTint))
                 .clipShape(Capsule())
             }
 

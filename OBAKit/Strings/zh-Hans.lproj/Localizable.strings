@@ -2120,8 +2120,6 @@
 "trip_page.stops_loading" = "正在加载本次车程的车站……";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "本次车程的车站列表当前不可用。";
-/* The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'. */
-"trip_page.title_fmt" = "%1$@号公交线路，开往%2$@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "车辆 %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */

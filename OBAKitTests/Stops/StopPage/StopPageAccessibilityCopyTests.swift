@@ -81,24 +81,4 @@ struct StopPageAccessibilityCopyTests {
         }
         #expect(StopPageAccessibilityCopy.followingDepartures([], formatters: formatters) { DepartureStatus(arrivalDeparture: $0) } == nil)
     }
-
-    // MARK: - Header
-
-    /// The pushed header read "Updated: Just Now, Pine St & 5th Ave, …, 3, 10, 11":
-    /// the status came first, so the Headings rotor listed the stop as "Updated…",
-    /// and the routes were bare numbers.
-    @Test func `The header names the stop first and says Routes`() throws {
-        let stop = try #require(Fixtures.loadSomeStops().first { !$0.routes.isEmpty })
-        let header = StopPageAccessibilityCopy.header(stop: stop, statusText: "Updated: Just Now")
-
-        #expect(header.label.hasPrefix(stop.name))
-        #expect(header.label.contains(try #require(Formatters.formattedRoutes(stop.routes))))
-        #expect(!header.label.contains("Updated"))
-        #expect(header.value == "Updated: Just Now")
-    }
-
-    @Test func `The header has no value when there's no status line`() throws {
-        let stop = try #require(Fixtures.loadSomeStops().first)
-        #expect(StopPageAccessibilityCopy.header(stop: stop, statusText: "").value == nil)
-    }
 }

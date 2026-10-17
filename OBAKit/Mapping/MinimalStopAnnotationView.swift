@@ -79,6 +79,9 @@ class MinimalStopAnnotationView: MKAnnotationView {
 
         arrivalBadge.configure(arrival)
         arrivalBadge.isHidden = arrival == nil
+        // The pin is the VoiceOver element, not the badge on it, so the badge's
+        // time and status ("Arrives in 5 min, 3 min late") are the pin's value.
+        accessibilityValue = arrival == nil ? nil : arrivalBadge.accessibilityLabel
         setNeedsLayout()
     }
 

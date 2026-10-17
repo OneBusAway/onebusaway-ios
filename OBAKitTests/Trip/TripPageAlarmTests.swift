@@ -24,18 +24,22 @@ final class TripPageAlarmTests: OBATestCase {
         return app
     }
 
+    private func addAlarm(for departure: ArrivalDeparture, in app: Application) throws {
+        let region = try #require(app.currentRegion)
+        let alarm = try Fixtures.loadAlarm()
+        alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
+        // In the future, so it isn't pruned as expired.
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 900), alarmOffset: 5)
+        app.userDataStore.add(alarm: alarm)
+    }
+
     @Test func `The alarm button knows when an alarm is set`() throws {
         let app = makeApplication()
-        let region = try #require(app.currentRegion)
 
         let before = try TripPageFixture.makeOnScreenPage(application: app)
         #expect(!before.rootView.hasAlarm)
 
-        let departure = try #require(before.viewModel.tripConvertible.arrivalDeparture)
-        let alarm = try Fixtures.loadAlarm()
-        alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
-        alarm.set(tripDate: Date(timeIntervalSinceNow: 900), alarmOffset: 5)
-        app.userDataStore.add(alarm: alarm)
+        try addAlarm(for: try #require(before.viewModel.tripConvertible.arrivalDeparture), in: app)
 
         let after = try TripPageFixture.makeOnScreenPage(application: app)
         #expect(after.rootView.hasAlarm)
@@ -44,13 +48,8 @@ final class TripPageAlarmTests: OBATestCase {
     /// An alarm for some other departure isn't this one's.
     @Test func `An alarm for another departure doesn't count`() throws {
         let app = makeApplication()
-        let region = try #require(app.currentRegion)
-
         let other = try #require(Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures_1_1121.json").arrivalsAndDepartures.first)
-        let alarm = try Fixtures.loadAlarm()
-        alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: other, regionID: region.regionIdentifier)
-        alarm.set(tripDate: Date(timeIntervalSinceNow: 900), alarmOffset: 5)
-        app.userDataStore.add(alarm: alarm)
+        try addAlarm(for: other, in: app)
 
         let page = try TripPageFixture.makeOnScreenPage(application: app)
         #expect(!page.rootView.hasAlarm)

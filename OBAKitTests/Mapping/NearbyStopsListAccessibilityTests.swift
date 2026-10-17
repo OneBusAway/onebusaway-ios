@@ -62,10 +62,11 @@ final class NearbyStopsListAccessibilityTests {
     @Test func `Stop rows give the distance from the rider when it's known`() throws {
         let stop = stops[0]
         dataSource.stops = [stop]
-        dataSource.userLocation = CLLocation(latitude: stop.location.coordinate.latitude + 0.002, longitude: stop.location.coordinate.longitude)
+        let rider = CLLocation(latitude: stop.location.coordinate.latitude + 0.002, longitude: stop.location.coordinate.longitude)
+        dataSource.userLocation = rider
 
         let row = try cells()[1]
-        let distance = NearbyStopsListViewController.distanceFormatter.string(fromDistance: stop.location.distance(from: try #require(dataSource.userLocation)))
+        let distance = NearbyStopsListViewController.distanceFormatter.string(fromDistance: stop.location.distance(from: rider))
         #expect(row.accessibilityLabel?.contains(distance) == true)
     }
 

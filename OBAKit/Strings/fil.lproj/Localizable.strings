@@ -2120,8 +2120,6 @@
 "trip_page.stops_loading" = "Nilo-load ang mga hintuan ng biyaheng ito…";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "Hindi available ngayon ang listahan ng mga hintuan ng biyaheng ito.";
-/* The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'. */
-"trip_page.title_fmt" = "Ruta %1$@ papuntang %2$@";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Sasakyan %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */

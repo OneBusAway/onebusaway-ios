@@ -43,7 +43,6 @@ struct AlarmVisitIdentity: Hashable {
 
     /// The stored alarm armed on `departure`'s visit, if there is one.
     static func alarm(for departure: ArrivalDeparture, regionID: Int, in alarms: [Alarm]) -> Alarm? {
-        guard !alarms.isEmpty else { return nil }
         let visit = AlarmVisitIdentity(departure, regionID: regionID)
         return alarms.first { $0.deepLink.map(AlarmVisitIdentity.init) == visit }
     }

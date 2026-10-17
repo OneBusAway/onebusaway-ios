@@ -103,18 +103,23 @@ struct TripCardView: View {
         .accessibilityAddTraits([.updatesFrequently, .isHeader])
     }
 
+    /// "Route 10 to Capitol Hill". Also the trip page's title.
+    static func routeToHeadsign(_ routeShortName: String, _ headsign: String) -> String {
+        let fmt = OBALoc(
+            "trip_page.card.a11y_no_arrival_fmt",
+            value: "Route %@ to %@",
+            comment: "VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. Also the trip page's title."
+        )
+        return String(format: fmt, routeShortName, headsign)
+    }
+
     /// "Arrives" rather than the departure list's "departs": this card is the one
     /// place the rider is tracking a specific vehicle toward their own stop.
     private var accessibilityText: String {
         guard let departure, let status, let timeDisplay else {
             // Reached from vehicle search: no stop, so no arrival to count down to.
             // Route and headsign are all there is to say.
-            let fmt = OBALoc(
-                "trip_page.card.a11y_no_arrival_fmt",
-                value: "Route %@ to %@",
-                comment: "VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time."
-            )
-            return [String(format: fmt, routeShortName, headsign), provenance]
+            return [Self.routeToHeadsign(routeShortName, headsign), provenance]
                 .compactMap { $0 }
                 .joined(separator: ", ")
         }

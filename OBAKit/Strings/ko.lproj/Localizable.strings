@@ -2120,8 +2120,6 @@
 "trip_page.stops_loading" = "이 운행의 정류장을 불러오는 중…";
 /* Shown when the trip's details came back with no stops in them. */
 "trip_page.stops_unavailable" = "지금은 이 운행의 정류장 목록을 사용할 수 없습니다.";
-/* The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'. */
-"trip_page.title_fmt" = "노선 %1$@, %2$@ 방면";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "차량 %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */

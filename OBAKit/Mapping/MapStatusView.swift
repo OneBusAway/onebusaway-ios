@@ -99,12 +99,12 @@ class MapStatusView: UIView {
     private func configure() {
         // Icon
         iconView = UIImageView.autolayoutNew()
-        iconView.tintColor = ThemeColors.shared.brand
+        iconView.tintColor = ThemeColors.shared.brandTint
 
         // Label
         detailLabel = UILabel.autolayoutNew()
         detailLabel.font = .preferredFont(forTextStyle: .headline)
-        detailLabel.textColor = ThemeColors.shared.brand
+        detailLabel.textColor = ThemeColors.shared.brandTint
         detailLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         // Stack

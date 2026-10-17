@@ -44,7 +44,6 @@ struct GroupedListView: View {
 
     @Environment(\.obaFormatters) private var formatters
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
     @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
@@ -239,13 +238,7 @@ struct GroupedListView: View {
     private func chips(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
         ForEach(group.chips, id: \.id) { chip in
             let chipStatus = statusProvider(chip)
-            HStack(spacing: 3) {
-                // The tint is the chip's only other sign of its status.
-                if differentiateWithoutColor {
-                    Image(systemName: chipStatus.glyphName).imageScale(.small)
-                }
-                Text(Formatters.shortMinutesText(chip.arrivalDepartureMinutes))
-            }
+            StatusGlyphLabel(text: Formatters.shortMinutesText(chip.arrivalDepartureMinutes), status: chipStatus)
                 .font(.caption.weight(.heavy)).monospacedDigit()
                 .foregroundStyle(Color(uiColor: chipStatus.color))
                 .padding(.horizontal, 8).padding(.vertical, 3)
@@ -425,7 +418,7 @@ struct GroupedListView: View {
         }
         // The alarm pill shows a set alarm only as a filled bell.
         if alarmLookup(group.next) != nil {
-            label += ", " + OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active")
+            label += ", " + StopPageAccessibilityCopy.alarmSet
         }
         // The chips, which otherwise reach VoiceOver only as a count. Their own
         // sentences, after a full stop, so they don't run on from the time above.

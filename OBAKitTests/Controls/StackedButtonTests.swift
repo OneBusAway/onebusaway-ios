@@ -50,7 +50,7 @@ final class StackedButtonTests {
         let textLabel = stackedButton.textLabel
         
         #expect(textLabel.numberOfLines == 1)
-        #expect(textLabel.textColor == ThemeColors.shared.brand)
+        #expect(textLabel.textColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)) == ThemeColors.shared.brandTint.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)))
         #expect(textLabel.textAlignment == .center)
         #expect(textLabel.isUserInteractionEnabled == false)
         #expect(textLabel.contentCompressionResistancePriority(for: .vertical) == .required)
@@ -67,7 +67,7 @@ final class StackedButtonTests {
         #expect(imageView.contentHuggingPriority(for: .horizontal) == .required)
         #expect(imageView.contentCompressionResistancePriority(for: .horizontal) == .required)
         #expect(imageView.isUserInteractionEnabled == false)
-        #expect(imageView.tintColor == ThemeColors.shared.brand)
+        #expect(imageView.tintColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)) == ThemeColors.shared.brandTint.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)))
     }
     
     @Test func `Image view can set image`() {
