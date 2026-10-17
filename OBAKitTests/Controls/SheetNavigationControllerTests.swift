@@ -56,7 +56,9 @@ struct SheetNavigationControllerTests {
         #expect(result == UIEdgeInsets(top: 8, left: 0, bottom: 4, right: 0))
     }
 
-    @Test @MainActor func onlyAPresentedSheetOptsOutOfVerticalBars() {
+    @Test @MainActor func anUnpresentedSheetKeepsAutomaticVerticalBars() {
+        // The presented half (`.disabled`) needs a window and a presentation, which a hosted
+        // test can't drive on a vertical-bar device; this pins the pushed-onto-a-stack case.
         guard #available(iOS 27.1, *) else { return }
         let unpresented = SheetHostingController(rootView: EmptyView())
         #expect(unpresented.preferredVerticalBarBehavior == .automatic)

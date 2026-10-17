@@ -73,6 +73,32 @@ class SheetNavigationController: UINavigationController {
         nil
     }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        registerForVerticalBarChanges { [weak self] in self?.resetHorizontalSafeAreaCorrections() }
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        resetHorizontalSafeAreaCorrections()
+    }
+
+    /// UIKit clamps a safe area inset at zero, so once a correction has brought a page's inset
+    /// to zero, the page no longer shows how much of it is still needed. The column only comes
+    /// and goes with the window's size or the vertical bar traits, so at those moments the
+    /// corrections are dropped and the next layout pass measures afresh.
+    private func resetHorizontalSafeAreaCorrections() {
+        for viewController in viewControllers {
+            var additional = viewController.additionalSafeAreaInsets
+            additional.left = 0
+            additional.right = 0
+            if additional != viewController.additionalSafeAreaInsets {
+                viewController.additionalSafeAreaInsets = additional
+            }
+        }
+        viewIfLoaded?.setNeedsLayout()
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         for viewController in viewControllers where viewController.isViewLoaded {
@@ -89,7 +115,8 @@ class SheetNavigationController: UINavigationController {
         matchHorizontalSafeArea(of: viewController)
     }
 
-    /// Caps a page's leading and trailing safe area at this controller's own.
+    /// Caps a page's leading and trailing safe area at this controller's own. It owns the
+    /// pages' left and right `additionalSafeAreaInsets`; a page can't set its own.
     private func matchHorizontalSafeArea(of viewController: UIViewController) {
         guard viewController.view.window != nil else { return }
         let additional = Self.correctedAdditionalSafeArea(
