@@ -40,6 +40,31 @@ struct ActionBarLabelLayoutTests {
         try expectWellFormedButtons(in: bar, count: 4)
     }
 
+    /// At the default text size every caption fits on one line, even with all four
+    /// buttons showing (#1577). "Add Bookmark" and "View schedule" wrapped; the
+    /// fuller wording stays in their VoiceOver labels.
+    @Test func `trip page action bar captions fit on one line with all four buttons`() throws {
+        let bar = TripActionBar(
+            canStartLiveActivity: false, isTrackingLiveActivity: false,
+            canSchedule: true, canAlarm: true, hasAlarm: false, canReportGhostBus: true,
+            onLiveActivity: {}, onBookmark: {}, onSchedule: {}, onAlarm: {}, onReportGhostBus: {}
+        )
+        // 375 pt is the narrowest width that still lays the four out in one row.
+        for width: CGFloat in [402, 375] {
+            let buttons = try measuredButtons(in: bar, size: CGSize(width: width, height: 260)).buttons
+            try #require(buttons.count == 4, "\(width) pt: found \(buttons.count) buttons")
+            #expect(buttons.map(\.captionLines) == [1, 1, 1, 1], "\(width) pt: caption line counts \(buttons.map(\.captionLines))")
+        }
+    }
+
+    /// The captions are short; what VoiceOver says is not.
+    @Test func `trip page action captions are short and their VoiceOver labels are not`() {
+        #expect(TripActionBar.bookmarkTitle == "Bookmark")
+        #expect(TripActionBar.bookmarkAccessibilityLabel == Strings.addBookmark)
+        #expect(TripActionBar.scheduleTitle == "Schedule")
+        #expect(TripActionBar.scheduleAccessibilityLabel == "View schedule")
+    }
+
     /// The stop page's toolbar never had the bug — it pins its icon height and shrinks
     /// its captions to fit — so this one is a guard, not a fix.
     @Test func `stop page toolbar labels sit inside their buttons, on one baseline`() throws {
@@ -82,11 +107,16 @@ struct ActionBarLabelLayoutTests {
 
     // MARK: - Measuring
 
-    private func expectWellFormedButtons<V: View>(in bar: V, count: Int) throws {
-        let size = CGSize(width: 402, height: 200)
+    /// The bar's buttons, and the render's pixels per point.
+    private func measuredButtons<V: View>(in bar: V, size: CGSize) throws -> (buttons: [ActionBarPixels.MeasuredButton], scale: CGFloat) {
         let render = try HostedRender(VStack { Spacer(); bar }, size: size)
         let scale = CGFloat(render.width) / size.width
-        let buttons = try #require(ActionBarPixels(render: render, scale: scale).buttons())
+        return (try #require(ActionBarPixels(render: render, scale: scale).buttons()), scale)
+    }
+
+    private func expectWellFormedButtons<V: View>(in bar: V, count: Int) throws {
+        let size = CGSize(width: 402, height: 200)
+        let (buttons, scale) = try measuredButtons(in: bar, size: size)
         try #require(buttons.count == count, "found \(buttons.count) buttons")
 
         for (index, button) in buttons.enumerated() {
@@ -116,6 +146,8 @@ private struct ActionBarPixels {
         /// Last row of the caption's first line.
         let firstLineBottom: Int
         let iconCenter: Int
+        /// Lines of caption under the icon.
+        let captionLines: Int
     }
 
     /// The bar is ~247; the frosted fill and its rim ~215–232.
@@ -190,7 +222,8 @@ private struct ActionBarPixels {
         return MeasuredButton(
             tightestInset: tightest,
             firstLineBottom: blocks[1].upperBound,
-            iconCenter: (icon.lowerBound + icon.upperBound) / 2
+            iconCenter: (icon.lowerBound + icon.upperBound) / 2,
+            captionLines: blocks.count - 1
         )
     }
 }

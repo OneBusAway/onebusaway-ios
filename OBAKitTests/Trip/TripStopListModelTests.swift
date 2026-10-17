@@ -412,4 +412,109 @@ struct TripStopListModelTests {
         #expect(countdown.stopIndex == 1)
         #expect(countdown.minutes == 8)
     }
+
+    // MARK: - Collapsed runs (#1576)
+
+    /// Twelve stops, A through L, one minute apart.
+    private var long: [StopTimeStub] { line((0..<12).map { String(UnicodeScalar(65 + $0)!) }) }
+
+    /// What the list draws: a stop's ID, or a collapsed run as `[n]` (`[n+]` expanded).
+    private func shape(_ model: TripStopListModel, expanded: Set<String> = []) -> [String] {
+        model.items(expanded: expanded).map { item in
+            switch item {
+            case .stop(let row): row.stopID
+            case .group(let group, false): "[\(group.rows.count)]"
+            case .group(let group, true): "[\(group.rows.count)+]"
+            }
+        }
+    }
+
+    @Test func `Without a live vehicle nothing collapses`() {
+        let model = make(long, userStopID: "H")
+
+        #expect(model.groups.isEmpty)
+        #expect(shape(model) == long.map(\.stopID))
+    }
+
+    @Test func `Stops the vehicle has passed collapse into one run`() throws {
+        let model = make(long, closestStopID: "F")
+
+        #expect(shape(model) == ["[5]", "F", "G", "H", "I", "J", "K", "L"])
+        let group = try #require(model.groups.first)
+        #expect(group.kind == .passed)
+        #expect(group.rows.map(\.stopID) == ["A", "B", "C", "D", "E"])
+    }
+
+    /// A one-stop run would trade a stop for a row that says "1 stop".
+    @Test func `A single passed stop stays a stop`() {
+        let model = make(long, closestStopID: "B")
+
+        #expect(model.groups.isEmpty)
+        #expect(shape(model).prefix(2) == ["A", "B"])
+    }
+
+    @Test func `More than three stops between the vehicle and your stop collapse`() {
+        let model = make(long, userStopID: "H", closestStopID: "C")
+
+        #expect(shape(model) == ["[2]", "C", "[4]", "H", "I", "J", "K", "L"])
+        #expect(model.groups.map(\.kind) == [.passed, .approaching])
+        #expect(model.groups.last?.rows.map(\.stopID) == ["D", "E", "F", "G"])
+    }
+
+    @Test func `Three stops between the vehicle and your stop stay listed`() {
+        let model = make(long, userStopID: "G", closestStopID: "C")
+
+        #expect(shape(model) == ["[2]", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"])
+    }
+
+    /// The vehicle's stop and your stop are never inside a run, even once the
+    /// vehicle has gone past you.
+    @Test func `Your stop stays visible when the vehicle has passed it`() {
+        let model = make(long, userStopID: "C", closestStopID: "H")
+
+        #expect(shape(model) == ["[2]", "C", "[4]", "H", "I", "J", "K", "L"])
+        #expect(model.groups.map(\.kind) == [.passed, .passed])
+        #expect(Set(model.groups.map(\.id)).count == 2)
+    }
+
+    @Test func `An expanded run lists its stops under the run`() throws {
+        let model = make(long, userStopID: "H", closestStopID: "C")
+        let passed = try #require(model.groups.first?.id)
+
+        #expect(shape(model, expanded: [passed]) == ["[2+]", "A", "B", "C", "[4]", "H", "I", "J", "K", "L"])
+    }
+
+    /// Expansion is remembered by id, so a run the rider opened has to keep its
+    /// id while the vehicle moves along and the run grows.
+    @Test func `A run keeps its id as the vehicle advances`() {
+        let before = make(long, userStopID: "K", closestStopID: "D")
+        let after = make(long, userStopID: "K", closestStopID: "E")
+
+        #expect(before.groups.map(\.id) == after.groups.map(\.id))
+    }
+
+    /// The run that ends at the vehicle is the same run as the vehicle passes
+    /// the rider's stop and splits it off, so it keeps its id.
+    @Test func `The run behind the vehicle keeps its id when it passes your stop`() {
+        let before = make(long, userStopID: "D", closestStopID: "D")
+        let after = make(long, userStopID: "D", closestStopID: "H")
+
+        #expect(before.groups.map(\.id) == after.groups.map(\.id).suffix(1))
+        #expect(shape(after, expanded: Set(before.groups.map(\.id))) == ["[3]", "D", "[3+]", "E", "F", "G", "H", "I", "J", "K", "L"])
+    }
+
+    @Test func `A run spans its first and last stops' times`() throws {
+        let model = make(long, closestStopID: "F")
+        let group = try #require(model.groups.first)
+
+        #expect(group.firstDate == Date(timeIntervalSince1970: 0))
+        #expect(group.lastDate == Date(timeIntervalSince1970: 4 * 60))
+    }
+
+    @Test func `Every item has a distinct id`() {
+        let model = make(long, userStopID: "H", closestStopID: "C")
+        let items = model.items(expanded: Set(model.groups.map(\.id)))
+
+        #expect(Set(items.map(\.id)).count == items.count)
+    }
 }

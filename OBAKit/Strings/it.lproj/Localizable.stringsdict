@@ -520,5 +520,59 @@
 			<string>%d altri</string>
 		</dict>
 	</dict>
+	<key>trip_page.stop_list.run_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>many</key>
+			<string>%d fermate</string>
+			<key>one</key>
+			<string>1 fermata</string>
+			<key>other</key>
+			<string>%d fermate</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_passed_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>many</key>
+			<string>%d fermate superate</string>
+			<key>one</key>
+			<string>1 fermata superata</string>
+			<key>other</key>
+			<string>%d fermate superate</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>many</key>
+			<string>%d fermate prima della tua fermata</string>
+			<key>one</key>
+			<string>1 fermata prima della tua fermata</string>
+			<key>other</key>
+			<string>%d fermate prima della tua fermata</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

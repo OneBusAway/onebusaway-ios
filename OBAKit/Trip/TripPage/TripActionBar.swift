@@ -135,13 +135,36 @@ struct TripActionBar: View {
     /// spare; scales with the caption.
     @ScaledMetric(relativeTo: .caption) private var minimumColumnWidth: CGFloat = 74
 
+    // Captions short enough that all four fit on one line at the default text size;
+    // VoiceOver keeps the fuller wording, which costs it nothing (#1577).
+
+    static var bookmarkTitle: String {
+        OBALoc("trip_page.bookmark", value: "Bookmark", comment: "Short caption on the trip page button that bookmarks this trip. Keep it to one short word: it shares a row with three other buttons.")
+    }
+
+    static var bookmarkAccessibilityLabel: String { Strings.addBookmark }
+
+    static var scheduleTitle: String {
+        OBALoc("trip_page.schedule", value: "Schedule", comment: "Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons.")
+    }
+
+    static var scheduleAccessibilityLabel: String {
+        OBALoc("trip_page.view_schedule", value: "View schedule", comment: "VoiceOver label for the trip page button opening the route's schedule.")
+    }
+
     @ViewBuilder
     private var secondaryButtons: some View {
-        secondaryButton(title: Strings.addBookmark, systemImage: "bookmark", action: onBookmark)
+        secondaryButton(
+            title: Self.bookmarkTitle,
+            accessibilityLabel: Self.bookmarkAccessibilityLabel,
+            systemImage: "bookmark",
+            action: onBookmark
+        )
 
         if canSchedule {
             secondaryButton(
-                title: OBALoc("trip_page.view_schedule", value: "View schedule", comment: "Trip page button opening the route's schedule."),
+                title: Self.scheduleTitle,
+                accessibilityLabel: Self.scheduleAccessibilityLabel,
                 systemImage: "calendar",
                 action: onSchedule
             )
@@ -185,11 +208,21 @@ struct TripActionBar: View {
         .accessibilityLabel(Strings.more)
     }
 
-    private func secondaryButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+    private func secondaryButton(
+        title: String,
+        accessibilityLabel: String? = nil,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             actionLabel(title: title, systemImage: systemImage)
         }
         .buttonStyle(FrostedActionButtonStyle(shape: Self.buttonShape))
+        .accessibilityLabel(accessibilityLabel ?? title)
+        // Voice Control matches spoken phrases against these, not the label. When the
+        // label is longer than the caption, "Tap Schedule" — the word on screen — would
+        // otherwise match nothing in locales where the two share no words.
+        .accessibilityInputLabels([title, accessibilityLabel].compactMap { $0 })
     }
 
     /// The shared icon-over-caption layout for everything in the bar's secondary row —

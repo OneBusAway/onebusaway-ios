@@ -2060,6 +2060,8 @@
 "stops_controller.directions_to_here" = "Trasa do tego miejsca";
 /* Header above the trip's full stop list. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.all_stops_fmt" = "Wszystkie przystanki (%d)";
+/* Short caption on the trip page button that bookmarks this trip. Keep it to one short word: it shares a row with three other buttons. */
+"trip_page.bookmark" = "Zakładka";
 /* VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status. */
 "trip_page.card.a11y_fmt" = "Linia %1$@ do %2$@, przyjazd za %3$d minut, %4$@";
 /* VoiceOver label for the trip page's header card when the trip was reached without a stop, so there is no arrival time. */
@@ -2082,14 +2084,28 @@
 "trip_page.remove_alarm" = "Usuń alarm";
 /* Trip page menu item for reporting a scheduled vehicle that never arrived. */
 "trip_page.report_ghost_bus" = "Zgłoś autobus widmo";
+/* Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons. */
+"trip_page.schedule" = "Rozkład";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "już minięty";
+/* VoiceOver label for a collapsed run of stops between the vehicle and the rider's stop, e.g. '5 stops before your stop'. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.stop_list.a11y_run_approaching_fmt" = "przystanki przed Twoim przystankiem: %d";
+/* VoiceOver label for a collapsed run of stops the vehicle has passed, e.g. '12 passed stops'. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.stop_list.a11y_run_passed_fmt" = "minięte przystanki: %d";
+/* VoiceOver time range of a collapsed run of stops. %1$@ is the first stop's time, %2$@ the last's, e.g. '9:52 AM to 10:22 AM'. */
+"trip_page.stop_list.a11y_run_time_range_fmt" = "od %1$@ do %2$@";
 /* VoiceOver clause on the final stop of the trip. */
 "trip_page.stop_list.a11y_terminal" = "przystanek końcowy";
 /* VoiceOver clause on the stop the vehicle is currently at. */
 "trip_page.stop_list.a11y_vehicle_here" = "pojazd jest tutaj";
 /* VoiceOver clause on the rider's own stop. */
 "trip_page.stop_list.a11y_your_stop" = "Twój przystanek";
+/* Count in a collapsed run of stops on the trip page, e.g. '12 stops'. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"trip_page.stop_list.run_count_fmt" = "przystanki: %d";
+/* A collapsed run of stops on the trip page: %1$@ is the count ('12 stops'), %2$@ the time range ('9:52 AM – 10:22 AM'). */
+"trip_page.stop_list.run_summary_fmt" = "%1$@ • %2$@";
+/* Time range of a collapsed run of stops on the trip page. %1$@ is the first stop's time, %2$@ the last's. */
+"trip_page.stop_list.run_time_range_fmt" = "%1$@ – %2$@";
 /* Header above the trip's stop list before the stops are known. */
 "trip_page.stops_header" = "Przystanki";
 /* Shown while the trip's stop list is being fetched. */
@@ -2098,7 +2114,7 @@
 "trip_page.stops_unavailable" = "Lista przystanków tego kursu jest teraz niedostępna.";
 /* Identifies a vehicle by its ID on the trip page, e.g. 'Vehicle 6821'. */
 "trip_page.vehicle_label_fmt" = "Pojazd %@";
-/* Trip page button opening the route's schedule. */
+/* VoiceOver label for the trip page button opening the route's schedule. */
 "trip_page.view_schedule" = "Zobacz rozkład";
 /* Shown when the vehicle is arriving at the user's stop */
 "trip_progress.arriving_now" = "Przyjeżdża teraz";

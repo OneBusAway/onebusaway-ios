@@ -32,9 +32,9 @@ protocol TripStopListEntry {
 /// This is the whole-trip counterpart to `ApproachSlice`. That type answers "what
 /// are the few stops leading up to mine", which is a stop-page question; this one
 /// answers "what does this entire trip look like, and where is the bus on it",
-/// which is the trip page's. They deliberately stay separate: the windowing,
-/// elision, and gap-marker rules that make `ApproachSlice` useful are exactly the
-/// rules a full list must not apply.
+/// which is the trip page's. They deliberately stay separate: `ApproachSlice`
+/// windows the trip down to a few stops, where this keeps every stop and only
+/// folds runs of them behind rows the rider can expand (see `groups`).
 struct TripStopListModel {
 
     struct Row: Identifiable {
@@ -66,6 +66,8 @@ struct TripStopListModel {
     /// Where the vehicle is, or `nil` on a trip with no live position — in which
     /// case no stop is passed, because nothing is known to have happened yet.
     let vehicleIndex: Int?
+    /// The row marked as the rider's stop, if any.
+    let userIndex: Int?
 
     static func make<S: TripStopListEntry>(
         stopTimes: [S],
@@ -92,7 +94,7 @@ struct TripStopListModel {
             )
         }
 
-        return TripStopListModel(rows: rows, vehicleIndex: vehicleIndex)
+        return TripStopListModel(rows: rows, vehicleIndex: vehicleIndex, userIndex: userIndex)
     }
 
     /// The rider's rows on a trip, as the UIKit trip page needs them. One
@@ -284,6 +286,112 @@ struct TripStopListModel {
             return stopSequence
         }
         return stopTimes.firstIndex { $0.stopID == stopID }
+    }
+}
+
+// MARK: - Collapsed runs
+
+/// The trip page hides the stops a rider rarely needs behind one expandable row
+/// each (#1576): the stops the vehicle has already passed, and a long stretch
+/// between the vehicle and the rider's stop. The vehicle's stop and the
+/// rider's stop are never inside a run.
+extension TripStopListModel {
+
+    enum CollapsedGroupKind {
+        /// Behind the vehicle. Drawn gray, like the stops inside it.
+        case passed
+        /// Between the vehicle and the rider's stop. Drawn in the route color.
+        case approaching
+    }
+
+    /// Consecutive rows drawn as one expandable row.
+    struct CollapsedGroup: Identifiable {
+        /// Names the run by what it is, not where it starts, so a run the rider
+        /// expanded stays expanded as the vehicle moves along and the run grows.
+        let id: String
+        let kind: CollapsedGroupKind
+        /// Where the run sits in the model's rows. Never empty.
+        let range: Range<Int>
+        let rows: ArraySlice<Row>
+
+        var isPassed: Bool { kind == .passed }
+        var firstDate: Date? { rows.lazy.compactMap(\.date).first }
+        var lastDate: Date? { rows.reversed().lazy.compactMap(\.date).first }
+    }
+
+    /// One line of the list as drawn: a stop, or a run with its stops listed
+    /// beneath it when expanded.
+    enum Item: Identifiable {
+        case stop(Row)
+        case group(CollapsedGroup, isExpanded: Bool)
+
+        var id: String {
+            switch self {
+            case .stop(let row): row.id
+            case .group(let group, _): "group-\(group.id)"
+            }
+        }
+
+        /// Whether the line leaving this item's foot is behind the vehicle.
+        var isPassed: Bool {
+            switch self {
+            case .stop(let row): row.isPassed
+            case .group(let group, _): group.isPassed
+            }
+        }
+    }
+
+    /// A run of passed stops shorter than this stays listed: one stop folded
+    /// into a row saying "1 stop" saves nothing.
+    static let minimumPassedRun = 2
+
+    /// More stops than this between the vehicle and the rider's stop collapse.
+    static let maximumApproachingStops = 3
+
+    /// The runs to collapse, in list order.
+    var groups: [CollapsedGroup] {
+        guard let vehicleIndex else { return [] }
+
+        // Passed stops, split around the rider's stop when the vehicle has
+        // already been through it. The run that ends at the vehicle is named
+        // the same either way: it is the run that grows as the vehicle moves.
+        var passedRuns = [(id: "passed", range: 0..<vehicleIndex)]
+        if let userIndex, userIndex < vehicleIndex {
+            passedRuns = [
+                (id: "passed-before-your-stop", range: 0..<userIndex),
+                (id: "passed", range: (userIndex + 1)..<vehicleIndex)
+            ]
+        }
+        var groups = passedRuns
+            .filter { $0.range.count >= Self.minimumPassedRun }
+            .map { group(id: $0.id, kind: .passed, range: $0.range) }
+
+        if let userIndex, userIndex - vehicleIndex - 1 > Self.maximumApproachingStops {
+            groups.append(group(id: "approaching", kind: .approaching, range: (vehicleIndex + 1)..<userIndex))
+        }
+
+        return groups
+    }
+
+    /// The list as drawn, given which runs the rider has expanded.
+    func items(expanded: Set<CollapsedGroup.ID>) -> [Item] {
+        var items: [Item] = []
+        var next = 0
+        for group in groups {
+            items += rows[next..<group.range.lowerBound].map(Item.stop)
+            let isExpanded = expanded.contains(group.id)
+            items.append(.group(group, isExpanded: isExpanded))
+            if isExpanded {
+                items += group.rows.map(Item.stop)
+            }
+            next = group.range.upperBound
+        }
+        items += rows[next...].map(Item.stop)
+        return items
+    }
+
+    private func group(id: String, kind: CollapsedGroupKind, range: Range<Int>) -> CollapsedGroup {
+        CollapsedGroup(id: id, kind: kind, range: range, rows: rows[range])
     }
 }
 

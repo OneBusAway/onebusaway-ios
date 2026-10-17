@@ -652,5 +652,65 @@
 			<string>ещё %d</string>
 		</dict>
 	</dict>
+	<key>trip_page.stop_list.run_count_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d остановки</string>
+			<key>many</key>
+			<string>%d остановок</string>
+			<key>one</key>
+			<string>%d остановка</string>
+			<key>other</key>
+			<string>%d остановки</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_passed_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d пройденные остановки</string>
+			<key>many</key>
+			<string>%d пройденных остановок</string>
+			<key>one</key>
+			<string>%d пройденная остановка</string>
+			<key>other</key>
+			<string>%d пройденной остановки</string>
+		</dict>
+	</dict>
+	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>%d остановки до вашей</string>
+			<key>many</key>
+			<string>%d остановок до вашей</string>
+			<key>one</key>
+			<string>%d остановка до вашей</string>
+			<key>other</key>
+			<string>%d остановки до вашей</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
