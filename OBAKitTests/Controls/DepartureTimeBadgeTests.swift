@@ -43,12 +43,30 @@ final class DepartureTimeBadgeTests {
             arrivalDepartureStatus: .departing,
             temporalState: .future,
             scheduleStatus: .onTime,
+            scheduleDeviation: 0,
             formatters: formatters
         )
         
-        #expect(config.accessibilityLabel == "Departs in 5 min")
+        #expect(config.accessibilityLabel == "Departs in 5 min, " + formatters.deviationLabel(scheduleStatus: .onTime, temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: 0))
         #expect(config.displayText == "5m")
         #expect(config.backgroundColor == ThemeColors().departureOnTimeBackground.cgColor)
+    }
+
+    /// Early, late and scheduled-only were told apart only by the badge's fill.
+    @Test func `The badge says whether the vehicle is late or only scheduled`() {
+        let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors())
+
+        let late = DepartureTimeBadge.Configuration(
+            arrivalDepartureMinutes: 5, arrivalDepartureStatus: .arriving, temporalState: .future,
+            scheduleStatus: .delayed, scheduleDeviation: 3, formatters: formatters
+        )
+        #expect(late.accessibilityLabel.contains("3 min late"))
+
+        let scheduled = DepartureTimeBadge.Configuration(
+            arrivalDepartureMinutes: 5, arrivalDepartureStatus: .arriving, temporalState: .future,
+            scheduleStatus: .unknown, scheduleDeviation: 0, formatters: formatters
+        )
+        #expect(scheduled.accessibilityLabel.contains(Strings.scheduledNotRealTime))
     }
 
     @Test func testBadgeInitialization() {

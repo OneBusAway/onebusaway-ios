@@ -21,6 +21,26 @@ import OBAKitCore
 /// "5 minut". `locale` is injectable so tests can exercise a locale whose categories
 /// differ from the root's.
 enum StopPageAccessibilityCopy {
+    /// The departures after a route card's next one, as its chips show them:
+    /// "Arrives in 12 min, live tracking, 3 min late." for each. `nil` when there
+    /// are none.
+    static func followingDepartures(
+        _ departures: [ArrivalDeparture],
+        formatters: Formatters,
+        status: (ArrivalDeparture) -> DepartureStatus
+    ) -> String? {
+        guard !departures.isEmpty else { return nil }
+        return departures.map { departure in
+            let time = formatters.explanationForArrivalDeparture(
+                tempuraState: departure.temporalState,
+                arrivalDepartureStatus: departure.arrivalDepartureStatus,
+                arrivalDepartureMinutes: departure.arrivalDepartureMinutes
+            )
+            return time + ", " + status(departure).accessibilityStatusDescription + "."
+        }
+        .joined(separator: " ")
+    }
+
     /// The pushed header's heading. The label is what the map pin says (name,
     /// direction, "Routes: …", stop ID) so the Headings rotor lists the stop by
     /// name. The "Updated: …" line is the value: it changes every few seconds,

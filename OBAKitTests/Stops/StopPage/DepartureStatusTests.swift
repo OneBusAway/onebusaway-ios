@@ -38,4 +38,20 @@ final class DepartureStatusTests {
         #expect(status.color == ThemeColors.shared.departureEarly)
         #expect(status.label == "3 min early")
     }
+
+    /// Differentiate Without Color: each status gets its own glyph, so the chips
+    /// don't rely on their tint.
+    @Test func `Each status has a distinct glyph`() {
+        let glyphs = [
+            DepartureStatus(isRealTime: true, scheduleStatus: .onTime, deviationMinutes: 0),
+            DepartureStatus(isRealTime: true, scheduleStatus: .early, deviationMinutes: -2),
+            DepartureStatus(isRealTime: true, scheduleStatus: .delayed, deviationMinutes: 4),
+            DepartureStatus(isRealTime: false, scheduleStatus: .unknown, deviationMinutes: 0)
+        ].map(\.glyphName)
+
+        #expect(Set(glyphs).count == 4)
+        for glyph in glyphs {
+            #expect(UIImage(systemName: glyph) != nil, "\(glyph) isn't an SF Symbol")
+        }
+    }
 }

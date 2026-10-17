@@ -65,6 +65,23 @@ struct StopPageAccessibilityCopyTests {
         #expect(!text.contains("next arrival"))
     }
 
+    // MARK: - Route-mode chips
+
+    /// The chips after a route card's next departure ("12m 25m") were tinted by
+    /// status and never spoken at all.
+    @Test func `Following departures are spoken with their status`() throws {
+        let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors())
+        let departures = Array(try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures_1_1121.json").arrivalsAndDepartures.prefix(2))
+        try #require(departures.count == 2)
+
+        let text = try #require(StopPageAccessibilityCopy.followingDepartures(departures, formatters: formatters) { DepartureStatus(arrivalDeparture: $0) })
+        for departure in departures {
+            #expect(text.contains(DepartureStatus(arrivalDeparture: departure).accessibilityStatusDescription))
+            #expect(text.contains(String(abs(departure.arrivalDepartureMinutes))))
+        }
+        #expect(StopPageAccessibilityCopy.followingDepartures([], formatters: formatters) { DepartureStatus(arrivalDeparture: $0) } == nil)
+    }
+
     // MARK: - Header
 
     /// The pushed header read "Updated: Just Now, Pine St & 5th Ave, …, 3, 10, 11":

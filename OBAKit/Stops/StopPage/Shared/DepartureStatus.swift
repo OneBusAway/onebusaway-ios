@@ -67,6 +67,18 @@ struct DepartureStatus {
         }
     }
 
+    /// Shown beside a countdown chip when Differentiate Without Color is on, so
+    /// the status doesn't rest on the chip's tint alone.
+    var glyphName: String {
+        guard isRealTime else { return "clock" }
+        switch scheduleStatus {
+        case .onTime: return "checkmark"
+        case .early: return "hare.fill"
+        case .delayed: return "tortoise.fill"
+        default: return "clock"
+        }
+    }
+
     var accessibilityStatusDescription: String {
         if isRealTime {
             let fmt = OBALoc("stop_page.status.a11y_live_fmt", value: "live tracking, %@", comment: "VoiceOver status suffix for a live departure. %@ is the adherence label.")

@@ -19,6 +19,7 @@ struct BookmarkCardView: View {
 
     @Environment(\.obaFormatters) private var formatters
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @State private var flashing = false
     @State private var flashDismissal: Task<Void, Never>?
     /// Snapshot of the trip IDs that triggered the current flash. The row is
@@ -239,9 +240,15 @@ struct BookmarkCardView: View {
         let status = DepartureStatus(arrivalDeparture: departure)
         let color = Color(uiColor: status.color)
         let minutes = max(0, departure.arrivalDepartureMinutes)
-        return Text(minutes == 0
-             ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
-             : Formatters.shortMinutesText(minutes))
+        return HStack(spacing: 3) {
+            // The tint is the chip's only other sign of its status.
+            if differentiateWithoutColor {
+                Image(systemName: status.glyphName).imageScale(.small)
+            }
+            Text(minutes == 0
+                 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
+                 : Formatters.shortMinutesText(minutes))
+        }
             .font(.caption.weight(.heavy))
             .monospacedDigit()
             .foregroundStyle(color)

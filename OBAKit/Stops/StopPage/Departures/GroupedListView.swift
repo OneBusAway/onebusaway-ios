@@ -44,6 +44,7 @@ struct GroupedListView: View {
 
     @Environment(\.obaFormatters) private var formatters
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
     @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
@@ -238,7 +239,13 @@ struct GroupedListView: View {
     private func chips(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
         ForEach(group.chips, id: \.id) { chip in
             let chipStatus = statusProvider(chip)
-            Text(Formatters.shortMinutesText(chip.arrivalDepartureMinutes))
+            HStack(spacing: 3) {
+                // The tint is the chip's only other sign of its status.
+                if differentiateWithoutColor {
+                    Image(systemName: chipStatus.glyphName).imageScale(.small)
+                }
+                Text(Formatters.shortMinutesText(chip.arrivalDepartureMinutes))
+            }
                 .font(.caption.weight(.heavy)).monospacedDigit()
                 .foregroundStyle(Color(uiColor: chipStatus.color))
                 .padding(.horizontal, 8).padding(.vertical, 3)
@@ -415,6 +422,10 @@ struct GroupedListView: View {
         label += " " + timeDisplay(group.next).accessibilityTimeDescription
         if isTransferTrip(group.next) {
             label += ", " + OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip.")
+        }
+        // The chips, which otherwise reach VoiceOver only as a count.
+        if let following = StopPageAccessibilityCopy.followingDepartures(group.chips, formatters: formatters, status: statusProvider) {
+            label += " " + following
         }
         return label
     }

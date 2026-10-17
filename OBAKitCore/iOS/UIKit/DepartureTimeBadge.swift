@@ -21,8 +21,14 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
                     arrivalDepartureStatus: ArrivalDepartureStatus,
                     temporalState: TemporalState,
                     scheduleStatus: ScheduleStatus,
+                    scheduleDeviation: Int,
                     formatters: Formatters) {
-            self.accessibilityLabel = formatters.explanationForArrivalDeparture(tempuraState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, arrivalDepartureMinutes: arrivalDepartureMinutes)
+            // The fill is the only thing on the badge that shows early, late or
+            // scheduled-only, so the label says it too.
+            self.accessibilityLabel = [
+                formatters.explanationForArrivalDeparture(tempuraState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, arrivalDepartureMinutes: arrivalDepartureMinutes),
+                formatters.deviationLabel(scheduleStatus: scheduleStatus, temporalState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, scheduleDeviation: scheduleDeviation)
+            ].joined(separator: ", ")
             self.displayText = formatters.shortFormattedTime(untilMinutes: arrivalDepartureMinutes, temporalState: temporalState)
             self.backgroundColor = formatters.backgroundColorForScheduleStatus(scheduleStatus).cgColor
         }
@@ -32,6 +38,7 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
                       arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
                       temporalState: arrivalDeparture.temporalState,
                       scheduleStatus: arrivalDeparture.scheduleStatus,
+                      scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes,
                       formatters: formatters)
         }
 
