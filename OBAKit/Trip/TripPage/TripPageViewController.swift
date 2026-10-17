@@ -289,9 +289,12 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// drawn, but it names the page on the back button of anything pushed on top
     /// of it, which otherwise said only "Back", and in the iPhone Duo's side bar.
     private var pageTitle: String? {
-        let convertible = viewModel.tripConvertible
-        guard let route = convertible.trip.route?.shortName ?? departure?.routeShortName, !route.isEmpty else { return nil }
-        guard let headsign = departure?.tripHeadsign ?? convertible.trip.headsign, !headsign.isEmpty else { return route }
+        // `routeShortName` and `tripHeadsign` fall back to the route and trip
+        // references, which trap until they've loaded; this runs from `init`.
+        guard let departure, (departure.route as Route?) != nil, (departure.trip as Trip?) != nil else { return nil }
+        let route = departure.routeShortName
+        guard !route.isEmpty else { return nil }
+        guard let headsign = departure.tripHeadsign, !headsign.isEmpty else { return route }
         let fmt = OBALoc("trip_page.title_fmt", value: "Route %@ to %@", comment: "The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'.")
         return String(format: fmt, route, headsign)
     }
