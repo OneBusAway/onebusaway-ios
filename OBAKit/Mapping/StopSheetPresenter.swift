@@ -98,7 +98,7 @@ final class StopSheetPresenter: NSObject {
         // would flash it back into place for a turn, behind the incoming sheet.
         tearDown(animated: false, restoringTabBar: false)
 
-        let navigation = UINavigationController(rootViewController: contentController)
+        let navigation = StopSheetNavigationController(rootViewController: contentController)
         navigation.delegate = self
         configureNavigationBar(navigation.navigationBar)
         // Seeded here as well as in `willShow` so the bar is already gone on the first layout
@@ -528,5 +528,62 @@ extension StopSheetPresenter: FloatingPanelControllerDelegate {
     func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
         guard fpc === panel, let topViewController = navigation?.topViewController else { return }
         syncCollapsedState(for: topViewController)
+    }
+}
+
+// MARK: - StopSheetNavigationController
+
+/// The sheet's navigation controller, which keeps its pages' leading and trailing safe area
+/// to what the sheet itself has.
+///
+/// Where the tab bar presents vertically (iPhone Duo), every navigation controller beneath it
+/// insets its pages by the width of the tab bar's column, without checking whether it reaches
+/// that column. The sheet never does, so its pages lost ~84pt down their trailing edge. No API
+/// opts out — `preferredVerticalBarBehavior` is ignored below the window's root — so the excess
+/// is taken back out with `additionalSafeAreaInsets`. A page overlapping the column for real
+/// keeps the inset, because the navigation controller's own view carries it too.
+final class StopSheetNavigationController: UINavigationController {
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        for viewController in viewControllers where viewController.isViewLoaded {
+            matchHorizontalSafeArea(of: viewController)
+        }
+    }
+
+    override func pushViewController(_ viewController: UIViewController, animated: Bool) {
+        super.pushViewController(viewController, animated: animated)
+        // The pushed page joins the hierarchy here, before the next layout pass of this
+        // controller's own view; correcting it now keeps the gap from showing mid-transition.
+        viewController.view.layoutIfNeeded()
+        matchHorizontalSafeArea(of: viewController)
+    }
+
+    private func matchHorizontalSafeArea(of viewController: UIViewController) {
+        guard viewController.view.window != nil else { return }
+        let additional = Self.correctedAdditionalSafeArea(
+            page: viewController.view.safeAreaInsets,
+            additional: viewController.additionalSafeAreaInsets,
+            container: view.safeAreaInsets
+        )
+        if additional != viewController.additionalSafeAreaInsets {
+            viewController.additionalSafeAreaInsets = additional
+        }
+    }
+
+    /// `additional` with its left and right set to take back whatever a page's inset on that
+    /// side exceeds `container`'s. Top and bottom pass through: the navigation bar legitimately
+    /// adds to the top.
+    nonisolated static func correctedAdditionalSafeArea(
+        page: UIEdgeInsets,
+        additional: UIEdgeInsets,
+        container: UIEdgeInsets
+    ) -> UIEdgeInsets {
+        var corrected = additional
+        // What UIKit gives the page before this correction.
+        let left = page.left - additional.left
+        let right = page.right - additional.right
+        corrected.left = -max(0, left - container.left)
+        corrected.right = -max(0, right - container.right)
+        return corrected
     }
 }
