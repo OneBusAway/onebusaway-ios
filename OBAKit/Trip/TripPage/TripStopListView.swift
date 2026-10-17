@@ -94,8 +94,8 @@ private struct TripStopRow: View {
 
     @ScaledMetric(relativeTo: .body) private var stopDotSize: CGFloat = 10
     @ScaledMetric(relativeTo: .body) private var userDotSize: CGFloat = 14
-    @ScaledMetric(relativeTo: .body) private var vehicleDotSize: CGFloat = 22
-    @ScaledMetric(relativeTo: .body) private var lineWidth: CGFloat = 2.5
+    @ScaledMetric(relativeTo: .body) private var vehicleDotSize = TripStopRailMetrics.width
+    @ScaledMetric(relativeTo: .body) private var lineWidth = TripStopRailMetrics.lineWidth
 
     /// Dimmed once the bus is past. The vehicle's own stop stays active — it is
     /// where the rider's attention belongs.
@@ -156,20 +156,15 @@ private struct TripStopRow: View {
     // MARK: - Connector
 
     private var connector: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                segment(isHidden: isFirst, isSpent: segmentAboveIsSpent)
-                segment(isHidden: isLast, isSpent: row.isPassed)
-            }
+        TripStopRail(
+            isFirst: isFirst,
+            isLast: isLast,
+            aboveIsSpent: segmentAboveIsSpent,
+            belowIsSpent: row.isPassed,
+            routeColor: routeColor
+        ) {
             dot
         }
-        .frame(width: vehicleDotSize)
-    }
-
-    private func segment(isHidden: Bool, isSpent: Bool) -> some View {
-        (isHidden ? Color.clear : (isSpent ? Color(uiColor: .systemGray4) : routeColor))
-            .frame(width: lineWidth)
-            .frame(maxHeight: .infinity)
     }
 
     @ViewBuilder
@@ -225,5 +220,48 @@ private struct TripStopRow: View {
         }
 
         return clauses.joined(separator: ", ")
+    }
+}
+
+/// Unscaled sizes for `TripStopRail`, which the rows' markers size themselves against.
+enum TripStopRailMetrics {
+    /// The column is as wide as the largest marker, the vehicle's dot.
+    static let width: CGFloat = 22
+    static let lineWidth: CGFloat = 2.5
+}
+
+/// The timeline's line through one row of the list, with the row's marker on it.
+///
+/// Shared by stop rows and run rows (`TripStopRunRow`): the line only reads as
+/// continuous if every row draws it at the same width, in the same column, in
+/// the same colors.
+struct TripStopRail<Marker: View>: View {
+    let isFirst: Bool
+    let isLast: Bool
+    /// Whether the segment coming down into this row is behind the vehicle.
+    let aboveIsSpent: Bool
+    /// Whether the segment leaving this row is.
+    let belowIsSpent: Bool
+    let routeColor: Color
+    @ViewBuilder let marker: Marker
+
+    @ScaledMetric(relativeTo: .body) private var width = TripStopRailMetrics.width
+    @ScaledMetric(relativeTo: .body) private var lineWidth = TripStopRailMetrics.lineWidth
+
+    var body: some View {
+        ZStack {
+            VStack(spacing: 0) {
+                segment(isHidden: isFirst, isSpent: aboveIsSpent)
+                segment(isHidden: isLast, isSpent: belowIsSpent)
+            }
+            marker
+        }
+        .frame(width: width)
+    }
+
+    private func segment(isHidden: Bool, isSpent: Bool) -> some View {
+        (isHidden ? Color.clear : (isSpent ? Color(uiColor: .systemGray4) : routeColor))
+            .frame(width: lineWidth)
+            .frame(maxHeight: .infinity)
     }
 }

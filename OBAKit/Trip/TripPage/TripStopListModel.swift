@@ -66,6 +66,8 @@ struct TripStopListModel {
     /// Where the vehicle is, or `nil` on a trip with no live position — in which
     /// case no stop is passed, because nothing is known to have happened yet.
     let vehicleIndex: Int?
+    /// The row marked as the rider's stop, if any.
+    let userIndex: Int?
 
     static func make<S: TripStopListEntry>(
         stopTimes: [S],
@@ -92,7 +94,7 @@ struct TripStopListModel {
             )
         }
 
-        return TripStopListModel(rows: rows, vehicleIndex: vehicleIndex)
+        return TripStopListModel(rows: rows, vehicleIndex: vehicleIndex, userIndex: userIndex)
     }
 
     /// The rider's rows on a trip, as the UIKit trip page needs them. One
@@ -308,7 +310,8 @@ extension TripStopListModel {
         /// expanded stays expanded as the vehicle moves along and the run grows.
         let id: String
         let kind: CollapsedGroupKind
-        /// Never empty.
+        /// Where the run sits in the model's rows. Never empty.
+        let range: Range<Int>
         let rows: [Row]
 
         var isPassed: Bool { kind == .passed }
@@ -348,24 +351,19 @@ extension TripStopListModel {
     /// The runs to collapse, in list order.
     var groups: [CollapsedGroup] {
         guard let vehicleIndex else { return [] }
-        let userIndex = rows.firstIndex(where: \.isUserStop)
-        var groups: [CollapsedGroup] = []
 
         // Passed stops, split around the rider's stop when the vehicle has
         // already been through it.
-        var runs: [Range<Int>] = []
-        var runStart = 0
-        for index in 0..<vehicleIndex where index == userIndex {
-            runs.append(runStart..<index)
-            runStart = index + 1
+        var passedRuns = [0..<vehicleIndex]
+        if let userIndex, userIndex < vehicleIndex {
+            passedRuns = [0..<userIndex, (userIndex + 1)..<vehicleIndex]
         }
-        runs.append(runStart..<vehicleIndex)
-        for (number, run) in runs.enumerated() where run.count >= Self.minimumPassedRun {
-            groups.append(CollapsedGroup(id: "passed-\(number)", kind: .passed, rows: Array(rows[run])))
-        }
+        var groups = passedRuns.enumerated()
+            .filter { $0.element.count >= Self.minimumPassedRun }
+            .map { group(id: "passed-\($0.offset)", kind: .passed, range: $0.element) }
 
         if let userIndex, userIndex - vehicleIndex - 1 > Self.maximumApproachingStops {
-            groups.append(CollapsedGroup(id: "approaching", kind: .approaching, rows: Array(rows[(vehicleIndex + 1)..<userIndex])))
+            groups.append(group(id: "approaching", kind: .approaching, range: (vehicleIndex + 1)..<userIndex))
         }
 
         return groups
@@ -373,25 +371,23 @@ extension TripStopListModel {
 
     /// The list as drawn, given which runs the rider has expanded.
     func items(expanded: Set<CollapsedGroup.ID>) -> [Item] {
-        var groupStarting: [String: CollapsedGroup] = [:]
-        var hidden: Set<String> = []
-        for group in groups {
-            groupStarting[group.rows[0].id] = group
-            if !expanded.contains(group.id) {
-                hidden.formUnion(group.rows.map(\.id))
-            }
-        }
-
         var items: [Item] = []
-        for row in rows {
-            if let group = groupStarting[row.id] {
-                items.append(.group(group, isExpanded: expanded.contains(group.id)))
+        var next = 0
+        for group in groups {
+            items += rows[next..<group.range.lowerBound].map(Item.stop)
+            let isExpanded = expanded.contains(group.id)
+            items.append(.group(group, isExpanded: isExpanded))
+            if isExpanded {
+                items += group.rows.map(Item.stop)
             }
-            if !hidden.contains(row.id) {
-                items.append(.stop(row))
-            }
+            next = group.range.upperBound
         }
+        items += rows[next...].map(Item.stop)
         return items
+    }
+
+    private func group(id: String, kind: CollapsedGroupKind, range: Range<Int>) -> CollapsedGroup {
+        CollapsedGroup(id: id, kind: kind, range: range, rows: Array(rows[range]))
     }
 }
 

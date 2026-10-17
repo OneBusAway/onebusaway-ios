@@ -2086,10 +2086,6 @@
 "trip_page.report_ghost_bus" = "유령 버스 신고";
 /* Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.schedule" = "시간표";
-/* VoiceOver value of a collapsed run of stops on the trip page while its stops are hidden. */
-"trip_page.stop_list.a11y_collapsed" = "접힘";
-/* VoiceOver value of a collapsed run of stops on the trip page once it is showing its stops. */
-"trip_page.stop_list.a11y_expanded" = "펼쳐짐";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "이미 지나감";
 /* VoiceOver label for a collapsed run of stops between the vehicle and the rider's stop, e.g. '5 stops before your stop'. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */

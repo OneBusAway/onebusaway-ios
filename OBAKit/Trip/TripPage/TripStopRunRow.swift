@@ -51,11 +51,12 @@ enum TripStopRunCopy {
         return [count, range].compactMap { $0 }.joined(separator: ", ")
     }
 
-    /// SwiftUI has no expanded-state trait, so the state is spoken as the value.
+    /// SwiftUI has no expanded-state trait, so the state is spoken as the value —
+    /// in the same words as the stop page's other collapsible headers.
     static func accessibilityValue(isExpanded: Bool) -> String {
         isExpanded
-            ? OBALoc("trip_page.stop_list.a11y_expanded", value: "expanded", comment: "VoiceOver value of a collapsed run of stops on the trip page once it is showing its stops.")
-            : OBALoc("trip_page.stop_list.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of a collapsed run of stops on the trip page while its stops are hidden.")
+            ? OBALoc("stop_page.grouped.a11y_expanded", value: "expanded", comment: "VoiceOver value of a collapsible header or grouped route card whose contents are showing.")
+            : OBALoc("stop_page.grouped.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of a collapsible header or grouped route card whose contents are hidden.")
     }
 
     /// The first and last times, the one time if they agree or only one is
@@ -82,8 +83,6 @@ struct TripStopRunRow: View {
 
     @Environment(\.obaFormatters) private var formatters
 
-    @ScaledMetric(relativeTo: .body) private var railWidth: CGFloat = 22
-    @ScaledMetric(relativeTo: .body) private var lineWidth: CGFloat = 2.5
     @ScaledMetric(relativeTo: .body) private var gapDotSize: CGFloat = 3
 
     private func time(_ date: Date) -> String { formatters.timeFormatter.string(from: date) }
@@ -122,11 +121,13 @@ struct TripStopRunRow: View {
     /// The rail runs straight through, with a short column of dots standing in
     /// for the hidden stops' markers.
     private var connector: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                segment(color: isFirst ? .clear : color(isSpent: segmentAboveIsSpent))
-                segment(color: color(isSpent: group.isPassed))
-            }
+        TripStopRail(
+            isFirst: isFirst,
+            isLast: false,
+            aboveIsSpent: segmentAboveIsSpent,
+            belowIsSpent: group.isPassed,
+            routeColor: routeColor
+        ) {
             VStack(spacing: gapDotSize) {
                 ForEach(0..<3, id: \.self) { _ in
                     Circle()
@@ -135,17 +136,6 @@ struct TripStopRunRow: View {
                 }
             }
         }
-        .frame(width: railWidth)
         .accessibilityHidden(true)
-    }
-
-    private func color(isSpent: Bool) -> Color {
-        isSpent ? Color(uiColor: .systemGray4) : routeColor
-    }
-
-    private func segment(color: Color) -> some View {
-        color
-            .frame(width: lineWidth)
-            .frame(maxHeight: .infinity)
     }
 }
