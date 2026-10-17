@@ -276,23 +276,13 @@ struct OBAListViewItemTests {
         #expect(uiAction.image == UIImage(systemName: "trash"))
         #expect(uiAction.backgroundColor == .red)
 
-        // Validate handler execution: trigger handler directly or via UIKit block if accessible
-        if uiAction.responds(to: NSSelectorFromString("handler")),
-           let handlerBlock = uiAction.value(forKey: "handler") {
-            typealias NativeHandler = @convention(block) (AnyObject, UIView, @escaping (Bool) -> Void) -> Void
-            let blockPtr = unsafeBitCast(handlerBlock as AnyObject, to: NativeHandler.self)
-            var completionSuccess: Bool?
-            blockPtr(uiAction, UIView()) { success in
-                completionSuccess = success
-            }
-            #expect(handlerInvoked)
-            #expect(invokedItemTitle == "Action Item")
-            #expect(completionSuccess == true)
-        } else {
-            action.handler?(item)
-            #expect(handlerInvoked)
-            #expect(invokedItemTitle == "Action Item")
+        var completionSuccess: Bool?
+        uiAction.handler(uiAction, UIView()) { success in
+            completionSuccess = success
         }
+        #expect(handlerInvoked)
+        #expect(invokedItemTitle == "Action Item")
+        #expect(completionSuccess == true)
     }
 
     @Test func testContextualActionsTypeErasureAndInvocation() {
@@ -301,6 +291,9 @@ struct OBAListViewItemTests {
             style: .normal,
             title: "Pin",
             image: UIImage(systemName: "pin"),
+            textColor: .yellow,
+            backgroundColor: .purple,
+            hidesWhenSelected: true,
             item: nil,
             handler: { item in
                 triggeredActionTitle = item.title
@@ -325,6 +318,9 @@ struct OBAListViewItemTests {
         #expect(firstErased.title == "Pin")
         #expect(firstErased.style == .normal)
         #expect(firstErased.image == UIImage(systemName: "pin"))
+        #expect(firstErased.textColor == .yellow)
+        #expect(firstErased.backgroundColor == .purple)
+        #expect(firstErased.hidesWhenSelected == true)
 
         firstErased.handler?(anyItem)
         #expect(triggeredActionTitle == "Leading Test")
@@ -341,6 +337,9 @@ struct OBAListViewItemTests {
         if case .list(let config, let accessories) = collapsibleHeader.configuration {
             #expect(config.text == "Departures")
             #expect(accessories.count == 1)
+            if case .outlineDisclosure(_, let options) = accessories[0] {
+                #expect(options.isHidden == false)
+            }
         } else {
             Issue.record("Expected .list configuration on header")
         }
@@ -351,6 +350,9 @@ struct OBAListViewItemTests {
         if case .list(let config, let accessories) = nonCollapsibleHeader.configuration {
             #expect(config.text == "Static Header")
             #expect(accessories.count == 1)
+            if case .outlineDisclosure(_, let options) = accessories[0] {
+                #expect(options.isHidden == true)
+            }
         } else {
             Issue.record("Expected .list configuration on header")
         }
@@ -408,6 +410,11 @@ struct OBAListViewItemTests {
         let noRegionItem = EmptyDataSetItem(id: "reg_err", error: APIError.noRegionSelected)
         #expect(noRegionItem.image == UIImage(systemName: "location.slash"))
 
+        let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stop/1_75403.json")!
+        let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: nil)!
+        let notFoundItem = EmptyDataSetItem(id: "not_found", error: APIError.requestNotFound(response))
+        #expect(notFoundItem.image == UIImage(systemName: "questionmark.square.dashed"))
+
         let customIcon = UIImage(systemName: "star")
         let explicitIconItem = EmptyDataSetItem(
             id: "exp_err",
@@ -420,10 +427,12 @@ struct OBAListViewItemTests {
     @Test func testEmptyDataSetItemEqualityAndHashing() {
         let item1 = EmptyDataSetItem(id: "e1", title: "Title", body: "Body")
         let item2 = EmptyDataSetItem(id: "e1", title: "Title", body: "Body")
+        let itemDiffID = EmptyDataSetItem(id: "e2", title: "Title", body: "Body")
         let itemDiffTitle = EmptyDataSetItem(id: "e1", title: "Different", body: "Body")
 
         #expect(item1 == item2)
         #expect(item1.hashValue == item2.hashValue)
+        #expect(item1 != itemDiffID)
         #expect(item1 != itemDiffTitle)
     }
 }

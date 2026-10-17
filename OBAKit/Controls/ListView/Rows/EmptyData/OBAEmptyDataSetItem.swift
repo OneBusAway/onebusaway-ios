@@ -83,10 +83,12 @@ nonisolated struct EmptyDataSetItem: OBAListViewItem {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine("EmptyDataSetItem")
+        hasher.combine(id)
     }
 
     static func == (_ lhs: EmptyDataSetItem, _ rhs: EmptyDataSetItem) -> Bool {
-        return lhs.alignment == rhs.alignment &&
+        return lhs.id == rhs.id &&
+            lhs.alignment == rhs.alignment &&
             lhs.title == rhs.title &&
             lhs.body == rhs.body &&
             lhs.image == rhs.image &&

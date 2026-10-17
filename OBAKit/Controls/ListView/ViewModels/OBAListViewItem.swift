@@ -150,7 +150,9 @@ nonisolated public struct AnyOBAListViewItem: OBAListViewItem, @unchecked Sendab
                 style: typedItem.style,
                 title: typedItem.title,
                 image: typedItem.image,
+                textColor: typedItem.textColor,
                 backgroundColor: typedItem.backgroundColor,
+                hidesWhenSelected: typedItem.hidesWhenSelected,
                 item: typeErased,
                 handler: typeErasedAction)
         }
