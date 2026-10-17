@@ -799,6 +799,20 @@ final class StopRouteFocusMapLayerTests {
         #expect(focus.isFocusable(routeID: "H"))
     }
 
+    /// The fetch's task can't run until this test yields, so it lands after the
+    /// trip page has taken the map.
+    @Test func `A shape that arrives while suppressed draws nothing`() async {
+        let mapView = MKMapView()
+        let layer = makeLayer(mapView: mapView)
+        layer.begin(focus: StopMapFocus())
+        layer.update(model: model(routeIDs: ["H"], vehicleRouteIDs: []))
+
+        layer.setSuppressed(true)
+        await layer.awaitPendingShapeWork()
+
+        #expect(mapView.overlays.compactMap { $0 as? RouteShapeOverlay }.isEmpty)
+    }
+
     @Test func `Ending the presentation clears suppression`() async {
         let mapView = MKMapView()
         let layer = makeLayer(mapView: mapView)

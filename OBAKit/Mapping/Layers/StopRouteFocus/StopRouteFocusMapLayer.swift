@@ -405,6 +405,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
                 }
                 return
             }
+            // Suppressed since the fetch began: drawing now would put the line over
+            // the trip that has the map. Unsuppressing clears the pins and refetches.
+            guard !self.isSuppressed else { return }
             self.shapes[route.routeID] = coordinates
             self.drawShapes()
         }
@@ -424,8 +427,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// Every route, not just one that changed: a route arriving on a street moves
     /// the ones already on it over, and one leaving lets them back.
     private func drawShapes() {
-        lanes = RouteLaneLayout.lines(for: model.routes.compactMap { route in
-            shapes[route.routeID].map { (route.routeID, $0) }
+        // In a fixed order, not the model's: that follows the soonest arrival, which
+        // rolls over as buses depart, and would swap the lines' sides on a redraw.
+        let routeIDs = model.routes.map(\.routeID).sorted()
+        lanes = RouteLaneLayout.lines(for: routeIDs.compactMap { routeID in
+            shapes[routeID].map { (routeID, $0) }
         })
         redrawLanes()
     }

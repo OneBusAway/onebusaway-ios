@@ -93,7 +93,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
         // Hidden here as well as in `viewWillAppear`, so the bar is already gone
         // on the first layout pass.
-        hideNavigationBar()
+        hideNavigationBar(animated: false)
 
         // Re-render now that there is a `navigationController` to ask. `init`
         // runs before this page is on anyone's stack, so the back row's glyph
@@ -123,8 +123,9 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         // Again on every appearance, not just the first: leaving for a page
-        // pushed on top gave that page the bar back.
-        hideNavigationBar()
+        // pushed on top gave that page the bar back. Animated with the pop, so
+        // the bar doesn't vanish from the page above at the start of a back swipe.
+        hideNavigationBar(animated: animated)
         disableIdleTimer()
         viewModel.start()
         onMapFocusChanged?(mapFocus)
@@ -158,12 +159,12 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// Only where nothing else decides the bar. The stop sheet's presenter, the
     /// stack's delegate, decides it on every push and pop, from
     /// `providesOwnSheetChrome`; a second owner would fight it.
-    private func hideNavigationBar() {
+    private func hideNavigationBar(animated: Bool) {
         guard let navigationController, navigationController.delegate == nil else { return }
         if navigationBarWasHidden == nil {
             navigationBarWasHidden = navigationController.isNavigationBarHidden
         }
-        navigationController.setNavigationBarHidden(true, animated: false)
+        navigationController.setNavigationBarHidden(true, animated: animated)
     }
 
     /// Hands the bar back when navigation takes this page off screen: popped, or
