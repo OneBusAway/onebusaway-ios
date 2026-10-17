@@ -28,9 +28,12 @@ extension MapViewController {
                 $0.union(MKMapRect(origin: MKMapPoint($1.coordinate), size: MKMapSize(width: 0, height: 0)))
             }
             let inset: CGFloat = 60
+            // Each side clears its own horizontal safe area: a vertical bar (iPhone
+            // Duo) covers one edge only, and MapKit's padding is from the bounds.
+            let safeArea = mapView.safeAreaInsets
             mapView.setVisibleMapRect(
                 enclosingRect,
-                edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset),
+                edgePadding: UIEdgeInsets(top: inset, left: safeArea.left + inset, bottom: 200, right: safeArea.right + inset),
                 animated: !UIAccessibility.isReduceMotionEnabled
             )
             return
