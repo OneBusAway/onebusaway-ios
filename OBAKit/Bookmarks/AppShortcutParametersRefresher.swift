@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import AppIntents
 import Foundation
 import OBAKitCore
 
@@ -19,26 +20,26 @@ import OBAKitCore
 @MainActor
 final class AppShortcutParametersRefresher {
 
+    /// The app's provider, from `AppConfig.appShortcutsProvider`.
+    private let provider: any AppShortcutsProvider.Type
+
     /// Observes `NotificationCenter.default` because that is where
     /// `UserDefaultsStore` posts. Selector-based observation is auto-removed on
     /// dealloc, so no token/deinit is needed.
-    init() {
+    init(provider: any AppShortcutsProvider.Type) {
+        self.provider = provider
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(bookmarksDidChange),
+            selector: #selector(refresh),
             name: .bookmarksDidChange,
             object: nil
         )
         refresh()
     }
 
-    /// `.bookmarksDidChange` may be posted off the main actor. The refresh is
-    /// nonisolated, so it runs on the posting thread.
-    @objc private nonisolated func bookmarksDidChange() {
-        OBAAppShortcuts.updateAppShortcutParameters()
-    }
-
-    func refresh() {
-        OBAAppShortcuts.updateAppShortcutParameters()
+    /// Also the `.bookmarksDidChange` observer. That may be posted off the main
+    /// actor, so this is nonisolated and runs on the posting thread.
+    @objc nonisolated func refresh() {
+        provider.updateAppShortcutParameters()
     }
 }

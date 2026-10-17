@@ -75,7 +75,7 @@ final class LocalizationTests {
     private static let specifier = try! NSRegularExpression(pattern: #"%(?:\d+\$)?[@dfs]|%%"#)
 
     private var frameworks: [(name: String, bundle: Bundle)] {
-        [("OBAKit", Bundle(for: DonationCell.self)),
+        [("OBAKit", Bundle.obaKit),
          ("OBAKitCore", Bundle.obaKitCore)]
     }
 
@@ -88,7 +88,7 @@ final class LocalizationTests {
     /// Treats a named locale's `.lproj` as its own bundle so a test can load a
     /// localization the host does not prefer.
     private func lprojBundle(_ localization: String) -> Bundle? {
-        guard let path = Bundle(for: DonationCell.self).path(forResource: localization, ofType: "lproj") else { return nil }
+        guard let path = Bundle.obaKit.path(forResource: localization, ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
@@ -153,7 +153,7 @@ final class LocalizationTests {
     /// Every locale must carry all the plural keys, with the CLDR-mandatory `other` category.
     /// A dropped entry degrades silently to the `.strings` fallback ("1 stops").
     @Test func `Every locale stringsdict is well formed`() {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.obaKit
 
         for localization in bundle.localizations where localization != "Base" {
             guard let url = bundle.url(forResource: "Localizable", withExtension: "stringsdict",
@@ -187,7 +187,7 @@ final class LocalizationTests {
     /// they are not looking at. Likewise GBFS `propulsion_type: HUMAN` means human-powered,
     /// which for a kick scooter is not pedalling.
     @Test func `Rental sheet copy does not assume a bike`() throws {
-        let english = try #require(strings(in: Bundle(for: DonationCell.self), localization: "en"))
+        let english = try #require(strings(in: Bundle.obaKit, localization: "en"))
 
         let planTrip = try #require(english["rental_detail.plan_trip"])
         #expect(!planTrip.localizedCaseInsensitiveContains("bike"),
@@ -204,7 +204,7 @@ final class LocalizationTests {
     /// Agency" uses "text" as a verb, which is SMS in en-US, so the narrowing starts at the
     /// source rather than in translation.
     @Test func `Agency contact action does not promise SMS`() throws {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.obaKit
         // Words that name SMS specifically, per locale. Deliberately not a blanket "sms"
         // substring check: several locales use a generic "message"/"write to" verb that is
         // correct for both destinations.
@@ -226,7 +226,7 @@ final class LocalizationTests {
     /// rule keys off the English: where the source says "transit", pt-BR must not answer
     /// "trânsito".
     @Test func `Brazilian Portuguese does not render transit as trânsito`() throws {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.obaKit
         let english = try #require(strings(in: bundle, localization: "en"))
         let ptBR = try #require(strings(in: bundle, localization: "pt-BR"))
 
@@ -242,7 +242,7 @@ final class LocalizationTests {
     /// التحويلة in Settings. التحويلة is a detour or a railway switch, i.e. the *vehicle* being
     /// rerouted, not the rider changing services. One term, all three keys.
     @Test func `Arabic uses one word for a transfer`() throws {
-        let arabic = try #require(strings(in: Bundle(for: DonationCell.self), localization: "ar"))
+        let arabic = try #require(strings(in: Bundle.obaKit, localization: "ar"))
         let transferKeys = [
             "settings_controller.arrival_display_section.transfer_banner",
             "walk_time_view.transfer_accessibility_label",
@@ -266,7 +266,7 @@ final class LocalizationTests {
     /// ("Mga scooter", "共享滑板车") while the tip carries the bare noun, and that is fine —
     /// what matters is that the same word for the vehicle appears in both.
     @Test func `Both modules use the same word for a scooter`() throws {
-        let kit = Bundle(for: DonationCell.self)
+        let kit = Bundle.obaKit
         let core = Bundle.obaKitCore
 
         func sharesRun(_ a: String, _ b: String, minimum: Int) -> Bool {
@@ -326,7 +326,7 @@ final class LocalizationTests {
     /// The section footer and region time zone switch title must be translated.
     /// Leaving English in a non-en locale regresses Settings for that language.
     @Test func `Arrival display section footer and region time zone are localized`() {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.obaKit
         let footerKey = "settings_controller.arrival_display_section.footer"
         let regionTimeZoneKey = "settings_controller.arrival_display_section.region_time_zone"
 
@@ -354,7 +354,7 @@ final class LocalizationTests {
     /// silently falls back to the bare `%d` form and English renders "1 stops". Assert the
     /// singular actually resolves, which only happens when the stringsdict is present.
     @Test func `Stringsdict is bundled so singulars resolve`() {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.obaKit
         let expectedSingulars = [
             "stop_page.timeline.skipped_stops_fmt": "1 stop",
             "stop_page.service_alerts.summary_fmt": "1 service alert",
@@ -380,7 +380,7 @@ final class LocalizationTests {
     /// `one`/`other`, so this says nothing about which categories a *call site* can reach.
     /// `Polish layer count reaches its few and many forms` covers that.
     @Test func `Map type layer count reads its singular and plural`() {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.obaKit
         let format = bundle.localizedString(
             forKey: "map_controller.map_type.accessibility_value_with_layers_fmt",
             value: "MISSING",
@@ -540,8 +540,12 @@ final class LocalizationTests {
     /// Shortcuts and Siri read `AppIntents.strings` out of process, and
     /// `scripts/extract_strings` never touches it, so nothing else notices a
     /// locale that lacks a key or carries a stale one.
+    ///
+    /// Both tables ship in the app (`Apps/Shared/CommonClient`), next to the
+    /// merged `Metadata.appintents`. The test host is the app, so that is
+    /// `Bundle.main` here.
     @Test func `Every locale has the same App Intents keys as english`() throws {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.main
         let english = try #require(table("AppIntents", in: bundle, localization: "en"))
         #expect(english["track_bookmark_intent.title"] == "Track Bookmark")
 
@@ -551,12 +555,25 @@ final class LocalizationTests {
         }
     }
 
+    /// The intents' strings name no bundle, so in-process lookups read the
+    /// app's table, the one Shortcuts reads. `#bundle` would point at OBAKit's
+    /// resource bundle, which has no `AppIntents` table, and every lookup would
+    /// quietly fall back to its English default.
+    @Test func `App Intents strings resolve in process from the app's table`() throws {
+        var title = TrackBookmarkIntent.title
+        title.locale = Locale(identifier: "pl")
+        let polish = try #require(table("AppIntents", in: .main, localization: "pl")?["track_bookmark_intent.title"])
+
+        #expect(polish != "Track Bookmark")
+        #expect(String(localized: title) == polish)
+    }
+
     /// Siri drops an App Shortcut phrase that lacks `${applicationName}`, and a
     /// phrase that loses `${bookmark}` can no longer pick a bookmark by name.
     /// Keys are the English phrases, so a renamed English phrase orphans every
     /// translation; the key check catches that.
     @Test func `Every locale has every App Shortcut phrase with its tokens`() throws {
-        let bundle = Bundle(for: DonationCell.self)
+        let bundle = Bundle.main
         let english = try #require(table("AppShortcuts", in: bundle, localization: "en"))
         #expect(english.count == 7)
 

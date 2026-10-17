@@ -16,19 +16,19 @@ import Testing
 struct ProximityAlertMenuItemTests {
 
     private func englishBundle() -> Bundle? {
-        guard let path = Bundle(for: DonationCell.self).path(forResource: "en", ofType: "lproj") else { return nil }
+        guard let path = Bundle.obaKit.path(forResource: "en", ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
     // MARK: - Title Switching
 
     @Test func `Title displays set copy when alert is inactive`() {
-        let expected = Bundle(for: DonationCell.self).localizedString(forKey: "stop_page.proximity_alert.menu.set", value: nil, table: nil)
+        let expected = Bundle.obaKit.localizedString(forKey: "stop_page.proximity_alert.menu.set", value: nil, table: nil)
         #expect(ProximityAlertMenuItem.title(isActive: false) == expected)
     }
 
     @Test func `Title displays cancel copy when alert is active`() {
-        let expected = Bundle(for: DonationCell.self).localizedString(forKey: "stop_page.proximity_alert.menu.cancel", value: nil, table: nil)
+        let expected = Bundle.obaKit.localizedString(forKey: "stop_page.proximity_alert.menu.cancel", value: nil, table: nil)
         #expect(ProximityAlertMenuItem.title(isActive: true) == expected)
     }
 

@@ -22,16 +22,18 @@ import OBAKitCore
 /// opts into the main actor to use `NextDeparturesLoader`.
 ///
 /// Strings come from `AppIntents.strings`; see `TrackBookmarkIntent` for why.
-struct NextDeparturesIntent: AppIntent {
-    static let title = LocalizedStringResource("next_departures_intent.title", defaultValue: "Next Departures", table: "AppIntents", bundle: #bundle)
-    static let description = IntentDescription(LocalizedStringResource("next_departures_intent.description", defaultValue: "Hear when a bookmarked trip departs next.", table: "AppIntents", bundle: #bundle))
-    static let openAppWhenRun = false
+public struct NextDeparturesIntent: AppIntent {
+    public static let title = LocalizedStringResource("next_departures_intent.title", defaultValue: "Next Departures", table: "AppIntents")
+    public static let description = IntentDescription(LocalizedStringResource("next_departures_intent.description", defaultValue: "Hear when a bookmarked trip departs next.", table: "AppIntents"))
+    public static let openAppWhenRun = false
 
-    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle))
-    var bookmark: BookmarkEntity?
+    public init() {}
+
+    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents"))
+    public var bookmark: BookmarkEntity?
 
     @MainActor
-    func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
+    public func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
         let outcome = try await resolveOutcome()
         let text = NextDeparturesSummary.text(for: outcome, now: Date())
         return .result(value: text, dialog: "\(text)")

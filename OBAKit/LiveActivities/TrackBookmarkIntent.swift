@@ -21,23 +21,27 @@ import OBAKitCore
 /// nonisolated AppIntent type on this SDK (entity/query/provider stay opted out).
 ///
 /// Every user-facing string on the intent surface names an explicit key in
-/// OBAKit's `AppIntents.strings`. Shortcuts and Siri resolve them out of
-/// process from the metadata `appintentsmetadataprocessor` writes into
-/// OBAKit.framework, which records only key, table, and default value; the
-/// lookup bundle is implicitly the one holding that metadata. The processor
-/// rejects any bundle but the module's own (`#bundle`; `.forClass` fails the
-/// build with "requires 'LocalizedStringResource' to use the main bundle").
+/// the `AppIntents.strings` table. Shortcuts and Siri resolve them out of
+/// process from the app's `Metadata.appintents` (OBAKit's is merged into it),
+/// which records only key, table, and default value; the lookup bundle is
+/// implicitly the one holding that metadata, so the table ships in the app,
+/// from `Apps/Shared/CommonClient`. In-process lookups use the default bundle,
+/// `.main`, to read the same table; `#bundle` would name OBAKit's resource
+/// bundle, which doesn't have it. (The processor rejects any explicit bundle,
+/// even `.main`: "requires 'LocalizedStringResource' to use the main bundle".)
 /// A separate table keeps `scripts/extract_strings`, which regenerates
 /// `Localizable.strings` from `OBALoc` calls only, from deleting these keys.
-struct TrackBookmarkIntent: AppIntent {
-    static let title = LocalizedStringResource("track_bookmark_intent.title", defaultValue: "Track Bookmark", table: "AppIntents", bundle: #bundle)
-    static let description = IntentDescription(LocalizedStringResource("track_bookmark_intent.description", defaultValue: "Start a Live Activity for a bookmarked trip.", table: "AppIntents", bundle: #bundle))
-    static let openAppWhenRun = true
+public struct TrackBookmarkIntent: AppIntent {
+    public static let title = LocalizedStringResource("track_bookmark_intent.title", defaultValue: "Track Bookmark", table: "AppIntents")
+    public static let description = IntentDescription(LocalizedStringResource("track_bookmark_intent.description", defaultValue: "Start a Live Activity for a bookmarked trip.", table: "AppIntents"))
+    public static let openAppWhenRun = true
 
-    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle))
-    var bookmark: BookmarkEntity
+    public init() {}
 
-    func perform() async throws -> some IntentResult {
+    @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents"))
+    public var bookmark: BookmarkEntity
+
+    public func perform() async throws -> some IntentResult {
         guard let suite = Bundle.main.appGroup,
               let defaults = UserDefaults(suiteName: suite) else {
             Logger.error("Track Bookmark Shortcut: app group UserDefaults unavailable; cannot queue a Live Activity.")
@@ -49,26 +53,28 @@ struct TrackBookmarkIntent: AppIntent {
 }
 
 /// App Entity types are extracted off the main actor; OBAKit defaults to `@MainActor`.
-nonisolated struct BookmarkEntity: AppEntity {
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(
-        name: LocalizedStringResource("bookmark_entity.type_name", defaultValue: "Bookmark", table: "AppIntents", bundle: #bundle)
+nonisolated public struct BookmarkEntity: AppEntity {
+    public static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource("bookmark_entity.type_name", defaultValue: "Bookmark", table: "AppIntents")
     )
-    static let defaultQuery = BookmarkEntityQuery()
+    public static let defaultQuery = BookmarkEntityQuery()
 
-    var id: UUID
-    var name: String
+    public var id: UUID
+    public var name: String
 
-    var displayRepresentation: DisplayRepresentation {
+    public var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(title: "\(name)")
     }
 }
 
-nonisolated struct BookmarkEntityQuery: EntityQuery {
-    func entities(for identifiers: [UUID]) async throws -> [BookmarkEntity] {
+nonisolated public struct BookmarkEntityQuery: EntityQuery {
+    public init() {}
+
+    public func entities(for identifiers: [UUID]) async throws -> [BookmarkEntity] {
         tripBookmarkEntities().filter { identifiers.contains($0.id) }
     }
 
-    func suggestedEntities() async throws -> [BookmarkEntity] {
+    public func suggestedEntities() async throws -> [BookmarkEntity] {
         tripBookmarkEntities()
     }
 
@@ -91,41 +97,5 @@ nonisolated enum BookmarkIntentMapping {
         bookmarks.filter { $0.isTripBookmark && $0.regionIdentifier == regionIdentifier }.map {
             BookmarkEntity(id: $0.id, name: $0.name)
         }
-    }
-}
-
-/// Exports this module's App Intents so the app target can include them.
-/// Without an `AppIntentsPackage` chain, `appintentsmetadataprocessor` never
-/// indexes intents compiled into OBAKit, and Shortcuts would not see Track.
-nonisolated public struct OBAKitAppIntentsPackage: AppIntentsPackage {}
-
-/// Phrases are localized by `AppShortcuts.strings`, keyed by the English phrase
-/// with `${applicationName}` / `${bookmark}` tokens, in OBAKit's `.lproj`s:
-/// the strings must sit in the bundle that contains this provider (and its
-/// `Metadata.appintents`), not the app's. Changing an English phrase changes
-/// its key, so update every locale's `AppShortcuts.strings` in the same commit.
-nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: TrackBookmarkIntent(),
-            phrases: [
-                "Track \(\.$bookmark) with \(.applicationName)",
-                "Track \(.applicationName) bookmark",
-                "Start \(.applicationName) Live Activity"
-            ],
-            shortTitle: LocalizedStringResource("track_bookmark_intent.short_title", defaultValue: "Track bookmark", table: "AppIntents", bundle: #bundle),
-            systemImageName: "bell"
-        )
-        AppShortcut(
-            intent: NextDeparturesIntent(),
-            phrases: [
-                "When is my next \(\.$bookmark) in \(.applicationName)",
-                "Next departures for \(\.$bookmark) in \(.applicationName)",
-                "When is my next bus in \(.applicationName)",
-                "Do I have time to catch the bus with \(.applicationName)"
-            ],
-            shortTitle: LocalizedStringResource("next_departures_intent.short_title", defaultValue: "Next departures", table: "AppIntents", bundle: #bundle),
-            systemImageName: "clock"
-        )
     }
 }

@@ -1,8 +1,8 @@
 // swift-tools-version: 6.2
 //
-// OBAKitCore as a Swift package. The apps in this repo consume it as a local
-// package (see `packages:` in Apps/Shared/app_shared.yml); anyone else can add
-// this repository as a package dependency.
+// OBAKitCore and OBAKit as a Swift package. The apps in this repo consume it as
+// a local package (see `packages:` in Apps/Shared/app_shared.yml); anyone else
+// can add this repository as a package dependency.
 //
 // Every target builds in the Swift 6 language mode, which the 6.2 tools
 // version implies. The settings below reproduce the rest of the project-wide
@@ -34,10 +34,15 @@ let package = Package(
     ],
     products: [
         .library(name: "OBAKitCore", targets: ["OBAKitCore"]),
+        // iOS only: OBAKit is UIKit throughout.
+        .library(name: "OBAKit", targets: ["OBAKit"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.1"),
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.11.0"),
+        .package(url: "https://github.com/SCENEE/FloatingPanel.git", from: "3.2.2"),
+        // Pre-1.0, so a minor release can break the API.
+        .package(url: "https://github.com/OneBusAway/otpkit.git", .upToNextMinor(from: "0.17.0")),
     ],
     targets: [
         // Core business logic, networking and models, for iOS and watchOS.
@@ -62,6 +67,39 @@ let package = Package(
             // as resources automatically; naming them here is a "duplicate
             // rule" error.
             swiftSettings: strictConcurrency
+        ),
+
+        // View controllers and UI components. Main-actor default isolation, as
+        // in every Xcode target.
+        .target(
+            name: "OBAKit",
+            dependencies: [
+                "OBAKitCore",
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+                .product(name: "FloatingPanel", package: "FloatingPanel"),
+                .product(name: "OTPKit", package: "otpkit"),
+            ],
+            path: "OBAKit",
+            // The vendored BulletinBoard, Hyperconnectivity and MarqueeLabel
+            // licenses are shown on the Credits screen
+            // (Settings/OBAKit_Credits.plist); keep the raw files out of the
+            // bundle.
+            exclude: [
+                "ThirdParty/BulletinBoard/LICENSE",
+                "ThirdParty/Hyperconnectivity/LICENSE",
+                "ThirdParty/MarqueeLabel/LICENSE",
+            ],
+            // String tables, the asset catalog and the privacy manifest are
+            // picked up automatically; these two are not, and both are
+            // force-unwrapped where they're loaded.
+            resources: [
+                .process("Settings/OBAKit_Credits.plist"),
+                .process("WebView/document_web_view_content.html"),
+            ],
+            swiftSettings: strictConcurrency + [.defaultIsolation(MainActor.self)],
+            // Health-based features read HealthKit; the app declares the purpose
+            // strings.
+            linkerSettings: [.linkedFramework("HealthKit")]
         ),
     ]
 )

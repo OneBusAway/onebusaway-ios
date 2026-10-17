@@ -11,10 +11,10 @@ settings:
     # target in the project — frameworks, apps, widget, OBAKitTests and
     # OBAKitUITests — builds in the Swift 6 language mode with main-actor
     # default isolation.
-    # OBAKitCore is the exception: it is a Swift package target (Package.swift
-    # at the repo root), so none of these settings reach it. Package.swift
-    # reproduces them, except default isolation, which it leaves nonisolated
-    # because Core owns the actors and the background decode. OBAKitTests used to override it too;
+    # OBAKitCore and OBAKit are the exception: they are Swift package targets
+    # (Package.swift at the repo root), so none of these settings reach them.
+    # Package.swift reproduces them, except that Core's default isolation stays
+    # nonisolated because Core owns the actors and the background decode. OBAKitTests used to override it too;
     # that pin went away when the suite moved to Swift Testing (see Phase 4).
     # Approachable concurrency stays on permanently for Swift 6 targets (two
     # of its five features are not part of the Swift 6 language mode).
@@ -53,7 +53,8 @@ targets:
     dependencies:
       - package: OBAKit
         product: OBAKitCore
-      - target: OBAKit
+      - package: OBAKit
+        product: OBAKit
       - target: OBAWidget
     info:
       properties:
@@ -106,6 +107,12 @@ targets:
       - name: Versioning
         script: "${PROJECT_DIR}/scripts/version"
         runOnlyWhenInstalling: true         # For SwiftUI Xcode Previews.
+    # Lints the whole repository. It ran after the OBAKit framework built until
+    # OBAKit became a package target, which can't carry a script phase.
+    postBuildScripts:
+      - name: Swiftlint
+        script: 'sh "${PROJECT_DIR}/scripts/swiftlint.sh"'
+        basedOnDependencyAnalysis: false
     scheme:
       gatherCoverageData: true
       testTargets:
@@ -125,24 +132,21 @@ targets:
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
 
 packages:
-    # This repository's own Package.swift, which builds OBAKitCore. Its
-    # dependencies are declared there. The path is relative to this file, as
-    # included paths are.
+    # This repository's own Package.swift, which builds OBAKitCore and OBAKit.
+    # Their dependencies are declared there. The path is relative to this file,
+    # as included paths are.
     OBAKit:
         path: ../..
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 3.2.2
     OTPKit:
-        # OneBusAway/otpkit#155 has merged to main but is not in a tagged
-        # release yet; track main until one ships, then switch back to a
-        # version range.
         url: https://github.com/OneBusAway/otpkit.git
-        branch: main
-    # OBAKitCore's dependencies, declared again so the targets that use them
-    # directly can link them: OBAKit and OBAKitTests decode GTFS-realtime
-    # protobufs, and OBAKitTests exercises Core's GRDB stores. Xcode resolves
-    # each pair of declarations to the same package and builds it once.
+        minorVersion: 0.17.0
+    # FloatingPanel, OTPKit and Core's dependencies are declared again here
+    # (Package.swift has them too) so OBAKitTests, which uses each directly, can
+    # link them. Xcode resolves each pair of declarations to the same package
+    # and builds it once.
     GRDB:
         url: https://github.com/groue/GRDB.swift.git
         minorVersion: 7.11.0

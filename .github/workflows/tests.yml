@@ -473,9 +473,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             -quiet
         }
-        # While OBAKitCore is the package's only product, its scheme takes the
-        # package's name.
-        build OBAKit generic/platform=iOS APPLICATION_EXTENSION_API_ONLY=YES
+        build OBAKitCore generic/platform=iOS APPLICATION_EXTENSION_API_ONLY=YES
 
     - name: Install xcodegen
       env:

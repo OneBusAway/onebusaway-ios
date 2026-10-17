@@ -563,7 +563,9 @@ public class Application: CoreApplication, PushServiceDelegate {
         reportAnalyticsUserProperties()
 
         configureTipKit()
-        appShortcutParametersRefresher = AppShortcutParametersRefresher()
+        if let provider = config.appShortcutsProvider {
+            appShortcutParametersRefresher = AppShortcutParametersRefresher(provider: provider)
+        }
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }

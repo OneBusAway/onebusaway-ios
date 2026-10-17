@@ -20,12 +20,20 @@ and the only user-curated list of those is **trip bookmarks**.
    arrivals, then starts (or promotes) the Live Activity via the existing
    Track path. No `Activity` is captured into a `Task`.
 
-Intents live in OBAKit. The app target includes them through
-`OBAAppIntentsPackage` → `OBAKitAppIntentsPackage`. Without that chain,
-Shortcuts never sees Track.
+Intents live in OBAKit, a Swift package target. Xcode merges a package's
+intent metadata into the app's own `Metadata.appintents`, so the app needs no
+`AppIntentsPackage`, and must not have one that includes OBAKit: the indexer
+would look for an `OBAKit.framework/Metadata.appintents` that doesn't exist
+and then ignore every intent in the app. `scripts/check_app_intents` fails
+the build if that comes back.
+
+The `AppShortcutsProvider`, `OBAAppShortcuts`, is in the app target
+(`Apps/Shared/CommonClient`), because the metadata processor drops one
+compiled into a package. Its `AppShortcuts.strings` and the intents'
+`AppIntents.strings` sit beside it, in the bundle that holds the metadata.
 
 The App Shortcut phrase includes `$bookmark`. `OBAAppShortcuts.updateAppShortcutParameters()`
-runs at launch and on `.bookmarksDidChange` so the donated list tracks the
+(reached through `AppConfig.appShortcutsProvider`) runs at launch and on `.bookmarksDidChange` so the donated list tracks the
 current region's trip bookmarks.
 
 Whole-stop bookmarks are omitted from the intent's entity query: they have no

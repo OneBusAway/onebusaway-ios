@@ -16,7 +16,7 @@ import Testing
 struct ProximityAlertSettingsReasonTests {
 
     private func englishBundle() -> Bundle? {
-        guard let path = Bundle(for: DonationCell.self).path(forResource: "en", ofType: "lproj") else { return nil }
+        guard let path = Bundle.obaKit.path(forResource: "en", ofType: "lproj") else { return nil }
         return Bundle(path: path)
     }
 
@@ -31,7 +31,7 @@ struct ProximityAlertSettingsReasonTests {
         ]
 
         for item in expectations {
-            let expected = Bundle(for: DonationCell.self).localizedString(forKey: item.key, value: nil, table: nil)
+            let expected = Bundle.obaKit.localizedString(forKey: item.key, value: nil, table: nil)
             #expect(item.reason.alertTitle == expected)
         }
     }
@@ -60,7 +60,7 @@ struct ProximityAlertSettingsReasonTests {
         ]
 
         for item in templateKeys {
-            let template = Bundle(for: DonationCell.self).localizedString(forKey: item.key, value: nil, table: nil)
+            let template = Bundle.obaKit.localizedString(forKey: item.key, value: nil, table: nil)
             let expected = String(format: template, appName)
             #expect(item.reason.alertMessage == expected)
             #expect(item.reason.alertMessage.contains(appName))
@@ -68,7 +68,7 @@ struct ProximityAlertSettingsReasonTests {
         }
 
         let restrictedKey = "stop_page.proximity_alert.location_restricted.message"
-        let expectedRestricted = Bundle(for: DonationCell.self).localizedString(forKey: restrictedKey, value: nil, table: nil)
+        let expectedRestricted = Bundle.obaKit.localizedString(forKey: restrictedKey, value: nil, table: nil)
         #expect(ProximityAlertSettingsReason.locationRestricted.alertMessage == expectedRestricted)
         #expect(!ProximityAlertSettingsReason.locationRestricted.alertMessage.contains("%"))
     }

@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import AppIntents
 import Foundation
 import CoreLocation
 import OBAKitCore
@@ -16,6 +17,12 @@ public class AppConfig: CoreAppConfig {
 
     let analytics: Analytics?
     @objc public var pushServiceProvider: PushServiceProvider?
+
+    /// The app's App Shortcuts. OBAKit refreshes their bookmark parameter at
+    /// launch, on region change, and whenever bookmarks change. It has to be
+    /// declared in the app target: the metadata processor ignores an
+    /// `AppShortcutsProvider` inside a Swift package.
+    public var appShortcutsProvider: (any AppShortcutsProvider.Type)?
 
     /// The raw `OBAKitConfig.LaunchRouteID`: a route the map opens on at launch. See `LaunchRouteGate`.
     public let launchRouteID: String?
