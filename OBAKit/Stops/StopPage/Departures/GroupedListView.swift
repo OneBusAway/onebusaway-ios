@@ -427,9 +427,10 @@ struct GroupedListView: View {
         if alarmLookup(group.next) != nil {
             label += ", " + OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active")
         }
-        // The chips, which otherwise reach VoiceOver only as a count.
+        // The chips, which otherwise reach VoiceOver only as a count. Their own
+        // sentences, after a full stop, so they don't run on from the time above.
         if let following = StopPageAccessibilityCopy.followingDepartures(group.chips, formatters: formatters, status: statusProvider) {
-            label += " " + following
+            label += ". " + following
         }
         return label
     }
