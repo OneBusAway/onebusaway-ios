@@ -48,3 +48,18 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "切换方向";
+
+/* Section title for ungrouped bookmarks */
+"bookmarks.title" = "书签";
+
+/* Bookmarks tab bar item title */
+"bookmarks.tab" = "书签";
+
+/* Nearby tab bar item title */
+"nearby.tab" = "附近";
+
+/* Empty state message when no bookmarks have been saved */
+"bookmarks.empty" = "暂无书签。在 iPhone 上添加书签即可在此查看。";
+
+/* Loading indicator text while bookmarks load */
+"bookmarks.loading" = "正在加载书签……";

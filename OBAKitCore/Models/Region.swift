@@ -15,7 +15,7 @@ public typealias RegionIdentifier = Int
 
 /// Represents a OneBusAway server deployment.
 /// For example, OBA regions include Tampa, Puget Sound, and Washington, D.C.
-public class Region: NSObject, Identifiable, Codable {
+public class Region: NSObject, Identifiable, Codable, @unchecked Sendable {
 
     /// The human-readable name of the region. Example: Puget Sound.
     public let name: String

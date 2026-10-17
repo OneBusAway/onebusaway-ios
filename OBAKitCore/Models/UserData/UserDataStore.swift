@@ -22,6 +22,9 @@ public extension Notification.Name {
 
     /// Posted whenever proximity alerts are added or deleted in the UserDataStore.
     static let proximityAlertsDidChange = Notification.Name("UserDataStore.proximityAlertsDidChange")
+
+    /// Posted whenever bookmark groups are added, updated, reordered, or deleted in the UserDataStore.
+    static let bookmarkGroupsDidChange = Notification.Name("UserDataStore.bookmarkGroupsDidChange")
 }
 
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
@@ -599,6 +602,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarkGroups) // swiftlint:disable:this force_try
+            NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
         }
     }
 
@@ -610,6 +614,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         else {
             bookmarkGroups.append(bookmarkGroup)
         }
+        NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
     }
 
     public func deleteGroup(_ group: BookmarkGroup) {
@@ -621,6 +626,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         if let index = findGroupIndex(id: group.id) {
             bookmarkGroups.remove(at: index)
         }
+        NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
     }
 
     public func deleteGroup(id: UUID) {

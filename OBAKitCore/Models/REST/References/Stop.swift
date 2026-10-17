@@ -29,6 +29,21 @@ public enum Direction: Int, Comparable {
     public static func < (lhs: Direction, rhs: Direction) -> Bool {
         return lhs.rawValue < rhs.rawValue
     }
+
+    /// The canonical unlocalized cardinal direction abbreviation (e.g. "N", "S", "W"), or nil if unknown.
+    public var canonicalAbbreviation: String? {
+        switch self {
+        case .n: return "N"
+        case .ne: return "NE"
+        case .e: return "E"
+        case .se: return "SE"
+        case .s: return "S"
+        case .sw: return "SW"
+        case .w: return "W"
+        case .nw: return "NW"
+        case .unknown: return nil
+        }
+    }
 }
 
 public enum StopLocationType: Int, Decodable {
@@ -161,6 +176,42 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
         case routes
         case routeIDs = "routeIds"
         case wheelchairBoarding
+    }
+
+    public init(
+        id: StopID,
+        name: String,
+        code: String = "",
+        direction: String? = nil,
+        location: CLLocation = CLLocation(latitude: 0, longitude: 0),
+        locationType: StopLocationType = .stop,
+        routeIDs: [String] = [],
+        onDemandServiceIDs: [String] = [],
+        regionIdentifier: Int? = nil,
+        wheelchairBoarding: WheelchairBoarding = .unknown
+    ) {
+        self.id = id
+        self.name = name
+        self.code = code
+        self._direction = direction
+        self.location = location
+        self.locationType = locationType
+        self.routeIDs = routeIDs
+        self.onDemandServiceIDs = onDemandServiceIDs
+        self.routes = []
+        self.regionIdentifier = regionIdentifier
+        self.wheelchairBoarding = wheelchairBoarding
+        super.init()
+    }
+
+    public convenience init(watchBookmark: WatchBookmark) {
+        self.init(
+            id: watchBookmark.stopID,
+            name: watchBookmark.stopName,
+            direction: watchBookmark.stopDirection,
+            location: CLLocation(latitude: watchBookmark.latitude, longitude: watchBookmark.longitude),
+            regionIdentifier: Int(watchBookmark.regionIdentifier)
+        )
     }
 
     public required init(from decoder: Decoder) throws {
