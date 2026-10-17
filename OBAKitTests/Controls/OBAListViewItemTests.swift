@@ -382,7 +382,7 @@ struct OBAListViewItemTests {
         #expect(item.alignment == .top)
 
         if case .custom(let config) = item.configuration {
-            #expect(config.obaContentView == EmptyDataSetCell.self)
+            #expect(ObjectIdentifier(config.obaContentView) == ObjectIdentifier(EmptyDataSetCell.self))
         } else {
             Issue.record("Expected .custom configuration for EmptyDataSetItem")
         }
@@ -396,17 +396,24 @@ struct OBAListViewItemTests {
         #expect(networkErrorItem.alignment == .center)
         #expect(networkErrorItem.image == UIImage(systemName: "wifi.slash"))
 
-        let serverErrorItem = EmptyDataSetItem(id: "srv_err", error: APIError.serverError)
+        let serverErrorItem = EmptyDataSetItem(
+            id: "srv_err",
+            error: APIError.serverError(regionName: "Test")
+        )
         #expect(serverErrorItem.image == UIImage(systemName: "server.rack"))
 
-        let notFoundItem = EmptyDataSetItem(id: "nf_err", error: APIError.requestNotFound)
-        #expect(notFoundItem.image == UIImage(systemName: "questionmark.square.dashed"))
+        let cellularErrorItem = EmptyDataSetItem(id: "cell_err", error: APIError.cellularDataRestricted)
+        #expect(cellularErrorItem.image == UIImage(systemName: "wifi.slash"))
 
         let noRegionItem = EmptyDataSetItem(id: "reg_err", error: APIError.noRegionSelected)
         #expect(noRegionItem.image == UIImage(systemName: "location.slash"))
 
         let customIcon = UIImage(systemName: "star")
-        let explicitIconItem = EmptyDataSetItem(id: "exp_err", error: APIError.serverError, image: customIcon)
+        let explicitIconItem = EmptyDataSetItem(
+            id: "exp_err",
+            error: APIError.serverError(regionName: "Test"),
+            image: customIcon
+        )
         #expect(explicitIconItem.image == customIcon)
     }
 
