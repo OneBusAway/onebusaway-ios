@@ -96,7 +96,7 @@ extension MapViewController {
     /// the screen; at compact width it spans the map, so it stops below the
     /// map controls instead of covering Layers and My Trip.
     private func plannerCardCeiling(for placement: OnDemandDockPlacement) -> NSLayoutYAxisAnchor {
-        placement == .compact ? toolbar.bottomAnchor : view.safeAreaLayoutGuide.topAnchor
+        placement == .compact && !toolbar.isHidden ? toolbar.bottomAnchor : view.safeAreaLayoutGuide.topAnchor
     }
 
     /// The zone colours the layer drew, so the dock and picker match the map.
