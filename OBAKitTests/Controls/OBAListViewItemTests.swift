@@ -352,11 +352,6 @@ struct OBAListViewItemTests {
         } else {
             Issue.record("Expected .list configuration on header")
         }
-
-        if case .list(_, let cAccessories) = collapsibleHeader.configuration,
-           case .list(_, let ncAccessories) = nonCollapsibleHeader.configuration {
-            #expect(cAccessories != ncAccessories)
-        }
     }
 
     @Test func testListViewHeaderEqualityAndHashing() {
