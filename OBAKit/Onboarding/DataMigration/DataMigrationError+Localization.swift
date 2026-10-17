@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 1/6/23.
 //
 
+import UIKit
 import OBAKitCore
 
 extension DataMigrationError: @retroactive LocalizedError {

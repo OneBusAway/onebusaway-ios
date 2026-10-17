@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 3/5/21.
 //
 
+import UIKit
+
 typealias ControllerPreviewProvider = () -> UIViewController?
 
 /// Implement this protocol on `UIViewController`s that are meant to be viewable as Context Menu previews.

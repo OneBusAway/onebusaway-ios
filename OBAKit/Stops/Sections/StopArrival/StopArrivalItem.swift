@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 2/15/21.
 //
 
+import UIKit
 import OBAKitCore
 
 nonisolated struct ArrivalDepartureItem: OBAListViewItem {

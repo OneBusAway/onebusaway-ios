@@ -128,7 +128,7 @@ class AwesomeSpotlightView: UIView {
     }
 
     private func setupArrowDown() {
-        arrowDownImageView = UIImageView(image: UIImage(named: "arrowDownIcon"))
+        arrowDownImageView = UIImageView(image: Icons.spotlightArrowDown)
         arrowDownImageView.alpha = 0
         addSubview(arrowDownImageView)
     }

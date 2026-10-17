@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 3/4/21.
 //
 
+import Foundation
+
 public protocol OBAListViewDelegate: AnyObject {
     /// Tells the delegate that the OBAListView finished applying data.
     /// - parameter listView: The OBAListView that finished applying data.

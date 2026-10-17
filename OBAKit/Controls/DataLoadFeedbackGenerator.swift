@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 8/12/21.
 //
 
+import UIKit
+
 /// Provides appropriate haptic feedback depending on a data load result.
 /// This class DRYs lifecycle management of the system's Feedback Generators and
 /// standardizes haptic feedback across the app.
