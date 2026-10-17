@@ -42,7 +42,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.38.1"),
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.11.0"),
-        .package(url: "https://github.com/SCENEE/FloatingPanel.git", from: "3.2.2"),
+        .package(url: "https://github.com/SCENEE/FloatingPanel.git", from: "3.2.4"),
         // Pre-1.0, so a minor release can break the API.
         .package(url: "https://github.com/OneBusAway/otpkit.git", .upToNextMinor(from: "0.17.0")),
     ],

@@ -140,7 +140,7 @@ packages:
         path: ../..
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
-        exactVersion: 3.2.2
+        exactVersion: 3.2.4
     OTPKit:
         url: https://github.com/OneBusAway/otpkit.git
         minorVersion: 0.17.0
