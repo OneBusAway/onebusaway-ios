@@ -20,21 +20,34 @@ import UIKit
 //
 // - Presented (`present(_:animated:)`): the sheet is a presentation of its own, and opts out
 //   with `preferredVerticalBarBehavior`, which UIKit reads from the root of each presentation.
+//   A SwiftUI `.sheet` does the same with `sheetKeepsBarsHorizontal()`.
 // - Embedded in a FloatingPanel (the stop sheet): every navigation controller under the
 //   vertical tab bar insets its pages by the column's width, without checking whether it
 //   reaches the column. `preferredVerticalBarBehavior` isn't consulted below the window's root
 //   there, so `SheetNavigationController` takes the excess back out of its pages' safe area.
 //
-// Sheets with bar items of their own (Schedules, the map settings sheet) are left alone: their
-// glyph buttons are what fills the column.
+// Sheets with glyph bar items of their own (Schedules, the map settings sheet) are left alone:
+// those buttons are what fills the column.
 
-extension UIViewController {
-    /// `.disabled` while this controller is part of a presented sheet. A controller pushed onto
-    /// the window's own navigation stack stays `.automatic`, because its preference reaches the
-    /// window and would lay the tab bar out horizontally.
+fileprivate extension UIViewController {
+    /// `.disabled` while presented. A controller pushed onto the window's own navigation stack
+    /// stays `.automatic`, because its preference reaches the window and would lay the tab bar
+    /// out horizontally.
     @available(iOS 27.1, *)
     var sheetVerticalBarBehavior: UIVerticalBarBehavior {
         presentingViewController == nil ? .automatic : .disabled
+    }
+}
+
+extension View {
+    /// The content of a SwiftUI `.sheet` with no bar items, which keeps its bars horizontal.
+    @ViewBuilder
+    func sheetKeepsBarsHorizontal() -> some View {
+        if #available(iOS 27.1, *) {
+            toolbarVerticalBehavior(.disabled)
+        } else {
+            self
+        }
     }
 }
 
@@ -46,8 +59,7 @@ class SheetHostingController<Content: View>: UIHostingController<Content> {
     }
 }
 
-/// A navigation controller for a sheet, which keeps its bars horizontal whether it is
-/// presented or embedded in a FloatingPanel.
+/// A navigation controller for a sheet, presented or embedded, which keeps its bars horizontal.
 class SheetNavigationController: UINavigationController {
     @available(iOS 27.1, *)
     override var preferredVerticalBarBehavior: UIVerticalBarBehavior {
@@ -72,12 +84,12 @@ class SheetNavigationController: UINavigationController {
         super.pushViewController(viewController, animated: animated)
         // The pushed page joins the hierarchy here, before the next layout pass of this
         // controller's own view; correcting it now keeps the gap from showing mid-transition.
+        guard viewController.viewIfLoaded?.window != nil else { return }
         viewController.view.layoutIfNeeded()
         matchHorizontalSafeArea(of: viewController)
     }
 
-    /// Caps a page's leading and trailing safe area at this controller's own. A page that
-    /// overlaps the bar column for real keeps the inset, because this view carries it too.
+    /// Caps a page's leading and trailing safe area at this controller's own.
     private func matchHorizontalSafeArea(of viewController: UIViewController) {
         guard viewController.view.window != nil else { return }
         let additional = Self.correctedAdditionalSafeArea(

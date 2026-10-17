@@ -58,8 +58,6 @@ struct SheetNavigationControllerTests {
 
     @Test @MainActor func onlyAPresentedSheetOptsOutOfVerticalBars() {
         guard #available(iOS 27.1, *) else { return }
-        // Pushed onto the window's own stack, the preference would reach the window and lay
-        // the tab bar out horizontally.
         let unpresented = SheetHostingController(rootView: EmptyView())
         #expect(unpresented.preferredVerticalBarBehavior == .automatic)
         #expect(SheetNavigationController().preferredVerticalBarBehavior == .automatic)

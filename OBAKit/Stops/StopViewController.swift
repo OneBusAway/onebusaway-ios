@@ -648,7 +648,7 @@ public class StopViewController: UIViewController,
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(application.analytics))
 
-        present(UIHostingController(rootView: learnMoreView), animated: true)
+        present(SheetHostingController(rootView: learnMoreView), animated: true)
     }
 
     private func showDonationDismissUI() {
@@ -1292,7 +1292,7 @@ public class StopViewController: UIViewController,
         let hiddenRoutes = Set(stopPreferences.hiddenRoutes)
         let stopPreferencesView = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
             .environment(\.coreApplication, application)
-        present(UIHostingController(rootView: stopPreferencesView), animated: true)
+        present(SheetHostingController(rootView: stopPreferencesView), animated: true)
     }
 
     @objc private func loadMoreDepartures() {

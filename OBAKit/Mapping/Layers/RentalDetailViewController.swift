@@ -388,6 +388,7 @@ struct RentalClusterListView: View {
                     onOpenLink: onOpenLink
                 )
                 .presentationDetents([.medium])
+                .sheetKeepsBarsHorizontal()
             }
         }
     }
