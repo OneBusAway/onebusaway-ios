@@ -91,15 +91,9 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // The page draws its own back row, so a navigation bar here would be a
-        // second one — and inside the sheet it would impose a top safe area that
-        // eats the sheet's scarce height.
-        //
-        // Set here for hosts that don't manage the bar themselves, and answered
-        // again through `providesOwnSheetChrome` for the stop sheet, whose
-        // presenter re-decides it on every push and would otherwise put the bar
-        // straight back.
-        navigationController?.setNavigationBarHidden(true, animated: false)
+        // Hidden here as well as in `viewWillAppear`, so the bar is already gone
+        // on the first layout pass.
+        hideNavigationBar(animated: false)
 
         // Re-render now that there is a `navigationController` to ask. `init`
         // runs before this page is on anyone's stack, so the back row's glyph
@@ -128,6 +122,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // Again on every appearance, not just the first: leaving for a page
+        // pushed on top gave that page the bar back. Animated with the pop, so
+        // the bar doesn't vanish from the page above at the start of a back swipe.
+        hideNavigationBar(animated: animated)
         disableIdleTimer()
         viewModel.start()
         onMapFocusChanged?(mapFocus)
@@ -143,6 +141,47 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // the map back then would drop the trip while the rider is still on it.
         if isMovingFromParent {
             onMapFocusChanged?(nil)
+        }
+
+        restoreNavigationBar(animated: animated)
+    }
+
+    // MARK: - Navigation bar
+
+    /// Whether the bar was hidden before this page hid it, so it can be put back
+    /// the way it was. `nil` while the page isn't hiding it.
+    private var navigationBarWasHidden: Bool?
+
+    /// The page draws its own back row, so a navigation bar here would be a
+    /// second one — and inside the sheet it would impose a top safe area that
+    /// eats the sheet's scarce height.
+    ///
+    /// Only where nothing else decides the bar. The stop sheet's presenter, the
+    /// stack's delegate, decides it on every push and pop, from
+    /// `providesOwnSheetChrome`; a second owner would fight it.
+    private func hideNavigationBar(animated: Bool) {
+        guard let navigationController, navigationController.delegate == nil else { return }
+        if navigationBarWasHidden == nil {
+            navigationBarWasHidden = navigationController.isNavigationBarHidden
+        }
+        navigationController.setNavigationBarHidden(true, animated: animated)
+    }
+
+    /// Hands the bar back when navigation takes this page off screen (#1570):
+    /// popped, it goes back the way the host had it; covered by a page pushed on
+    /// top, it shows, since that page needs it for its back button, and the host's
+    /// state waits for the pop. Not on a modal over the page or a tab switch,
+    /// which leave it on top of its stack.
+    ///
+    /// Popped is read from the stack rather than `isMovingFromParent`, which a
+    /// page covered by a push can report too.
+    private func restoreNavigationBar(animated: Bool) {
+        guard let wasHidden = navigationBarWasHidden, let navigationController else { return }
+        if !navigationController.viewControllers.contains(self) {
+            navigationBarWasHidden = nil
+            navigationController.setNavigationBarHidden(wasHidden, animated: animated)
+        } else if navigationController.topViewController !== self {
+            navigationController.setNavigationBarHidden(false, animated: animated)
         }
     }
 

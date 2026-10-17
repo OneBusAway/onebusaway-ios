@@ -33,6 +33,10 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         static let normalAlpha: CGFloat = 1.0
     }
 
+    /// How far apart, in screen points, routes sharing a street draw: an unfocused
+    /// line and its casing, so neighbors touch without covering each other.
+    static let laneWidth: CGFloat = Style.coreWidth + RouteArrowStyle.casingExtraWidth
+
     // MARK: - MapLayer
 
     static let layerID = "stopRoutes"
@@ -79,6 +83,15 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     /// Shapes already drawn, so a refresh doesn't redraw an unchanged line.
     private var drawnShapeIDsByRoute: [RouteID: String] = [:]
+
+    /// Each drawn route's shape as fetched, before it moves over for a shared street.
+    private var shapes: [RouteID: [CLLocationCoordinate2D]] = [:]
+    /// Where each drawn route sits across the streets it shares.
+    private var lanes: [RouteID: RouteLaneLayout.Line] = [:]
+    /// The screen points per map point the lines were last moved over for.
+    private var laneScale: CGFloat?
+    /// The routes drawn moved over for a shared street.
+    private var offsetRouteIDs = Set<RouteID>()
 
     /// Resolves a departure ID back to the live model object. Set by
     /// `MapViewController` (Task 11) BEFORE the first `update(model:)`, because
@@ -355,11 +368,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private func syncRouteOverlays() {
         let wantedRouteIDs = Set(model.routes.map(\.routeID))
 
-        // Drop lines for routes that have left the arrival set.
-        let stale = overlays.filter { !wantedRouteIDs.contains($0.routeID) }
-        if !stale.isEmpty {
-            mapView.removeOverlays(stale)
-            overlays.removeAll { !wantedRouteIDs.contains($0.routeID) }
+        // Drop lines for routes that have left the arrival set. The rest are
+        // drawn again, since a route leaving a shared street gives it back.
+        if shapes.keys.contains(where: { !wantedRouteIDs.contains($0) }) {
+            shapes = shapes.filter { wantedRouteIDs.contains($0.key) }
+            drawShapes()
         }
         drawnShapeIDsByRoute = drawnShapeIDsByRoute.filter { wantedRouteIDs.contains($0.key) }
 
@@ -392,7 +405,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
                 }
                 return
             }
-            self.addShape(coordinates: coordinates, routeID: route.routeID)
+            // Suppressed since the fetch began: drawing now would put the line over
+            // the trip that has the map. Unsuppressing clears the pins and refetches.
+            guard !self.isSuppressed else { return }
+            self.shapes[route.routeID] = coordinates
+            self.drawShapes()
         }
         shapeTasks.append(task)
     }
@@ -405,15 +422,74 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         for task in shapeTasks { await task.value }
     }
 
-    private func addShape(coordinates: [CLLocationCoordinate2D], routeID: RouteID) {
-        // Bottom to top: casing, the colored core above it, then its chevrons.
-        let parts = [RouteLinePart.casing, .core, .arrows].map {
-            RouteShapeOverlay.make(coordinates: coordinates, routeID: routeID, part: $0)
+    /// Lays the routes out across the streets they share, then draws them.
+    ///
+    /// Every route, not just one that changed: a route arriving on a street moves
+    /// the ones already on it over, and one leaving lets them back.
+    private func drawShapes() {
+        // In a fixed order, not the model's: that follows the soonest arrival, which
+        // rolls over as buses depart, and would swap the lines' sides on a redraw.
+        let routeIDs = model.routes.map(\.routeID).sorted()
+        lanes = RouteLaneLayout.lines(for: routeIDs.compactMap { routeID in
+            shapes[routeID].map { (routeID, $0) }
+        })
+        redrawLanes()
+    }
+
+    /// Draws the routes that share a street a lane apart at the map's zoom; see
+    /// `RouteLaneLayout`. A line already drawn down the middle of its street, and
+    /// staying there, is left as it is: it doesn't depend on the zoom.
+    ///
+    /// The offset goes into the overlay's coordinates rather than into a renderer
+    /// that draws for itself, so the line stays a plain `MKPolylineRenderer`; see
+    /// `RouteLinePart`. That ties it to a zoom, so `viewportDidChange` comes back
+    /// here when the zoom moves far enough.
+    private func redrawLanes() {
+        let scale = screenScale
+        laneScale = scale
+        let laneWidth = scale.map { Double(Self.laneWidth / $0) } ?? 0
+
+        let drawn = Dictionary(grouping: overlays, by: \.routeID)
+        var added: [RouteShapeOverlay] = []
+        overlays = model.routes.flatMap { route -> [RouteShapeOverlay] in
+            guard let line = lanes[route.routeID], let shape = shapes[route.routeID] else { return [] }
+            if !line.isShared, !offsetRouteIDs.contains(route.routeID), let lines = drawn[route.routeID] {
+                return lines
+            }
+            let coordinates = line.isShared ? line.offsetCoordinates(laneWidth: laneWidth) : shape
+            // Bottom to top: casing, the colored core above it, then its chevrons.
+            let parts = [RouteLinePart.casing, .core, .arrows].map {
+                RouteShapeOverlay.make(coordinates: coordinates, routeID: route.routeID, part: $0)
+            }
+            added += parts
+            return parts
         }
+        offsetRouteIDs = Set(lanes.filter { $0.value.isShared }.keys)
+
+        let kept = Set(overlays.map(ObjectIdentifier.init))
+        let replaced = drawn.values.joined().filter { !kept.contains(ObjectIdentifier($0)) }
         // Before the overlays, so the arrows' first draw already knows where the stops are.
         refreshArrowMarkers()
-        overlays.append(contentsOf: parts)
-        mapView.addOverlays(parts, level: .aboveRoads)
+        // Added before the old lines go, so there's no frame without either.
+        mapView.addOverlays(added, level: .aboveRoads)
+        mapView.removeOverlays(Array(replaced))
+    }
+
+    /// Lanes stay put within a quarter of a zoom level, where they are still about
+    /// a line's width apart; past that they are drawn again for the new zoom.
+    ///
+    /// - Returns: Whether they were drawn again.
+    private func redrawLanesIfZoomMoved() -> Bool {
+        guard !offsetRouteIDs.isEmpty, let scale = screenScale else { return false }
+        if let laneScale, abs(log2(scale / laneScale)) < 0.25 { return false }
+        redrawLanes()
+        return true
+    }
+
+    /// Screen points per map point, or nil while the map has no size.
+    private var screenScale: CGFloat? {
+        let scale = RouteArrowContext.screenScale(of: mapView)
+        return scale.isFinite && scale > 0 ? scale : nil
     }
 
     private func refreshArrowMarkers() {
@@ -472,6 +548,10 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         mapView.removeAnnotations(annotations)
         overlays.removeAll()
         annotations.removeAll()
+        shapes.removeAll()
+        lanes.removeAll()
+        laneScale = nil
+        offsetRouteIDs.removeAll()
     }
 
     // MARK: - MapLayer conformance
@@ -590,11 +670,14 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     func deactivate() { end() }
 
-    /// Selection-driven, not viewport-driven. A new zoom only lays the arrows out
-    /// again: they are sized and spaced in screen points.
+    /// Selection-driven, not viewport-driven. A new zoom only lays the arrows and
+    /// the lanes of shared streets out again: they are sized and spaced in screen points.
     func viewportDidChange(_ mapRect: MKMapRect?) {
         guard focus != nil else { return }
-        arrowContext.refreshScale(from: mapView, redrawing: overlays)
+        // Lines drawn again come with fresh arrows.
+        if !redrawLanesIfZoomMoved() {
+            arrowContext.refreshScale(from: mapView, redrawing: overlays)
+        }
     }
 
     func stopMarkersDidChange() {

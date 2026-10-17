@@ -1,0 +1,256 @@
+//
+//  RouteLaneLayout.swift
+//  OBAKit
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import CoreLocation
+import MapKit
+import OBAKitCore
+
+/// Spreads routes that share a street across it, side by side, instead of drawing
+/// them one on top of the other, where only the last one drawn shows (#1569).
+///
+/// Each route gets a lane at every point along it: 0, the middle of its street, or a
+/// signed number of lane widths to one side where other routes share the street.
+/// Lanes are counted in widths rather than distances because the lines they keep
+/// apart are as wide in screen points at every zoom; `Line.offsetCoordinates(laneWidth:)`
+/// turns them into map points for the zoom the map is at.
+///
+/// Two routes share a street where they run within `Rules.sharingDistance` of each
+/// other and nearly parallel, in either direction; streets that only cross don't
+/// count. Where several routes share, they take slots in the order they were given,
+/// so a route keeps to the same side all along a shared stretch. The slots are
+/// counted from the side of the first of them, so two routes running opposite ways
+/// don't each move to their own right and land on the same side.
+nonisolated enum RouteLaneLayout {
+
+    enum Rules {
+        /// Agencies trace one street through different points, and some down
+        /// either side of it. Further apart than this is a different street.
+        static let sharingDistance: CLLocationDistance = 20
+        /// How far from parallel two lines can run and still share the street.
+        static let maximumAngle: Double = 25 * .pi / 180
+        /// Long segments are cut into pieces this long, so a line moves over where
+        /// the sharing starts rather than drifting across a whole segment.
+        static let sampleSpacing: CLLocationDistance = 20
+    }
+
+    /// One route's line, ready to offset.
+    struct Line {
+        /// The route's shape, resampled, in map points.
+        let points: [MKMapPoint]
+        /// At each point, in lane widths. Positive is to the right of travel.
+        let lanes: [Double]
+
+        let isShared: Bool
+
+        init(points: [MKMapPoint], lanes: [Double]) {
+            self.points = points
+            self.lanes = lanes
+            isShared = lanes.contains { $0 != 0 }
+        }
+
+        /// The line, moved off the middle of the street wherever it shares it.
+        ///
+        /// - Parameter laneWidth: In map points.
+        func offsetCoordinates(laneWidth: Double) -> [CLLocationCoordinate2D] {
+            points.indices.map { index in
+                guard lanes[index] != 0 else { return points[index].coordinate }
+                let normal = RouteLaneLayout.normal(at: index, in: points)
+                let distance = lanes[index] * laneWidth
+                return MKMapPoint(
+                    x: points[index].x + normal.dx * distance,
+                    y: points[index].y + normal.dy * distance
+                ).coordinate
+            }
+        }
+    }
+
+    /// - Parameter routes: In priority order: the first route takes the first slot
+    ///   wherever it shares a street.
+    /// - Returns: A line for every route with at least two distinct points.
+    static func lines(for routes: [(routeID: RouteID, coordinates: [CLLocationCoordinate2D])]) -> [RouteID: Line] {
+        guard let anyCoordinate = routes.lazy.compactMap(\.coordinates.first).first else { return [:] }
+        // One scale for the whole set: the routes serving one stop span a few
+        // kilometers, over which it barely changes.
+        let mapPointsPerMeter = MKMapPointsPerMeterAtLatitude(anyCoordinate.latitude)
+
+        let sampled = routes.compactMap { route -> (routeID: RouteID, points: [MKMapPoint])? in
+            let points = resample(route.coordinates.map(MKMapPoint.init), spacing: Rules.sampleSpacing * mapPointsPerMeter)
+            return points.count >= 2 ? (route.routeID, points) : nil
+        }
+
+        let reach = Rules.sharingDistance * mapPointsPerMeter
+        let index = SegmentIndex(lines: sampled.map(\.points), cellSize: reach)
+        let minimumAlignment = cos(Rules.maximumAngle)
+
+        var lines: [RouteID: Line] = [:]
+        for (routeIndex, route) in sampled.enumerated() {
+            let lanes = route.points.indices.map { pointIndex -> Double in
+                // Each other route's segment here that runs most nearly along this
+                // route's, as a signed cosine. All the segments in reach, not just the
+                // nearest: by a corner, that's on the cross street. Both of this
+                // route's segments at the point, not their average: at a corner, that
+                // runs diagonally, along neither street.
+                let directions = segmentDirections(at: pointIndex, in: route.points)
+                var alignments: [Int: Double] = [:]
+                for segment in index.segments(near: route.points[pointIndex], within: reach, excluding: routeIndex) {
+                    for direction in directions {
+                        let alignment = direction.dot(segment.direction)
+                        if abs(alignment) > abs(alignments[segment.line] ?? 0) {
+                            alignments[segment.line] = alignment
+                        }
+                    }
+                }
+                // Every other route sharing the street here, with whether it runs
+                // the same way as this one.
+                let sharers = alignments.filter { abs($0.value) >= minimumAlignment }
+                guard let first = sharers.min(by: { $0.key < $1.key }) else { return 0 }
+
+                let slot = Double(sharers.keys.count(where: { $0 < routeIndex }))
+                let centered = slot - Double(sharers.count) / 2
+                // Counted from the first sharer's right, which is this route's left
+                // when the two run opposite ways.
+                return first.key < routeIndex && first.value < 0 ? -centered : centered
+            }
+            lines[route.routeID] = Line(points: route.points, lanes: lanes)
+        }
+        return lines
+    }
+
+    // MARK: - Geometry
+
+    fileprivate struct Vector {
+        var dx: Double
+        var dy: Double
+
+        init(dx: Double, dy: Double) {
+            self.dx = dx
+            self.dy = dy
+        }
+
+        init(from start: MKMapPoint, to end: MKMapPoint) {
+            self.init(dx: end.x - start.x, dy: end.y - start.y)
+        }
+
+        var normalized: Vector? {
+            let length = hypot(dx, dy)
+            return length > 0 ? Vector(dx: dx / length, dy: dy / length) : nil
+        }
+
+        /// A quarter turn clockwise on screen, where y runs down: the right of travel.
+        var right: Vector { Vector(dx: -dy, dy: dx) }
+
+        func dot(_ other: Vector) -> Double { dx * other.dx + dy * other.dy }
+    }
+
+    /// The distance from `point` to the segment from `start` to `end`, in map points.
+    static func distance(from point: MKMapPoint, toSegmentFrom start: MKMapPoint, to end: MKMapPoint) -> Double {
+        let segment = Vector(from: start, to: end)
+        let lengthSquared = segment.dot(segment)
+        let fraction = lengthSquared == 0 ? 0 : max(0, min(1, Vector(from: start, to: point).dot(segment) / lengthSquared))
+        return hypot(point.x - (start.x + fraction * segment.dx), point.y - (start.y + fraction * segment.dy))
+    }
+
+    /// `points` with any repeats dropped and every segment longer than `spacing` cut
+    /// into equal pieces no longer than it.
+    private static func resample(_ points: [MKMapPoint], spacing: Double) -> [MKMapPoint] {
+        guard var previous = points.first else { return [] }
+        var resampled = [previous]
+        for point in points.dropFirst() {
+            let length = hypot(point.x - previous.x, point.y - previous.y)
+            guard length > 0 else { continue }
+            let pieces = max(1, Int((length / spacing).rounded(.up)))
+            for piece in 1...pieces {
+                let fraction = Double(piece) / Double(pieces)
+                resampled.append(MKMapPoint(
+                    x: previous.x + (point.x - previous.x) * fraction,
+                    y: previous.y + (point.y - previous.y) * fraction
+                ))
+            }
+            previous = point
+        }
+        return resampled
+    }
+
+    /// The directions of travel into and out of point `index`: one at either end
+    /// of the line, two everywhere else.
+    private static func segmentDirections(at index: Int, in points: [MKMapPoint]) -> [Vector] {
+        [(index - 1, index), (index, index + 1)].compactMap { from, to in
+            guard from >= 0, to < points.count else { return nil }
+            return Vector(from: points[from], to: points[to]).normalized
+        }
+    }
+
+    /// Which way, and how far, one lane width at point `index` moves it: to the right
+    /// of travel, lengthened at a corner so the line beside it keeps its width.
+    private static func normal(at index: Int, in points: [MKMapPoint]) -> Vector {
+        let rights = segmentDirections(at: index, in: points).map(\.right)
+        guard rights.count == 2 else { return rights.first ?? Vector(dx: 0, dy: 0) }
+        let incoming = rights[0]
+        guard let bisector = Vector(dx: incoming.dx + rights[1].dx, dy: incoming.dy + rights[1].dy).normalized else {
+            return incoming
+        }
+        // A miter, capped so a hairpin doesn't throw the point off into the distance.
+        let alignment = max(bisector.dot(incoming), 0.5)
+        return Vector(dx: bisector.dx / alignment, dy: bisector.dy / alignment)
+    }
+}
+
+/// Finds the routes near a point without measuring every segment of every route.
+nonisolated private struct SegmentIndex {
+    struct Segment {
+        let line: Int
+        let start: MKMapPoint
+        let end: MKMapPoint
+        let direction: RouteLaneLayout.Vector
+    }
+
+    private struct Cell: Hashable {
+        let x: Int
+        let y: Int
+    }
+
+    private let cellSize: Double
+    private var cells: [Cell: [Segment]] = [:]
+
+    init(lines: [[MKMapPoint]], cellSize: Double) {
+        self.cellSize = cellSize
+        for (line, points) in lines.enumerated() {
+            for (start, end) in zip(points, points.dropFirst()) {
+                guard let direction = RouteLaneLayout.Vector(from: start, to: end).normalized else { continue }
+                let segment = Segment(line: line, start: start, end: end, direction: direction)
+                let low = cell(MKMapPoint(x: min(start.x, end.x), y: min(start.y, end.y)))
+                let high = cell(MKMapPoint(x: max(start.x, end.x), y: max(start.y, end.y)))
+                for x in low.x...high.x {
+                    for y in low.y...high.y {
+                        cells[Cell(x: x, y: y), default: []].append(segment)
+                    }
+                }
+            }
+        }
+    }
+
+    private func cell(_ point: MKMapPoint) -> Cell {
+        Cell(x: Int((point.x / cellSize).rounded(.down)), y: Int((point.y / cellSize).rounded(.down)))
+    }
+
+    /// Every other line's segments within `reach` of `point`. A segment spanning
+    /// several cells can come back more than once.
+    func segments(near point: MKMapPoint, within reach: Double, excluding excluded: Int) -> [Segment] {
+        let center = cell(point)
+        var found: [Segment] = []
+        for x in (center.x - 1)...(center.x + 1) {
+            for y in (center.y - 1)...(center.y + 1) {
+                found += (cells[Cell(x: x, y: y)] ?? []).filter {
+                    $0.line != excluded && RouteLaneLayout.distance(from: point, toSegmentFrom: $0.start, to: $0.end) <= reach
+                }
+            }
+        }
+        return found
+    }
+}
