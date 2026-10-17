@@ -321,14 +321,19 @@ private struct TripPageBackRow: View {
             // Stop names routinely outrun the row, so the title scrolls rather than truncating.
             if let title {
                 MarqueeText(text: title, textStyle: .headline)
-                    // The back button's label already says "Back to <title>".
-                    .accessibilityHidden(behavior == .pop)
             }
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+        // One element for the whole row, so VoiceOver says "Back to <title>" once
+        // instead of the button and then the title again. The title is a UIKit
+        // label in a representable, which `.accessibilityHidden` doesn't reach.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(behavior.accessibilityLabel(originTitle: title))
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { onBack() }
     }
 
     private func circleGlyph(_ systemImage: String) -> some View {

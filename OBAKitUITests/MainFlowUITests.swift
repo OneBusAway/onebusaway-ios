@@ -15,11 +15,13 @@ import XCTest
 /// (`-OBACurrentRegionIdentifierUserDefaultsKey <integer>1</integer>` = Puget Sound,
 /// which is bundled in regions.json), so onboarding is skipped without any
 /// stored state on the simulator.
-final class MainFlowUITests: XCTestCase {
+// nonisolated: the target defaults to the main actor, and XCTestCase\'s
+// initializers and setUp are nonisolated.
+nonisolated final class MainFlowUITests: XCTestCase {
 
-    private var app: XCUIApplication!
+    @MainActor private var app: XCUIApplication!
 
-    override func setUpWithError() throws {
+    @MainActor override func setUp() async throws {
         continueAfterFailure = false
 
         app = XCUIApplication()
@@ -49,7 +51,7 @@ final class MainFlowUITests: XCTestCase {
         app.launch()
     }
 
-    func test_appLaunches_withTabBar_andOnboardingIsSkipped() throws {
+    @MainActor func test_appLaunches_withTabBar_andOnboardingIsSkipped() throws {
         XCTAssertTrue(
             app.tabBars.firstMatch.waitForExistence(timeout: 30),
             "Tab bar should appear on launch when a region is already selected")
@@ -58,7 +60,7 @@ final class MainFlowUITests: XCTestCase {
             "Onboarding must not appear when a region is already selected")
     }
 
-    func test_allTabs_openWithoutCrashing() throws {
+    @MainActor func test_allTabs_openWithoutCrashing() throws {
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 30))
 
@@ -78,7 +80,7 @@ final class MainFlowUITests: XCTestCase {
     /// bulletin above all other content. Region-wide alerts (empty GTFS-RT `agency_id`,
     /// as served by sidecar.onebusaway.org) used to be silently dropped during parsing,
     /// so the bulletin never appeared.
-    func test_regionWideAlertBulletin_appears_andIsDismissible() throws {
+    @MainActor func test_regionWideAlertBulletin_appears_andIsDismissible() throws {
         // Relaunch with the bulletin suppression removed and a synthetic
         // region-wide alert injected (DEBUG-only hook), so this test does not
         // depend on a real alert being live in the region.
@@ -111,7 +113,7 @@ final class MainFlowUITests: XCTestCase {
     /// SpringBoard proxy rather than `app` — and directly, rather than via an
     /// interruption monitor, since a withheld scene never delivers the interaction
     /// an interruption monitor depends on.
-    private func dismissSystemPermissionDialogs() {
+    @MainActor private func dismissSystemPermissionDialogs() {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let buttonLabels = ["Allow", "Allow Once", "Allow While Using App", "Allow While Using the App", "OK", "Don't Allow"]
 
@@ -127,7 +129,7 @@ final class MainFlowUITests: XCTestCase {
         }
     }
 
-    func test_tripPlannerTip_rendersContent() throws {
+    @MainActor func test_tripPlannerTip_rendersContent() throws {
         // Relaunch with all tips forced visible (DEBUG-only hook) so the test
         // doesn't depend on TipKit's display-frequency or invalidation state.
         app.launchEnvironment["TEST_SHOW_ALL_TIPS"] = "1"
@@ -147,7 +149,7 @@ final class MainFlowUITests: XCTestCase {
             "Trip planner tip popover should display its message")
     }
 
-    func test_moreTab_showsSettingsContent() throws {
+    @MainActor func test_moreTab_showsSettingsContent() throws {
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 30))
 
