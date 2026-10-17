@@ -7,6 +7,9 @@ Apps/**/Info.plist
 Apps/**/*.entitlements
 OBAWidget/**/*.entitlements
 OBAKitTests/Info.plist
+# Left behind by the framework targets these package targets replaced.
+# SwiftPM ignores them, so keep them out of commits.
+OBAKitCore/Info.plist
 OBAWidget/Info.plist
 OBAKitWatch/Info.plist
 WatchApp/Info.plist
