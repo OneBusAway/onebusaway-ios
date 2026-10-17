@@ -321,6 +321,8 @@ private struct TripPageBackRow: View {
             // Stop names routinely outrun the row, so the title scrolls rather than truncating.
             if let title {
                 MarqueeText(text: title, textStyle: .headline)
+                    // The back button's label already says "Back to <title>".
+                    .accessibilityHidden(behavior == .pop)
             }
 
             Spacer(minLength: 0)

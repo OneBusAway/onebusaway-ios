@@ -143,7 +143,6 @@ public extension UIColor {
         )
     }
 
-    /// Linear blend toward `other` in RGB space; `amount` is clamped to 0...1.
     /// The receiver, darkened over a light `background` or lightened over a dark
     /// one, in small steps until it reaches `minimumRatio` against it. Unchanged
     /// when it already does. Mixing toward black or white keeps the hue, so a
@@ -159,6 +158,7 @@ public extension UIColor {
         return candidate
     }
 
+    /// Linear blend toward `other` in RGB space; `amount` is clamped to 0...1.
     func blended(with other: UIColor, amount: CGFloat) -> UIColor {
         var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
         var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0

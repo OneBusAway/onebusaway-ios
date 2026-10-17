@@ -274,6 +274,11 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
 
         if let stopsSectionSnapshot {
             self.diffableDataSource.apply(stopsSectionSnapshot, to: .nearbyStops, animatingDifferences: true)
+            // Rows whose identity didn't change aren't redrawn, so their VoiceOver
+            // distance would stay at whatever it was when they first appeared.
+            var refreshed = self.diffableDataSource.snapshot()
+            refreshed.reconfigureItems(refreshed.itemIdentifiers(inSection: .nearbyStops))
+            self.diffableDataSource.apply(refreshed, animatingDifferences: false)
         }
 
         toggleEmptyDataView(isShowing: sections.isEmpty)

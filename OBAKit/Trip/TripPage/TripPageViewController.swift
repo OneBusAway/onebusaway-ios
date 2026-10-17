@@ -549,6 +549,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// Looked up once per `render()`: reading `alarms` decodes the whole store.
     private var existingAlarm: Alarm?
 
+    private var isRemovingAlarm = false
+
     private func lookUpAlarm() -> Alarm? {
         guard let departure, let regionID = application.currentRegion?.regionIdentifier else { return nil }
         let store = application.userDataStore
@@ -561,7 +563,12 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// Mirrors `StopViewModel.cancelAlarm(for:)`: the server copy goes first, so
     /// a failure leaves the rider an alarm they can still see and cancel.
     private func removeAlarm(_ alarm: Alarm) {
+        // A second activation while the delete is in flight would delete and
+        // announce twice.
+        guard !isRemovingAlarm else { return }
+        isRemovingAlarm = true
         Task { @MainActor in
+            defer { isRemovingAlarm = false }
             do {
                 guard let obacoService = application.obacoService else {
                     throw StopViewModel.AlarmCancellationError.serviceUnavailable
@@ -586,6 +593,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
+        // `AlarmBuilder` doesn't persist what it creates. Without this the page
+        // can't find the alarm it just set, so the button kept saying "Add alarm".
+        application.userDataStore.add(alarm: alarm)
+
         if alarmBuilder.trackOnLockScreen {
             startLiveActivity()
         }
