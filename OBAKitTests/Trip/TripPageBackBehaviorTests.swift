@@ -101,4 +101,14 @@ final class TripPageBackWiringTests: OBATestCase {
 
         #expect(closeCount == 1)
     }
+
+    // MARK: - VoiceOver
+
+    /// The control said only "Back", with the origin as separate text after it, so
+    /// it sounded like the rider was still on the stop page.
+    @Test func `Back names where it goes`() {
+        #expect(TripPageBackBehavior.pop.accessibilityLabel(originTitle: "3rd Ave & Pike St") == "Back to 3rd Ave & Pike St")
+        #expect(TripPageBackBehavior.pop.accessibilityLabel(originTitle: nil) == Strings.back)
+        #expect(TripPageBackBehavior.dismiss.accessibilityLabel(originTitle: "3rd Ave & Pike St") == Strings.close)
+    }
 }

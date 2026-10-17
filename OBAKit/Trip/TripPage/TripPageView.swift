@@ -316,11 +316,14 @@ private struct TripPageBackRow: View {
                 circleGlyph(behavior.systemImage)
             }
             .tint(Color(uiColor: .label))
-            .accessibilityLabel(behavior == .pop ? Strings.back : Strings.close)
+            .accessibilityLabel(behavior.accessibilityLabel(originTitle: title))
 
             // Stop names routinely outrun the row, so the title scrolls rather than truncating.
             if let title {
                 MarqueeText(text: title, textStyle: .headline)
+                    // The button's label already says it ("Back to …"), and when
+                    // closing, this is the screen underneath, not this page.
+                    .accessibilityHidden(true)
             }
 
             Spacer(minLength: 0)

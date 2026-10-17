@@ -270,6 +270,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// view model is observed directly by the view, so this is only for the
     /// action gates and the two pieces of state this controller owns.
     private func render() {
+        title = pageTitle
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
@@ -282,6 +283,17 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             isTrackingLiveActivity: isTrackingLiveActivity,
             isCollapsed: isAtTip
         )
+    }
+
+    /// "Route 10 to Capitol Hill". The page hides its bar, so this mostly isn't
+    /// drawn, but it names the page on the back button of anything pushed on top
+    /// of it, which otherwise said only "Back", and in the iPhone Duo's side bar.
+    private var pageTitle: String? {
+        let convertible = viewModel.tripConvertible
+        guard let route = convertible.trip.route?.shortName ?? departure?.routeShortName, !route.isEmpty else { return nil }
+        guard let headsign = departure?.tripHeadsign ?? convertible.trip.headsign, !headsign.isEmpty else { return route }
+        let fmt = OBALoc("trip_page.title_fmt", value: "Route %@ to %@", comment: "The trip page's title: route short name, then headsign. e.g. 'Route 10 to Capitol Hill'.")
+        return String(format: fmt, route, headsign)
     }
 
     // MARK: - StopSheetCollapsibleContent

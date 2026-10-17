@@ -98,7 +98,9 @@ struct TripCardView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         // A focused card re-speaks as its countdown changes, like the Stop page rows.
-        .accessibilityAddTraits(.updatesFrequently)
+        // A heading because it's what this page is about, so the Headings rotor
+        // reaches it first.
+        .accessibilityAddTraits([.updatesFrequently, .isHeader])
     }
 
     /// "Arrives" rather than the departure list's "departs": this card is the one
