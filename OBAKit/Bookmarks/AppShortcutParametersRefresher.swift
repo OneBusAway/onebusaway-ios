@@ -30,20 +30,16 @@ final class AppShortcutParametersRefresher {
         self.provider = provider
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(bookmarksDidChange),
+            selector: #selector(refresh),
             name: .bookmarksDidChange,
             object: nil
         )
         refresh()
     }
 
-    /// `.bookmarksDidChange` may be posted off the main actor. The refresh is
-    /// nonisolated, so it runs on the posting thread.
-    @objc private nonisolated func bookmarksDidChange() {
-        provider.updateAppShortcutParameters()
-    }
-
-    func refresh() {
+    /// Also the `.bookmarksDidChange` observer. That may be posted off the main
+    /// actor, so this is nonisolated and runs on the posting thread.
+    @objc nonisolated func refresh() {
         provider.updateAppShortcutParameters()
     }
 }
