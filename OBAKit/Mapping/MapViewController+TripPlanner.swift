@@ -178,8 +178,8 @@ extension MapViewController {
 
         subscribeToTripPlannerNotifications()
 
-        // `.embedded`, inside a stack built here rather than OTPKit's own, so the
-        // stack's bars can be kept horizontal in the panel. See `TripPlannerPanelView`.
+        // `.embedded`, under a plain header rather than OTPKit's navigation stack,
+        // which reserved an empty vertical-bar column in the panel. See `TripPlannerPanelView`.
         let plannerBody = tripPlanner.createTripPlannerView(
             origin: originLocation,
             destination: destinationLocation,

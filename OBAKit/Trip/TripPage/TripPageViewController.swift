@@ -96,9 +96,13 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         hideNavigationBar(animated: false)
 
         registerForVerticalBarChanges { [weak self] in
-            guard let self, navigationController?.topViewController === self else { return }
-            hideNavigationBar(animated: true)
+            guard let self else { return }
+            // Render even while covered: `viewWillAppear` puts the bar back to
+            // match `showsSystemNavigationBar` on the way back, and a stale back
+            // row would leave the page with two back controls, or none.
             render()
+            guard navigationController?.topViewController === self else { return }
+            hideNavigationBar(animated: true)
         }
 
         // Re-render now that there is a `navigationController` to ask. `init`

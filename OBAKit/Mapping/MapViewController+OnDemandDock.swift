@@ -79,15 +79,17 @@ extension MapViewController {
         host.view.isHidden = anchoring.isHidden
         let placement = anchoring.placement
         let surface: UIView = (anchoring.anchorsToPlanner ? plannerPanel?.surfaceView : nil) ?? floatingPanel.surfaceView
-        guard placement != host.placement || surface !== host.placementSurface else { return }
+        let ceilsAtToolbar = anchoring.anchorsToPlanner && plannerCardCeilsAtToolbar(for: placement)
+        guard placement != host.placement || surface !== host.placementSurface || ceilsAtToolbar != host.placementCeilsAtToolbar else { return }
         NSLayoutConstraint.deactivate(host.placementConstraints)
         host.placement = placement
         host.placementSurface = surface
+        host.placementCeilsAtToolbar = ceilsAtToolbar
         host.placementConstraints = placement.constraints(
             dockView: host.view,
             safeArea: view.safeAreaLayoutGuide,
             surface: surface,
-            ceiling: anchoring.anchorsToPlanner ? plannerCardCeiling(for: placement) : nil
+            ceiling: anchoring.anchorsToPlanner ? (ceilsAtToolbar ? toolbar.bottomAnchor : view.safeAreaLayoutGuide.topAnchor) : nil
         )
         NSLayoutConstraint.activate(host.placementConstraints)
     }
@@ -95,8 +97,8 @@ extension MapViewController {
     /// The planner card rises from the half-height planner toward the top of
     /// the screen; at compact width it spans the map, so it stops below the
     /// map controls instead of covering Layers and My Trip.
-    private func plannerCardCeiling(for placement: OnDemandDockPlacement) -> NSLayoutYAxisAnchor {
-        placement == .compact && !toolbar.isHidden ? toolbar.bottomAnchor : view.safeAreaLayoutGuide.topAnchor
+    private func plannerCardCeilsAtToolbar(for placement: OnDemandDockPlacement) -> Bool {
+        placement == .compact && !toolbar.isHidden
     }
 
     /// The zone colours the layer drew, so the dock and picker match the map.

@@ -122,14 +122,16 @@ class StopHeaderView: UIView {
     /// The width the current map snapshot was taken at.
     private var snapshotWidth: CGFloat = 0
 
-    /// Snapshots the map at this view's own width. `layoutSubviews` retakes it
-    /// only when the view grows past that width; aspect-fill covers shrinking,
-    /// and a live resize would otherwise render a snapshot on every pass.
+    /// Snapshots the map at this view's own width, rounded up so a live resize
+    /// doesn't start a snapshot on every pass. `layoutSubviews` retakes it only
+    /// when the view grows past that width; the image view centres the snapshot,
+    /// so a narrower view crops it evenly from both sides.
     private func updateSnapshot() {
         guard let config, bounds.width > 0 else { return }
 
-        snapshotWidth = bounds.width
-        let size = CGSize(width: bounds.width, height: StopHeaderView.maximumHeight)
+        let widthStep: CGFloat = 128
+        snapshotWidth = (bounds.width / widthStep).rounded(.up) * widthStep
+        let size = CGSize(width: snapshotWidth, height: StopHeaderView.maximumHeight)
 
         snapshotter = MapSnapshotter(size: size, traitCollection: traitCollection, stopIconFactory: config.viewModel.stopIconFactory)
 

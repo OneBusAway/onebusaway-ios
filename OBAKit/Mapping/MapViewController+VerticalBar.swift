@@ -28,6 +28,8 @@ extension MapViewController {
         let vertical = presentsBarsVertically
         toolbar.isHidden = vertical
         setToolbarItems(vertical ? verticalBarItems.items : nil, animated: animated)
+        // The planner card's ceiling is the hover bar only while it shows.
+        layoutOnDemandDock()
 
         // Only the visible page owns the navigation controller's toolbar.
         guard let navigationController, navigationController.topViewController === self else { return }

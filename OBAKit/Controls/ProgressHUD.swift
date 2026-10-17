@@ -359,6 +359,8 @@ public class ProgressHUD: UIView {
 			toolbarHUD?.clipsToBounds = true
 			toolbarHUD?.layer.cornerRadius = 10
 			toolbarHUD?.layer.masksToBounds = true
+			// Stays centred when the window resizes, which posts no orientation change.
+			toolbarHUD?.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
 			viewBackground?.addSubview(toolbarHUD!)
 		}
 
