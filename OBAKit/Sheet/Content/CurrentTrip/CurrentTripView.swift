@@ -43,7 +43,7 @@ struct CurrentTripView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(Strings.close) { coordinator.pop() }
+                        SheetDismissButton(.close) { coordinator.pop() }
                     }
                 }
         }

@@ -36,7 +36,7 @@ struct FeedStatusSheet: View {
                     .font(.subheadline)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    SheetDismissButton(.done) { dismiss() }
                 }
             }
         }

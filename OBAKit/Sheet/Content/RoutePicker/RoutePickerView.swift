@@ -39,7 +39,7 @@ struct RoutePickerView: View {
                 }
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(Strings.close) { coordinator.pop() }
+                        SheetDismissButton(.close) { coordinator.pop() }
                     }
                 }
         }

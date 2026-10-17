@@ -46,7 +46,7 @@ struct VehicleDetailSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    SheetDismissButton(.done) { dismiss() }
                 }
             }
         }
