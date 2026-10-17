@@ -326,6 +326,8 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         #expect(badge.text == "7m")
         #expect(badge.frame.maxY < view.bounds.minY)
         #expect(abs(badge.frame.midX - view.bounds.midX) < 0.001)
+        // VoiceOver reads the pin, not the badge, so the pin carries the arrival.
+        #expect(view.accessibilityValue == "arrives in 7 minutes")
     }
 
     /// On a shared trip the sharer's boarding stop is a ring in the route's
@@ -341,6 +343,7 @@ final class TripMapAnnotationPolicyTests: OBATestCase {
         #expect(shape.fillColor == UIColor.white.cgColor)
         #expect(shape.strokeColor == UIColor.red.cgColor)
         #expect(try arrivalBadge(of: view).isHidden)
+        #expect(view.accessibilityValue == nil)
     }
 
     /// A reused view must not carry the last stop's mark or arrival to the next.

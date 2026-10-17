@@ -105,7 +105,7 @@ final class SurveyLauncherCardView: UIView {
     private lazy var takeSurveyButton = SurveyLauncherCardView.footerButton(
         title: OBALoc("survey_launcher.take_survey_button", value: "Take survey", comment: "Primary button on the survey launcher card; opens the survey."),
         weight: .semibold,
-        titleColor: ThemeColors.shared.brand,
+        titleColor: ThemeColors.shared.brandTint,
         pressedColor: ThemeColors.shared.brand.withAlphaComponent(0.08)
     )
 

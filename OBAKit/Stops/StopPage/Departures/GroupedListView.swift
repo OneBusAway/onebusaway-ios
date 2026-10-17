@@ -238,7 +238,7 @@ struct GroupedListView: View {
     private func chips(_ group: StopPageListBuilder.RouteGroup<ArrivalDeparture>) -> some View {
         ForEach(group.chips, id: \.id) { chip in
             let chipStatus = statusProvider(chip)
-            Text(Formatters.shortMinutesText(chip.arrivalDepartureMinutes))
+            StatusGlyphLabel(text: Formatters.shortMinutesText(chip.arrivalDepartureMinutes), status: chipStatus)
                 .font(.caption.weight(.heavy)).monospacedDigit()
                 .foregroundStyle(Color(uiColor: chipStatus.color))
                 .padding(.horizontal, 8).padding(.vertical, 3)
@@ -415,6 +415,15 @@ struct GroupedListView: View {
         label += " " + timeDisplay(group.next).accessibilityTimeDescription
         if isTransferTrip(group.next) {
             label += ", " + OBALoc("stop_page.row.a11y_transfer_trip", value: "your transfer trip", comment: "VoiceOver clause appended to a departure row that matches the rider's inbound transfer trip.")
+        }
+        // The alarm pill shows a set alarm only as a filled bell.
+        if alarmLookup(group.next) != nil {
+            label += ", " + StopPageAccessibilityCopy.alarmSet
+        }
+        // The chips, which otherwise reach VoiceOver only as a count. Their own
+        // sentences, after a full stop, so they don't run on from the time above.
+        if let following = StopPageAccessibilityCopy.followingDepartures(group.chips, formatters: formatters, status: statusProvider) {
+            label += ". " + following
         }
         return label
     }

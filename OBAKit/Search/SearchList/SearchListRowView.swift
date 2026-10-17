@@ -11,7 +11,7 @@ import OBAKitCore
 struct SearchListRowView: View {
     let row: SearchListRow
 
-    private let brandColor = Color(uiColor: ThemeColors.shared.brand)
+    private let brandColor = Color(uiColor: ThemeColors.shared.brandTint)
 
     /// Icon sizes below are design points at the default text size; this scales
     /// them with Dynamic Type so the glyphs keep pace with the row's text.

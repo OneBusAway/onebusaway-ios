@@ -270,6 +270,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// view model is observed directly by the view, so this is only for the
     /// action gates and the two pieces of state this controller owns.
     private func render() {
+        existingAlarm = lookUpAlarm()
+        title = pageTitle
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
@@ -278,10 +280,23 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             actions: makeActions(),
             backBehavior: backBehavior,
             showsBackRow: !showsSystemNavigationBar,
-            hasAlarm: false,
+            hasAlarm: existingAlarm != nil,
             isTrackingLiveActivity: isTrackingLiveActivity,
             isCollapsed: isAtTip
         )
+    }
+
+    /// "Route 10 to Capitol Hill". The page hides its bar, so this mostly isn't
+    /// drawn, but it names the page on the back button of anything pushed on top
+    /// of it, which otherwise said only "Back", and in the iPhone Duo's side bar.
+    private var pageTitle: String? {
+        // `routeShortName` and `tripHeadsign` fall back to the route and trip
+        // references, which trap until they've loaded; this runs from `init`.
+        guard let departure, (departure.route as Route?) != nil, (departure.trip as Trip?) != nil else { return nil }
+        let route = departure.routeShortName
+        guard !route.isEmpty else { return nil }
+        guard let headsign = departure.tripHeadsign, !headsign.isEmpty else { return route }
+        return TripCardView.routeToHeadsign(route, headsign)
     }
 
     // MARK: - StopSheetCollapsibleContent
@@ -341,7 +356,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
         let stopID = departure?.stopID ?? viewModel.tripDetails?.stopTimes.first?.stopID
         actions.canSchedule = routeID != nil && ScheduleViewControllerFactory.canPresentSchedule(stopID: stopID, application: application)
-        actions.canAlarm = departure.map(canCreateAlarm) ?? false
+        // An alarm already set can always be removed, even once it's too late to set one.
+        actions.canAlarm = existingAlarm != nil || (departure.map(canCreateAlarm) ?? false)
         // A Live Activity reports a countdown to a stop. Without a departure
         // there is no stop and nothing to count down to.
         actions.canStartLiveActivity = departure != nil && ActivityAuthorizationInfo().areActivitiesEnabled
@@ -358,7 +374,14 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         }
         actions.onBookmark = { [weak self] in self?.showBookmarkEditor() }
         actions.onSchedule = { [weak self] in self?.showSchedule() }
-        actions.onAlarm = { [weak self] in self?.showAlarmPicker() }
+        actions.onAlarm = { [weak self] in
+            guard let self else { return }
+            if let existingAlarm = self.existingAlarm {
+                removeAlarm(existingAlarm)
+            } else {
+                showAlarmPicker()
+            }
+        }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
         actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
 
@@ -519,6 +542,50 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         alarmBuilder?.showBulletin(above: self)
     }
 
+    /// The alarm the rider set on this departure, from this page or the stop page.
+    /// The button said "Add alarm" whether or not there was one, so pressing it
+    /// again armed a second alarm, and the first couldn't be removed from here.
+    ///
+    /// Looked up once per `render()`: reading `alarms` decodes the whole store.
+    private var existingAlarm: Alarm?
+
+    private var isRemovingAlarm = false
+
+    private func lookUpAlarm() -> Alarm? {
+        guard let departure, let regionID = application.currentRegion?.regionIdentifier else { return nil }
+        let store = application.userDataStore
+        guard !store.alarms.isEmpty else { return nil }
+        // As the stop page does: an expired alarm has fired, so it's nothing to remove.
+        store.deleteExpiredAlarms()
+        return AlarmVisitIdentity.alarm(for: departure, regionID: regionID, in: store.alarms)
+    }
+
+    /// Mirrors `StopViewModel.cancelAlarm(for:)`: the server copy goes first, so
+    /// a failure leaves the rider an alarm they can still see and cancel.
+    private func removeAlarm(_ alarm: Alarm) {
+        // A second activation while the delete is in flight would delete and
+        // announce twice.
+        guard !isRemovingAlarm else { return }
+        isRemovingAlarm = true
+        Task { @MainActor in
+            defer { isRemovingAlarm = false }
+            do {
+                guard let obacoService = application.obacoService else {
+                    throw StopViewModel.AlarmCancellationError.serviceUnavailable
+                }
+                try await obacoService.deleteAlarm(url: alarm.url)
+            } catch APIError.requestNotFound {
+                // It already fired, and the server deleted it.
+            } catch {
+                await AlertPresenter.show(error: error, presentingController: self)
+                return
+            }
+            application.userDataStore.delete(alarm: alarm)
+            render()
+            AccessibilityNotification.Announcement(AlarmVisitIdentity.removedAnnouncement).post()
+        }
+    }
+
     // MARK: - AlarmBuilderDelegate
 
     func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
@@ -526,12 +593,17 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
+        // `AlarmBuilder` doesn't persist what it creates. Without this the page
+        // can't find the alarm it just set, so the button kept saying "Add alarm".
+        application.userDataStore.add(alarm: alarm)
+
         if alarmBuilder.trackOnLockScreen {
             startLiveActivity()
         }
 
         let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
         ProgressHUD.showSuccessAndDismiss(message: message)
+        render()
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {

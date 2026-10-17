@@ -34,8 +34,8 @@ nonisolated public struct OBAListRowConfiguration: OBAContentConfiguration, Equa
 
         var cellAccessory: UICellAccessory? {
             switch self {
-            case .checkmark: return .checkmark(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand))
-            case .disclosureIndicator: return .disclosureIndicator(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand))
+            case .checkmark: return .checkmark(displayed: .always, options: .init(tintColor: ThemeColors.shared.brandTint))
+            case .disclosureIndicator: return .disclosureIndicator(displayed: .always, options: .init(tintColor: ThemeColors.shared.brandTint))
             case .none: return nil
             }
         }

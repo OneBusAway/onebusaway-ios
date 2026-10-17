@@ -21,6 +21,24 @@ import OBAKitCore
 /// "5 minut". `locale` is injectable so tests can exercise a locale whose categories
 /// differ from the root's.
 enum StopPageAccessibilityCopy {
+    /// Said of a departure the rider has an alarm on, which the screen shows only as a filled bell.
+    static let alarmSet = OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active")
+
+    /// The departures after a route card's next one, as its chips show them:
+    /// "Arrives in 12 min, live tracking, 3 min late." for each. `nil` when there
+    /// are none.
+    static func followingDepartures(
+        _ departures: [ArrivalDeparture],
+        formatters: Formatters,
+        status: (ArrivalDeparture) -> DepartureStatus
+    ) -> String? {
+        guard !departures.isEmpty else { return nil }
+        return departures.map { departure in
+            formatters.explanation(from: departure) + ", " + status(departure).accessibilityStatusDescription + "."
+        }
+        .joined(separator: " ")
+    }
+
     static func upcomingIdentity(
         routeShortName: String,
         headsign: String,

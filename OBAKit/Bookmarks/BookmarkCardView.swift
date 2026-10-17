@@ -239,9 +239,12 @@ struct BookmarkCardView: View {
         let status = DepartureStatus(arrivalDeparture: departure)
         let color = Color(uiColor: status.color)
         let minutes = max(0, departure.arrivalDepartureMinutes)
-        return Text(minutes == 0
-             ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
-             : Formatters.shortMinutesText(minutes))
+        return StatusGlyphLabel(
+            text: minutes == 0
+                ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
+                : Formatters.shortMinutesText(minutes),
+            status: status
+        )
             .font(.caption.weight(.heavy))
             .monospacedDigit()
             .foregroundStyle(color)

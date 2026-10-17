@@ -15,13 +15,15 @@ import XCTest
 /// `TEST_ONBOARDING=1` (a DEBUG-only environment variable the app already supports)
 /// forces the onboarding flow regardless of stored state and appends two debug pages
 /// after the region picker.
-final class OnboardingUITests: XCTestCase {
+// nonisolated: the target defaults to the main actor, and XCTestCase\'s
+// initializers and setUp are nonisolated.
+nonisolated final class OnboardingUITests: XCTestCase {
 
-    override func setUpWithError() throws {
+    @MainActor override func setUp() async throws {
         continueAfterFailure = false
     }
 
-    func test_onboarding_fromLocationPageToMainUI() throws {
+    @MainActor func test_onboarding_fromLocationPageToMainUI() throws {
         let app = XCUIApplication()
         app.launchEnvironment["TEST_ONBOARDING"] = "1"
         app.launchArguments += ["-AppleLanguages", "(en)"]
@@ -96,12 +98,12 @@ final class OnboardingUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func isToggleOn(_ element: XCUIElement) -> Bool {
+    @MainActor private func isToggleOn(_ element: XCUIElement) -> Bool {
         (element.value as? String) == "1"
     }
 
     /// Polls `condition` until it is true or the timeout elapses, then asserts.
-    private func waitUntil(
+    @MainActor private func waitUntil(
         timeout: TimeInterval,
         _ message: String,
         file: StaticString = #filePath,
@@ -116,7 +118,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(condition(), message, file: file, line: line)
     }
 
-    private func allowLocationAlertIfPresent() {
+    @MainActor private func allowLocationAlertIfPresent() {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         for label in ["Allow Once", "Allow While Using App", "Allow While Using the App"] {
             let button = springboard.buttons[label]

@@ -87,6 +87,12 @@ struct StopPageHeaderView: View {
             // button below stays separate so it remains individually
             // focusable and activatable.
             .accessibilityElement(children: .combine)
+            // What the map pin says (name, direction, "Routes: …", stop ID), so the
+            // Headings rotor lists the stop by name. The "Updated: …" line is the
+            // value: it changes every few seconds, and as the start of the label
+            // it read before the stop's name.
+            .accessibilityLabel(Formatters.formattedAccessibilityLabel(stop: stop))
+            .accessibilityValue(statusText)
             // The screen's title: mark it a heading so it anchors VoiceOver's
             // Headings rotor for quick top-of-page navigation.
             .accessibilityAddTraits(.isHeader)

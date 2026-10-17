@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import OBAKitCore
 
 /// What the trip page's Back row should do, given the stack it finds itself in.
 ///
@@ -47,6 +48,20 @@ nonisolated enum TripPageBackBehavior: Equatable {
         switch self {
         case .pop: "chevron.backward"
         case .dismiss: "xmark"
+        }
+    }
+
+    /// What VoiceOver calls the control. Going back names the screen it goes back
+    /// to: "Back" alone, followed by that screen's name, sounded like the rider
+    /// was still on it.
+    func accessibilityLabel(originTitle: String?) -> String {
+        switch self {
+        case .pop:
+            guard let originTitle, !originTitle.isEmpty else { return Strings.back }
+            let fmt = OBALoc("trip_page.back_to_fmt", value: "Back to %@", comment: "VoiceOver label for the trip page's back button. %@ is the name of the screen it goes back to, usually a stop, e.g. 'Back to 3rd Ave & Pike St'.")
+            return String(format: fmt, originTitle)
+        case .dismiss:
+            return Strings.close
         }
     }
 }

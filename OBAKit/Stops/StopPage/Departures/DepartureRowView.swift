@@ -200,7 +200,7 @@ struct DepartureRowView: View {
         }
 
         if hasAlarm {
-            extras.append(OBALoc("stop_page.row.a11y_alarm_set", value: "alarm set", comment: "VoiceOver suffix indicating a departure alarm is active"))
+            extras.append(StopPageAccessibilityCopy.alarmSet)
         }
 
         return DepartureAccessibility.label(

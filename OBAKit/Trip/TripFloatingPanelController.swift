@@ -593,7 +593,7 @@ final class TripProgressView: UIView {
     }()
 
     private let etaLabel: UILabel = {
-        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .caption1), textColor: ThemeColors.shared.brand)
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .caption1), textColor: ThemeColors.shared.brandTint)
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         label.textAlignment = .right

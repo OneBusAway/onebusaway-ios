@@ -46,6 +46,9 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "잠금 화면에서 추적";
 
+/* VoiceOver announcement after the rider removes a departure alarm. */
+"alarms.a11y_removed" = "미리 알림이 제거되었습니다";
+
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "이 화면은 곧 제공될 예정입니다.";
 
@@ -698,6 +701,9 @@
 
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "주변 정류장 없음";
+
+/* How far a nearby stop is from the rider, read by VoiceOver after the stop's name. e.g. '500 feet away' */
+"nearby_stops.accessibility_distance_fmt" = "%@ 거리";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "주변에 다른 정류장이 없습니다.";
@@ -2060,6 +2066,8 @@
 "stops_controller.directions_to_here" = "여기로 가는 경로";
 /* Header above the trip's full stop list. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.all_stops_fmt" = "전체 정류장 %d개";
+/* VoiceOver label for the trip page's back button. %@ is the name of the screen it goes back to, usually a stop, e.g. 'Back to 3rd Ave & Pike St'. */
+"trip_page.back_to_fmt" = "%@(으)로 돌아가기";
 /* Short caption on the trip page button that bookmarks this trip. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.bookmark" = "즐겨찾기";
 /* VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status. */

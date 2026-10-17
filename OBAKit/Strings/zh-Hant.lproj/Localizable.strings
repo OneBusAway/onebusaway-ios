@@ -46,6 +46,9 @@
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "在鎖定畫面上追蹤";
 
+/* VoiceOver announcement after the rider removes a departure alarm. */
+"alarms.a11y_removed" = "已移除提醒";
+
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "此畫面即將推出。";
 
@@ -698,6 +701,9 @@
 
 /* Title for the empty set indicator on the Nearby controller */
 "nearby_controller.empty_set.title" = "附近沒有站牌";
+
+/* How far a nearby stop is from the rider, read by VoiceOver after the stop's name. e.g. '500 feet away' */
+"nearby_stops.accessibility_distance_fmt" = "距離 %@";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "附近沒有其他站牌。";
@@ -2060,6 +2066,8 @@
 "stops_controller.directions_to_here" = "到這裡的路線";
 /* Header above the trip's full stop list. %d is the number of stops. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.all_stops_fmt" = "全部 %d 站";
+/* VoiceOver label for the trip page's back button. %@ is the name of the screen it goes back to, usually a stop, e.g. 'Back to 3rd Ave & Pike St'. */
+"trip_page.back_to_fmt" = "返回 %@";
 /* Short caption on the trip page button that bookmarks this trip. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.bookmark" = "書籤";
 /* VoiceOver label for the trip page's header card: route, headsign, minutes until arrival, status. */

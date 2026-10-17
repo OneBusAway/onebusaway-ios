@@ -128,6 +128,10 @@ class MapViewController: UIViewController,
 
     // MARK: - UIViewController
 
+    public override func loadView() {
+        view = MapContainerView()
+    }
+
     public override func viewDidLoad() {
         super.viewDidLoad()
 

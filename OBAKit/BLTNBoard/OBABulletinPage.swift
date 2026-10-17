@@ -18,7 +18,7 @@ class ThemedBulletinPage: BLTNPageItem {
 
     private func customizeAppearance() {
         appearance.actionButtonColor = ThemeColors.shared.brand
-        appearance.alternativeButtonTitleColor = ThemeColors.shared.brand
+        appearance.alternativeButtonTitleColor = ThemeColors.shared.brandTint
         appearance.imageViewTintColor = ThemeColors.shared.brand
     }
 }

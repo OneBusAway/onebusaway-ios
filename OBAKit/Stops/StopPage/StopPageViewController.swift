@@ -247,11 +247,13 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// Rebuilds the nav-bar chrome (right bar items) whenever the state the
     /// menus read changes. Mirrors `StopViewController.bindViewModel()`'s
     /// `configureTabBarButtons()` calls. No nav-bar title: the header card
-    /// carries the stop identity.
+    /// carries the stop identity. The stop's name goes on the back button of
+    /// the page pushed next instead, which otherwise said only "Back".
     private func bindChrome() {
         viewModel.$stop
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] stop in
+                self?.navigationItem.backButtonTitle = stop?.name
                 self?.configureBarButtons()
                 self?.beginUserActivity()
             }

@@ -229,6 +229,7 @@ nonisolated struct ArrivalDepartureContentConfiguration: OBAContentConfiguration
             arrivalDepartureStatus: viewModel.arrivalDepartureStatus,
             temporalState: viewModel.temporalState,
             scheduleStatus: viewModel.scheduleStatus,
+            scheduleDeviation: viewModel.deviationFromScheduleInMinutes,
             formatters: formatters)
     }
 

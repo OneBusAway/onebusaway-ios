@@ -143,6 +143,21 @@ public extension UIColor {
         )
     }
 
+    /// The receiver, darkened over a light `background` or lightened over a dark
+    /// one, in small steps until it reaches `minimumRatio` against it. Unchanged
+    /// when it already does. Mixing toward black or white keeps the hue, so a
+    /// brand colour stays recognisably itself.
+    func adjusted(toContrast minimumRatio: CGFloat, against background: UIColor) -> UIColor {
+        guard wcagContrastRatio(against: background) < minimumRatio else { return self }
+        let target: UIColor = background.wcagRelativeLuminance > 0.18 ? .black : .white
+        var candidate = self
+        for step in 1...20 {
+            candidate = blended(with: target, amount: CGFloat(step) / 20)
+            if candidate.wcagContrastRatio(against: background) >= minimumRatio { break }
+        }
+        return candidate
+    }
+
     /// Linear blend toward `other` in RGB space; `amount` is clamped to 0...1.
     func blended(with other: UIColor, amount: CGFloat) -> UIColor {
         var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
