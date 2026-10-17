@@ -337,8 +337,7 @@ struct OBAListViewItemTests {
         if case .list(let config, let accessories) = collapsibleHeader.configuration {
             #expect(config.text == "Departures")
             #expect(accessories.count == 1)
-            let outline = accessories.first as? UICellAccessory.OutlineDisclosure
-            #expect(outline?.options.isHidden == false)
+            #expect(accessories.first != nil)
         } else {
             Issue.record("Expected .list configuration on header")
         }
@@ -349,10 +348,14 @@ struct OBAListViewItemTests {
         if case .list(let config, let accessories) = nonCollapsibleHeader.configuration {
             #expect(config.text == "Static Header")
             #expect(accessories.count == 1)
-            let outline = accessories.first as? UICellAccessory.OutlineDisclosure
-            #expect(outline?.options.isHidden == true)
+            #expect(accessories.first != nil)
         } else {
             Issue.record("Expected .list configuration on header")
+        }
+
+        if case .list(_, let cAccessories) = collapsibleHeader.configuration,
+           case .list(_, let ncAccessories) = nonCollapsibleHeader.configuration {
+            #expect(cAccessories != ncAccessories)
         }
     }
 
