@@ -141,7 +141,11 @@ struct TripPageView: View {
                 TripPageBackRow(
                     title: originTitle,
                     behavior: backBehavior,
-                    onBack: actions.onBack
+                    isRefreshing: viewModel.isLoading,
+                    lastUpdated: viewModel.lastUpdated,
+                    showsLastUpdated: !isCollapsed,
+                    onBack: actions.onBack,
+                    onRefresh: viewModel.refresh
                 )
             }
 
@@ -299,18 +303,38 @@ struct TripPageView: View {
     }
 }
 
-/// The back affordance. A circular button beside the originating screen's name,
-/// rather than a navigation bar: the page is pushed into a sheet whose root has
-/// no bar, and adding one would impose a top safe area that eats the sheet's
-/// scarce height.
+/// The back affordance, and refresh (#1581). A circular button beside the
+/// originating screen's name, rather than a navigation bar: the page is pushed
+/// into a sheet whose root has no bar, and adding one would impose a top safe
+/// area that eats the sheet's scarce height.
 private struct TripPageBackRow: View {
     let title: String?
     /// Drives the glyph and the VoiceOver label together — the two must never
     /// disagree about whether this goes back or closes.
     let behavior: TripPageBackBehavior
+    /// Spins the refresh glyph and disables the button, so a second tap can't
+    /// cancel the load the first one started.
+    let isRefreshing: Bool
+    /// When the page's data last arrived; see `TripViewModel.lastUpdated`.
+    let lastUpdated: Date?
+    /// `false` at the sheet's `.tip` detent, which has room for one line only.
+    let showsLastUpdated: Bool
     let onBack: () -> Void
+    let onRefresh: () -> Void
+
+    @Environment(\.obaFormatters) private var formatters
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        HStack(spacing: 12) {
+            backElement
+            refreshButton
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+
+    private var backElement: some View {
         HStack(spacing: 12) {
             Button(action: onBack) {
                 circleGlyph(behavior.systemImage)
@@ -318,27 +342,59 @@ private struct TripPageBackRow: View {
             .tint(Color(uiColor: .label))
             .accessibilityLabel(behavior.accessibilityLabel(originTitle: title))
 
-            // Stop names routinely outrun the row, so the title scrolls rather than truncating.
-            if let title {
-                MarqueeText(text: title, textStyle: .headline)
+            VStack(alignment: .leading, spacing: 1) {
+                // Stop names routinely outrun the row, so the title scrolls rather than truncating.
+                if let title {
+                    MarqueeText(text: title, textStyle: .headline)
+                }
+                if showsLastUpdated, let lastUpdated {
+                    // Re-evaluated on a timer, so "Just Now" ages without a refresh.
+                    TimelineView(.periodic(from: .now, by: 15)) { _ in
+                        Text(updatedText(lastUpdated))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
             }
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        // One element for the whole row, so VoiceOver says "Back to <title>" once
-        // instead of the button and then the title again. The title is a UIKit
-        // label in a representable, which `.accessibilityHidden` doesn't reach.
+        // One element for the back button and its title, so VoiceOver says "Back to
+        // <title>" once instead of the button and then the title again. The title is
+        // a UIKit label in a representable, which `.accessibilityHidden` doesn't
+        // reach. The update time is left out of it: refresh speaks it as its value.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(behavior.accessibilityLabel(originTitle: title))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onBack() }
     }
 
-    private func circleGlyph(_ systemImage: String) -> some View {
+    private var refreshButton: some View {
+        Button(action: onRefresh) {
+            circleGlyph("arrow.clockwise", isSpinning: isRefreshing && !reduceMotion)
+        }
+        .tint(Color(uiColor: .label))
+        .disabled(isRefreshing)
+        .accessibilityLabel(Strings.refresh)
+        .accessibilityValue(refreshAccessibilityValue)
+    }
+
+    /// Same wording as the Stop page's refresh: "Updating…" while it runs, then
+    /// "Updated: 2 min. ago".
+    private var refreshAccessibilityValue: String {
+        if isRefreshing { return Strings.updating }
+        return lastUpdated.map(updatedText) ?? ""
+    }
+
+    private func updatedText(_ date: Date) -> String {
+        String(format: Strings.updatedAtFormat, formatters.timeAgoInWords(date: date))
+    }
+
+    private func circleGlyph(_ systemImage: String, isSpinning: Bool = false) -> some View {
         Image(systemName: systemImage)
             .font(.subheadline.weight(.semibold))
+            .symbolEffect(.rotate, options: .repeat(.continuous), isActive: isSpinning)
             .frame(width: 32, height: 32)
             .background(Color(uiColor: .tertiarySystemFill), in: Circle())
             // Hit area grows to the 44pt minimum without growing the glyph or
