@@ -103,7 +103,11 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
         self.isRegionFromSync = userDefaults.bool(forKey: Self.isRegionFromSyncUserDefaultsKey)
 
         if let syncedRegion = bookmarkStore.syncedRegion, syncedRegion.isCustom == true {
-            try? regionsService.registerCustomRegionIfNeeded(syncedRegion)
+            do {
+                try regionsService.registerCustomRegionIfNeeded(syncedRegion)
+            } catch {
+                Logger.error("WatchAppHost: Failed to register synced custom region: \(error)")
+            }
         }
 
         self.currentRegion = regionsService.currentRegion
@@ -141,7 +145,11 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
     private func applySyncedRegion(_ region: Region) {
         isApplyingSyncedRegion = true
         if region.isCustom == true {
-            try? regionsService.registerCustomRegionIfNeeded(region)
+            do {
+                try regionsService.registerCustomRegionIfNeeded(region)
+            } catch {
+                Logger.error("WatchAppHost: Failed to register custom region during sync: \(error)")
+            }
         }
         regionsService.currentRegion = region
         currentRegion = region

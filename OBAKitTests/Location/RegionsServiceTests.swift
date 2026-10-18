@@ -269,8 +269,8 @@ final class RegionsServiceTests: OBATestCase {
         #expect(regionsService.currentRegion == newRegion, "Expected RegionsService to update its currentRegion property to the new region")
     }
 
-    /// It notifies delegates when setting currentRegion if currentRegion was previously nil, even if the stored identifier matches.
-    @Test func `Region updated notifications when previously nil but stored identifier matches`() {
+    /// It notifies delegates when registering a custom region if that region matches the stored identifier.
+    @Test func `Region updated notifications when previously nil but stored identifier matches`() throws {
         stubRegions(dataLoader: dataLoader)
 
         let newRegion = Fixtures.customMinneapolisRegion
@@ -289,11 +289,10 @@ final class RegionsServiceTests: OBATestCase {
         // Storage does not contain custom region yet, so currentRegion is nil.
         #expect(regionsService.currentRegion == nil)
 
-        // Now register custom region and set currentRegion
-        try? regionsService.registerCustomRegionIfNeeded(newRegion)
-        regionsService.currentRegion = newRegion
+        // Registering the custom region resolves the stored identifier and notifies delegates.
+        try regionsService.registerCustomRegionIfNeeded(newRegion)
 
-        expectDidCallDelegateMethod(testDelegate.newRegionSelected, newRegion, "Expected RegionsService to inform delegates of region selection when previously nil")
+        expectDidCallDelegateMethod(testDelegate.newRegionSelected, newRegion, "Expected RegionsService to inform delegates of region selection when registered custom region matches stored identifier")
         #expect(regionsService.currentRegion == newRegion)
     }
 

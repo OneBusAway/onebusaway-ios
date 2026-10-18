@@ -95,10 +95,9 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
         let provider = makeProvider(regionsService)
         #expect(provider.apiService == nil)
 
-        // When the custom region is registered/set, currentRegion setter must notify delegates
-        // even though storedIdentifier in userDefaults matches customRegion.regionIdentifier.
+        // When the custom region is registered, registerCustomRegionIfNeeded notifies delegates
+        // because storedIdentifier in userDefaults matches customRegion.regionIdentifier.
         try regionsService.registerCustomRegionIfNeeded(customRegion)
-        regionsService.currentRegion = customRegion
 
         #expect(provider.apiService != nil)
     }
