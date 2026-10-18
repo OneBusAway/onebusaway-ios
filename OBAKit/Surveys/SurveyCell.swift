@@ -292,6 +292,8 @@ class SurveyCell: OBAListViewCell {
             questionLabel.text = OBALoc("survey_cell.default_prompt", value: "Take survey to help improve transit", comment: "Default prompt when no hero question exists")
             questionLabel.isHidden = false
             optionsStack.isHidden = true
+            externalSurveyButton.isHidden = true
+            nextButton.isHidden = false
         }
 
         // Update button state based on selection

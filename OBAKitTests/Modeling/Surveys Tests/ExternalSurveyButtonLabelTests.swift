@@ -60,12 +60,6 @@ struct ExternalSurveyButtonLabelTests {
         #expect(content.externalSurveyButtonLabel == .openSurvey)
     }
 
-    @Test func `Button label passes through to external survey content`() throws {
-        let content = try decodeContent(buttonLabel: "learn_more")
-
-        #expect(content.asExternalSurveyContent?.buttonLabel == "learn_more")
-    }
-
     @Test func `A survey with an unknown button_label is still offered`() throws {
         let json = """
         {"id": 1, "position": 1, "required": false,

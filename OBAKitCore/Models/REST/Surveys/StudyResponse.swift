@@ -310,8 +310,7 @@ extension QuestionContent {
             labelText: labelText,
             url: url,
             provider: surveyProvider,
-            embeddedDataFields: embeddedDataFields,
-            buttonLabel: buttonLabel
+            embeddedDataFields: embeddedDataFields
         )
     }
 
@@ -347,7 +346,6 @@ public struct ExternalSurveyContent: Codable, Hashable {
     public let url: String?
     public let provider: String?
     public let embeddedDataFields: [String]?
-    public let buttonLabel: String?
 }
 
 // MARK: - QuestionContent Compatibility
