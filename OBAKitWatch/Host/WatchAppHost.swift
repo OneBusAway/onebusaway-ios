@@ -102,6 +102,14 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
         self.userDefaults = userDefaults
         self.isRegionFromSync = userDefaults.bool(forKey: Self.isRegionFromSyncUserDefaultsKey)
 
+        if let syncedRegion = bookmarkStore.syncedRegion, syncedRegion.isCustom == true {
+            do {
+                try regionsService.registerCustomRegionIfNeeded(syncedRegion)
+            } catch {
+                Logger.error("WatchAppHost: Failed to register synced custom region: \(error)")
+            }
+        }
+
         self.currentRegion = regionsService.currentRegion
         self.authorizationStatus = locationService.authorizationStatus
 
@@ -141,11 +149,20 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
 
     private func applySyncedRegion(_ region: Region) {
         isApplyingSyncedRegion = true
+        defer { isApplyingSyncedRegion = false }
+
+        if region.isCustom == true {
+            do {
+                try regionsService.registerCustomRegionIfNeeded(region)
+            } catch {
+                Logger.error("WatchAppHost: Failed to register custom region during sync: \(error)")
+                return
+            }
+        }
         regionsService.currentRegion = region
         currentRegion = region
         isRegionFromSync = true
         userDefaults.set(true, forKey: Self.isRegionFromSyncUserDefaultsKey)
-        isApplyingSyncedRegion = false
     }
 
     /// Builds the host from `Bundle.main`'s `OBAKitConfig`, the way an app's

@@ -19,23 +19,25 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
     private var locationManager: LocationManagerMock!
     private var locationService: LocationService!
     private var dataLoader: MockDataLoader!
+    private var mockFileStorage: MockRegionsFileStorage!
 
     override init() async throws {
         try await super.init()
         locationManager = LocationManagerMock()
         locationService = LocationService(userDefaults: userDefaults, locationManager: locationManager, startsUpdatesOnAuthorization: false)
         dataLoader = MockDataLoader(testName: name)
+        mockFileStorage = MockRegionsFileStorage()
         stubRegions(dataLoader: dataLoader)
     }
 
-    private func makeRegionsService() -> RegionsService {
+    private func makeRegionsService(fileStorage: RegionsFileStorageProtocol? = nil) -> RegionsService {
         RegionsService(
             apiService: buildRegionsAPIService(dataLoader: dataLoader),
             locationService: locationService,
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
-            fileStorage: MockRegionsFileStorage()
+            fileStorage: fileStorage ?? mockFileStorage
         )
     }
 
@@ -84,6 +86,24 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
         #expect(before !== after)
     }
 
+    @Test func `Rebuilds on updatedRegion when region matches stored identifier but was previously nil`() throws {
+        let customRegion = Fixtures.customMinneapolisRegion
+        userDefaults.set(customRegion.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+
+        // On cold launch, if the custom region is not yet in storage or cache, currentRegion resolves to nil.
+        let regionsService = makeRegionsService()
+        #expect(regionsService.currentRegion == nil)
+
+        let provider = makeProvider(regionsService)
+        #expect(provider.apiService == nil)
+
+        // When the custom region is registered, registerCustomRegionIfNeeded notifies delegates
+        // because storedIdentifier in userDefaults matches customRegion.regionIdentifier.
+        try regionsService.registerCustomRegionIfNeeded(customRegion)
+
+        #expect(provider.apiService != nil)
+    }
+
     @Test func `Is retained by nothing but its owner`() {
         let regionsService = makeRegionsService()
         weak var weakProvider: StandaloneAPIServiceProvider?
@@ -95,3 +115,4 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
         #expect(weakProvider == nil, "RegionsService holds delegates weakly; the host must retain the provider")
     }
 }
+
