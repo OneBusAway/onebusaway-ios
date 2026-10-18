@@ -796,7 +796,7 @@ class StopViewModel: ObservableObject {
             statusText = ""
             return
         }
-        statusText = String(format: Strings.updatedAtFormat, environment.formatters.timeAgoInWords(date: lastUpdated))
+        statusText = environment.formatters.updatedText(since: lastUpdated)
     }
 
     // MARK: - Stop Page: Walk Time

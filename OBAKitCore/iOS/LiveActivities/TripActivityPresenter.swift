@@ -165,7 +165,7 @@ public struct TripActivityPresenter {
         segments.map { segment in
             switch segment {
             case .text(let text): text
-            case .countdown(let departure): TripCountdownFormatStyle.spoken(departure: departure).format(now)
+            case .countdown(let departure): TickingCountdownText.snapshot(departure: departure, now: now)
             }
         }
         .joined(separator: ", ")

@@ -127,7 +127,8 @@ final class TripActivityPresenterTests {
 
         let route = try #require(label.range(of: "Route 49"))
         let headsign = try #require(label.range(of: "Downtown Seattle"))
-        let minutes = try #require(label.range(of: "8 minutes"))
+        // 8½ minutes out. The system style rounds, so it says 9 (#1583).
+        let minutes = try #require(label.range(of: "in 9 minutes"))
         let lateness = try #require(label.range(of: "2 min late"))
         #expect(route.lowerBound < headsign.lowerBound)
         #expect(headsign.lowerBound < minutes.lowerBound)
@@ -157,7 +158,7 @@ final class TripActivityPresenterTests {
             .countdown(now.addingTimeInterval(1_320))
         ])
         let label = TripActivityPresenter.spokenString(segments, now: now)
-        #expect(label.hasSuffix("later departures, 15 minutes, 22 minutes"))
+        #expect(label.hasSuffix("later departures, in 15 minutes, in 22 minutes"))
     }
 
     @Test func `Card label ends with the stale warning when stale`() {

@@ -350,7 +350,7 @@ private struct TripPageBackRow: View {
                 if showsLastUpdated, let lastUpdated {
                     // Re-evaluated on a timer, so "Just Now" ages without a refresh.
                     TimelineView(.periodic(from: .now, by: 15)) { _ in
-                        Text(updatedText(lastUpdated))
+                        Text(formatters.updatedText(since: lastUpdated))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -372,7 +372,7 @@ private struct TripPageBackRow: View {
 
     private var refreshButton: some View {
         Button(action: onRefresh) {
-            circleGlyph("arrow.clockwise", isSpinning: isRefreshing && !reduceMotion)
+            circleGlyph(AppSymbol.refresh, isSpinning: isRefreshing && !reduceMotion)
         }
         .tint(Color(uiColor: .label))
         .disabled(isRefreshing)
@@ -384,11 +384,7 @@ private struct TripPageBackRow: View {
     /// "Updated: 2 min. ago".
     private var refreshAccessibilityValue: String {
         if isRefreshing { return Strings.updating }
-        return lastUpdated.map(updatedText) ?? ""
-    }
-
-    private func updatedText(_ date: Date) -> String {
-        String(format: Strings.updatedAtFormat, formatters.timeAgoInWords(date: date))
+        return lastUpdated.map(formatters.updatedText(since:)) ?? ""
     }
 
     private func circleGlyph(_ systemImage: String, isSpinning: Bool = false) -> some View {
