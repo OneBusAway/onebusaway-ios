@@ -60,14 +60,30 @@ bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.pl
 # simulator, and one booted first was found shut down by install time after a
 # 4.5-minute CI build (CoreSimulator 405, "Unable to lookup in current state:
 # Shutdown"). A first boot also saturates a CI runner, which slowed the build.
-xcrun simctl boot "$udid" 2>/dev/null || true
-if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
-    echo "error: simctl bootstatus failed" >&2
-    exit 1
-fi
+#
+# Even booted here, a CI simulator has passed bootstatus and then been found
+# shut down by install (#1591). That is the runner, not the app, so only that
+# failure boots it again; any other install error fails at once.
+installed=0
+for attempt in 1 2 3; do
+    xcrun simctl boot "$udid" 2>/dev/null || true
+    if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
+        echo "error: simctl bootstatus failed" >&2
+        exit 1
+    fi
 
-xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
-if ! xcrun simctl install "$udid" "$app"; then
+    xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
+    if install_output=$(xcrun simctl install "$udid" "$app" 2>&1); then
+        installed=1
+        break
+    fi
+    echo "$install_output" >&2
+    if ! grep -q "current state: Shutdown" <<<"$install_output" || [ "$attempt" = 3 ]; then
+        break
+    fi
+    echo "simulator shut down before install (attempt $attempt of 3); booting it again" >&2
+done
+if [ "$installed" != 1 ]; then
     echo "error: simctl install failed" >&2
     exit 1
 fi
