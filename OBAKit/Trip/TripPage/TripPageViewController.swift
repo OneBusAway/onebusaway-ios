@@ -525,11 +525,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             },
             onSubmitted: {
                 dismissSheet()
-                ProgressHUD.showSuccessAndDismiss(message: OBALoc(
-                    "trip_page.ghost_bus_report_sent",
-                    value: "Thanks! Your report was sent.",
-                    comment: "Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted."
-                ))
+                Self.showGhostBusReportSent()
             },
             onFailure: { [weak self] error in
                 // The toast has a window of its own, above this sheet, which stays
@@ -544,6 +540,14 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             sheet.prefersGrabberVisible = true
         }
         present(host, animated: true)
+    }
+
+    private static func showGhostBusReportSent() {
+        ProgressHUD.showSuccessAndDismiss(message: OBALoc(
+            "trip_page.ghost_bus_report_sent",
+            value: "Thanks! Your report was sent.",
+            comment: "Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted."
+        ))
     }
 
     /// Ghost bus report failures with copy of their own. Shown in the error toast
