@@ -1415,9 +1415,6 @@
 /* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
 "stop_page.header.walk_trip_planner_a11y_hint" = "يخطط لمسار مشي إلى هذا الموقف في التطبيق.";
 
-/* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "التتبّع على شاشة القفل";
-
 /* Extends the departure time window */
 "stop_page.load_more" = "تحميل المزيد";
 

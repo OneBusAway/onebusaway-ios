@@ -1415,9 +1415,6 @@
 /* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
 "stop_page.header.walk_trip_planner_a11y_hint" = "在 App 內規劃前往此站牌的步行路線。";
 
-/* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "在鎖定畫面上追蹤";
-
 /* Extends the departure time window */
 "stop_page.load_more" = "載入更多";
 

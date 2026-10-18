@@ -103,10 +103,9 @@ struct TripActionBar: View {
     @ViewBuilder
     private var liveActivityButton: some View {
         if isTrackingLiveActivity {
-            // A status, not a disabled button: disabling the prominent style
-            // faded its fill to near-white under the forced white label, and
-            // the control seemed to vanish once tapped. `departureOnTime` is the
-            // green tuned to be read as text in both appearances.
+            // A status, not a disabled button, which faded to near-white and
+            // seemed to vanish once tapped. A capsule like the button it
+            // replaces; `departureOnTime` is the green tuned to be read as text.
             let onTime = Color(uiColor: ThemeColors.shared.departureOnTime)
             Label(
                 OBALoc("trip_page.live_activity_tracking", value: "Tracking on Lock Screen", comment: "Shown in place of the trip page's Track on Lock Screen button once a Live Activity is running for this trip."),
@@ -127,7 +126,6 @@ struct TripActionBar: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Color(uiColor: ThemeColors.shared.departureOnTimeFill))
-            .foregroundStyle(.white)
         }
     }
 
