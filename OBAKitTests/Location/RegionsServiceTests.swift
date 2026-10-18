@@ -269,6 +269,57 @@ final class RegionsServiceTests: OBATestCase {
         #expect(regionsService.currentRegion == newRegion, "Expected RegionsService to update its currentRegion property to the new region")
     }
 
+    /// It notifies delegates when setting currentRegion if currentRegion was previously nil, even if the stored identifier matches.
+    @Test func `Region updated notifications when previously nil but stored identifier matches`() {
+        stubRegions(dataLoader: dataLoader)
+
+        let newRegion = Fixtures.customMinneapolisRegion
+        userDefaults.set(newRegion.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
+
+        // Storage does not contain custom region yet, so currentRegion is nil.
+        #expect(regionsService.currentRegion == nil)
+
+        // Now register custom region and set currentRegion
+        try? regionsService.registerCustomRegionIfNeeded(newRegion)
+        regionsService.currentRegion = newRegion
+
+        expectDidCallDelegateMethod(testDelegate.newRegionSelected, newRegion, "Expected RegionsService to inform delegates of region selection when previously nil")
+        #expect(regionsService.currentRegion == newRegion)
+    }
+
+    @Test func `registerCustomRegionIfNeeded saves custom region and makes it discoverable`() throws {
+        stubRegions(dataLoader: dataLoader)
+
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: bundledRegionsPath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
+
+        let newRegion = Fixtures.customMinneapolisRegion
+        #expect(regionsService.find(id: newRegion.regionIdentifier) == nil)
+
+        try regionsService.registerCustomRegionIfNeeded(newRegion)
+
+        #expect(regionsService.find(id: newRegion.regionIdentifier) == newRegion)
+        #expect(mockFileStorage.storedCustomRegions.contains(where: { $0.regionIdentifier == newRegion.regionIdentifier }))
+    }
+
+
     // MARK: - Network Data
 
     // It updates the 'last updated at' date in user defaults when the regions list is downloaded.

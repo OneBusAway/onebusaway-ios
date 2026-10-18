@@ -102,6 +102,10 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
         self.userDefaults = userDefaults
         self.isRegionFromSync = userDefaults.bool(forKey: Self.isRegionFromSyncUserDefaultsKey)
 
+        if let syncedRegion = bookmarkStore.syncedRegion, syncedRegion.isCustom == true {
+            try? regionsService.registerCustomRegionIfNeeded(syncedRegion)
+        }
+
         self.currentRegion = regionsService.currentRegion
         self.authorizationStatus = locationService.authorizationStatus
 
@@ -136,6 +140,9 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
 
     private func applySyncedRegion(_ region: Region) {
         isApplyingSyncedRegion = true
+        if region.isCustom == true {
+            try? regionsService.registerCustomRegionIfNeeded(region)
+        }
         regionsService.currentRegion = region
         currentRegion = region
         isRegionFromSync = true

@@ -84,6 +84,25 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
         #expect(before !== after)
     }
 
+    @Test func `Rebuilds on updatedRegion when region matches stored identifier but was previously nil`() throws {
+        let customRegion = Fixtures.customMinneapolisRegion
+        userDefaults.set(customRegion.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+
+        // On cold launch, if the custom region is not yet in storage or cache, currentRegion resolves to nil.
+        let regionsService = makeRegionsService()
+        #expect(regionsService.currentRegion == nil)
+
+        let provider = makeProvider(regionsService)
+        #expect(provider.apiService == nil)
+
+        // When the custom region is registered/set, currentRegion setter must notify delegates
+        // even though storedIdentifier in userDefaults matches customRegion.regionIdentifier.
+        try regionsService.registerCustomRegionIfNeeded(customRegion)
+        regionsService.currentRegion = customRegion
+
+        #expect(provider.apiService != nil)
+    }
+
     @Test func `Is retained by nothing but its owner`() {
         let regionsService = makeRegionsService()
         weak var weakProvider: StandaloneAPIServiceProvider?
@@ -95,3 +114,4 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
         #expect(weakProvider == nil, "RegionsService holds delegates weakly; the host must retain the provider")
     }
 }
+

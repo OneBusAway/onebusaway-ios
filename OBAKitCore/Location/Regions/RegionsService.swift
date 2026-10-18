@@ -217,7 +217,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             guard let newValue else { return }
 
             let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
-            guard newValue.regionIdentifier != storedIdentifier else { return }
+            guard newValue.regionIdentifier != storedIdentifier || currentRegion == nil else { return }
 
             userDefaults.set(newValue.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
             notifyDelegatesRegionChanged(newValue)
@@ -256,6 +256,15 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     // MARK: - Custom Regions
+
+    /// Synchronously saves and registers a custom region if it is not already known.
+    /// - throws: Persistence storage errors.
+    public func registerCustomRegionIfNeeded(_ region: Region) throws {
+        guard region.isCustom == true else { return }
+        try fileStorage.saveCustomRegion(region)
+        customRegionsCacheLock.withLock { customRegionsCache = nil }
+        notifyDelegatesCustomRegionsUpdated()
+    }
 
     /// Adds the provided custom region to the RegionsService.
     /// If an existing custom region with the same `regionIdentifier` exists, the new region replaces the existing region.
