@@ -62,6 +62,7 @@ public struct TickingCountdownText: View {
                     .overlay(alignment: .trailing) {
                         Text(.dateRange(endingAt: departure), format: Self.visibleFormat(locale: locale))
                             .multilineTextAlignment(.trailing)
+                            .lineLimit(1)
                     }
             }
         }

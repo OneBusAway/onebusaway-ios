@@ -222,7 +222,8 @@ private struct TripLiveActivitySmallView: View {
 
     var body: some View {
         let staticData = context.attributes.staticData
-        let primary = context.state.upcomingArrivals().first
+        let now = Date()
+        let primary = context.state.upcomingArrivals(now: now).first
 
         VStack(alignment: .leading, spacing: 2) {
             // Dim arrival content only; the warning stays full opacity (#1376).
@@ -254,9 +255,9 @@ private struct TripLiveActivitySmallView: View {
                     .foregroundStyle(LiveActivityStaleChrome.warningColor)
                     .lineLimit(1)
             } else if let primary {
-                Text(presenter.statusText(for: primary))
+                Text(presenter.statusText(for: primary, now: now))
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Color(presenter.primaryColor(for: context.state)))
+                    .foregroundStyle(Color(presenter.color(for: primary)))
                     .lineLimit(1)
             }
         }
@@ -269,7 +270,8 @@ private struct TripLiveActivitySmallView: View {
             contentState: context.state,
             isStale: context.isStale,
             isLuminanceReduced: isLuminanceReduced,
-            now: Date()
+            now: now,
+            presenter: presenter
         ))
         .accessibilityAddTraits(.updatesFrequently)
     }

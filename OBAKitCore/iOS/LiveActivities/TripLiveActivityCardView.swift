@@ -94,7 +94,8 @@ public struct TripLiveActivityCardView: View {
             contentState: contentState,
             isStale: isStale,
             isLuminanceReduced: isLuminanceReduced,
-            now: now
+            now: now,
+            presenter: presenter
         )
     }
 
@@ -106,9 +107,10 @@ public struct TripLiveActivityCardView: View {
         contentState: TripAttributes.ContentState,
         isStale: Bool,
         isLuminanceReduced: Bool,
-        now: Date
+        now: Date,
+        presenter: TripActivityPresenter = TripActivityPresenter()
     ) -> Text {
-        let segments = TripActivityPresenter().accessibilitySegments(
+        let segments = presenter.accessibilitySegments(
             staticData: staticData,
             contentState: contentState,
             isStale: isStale,
