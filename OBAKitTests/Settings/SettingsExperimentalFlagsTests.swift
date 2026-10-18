@@ -71,6 +71,20 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         #expect(self.application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey))
     }
 
+    // MARK: - Stop clustering
+
+    @Test func `Stop clustering seeds off by default`() throws {
+        let vm = makeViewModel()
+        #expect(!vm.clustersStops)
+    }
+
+    @Test func `Stop clustering toggling on persists immediately`() throws {
+        let vm = makeViewModel()
+        vm.clustersStops = true
+
+        #expect(self.application.userDefaults.bool(forKey: FeatureFlags.clustersStopsKey))
+    }
+
     // MARK: - Accessibility
 
     /// This switch was once wired to neither seeding nor saving, so it always drew "off" and

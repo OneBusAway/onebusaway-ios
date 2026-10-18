@@ -1215,6 +1215,9 @@
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Debug";
 
+/* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
+"settings_controller.experimental_section.cluster_stops" = "Pagsamahin ang magkakalapit na hintuan sa mapa";
+
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Gamitin ang map panel";
 

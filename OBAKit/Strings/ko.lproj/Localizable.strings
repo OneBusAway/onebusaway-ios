@@ -1215,6 +1215,9 @@
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "디버그";
 
+/* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
+"settings_controller.experimental_section.cluster_stops" = "지도에서 가까운 정류장 묶기";
+
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "지도 패널 사용";
 

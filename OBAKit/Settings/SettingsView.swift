@@ -96,6 +96,7 @@ struct SettingsView: View {
         Section {
             Toggle(OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle"), isOn: $viewModel.usesMapPanelExperience)
             Toggle(OBALoc("settings_controller.experimental_section.new_stop_page", value: "Use new stop page", comment: "Settings > Experimental section > New stop page toggle"), isOn: $viewModel.usesNewStopPage)
+            Toggle(OBALoc("settings_controller.experimental_section.cluster_stops", value: "Group nearby stops on the map", comment: "Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin"), isOn: $viewModel.clustersStops)
         } header: {
             Text(OBALoc("settings_controller.experimental_section.title", value: "Experimental", comment: "Settings > Experimental section title"))
         } footer: {

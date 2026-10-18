@@ -21,6 +21,10 @@ public enum FeatureFlags {
     /// toggle writes an explicit value.
     public static let useNewStopPageKey = "OBAUseNewStopPage"
 
+    /// Gates MapKit clustering of stop pins (#515). Off by default while the
+    /// feature is refined (#1600).
+    public static let clustersStopsKey = "OBAClustersStops"
+
     /// Resolves the new-stop-page flag, defaulting to enabled when the user
     /// has never touched the toggle.
     public static func isNewStopPageEnabled(userDefaults: UserDefaults) -> Bool {

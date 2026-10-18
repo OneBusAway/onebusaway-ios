@@ -28,6 +28,7 @@ final class StopAnnotationCalloutTests: OBATestCase {
     private final class StopAnnotationDelegateStub: NSObject, StopAnnotationDelegate {
         var showsStopAnnotationCallouts: Bool
         var shouldHideExtraStopAnnotationData = false
+        var clustersStops = false
         let iconFactory = StopIconFactory(iconSize: 48.0, themeColors: ThemeColors.shared)
 
         init(showsStopAnnotationCallouts: Bool) {
@@ -155,6 +156,20 @@ final class StopAnnotationCalloutTests: OBATestCase {
         view.prepareForDisplay()
 
         #expect(!view.canShowCallout)
+    }
+
+    /// Stop clustering is an experimental opt-in (#1600): pins stay separate until the user
+    /// turns it on, and pick the setting up the next time MapKit displays them.
+    @Test @MainActor
+    func `Stop pins cluster only when the experimental flag is on`() throws {
+        let manager = makeRegionManager()
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let view = try #require(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
+        #expect(view.clusteringIdentifier == nil)
+
+        userDefaults.set(true, forKey: FeatureFlags.clustersStopsKey)
+        view.prepareForDisplay()
+        #expect(view.clusteringIdentifier == StopCluster.clusteringIdentifier)
     }
 
     @Test @MainActor

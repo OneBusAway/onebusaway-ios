@@ -102,17 +102,26 @@ final class StopClusterTests {
 
     // MARK: - Annotation views
 
-    @Test func `Stop pins share one clustering identifier across reuse`() {
+    @Test func `Stop pins share one clustering identifier across reuse when clustering is on`() {
+        let delegate = ClusteringDelegateStub(clustersStops: true)
         let view = StopAnnotationView(annotation: stops[0], reuseIdentifier: nil)
-        #expect(view.clusteringIdentifier == StopCluster.clusteringIdentifier)
-
-        view.clusteringIdentifier = nil
-        view.prepareForReuse()
-        #expect(view.clusteringIdentifier == StopCluster.clusteringIdentifier)
-
-        view.clusteringIdentifier = nil
+        view.delegate = delegate
         view.prepareForDisplay()
         #expect(view.clusteringIdentifier == StopCluster.clusteringIdentifier)
+
+        view.prepareForReuse()
+        view.prepareForDisplay()
+        #expect(view.clusteringIdentifier == StopCluster.clusteringIdentifier)
+    }
+
+    @Test func `Stop pins don't cluster when clustering is off`() {
+        let delegate = ClusteringDelegateStub(clustersStops: false)
+        let view = StopAnnotationView(annotation: stops[0], reuseIdentifier: nil)
+        #expect(view.clusteringIdentifier == nil)
+
+        view.delegate = delegate
+        view.prepareForDisplay()
+        #expect(view.clusteringIdentifier == nil)
     }
 
     @Test func `The cluster view shows how many stops it holds`() {
@@ -238,17 +247,38 @@ final class StopClusterTests {
     }
 }
 
+/// Stop clustering is opt-in (#1600); `MapRegionManager` answers from the Settings flag.
+private final class ClusteringDelegateStub: NSObject, StopAnnotationDelegate {
+    let clustersStops: Bool
+    let showsStopAnnotationCallouts = true
+    let shouldHideExtraStopAnnotationData = true
+    let iconFactory = StopIconFactory(iconSize: 48.0, themeColors: ThemeColors.shared)
+
+    init(clustersStops: Bool) {
+        self.clustersStops = clustersStops
+    }
+
+    func isStopBookmarked(_ stop: Stop) -> Bool { false }
+}
+
 /// Stands in for `MapRegionManager.mapView(_:viewFor:)` for stops and their clusters.
 @MainActor
 private final class StopClusterMapDelegate: NSObject, MKMapViewDelegate {
+    private let stopDelegate = ClusteringDelegateStub(clustersStops: true)
+
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         switch annotation {
         case is MKClusterAnnotation:
-            mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopClusterAnnotationView.self), for: annotation)
+            return mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopClusterAnnotationView.self), for: annotation)
         case is Stop:
-            mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopAnnotationView.self), for: annotation)
+            let view = mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopAnnotationView.self), for: annotation)
+            if let stopView = view as? StopAnnotationView {
+                stopView.delegate = stopDelegate
+                stopView.applyPresentation()
+            }
+            return view
         default:
-            nil
+            return nil
         }
     }
 }

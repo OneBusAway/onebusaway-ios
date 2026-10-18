@@ -88,6 +88,7 @@ final class SettingsViewModel {
 
         usesMapPanelExperience = defaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey)
         usesNewStopPage = FeatureFlags.isNewStopPageEnabled(userDefaults: defaults)
+        clustersStops = defaults.bool(forKey: FeatureFlags.clustersStopsKey)
 
         hapticFeedbackOnReload = defaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         alwaysShowsFullSheetOnVoiceOver = defaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
@@ -165,6 +166,10 @@ final class SettingsViewModel {
 
     var usesNewStopPage: Bool {
         didSet { application.userDefaults.set(usesNewStopPage, forKey: FeatureFlags.useNewStopPageKey) }
+    }
+
+    var clustersStops: Bool {
+        didSet { application.userDefaults.set(clustersStops, forKey: FeatureFlags.clustersStopsKey) }
     }
 
     // MARK: - Accessibility
