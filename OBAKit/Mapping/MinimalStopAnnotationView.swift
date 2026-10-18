@@ -82,6 +82,9 @@ class MinimalStopAnnotationView: MKAnnotationView {
         // The pin is the VoiceOver element, not the badge on it, so the badge's
         // time and status ("Arrives in 5 min, 3 min late") are the pin's value.
         accessibilityValue = arrival == nil ? nil : arrivalBadge.accessibilityLabel
+        // A pin displaying an arrival badge sits above neighbouring stop dots
+        // and the vehicle pin so its badge is never obscured. See #1513.
+        zPriority = arrival != nil ? .max : .defaultUnselected
         setNeedsLayout()
     }
 
