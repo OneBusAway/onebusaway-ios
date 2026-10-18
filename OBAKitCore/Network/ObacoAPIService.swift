@@ -174,7 +174,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         if let stopID = draft.stopID { params["stop_identifier"] = stopID }
         if let vehicleID = draft.vehicleID { params["vehicle_identifier"] = vehicleID }
         if let stopSequence = draft.stopSequence { params["stop_sequence"] = stopSequence }
-        addGhostBusPredictionParams(from: draft, to: &params)
+        Self.addGhostBusPredictionParams(from: draft, to: &params)
         if let comment = draft.comment, !comment.isEmpty { params["comment"] = comment }
         if let lat = draft.userLatitude { params["user_latitude"] = lat }
         if let lon = draft.userLongitude { params["user_longitude"] = lon }
@@ -186,7 +186,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
     }
 
     /// The real-time prediction the rider was looking at, if there was one.
-    private nonisolated func addGhostBusPredictionParams(from draft: GhostBusReportDraft, to params: inout [String: Any]) {
+    private static func addGhostBusPredictionParams(from draft: GhostBusReportDraft, to params: inout [String: Any]) {
         if let predicted = draft.predicted { params["predicted"] = predicted ? "1" : "0" }
         if let scheduled = draft.scheduledArrivalAt {
             params["scheduled_arrival_at"] = Int64(scheduled.timeIntervalSince1970 * 1000)
