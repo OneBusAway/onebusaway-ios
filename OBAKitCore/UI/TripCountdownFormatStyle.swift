@@ -10,17 +10,15 @@
 import Foundation
 import SwiftUI
 
-/// Live Activity countdown that keeps the `8m` / `NOW` typography and still
-/// ticks without a keepalive push.
+/// The `8m` / `NOW` countdown as a `DiscreteFormatStyle`.
 ///
-/// `Text.timer` was tried in #1263 and rejected: `0:00` is not how this app
-/// shows a departure. A custom `DiscreteFormatStyle` is how SwiftUI schedules
-/// the next redraw (minute boundaries *anchored on `departure`*, not on the
-/// wall clock). Past departure it stays `NOW` rather than counting up.
+/// Format it to a `String`; never hand it to `Text(.currentDate, format:)` in a
+/// Live Activity. The Lock Screen renders a ticking `Text` out of process, and
+/// at full brightness it drew this custom style as a redacted placeholder card
+/// (#1583). `TickingCountdownText` ticks with a SwiftUI system style instead.
 ///
-/// Always-on display redacts unknown format styles. `TickingCountdownText`
-/// falls back to a static `format(Date())` when `isLuminanceReduced` is set,
-/// so dim Lock Screen shows dashes-free digits from the last evaluation.
+/// The minute boundaries are anchored on `departure`, not on the wall clock;
+/// past departure it stays `NOW` rather than counting up.
 ///
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1187
 public struct TripCountdownFormatStyle: DiscreteFormatStyle, Sendable {
@@ -110,8 +108,9 @@ public struct TripCountdownFormatStyle: DiscreteFormatStyle, Sendable {
     }
 }
 
-/// `8m` / `NOW` that self-updates on a Live Activity. Dim Lock Screen uses a
-/// static snapshot so a custom format style is not redacted to dashes.
+/// "in 8 minutes" / "now" that self-updates on a Live Activity, using a
+/// SwiftUI system style (see `liveFormat`). Dim Lock Screen draws a static
+/// snapshot of the same wording.
 ///
 /// `opacity` and `accessibilityLabel` are first-class so Live Activity stale
 /// chrome (#1379) can compose on this type instead of re-wrapping modifiers
@@ -144,12 +143,11 @@ public struct TickingCountdownText: View {
     }
 
     public var body: some View {
-        let style = TripCountdownFormatStyle(departure: departure)
         let label = Group {
             if isLuminanceReduced {
-                Text(style.format(Date()))
+                Text(verbatim: Self.snapshot(departure: departure, now: Date(), locale: locale))
             } else {
-                Text(.currentDate, format: style)
+                Text(.currentDate, format: Self.liveFormat(departure: departure, locale: locale))
             }
         }
         .font(font)
@@ -160,19 +158,36 @@ public struct TickingCountdownText: View {
         if let accessibilityLabel {
             label.accessibilityLabel(accessibilityLabel)
         } else {
-            label.accessibilityLabel(Self.spokenText(departure: departure, isLuminanceReduced: isLuminanceReduced))
+            label.accessibilityLabel(Self.spokenText(departure: departure, isLuminanceReduced: isLuminanceReduced, locale: locale))
         }
     }
 
-    /// The spelled-out countdown as a `Text`, ticking on the same minute
-    /// boundaries as the visual one. Static under reduced luminance for the
-    /// same redaction reason as the visual text. Public so a combined
-    /// accessibility label (the Live Activity card) can splice it in.
-    public static func spokenText(departure: Date, isLuminanceReduced: Bool = false) -> Text {
-        let style = TripCountdownFormatStyle.spoken(departure: departure)
+    @Environment(\.locale) private var locale
+
+    /// "in 8 minutes" / "now", ticking on its own.
+    ///
+    /// It must be one of SwiftUI's system styles. The Lock Screen renders a
+    /// ticking `Text` out of process; at full brightness it drew our custom
+    /// `TripCountdownFormatStyle` as a redacted placeholder card (#1583). The
+    /// output is already spelled out, so VoiceOver speaks it as is.
+    public static func liveFormat(departure: Date, locale: Locale = .autoupdatingCurrent) -> SystemFormatStyle.DateReference {
+        SystemFormatStyle.DateReference(to: departure, allowedFields: [.minute], maxFieldCount: 1, thresholdField: .minute)
+            .locale(locale)
+    }
+
+    /// What `liveFormat` says at `now`, for the dim Lock Screen's static text,
+    /// so raising the phone doesn't change the wording.
+    public static func snapshot(departure: Date, now: Date, locale: Locale = .autoupdatingCurrent) -> String {
+        String(liveFormat(departure: departure, locale: locale).format(now).characters)
+    }
+
+    /// The countdown as a `Text` for VoiceOver, ticking with the visual one.
+    /// Static under reduced luminance, like the visual text. Public so a
+    /// combined accessibility label (the Live Activity card) can splice it in.
+    public static func spokenText(departure: Date, isLuminanceReduced: Bool = false, locale: Locale = .autoupdatingCurrent) -> Text {
         if isLuminanceReduced {
-            return Text(verbatim: style.format(Date()))
+            return Text(verbatim: snapshot(departure: departure, now: Date(), locale: locale))
         }
-        return Text(.currentDate, format: style)
+        return Text(.currentDate, format: liveFormat(departure: departure, locale: locale))
     }
 }
