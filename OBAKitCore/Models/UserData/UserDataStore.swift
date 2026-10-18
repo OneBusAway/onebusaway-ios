@@ -607,14 +607,15 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func upsert(bookmarkGroup: BookmarkGroup) {
-        if let index = findGroupIndex(id: bookmarkGroup.id) {
-            bookmarkGroups.remove(at: index)
-            bookmarkGroups.insert(bookmarkGroup, at: index)
+        var groups = bookmarkGroups
+        if let index = groups.firstIndex(where: { $0.id == bookmarkGroup.id }) {
+            groups.remove(at: index)
+            groups.insert(bookmarkGroup, at: index)
         }
         else {
-            bookmarkGroups.append(bookmarkGroup)
+            groups.append(bookmarkGroup)
         }
-        NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
+        bookmarkGroups = groups
     }
 
     public func deleteGroup(_ group: BookmarkGroup) {
@@ -623,10 +624,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             add(bm, to: nil, index: .max)
         }
 
-        if let index = findGroupIndex(id: group.id) {
-            bookmarkGroups.remove(at: index)
+        var groups = bookmarkGroups
+        if let index = groups.firstIndex(where: { $0.id == group.id }) {
+            groups.remove(at: index)
+            bookmarkGroups = groups
         }
-        NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
     }
 
     public func deleteGroup(id: UUID) {
