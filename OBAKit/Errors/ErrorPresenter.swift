@@ -155,7 +155,6 @@ final class ErrorPresenter: NSObject {
         let details = UIHostingController(rootView: ProblemDetailsView(
             report: report,
             onDone: { [weak self] in self?.dismissDetails() },
-            onOpenSettings: { [weak self] in self?.openSettings() },
             onContactSupport: { [weak self] in self?.contactSupport(about: report) }
         ))
         details.presentationController?.delegate = self
@@ -211,7 +210,10 @@ final class ErrorPresenter: NSObject {
         if let window, window.windowScene === scene {
             return window
         }
+        // Moving to another scene: the toast up in the old window goes with it,
+        // or `showToast` would update that hidden host instead of showing one here.
         window?.isHidden = true
+        toastHost = nil
 
         let window = PassthroughWindow(windowScene: scene)
         // Above the app and its sheets, below system alerts.
@@ -246,6 +248,19 @@ extension ErrorPresenter: UIAdaptivePresentationControllerDelegate {
 extension ErrorPresenter: MFMailComposeViewControllerDelegate {
     nonisolated func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
         MainActor.assumeIsolated { controller.dismiss(animated: true) }
+    }
+}
+
+// MARK: - Target Scene
+
+extension UIApplication {
+    /// The scene an error toast goes to: `bulletinTargetScene`, or failing that
+    /// a foreground-inactive app scene (at launch, or with Control Center pulled
+    /// down), so an error arriving then still reaches the rider.
+    var errorToastTargetScene: UIWindowScene? {
+        bulletinTargetScene ?? connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundInactive && $0.session.role == .windowApplication }
     }
 }
 

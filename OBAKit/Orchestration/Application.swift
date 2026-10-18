@@ -998,11 +998,16 @@ public class Application: CoreApplication, PushServiceDelegate {
             systemVersion: Self.systemVersion,
             deviceModel: Self.deviceModel
         )
-        Logger.error("Error [\(report.reference)]: \(report.errorCode) \(report.requestURL?.absoluteString ?? "") \(error.localizedDescription)")
+        // `report.summary` rather than `error.localizedDescription`: a 404's
+        // description carries the full request URL, API key included.
+        Logger.error("Error [\(report.reference)]: \(report.errorCode) \(report.requestURL?.absoluteString ?? "") \(report.summary)")
 
         analytics?.reportError?(error)
 
-        guard let scene = delegate?.uiApplication?.bulletinTargetScene else { return }
+        guard let scene = delegate?.uiApplication?.errorToastTargetScene else {
+            Logger.error("Error [\(report.reference)] not shown: no foreground window scene.")
+            return
+        }
         errorPresenter.present(report, in: scene)
     }
 

@@ -17,7 +17,6 @@ import OBAKitCore
 struct ProblemDetailsView: View {
     let report: ErrorReport
     var onDone: () -> Void
-    var onOpenSettings: () -> Void
     var onContactSupport: () -> Void
 
     @State private var showsCopied = false
@@ -37,12 +36,6 @@ struct ProblemDetailsView: View {
                     }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
-                }
-
-                if report.action == .openSettings {
-                    Section {
-                        Button(ErrorStrings.openSettings, action: onOpenSettings)
-                    }
                 }
 
                 Section {
@@ -133,7 +126,6 @@ enum ErrorStrings {
     static let copyDetails = OBALoc("problem_details.copy_details", value: "Copy Details", comment: "Button that copies the technical details of an error to the clipboard.")
     static let copied = CopyableValueRow.confirmation
     static let contactSupport = OBALoc("problem_details.contact_support", value: "Contact Support", comment: "Button that starts an email to the app's support team about an error.")
-    static let openSettings = OBALoc("problem_details.open_settings", value: "Open Settings", comment: "Button that opens this app's page in the iOS Settings app.")
     static let supportEmailSubjectFmt = OBALoc("problem_details.email_subject_fmt", value: "%@ problem report %@", comment: "Subject of a support email about an error. The first value is the app name, the second a short reference code like 7F3K-Q2.")
 }
 
@@ -149,7 +141,7 @@ enum ErrorStrings {
             systemVersion: "26.1",
             deviceModel: "iPhone16,1"
         ),
-        onDone: {}, onOpenSettings: {}, onContactSupport: {}
+        onDone: {}, onContactSupport: {}
     )
 }
 #endif

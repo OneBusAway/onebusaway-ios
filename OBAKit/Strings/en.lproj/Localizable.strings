@@ -2549,8 +2549,6 @@
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "For Support";
 
-/* Button that opens this app's page in the iOS Settings app. */
-"problem_details.open_settings" = "Open Settings";
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "App";

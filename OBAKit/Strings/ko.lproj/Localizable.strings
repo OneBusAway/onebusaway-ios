@@ -2432,8 +2432,6 @@
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "지원팀용 정보";
 
-/* Button that opens this app's page in the iOS Settings app. */
-"problem_details.open_settings" = "설정 열기";
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "앱";

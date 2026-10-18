@@ -197,13 +197,24 @@ public struct ErrorReport: Sendable {
         let requestURL = Self.requestURL(from: error)
         let subject = Subject(url: requestURL)
 
-        if let message = Self.ownMessage(of: classified) {
+        // Checked on the raw error: classification turns a cancellation into
+        // `networkFailure` ("You're offline"), and an unreadable payload with no
+        // region name into an `UnstructuredError` that would read as its own message.
+        let ownMessage = Self.ownMessage(of: classified)
+        if !Self.isCancellation(error), !Self.isUnreadablePayload(error), let message = ownMessage {
             self.cause = .message
             self.title = Strings.error
             self.summary = message
             self.explanation = message
         } else {
-            let cause = Self.cause(for: classified, subject: subject)
+            let cause: Cause
+            if Self.isCancellation(error) {
+                cause = .silent
+            } else if Self.isUnreadablePayload(error) {
+                cause = .invalidResponseData
+            } else {
+                cause = Self.cause(for: classified, subject: subject)
+            }
             self.cause = cause
             self.title = Self.title(for: cause, subject: subject)
             self.summary = Self.summary(for: cause, regionName: regionName)
@@ -221,8 +232,9 @@ public struct ErrorReport: Sendable {
 
     // MARK: - Shared Text
 
-    /// The text that Copy, Share, and Contact Support all use. Kept in English
-    /// on purpose: it is read by support, not by the rider.
+    /// The text that Copy, Share, and Contact Support all use. The labels are
+    /// English, since support reads them; the title and summary stay in the
+    /// rider's language, matching the screen they saw.
     public var shareText: String {
         var lines = [
             "\(Bundle.main.appName) problem report",
@@ -269,14 +281,30 @@ public struct ErrorReport: Sendable {
 
     /// The message of an error that isn't about a request but brings its own
     /// rider-facing text. Decoding errors are excluded: theirs is developer prose.
+    /// An `NSError` (MapKit, Core Location, …) counts when it was given an
+    /// explicit description; the generic "The operation couldn't be completed"
+    /// that Foundation makes up otherwise does not.
     private static func ownMessage(of classified: Error) -> String? {
-        guard
-            !(classified is APIError),
-            !(classified is DecodingError),
-            let description = (classified as? LocalizedError)?.errorDescription,
-            !description.isEmpty
-        else { return nil }
+        guard !(classified is APIError), !(classified is DecodingError) else { return nil }
+        let description = (classified as? LocalizedError)?.errorDescription
+            ?? (classified as NSError).userInfo[NSLocalizedDescriptionKey] as? String
+        guard let description, !description.isEmpty else { return nil }
         return description
+    }
+
+    /// A request the app called off itself, not a failure worth a toast.
+    private static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        let nsError = innermostError(error) as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+    }
+
+    /// A response that arrived but can't be read: a decoding failure, or the
+    /// blank 200 that `APIService` reports as `requestNotFound`.
+    private static func isUnreadablePayload(_ error: Error) -> Bool {
+        if error is DecodingError { return true }
+        if case .requestNotFound(let response) = error as? APIError, response.statusCode != 404 { return true }
+        return false
     }
 
     private static func cause(for classified: Error, subject: Subject) -> Cause {

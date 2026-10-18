@@ -174,6 +174,31 @@ final class ErrorReportTests {
         #expect(report.explanation == "This stop is in a different region.")
     }
 
+    /// Without a region the classifier turns these into an `UnstructuredError`;
+    /// they must still read as unreadable data, under the endpoint's title.
+    @Test func `Unreadable payload without a region isn't its own message`() {
+        let context = DecodingError.Context(codingPath: [], debugDescription: "missing")
+        let decoding = report(DecodingError.keyNotFound(AnyKey("id"), context), region: nil)
+        #expect(decoding.cause == .invalidResponseData)
+
+        let blank = report(APIError.requestNotFound(response("trip-details/1_1.json", status: 200)), region: nil)
+        #expect(blank.cause == .invalidResponseData)
+        #expect(blank.title == "Couldn't load live position")
+    }
+
+    @Test func `Cancelled requests are silent`() {
+        #expect(report(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)).isSilent)
+        #expect(report(APIError.networkFailure(NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))).isSilent)
+        #expect(report(CancellationError()).isSilent)
+    }
+
+    @Test func `NSError with an explicit description keeps it`() {
+        let error = NSError(domain: "MKErrorDomain", code: 4, userInfo: [NSLocalizedDescriptionKey: "Directions Not Available"])
+        let report = report(error)
+        #expect(report.cause == .message)
+        #expect(report.summary == "Directions Not Available")
+    }
+
     @Test func `Stop prefix doesn't swallow other stop endpoints`() {
         #expect(ErrorReport.Subject(url: URL(string: "\(base)/stops-for-agency/1.json")) == .unknown)
     }
