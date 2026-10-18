@@ -371,13 +371,16 @@ private struct TripPageBackRow: View {
     }
 
     private var refreshButton: some View {
-        Button(action: onRefresh) {
-            circleGlyph(AppSymbol.refresh, isSpinning: isRefreshing && !reduceMotion)
+        // On the caption's timer, so the spoken age keeps up with the visible one.
+        TimelineView(.periodic(from: .now, by: 15)) { _ in
+            Button(action: onRefresh) {
+                circleGlyph(AppSymbol.refresh, isSpinning: isRefreshing && !reduceMotion)
+            }
+            .tint(Color(uiColor: .label))
+            .disabled(isRefreshing)
+            .accessibilityLabel(Strings.refresh)
+            .accessibilityValue(refreshAccessibilityValue)
         }
-        .tint(Color(uiColor: .label))
-        .disabled(isRefreshing)
-        .accessibilityLabel(Strings.refresh)
-        .accessibilityValue(refreshAccessibilityValue)
     }
 
     /// Same wording as the Stop page's refresh: "Updating…" while it runs, then

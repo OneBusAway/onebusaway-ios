@@ -57,6 +57,12 @@ struct TickingCountdownTextTests {
         #expect(TickingCountdownText.spokenSnapshot(departure: departure, now: departure.addingTimeInterval(-485), locale: english) == "in 8 minutes")
     }
 
+    /// Stays in minutes past the hour: a `.hour` threshold would round 90
+    /// minutes to "in 2 hours".
+    @Test func `Ninety minutes out is spoken in minutes`() {
+        #expect(TickingCountdownText.spokenSnapshot(departure: departure, now: departure.addingTimeInterval(-5400), locale: english) == "in 90 minutes")
+    }
+
     @Test func `At departure it is spoken as now`() {
         #expect(TickingCountdownText.spokenSnapshot(departure: departure, now: departure, locale: english) == "now")
     }
