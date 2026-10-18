@@ -1215,6 +1215,9 @@
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "除錯";
 
+/* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
+"settings_controller.experimental_section.cluster_stops" = "在地圖上合併相鄰站牌";
+
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "使用地圖面板體驗";
 

@@ -1431,6 +1431,9 @@
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Debug";
 
+/* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
+"settings_controller.experimental_section.cluster_stops" = "Group nearby stops on the map";
+
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Use map panel experience";
 

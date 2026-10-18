@@ -18,6 +18,9 @@ protocol StopAnnotationDelegate: NSObjectProtocol {
 
     /// Whether tapping a stop annotation should open a callout, or open the stop directly.
     var showsStopAnnotationCallouts: Bool { get }
+
+    /// Whether stop pins that would overlap merge into a cluster.
+    var clustersStops: Bool { get }
 }
 
 class StopAnnotationView: MKAnnotationView {
@@ -80,7 +83,6 @@ class StopAnnotationView: MKAnnotationView {
         }
 
         rightCalloutAccessoryView = UIButton.chevronButton
-        clusteringIdentifier = StopCluster.clusteringIdentifier
 
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
         updateCalloutVisibility()
@@ -106,14 +108,13 @@ class StopAnnotationView: MKAnnotationView {
         super.prepareForReuse()
 
         labelStack.isHidden = true
-        clusteringIdentifier = StopCluster.clusteringIdentifier
+        clusteringIdentifier = nil
 
         titleLabel.text = nil
     }
 
     public override func prepareForDisplay() {
         super.prepareForDisplay()
-        clusteringIdentifier = StopCluster.clusteringIdentifier
         applyPresentation()
     }
 
@@ -121,6 +122,7 @@ class StopAnnotationView: MKAnnotationView {
     /// a frame later; leaving `image` nil for that frame is the default-pin flash.
     func applyPresentation() {
         updateCalloutVisibility()
+        clusteringIdentifier = delegate?.clustersStops == true ? StopCluster.clusteringIdentifier : nil
 
         guard let delegate else { return }
 

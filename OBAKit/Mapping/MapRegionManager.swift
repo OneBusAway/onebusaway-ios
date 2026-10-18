@@ -960,6 +960,10 @@ public class MapRegionManager: NSObject,
         !FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults)
     }
 
+    var clustersStops: Bool {
+        application.userDefaults.bool(forKey: FeatureFlags.clustersStopsKey)
+    }
+
     /// Re-asks every stop annotation currently on the map whether it should show a callout.
     ///
     /// `canShowCallout` is computed once, when `viewFor` attaches the delegate, but
