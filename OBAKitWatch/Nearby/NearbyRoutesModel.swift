@@ -36,8 +36,6 @@ public final class NearbyRoutesModel {
     /// The fix the current list was built around; the route screen measures
     /// stop distances from it.
     public private(set) var origin: CLLocation?
-    /// The region containing the last fix; the screen title.
-    public private(set) var regionName: String?
     /// When the loaded list's arrivals were fetched; the route screen's
     /// "Updated at" until its first poll lands.
     public private(set) var loadedAt: Date?
@@ -52,11 +50,10 @@ public final class NearbyRoutesModel {
     }
 
     /// For previews and tests: a fixed phase, no services.
-    public init(phase: Phase, origin: CLLocation? = nil, regionName: String? = nil) {
+    public init(phase: Phase, origin: CLLocation? = nil) {
         self.host = nil
         self.phase = phase
         self.origin = origin
-        self.regionName = regionName
         self.loadedAt = Date()
     }
 
@@ -96,12 +93,10 @@ public final class NearbyRoutesModel {
 
         // `currentRegion` keeps the previous launch's region when a fix lands
         // outside every region, so the rule keys off where the watch *is*.
-        guard let region = host.regionsService.physicallyLocatedRegion else {
-            regionName = nil
+        guard host.regionsService.physicallyLocatedRegion != nil else {
             phase = .noRegion
             return
         }
-        regionName = region.name
 
         // The fix above set currentLocation → RegionsService selected the
         // region → StandaloneAPIServiceProvider rebuilt the service, all

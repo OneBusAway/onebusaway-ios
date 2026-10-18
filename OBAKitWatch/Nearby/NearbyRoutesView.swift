@@ -16,7 +16,7 @@ struct NearbyRoutesView: View {
 
     var body: some View {
         content
-            .navigationTitle(model.regionName ?? OBALoc("nearby.title", value: "Nearby", comment: "Screen title before a transit region is known"))
+            .navigationTitle(OBALoc("nearby.title", value: "Nearby", comment: "Nearby screen title"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -85,7 +85,7 @@ struct NearbyRoutesView: View {
 }
 
 #Preview("Loading") {
-    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .loading, regionName: "Puget Sound")) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .loading)) }
 }
 
 #Preview("No region") {
@@ -97,5 +97,5 @@ struct NearbyRoutesView: View {
 }
 
 #Preview("Empty") {
-    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .empty, regionName: "Puget Sound")) }
+    NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .empty)) }
 }

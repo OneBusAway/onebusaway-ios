@@ -31,7 +31,7 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "這裡沒有大眾運輸區域。";
 
-/* Screen title before a transit region is known */
+/* Nearby screen title */
 "nearby.title" = "附近";
 
 /* Progress text while nearby stops' departures load */

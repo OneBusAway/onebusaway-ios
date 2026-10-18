@@ -31,7 +31,7 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "Không có khu vực giao thông nào ở đây.";
 
-/* Screen title before a transit region is known */
+/* Nearby screen title */
 "nearby.title" = "Lân cận";
 
 /* Progress text while nearby stops' departures load */
