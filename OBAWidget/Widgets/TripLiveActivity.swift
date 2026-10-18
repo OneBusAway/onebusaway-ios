@@ -31,7 +31,6 @@ struct TripLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripAttributes.self) { context in
             TripLiveActivityContentView(context: context)
-                .activityBackgroundTint(Color(UIColor.systemBackground))
                 .widgetURL(
                     URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
                         .encodeViewStop(stopID: context.attributes.staticData.stopID, regionID: context.attributes.staticData.regionID)
@@ -199,7 +198,12 @@ private struct TripLiveActivityContentView: View {
     var body: some View {
         switch activityFamily {
         case .small:
+            // The phone resolves colors in its own appearance, so a light-mode
+            // phone tinted the Smart Stack card white while the watch drew the
+            // text for its dark face: illegible once the wrist was raised.
             TripLiveActivitySmallView(context: context)
+                .environment(\.colorScheme, .dark)
+                .activityBackgroundTint(.black)
         default:
             TripLiveActivityCardView(
                 staticData: context.attributes.staticData,
@@ -207,6 +211,7 @@ private struct TripLiveActivityContentView: View {
                 isStale: context.isStale,
                 showsDismissHint: context.attributes.showsDismissHint
             )
+            .activityBackgroundTint(Color(UIColor.systemBackground))
         }
     }
 }
