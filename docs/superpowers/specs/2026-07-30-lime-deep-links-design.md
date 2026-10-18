@@ -1,5 +1,12 @@
 # Synthesized Rental Deep Links
 
+> **Superseded 2026-10-18 (#1602):** synthesized links no longer target a
+> vehicle. Lime's `selected_vehicle_id` takes Lime's internal id, which only
+> partner feeds publish (in `rental_uris`); the public feed's `bike_id` is a
+> rotating UUID, so Lime had nothing to select. Synthesized links are now plain
+> app launches (`limebike://map`, `bird://`), with no `generated_at`. See
+> `OBAKit/Mapping/Layers/RentalDeepLink.swift`.
+
 The rental detail sheet already has an "Open in %@" button. It has never once
 rendered, because the only thing that can populate it — GBFS `rental_uris` —
 is absent from every feed we consume.

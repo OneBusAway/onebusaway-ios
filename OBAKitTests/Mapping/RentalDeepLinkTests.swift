@@ -39,7 +39,6 @@ struct RentalDeepLinkTests {
         let rental = try RentalFixtures.vehicle(id: "bird-seattle-washington:abc", networkId: "bird-seattle-washington")
         let target = try #require(RentalDeepLink.target(for: rental))
 
-        #expect(target.url.scheme == "bird")
         // Matches the `discovery_uri` Bird's own GBFS feed publishes; a bare
         // `bird:` would be a needless divergence from it.
         #expect(target.url.absoluteString == "bird://")

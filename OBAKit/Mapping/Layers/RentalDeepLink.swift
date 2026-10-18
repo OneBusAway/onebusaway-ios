@@ -40,7 +40,7 @@ enum RentalDeepLink {
         /// page for a feed-published one.
         let storeFallback: URL?
         let operatorName: String?
-        /// The operator's App Store id, from `appStoreIDs`. Supplied whatever
+        /// The operator's App Store id, from `appStoreID(forNetworkID:)`. Supplied whatever
         /// branch produced `url` — a feed-published link fails just as hard as a
         /// synthesized one when the app is not installed.
         var appStoreID: String?
