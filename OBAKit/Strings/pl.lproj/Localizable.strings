@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "Czas";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "Zrzut ekranu tej strony zawiera wszystko, czego potrzebuje zespół pomocy. Nie zawiera danych osobowych ani lokalizacji.";
+"problem_details.support_footer" = "Zrzut ekranu tej strony zawiera wszystko, czego potrzebuje zespół pomocy. Nie zawiera danych osobowych ani Twojej bieżącej lokalizacji.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Szczegóły problemu";

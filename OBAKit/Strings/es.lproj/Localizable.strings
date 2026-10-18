@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "Hora";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "Una captura de pantalla de esta página contiene todo lo que necesita el equipo de soporte. No incluye información personal ni su ubicación.";
+"problem_details.support_footer" = "Una captura de pantalla de esta página contiene todo lo que necesita el equipo de soporte. No incluye información personal ni su ubicación actual.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Detalles del problema";

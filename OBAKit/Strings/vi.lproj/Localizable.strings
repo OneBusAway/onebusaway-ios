@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "Thời gian";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "Ảnh chụp màn hình trang này có đủ mọi thông tin bộ phận hỗ trợ cần. Không bao gồm thông tin cá nhân hay vị trí của bạn.";
+"problem_details.support_footer" = "Ảnh chụp màn hình trang này có đủ mọi thông tin bộ phận hỗ trợ cần. Không bao gồm thông tin cá nhân hay vị trí hiện tại của bạn.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Chi tiết sự cố";

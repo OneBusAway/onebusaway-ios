@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "Oras";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "Nasa screenshot ng page na ito ang lahat ng kailangan ng support. Walang kasamang personal na impormasyon o lokasyon.";
+"problem_details.support_footer" = "Nasa screenshot ng page na ito ang lahat ng kailangan ng support. Walang kasamang personal na impormasyon o ang kasalukuyan mong lokasyon.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Mga Detalye ng Problema";

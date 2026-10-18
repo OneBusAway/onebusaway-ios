@@ -95,6 +95,15 @@ final class ErrorReportTests {
         #expect(report.errorCode == "NSURLErrorDomain -1001 (serverUnavailable)")
     }
 
+    /// With no region name the classifier leaves a timeout as a network
+    /// failure. The phone is online, so it mustn't read "You're offline".
+    @Test func `Timeout without a region is not offline`() {
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        let report = report(error, region: nil)
+        #expect(report.cause == .serverUnavailable)
+        #expect(!report.cause.isRiderActionable)
+    }
+
     @Test func `Decoding error names the case`() {
         let context = DecodingError.Context(codingPath: [], debugDescription: "missing")
         let report = report(DecodingError.keyNotFound(AnyKey("id"), context))

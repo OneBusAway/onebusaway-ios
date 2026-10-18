@@ -116,7 +116,7 @@ enum ErrorStrings {
     static let details = OBALoc("error_toast.details", value: "Details", comment: "Button on an error notice that opens a page explaining the problem.")
     static let problemDetailsTitle = OBALoc("problem_details.title", value: "Problem Details", comment: "Title of the page that explains an error in detail.")
     static let forSupport = OBALoc("problem_details.for_support", value: "For Support", comment: "Section header above technical details meant for the support team.")
-    static let supportFooter = OBALoc("problem_details.support_footer", value: "A screenshot of this page has everything support needs. No personal info or location is included.", comment: "Footer under the technical details on the problem details page.")
+    static let supportFooter = OBALoc("problem_details.support_footer", value: "A screenshot of this page has everything support needs. No personal info or your current location is included.", comment: "Footer under the technical details on the problem details page.")
     static let supportError = OBALoc("problem_details.row.error", value: "Error", comment: "Row label: the technical error code.")
     static let supportTime = OBALoc("problem_details.row.time", value: "Time", comment: "Row label: when the error happened.")
     static let supportRegion = OBALoc("problem_details.row.region", value: "Region", comment: "Row label: the transit region in use.")

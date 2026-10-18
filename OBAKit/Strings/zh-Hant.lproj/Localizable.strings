@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "時間";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "此頁面的截圖包含支援團隊所需的所有資訊，不含任何個人資訊或位置。";
+"problem_details.support_footer" = "此頁面的截圖包含支援團隊所需的所有資訊，不含任何個人資訊或您目前的位置。";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "問題詳細資訊";

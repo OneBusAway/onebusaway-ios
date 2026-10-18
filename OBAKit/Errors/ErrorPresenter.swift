@@ -52,7 +52,10 @@ final class ErrorPresenter: NSObject {
     }
 
     func present(_ report: ErrorReport, in scene: UIWindowScene) {
-        guard Self.shouldPresent(report, current: currentReport, isShowingDetails: isShowingDetails) else { return }
+        // A repeat aimed at another window (iPad) isn't a repeat for the rider
+        // looking at that one.
+        let current = window?.windowScene === scene ? currentReport : nil
+        guard Self.shouldPresent(report, current: current, isShowingDetails: isShowingDetails) else { return }
 
         currentReport = report
         let window = installWindowIfNeeded(in: scene)
@@ -104,6 +107,12 @@ final class ErrorPresenter: NSObject {
         dismissTask?.cancel()
         let dwell = ToastManager.dwell(for: Self.toastDuration, isVoiceOverRunning: UIAccessibility.isVoiceOverRunning)
         dismissTask = Task { [weak self] in
+            // Hold the toast while its scene is inactive (launch, Control
+            // Center pulled down), so the dwell starts when the rider can see it.
+            while self?.window?.windowScene?.activationState == .foregroundInactive {
+                try? await Task.sleep(for: .milliseconds(500))
+                if Task.isCancelled { return }
+            }
             try? await Task.sleep(for: .seconds(dwell))
             guard !Task.isCancelled else { return }
             self?.dismissToast()

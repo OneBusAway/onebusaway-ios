@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "Время";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "На снимке экрана этой страницы есть всё, что нужно поддержке. Личные данные и местоположение не включаются.";
+"problem_details.support_footer" = "На снимке экрана этой страницы есть всё, что нужно поддержке. Личные данные и ваше текущее местоположение не включаются.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Подробности проблемы";

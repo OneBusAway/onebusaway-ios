@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "Ora";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "Uno screenshot di questa pagina contiene tutto ciò che serve all'assistenza. Non include informazioni personali né la tua posizione.";
+"problem_details.support_footer" = "Uno screenshot di questa pagina contiene tutto ciò che serve all'assistenza. Non include informazioni personali né la tua posizione attuale.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Dettagli del problema";

@@ -2569,7 +2569,7 @@
 "problem_details.row.time" = "Time";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "A screenshot of this page has everything support needs. No personal info or location is included.";
+"problem_details.support_footer" = "A screenshot of this page has everything support needs. No personal info or your current location is included.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Problem Details";

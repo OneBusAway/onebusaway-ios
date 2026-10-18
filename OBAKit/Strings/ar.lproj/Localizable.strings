@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "الوقت";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "تحتوي لقطة شاشة لهذه الصفحة على كل ما يحتاجه فريق الدعم. لا تتضمن أي معلومات شخصية أو موقعك.";
+"problem_details.support_footer" = "تحتوي لقطة شاشة لهذه الصفحة على كل ما يحتاجه فريق الدعم. لا تتضمن أي معلومات شخصية أو موقعك الحالي.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "تفاصيل المشكلة";

@@ -323,7 +323,13 @@ public struct ErrorReport: Sendable {
             case .arrivalTimes: return .stopNotFound
             default: return .notFound
             }
-        case .networkFailure: return .offline
+        case .networkFailure(let inner):
+            // Without a region name the classifier can't build
+            // `serverUnavailable`, and leaves an unreachable host here. The
+            // phone is online in that case; don't tell the rider otherwise.
+            let code = (inner as NSError?)?.code
+            let unreachable = [NSURLErrorTimedOut, NSURLErrorCannotConnectToHost, NSURLErrorCannotFindHost]
+            return code.map(unreachable.contains) == true ? .serverUnavailable : .offline
         case .cellularDataRestricted: return .cellularDataRestricted
         case .captivePortal: return .captivePortal
         case .noRegionSelected: return .noRegionSelected

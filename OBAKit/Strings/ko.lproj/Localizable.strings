@@ -2452,7 +2452,7 @@
 "problem_details.row.time" = "시간";
 
 /* Footer under the technical details on the problem details page. */
-"problem_details.support_footer" = "이 화면의 스크린샷에 지원팀에 필요한 정보가 모두 담겨 있습니다. 개인 정보나 위치는 포함되지 않습니다.";
+"problem_details.support_footer" = "이 화면의 스크린샷에 지원팀에 필요한 정보가 모두 담겨 있습니다. 개인 정보나 현재 위치는 포함되지 않습니다.";
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "문제 세부 정보";
