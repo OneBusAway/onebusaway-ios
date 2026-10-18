@@ -707,6 +707,9 @@
 /* Title of an error shown when cellular data is turned off for this app in Settings. The substituted value is the app name. */
 "error_report.title.cellular_data_restricted_fmt" = "Сотовые данные выключены для приложения %@";
 
+/* Title of an error about a ghost bus report (a scheduled bus that never came) that failed to send. */
+"error_report.title.ghost_bus_report" = "Не удалось отправить сообщение";
+
 /* Title of an error about a failed request for a vehicle's live position. */
 "error_report.title.live_position" = "Не удалось загрузить текущее положение";
 

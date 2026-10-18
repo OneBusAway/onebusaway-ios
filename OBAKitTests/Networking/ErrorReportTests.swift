@@ -47,6 +47,7 @@ final class ErrorReportTests {
             ("stops-for-route/1_100275.json", .routeMap),
             ("shape/1_abc.json", .routeMap),
             ("search/stop.json", .searchResults),
+            ("regions/1/ghost_bus_reports", .ghostBusReport),
             ("current-time.json", .unknown)
         ]
         for (path, expected) in cases {
@@ -84,6 +85,14 @@ final class ErrorReportTests {
         #expect(report.cause == .serverError)
         #expect(report.title == "Couldn't load nearby stops")
         #expect(report.summary == "The Puget Sound server hit a problem.")
+    }
+
+    /// A failed ghost bus report is something the rider sent, not something the
+    /// app loaded (#1596).
+    @Test func `Ghost bus report failure says the report didn't send`() {
+        let report = report(APIError.requestFailure(response("regions/1/ghost_bus_reports", status: 500)))
+        #expect(report.cause == .serverError)
+        #expect(report.title == "Couldn't send your report")
     }
 
     @Test func `Timeout is unreachable and keeps the failing URL`() {
