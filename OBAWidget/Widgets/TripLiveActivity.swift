@@ -30,17 +30,12 @@ struct TripLiveActivity: Widget {
 
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripAttributes.self) { context in
-            TripLiveActivityCardView(
-                staticData: context.attributes.staticData,
-                contentState: context.state,
-                isStale: context.isStale,
-                showsDismissHint: context.attributes.showsDismissHint
-            )
-            .activityBackgroundTint(Color(UIColor.systemBackground))
-            .widgetURL(
-                URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
-                    .encodeViewStop(stopID: context.attributes.staticData.stopID, regionID: context.attributes.staticData.regionID)
-            )
+            TripLiveActivityContentView(context: context)
+                .activityBackgroundTint(Color(UIColor.systemBackground))
+                .widgetURL(
+                    URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
+                        .encodeViewStop(stopID: context.attributes.staticData.stopID, regionID: context.attributes.staticData.regionID)
+                )
         } dynamicIsland: { context in
             let upcoming = context.state.upcomingArrivals()
             let primary = upcoming.first
@@ -181,12 +176,96 @@ struct TripLiveActivity: Widget {
                 }
             }
         }
+        // Without `.small`, the Watch Smart Stack and CarPlay fall back to the
+        // compact Island pair: a bare route and minutes.
+        .supplementalActivityFamilies([.small])
     }
+}
 
-    /// "Route 8" rather than a bare "8", which VoiceOver reads as a number with
-    /// nothing to say what it counts.
-    private func routeLabel(_ staticData: TripAttributes.StaticData) -> String {
-        Formatters(locale: .autoupdatingCurrent, calendar: .autoupdatingCurrent, themeColors: ThemeColors.shared)
-            .accessibilityLabelForArrivalDeparture(routeAndHeadsign: staticData.routeShortName)
+/// "Route 8" rather than a bare "8", which VoiceOver reads as a number with
+/// nothing to say what it counts.
+private func routeLabel(_ staticData: TripAttributes.StaticData) -> String {
+    Formatters(locale: .autoupdatingCurrent, calendar: .autoupdatingCurrent, themeColors: ThemeColors.shared)
+        .accessibilityLabelForArrivalDeparture(routeAndHeadsign: staticData.routeShortName)
+}
+
+/// The Lock Screen card on iPhone; a smaller layout in the Watch Smart Stack
+/// and CarPlay, which ask for `.small`.
+private struct TripLiveActivityContentView: View {
+    let context: ActivityViewContext<TripAttributes>
+
+    @Environment(\.activityFamily) private var activityFamily
+
+    var body: some View {
+        switch activityFamily {
+        case .small:
+            TripLiveActivitySmallView(
+                staticData: context.attributes.staticData,
+                contentState: context.state,
+                isStale: context.isStale
+            )
+        default:
+            TripLiveActivityCardView(
+                staticData: context.attributes.staticData,
+                contentState: context.state,
+                isStale: context.isStale,
+                showsDismissHint: context.attributes.showsDismissHint
+            )
+        }
+    }
+}
+
+/// Route and minutes on the first line, then the headsign and how the bus is
+/// running — what the rider glances at on their wrist.
+private struct TripLiveActivitySmallView: View {
+    let staticData: TripAttributes.StaticData
+    let contentState: TripAttributes.ContentState
+    let isStale: Bool
+
+    private let presenter = TripActivityPresenter()
+
+    var body: some View {
+        let primary = contentState.upcomingArrivals().first
+        let statusColor = Color(presenter.primaryColor(for: contentState))
+
+        VStack(alignment: .leading, spacing: 2) {
+            // Dim arrival content only; the warning stays full opacity (#1376).
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(staticData.routeShortName)
+                        .font(.system(.headline, design: .rounded, weight: .heavy))
+                        .lineLimit(1)
+                        .accessibilityLabel(routeLabel(staticData))
+                    Spacer(minLength: 4)
+                    if let primary {
+                        TickingCountdownText(
+                            departure: primary.departureDate,
+                            font: .system(.title3, design: .rounded, weight: .bold),
+                            color: Color(presenter.color(for: primary))
+                        )
+                    }
+                }
+                Text(staticData.routeHeadsign)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
+
+            if isStale {
+                Label(LiveActivityStaleChrome.warningText, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+            } else if let primary {
+                Text(presenter.statusText(for: primary))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(statusColor)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .accessibilityElement(children: .combine)
     }
 }
