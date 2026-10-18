@@ -31,7 +31,7 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "Здесь нет транспортного региона.";
 
-/* Screen title before a transit region is known */
+/* Nearby screen title */
 "nearby.title" = "Рядом";
 
 /* Progress text while nearby stops' departures load */

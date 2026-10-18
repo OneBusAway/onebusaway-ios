@@ -31,7 +31,7 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "Nessuna regione di trasporto qui.";
 
-/* Screen title before a transit region is known */
+/* Nearby screen title */
 "nearby.title" = "Nelle vicinanze";
 
 /* Progress text while nearby stops' departures load */

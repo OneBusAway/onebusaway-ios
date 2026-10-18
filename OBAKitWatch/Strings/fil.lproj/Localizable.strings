@@ -31,7 +31,7 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "Walang rehiyon ng transit dito.";
 
-/* Screen title before a transit region is known */
+/* Nearby screen title */
 "nearby.title" = "Malapit";
 
 /* Progress text while nearby stops' departures load */

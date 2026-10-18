@@ -31,7 +31,7 @@
 /* The fix is outside every supported region */
 "nearby.no_region" = "لا توجد منطقة نقل هنا.";
 
-/* Screen title before a transit region is known */
+/* Nearby screen title */
 "nearby.title" = "بالقرب منك";
 
 /* Progress text while nearby stops' departures load */
