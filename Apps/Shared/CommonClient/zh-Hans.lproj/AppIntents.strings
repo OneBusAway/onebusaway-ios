@@ -31,6 +31,9 @@
 /* App Intents: label of the stop parameter on the Open Stop action. */
 "stop_entity.parameter_title" = "车站";
 
+/* App Intents: name of the Next Departures card's Refresh button action. Not listed in Shortcuts; shown only where the system names the action. */
+"refresh_next_departures_intent.title" = "刷新下一班发车";
+
 /* App Intents: name of the Shortcuts action that starts a Live Activity for a bookmarked trip. */
 "track_bookmark_intent.title" = "追踪书签";
 

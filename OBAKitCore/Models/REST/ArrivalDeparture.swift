@@ -472,7 +472,7 @@ public enum ArrivalDepartureStatus: Int {
     case arriving, departing
 }
 
-public enum ScheduleStatus: Int {
+public enum ScheduleStatus: Int, Sendable {
     case unknown, early, onTime, delayed
 }
 

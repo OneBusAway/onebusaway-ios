@@ -21,6 +21,10 @@ import OBAKitCore
 /// The `AppIntent` conformance still leaves members nonisolated, so `perform`
 /// opts into the main actor to use `NextDeparturesLoader`.
 ///
+/// On iOS 26 the answer also appears as an interactive card, opened through
+/// `NextDeparturesCardIntent` (#1554). The spoken answer and the `String` this
+/// returns are the same on every OS, so saved shortcuts are unaffected.
+///
 /// Strings come from `AppIntents.strings`; see `TrackBookmarkIntent` for why.
 public struct NextDeparturesIntent: AppIntent {
     public static let title = LocalizedStringResource("next_departures_intent.title", defaultValue: "Next Departures", table: "AppIntents")
@@ -34,28 +38,40 @@ public struct NextDeparturesIntent: AppIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
-        let outcome = try await resolveOutcome()
+        let bookmarkID = try await resolveBookmarkID()
+        // Through the store, so the card can show this outcome without fetching it again.
+        let outcome = await NextDeparturesStore.shared.load(bookmarkID: bookmarkID)
         let text = NextDeparturesSummary.text(for: outcome, now: Date())
+
+        // Both branches return `IntentResultContainer<String, Never, Never,
+        // IntentDialog>`, which is what lets one `perform()` serve every OS.
+        // Siri speaks the full sentence; beside the card, it shows only the
+        // short supporting line, so the screen doesn't repeat the card.
+        if #available(iOS 26.0, *) {
+            return .result(
+                value: text,
+                opensIntent: NextDeparturesCardIntent(bookmarkID: bookmarkID),
+                dialog: IntentDialog(full: "\(text)", supporting: Self.title)
+            )
+        }
         return .result(value: text, dialog: "\(text)")
     }
 
+    /// The bookmark to answer for: the parameter, else the only trip bookmark.
+    /// `nil` when there is none, which the store answers with `noBookmarks` or,
+    /// without the app group, `noRegion`.
     @MainActor
-    private func resolveOutcome() async throws -> NextDeparturesSummary.Outcome {
-        guard let loader = NextDeparturesLoader(bundle: .main) else {
-            Logger.error("Next Departures Shortcut: app group UserDefaults unavailable.")
-            return .noRegion
-        }
-
+    private func resolveBookmarkID() async throws -> UUID? {
         if let bookmark {
-            return await loader.outcome(bookmarkID: bookmark.id)
+            return bookmark.id
         }
 
         let candidates = try await BookmarkEntityQuery().suggestedEntities()
         switch candidates.count {
         case 0:
-            return .noBookmarks
+            return nil
         case 1:
-            return await loader.outcome(bookmarkID: candidates[0].id)
+            return candidates[0].id
         default:
             let prompt = OBALoc("next_departures_intent.choose_bookmark", value: "Which bookmark?", comment: "Siri asks which trip bookmark to report departures for when the user has more than one.")
             throw $bookmark.needsValueError("\(prompt)")
@@ -67,13 +83,27 @@ public struct NextDeparturesIntent: AppIntent {
 /// `WidgetDataProvider` does. The intent has no route to `Application`, and the
 /// system may launch the app in the background just to run it.
 struct NextDeparturesLoader {
+    /// How long a departures fetch may take. Siri and Shortcuts wait on the
+    /// answer, and the card's Refresh button shouldn't spin for URLSession's
+    /// 60-second default before saying the load failed (#1554).
+    nonisolated static let requestTimeout: TimeInterval = 10
+
+    /// The session fetches use unless a test injects another: request and
+    /// resource timeouts both capped at `requestTimeout`.
+    nonisolated static let defaultDataLoader: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = requestTimeout
+        configuration.timeoutIntervalForResource = requestTimeout
+        return URLSession(configuration: configuration)
+    }()
+
     let userDefaults: UserDefaults
     let bundledRegionsFilePath: String?
     let apiKey: String?
     let appVersion: String
     let dataLoader: URLDataLoader
 
-    init(userDefaults: UserDefaults, bundledRegionsFilePath: String?, apiKey: String?, appVersion: String, dataLoader: URLDataLoader = URLSession.shared) {
+    init(userDefaults: UserDefaults, bundledRegionsFilePath: String?, apiKey: String?, appVersion: String, dataLoader: URLDataLoader = NextDeparturesLoader.defaultDataLoader) {
         self.userDefaults = userDefaults
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.apiKey = apiKey
@@ -129,7 +159,7 @@ struct NextDeparturesLoader {
             bookmarkName: bookmark.name,
             routeShortName: routeShortName,
             headsign: headsign,
-            dates: departures.map(\.arrivalDepartureDate)
+            departures: departures.map(NextDeparturesSummary.Departure.init(arrivalDeparture:))
         )
     }
 }
