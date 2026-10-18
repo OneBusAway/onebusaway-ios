@@ -45,8 +45,23 @@ class EditBookmarkViewController: UIHostingController<EditBookmarkView>, Destina
             title = OBALoc("edit_bookmark_controller.title_edit", value: "Edit Bookmark", comment: "Title for the Edit Bookmark controller in edit mode")
         }
 
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(save))
+        self.navigationItem.rightBarButtonItem = makeSaveButton()
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(close))
+    }
+
+    /// A checkmark rather than "Save" (#1597). On iOS 26 it sits on a prominent,
+    /// brand-tinted capsule; the system picks a dark glyph for our light tint, so
+    /// the checkmark is drawn white explicitly.
+    private func makeSaveButton() -> UIBarButtonItem {
+        let checkmark = UIImage(systemName: "checkmark")
+        let item: UIBarButtonItem
+        if #available(iOS 26.0, *) {
+            item = UIBarButtonItem(image: checkmark?.withTintColor(.white, renderingMode: .alwaysOriginal), style: .prominent, target: self, action: #selector(save))
+        } else {
+            item = UIBarButtonItem(image: checkmark, style: .done, target: self, action: #selector(save))
+        }
+        item.accessibilityLabel = Strings.save
+        return item
     }
 
     required init?(coder aDecoder: NSCoder) {
