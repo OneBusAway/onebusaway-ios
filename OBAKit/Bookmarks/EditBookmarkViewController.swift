@@ -49,17 +49,22 @@ class EditBookmarkViewController: UIHostingController<EditBookmarkView>, Destina
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(close))
     }
 
-    /// A checkmark rather than "Save" (#1597). On iOS 26 it sits on a prominent,
-    /// brand-tinted capsule; the system picks a dark glyph for our light tint, so
-    /// the checkmark is drawn white explicitly.
+    /// A checkmark rather than "Save" (#1597). On iOS 26 it sits on a prominent
+    /// capsule filled with the item's tint. The system picks a dark glyph for the
+    /// bar's light `brandTint`, so the checkmark is drawn white, on `brandAccent`:
+    /// `brandTint` lightens in dark mode, leaving white at 2.7:1, and the accent
+    /// keeps it above 3:1 in both.
     private func makeSaveButton() -> UIBarButtonItem {
         var image = Icons.checkmark
         var style = UIBarButtonItem.Style.done
+        var tint: UIColor?
         if #available(iOS 26.0, *) {
             image = image.withTintColor(.white, renderingMode: .alwaysOriginal)
             style = .prominent
+            tint = ThemeColors.shared.brandAccent
         }
         let item = UIBarButtonItem(image: image, style: style, target: self, action: #selector(save))
+        item.tintColor = tint
         item.accessibilityLabel = Strings.save
         return item
     }
