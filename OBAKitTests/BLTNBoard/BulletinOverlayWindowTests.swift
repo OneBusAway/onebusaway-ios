@@ -41,9 +41,9 @@ final class BulletinOverlayWindowTests {
         overlay.restoreDismissalHandler()
     }
 
-    /// Item 2 from issue #1170: on a reused page item (like
-    /// `ReachabilityBulletin.connectivityPage`, re-shown on every connectivity
-    /// flap), each presentation must leave the item exactly as it found it.
+    /// Item 2 from issue #1170: on a reused page item (one a bulletin class
+    /// shows again and again), each presentation must leave the item exactly
+    /// as it found it.
     ///
     /// Pre-fix, the post-dismissal assertion fails on the very first pass — the
     /// item is left holding wrapper 1 — and every later pass buries it one level

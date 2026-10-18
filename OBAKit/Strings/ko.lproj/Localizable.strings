@@ -930,21 +930,6 @@
 /* Title of the notification shown when the rider nears the stop they set a destination alert on. */
 "proximity_alert.notification.title" = "정류장에 접근 중";
 
-/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
-"reachability_bulletin.description.cellular_data_restricted_fmt" = "현재 %1$@의 셀룰러 데이터 사용이 허용되어 있지 않습니다. 설정 > 셀룰러로 이동하여 %2$@의 셀룰러 데이터를 켜거나 WiFi 네트워크에 연결해 주세요.";
-
-/* Reachability bulletin for a cellular connection that can't access the Internet. */
-"reachability_bulletin.description.cellular_no_internet" = "셀룰러 연결로 인터넷에 접속할 수 없습니다.\r\n\r\nWiFi에 연결하거나 다른 곳으로 이동해 보세요.";
-
-/* Reachability bulletin for a phone with no connection. */
-"reachability_bulletin.description.not_connected" = "인터넷에 접속할 수 없습니다. WiFi 또는 셀룰러 데이터로 연결해 보세요.";
-
-/* Reachability bulletin for a WiFi network that can't access the Internet. */
-"reachability_bulletin.description.wifi_no_internet" = "WiFi 연결로 인터넷에 접속할 수 없습니다.\r\n\r\nWiFi를 끄거나 다른 네트워크에 연결해 보세요.";
-
-/* Title of the alert that appears when the app can't connect to the server. */
-"reachability_bulletin.title" = "인터넷 연결 없음";
-
 /* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
 "recent_stops.confirmation_alert.title" = "최근 정류장을 모두 삭제하시겠습니까?";
 

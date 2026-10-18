@@ -930,21 +930,6 @@
 /* Title of the notification shown when the rider nears the stop they set a destination alert on. */
 "proximity_alert.notification.title" = "Aproximando-se do seu ponto";
 
-/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
-"reachability_bulletin.description.cellular_data_restricted_fmt" = "O app %1$@ não tem permissão para acessar os dados móveis no momento. Para corrigir, vá em Ajustes > Celular e ative os dados móveis para o app %2$@, ou conecte-se a uma rede Wi-Fi.";
-
-/* Reachability bulletin for a cellular connection that can't access the Internet. */
-"reachability_bulletin.description.cellular_no_internet" = "Não conseguimos acessar a internet pela sua conexão de dados móveis.\r\n\r\nTente conectar-se a uma rede Wi-Fi ou mudar de local.";
-
-/* Reachability bulletin for a phone with no connection. */
-"reachability_bulletin.description.not_connected" = "Não conseguimos acessar a internet. Tente conectar-se via Wi-Fi ou dados móveis.";
-
-/* Reachability bulletin for a WiFi network that can't access the Internet. */
-"reachability_bulletin.description.wifi_no_internet" = "Não conseguimos acessar a internet pela sua conexão Wi-Fi.\r\n\r\nTente desativar o Wi-Fi ou conectar-se a outra rede.";
-
-/* Title of the alert that appears when the app can't connect to the server. */
-"reachability_bulletin.title" = "Sem Internet";
-
 /* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
 "recent_stops.confirmation_alert.title" = "Tem certeza de que deseja apagar todas as suas paradas recentes?";
 

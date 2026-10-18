@@ -930,21 +930,6 @@
 /* Title of the notification shown when the rider nears the stop they set a destination alert on. */
 "proximity_alert.notification.title" = "即將抵達您的站點";
 
-/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
-"reachability_bulletin.description.cellular_data_restricted_fmt" = "%1$@ 目前無法取用行動數據。若要修正此問題，請前往「設定」>「行動服務」，為 %2$@ 開啟行動數據，或連接 Wi-Fi 網路。";
-
-/* Reachability bulletin for a cellular connection that can't access the Internet. */
-"reachability_bulletin.description.cellular_no_internet" = "我們無法透過您的行動數據連線存取網際網路。\r\n\r\n請嘗試連接 Wi-Fi 或移動至其他地點。";
-
-/* Reachability bulletin for a phone with no connection. */
-"reachability_bulletin.description.not_connected" = "我們無法存取網際網路。請嘗試透過 Wi-Fi 或行動數據連線。";
-
-/* Reachability bulletin for a WiFi network that can't access the Internet. */
-"reachability_bulletin.description.wifi_no_internet" = "我們無法透過您的 Wi-Fi 連線存取網際網路。\r\n\r\n請嘗試關閉 Wi-Fi 或連接其他網路。";
-
-/* Title of the alert that appears when the app can't connect to the server. */
-"reachability_bulletin.title" = "沒有網際網路連線";
-
 /* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
 "recent_stops.confirmation_alert.title" = "確定要刪除所有最近瀏覽的站牌嗎？";
 

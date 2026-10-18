@@ -227,11 +227,6 @@ nonisolated class Icons: NSObject {
 
     // MARK: - Miscellaneous
 
-    /// An image used to represent an offline internet connection.
-    public class var noInternet: UIImage {
-        imageNamed("no_internet")
-    }
-
     /// The arrow that points from a spotlight's caption down to the highlighted view.
     class var spotlightArrowDown: UIImage {
         imageNamed("arrowDownIcon")

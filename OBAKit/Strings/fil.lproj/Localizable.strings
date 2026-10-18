@@ -930,21 +930,6 @@
 /* Title of the notification shown when the rider nears the stop they set a destination alert on. */
 "proximity_alert.notification.title" = "Papalapit ka na sa iyong hintuan";
 
-/* Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name. */
-"reachability_bulletin.description.cellular_data_restricted_fmt" = "Kasalukuyang hindi pinapayagan ang %1$@ app na ma-access ang cellular data. Para ayusin ito, pumunta sa Settings > Cellular at i-enable ang cellular data para sa %2$@ app, o kumonekta sa isang WiFi network.";
-
-/* Reachability bulletin for a cellular connection that can't access the Internet. */
-"reachability_bulletin.description.cellular_no_internet" = "Hindi kami maka-access sa Internet gamit ang iyong cellular na koneksyon.\r\n\r\nSubukang kumonekta sa WiFi o lumipat sa ibang lugar.";
-
-/* Reachability bulletin for a phone with no connection. */
-"reachability_bulletin.description.not_connected" = "Hindi kami maka-access sa Internet. Subukang kumonekta gamit ang WiFi o cellular data.";
-
-/* Reachability bulletin for a WiFi network that can't access the Internet. */
-"reachability_bulletin.description.wifi_no_internet" = "Hindi kami maka-access sa Internet gamit ang iyong WiFi na koneksyon.\r\n\r\nSubukang i-off ang WiFi o kumonekta sa ibang network.";
-
-/* Title of the alert that appears when the app can't connect to the server. */
-"reachability_bulletin.title" = "Walang Internet";
-
 /* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
 "recent_stops.confirmation_alert.title" = "Sigurado ka bang gusto mong i-delete ang lahat ng iyong kamakailang hintuan?";
 
