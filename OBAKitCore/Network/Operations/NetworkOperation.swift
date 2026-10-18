@@ -32,9 +32,8 @@ public enum APIError: Error, LocalizedError {
     /// `.serverUnavailable`: the host responded, the payload is unusable (#1276).
     case invalidResponseData(regionName: String)
 
-    /// The server answered HTTP 429: too many requests. `retryAfter` is the
-    /// response's `Retry-After` delay in seconds, when it sent one.
-    case rateLimited(retryAfter: TimeInterval?)
+    /// The server answered HTTP 429: too many requests.
+    case rateLimited
 
     /// Survey service is not configured or survey base URL is missing.
     case surveyServiceNotConfigured

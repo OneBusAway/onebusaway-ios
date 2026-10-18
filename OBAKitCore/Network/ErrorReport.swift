@@ -17,12 +17,12 @@ import Foundation
 /// request's endpoint and says *what* failed ("Couldn't load arrival times").
 /// The ``Cause`` comes from the classified error and says *why*. Every pair has
 /// sensible copy, and anything unrecognized uses the ``Cause/fallback`` wording.
-public struct ErrorReport: Sendable, Equatable {
+public struct ErrorReport: Sendable {
 
     // MARK: - Subject
 
     /// What failed, worked out from the endpoint of the request that failed.
-    public enum Subject: Sendable, Equatable, CaseIterable {
+    public enum Subject: Sendable, Equatable {
         case arrivalTimes
         case livePosition
         case schedule
@@ -58,8 +58,9 @@ public struct ErrorReport: Sendable, Equatable {
                 self = .serviceAlerts
             } else if has("gbfs", "free_bike_status", "station_status", "vehicle_status") {
                 self = .bikeShare
-            } else if has("stop") {
-                // `stop/1_75403.json` — the stop page's own fetch.
+            } else if components.contains("stop") {
+                // `stop/1_75403.json` — the stop page's own fetch. An exact match:
+                // a prefix would also catch `stops-for-agency`.
                 self = .arrivalTimes
             } else {
                 self = .unknown
@@ -109,6 +110,10 @@ public struct ErrorReport: Sendable, Equatable {
         case noRegionSelected
         /// Not worth telling the rider about; see ``ErrorReport/isSilent``.
         case silent
+        /// Not a failed request: an error that carries its own message, like
+        /// `UnstructuredError("This stop is in a different region…")`. That
+        /// message is shown as is.
+        case message
         case fallback
 
         /// Whether the fix is on the rider's side (settings, network) rather than
@@ -116,14 +121,6 @@ public struct ErrorReport: Sendable, Equatable {
         public var isRiderActionable: Bool {
             switch self {
             case .offline, .cellularDataRestricted, .captivePortal, .noRegionSelected: return true
-            default: return false
-            }
-        }
-
-        /// Whether trying the same request again has a reasonable chance of working.
-        public var isRetryable: Bool {
-            switch self {
-            case .rateLimited, .serverError, .serverUnavailable, .invalidResponseData, .offline, .fallback: return true
             default: return false
             }
         }
@@ -140,7 +137,6 @@ public struct ErrorReport: Sendable, Equatable {
     // MARK: - Properties
 
     public let cause: Cause
-    public let subject: Subject
 
     /// Toast title and the headline of the Problem Details page.
     public let title: String
@@ -200,13 +196,19 @@ public struct ErrorReport: Sendable, Equatable {
         let classified = ErrorClassifier.classify(error, regionName: regionName, isCellularDataRestricted: isCellularDataRestricted)
         let requestURL = Self.requestURL(from: error)
         let subject = Subject(url: requestURL)
-        let cause = Self.cause(for: classified, subject: subject)
 
-        self.cause = cause
-        self.subject = subject
-        self.title = Self.title(for: cause, subject: subject)
-        self.summary = Self.summary(for: cause, regionName: regionName)
-        self.explanation = Self.explanation(for: cause, regionName: regionName)
+        if let message = Self.ownMessage(of: classified) {
+            self.cause = .message
+            self.title = Strings.error
+            self.summary = message
+            self.explanation = message
+        } else {
+            let cause = Self.cause(for: classified, subject: subject)
+            self.cause = cause
+            self.title = Self.title(for: cause, subject: subject)
+            self.summary = Self.summary(for: cause, regionName: regionName)
+            self.explanation = Self.explanation(for: cause, regionName: regionName)
+        }
         self.errorCode = Self.errorCode(raw: error, classified: classified)
         self.date = date
         self.regionName = regionName
@@ -226,7 +228,7 @@ public struct ErrorReport: Sendable, Equatable {
             "\(Bundle.main.appName) problem report",
             "\(title) — \(summary)",
             "Error: \(errorCode)",
-            "Time: \(Self.isoFormatter.string(from: date))"
+            "Time: \(date.formatted(Date.ISO8601FormatStyle(timeZone: .current)))"
         ]
         if let regionName {
             lines.append("Region: \(regionName)")
@@ -234,9 +236,14 @@ public struct ErrorReport: Sendable, Equatable {
         if let requestURL {
             lines.append("Request: \(requestURL.absoluteString)")
         }
-        lines.append("App: \(appVersion) · iOS \(systemVersion) · \(deviceModel)")
+        lines.append("App: \(appSummary)")
         lines.append("Ref: \(reference)")
         return lines.joined(separator: "\n")
+    }
+
+    /// App version, iOS version, and device model on one line.
+    public var appSummary: String {
+        "\(appVersion) · iOS \(systemVersion) · \(deviceModel)"
     }
 
     /// The request as shown on the Problem Details page: no scheme, since it
@@ -260,11 +267,17 @@ public struct ErrorReport: Sendable, Equatable {
 
     // MARK: - Private
 
-    nonisolated(unsafe) private static let isoFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.timeZone = .current
-        return formatter
-    }()
+    /// The message of an error that isn't about a request but brings its own
+    /// rider-facing text. Decoding errors are excluded: theirs is developer prose.
+    private static func ownMessage(of classified: Error) -> String? {
+        guard
+            !(classified is APIError),
+            !(classified is DecodingError),
+            let description = (classified as? LocalizedError)?.errorDescription,
+            !description.isEmpty
+        else { return nil }
+        return description
+    }
 
     private static func cause(for classified: Error, subject: Subject) -> Cause {
         guard let apiError = classified as? APIError else {
@@ -336,7 +349,7 @@ public struct ErrorReport: Sendable, Equatable {
             return OBALoc("error_report.summary.captive_portal", value: "Open the network's login page to continue.", comment: "One-line toast text under a title saying the Wi-Fi network needs the rider to sign in.")
         case .noRegionSelected:
             return OBALoc("error_report.summary.no_region_selected", value: "Choose your region to see transit info.", comment: "One-line toast text: no transit region has been selected.")
-        case .silent, .fallback:
+        case .silent, .message, .fallback:
             return fallbackSummary
         }
     }
@@ -376,7 +389,7 @@ public struct ErrorReport: Sendable, Equatable {
         case .noRegionSelected:
             let fmt = OBALoc("error_report.explanation.no_region_selected_fmt", value: "%@ needs to know which transit region you're in.", comment: "Explanation of an error where no transit region is selected. The substituted value is the app name.")
             return String(format: fmt, Bundle.main.appName)
-        case .silent, .fallback:
+        case .silent, .message, .fallback:
             return fallbackExplanation
         }
     }
@@ -388,7 +401,7 @@ public struct ErrorReport: Sendable, Equatable {
     // MARK: - Support Details
 
     /// Status code (when there is one) plus the case or type name.
-    static func errorCode(raw: Error, classified: Error) -> String {
+    private static func errorCode(raw: Error, classified: Error) -> String {
         // A decoding failure is more useful by its own case than by the
         // `invalidResponseData` it classifies to.
         let name = raw is DecodingError ? caseName(raw) : caseName(classified)
@@ -469,7 +482,7 @@ public struct ErrorReport: Sendable, Equatable {
         return error
     }
 
-    static func requestURL(from error: Error) -> URL? {
+    private static func requestURL(from error: Error) -> URL? {
         if let apiError = error as? APIError {
             switch apiError {
             case .requestFailure(let response), .requestNotFound(let response):

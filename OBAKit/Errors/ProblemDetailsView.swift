@@ -17,6 +17,7 @@ import OBAKitCore
 struct ProblemDetailsView: View {
     let report: ErrorReport
     var onDone: () -> Void
+    var onOpenSettings: () -> Void
     var onContactSupport: () -> Void
 
     @State private var showsCopied = false
@@ -40,7 +41,7 @@ struct ProblemDetailsView: View {
 
                 if report.action == .openSettings {
                     Section {
-                        Button(ErrorStrings.openSettings, action: openSettings)
+                        Button(ErrorStrings.openSettings, action: onOpenSettings)
                     }
                 }
 
@@ -53,7 +54,7 @@ struct ProblemDetailsView: View {
                     if let request = report.displayRequest {
                         supportRow(ErrorStrings.supportRequest, request)
                     }
-                    supportRow(ErrorStrings.supportApp, "\(report.appVersion) · iOS \(report.systemVersion) · \(report.deviceModel)")
+                    supportRow(ErrorStrings.supportApp, report.appSummary)
                     supportRow(ErrorStrings.supportReference, report.reference)
                 } header: {
                     Text(ErrorStrings.forSupport)
@@ -115,11 +116,6 @@ struct ProblemDetailsView: View {
             showsCopied = false
         }
     }
-
-    private func openSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
-    }
 }
 
 /// Copy for the error toast and the Problem Details page.
@@ -135,7 +131,7 @@ enum ErrorStrings {
     static let supportApp = OBALoc("problem_details.row.app", value: "App", comment: "Row label: app version, iOS version and device model.")
     static let supportReference = OBALoc("problem_details.row.reference", value: "Ref", comment: "Row label: a short reference code for this error that the rider can quote to support. Abbreviation of 'Reference'.")
     static let copyDetails = OBALoc("problem_details.copy_details", value: "Copy Details", comment: "Button that copies the technical details of an error to the clipboard.")
-    static let copied = OBALoc("clipboard.copied_text_confirmation", value: "Copied to clipboard", comment: "This is displayed to confirm that something has been copied to clipboard.")
+    static let copied = CopyableValueRow.confirmation
     static let contactSupport = OBALoc("problem_details.contact_support", value: "Contact Support", comment: "Button that starts an email to the app's support team about an error.")
     static let openSettings = OBALoc("problem_details.open_settings", value: "Open Settings", comment: "Button that opens this app's page in the iOS Settings app.")
     static let supportEmailSubjectFmt = OBALoc("problem_details.email_subject_fmt", value: "%@ problem report %@", comment: "Subject of a support email about an error. The first value is the app name, the second a short reference code like 7F3K-Q2.")
@@ -153,7 +149,7 @@ enum ErrorStrings {
             systemVersion: "26.1",
             deviceModel: "iPhone16,1"
         ),
-        onDone: {}, onContactSupport: {}
+        onDone: {}, onOpenSettings: {}, onContactSupport: {}
     )
 }
 #endif

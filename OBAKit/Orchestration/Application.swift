@@ -995,21 +995,22 @@ public class Application: CoreApplication, PushServiceDelegate {
             error: error,
             regionName: currentRegionName,
             isCellularDataRestricted: isCellularDataRestricted,
-            systemVersion: UIDevice.current.systemVersion,
-            deviceModel: UIDevice.current.modelName
+            systemVersion: Self.systemVersion,
+            deviceModel: Self.deviceModel
         )
         Logger.error("Error [\(report.reference)]: \(report.errorCode) \(report.requestURL?.absoluteString ?? "") \(error.localizedDescription)")
 
         analytics?.reportError?(error)
 
-        guard let scene = delegate?.uiApplication?.keyWindowFromScene?.windowScene else { return }
+        guard let scene = delegate?.uiApplication?.bulletinTargetScene else { return }
         errorPresenter.present(report, in: scene)
     }
 
-    private lazy var errorPresenter = ErrorPresenter { [weak self] in
-        guard let self else { return "iphone-app@onebusaway.org" }
-        return ContactUsHelper(application: self).appDevelopersEmail
-    }
+    private let errorPresenter = ErrorPresenter()
+
+    // Fixed for the life of the process; `modelName` reflects over `uname`.
+    private static let systemVersion = UIDevice.current.systemVersion
+    private static let deviceModel = UIDevice.current.modelName
 
     // MARK: - Feature Availability
 

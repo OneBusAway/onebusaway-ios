@@ -12,8 +12,8 @@ import OBAKitCore
 
 /// What an ``ErrorToastView`` shows. Independent of `ErrorReport` so any
 /// surface can raise a toast of its own.
-struct ErrorToast: Equatable {
-    enum Style: Equatable {
+struct ErrorToast {
+    enum Style {
         /// Orange "!": the problem is on our side or the agency's.
         case problem
         /// Grey "i": the fix is on the rider's side (settings, network).
@@ -24,14 +24,9 @@ struct ErrorToast: Equatable {
     let message: String
     let style: Style
     let actionTitle: String
+}
 
-    init(title: String, message: String, style: Style, actionTitle: String) {
-        self.title = title
-        self.message = message
-        self.style = style
-        self.actionTitle = actionTitle
-    }
-
+extension ErrorToast {
     init(report: ErrorReport) {
         self.title = report.title
         self.message = report.summary

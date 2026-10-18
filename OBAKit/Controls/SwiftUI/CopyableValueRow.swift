@@ -27,7 +27,7 @@ struct CopyableValueRow: View {
     @State private var showsConfirmation = false
     @State private var revertTask: Task<Void, Never>?
 
-    private var confirmation: String {
+    static var confirmation: String {
         OBALoc("clipboard.copied_text_confirmation", value: "Copied to clipboard", comment: "This is displayed to confirm that something has been copied to clipboard.")
     }
 
@@ -35,7 +35,7 @@ struct CopyableValueRow: View {
         Button(action: copy) {
             LabeledContent {
                 if showsConfirmation {
-                    Text(confirmation)
+                    Text(Self.confirmation)
                 } else {
                     Text(value)
                         .lineLimit(truncatesValue ? 1 : nil)
@@ -59,7 +59,7 @@ struct CopyableValueRow: View {
 
     private func copy() {
         UIPasteboard.general.string = value
-        AccessibilityAnnouncement.post(confirmation)
+        AccessibilityAnnouncement.post(Self.confirmation)
         showsConfirmation = true
         revertTask?.cancel()
         revertTask = Task {

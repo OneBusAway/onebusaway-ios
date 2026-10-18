@@ -28,23 +28,16 @@ final class ErrorPresenter: NSObject {
     /// `ToastManager.dwell(for:isVoiceOverRunning:)`.
     static let toastDuration: TimeInterval = 4
 
-    private let contactEmail: () -> String
-
     private var window: PassthroughWindow?
     private var toastHost: UIHostingController<ErrorToastView>?
     private var dismissTask: Task<Void, Never>?
     private weak var previousKeyWindow: UIWindow?
 
     /// The report on screen, as a toast or a details page.
-    private(set) var currentReport: ErrorReport?
+    private var currentReport: ErrorReport?
 
     /// `true` while the details page is up.
-    private(set) var isShowingDetails = false
-
-    /// - Parameter contactEmail: Where Contact Support sends its email.
-    init(contactEmail: @escaping () -> String) {
-        self.contactEmail = contactEmail
-    }
+    private var isShowingDetails = false
 
     /// Whether `report` should replace what's on screen.
     ///
@@ -141,10 +134,13 @@ final class ErrorPresenter: NSObject {
             showDetails(for: report)
         case .openSettings:
             dismissToast()
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
+            openSettings()
         }
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     private func showDetails(for report: ErrorReport) {
@@ -159,6 +155,7 @@ final class ErrorPresenter: NSObject {
         let details = UIHostingController(rootView: ProblemDetailsView(
             report: report,
             onDone: { [weak self] in self?.dismissDetails() },
+            onOpenSettings: { [weak self] in self?.openSettings() },
             onContactSupport: { [weak self] in self?.contactSupport(about: report) }
         ))
         details.presentationController?.delegate = self
@@ -173,14 +170,13 @@ final class ErrorPresenter: NSObject {
 
     private func detailsDidDismiss() {
         isShowingDetails = false
-        currentReport = nil
         previousKeyWindow?.makeKey()
         previousKeyWindow = nil
         tearDownIfIdle()
     }
 
     private func contactSupport(about report: ErrorReport) {
-        let email = contactEmail()
+        let email = ContactUsHelper.appDevelopersEmail
         let subject = String(format: ErrorStrings.supportEmailSubjectFmt, Bundle.main.appName, report.reference)
 
         guard
@@ -254,6 +250,9 @@ extension ErrorPresenter: MFMailComposeViewControllerDelegate {
 }
 
 // MARK: - Passthrough
+
+// Both levels need the override: with the root view passing a touch through,
+// the window would otherwise return itself and swallow it.
 
 /// A window that only claims touches landing on one of its subviews.
 private final class PassthroughWindow: UIWindow {

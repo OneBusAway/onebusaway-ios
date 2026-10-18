@@ -90,7 +90,7 @@ extension UIApplication {
     /// (`.windowExternalDisplayNonInteractive`) so bulletins never land on a
     /// secondary screen no one is touching. Falls back to the first
     /// foreground-active application scene when no key window can be found.
-    fileprivate var bulletinTargetScene: UIWindowScene? {
+    var bulletinTargetScene: UIWindowScene? {
         let activeAppScenes = connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .filter { $0.activationState == .foregroundActive && $0.session.role == .windowApplication }

@@ -17,8 +17,8 @@ final class ErrorReportTests {
 
     private let base = "https://api.pugetsound.onebusaway.org/api/where"
 
-    private func response(_ path: String, status: Int, headers: [String: String]? = nil) -> HTTPURLResponse {
-        HTTPURLResponse(url: URL(string: "\(base)/\(path)?key=SECRET&app_uid=abc")!, statusCode: status, httpVersion: nil, headerFields: headers)!
+    private func response(_ path: String, status: Int) -> HTTPURLResponse {
+        HTTPURLResponse(url: URL(string: "\(base)/\(path)?key=SECRET&app_uid=abc")!, statusCode: status, httpVersion: nil, headerFields: nil)!
     }
 
     private func report(_ error: Error, region: String? = "Puget Sound", cellularRestricted: Bool = false) -> ErrorReport {
@@ -91,7 +91,7 @@ final class ErrorReportTests {
         let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSURLErrorFailingURLErrorKey: url])
         let report = report(error)
         #expect(report.cause == .serverUnavailable)
-        #expect(report.subject == .routeMap)
+        #expect(report.title == "Couldn't load the route map")
         #expect(report.errorCode == "NSURLErrorDomain -1001 (serverUnavailable)")
     }
 
@@ -157,30 +157,25 @@ final class ErrorReportTests {
         }
     }
 
-    // MARK: - Classifier
-
-    @Test func `Classifier reads Retry-After seconds`() {
-        let classified = ErrorClassifier.classify(
-            APIError.requestFailure(response("stop/1.json", status: 429, headers: ["Retry-After": "12"])),
-            regionName: "Puget Sound"
-        )
-        guard case .rateLimited(let retryAfter) = classified as? APIError else {
+    @Test func `Classifier maps 429 to rate limited`() {
+        let classified = ErrorClassifier.classify(APIError.requestFailure(response("stop/1.json", status: 429)), regionName: nil)
+        guard case .rateLimited = classified as? APIError else {
             Issue.record("Expected .rateLimited, got \(classified)")
             return
         }
-        #expect(retryAfter == 12)
     }
 
-    @Test func `Classifier ignores an HTTP-date Retry-After`() {
-        let classified = ErrorClassifier.classify(
-            APIError.requestFailure(response("stop/1.json", status: 429, headers: ["Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"])),
-            regionName: nil
-        )
-        guard case .rateLimited(let retryAfter) = classified as? APIError else {
-            Issue.record("Expected .rateLimited, got \(classified)")
-            return
-        }
-        #expect(retryAfter == nil)
+    /// An error that isn't about a request keeps its own message rather than
+    /// becoming "Something went wrong".
+    @Test func `Error with its own message keeps it`() {
+        let report = report(UnstructuredError("This stop is in a different region."))
+        #expect(report.cause == .message)
+        #expect(report.summary == "This stop is in a different region.")
+        #expect(report.explanation == "This stop is in a different region.")
+    }
+
+    @Test func `Stop prefix doesn't swallow other stop endpoints`() {
+        #expect(ErrorReport.Subject(url: URL(string: "\(base)/stops-for-agency/1.json")) == .unknown)
     }
 }
 
