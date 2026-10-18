@@ -26,7 +26,7 @@ struct AlarmControlView: View {
 
     var body: some View {
         Button(action: onSet) {
-            Label(OBALoc("stop_page.live_activity.track", value: "Track Arrival", comment: "Button in the trip panel to start a Live Activity, which follows this departure on the Lock Screen and Dynamic Island. Keep it short."), systemImage: Icons.liveActivitySymbolName)
+            Label(OBALoc("stop_page.live_activity.track", value: "Track on Lock Screen", comment: "Button in the trip panel to start a Live Activity, which follows this departure on the Lock Screen and Dynamic Island."), systemImage: Icons.liveActivitySymbolName)
                 .frame(maxWidth: .infinity, minHeight: 46)
         }
         .buttonStyle(.borderedProminent)

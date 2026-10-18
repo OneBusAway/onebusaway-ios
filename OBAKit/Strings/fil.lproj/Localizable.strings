@@ -80,7 +80,7 @@
 "bookmarks_controller.context_menu.pin" = "I-pin";
 
 /* Action to start a Live Activity for a specific bookmark */
-"bookmarks_controller.context_menu.track_live_activity" = "I-track ang Pagdating";
+"bookmarks_controller.context_menu.track_live_activity" = "I-track sa Lock Screen";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
 "bookmarks_controller.context_menu.unpin" = "I-unpin";
@@ -1416,7 +1416,7 @@
 "stop_page.header.walk_trip_planner_a11y_hint" = "Magpaplano ng paglalakad papunta sa hintuang ito sa app.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "I-track ang Pagdating";
+"stop_page.live_activity.track" = "I-track sa Lock Screen";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "Mag-load pa";
@@ -2086,9 +2086,9 @@
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Hindi maisumite ang ulat na ito dahil hindi available ngayon ang serbisyo ng pag-uulat. Pakisubukang muli mamaya.";
 /* Trip page button that starts a Live Activity for this trip. */
-"trip_page.live_activity_start" = "I-track ang Pagdating";
+"trip_page.live_activity_start" = "I-track sa Lock Screen";
 /* Trip page button state once a Live Activity is running for this trip. */
-"trip_page.live_activity_tracking" = "Sinusubaybayan";
+"trip_page.live_activity_tracking" = "Sinusubaybayan sa Lock Screen";
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "na-update ang posisyon %@";
 /* Trip page button cancelling this trip's arrival alarm. */

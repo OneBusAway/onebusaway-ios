@@ -80,7 +80,7 @@
 "bookmarks_controller.context_menu.pin" = "تثبيت";
 
 /* Action to start a Live Activity for a specific bookmark */
-"bookmarks_controller.context_menu.track_live_activity" = "تتبّع الوصول";
+"bookmarks_controller.context_menu.track_live_activity" = "التتبّع على شاشة القفل";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
 "bookmarks_controller.context_menu.unpin" = "إلغاء التثبيت";
@@ -1416,7 +1416,7 @@
 "stop_page.header.walk_trip_planner_a11y_hint" = "يخطط لمسار مشي إلى هذا الموقف في التطبيق.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "تتبّع الوصول";
+"stop_page.live_activity.track" = "التتبّع على شاشة القفل";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "تحميل المزيد";
@@ -2086,9 +2086,9 @@
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "تعذّر إرسال هذا البلاغ لأن خدمة الإبلاغ غير متاحة حاليًا. يُرجى المحاولة مرة أخرى لاحقًا.";
 /* Trip page button that starts a Live Activity for this trip. */
-"trip_page.live_activity_start" = "تتبّع الوصول";
+"trip_page.live_activity_start" = "التتبّع على شاشة القفل";
 /* Trip page button state once a Live Activity is running for this trip. */
-"trip_page.live_activity_tracking" = "جارٍ التتبّع";
+"trip_page.live_activity_tracking" = "التتبّع على شاشة القفل";
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "تم تحديث الموقع %@";
 /* Trip page button cancelling this trip's arrival alarm. */

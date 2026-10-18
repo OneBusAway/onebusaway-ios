@@ -80,7 +80,7 @@
 "bookmarks_controller.context_menu.pin" = "置頂";
 
 /* Action to start a Live Activity for a specific bookmark */
-"bookmarks_controller.context_menu.track_live_activity" = "追蹤到站";
+"bookmarks_controller.context_menu.track_live_activity" = "在鎖定畫面上追蹤";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
 "bookmarks_controller.context_menu.unpin" = "取消置頂";
@@ -1416,7 +1416,7 @@
 "stop_page.header.walk_trip_planner_a11y_hint" = "在 App 內規劃前往此站牌的步行路線。";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "追蹤到站";
+"stop_page.live_activity.track" = "在鎖定畫面上追蹤";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "載入更多";
@@ -2086,9 +2086,9 @@
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "無法送出此回報，因為回報服務目前無法使用。請稍後再試。";
 /* Trip page button that starts a Live Activity for this trip. */
-"trip_page.live_activity_start" = "追蹤到站";
+"trip_page.live_activity_start" = "在鎖定畫面上追蹤";
 /* Trip page button state once a Live Activity is running for this trip. */
-"trip_page.live_activity_tracking" = "正在追蹤";
+"trip_page.live_activity_tracking" = "正在鎖定畫面上追蹤";
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "位置更新於 %@";
 /* Trip page button cancelling this trip's arrival alarm. */

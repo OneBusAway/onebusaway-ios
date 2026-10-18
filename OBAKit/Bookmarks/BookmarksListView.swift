@@ -199,7 +199,7 @@ struct BookmarksListView: View {
                 navigation.trackBookmark(row.bookmark)
             } label: {
                 Label(
-                    OBALoc("bookmarks_controller.context_menu.track_live_activity", value: "Track Arrival", comment: "Action to start a Live Activity, which follows the next arrival for a specific bookmark on the Lock Screen"),
+                    OBALoc("bookmarks_controller.context_menu.track_live_activity", value: "Track on Lock Screen", comment: "Action to start a Live Activity, which follows the next arrival for a specific bookmark on the Lock Screen"),
                     systemImage: Icons.liveActivitySymbolName
                 )
             }

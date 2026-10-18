@@ -80,7 +80,7 @@
 "bookmarks_controller.context_menu.pin" = "Pin";
 
 /* Action to start a Live Activity, which follows the next arrival for a specific bookmark on the Lock Screen */
-"bookmarks_controller.context_menu.track_live_activity" = "Track Arrival";
+"bookmarks_controller.context_menu.track_live_activity" = "Track on Lock Screen";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
 "bookmarks_controller.context_menu.unpin" = "Unpin";
@@ -1662,8 +1662,8 @@
 /* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
 "stop_page.header.walk_trip_planner_a11y_hint" = "Plans a walk to this stop in the app.";
 
-/* Button in the trip panel to start a Live Activity, which follows this departure on the Lock Screen and Dynamic Island. Keep it short. */
-"stop_page.live_activity.track" = "Track Arrival";
+/* Button in the trip panel to start a Live Activity, which follows this departure on the Lock Screen and Dynamic Island. */
+"stop_page.live_activity.track" = "Track on Lock Screen";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "Load more";
@@ -2024,11 +2024,11 @@
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.";
 
-/* Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. Keep it short. */
-"trip_page.live_activity_start" = "Track Arrival";
+/* Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. */
+"trip_page.live_activity_start" = "Track on Lock Screen";
 
-/* Shown in place of the trip page's Track Arrival button once a Live Activity is running for this trip. */
-"trip_page.live_activity_tracking" = "Tracking";
+/* Shown in place of the trip page's Track on Lock Screen button once a Live Activity is running for this trip. */
+"trip_page.live_activity_tracking" = "Tracking on Lock Screen";
 
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "position updated %@";

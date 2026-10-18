@@ -109,7 +109,7 @@ struct TripActionBar: View {
             // green tuned to be read as text in both appearances.
             let onTime = Color(uiColor: ThemeColors.shared.departureOnTime)
             Label(
-                OBALoc("trip_page.live_activity_tracking", value: "Tracking", comment: "Shown in place of the trip page's Track Arrival button once a Live Activity is running for this trip."),
+                OBALoc("trip_page.live_activity_tracking", value: "Tracking on Lock Screen", comment: "Shown in place of the trip page's Track on Lock Screen button once a Live Activity is running for this trip."),
                 systemImage: "checkmark.circle.fill"
             )
             .font(.body.weight(.semibold))
@@ -119,7 +119,7 @@ struct TripActionBar: View {
         } else {
             Button(action: onLiveActivity) {
                 Label(
-                    OBALoc("trip_page.live_activity_start", value: "Track Arrival", comment: "Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. Keep it short."),
+                    OBALoc("trip_page.live_activity_start", value: "Track on Lock Screen", comment: "Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island."),
                     systemImage: Icons.liveActivitySymbolName
                 )
                 .font(.body.weight(.semibold))

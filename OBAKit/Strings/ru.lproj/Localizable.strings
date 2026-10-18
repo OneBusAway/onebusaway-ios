@@ -80,7 +80,7 @@
 "bookmarks_controller.context_menu.pin" = "Закрепить";
 
 /* Action to start a Live Activity for a specific bookmark */
-"bookmarks_controller.context_menu.track_live_activity" = "Отслеживать прибытие";
+"bookmarks_controller.context_menu.track_live_activity" = "Отслеживать на экране блокировки";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
 "bookmarks_controller.context_menu.unpin" = "Открепить";
@@ -1416,7 +1416,7 @@
 "stop_page.header.walk_trip_planner_a11y_hint" = "Прокладывает в приложении пешеходный маршрут до этой остановки.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "Отслеживать прибытие";
+"stop_page.live_activity.track" = "Отслеживать на экране блокировки";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "Загрузить ещё";
@@ -2086,9 +2086,9 @@
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Не удалось отправить сообщение: сервис приёма сообщений сейчас недоступен. Повторите попытку позже.";
 /* Trip page button that starts a Live Activity for this trip. */
-"trip_page.live_activity_start" = "Отслеживать прибытие";
+"trip_page.live_activity_start" = "Отслеживать на экране блокировки";
 /* Trip page button state once a Live Activity is running for this trip. */
-"trip_page.live_activity_tracking" = "Отслеживается";
+"trip_page.live_activity_tracking" = "Отслеживание на экране блокировки";
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "местоположение обновлено %@";
 /* Trip page button cancelling this trip's arrival alarm. */
