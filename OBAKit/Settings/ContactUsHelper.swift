@@ -109,7 +109,9 @@ class ContactUsHelper: NSObject {
         return template.replacingOccurrences(of: "{{DEBUGGING_INFO}}", with: debuggingInfoListItems)
     }
 
-    var appDevelopersEmail: String {
+    var appDevelopersEmail: String { Self.appDevelopersEmail }
+
+    static var appDevelopersEmail: String {
         Bundle.main.appDevelopersEmailAddress ?? "iphone-app@onebusaway.org"
     }
 

@@ -619,3 +619,117 @@
 
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "轻点以了解更多信息";
+
+/* An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name. */
+"api_error.rate_limited_fmt" = "%@当前收到的请求过多，暂时无法处理。请一分钟后重试。";
+
+/* Explanation of an error where a Wi-Fi network requires signing in on a login page. */
+"error_report.explanation.captive_portal" = "您连接的Wi-Fi网络需要先登录才能访问互联网。请登录，或切换到蜂窝网络。";
+
+/* Explanation of an error where cellular data is turned off for the app. The substituted value is the app name. */
+"error_report.explanation.cellular_data_restricted_fmt" = "%@无法使用蜂窝移动数据。请前往“设置”>“蜂窝网络”开启，或连接到Wi-Fi。";
+
+/* Explanation of an error the app doesn't recognize. 'These details' are the support details shown below it. */
+"error_report.explanation.fallback" = "发生了意外错误，可能只是暂时性故障。请重试；如果问题持续出现，请将以下详细信息发送给支持团队，以便我们修复。";
+
+/* Explanation of an error where the server's response couldn't be read. */
+"error_report.explanation.invalid_response_data" = "服务器已响应，但数据不完整或格式无法读取。这通常是公交机构数据源的问题，而不是您手机的问题。";
+
+/* Explanation of an error where no transit region is selected. The substituted value is the app name. */
+"error_report.explanation.no_region_selected_fmt" = "%@需要知道您所在的公交地区。";
+
+/* Explanation of a 404 Not Found error for something other than a stop or trip. */
+"error_report.explanation.not_found" = "服务器上没有所请求的内容，可能已被删除或重命名。";
+
+/* Explanation of an error where the device has no internet connection. */
+"error_report.explanation.offline" = "您的手机未连接到互联网。网络恢复后，信息将重新更新。";
+
+/* Explanation of an error caused by the server being overloaded with requests (HTTP 429). The substituted value is the app name. */
+"error_report.explanation.rate_limited_fmt" = "%@当前收到的请求过多，暂时无法处理。这种情况通常会在一分钟内自行恢复。";
+
+/* Explanation of an internal server error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_error_fmt" = "%@服务器在处理此请求时遇到问题。服务器仍在运行，重试通常即可解决。";
+
+/* Explanation of an error where the regional server can't be reached. Mentions VPNs because riders often hit this on a filtered network. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_unavailable_fmt" = "%@服务器没有响应。服务器可能已停机，或者VPN、防火墙或内容拦截器阻止了访问。";
+
+/* Explanation of an error where the server no longer has the requested stop. */
+"error_report.explanation.stop_not_found" = "公交机构已不再列出此车站，它可能已迁移或停用。";
+
+/* Explanation of an error where the server no longer has the requested trip. */
+"error_report.explanation.trip_not_found" = "此行程已结束或已从今日班次中取消，因此没有可显示的实时位置。";
+
+/* One-line toast text under a title saying the Wi-Fi network needs the rider to sign in. */
+"error_report.summary.captive_portal" = "请打开网络登录页面以继续。";
+
+/* One-line toast text under a title saying cellular data is off for the app. */
+"error_report.summary.cellular_data_restricted" = "请在“设置”中开启，或使用Wi-Fi。";
+
+/* One-line toast text for an error the app doesn't recognize. */
+"error_report.summary.fallback" = "出错了。";
+
+/* One-line toast text: the server answered with data the app can't read. */
+"error_report.summary.invalid_response_data" = "服务器发送了无法读取的数据。";
+
+/* One-line toast text: no transit region has been selected. */
+"error_report.summary.no_region_selected" = "选择您的地区以查看公交信息。";
+
+/* One-line toast text: the server has no record of the thing that was requested. */
+"error_report.summary.not_found" = "服务器上没有此内容。";
+
+/* One-line toast text: the device has no internet connection. */
+"error_report.summary.offline" = "请检查网络连接后重试。";
+
+/* One-line toast text: the server is getting too many requests. The substituted value is the app name. */
+"error_report.summary.rate_limited_fmt" = "%@当前繁忙。";
+
+/* One-line toast text: the regional server returned an internal error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_error_fmt" = "%@服务器出现问题。";
+
+/* One-line toast text: the regional server is down or unreachable. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_unavailable_fmt" = "无法连接%@服务器。";
+
+/* One-line toast text: the agency no longer lists this stop. */
+"error_report.summary.stop_not_found" = "此车站已停止服务。";
+
+/* One-line toast text: the trip has finished or was removed from today's service. */
+"error_report.summary.trip_not_found" = "此行程已结束。";
+
+/* Title of an error about a failed request for a stop's arrival times. */
+"error_report.title.arrival_times" = "无法加载到站时间";
+
+/* Title of an error about a failed request for bike and scooter share data. */
+"error_report.title.bike_share" = "无法加载共享单车";
+
+/* Title of an error shown when the Wi-Fi network requires the rider to sign in on a login page before it connects to the internet. */
+"error_report.title.captive_portal" = "此Wi-Fi需要登录";
+
+/* Title of an error shown when cellular data is turned off for this app in Settings. The substituted value is the app name. */
+"error_report.title.cellular_data_restricted_fmt" = "%@的蜂窝移动数据已关闭";
+
+/* Title of an error about a failed request for a vehicle's live position. */
+"error_report.title.live_position" = "无法加载实时位置";
+
+/* Title of an error about a failed request for the stops near the rider. */
+"error_report.title.nearby_stops" = "无法加载附近车站";
+
+/* Title of an error shown when no transit region has been selected. */
+"error_report.title.no_region_selected" = "选择您的地区";
+
+/* Title of an error shown when the device has no internet connection. */
+"error_report.title.offline" = "您已离线";
+
+/* Title of an error about a failed request for a route's line on the map. */
+"error_report.title.route_map" = "无法加载线路图";
+
+/* Title of an error about a failed request for a schedule. */
+"error_report.title.schedule" = "无法加载时刻表";
+
+/* Title of an error about a failed search. */
+"error_report.title.search_results" = "无法加载搜索结果";
+
+/* Title of an error about a failed request for transit service alerts. */
+"error_report.title.service_alerts" = "无法加载服务通知";
+
+/* Title of an error about a failed request when the app can't tell what the request was for. */
+"error_report.title.unknown" = "无法加载此信息";

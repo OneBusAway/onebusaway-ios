@@ -30,7 +30,7 @@ public enum ErrorClassifier {
         // Already-classified errors pass through unchanged.
         if let apiError = error as? APIError {
             switch apiError {
-            case .serverError, .serverUnavailable, .invalidResponseData, .cellularDataRestricted:
+            case .serverError, .serverUnavailable, .invalidResponseData, .cellularDataRestricted, .rateLimited:
                 return apiError
             default:
                 return classifyAPIError(apiError, regionName: regionName, isCellularDataRestricted: isCellularDataRestricted)
@@ -63,6 +63,11 @@ public enum ErrorClassifier {
                 return apiError
             }
             return APIError.serverError(regionName: regionName)
+
+        case .requestFailure(let response) where response.statusCode == 429:
+            // Before this case existed, 429 fell through to `requestFailure`'s
+            // "the server encountered an error" copy (#1582).
+            return APIError.rateLimited
 
         case .requestFailure(let response) where isServerUnavailable(statusCode: response.statusCode):
             guard let regionName else {

@@ -619,3 +619,117 @@
 
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "Коснитесь, чтобы узнать подробнее";
+
+/* An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name. */
+"api_error.rate_limited_fmt" = "Приложение %@ сейчас получает больше запросов, чем может обработать. Повторите попытку через минуту.";
+
+/* Explanation of an error where a Wi-Fi network requires signing in on a login page. */
+"error_report.explanation.captive_portal" = "Сеть Wi-Fi, к которой вы подключены, требует входа, прежде чем откроет доступ в интернет. Войдите в сеть или переключитесь на сотовые данные.";
+
+/* Explanation of an error where cellular data is turned off for the app. The substituted value is the app name. */
+"error_report.explanation.cellular_data_restricted_fmt" = "Приложению %@ запрещено использовать сотовые данные. Откройте «Настройки» › «Сотовая связь», чтобы включить их, или подключитесь к Wi-Fi.";
+
+/* Explanation of an error the app doesn't recognize. 'These details' are the support details shown below it. */
+"error_report.explanation.fallback" = "Произошла непредвиденная ошибка. Возможно, это временный сбой. Повторите попытку, а если ошибка повторяется, отправьте эти данные в поддержку, чтобы мы могли её исправить.";
+
+/* Explanation of an error where the server's response couldn't be read. */
+"error_report.explanation.invalid_response_data" = "Сервер ответил, но данные оказались неполными или в формате, который мы не можем прочитать. Обычно это проблема с данными перевозчика, а не с вашим телефоном.";
+
+/* Explanation of an error where no transit region is selected. The substituted value is the app name. */
+"error_report.explanation.no_region_selected_fmt" = "Приложению %@ нужно знать, в каком транспортном регионе вы находитесь.";
+
+/* Explanation of a 404 Not Found error for something other than a stop or trip. */
+"error_report.explanation.not_found" = "На сервере нет запрошенных данных. Возможно, их удалили или переименовали.";
+
+/* Explanation of an error where the device has no internet connection. */
+"error_report.explanation.offline" = "Ваш телефон не подключён к интернету. Информация снова начнёт обновляться, когда подключение восстановится.";
+
+/* Explanation of an error caused by the server being overloaded with requests (HTTP 429). The substituted value is the app name. */
+"error_report.explanation.rate_limited_fmt" = "Приложение %@ сейчас получает больше запросов, чем может обработать. Обычно это проходит само в течение минуты.";
+
+/* Explanation of an internal server error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_error_fmt" = "На сервере региона %@ возникла проблема при обработке этого запроса. Сервер продолжает работать, поэтому повторная попытка обычно помогает.";
+
+/* Explanation of an error where the regional server can't be reached. Mentions VPNs because riders often hit this on a filtered network. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_unavailable_fmt" = "Сервер региона %@ не отвечает. Возможно, он не работает, или его блокирует VPN, брандмауэр или блокировщик контента.";
+
+/* Explanation of an error where the server no longer has the requested stop. */
+"error_report.explanation.stop_not_found" = "Перевозчик больше не указывает эту остановку. Возможно, её перенесли или закрыли.";
+
+/* Explanation of an error where the server no longer has the requested trip. */
+"error_report.explanation.trip_not_found" = "Этот рейс уже завершён или исключён из сегодняшнего расписания, поэтому показать его текущее положение нельзя.";
+
+/* One-line toast text under a title saying the Wi-Fi network needs the rider to sign in. */
+"error_report.summary.captive_portal" = "Откройте страницу входа в сеть, чтобы продолжить.";
+
+/* One-line toast text under a title saying cellular data is off for the app. */
+"error_report.summary.cellular_data_restricted" = "Включите их в Настройках или используйте Wi-Fi.";
+
+/* One-line toast text for an error the app doesn't recognize. */
+"error_report.summary.fallback" = "Что-то пошло не так.";
+
+/* One-line toast text: the server answered with data the app can't read. */
+"error_report.summary.invalid_response_data" = "Сервер прислал данные, которые мы не можем прочитать.";
+
+/* One-line toast text: no transit region has been selected. */
+"error_report.summary.no_region_selected" = "Выберите регион, чтобы видеть информацию о транспорте.";
+
+/* One-line toast text: the server has no record of the thing that was requested. */
+"error_report.summary.not_found" = "На сервере этого нет.";
+
+/* One-line toast text: the device has no internet connection. */
+"error_report.summary.offline" = "Проверьте подключение и повторите попытку.";
+
+/* One-line toast text: the server is getting too many requests. The substituted value is the app name. */
+"error_report.summary.rate_limited_fmt" = "Приложение %@ перегружено.";
+
+/* One-line toast text: the regional server returned an internal error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_error_fmt" = "На сервере региона %@ возникла проблема.";
+
+/* One-line toast text: the regional server is down or unreachable. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_unavailable_fmt" = "Не удаётся связаться с сервером региона %@.";
+
+/* One-line toast text: the agency no longer lists this stop. */
+"error_report.summary.stop_not_found" = "Эта остановка не обслуживается.";
+
+/* One-line toast text: the trip has finished or was removed from today's service. */
+"error_report.summary.trip_not_found" = "Этот рейс завершён.";
+
+/* Title of an error about a failed request for a stop's arrival times. */
+"error_report.title.arrival_times" = "Не удалось загрузить время прибытия";
+
+/* Title of an error about a failed request for bike and scooter share data. */
+"error_report.title.bike_share" = "Не удалось загрузить данные проката велосипедов";
+
+/* Title of an error shown when the Wi-Fi network requires the rider to sign in on a login page before it connects to the internet. */
+"error_report.title.captive_portal" = "Для этой сети Wi-Fi нужно войти";
+
+/* Title of an error shown when cellular data is turned off for this app in Settings. The substituted value is the app name. */
+"error_report.title.cellular_data_restricted_fmt" = "Сотовые данные выключены для приложения %@";
+
+/* Title of an error about a failed request for a vehicle's live position. */
+"error_report.title.live_position" = "Не удалось загрузить текущее положение";
+
+/* Title of an error about a failed request for the stops near the rider. */
+"error_report.title.nearby_stops" = "Не удалось загрузить ближайшие остановки";
+
+/* Title of an error shown when no transit region has been selected. */
+"error_report.title.no_region_selected" = "Выберите регион";
+
+/* Title of an error shown when the device has no internet connection. */
+"error_report.title.offline" = "Нет подключения к интернету";
+
+/* Title of an error about a failed request for a route's line on the map. */
+"error_report.title.route_map" = "Не удалось загрузить карту маршрута";
+
+/* Title of an error about a failed request for a schedule. */
+"error_report.title.schedule" = "Не удалось загрузить расписание";
+
+/* Title of an error about a failed search. */
+"error_report.title.search_results" = "Не удалось загрузить результаты поиска";
+
+/* Title of an error about a failed request for transit service alerts. */
+"error_report.title.service_alerts" = "Не удалось загрузить сервисные оповещения";
+
+/* Title of an error about a failed request when the app can't tell what the request was for. */
+"error_report.title.unknown" = "Не удалось загрузить эту информацию";

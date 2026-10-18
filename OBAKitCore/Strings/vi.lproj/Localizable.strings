@@ -619,3 +619,117 @@
 
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "Chạm để biết thêm thông tin";
+
+/* An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name. */
+"api_error.rate_limited_fmt" = "%@ đang nhận nhiều yêu cầu hơn mức có thể xử lý. Vui lòng thử lại sau một phút.";
+
+/* Explanation of an error where a Wi-Fi network requires signing in on a login page. */
+"error_report.explanation.captive_portal" = "Mạng Wi-Fi bạn đang dùng yêu cầu đăng nhập trước khi kết nối Internet. Hãy đăng nhập hoặc chuyển sang dữ liệu di động.";
+
+/* Explanation of an error where cellular data is turned off for the app. The substituted value is the app name. */
+"error_report.explanation.cellular_data_restricted_fmt" = "%@ không được phép dùng dữ liệu di động. Vào Cài đặt > Di động để bật, hoặc kết nối Wi-Fi.";
+
+/* Explanation of an error the app doesn't recognize. 'These details' are the support details shown below it. */
+"error_report.explanation.fallback" = "Đã xảy ra sự cố ngoài dự kiến. Có thể đây chỉ là lỗi tạm thời. Hãy thử lại, và nếu lỗi vẫn tiếp diễn, hãy gửi các thông tin chi tiết này cho bộ phận hỗ trợ để chúng tôi khắc phục.";
+
+/* Explanation of an error where the server's response couldn't be read. */
+"error_report.explanation.invalid_response_data" = "Máy chủ đã phản hồi, nhưng dữ liệu không đầy đủ hoặc ở định dạng chúng tôi không đọc được. Đây thường là vấn đề với nguồn dữ liệu của cơ quan vận tải, không phải với điện thoại của bạn.";
+
+/* Explanation of an error where no transit region is selected. The substituted value is the app name. */
+"error_report.explanation.no_region_selected_fmt" = "%@ cần biết bạn đang ở khu vực vận tải nào.";
+
+/* Explanation of a 404 Not Found error for something other than a stop or trip. */
+"error_report.explanation.not_found" = "Máy chủ không có nội dung được yêu cầu. Có thể nội dung đã bị xóa hoặc đổi tên.";
+
+/* Explanation of an error where the device has no internet connection. */
+"error_report.explanation.offline" = "Điện thoại của bạn chưa kết nối Internet. Thông tin sẽ được cập nhật lại khi có kết nối.";
+
+/* Explanation of an error caused by the server being overloaded with requests (HTTP 429). The substituted value is the app name. */
+"error_report.explanation.rate_limited_fmt" = "%@ đang nhận nhiều yêu cầu hơn mức có thể xử lý. Tình trạng này thường tự hết trong vòng một phút.";
+
+/* Explanation of an internal server error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_error_fmt" = "Máy chủ %@ gặp sự cố khi xử lý yêu cầu này. Máy chủ vẫn đang hoạt động, nên thử lại thường sẽ được.";
+
+/* Explanation of an error where the regional server can't be reached. Mentions VPNs because riders often hit this on a filtered network. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_unavailable_fmt" = "Máy chủ %@ không phản hồi. Máy chủ có thể đang ngừng hoạt động, hoặc VPN, tường lửa hay trình chặn nội dung đang chặn kết nối.";
+
+/* Explanation of an error where the server no longer has the requested stop. */
+"error_report.explanation.stop_not_found" = "Cơ quan vận tải không còn liệt kê điểm dừng này. Điểm dừng có thể đã được di dời hoặc đóng cửa.";
+
+/* Explanation of an error where the server no longer has the requested trip. */
+"error_report.explanation.trip_not_found" = "Chuyến này đã kết thúc hoặc đã bị hủy khỏi lịch chạy hôm nay, nên không có vị trí trực tiếp để hiển thị.";
+
+/* One-line toast text under a title saying the Wi-Fi network needs the rider to sign in. */
+"error_report.summary.captive_portal" = "Mở trang đăng nhập của mạng để tiếp tục.";
+
+/* One-line toast text under a title saying cellular data is off for the app. */
+"error_report.summary.cellular_data_restricted" = "Bật trong Cài đặt, hoặc dùng Wi-Fi.";
+
+/* One-line toast text for an error the app doesn't recognize. */
+"error_report.summary.fallback" = "Đã xảy ra sự cố.";
+
+/* One-line toast text: the server answered with data the app can't read. */
+"error_report.summary.invalid_response_data" = "Máy chủ gửi dữ liệu mà chúng tôi không đọc được.";
+
+/* One-line toast text: no transit region has been selected. */
+"error_report.summary.no_region_selected" = "Chọn khu vực để xem thông tin vận tải.";
+
+/* One-line toast text: the server has no record of the thing that was requested. */
+"error_report.summary.not_found" = "Máy chủ không có nội dung này.";
+
+/* One-line toast text: the device has no internet connection. */
+"error_report.summary.offline" = "Kiểm tra kết nối và thử lại.";
+
+/* One-line toast text: the server is getting too many requests. The substituted value is the app name. */
+"error_report.summary.rate_limited_fmt" = "%@ đang quá tải.";
+
+/* One-line toast text: the regional server returned an internal error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_error_fmt" = "Máy chủ %@ gặp sự cố.";
+
+/* One-line toast text: the regional server is down or unreachable. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_unavailable_fmt" = "Không thể kết nối với máy chủ %@.";
+
+/* One-line toast text: the agency no longer lists this stop. */
+"error_report.summary.stop_not_found" = "Điểm dừng này không còn hoạt động.";
+
+/* One-line toast text: the trip has finished or was removed from today's service. */
+"error_report.summary.trip_not_found" = "Chuyến này đã kết thúc.";
+
+/* Title of an error about a failed request for a stop's arrival times. */
+"error_report.title.arrival_times" = "Không thể tải giờ đến";
+
+/* Title of an error about a failed request for bike and scooter share data. */
+"error_report.title.bike_share" = "Không thể tải xe đạp dùng chung";
+
+/* Title of an error shown when the Wi-Fi network requires the rider to sign in on a login page before it connects to the internet. */
+"error_report.title.captive_portal" = "Wi-Fi này yêu cầu đăng nhập";
+
+/* Title of an error shown when cellular data is turned off for this app in Settings. The substituted value is the app name. */
+"error_report.title.cellular_data_restricted_fmt" = "Dữ liệu di động đang tắt cho %@";
+
+/* Title of an error about a failed request for a vehicle's live position. */
+"error_report.title.live_position" = "Không thể tải vị trí trực tiếp";
+
+/* Title of an error about a failed request for the stops near the rider. */
+"error_report.title.nearby_stops" = "Không thể tải điểm dừng lân cận";
+
+/* Title of an error shown when no transit region has been selected. */
+"error_report.title.no_region_selected" = "Chọn khu vực của bạn";
+
+/* Title of an error shown when the device has no internet connection. */
+"error_report.title.offline" = "Bạn đang ngoại tuyến";
+
+/* Title of an error about a failed request for a route's line on the map. */
+"error_report.title.route_map" = "Không thể tải bản đồ tuyến";
+
+/* Title of an error about a failed request for a schedule. */
+"error_report.title.schedule" = "Không thể tải lịch trình";
+
+/* Title of an error about a failed search. */
+"error_report.title.search_results" = "Không thể tải kết quả tìm kiếm";
+
+/* Title of an error about a failed request for transit service alerts. */
+"error_report.title.service_alerts" = "Không thể tải cảnh báo dịch vụ";
+
+/* Title of an error about a failed request when the app can't tell what the request was for. */
+"error_report.title.unknown" = "Không thể tải thông tin này";

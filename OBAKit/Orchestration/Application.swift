@@ -984,41 +984,38 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Error Visualization
 
-    /// Whether a new error bulletin should be presented.
-    ///
-    /// Each `ErrorBulletin` owns its own `BLTNItemManager`, so a second one
-    /// presented while the first is up stacks a second card on top of it. The
-    /// Bookmarks screen makes that easy to hit: `BookmarkDataLoader` runs one
-    /// fetch, and one `displayError`, per bookmark, so a single dead stop
-    /// produces a burst of identical errors (#1421).
-    ///
-    /// This suppresses the stack. It is *not* what keeps the cards dismissable
-    /// — that's `ErrorBulletin.present(_:)`, which stops a stacked card's owner
-    /// from being deallocated out from under it (#1429). The two are
-    /// independent: this one is about noise, that one about not wedging.
-    static func shouldPresentErrorBulletin(alreadyShowing: Bool) -> Bool {
-        !alreadyShowing
-    }
-
     /// Classifies and displays an error to the end user.
+    ///
+    /// Shows a non-modal toast with a Details button rather than a modal card
+    /// (#1582). Bursts of the same failure collapse into one toast; see
+    /// `ErrorPresenter.shouldPresent(_:current:isShowingDetails:)`.
     @MainActor
     public override func displayError(_ error: Error) async {
-        let classified = ErrorClassifier.classify(error, regionName: currentRegionName, isCellularDataRestricted: isCellularDataRestricted)
-        Logger.error("Error: \(classified.localizedDescription)")
+        let report = ErrorReport(
+            error: error,
+            regionName: currentRegionName,
+            isCellularDataRestricted: isCellularDataRestricted,
+            systemVersion: Self.systemVersion,
+            deviceModel: Self.deviceModel
+        )
+        // `report.summary` rather than `error.localizedDescription`: a 404's
+        // description carries the full request URL, API key included.
+        Logger.error("Error [\(report.reference)]: \(report.errorCode) \(report.requestURL?.absoluteString ?? "") \(report.summary)")
 
         analytics?.reportError?(error)
 
-        guard Self.shouldPresentErrorBulletin(alreadyShowing: errorBulletin?.isShowing ?? false) else {
+        guard let scene = delegate?.uiApplication?.errorToastTargetScene else {
+            Logger.error("Error [\(report.reference)] not shown: no foreground window scene.")
             return
         }
-
-        guard let uiApp = delegate?.uiApplication else { return }
-        let bulletin = ErrorBulletin(application: self, classifiedError: classified)
-        bulletin.show(in: uiApp)
-        self.errorBulletin = bulletin
+        errorPresenter.present(report, in: scene)
     }
 
-    private var errorBulletin: ErrorBulletin?
+    private let errorPresenter = ErrorPresenter()
+
+    // Fixed for the life of the process; `modelName` reflects over `uname`.
+    private static let systemVersion = UIDevice.current.systemVersion
+    private static let deviceModel = UIDevice.current.modelName
 
     // MARK: - Feature Availability
 

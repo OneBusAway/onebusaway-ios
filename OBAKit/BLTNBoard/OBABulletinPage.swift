@@ -60,9 +60,8 @@ extension BLTNItemManager {
         let useMapPanelExperience = appGroupDefaults?.bool(forKey: FeatureFlags.useMapPanelExperienceKey) ?? false
 
         if useMapPanelExperience {
-            // No usable scene means the bulletin disappears with no UI trace,
-            // including for the error path (`Application.displayError`). Log so
-            // there's at least a diagnostic breadcrumb instead of silent loss.
+            // No usable scene means the bulletin disappears with no UI trace.
+            // Log so there's at least a diagnostic breadcrumb instead of silent loss.
             guard let scene = application.bulletinTargetScene else {
                 Logger.error("Bulletin dropped: no foreground-active window scene available to host it.")
                 return
@@ -91,7 +90,7 @@ extension UIApplication {
     /// (`.windowExternalDisplayNonInteractive`) so bulletins never land on a
     /// secondary screen no one is touching. Falls back to the first
     /// foreground-active application scene when no key window can be found.
-    fileprivate var bulletinTargetScene: UIWindowScene? {
+    var bulletinTargetScene: UIWindowScene? {
         let activeAppScenes = connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .filter { $0.activationState == .foregroundActive && $0.session.role == .windowApplication }

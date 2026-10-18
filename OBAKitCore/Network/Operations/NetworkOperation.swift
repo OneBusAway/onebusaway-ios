@@ -32,6 +32,9 @@ public enum APIError: Error, LocalizedError {
     /// `.serverUnavailable`: the host responded, the payload is unusable (#1276).
     case invalidResponseData(regionName: String)
 
+    /// The server answered HTTP 429: too many requests.
+    case rateLimited
+
     /// Survey service is not configured or survey base URL is missing.
     case surveyServiceNotConfigured
 
@@ -122,6 +125,13 @@ public enum APIError: Error, LocalizedError {
                 comment: "An error shown when the regional server returned a body the app cannot decode. Distinct from a down server. The first substituted value is the region name, the second is the app name."
             )
             return String(format: fmt, regionName, Bundle.main.appName)
+        case .rateLimited:
+            let fmt = OBALoc(
+                "api_error.rate_limited_fmt",
+                value: "%@ is getting more requests than it can handle right now. Please try again in a minute.",
+                comment: "An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name."
+            )
+            return String(format: fmt, Bundle.main.appName)
         case .surveyServiceNotConfigured:
             return OBALoc("api_error.survey_service_not_configured", value: "Survey service is not available in this region.", comment: "An error message that tells the user that surveys are not available.")
         case .noRegionSelected:
