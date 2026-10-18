@@ -30,17 +30,11 @@ struct TripLiveActivity: Widget {
 
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TripAttributes.self) { context in
-            TripLiveActivityCardView(
-                staticData: context.attributes.staticData,
-                contentState: context.state,
-                isStale: context.isStale,
-                showsDismissHint: context.attributes.showsDismissHint
-            )
-            .activityBackgroundTint(Color(UIColor.systemBackground))
-            .widgetURL(
-                URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
-                    .encodeViewStop(stopID: context.attributes.staticData.stopID, regionID: context.attributes.staticData.regionID)
-            )
+            TripLiveActivityContentView(context: context)
+                .widgetURL(
+                    URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
+                        .encodeViewStop(stopID: context.attributes.staticData.stopID, regionID: context.attributes.staticData.regionID)
+                )
         } dynamicIsland: { context in
             let upcoming = context.state.upcomingArrivals()
             let primary = upcoming.first
@@ -181,12 +175,109 @@ struct TripLiveActivity: Widget {
                 }
             }
         }
+        // Without `.small`, the Watch Smart Stack and CarPlay fall back to the
+        // compact Island pair: a bare route and minutes.
+        .supplementalActivityFamilies([.small])
     }
+}
 
-    /// "Route 8" rather than a bare "8", which VoiceOver reads as a number with
-    /// nothing to say what it counts.
-    private func routeLabel(_ staticData: TripAttributes.StaticData) -> String {
-        Formatters(locale: .autoupdatingCurrent, calendar: .autoupdatingCurrent, themeColors: ThemeColors.shared)
-            .accessibilityLabelForArrivalDeparture(routeAndHeadsign: staticData.routeShortName)
+/// "Route 8" rather than a bare "8", which VoiceOver reads as a number with
+/// nothing to say what it counts.
+private func routeLabel(_ staticData: TripAttributes.StaticData) -> String {
+    Formatters(locale: .autoupdatingCurrent, calendar: .autoupdatingCurrent, themeColors: ThemeColors.shared)
+        .accessibilityLabelForArrivalDeparture(routeAndHeadsign: staticData.routeShortName)
+}
+
+/// The Lock Screen card on iPhone; a smaller layout in the Watch Smart Stack
+/// and CarPlay, which ask for `.small`.
+private struct TripLiveActivityContentView: View {
+    let context: ActivityViewContext<TripAttributes>
+
+    @Environment(\.activityFamily) private var activityFamily
+
+    var body: some View {
+        switch activityFamily {
+        case .small:
+            // The phone resolves colors in its own appearance, so a light-mode
+            // phone tinted the Smart Stack card white while the watch drew the
+            // text for its dark face: illegible once the wrist was raised.
+            TripLiveActivitySmallView(context: context)
+                .environment(\.colorScheme, .dark)
+                .activityBackgroundTint(.black)
+        default:
+            TripLiveActivityCardView(
+                staticData: context.attributes.staticData,
+                contentState: context.state,
+                isStale: context.isStale,
+                showsDismissHint: context.attributes.showsDismissHint
+            )
+            .activityBackgroundTint(Color(UIColor.systemBackground))
+        }
+    }
+}
+
+/// Route and minutes on the first line, then the headsign and how the bus is
+/// running — what the rider glances at on their wrist.
+private struct TripLiveActivitySmallView: View {
+    let context: ActivityViewContext<TripAttributes>
+
+    private let presenter = TripActivityPresenter()
+
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
+
+    var body: some View {
+        let staticData = context.attributes.staticData
+        let now = Date()
+        let primary = context.state.upcomingArrivals(now: now).first
+
+        VStack(alignment: .leading, spacing: 2) {
+            // Dim arrival content only; the warning stays full opacity (#1376).
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(staticData.routeShortName)
+                        .font(.system(.headline, design: .rounded, weight: .heavy))
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    if let primary {
+                        CountdownView(
+                            departure: primary.departureDate,
+                            isRealTime: primary.scheduleStatus != .unknown,
+                            color: Color(presenter.color(for: primary)),
+                            isLiveActivity: true
+                        )
+                    }
+                }
+                Text(staticData.routeHeadsign)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: context.isStale))
+
+            if context.isStale {
+                Label(LiveActivityStaleChrome.warningText, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(LiveActivityStaleChrome.warningColor)
+                    .lineLimit(1)
+            } else if let primary {
+                Text(presenter.statusText(for: primary, now: now))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color(presenter.color(for: primary)))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        // The Lock Screen card's label, so every surface speaks the same words.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(TripLiveActivityCardView.accessibilityLabel(
+            staticData: staticData,
+            contentState: context.state,
+            isStale: context.isStale,
+            isLuminanceReduced: isLuminanceReduced,
+            now: now,
+            presenter: presenter
+        ))
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }

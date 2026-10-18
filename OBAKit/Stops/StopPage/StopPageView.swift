@@ -427,11 +427,6 @@ struct StopPageView: View {
         VStack(spacing: 24) {
             StopPageModeToggle(mode: .time) { _ in }
             WalkLineDivider(walkMinutes: 4)
-            AlarmControlView(
-                alarmIsSet: true,
-                leadTimeMinutes: 5,
-                onSet: {}, onCancel: {}, onChange: {}
-            )
         }
         .padding()
     }

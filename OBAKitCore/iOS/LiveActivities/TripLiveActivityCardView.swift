@@ -88,9 +88,28 @@ public struct TripLiveActivityCardView: View {
 
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
-    /// Splices ticking spoken countdowns between the static segments, so the
-    /// label keeps pace with the visible minutes between pushes.
     private func accessibilityLabel(now: Date) -> Text {
+        Self.accessibilityLabel(
+            staticData: staticData,
+            contentState: contentState,
+            isStale: isStale,
+            isLuminanceReduced: isLuminanceReduced,
+            now: now,
+            presenter: presenter
+        )
+    }
+
+    /// Splices ticking spoken countdowns between the static segments, so the
+    /// label keeps pace with the visible minutes between pushes. Public so the
+    /// widget's smaller layouts speak the same words.
+    public static func accessibilityLabel(
+        staticData: TripAttributes.StaticData,
+        contentState: TripAttributes.ContentState,
+        isStale: Bool,
+        isLuminanceReduced: Bool,
+        now: Date,
+        presenter: TripActivityPresenter = TripActivityPresenter()
+    ) -> Text {
         let segments = presenter.accessibilitySegments(
             staticData: staticData,
             contentState: contentState,

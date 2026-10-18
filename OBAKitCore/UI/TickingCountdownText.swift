@@ -48,11 +48,22 @@ public struct TickingCountdownText: View {
     }
 
     public var body: some View {
+        let snapshot = Text(verbatim: Self.snapshot(departure: departure, now: Date(), locale: locale))
         let label = Group {
             if isLuminanceReduced {
-                Text(verbatim: Self.snapshot(departure: departure, now: Date(), locale: locale))
+                snapshot
             } else {
-                Text(.dateRange(endingAt: departure), format: Self.visibleFormat(locale: locale))
+                // Drawn out of process, a ticking Text claims the width of the
+                // widest value its format can reach, digits at the leading edge.
+                // The hidden snapshot sizes the slot instead; the count only
+                // falls, so it never outgrows it.
+                snapshot
+                    .hidden()
+                    .overlay(alignment: .trailing) {
+                        Text(.dateRange(endingAt: departure), format: Self.visibleFormat(locale: locale))
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(1)
+                    }
             }
         }
         .font(font)
