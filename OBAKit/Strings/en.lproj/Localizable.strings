@@ -1922,9 +1922,6 @@
 /* Button that opens an external survey in the browser */
 "external_survey_button.open_survey" = "Open Survey";
 
-/* Button that opens an external survey link in the browser, when the link is mainly information to read */
-"external_survey_button.learn_more" = "Learn More";
-
 /* Button that opens an external feedback form in the browser */
 "external_survey_button.share_feedback" = "Share Feedback";
 

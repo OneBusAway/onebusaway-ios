@@ -17,7 +17,7 @@ extension ExternalSurveyButtonLabel {
         case .openSurvey:
             OBALoc("external_survey_button.open_survey", value: "Open Survey", comment: "Button that opens an external survey in the browser")
         case .learnMore:
-            OBALoc("external_survey_button.learn_more", value: "Learn More", comment: "Button that opens an external survey link in the browser, when the link is mainly information to read")
+            Strings.learnMore
         case .shareFeedback:
             OBALoc("external_survey_button.share_feedback", value: "Share Feedback", comment: "Button that opens an external feedback form in the browser")
         case .signUp:
