@@ -53,13 +53,13 @@ class EditBookmarkViewController: UIHostingController<EditBookmarkView>, Destina
     /// brand-tinted capsule; the system picks a dark glyph for our light tint, so
     /// the checkmark is drawn white explicitly.
     private func makeSaveButton() -> UIBarButtonItem {
-        let checkmark = UIImage(systemName: "checkmark")
-        let item: UIBarButtonItem
+        var image = Icons.checkmark
+        var style = UIBarButtonItem.Style.done
         if #available(iOS 26.0, *) {
-            item = UIBarButtonItem(image: checkmark?.withTintColor(.white, renderingMode: .alwaysOriginal), style: .prominent, target: self, action: #selector(save))
-        } else {
-            item = UIBarButtonItem(image: checkmark, style: .done, target: self, action: #selector(save))
+            image = image.withTintColor(.white, renderingMode: .alwaysOriginal)
+            style = .prominent
         }
+        let item = UIBarButtonItem(image: image, style: style, target: self, action: #selector(save))
         item.accessibilityLabel = Strings.save
         return item
     }
