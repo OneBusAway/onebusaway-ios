@@ -19,23 +19,25 @@ final class StandaloneAPIServiceProviderTests: OBATestCase {
     private var locationManager: LocationManagerMock!
     private var locationService: LocationService!
     private var dataLoader: MockDataLoader!
+    private var mockFileStorage: MockRegionsFileStorage!
 
     override init() async throws {
         try await super.init()
         locationManager = LocationManagerMock()
         locationService = LocationService(userDefaults: userDefaults, locationManager: locationManager, startsUpdatesOnAuthorization: false)
         dataLoader = MockDataLoader(testName: name)
+        mockFileStorage = MockRegionsFileStorage()
         stubRegions(dataLoader: dataLoader)
     }
 
-    private func makeRegionsService() -> RegionsService {
+    private func makeRegionsService(fileStorage: RegionsFileStorageProtocol? = nil) -> RegionsService {
         RegionsService(
             apiService: buildRegionsAPIService(dataLoader: dataLoader),
             locationService: locationService,
             userDefaults: userDefaults,
             bundledRegionsFilePath: bundledRegionsPath,
             apiPath: regionsAPIPath,
-            fileStorage: MockRegionsFileStorage()
+            fileStorage: fileStorage ?? mockFileStorage
         )
     }
 
