@@ -11,8 +11,8 @@ import Foundation
 import Testing
 @testable import OBAKitCore
 
-/// `discreteInput(after:)` is how SwiftUI knows when to redraw a Live Activity
-/// `Text`. Wrong boundaries → the card never ticks, or it re-renders constantly.
+/// `discreteInput(after:)` is how SwiftUI knows when to redraw the watch's
+/// countdown `Text`. Wrong boundaries → the card never ticks, or it re-renders constantly.
 /// Minute boundaries are anchored on `departure`, not on wall-clock minutes.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1187
 @Suite(.serialized)
@@ -26,9 +26,8 @@ struct TripCountdownFormatStyleTests {
         #expect(style.format(now) == "8m")
     }
 
-    /// The Dynamic Island used to go through `presenter.minuteText` →
-    /// `Formatters.shortFormattedTime` → `formatters.short_time_fmt`. Keep that
-    /// coupling so ar/fr/ko/ru/vi/zh don't fall back to a hardcoded English `m`.
+    /// Same `formatters.short_time_fmt` key as `Formatters.shortFormattedTime`,
+    /// so ar/fr/ko/ru/vi/zh don't fall back to a hardcoded English `m`.
     @Test func `Future minutes match Formatters.shortFormattedTime`() {
         let now = departure.addingTimeInterval(-510)
         let formatters = Formatters(
@@ -37,32 +36,6 @@ struct TripCountdownFormatStyleTests {
             themeColors: ThemeColors.shared
         )
         #expect(style.format(now) == formatters.shortFormattedTime(untilMinutes: 8, temporalState: .future))
-    }
-
-    // MARK: - Spoken form
-
-    private var spoken: TripCountdownFormatStyle { .spoken(departure: departure) }
-
-    /// VoiceOver reads the visual "8m" as "8 meters"; the spoken form spells
-    /// the unit out, matching what the Stop page speaks.
-    @Test func `Spoken form spells out minutes`() {
-        #expect(spoken.format(departure.addingTimeInterval(-510)) == "8 minutes")
-    }
-
-    @Test func `Spoken form says one minute in the singular`() {
-        #expect(spoken.format(departure.addingTimeInterval(-90)) == "One minute")
-    }
-
-    @Test func `Spoken form says now under a minute`() {
-        #expect(spoken.format(departure.addingTimeInterval(-30)) == "NOW")
-    }
-
-    /// The spoken label must flip on the same instants as the visible text, or
-    /// a focused element says a different number than the screen shows.
-    @Test func `Spoken form ticks on the same boundaries as the visual form`() {
-        let now = departure.addingTimeInterval(-510)
-        #expect(spoken.discreteInput(after: now) == style.discreteInput(after: now))
-        #expect(spoken.discreteInput(before: now) == style.discreteInput(before: now))
     }
 
     @Test func `Under a minute formats as NOW`() {

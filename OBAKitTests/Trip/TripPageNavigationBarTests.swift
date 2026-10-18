@@ -172,6 +172,28 @@ final class TripPageNavigationBarTests: OBATestCase {
         #expect(!page.rootView.showsBackRow)
     }
 
+    /// The back row carries the refresh button, so without it the bar has to.
+    @Test func `With vertical bars the system bar carries the refresh button`() throws {
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        let window = try show(navigation)
+
+        let page = try makeTripPage(barsVertical: true)
+        push(page, onto: navigation, in: window)
+
+        let item = try #require(page.navigationItem.rightBarButtonItem)
+        #expect(item.accessibilityLabel == Strings.refresh)
+    }
+
+    @Test func `With the back row, the bar has no second refresh button`() throws {
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        let window = try show(navigation)
+
+        let page = try makeTripPage()
+        push(page, onto: navigation, in: window)
+
+        #expect(page.navigationItem.rightBarButtonItem == nil)
+    }
+
     @Test func `With vertical bars, popping the page still restores the host's bar`() throws {
         let navigation = UINavigationController(rootViewController: UIViewController())
         navigation.setNavigationBarHidden(true, animated: false)

@@ -520,6 +520,11 @@ public class Formatters: NSObject {
         return relativeDateTimeFormatter.localizedString(for: date, relativeTo: Date())
     }
 
+    /// "Updated: 2 min. ago", for a page that shows when it last loaded.
+    public func updatedText(since date: Date) -> String {
+        String(format: Strings.updatedAtFormat, timeAgoInWords(date: date))
+    }
+
     /// Creates a formatted string from the `ArrivalDeparture` object that shows the  formatted time until this event occurs.
     ///
     /// For example, if the `ArrivalDeparture` happens 7 minutes in the future, this will return the string `"7 minutes"`.

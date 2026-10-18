@@ -166,7 +166,7 @@ struct TripLiveActivity: Widget {
                 // rider gets here. Compact and minimal are mutually exclusive
                 // presentations, so there is no compact leading triangle to lean on.
                 if let primary {
-                    let minuteText = TripCountdownFormatStyle.spoken(departure: primary.departureDate).format(Date())
+                    let minuteText = TickingCountdownText.spokenSnapshot(departure: primary.departureDate, now: Date())
                     TickingCountdownText(
                         departure: primary.departureDate,
                         font: .system(.callout, design: .rounded, weight: .heavy),

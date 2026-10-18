@@ -128,6 +128,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
                 render()
             }
             .store(in: &cancellables)
+
+        viewModel.$isLoading
+            .sink { [weak self] isLoading in self?.refreshBarButton.isEnabled = !isLoading }
+            .store(in: &cancellables)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -157,6 +161,15 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     }
 
     // MARK: - Navigation bar
+
+    /// The back row's refresh button, for when the system bar replaces the row.
+    private lazy var refreshBarButton: UIBarButtonItem = {
+        let item = UIBarButtonItem(image: UIImage(systemName: AppSymbol.refresh), primaryAction: UIAction { [weak self] _ in
+            self?.viewModel.refresh()
+        })
+        item.accessibilityLabel = Strings.refresh
+        return item
+    }()
 
     /// Internal for tests: stands in for `traitCollection.presentsBarsVertically`,
     /// a system trait a test can't set.
@@ -272,6 +285,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     private func render() {
         existingAlarm = lookUpAlarm()
         title = pageTitle
+        navigationItem.rightBarButtonItem = showsSystemNavigationBar ? refreshBarButton : nil
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,

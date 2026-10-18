@@ -373,4 +373,68 @@ final class TripViewModelTests: OBATestCase {
         #expect(viewModel.stopListState == .loaded)
         #expect(viewModel.tripDetails?.stopTimes.count == 53)
     }
+
+    // MARK: - Refresh button (#1581)
+
+    /// The page says when it was last updated, so the time must mean the trip's
+    /// data arrived, not merely that a request was made.
+    @Test @MainActor
+    func `The update time is set only once a load brings the trip back`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        #expect(viewModel.lastUpdated == nil)
+
+        let before = Date()
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        let updated = try #require(viewModel.lastUpdated)
+        #expect(updated >= before)
+        #expect(updated <= Date())
+    }
+
+    /// A refresh that fails leaves the old trip on screen, so the page must keep
+    /// saying how old it is rather than claim it was just updated.
+    @Test @MainActor
+    func `A failed refresh keeps the previous update time`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+        let firstUpdate = try #require(viewModel.lastUpdated)
+
+        dataLoader.replaceMappedResponses { staging in
+            failRequests(to: "/api/where/trip-details", dataLoader: staging)
+            stubCommonEndpoints(dataLoader: staging)
+        }
+        viewModel.refresh()
+        await viewModel.loadDataTask?.value
+
+        #expect(viewModel.operationError != nil)
+        #expect(viewModel.lastUpdated == firstUpdate)
+    }
+
+    /// The refresh button disables itself off `isLoading`. Set inside the load's
+    /// task, it would stay `false` until that task first ran, leaving a window in
+    /// which a second tap starts a second load and cancels the first.
+    @Test @MainActor
+    func `A refresh reports loading as soon as it is asked for`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        try #require(app.apiService != nil)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        #expect(viewModel.isLoading == false)
+        viewModel.refresh()
+        #expect(viewModel.isLoading)
+
+        await viewModel.loadDataTask?.value
+        #expect(viewModel.isLoading == false)
+    }
 }

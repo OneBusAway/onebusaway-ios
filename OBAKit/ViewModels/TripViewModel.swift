@@ -36,8 +36,15 @@ class TripViewModel: ObservableObject {
     /// Decoded route shape coordinates; nil until first loaded. UI layer converts to MKPolyline.
     @Published private(set) var routePolylineCoordinates: [CLLocationCoordinate2D]?
 
-    /// `true` while any data request is in-flight.
+    /// `true` while any data request is in-flight. Set the moment a load is
+    /// asked for, not when its task first runs, so the refresh button disables
+    /// on the tap that started it.
     @Published private(set) var isLoading = false
+
+    /// When a load last brought the trip back: its details, or its arrival at
+    /// the rider's stop. `nil` until one has. A load that fails leaves it alone,
+    /// because the page is still showing what that earlier load fetched (#1581).
+    @Published private(set) var lastUpdated: Date?
 
     /// Non-nil when a network error occurred.
     @Published private(set) var operationError: Error?
@@ -128,9 +135,9 @@ class TripViewModel: ObservableObject {
 
     func loadData() {
         loadDataTask?.cancel()
+        isLoading = true
         loadDataTask = Task { [weak self] in
             guard let self else { return }
-            isLoading = true
             stopListLoadFailed = false
 
             // One failing loses none of the others (#1548). The stop list used to
@@ -160,7 +167,10 @@ class TripViewModel: ObservableObject {
             do {
                 let newDetails = try await details
                 guard !Task.isCancelled else { return }
-                if let newDetails { tripDetails = newDetails }
+                if let newDetails {
+                    tripDetails = newDetails
+                    lastUpdated = Date()
+                }
                 stopListLoadFailed = false
             } catch {
                 guard !Task.isCancelled else { return }
@@ -172,7 +182,10 @@ class TripViewModel: ObservableObject {
             do {
                 let newConvertible = try await convertible
                 guard !Task.isCancelled else { return }
-                if let newConvertible { tripConvertible = newConvertible }
+                if let newConvertible {
+                    tripConvertible = newConvertible
+                    lastUpdated = Date()
+                }
             } catch {
                 guard !Task.isCancelled else { return }
                 record(error)
