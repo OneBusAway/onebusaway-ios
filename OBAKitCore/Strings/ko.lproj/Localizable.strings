@@ -619,3 +619,117 @@
 
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "자세한 정보를 보려면 탭하세요";
+
+/* An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name. */
+"api_error.rate_limited_fmt" = "%@에 현재 처리할 수 있는 것보다 많은 요청이 들어오고 있습니다. 1분 후에 다시 시도해 주세요.";
+
+/* Explanation of an error where a Wi-Fi network requires signing in on a login page. */
+"error_report.explanation.captive_portal" = "연결된 Wi-Fi 네트워크에서 인터넷에 연결하려면 로그인이 필요합니다. 로그인하거나 셀룰러로 전환해 주세요.";
+
+/* Explanation of an error where cellular data is turned off for the app. The substituted value is the app name. */
+"error_report.explanation.cellular_data_restricted_fmt" = "%@에서 셀룰러 데이터를 사용할 수 없도록 설정되어 있습니다. 설정 > 셀룰러에서 켜거나 Wi-Fi에 연결해 주세요.";
+
+/* Explanation of an error the app doesn't recognize. 'These details' are the support details shown below it. */
+"error_report.explanation.fallback" = "예기치 않은 문제가 발생했습니다. 일시적인 오류일 수 있습니다. 다시 시도해 보시고, 문제가 계속되면 아래 세부 정보를 지원팀에 보내 주세요. 문제 해결에 도움이 됩니다.";
+
+/* Explanation of an error where the server's response couldn't be read. */
+"error_report.explanation.invalid_response_data" = "서버가 응답했지만 데이터가 불완전하거나 읽을 수 없는 형식입니다. 보통 휴대폰이 아니라 운영 기관 피드의 문제입니다.";
+
+/* Explanation of an error where no transit region is selected. The substituted value is the app name. */
+"error_report.explanation.no_region_selected_fmt" = "%@을(를) 사용하려면 대중교통 지역을 선택해야 합니다.";
+
+/* Explanation of a 404 Not Found error for something other than a stop or trip. */
+"error_report.explanation.not_found" = "서버에 요청한 항목이 없습니다. 삭제되었거나 이름이 바뀌었을 수 있습니다.";
+
+/* Explanation of an error where the device has no internet connection. */
+"error_report.explanation.offline" = "휴대폰이 인터넷에 연결되어 있지 않습니다. 연결이 복구되면 정보가 다시 업데이트됩니다.";
+
+/* Explanation of an error caused by the server being overloaded with requests (HTTP 429). The substituted value is the app name. */
+"error_report.explanation.rate_limited_fmt" = "%@에 현재 처리할 수 있는 것보다 많은 요청이 들어오고 있습니다. 보통 1분 안에 저절로 해결됩니다.";
+
+/* Explanation of an internal server error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_error_fmt" = "%@ 서버가 이 요청을 처리하는 중 문제가 발생했습니다. 서버는 계속 작동 중이므로 다시 시도하면 대개 해결됩니다.";
+
+/* Explanation of an error where the regional server can't be reached. Mentions VPNs because riders often hit this on a filtered network. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_unavailable_fmt" = "%@ 서버가 응답하지 않습니다. 서버가 중단되었거나 VPN, 방화벽 또는 콘텐츠 차단기가 접속을 막고 있을 수 있습니다.";
+
+/* Explanation of an error where the server no longer has the requested stop. */
+"error_report.explanation.stop_not_found" = "운영 기관에서 더 이상 이 정류장을 제공하지 않습니다. 정류장이 이전되었거나 폐쇄되었을 수 있습니다.";
+
+/* Explanation of an error where the server no longer has the requested trip. */
+"error_report.explanation.trip_not_found" = "이 운행은 이미 종료되었거나 오늘 운행 일정에서 제외되어 표시할 실시간 위치가 없습니다.";
+
+/* One-line toast text under a title saying the Wi-Fi network needs the rider to sign in. */
+"error_report.summary.captive_portal" = "계속하려면 네트워크 로그인 페이지를 여세요.";
+
+/* One-line toast text under a title saying cellular data is off for the app. */
+"error_report.summary.cellular_data_restricted" = "설정에서 켜거나 Wi-Fi를 사용하세요.";
+
+/* One-line toast text for an error the app doesn't recognize. */
+"error_report.summary.fallback" = "문제가 발생했습니다.";
+
+/* One-line toast text: the server answered with data the app can't read. */
+"error_report.summary.invalid_response_data" = "서버가 읽을 수 없는 데이터를 보냈습니다.";
+
+/* One-line toast text: no transit region has been selected. */
+"error_report.summary.no_region_selected" = "대중교통 정보를 보려면 지역을 선택하세요.";
+
+/* One-line toast text: the server has no record of the thing that was requested. */
+"error_report.summary.not_found" = "서버에 해당 항목이 없습니다.";
+
+/* One-line toast text: the device has no internet connection. */
+"error_report.summary.offline" = "연결 상태를 확인한 후 다시 시도하세요.";
+
+/* One-line toast text: the server is getting too many requests. The substituted value is the app name. */
+"error_report.summary.rate_limited_fmt" = "%@ 서버가 혼잡합니다.";
+
+/* One-line toast text: the regional server returned an internal error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_error_fmt" = "%@ 서버에 문제가 발생했습니다.";
+
+/* One-line toast text: the regional server is down or unreachable. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_unavailable_fmt" = "%@ 서버에 연결할 수 없습니다.";
+
+/* One-line toast text: the agency no longer lists this stop. */
+"error_report.summary.stop_not_found" = "운행하지 않는 정류장입니다.";
+
+/* One-line toast text: the trip has finished or was removed from today's service. */
+"error_report.summary.trip_not_found" = "운행이 종료되었습니다.";
+
+/* Title of an error about a failed request for a stop's arrival times. */
+"error_report.title.arrival_times" = "도착 시간을 불러올 수 없음";
+
+/* Title of an error about a failed request for bike and scooter share data. */
+"error_report.title.bike_share" = "공유 자전거 정보를 불러올 수 없음";
+
+/* Title of an error shown when the Wi-Fi network requires the rider to sign in on a login page before it connects to the internet. */
+"error_report.title.captive_portal" = "이 Wi-Fi는 로그인이 필요합니다";
+
+/* Title of an error shown when cellular data is turned off for this app in Settings. The substituted value is the app name. */
+"error_report.title.cellular_data_restricted_fmt" = "%@의 셀룰러 데이터가 꺼져 있음";
+
+/* Title of an error about a failed request for a vehicle's live position. */
+"error_report.title.live_position" = "실시간 위치를 불러올 수 없음";
+
+/* Title of an error about a failed request for the stops near the rider. */
+"error_report.title.nearby_stops" = "주변 정류장을 불러올 수 없음";
+
+/* Title of an error shown when no transit region has been selected. */
+"error_report.title.no_region_selected" = "지역을 선택하세요";
+
+/* Title of an error shown when the device has no internet connection. */
+"error_report.title.offline" = "오프라인 상태입니다";
+
+/* Title of an error about a failed request for a route's line on the map. */
+"error_report.title.route_map" = "노선 지도를 불러올 수 없음";
+
+/* Title of an error about a failed request for a schedule. */
+"error_report.title.schedule" = "시간표를 불러올 수 없음";
+
+/* Title of an error about a failed search. */
+"error_report.title.search_results" = "검색 결과를 불러올 수 없음";
+
+/* Title of an error about a failed request for transit service alerts. */
+"error_report.title.service_alerts" = "운행 알림을 불러올 수 없음";
+
+/* Title of an error about a failed request when the app can't tell what the request was for. */
+"error_report.title.unknown" = "이 정보를 불러올 수 없음";

@@ -984,41 +984,32 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Error Visualization
 
-    /// Whether a new error bulletin should be presented.
-    ///
-    /// Each `ErrorBulletin` owns its own `BLTNItemManager`, so a second one
-    /// presented while the first is up stacks a second card on top of it. The
-    /// Bookmarks screen makes that easy to hit: `BookmarkDataLoader` runs one
-    /// fetch, and one `displayError`, per bookmark, so a single dead stop
-    /// produces a burst of identical errors (#1421).
-    ///
-    /// This suppresses the stack. It is *not* what keeps the cards dismissable
-    /// — that's `ErrorBulletin.present(_:)`, which stops a stacked card's owner
-    /// from being deallocated out from under it (#1429). The two are
-    /// independent: this one is about noise, that one about not wedging.
-    static func shouldPresentErrorBulletin(alreadyShowing: Bool) -> Bool {
-        !alreadyShowing
-    }
-
     /// Classifies and displays an error to the end user.
+    ///
+    /// Shows a non-modal toast with a Details button rather than a modal card
+    /// (#1582). Bursts of the same failure collapse into one toast; see
+    /// `ErrorPresenter.shouldPresent(_:current:isShowingDetails:)`.
     @MainActor
     public override func displayError(_ error: Error) async {
-        let classified = ErrorClassifier.classify(error, regionName: currentRegionName, isCellularDataRestricted: isCellularDataRestricted)
-        Logger.error("Error: \(classified.localizedDescription)")
+        let report = ErrorReport(
+            error: error,
+            regionName: currentRegionName,
+            isCellularDataRestricted: isCellularDataRestricted,
+            systemVersion: UIDevice.current.systemVersion,
+            deviceModel: UIDevice.current.modelName
+        )
+        Logger.error("Error [\(report.reference)]: \(report.errorCode) \(report.requestURL?.absoluteString ?? "") \(error.localizedDescription)")
 
         analytics?.reportError?(error)
 
-        guard Self.shouldPresentErrorBulletin(alreadyShowing: errorBulletin?.isShowing ?? false) else {
-            return
-        }
-
-        guard let uiApp = delegate?.uiApplication else { return }
-        let bulletin = ErrorBulletin(application: self, classifiedError: classified)
-        bulletin.show(in: uiApp)
-        self.errorBulletin = bulletin
+        guard let scene = delegate?.uiApplication?.keyWindowFromScene?.windowScene else { return }
+        errorPresenter.present(report, in: scene)
     }
 
-    private var errorBulletin: ErrorBulletin?
+    private lazy var errorPresenter = ErrorPresenter { [weak self] in
+        guard let self else { return "iphone-app@onebusaway.org" }
+        return ContactUsHelper(application: self).appDevelopersEmail
+    }
 
     // MARK: - Feature Availability
 

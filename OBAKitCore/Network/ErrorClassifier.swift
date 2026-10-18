@@ -30,7 +30,7 @@ public enum ErrorClassifier {
         // Already-classified errors pass through unchanged.
         if let apiError = error as? APIError {
             switch apiError {
-            case .serverError, .serverUnavailable, .invalidResponseData, .cellularDataRestricted:
+            case .serverError, .serverUnavailable, .invalidResponseData, .cellularDataRestricted, .rateLimited:
                 return apiError
             default:
                 return classifyAPIError(apiError, regionName: regionName, isCellularDataRestricted: isCellularDataRestricted)
@@ -63,6 +63,11 @@ public enum ErrorClassifier {
                 return apiError
             }
             return APIError.serverError(regionName: regionName)
+
+        case .requestFailure(let response) where response.statusCode == 429:
+            // Before this case existed, 429 fell through to `requestFailure`'s
+            // "the server encountered an error" copy (#1582).
+            return APIError.rateLimited(retryAfter: retryAfter(from: response))
 
         case .requestFailure(let response) where isServerUnavailable(statusCode: response.statusCode):
             guard let regionName else {
@@ -142,6 +147,17 @@ public enum ErrorClassifier {
     }
 
     // MARK: - Helpers
+
+    /// The `Retry-After` header as a delay in seconds. Only the delta-seconds
+    /// form is read; an HTTP-date is treated as absent.
+    static func retryAfter(from response: HTTPURLResponse) -> TimeInterval? {
+        guard
+            let value = response.value(forHTTPHeaderField: "Retry-After"),
+            let seconds = TimeInterval(value.trimmingCharacters(in: .whitespaces)),
+            seconds >= 0
+        else { return nil }
+        return seconds
+    }
 
     private static func isServerUnavailable(statusCode: Int) -> Bool {
         return [502, 503, 504].contains(statusCode)

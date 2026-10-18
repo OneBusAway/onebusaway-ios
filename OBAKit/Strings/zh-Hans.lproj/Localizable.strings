@@ -2416,3 +2416,45 @@
 
 /* Label before the rental range chips */
 "map_layers.min_range" = "最低续航";
+
+/* Button on an error notice that opens a page explaining the problem. */
+"error_toast.details" = "详细信息";
+
+/* Button that starts an email to the app's support team about an error. */
+"problem_details.contact_support" = "联系支持团队";
+
+/* Button that copies the technical details of an error to the clipboard. */
+"problem_details.copy_details" = "复制详细信息";
+
+/* Subject of a support email about an error. The first value is the app name, the second a short reference code like 7F3K-Q2. */
+"problem_details.email_subject_fmt" = "%1$@问题报告 %2$@";
+
+/* Section header above technical details meant for the support team. */
+"problem_details.for_support" = "供支持团队参考";
+
+/* Button that opens this app's page in the iOS Settings app. */
+"problem_details.open_settings" = "打开设置";
+
+/* Row label: app version, iOS version and device model. */
+"problem_details.row.app" = "App";
+
+/* Row label: the technical error code. */
+"problem_details.row.error" = "错误";
+
+/* Row label: a short reference code for this error that the rider can quote to support. Abbreviation of 'Reference'. */
+"problem_details.row.reference" = "参考号";
+
+/* Row label: the transit region in use. */
+"problem_details.row.region" = "地区";
+
+/* Row label: the web address of the request that failed. */
+"problem_details.row.request" = "请求";
+
+/* Row label: when the error happened. */
+"problem_details.row.time" = "时间";
+
+/* Footer under the technical details on the problem details page. */
+"problem_details.support_footer" = "此页面的截屏包含支持团队所需的全部信息，不含任何个人信息或位置信息。";
+
+/* Title of the page that explains an error in detail. */
+"problem_details.title" = "问题详情";

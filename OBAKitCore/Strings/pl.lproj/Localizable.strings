@@ -619,3 +619,117 @@
 
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "Stuknij, aby dowiedzieć się więcej";
+
+/* An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name. */
+"api_error.rate_limited_fmt" = "%@ otrzymuje obecnie więcej żądań, niż może obsłużyć. Spróbuj ponownie za minutę.";
+
+/* Explanation of an error where a Wi-Fi network requires signing in on a login page. */
+"error_report.explanation.captive_portal" = "Sieć Wi-Fi, z którą masz połączenie, wymaga zalogowania, zanim połączy się z internetem. Zaloguj się lub przełącz na dane komórkowe.";
+
+/* Explanation of an error where cellular data is turned off for the app. The substituted value is the app name. */
+"error_report.explanation.cellular_data_restricted_fmt" = "%@ nie ma pozwolenia na korzystanie z danych komórkowych. Przejdź do Ustawienia › Sieć komórkowa, aby je włączyć, lub połącz się z Wi-Fi.";
+
+/* Explanation of an error the app doesn't recognize. 'These details' are the support details shown below it. */
+"error_report.explanation.fallback" = "Wystąpił nieoczekiwany problem. Może to być chwilowa usterka. Spróbuj ponownie, a jeśli problem będzie się powtarzał, wyślij te szczegóły do zespołu pomocy, abyśmy mogli go naprawić.";
+
+/* Explanation of an error where the server's response couldn't be read. */
+"error_report.explanation.invalid_response_data" = "Serwer odpowiedział, ale dane były niekompletne lub w formacie, którego nie potrafimy odczytać. Zwykle jest to problem z feedem przewoźnika, a nie z Twoim telefonem.";
+
+/* Explanation of an error where no transit region is selected. The substituted value is the app name. */
+"error_report.explanation.no_region_selected_fmt" = "%@ musi wiedzieć, w jakim regionie komunikacji się znajdujesz.";
+
+/* Explanation of a 404 Not Found error for something other than a stop or trip. */
+"error_report.explanation.not_found" = "Serwer nie ma żądanych danych. Mogły zostać usunięte lub zmienić nazwę.";
+
+/* Explanation of an error where the device has no internet connection. */
+"error_report.explanation.offline" = "Twój telefon nie ma połączenia z internetem. Informacje zaktualizują się ponownie, gdy połączenie wróci.";
+
+/* Explanation of an error caused by the server being overloaded with requests (HTTP 429). The substituted value is the app name. */
+"error_report.explanation.rate_limited_fmt" = "%@ otrzymuje obecnie więcej żądań, niż może obsłużyć. Zwykle mija to samo w ciągu minuty.";
+
+/* Explanation of an internal server error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_error_fmt" = "Serwer regionu %@ napotkał problem podczas obsługi tego żądania. Nadal działa, więc ponowna próba zwykle pomaga.";
+
+/* Explanation of an error where the regional server can't be reached. Mentions VPNs because riders often hit this on a filtered network. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_unavailable_fmt" = "Serwer regionu %@ nie odpowiada. Może być niedostępny albo blokuje go VPN, zapora sieciowa lub bloker treści.";
+
+/* Explanation of an error where the server no longer has the requested stop. */
+"error_report.explanation.stop_not_found" = "Przewoźnik nie wymienia już tego przystanku. Mógł zostać przeniesiony lub zlikwidowany.";
+
+/* Explanation of an error where the server no longer has the requested trip. */
+"error_report.explanation.trip_not_found" = "Ten kurs już się zakończył lub został usunięty z dzisiejszego rozkładu, więc nie ma pozycji na żywo do pokazania.";
+
+/* One-line toast text under a title saying the Wi-Fi network needs the rider to sign in. */
+"error_report.summary.captive_portal" = "Otwórz stronę logowania sieci, aby kontynuować.";
+
+/* One-line toast text under a title saying cellular data is off for the app. */
+"error_report.summary.cellular_data_restricted" = "Włącz je w Ustawieniach lub użyj Wi-Fi.";
+
+/* One-line toast text for an error the app doesn't recognize. */
+"error_report.summary.fallback" = "Coś poszło nie tak.";
+
+/* One-line toast text: the server answered with data the app can't read. */
+"error_report.summary.invalid_response_data" = "Serwer wysłał dane, których nie można odczytać.";
+
+/* One-line toast text: no transit region has been selected. */
+"error_report.summary.no_region_selected" = "Wybierz region, aby zobaczyć informacje o komunikacji.";
+
+/* One-line toast text: the server has no record of the thing that was requested. */
+"error_report.summary.not_found" = "Serwer tego nie ma.";
+
+/* One-line toast text: the device has no internet connection. */
+"error_report.summary.offline" = "Sprawdź połączenie i spróbuj ponownie.";
+
+/* One-line toast text: the server is getting too many requests. The substituted value is the app name. */
+"error_report.summary.rate_limited_fmt" = "%@ jest przeciążony.";
+
+/* One-line toast text: the regional server returned an internal error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_error_fmt" = "Serwer regionu %@ napotkał problem.";
+
+/* One-line toast text: the regional server is down or unreachable. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_unavailable_fmt" = "Nie można połączyć się z serwerem regionu %@.";
+
+/* One-line toast text: the agency no longer lists this stop. */
+"error_report.summary.stop_not_found" = "Ten przystanek jest nieczynny.";
+
+/* One-line toast text: the trip has finished or was removed from today's service. */
+"error_report.summary.trip_not_found" = "Ten kurs się zakończył.";
+
+/* Title of an error about a failed request for a stop's arrival times. */
+"error_report.title.arrival_times" = "Nie udało się wczytać godzin przyjazdu";
+
+/* Title of an error about a failed request for bike and scooter share data. */
+"error_report.title.bike_share" = "Nie udało się wczytać rowerów miejskich";
+
+/* Title of an error shown when the Wi-Fi network requires the rider to sign in on a login page before it connects to the internet. */
+"error_report.title.captive_portal" = "Ta sieć Wi-Fi wymaga zalogowania";
+
+/* Title of an error shown when cellular data is turned off for this app in Settings. The substituted value is the app name. */
+"error_report.title.cellular_data_restricted_fmt" = "Dane komórkowe są wyłączone dla %@";
+
+/* Title of an error about a failed request for a vehicle's live position. */
+"error_report.title.live_position" = "Nie udało się wczytać pozycji na żywo";
+
+/* Title of an error about a failed request for the stops near the rider. */
+"error_report.title.nearby_stops" = "Nie udało się wczytać pobliskich przystanków";
+
+/* Title of an error shown when no transit region has been selected. */
+"error_report.title.no_region_selected" = "Wybierz region";
+
+/* Title of an error shown when the device has no internet connection. */
+"error_report.title.offline" = "Jesteś offline";
+
+/* Title of an error about a failed request for a route's line on the map. */
+"error_report.title.route_map" = "Nie udało się wczytać mapy linii";
+
+/* Title of an error about a failed request for a schedule. */
+"error_report.title.schedule" = "Nie udało się wczytać rozkładu jazdy";
+
+/* Title of an error about a failed search. */
+"error_report.title.search_results" = "Nie udało się wczytać wyników wyszukiwania";
+
+/* Title of an error about a failed request for transit service alerts. */
+"error_report.title.service_alerts" = "Nie udało się wczytać alertów";
+
+/* Title of an error about a failed request when the app can't tell what the request was for. */
+"error_report.title.unknown" = "Nie udało się wczytać tych informacji";

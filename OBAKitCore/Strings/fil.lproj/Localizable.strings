@@ -619,3 +619,117 @@
 
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "I-tap para sa higit pang impormasyon";
+
+/* An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name. */
+"api_error.rate_limited_fmt" = "Mas maraming kahilingan ang natatanggap ng %@ kaysa sa kaya nito ngayon. Pakisubukang muli pagkalipas ng isang minuto.";
+
+/* Explanation of an error where a Wi-Fi network requires signing in on a login page. */
+"error_report.explanation.captive_portal" = "Kailangan mong mag-sign in sa Wi-Fi network na ito bago ito kumonekta sa internet. Mag-sign in, o lumipat sa cellular.";
+
+/* Explanation of an error where cellular data is turned off for the app. The substituted value is the app name. */
+"error_report.explanation.cellular_data_restricted_fmt" = "Hindi pinapayagang gumamit ng cellular data ang %@. Pumunta sa Settings › Cellular para i-on ito, o kumonekta sa Wi-Fi.";
+
+/* Explanation of an error the app doesn't recognize. 'These details' are the support details shown below it. */
+"error_report.explanation.fallback" = "May hindi inaasahang nangyaring mali. Baka pansamantalang aberya lang ito. Subukang muli, at kung patuloy itong nangyayari, ipadala ang mga detalyeng ito sa support para maayos namin ito.";
+
+/* Explanation of an error where the server's response couldn't be read. */
+"error_report.explanation.invalid_response_data" = "Sumagot ang server, pero kulang ang data o nasa format na hindi namin mabasa. Kadalasan, problema ito sa feed ng ahensya, hindi sa iyong phone.";
+
+/* Explanation of an error where no transit region is selected. The substituted value is the app name. */
+"error_report.explanation.no_region_selected_fmt" = "Kailangang malaman ng %@ kung saang rehiyon ng transit ka naroroon.";
+
+/* Explanation of a 404 Not Found error for something other than a stop or trip. */
+"error_report.explanation.not_found" = "Wala sa server ang hiniling. Maaaring inalis na ito o pinalitan ang pangalan.";
+
+/* Explanation of an error where the device has no internet connection. */
+"error_report.explanation.offline" = "Hindi nakakonekta sa internet ang iyong phone. Mag-a-update muli ang impormasyon kapag bumalik ang koneksyon.";
+
+/* Explanation of an error caused by the server being overloaded with requests (HTTP 429). The substituted value is the app name. */
+"error_report.explanation.rate_limited_fmt" = "Mas maraming kahilingan ang natatanggap ng %@ kaysa sa kaya nito ngayon. Kadalasan, kusa itong naaayos sa loob ng isang minuto.";
+
+/* Explanation of an internal server error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_error_fmt" = "Nagkaproblema ang server para sa %@ habang pinoproseso ang kahilingang ito. Tumatakbo pa rin ito, kaya kadalasang gumagana ang pagsubok muli.";
+
+/* Explanation of an error where the regional server can't be reached. Mentions VPNs because riders often hit this on a filtered network. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.explanation.server_unavailable_fmt" = "Hindi tumutugon ang server para sa %@. Maaaring down ito, o hinaharangan ito ng VPN, firewall, o content blocker.";
+
+/* Explanation of an error where the server no longer has the requested stop. */
+"error_report.explanation.stop_not_found" = "Hindi na nakalista ng ahensya ang hintuang ito. Maaaring inilipat ito o isinara.";
+
+/* Explanation of an error where the server no longer has the requested trip. */
+"error_report.explanation.trip_not_found" = "Tapos na ang biyaheng ito o inalis ito sa serbisyo ngayong araw, kaya walang live na posisyong maipapakita.";
+
+/* One-line toast text under a title saying the Wi-Fi network needs the rider to sign in. */
+"error_report.summary.captive_portal" = "Buksan ang login page ng network para magpatuloy.";
+
+/* One-line toast text under a title saying cellular data is off for the app. */
+"error_report.summary.cellular_data_restricted" = "I-on ito sa Settings, o gumamit ng Wi-Fi.";
+
+/* One-line toast text for an error the app doesn't recognize. */
+"error_report.summary.fallback" = "May nangyaring mali.";
+
+/* One-line toast text: the server answered with data the app can't read. */
+"error_report.summary.invalid_response_data" = "Nagpadala ang server ng data na hindi namin mabasa.";
+
+/* One-line toast text: no transit region has been selected. */
+"error_report.summary.no_region_selected" = "Pumili ng rehiyon para makita ang impormasyon ng transit.";
+
+/* One-line toast text: the server has no record of the thing that was requested. */
+"error_report.summary.not_found" = "Wala ito sa server.";
+
+/* One-line toast text: the device has no internet connection. */
+"error_report.summary.offline" = "Suriin ang iyong koneksyon at subukang muli.";
+
+/* One-line toast text: the server is getting too many requests. The substituted value is the app name. */
+"error_report.summary.rate_limited_fmt" = "Abala ang %@.";
+
+/* One-line toast text: the regional server returned an internal error. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_error_fmt" = "Nagkaproblema ang server para sa %@.";
+
+/* One-line toast text: the regional server is down or unreachable. The substituted value is the region name, e.g. 'Puget Sound'. */
+"error_report.summary.server_unavailable_fmt" = "Hindi maabot ang server para sa %@.";
+
+/* One-line toast text: the agency no longer lists this stop. */
+"error_report.summary.stop_not_found" = "Wala nang serbisyo sa hintuang ito.";
+
+/* One-line toast text: the trip has finished or was removed from today's service. */
+"error_report.summary.trip_not_found" = "Tapos na ang biyaheng ito.";
+
+/* Title of an error about a failed request for a stop's arrival times. */
+"error_report.title.arrival_times" = "Hindi ma-load ang mga oras ng pagdating";
+
+/* Title of an error about a failed request for bike and scooter share data. */
+"error_report.title.bike_share" = "Hindi ma-load ang bike share";
+
+/* Title of an error shown when the Wi-Fi network requires the rider to sign in on a login page before it connects to the internet. */
+"error_report.title.captive_portal" = "Kailangan mong mag-sign in sa Wi-Fi na ito";
+
+/* Title of an error shown when cellular data is turned off for this app in Settings. The substituted value is the app name. */
+"error_report.title.cellular_data_restricted_fmt" = "Naka-off ang cellular data para sa %@";
+
+/* Title of an error about a failed request for a vehicle's live position. */
+"error_report.title.live_position" = "Hindi ma-load ang live na posisyon";
+
+/* Title of an error about a failed request for the stops near the rider. */
+"error_report.title.nearby_stops" = "Hindi ma-load ang mga kalapit na hintuan";
+
+/* Title of an error shown when no transit region has been selected. */
+"error_report.title.no_region_selected" = "Pumili ng iyong rehiyon";
+
+/* Title of an error shown when the device has no internet connection. */
+"error_report.title.offline" = "Offline ka";
+
+/* Title of an error about a failed request for a route's line on the map. */
+"error_report.title.route_map" = "Hindi ma-load ang mapa ng ruta";
+
+/* Title of an error about a failed request for a schedule. */
+"error_report.title.schedule" = "Hindi ma-load ang iskedyul";
+
+/* Title of an error about a failed search. */
+"error_report.title.search_results" = "Hindi ma-load ang mga resulta ng paghahanap";
+
+/* Title of an error about a failed request for transit service alerts. */
+"error_report.title.service_alerts" = "Hindi ma-load ang mga alerto sa serbisyo";
+
+/* Title of an error about a failed request when the app can't tell what the request was for. */
+"error_report.title.unknown" = "Hindi ma-load ang impormasyong ito";

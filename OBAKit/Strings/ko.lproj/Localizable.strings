@@ -2416,3 +2416,45 @@
 
 /* Label before the rental range chips */
 "map_layers.min_range" = "최소 주행 거리";
+
+/* Button on an error notice that opens a page explaining the problem. */
+"error_toast.details" = "세부 정보";
+
+/* Button that starts an email to the app's support team about an error. */
+"problem_details.contact_support" = "지원팀에 문의";
+
+/* Button that copies the technical details of an error to the clipboard. */
+"problem_details.copy_details" = "세부 정보 복사";
+
+/* Subject of a support email about an error. The first value is the app name, the second a short reference code like 7F3K-Q2. */
+"problem_details.email_subject_fmt" = "%1$@ 문제 보고 %2$@";
+
+/* Section header above technical details meant for the support team. */
+"problem_details.for_support" = "지원팀용 정보";
+
+/* Button that opens this app's page in the iOS Settings app. */
+"problem_details.open_settings" = "설정 열기";
+
+/* Row label: app version, iOS version and device model. */
+"problem_details.row.app" = "앱";
+
+/* Row label: the technical error code. */
+"problem_details.row.error" = "오류";
+
+/* Row label: a short reference code for this error that the rider can quote to support. Abbreviation of 'Reference'. */
+"problem_details.row.reference" = "참조";
+
+/* Row label: the transit region in use. */
+"problem_details.row.region" = "지역";
+
+/* Row label: the web address of the request that failed. */
+"problem_details.row.request" = "요청";
+
+/* Row label: when the error happened. */
+"problem_details.row.time" = "시간";
+
+/* Footer under the technical details on the problem details page. */
+"problem_details.support_footer" = "이 화면의 스크린샷에 지원팀에 필요한 정보가 모두 담겨 있습니다. 개인 정보나 위치는 포함되지 않습니다.";
+
+/* Title of the page that explains an error in detail. */
+"problem_details.title" = "문제 세부 정보";
