@@ -54,10 +54,9 @@ public struct TickingCountdownText: View {
                 snapshot
             } else {
                 // Drawn out of process, a ticking Text claims the width of the
-                // widest value its format can reach and puts the digits at its
-                // leading edge, which widened the compact Island and squeezed
-                // the Lock Screen headsign. The hidden snapshot sizes the slot
-                // instead; the count only falls, so it never outgrows it.
+                // widest value its format can reach, digits at the leading edge.
+                // The hidden snapshot sizes the slot instead; the count only
+                // falls, so it never outgrows it.
                 snapshot
                     .hidden()
                     .overlay(alignment: .trailing) {

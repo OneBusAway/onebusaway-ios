@@ -199,11 +199,7 @@ private struct TripLiveActivityContentView: View {
     var body: some View {
         switch activityFamily {
         case .small:
-            TripLiveActivitySmallView(
-                staticData: context.attributes.staticData,
-                contentState: context.state,
-                isStale: context.isStale
-            )
+            TripLiveActivitySmallView(context: context)
         default:
             TripLiveActivityCardView(
                 staticData: context.attributes.staticData,
@@ -218,15 +214,15 @@ private struct TripLiveActivityContentView: View {
 /// Route and minutes on the first line, then the headsign and how the bus is
 /// running — what the rider glances at on their wrist.
 private struct TripLiveActivitySmallView: View {
-    let staticData: TripAttributes.StaticData
-    let contentState: TripAttributes.ContentState
-    let isStale: Bool
+    let context: ActivityViewContext<TripAttributes>
 
     private let presenter = TripActivityPresenter()
 
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
+
     var body: some View {
-        let primary = contentState.upcomingArrivals().first
-        let statusColor = Color(presenter.primaryColor(for: contentState))
+        let staticData = context.attributes.staticData
+        let primary = context.state.upcomingArrivals().first
 
         VStack(alignment: .leading, spacing: 2) {
             // Dim arrival content only; the warning stays full opacity (#1376).
@@ -235,13 +231,13 @@ private struct TripLiveActivitySmallView: View {
                     Text(staticData.routeShortName)
                         .font(.system(.headline, design: .rounded, weight: .heavy))
                         .lineLimit(1)
-                        .accessibilityLabel(routeLabel(staticData))
                     Spacer(minLength: 4)
                     if let primary {
-                        TickingCountdownText(
+                        CountdownView(
                             departure: primary.departureDate,
-                            font: .system(.title3, design: .rounded, weight: .bold),
-                            color: Color(presenter.color(for: primary))
+                            isRealTime: primary.scheduleStatus != .unknown,
+                            color: Color(presenter.color(for: primary)),
+                            isLiveActivity: true
                         )
                     }
                 }
@@ -250,22 +246,31 @@ private struct TripLiveActivitySmallView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: isStale))
+            .opacity(LiveActivityStaleChrome.contentOpacity(isStale: context.isStale))
 
-            if isStale {
+            if context.isStale {
                 Label(LiveActivityStaleChrome.warningText, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(LiveActivityStaleChrome.warningColor)
                     .lineLimit(1)
             } else if let primary {
                 Text(presenter.statusText(for: primary))
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(statusColor)
+                    .foregroundStyle(Color(presenter.primaryColor(for: context.state)))
                     .lineLimit(1)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .accessibilityElement(children: .combine)
+        // The Lock Screen card's label, so every surface speaks the same words.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(TripLiveActivityCardView.accessibilityLabel(
+            staticData: staticData,
+            contentState: context.state,
+            isStale: context.isStale,
+            isLuminanceReduced: isLuminanceReduced,
+            now: Date()
+        ))
+        .accessibilityAddTraits(.updatesFrequently)
     }
 }
