@@ -43,7 +43,8 @@ final class BulletinOverlayWindowTests {
 
     /// Item 2 from issue #1170: on a reused page item (one a bulletin class
     /// shows again and again), each presentation must leave the item exactly
-    /// as it found it.
+    /// as it found it. No production bulletin reuses an item today, so this
+    /// guards the contract rather than a live call site.
     ///
     /// Pre-fix, the post-dismissal assertion fails on the very first pass — the
     /// item is left holding wrapper 1 — and every later pass buries it one level
