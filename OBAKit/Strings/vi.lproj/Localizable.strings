@@ -79,7 +79,7 @@
 /* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
 "bookmarks_controller.context_menu.pin" = "Ghim";
 
-/* Action to start a Live Activity for a specific bookmark */
+/* Action to start a Live Activity, which follows the next arrival for a specific bookmark on the Lock Screen */
 "bookmarks_controller.context_menu.track_live_activity" = "Theo dõi trên Màn hình khóa";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
@@ -2082,9 +2082,9 @@
 "trip_page.card.distance_stops_fmt" = "cách %1$@ · %2$d điểm dừng";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Không thể gửi báo cáo này vì dịch vụ báo cáo hiện không khả dụng. Vui lòng thử lại sau.";
-/* Trip page button that starts a Live Activity for this trip. */
+/* Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. */
 "trip_page.live_activity_start" = "Theo dõi trên Màn hình khóa";
-/* Trip page button state once a Live Activity is running for this trip. */
+/* Shown in place of the trip page's Track on Lock Screen button once a Live Activity is running for this trip. */
 "trip_page.live_activity_tracking" = "Đang theo dõi trên Màn hình khóa";
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "vị trí đã cập nhật %@";

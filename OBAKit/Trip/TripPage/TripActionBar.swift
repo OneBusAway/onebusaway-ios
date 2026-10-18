@@ -113,6 +113,10 @@ struct TripActionBar: View {
             )
             .font(.body.weight(.semibold))
             .foregroundStyle(onTime)
+            .multilineTextAlignment(.center)
+            // A capsule's ends curve in; without an inset, text that wraps at
+            // large sizes or in long locales runs into them.
+            .padding(.horizontal, 16)
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(onTime.opacity(0.14), in: Capsule())
         } else {
