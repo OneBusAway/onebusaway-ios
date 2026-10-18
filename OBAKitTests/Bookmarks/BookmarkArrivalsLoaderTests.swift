@@ -145,6 +145,74 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
         #expect(result[bad.id] == nil)
     }
 
+    @Test func `Departures by watch bookmark returns arrivals for watch bookmarks`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let stops = try Fixtures.loadSomeStops()
+        let good = WatchBookmark(
+            id: UUID(),
+            name: "Good Watch",
+            regionIdentifier: Int32(pugetSoundRegionIdentifier),
+            stopID: stops[0].id,
+            stopName: stops[0].name,
+            latitude: stops[0].coordinate.latitude,
+            longitude: stops[0].coordinate.longitude,
+            isFavorite: false
+        )
+        let bad = WatchBookmark(
+            id: UUID(),
+            name: "Bad Watch",
+            regionIdentifier: Int32(pugetSoundRegionIdentifier),
+            stopID: stops[1].id,
+            stopName: stops[1].name,
+            latitude: stops[1].coordinate.latitude,
+            longitude: stops[1].coordinate.longitude,
+            isFavorite: false
+        )
+        mockArrivals(dataLoader, log: RequestLog(), failingStopID: stops[1].id)
+
+        let result = await BookmarkArrivalsLoader().departuresByWatchBookmark(
+            for: [good, bad],
+            using: buildRESTService(dataLoader: dataLoader)
+        )
+
+        #expect(result[good.id] != nil)
+        #expect(result[bad.id] == nil)
+    }
+
+    @Test func `TripBookmarkKey initialization from watch bookmark`() {
+        let tripBookmark = WatchBookmark(
+            id: UUID(),
+            name: "Trip Bookmark",
+            regionIdentifier: 1,
+            stopID: "1_100",
+            stopName: "Stop",
+            latitude: 47.6,
+            longitude: -122.3,
+            isFavorite: true,
+            routeID: "1_40",
+            routeShortName: "40",
+            tripHeadsign: "Downtown"
+        )
+        let key = TripBookmarkKey(watchBookmark: tripBookmark)
+        #expect(key != nil)
+        #expect(key?.stopID == "1_100")
+        #expect(key?.routeID == "1_40")
+        #expect(key?.routeShortName == "40")
+        #expect(key?.tripHeadsign == "Downtown")
+
+        let stopBookmark = WatchBookmark(
+            id: UUID(),
+            name: "Stop Bookmark",
+            regionIdentifier: 1,
+            stopID: "1_100",
+            stopName: "Stop",
+            latitude: 47.6,
+            longitude: -122.3,
+            isFavorite: false
+        )
+        #expect(TripBookmarkKey(watchBookmark: stopBookmark) == nil)
+    }
+
     @Test func `Standalone service targets the region's base URL`() async {
         let service = RESTAPIService.standalone(region: Fixtures.pugetSoundRegion, apiKey: "key", appVersion: "1.0", uuid: "uuid")
         #expect(await service.configuration.baseURL == Fixtures.pugetSoundRegion.OBABaseURL)

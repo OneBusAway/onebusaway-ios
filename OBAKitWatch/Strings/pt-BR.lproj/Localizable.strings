@@ -48,3 +48,18 @@
 
 /* Button: show the same route heading the other way */
 "route.switch_direction" = "Trocar sentido";
+
+/* Section title for ungrouped bookmarks */
+"bookmarks.title" = "Favoritos";
+
+/* Bookmarks tab bar item title */
+"bookmarks.tab" = "Favoritos";
+
+/* Nearby tab bar item title */
+"nearby.tab" = "Por perto";
+
+/* Empty state message when no bookmarks have been saved */
+"bookmarks.empty" = "Nenhum favorito ainda. Adicione favoritos no seu iPhone para vê-los aqui.";
+
+/* Loading indicator text while bookmarks load */
+"bookmarks.loading" = "Carregando favoritos…";
