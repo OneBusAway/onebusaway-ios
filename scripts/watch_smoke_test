@@ -34,12 +34,6 @@ cd "$(dirname "$0")/.."
 
 udid=$(scripts/resolve_watch_simulator_udid)
 
-xcrun simctl boot "$udid" 2>/dev/null || true
-if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
-    echo "error: simctl bootstatus failed" >&2
-    exit 1
-fi
-
 # `-quiet` prints only warnings and errors; `set -e` fails the script on a
 # failed build, so a broken compile is reported as itself, not as a missing app.
 xcodebuild build \
@@ -61,6 +55,16 @@ if [ ! -d "$app" ]; then
 fi
 
 bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
+
+# Booted after the build, not before it: the build doesn't need a running
+# simulator, and one booted first was found shut down by install time after a
+# 4.5-minute CI build (CoreSimulator 405, "Unable to lookup in current state:
+# Shutdown"). A first boot also saturates a CI runner, which slowed the build.
+xcrun simctl boot "$udid" 2>/dev/null || true
+if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
+    echo "error: simctl bootstatus failed" >&2
+    exit 1
+fi
 
 xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
 if ! xcrun simctl install "$udid" "$app"; then
