@@ -104,7 +104,6 @@ final class AppSheetViewFactory {
     // MARK: - Dispatcher
 
     @ViewBuilder
-    // swiftlint:disable:next cyclomatic_complexity
     func view(for route: AppSheetRoute) -> some View {
         switch route {
         case .home:

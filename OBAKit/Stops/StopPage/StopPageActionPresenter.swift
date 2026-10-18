@@ -223,14 +223,8 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
                 self?.showWalkingDirections(coordinate: coordinate)
             },
             pillDirections: makePillDirections(viewModel: viewModel, tripPlannerAvailable: tripPlannerAvailable),
-            showDirectionsToHere: tripPlannerAvailable ? { [weak self] in
-                guard let stop = viewModel.stop else { return }
-                self?.showTripPlanner(action: .directionsToStop, stop: stop)
-            } : nil,
-            showDirectionsFromHere: tripPlannerAvailable ? { [weak self] in
-                guard let stop = viewModel.stop else { return }
-                self?.showTripPlanner(action: .directionsFromStop, stop: stop)
-            } : nil,
+            showDirectionsToHere: tripPlannerAvailable ? makeTripPlannerClosure(.directionsToStop, viewModel: viewModel) : nil,
+            showDirectionsFromHere: tripPlannerAvailable ? makeTripPlannerClosure(.directionsFromStop, viewModel: viewModel) : nil,
             showAlertDetail: { [weak self] alert in
                 guard let self, let host = self.presentationHost(for: "alert detail") else { return }
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
@@ -471,6 +465,13 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         }
         sheet.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
         present(actionSheet: sheet)
+    }
+
+    private func makeTripPlannerClosure(_ action: StopTripPlannerAction, viewModel: StopViewModel) -> () -> Void {
+        return { [weak self] in
+            guard let stop = viewModel.stop else { return }
+            self?.showTripPlanner(action: action, stop: stop)
+        }
     }
 
     private func makePillDirections(viewModel: StopViewModel, tripPlannerAvailable: Bool) -> StopPillDirections {

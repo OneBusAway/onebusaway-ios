@@ -53,30 +53,7 @@ nonisolated struct EmptyDataSetItem: OBAListViewItem {
         }
 
         // Then, add an icon if applicable.
-        var icon: UIImage?
-        switch error {
-        case let apiError as APIError:
-            switch apiError {
-            case .networkFailure, .cellularDataRestricted:
-                icon = UIImage(systemName: "wifi.slash")
-            case .captivePortal:
-                icon = UIImage(systemName: "wifi.exclamationmark")
-            case .noResponseBody, .requestFailure, .invalidContentType:
-                icon = UIImage(systemName: "bolt.horizontal.circle")
-            case .requestNotFound:
-                icon = UIImage(systemName: "questionmark.square.dashed")
-            case .serverError, .serverUnavailable, .rateLimited:
-                icon = UIImage(systemName: "server.rack")
-            case .invalidResponseData:
-                icon = UIImage(systemName: "exclamationmark.triangle")
-            case .surveyServiceNotConfigured:
-                icon = UIImage(systemName: "doc.text.magnifyingglass")
-            case .noRegionSelected:
-                icon = UIImage(systemName: "location.slash")
-            }
-        default:
-            break
-        }
+        let icon = EmptyDataSetView.icon(for: error)
 
         self.init(id: id, alignment: .center, title: nil, body: error.localizedDescription, image: icon, buttonConfig: buttonConfig)
     }

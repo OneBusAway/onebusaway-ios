@@ -46,12 +46,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
                 return classic
             }
             if let windowScene = context.viewIfLoaded?.window?.windowScene {
-                for window in windowScene.windows {
-                    if let classic = findClassicRoot(in: window.rootViewController) {
-                        return classic
-                    }
-                }
-                return nil
+                return findClassicRoot(in: windowScene, preferringKeyWindow: false)
             }
         }
 
@@ -59,37 +54,23 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         for scene in UIApplication.shared.connectedScenes {
             guard let windowScene = scene as? UIWindowScene,
                   windowScene.activationState == .foregroundActive else { continue }
-            if let keyWindow = windowScene.windows.first(where: \.isKeyWindow),
-               let classic = findClassicRoot(in: keyWindow.rootViewController) {
+            if let classic = findClassicRoot(in: windowScene) {
                 return classic
-            }
-            for window in windowScene.windows {
-                if let classic = findClassicRoot(in: window.rootViewController) {
-                    return classic
-                }
             }
         }
 
         // Check any connected window scene
         for scene in UIApplication.shared.connectedScenes {
             guard let windowScene = scene as? UIWindowScene else { continue }
-            if let keyWindow = windowScene.windows.first(where: \.isKeyWindow),
-               let classic = findClassicRoot(in: keyWindow.rootViewController) {
+            if let classic = findClassicRoot(in: windowScene) {
                 return classic
-            }
-            for window in windowScene.windows {
-                if let classic = findClassicRoot(in: window.rootViewController) {
-                    return classic
-                }
             }
         }
 
         // Fallback for tests or environments without window scenes:
         // check registered controllers (held weakly).
-        for root in registeredRootControllers.allObjects {
-            if root.viewIfLoaded?.window?.isKeyWindow == true {
-                return root
-            }
+        for root in registeredRootControllers.allObjects where root.viewIfLoaded?.window?.isKeyWindow == true {
+            return root
         }
         return registeredRootControllers.allObjects.first
     }
@@ -118,6 +99,21 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         if let presenting = context.presentingViewController,
            let classic = findClassicRoot(from: presenting) {
             return classic
+        }
+        return nil
+    }
+
+    /// Searches `windowScene`'s windows, starting with its key window unless `preferringKeyWindow` is `false`.
+    private func findClassicRoot(in windowScene: UIWindowScene, preferringKeyWindow: Bool = true) -> ClassicApplicationRootController? {
+        if preferringKeyWindow,
+           let keyWindow = windowScene.keyWindow,
+           let classic = findClassicRoot(in: keyWindow.rootViewController) {
+            return classic
+        }
+        for window in windowScene.windows {
+            if let classic = findClassicRoot(in: window.rootViewController) {
+                return classic
+            }
         }
         return nil
     }

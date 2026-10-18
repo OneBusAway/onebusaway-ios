@@ -449,7 +449,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
     /// Building the draft: prefer `ArrivalDeparture` fields (stop-level context) when a departure
     /// is loaded, falling back to trip-level data from `TripConvertible` otherwise.
-    private func showGhostBusReport() {
+    private func makeGhostBusReportDraft() -> GhostBusReportDraft {
         let convertible = viewModel.tripConvertible
         let trip = convertible.trip
 
@@ -474,6 +474,12 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             draft.routeID = trip.routeID
             draft.vehicleID = convertible.vehicleID
         }
+        return draft
+    }
+
+    private func showGhostBusReport() {
+        let trip = viewModel.tripConvertible.trip
+        let draft = makeGhostBusReportDraft()
 
         let context = GhostBusReportContext(
             routeAndHeadsign: [departure?.routeShortName ?? trip.route?.shortName, departure?.tripHeadsign ?? trip.headsign]
