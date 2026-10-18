@@ -1666,7 +1666,13 @@
 "survey_cell.next_button" = "Avanti";
 
 /* Button that opens an external survey in the browser */
-"survey_cell.open_external_survey_button" = "Apri sondaggio";
+"external_survey_button.open_survey" = "Apri sondaggio";
+
+/* Button that opens an external feedback form in the browser */
+"external_survey_button.share_feedback" = "Condividi feedback";
+
+/* Button that opens an external sign-up form in the browser */
+"external_survey_button.sign_up" = "Iscriviti";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_launcher.external_survey_error.message" = "Non è stato possibile aprire il link del sondaggio. Riprova più tardi.";
@@ -1697,9 +1703,6 @@
 
 /* OK button on survey alerts */
 "survey_vc.ok_button" = "OK";
-
-/* Button that opens an external survey in the browser */
-"survey_vc.open_external_survey_button" = "Apri sondaggio";
 
 /* Section header for survey questions */
 "survey_vc.questions_section_title" = "Domande";

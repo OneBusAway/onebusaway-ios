@@ -165,9 +165,7 @@ class SurveyCell: OBAListViewCell {
     }()
 
     lazy var externalSurveyButton: UIButton = {
-        let button = SurveyCell.prominentButton(
-            title: OBALoc("survey_cell.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser")
-        )
+        let button = SurveyCell.prominentButton(title: ExternalSurveyButtonLabel.openSurvey.localizedTitle)
         button.isHidden = true
 
         let action = UIAction { [weak self] _ in
@@ -294,6 +292,8 @@ class SurveyCell: OBAListViewCell {
             questionLabel.text = OBALoc("survey_cell.default_prompt", value: "Take survey to help improve transit", comment: "Default prompt when no hero question exists")
             questionLabel.isHidden = false
             optionsStack.isHidden = true
+            externalSurveyButton.isHidden = true
+            nextButton.isHidden = false
         }
 
         // Update button state based on selection
@@ -332,6 +332,7 @@ class SurveyCell: OBAListViewCell {
         case .externalSurvey:
             optionsStack.isHidden = true
             nextButton.isHidden = true
+            externalSurveyButton.configuration?.title = question.content.externalSurveyButtonLabel.localizedTitle
             externalSurveyButton.isHidden = false
         }
     }

@@ -125,7 +125,7 @@ private struct SurveyQuestionRows: View {
 
         case .externalSurvey:
             Text(question.content.labelText)
-            Button(OBALoc("survey_vc.open_external_survey_button", value: "Open Survey", comment: "Button that opens an external survey in the browser"), action: openExternalSurvey)
+            Button(question.content.externalSurveyButtonLabel.localizedTitle, action: openExternalSurvey)
         }
     }
 

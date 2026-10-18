@@ -1666,7 +1666,13 @@
 "survey_cell.next_button" = "下一步";
 
 /* Button that opens an external survey in the browser */
-"survey_cell.open_external_survey_button" = "開啟問卷";
+"external_survey_button.open_survey" = "開啟問卷";
+
+/* Button that opens an external feedback form in the browser */
+"external_survey_button.share_feedback" = "分享意見";
+
+/* Button that opens an external sign-up form in the browser */
+"external_survey_button.sign_up" = "報名";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_launcher.external_survey_error.message" = "無法開啟此問卷連結。請稍後再試。";
@@ -1697,9 +1703,6 @@
 
 /* OK button on survey alerts */
 "survey_vc.ok_button" = "好";
-
-/* Button that opens an external survey in the browser */
-"survey_vc.open_external_survey_button" = "開啟問卷";
 
 /* Section header for survey questions */
 "survey_vc.questions_section_title" = "問題";

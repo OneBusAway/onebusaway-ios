@@ -26,7 +26,8 @@ enum SurveysTestHelpers {
         options: [String]? = nil,
         url: String? = nil,
         surveyProvider: String? = nil,
-        embeddedDataFields: [String]? = nil
+        embeddedDataFields: [String]? = nil,
+        buttonLabel: String? = nil
     ) -> QuestionContent {
         QuestionContent(
             labelText: labelText,
@@ -34,7 +35,8 @@ enum SurveysTestHelpers {
             options: options,
             url: url,
             surveyProvider: surveyProvider,
-            embeddedDataFields: embeddedDataFields
+            embeddedDataFields: embeddedDataFields,
+            buttonLabel: buttonLabel
         )
     }
 
@@ -48,7 +50,8 @@ enum SurveysTestHelpers {
         labelText: String = "Test Question",
         options: [String]? = nil,
         url: String? = nil,
-        embeddedDataFields: [String] = []
+        embeddedDataFields: [String] = [],
+        buttonLabel: String? = nil
     ) -> SurveyQuestion {
         SurveyQuestion(
             id: id,
@@ -59,7 +62,8 @@ enum SurveysTestHelpers {
                 labelText: labelText,
                 options: options,
                 url: url,
-                embeddedDataFields: embeddedDataFields
+                embeddedDataFields: embeddedDataFields,
+                buttonLabel: buttonLabel
             )
         )
     }
