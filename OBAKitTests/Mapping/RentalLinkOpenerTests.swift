@@ -56,9 +56,9 @@ final class RentalLinkOpenerTests {
 
     @Test func successfulOpenLogsOnlyTheTap() {
         openResults = [true]
-        makeOpener().open(target("limebike://map?selected_vehicle_id=a", appStoreID: "1199780189"), networkID: "lime_seattle")
+        makeOpener().open(target("limebike://map", appStoreID: "1199780189"), networkID: "lime_seattle")
 
-        #expect(opened == [Opened(url: "limebike://map?selected_vehicle_id=a", universalLinksOnly: false)])
+        #expect(opened == [Opened(url: "limebike://map", universalLinksOnly: false)])
         #expect(reported == [AnalyticsLabels.rentalDeepLinkTapped])
         #expect(storeRequests.isEmpty)
     }

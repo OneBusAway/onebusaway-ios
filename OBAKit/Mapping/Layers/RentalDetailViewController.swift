@@ -107,13 +107,9 @@ struct RentalDetailView: View {
                 .tint(Color(uiColor: .rentalPurple))
             }
 
-            if let deepLink = deepLinkURL {
+            if let deepLink = openLink {
                 Button {
-                    // Re-resolve at tap time: the URL carries a `generated_at`
-                    // timestamp, and a sheet left open would otherwise send a
-                    // stale one that the operator's app may reject.
-                    let target = RentalDeepLink.target(for: rental) ?? deepLink.target
-                    onOpenLink(target, rental.rentalNetwork?.networkId)
+                    onOpenLink(deepLink.target, rental.rentalNetwork?.networkId)
                 } label: {
                     // The glyph says "this leaves the app", which the title alone does not.
                     Label(deepLink.copy.title, systemImage: "arrow.up.forward.app")
@@ -244,10 +240,7 @@ struct RentalDetailView: View {
     /// Where the "Open in <operator>" button goes. Feed-published URIs win;
     /// otherwise `RentalDeepLink` synthesizes one from the operator's scheme.
     /// Nil hides the button.
-    ///
-    /// Carries the `Target` itself rather than flattening it, so the tap-time
-    /// re-resolution above can swap in a fresher one without renaming fields.
-    private var deepLinkURL: (copy: RentalFormat.OpenButtonCopy, target: RentalDeepLink.Target)? {
+    private var openLink: (copy: RentalFormat.OpenButtonCopy, target: RentalDeepLink.Target)? {
         guard let target = RentalDeepLink.target(for: rental) else { return nil }
         return (RentalFormat.openButtonCopy(for: target), target)
     }

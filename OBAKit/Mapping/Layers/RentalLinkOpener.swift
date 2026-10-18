@@ -26,8 +26,8 @@ import UIKit
 /// 1. https links open with `.universalLinksOnly`, so an installed operator app
 ///    claims them and an absent one reports failure rather than opening Safari.
 /// 2. With a known App Store id, the operator's App Store page is presented
-///    in-app (`SKStoreProductViewController`), so the rider can install and come
-///    straight back to the vehicle they picked. If the page cannot load, the
+///    in-app (`SKStoreProductViewController`), so the rider can install without
+///    losing their place in OneBusAway. If the page cannot load, the
 ///    https App Store URL opens instead.
 /// 3. Otherwise an https link opens normally, in Safari; any other link falls
 ///    back to `Target.storeFallback`.
