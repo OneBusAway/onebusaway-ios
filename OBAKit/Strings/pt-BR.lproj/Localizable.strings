@@ -80,7 +80,7 @@
 "bookmarks_controller.context_menu.pin" = "Fixar";
 
 /* Action to start a Live Activity for a specific bookmark */
-"bookmarks_controller.context_menu.track_live_activity" = "Acompanhar";
+"bookmarks_controller.context_menu.track_live_activity" = "Acompanhar chegada";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
 "bookmarks_controller.context_menu.unpin" = "Desafixar";
@@ -1416,7 +1416,7 @@
 "stop_page.header.walk_trip_planner_a11y_hint" = "Planeja no app uma caminhada até esta parada.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "Acompanhar";
+"stop_page.live_activity.track" = "Acompanhar chegada";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "Carregar mais";
@@ -2086,9 +2086,9 @@
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Não foi possível enviar este relato porque o serviço de relatos está indisponível no momento. Tente novamente mais tarde.";
 /* Trip page button that starts a Live Activity for this trip. */
-"trip_page.live_activity_start" = "Atividade ao Vivo — acompanhar na Tela Bloqueada";
+"trip_page.live_activity_start" = "Acompanhar chegada";
 /* Trip page button state once a Live Activity is running for this trip. */
-"trip_page.live_activity_tracking" = "Acompanhando na Tela Bloqueada";
+"trip_page.live_activity_tracking" = "Acompanhando";
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "posição atualizada %@";
 /* Trip page button cancelling this trip's arrival alarm. */

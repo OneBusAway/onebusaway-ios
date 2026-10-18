@@ -80,7 +80,7 @@
 "bookmarks_controller.context_menu.pin" = "고정";
 
 /* Action to start a Live Activity for a specific bookmark */
-"bookmarks_controller.context_menu.track_live_activity" = "추적";
+"bookmarks_controller.context_menu.track_live_activity" = "도착 추적";
 
 /* Context menu action that removes a bookmark's pin, returning it to the normal ordering. */
 "bookmarks_controller.context_menu.unpin" = "고정 해제";
@@ -1416,7 +1416,7 @@
 "stop_page.header.walk_trip_planner_a11y_hint" = "앱에서 이 정류장까지의 도보 경로를 계획합니다.";
 
 /* Button in the trip panel to start a Live Activity for this departure on the Lock Screen and Dynamic Island */
-"stop_page.live_activity.track" = "추적";
+"stop_page.live_activity.track" = "도착 추적";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "더 불러오기";
@@ -2086,9 +2086,9 @@
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "신고 서비스를 사용할 수 없어 이 신고를 제출하지 못했습니다. 나중에 다시 시도해 주세요.";
 /* Trip page button that starts a Live Activity for this trip. */
-"trip_page.live_activity_start" = "실시간 액티비티 — 잠금 화면에서 추적";
+"trip_page.live_activity_start" = "도착 추적";
 /* Trip page button state once a Live Activity is running for this trip. */
-"trip_page.live_activity_tracking" = "잠금 화면에서 추적 중";
+"trip_page.live_activity_tracking" = "추적 중";
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "위치 업데이트 %@";
 /* Trip page button cancelling this trip's arrival alarm. */

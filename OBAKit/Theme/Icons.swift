@@ -146,9 +146,12 @@ nonisolated class Icons: NSObject {
 
     // MARK: - Live Activity
 
+    /// The live-prediction glyph, used wherever a rider starts a Live Activity.
+    public static let liveActivitySymbolName = "dot.radiowaves.up.forward"
+
     // An icon used for Live Activities ..
     public class var liveActivity: UIImage {
-        systemImage(named: "waveform.circle.fill")
+        systemImage(named: liveActivitySymbolName)
     }
 
     // MARK: - Bookmarks

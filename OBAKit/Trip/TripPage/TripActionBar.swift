@@ -100,22 +100,35 @@ struct TripActionBar: View {
         return maxHeight
     }
 
+    @ViewBuilder
     private var liveActivityButton: some View {
-        Button(action: onLiveActivity) {
-            Label {
-                Text(isTrackingLiveActivity
-                     ? OBALoc("trip_page.live_activity_tracking", value: "Tracking on Lock Screen", comment: "Trip page button state once a Live Activity is running for this trip.")
-                     : OBALoc("trip_page.live_activity_start", value: "Live Activity — track on Lock Screen", comment: "Trip page button that starts a Live Activity for this trip."))
-                .font(.body.weight(.semibold))
-            } icon: {
-                Image(systemName: "waveform.path.ecg")
-            }
+        if isTrackingLiveActivity {
+            // A status, not a disabled button: disabling the prominent style
+            // faded its fill to near-white under the forced white label, and
+            // the control seemed to vanish once tapped. `departureOnTime` is the
+            // green tuned to be read as text in both appearances.
+            let onTime = Color(uiColor: ThemeColors.shared.departureOnTime)
+            Label(
+                OBALoc("trip_page.live_activity_tracking", value: "Tracking", comment: "Shown in place of the trip page's Track Arrival button once a Live Activity is running for this trip."),
+                systemImage: "checkmark.circle.fill"
+            )
+            .font(.body.weight(.semibold))
+            .foregroundStyle(onTime)
             .frame(maxWidth: .infinity, minHeight: 44)
+            .background(onTime.opacity(0.14), in: Capsule())
+        } else {
+            Button(action: onLiveActivity) {
+                Label(
+                    OBALoc("trip_page.live_activity_start", value: "Track Arrival", comment: "Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. Keep it short."),
+                    systemImage: Icons.liveActivitySymbolName
+                )
+                .font(.body.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color(uiColor: ThemeColors.shared.departureOnTimeFill))
+            .foregroundStyle(.white)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(Color(uiColor: ThemeColors.shared.departureOnTimeFill))
-        .foregroundStyle(.white)
-        .disabled(isTrackingLiveActivity)
     }
 
     /// As many columns as leave each button room for its caption: all in one row, then
