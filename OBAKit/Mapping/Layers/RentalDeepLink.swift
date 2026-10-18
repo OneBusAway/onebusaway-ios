@@ -46,29 +46,22 @@ enum RentalDeepLink {
         var appStoreID: String?
     }
 
-    /// A known operator's app-launch URL, expressed as URL *components*.
-    private struct Operator {
-        let scheme: String
-        /// Empty string for an operator whose launch URI carries no host, so the
-        /// URL keeps its `//` (`bird://`) rather than collapsing to `bird:`.
-        let appHost: String
-    }
-
-    /// Keyed by the leading token of the GBFS network id — the same tokenization
-    /// OTPKit's `RentalNetwork.displayName` uses, so the button's operator and
-    /// the sheet header's operator can never disagree.
-    private static let operators: [String: Operator] = [
-        "lime": Operator(scheme: "limebike", appHost: "map"),
+    /// Known operators' app-launch URIs, keyed by the leading token of the GBFS
+    /// network id — the same tokenization OTPKit's `RentalNetwork.displayName`
+    /// uses, so the button's operator and the sheet header's operator can never
+    /// disagree.
+    private static let launchURIs: [String: String] = [
+        "lime": "limebike://map",
         // `bird://` is the shape Bird's own GBFS `discovery_uri` publishes;
         // LaunchServices dispatches on scheme alone, so `bird:` would likely work
         // too, but there is no reason to differ from the operator's declared URI.
-        "bird": Operator(scheme: "bird", appHost: "")
+        "bird": "bird://"
     ]
 
     // MARK: - Operator registry
 
     /// App Store ids for single-brand operators, keyed by the leading token of the
-    /// GBFS network id (`lime_seattle` -> `lime`) — the tokenization `operators`
+    /// GBFS network id (`lime_seattle` -> `lime`) — the tokenization `launchURIs`
     /// and OTPKit's `RentalNetwork.displayName` use.
     private static let appStoreIDsByToken: [String: String] = [
         "lime": "1199780189",
@@ -158,8 +151,21 @@ enum RentalDeepLink {
         // 2. Synthesize for known operators. Deliberately outranks the network
         //    URL below: the operator's app beats its homepage, which is a dead end
         //    for someone standing next to a scooter.
-        if let synthesized = synthesize(network: network, operatorName: operatorName, appStoreID: appStoreID) {
-            return synthesized
+        //
+        //    Lowercasing OTPKit's own `displayName` rather than re-splitting the
+        //    network id keeps the operator token single-sourced, so the button's
+        //    operator and the sheet header's can't drift apart. Not a perfect
+        //    round-trip: `displayName` uppercases the first character, and a few
+        //    characters expand when uppercased (ß -> SS, ﬁ -> FI), which
+        //    lowercasing does not undo. Harmless here — every key in `launchURIs`
+        //    is an ASCII slug, and a miss just falls through to the web page.
+        if let uri = launchURIs[network.displayName.lowercased()], let url = URL(string: uri) {
+            return Target(
+                url: url,
+                storeFallback: appStoreID.flatMap(appStoreURL(forID:)),
+                operatorName: operatorName,
+                appStoreID: appStoreID
+            )
         }
 
         // 3. The operator's web page, when the feed published one.
@@ -169,35 +175,5 @@ enum RentalDeepLink {
 
         // 4. Nothing to open; the caller hides the button.
         return nil
-    }
-
-    // MARK: - Synthesis
-
-    private static func synthesize(
-        network: RentalNetwork,
-        operatorName: String?,
-        appStoreID: String?
-    ) -> Target? {
-        // Lowercasing OTPKit's own `displayName` rather than re-splitting the
-        // network id keeps the operator token single-sourced, so the button's
-        // operator and the sheet header's can't drift apart.
-        //
-        // Not a perfect round-trip: `displayName` uppercases the first character,
-        // and a few characters expand when uppercased (ß -> SS, ﬁ -> FI), which
-        // lowercasing does not undo. Harmless here — every key in `operators` is
-        // an ASCII slug, and a miss just falls through to the web-page branch.
-        guard let op = operators[network.displayName.lowercased()] else { return nil }
-
-        var components = URLComponents()
-        components.scheme = op.scheme
-        components.host = op.appHost
-
-        guard let url = components.url else { return nil }
-        return Target(
-            url: url,
-            storeFallback: appStoreID.flatMap(appStoreURL(forID:)),
-            operatorName: operatorName,
-            appStoreID: appStoreID
-        )
     }
 }

@@ -24,6 +24,8 @@ struct RentalDeepLinkTests {
 
     // MARK: - Synthesis
 
+    /// No query: the public feed's `bike_id` is a rotating UUID, not the internal
+    /// id Lime's `selected_vehicle_id` takes, so sending it selected nothing (#1602).
     @Test func synthesizesLimeAppLaunchLink() throws {
         let rental = try RentalFixtures.vehicle(id: "lime_seattle:e0762983-6769-4191-903e-7a9e44444ea3")
         let target = try #require(RentalDeepLink.target(for: rental))
@@ -31,15 +33,6 @@ struct RentalDeepLinkTests {
         #expect(target.url.absoluteString == limeLaunch)
         #expect(target.storeFallback?.absoluteString == "https://apps.apple.com/app/id1199780189")
         #expect(target.operatorName == "Lime")
-    }
-
-    /// The public feed's `bike_id` is a rotating UUID, not the internal id Lime's
-    /// `selected_vehicle_id` takes, so sending it selected nothing (#1602).
-    @Test func limeLinkNeverCarriesThePublicVehicleID() throws {
-        let rental = try RentalFixtures.vehicle(id: "lime_seattle:a&b=c d")
-        let target = try #require(RentalDeepLink.target(for: rental))
-
-        #expect(target.url.query == nil)
     }
 
     @Test func synthesizesAppLevelLinkForBird() throws {

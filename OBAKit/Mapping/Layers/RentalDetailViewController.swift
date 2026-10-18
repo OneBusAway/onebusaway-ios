@@ -107,7 +107,7 @@ struct RentalDetailView: View {
                 .tint(Color(uiColor: .rentalPurple))
             }
 
-            if let deepLink = deepLinkURL {
+            if let deepLink = openLink {
                 Button {
                     onOpenLink(deepLink.target, rental.rentalNetwork?.networkId)
                 } label: {
@@ -240,7 +240,7 @@ struct RentalDetailView: View {
     /// Where the "Open in <operator>" button goes. Feed-published URIs win;
     /// otherwise `RentalDeepLink` synthesizes one from the operator's scheme.
     /// Nil hides the button.
-    private var deepLinkURL: (copy: RentalFormat.OpenButtonCopy, target: RentalDeepLink.Target)? {
+    private var openLink: (copy: RentalFormat.OpenButtonCopy, target: RentalDeepLink.Target)? {
         guard let target = RentalDeepLink.target(for: rental) else { return nil }
         return (RentalFormat.openButtonCopy(for: target), target)
     }
