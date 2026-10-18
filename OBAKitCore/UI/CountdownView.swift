@@ -16,8 +16,8 @@ public struct CountdownView: View {
     /// When set, the number ticks on its own. Stop-page rows keep passing
     /// `minutes` only.
     public var departure: Date?
-    /// Drawn on the Lock Screen, which can't tick our `8m` style (#1583): there
-    /// it reads "in 8 minutes" through `TickingCountdownText` instead.
+    /// Drawn on the Lock Screen, which can't tick our own `8m` style (#1583):
+    /// there `TickingCountdownText` ticks it with Apple's format style instead.
     public var isLiveActivity: Bool = false
 
     public init(minutes: Int, isRealTime: Bool, color: Color, emphasized: Bool = true) {

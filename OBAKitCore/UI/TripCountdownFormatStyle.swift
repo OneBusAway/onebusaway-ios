@@ -14,9 +14,9 @@ import SwiftUI
 ///
 /// Not for a Live Activity. The Lock Screen renders a ticking `Text` out of
 /// process, and at full brightness it drew this custom style as a redacted
-/// placeholder card (#1583); `TickingCountdownText` ticks there with a system
-/// style instead. In the app's own process it works, and keeps the compact
-/// typography a narrow row needs.
+/// placeholder card (#1583); `TickingCountdownText` ticks there with Apple's
+/// format styles instead, which can't say `NOW`. In the app's own process this
+/// one works, `NOW` included.
 ///
 /// A custom `DiscreteFormatStyle` is how SwiftUI schedules the next redraw:
 /// minute boundaries *anchored on `departure`*, not on the wall clock. Past
