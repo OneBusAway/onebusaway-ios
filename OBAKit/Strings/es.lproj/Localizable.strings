@@ -2080,7 +2080,6 @@
 "trip_page.card.distance_stops_fmt" = "a %1$@ · %2$d paradas";
 /* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
 "trip_page.ghost_bus_report_sent" = "¡Gracias! Se envió su informe.";
-
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "No se pudo enviar este informe porque el servicio de informes no está disponible en este momento. Inténtelo de nuevo más tarde.";
 /* Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. */

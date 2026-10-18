@@ -493,12 +493,13 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         let shareLocationKey = "GhostBusReport.shareLocation"
         application.userDefaults.register(defaults: [shareLocationKey: true])
 
+        let dismissSheet: () -> Void = { [weak self] in self?.presentedViewController?.dismiss(animated: true) }
         let host = UIHostingController(rootView: GhostBusReportView(
             context: context,
             defaultShareLocation: application.userDefaults.bool(forKey: shareLocationKey),
             submit: { [weak self] waitDurationMinutes, comment, shareLocation in
                 // `submit` is `async throws`, and `GhostBusReportView.performSubmit` reads a
-                // plain return as success, dismisses the sheet and confirms the report. A guard failure has to
+                // plain return as success and calls `onSubmitted`. A guard failure has to
                 // throw, not return, or the rider is told their report went out when it
                 // never did. (Today `obacoService` is never nil once set — a region switch
                 // replaces it or leaves the old one — so this guard is defense against
@@ -522,8 +523,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
                     throw GhostBusReportSubmissionError.alreadyReported
                 }
             },
-            onSubmitted: { [weak self] in
-                self?.presentedViewController?.dismiss(animated: true)
+            onSubmitted: {
+                dismissSheet()
                 ProgressHUD.showSuccessAndDismiss(message: OBALoc(
                     "trip_page.ghost_bus_report_sent",
                     value: "Thanks! Your report was sent.",
@@ -535,7 +536,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
                 // up so the rider can try again without retyping.
                 Task { await self?.application.displayError(error) }
             },
-            onDismiss: { [weak self] in self?.presentedViewController?.dismiss(animated: true) }
+            onDismiss: dismissSheet
         ))
 
         if let sheet = host.sheetPresentationController {
