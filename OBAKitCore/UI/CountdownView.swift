@@ -13,9 +13,12 @@ public struct CountdownView: View {
     public let color: Color
     /// `true` = card-header size, `false` = compact.
     public var emphasized: Bool = true
-    /// When set, the number ticks on a Live Activity without a keepalive push.
-    /// Stop-page rows keep passing `minutes` only.
+    /// When set, the number ticks on its own. Stop-page rows keep passing
+    /// `minutes` only.
     public var departure: Date?
+    /// Drawn on the Lock Screen, which can't tick our `8m` style (#1583): there
+    /// it reads "in 8 minutes" through `TickingCountdownText` instead.
+    public var isLiveActivity: Bool = false
 
     public init(minutes: Int, isRealTime: Bool, color: Color, emphasized: Bool = true) {
         self.minutes = minutes
@@ -25,12 +28,13 @@ public struct CountdownView: View {
         self.departure = nil
     }
 
-    public init(departure: Date, isRealTime: Bool, color: Color, emphasized: Bool = true) {
+    public init(departure: Date, isRealTime: Bool, color: Color, emphasized: Bool = true, isLiveActivity: Bool = false) {
         self.minutes = 0
         self.isRealTime = isRealTime
         self.color = color
         self.emphasized = emphasized
         self.departure = departure
+        self.isLiveActivity = isLiveActivity
     }
 
     public var body: some View {
@@ -45,14 +49,25 @@ public struct CountdownView: View {
         .accessibilityHidden(true)
     }
 
+    @Environment(\.isLuminanceReduced) private var isLuminanceReduced
+
     @ViewBuilder
     private var countdownLabel: some View {
-        if let departure {
+        if let departure, isLiveActivity {
             TickingCountdownText(
                 departure: departure,
                 font: emphasized ? .system(.title2, design: .rounded, weight: .heavy) : .system(.callout, design: .rounded, weight: .heavy),
                 color: color
             )
+        } else if let departure {
+            let style = TripCountdownFormatStyle(departure: departure)
+            // Reduced luminance redacts a custom style's digits to dashes, so
+            // the dim watch face shows a static snapshot instead.
+            if isLuminanceReduced {
+                Text(style.format(Date()))
+            } else {
+                Text(.currentDate, format: style)
+            }
         } else {
             Text(minutes == 0 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now") : Formatters.shortMinutesText(minutes))
         }

@@ -163,7 +163,8 @@ public struct TripLiveActivityCardView: View {
         CountdownView(
             departure: arrival.departureDate,
             isRealTime: arrival.scheduleStatus != .unknown,
-            color: Color(uiColor: presenter.color(for: arrival))
+            color: Color(uiColor: presenter.color(for: arrival)),
+            isLiveActivity: true
         )
     }
 

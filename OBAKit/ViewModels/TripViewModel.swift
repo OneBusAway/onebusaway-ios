@@ -139,8 +139,6 @@ class TripViewModel: ObservableObject {
         loadDataTask = Task { [weak self] in
             guard let self else { return }
             stopListLoadFailed = false
-            // Whether this load brought the trip back, for `lastUpdated`.
-            var broughtTripBack = false
 
             // One failing loses none of the others (#1548). The stop list used to
             // wait on the route line and the arrival, and go down with either of
@@ -169,8 +167,10 @@ class TripViewModel: ObservableObject {
             do {
                 let newDetails = try await details
                 guard !Task.isCancelled else { return }
-                if let newDetails { tripDetails = newDetails }
-                broughtTripBack = newDetails != nil
+                if let newDetails {
+                    tripDetails = newDetails
+                    lastUpdated = Date()
+                }
                 stopListLoadFailed = false
             } catch {
                 guard !Task.isCancelled else { return }
@@ -182,8 +182,10 @@ class TripViewModel: ObservableObject {
             do {
                 let newConvertible = try await convertible
                 guard !Task.isCancelled else { return }
-                if let newConvertible { tripConvertible = newConvertible }
-                broughtTripBack = broughtTripBack || newConvertible != nil
+                if let newConvertible {
+                    tripConvertible = newConvertible
+                    lastUpdated = Date()
+                }
             } catch {
                 guard !Task.isCancelled else { return }
                 record(error)
@@ -201,7 +203,6 @@ class TripViewModel: ObservableObject {
             // cancelled, when a lower layer cancelled the request. Never a
             // rider-facing error.
             operationError = failure?.isCancellation == true ? nil : failure
-            if broughtTripBack { lastUpdated = Date() }
 
             // After the details are applied, because the destination's row is
             // read from them.
