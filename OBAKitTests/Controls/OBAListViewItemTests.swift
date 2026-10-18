@@ -344,30 +344,46 @@ struct OBAListViewItemTests {
 
     // MARK: - OBAListViewHeader
 
-    /// Tests configuration generation for collapsible and static section headers.
+    /// Tests configuration generation for collapsible and static section headers,
+    /// verifying that collapsible headers configure a visible disclosure accessory
+    /// and static headers configure a hidden disclosure accessory.
     @Test func testListViewHeaderConfiguration() {
         let collapsibleHeader = OBAListViewHeader(id: "sec_1", title: "Departures", isCollapsible: true)
         #expect(collapsibleHeader.id == "sec_1")
         #expect(collapsibleHeader.title == "Departures")
         #expect(collapsibleHeader.isCollapsible == true)
+        #expect(collapsibleHeader.outlineDisclosureOptions.style == .header)
+        #expect(collapsibleHeader.outlineDisclosureOptions.isHidden == false)
 
         if case .list(let config, let accessories) = collapsibleHeader.configuration {
             #expect(config.text == "Departures")
             #expect(accessories.count == 1)
-            #expect(accessories.first != nil)
+            guard let accessory = accessories.first ?? nil else {
+                Issue.record("Expected non-nil accessory for collapsible header")
+                return
+            }
+            #expect(accessory.accessoryType == .outlineDisclosure)
         } else {
-            Issue.record("Expected .list configuration on header")
+            Issue.record("Expected .list configuration on collapsible header")
         }
 
         let nonCollapsibleHeader = OBAListViewHeader(id: "sec_2", title: "Static Header", isCollapsible: false)
+        #expect(nonCollapsibleHeader.id == "sec_2")
+        #expect(nonCollapsibleHeader.title == "Static Header")
         #expect(nonCollapsibleHeader.isCollapsible == false)
+        #expect(nonCollapsibleHeader.outlineDisclosureOptions.style == .header)
+        #expect(nonCollapsibleHeader.outlineDisclosureOptions.isHidden == true)
 
         if case .list(let config, let accessories) = nonCollapsibleHeader.configuration {
             #expect(config.text == "Static Header")
             #expect(accessories.count == 1)
-            #expect(accessories.first != nil)
+            guard let accessory = accessories.first ?? nil else {
+                Issue.record("Expected non-nil accessory for static header")
+                return
+            }
+            #expect(accessory.accessoryType == .outlineDisclosure)
         } else {
-            Issue.record("Expected .list configuration on header")
+            Issue.record("Expected .list configuration on static header")
         }
     }
 
