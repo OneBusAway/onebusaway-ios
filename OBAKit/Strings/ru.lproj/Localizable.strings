@@ -1666,7 +1666,16 @@
 "survey_cell.next_button" = "Далее";
 
 /* Button that opens an external survey in the browser */
-"survey_cell.open_external_survey_button" = "Открыть опрос";
+"external_survey_button.open_survey" = "Открыть опрос";
+
+/* Button that opens an external survey link in the browser, when the link is mainly information to read */
+"external_survey_button.learn_more" = "Подробнее";
+
+/* Button that opens an external feedback form in the browser */
+"external_survey_button.share_feedback" = "Оставить отзыв";
+
+/* Button that opens an external sign-up form in the browser */
+"external_survey_button.sign_up" = "Записаться";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_launcher.external_survey_error.message" = "Не удалось открыть ссылку на опрос. Повторите попытку позже.";
@@ -1697,9 +1706,6 @@
 
 /* OK button on survey alerts */
 "survey_vc.ok_button" = "ОК";
-
-/* Button that opens an external survey in the browser */
-"survey_vc.open_external_survey_button" = "Открыть опрос";
 
 /* Section header for survey questions */
 "survey_vc.questions_section_title" = "Вопросы";

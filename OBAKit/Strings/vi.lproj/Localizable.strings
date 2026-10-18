@@ -1666,7 +1666,16 @@
 "survey_cell.next_button" = "Tiếp theo";
 
 /* Button that opens an external survey in the browser */
-"survey_cell.open_external_survey_button" = "Mở khảo sát";
+"external_survey_button.open_survey" = "Mở khảo sát";
+
+/* Button that opens an external survey link in the browser, when the link is mainly information to read */
+"external_survey_button.learn_more" = "Tìm hiểu thêm";
+
+/* Button that opens an external feedback form in the browser */
+"external_survey_button.share_feedback" = "Chia sẻ phản hồi";
+
+/* Button that opens an external sign-up form in the browser */
+"external_survey_button.sign_up" = "Đăng ký";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_launcher.external_survey_error.message" = "Không thể mở liên kết khảo sát này. Vui lòng thử lại sau.";
@@ -1697,9 +1706,6 @@
 
 /* OK button on survey alerts */
 "survey_vc.ok_button" = "OK";
-
-/* Button that opens an external survey in the browser */
-"survey_vc.open_external_survey_button" = "Mở khảo sát";
 
 /* Section header for survey questions */
 "survey_vc.questions_section_title" = "Câu hỏi";

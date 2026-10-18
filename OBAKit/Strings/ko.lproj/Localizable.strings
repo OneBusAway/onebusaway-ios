@@ -1666,7 +1666,16 @@
 "survey_cell.next_button" = "다음";
 
 /* Button that opens an external survey in the browser */
-"survey_cell.open_external_survey_button" = "설문조사 열기";
+"external_survey_button.open_survey" = "설문조사 열기";
+
+/* Button that opens an external survey link in the browser, when the link is mainly information to read */
+"external_survey_button.learn_more" = "더 알아보기";
+
+/* Button that opens an external feedback form in the browser */
+"external_survey_button.share_feedback" = "의견 공유하기";
+
+/* Button that opens an external sign-up form in the browser */
+"external_survey_button.sign_up" = "가입하기";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_launcher.external_survey_error.message" = "이 설문조사 링크를 열 수 없습니다. 나중에 다시 시도해 주세요.";
@@ -1697,9 +1706,6 @@
 
 /* OK button on survey alerts */
 "survey_vc.ok_button" = "확인";
-
-/* Button that opens an external survey in the browser */
-"survey_vc.open_external_survey_button" = "설문조사 열기";
 
 /* Section header for survey questions */
 "survey_vc.questions_section_title" = "질문";

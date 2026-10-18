@@ -240,6 +240,12 @@ public struct QuestionContent: Codable, Hashable {
 
     public let embeddedDataFields: [String]?
 
+    /// The raw `button_label` key of an `external_survey` question. Kept as a
+    /// string rather than decoded as `ExternalSurveyButtonLabel`, so a value this
+    /// build doesn't know falls back to Open Survey instead of failing the
+    /// survey payload. Read it through `externalSurveyButtonLabel`.
+    public let buttonLabel: String?
+
     enum CodingKeys: String, CodingKey {
         case labelText = "label_text"
         case type
@@ -247,15 +253,37 @@ public struct QuestionContent: Codable, Hashable {
         case url
         case surveyProvider = "survey_provider"
         case embeddedDataFields = "embedded_data_fields"
+        case buttonLabel = "button_label"
     }
 
-    public init(labelText: String, type: QuestionType, options: [String]? = nil, url: String? = nil, surveyProvider: String? = nil, embeddedDataFields: [String]? = nil) {
+    public init(labelText: String, type: QuestionType, options: [String]? = nil, url: String? = nil, surveyProvider: String? = nil, embeddedDataFields: [String]? = nil, buttonLabel: String? = nil) {
         self.labelText = labelText
         self.type = type
         self.options = options
         self.url = url
         self.surveyProvider = surveyProvider
         self.embeddedDataFields = embeddedDataFields
+        self.buttonLabel = buttonLabel
+    }
+
+    /// The call to action for an `external_survey` question's button.
+    public var externalSurveyButtonLabel: ExternalSurveyButtonLabel {
+        ExternalSurveyButtonLabel(key: buttonLabel)
+    }
+}
+
+/// The pre-set titles an `external_survey` question's button can show. The
+/// server sends one of these keys as `button_label`; an absent or unknown key
+/// means `.openSurvey`, so the servers can add a label without breaking
+/// shipped apps.
+public enum ExternalSurveyButtonLabel: String, CaseIterable, Hashable, Sendable {
+    case openSurvey = "open_survey"
+    case learnMore = "learn_more"
+    case shareFeedback = "share_feedback"
+    case signUp = "sign_up"
+
+    public init(key: String?) {
+        self = key.flatMap(Self.init(rawValue:)) ?? .openSurvey
     }
 }
 
@@ -282,7 +310,8 @@ extension QuestionContent {
             labelText: labelText,
             url: url,
             provider: surveyProvider,
-            embeddedDataFields: embeddedDataFields
+            embeddedDataFields: embeddedDataFields,
+            buttonLabel: buttonLabel
         )
     }
 
@@ -318,6 +347,7 @@ public struct ExternalSurveyContent: Codable, Hashable {
     public let url: String?
     public let provider: String?
     public let embeddedDataFields: [String]?
+    public let buttonLabel: String?
 }
 
 // MARK: - QuestionContent Compatibility

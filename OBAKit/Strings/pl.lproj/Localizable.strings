@@ -1666,7 +1666,16 @@
 "survey_cell.next_button" = "Dalej";
 
 /* Button that opens an external survey in the browser */
-"survey_cell.open_external_survey_button" = "Otwórz ankietę";
+"external_survey_button.open_survey" = "Otwórz ankietę";
+
+/* Button that opens an external survey link in the browser, when the link is mainly information to read */
+"external_survey_button.learn_more" = "Dowiedz się więcej";
+
+/* Button that opens an external feedback form in the browser */
+"external_survey_button.share_feedback" = "Podziel się opinią";
+
+/* Button that opens an external sign-up form in the browser */
+"external_survey_button.sign_up" = "Zapisz się";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_launcher.external_survey_error.message" = "Nie udało się otworzyć linku do ankiety. Spróbuj ponownie później.";
@@ -1697,9 +1706,6 @@
 
 /* OK button on survey alerts */
 "survey_vc.ok_button" = "OK";
-
-/* Button that opens an external survey in the browser */
-"survey_vc.open_external_survey_button" = "Otwórz ankietę";
 
 /* Section header for survey questions */
 "survey_vc.questions_section_title" = "Pytania";
