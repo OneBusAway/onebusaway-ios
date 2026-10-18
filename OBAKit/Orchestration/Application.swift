@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import Combine
 import CoreTelephony
 import CoreLocation
 import OBAKitCore
@@ -302,11 +301,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         delegate?.performTestCrash?()
     }
 
-    // MARK: - Reachability
-
-    private var reachabilityBulletin: ReachabilityBulletin?
-
-    private var hyperconnectivityCancellable: AnyCancellable?
+    // MARK: - Cellular Data
 
     /// Long-lived instance so `restrictedState` has time to resolve from `.unknown`.
     private let cellularData = CTCellularData()
@@ -314,36 +309,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// Whether the user has disabled cellular data for this app in iOS Settings.
     var isCellularDataRestricted: Bool {
         return cellularData.restrictedState == .restricted
-    }
-
-    /// This may be called repeatedly as the app goes in and out of the foreground.
-    private func configureConnectivity() {
-        hyperconnectivityCancellable?.cancel()
-
-        hyperconnectivityCancellable = Hyperconnectivity.Publisher()
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
-            .sink(receiveValue: { [weak self] result in
-                guard let self = self else { return }
-                // `.receive(on: DispatchQueue.main)` above is what makes
-                // `assumeIsolated` safe here — bulletin presentation is
-                // `@MainActor`. Don't remove the `.receive(on:)` upstream;
-                // doing so would silently turn this into a crash-on-mismatch.
-                MainActor.assumeIsolated {
-                    if result.isConnected {
-                        self.reachabilityBulletin?.dismiss()
-                        return
-                    }
-
-                    guard let app = self.delegate?.uiApplication else { return }
-
-                    if self.reachabilityBulletin == nil {
-                        self.reachabilityBulletin = ReachabilityBulletin()
-                    }
-
-                    self.reachabilityBulletin?.showStatus(result, in: app, isCellularDataRestricted: self.isCellularDataRestricted)
-                }
-            })
     }
 
     // MARK: - Push Notifications
@@ -524,8 +489,6 @@ public class Application: CoreApplication, PushServiceDelegate {
             locationService.startUpdates()
         }
 
-        configureConnectivity()
-
         // Re-arm proximity geofences and reap alerts that expired while the app was
         // away. Same reason the Live Activity cleanup below runs here: alerts age
         // out on a clock that keeps running with no process to notice, and the
@@ -668,8 +631,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Unconditional: stopping is always safe, and gating it on authorization
         // would strand a manager we started before access was revoked.
         locationService.stopUpdates()
-
-        hyperconnectivityCancellable?.cancel()
     }
 
     public var isIdleTimerDisabled: Bool {

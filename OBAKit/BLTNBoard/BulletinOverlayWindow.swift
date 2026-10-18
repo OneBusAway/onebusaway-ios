@@ -35,7 +35,7 @@ final class BulletinOverlayWindow {
     /// The item currently being presented, held weakly so we can restore
     /// its original `dismissalHandler` on teardown without extending its
     /// lifetime. Items outlive this window in practice (they're stored
-    /// properties on bulletin classes like `ReachabilityBulletin`), but the
+    /// properties on bulletin classes like `AgencyAlertBulletin`), but the
     /// weak reference is correct regardless.
     private weak var savedRootItem: BLTNItem?
 
@@ -51,8 +51,10 @@ final class BulletinOverlayWindow {
     /// `showBulletin(above:)`. Snapshots `rootItem.dismissalHandler` and
     /// replaces it with a wrapper that dispatches to the original then
     /// tears the window down. On teardown the original handler is restored,
-    /// so a reused item (e.g. `ReachabilityBulletin.connectivityPage` re-shown
-    /// across connectivity flaps) never accumulates nested wrappers.
+    /// so a reused item (one page shown again and again by the same bulletin
+    /// class) never accumulates nested wrappers. No current bulletin reuses
+    /// an item (each is built fresh per presentation), but the restore keeps
+    /// that safe if one does.
     ///
     /// One bulletin at a time. Each `BLTNItemManager` already guards on
     /// `isShowingBulletin`, but those guards are per-manager; this singleton is
