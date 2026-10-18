@@ -13,12 +13,21 @@ nonisolated struct OBAListViewHeader: OBAListViewItem {
     let title: String?
     let isCollapsible: Bool
 
+    /// Outline disclosure options configuring chevron style, collapse visibility, and tint.
+    var outlineDisclosureOptions: UICellAccessory.OutlineDisclosureOptions {
+        UICellAccessory.OutlineDisclosureOptions(
+            style: .header,
+            isHidden: !isCollapsible,
+            reservedLayoutWidth: nil,
+            tintColor: ThemeColors.shared.brandTint
+        )
+    }
+
     var configuration: OBAListViewItemConfiguration {
         var config = UIListContentConfiguration.header()
         config.text = title
         config.textProperties.font = .preferredFont(forTextStyle: .headline)
 
-        let options = UICellAccessory.OutlineDisclosureOptions(style: .header, isHidden: !isCollapsible, reservedLayoutWidth: nil, tintColor: ThemeColors.shared.brandTint)
-        return .list(config, [.outlineDisclosure(displayed: .always, options: options)])
+        return .list(config, [.outlineDisclosure(displayed: .always, options: outlineDisclosureOptions)])
     }
 }
