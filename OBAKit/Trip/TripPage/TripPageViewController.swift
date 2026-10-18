@@ -498,7 +498,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             defaultShareLocation: application.userDefaults.bool(forKey: shareLocationKey),
             submit: { [weak self] waitDurationMinutes, comment, shareLocation in
                 // `submit` is `async throws`, and `GhostBusReportView.performSubmit` reads a
-                // plain return as success and dismisses the sheet. A guard failure has to
+                // plain return as success, dismisses the sheet and confirms the report. A guard failure has to
                 // throw, not return, or the rider is told their report went out when it
                 // never did. (Today `obacoService` is never nil once set — a region switch
                 // replaces it or leaves the old one — so this guard is defense against
@@ -516,7 +516,24 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
                     submitted.userLongitude = location.coordinate.longitude
                 }
 
-                _ = try await obacoService.postGhostBusReport(submitted, userID: self.application.userUUID)
+                do {
+                    _ = try await obacoService.postGhostBusReport(submitted, userID: self.application.userUUID)
+                } catch APIError.requestFailure(let response) where response.statusCode == 422 {
+                    throw GhostBusReportSubmissionError.alreadyReported
+                }
+            },
+            onSubmitted: { [weak self] in
+                self?.presentedViewController?.dismiss(animated: true)
+                ProgressHUD.showSuccessAndDismiss(message: OBALoc(
+                    "trip_page.ghost_bus_report_sent",
+                    value: "Thanks! Your report was sent.",
+                    comment: "Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted."
+                ))
+            },
+            onFailure: { [weak self] error in
+                // The toast has a window of its own, above this sheet, which stays
+                // up so the rider can try again without retyping.
+                Task { await self?.application.displayError(error) }
             },
             onDismiss: { [weak self] in self?.presentedViewController?.dismiss(animated: true) }
         ))
@@ -528,20 +545,26 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         present(host, animated: true)
     }
 
-    /// Why a ghost bus report couldn't be submitted before ever reaching the network.
-    /// Surfaced through `GhostBusReportView`'s error alert, same as a network failure —
-    /// see the `submit` closure in `showGhostBusReport()`.
+    /// Ghost bus report failures with copy of their own. Shown in the error toast
+    /// as is, like a network failure — see the `submit` closure in `showGhostBusReport()`.
     enum GhostBusReportSubmissionError: LocalizedError {
         /// The submit closure couldn't reach an Obaco service — the presenting
         /// controller deallocated, or `obacoService` was unexpectedly absent.
         case serviceUnavailable
+        /// The server answered 422: this device already reported the trip.
+        case alreadyReported
 
         var errorDescription: String? {
-            OBALoc(
-                "trip_page.ghost_bus_report_unavailable",
-                value: "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.",
-                comment: "Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable."
-            )
+            switch self {
+            case .serviceUnavailable:
+                OBALoc(
+                    "trip_page.ghost_bus_report_unavailable",
+                    value: "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.",
+                    comment: "Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable."
+                )
+            case .alreadyReported:
+                OBALoc("ghost_bus_report.error.already_reported", value: "It looks like this trip has already been reported from this device.", comment: "Error message when the server rejects a duplicate ghost bus report.")
+            }
         }
     }
 

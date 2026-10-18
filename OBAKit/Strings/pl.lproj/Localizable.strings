@@ -1914,8 +1914,6 @@
 "ghost_bus_report.context.vehicle" = "Pojazd";
 /* Error message when the server rejects a duplicate ghost bus report. */
 "ghost_bus_report.error.already_reported" = "Wygląda na to, że ten kurs został już zgłoszony z tego urządzenia.";
-/* Title of the ghost bus submission error alert. */
-"ghost_bus_report.error.title" = "Nie można wysłać";
 /* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
 "ghost_bus_report.footer_recipients_fmt" = "Twoje zgłoszenie, a także Twoja lokalizacja, jeśli zdecydujesz się ją udostępnić, trafia do %@ i przewoźnika, aby pomóc w poprawie usług.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
@@ -2080,6 +2078,9 @@
 "trip_page.card.distance_stops_a11y_fmt" = "jeszcze %1$@, przystanki: %2$d";
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "jeszcze %1$@ · przystanki: %2$d";
+/* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
+"trip_page.ghost_bus_report_sent" = "Dziękujemy! Zgłoszenie zostało wysłane.";
+
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "Nie udało się wysłać zgłoszenia, ponieważ usługa zgłoszeń jest teraz niedostępna. Spróbuj ponownie później.";
 /* Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. */

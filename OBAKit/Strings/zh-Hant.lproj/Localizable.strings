@@ -1914,8 +1914,6 @@
 "ghost_bus_report.context.vehicle" = "車輛";
 /* Error message when the server rejects a duplicate ghost bus report. */
 "ghost_bus_report.error.already_reported" = "這趟班次似乎已從此裝置回報過了。";
-/* Title of the ghost bus submission error alert. */
-"ghost_bus_report.error.title" = "無法送出";
 /* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
 "ghost_bus_report.footer_recipients_fmt" = "您的回報（以及您選擇分享的位置）將傳送給 %@ 與大眾運輸營運機構，以協助改善服務。";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
@@ -2080,6 +2078,9 @@
 "trip_page.card.distance_stops_a11y_fmt" = "距離 %1$@，還有 %2$d 站";
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "距離 %1$@ · %2$d 站";
+/* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
+"trip_page.ghost_bus_report_sent" = "謝謝！您的回報已送出。";
+
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "無法送出此回報，因為回報服務目前無法使用。請稍後再試。";
 /* Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. */

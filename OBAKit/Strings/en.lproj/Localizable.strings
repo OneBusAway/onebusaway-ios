@@ -444,9 +444,6 @@
 /* Error message when the server rejects a duplicate ghost bus report. */
 "ghost_bus_report.error.already_reported" = "It looks like this trip has already been reported from this device.";
 
-/* Title of the ghost bus submission error alert. */
-"ghost_bus_report.error.title" = "Unable to Submit";
-
 /* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
 "ghost_bus_report.footer_recipients_fmt" = "Your report, and your location if you choose to share it, goes to %@ and the transit agency to help improve service.";
 
@@ -2017,6 +2014,9 @@
 
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "%1$@ away · %2$d stops";
+
+/* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
+"trip_page.ghost_bus_report_sent" = "Thanks! Your report was sent.";
 
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "This report couldn't be submitted because the reporting service isn't available right now. Please try again later.";

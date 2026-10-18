@@ -31,6 +31,7 @@ public struct ErrorReport: Sendable {
         case searchResults
         case serviceAlerts
         case bikeShare
+        case ghostBusReport
         case unknown
 
         /// Matches path components rather than whole paths so the same table
@@ -58,6 +59,8 @@ public struct ErrorReport: Sendable {
                 self = .serviceAlerts
             } else if has("gbfs", "free_bike_status", "station_status", "vehicle_status") {
                 self = .bikeShare
+            } else if has("ghost_bus_reports") {
+                self = .ghostBusReport
             } else if components.contains("stop") {
                 // `stop/1_75403.json` — the stop page's own fetch. An exact match:
                 // a prefix would also catch `stops-for-agency`.
@@ -87,6 +90,8 @@ public struct ErrorReport: Sendable {
                 return OBALoc("error_report.title.service_alerts", value: "Couldn't load service alerts", comment: "Title of an error about a failed request for transit service alerts.")
             case .bikeShare:
                 return OBALoc("error_report.title.bike_share", value: "Couldn't load bike share", comment: "Title of an error about a failed request for bike and scooter share data.")
+            case .ghostBusReport:
+                return OBALoc("error_report.title.ghost_bus_report", value: "Couldn't send your report", comment: "Title of an error about a ghost bus report (a scheduled bus that never came) that failed to send.")
             case .unknown:
                 return OBALoc("error_report.title.unknown", value: "Couldn't load this information", comment: "Title of an error about a failed request when the app can't tell what the request was for.")
             }

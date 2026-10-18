@@ -1914,8 +1914,6 @@
 "ghost_bus_report.context.vehicle" = "Vehículo";
 /* Error message when the server rejects a duplicate ghost bus report. */
 "ghost_bus_report.error.already_reported" = "Parece que este viaje ya se informó desde este dispositivo.";
-/* Title of the ghost bus submission error alert. */
-"ghost_bus_report.error.title" = "No se pudo enviar";
 /* Footer under the submit button on the ghost bus form. Says who receives the report, and that location goes with it only when the rider shares it. %@ is the app name. Must not call the report anonymous: it carries the app's persistent user identifier. */
 "ghost_bus_report.footer_recipients_fmt" = "Su informe, y su ubicación si decide compartirla, se envían a %@ y a la agencia de transporte para ayudar a mejorar el servicio.";
 /* Toggle on the ghost bus form for including the rider's location with the report. */
@@ -2080,6 +2078,9 @@
 "trip_page.card.distance_stops_a11y_fmt" = "a %1$@, a %2$d paradas";
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "a %1$@ · %2$d paradas";
+/* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
+"trip_page.ghost_bus_report_sent" = "¡Gracias! Se envió su informe.";
+
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
 "trip_page.ghost_bus_report_unavailable" = "No se pudo enviar este informe porque el servicio de informes no está disponible en este momento. Inténtelo de nuevo más tarde.";
 /* Trip page button that starts a Live Activity, which follows this trip's arrival on the Lock Screen and Dynamic Island. */

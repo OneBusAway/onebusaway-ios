@@ -21,38 +21,42 @@ struct GhostBusReportContext {
 
 /// The "Report Ghost Bus" form: confirm the trip, say how long you waited,
 /// optionally add detail, submit. Failures keep the sheet up with the rider's
-/// input intact; success dismisses.
+/// input intact and go to `onFailure`; success goes to `onSubmitted` (#1596).
 struct GhostBusReportView: View {
     let context: GhostBusReportContext
     let defaultShareLocation: Bool
     let submit: (_ waitDurationMinutes: Int, _ comment: String?, _ shareLocation: Bool) async throws -> Void
+    let onSubmitted: () -> Void
+    let onFailure: (Error) -> Void
     let onDismiss: () -> Void
 
     static let waitChoices = [5, 10, 15, 20, 30]
 
     /// Mirrors the server's `GhostBusReport::COMMENT_MAX_LENGTH` (obacloud
-    /// `app/models/ghost_bus_report.rb`). The submit alert can't distinguish a
-    /// too-long-comment 422 from a duplicate-report 422 (`APIError` carries no
-    /// response body), so the comment field must never be able to produce the
-    /// former — keeping this cap in sync with the server keeps that alert copy
-    /// truthful.
+    /// `app/models/ghost_bus_report.rb`). A too-long-comment 422 can't be told
+    /// from a duplicate-report 422 (`APIError` carries no response body), so the
+    /// comment field must never be able to produce the former — keeping this cap
+    /// in sync with the server keeps the "already reported" copy truthful.
     static let commentMaxLength = 1_000
 
     @State private var waitDurationMinutes = 15
     @State private var comment = ""
     @State private var shareLocation: Bool
     @State private var isSubmitting = false
-    @State private var errorMessage: String?
 
     init(
         context: GhostBusReportContext,
         defaultShareLocation: Bool,
         submit: @escaping (_ waitDurationMinutes: Int, _ comment: String?, _ shareLocation: Bool) async throws -> Void,
+        onSubmitted: @escaping () -> Void,
+        onFailure: @escaping (Error) -> Void,
         onDismiss: @escaping () -> Void
     ) {
         self.context = context
         self.defaultShareLocation = defaultShareLocation
         self.submit = submit
+        self.onSubmitted = onSubmitted
+        self.onFailure = onFailure
         self.onDismiss = onDismiss
         self._shareLocation = State(initialValue: defaultShareLocation)
     }
@@ -150,14 +154,6 @@ struct GhostBusReportView: View {
                     SheetDismissButton(.cancel, action: onDismiss)
                 }
             }
-            .alert(
-                OBALoc("ghost_bus_report.error.title", value: "Unable to Submit", comment: "Title of the ghost bus submission error alert."),
-                isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
-            ) {
-                Button(Strings.dismiss, role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
-            }
             .interactiveDismissDisabled(isSubmitting)
         }
     }
@@ -168,15 +164,9 @@ struct GhostBusReportView: View {
         do {
             let trimmed = comment.trimmingCharacters(in: .whitespacesAndNewlines)
             try await submit(waitDurationMinutes, trimmed.isEmpty ? nil : trimmed, shareLocation)
-            onDismiss()
-        } catch let error as APIError {
-            if case .requestFailure(let response) = error, response.statusCode == 422 {
-                errorMessage = OBALoc("ghost_bus_report.error.already_reported", value: "It looks like this trip has already been reported from this device.", comment: "Error message when the server rejects a duplicate ghost bus report.")
-            } else {
-                errorMessage = error.localizedDescription
-            }
+            onSubmitted()
         } catch {
-            errorMessage = error.localizedDescription
+            onFailure(error)
         }
     }
 }
