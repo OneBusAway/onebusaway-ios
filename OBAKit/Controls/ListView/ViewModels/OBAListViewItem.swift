@@ -133,6 +133,7 @@ nonisolated public struct AnyOBAListViewItem: OBAListViewItem, @unchecked Sendab
         return typeErasedClosure
     }
 
+    /// Type-erases an array of contextual actions into their `AnyOBAListViewItem` equivalents.
     fileprivate static func typeEraseActions<ViewModel: OBAListViewItem>(
         _ actions: [OBAListViewContextualAction<ViewModel>]?
     ) -> [OBAListViewContextualAction<AnyOBAListViewItem>]? {
@@ -150,7 +151,9 @@ nonisolated public struct AnyOBAListViewItem: OBAListViewItem, @unchecked Sendab
                 style: typedItem.style,
                 title: typedItem.title,
                 image: typedItem.image,
+                textColor: typedItem.textColor,
                 backgroundColor: typedItem.backgroundColor,
+                hidesWhenSelected: typedItem.hidesWhenSelected,
                 item: typeErased,
                 handler: typeErasedAction)
         }
