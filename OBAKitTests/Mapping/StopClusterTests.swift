@@ -247,8 +247,6 @@ final class StopClusterTests {
     }
 }
 
-/// Stands in for `MapRegionManager.mapView(_:viewFor:)` for stops and their clusters.
-@MainActor
 /// Stop clustering is opt-in (#1600); `MapRegionManager` answers from the Settings flag.
 private final class ClusteringDelegateStub: NSObject, StopAnnotationDelegate {
     let clustersStops: Bool
@@ -263,6 +261,8 @@ private final class ClusteringDelegateStub: NSObject, StopAnnotationDelegate {
     func isStopBookmarked(_ stop: Stop) -> Bool { false }
 }
 
+/// Stands in for `MapRegionManager.mapView(_:viewFor:)` for stops and their clusters.
+@MainActor
 private final class StopClusterMapDelegate: NSObject, MKMapViewDelegate {
     private let stopDelegate = ClusteringDelegateStub(clustersStops: true)
 
@@ -272,8 +272,10 @@ private final class StopClusterMapDelegate: NSObject, MKMapViewDelegate {
             return mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopClusterAnnotationView.self), for: annotation)
         case is Stop:
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: MKMapView.reuseIdentifier(for: StopAnnotationView.self), for: annotation)
-            (view as? StopAnnotationView)?.delegate = stopDelegate
-            (view as? StopAnnotationView)?.applyPresentation()
+            if let stopView = view as? StopAnnotationView {
+                stopView.delegate = stopDelegate
+                stopView.applyPresentation()
+            }
             return view
         default:
             return nil
