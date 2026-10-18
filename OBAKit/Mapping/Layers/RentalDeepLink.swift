@@ -16,14 +16,20 @@ import OTPKit
 /// Lime system publishes it. A survey of all 48 Lime systems in MobilityData's
 /// catalog (~87,000 vehicles) found zero. Deep links are a Lime Transit
 /// Partnership feature; the public feed omits them worldwide. So when the feed
-/// says nothing, we synthesize the link from the operator's URL scheme and the
-/// vehicle's own id.
+/// says nothing, we synthesize an app-launch link from the operator's URL scheme.
 ///
-/// The Lime scheme is reverse-engineered (ubahnverleih/WoBike) and undocumented
-/// by Lime. That is tolerable only because failure is graceful: `UIApplication`
-/// reports `success == false` when no app claims the scheme, and
-/// `RentalLinkOpener` then falls back — to the operator's App Store page, shown
-/// in-app, when `appStoreID` is known.
+/// Synthesized links open the operator's app; they never pick out the vehicle
+/// (#1602). Lime's `limebike://map?selected_vehicle_id=` takes Lime's *internal*
+/// vehicle id — the one its partner feeds put in `rental_uris` — while the public
+/// feed's `bike_id` is a random UUID that GBFS requires operators to rotate, so
+/// Lime had nothing to select. Its map opens centred on the rider, who is standing
+/// by the vehicle anyway.
+///
+/// The Lime scheme is reverse-engineered (ubahnverleih/WoBike, and Lime 3.286's
+/// `CFBundleURLTypes`) and undocumented by Lime. That is tolerable only because
+/// failure is graceful: `UIApplication` reports `success == false` when no app
+/// claims the scheme, and `RentalLinkOpener` then falls back — to the operator's
+/// App Store page, shown in-app, when `appStoreID` is known.
 enum RentalDeepLink {
 
     /// Where the button should go, and where to land if that fails.
@@ -40,46 +46,23 @@ enum RentalDeepLink {
         var appStoreID: String?
     }
 
-    /// A known operator's app-launch surface, expressed as URL *components*.
-    ///
-    /// Deliberately not a format string: `String(format:)` would bypass
-    /// percent-encoding, and `.urlQueryAllowed` does not escape `&` or `=`
-    /// inside a query value. Holding components makes the unsafe construction
-    /// unexpressible.
+    /// A known operator's app-launch URL, expressed as URL *components*.
     private struct Operator {
         let scheme: String
-        /// Host of the vehicle-targeting URL. Nil when the app cannot target an
-        /// individual vehicle, in which case only `appHost` is ever used.
-        let vehicleHost: String?
-        /// Query key carrying the vehicle id.
-        let vehicleIDKey: String?
-        /// Host for the plain app-launch URL: stations, untargetable operators.
         /// Empty string for an operator whose launch URI carries no host, so the
         /// URL keeps its `//` (`bird://`) rather than collapsing to `bird:`.
-        let appHost: String?
+        let appHost: String
     }
 
     /// Keyed by the leading token of the GBFS network id — the same tokenization
     /// OTPKit's `RentalNetwork.displayName` uses, so the button's operator and
     /// the sheet header's operator can never disagree.
     private static let operators: [String: Operator] = [
-        "lime": Operator(
-            scheme: "limebike",
-            vehicleHost: "map",
-            vehicleIDKey: "selected_vehicle_id",
-            appHost: "map"
-        ),
-        // Bird cannot target an individual vehicle, so it only ever gets the
-        // app-launch form. `bird://` is the shape Bird's own GBFS
-        // `discovery_uri` publishes; LaunchServices dispatches on scheme alone,
-        // so `bird:` would likely work too, but there is no reason to differ
-        // from the operator's declared URI.
-        "bird": Operator(
-            scheme: "bird",
-            vehicleHost: nil,
-            vehicleIDKey: nil,
-            appHost: ""
-        )
+        "lime": Operator(scheme: "limebike", appHost: "map"),
+        // `bird://` is the shape Bird's own GBFS `discovery_uri` publishes;
+        // LaunchServices dispatches on scheme alone, so `bird:` would likely work
+        // too, but there is no reason to differ from the operator's declared URI.
+        "bird": Operator(scheme: "bird", appHost: "")
     ]
 
     // MARK: - Operator registry
@@ -150,8 +133,7 @@ enum RentalDeepLink {
         return !rejectedFeedSchemes.contains(scheme)
     }
 
-    /// - Parameter now: injected so `generated_at` is deterministic in tests.
-    static func target(for rental: VehicleRental, now: Date = Date()) -> Target? {
+    static func target(for rental: VehicleRental) -> Target? {
         let network = rental.rentalNetwork
         let operatorName = network?.displayName
         let webURL = network?.url.flatMap(URL.init(string:))
@@ -174,9 +156,9 @@ enum RentalDeepLink {
         guard let network else { return nil }
 
         // 2. Synthesize for known operators. Deliberately outranks the network
-        //    URL below: a targeted app link beats an operator homepage, which is
-        //    a dead end for someone standing next to a scooter.
-        if let synthesized = synthesize(for: rental, network: network, operatorName: operatorName, appStoreID: appStoreID, now: now) {
+        //    URL below: the operator's app beats its homepage, which is a dead end
+        //    for someone standing next to a scooter.
+        if let synthesized = synthesize(network: network, operatorName: operatorName, appStoreID: appStoreID) {
             return synthesized
         }
 
@@ -192,11 +174,9 @@ enum RentalDeepLink {
     // MARK: - Synthesis
 
     private static func synthesize(
-        for rental: VehicleRental,
         network: RentalNetwork,
         operatorName: String?,
-        appStoreID: String?,
-        now: Date
+        appStoreID: String?
     ) -> Target? {
         // Lowercasing OTPKit's own `displayName` rather than re-splitting the
         // network id keeps the operator token single-sourced, so the button's
@@ -210,29 +190,7 @@ enum RentalDeepLink {
 
         var components = URLComponents()
         components.scheme = op.scheme
-
-        // Stations carry a station id, never a vehicle id, so they only ever
-        // get the app-launch form.
-        if case .vehicle(let vehicle) = rental,
-           let host = op.vehicleHost,
-           let key = op.vehicleIDKey,
-           let id = rawVehicleID(vehicle.vehicleId) {
-            components.host = host
-            components.queryItems = [
-                URLQueryItem(name: key, value: id),
-                // Epoch seconds is an inference: the documented format carries an
-                // untyped <timestamp>. Built as a string because "%d" via
-                // String(format:) is a 32-bit specifier.
-                //
-                // `generated_at` is Lime's, not a general rule. Bird never reaches
-                // here (no `vehicleHost`), so a shared line is honest today — but a
-                // third vehicle-targeting operator with different query quirks
-                // should move this onto `Operator` rather than branch on scheme.
-                URLQueryItem(name: "generated_at", value: String(Int(now.timeIntervalSince1970)))
-            ]
-        } else {
-            components.host = op.appHost
-        }
+        components.host = op.appHost
 
         guard let url = components.url else { return nil }
         return Target(
@@ -241,13 +199,5 @@ enum RentalDeepLink {
             operatorName: operatorName,
             appStoreID: appStoreID
         )
-    }
-
-    /// OTP returns `network:id`. Strip through the first colon to recover the raw
-    /// GBFS `bike_id`. Nil when nothing usable remains, so the caller drops to the
-    /// app-launch form rather than emitting an empty parameter.
-    private static func rawVehicleID(_ vehicleId: String) -> String? {
-        let raw = vehicleId.firstIndex(of: ":").map { String(vehicleId[vehicleId.index(after: $0)...]) } ?? vehicleId
-        return raw.isEmpty ? nil : raw
     }
 }
