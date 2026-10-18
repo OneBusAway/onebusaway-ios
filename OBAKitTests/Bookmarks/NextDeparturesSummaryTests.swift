@@ -21,6 +21,10 @@ final class NextDeparturesSummaryTests {
         now.addingTimeInterval(minutes * 60)
     }
 
+    private func departure(_ minutes: Double, isRealTime: Bool = true) -> NextDeparturesSummary.Departure {
+        NextDeparturesSummary.Departure(date: minutesFromNow(minutes), isRealTime: isRealTime, scheduleStatus: .onTime, deviationMinutes: 0)
+    }
+
     @Test func `Zero minutes reads as now`() {
         #expect(NextDeparturesSummary.relativeTime(minutes: 0) == "now")
     }
@@ -62,7 +66,7 @@ final class NextDeparturesSummaryTests {
     }
 
     @Test func `No upcoming departures names the bookmark`() {
-        let outcome = NextDeparturesSummary.Outcome.departures(bookmarkName: "Library", routeShortName: "550", headsign: "Seattle", dates: [minutesFromNow(-2)])
+        let outcome = NextDeparturesSummary.Outcome.departures(bookmarkName: "Library", routeShortName: "550", headsign: "Seattle", departures: [departure(-2)])
 
         #expect(NextDeparturesSummary.departuresSentence(routeShortName: "550", headsign: "Seattle", dates: [], now: now) == nil)
         #expect(NextDeparturesSummary.text(for: outcome, now: now) == "No departures for Library in the next hour.")
@@ -79,6 +83,14 @@ final class NextDeparturesSummaryTests {
         #expect(Set(messages).count == messages.count)
         #expect(messages.allSatisfy { !$0.isEmpty })
         #expect(messages[3] == "Couldn't load departures for Library. Check your connection and try again.")
+    }
+
+    /// The card needs per-departure status, but what Siri says must not change.
+    @Test func `Text for departures is the sentence from their dates`() {
+        let departures = [departure(32), departure(5, isRealTime: false), departure(17)]
+        let outcome = NextDeparturesSummary.Outcome.departures(bookmarkName: "Library", routeShortName: "550", headsign: "Seattle", departures: departures)
+
+        #expect(NextDeparturesSummary.text(for: outcome, now: now) == "550 to Seattle departs in 5 minutes. Then in 17 minutes and in 32 minutes.")
     }
 }
 
@@ -124,14 +136,33 @@ final class NextDeparturesLoaderTests: OBATestCase {
 
         let outcome = await loader(dataLoader: dataLoader).outcome(bookmarkID: bookmark.id)
 
-        guard case let .departures(bookmarkName, route, headsign, dates) = outcome else {
+        guard case let .departures(bookmarkName, route, headsign, departures) = outcome else {
             Issue.record("Expected departures, got \(outcome)")
             return
         }
         #expect(bookmarkName == "10 to Capitol Hill")
         #expect(route == "10")
         #expect(headsign == capitolHill)
-        #expect(dates.count == 3)
+        #expect(departures.count == 3)
+    }
+
+    /// Each departure keeps the live/scheduled flag and the deviation from its
+    /// `ArrivalDeparture`, which the card's status label is built from.
+    @Test func `Departures carry live status and deviation from the arrivals`() async throws {
+        let bookmark = try addCapitolHillBookmark()
+        let dataLoader = MockDataLoader(testName: name)
+        mockArrivals(dataLoader)
+        let arrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: galerFixture).arrivalsAndDepartures
+            .filter { $0.tripHeadsign == capitolHill }
+            .sorted { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
+
+        let outcome = await loader(dataLoader: dataLoader).outcome(bookmarkID: bookmark.id)
+
+        guard case let .departures(_, _, _, departures) = outcome else {
+            Issue.record("Expected departures, got \(outcome)")
+            return
+        }
+        #expect(departures == arrivals.map(NextDeparturesSummary.Departure.init(arrivalDeparture:)))
     }
 
     @Test func `A server error is a load failure, not an empty schedule`() async throws {
@@ -156,6 +187,18 @@ final class NextDeparturesLoaderTests: OBATestCase {
         let outcome = await loader(dataLoader: MockDataLoader(testName: name)).outcome(bookmarkID: UUID())
 
         #expect(outcome == .bookmarkUnavailable)
+    }
+
+    /// Siri waits on this fetch; URLSession's default would hang for a minute.
+    @Test func `Fetches time out within ten seconds unless a loader is injected`() throws {
+        let loader = NextDeparturesLoader(userDefaults: userDefaults, bundledRegionsFilePath: nil, apiKey: apiKey, appVersion: appVersion)
+        let session = try #require(loader.dataLoader as? URLSession)
+
+        #expect(session.configuration.timeoutIntervalForRequest <= 10)
+        #expect(session.configuration.timeoutIntervalForResource <= 10)
+
+        let injected = MockDataLoader(testName: name)
+        #expect(self.loader(dataLoader: injected).dataLoader as? MockDataLoader === injected)
     }
 
     @Test func `No resolved region asks the user to choose one`() async throws {
