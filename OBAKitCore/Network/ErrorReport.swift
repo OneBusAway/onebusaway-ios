@@ -317,25 +317,12 @@ public struct ErrorReport: Sendable {
         case .serverError: return .serverError
         case .serverUnavailable: return .serverUnavailable
         case .invalidResponseData, .invalidContentType, .noResponseBody: return .invalidResponseData
-        case .requestNotFound: return notFoundCause(subject: subject)
-        case .networkFailure, .cellularDataRestricted, .captivePortal, .noRegionSelected:
-            return deviceCause(for: apiError)
-        case .surveyServiceNotConfigured: return .silent
-        case .requestFailure: return .fallback
-        }
-    }
-
-    private static func notFoundCause(subject: Subject) -> Cause {
-        switch subject {
-        case .livePosition: return .tripNotFound
-        case .arrivalTimes: return .stopNotFound
-        default: return .notFound
-        }
-    }
-
-    /// The causes the rider fixes on their side. `cause(for:subject:)` sends only those here.
-    private static func deviceCause(for apiError: APIError) -> Cause {
-        switch apiError {
+        case .requestNotFound:
+            switch subject {
+            case .livePosition: return .tripNotFound
+            case .arrivalTimes: return .stopNotFound
+            default: return .notFound
+            }
         case .networkFailure(let inner):
             // Without a region name the classifier can't build
             // `serverUnavailable`, and leaves an unreachable host here. The
@@ -346,7 +333,8 @@ public struct ErrorReport: Sendable {
         case .cellularDataRestricted: return .cellularDataRestricted
         case .captivePortal: return .captivePortal
         case .noRegionSelected: return .noRegionSelected
-        default: return .fallback
+        case .surveyServiceNotConfigured: return .silent
+        case .requestFailure: return .fallback
         }
     }
 
@@ -372,11 +360,13 @@ public struct ErrorReport: Sendable {
             let fmt = OBALoc("error_report.summary.rate_limited_fmt", value: "%@ is busy.", comment: "One-line toast text: the server is getting too many requests. The substituted value is the app name.")
             return String(format: fmt, Bundle.main.appName)
         case .serverError:
+            guard let regionName else { return fallbackSummary }
             let fmt = OBALoc("error_report.summary.server_error_fmt", value: "The %@ server hit a problem.", comment: "One-line toast text: the regional server returned an internal error. The substituted value is the region name, e.g. 'Puget Sound'.")
-            return formatted(fmt, regionName: regionName) ?? fallbackSummary
+            return String(format: fmt, regionName)
         case .serverUnavailable:
+            guard let regionName else { return fallbackSummary }
             let fmt = OBALoc("error_report.summary.server_unavailable_fmt", value: "Can't reach the %@ server.", comment: "One-line toast text: the regional server is down or unreachable. The substituted value is the region name, e.g. 'Puget Sound'.")
-            return formatted(fmt, regionName: regionName) ?? fallbackSummary
+            return String(format: fmt, regionName)
         case .invalidResponseData:
             return OBALoc("error_report.summary.invalid_response_data", value: "The server sent data we can't read.", comment: "One-line toast text: the server answered with data the app can't read.")
         case .tripNotFound:
@@ -385,16 +375,6 @@ public struct ErrorReport: Sendable {
             return OBALoc("error_report.summary.stop_not_found", value: "This stop isn't in service.", comment: "One-line toast text: the agency no longer lists this stop.")
         case .notFound:
             return OBALoc("error_report.summary.not_found", value: "The server doesn't have it.", comment: "One-line toast text: the server has no record of the thing that was requested.")
-        case .offline, .cellularDataRestricted, .captivePortal, .noRegionSelected:
-            return deviceSummary(for: cause)
-        case .silent, .message, .fallback:
-            return fallbackSummary
-        }
-    }
-
-    /// `summary(for:regionName:)` sends only the device-side causes here.
-    private static func deviceSummary(for cause: Cause) -> String {
-        switch cause {
         case .offline:
             return OBALoc("error_report.summary.offline", value: "Check your connection and try again.", comment: "One-line toast text: the device has no internet connection.")
         case .cellularDataRestricted:
@@ -403,14 +383,9 @@ public struct ErrorReport: Sendable {
             return OBALoc("error_report.summary.captive_portal", value: "Open the network's login page to continue.", comment: "One-line toast text under a title saying the Wi-Fi network needs the rider to sign in.")
         case .noRegionSelected:
             return OBALoc("error_report.summary.no_region_selected", value: "Choose your region to see transit info.", comment: "One-line toast text: no transit region has been selected.")
-        default:
+        case .silent, .message, .fallback:
             return fallbackSummary
         }
-    }
-
-    /// `format` with the region name substituted, or `nil` without one.
-    private static func formatted(_ format: String, regionName: String?) -> String? {
-        regionName.map { String(format: format, $0) }
     }
 
     private static var fallbackSummary: String {
@@ -423,11 +398,13 @@ public struct ErrorReport: Sendable {
             let fmt = OBALoc("error_report.explanation.rate_limited_fmt", value: "%@ is getting more requests than it can handle right now. This usually clears up on its own within a minute.", comment: "Explanation of an error caused by the server being overloaded with requests (HTTP 429). The substituted value is the app name.")
             return String(format: fmt, Bundle.main.appName)
         case .serverError:
+            guard let regionName else { return fallbackExplanation }
             let fmt = OBALoc("error_report.explanation.server_error_fmt", value: "The %@ server ran into a problem handling this request. It's still running, so trying again usually works.", comment: "Explanation of an internal server error. The substituted value is the region name, e.g. 'Puget Sound'.")
-            return formatted(fmt, regionName: regionName) ?? fallbackExplanation
+            return String(format: fmt, regionName)
         case .serverUnavailable:
+            guard let regionName else { return fallbackExplanation }
             let fmt = OBALoc("error_report.explanation.server_unavailable_fmt", value: "The %@ server isn't responding. It may be down, or a VPN, firewall, or content blocker may be blocking it.", comment: "Explanation of an error where the regional server can't be reached. Mentions VPNs because riders often hit this on a filtered network. The substituted value is the region name, e.g. 'Puget Sound'.")
-            return formatted(fmt, regionName: regionName) ?? fallbackExplanation
+            return String(format: fmt, regionName)
         case .invalidResponseData:
             return OBALoc("error_report.explanation.invalid_response_data", value: "The server answered, but the data was incomplete or in a format we can't read. That's usually a problem with the agency's feed, not your phone.", comment: "Explanation of an error where the server's response couldn't be read.")
         case .tripNotFound:
@@ -436,16 +413,6 @@ public struct ErrorReport: Sendable {
             return OBALoc("error_report.explanation.stop_not_found", value: "The agency no longer lists this stop. It may have moved or closed.", comment: "Explanation of an error where the server no longer has the requested stop.")
         case .notFound:
             return OBALoc("error_report.explanation.not_found", value: "The server doesn't have what was requested. It may have been removed or renamed.", comment: "Explanation of a 404 Not Found error for something other than a stop or trip.")
-        case .offline, .cellularDataRestricted, .captivePortal, .noRegionSelected:
-            return deviceExplanation(for: cause)
-        case .silent, .message, .fallback:
-            return fallbackExplanation
-        }
-    }
-
-    /// `explanation(for:regionName:)` sends only the device-side causes here.
-    private static func deviceExplanation(for cause: Cause) -> String {
-        switch cause {
         case .offline:
             return OBALoc("error_report.explanation.offline", value: "Your phone isn't connected to the internet. Information will update again when the connection returns.", comment: "Explanation of an error where the device has no internet connection.")
         case .cellularDataRestricted:
@@ -456,7 +423,7 @@ public struct ErrorReport: Sendable {
         case .noRegionSelected:
             let fmt = OBALoc("error_report.explanation.no_region_selected_fmt", value: "%@ needs to know which transit region you're in.", comment: "Explanation of an error where no transit region is selected. The substituted value is the app name.")
             return String(format: fmt, Bundle.main.appName)
-        default:
+        case .silent, .message, .fallback:
             return fallbackExplanation
         }
     }

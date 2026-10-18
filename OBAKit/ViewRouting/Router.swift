@@ -106,7 +106,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     /// Searches `windowScene`'s windows, starting with its key window unless `preferringKeyWindow` is `false`.
     private func findClassicRoot(in windowScene: UIWindowScene, preferringKeyWindow: Bool = true) -> ClassicApplicationRootController? {
         if preferringKeyWindow,
-           let keyWindow = windowScene.windows.first(where: \.isKeyWindow),
+           let keyWindow = windowScene.keyWindow,
            let classic = findClassicRoot(in: keyWindow.rootViewController) {
             return classic
         }

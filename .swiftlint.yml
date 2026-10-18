@@ -30,6 +30,11 @@ type_body_length:
   warning: 900
   error: 1000
 
+cyclomatic_complexity:
+  # A switch that maps each case to a value isn't complex, and splitting one
+  # to satisfy the rule costs the compiler's exhaustiveness check.
+  ignores_case_statements: true
+
 redundant_discardable_let:
   # `_ = foo` doesn't compile in a result builder, so `let _ = foo` is the only
   # way to read an observed value for its dependency inside a SwiftUI `body`.

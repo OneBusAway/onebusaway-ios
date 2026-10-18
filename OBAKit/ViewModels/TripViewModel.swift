@@ -172,7 +172,7 @@ class TripViewModel: ObservableObject {
         do {
             let newDetails = try await details
             guard !Task.isCancelled else { return }
-            apply(newDetails)
+            applyTripDetails(newDetails)
         } catch {
             guard !Task.isCancelled else { return }
             // Even for a lower-layer cancellation: there is still no list, and
@@ -183,7 +183,7 @@ class TripViewModel: ObservableObject {
         do {
             let newConvertible = try await convertible
             guard !Task.isCancelled else { return }
-            apply(newConvertible)
+            applyTripConvertible(newConvertible)
         } catch {
             guard !Task.isCancelled else { return }
             record(error)
@@ -191,7 +191,7 @@ class TripViewModel: ObservableObject {
         do {
             let newPolyline = try await polyline
             guard !Task.isCancelled else { return }
-            apply(newPolyline)
+            applyRoutePolyline(newPolyline)
         } catch {
             guard !Task.isCancelled else { return }
             record(error)
@@ -211,7 +211,7 @@ class TripViewModel: ObservableObject {
         isLoading = false
     }
 
-    private func apply(_ newDetails: TripDetails?) {
+    private func applyTripDetails(_ newDetails: TripDetails?) {
         if let newDetails {
             tripDetails = newDetails
             lastUpdated = Date()
@@ -219,13 +219,13 @@ class TripViewModel: ObservableObject {
         stopListLoadFailed = false
     }
 
-    private func apply(_ newConvertible: TripConvertible?) {
+    private func applyTripConvertible(_ newConvertible: TripConvertible?) {
         guard let newConvertible else { return }
         tripConvertible = newConvertible
         lastUpdated = Date()
     }
 
-    private func apply(_ newPolyline: [CLLocationCoordinate2D]?) {
+    private func applyRoutePolyline(_ newPolyline: [CLLocationCoordinate2D]?) {
         if let newPolyline { routePolylineCoordinates = newPolyline }
     }
 

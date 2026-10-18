@@ -16,7 +16,6 @@ extension Application {
     /// Adds the region `regionData` describes and makes it the current region.
     ///
     /// Throws if the region can't be added; the caller tells the rider the link was invalid.
-    @MainActor
     func addCustomRegion(from regionData: AddRegionURLData) async throws {
         guard let regionCoordinate = try await apiService?.getAgenciesWithCoverage().list.first?.region else {
             return
