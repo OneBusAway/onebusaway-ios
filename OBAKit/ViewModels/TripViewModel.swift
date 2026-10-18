@@ -137,81 +137,96 @@ class TripViewModel: ObservableObject {
         loadDataTask?.cancel()
         isLoading = true
         loadDataTask = Task { [weak self] in
-            guard let self else { return }
-            stopListLoadFailed = false
-
-            // One failing loses none of the others (#1548). The stop list used to
-            // wait on the route line and the arrival, and go down with either of
-            // them: the page then said the list "isn't available" until a refresh
-            // 30 seconds later. A throw caught inside this scope leaves the other
-            // fetches running.
-            async let details = fetchTripDetails()
-            async let convertible = fetchTripConvertible()
-            async let polyline = fetchMapPolyline()
-            var failure: Error?
-            // The first failure the rider should hear about. A lower-layer
-            // cancellation never is, so it must not hide a real error after it.
-            func record(_ error: Error) {
-                if failure == nil || failure?.isCancellation == true { failure = error }
-            }
-
-            // The stop list first: it is most of the page, and the others run
-            // alongside it rather than ahead of it.
-            //
-            // After each wait, cancellation is checked before anything applies. It
-            // is cooperative: a load cancelled by a newer one or by `deactivate()`
-            // can still get its responses back, and applying them could overwrite
-            // the newer load's trip. Nor does a cancelled load (e.g. dismissing a
-            // context menu preview) surface an error; it leaves `isLoading` to the
-            // load that replaced it, or to `deactivate()`.
-            do {
-                let newDetails = try await details
-                guard !Task.isCancelled else { return }
-                if let newDetails {
-                    tripDetails = newDetails
-                    lastUpdated = Date()
-                }
-                stopListLoadFailed = false
-            } catch {
-                guard !Task.isCancelled else { return }
-                // Even for a lower-layer cancellation: there is still no list, and
-                // without this the page would say "Loading" with nothing loading.
-                stopListLoadFailed = true
-                record(error)
-            }
-            do {
-                let newConvertible = try await convertible
-                guard !Task.isCancelled else { return }
-                if let newConvertible {
-                    tripConvertible = newConvertible
-                    lastUpdated = Date()
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                record(error)
-            }
-            do {
-                let newPolyline = try await polyline
-                guard !Task.isCancelled else { return }
-                if let newPolyline { routePolylineCoordinates = newPolyline }
-            } catch {
-                guard !Task.isCancelled else { return }
-                record(error)
-            }
-
-            // URLSession can report NSURLErrorCancelled without this task being
-            // cancelled, when a lower layer cancelled the request. Never a
-            // rider-facing error.
-            operationError = failure?.isCancellation == true ? nil : failure
-
-            // After the details are applied, because the destination's row is
-            // read from them.
-            await loadDestinationArrival()
-            // Same for a load cancelled while it waited for the destination's
-            // arrival: the load that replaced it may still be running.
-            guard !Task.isCancelled else { return }
-            isLoading = false
+            await self?.performLoad()
         }
+    }
+
+    /// The body of `loadData()`'s task.
+    private func performLoad() async {
+        stopListLoadFailed = false
+
+        // One failing loses none of the others (#1548). The stop list used to
+        // wait on the route line and the arrival, and go down with either of
+        // them: the page then said the list "isn't available" until a refresh
+        // 30 seconds later. A throw caught inside this scope leaves the other
+        // fetches running.
+        async let details = fetchTripDetails()
+        async let convertible = fetchTripConvertible()
+        async let polyline = fetchMapPolyline()
+        var failure: Error?
+        // The first failure the rider should hear about. A lower-layer
+        // cancellation never is, so it must not hide a real error after it.
+        func record(_ error: Error) {
+            if failure == nil || failure?.isCancellation == true { failure = error }
+        }
+
+        // The stop list first: it is most of the page, and the others run
+        // alongside it rather than ahead of it.
+        //
+        // After each wait, cancellation is checked before anything applies. It
+        // is cooperative: a load cancelled by a newer one or by `deactivate()`
+        // can still get its responses back, and applying them could overwrite
+        // the newer load's trip. Nor does a cancelled load (e.g. dismissing a
+        // context menu preview) surface an error; it leaves `isLoading` to the
+        // load that replaced it, or to `deactivate()`.
+        do {
+            let newDetails = try await details
+            guard !Task.isCancelled else { return }
+            apply(newDetails)
+        } catch {
+            guard !Task.isCancelled else { return }
+            // Even for a lower-layer cancellation: there is still no list, and
+            // without this the page would say "Loading" with nothing loading.
+            stopListLoadFailed = true
+            record(error)
+        }
+        do {
+            let newConvertible = try await convertible
+            guard !Task.isCancelled else { return }
+            apply(newConvertible)
+        } catch {
+            guard !Task.isCancelled else { return }
+            record(error)
+        }
+        do {
+            let newPolyline = try await polyline
+            guard !Task.isCancelled else { return }
+            apply(newPolyline)
+        } catch {
+            guard !Task.isCancelled else { return }
+            record(error)
+        }
+
+        // URLSession can report NSURLErrorCancelled without this task being
+        // cancelled, when a lower layer cancelled the request. Never a
+        // rider-facing error.
+        operationError = failure?.isCancellation == true ? nil : failure
+
+        // After the details are applied, because the destination's row is
+        // read from them.
+        await loadDestinationArrival()
+        // Same for a load cancelled while it waited for the destination's
+        // arrival: the load that replaced it may still be running.
+        guard !Task.isCancelled else { return }
+        isLoading = false
+    }
+
+    private func apply(_ newDetails: TripDetails?) {
+        if let newDetails {
+            tripDetails = newDetails
+            lastUpdated = Date()
+        }
+        stopListLoadFailed = false
+    }
+
+    private func apply(_ newConvertible: TripConvertible?) {
+        guard let newConvertible else { return }
+        tripConvertible = newConvertible
+        lastUpdated = Date()
+    }
+
+    private func apply(_ newPolyline: [CLLocationCoordinate2D]?) {
+        if let newPolyline { routePolylineCoordinates = newPolyline }
     }
 
     private func fetchTripConvertible() async throws -> TripConvertible? {

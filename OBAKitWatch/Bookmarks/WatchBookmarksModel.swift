@@ -122,25 +122,13 @@ public final class WatchBookmarksModel {
         for group in groups {
             let groupBookmarks = bookmarks.filter { $0.groupID == group.id }
             guard !groupBookmarks.isEmpty else { continue }
-            let bookmarkArrivals = groupBookmarks.map { bm -> WatchBookmarkArrival in
-                let nextArrival = departures[bm.id]?.first
-                if let arrivalDate = nextArrival?.arrivalDepartureDate {
-                    upcomingDepartureDates.append(arrivalDate > now ? arrivalDate : now.addingTimeInterval(5.0))
-                }
-                return WatchBookmarkArrival(bookmark: bm, nextArrival: nextArrival)
-            }
+            let bookmarkArrivals = Self.bookmarkArrivals(for: groupBookmarks, departures: departures, now: now, upcomingDepartureDates: &upcomingDepartureDates)
             sections.append(WatchBookmarkSection(id: group.id, title: group.name, bookmarks: bookmarkArrivals))
         }
 
         let ungrouped = bookmarks.filter { $0.groupID == nil }
         if !ungrouped.isEmpty {
-            let bookmarkArrivals = ungrouped.map { bm -> WatchBookmarkArrival in
-                let nextArrival = departures[bm.id]?.first
-                if let arrivalDate = nextArrival?.arrivalDepartureDate {
-                    upcomingDepartureDates.append(arrivalDate > now ? arrivalDate : now.addingTimeInterval(5.0))
-                }
-                return WatchBookmarkArrival(bookmark: bm, nextArrival: nextArrival)
-            }
+            let bookmarkArrivals = Self.bookmarkArrivals(for: ungrouped, departures: departures, now: now, upcomingDepartureDates: &upcomingDepartureDates)
             let title = sections.isEmpty ? "" : OBALoc("bookmarks.title", value: "Bookmarks", comment: "Section title for ungrouped bookmarks")
             let sectionID = UUID(uuidString: "00000000-0000-0000-0000-000000000000") ?? UUID()
             sections.append(WatchBookmarkSection(id: sectionID, title: title, bookmarks: bookmarkArrivals))
@@ -148,6 +136,23 @@ public final class WatchBookmarksModel {
 
         self.phase = sections.isEmpty ? .empty : .loaded(sections)
         scheduleAutoRefresh(at: upcomingDepartureDates.min())
+    }
+
+    /// Pairs each bookmark with its next arrival, collecting the arrival dates
+    /// that should trigger an auto refresh into `upcomingDepartureDates`.
+    private static func bookmarkArrivals(
+        for bookmarks: [WatchBookmark],
+        departures: [UUID: [ArrivalDeparture]],
+        now: Date,
+        upcomingDepartureDates: inout [Date]
+    ) -> [WatchBookmarkArrival] {
+        bookmarks.map { bm -> WatchBookmarkArrival in
+            let nextArrival = departures[bm.id]?.first
+            if let arrivalDate = nextArrival?.arrivalDepartureDate {
+                upcomingDepartureDates.append(arrivalDate > now ? arrivalDate : now.addingTimeInterval(5.0))
+            }
+            return WatchBookmarkArrival(bookmark: bm, nextArrival: nextArrival)
+        }
     }
 
     private func scheduleAutoRefresh(at earliestDate: Date?) {

@@ -388,82 +388,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         pushService.start(launchOptions: launchOptions)
     }
 
-    public func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
-        topViewController
-    }
-
-    public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            // Remove the fired alarm from the local store and let open stop pages
-            // update their alarm index via the notification.
-            self.deleteMatchingAlarm(for: pushBody)
-            NotificationCenter.default.post(name: .alarmFired, object: nil)
-            self.launchRouteGate.suppress()
-
-            guard self.topViewController != nil else {
-                // UI not ready yet (cold launch). Navigate once the scene activates.
-                self.pendingStopID = pushBody.stopID
-                // A region left by an earlier stash would make the drain refuse
-                // this stop as belonging to somewhere else.
-                self.pendingStopRegionID = nil
-                return
-            }
-            self.pushStopFromOutside(pushBody.stopID)
-        }
-    }
-
-    public func pushService(_ pushService: PushService, receivedDeviceToken token: String) {
-        pushRegistrationManager.updateDeviceToken(token)
-        Task { await pushRegistrationManager.registerIfNeeded() }
-    }
-
-    public func pushService(_ pushService: PushService, receivedProximityAlertForStopID stopID: StopID, regionID: Int?) {
-        // The alert's own region wins where it has one. `currentRegion` is right
-        // only while it tracks the rider's location — the ordinary case, since the
-        // geofence is crossed where they are — and is wrong for a manually pinned
-        // region, which would send them to the pinned region's API for a stop they
-        // set somewhere else. Alerts stored before they carried a region still
-        // fall back to it, exactly as they always did.
-        guard let regionID = regionID ?? regionsService.currentRegion?.regionIdentifier else {
-            // Neither names one — the ordinary case for a tap that relaunched a
-            // terminated app, since the regions list loads asynchronously. Stash
-            // without one, exactly as the fired-alarm handler above does: the
-            // drain navigates as soon as a root controller exists, and
-            // `regionsService(_:updatedRegion:)` drains again once a region lands.
-            // Returning here instead would drop the only thing the rider tapped.
-            Logger.info("Proximity alert tap for stop \(stopID) arrived with no region; deferring navigation.")
-            pendingStopID = stopID
-            // Cleared rather than left alone: a region stashed by an earlier
-            // navigation would make the drain refuse this stop as belonging to
-            // somewhere else.
-            pendingStopRegionID = nil
-            return
-        }
-        // Through `queueOrOpenStop` on both branches, rather than a second copy of
-        // its deferral logic here: once the region can come from the alert instead
-        // of from `currentRegion`, its mismatch guard can finally disagree with
-        // itself, and a tap that relaunched the app stashes a region the drain can
-        // check instead of navigating against whatever loads first.
-        queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopID, regionID: regionID))
-    }
-
-    /// Deletes the stored alarm whose deep-link identity matches `pushBody`, so the stop
-    /// page reflects the fired state without waiting for the next full refresh.
-    @MainActor
-    private func deleteMatchingAlarm(for pushBody: AlarmPushBody) {
-        for alarm in userDataStore.alarms {
-            guard let deepLink = alarm.deepLink else { continue }
-            guard deepLink.stopID == pushBody.stopID,
-                  deepLink.tripID == pushBody.tripID,
-                  deepLink.stopSequence == pushBody.stopSequence,
-                  abs(deepLink.serviceDate.timeIntervalSince(pushBody.serviceDate)) < 60
-            else { continue }
-            userDataStore.delete(alarm: alarm)
-            return
-        }
-    }
-
     /// A stop navigation (fired alarm push, `viewStop` deep link, or a donated
     /// stop `NSUserActivity`) received before the root view controller was
     /// installed, or before `currentRegion` had loaded. Drained once both exist.
@@ -863,39 +787,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                         return
                     }
 
-                    guard let regionCoordinate = try await self.apiService?.getAgenciesWithCoverage().list.first?.region else {
-                        return
-                    }
-
-                    // Adjustments for coordinate span
-                    var adjustedRegionCoordinate = regionCoordinate
-                    adjustedRegionCoordinate.span.latitudeDelta = 2
-                    adjustedRegionCoordinate.span.longitudeDelta = 2
-
-                    // Create region provider
-                    let regionProvider = RegionPickerCoordinator(regionsService: self.regionsService, userDataStore: self.userDataStore)
-
-                    // Construct Region from URL data. umamiAnalytics applies the
-                    // both-or-nothing rule; no rule logic lives here.
-                    //
-                    // regionIdentifier must come from the link: Region falls back to a
-                    // random id when it's nil, and every Obaco call for the region then
-                    // 404s against an id the sidecar has never heard of.
-                    let currentRegion = Region(
-                        name: regionData.name,
-                        OBABaseURL: regionData.obaURL,
-                        coordinateRegion: adjustedRegionCoordinate,
-                        contactEmail: "example@example.com",
-                        regionIdentifier: regionData.regionID,
-                        openTripPlannerURL: regionData.otpURL,
-                        openTripPlannerGraphQLURL: regionData.otpGraphQLURL,
-                        supportsOTPGraphQLBikeshare: regionData.supportsOTPGraphQLBikeshare,
-                        sidecarBaseURL: regionData.sidecarURL,
-                        umamiAnalytics: regionData.umamiAnalytics)
-
-                    // Add and set current region
-                    try await regionProvider.add(customRegion: currentRegion)
-                    try await regionProvider.setCurrentRegion(to: currentRegion)
+                    try await addCustomRegion(from: regionData)
                 } catch {
                     presentAddRegionAlertOnActive = true
                     return
@@ -908,30 +800,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     override public func apiServicesRefreshed() {
         super.apiServicesRefreshed()
         donationsManager.obacoService = obacoService
-    }
-
-    // MARK: - Appearance and Themes
-
-    /// Sets default styles for several UIAppearance proxies in order to customize the app's look and feel
-    ///
-    /// To override the values that are set in here, either customize the theme that this object is
-    /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
-    /// proxies instead.
-    private func configureAppearanceProxies() {
-        // `brandTint`, not `brand`: these colour text and controls, and `brand`
-        // is too pale on white to read (2.76:1 in the OneBusAway app).
-        let tint = ThemeColors.shared.brandTint
-        for t in [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self] {
-            t.appearance().tintColor = tint
-        }
-
-        UISwitch.appearance().onTintColor = tint
-
-        StopArrivalView.appearance().notificationCenter = notificationCenter
-
-        MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
-
-        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tint], for: .normal)
     }
 
     // MARK: - Regions Management
@@ -1018,77 +886,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     private static let deviceModel = UIDevice.current.modelName
 
     // MARK: - Feature Availability
-
-    /// Models feature availability state in the app.
-    ///
-    /// Some applications might have support for features, like push notifications, that other white label versions of the app might lack.
-    /// `FeatureStatus` and `FeatureAvailability` describe whether those features are unavailable, not running, or available for use.
-    public enum FeatureStatus {
-
-        /// This feature is not available in this app.
-        case off
-
-        /// This feature is available, but is not fully configured for use.
-        ///
-        /// This might be due to a race condition, for instance, and the caller should assume that the feature may be available in the future.
-        case notRunning
-
-        /// This feature is available for use.
-        case running
-    }
-
-    /// Describes feature availability state in the app.
-    ///
-    /// Some applications might have support for features, like push notifications, that other white label versions of the app might lack.
-    /// `FeatureStatus` and `FeatureAvailability` describe whether those features are unavailable, not running, or available for use.
-    public struct FeatureAvailability {
-        private let config: AppConfig
-        private weak var application: Application?
-
-        init(config: AppConfig, application: Application) {
-            self.config = config
-            self.application = application
-        }
-
-        /// Feature status of the Obaco service.
-        public var obaco: FeatureStatus {
-            switch (application?.regionsService.currentRegion?.sidecarBaseURL, application?.obacoService) {
-            case (nil, nil): return .off
-            case (_, nil): return .notRunning
-            default: return .running
-            }
-        }
-
-        /// Feature status of push notifications.
-        public var push: FeatureStatus {
-            switch (config.pushServiceProvider, application?.pushService) {
-            case (nil, nil): return .off
-            case (_, nil): return .notRunning
-            default: return .running
-            }
-        }
-
-        /// Feature status of Deep Linking.
-        public var deepLinking: FeatureStatus {
-            switch (application?.regionsService.currentRegion?.sidecarBaseURL, application?.appLinksRouter) {
-            case (nil, nil): return .off
-            case (_, nil): return .notRunning
-            default: return .running
-            }
-        }
-
-        /// Feature status of OTP trip planning.
-        public var tripPlanning: FeatureStatus {
-            guard
-                let region = application?.regionsService.currentRegion,
-                region.supportsOTP
-            else {
-                return .off
-            }
-
-            return .running
-        }
-    }
 
     /// Documents availability of features in whitelabel clients, so that features like alarms, weather, and trip status can be hidden or shown.
     ///

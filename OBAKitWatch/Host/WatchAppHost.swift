@@ -110,11 +110,16 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
         locationService.addDelegate(self)
         regionsService.addDelegate(self)
 
+        startWatchSessionSync()
+    }
+
+    /// Applies the latest payload synced from the phone, then follows later ones.
+    private func startWatchSessionSync() {
         WatchSessionBridge.shared.activate()
 
         if let latest = WatchSessionBridge.shared.latestReceivedPayload {
             bookmarkStore.update(payload: latest)
-            if (regionsService.currentRegion == nil || isRegionFromSync), let region = latest.region {
+            if regionsService.currentRegion == nil || isRegionFromSync, let region = latest.region {
                 applySyncedRegion(region)
             }
         }
@@ -127,7 +132,7 @@ public final class WatchAppHost: NSObject, LocationServiceDelegate, RegionsServi
             for await payload in WatchSessionBridge.shared.payloads {
                 guard let self else { break }
                 self.bookmarkStore.update(payload: payload)
-                if let syncedRegion = payload.region, (self.regionsService.currentRegion == nil || self.isRegionFromSync) {
+                if let syncedRegion = payload.region, self.regionsService.currentRegion == nil || self.isRegionFromSync {
                     self.applySyncedRegion(syncedRegion)
                 }
             }

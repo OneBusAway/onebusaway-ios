@@ -197,4 +197,3 @@ nonisolated struct HTMLBuilder {
         HTML.append(tag.closing)
     }
 }
-

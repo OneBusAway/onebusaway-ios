@@ -174,6 +174,19 @@ public actor ObacoAPIService: @preconcurrency APIService {
         if let stopID = draft.stopID { params["stop_identifier"] = stopID }
         if let vehicleID = draft.vehicleID { params["vehicle_identifier"] = vehicleID }
         if let stopSequence = draft.stopSequence { params["stop_sequence"] = stopSequence }
+        addGhostBusPredictionParams(from: draft, to: &params)
+        if let comment = draft.comment, !comment.isEmpty { params["comment"] = comment }
+        if let lat = draft.userLatitude { params["user_latitude"] = lat }
+        if let lon = draft.userLongitude { params["user_longitude"] = lon }
+
+        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
+
+        let (data, _) = try await data(for: urlRequest as URLRequest)
+        return try JSONDecoder.obacoServiceDecoder.decode(GhostBusReport.self, from: data)
+    }
+
+    /// The real-time prediction the rider was looking at, if there was one.
+    private nonisolated func addGhostBusPredictionParams(from draft: GhostBusReportDraft, to params: inout [String: Any]) {
         if let predicted = draft.predicted { params["predicted"] = predicted ? "1" : "0" }
         if let scheduled = draft.scheduledArrivalAt {
             params["scheduled_arrival_at"] = Int64(scheduled.timeIntervalSince1970 * 1000)
@@ -185,14 +198,6 @@ public actor ObacoAPIService: @preconcurrency APIService {
         if let lastUpdated = draft.predictionLastUpdatedAt {
             params["prediction_last_updated_at"] = Int64(lastUpdated.timeIntervalSince1970 * 1000)
         }
-        if let comment = draft.comment, !comment.isEmpty { params["comment"] = comment }
-        if let lat = draft.userLatitude { params["user_latitude"] = lat }
-        if let lon = draft.userLongitude { params["user_longitude"] = lon }
-
-        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
-
-        let (data, _) = try await data(for: urlRequest as URLRequest)
-        return try JSONDecoder.obacoServiceDecoder.decode(GhostBusReport.self, from: data)
     }
 
     // MARK: - APNs Environment

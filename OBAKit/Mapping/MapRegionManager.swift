@@ -1324,9 +1324,11 @@ public class MapRegionManager: NSObject,
         // Limit stored pins to prevent unbounded growth
         limitStoredPins(maxPins: 10)
     }
+}
 
-    // MARK: - User-dropped pin management
+// MARK: - User-dropped pin management
 
+extension MapRegionManager {
     /// Removes a specific user-dropped pin from the map and cleans up associated data
     public func removeUserAnnotation(_ annotation: UserDroppedPin) {
         // Notify delegates first (so UI can dismiss while data is still vaguely valid, though irrelevant)

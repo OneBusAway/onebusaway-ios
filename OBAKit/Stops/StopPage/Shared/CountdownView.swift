@@ -17,7 +17,7 @@ struct CountdownView: View {
     var emphasized: Bool = true
     /// "Arrives" / "Departs" under the minutes. Nil on surfaces that are
     /// already one-sided (trip card = arriving, bookmark = departing).
-    var caption: String? = nil
+    var caption: String?
 
     var body: some View {
         VStack(spacing: 1) {

@@ -86,12 +86,12 @@ public struct TickingCountdownText: View {
     /// It must be one of Apple's format styles. The Lock Screen renders a
     /// ticking `Text` out of process; at full brightness it drew our own
     /// custom `DiscreteFormatStyle` as a redacted placeholder card (#1583).
-    public static func visibleFormat(locale: Locale = .autoupdatingCurrent) -> Date.ComponentsFormatStyle {
+    public nonisolated static func visibleFormat(locale: Locale = .autoupdatingCurrent) -> Date.ComponentsFormatStyle {
         Date.ComponentsFormatStyle(style: .narrow, locale: locale, fields: [.minute])
     }
 
     /// What `visibleFormat` shows at `now`, for the dim Lock Screen.
-    public static func snapshot(departure: Date, now: Date, locale: Locale = .autoupdatingCurrent) -> String {
+    public nonisolated static func snapshot(departure: Date, now: Date, locale: Locale = .autoupdatingCurrent) -> String {
         // A backwards range traps; a departed arrival reads as no time left.
         visibleFormat(locale: locale).format(now..<max(now, departure))
     }
@@ -100,13 +100,13 @@ public struct TickingCountdownText: View {
 
     /// "in 8 minutes" / "now", ticking on its own. A SwiftUI system style, for
     /// the same out-of-process reason as `visibleFormat`.
-    public static func spokenFormat(departure: Date, locale: Locale = .autoupdatingCurrent) -> SystemFormatStyle.DateReference {
+    public nonisolated static func spokenFormat(departure: Date, locale: Locale = .autoupdatingCurrent) -> SystemFormatStyle.DateReference {
         SystemFormatStyle.DateReference(to: departure, allowedFields: [.minute], maxFieldCount: 1, thresholdField: .minute)
             .locale(locale)
     }
 
     /// What `spokenFormat` says at `now`, for labels baked into a string.
-    public static func spokenSnapshot(departure: Date, now: Date, locale: Locale = .autoupdatingCurrent) -> String {
+    public nonisolated static func spokenSnapshot(departure: Date, now: Date, locale: Locale = .autoupdatingCurrent) -> String {
         String(spokenFormat(departure: departure, locale: locale).format(now).characters)
     }
 

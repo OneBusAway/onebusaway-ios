@@ -1301,8 +1301,118 @@ class MapViewController: UIViewController,
         floatingPanel.move(to: state, animated: animated)
     }
 
-    // MARK: - MapRegionDelegate
+    // MARK: Loading Indicator
 
+    lazy var loadingIndicator: UIActivityIndicatorView = {
+        let indicator: UIActivityIndicatorView
+
+        indicator = UIActivityIndicatorView(style: .medium)
+        indicator.color = ThemeColors.shared.brand
+
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+
+    var loadingIndicatorTimer: Timer?
+
+    public func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager) {
+        // If loading takes more than a second, show the activity indicator.
+        loadingIndicatorTimer = Timer.scheduledMainActorTimer(withTimeInterval: 1, repeats: false) { [weak self] in
+            guard let self = self else { return }
+            UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
+                self.toolbar.stackView.addArrangedSubview(self.loadingIndicator)
+                self.loadingIndicator.startAnimating()
+            })
+        }
+    }
+
+    public func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager) {
+        loadingIndicatorTimer?.invalidate()
+        loadingIndicatorTimer = nil
+
+        UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
+            self.toolbar.stackView.removeArrangedSubview(self.loadingIndicator)
+            self.loadingIndicator.stopAnimating()
+        })
+    }
+
+    public func mapRegionManagerDismissSearch(_ manager: MapRegionManager) {
+        mapPanelController.exitSearchMode()
+    }
+
+    // MARK: - LocationServiceDelegate
+
+    /// Internal so `showPendingRentalsIfNeeded()` can latch it: a deep-linked
+    /// camera must not be yanked to the device by the next GPS fix.
+    var initialMapChangeMade = false
+
+    private var promptUserOnRegionMismatch = true
+
+    private static let programmaticRadiusInMeters = 200.0
+
+    private var regionMismatchBulletin: RegionMismatchBulletin?
+
+    /// Updates the visible area on the map view based on the user's selected `Region` and current location.
+    private func updateVisibleMapRect() {
+        applyLaunchCamera(userLocation: application.locationService.currentLocation)
+    }
+
+    /// Frames GPS when it sits in the selected region; otherwise the region's
+    /// service rect (or last in-region viewport). The first location fix used
+    /// to call `programmaticallyUpdateVisibleMapRegion` unconditionally, which
+    /// is why a Taipei GPS with Puget Sound selected opened on Taipei (#615).
+    private func applyLaunchCamera(userLocation: CLLocation?) {
+        guard let currentRegion = application.regionsService.currentRegion else { return }
+
+        switch LaunchMapCamera.target(
+            selectedRegion: currentRegion,
+            userLocation: userLocation,
+            lastVisibleMapRect: mapRegionManager.lastVisibleMapRect
+        ) {
+        case .userLocation:
+            if let userLocation {
+                programmaticallyUpdateVisibleMapRegion(location: userLocation)
+            }
+        case .mapRect(let rect, let showMismatch):
+            if !initialMapChangeMade {
+                mapRegionManager.mapView.visibleMapRect = rect
+                // Latch on mismatch so the next GPS callback cannot yank the
+                // camera to the device. No GPS yet: leave the latch open so a
+                // later in-region fix can still zoom in for stops.
+                if showMismatch {
+                    initialMapChangeMade = true
+                }
+            }
+            if showMismatch && promptUserOnRegionMismatch {
+                promptUserOnRegionMismatch = false
+                if let regionMismatchBulletin = RegionMismatchBulletin(application: application),
+                   let uiApp = application.delegate?.uiApplication {
+                    self.regionMismatchBulletin = regionMismatchBulletin
+                    self.regionMismatchBulletin?.show(in: uiApp)
+                }
+            }
+        }
+    }
+
+    func programmaticallyUpdateVisibleMapRegion(location: CLLocation) {
+        guard !initialMapChangeMade else {
+            return
+        }
+
+        initialMapChangeMade = true
+        let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: MapViewController.programmaticRadiusInMeters, longitudinalMeters: MapViewController.programmaticRadiusInMeters)
+        mapRegionManager.mapView.setRegion(region, animated: false)
+    }
+
+    public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
+        applyLaunchCamera(userLocation: location)
+    }
+
+}
+
+// MARK: - MapRegionDelegate
+
+extension MapViewController {
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         // Layer-owned annotations (rental vehicles, rental clusters) present
         // their own detail sheets.
@@ -1454,114 +1564,6 @@ class MapViewController: UIViewController,
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
         viewModel.updateZoomWarnings(stops: showStatus, rentals: manager.rentalZoomHintStatus)
     }
-
-    // MARK: Loading Indicator
-
-    lazy var loadingIndicator: UIActivityIndicatorView = {
-        let indicator: UIActivityIndicatorView
-
-        indicator = UIActivityIndicatorView(style: .medium)
-        indicator.color = ThemeColors.shared.brand
-
-        indicator.hidesWhenStopped = true
-        return indicator
-    }()
-
-    var loadingIndicatorTimer: Timer?
-
-    public func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager) {
-        // If loading takes more than a second, show the activity indicator.
-        loadingIndicatorTimer = Timer.scheduledMainActorTimer(withTimeInterval: 1, repeats: false) { [weak self] in
-            guard let self = self else { return }
-            UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
-                self.toolbar.stackView.addArrangedSubview(self.loadingIndicator)
-                self.loadingIndicator.startAnimating()
-            })
-        }
-    }
-
-    public func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager) {
-        loadingIndicatorTimer?.invalidate()
-        loadingIndicatorTimer = nil
-
-        UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
-            self.toolbar.stackView.removeArrangedSubview(self.loadingIndicator)
-            self.loadingIndicator.stopAnimating()
-        })
-    }
-
-    public func mapRegionManagerDismissSearch(_ manager: MapRegionManager) {
-        mapPanelController.exitSearchMode()
-    }
-
-    // MARK: - LocationServiceDelegate
-
-    /// Internal so `showPendingRentalsIfNeeded()` can latch it: a deep-linked
-    /// camera must not be yanked to the device by the next GPS fix.
-    var initialMapChangeMade = false
-
-    private var promptUserOnRegionMismatch = true
-
-    private static let programmaticRadiusInMeters = 200.0
-
-    private var regionMismatchBulletin: RegionMismatchBulletin?
-
-    /// Updates the visible area on the map view based on the user's selected `Region` and current location.
-    private func updateVisibleMapRect() {
-        applyLaunchCamera(userLocation: application.locationService.currentLocation)
-    }
-
-    /// Frames GPS when it sits in the selected region; otherwise the region's
-    /// service rect (or last in-region viewport). The first location fix used
-    /// to call `programmaticallyUpdateVisibleMapRegion` unconditionally, which
-    /// is why a Taipei GPS with Puget Sound selected opened on Taipei (#615).
-    private func applyLaunchCamera(userLocation: CLLocation?) {
-        guard let currentRegion = application.regionsService.currentRegion else { return }
-
-        switch LaunchMapCamera.target(
-            selectedRegion: currentRegion,
-            userLocation: userLocation,
-            lastVisibleMapRect: mapRegionManager.lastVisibleMapRect
-        ) {
-        case .userLocation:
-            if let userLocation {
-                programmaticallyUpdateVisibleMapRegion(location: userLocation)
-            }
-        case .mapRect(let rect, let showMismatch):
-            if !initialMapChangeMade {
-                mapRegionManager.mapView.visibleMapRect = rect
-                // Latch on mismatch so the next GPS callback cannot yank the
-                // camera to the device. No GPS yet: leave the latch open so a
-                // later in-region fix can still zoom in for stops.
-                if showMismatch {
-                    initialMapChangeMade = true
-                }
-            }
-            if showMismatch && promptUserOnRegionMismatch {
-                promptUserOnRegionMismatch = false
-                if let regionMismatchBulletin = RegionMismatchBulletin(application: application),
-                   let uiApp = application.delegate?.uiApplication {
-                    self.regionMismatchBulletin = regionMismatchBulletin
-                    self.regionMismatchBulletin?.show(in: uiApp)
-                }
-            }
-        }
-    }
-
-    func programmaticallyUpdateVisibleMapRegion(location: CLLocation) {
-        guard !initialMapChangeMade else {
-            return
-        }
-
-        initialMapChangeMade = true
-        let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: MapViewController.programmaticRadiusInMeters, longitudinalMeters: MapViewController.programmaticRadiusInMeters)
-        mapRegionManager.mapView.setRegion(region, animated: false)
-    }
-
-    public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
-        applyLaunchCamera(userLocation: location)
-    }
-
 }
 
 // MARK: - Context Menus

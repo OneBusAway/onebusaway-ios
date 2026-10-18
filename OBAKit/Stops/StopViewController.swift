@@ -1206,32 +1206,6 @@ public class StopViewController: UIViewController,
         }
     }
 
-    // MARK: - Bookmarks
-    private func addBookmark(viewModel: ArrivalDepartureItem) {
-        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
-        addBookmark(arrivalDeparture: arrivalDeparture)
-    }
-
-    private func addBookmark(arrivalDeparture: ArrivalDeparture) {
-        let bookmarkController = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
-        let navigation = UINavigationController(rootViewController: bookmarkController)
-
-        application.viewRouter.present(navigation, from: self)
-    }
-
-    // MARK: - Bookmark Editor
-
-    func bookmarkEditorCancelled(_ viewController: UIViewController) {
-        viewController.dismiss(animated: true, completion: nil)
-    }
-
-    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
-        viewController.dismiss(animated: true) {
-            let msg = isNewBookmark ? OBALoc("stops_controller.created_new_bookmark", value: "Added Bookmark", comment: "Message displayed when a new bookmark is created.") : OBALoc("stops_controller.updated_bookmark", value: "Updated Bookmark", comment: "Message displayed an existing bookmark is updated.")
-            ProgressHUD.showSuccessAndDismiss(message: msg, dismissAfter: 1.0)
-        }
-    }
-
     // MARK: - Share Trip Status
 
     /// Owns the picker → share-sheet flow. Holds `self` weakly, so retaining it
@@ -1333,6 +1307,35 @@ public class StopViewController: UIViewController,
         inPreviewMode = false
     }
 
+}
+
+// MARK: - Bookmarks
+
+extension StopViewController {
+    private func addBookmark(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+        addBookmark(arrivalDeparture: arrivalDeparture)
+    }
+
+    private func addBookmark(arrivalDeparture: ArrivalDeparture) {
+        let bookmarkController = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
+        let navigation = UINavigationController(rootViewController: bookmarkController)
+
+        application.viewRouter.present(navigation, from: self)
+    }
+
+    // MARK: - Bookmark Editor
+
+    func bookmarkEditorCancelled(_ viewController: UIViewController) {
+        viewController.dismiss(animated: true, completion: nil)
+    }
+
+    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
+        viewController.dismiss(animated: true) {
+            let msg = isNewBookmark ? OBALoc("stops_controller.created_new_bookmark", value: "Added Bookmark", comment: "Message displayed when a new bookmark is created.") : OBALoc("stops_controller.updated_bookmark", value: "Updated Bookmark", comment: "Message displayed an existing bookmark is updated.")
+            ProgressHUD.showSuccessAndDismiss(message: msg, dismissAfter: 1.0)
+        }
+    }
 }
 
 // MARK: - ViewModel Binding

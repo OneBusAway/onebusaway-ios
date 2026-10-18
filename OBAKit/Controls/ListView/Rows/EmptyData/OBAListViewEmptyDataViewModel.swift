@@ -41,30 +41,7 @@ extension OBAListView {
             }
 
             // Then, add an icon if applicable.
-            var icon: UIImage?
-            switch error {
-            case let apiError as APIError:
-                switch apiError {
-                case .networkFailure, .cellularDataRestricted:
-                    icon = UIImage(systemName: "wifi.slash")
-                case .captivePortal:
-                    icon = UIImage(systemName: "wifi.exclamationmark")
-                case .noResponseBody, .requestFailure, .invalidContentType:
-                    icon = UIImage(systemName: "bolt.horizontal.circle")
-                case .requestNotFound:
-                    icon = UIImage(systemName: "questionmark.square.dashed")
-                case .serverError, .serverUnavailable, .rateLimited:
-                    icon = UIImage(systemName: "server.rack")
-                case .invalidResponseData:
-                    icon = UIImage(systemName: "exclamationmark.triangle")
-                case .surveyServiceNotConfigured:
-                    icon = UIImage(systemName: "doc.text.magnifyingglass")
-                case .noRegionSelected:
-                    icon = UIImage(systemName: "location.slash")
-                }
-            default:
-                break
-            }
+            let icon = EmptyDataSetView.icon(for: error)
 
             self.init(alignment: .center, title: nil, body: error.localizedDescription, image: icon, buttonConfig: buttonConfig)
         }
@@ -72,6 +49,32 @@ extension OBAListView {
 }
 
 extension EmptyDataSetView {
+    /// A symbol describing `error`, or `nil` when there isn't a relevant one.
+    nonisolated static func icon(for error: Error) -> UIImage? {
+        guard let apiError = error as? APIError else { return nil }
+
+        let symbolName: String
+        switch apiError {
+        case .networkFailure, .cellularDataRestricted:
+            symbolName = "wifi.slash"
+        case .captivePortal:
+            symbolName = "wifi.exclamationmark"
+        case .noResponseBody, .requestFailure, .invalidContentType:
+            symbolName = "bolt.horizontal.circle"
+        case .requestNotFound:
+            symbolName = "questionmark.square.dashed"
+        case .serverError, .serverUnavailable, .rateLimited:
+            symbolName = "server.rack"
+        case .invalidResponseData:
+            symbolName = "exclamationmark.triangle"
+        case .surveyServiceNotConfigured:
+            symbolName = "doc.text.magnifyingglass"
+        case .noRegionSelected:
+            symbolName = "location.slash"
+        }
+        return UIImage(systemName: symbolName)
+    }
+
     func apply(_ viewModel: OBAListView.StandardEmptyDataViewModel) {
         alignment = viewModel.alignment
         titleLabel.text = viewModel.title
