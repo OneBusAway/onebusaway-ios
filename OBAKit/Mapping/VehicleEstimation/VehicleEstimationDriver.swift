@@ -12,19 +12,21 @@ import Foundation
 import OBAKitCore
 import UIKit
 
-/// Runs a `VehicleTrack` for one trip on a 1 Hz tick and hands each estimate to
-/// whoever draws the marker.
+/// Runs a `VehicleTrack` per vehicle on a 1 Hz tick and hands the estimates to
+/// whoever draws the markers: one vehicle for the trip page, one per arriving bus
+/// for the stop's map.
 ///
-/// Fed by the trip page on every poll (`update`), started and stopped with the
-/// page (`resume`, `pause`), and stopped in the background. Publishes `nil` when
-/// there is nothing to estimate — the feature is off, the trip has no shape, the
-/// vehicle reports no usable fix — which tells the map to draw the reported
-/// position as it always has.
+/// Fed on every poll (`update`), started and stopped with its screen (`resume`,
+/// `pause`), and stopped in the background. A vehicle with nothing to estimate —
+/// the feature is off, its trip has no shape, it reports no usable fix — has no
+/// estimate, which tells the map to draw its reported position as it always has.
 @MainActor
 final class VehicleEstimationDriver {
 
-    /// Everything one poll knows about the trip.
+    /// Everything one poll knows about one vehicle's trip.
     struct Input {
+        /// Which marker this is. Stable across polls for the same vehicle.
+        let vehicleKey: String
         let tripID: String
         let shape: [CLLocationCoordinate2D]
         let stopTimes: [TripGeometry.StopTime]
@@ -40,9 +42,13 @@ final class VehicleEstimationDriver {
     /// With Reduce Motion on, the marker moves this often, without animating.
     static let reduceMotionStepInterval: TimeInterval = 10
 
+    /// Every vehicle's estimate, by `Input.vehicleKey`, on every update and tick.
+    var onEstimates: (([String: VehicleEstimate]) -> Void)?
+
+    /// For a single vehicle: its estimate, or `nil`.
     var onEstimate: ((VehicleEstimate?) -> Void)?
 
-    private(set) var estimate: VehicleEstimate?
+    private(set) var estimates: [String: VehicleEstimate] = [:]
 
     private let isEnabled: () -> Bool
     private let reduceMotion: () -> Bool
@@ -50,8 +56,14 @@ final class VehicleEstimationDriver {
     private let now: () -> Date
     private let tunables: VehicleEstimationTunables
 
-    private var track: VehicleTrack?
-    private var geometryKey: GeometryKey?
+    private struct Vehicle {
+        var track: VehicleTrack
+        let geometryKey: GeometryKey
+    }
+
+    private var vehicles: [String: Vehicle] = [:]
+    /// The key `onEstimate` reports: the only vehicle, when there is one.
+    private var singleKey: String?
     private var skew = ClockSkewEstimator()
     private var lastPublishedAt: Date?
 
@@ -92,33 +104,40 @@ final class VehicleEstimationDriver {
     // MARK: - Input
 
     func update(_ input: Input) {
-        guard isEnabled(), let shape = ShapeLine(coordinates: input.shape) else {
-            reset()
+        update([input])
+    }
+
+    /// Replaces the set of vehicles with `inputs`: one left out is dropped.
+    func update(_ inputs: [Input]) {
+        singleKey = inputs.count == 1 ? inputs[0].vehicleKey : nil
+        guard isEnabled() else {
+            vehicles.removeAll()
+            lastPublishedAt = nil
+            publish(force: true)
             return
         }
 
-        input.serverClocks.forEach { skew.record($0) }
-
-        let key = GeometryKey(input: input)
-        if key != geometryKey || track == nil {
-            geometryKey = key
-            let geometry = TripGeometry(shape: shape, stopTimes: input.stopTimes, serverTripLength: input.serverTripLength)
-            track = VehicleTrack(geometry: geometry, tunables: tunables)
-        }
-
+        inputs.flatMap(\.serverClocks).forEach { skew.record($0) }
         let serverNow = skew.serverNow(deviceNow: now())
-        for fix in input.fixes.filter({ $0.tripID == input.tripID }).sorted(by: { $0.fixTime < $1.fixTime }) {
-            _ = track?.ingest(fix, now: serverNow)
-        }
-        publish(force: true)
-    }
 
-    private func reset() {
-        track = nil
-        geometryKey = nil
-        lastPublishedAt = nil
-        estimate = nil
-        onEstimate?(nil)
+        var next: [String: Vehicle] = [:]
+        for input in inputs {
+            guard let shape = ShapeLine(coordinates: input.shape) else { continue }
+            let key = GeometryKey(input: input)
+            var vehicle: Vehicle
+            if let existing = vehicles[input.vehicleKey], existing.geometryKey == key {
+                vehicle = existing
+            } else {
+                let geometry = TripGeometry(shape: shape, stopTimes: input.stopTimes, serverTripLength: input.serverTripLength)
+                vehicle = Vehicle(track: VehicleTrack(geometry: geometry, tunables: tunables), geometryKey: key)
+            }
+            for fix in input.fixes.filter({ $0.tripID == input.tripID }).sorted(by: { $0.fixTime < $1.fixTime }) {
+                _ = vehicle.track.ingest(fix, now: serverNow)
+            }
+            next[input.vehicleKey] = vehicle
+        }
+        vehicles = next
+        publish(force: true)
     }
 
     // MARK: - Ticking
@@ -154,25 +173,23 @@ final class VehicleEstimationDriver {
     }
 
     private func publish(force: Bool) {
-        guard var track, track.hasFix else {
-            if estimate != nil || force {
-                estimate = nil
-                onEstimate?(nil)
-            }
-            return
-        }
-
         let deviceNow = now()
+        if !force, vehicles.isEmpty { return }
         if !force, reduceMotion(), let lastPublishedAt,
            deviceNow.timeIntervalSince(lastPublishedAt) < Self.reduceMotionStepInterval {
             return
         }
 
-        let next = track.estimate(at: skew.serverNow(deviceNow: deviceNow))
-        self.track = track
+        let serverNow = skew.serverNow(deviceNow: deviceNow)
+        var next: [String: VehicleEstimate] = [:]
+        for key in vehicles.keys {
+            guard vehicles[key]!.track.hasFix, let estimate = vehicles[key]!.track.estimate(at: serverNow) else { continue }
+            next[key] = estimate
+        }
         lastPublishedAt = deviceNow
-        estimate = next
-        onEstimate?(next)
+        estimates = next
+        onEstimates?(next)
+        onEstimate?(singleKey.flatMap { next[$0] })
     }
 
     /// What, when it changes, means the shape or schedule did: a new trip, or the

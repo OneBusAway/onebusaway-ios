@@ -44,10 +44,12 @@ final class VehicleEstimationDriverTests {
 
     private func input(
         tripID: String = "trip",
+        vehicleKey: String? = nil,
         fixes: [VehicleFix] = [F.fix(north: 200, at: 0)],
         serverClocks: [ServerClockSample] = []
     ) -> VehicleEstimationDriver.Input {
         VehicleEstimationDriver.Input(
+            vehicleKey: vehicleKey ?? tripID,
             tripID: tripID,
             shape: F.straightLine().coordinates,
             stopTimes: [F.stop(0, at: 0), F.stop(1000, at: 100)],
@@ -161,4 +163,45 @@ final class VehicleEstimationDriverTests {
         driver.update(input(serverClocks: [sample]))
         expectClose(published.last??.fixAge, 10, within: 0.001)
     }
+
+    // MARK: - Several vehicles
+
+    @Test func `Several vehicles are estimated at once, each by its key`() {
+        var estimates: [String: VehicleEstimate] = [:]
+        driver.onEstimates = { estimates = $0 }
+
+        driver.update([
+            input(tripID: "a", vehicleKey: "bus 1", fixes: [F.fix(north: 100, at: 0, vehicleID: "bus 1", tripID: "a")]),
+            input(tripID: "b", vehicleKey: "bus 2", fixes: [F.fix(north: 500, at: 0, vehicleID: "bus 2", tripID: "b")])
+        ])
+
+        expectClose(estimates["bus 1"]?.distanceAlongShape, 100, within: 0.5)
+        expectClose(estimates["bus 2"]?.distanceAlongShape, 500, within: 0.5)
+    }
+
+    @Test func `A vehicle left out of an update stops being estimated`() {
+        var estimates: [String: VehicleEstimate] = [:]
+        driver.onEstimates = { estimates = $0 }
+        driver.update([
+            input(tripID: "a", vehicleKey: "bus 1", fixes: [F.fix(north: 100, at: 0, vehicleID: "bus 1", tripID: "a")]),
+            input(tripID: "b", vehicleKey: "bus 2", fixes: [F.fix(north: 500, at: 0, vehicleID: "bus 2", tripID: "b")])
+        ])
+
+        driver.update([input(tripID: "b", vehicleKey: "bus 2", fixes: [F.fix(north: 500, at: 0, vehicleID: "bus 2", tripID: "b")])])
+
+        #expect(estimates["bus 1"] == nil)
+        #expect(estimates["bus 2"] != nil)
+    }
+
+    @Test func `A vehicle keeps its history across updates`() {
+        var estimates: [String: VehicleEstimate] = [:]
+        driver.onEstimates = { estimates = $0 }
+        driver.update([input(tripID: "a", vehicleKey: "bus 1", fixes: [F.fix(north: 100, at: 0, vehicleID: "bus 1", tripID: "a")])])
+        device.now += 15
+        driver.update([input(tripID: "a", vehicleKey: "bus 1", fixes: [F.fix(north: 100, at: 0, vehicleID: "bus 1", tripID: "a")])])
+        // The same fix again: not a new vehicle, so no snap, and it has moved on.
+        #expect(estimates["bus 1"]?.shouldSnap == false)
+        expectClose(estimates["bus 1"]?.distanceAlongShape, 250, within: 0.5)
+    }
 }
+
