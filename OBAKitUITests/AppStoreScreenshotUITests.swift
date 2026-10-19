@@ -50,6 +50,9 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     // MARK: - Launch
 
     @MainActor private func launch(environment: [String: String] = [:]) -> XCUIApplication {
+        // A retake can start with slide 7's Safari in front, and launching
+        // from there puts "◀ Safari" in the status bar.
+        XCUIApplication(bundleIdentifier: "com.apple.mobilesafari").terminate()
         let app = XCUIApplication()
         app.launchArguments += [
             "-AppleLanguages", "(en)",
@@ -72,8 +75,8 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         return app
     }
 
-    @MainActor private func launchOnStopSheet() -> XCUIApplication {
-        let app = launch(environment: ["TEST_SCREENSHOT_STOP_ID": Self.stopID])
+    @MainActor private func launchOnStopSheet(environment: [String: String] = [:]) -> XCUIApplication {
+        let app = launch(environment: environment.merging(["TEST_SCREENSHOT_STOP_ID": Self.stopID]) { $1 })
         XCTAssertTrue(firstDeparture(in: app).waitForExistence(timeout: 45), "Stop sheet never showed departures")
         return app
     }
@@ -162,7 +165,8 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         if Self.duoPosture != nil {
             throw XCTSkip("pressLockButton doesn't lock iPhone Duo.")
         }
-        let app = launchOnStopSheet()
+        // Stub departures: the real trip has usually left by capture time.
+        let app = launchOnStopSheet(environment: ["TEST_SCREENSHOT_LIVE_ACTIVITY_MINUTES": "4,12,21"])
         openTripPage(in: app)
         app.buttons["Track on Lock Screen"].tap()
         sleep(3)
@@ -245,6 +249,16 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
             _ = lastBookmark.waitForExistence(timeout: 5)
         }
         XCTAssertTrue(lastBookmark.exists, "Seeded bookmarks never appeared")
+
+        // A row whose arrivals fetch failed (the server sometimes answers
+        // `null` under load) says so until the next refresh; pull to refresh
+        // rather than ship it.
+        let failedRow = app.staticTexts["No upcoming departures"].firstMatch
+        for _ in 0..<6 where failedRow.waitForExistence(timeout: 3) {
+            let row = lastBookmark.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            row.press(forDuration: 0.1, thenDragTo: row.withOffset(CGVector(dx: 0, dy: 300)))
+            sleep(5)
+        }
         capture("06-bookmarks", settle: 5)
     }
 

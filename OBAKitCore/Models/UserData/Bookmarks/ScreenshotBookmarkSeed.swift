@@ -32,34 +32,40 @@ public struct ScreenshotBookmarkSeed: Decodable, Sendable {
         }
     }
 
-    /// Trip bookmarks for `seeds`, fetched concurrently and returned in seed
-    /// order, each with its seed. A seed whose route has no departure in the
-    /// next 90 minutes, or whose fetch fails, is left out.
+    /// Trip bookmarks for `seeds`, in seed order, each with its seed. A seed
+    /// whose route has no departure in the next 90 minutes, or whose fetch
+    /// keeps failing, is left out.
+    ///
+    /// The fetches run one at a time, and each retries: under load, as at the
+    /// app's launch, the Puget Sound server answers some with the body `null`.
     public static func makeBookmarks(
         _ seeds: [ScreenshotBookmarkSeed],
         apiService: RESTAPIService,
         regionIdentifier: Int
     ) async -> [(seed: ScreenshotBookmarkSeed, bookmark: Bookmark)] {
-        let bookmarks = await withTaskGroup(of: (Int, Bookmark?).self) { group in
-            for (index, seed) in seeds.enumerated() {
-                group.addTask { (index, await seed.makeBookmark(apiService: apiService, regionIdentifier: regionIdentifier)) }
+        var made = [(seed: ScreenshotBookmarkSeed, bookmark: Bookmark)]()
+        for seed in seeds {
+            if let bookmark = await seed.makeBookmark(apiService: apiService, regionIdentifier: regionIdentifier) {
+                made.append((seed, bookmark))
             }
-            return await group.reduce(into: [Int: Bookmark]()) { $0[$1.0] = $1.1 }
         }
-        return seeds.indices.compactMap { index in bookmarks[index].map { (seeds[index], $0) } }
+        return made
     }
 
     /// A trip bookmark on the route's next departure from the stop, so it
     /// shows real countdowns; nil when the route has none in the next 90
     /// minutes or the fetch fails.
     private func makeBookmark(apiService: RESTAPIService, regionIdentifier: Int) async -> Bookmark? {
-        let arrivals: StopArrivals
-        do {
-            arrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 0, minutesAfter: 90).entry
-        } catch {
-            Logger.error("Screenshot bookmarks: arrivals for \(stopID) failed: \(error)")
-            return nil
+        var arrivals: StopArrivals?
+        for attempt in 1...5 where arrivals == nil && !Task.isCancelled {
+            do {
+                arrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 0, minutesAfter: 90).entry
+            } catch {
+                Logger.error("Screenshot bookmarks: arrivals for \(stopID) failed (attempt \(attempt)): \(error)")
+                try? await Task.sleep(for: .seconds(3))
+            }
         }
+        guard let arrivals else { return nil }
         guard let arrivalDeparture = arrivals.arrivalsAndDepartures.first(where: { $0.routeID == routeID }) else {
             Logger.error("Screenshot bookmarks: no \(routeID) departures at \(stopID).")
             return nil

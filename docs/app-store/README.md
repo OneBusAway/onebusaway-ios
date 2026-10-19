@@ -167,6 +167,7 @@ put the app in the right state:
 |---|---|
 | `TEST_SCREENSHOT_STOP_ID` | Opens the stop's sheet over the map, as a tap on its pin does. Classic map only; the experimental map panel ignores it |
 | `TEST_SCREENSHOT_BOOKMARKS` | Replaces all bookmarks with trip bookmarks built from live arrivals (JSON: `group`, `name`, `stopID`, `routeID`) |
+| `TEST_SCREENSHOT_LIVE_ACTIVITY_MINUTES` | Gives a Live Activity started from the trip page stub departures, that many minutes from now (`4,12,21`). The Lock Screen slide uses it: the real trip has usually left by the time the Lock Screen is captured, and the card would show no times |
 | `TEST_SCREENSHOT_END_LIVE_ACTIVITIES` | Ends every Live Activity. Every test sets it, so slide 2's is gone from the Dynamic Island over Safari and retakes of slide 2 don't stack activities |
 
 The tests also pass these launch arguments, which override UserDefaults for

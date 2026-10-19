@@ -38,6 +38,19 @@ extension Application {
         }
     }
 
+    /// Stub departures for a Live Activity started from the trip page, from
+    /// `TEST_SCREENSHOT_LIVE_ACTIVITY_MINUTES` ("4,12,21": minutes from now).
+    /// The real trip is usually leaving by the time the Lock Screen is
+    /// captured, and a card whose only departure has gone shows no times.
+    static func screenshotLiveActivityState() -> TripAttributes.ContentState? {
+        guard let minutes = ProcessInfo.processInfo.environment["TEST_SCREENSHOT_LIVE_ACTIVITY_MINUTES"] else { return nil }
+        let now = Int(Date().timeIntervalSince1970)
+        let arrivals = minutes.split(separator: ",").compactMap { Int($0) }.map {
+            TripAttributes.ContentState.ArrivalInfo(departureTime: now + $0 * 60, scheduleStatus: .onTime, scheduleDeviation: 0, isArrival: false)
+        }
+        return arrivals.isEmpty ? nil : TripAttributes.ContentState(arrivals: arrivals)
+    }
+
     /// The stop to open as the map's sheet, once there is a region to load it
     /// from. Cleared on return, so it opens once.
     func claimScreenshotStop() -> StopID? {

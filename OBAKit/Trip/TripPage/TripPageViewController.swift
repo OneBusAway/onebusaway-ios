@@ -690,7 +690,11 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // a single `departure` and no stop arrival list, so there is no second one
         // to offer — what changes is that a future edit to the mapping reaches
         // here too.
+        #if DEBUG
+        let contentState = Application.screenshotLiveActivityState() ?? BookmarkActions.contentState(from: [departure])
+        #else
         let contentState = BookmarkActions.contentState(from: [departure])
+        #endif
 
         // The same trip can be started from here, the stop page, and the
         // bookmarks list. Without this guard one stop ends up with two Lock
