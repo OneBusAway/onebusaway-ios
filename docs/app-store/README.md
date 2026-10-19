@@ -4,14 +4,45 @@ Everything needed to regenerate the App Store screenshot slides from the
 simulator. The slide list and captions are in `screenshots.json`; the listing
 text (description, keywords, promotional text) is in `listing.md`.
 
+## Generating the screenshots
+
+1. Do the [one-time setup](#one-time-setup) below (Pillow and frames-cli).
+2. From the repo root, generate the project:
+
+   ```bash
+   scripts/generate_project OneBusAway
+   ```
+
+3. Run the pipeline. The first run takes about ten minutes, most of it the
+   build; later runs take about three:
+
+   ```bash
+   scripts/app_store_screenshots
+   ```
+
+4. Check the slides in `build/app-store-screenshots/slides/`: one PNG per
+   slide, numbered in App Store order, at 1206 × 2622 (the 6.3" iPhone size).
+5. Drag them into App Store Connect, in order, under the matching display
+   size.
+
+Run it in the daytime, Pacific time; see [Data](#data). A slide that fails
+or skips prints a warning, and the run keeps the others. Retake it on its own:
+
 ```bash
-scripts/generate_project OneBusAway        # required first
-scripts/app_store_screenshots              # capture → export → frame → compose
+scripts/app_store_screenshots --only test05Alarm
 ```
 
-The finished slides land in `build/app-store-screenshots/slides/`, one PNG per
-slide at 1206 × 2622 (the 6.3" iPhone size). Add `--size 1320x2868` for the 6.9"
-size; the layout scales with the canvas.
+Options:
+
+| Option | Effect |
+|---|---|
+| `--size 1320x2868` | Composes at the 6.9" size instead; the layout scales with the canvas |
+| `--only <test>` | Runs one slide's test (`test01StopArrivals` … `test07OpenSource`); other captures are kept |
+| `capture`, `export`, `frame`, `compose` | Runs one step. After editing a caption, `compose` alone is enough |
+| `SCREENSHOT_UDID=<udid>` | Uses that simulator instead of the newest iPhone Pro |
+
+To change a caption, edit `screenshots.json` and rerun `compose`. To change
+what a slide shows, edit its test in `OBAKitUITests/AppStoreScreenshotUITests.swift`.
 
 ## How it works
 
@@ -28,11 +59,6 @@ size; the layout scales with the canvas.
 4. **Compose.** `scripts/app_store/compose_screenshots.py` puts each framed
    capture on the `#68AD0B` background under its caption, in SF Pro Display
    Bold, into `slides/`. The proportions come from the hand-made 2025 set.
-
-Run one step on its own with `scripts/app_store_screenshots capture` (or
-`export`, `frame`, `compose`). Retake a single slide with
-`--only test05Alarm`; the other raw captures are kept. Re-running `compose`
-alone is enough after editing a caption.
 
 ## Data
 
