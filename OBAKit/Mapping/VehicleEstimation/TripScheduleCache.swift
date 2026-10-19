@@ -91,17 +91,3 @@ actor TripScheduleCache {
         inFlight.removeAll()
     }
 }
-
-extension TripScheduleCache {
-    /// Fetches through `apiService`'s trip details.
-    static func live(apiService: @escaping @MainActor () -> RESTAPIService?) -> TripScheduleCache {
-        TripScheduleCache { request in
-            guard let service = await apiService() else { throw APIError.networkFailure(nil) }
-            let details = try await service.getTrip(tripID: request.tripID, vehicleID: request.vehicleID, serviceDate: request.serviceDate).entry
-            return Schedule(
-                stopTimes: details.stopTimes.compactMap(TripGeometry.StopTime.init),
-                serverTripLength: details.status?.totalDistanceAlongTrip
-            )
-        }
-    }
-}

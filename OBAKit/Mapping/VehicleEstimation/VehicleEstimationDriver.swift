@@ -101,6 +101,9 @@ final class VehicleEstimationDriver {
         tickTask?.cancel()
     }
 
+    /// Whether estimation is on, for callers deciding whether to fetch its inputs.
+    var isEnabledNow: Bool { isEnabled() }
+
     // MARK: - Input
 
     func update(_ input: Input) {
