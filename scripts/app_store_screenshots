@@ -69,11 +69,12 @@ resolve_udid() {
     fi
 }
 
-# Runs the given tests, or the whole suite without any, into result bundle $1,
-# telling the tests the Duo's posture ($posture) if there is one. A failed
-# slide still leaves the others' captures in the bundle.
+# run_tests <bundle> <udid> <posture> [test ...]: runs the given tests, or the
+# whole suite without any, into the result bundle. A Duo posture, open or
+# folded, is passed to the tests; the iPhone passes "". A failed slide still
+# leaves the others' captures in the bundle.
 run_tests() {
-    local bundle="$1" udid="$2"; shift 2
+    local bundle="$1" udid="$2" posture="$3"; shift 3
     local filters=("-only-testing:$suite")
     if [[ $# -gt 0 ]]; then
         filters=()
@@ -83,7 +84,7 @@ run_tests() {
     fi
     rm -rf "$bundle"
     # xcodebuild hands TEST_RUNNER_-prefixed variables to the tests, unprefixed.
-    TEST_RUNNER_SCREENSHOT_POSTURE="${posture:-}" xcodebuild test-without-building -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
+    env ${posture:+TEST_RUNNER_SCREENSHOT_POSTURE="$posture"} xcodebuild test-without-building -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
         -destination "platform=iOS Simulator,id=$udid" -derivedDataPath "$derived" \
         "${filters[@]}" -resultBundlePath "$bundle" || echo "warning: some slides failed; exporting what was captured" >&2
 }
@@ -98,6 +99,11 @@ selected() {
 }
 
 capture() {
+    if [[ "$duo" == 1 && -n "$only" && -z "$(selected "${open_tests[@]}" "${folded_tests[@]}")" ]]; then
+        echo "error: $only is not in the Duo set (open: ${open_tests[*]}; folded: ${folded_tests[*]})" >&2
+        exit 2
+    fi
+
     local udid
     udid=$(resolve_udid)
     echo "Capturing on simulator $udid"
@@ -124,7 +130,7 @@ capture() {
     fi
 
     if [[ "$duo" == 0 ]]; then
-        run_tests "$out/screenshots.xcresult" "$udid" ${only:+"$only"}
+        run_tests "$out/screenshots.xcresult" "$udid" "" ${only:+"$only"}
         return
     fi
 
@@ -146,7 +152,7 @@ capture() {
         fi
         python3 "$repo/scripts/app_store/duo_posture.py" "$udid" "$posture"
         # shellcheck disable=SC2086 # one test name per word
-        run_tests "$out/$posture.xcresult" "$udid" $tests
+        run_tests "$out/$posture.xcresult" "$udid" "$posture" $tests
     done
 }
 

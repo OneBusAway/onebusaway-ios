@@ -115,8 +115,9 @@ def draw_device(capture, folded):
     inner_size = (bw - 6, bh - 6)
     rim_body.paste(Image.new("RGBA", inner_size, METAL + (255,)), (3, 3), rounded_mask(inner_size, grown(body_radii, -3)))
     glass_size = (bw - 2 * RIM, bh - 2 * RIM)
+    # The glass follows the body's corners, so none pokes past it at the hinge.
     rim_body.paste(Image.new("RGBA", glass_size, GLASS + (255,)), (RIM, RIM),
-                   rounded_mask(glass_size, grown(screen_radii, BEZEL)))
+                   rounded_mask(glass_size, grown(body_radii, -RIM)))
     rim_body.paste(screen, (border, border), rounded_mask(screen_size, screen_radii))
     device.alpha_composite(rim_body, (ox, oy))
     return device

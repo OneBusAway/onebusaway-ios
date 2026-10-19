@@ -91,8 +91,10 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     }
 
     /// The iPhone Duo's posture, `open` or `folded`, which
-    /// `scripts/app_store_screenshots --duo` passes in. Nil on other devices.
+    /// `scripts/app_store_screenshots --duo` passes in. Nil on other devices,
+    /// where the script passes the variable empty.
     private static let duoPosture = ProcessInfo.processInfo.environment["SCREENSHOT_POSTURE"]
+        .flatMap { $0.isEmpty ? nil : $0 }
 
     /// iPhone Duo has two screens, and `XCUIScreen.main` is the cover one,
     /// which is dark when the Duo is open; then the inner, larger one is lit.
