@@ -19,7 +19,10 @@ import OBAKitCore
 /// A free function rather than inline map content because `MapPanelRootView.body`
 /// has already exceeded Swift's type-check budget once.
 @MapContentBuilder
-func tripFocusMapContent(for display: TripFocusMapDisplayModel.Display?) -> some MapContent {
+func tripFocusMapContent(
+    for display: TripFocusMapDisplayModel.Display?,
+    vehicle: TripFocusMapDisplayModel.TripVehicle?
+) -> some MapContent {
     if let display {
         // Spent first, then ahead, so where the two meet the live half wins the
         // z-order. Casing before core within each, for the same reason.
@@ -54,7 +57,7 @@ func tripFocusMapContent(for display: TripFocusMapDisplayModel.Display?) -> some
             }
         }
 
-        if let vehicle = display.vehicle {
+        if let vehicle {
             Annotation("", coordinate: vehicle.coordinate, anchor: .center) {
                 TripVehicleMarker(vehicle: vehicle, routeColor: display.routeColor)
             }
@@ -126,7 +129,14 @@ private struct TripVehicleMarker: View {
         let color = vehicle.isRealTime ? routeColor : Color(uiColor: ThemeColors.shared.gray)
 
         ZStack {
-            if vehicle.isRealTime {
+            // The uncertainty halo of an estimate from an aging fix; see `VehicleMarkerStaleness`.
+            if vehicle.staleness.haloDiameter > 0 {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .overlay(Circle().stroke(color.opacity(0.35), lineWidth: 1))
+                    .frame(width: vehicle.staleness.haloDiameter, height: vehicle.staleness.haloDiameter)
+            }
+            if vehicle.isRealTime && vehicle.staleness.showsHeading {
                 // Negated because OBA's orientation turns the other way from a
                 // screen rotation; see `PulsingVehicleAnnotationView.updateHeading`.
                 Image(uiImage: Icons.templateHeading)
@@ -146,6 +156,7 @@ private struct TripVehicleMarker: View {
                 .frame(width: Self.diameter / 2, height: Self.diameter / 2)
                 .foregroundStyle(.white)
         }
+        .opacity(vehicle.staleness.alpha)
         // The page's stop list already marks the stop the bus is at, and the map
         // tab's marker isn't interactive either.
         .accessibilityHidden(true)

@@ -274,4 +274,96 @@ final class TripFocusMapLayerTests {
 
         #expect(shapeOverlays.isEmpty)
     }
+
+    // MARK: - Estimated position
+
+    private var vehicleAnnotations: [VehicleAnnotation] {
+        mapView.annotations.compactMap { $0 as? VehicleAnnotation }
+    }
+
+    /// The shape fixture runs east along latitude 47.
+    private let alongShape = CLLocationCoordinate2D(latitude: 47, longitude: -121.975)
+
+    @Test func `An estimate moves the vehicle marker without replacing it`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+        let marker = try #require(vehicleAnnotations.first)
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        #expect(vehicleAnnotations.count == 1)
+        #expect(vehicleAnnotations.first === marker)
+        #expect(marker.coordinate.latitude == alongShape.latitude)
+        #expect(marker.coordinate.longitude == alongShape.longitude)
+    }
+
+    /// Polls still arrive every 30 s with the raw fix. Moving the marker to it
+    /// would yank an estimated bus back to where it was a minute ago.
+    @Test func `A poll does not drag an estimated marker back to the reported fix`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.apply(content(shape: shape(), progress: 0.25, vehicle: status))
+
+        let marker = try #require(vehicleAnnotations.first)
+        #expect(marker.coordinate.longitude == alongShape.longitude)
+    }
+
+    @Test func `A marker drawn while an estimate is running starts at the estimate`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.2))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.apply(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+
+        let marker = try #require(vehicleAnnotations.first)
+        #expect(marker.coordinate.longitude == alongShape.longitude)
+    }
+
+    @Test func `Clearing the estimate puts the marker back on the reported fix`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.applyVehicleEstimate(nil)
+
+        let marker = try #require(vehicleAnnotations.first)
+        #expect(marker.coordinate.latitude == status.coordinate.latitude)
+        #expect(marker.coordinate.longitude == status.coordinate.longitude)
+    }
+
+    /// The line's gray-to-colored join is where the bus is. An estimate that runs
+    /// ahead of the last fix moves that join, but at most every few seconds:
+    /// redrawing the line costs more than moving a marker.
+    @Test func `An estimate re-splits the line at the marker, at most every few seconds`() throws {
+        var now = Date(timeIntervalSince1970: 1_800_000_000)
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+        layer.now = { now }
+
+        func spentEnd() -> Double? {
+            shapeOverlays.first { $0.isSpent && $0.part == .core }.map { $0.points()[$0.pointCount - 1].coordinate.longitude }
+        }
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.6))
+        expectClose(spentEnd(), -121.976, within: 0.0005)
+
+        now += 2
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
+        expectClose(spentEnd(), -121.976, within: 0.0005)
+
+        now += TripFocusMapLayer.splitRefreshInterval
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
+        expectClose(spentEnd(), -121.972, within: 0.0005)
+    }
+
+    @Test func `A poll keeps the line split at the estimate`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.6))
+
+        focus.apply(content(shape: shape(), progress: 0.25, vehicle: status))
+
+        let spent = try #require(shapeOverlays.first { $0.isSpent && $0.part == .core })
+        expectClose(spent.points()[spent.pointCount - 1].coordinate.longitude, -121.976, within: 0.0005)
+    }
 }
+

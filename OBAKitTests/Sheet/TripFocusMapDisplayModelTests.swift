@@ -10,7 +10,7 @@
 import Foundation
 import MapKit
 import Testing
-import OBAKitCore
+@testable import OBAKitCore
 @testable import OBAKit
 
 /// What the panel's map draws for an open trip sheet, where its camera goes, and
@@ -69,7 +69,7 @@ final class TripFocusMapDisplayModelTests {
         #expect(model.isShowingTrip)
         #expect(display.spent != nil)
         #expect(display.ahead != nil)
-        #expect(display.vehicle != nil)
+        #expect(model.vehicle != nil)
         #expect(display.stops.map(\.id) == ["0-A", "1-B", "2-C"])
         // The stop the bus is at isn't behind it yet, as on the map tab.
         #expect(display.stops.map(\.isPassed) == [true, false, false])
@@ -240,4 +240,73 @@ final class TripFocusMapDisplayModelTests {
 
         #expect(model.display == nil)
     }
+
+    // MARK: - Estimated position
+
+    private let alongShape = CLLocationCoordinate2D(latitude: 47, longitude: -121.975)
+
+    /// The panel rebuilds its polylines on every `display`. A 1 Hz estimate must
+    /// move only the vehicle.
+    @Test func `An estimate moves the vehicle without redrawing the trip`() throws {
+        let (model, focus) = try show(TripMapFocusFixture.content(
+            shape: TripMapFocusFixture.shape(), progress: 0.2, vehicle: try TripMapFocusFixture.vehicle()
+        ))
+        // The first estimate moves the line's join to the marker; the ticks after
+        // it, inside `splitRefreshInterval`, must not.
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.2))
+        var displays = 0
+        let subscription = model.$display.dropFirst().sink { _ in displays += 1 }
+        defer { subscription.cancel() }
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.21, shouldSnap: false))
+
+        #expect(displays == 0)
+        #expect(model.vehicle?.coordinate.longitude == alongShape.longitude)
+        expectClose(model.vehicle?.orientation, 0, within: 0.001)
+    }
+
+    @Test func `Without an estimate the vehicle is where the feed says`() throws {
+        let status = try TripMapFocusFixture.vehicle()
+        let (model, focus) = try show(TripMapFocusFixture.content(shape: TripMapFocusFixture.shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.applyVehicleEstimate(nil)
+
+        #expect(model.vehicle?.coordinate.latitude == status.coordinate.latitude)
+        #expect(model.vehicle?.staleness == .live)
+    }
+
+    @Test func `A poll does not move an estimated vehicle back`() throws {
+        let status = try TripMapFocusFixture.vehicle()
+        let (model, focus) = try show(TripMapFocusFixture.content(shape: TripMapFocusFixture.shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.apply(TripMapFocusFixture.content(shape: TripMapFocusFixture.shape(), progress: 0.25, vehicle: status))
+
+        #expect(model.vehicle?.coordinate.longitude == alongShape.longitude)
+    }
+
+    @Test func `An estimate re-splits the panel's line at most every few seconds`() throws {
+        var now = Date(timeIntervalSince1970: 1_800_000_000)
+        let (model, focus) = try show(TripMapFocusFixture.content(
+            shape: TripMapFocusFixture.shape(), progress: 0.2, vehicle: try TripMapFocusFixture.vehicle()
+        ))
+        model.now = { now }
+
+        func spentEnd() -> Double? {
+            model.display?.spent.map { $0.core.points()[$0.core.pointCount - 1].coordinate.longitude }
+        }
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.6))
+        expectClose(spentEnd(), -121.976, within: 0.0005)
+
+        now += 2
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
+        expectClose(spentEnd(), -121.976, within: 0.0005)
+
+        now += TripFocusMapLayer.splitRefreshInterval
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
+        expectClose(spentEnd(), -121.972, within: 0.0005)
+    }
 }
+

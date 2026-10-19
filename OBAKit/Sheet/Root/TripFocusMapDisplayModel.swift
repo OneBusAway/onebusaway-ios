@@ -37,10 +37,9 @@ final class TripFocusMapDisplayModel: ObservableObject {
         /// its own in screen points with `RouteArrowLayout`, which this map can't.
         let arrows: [PolylineArrowPlacement]
         let stops: [TripStop]
-        let vehicle: TripVehicle?
 
         fileprivate var isEmpty: Bool {
-            spent == nil && ahead == nil && stops.isEmpty && vehicle == nil
+            spent == nil && ahead == nil && stops.isEmpty
         }
     }
 
@@ -67,6 +66,7 @@ final class TripFocusMapDisplayModel: ObservableObject {
         let isRealTime: Bool
         /// In degrees, as OBA reports it.
         let orientation: CLLocationDirection
+        let staleness: VehicleMarkerStaleness
     }
 
     /// Where the camera should move. One-shot, like `MapSearchDisplayModel.cameraTarget`:
@@ -84,7 +84,20 @@ final class TripFocusMapDisplayModel: ObservableObject {
     }
 
     @Published private(set) var display: Display?
+    /// Apart from `display`: an estimate moves it once a second, and `display`
+    /// rebuilds every polyline.
+    @Published private(set) var vehicle: TripVehicle?
     @Published private(set) var cameraTarget: CameraTarget?
+
+    /// The estimate the vehicle follows; `nil` to follow the feed.
+    private var estimate: VehicleEstimate?
+    /// Where the line is cut while an estimate runs; see `TripFocusMapLayer`.
+    private var estimatedSplitProgress: Double?
+    private var lastEstimatedSplitAt: Date?
+    private var drawnContent: TripMapFocus.Content?
+
+    /// Test seam for `TripFocusMapLayer.splitRefreshInterval`.
+    var now: () -> Date = Date.init
 
     /// While a trip is drawn the ambient stop pins stand down, as they do for a
     /// planned trip or a searched route: the trip's own stops are drawn instead.
@@ -109,7 +122,7 @@ final class TripFocusMapDisplayModel: ObservableObject {
         weak var focus: TripMapFocus?
     }
 
-    private var focusCancellable: AnyCancellable?
+    private var focusCancellables = Set<AnyCancellable>()
 
     /// The trip the camera was last framed for. Framing happens once per trip, as
     /// in `TripFocusMapLayer`: the position updates every 30s, and re-framing on
@@ -160,10 +173,19 @@ final class TripFocusMapDisplayModel: ObservableObject {
 
     func clear() {
         entries.removeAll()
-        focusCancellable = nil
+        focusCancellables.removeAll()
         framedTripID = nil
         display = nil
+        vehicle = nil
         cameraTarget = nil
+        resetEstimate()
+    }
+
+    private func resetEstimate() {
+        estimate = nil
+        estimatedSplitProgress = nil
+        lastEstimatedSplitAt = nil
+        drawnContent = nil
     }
 
     func consumeCameraTarget() {
@@ -173,18 +195,53 @@ final class TripFocusMapDisplayModel: ObservableObject {
     // MARK: - Rendering
 
     private func draw(_ focus: TripMapFocus) {
-        focusCancellable = focus.$content.sink { [weak self] content in
-            self?.render(content)
+        focusCancellables.removeAll()
+        resetEstimate()
+        // `@Published` emits in `willSet`: values come from the closures.
+        focus.$content
+            .sink { [weak self] content in self?.render(content) }
+            .store(in: &focusCancellables)
+        focus.$vehicleEstimate
+            .dropFirst()
+            .sink { [weak self] estimate in self?.apply(estimate) }
+            .store(in: &focusCancellables)
+    }
+
+    private func apply(_ estimate: VehicleEstimate?) {
+        let wasEstimating = self.estimate != nil
+        self.estimate = estimate
+        guard let content = drawnContent else { return }
+
+        let vehicle = Self.vehicle(content, estimate: estimate)
+        if let estimate, !estimate.shouldSnap, !UIAccessibility.isReduceMotionEnabled {
+            let duration = TimeInterval(VehicleEstimationDriver.tickInterval.components.seconds)
+            withAnimation(.linear(duration: duration)) { self.vehicle = vehicle }
+        } else {
+            self.vehicle = vehicle
+        }
+
+        if let progress = estimate?.progress {
+            let now = now()
+            if let lastEstimatedSplitAt, now.timeIntervalSince(lastEstimatedSplitAt) < TripFocusMapLayer.splitRefreshInterval { return }
+            lastEstimatedSplitAt = now
+            estimatedSplitProgress = progress
+            render(content)
+        } else if wasEstimating, estimatedSplitProgress != nil {
+            estimatedSplitProgress = nil
+            lastEstimatedSplitAt = nil
+            render(content)
         }
     }
 
     private func render(_ content: TripMapFocus.Content?) {
+        drawnContent = content
         guard let content else {
             display = nil
+            vehicle = nil
             return
         }
 
-        let split = content.shapeSplit
+        let split = content.shapeSplit(atProgress: estimatedSplitProgress ?? content.progress)
         let display = Display(
             routeColor: Color(uiColor: content.routeColor),
             casingColor: Color(uiColor: RouteArrowStyle.casingColor(for: content.routeColor)),
@@ -206,14 +263,15 @@ final class TripFocusMapDisplayModel: ObservableObject {
                         isTerminal: row.isTerminal
                     )
                 }
-            },
-            vehicle: Self.vehicle(content)
+            }
         )
+        let vehicle = Self.vehicle(content, estimate: estimate)
 
         // The page publishes its focus before the trip has loaded, with nothing in
         // it to draw. Counting that as a drawn trip would hide the ambient stops
         // for nothing, and for good if the trip never loads.
-        self.display = display.isEmpty ? nil : display
+        self.display = display.isEmpty && vehicle == nil ? nil : display
+        self.vehicle = vehicle
 
         guard framedTripID != content.tripID,
               let rect = content.framingRect(split: split, userLocation: userLocation()) else { return }
@@ -232,13 +290,24 @@ final class TripFocusMapDisplayModel: ObservableObject {
         )
     }
 
-    private static func vehicle(_ content: TripMapFocus.Content) -> TripVehicle? {
-        guard let status = content.vehicle, let coordinate = content.vehicleCoordinate else { return nil }
+    private static func vehicle(_ content: TripMapFocus.Content, estimate: VehicleEstimate?) -> TripVehicle? {
+        guard let status = content.vehicle else { return nil }
+        if let estimate {
+            return TripVehicle(
+                coordinate: estimate.coordinate,
+                routeType: content.routeType,
+                isRealTime: status.isRealTime,
+                orientation: estimate.obaOrientation ?? status.orientation,
+                staleness: VehicleMarkerStaleness(estimate: estimate)
+            )
+        }
+        guard let coordinate = content.vehicleCoordinate else { return nil }
         return TripVehicle(
             coordinate: coordinate,
             routeType: content.routeType,
             isRealTime: status.isRealTime,
-            orientation: status.orientation
+            orientation: status.orientation,
+            staleness: .live
         )
     }
 }
