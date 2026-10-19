@@ -12,8 +12,20 @@
 # Usage:
 #   WATCH_UDID=$(scripts/resolve_watch_simulator_udid)
 #   xcodebuild ... -destination "platform=watchOS Simulator,id=$WATCH_UDID"
+#
+# With --ultra it resolves (or creates) the newest Apple Watch Ultra instead:
+# its screen is the largest App Store watch size, which
+# `scripts/app_store_screenshots --watch` captures at.
 
 set -euo pipefail
+
+family="Apple-Watch"
+name="OBA Watch Smoke"
+case "${1:-}" in
+    "") ;;
+    --ultra) family="Apple-Watch-Ultra"; name="OBA Watch Ultra" ;;
+    *) echo "error: unknown argument: $1 (expected --ultra or nothing)" >&2; exit 2 ;;
+esac
 
 if ! devices_json=$(xcrun simctl list devices available -j 2>&1); then
     echo "error: \`xcrun simctl\` failed:" >&2
@@ -36,11 +48,13 @@ def version(runtime):
 for runtime in sorted(devices, key=version, reverse=True):
     if not re.search(r"watchOS-\d+-\d+", runtime):
         continue
-    watches = [d for d in devices[runtime] if "Apple-Watch" in d.get("deviceTypeIdentifier", "")]
+    watches = [d for d in devices[runtime] if sys.argv[1] + "-" in d.get("deviceTypeIdentifier", "")]
     if watches:
+        # Newest model first, e.g. "Ultra-4" over "Ultra-3".
+        watches.sort(key=lambda d: [int(n) for n in re.findall(r"-(\d+)-", d["deviceTypeIdentifier"])], reverse=True)
         print(watches[0]["udid"])
         break
-')
+' "$family")
 
 if [ -z "$udid" ]; then
     # No device on any watchOS runtime: create one from the newest runtime and
@@ -54,13 +68,14 @@ runtimes.sort(key=lambda r: [int(x) for x in r["version"].split(".")], reverse=T
 print(runtimes[0]["identifier"])
 ')
     devicetype=$(xcrun simctl list devicetypes -j | python3 -c '
-import json, sys
-types = [t for t in json.load(sys.stdin)["devicetypes"] if t["name"].startswith("Apple Watch")]
+import json, re, sys
+types = [t for t in json.load(sys.stdin)["devicetypes"] if (sys.argv[1] + "-") in t["identifier"]]
 if not types:
-    sys.exit("error: no Apple Watch device types are installed.")
+    sys.exit("error: no " + sys.argv[1] + " device types are installed.")
+types.sort(key=lambda t: [int(n) for n in re.findall(r"-(\d+)-", t["identifier"])], reverse=True)
 print(types[0]["identifier"])
-')
-    udid=$(xcrun simctl create "OBA Watch Smoke" "$devicetype" "$runtime")
+' "$family")
+    udid=$(xcrun simctl create "$name" "$devicetype" "$runtime")
 fi
 
 printf '%s\n' "$udid"

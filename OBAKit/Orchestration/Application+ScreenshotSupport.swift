@@ -20,13 +20,6 @@ import UIKit
 /// the same way `pendingRentalsCoordinate` does: the map claims the stop when it
 /// appears or the region loads, and the bookmarks are seeded once the root UI
 /// or the region is in place.
-struct ScreenshotBookmarkSeed: Decodable {
-    let group: String
-    let name: String
-    let stopID: StopID
-    let routeID: RouteID
-}
-
 extension Application {
 
     func applyScreenshotLaunchHooks() {
@@ -34,13 +27,7 @@ extension Application {
 
         screenshotStopID = environment["TEST_SCREENSHOT_STOP_ID"]
 
-        if let json = environment["TEST_SCREENSHOT_BOOKMARKS"] {
-            do {
-                screenshotBookmarkSeeds = try JSONDecoder().decode([ScreenshotBookmarkSeed].self, from: Data(json.utf8))
-            } catch {
-                Logger.error("Screenshot bookmarks: undecodable TEST_SCREENSHOT_BOOKMARKS: \(error)")
-            }
-        }
+        screenshotBookmarkSeeds = ScreenshotBookmarkSeed.fromEnvironment()
 
         if environment["TEST_SCREENSHOT_END_LIVE_ACTIVITIES"] == "1" {
             Task {
@@ -80,23 +67,11 @@ extension Application {
         Task {
             var groups = [String: BookmarkGroup]()
             for seed in seeds {
-                let arrivals: StopArrivals
-                do {
-                    arrivals = try await apiService.getArrivalsAndDeparturesForStop(id: seed.stopID, minutesBefore: 0, minutesAfter: 90).entry
-                } catch {
-                    Logger.error("Screenshot bookmarks: arrivals for \(seed.stopID) failed: \(error)")
-                    continue
-                }
-                guard let arrivalDeparture = arrivals.arrivalsAndDepartures.first(where: { $0.routeID == seed.routeID }) else {
-                    Logger.error("Screenshot bookmarks: no \(seed.routeID) departures at \(seed.stopID).")
-                    continue
-                }
+                guard let bookmark = await seed.makeBookmark(apiService: apiService, regionIdentifier: regionID) else { continue }
 
                 // `add(_:to:)` upserts the group and appends the bookmark to it.
                 let group = groups[seed.group] ?? BookmarkGroup(name: seed.group, sortOrder: groups.count)
                 groups[seed.group] = group
-
-                let bookmark = Bookmark(name: seed.name, regionIdentifier: regionID, arrivalDeparture: arrivalDeparture)
                 userDataStore.add(bookmark, to: group)
             }
         }

@@ -8,7 +8,7 @@
 #   compose  caption + background, at the App Store size
 #
 # Usage:
-#   scripts/app_store_screenshots [all|capture|export|frame|compose] [--duo] [--size WxH] [--only test05Alarm]
+#   scripts/app_store_screenshots [all|capture|export|frame|compose] [--duo|--watch] [--size WxH] [--only test05Alarm]
 #
 # Run from the repo root after scripts/generate_project. Output goes to
 # build/app-store-screenshots/{raw,framed,slides}. --size defaults to 1206x2622
@@ -20,6 +20,11 @@
 # Hub, since nothing can script that), and a compose step that draws the Duo
 # itself, as frames-cli has no Duo frame. --size defaults to 2853x2007.
 #
+# --watch makes the Apple Watch set, into build/app-store-screenshots/watch:
+# screenshots of the watch app on the newest Apple Watch Ultra simulator, at
+# its screen size, uploaded as they are. --only takes a slide name there
+# (02-nearby); the steps other than capture have nothing to do.
+#
 # The captures use live Puget Sound data, so run during the day, when every
 # route the slides show is running. Setup (frames-cli, Pillow) and the details
 # are in docs/app-store/README.md.
@@ -30,10 +35,12 @@ step="all"
 size=""
 only=""
 duo=0
+watch=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         all|capture|export|frame|compose) step="$1" ;;
         --duo) duo=1 ;;
+        --watch) watch=1 ;;
         --size) size="$2"; shift ;;
         --only) only="$2"; shift ;;
         *) echo "error: unknown argument: $1" >&2; exit 2 ;;
@@ -46,6 +53,29 @@ out="$repo/build/app-store-screenshots"
 derived="$repo/build/app-store-screenshots-derived-data"
 bundle_id="org.onebusaway.iphone"
 suite="OBAKitUITests/AppStoreScreenshotUITests"
+
+if [[ "$watch" == 1 ]]; then
+    [[ "$duo" == 0 ]] || { echo "error: --duo and --watch are separate sets" >&2; exit 2; }
+    if [[ "$step" != all && "$step" != capture ]]; then
+        echo "The watch set has no $step step: its captures are the slides."
+        exit 0
+    fi
+    udid="${SCREENSHOT_UDID:-$("$repo/scripts/resolve_watch_simulator_udid" --ultra)}"
+    echo "Capturing on watch simulator $udid"
+    watch_derived="$repo/build/app-store-screenshots-watch-derived-data"
+    xcodebuild build -project "$repo/OBAKit.xcodeproj" -scheme WatchApp -configuration Debug \
+        -destination "platform=watchOS Simulator,id=$udid" -derivedDataPath "$watch_derived" -quiet
+    xcrun simctl boot "$udid" 2>/dev/null || true
+    xcrun simctl bootstatus "$udid" -b >/dev/null
+    app="$watch_derived/Build/Products/Debug-watchsimulator/WatchApp.app"
+    watch_bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
+    xcrun simctl install "$udid" "$app"
+    # Nearby needs location; granted up front so no alert covers a capture.
+    xcrun simctl privacy "$udid" grant location "$watch_bundle_id"
+    [[ -n "$only" ]] || rm -rf "$out/watch"
+    python3 "$repo/scripts/app_store/capture_watch_screenshots.py" "$udid" "$watch_bundle_id" "$out/watch" ${only:+--only "$only"}
+    exit 0
+fi
 
 if [[ "$duo" == 1 ]]; then
     out="$out/duo"

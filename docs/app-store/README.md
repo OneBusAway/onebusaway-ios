@@ -95,6 +95,40 @@ How the Duo set differs from the iPhone set:
 `--only` works with `--duo` too. It runs that test only in the postures that
 use it.
 
+## Apple Watch
+
+```bash
+scripts/app_store_screenshots --watch
+```
+
+The run captures four screens of the watch app into
+`build/app-store-screenshots/watch/`: the bookmarks list, Nearby, a route, and
+a stop. They come from the newest Apple Watch Ultra simulator, which
+`scripts/resolve_watch_simulator_udid --ultra` creates if there isn't one.
+They're 422 × 514, the Ultra's screen size and one of the sizes App Store
+Connect takes for the watch, and they're uploaded as they are, with no frame
+or caption. `--only 03-route` retakes one.
+
+The watch has no UI test target, so `scripts/app_store/capture_watch_screenshots.py`
+drives the app directly. It sets the simulated location to Capitol Hill, then
+for each slide in `watch-screenshots.json`:
+
+1. Relaunches the app with that slide's launch environment.
+2. Waits 15 seconds for live data.
+3. Saves a screenshot.
+
+DEBUG-only hooks in `OBAKitWatch/ScreenshotHooks.swift` read the environment:
+
+| Environment variable | Effect |
+|---|---|
+| `TEST_SCREENSHOT_TAB` | `nearby` opens on the Nearby tab |
+| `TEST_SCREENSHOT_BOOKMARKS` | Replaces the bookmarks synced from the phone with trip bookmarks built from live arrivals. It uses the same JSON as on iOS; the slide config's `bookmarks` list fills it in |
+| `TEST_SCREENSHOT_STOP_ID` | Opens that seeded bookmark's stop |
+| `TEST_SCREENSHOT_ROUTE_ID` | Opens that route's Nearby card once it loads |
+
+`simctl status_bar` doesn't work on watchOS, so the watch clock shows the real
+time, not 9:41.
+
 ## How it works
 
 1. **Capture.** `OBAKitUITests/AppStoreScreenshotUITests` has one test per
