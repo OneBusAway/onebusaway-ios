@@ -67,6 +67,11 @@ class StopViewModel: ObservableObject {
     }
 
     /// The arrivals/departures fetched from the server.
+    /// The server clock the latest arrivals carried, for vehicle position
+    /// estimation's skew correction. Set before `stopArrivals`, so a sink on that
+    /// can read it.
+    @Published private(set) var arrivalsServerClock: ServerClockSample?
+
     @Published private(set) var stopArrivals: StopArrivals?
 
     /// On-demand services this stop references, for the on-demand card; see `StopOnDemandServicesLoader`.
@@ -354,13 +359,20 @@ class StopViewModel: ObservableObject {
         var pendingExtensionMinutes: UInt?
 
         do {
-            let result = try await apiService.getArrivalsAndDeparturesForStop(
+            // An estimate measured from a cached arrival would think its fix fresher
+            // than it is: maglev marks this endpoint `max-age=30`.
+            let response = try await apiService.getArrivalsAndDeparturesForStop(
                 id: stopID,
                 minutesBefore: minutesBefore,
-                minutesAfter: minutesAfter
-            ).entry
+                minutesAfter: minutesAfter,
+                cachePolicy: FeatureFlags.isVehicleEstimationEnabled(userDefaults: environment.userDefaults)
+                    ? .reloadIgnoringLocalCacheData
+                    : .useProtocolCachePolicy
+            )
+            let result = response.entry
 
             if let loadedStop = result.stop {
+                arrivalsServerClock = response.serverClock
                 applySuccessfulFetch(stop: loadedStop, arrivals: result)
                 performInitialStopSetupIfNeeded(for: loadedStop)
 

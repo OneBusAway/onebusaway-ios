@@ -167,11 +167,17 @@ extension RESTAPIService {
     /// - parameter minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``StopArrivals``.
-    public nonisolated func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) async throws -> RESTAPIResponse<StopArrivals> {
+    public nonisolated func getArrivalsAndDeparturesForStop(
+        id: StopID,
+        minutesBefore: UInt,
+        minutesAfter: UInt,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) async throws -> RESTAPIResponse<StopArrivals> {
         let url = urlBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         return try await getData(
             for: url,
-            decodeRESTAPIResponseAs: StopArrivals.self
+            decodeRESTAPIResponseAs: StopArrivals.self,
+            cachePolicy: cachePolicy
         )
     }
 
