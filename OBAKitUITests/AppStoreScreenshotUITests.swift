@@ -84,10 +84,40 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         // Sheets, map camera moves and countdowns animate in; a fixed settle
         // beats polling for "animation finished", which XCUITest can't see.
         sleep(settle)
-        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        attachment.name = name
+        let (screenshot, folded) = litScreenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = folded ? "\(name)-folded" : name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    /// iPhone Duo has two displays, and `XCUIScreen.main` is the cover one,
+    /// which goes dark when the device is open. Captures whichever is lit, and
+    /// whether that's a folded Duo's cover screen, so the two postures' captures
+    /// get different names.
+    @MainActor private func litScreenshot() -> (XCUIScreenshot, folded: Bool) {
+        let shots = XCUIScreen.screens.map { $0.screenshot() }
+        guard shots.count > 1,
+              let lit = shots.max(by: { Self.brightness($0.image) < Self.brightness($1.image) }) else {
+            return (XCUIScreen.main.screenshot(), false)
+        }
+        // The cover is the smaller screen.
+        let area = { (shot: XCUIScreenshot) in shot.image.size.width * shot.image.size.height }
+        return (lit, shots.contains { area($0) > area(lit) })
+    }
+
+    /// Mean brightness, 0–255, from an 8 × 8 thumbnail.
+    private static func brightness(_ image: UIImage) -> Int {
+        let side = 8
+        var pixels = [UInt8](repeating: 0, count: side * side)
+        pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
+                                          bytesPerRow: side, space: CGColorSpaceCreateDeviceGray(),
+                                          bitmapInfo: CGImageAlphaInfo.none.rawValue),
+                  let cgImage = image.cgImage else { return }
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
+        }
+        return pixels.reduce(0) { $0 + Int($1) } / pixels.count
     }
 
     // MARK: - Departure rows
@@ -216,7 +246,8 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     /// 06 — The Bookmarks tab, seeded with two groups of trip bookmarks.
     @MainActor func test06Bookmarks() {
         let app = launch(environment: ["TEST_SCREENSHOT_BOOKMARKS": Self.bookmarks])
-        let tab = app.tabBars.buttons["Bookmarks"]
+        // Not `app.tabBars`: iPhone Duo shows its tabs in a vertical bar.
+        let tab = app.buttons["Bookmarks"].firstMatch
         XCTAssertTrue(tab.waitForExistence(timeout: 30))
 
         // The seed fetches live arrivals for each bookmark, so it lands a few
@@ -235,7 +266,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         // Launch once so the app ends slide 2's Live Activity, or it shows in
         // the Dynamic Island over Safari.
         let app = launch()
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["Bookmarks"].firstMatch.waitForExistence(timeout: 30))
         sleep(2)
         app.terminate()
 

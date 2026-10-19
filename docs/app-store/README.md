@@ -39,10 +39,62 @@ Options:
 | `--size 1320x2868` | Composes at the 6.9" size instead; the layout scales with the canvas |
 | `--only <test>` | Runs one slide's test (`test01StopArrivals` … `test07OpenSource`); other captures are kept |
 | `capture`, `export`, `frame`, `compose` | Runs one step. After editing a caption, `compose` alone is enough |
-| `SCREENSHOT_UDID=<udid>` | Uses that simulator instead of the newest iPhone Pro |
+| `--duo` | Makes the [iPhone Duo](#iphone-duo) set instead |
+| `SCREENSHOT_UDID=<udid>` | Uses that simulator instead of the newest iPhone Pro (or Duo) |
 
 To change a caption, edit `screenshots.json` and rerun `compose`. To change
 what a slide shows, edit its test in `OBAKitUITests/AppStoreScreenshotUITests.swift`.
+
+## iPhone Duo
+
+The Duo has its own set: landscape slides, at 2853 × 2007, of the open Duo,
+plus one slide of two folded Duos showing the cover screen. Its slide list
+and captions are in `duo-screenshots.json`.
+
+```bash
+scripts/app_store_screenshots --duo
+```
+
+The slides land in `build/app-store-screenshots/duo/slides/`. Upload them to
+the iPhone Duo display size in App Store Connect. App Store Connect also
+takes 2034 × 1398 (`--size 2034x1398`), and either size in portrait.
+
+The run needs you once or twice. Nothing scriptable folds or unfolds the
+simulator: `simctl` and XCUITest have no posture API, and Device Hub's
+buttons aren't reachable through Accessibility. So the script asks, and
+waits:
+
+The script starts with whichever posture the Duo is already in, then asks
+for the other one:
+
+- **Open:** in Device Hub, click the rightmost posture button under the
+  device (flat). The open slides are captured.
+- **Folded:** click the posture button just right of the divider. The
+  cover-screen captures are taken.
+
+There's no Lock Screen slide in the Duo set, because `pressLockButton`
+doesn't lock the Duo.
+
+It tells the postures apart by whether the inner display is lit
+(`scripts/app_store/duo_posture.py`). Device Hub
+(`Xcode.app/Contents/Applications/DeviceHub.app`) is the simulator app from
+Xcode 27 on. An older `Simulator.app` can still show the Duo, but it has no
+posture buttons, so the Duo stays folded.
+
+How the Duo set differs from the iPhone set:
+
+- **Capture.** It uses the same tests. A capture taken while the Duo is
+  folded gets a `-folded` suffix (`01-stop-arrivals-folded`), because the
+  test captures whichever display is lit, and `XCUIScreen.main` is the cover
+  screen. The script decides which tests run in which posture.
+- **Frame.** There's no frames-cli step, since frames-cli has no Duo frame.
+- **Compose.** `scripts/app_store/compose_duo_screenshots.py` draws the Duo
+  itself, open or folded, from the screen sizes and corner radii in the
+  simulator's device profile. A slide lists one capture or more under
+  `devices`.
+
+`--only` works with `--duo` too. It runs that test only in the postures that
+use it.
 
 ## How it works
 

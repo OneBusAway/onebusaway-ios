@@ -9,7 +9,8 @@
 #
 # With --pro it prints the newest "iPhone NN Pro" (not Max) instead, on the
 # newest runtime that has one: its screen is the 6.3" App Store size, which
-# scripts/app_store_screenshots captures at.
+# scripts/app_store_screenshots captures at. With --duo it prints the newest
+# iPhone Duo, which `scripts/app_store_screenshots --duo` captures on.
 #
 # Address the device by `id=` rather than `name=`. A hardcoded name breaks two
 # ways, and the two report differently, which is why neither `OS=latest` nor a
@@ -33,11 +34,12 @@
 
 set -euo pipefail
 
-pro=0
+kind=any
 case "${1:-}" in
     "") ;;
-    --pro) pro=1 ;;
-    *) echo "error: unknown argument: $1 (expected --pro or nothing)" >&2; exit 2 ;;
+    --pro) kind=pro ;;
+    --duo) kind=duo ;;
+    *) echo "error: unknown argument: $1 (expected --pro, --duo or nothing)" >&2; exit 2 ;;
 esac
 
 if ! devices_json=$(xcrun simctl list devices available -j 2>&1); then
@@ -67,7 +69,14 @@ def ios_version(runtime):
 for runtime in sorted(devices, key=ios_version, reverse=True):
     if not re.search(r"iOS-\d+-\d+", runtime):
         continue
-    if sys.argv[1] == "1":
+    if sys.argv[1] == "duo":
+        duos = [d["udid"] for d in devices[runtime]
+                if d.get("deviceTypeIdentifier", "").endswith(".iPhone-Duo")]
+        if duos:
+            print(duos[0])
+            break
+        continue
+    if sys.argv[1] == "pro":
         # Highest model number wins: "iPhone-18-Pro" over "iPhone-17-Pro".
         pros = [(int(match.group(1)), d["udid"]) for d in devices[runtime]
                 if (match := re.search(r"iPhone-(\d+)-Pro$", d.get("deviceTypeIdentifier", "")))]
@@ -79,11 +88,13 @@ for runtime in sorted(devices, key=ios_version, reverse=True):
     if phones:
         print(phones[0]["udid"])
         break
-' "$pro")
+' "$kind")
 
 if [ -z "$udid" ]; then
-    if [ "$pro" = 1 ]; then
+    if [ "$kind" = pro ]; then
         echo "error: no available iPhone Pro simulator on any installed iOS runtime." >&2
+    elif [ "$kind" = duo ]; then
+        echo "error: no available iPhone Duo simulator on any installed iOS runtime." >&2
     else
         echo "error: no available iPhone simulator on any installed iOS runtime." >&2
     fi

@@ -77,3 +77,4 @@ pr-*.md
 # Personal XcodeGen overrides (team ID / bundle ID). See Apps/*/local.yml.example.
 Apps/*/local.yml
 
+__pycache__/

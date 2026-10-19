@@ -1,0 +1,13 @@
+{
+  "background": "#68AD0B",
+  "text": "#FFFFFF",
+  "slides": [
+    { "name": "01-stop-arrivals", "devices": ["01-stop-arrivals"], "caption": "Real-Time Arrivals, Unfolded" },
+    { "name": "02-folded", "devices": ["01-stop-arrivals-folded", "03-trip-vehicle-folded"], "caption": "Folded? Still on Time", "subtitle": "Live arrivals and vehicles on the cover screen" },
+    { "name": "03-trip-vehicle", "devices": ["03-trip-vehicle"], "caption": "See Buses, Trains and Ferries Move", "subtitle": "(or funiculars, if you use one!)" },
+    { "name": "04-trip-planner", "devices": ["04-trip-planner"], "caption": "Plan Any Trip" },
+    { "name": "05-alarm", "devices": ["05-alarm"], "caption": "Never Miss Your Bus" },
+    { "name": "06-bookmarks", "devices": ["06-bookmarks"], "caption": "Your Favorite Routes, All Together" },
+    { "name": "07-open-source", "devices": ["07-open-source"], "caption": "Free and Open Source" }
+  ]
+}
