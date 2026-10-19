@@ -123,8 +123,8 @@ DEBUG-only hooks in `OBAKitWatch/ScreenshotHooks.swift` read the environment:
 |---|---|
 | `TEST_SCREENSHOT_TAB` | `nearby` opens on the Nearby tab |
 | `TEST_SCREENSHOT_BOOKMARKS` | Replaces the bookmarks synced from the phone with trip bookmarks built from live arrivals. It uses the same JSON as on iOS; the slide config's `bookmarks` list fills it in |
-| `TEST_SCREENSHOT_STOP_ID` | Opens that seeded bookmark's stop |
-| `TEST_SCREENSHOT_ROUTE_ID` | Opens that route's Nearby card once it loads |
+| `TEST_SCREENSHOT_STOP_ID` | Opens that stop's arrivals |
+| `TEST_SCREENSHOT_ROUTE_ID` | Opens that route's Nearby card once it loads, on the Nearby tab |
 
 `simctl status_bar` doesn't work on watchOS, so the watch clock shows the real
 time, not 9:41.

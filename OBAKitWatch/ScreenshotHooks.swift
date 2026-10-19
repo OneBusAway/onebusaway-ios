@@ -15,11 +15,12 @@ import OBAKitCore
 /// screenshot needs. `scripts/app_store_screenshots --watch` sets them through
 /// the launch environment; `docs/app-store/README.md` lists them.
 ///
-/// - `TEST_SCREENSHOT_TAB`: `bookmarks` or `nearby`, the tab to show.
+/// - `TEST_SCREENSHOT_TAB`: `nearby` opens on the Nearby tab.
 /// - `TEST_SCREENSHOT_BOOKMARKS`: replaces the bookmarks synced from the phone
 ///   with trip bookmarks built from live arrivals (see `ScreenshotBookmarkSeed`).
-/// - `TEST_SCREENSHOT_STOP_ID`: opens that seeded bookmark's stop.
-/// - `TEST_SCREENSHOT_ROUTE_ID`: opens that route's Nearby card once it loads.
+/// - `TEST_SCREENSHOT_STOP_ID`: opens that stop's arrivals.
+/// - `TEST_SCREENSHOT_ROUTE_ID`: opens that route's Nearby card once it loads,
+///   on the Nearby tab.
 struct ScreenshotHooks: ViewModifier {
     @Environment(WatchAppHost.self) private var host
     @Binding var tab: WatchRootView.Tab
@@ -35,7 +36,7 @@ struct ScreenshotHooks: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onAppear {
-                if ProcessInfo.processInfo.environment["TEST_SCREENSHOT_TAB"] == "nearby" {
+                if routeID != nil || ProcessInfo.processInfo.environment["TEST_SCREENSHOT_TAB"] == "nearby" {
                     tab = .nearby
                 }
             }
@@ -43,6 +44,7 @@ struct ScreenshotHooks: ViewModifier {
             // after launch.
             .task(id: host.currentRegion?.regionIdentifier) {
                 await seedBookmarks()
+                await openStop()
             }
             .onChange(of: nearby?.directions) { _, directions in
                 guard let routeID, let direction = directions?.first(where: { $0.key.routeID == routeID }) else { return }
@@ -55,32 +57,32 @@ struct ScreenshotHooks: ViewModifier {
         guard let seeds, let apiService = host.apiService, let region = host.currentRegion else { return }
         self.seeds = nil
 
-        var groups = [String: WatchBookmarkGroup]()
+        // Groups in the order the seeds name them.
+        var groups = [WatchBookmarkGroup]()
         var bookmarks = [WatchBookmark]()
-        for seed in seeds {
-            guard let bookmark = await seed.makeBookmark(apiService: apiService, regionIdentifier: region.regionIdentifier) else {
-                continue
+        for (seed, bookmark) in await ScreenshotBookmarkSeed.makeBookmarks(seeds, apiService: apiService, regionIdentifier: region.regionIdentifier) {
+            let group = groups.first { $0.name == seed.group } ?? WatchBookmarkGroup(id: UUID(), name: seed.group)
+            if !groups.contains(group) {
+                groups.append(group)
             }
-            let group = groups[seed.group] ?? WatchBookmarkGroup(id: UUID(), name: seed.group)
-            groups[seed.group] = group
             bookmark.groupID = group.id
             bookmarks.append(WatchBookmark(bookmark: bookmark))
         }
 
         do {
-            // Groups in the order the seeds name them.
-            let orderedGroups = seeds.map(\.group).reduce(into: [WatchBookmarkGroup]()) { ordered, name in
-                if let group = groups[name], !ordered.contains(group) { ordered.append(group) }
-            }
-            host.bookmarkStore.update(payload: try WatchSyncPayload(bookmarks: bookmarks, groups: orderedGroups, region: region))
+            host.bookmarkStore.update(payload: try WatchSyncPayload(bookmarks: bookmarks, groups: groups, region: region))
         } catch {
             Logger.error("Screenshot bookmarks: couldn't build the payload: \(error)")
-            return
         }
+    }
 
-        if let stopID, let bookmark = bookmarks.first(where: { $0.stopID == stopID }) {
-            self.stopID = nil
-            bookmarksPath.append(bookmark.stop)
+    private func openStop() async {
+        guard let stopID, let apiService = host.apiService else { return }
+        self.stopID = nil
+        do {
+            bookmarksPath.append(try await apiService.getStop(id: stopID).entry)
+        } catch {
+            Logger.error("Screenshot stop: \(stopID) failed: \(error)")
         }
     }
 }

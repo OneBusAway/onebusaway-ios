@@ -7,9 +7,9 @@
     {"group": "Home", "name": "10 back home", "stopID": "1_1180", "routeID": "1_100002"}
   ],
   "slides": [
-    { "name": "01-bookmarks", "env": { "TEST_SCREENSHOT_TAB": "bookmarks" }, "bookmarks": true },
+    { "name": "01-bookmarks", "env": {}, "bookmarks": true },
     { "name": "02-nearby", "env": { "TEST_SCREENSHOT_TAB": "nearby" } },
-    { "name": "03-route", "env": { "TEST_SCREENSHOT_TAB": "nearby", "TEST_SCREENSHOT_ROUTE_ID": "40_100479" } },
-    { "name": "04-stop", "env": { "TEST_SCREENSHOT_STOP_ID": "40_99610" }, "bookmarks": true }
+    { "name": "03-route", "env": { "TEST_SCREENSHOT_ROUTE_ID": "40_100479" } },
+    { "name": "04-stop", "env": { "TEST_SCREENSHOT_STOP_ID": "40_99610" } }
   ]
 }

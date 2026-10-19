@@ -66,9 +66,7 @@ extension Application {
 
         Task {
             var groups = [String: BookmarkGroup]()
-            for seed in seeds {
-                guard let bookmark = await seed.makeBookmark(apiService: apiService, regionIdentifier: regionID) else { continue }
-
+            for (seed, bookmark) in await ScreenshotBookmarkSeed.makeBookmarks(seeds, apiService: apiService, regionIdentifier: regionID) {
                 // `add(_:to:)` upserts the group and appends the bookmark to it.
                 let group = groups[seed.group] ?? BookmarkGroup(name: seed.group, sortOrder: groups.count)
                 groups[seed.group] = group

@@ -60,14 +60,18 @@ if [[ "$watch" == 1 ]]; then
         echo "The watch set has no $step step: its captures are the slides."
         exit 0
     fi
+    if [[ -n "$only" ]] && ! python3 -c 'import json, sys; sys.exit(sys.argv[2] not in [s["name"] for s in json.load(open(sys.argv[1]))["slides"]])' \
+            "$repo/docs/app-store/watch-screenshots.json" "$only"; then
+        echo "error: no watch slide named $only (see docs/app-store/watch-screenshots.json)" >&2
+        exit 2
+    fi
     udid="${SCREENSHOT_UDID:-$("$repo/scripts/resolve_watch_simulator_udid" --ultra)}"
     echo "Capturing on watch simulator $udid"
-    watch_derived="$repo/build/app-store-screenshots-watch-derived-data"
     xcodebuild build -project "$repo/OBAKit.xcodeproj" -scheme WatchApp -configuration Debug \
-        -destination "platform=watchOS Simulator,id=$udid" -derivedDataPath "$watch_derived" -quiet
+        -destination "platform=watchOS Simulator,id=$udid" -derivedDataPath "$derived" -quiet
     xcrun simctl boot "$udid" 2>/dev/null || true
     xcrun simctl bootstatus "$udid" -b >/dev/null
-    app="$watch_derived/Build/Products/Debug-watchsimulator/WatchApp.app"
+    app="$derived/Build/Products/Debug-watchsimulator/WatchApp.app"
     watch_bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
     xcrun simctl install "$udid" "$app"
     # Nearby needs location; granted up front so no alert covers a capture.

@@ -32,10 +32,27 @@ public struct ScreenshotBookmarkSeed: Decodable, Sendable {
         }
     }
 
+    /// Trip bookmarks for `seeds`, fetched concurrently and returned in seed
+    /// order, each with its seed. A seed whose route has no departure in the
+    /// next 90 minutes, or whose fetch fails, is left out.
+    public static func makeBookmarks(
+        _ seeds: [ScreenshotBookmarkSeed],
+        apiService: RESTAPIService,
+        regionIdentifier: Int
+    ) async -> [(seed: ScreenshotBookmarkSeed, bookmark: Bookmark)] {
+        let bookmarks = await withTaskGroup(of: (Int, Bookmark?).self) { group in
+            for (index, seed) in seeds.enumerated() {
+                group.addTask { (index, await seed.makeBookmark(apiService: apiService, regionIdentifier: regionIdentifier)) }
+            }
+            return await group.reduce(into: [Int: Bookmark]()) { $0[$1.0] = $1.1 }
+        }
+        return seeds.indices.compactMap { index in bookmarks[index].map { (seeds[index], $0) } }
+    }
+
     /// A trip bookmark on the route's next departure from the stop, so it
     /// shows real countdowns; nil when the route has none in the next 90
     /// minutes or the fetch fails.
-    public func makeBookmark(apiService: RESTAPIService, regionIdentifier: Int) async -> Bookmark? {
+    private func makeBookmark(apiService: RESTAPIService, regionIdentifier: Int) async -> Bookmark? {
         let arrivals: StopArrivals
         do {
             arrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 0, minutesAfter: 90).entry
