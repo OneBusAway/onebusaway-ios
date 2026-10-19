@@ -468,5 +468,101 @@ struct OBAListViewItemTests {
         #expect(item1 != itemDiffID)
         #expect(item1 != itemDiffTitle)
     }
+
+    // MARK: - OBAListViewMenuActions
+
+    /// Tests configuration generation for OBAListViewMenuActions with a standard preview controller.
+    @Test func testListViewMenuActionsBasicConfiguration() {
+        var previewCalled = false
+        var performCalled = false
+        var menuCalled = false
+
+        let previewController = UIViewController()
+        let menuElement = UIAction(title: "Custom Action") { _ in }
+        let customMenu = UIMenu(title: "Test Menu", children: [menuElement])
+
+        let actions = OBAListViewMenuActions(
+            previewProvider: {
+                previewCalled = true
+                return previewController
+            },
+            performPreviewAction: {
+                performCalled = true
+            },
+            contextMenuProvider: { suggested in
+                menuCalled = true
+                #expect(suggested.isEmpty)
+                return customMenu
+            }
+        )
+
+        let contextConfig = actions.contextMenuConfiguration(identifier: "item_identifier")
+        #expect(contextConfig.identifier as? String == "item_identifier")
+
+        // Trigger previewProvider block
+        let previewBlock = contextConfig.previewProvider
+        #expect(previewBlock != nil)
+        let resolvedController = previewBlock?()
+        #expect(resolvedController === previewController)
+        #expect(previewCalled == true)
+
+        // Trigger performPreviewAction
+        actions.performPreviewAction?()
+        #expect(performCalled == true)
+
+        // Trigger contextMenuProvider actionProvider block
+        let actionBlock = contextConfig.actionProvider
+        #expect(actionBlock != nil)
+        let resolvedMenu = actionBlock?([])
+        #expect(resolvedMenu === customMenu)
+        #expect(menuCalled == true)
+    }
+
+    /// Tests that OBAListViewMenuActions automatically calls enterPreviewMode()
+    /// when the previewed controller conforms to the Previewable protocol.
+    @Test func testListViewMenuActionsWithPreviewableController() {
+        class MockPreviewableViewController: UIViewController, Previewable {
+            var enteredPreviewModeCount = 0
+            var exitedPreviewModeCount = 0
+
+            func enterPreviewMode() {
+                enteredPreviewModeCount += 1
+            }
+
+            func exitPreviewMode() {
+                exitedPreviewModeCount += 1
+            }
+        }
+
+        let previewableController = MockPreviewableViewController()
+        #expect(previewableController.enteredPreviewModeCount == 0)
+
+        let actions = OBAListViewMenuActions(
+            previewProvider: { previewableController },
+            performPreviewAction: nil,
+            contextMenuProvider: nil
+        )
+
+        let contextConfig = actions.contextMenuConfiguration(identifier: nil)
+        #expect(contextConfig.identifier == nil)
+
+        let resolvedController = contextConfig.previewProvider?()
+        #expect(resolvedController === previewableController)
+        #expect(previewableController.enteredPreviewModeCount == 1)
+        #expect(previewableController.exitedPreviewModeCount == 0)
+    }
+
+    /// Tests that OBAListViewMenuActions handles nil providers safely without crashing.
+    @Test func testListViewMenuActionsNilProviders() {
+        let actions = OBAListViewMenuActions(
+            previewProvider: nil,
+            performPreviewAction: nil,
+            contextMenuProvider: nil
+        )
+
+        let contextConfig = actions.contextMenuConfiguration(identifier: nil)
+        #expect(contextConfig.previewProvider?() == nil)
+        #expect(contextConfig.actionProvider?([]) == nil)
+    }
 }
 
