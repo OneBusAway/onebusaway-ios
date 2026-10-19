@@ -25,6 +25,10 @@ text (description, keywords, promotional text) is in `listing.md`.
 5. Drag them into App Store Connect, in order, under the matching display
    size.
 
+To make the iPhone, iPhone Duo and Apple Watch sets in one run, use
+`scripts/app_store_screenshots --all-sets`. The Duo part
+[needs a click from you](#iphone-duo) partway through.
+
 Run it in the daytime, Pacific time; see [Data](#data). A slide that fails
 or skips prints a warning, and the run keeps the others. Retake it on its own:
 
@@ -40,6 +44,8 @@ Options:
 | `--only <test>` | Runs one slide's test (`test01StopArrivals` … `test07OpenSource`); other captures are kept |
 | `capture`, `export`, `frame`, `compose` | Runs one step. After editing a caption, `compose` alone is enough |
 | `--duo` | Makes the [iPhone Duo](#iphone-duo) set instead |
+| `--watch` | Makes the [Apple Watch](#apple-watch) set instead |
+| `--all-sets` | Makes all three sets in one run: iPhone, Duo, then watch, each at its default size. It takes a step (`--all-sets compose`) but not `--size`, `--only` or `SCREENSHOT_UDID` |
 | `SCREENSHOT_UDID=<udid>` | Uses that simulator instead of the newest iPhone Pro (or Duo) |
 
 To change a caption, edit `screenshots.json` and rerun `compose`. To change

@@ -8,7 +8,7 @@
 #   compose  caption + background, at the App Store size
 #
 # Usage:
-#   scripts/app_store_screenshots [all|capture|export|frame|compose] [--duo|--watch] [--size WxH] [--only test05Alarm]
+#   scripts/app_store_screenshots [all|capture|export|frame|compose] [--duo|--watch|--all-sets] [--size WxH] [--only test05Alarm]
 #
 # Run from the repo root after scripts/generate_project. Output goes to
 # build/app-store-screenshots/{raw,framed,slides}. --size defaults to 1206x2622
@@ -25,6 +25,10 @@
 # its screen size, uploaded as they are. --only takes a slide name there
 # (02-nearby); the steps other than capture have nothing to do.
 #
+# --all-sets makes all three sets in one go: iPhone, then Duo, then watch, each
+# at its default size. It takes a step, but not --size, --only or
+# SCREENSHOT_UDID, which each fit one set only.
+#
 # The captures use live Puget Sound data, so run during the day, when every
 # route the slides show is running. Setup (frames-cli, Pillow) and the details
 # are in docs/app-store/README.md.
@@ -36,11 +40,13 @@ size=""
 only=""
 duo=0
 watch=0
+all_sets=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         all|capture|export|frame|compose) step="$1" ;;
         --duo) duo=1 ;;
         --watch) watch=1 ;;
+        --all-sets) all_sets=1 ;;
         --size) size="$2"; shift ;;
         --only) only="$2"; shift ;;
         *) echo "error: unknown argument: $1" >&2; exit 2 ;;
@@ -53,6 +59,25 @@ out="$repo/build/app-store-screenshots"
 derived="$repo/build/app-store-screenshots-derived-data"
 bundle_id="org.onebusaway.iphone"
 suite="OBAKitUITests/AppStoreScreenshotUITests"
+
+if [[ "$all_sets" == 1 ]]; then
+    if [[ "$duo" == 1 || "$watch" == 1 || -n "$size" || -n "$only" || -n "${SCREENSHOT_UDID:-}" ]]; then
+        echo "error: --all-sets takes a step only; run one set for --duo, --watch, --size, --only or SCREENSHOT_UDID" >&2
+        exit 2
+    fi
+    # A set that fails stops the run: each already warns and carries on past
+    # a failed slide, so an exit here means the set itself broke.
+    for set in iPhone Duo Watch; do
+        echo "==> $set set"
+        case "$set" in
+            iPhone) "$0" "$step" ;;
+            Duo) "$0" "$step" --duo ;;
+            Watch) "$0" "$step" --watch ;;
+        esac
+    done
+    echo "Slides: $out/slides, $out/duo/slides, $out/watch"
+    exit 0
+fi
 
 if [[ "$watch" == 1 ]]; then
     [[ "$duo" == 0 ]] || { echo "error: --duo and --watch are separate sets" >&2; exit 2; }

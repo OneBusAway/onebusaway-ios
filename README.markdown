@@ -130,7 +130,7 @@ You can find the latest version of the GTFS-RT protobuf file in the https://gith
 
 ### Generate App Store screenshots
 
-Run `scripts/app_store_screenshots` from the project root. It captures each slide in the simulator, adds the device frame and caption, and writes finished PNGs to `build/app-store-screenshots/slides/`. Add `--duo` for the iPhone Duo set or `--watch` for the Apple Watch set. See [docs/app-store/README.md](docs/app-store/README.md) for the one-time setup, options, and how to change the slides.
+Run `scripts/app_store_screenshots` from the project root. It captures each slide in the simulator, adds the device frame and caption, and writes finished PNGs to `build/app-store-screenshots/slides/`. Add `--duo` for the iPhone Duo set, `--watch` for the Apple Watch set, or `--all-sets` for all three. See [docs/app-store/README.md](docs/app-store/README.md) for the one-time setup, options, and how to change the slides.
 
 ### Update macOS/Xcode versions for GitHub Actions CI
 
