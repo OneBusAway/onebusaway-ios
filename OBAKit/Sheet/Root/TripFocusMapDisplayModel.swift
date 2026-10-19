@@ -87,6 +87,14 @@ final class TripFocusMapDisplayModel: ObservableObject {
     /// Apart from `display`: an estimate moves it once a second, and `display`
     /// rebuilds every polyline.
     @Published private(set) var vehicle: TripVehicle?
+    /// Debug; see `TripMapFocus.Content.showsReportedPositions`.
+    @Published private(set) var reportedPositions: [ReportedPosition] = []
+
+    struct ReportedPosition: Identifiable {
+        let kind: ReportedPositionKind
+        let coordinate: CLLocationCoordinate2D
+        var id: String { "\(kind)" }
+    }
     @Published private(set) var cameraTarget: CameraTarget?
 
     /// The estimate the vehicle follows; `nil` to follow the feed.
@@ -177,6 +185,7 @@ final class TripFocusMapDisplayModel: ObservableObject {
         framedTripID = nil
         display = nil
         vehicle = nil
+        reportedPositions = []
         cameraTarget = nil
         resetEstimate()
     }
@@ -213,6 +222,7 @@ final class TripFocusMapDisplayModel: ObservableObject {
         guard let content = drawnContent else { return }
 
         let vehicle = Self.vehicle(content, estimate: estimate)
+        if (estimate != nil) != wasEstimating { updateReportedPositions(content) }
         if let estimate, !estimate.shouldSnap, !UIAccessibility.isReduceMotionEnabled {
             let duration = TimeInterval(VehicleEstimationDriver.tickInterval.components.seconds)
             withAnimation(.linear(duration: duration)) { self.vehicle = vehicle }
@@ -238,8 +248,10 @@ final class TripFocusMapDisplayModel: ObservableObject {
         guard let content else {
             display = nil
             vehicle = nil
+            reportedPositions = []
             return
         }
+        updateReportedPositions(content)
 
         let split = content.shapeSplit(atProgress: estimatedSplitProgress ?? content.progress)
         let display = Display(
@@ -278,6 +290,16 @@ final class TripFocusMapDisplayModel: ObservableObject {
 
         framedTripID = content.tripID
         cameraTarget = CameraTarget(rect: rect)
+    }
+
+    private func updateReportedPositions(_ content: TripMapFocus.Content) {
+        guard estimate != nil, content.showsReportedPositions else {
+            if !reportedPositions.isEmpty { reportedPositions = [] }
+            return
+        }
+        reportedPositions = ReportedPositionKind.positions(of: content.vehicle).map {
+            ReportedPosition(kind: $0.kind, coordinate: $0.coordinate)
+        }
     }
 
     /// One point is not a line, and drawing it would add polylines that render as

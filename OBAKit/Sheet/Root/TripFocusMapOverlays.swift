@@ -21,7 +21,8 @@ import OBAKitCore
 @MapContentBuilder
 func tripFocusMapContent(
     for display: TripFocusMapDisplayModel.Display?,
-    vehicle: TripFocusMapDisplayModel.TripVehicle?
+    vehicle: TripFocusMapDisplayModel.TripVehicle?,
+    reportedPositions: [TripFocusMapDisplayModel.ReportedPosition] = []
 ) -> some MapContent {
     if let display {
         // Spent first, then ahead, so where the two meet the live half wins the
@@ -54,6 +55,17 @@ func tripFocusMapContent(
         ForEach(display.stops) { stop in
             Annotation("", coordinate: stop.coordinate, anchor: .center) {
                 TripStopDot(stop: stop, routeColor: display.routeColor)
+            }
+        }
+
+        // Debug, under the marker so the estimate stays on top.
+        ForEach(reportedPositions) { position in
+            Annotation("", coordinate: position.coordinate, anchor: .center) {
+                Circle()
+                    .stroke(Color(uiColor: position.kind.color), lineWidth: 2.5)
+                    .frame(width: ReportedPositionAnnotationView.diameter, height: ReportedPositionAnnotationView.diameter)
+                    .accessibilityHidden(true)
+                    .allowsHitTesting(false)
             }
         }
 

@@ -51,7 +51,8 @@ enum TripMapFocusFixture {
         shape: [CLLocationCoordinate2D],
         progress: Double?,
         stops: [TripStopListModel.Row] = [],
-        vehicle: TripStatus? = nil
+        vehicle: TripStatus? = nil,
+        showsReportedPositions: Bool = false
     ) -> TripMapFocus.Content {
         TripMapFocus.Content(
             tripID: tripID,
@@ -60,7 +61,8 @@ enum TripMapFocusFixture {
             shape: shape,
             progress: progress,
             stops: stops,
-            vehicle: vehicle
+            vehicle: vehicle,
+            showsReportedPositions: showsReportedPositions
         )
     }
 

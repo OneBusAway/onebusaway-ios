@@ -436,7 +436,11 @@ struct MapPanelRootView: View {
             if stopTakesMap {
                 stopFocusMapContent(for: stopFocusDisplay.display, onSelectVehicle: followStopVehicle)
             } else {
-                tripFocusMapContent(for: tripFocusDisplay.display, vehicle: tripFocusDisplay.vehicle)
+                tripFocusMapContent(
+                    for: tripFocusDisplay.display,
+                    vehicle: tripFocusDisplay.vehicle,
+                    reportedPositions: tripFocusDisplay.reportedPositions
+                )
             }
         }
         // Long-press drops a pin, as on the UIKit map: a place to plan a trip

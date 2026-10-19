@@ -308,5 +308,20 @@ final class TripFocusMapDisplayModelTests {
         focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
         expectClose(spentEnd(), -121.972, within: 0.0005)
     }
+
+    @Test func `The debug overlay marks the reported fix and the server's position beside an estimate`() throws {
+        let status = try TripMapFocusFixture.vehicle()
+        let (model, focus) = try show(TripMapFocusFixture.content(
+            shape: TripMapFocusFixture.shape(), progress: 0.2, vehicle: status, showsReportedPositions: true
+        ))
+        #expect(model.reportedPositions.isEmpty)
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        #expect(model.reportedPositions.map(\.kind) == [.lastKnownLocation, .serverPosition])
+
+        focus.applyVehicleEstimate(nil)
+        #expect(model.reportedPositions.isEmpty)
+    }
 }
 

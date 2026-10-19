@@ -365,5 +365,37 @@ final class TripFocusMapLayerTests {
         let spent = try #require(shapeOverlays.first { $0.isSpent && $0.part == .core })
         expectClose(spent.points()[spent.pointCount - 1].coordinate.longitude, -121.976, within: 0.0005)
     }
+
+    // MARK: - Reported positions (debug)
+
+    private var reportedPositions: [ReportedPositionAnnotation] {
+        mapView.annotations.compactMap { $0 as? ReportedPositionAnnotation }
+    }
+
+    @Test func `The debug overlay marks the reported fix and the server's position beside an estimate`() throws {
+        let status = try vehicle()
+        let focus = focus(TripMapFocusFixture.content(shape: shape(), progress: 0.2, vehicle: status, showsReportedPositions: true))
+        #expect(reportedPositions.isEmpty)
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        let gps = try #require(reportedPositions.first { $0.kind == .lastKnownLocation })
+        #expect(gps.coordinate.latitude == status.lastKnownLocation?.coordinate.latitude)
+        let server = try #require(reportedPositions.first { $0.kind == .serverPosition })
+        #expect(server.coordinate.latitude == status.position?.coordinate.latitude)
+        #expect(reportedPositions.count == 2)
+
+        focus.apply(TripMapFocusFixture.content(shape: shape(), progress: 0.25, vehicle: status, showsReportedPositions: true))
+        #expect(reportedPositions.count == 2)
+
+        focus.applyVehicleEstimate(nil)
+        #expect(reportedPositions.isEmpty)
+    }
+
+    @Test func `Without the debug toggle no reported positions are drawn`() throws {
+        let focus = focus(TripMapFocusFixture.content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+        #expect(reportedPositions.isEmpty)
+    }
 }
 
