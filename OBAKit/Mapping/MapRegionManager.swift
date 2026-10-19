@@ -1113,16 +1113,7 @@ public class MapRegionManager: NSObject,
         let request = MKMapItemRequest(mapFeatureAnnotation: feature)
 
         do {
-            // MKMapItemRequest and MKMapItem aren't Sendable, and Swift 6.2
-            // (CI's toolchain) won't let them cross the main-actor boundary
-            // around the nonisolated async `mapItem` accessor. Run the fetch in
-            // a detached task, handing each value across in a box: the request
-            // is one-shot and the fetched item has no other owner until the
-            // transfer completes.
-            let requestBox = UncheckedSendableBox(value: request)
-            let mapItem = try await Task.detached {
-                UncheckedSendableBox(value: try await requestBox.value.mapItem)
-            }.value.value
+            let mapItem = try await request.mapItem
 
             let searchRequest = SearchRequest(
                 query: mapItem.name ?? UserDroppedPin.defaultTitle,
