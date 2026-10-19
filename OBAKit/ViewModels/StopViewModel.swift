@@ -359,15 +359,11 @@ class StopViewModel: ObservableObject {
         var pendingExtensionMinutes: UInt?
 
         do {
-            // An estimate measured from a cached arrival would think its fix fresher
-            // than it is: maglev marks this endpoint `max-age=30`.
             let response = try await apiService.getArrivalsAndDeparturesForStop(
                 id: stopID,
                 minutesBefore: minutesBefore,
                 minutesAfter: minutesAfter,
-                cachePolicy: FeatureFlags.isVehicleEstimationEnabled(userDefaults: environment.userDefaults)
-                    ? .reloadIgnoringLocalCacheData
-                    : .useProtocolCachePolicy
+                cachePolicy: FeatureFlags.realtimeCachePolicy(userDefaults: environment.userDefaults)
             )
             let result = response.entry
 

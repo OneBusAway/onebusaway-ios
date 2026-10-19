@@ -20,23 +20,19 @@ enum ReportedPositionKind: Equatable {
     /// time, on maglev the fix snapped to the shape.
     case serverPosition
 
-    /// Both, for a vehicle being estimated, in a fixed order.
-    static func positions(of status: TripStatus?) -> [(kind: ReportedPositionKind, coordinate: CLLocationCoordinate2D)] {
-        guard let status else { return [] }
-        return [
-            status.lastKnownLocation.map { (ReportedPositionKind.lastKnownLocation, $0.coordinate) },
-            status.position.map { (ReportedPositionKind.serverPosition, $0.coordinate) }
-        ]
-        .compactMap { $0 }
-        .filter { !$0.1.isNullIsland }
-    }
-
     var color: UIColor {
         switch self {
         case .lastKnownLocation: .label
         case .serverPosition: .systemPurple
         }
     }
+}
+
+/// One reported position to draw; see `TripMapFocus.Content.reportedPositions(isEstimating:)`.
+struct ReportedPosition: Identifiable {
+    let kind: ReportedPositionKind
+    let coordinate: CLLocationCoordinate2D
+    var id: String { "\(kind)" }
 }
 
 final class ReportedPositionAnnotation: MKPointAnnotation {

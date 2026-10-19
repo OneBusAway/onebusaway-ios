@@ -291,7 +291,7 @@ final class TripFocusMapDisplayModelTests {
         let (model, focus) = try show(TripMapFocusFixture.content(
             shape: TripMapFocusFixture.shape(), progress: 0.2, vehicle: try TripMapFocusFixture.vehicle()
         ))
-        model.now = { now }
+        focus.now = { now }
 
         func spentEnd() -> Double? {
             model.display?.spent.map { $0.core.points()[$0.core.pointCount - 1].coordinate.longitude }
@@ -304,7 +304,7 @@ final class TripFocusMapDisplayModelTests {
         focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
         expectClose(spentEnd(), -121.976, within: 0.0005)
 
-        now += TripFocusMapLayer.splitRefreshInterval
+        now += TripMapFocus.splitRefreshInterval
         focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
         expectClose(spentEnd(), -121.972, within: 0.0005)
     }

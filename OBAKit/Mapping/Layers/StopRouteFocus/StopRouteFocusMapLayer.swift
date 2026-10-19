@@ -215,7 +215,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         latestServerClock = serverClock
         let all = arrivals?.arrivalsAndDepartures ?? []
         // Assigned before `update`, which consults it for every vehicle.
-        departureProvider = { departureID in all.first { $0.id == departureID } }
+        // Asked once per vehicle, twice a poll: a lookup, not a scan.
+        let byID = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        departureProvider = { byID[$0] }
 
         let visible = StopRouteFocusModel.visibleDepartures(
             all,
@@ -405,19 +407,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             return
         }
 
-        struct Pending {
-            let vehicleKey: String
-            let tripID: String
-            let shapeID: String
-            let request: TripScheduleCache.Request
-            let serverTripLength: Double
-            let fix: VehicleFix?
-        }
-        let pending: [Pending] = model.vehicles.compactMap { vehicle in
+        let pending: [EstimationPending] = model.vehicles.compactMap { vehicle in
             guard let tripID = vehicle.tripID, let shapeID = vehicle.shapeID, !shapeID.isEmpty,
                   let departure = departureProvider?(vehicle.departureID),
                   let status = departure.tripStatus else { return nil }
-            return Pending(
+            return EstimationPending(
                 vehicleKey: vehicle.id,
                 tripID: tripID,
                 shapeID: shapeID,
@@ -431,24 +425,53 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
         estimationTask?.cancel()
         estimationTask = Task { [weak self, shapeCache] in
-            var inputs: [VehicleEstimationDriver.Input] = []
-            for vehicle in pending {
-                guard let shape = try? await shapeCache.coordinates(forShapeID: vehicle.shapeID), shape.count > 1 else { continue }
-                // Without its schedule a vehicle can still move at its observed speed.
-                let schedule = try? await tripSchedules.schedule(for: vehicle.request)
-                inputs.append(.init(
-                    vehicleKey: vehicle.vehicleKey,
-                    tripID: vehicle.tripID,
-                    shape: shape,
-                    stopTimes: schedule?.stopTimes ?? [],
-                    serverTripLength: vehicle.serverTripLength > 0 ? vehicle.serverTripLength : schedule?.serverTripLength,
-                    fixes: [vehicle.fix].compactMap { $0 },
-                    serverClocks: serverClocks
-                ))
-            }
+            let inputs = await Self.estimationInputs(for: pending, shapeCache: shapeCache, tripSchedules: tripSchedules)
             guard !Task.isCancelled, let self, self.presentationToken == token, !self.isSuppressed else { return }
-            vehicleEstimation.update(inputs)
+            vehicleEstimation.update(inputs, serverClocks: serverClocks)
             vehicleEstimation.resume()
+        }
+    }
+
+    /// What `refreshEstimationInputs` knows about a vehicle before its shape and
+    /// schedule arrive.
+    private struct EstimationPending: Sendable {
+        let vehicleKey: String
+        let tripID: String
+        let shapeID: String
+        let request: TripScheduleCache.Request
+        let serverTripLength: Double
+        let fix: VehicleFix?
+    }
+
+    /// Every vehicle at once: on a cold cache each is a round trip or two.
+    private static func estimationInputs(
+        for pending: [EstimationPending],
+        shapeCache: ShapeCache,
+        tripSchedules: TripScheduleCache
+    ) async -> [VehicleEstimationDriver.Input] {
+        await withTaskGroup(of: VehicleEstimationDriver.Input?.self) { group in
+            for vehicle in pending {
+                group.addTask {
+                    async let shape = try? shapeCache.coordinates(forShapeID: vehicle.shapeID)
+                    // Without its schedule a vehicle can still move at its observed speed.
+                    async let schedule = try? tripSchedules.schedule(for: vehicle.request)
+                    guard let shape = await shape, shape.count > 1 else { return nil }
+                    let fetched = await schedule
+                    return VehicleEstimationDriver.Input(
+                        vehicleKey: vehicle.vehicleKey,
+                        tripID: vehicle.tripID,
+                        shape: shape,
+                        stopTimes: fetched?.stopTimes ?? [],
+                        serverTripLength: vehicle.serverTripLength > 0 ? vehicle.serverTripLength : fetched?.serverTripLength,
+                        fixes: [vehicle.fix].compactMap { $0 }
+                    )
+                }
+            }
+            var inputs: [VehicleEstimationDriver.Input] = []
+            for await input in group {
+                if let input { inputs.append(input) }
+            }
+            return inputs
         }
     }
 
@@ -739,16 +762,6 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         return [formatters.accessibilityLabelForArrivalDeparture(routeAndHeadsign: routeAndHeadsign), vehicle].joined(separator: ", ")
     }
 
-    /// Relative-time formatter for "position updated 12s ago". Held statically —
-    /// constructing one per callout is measurably wasteful and they are stateless.
-    private static let updatedFormatter: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        // `.abbreviated` ("12s ago"), not `.short` ("12 sec. ago") — the design's
-        // freshness line, and short enough not to wrap under the countdown.
-        formatter.unitsStyle = .abbreviated
-        return formatter
-    }()
-
     /// "Vehicle NNNN" — see the spec's callout content list.
     private static let vehicleLabelFormat = OBALoc(
         "vehicle_callout.vehicle_label_fmt",
@@ -776,7 +789,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             statusColor: status.color,
             // There is no `Formatters.formattedLastUpdated`. `ArrivalDeparture`
             // carries `lastUpdated: Date` (:35); format it here.
-            updatedText: Self.updatedFormatter.localizedString(for: departure.lastUpdated, relativeTo: Date()),
+            updatedText: RelativeDateTimeFormatter.vehiclePositionAge.localizedString(for: departure.lastUpdated, relativeTo: Date()),
             routeColor: annotation.routeColor,
             onFollow: { [weak self] in self?.onFollowTrip?(departure) }
         )

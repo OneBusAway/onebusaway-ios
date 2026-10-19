@@ -89,23 +89,15 @@ final class TripFocusMapDisplayModel: ObservableObject {
     @Published private(set) var vehicle: TripVehicle?
     /// Debug; see `TripMapFocus.Content.showsReportedPositions`.
     @Published private(set) var reportedPositions: [ReportedPosition] = []
-
-    struct ReportedPosition: Identifiable {
-        let kind: ReportedPositionKind
-        let coordinate: CLLocationCoordinate2D
-        var id: String { "\(kind)" }
-    }
     @Published private(set) var cameraTarget: CameraTarget?
 
     /// The estimate the vehicle follows; `nil` to follow the feed.
     private var estimate: VehicleEstimate?
     /// Where the line is cut while an estimate runs; see `TripFocusMapLayer`.
+    /// The focus's `estimatedSplitProgress`, kept because `@Published` hands the
+    /// new value to its sink before the property holds it.
     private var estimatedSplitProgress: Double?
-    private var lastEstimatedSplitAt: Date?
     private var drawnContent: TripMapFocus.Content?
-
-    /// Test seam for `TripFocusMapLayer.splitRefreshInterval`.
-    var now: () -> Date = Date.init
 
     /// While a trip is drawn the ambient stop pins stand down, as they do for a
     /// planned trip or a searched route: the trip's own stops are drawn instead.
@@ -193,7 +185,6 @@ final class TripFocusMapDisplayModel: ObservableObject {
     private func resetEstimate() {
         estimate = nil
         estimatedSplitProgress = nil
-        lastEstimatedSplitAt = nil
         drawnContent = nil
     }
 
@@ -214,6 +205,15 @@ final class TripFocusMapDisplayModel: ObservableObject {
             .dropFirst()
             .sink { [weak self] estimate in self?.apply(estimate) }
             .store(in: &focusCancellables)
+        // Not `dropFirst()`: a focus already estimating when it is shown starts split.
+        focus.$estimatedSplitProgress
+            .removeDuplicates()
+            .sink { [weak self] progress in
+                guard let self else { return }
+                estimatedSplitProgress = progress
+                render(drawnContent)
+            }
+            .store(in: &focusCancellables)
     }
 
     private func apply(_ estimate: VehicleEstimate?) {
@@ -222,24 +222,12 @@ final class TripFocusMapDisplayModel: ObservableObject {
         guard let content = drawnContent else { return }
 
         let vehicle = Self.vehicle(content, estimate: estimate)
-        if (estimate != nil) != wasEstimating { updateReportedPositions(content) }
+        if (estimate != nil) != wasEstimating { reportedPositions = content.reportedPositions(isEstimating: estimate != nil) }
         if let estimate, !estimate.shouldSnap, !UIAccessibility.isReduceMotionEnabled {
             let duration = TimeInterval(VehicleEstimationDriver.tickInterval.components.seconds)
             withAnimation(.linear(duration: duration)) { self.vehicle = vehicle }
         } else {
             self.vehicle = vehicle
-        }
-
-        if let progress = estimate?.progress {
-            let now = now()
-            if let lastEstimatedSplitAt, now.timeIntervalSince(lastEstimatedSplitAt) < TripFocusMapLayer.splitRefreshInterval { return }
-            lastEstimatedSplitAt = now
-            estimatedSplitProgress = progress
-            render(content)
-        } else if wasEstimating, estimatedSplitProgress != nil {
-            estimatedSplitProgress = nil
-            lastEstimatedSplitAt = nil
-            render(content)
         }
     }
 
@@ -251,9 +239,9 @@ final class TripFocusMapDisplayModel: ObservableObject {
             reportedPositions = []
             return
         }
-        updateReportedPositions(content)
+        reportedPositions = content.reportedPositions(isEstimating: estimate != nil)
 
-        let split = content.shapeSplit(atProgress: estimatedSplitProgress ?? content.progress)
+        let split = content.shapeSplit(estimatedProgress: estimatedSplitProgress)
         let display = Display(
             routeColor: Color(uiColor: content.routeColor),
             casingColor: Color(uiColor: RouteArrowStyle.casingColor(for: content.routeColor)),
@@ -292,16 +280,6 @@ final class TripFocusMapDisplayModel: ObservableObject {
         cameraTarget = CameraTarget(rect: rect)
     }
 
-    private func updateReportedPositions(_ content: TripMapFocus.Content) {
-        guard estimate != nil, content.showsReportedPositions else {
-            if !reportedPositions.isEmpty { reportedPositions = [] }
-            return
-        }
-        reportedPositions = ReportedPositionKind.positions(of: content.vehicle).map {
-            ReportedPosition(kind: $0.kind, coordinate: $0.coordinate)
-        }
-    }
-
     /// One point is not a line, and drawing it would add polylines that render as
     /// nothing.
     private static func shapeLine(_ coordinates: [CLLocationCoordinate2D]) -> ShapeLine? {
@@ -312,24 +290,15 @@ final class TripFocusMapDisplayModel: ObservableObject {
         )
     }
 
+    /// Where the estimate puts the vehicle, or where the feed does without one.
     private static func vehicle(_ content: TripMapFocus.Content, estimate: VehicleEstimate?) -> TripVehicle? {
-        guard let status = content.vehicle else { return nil }
-        if let estimate {
-            return TripVehicle(
-                coordinate: estimate.coordinate,
-                routeType: content.routeType,
-                isRealTime: status.isRealTime,
-                orientation: estimate.obaOrientation ?? status.orientation,
-                staleness: VehicleMarkerStaleness(estimate: estimate)
-            )
-        }
-        guard let coordinate = content.vehicleCoordinate else { return nil }
+        guard let status = content.vehicle, let coordinate = estimate?.coordinate ?? content.vehicleCoordinate else { return nil }
         return TripVehicle(
             coordinate: coordinate,
             routeType: content.routeType,
             isRealTime: status.isRealTime,
-            orientation: status.orientation,
-            staleness: .live
+            orientation: estimate?.obaOrientation ?? status.orientation,
+            staleness: VehicleMarkerStaleness(estimate: estimate)
         )
     }
 }

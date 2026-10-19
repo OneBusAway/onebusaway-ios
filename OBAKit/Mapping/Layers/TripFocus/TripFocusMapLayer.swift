@@ -94,18 +94,6 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// The estimate the marker is following, or `nil` to follow the feed.
     private var estimate: VehicleEstimate?
 
-    /// Where the line is cut while an estimate runs. `nil` cuts it at the reported
-    /// progress, as without one.
-    private var estimatedSplitProgress: Double?
-    private var lastEstimatedSplitAt: Date?
-
-    /// Redrawing the line costs more than moving a marker, so an estimate moves the
-    /// line's join at most this often.
-    static let splitRefreshInterval: TimeInterval = 5
-
-    /// Test seam for `splitRefreshInterval`.
-    var now: () -> Date = Date.init
-
     init(mapView: MKMapView) {
         self.mapView = mapView
         super.init()
@@ -140,6 +128,12 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             .dropFirst()
             .sink { [weak self] estimate in self?.apply(estimate) }
             .store(in: &cancellables)
+
+        focus.$estimatedSplitProgress
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] progress in self?.redrawShape(estimatedProgress: progress) }
+            .store(in: &cancellables)
     }
 
     /// Called when the trip page goes away.
@@ -152,8 +146,6 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         focus = nil
         framedTripID = nil
         estimate = nil
-        estimatedSplitProgress = nil
-        lastEstimatedSplitAt = nil
         removeAllContent()
     }
 
@@ -172,7 +164,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
         // Split once: the drawing and the camera have to agree about which half
         // of the shape is still ahead of the bus.
-        let split = content.shapeSplit(atProgress: estimatedSplitProgress ?? content.progress)
+        let split = content.shapeSplit(estimatedProgress: focus?.estimatedSplitProgress)
 
         drawStops(content)
         // Before the shape, so its first draw already knows where this trip's stops are.
@@ -265,41 +257,24 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             }
         }
 
-        resplitIfNeeded(estimate: estimate, wasEstimating: wasEstimating)
         if (estimate != nil) != wasEstimating { drawReportedPositions() }
     }
 
     private func drawReportedPositions() {
         mapView.removeAnnotations(reportedPositionAnnotations)
         reportedPositionAnnotations.removeAll()
-        guard estimate != nil, let content = focus?.content, content.showsReportedPositions else { return }
-        reportedPositionAnnotations = ReportedPositionKind.positions(of: content.vehicle).map {
+        reportedPositionAnnotations = (focus?.content?.reportedPositions(isEstimating: estimate != nil) ?? []).map {
             ReportedPositionAnnotation(kind: $0.kind, coordinate: $0.coordinate)
         }
         mapView.addAnnotations(reportedPositionAnnotations)
     }
 
-    private func resplitIfNeeded(estimate: VehicleEstimate?, wasEstimating: Bool) {
-        guard let content = focus?.content else { return }
-        guard let progress = estimate?.progress else {
-            guard wasEstimating, estimatedSplitProgress != nil else { return }
-            estimatedSplitProgress = nil
-            lastEstimatedSplitAt = nil
-            redrawShape(content)
-            return
-        }
-        let now = now()
-        if let lastEstimatedSplitAt, now.timeIntervalSince(lastEstimatedSplitAt) < Self.splitRefreshInterval { return }
-        lastEstimatedSplitAt = now
-        estimatedSplitProgress = progress
-        redrawShape(content)
-    }
-
     /// The line alone, cut where the marker is; the stops and the vehicle stay.
-    private func redrawShape(_ content: TripMapFocus.Content) {
+    private func redrawShape(estimatedProgress: Double?) {
+        guard let content = focus?.content else { return }
         mapView.removeOverlays(shapeOverlays)
         shapeOverlays.removeAll()
-        drawShape(content.shapeSplit(atProgress: estimatedSplitProgress ?? content.progress))
+        drawShape(content.shapeSplit(estimatedProgress: estimatedProgress))
         refreshArrowMarkers()
     }
 

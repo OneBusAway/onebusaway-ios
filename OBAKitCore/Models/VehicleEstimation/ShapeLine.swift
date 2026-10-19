@@ -17,7 +17,8 @@ import Foundation
 /// flat approximation per segment: segments are tens of meters long, where the
 /// error against the sphere is far below GPS noise.
 public struct ShapeLine: Sendable {
-    public static let earthRadiusMeters = 6_371_000.0
+    /// The same sphere `OnDemandGeometry` measures on.
+    public static let earthRadiusMeters = OnDemandGeometry.earthRadiusMeters
 
     public let coordinates: [CLLocationCoordinate2D]
     /// `cumulative[i]` is the distance along the shape of `coordinates[i]`.
@@ -59,7 +60,7 @@ public struct ShapeLine: Sendable {
                 latitude: from.latitude + (to.latitude - from.latitude) * ratio,
                 longitude: from.longitude + (to.longitude - from.longitude) * ratio
             ),
-            bearingDegrees: Self.bearing(from, to)
+            bearingDegrees: OnDemandGeometry.bearingDegrees(from: from, to: to)
         )
     }
 
@@ -142,14 +143,5 @@ public struct ShapeLine: Sendable {
         let dLat = lat2 - lat1, dLon = (b.longitude - a.longitude) * .pi / 180
         let h = sin(dLat / 2) * sin(dLat / 2) + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
         return 2 * earthRadiusMeters * asin(min(1, h.squareRoot()))
-    }
-
-    static func bearing(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Double {
-        let lat1 = a.latitude * .pi / 180, lat2 = b.latitude * .pi / 180
-        let dLon = (b.longitude - a.longitude) * .pi / 180
-        let y = sin(dLon) * cos(lat2)
-        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
-        let degrees = atan2(y, x) * 180 / .pi
-        return (degrees + 360).truncatingRemainder(dividingBy: 360)
     }
 }

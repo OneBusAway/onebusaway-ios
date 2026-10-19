@@ -38,6 +38,13 @@ public enum FeatureFlags {
         userDefaults.bool(forKey: estimatesVehiclePositionsKey)
     }
 
+    /// For requests that carry vehicle positions: an estimate measured from a
+    /// cached status would think its fix fresher than it is, and maglev marks these
+    /// endpoints `max-age=30`. Unchanged while estimation is off.
+    public static func realtimeCachePolicy(userDefaults: UserDefaults) -> URLRequest.CachePolicy {
+        isVehicleEstimationEnabled(userDefaults: userDefaults) ? .reloadIgnoringLocalCacheData : .useProtocolCachePolicy
+    }
+
     public static func showsRawVehicleFix(userDefaults: UserDefaults) -> Bool {
         userDefaults.bool(forKey: showsRawVehicleFixKey)
     }

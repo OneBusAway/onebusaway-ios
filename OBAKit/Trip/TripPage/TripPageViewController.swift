@@ -289,9 +289,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             shape: shape ?? [],
             stopTimes: (details?.stopTimes ?? []).compactMap(TripGeometry.StopTime.init),
             serverTripLength: statuses.first?.totalDistanceAlongTrip,
-            fixes: statuses.compactMap { VehicleFix(tripStatus: $0, tripID: tripID) },
-            serverClocks: serverClocks
-        ))
+            fixes: statuses.compactMap { VehicleFix(tripStatus: $0, tripID: tripID) }
+        ), serverClocks: serverClocks)
     }
 
     private func publishMapFocus(

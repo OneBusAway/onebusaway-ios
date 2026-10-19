@@ -337,7 +337,7 @@ final class TripFocusMapLayerTests {
     @Test func `An estimate re-splits the line at the marker, at most every few seconds`() throws {
         var now = Date(timeIntervalSince1970: 1_800_000_000)
         let focus = focus(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
-        layer.now = { now }
+        focus.now = { now }
 
         func spentEnd() -> Double? {
             shapeOverlays.first { $0.isSpent && $0.part == .core }.map { $0.points()[$0.pointCount - 1].coordinate.longitude }
@@ -350,7 +350,7 @@ final class TripFocusMapLayerTests {
         focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
         expectClose(spentEnd(), -121.976, within: 0.0005)
 
-        now += TripFocusMapLayer.splitRefreshInterval
+        now += TripMapFocus.splitRefreshInterval
         focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.7, shouldSnap: false))
         expectClose(spentEnd(), -121.972, within: 0.0005)
     }

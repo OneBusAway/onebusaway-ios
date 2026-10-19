@@ -154,11 +154,7 @@ class TripViewModel: ObservableObject {
         // them: the page then said the list "isn't available" until a refresh
         // 30 seconds later. A throw caught inside this scope leaves the other
         // fetches running.
-        // An estimate measured from a cached status would think its fix fresher
-        // than it is: maglev marks both of these `max-age=30`.
-        let cachePolicy: URLRequest.CachePolicy = FeatureFlags.isVehicleEstimationEnabled(userDefaults: application.userDefaults)
-            ? .reloadIgnoringLocalCacheData
-            : .useProtocolCachePolicy
+        let cachePolicy = FeatureFlags.realtimeCachePolicy(userDefaults: application.userDefaults)
         var detailsClock: ServerClockSample?
         var convertibleClock: ServerClockSample?
         async let details = fetchTripDetails(cachePolicy: cachePolicy)

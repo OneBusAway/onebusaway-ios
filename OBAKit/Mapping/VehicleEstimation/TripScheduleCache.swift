@@ -15,8 +15,7 @@ import OBAKitCore
 /// One `trip-details` call per vehicle drawn, about 10–20 KB, rather than one
 /// `trips-for-route` per route, which runs to hundreds of kilobytes. A trip's
 /// schedule doesn't change through its service day, so each is fetched once for
-/// the map session. Same shape as `ShapeCache`: bounded, de-duplicates in-flight
-/// fetches, and drops a fetch that resolves after `removeAll()`.
+/// the map session.
 actor TripScheduleCache {
 
     struct Request: Sendable, Hashable {
@@ -34,60 +33,26 @@ actor TripScheduleCache {
     /// `RESTAPIService.getTrip(tripID:vehicleID:serviceDate:)`.
     typealias Fetch = @Sendable (Request) async throws -> Schedule
 
-    private final class InFlightBox {
-        let task: Task<Schedule, Error>
-        init(task: Task<Schedule, Error>) { self.task = task }
+    /// Keyed by trip and service day: the vehicle doesn't change the schedule.
+    private struct Key: Hashable, Sendable {
+        let tripID: String
+        let serviceDate: Date
     }
 
     private let fetch: Fetch
-    private var storage: [String: Schedule] = [:]
-    private var inFlight: [String: InFlightBox] = [:]
-    private var insertionOrder: [String] = []
-    private let capacity = 64
-    private var generation: UInt64 = 0
+    private let cache = MemoizingCache<Key, Schedule>(capacity: 64)
 
     init(fetch: @escaping Fetch) {
         self.fetch = fetch
     }
 
-    /// Keyed by trip and service day: the vehicle doesn't change the schedule.
-    private static func key(_ request: Request) -> String {
-        "\(request.tripID)|\(Int64(request.serviceDate.timeIntervalSince1970))"
-    }
-
     func schedule(for request: Request) async throws -> Schedule {
-        let key = Self.key(request)
-        if let cached = storage[key] { return cached }
-        if let existing = inFlight[key] { return try await existing.task.value }
-
-        let generation = self.generation
-        let box = InFlightBox(task: Task { [fetch] in try await fetch(request) })
-        inFlight[key] = box
-
-        // Identity, not `defer`, for the reason `ShapeCache.coordinates(forShapeID:)` gives.
-        let schedule: Schedule
-        do {
-            schedule = try await box.task.value
-        } catch {
-            if inFlight[key] === box { inFlight[key] = nil }
-            throw error
+        try await cache.value(for: Key(tripID: request.tripID, serviceDate: request.serviceDate)) { [fetch] in
+            try await fetch(request)
         }
-        if inFlight[key] === box { inFlight[key] = nil }
-
-        guard generation == self.generation else { return schedule }
-        storage[key] = schedule
-        insertionOrder.append(key)
-        while insertionOrder.count > capacity {
-            storage[insertionOrder.removeFirst()] = nil
-        }
-        return schedule
     }
 
-    func removeAll() {
-        generation &+= 1
-        storage.removeAll()
-        insertionOrder.removeAll()
-        for box in inFlight.values { box.task.cancel() }
-        inFlight.removeAll()
+    func removeAll() async {
+        await cache.removeAll()
     }
 }
