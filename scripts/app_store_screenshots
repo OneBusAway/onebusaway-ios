@@ -53,7 +53,6 @@ if [[ "$duo" == 1 ]]; then
     # Which slides each posture captures; docs/app-store/duo-screenshots.json
     # uses them. Open is the Duo's main posture, so most slides are open.
     open_tests=(test01StopArrivals test03TripVehicle test04TripPlanner test05Alarm test06Bookmarks test07OpenSource)
-    # Not test02LockScreen: pressLockButton doesn't lock the Duo.
     folded_tests=(test01StopArrivals test03TripVehicle)
 else
     size="${size:-1206x2622}"
@@ -70,8 +69,9 @@ resolve_udid() {
     fi
 }
 
-# Runs the given tests, or the whole suite without any, into result bundle $1.
-# A failed slide still leaves the others' captures in the bundle.
+# Runs the given tests, or the whole suite without any, into result bundle $1,
+# telling the tests the Duo's posture ($posture) if there is one. A failed
+# slide still leaves the others' captures in the bundle.
 run_tests() {
     local bundle="$1" udid="$2"; shift 2
     local filters=("-only-testing:$suite")
@@ -82,7 +82,8 @@ run_tests() {
         done
     fi
     rm -rf "$bundle"
-    xcodebuild test-without-building -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
+    # xcodebuild hands TEST_RUNNER_-prefixed variables to the tests, unprefixed.
+    TEST_RUNNER_SCREENSHOT_POSTURE="${posture:-}" xcodebuild test-without-building -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
         -destination "platform=iOS Simulator,id=$udid" -derivedDataPath "$derived" \
         "${filters[@]}" -resultBundlePath "$bundle" || echo "warning: some slides failed; exporting what was captured" >&2
 }
@@ -123,16 +124,12 @@ capture() {
     fi
 
     if [[ "$duo" == 0 ]]; then
-        if [[ -n "$only" ]]; then
-            run_tests "$out/screenshots.xcresult" "$udid" "$only"
-        else
-            run_tests "$out/screenshots.xcresult" "$udid"
-        fi
+        run_tests "$out/screenshots.xcresult" "$udid" ${only:+"$only"}
         return
     fi
 
     # Start in whichever posture the Duo is in: one click fewer.
-    local tests postures=(open folded)
+    local posture tests postures=(open folded)
     if [[ $(python3 "$repo/scripts/app_store/duo_posture.py" "$udid" current) == folded ]]; then
         postures=(folded open)
     fi
@@ -142,7 +139,11 @@ capture() {
         else
             tests=$(selected "${folded_tests[@]}")
         fi
-        [[ -n "$tests" ]] || continue
+        if [[ -z "$tests" ]]; then
+            # Last run's bundle would only be exported again.
+            rm -rf "$out/$posture.xcresult"
+            continue
+        fi
         python3 "$repo/scripts/app_store/duo_posture.py" "$udid" "$posture"
         # shellcheck disable=SC2086 # one test name per word
         run_tests "$out/$posture.xcresult" "$udid" $tests

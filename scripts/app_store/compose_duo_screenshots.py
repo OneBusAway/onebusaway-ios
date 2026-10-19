@@ -4,8 +4,8 @@
 Reads the slide list from docs/app-store/duo-screenshots.json. Each slide
 names one or more raw captures from `<raw dir>`; a capture ending in
 `-folded` is the cover screen and is drawn as the folded Duo, any other as the
-open Duo. frames-cli has no Duo frame, so this draws the device itself, from
-the screen geometry in the simulator's device profile.
+open Duo. frames-cli has no Duo frame, so this draws the device itself around
+the capture, with the screen corner radii from the simulator's device profile.
 
 Usage: compose_duo_screenshots.py <raw dir> <output dir> [--size WxH]
 
@@ -20,17 +20,15 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFilter, ImageOps
 
-from compose_screenshots import block_height, draw_lines, fitted_font
+from compose_screenshots import draw_caption
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 CONFIG = REPO / "docs" / "app-store" / "duo-screenshots.json"
 
-# Screen geometry in pixels, from the iPhone Duo device profile
-# (capabilities.plist: corner radii in points, at 3x). Radii run top-left,
-# top-right, bottom-right, bottom-left.
-OPEN_SCREEN = (2853, 2007)          # inner display, landscape
+# Screen corner radii in pixels, from the iPhone Duo device profile
+# (capabilities.plist: points, at 3x), running top-left, top-right,
+# bottom-right, bottom-left. The cover screen's hinge is on its left.
 OPEN_RADII = (165, 165, 165, 165)
-COVER_SCREEN = (1398, 2034)         # cover display; the hinge is on its left
 COVER_RADII = (24, 177, 177, 24)
 
 BEZEL = 62          # black border around the screen
@@ -48,6 +46,7 @@ DEVICE_TOP = 0.215      # device top / canvas height
 OPEN_WIDTH = 0.84       # a lone open Duo's width / canvas width
 DEVICE_HEIGHT = 0.74    # folded Duos' height / canvas height
 GAP = 0.05              # space between devices / canvas width
+MAX_ROW = 0.94          # widest a row of devices may be / canvas width
 SUPERSAMPLE = 2         # masks are drawn this much larger, for smooth edges
 
 
@@ -74,10 +73,14 @@ def grown(radii, by):
     return tuple(r + by for r in radii)
 
 
-def draw_device(capture, screen_size, screen_radii, folded):
+def draw_device(capture, folded):
     """The capture in a Duo body, on a transparent image with room for bumps."""
-    screen = ImageOps.exif_transpose(Image.open(capture)).convert("RGB").resize(screen_size, Image.LANCZOS)
+    # The exported PNGs carry an EXIF rotation; the open Duo's is landscape.
+    screen = ImageOps.exif_transpose(Image.open(capture)).convert("RGB")
+    screen_size = screen.size
+    screen_radii = COVER_RADII if folded else OPEN_RADII
     border = BEZEL + RIM
+    body_radii = grown(screen_radii, border)
     body_size = (screen_size[0] + 2 * border, screen_size[1] + 2 * border)
     left_pad = SPINE if folded else BUMP
     device = Image.new("RGBA", (body_size[0] + left_pad + BUMP, body_size[1] + 2 * BUMP), (0, 0, 0, 0))
@@ -94,13 +97,11 @@ def draw_device(capture, screen_size, screen_radii, folded):
         # The hinge spine runs down the left side, behind the body.
         draw.rounded_rectangle((0, oy + 40, ox + 60, oy + bh - 40), radius=SPINE, fill=METAL_LIGHT)
         draw.rounded_rectangle((8, oy + 52, ox + 60, oy + bh - 52), radius=SPINE, fill=METAL)
-        body_radii = grown(screen_radii, border)
         body_radii = (40, body_radii[1], body_radii[2], 40)
         # A side button on the right.
         y = oy + round(bh * 0.30)
         draw.rounded_rectangle((ox + bw - RIM, y, ox + bw + BUMP, y + round(bh * 0.10)), radius=BUMP, fill=METAL_LIGHT)
     else:
-        body_radii = grown(screen_radii, border)
         # Hinge tabs at the middle of the top and bottom edges.
         cx = ox + bw // 2
         tab = round(bw * 0.035)
@@ -132,43 +133,25 @@ def with_shadow(device):
     return shadow, pad
 
 
-def device_for(raw_dir, capture):
-    path = raw_dir / f"{capture}.png"
-    if not path.exists():
-        return None
-    if capture.endswith("-folded"):
-        return draw_device(path, COVER_SCREEN, COVER_RADII, folded=True)
-    return draw_device(path, OPEN_SCREEN, OPEN_RADII, folded=False)
-
-
-def compose(slide, devices, size, background, text_color):
+def compose(slide, raw_dir, size, background, text_color):
     width, height = size
     canvas = Image.new("RGB", size, background)
-    draw = ImageDraw.Draw(canvas)
-    max_text = width * (1 - 2 * SIDE_MARGIN)
-
-    caption = slide["caption"].splitlines()
-    caption_font = fitted_font(caption, round(height * CAPTION_SIZE), max_text)
-    subtitle = slide.get("subtitle", "").splitlines()
-    subtitle_font = fitted_font(subtitle, round(height * SUBTITLE_SIZE), max_text)
-
     device_top = round(height * DEVICE_TOP)
-    gap = round(caption_font.size * 0.35) if subtitle else 0
-    text_height = block_height(caption, caption_font) + gap + block_height(subtitle, subtitle_font)
-    top = max(0, round((device_top - text_height) / 2))
-    bottom = draw_lines(draw, caption, caption_font, top, width, text_color)
-    draw_lines(draw, subtitle, subtitle_font, bottom + gap, width, text_color)
+    draw_caption(canvas, slide, device_top, round(height * CAPTION_SIZE), round(height * SUBTITLE_SIZE),
+                 text_color, side_margin=SIDE_MARGIN, gap_factor=0.35, nudge=0)
 
+    folded = [capture.endswith("-folded") for capture in slide["devices"]]
+    devices = [draw_device(raw_dir / f"{capture}.png", f) for capture, f in zip(slide["devices"], folded)]
     # A lone open Duo fills the width and runs off the bottom edge; folded
     # ones stand side by side at a common height.
-    if len(devices) == 1 and devices[0].width > devices[0].height:
+    if folded == [False]:
         scales = [width * OPEN_WIDTH / devices[0].width]
     else:
         scales = [height * DEVICE_HEIGHT / d.height for d in devices]
     spacing = round(width * GAP)
     total = sum(d.width * s for d, s in zip(devices, scales)) + spacing * (len(devices) - 1)
-    if total > width * 0.94:
-        shrink = width * 0.94 / total
+    if total > width * MAX_ROW:
+        shrink = width * MAX_ROW / total
         scales = [s * shrink for s in scales]
         total *= shrink
 
@@ -194,11 +177,10 @@ def main():
 
     missing = []
     for slide in config["slides"]:
-        devices = [device_for(args.raw_dir, capture) for capture in slide["devices"]]
-        if None in devices:
+        if not all((args.raw_dir / f"{capture}.png").exists() for capture in slide["devices"]):
             missing.append(slide["name"])
             continue
-        image = compose(slide, devices, size, config["background"], config["text"])
+        image = compose(slide, args.raw_dir, size, config["background"], config["text"])
         target = args.output_dir / f"{slide['name']}-{size[0]}x{size[1]}.png"
         image.save(target)
         print(target)

@@ -35,10 +35,11 @@
 set -euo pipefail
 
 kind=any
+label="iPhone"
 case "${1:-}" in
     "") ;;
-    --pro) kind=pro ;;
-    --duo) kind=duo ;;
+    --pro) kind=pro; label="iPhone Pro" ;;
+    --duo) kind=duo; label="iPhone Duo" ;;
     *) echo "error: unknown argument: $1 (expected --pro, --duo or nothing)" >&2; exit 2 ;;
 esac
 
@@ -91,13 +92,7 @@ for runtime in sorted(devices, key=ios_version, reverse=True):
 ' "$kind")
 
 if [ -z "$udid" ]; then
-    if [ "$kind" = pro ]; then
-        echo "error: no available iPhone Pro simulator on any installed iOS runtime." >&2
-    elif [ "$kind" = duo ]; then
-        echo "error: no available iPhone Duo simulator on any installed iOS runtime." >&2
-    else
-        echo "error: no available iPhone simulator on any installed iOS runtime." >&2
-    fi
+    echo "error: no available $label simulator on any installed iOS runtime." >&2
     echo "Install one in Xcode > Settings > Components, or run: xcodebuild -downloadPlatform iOS" >&2
     exit 1
 fi

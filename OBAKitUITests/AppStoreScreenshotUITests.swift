@@ -84,40 +84,22 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         // Sheets, map camera moves and countdowns animate in; a fixed settle
         // beats polling for "animation finished", which XCUITest can't see.
         sleep(settle)
-        let (screenshot, folded) = litScreenshot()
-        let attachment = XCTAttachment(screenshot: screenshot)
-        attachment.name = folded ? "\(name)-folded" : name
+        let attachment = XCTAttachment(screenshot: Self.screenshot())
+        attachment.name = Self.duoPosture == "folded" ? "\(name)-folded" : name
         attachment.lifetime = .keepAlways
         add(attachment)
     }
 
-    /// iPhone Duo has two displays, and `XCUIScreen.main` is the cover one,
-    /// which goes dark when the device is open. Captures whichever is lit, and
-    /// whether that's a folded Duo's cover screen, so the two postures' captures
-    /// get different names.
-    @MainActor private func litScreenshot() -> (XCUIScreenshot, folded: Bool) {
-        let shots = XCUIScreen.screens.map { $0.screenshot() }
-        guard shots.count > 1,
-              let lit = shots.max(by: { Self.brightness($0.image) < Self.brightness($1.image) }) else {
-            return (XCUIScreen.main.screenshot(), false)
-        }
-        // The cover is the smaller screen.
-        let area = { (shot: XCUIScreenshot) in shot.image.size.width * shot.image.size.height }
-        return (lit, shots.contains { area($0) > area(lit) })
-    }
+    /// The iPhone Duo's posture, `open` or `folded`, which
+    /// `scripts/app_store_screenshots --duo` passes in. Nil on other devices.
+    private static let duoPosture = ProcessInfo.processInfo.environment["SCREENSHOT_POSTURE"]
 
-    /// Mean brightness, 0–255, from an 8 × 8 thumbnail.
-    private static func brightness(_ image: UIImage) -> Int {
-        let side = 8
-        var pixels = [UInt8](repeating: 0, count: side * side)
-        pixels.withUnsafeMutableBytes { buffer in
-            guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
-                                          bytesPerRow: side, space: CGColorSpaceCreateDeviceGray(),
-                                          bitmapInfo: CGImageAlphaInfo.none.rawValue),
-                  let cgImage = image.cgImage else { return }
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
-        }
-        return pixels.reduce(0) { $0 + Int($1) } / pixels.count
+    /// iPhone Duo has two screens, and `XCUIScreen.main` is the cover one,
+    /// which is dark when the Duo is open; then the inner, larger one is lit.
+    @MainActor private static func screenshot() -> XCUIScreenshot {
+        guard duoPosture == "open" else { return XCUIScreen.main.screenshot() }
+        let area = { (shot: XCUIScreenshot) in shot.image.size.width * shot.image.size.height }
+        return XCUIScreen.screens.map { $0.screenshot() }.max { area($0) < area($1) } ?? XCUIScreen.main.screenshot()
     }
 
     // MARK: - Departure rows
@@ -175,6 +157,9 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     /// 02 — A Live Activity on the Lock Screen. Starts tracking from the trip
     /// page, then locks and wakes the device so the Lock Screen shows.
     @MainActor func test02LockScreen() throws {
+        if Self.duoPosture != nil {
+            throw XCTSkip("pressLockButton doesn't lock iPhone Duo.")
+        }
         let app = launchOnStopSheet()
         openTripPage(in: app)
         app.buttons["Track on Lock Screen"].tap()
