@@ -540,8 +540,8 @@ struct OBAListViewItemTests {
         )
 
         let contextConfig = actions.contextMenuConfiguration(identifier: nil)
-        let identifierString = contextConfig.identifier as? String
-        #expect(identifierString == nil)
+        // When initialized with nil identifier, UIKit automatically generates a unique identifier
+        #expect(contextConfig.identifier != nil)
 
         // Generating configuration with Previewable controller triggers previewProvider when presented
         let resolvedController = actions.previewProvider?()
@@ -562,8 +562,7 @@ struct OBAListViewItemTests {
         )
 
         let contextConfig = actions.contextMenuConfiguration(identifier: nil)
-        let identifierString = contextConfig.identifier as? String
-        #expect(identifierString == nil)
+        #expect(contextConfig.identifier != nil)
         #expect(actions.previewProvider?() == nil)
         #expect(actions.contextMenuProvider?([]) == nil)
         #expect(actions.performPreviewAction == nil)
