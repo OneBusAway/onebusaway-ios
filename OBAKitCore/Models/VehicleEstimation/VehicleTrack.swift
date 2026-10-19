@@ -108,22 +108,26 @@ public struct VehicleTrack: Sendable {
         anchors.append(anchor)
         if anchors.count > 3 { anchors.removeFirst(anchors.count - 3) }
 
-        if let shown = shownS, !needsSnap {
-            let delta = rawEstimate(at: now).s - shown
-            if delta > tunables.snapForwardMeters || delta < -tunables.snapBackMeters {
-                // A pace measured across a jump this size would be nonsense.
-                anchors = [anchor]
-                snapNext()
-            } else if delta >= 0 {
-                reconcile = .catchUp(from: shown, start: now)
-            } else if delta >= -tunables.backwardToleranceMeters {
-                // The monotonic clamp in `estimate` waits it out.
-                reconcile = .none
-            } else {
-                reconcile = .hold(at: shown, since: now)
-            }
-        }
+        reconcile(with: anchor, now: now)
         return wasReset ? .reset : .accepted
+    }
+
+    /// Decides how the marker gets from where it is shown to where `anchor` puts it.
+    private mutating func reconcile(with anchor: Anchor, now: Date) {
+        guard let shown = shownS, !needsSnap else { return }
+        let delta = rawEstimate(at: now).s - shown
+        if delta > tunables.snapForwardMeters || delta < -tunables.snapBackMeters {
+            // A pace measured across a jump this size would be nonsense.
+            anchors = [anchor]
+            snapNext()
+        } else if delta >= 0 {
+            reconcile = .catchUp(from: shown, start: now)
+        } else if delta >= -tunables.backwardToleranceMeters {
+            // The monotonic clamp in `estimate` waits it out.
+            reconcile = .none
+        } else {
+            reconcile = .hold(at: shown, since: now)
+        }
     }
 
     private static func isDifferentVehicle(_ a: VehicleFix, _ b: VehicleFix) -> Bool {
