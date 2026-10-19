@@ -466,8 +466,9 @@ struct OBAListRowConfigurationTests {
         let modelB = OBAListRowView.DefaultViewModel(title: "Equal Check")
         #expect(modelA.id != modelB.id)
         #expect(modelA != modelB)
-        #expect(modelA == modelA)
-        #expect(modelA.hashValue == modelA.hashValue)
+        let modelCopy = modelA
+        #expect(modelA == modelCopy)
+        #expect(modelA.hashValue == modelCopy.hashValue)
     }
 
     /// Tests OBAListRowView.SubtitleViewModel initialization and configuration conversion.
@@ -574,8 +575,9 @@ struct OBAListRowConfigurationTests {
         let subB = OBAListRowView.SubtitleViewModel(title: "Same", subtitle: "Sub")
         #expect(subA.id != subB.id)
         #expect(subA != subB)
-        #expect(subA == subA)
-        #expect(subA.hashValue == subA.hashValue)
+        let subCopy = subA
+        #expect(subA == subCopy)
+        #expect(subA.hashValue == subCopy.hashValue)
     }
 
     /// Tests OBAListRowView.ValueViewModel initialization and configuration conversion.
@@ -683,8 +685,9 @@ struct OBAListRowConfigurationTests {
         let valB = OBAListRowView.ValueViewModel(title: "Same", subtitle: "Val")
         #expect(valA.id != valB.id)
         #expect(valA != valB)
-        #expect(valA == valA)
-        #expect(valA.hashValue == valA.hashValue)
+        let valCopy = valA
+        #expect(valA == valCopy)
+        #expect(valA.hashValue == valCopy.hashValue)
     }
 
     // MARK: - Helpers
