@@ -25,6 +25,23 @@ public enum FeatureFlags {
     /// feature is refined (#1600).
     public static let clustersStopsKey = "OBAClustersStops"
 
+    /// Gates on-device estimation of where a followed trip's vehicle is now, moving
+    /// its marker between real-time updates (`VehicleTrack`). Off by default until
+    /// the replay evaluation says otherwise. Read live; no relaunch needed.
+    public static let estimatesVehiclePositionsKey = "OBAEstimatesVehiclePositions"
+
+    /// Debug: draws the reported fix and the server's `position` beside an estimated
+    /// vehicle marker, to compare them in the field.
+    public static let showsRawVehicleFixKey = "OBAShowsRawVehicleFix"
+
+    public static func isVehicleEstimationEnabled(userDefaults: UserDefaults) -> Bool {
+        userDefaults.bool(forKey: estimatesVehiclePositionsKey)
+    }
+
+    public static func showsRawVehicleFix(userDefaults: UserDefaults) -> Bool {
+        userDefaults.bool(forKey: showsRawVehicleFixKey)
+    }
+
     /// Resolves the new-stop-page flag, defaulting to enabled when the user
     /// has never touched the toggle.
     public static func isNewStopPageEnabled(userDefaults: UserDefaults) -> Bool {
