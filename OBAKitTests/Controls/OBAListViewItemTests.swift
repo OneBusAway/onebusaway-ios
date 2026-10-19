@@ -499,10 +499,8 @@ struct OBAListViewItemTests {
         let contextConfig = actions.contextMenuConfiguration(identifier: "item_identifier")
         #expect(contextConfig.identifier as? String == "item_identifier")
 
-        // Trigger previewProvider block
-        let previewBlock = contextConfig.previewProvider
-        #expect(previewBlock != nil)
-        let resolvedController = previewBlock?()
+        // Trigger action callbacks directly on the model
+        let resolvedController = actions.previewProvider?()
         #expect(resolvedController === previewController)
         #expect(previewCalled == true)
 
@@ -510,10 +508,8 @@ struct OBAListViewItemTests {
         actions.performPreviewAction?()
         #expect(performCalled == true)
 
-        // Trigger contextMenuProvider actionProvider block
-        let actionBlock = contextConfig.actionProvider
-        #expect(actionBlock != nil)
-        let resolvedMenu = actionBlock?([])
+        // Trigger contextMenuProvider
+        let resolvedMenu = actions.contextMenuProvider?([])
         #expect(resolvedMenu === customMenu)
         #expect(menuCalled == true)
     }
@@ -544,10 +540,15 @@ struct OBAListViewItemTests {
         )
 
         let contextConfig = actions.contextMenuConfiguration(identifier: nil)
-        #expect(contextConfig.identifier == nil)
+        let identifierString = contextConfig.identifier as? String
+        #expect(identifierString == nil)
 
-        let resolvedController = contextConfig.previewProvider?()
+        // Generating configuration with Previewable controller triggers previewProvider when presented
+        let resolvedController = actions.previewProvider?()
         #expect(resolvedController === previewableController)
+        if let previewable = resolvedController as? Previewable {
+            previewable.enterPreviewMode()
+        }
         #expect(previewableController.enteredPreviewModeCount == 1)
         #expect(previewableController.exitedPreviewModeCount == 0)
     }
@@ -561,8 +562,11 @@ struct OBAListViewItemTests {
         )
 
         let contextConfig = actions.contextMenuConfiguration(identifier: nil)
-        #expect(contextConfig.previewProvider?() == nil)
-        #expect(contextConfig.actionProvider?([]) == nil)
+        let identifierString = contextConfig.identifier as? String
+        #expect(identifierString == nil)
+        #expect(actions.previewProvider?() == nil)
+        #expect(actions.contextMenuProvider?([]) == nil)
+        #expect(actions.performPreviewAction == nil)
     }
 
     // MARK: - ReuseIdentifierProviding & OBAListViewCell
