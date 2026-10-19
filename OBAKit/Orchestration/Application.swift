@@ -625,6 +625,24 @@ public class Application: CoreApplication, PushServiceDelegate {
                 self.consumePendingLiveActivityShortcut()
             }
         }
+
+        // Open Stop has no queue to peek: its request arrives only as this
+        // notification, and `queueOrOpenStop(_:)` stashes the stop if the UI or
+        // region isn't ready yet.
+        notificationCenter.addObserver(
+            forName: .openStopRequested,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            guard let destination = notification.userInfo?[OpenStopRequest.destinationUserInfoKey] as? AppLinksRouter.StopDestination else {
+                Logger.warn("Open Stop request has no stop destination; nothing to open.")
+                return
+            }
+            MainActor.assumeIsolated {
+                self.queueOrOpenStop(destination)
+            }
+        }
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {
