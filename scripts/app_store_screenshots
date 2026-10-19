@@ -40,30 +40,13 @@ bundle="$out/screenshots.xcresult"
 derived="$repo/build/app-store-screenshots-derived-data"
 bundle_id="org.onebusaway.iphone"
 
-# The newest "iPhone NN Pro" (not Max) on the newest iOS runtime that has one:
-# its screen is the 6.3" App Store size. SCREENSHOT_UDID overrides.
+# The 6.3" App Store size; SCREENSHOT_UDID overrides.
 resolve_udid() {
     if [[ -n "${SCREENSHOT_UDID:-}" ]]; then
         echo "$SCREENSHOT_UDID"
-        return
+    else
+        "$repo/scripts/resolve_simulator_udid" --pro
     fi
-    xcrun simctl list devices available -j | python3 -c '
-import json, re, sys
-devices = json.load(sys.stdin)["devices"]
-def version(runtime):
-    match = re.search(r"iOS-(\d+)-(\d+)", runtime)
-    return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
-for runtime in sorted(devices, key=version, reverse=True):
-    pros = []
-    for device in devices[runtime]:
-        match = re.search(r"iPhone-(\d+)-Pro$", device.get("deviceTypeIdentifier", ""))
-        if match and version(runtime) > (0, 0):
-            pros.append((int(match.group(1)), device["udid"]))
-    if pros:
-        print(max(pros)[1])
-        sys.exit(0)
-sys.exit("error: no iPhone Pro simulator installed; set SCREENSHOT_UDID")
-'
 }
 
 capture() {

@@ -72,9 +72,9 @@ put the app in the right state:
 
 | Environment variable | Effect |
 |---|---|
-| `SCREENSHOT_STOP_ID` | Opens the stop's sheet over the map, as a tap on its pin does |
-| `SCREENSHOT_BOOKMARKS` | Replaces all bookmarks with trip bookmarks built from live arrivals (JSON: `group`, `name`, `stopID`, `routeID`) |
-| `SCREENSHOT_END_LIVE_ACTIVITIES` | Ends every Live Activity, so slide 2's is gone from the Dynamic Island over Safari |
+| `TEST_SCREENSHOT_STOP_ID` | Opens the stop's sheet over the map, as a tap on its pin does. Classic map only; the experimental map panel ignores it |
+| `TEST_SCREENSHOT_BOOKMARKS` | Replaces all bookmarks with trip bookmarks built from live arrivals (JSON: `group`, `name`, `stopID`, `routeID`) |
+| `TEST_SCREENSHOT_END_LIVE_ACTIVITIES` | Ends every Live Activity, so slide 2's is gone from the Dynamic Island over Safari |
 
 The tests also pass these launch arguments, which override UserDefaults for
 the run without changing what's stored:

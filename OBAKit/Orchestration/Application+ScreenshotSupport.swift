@@ -14,88 +14,61 @@ import UIKit
 
 /// DEBUG-only launch hooks that put the app into the state an App Store
 /// screenshot needs. `AppStoreScreenshotUITests` sets them through the launch
-/// environment; see `docs/app-store/README.md`.
+/// environment; `docs/app-store/README.md` lists them.
 ///
-/// - `SCREENSHOT_STOP_ID`: opens this stop's sheet over the map on launch.
-/// - `SCREENSHOT_BOOKMARKS`: a JSON array of `ScreenshotBookmarkSeed`. Replaces
-///   every bookmark and group with trip bookmarks built from live arrivals, so
-///   the Bookmarks tab shows real countdowns.
-/// - `SCREENSHOT_END_LIVE_ACTIVITIES=1`: ends every Live Activity, so the
-///   Lock Screen slide's activity is gone from the Dynamic Island when a later
-///   slide shows another app.
-extension Application {
+/// `init` only reads them. The work waits for the app's own readiness points,
+/// the same way `pendingRentalsCoordinate` does: the map claims the stop when it
+/// appears or the region loads, and the bookmarks are seeded once the root UI
+/// or the region is in place.
+struct ScreenshotBookmarkSeed: Decodable {
+    let group: String
+    let name: String
+    let stopID: StopID
+    let routeID: RouteID
+}
 
-    struct ScreenshotBookmarkSeed: Decodable {
-        let group: String
-        let name: String
-        let stopID: StopID
-        let routeID: RouteID
-    }
+extension Application {
 
     func applyScreenshotLaunchHooks() {
         let environment = ProcessInfo.processInfo.environment
 
-        if let stopID = environment["SCREENSHOT_STOP_ID"] {
-            Task { await showScreenshotStop(stopID) }
+        screenshotStopID = environment["TEST_SCREENSHOT_STOP_ID"]
+
+        if let json = environment["TEST_SCREENSHOT_BOOKMARKS"] {
+            do {
+                screenshotBookmarkSeeds = try JSONDecoder().decode([ScreenshotBookmarkSeed].self, from: Data(json.utf8))
+            } catch {
+                Logger.error("Screenshot bookmarks: undecodable TEST_SCREENSHOT_BOOKMARKS: \(error)")
+            }
         }
 
-        if environment["SCREENSHOT_END_LIVE_ACTIVITIES"] == "1" {
+        if environment["TEST_SCREENSHOT_END_LIVE_ACTIVITIES"] == "1" {
             Task {
                 for activity in Activity<TripAttributes>.activities {
                     await activity.end(nil, dismissalPolicy: .immediate)
                 }
             }
         }
-
-        if let json = environment["SCREENSHOT_BOOKMARKS"] {
-            do {
-                let seeds = try JSONDecoder().decode([ScreenshotBookmarkSeed].self, from: Data(json.utf8))
-                Task { await seedScreenshotBookmarks(seeds) }
-            } catch {
-                Logger.error("Screenshot bookmarks: undecodable SCREENSHOT_BOOKMARKS: \(error)")
-            }
-        }
     }
 
-    /// Opens the stop the way a tap on its map pin does: as the map's half-height
-    /// sheet, with the map still showing above it. (`pendingStopID` pushes a
-    /// full-screen Stop page instead.)
-    private func showScreenshotStop(_ stopID: StopID) async {
-        for _ in 0..<60 {
-            if currentRegion != nil,
-               let root = delegate?.uiApplication?.keyWindowFromScene?.rootViewController,
-               let map = Self.firstMapViewController(in: root) {
-                // Let the map settle on the rider's location before the sheet covers it.
-                try? await Task.sleep(for: .seconds(2))
-                map.show(stopID: stopID)
-                return
-            }
-            try? await Task.sleep(for: .milliseconds(500))
-        }
-        Logger.error("Screenshot stop: no map after 30 seconds.")
+    /// The stop to open as the map's sheet, once there is a region to load it
+    /// from. Cleared on return, so it opens once.
+    func claimScreenshotStop() -> StopID? {
+        guard currentRegion != nil, let stopID = screenshotStopID else { return nil }
+        screenshotStopID = nil
+        return stopID
     }
 
-    private static func firstMapViewController(in controller: UIViewController) -> MapViewController? {
-        if let map = controller as? MapViewController {
-            return map
-        }
-        for child in controller.children {
-            if let map = firstMapViewController(in: child) {
-                return map
-            }
-        }
-        return nil
-    }
-
-    private func seedScreenshotBookmarks(_ seeds: [ScreenshotBookmarkSeed]) async {
-        // The region and its API service load asynchronously on launch.
-        for _ in 0..<60 where apiService == nil || currentRegion == nil {
-            try? await Task.sleep(for: .milliseconds(500))
-        }
-        guard let apiService, let regionID = currentRegion?.regionIdentifier else {
-            Logger.error("Screenshot bookmarks: no region after 30 seconds.")
+    /// Replaces every bookmark and group with trip bookmarks built from live
+    /// arrivals, so the Bookmarks tab shows real countdowns. Runs once, as soon
+    /// as there is an API service to fetch them from.
+    func seedScreenshotBookmarksIfNeeded() {
+        guard let seeds = screenshotBookmarkSeeds,
+              let apiService,
+              let regionID = currentRegion?.regionIdentifier else {
             return
         }
+        screenshotBookmarkSeeds = nil
 
         for bookmark in userDataStore.bookmarks {
             userDataStore.delete(bookmark: bookmark)
@@ -104,32 +77,44 @@ extension Application {
             userDataStore.deleteGroup(group)
         }
 
-        var groups = [String: BookmarkGroup]()
-        for seed in seeds {
-            let arrivals: StopArrivals
-            do {
-                arrivals = try await apiService.getArrivalsAndDeparturesForStop(id: seed.stopID, minutesBefore: 0, minutesAfter: 90).entry
-            } catch {
-                Logger.error("Screenshot bookmarks: arrivals for \(seed.stopID) failed: \(error)")
-                continue
-            }
-            guard let arrivalDeparture = arrivals.arrivalsAndDepartures.first(where: { $0.routeID == seed.routeID }) else {
-                Logger.error("Screenshot bookmarks: no \(seed.routeID) departures at \(seed.stopID).")
-                continue
-            }
+        Task {
+            var groups = [String: BookmarkGroup]()
+            for seed in seeds {
+                let arrivals: StopArrivals
+                do {
+                    arrivals = try await apiService.getArrivalsAndDeparturesForStop(id: seed.stopID, minutesBefore: 0, minutesAfter: 90).entry
+                } catch {
+                    Logger.error("Screenshot bookmarks: arrivals for \(seed.stopID) failed: \(error)")
+                    continue
+                }
+                guard let arrivalDeparture = arrivals.arrivalsAndDepartures.first(where: { $0.routeID == seed.routeID }) else {
+                    Logger.error("Screenshot bookmarks: no \(seed.routeID) departures at \(seed.stopID).")
+                    continue
+                }
 
-            let group: BookmarkGroup
-            if let existing = groups[seed.group] {
-                group = existing
-            } else {
-                group = BookmarkGroup(name: seed.group, sortOrder: groups.count)
-                userDataStore.upsert(bookmarkGroup: group)
-                groups[seed.group] = group
-            }
+                let group: BookmarkGroup
+                if let existing = groups[seed.group] {
+                    group = existing
+                } else {
+                    group = BookmarkGroup(name: seed.group, sortOrder: groups.count)
+                    userDataStore.upsert(bookmarkGroup: group)
+                    groups[seed.group] = group
+                }
 
-            let bookmark = Bookmark(name: seed.name, regionIdentifier: regionID, arrivalDeparture: arrivalDeparture)
-            userDataStore.add(bookmark, to: group, index: Int.max)
+                let bookmark = Bookmark(name: seed.name, regionIdentifier: regionID, arrivalDeparture: arrivalDeparture)
+                userDataStore.add(bookmark, to: group, index: Int.max)
+            }
         }
+    }
+}
+
+extension MapViewController {
+    /// Opens the screenshot stop the way a tap on its pin does: as the map's
+    /// half-height sheet, with the map still showing above it. (`pendingStopID`
+    /// pushes a full-screen Stop page instead.)
+    func showScreenshotStopIfNeeded() {
+        guard viewIfLoaded?.window != nil, let stopID = application.claimScreenshotStop() else { return }
+        show(stopID: stopID)
     }
 }
 #endif // DEBUG

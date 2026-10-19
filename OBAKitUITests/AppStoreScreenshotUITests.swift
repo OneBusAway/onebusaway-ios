@@ -69,7 +69,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     }
 
     @MainActor private func launchOnStopSheet() -> XCUIApplication {
-        let app = launch(environment: ["SCREENSHOT_STOP_ID": Self.stopID])
+        let app = launch(environment: ["TEST_SCREENSHOT_STOP_ID": Self.stopID])
         XCTAssertTrue(firstDeparture(in: app).waitForExistence(timeout: 45), "Stop sheet never showed departures")
         return app
     }
@@ -117,6 +117,12 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     private static func minutesAway(_ label: String) -> Int? {
         guard let range = label.range(of: #" in (\d+) minutes"#, options: .regularExpression) else { return nil }
         return Int(label[range].filter(\.isNumber))
+    }
+
+    /// Waits for `element`, failing the test with `message` if it never shows, then taps it.
+    @MainActor private func tap(_ element: XCUIElement, timeout: TimeInterval = 15, _ message: String = "") {
+        XCTAssertTrue(element.waitForExistence(timeout: timeout), message)
+        element.tap()
     }
 
     @MainActor private func openTripPage(in app: XCUIApplication) {
@@ -176,21 +182,13 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     @MainActor func test04TripPlanner() {
         let app = launch()
         let search = app.searchFields["Where are you going?"]
-        XCTAssertTrue(search.waitForExistence(timeout: 30), "Map search field missing")
-        search.tap()
+        tap(search, timeout: 30, "Map search field missing")
         search.typeText("Paul G. Allen Center")
 
         let place = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'The Paul G. Allen Center'")).firstMatch
-        XCTAssertTrue(place.waitForExistence(timeout: 20), "Search found no Allen Center")
-        place.tap()
-
-        let plan = app.buttons["Plan trip to this location"]
-        XCTAssertTrue(plan.waitForExistence(timeout: 15))
-        plan.tap()
-
-        let findRoutes = app.buttons["Find Routes"]
-        XCTAssertTrue(findRoutes.waitForExistence(timeout: 15))
-        findRoutes.tap()
+        tap(place, timeout: 20, "Search found no Allen Center")
+        tap(app.buttons["Plan trip to this location"])
+        tap(app.buttons["Find Routes"])
 
         let itinerary = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Depart:'")).firstMatch
         XCTAssertTrue(itinerary.waitForExistence(timeout: 45), "Trip planner returned no itineraries")
@@ -213,7 +211,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
 
     /// 06 — The Bookmarks tab, seeded with two groups of trip bookmarks.
     @MainActor func test06Bookmarks() {
-        let app = launch(environment: ["SCREENSHOT_BOOKMARKS": Self.bookmarks])
+        let app = launch(environment: ["TEST_SCREENSHOT_BOOKMARKS": Self.bookmarks])
         let tab = app.tabBars.buttons["Bookmarks"]
         XCTAssertTrue(tab.waitForExistence(timeout: 30))
 
@@ -232,7 +230,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     @MainActor func test07OpenSource() throws {
         // End slide 2's Live Activity first, or it shows in the Dynamic Island
         // over Safari.
-        let app = launch(environment: ["SCREENSHOT_END_LIVE_ACTIVITIES": "1"])
+        let app = launch(environment: ["TEST_SCREENSHOT_END_LIVE_ACTIVITIES": "1"])
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
         sleep(2)
         app.terminate()

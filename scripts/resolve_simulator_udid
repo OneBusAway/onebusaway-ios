@@ -7,6 +7,10 @@
 #   SIMULATOR_UDID=$(scripts/resolve_simulator_udid)
 #   xcodebuild ... -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 #
+# With --pro it prints the newest "iPhone NN Pro" (not Max) instead, on the
+# newest runtime that has one: its screen is the 6.3" App Store size, which
+# scripts/app_store_screenshots captures at.
+#
 # Address the device by `id=` rather than `name=`. A hardcoded name breaks two
 # ways, and the two report differently, which is why neither `OS=latest` nor a
 # fresh device name fixes both:
@@ -28,6 +32,13 @@
 # documented commands, so the two cannot drift apart.
 
 set -euo pipefail
+
+pro=0
+case "${1:-}" in
+    "") ;;
+    --pro) pro=1 ;;
+    *) echo "error: unknown argument: $1 (expected --pro or nothing)" >&2; exit 2 ;;
+esac
 
 if ! devices_json=$(xcrun simctl list devices available -j 2>&1); then
     echo "error: \`xcrun simctl\` failed:" >&2
@@ -56,14 +67,26 @@ def ios_version(runtime):
 for runtime in sorted(devices, key=ios_version, reverse=True):
     if not re.search(r"iOS-\d+-\d+", runtime):
         continue
+    if sys.argv[1] == "1":
+        # Highest model number wins: "iPhone-18-Pro" over "iPhone-17-Pro".
+        pros = [(int(match.group(1)), d["udid"]) for d in devices[runtime]
+                if (match := re.search(r"iPhone-(\d+)-Pro$", d.get("deviceTypeIdentifier", "")))]
+        if pros:
+            print(max(pros)[1])
+            break
+        continue
     phones = [d for d in devices[runtime] if d["name"].startswith("iPhone")]
     if phones:
         print(phones[0]["udid"])
         break
-')
+' "$pro")
 
 if [ -z "$udid" ]; then
-    echo "error: no available iPhone simulator on any installed iOS runtime." >&2
+    if [ "$pro" = 1 ]; then
+        echo "error: no available iPhone Pro simulator on any installed iOS runtime." >&2
+    else
+        echo "error: no available iPhone simulator on any installed iOS runtime." >&2
+    fi
     echo "Install one in Xcode > Settings > Components, or run: xcodebuild -downloadPlatform iOS" >&2
     exit 1
 fi

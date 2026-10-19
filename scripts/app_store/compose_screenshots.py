@@ -75,23 +75,20 @@ def compose(slide, framed, size, background, text_color):
     draw = ImageDraw.Draw(canvas)
     max_text = width * (1 - 2 * SIDE_MARGIN)
 
-    caption = slide["caption"].split("\n")
+    caption = slide["caption"].splitlines()
     caption_font = fitted_font(caption, round(width * CAPTION_SIZE), max_text)
-    subtitle = slide.get("subtitle")
-    subtitle_lines = subtitle.split("\n") if subtitle else []
-    subtitle_font = fitted_font(subtitle_lines, round(width * SUBTITLE_SIZE), max_text) if subtitle else None
+    # The helpers take an empty subtitle in their stride: no height, nothing drawn.
+    subtitle = slide.get("subtitle", "").splitlines()
+    subtitle_font = fitted_font(subtitle, round(width * SUBTITLE_SIZE), max_text)
 
     device_top = round(height * DEVICE_TOP)
     gap = round(caption_font.size * 0.45) if subtitle else 0
-    text_height = block_height(caption, caption_font)
-    if subtitle:
-        text_height += gap + block_height(subtitle_lines, subtitle_font)
+    text_height = block_height(caption, caption_font) + gap + block_height(subtitle, subtitle_font)
     # Centre the text in the band above the device, nudged up a little so it
     # doesn't crowd the frame.
     top = max(0, round((device_top - text_height) / 2 - height * 0.005))
     bottom = draw_lines(draw, caption, caption_font, top, width, text_color)
-    if subtitle:
-        draw_lines(draw, subtitle_lines, subtitle_font, bottom + gap, width, text_color)
+    draw_lines(draw, subtitle, subtitle_font, bottom + gap, width, text_color)
 
     device = Image.open(framed).convert("RGBA")
     device_width = round(width * DEVICE_WIDTH)
@@ -113,13 +110,14 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     missing = []
-    for index, slide in enumerate(config["slides"], start=1):
+    for slide in config["slides"]:
         framed = args.framed_dir / f"{slide['capture']}_framed.png"
         if not framed.exists():
             missing.append(framed.name)
             continue
         image = compose(slide, framed, size, config["background"], config["text"])
-        target = args.output_dir / f"{index:02d}-{slide['capture'].split('-', 1)[1]}-{size[0]}x{size[1]}.png"
+        # Capture names carry the App Store order ("01-stop-arrivals").
+        target = args.output_dir / f"{slide['capture']}-{size[0]}x{size[1]}.png"
         image.save(target)
         print(target)
 
