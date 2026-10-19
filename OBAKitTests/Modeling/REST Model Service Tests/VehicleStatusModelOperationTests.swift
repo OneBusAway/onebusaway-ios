@@ -103,7 +103,8 @@ final class VehicleStatusModelOperationTests: OBATestCase {
 
         #expect(tripStatus.closestStopTimeOffset == 23)
         expectClose(tripStatus.distanceAlongTrip, 2277.5779, within: 0.1)
-        #expect(tripStatus.lastKnownDistanceAlongTrip == 0)
+        // The fixture's `0` is the servers' "no projection".
+        #expect(tripStatus.lastKnownDistanceAlongTrip == nil)
 
         let lastKnown = tripStatus.lastKnownLocation!.coordinate
         expectClose(lastKnown.latitude, 47.61949539)

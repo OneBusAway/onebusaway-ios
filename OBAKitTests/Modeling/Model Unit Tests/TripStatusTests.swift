@@ -117,6 +117,34 @@ final class TripStatusTests: OBATestCase {
         #expect(status.vehicleID == nil)
     }
     
+    /// maglev emits the GPS projection in meters, fractional (`trips_helper.go`),
+    /// where Java never sets it. Decoding it as `Int` threw, which dropped the
+    /// whole status: `ArrivalDeparture` decodes it with `try?`, so the vehicle
+    /// vanished, and `TripDetails` with `try`, so the trip failed to load.
+    @Test func `Fractional last known distance along trip decodes`() throws {
+        var data = Self.lastKnownDistanceData
+        data["lastKnownDistanceAlongTrip"] = 1234.56
+        let status = try Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: data)
+        #expect(status.lastKnownDistanceAlongTrip == 1234.56)
+    }
+
+    /// Both servers emit `0` when they have no projection, so `0` means absent.
+    @Test func `Zero last known distance along trip decodes as nil`() throws {
+        var data = Self.lastKnownDistanceData
+        data["lastKnownDistanceAlongTrip"] = 0
+        let status = try Fixtures.dictionaryToModel(type: TripStatus.self, dictionary: data)
+        #expect(status.lastKnownDistanceAlongTrip == nil)
+    }
+
+    private static let lastKnownDistanceData: [String: Any] = [
+        "activeTripId": "trip", "blockTripSequence": 0, "closestStop": "stop",
+        "closestStopTimeOffset": 0, "distanceAlongTrip": 1240.0, "lastLocationUpdateTime": 0,
+        "lastUpdateTime": 0, "nextStopTimeOffset": 0, "orientation": 0.0, "phase": "in_progress",
+        "predicted": true, "scheduleDeviation": 0, "scheduledDistanceAlongTrip": 1200.0,
+        "serviceDate": 1000000000, "situationIds": [], "status": "SCHEDULED",
+        "totalDistanceAlongTrip": 9000.0, "vehicleId": "v"
+    ]
+
     @Test func `Status modifier decoding`() {
         let statusTestCases: [(String, TripStatus.StatusModifier)] = [
             ("default", .default),
