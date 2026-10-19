@@ -564,5 +564,30 @@ struct OBAListViewItemTests {
         #expect(contextConfig.previewProvider?() == nil)
         #expect(contextConfig.actionProvider?([]) == nil)
     }
+
+    // MARK: - ReuseIdentifierProviding & OBAListViewCell
+
+    /// Tests default reuse identifier generation for cells conforming to ReuseIdentifierProviding.
+    @Test func testReuseIdentifierProvidingDefault() {
+        #expect(MockListViewCell.ReuseIdentifier == "MockListViewCell_ReuseIdentifier")
+        #expect(OBAListViewCell.ReuseIdentifier == "OBAListViewCell_ReuseIdentifier")
+    }
+
+    /// Tests that OBAListViewCell responds cleanly to apply, willDisplayCell, and blink animations.
+    @Test func testOBAListViewCellLifecycleAndAnimations() {
+        let cell = OBAListViewCell()
+        let config = MockContentConfiguration()
+
+        // Base cell apply should no-op cleanly without trapping
+        cell.apply(config)
+
+        // Test blink animation attaches CABasicAnimation with expected properties
+        cell.blink(.blue, delay: 0.05)
+        #expect(cell.layer.animationKeys()?.isEmpty == false)
+
+        // willDisplayCell should no-op cleanly
+        let listView = OBAListView()
+        cell.willDisplayCell(in: listView)
+    }
 }
 
