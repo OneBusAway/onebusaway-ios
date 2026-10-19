@@ -217,6 +217,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         configureAppearanceProxies()
         observeShortcutLifecycle()
+
+        #if DEBUG
+        applyScreenshotLaunchHooks()
+        #endif
     }
 
     private func configureTipKit() {

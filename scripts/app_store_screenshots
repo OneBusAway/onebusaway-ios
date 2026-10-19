@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+#
+# Regenerates the App Store screenshot slides end to end:
+#
+#   capture  run AppStoreScreenshotUITests on an iPhone Pro simulator
+#   export   pull the named captures out of the result bundle
+#   frame    add the device bezel (frames-cli)
+#   compose  caption + background, at the App Store size
+#
+# Usage:
+#   scripts/app_store_screenshots [all|capture|export|frame|compose] [--size WxH] [--only test05Alarm]
+#
+# Run from the repo root after scripts/generate_project. Output goes to
+# build/app-store-screenshots/{raw,framed,slides}. --size defaults to 1206x2622
+# (6.3"); 1320x2868 is the 6.9" size. --only runs one slide's test, e.g. to
+# retake one capture; the other raw captures are kept.
+#
+# The captures use live Puget Sound data, so run during the day, when every
+# route the slides show is running. Setup (frames-cli, Pillow) and the details
+# are in docs/app-store/README.md.
+
+set -euo pipefail
+
+step="all"
+size="1206x2622"
+only=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        all|capture|export|frame|compose) step="$1" ;;
+        --size) size="$2"; shift ;;
+        --only) only="$2"; shift ;;
+        *) echo "error: unknown argument: $1" >&2; exit 2 ;;
+    esac
+    shift
+done
+
+repo=$(cd "$(dirname "$0")/.." && pwd)
+out="$repo/build/app-store-screenshots"
+bundle="$out/screenshots.xcresult"
+derived="$repo/build/app-store-screenshots-derived-data"
+bundle_id="org.onebusaway.iphone"
+
+# The newest "iPhone NN Pro" (not Max) on the newest iOS runtime that has one:
+# its screen is the 6.3" App Store size. SCREENSHOT_UDID overrides.
+resolve_udid() {
+    if [[ -n "${SCREENSHOT_UDID:-}" ]]; then
+        echo "$SCREENSHOT_UDID"
+        return
+    fi
+    xcrun simctl list devices available -j | python3 -c '
+import json, re, sys
+devices = json.load(sys.stdin)["devices"]
+def version(runtime):
+    match = re.search(r"iOS-(\d+)-(\d+)", runtime)
+    return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
+for runtime in sorted(devices, key=version, reverse=True):
+    pros = []
+    for device in devices[runtime]:
+        match = re.search(r"iPhone-(\d+)-Pro$", device.get("deviceTypeIdentifier", ""))
+        if match and version(runtime) > (0, 0):
+            pros.append((int(match.group(1)), device["udid"]))
+    if pros:
+        print(max(pros)[1])
+        sys.exit(0)
+sys.exit("error: no iPhone Pro simulator installed; set SCREENSHOT_UDID")
+'
+}
+
+capture() {
+    local udid
+    udid=$(resolve_udid)
+    echo "Capturing on simulator $udid"
+    xcrun simctl boot "$udid" 2>/dev/null || true
+    xcrun simctl bootstatus "$udid" -b >/dev/null
+
+    # The App Store convention: 9:41, full battery and signal. The empty
+    # operator name keeps "Carrier" off the Lock Screen.
+    xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 \
+        --wifiBars 3 --cellularMode active --cellularBars 4 --operatorName ""
+
+    xcodebuild build-for-testing -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
+        -destination "platform=iOS Simulator,id=$udid" -derivedDataPath "$derived" -quiet
+
+    # Grant location up front so no permission alert covers a capture. The app
+    # has to be installed for the grant to stick.
+    xcrun simctl install "$udid" "$derived/Build/Products/Debug-iphonesimulator/App.app"
+    xcrun simctl privacy "$udid" grant location-always "$bundle_id"
+
+    local filter="-only-testing:OBAKitUITests/AppStoreScreenshotUITests"
+    [[ -n "$only" ]] && filter="$filter/$only"
+    rm -rf "$bundle"
+    # A failed slide still leaves the others' captures in the bundle.
+    xcodebuild test-without-building -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
+        -destination "platform=iOS Simulator,id=$udid" -derivedDataPath "$derived" \
+        "$filter" -resultBundlePath "$bundle" || echo "warning: some slides failed; exporting what was captured" >&2
+}
+
+export_captures() {
+    python3 "$repo/scripts/app_store/export_screenshots.py" "$bundle" "$out/raw"
+}
+
+frame() {
+    if ! command -v frames >/dev/null; then
+        echo "error: frames-cli is not installed; see docs/app-store/README.md" >&2
+        exit 1
+    fi
+    mkdir -p "$out/framed"
+    frames -c "Cosmic Orange" -o "$out/framed" "$out"/raw/*.png
+}
+
+compose() {
+    python3 "$repo/scripts/app_store/compose_screenshots.py" "$out/framed" "$out/slides" --size "$size"
+}
+
+case "$step" in
+    capture) capture ;;
+    export) export_captures ;;
+    frame) frame ;;
+    compose) compose ;;
+    all) capture; export_captures; frame; compose ;;
+esac

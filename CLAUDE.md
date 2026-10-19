@@ -158,6 +158,7 @@ scripts/docs                          # Generate DocC documentation (output in a
 scripts/version                        # Version management
 scripts/update_package_resolved        # Update Swift Package Manager dependencies
 scripts/extract_strings               # Extract strings for localization
+scripts/app_store_screenshots         # App Store slides: capture, frame, caption (docs/app-store/README.md)
 ```
 
 ## Architecture

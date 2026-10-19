@@ -1,0 +1,13 @@
+{
+  "background": "#68AD0B",
+  "text": "#FFFFFF",
+  "slides": [
+    { "capture": "01-stop-arrivals", "caption": "Real-Time\nArrivals, One Tap" },
+    { "capture": "02-lock-screen", "caption": "Watch Your Ride From\nthe Lock Screen" },
+    { "capture": "03-trip-vehicle", "caption": "See buses, trains and\nferries in real-time", "subtitle": "(or funiculars, if you use one!)" },
+    { "capture": "04-trip-planner", "caption": "Plan Any Trip" },
+    { "capture": "05-alarm", "caption": "Never Miss\nYour Bus" },
+    { "capture": "06-bookmarks", "caption": "Your Favorite\nRoutes, All Together" },
+    { "capture": "07-open-source", "caption": "Free and\nOpen Source" }
+  ]
+}
