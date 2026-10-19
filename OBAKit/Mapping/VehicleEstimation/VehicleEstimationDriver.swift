@@ -24,7 +24,7 @@ import UIKit
 final class VehicleEstimationDriver {
 
     /// Everything one poll knows about one vehicle's trip.
-    struct Input {
+    struct Input: Sendable {
         /// Which marker this is. Stable across polls for the same vehicle.
         let vehicleKey: String
         let tripID: String
@@ -35,7 +35,6 @@ final class VehicleEstimationDriver {
         /// Every status the poll returned, in any order: the trip page gets one from
         /// the arrival and one from the trip details.
         let fixes: [VehicleFix]
-        let serverClocks: [ServerClockSample]
     }
 
     static let tickInterval: Duration = .seconds(1)
@@ -47,8 +46,6 @@ final class VehicleEstimationDriver {
 
     /// For a single vehicle: its estimate, or `nil`.
     var onEstimate: ((VehicleEstimate?) -> Void)?
-
-    private(set) var estimates: [String: VehicleEstimate] = [:]
 
     private let isEnabled: () -> Bool
     private let reduceMotion: () -> Bool
@@ -106,12 +103,14 @@ final class VehicleEstimationDriver {
 
     // MARK: - Input
 
-    func update(_ input: Input) {
-        update([input])
+    func update(_ input: Input, serverClocks: [ServerClockSample] = []) {
+        update([input], serverClocks: serverClocks)
     }
 
     /// Replaces the set of vehicles with `inputs`: one left out is dropped.
-    func update(_ inputs: [Input]) {
+    ///
+    /// - Parameter serverClocks: What the poll's responses said the time was.
+    func update(_ inputs: [Input], serverClocks: [ServerClockSample] = []) {
         singleKey = inputs.count == 1 ? inputs[0].vehicleKey : nil
         guard isEnabled() else {
             vehicles.removeAll()
@@ -120,21 +119,23 @@ final class VehicleEstimationDriver {
             return
         }
 
-        inputs.flatMap(\.serverClocks).forEach { skew.record($0) }
+        serverClocks.forEach { skew.record($0) }
         let serverNow = skew.serverNow(deviceNow: now())
 
         var next: [String: Vehicle] = [:]
         for input in inputs {
-            guard let shape = ShapeLine(coordinates: input.shape) else { continue }
             let key = GeometryKey(input: input)
             var vehicle: Vehicle
             if let existing = vehicles[input.vehicleKey], existing.geometryKey == key {
                 vehicle = existing
             } else {
+                // Measuring the shape is the only O(points) work here: done only
+                // when the trip or its shape changes, not on every poll.
+                guard let shape = ShapeLine(coordinates: input.shape) else { continue }
                 let geometry = TripGeometry(shape: shape, stopTimes: input.stopTimes, serverTripLength: input.serverTripLength)
                 vehicle = Vehicle(track: VehicleTrack(geometry: geometry, tunables: tunables), geometryKey: key)
             }
-            for fix in input.fixes.filter({ $0.tripID == input.tripID }).sorted(by: { $0.fixTime < $1.fixTime }) {
+            for fix in input.fixes.sorted(by: { $0.fixTime < $1.fixTime }) {
                 _ = vehicle.track.ingest(fix, now: serverNow)
             }
             next[input.vehicleKey] = vehicle
@@ -186,11 +187,9 @@ final class VehicleEstimationDriver {
         let serverNow = skew.serverNow(deviceNow: deviceNow)
         var next: [String: VehicleEstimate] = [:]
         for key in vehicles.keys {
-            guard vehicles[key]!.track.hasFix, let estimate = vehicles[key]!.track.estimate(at: serverNow) else { continue }
-            next[key] = estimate
+            next[key] = vehicles[key]?.track.estimate(at: serverNow)
         }
         lastPublishedAt = deviceNow
-        estimates = next
         onEstimates?(next)
         onEstimate?(singleKey.flatMap { next[$0] })
     }

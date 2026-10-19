@@ -45,8 +45,7 @@ final class VehicleEstimationDriverTests {
     private func input(
         tripID: String = "trip",
         vehicleKey: String? = nil,
-        fixes: [VehicleFix] = [F.fix(north: 200, at: 0)],
-        serverClocks: [ServerClockSample] = []
+        fixes: [VehicleFix] = [F.fix(north: 200, at: 0)]
     ) -> VehicleEstimationDriver.Input {
         VehicleEstimationDriver.Input(
             vehicleKey: vehicleKey ?? tripID,
@@ -54,8 +53,7 @@ final class VehicleEstimationDriverTests {
             shape: F.straightLine().coordinates,
             stopTimes: [F.stop(0, at: 0), F.stop(1000, at: 100)],
             serverTripLength: 1000,
-            fixes: fixes,
-            serverClocks: serverClocks
+            fixes: fixes
         )
     }
 
@@ -160,7 +158,7 @@ final class VehicleEstimationDriverTests {
         // old is 10 s old.
         device.now = F.t0 + 40
         let sample = ServerClockSample(serverTime: F.t0 + 10, receivedAt: F.t0 + 40)
-        driver.update(input(serverClocks: [sample]))
+        driver.update(input(), serverClocks: [sample])
         expectClose(published.last??.fixAge, 10, within: 0.001)
     }
 

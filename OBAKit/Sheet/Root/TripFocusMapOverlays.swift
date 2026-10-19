@@ -22,7 +22,7 @@ import OBAKitCore
 func tripFocusMapContent(
     for display: TripFocusMapDisplayModel.Display?,
     vehicle: TripFocusMapDisplayModel.TripVehicle?,
-    reportedPositions: [TripFocusMapDisplayModel.ReportedPosition] = []
+    reportedPositions: [ReportedPosition] = []
 ) -> some MapContent {
     if let display {
         // Spent first, then ahead, so where the two meet the live half wins the

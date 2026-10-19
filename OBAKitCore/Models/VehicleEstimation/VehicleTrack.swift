@@ -56,8 +56,7 @@ public struct VehicleTrack: Sendable {
         case hold(at: Double, since: Date)
     }
 
-    /// Oldest first. Two measure a pace; one more is kept for nothing in particular
-    /// and costs nothing.
+    /// Oldest first: the two that measure a pace.
     private var anchors: [Anchor] = []
     private var latestFix: VehicleFix?
     private var isOffShape = false
@@ -106,7 +105,7 @@ public struct VehicleTrack: Sendable {
 
         let anchor = Anchor(fix: fix, s: projection.distanceAlongShape, receivedAt: now)
         anchors.append(anchor)
-        if anchors.count > 3 { anchors.removeFirst(anchors.count - 3) }
+        if anchors.count > 2 { anchors.removeFirst(anchors.count - 2) }
 
         reconcile(with: anchor, now: now)
         return wasReset ? .reset : .accepted
