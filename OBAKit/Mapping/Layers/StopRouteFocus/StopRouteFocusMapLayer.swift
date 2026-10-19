@@ -112,7 +112,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// Vehicles whose marker follows an estimate, by `DrawnVehicle.id`.
     private var estimates: [String: VehicleEstimate] = [:]
     private var estimationTask: Task<Void, Never>?
+    /// The latest arrivals' server clock, and the last one handed to the driver:
+    /// each is recorded once per response, not once per filter change, or one
+    /// sample would fill the skew median.
     private var latestServerClock: ServerClockSample?
+    private var recordedServerClock: ServerClockSample?
 
     init(
         mapView: MKMapView,
@@ -403,7 +407,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private func refreshEstimationInputs() {
         guard let vehicleEstimation, let tripSchedules else { return }
         guard vehicleEstimation.isEnabledNow else {
-            if !estimates.isEmpty { vehicleEstimation.update([]) }
+            // Also stops the tick and any gathering still in flight, which would
+            // otherwise resume the driver.
+            stopEstimating()
             return
         }
 
@@ -420,7 +426,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
                 fix: VehicleFix(tripStatus: status, tripID: tripID)
             )
         }
-        let serverClocks = [latestServerClock].compactMap { $0 }
+        let serverClocks = [latestServerClock].compactMap { $0 }.filter { $0 != recordedServerClock }
+        recordedServerClock = latestServerClock ?? recordedServerClock
         let token = presentationToken
 
         estimationTask?.cancel()

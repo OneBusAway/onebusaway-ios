@@ -83,6 +83,7 @@ final class VehicleEstimationDriver {
         self.clock = clock
         self.now = now
         self.tunables = tunables
+        self.notificationCenter = notificationCenter
 
         observers = [
             notificationCenter.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
@@ -94,8 +95,12 @@ final class VehicleEstimationDriver {
         ]
     }
 
+    private let notificationCenter: NotificationCenter
+
     isolated deinit {
         tickTask?.cancel()
+        // Block-based observers stay registered until removed.
+        for observer in observers { notificationCenter.removeObserver(observer) }
     }
 
     /// Whether estimation is on, for callers deciding whether to fetch its inputs.
