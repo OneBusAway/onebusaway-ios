@@ -38,6 +38,7 @@ struct RoutesOnMapView: View {
             List(routes, id: \.id) { route in
                 row(for: route)
             }
+            .scrollContentBackground(.hidden) // show the sheet's background, not the List's
         }
     }
 
@@ -64,6 +65,9 @@ struct RoutesOnMapView: View {
                 }
             }
         }
+        // A List row's Button colours its label with the accent, and `.primary`
+        // and `.secondary` above resolve against it — faint green text.
+        .tint(.primary)
         .accessibilityElement(children: .combine)
         .accessibilityHint(Strings.routesOnMapRowHint)
     }
