@@ -88,7 +88,9 @@ final class StopVehicleAnnotation: VehicleAnnotation {
     /// Mutates this annotation in place for a refresh, preserving MapKit
     /// identity so an open callout survives an arrivals refresh instead of
     /// being dismissed by a remove/re-add cycle.
-    func update(tripStatus: TripStatus, coordinate: CLLocationCoordinate2D, routeColor: UIColor) {
+    /// - Parameter movesMarker: `false` while the marker follows an estimate, which
+    ///   is newer than the reported `coordinate`.
+    func update(tripStatus: TripStatus, coordinate: CLLocationCoordinate2D, routeColor: UIColor, movesMarker: Bool = true) {
         // Assign tripStatus first: its `didSet` (inherited from
         // `VehicleAnnotation`) re-derives `coordinate` from `lastKnownLocation`,
         // same as the initializer's `super.init(tripStatus:)` — so the
@@ -102,6 +104,7 @@ final class StopVehicleAnnotation: VehicleAnnotation {
         self.tripStatus = tripStatus
         self.coordinate = from
         self.routeColor = routeColor
+        guard movesMarker else { return }
         VehicleCoordinateUpdate.apply(from: from, to: coordinate, on: self)
     }
 }

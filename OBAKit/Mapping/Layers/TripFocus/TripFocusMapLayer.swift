@@ -256,7 +256,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         if let vehicleAnnotation {
             let view = mapView.view(for: vehicleAnnotation) as? PulsingVehicleAnnotationView
             if let estimate {
-                move(vehicleAnnotation, to: estimate.coordinate, snap: estimate.shouldSnap)
+                VehicleCoordinateUpdate.follow(vehicleAnnotation, to: estimate.coordinate, snap: estimate.shouldSnap, in: mapView)
                 view?.applyEstimate(estimate)
             } else if let content = focus?.content, let coordinate = content.vehicleCoordinate {
                 VehicleCoordinateUpdate.apply(from: vehicleAnnotation.coordinate, to: coordinate, on: vehicleAnnotation)
@@ -277,24 +277,6 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             ReportedPositionAnnotation(kind: $0.kind, coordinate: $0.coordinate)
         }
         mapView.addAnnotations(reportedPositionAnnotations)
-    }
-
-    /// Glides over one tick, so consecutive ticks read as continuous motion.
-    private func move(_ annotation: VehicleAnnotation, to coordinate: CLLocationCoordinate2D, snap: Bool) {
-        let from = annotation.coordinate
-        let decision = VehicleCoordinateUpdate.decision(from: from, to: coordinate)
-        let isOnScreen = mapView.visibleMapRect.contains(MKMapPoint(from)) || mapView.visibleMapRect.contains(MKMapPoint(coordinate))
-        switch decision {
-        case .unchanged:
-            break
-        case .animate where !snap && isOnScreen:
-            let duration = TimeInterval(VehicleEstimationDriver.tickInterval.components.seconds)
-            UIView.animate(withDuration: duration, delay: 0, options: [.curveLinear, .beginFromCurrentState, .allowUserInteraction]) {
-                annotation.coordinate = coordinate
-            }
-        case .animate, .snap:
-            annotation.coordinate = coordinate
-        }
     }
 
     private func resplitIfNeeded(estimate: VehicleEstimate?, wasEstimating: Bool) {

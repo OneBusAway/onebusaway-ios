@@ -104,11 +104,30 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private var presentationToken = UUID()
     private var shapeTasks: [Task<Void, Never>] = []
 
-    init(mapView: MKMapView, shapeCache: ShapeCache, formatters: Formatters) {
+    // MARK: - Estimated positions
+
+    /// `nil` leaves every vehicle where the feed says.
+    private let vehicleEstimation: VehicleEstimationDriver?
+    private let tripSchedules: TripScheduleCache?
+    /// Vehicles whose marker follows an estimate, by `DrawnVehicle.id`.
+    private var estimates: [String: VehicleEstimate] = [:]
+    private var estimationTask: Task<Void, Never>?
+    private var latestServerClock: ServerClockSample?
+
+    init(
+        mapView: MKMapView,
+        shapeCache: ShapeCache,
+        formatters: Formatters,
+        vehicleEstimation: VehicleEstimationDriver? = nil,
+        tripSchedules: TripScheduleCache? = nil
+    ) {
         self.mapView = mapView
         self.shapeCache = shapeCache
         self.formatters = formatters
+        self.vehicleEstimation = vehicleEstimation
+        self.tripSchedules = tripSchedules
         super.init()
+        vehicleEstimation?.onEstimates = { [weak self] in self?.apply(estimates: $0) }
     }
 
     /// Cancels and drops every cached shape. Called by `MapViewController` when
@@ -119,8 +138,12 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// callers fire-and-forget.
     @discardableResult
     func invalidateShapeCache() -> Task<Void, Never> {
-        let shapeCache = shapeCache
-        return Task { await shapeCache.removeAll() }
+        let shapeCache = shapeCache, tripSchedules = tripSchedules
+        return Task {
+            await shapeCache.removeAll()
+            // Trip IDs are region-scoped too.
+            await tripSchedules?.removeAll()
+        }
     }
 
     // MARK: - Presentation lifecycle
@@ -164,6 +187,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         presentationToken = UUID()
         for task in shapeTasks { task.cancel() }
         shapeTasks.removeAll()
+        stopEstimating()
         cancellables.removeAll()
         focus = nil
         focusedVehicleID = nil
@@ -187,7 +211,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// first load — the previous value was nil, no departure resolved, and
     /// `syncVehicleAnnotations` skipped every one — and left every refresh after
     /// resolving a generation stale.
-    func apply(arrivals: StopArrivals?, isListFiltered: Bool, preferences: StopPreferences) {
+    func apply(arrivals: StopArrivals?, isListFiltered: Bool, preferences: StopPreferences, serverClock: ServerClockSample? = nil) {
+        latestServerClock = serverClock
         let all = arrivals?.arrivalsAndDepartures ?? []
         // Assigned before `update`, which consults it for every vehicle.
         departureProvider = { departureID in all.first { $0.id == departureID } }
@@ -218,6 +243,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
         syncVehicleAnnotations()
         syncRouteOverlays()
+        refreshEstimationInputs()
     }
 
     /// Whether this layer is standing down so another can have the map.
@@ -233,6 +259,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         isSuppressed = suppressed
 
         guard !suppressed else {
+            stopEstimating()
             removeAllContent()
             // Shapes are pinned by route so a refresh doesn't redraw an unchanged
             // line. Clearing the pins is what lets them be drawn again on the way
@@ -244,6 +271,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
         syncVehicleAnnotations()
         syncRouteOverlays()
+        refreshEstimationInputs()
     }
 
     /// A vehicle marker tap. `MapViewController` calls this from
@@ -324,10 +352,12 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
             if let existing = survivors[vehicle.id] {
                 let routeColor = model.routes.first { $0.routeID == vehicle.routeID }?.color ?? tintColor
-                existing.update(tripStatus: tripStatus, coordinate: vehicle.coordinate, routeColor: routeColor)
+                let estimate = estimates[vehicle.id]
+                existing.update(tripStatus: tripStatus, coordinate: vehicle.coordinate, routeColor: routeColor, movesMarker: estimate == nil)
                 if let view = mapView.view(for: existing) as? PulsingVehicleAnnotationView {
                     view.realTimeAnnotationColor = routeColor
                     view.applyTripStatus(tripStatus)
+                    view.applyEstimate(estimate)
                 }
                 next.append(existing)
             } else {
@@ -337,7 +367,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
                     routeColor: model.routes.first { $0.routeID == vehicle.routeID }?.color ?? tintColor,
                     departureID: vehicle.departureID,
                     tripStatus: tripStatus,
-                    coordinate: vehicle.coordinate
+                    coordinate: estimates[vehicle.id]?.coordinate ?? vehicle.coordinate
                 )
                 next.append(annotation)
                 toAdd.append(annotation)
@@ -360,6 +390,94 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         for annotation in annotations {
             guard let view = mapView.view(for: annotation) as? PulsingVehicleAnnotationView else { continue }
             view.zPriority = (annotation.routeID == focus?.focusedRouteID) ? .max : .defaultUnselected
+        }
+    }
+
+    // MARK: - Estimation
+
+    /// Gathers each drawn vehicle's shape and schedule, from their caches or the
+    /// network, then hands the lot to the driver. Asynchronous, so a vehicle whose
+    /// shape or schedule hasn't arrived stays where the feed says until it has.
+    private func refreshEstimationInputs() {
+        guard let vehicleEstimation, let tripSchedules else { return }
+        guard vehicleEstimation.isEnabledNow else {
+            if !estimates.isEmpty { vehicleEstimation.update([]) }
+            return
+        }
+
+        struct Pending {
+            let vehicleKey: String
+            let tripID: String
+            let shapeID: String
+            let request: TripScheduleCache.Request
+            let serverTripLength: Double
+            let fix: VehicleFix?
+        }
+        let pending: [Pending] = model.vehicles.compactMap { vehicle in
+            guard let tripID = vehicle.tripID, let shapeID = vehicle.shapeID, !shapeID.isEmpty,
+                  let departure = departureProvider?(vehicle.departureID),
+                  let status = departure.tripStatus else { return nil }
+            return Pending(
+                vehicleKey: vehicle.id,
+                tripID: tripID,
+                shapeID: shapeID,
+                request: .init(tripID: tripID, vehicleID: departure.vehicleID, serviceDate: departure.serviceDate),
+                serverTripLength: status.totalDistanceAlongTrip,
+                fix: VehicleFix(tripStatus: status, tripID: tripID)
+            )
+        }
+        let serverClocks = [latestServerClock].compactMap { $0 }
+        let token = presentationToken
+
+        estimationTask?.cancel()
+        estimationTask = Task { [weak self, shapeCache] in
+            var inputs: [VehicleEstimationDriver.Input] = []
+            for vehicle in pending {
+                guard let shape = try? await shapeCache.coordinates(forShapeID: vehicle.shapeID), shape.count > 1 else { continue }
+                // Without its schedule a vehicle can still move at its observed speed.
+                let schedule = try? await tripSchedules.schedule(for: vehicle.request)
+                inputs.append(.init(
+                    vehicleKey: vehicle.vehicleKey,
+                    tripID: vehicle.tripID,
+                    shape: shape,
+                    stopTimes: schedule?.stopTimes ?? [],
+                    serverTripLength: vehicle.serverTripLength > 0 ? vehicle.serverTripLength : schedule?.serverTripLength,
+                    fixes: [vehicle.fix].compactMap { $0 },
+                    serverClocks: serverClocks
+                ))
+            }
+            guard !Task.isCancelled, let self, self.presentationToken == token, !self.isSuppressed else { return }
+            vehicleEstimation.update(inputs)
+            vehicleEstimation.resume()
+        }
+    }
+
+    /// Test seam: waits for the gathering `refreshEstimationInputs` started.
+    func estimationInputsSettled() async {
+        await estimationTask?.value
+    }
+
+    private func stopEstimating() {
+        estimationTask?.cancel()
+        estimationTask = nil
+        vehicleEstimation?.pause()
+        vehicleEstimation?.update([])
+        estimates.removeAll()
+    }
+
+    private func apply(estimates: [String: VehicleEstimate]) {
+        let previous = self.estimates
+        self.estimates = estimates
+        for annotation in annotations {
+            let view = mapView.view(for: annotation) as? PulsingVehicleAnnotationView
+            if let estimate = estimates[annotation.id] {
+                VehicleCoordinateUpdate.follow(annotation, to: estimate.coordinate, snap: estimate.shouldSnap, in: mapView)
+                view?.applyEstimate(estimate)
+            } else if previous[annotation.id] != nil {
+                // Back to the feed; the next arrivals poll moves it there.
+                if let status = annotation.tripStatus { view?.applyTripStatus(status) }
+                view?.applyEstimate(nil)
+            }
         }
     }
 
