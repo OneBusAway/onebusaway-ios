@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Foundation
 import Testing
 @testable import OBAKit
 
@@ -42,4 +43,27 @@ struct TripProvenanceLineTests {
         #expect(TripProvenanceLine.text(routeName: nil, vehicleLabel: nil, freshness: nil) == nil)
         #expect(TripProvenanceLine.text(routeName: "", vehicleLabel: "", freshness: "") == nil)
     }
+
+    // MARK: - Freshness
+
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    @Test func `A reported position says how old it is`() throws {
+        let freshness = try #require(TripProvenanceLine.freshness(lastUpdate: now - 45, isEstimated: false, relativeTo: now))
+        #expect(freshness.hasPrefix("position updated "))
+    }
+
+    /// The map marker can't take VoiceOver focus, so the card's line is where a
+    /// rider hears that the bus on the map is an estimate.
+    @Test func `An estimated position says it is estimated, and how old its fix is`() throws {
+        let freshness = try #require(TripProvenanceLine.freshness(lastUpdate: now - 45, isEstimated: true, relativeTo: now))
+        #expect(freshness.hasPrefix("estimated position, updated "))
+        let reported = try #require(TripProvenanceLine.freshness(lastUpdate: now - 45, isEstimated: false, relativeTo: now))
+        #expect(freshness.hasSuffix(String(reported.dropFirst("position updated ".count))))
+    }
+
+    @Test func `No update, no freshness`() {
+        #expect(TripProvenanceLine.freshness(lastUpdate: nil, isEstimated: true, relativeTo: now) == nil)
+    }
 }
+

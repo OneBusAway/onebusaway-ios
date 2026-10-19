@@ -29,4 +29,21 @@ public enum FeatureFlags {
         guard userDefaults.object(forKey: useMapPanelExperienceKey) != nil else { return true }
         return userDefaults.bool(forKey: useMapPanelExperienceKey)
     }
+
+    /// Gates on-device estimation of where a followed trip's vehicle is now, moving
+    /// its marker between real-time updates (`VehicleTrack`). Off by default until
+    /// the replay evaluation says otherwise. Read live; no relaunch needed.
+    public static let estimatesVehiclePositionsKey = "OBAEstimatesVehiclePositions"
+
+    /// Debug: draws the reported fix and the server's `position` beside an estimated
+    /// vehicle marker, to compare them in the field.
+    public static let showsRawVehicleFixKey = "OBAShowsRawVehicleFix"
+
+    public static func isVehicleEstimationEnabled(userDefaults: UserDefaults) -> Bool {
+        userDefaults.bool(forKey: estimatesVehiclePositionsKey)
+    }
+
+    public static func showsRawVehicleFix(userDefaults: UserDefaults) -> Bool {
+        userDefaults.bool(forKey: showsRawVehicleFixKey)
+    }
 }

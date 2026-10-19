@@ -32,4 +32,26 @@ nonisolated enum TripProvenanceLine {
         guard !clauses.isEmpty else { return nil }
         return clauses.joined(separator: separator)
     }
+
+    /// How old the vehicle's position is: "position updated 12 sec. ago", or, while
+    /// the map is estimating where the vehicle is now, "estimated position, updated
+    /// 12 sec. ago". `nil` with no update to measure from.
+    @MainActor static func freshness(lastUpdate: Date?, isEstimated: Bool, relativeTo now: Date) -> String? {
+        guard let lastUpdate else { return nil }
+        let age = updatedFormatter.localizedString(for: lastUpdate, relativeTo: now)
+        let format = isEstimated
+            ? OBALoc("trip_page.position_estimated_fmt", value: "estimated position, updated %@", comment: "How stale the vehicle's last reported position is, when the map shows where the vehicle is estimated to be now rather than where it last reported. %@ is a relative time like '12s ago'.")
+            : OBALoc("trip_page.position_updated_fmt", value: "position updated %@", comment: "How stale the vehicle's reported position is. %@ is a relative time like '12s ago'.")
+        return String(format: format, age)
+    }
+
+    /// Abbreviated ("12s ago"), matching the map callout's freshness line.
+    /// Static because these are stateless and rebuilding one per render is
+    /// measurably wasteful.
+    @MainActor private static let updatedFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter
+    }()
 }
+

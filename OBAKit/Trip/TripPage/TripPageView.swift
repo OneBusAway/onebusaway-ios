@@ -56,6 +56,7 @@ struct TripPageRootView: View {
     var isTrackingLiveActivity = false
     /// Mutable so `TripPageViewController.setAtTip` can flip it without rebuilding.
     var isCollapsed = false
+    var isVehiclePositionEstimated = false
 
     var body: some View {
         TripPageView(
@@ -66,7 +67,8 @@ struct TripPageRootView: View {
             showsBackRow: showsBackRow,
             hasAlarm: hasAlarm,
             isTrackingLiveActivity: isTrackingLiveActivity,
-            isCollapsed: isCollapsed
+            isCollapsed: isCollapsed,
+            isVehiclePositionEstimated: isVehiclePositionEstimated
         )
         .defaultAppStorage(userDefaults)
         .environment(\.obaFormatters, formatters)
@@ -109,6 +111,11 @@ struct TripPageView: View {
     /// belongs to. Dropping the bar at this detent leaves the row that names the trip's origin,
     /// which is what a peek is for. Mirrors `StopPageView.isCollapsed`.
     var isCollapsed = false
+
+    /// `true` while the map shows where the vehicle is estimated to be rather than
+    /// where it last reported. The marker can't take VoiceOver focus, so the card's
+    /// freshness line is where a rider learns this.
+    var isVehiclePositionEstimated = false
 
     /// The page's laid-out height, which is the sheet detent's — not the screen's. Feeds the
     /// action bar's ceiling at accessibility sizes; see `TripActionBar.maxHeight`.
@@ -260,21 +267,12 @@ struct TripPageView: View {
     }
 
     private var freshness: String? {
-        guard let lastUpdate = convertible.tripStatus?.lastUpdate else { return nil }
-        return String(
-            format: OBALoc("trip_page.position_updated_fmt", value: "position updated %@", comment: "How stale the vehicle's reported position is. %@ is a relative time like '12s ago'."),
-            Self.updatedFormatter.localizedString(for: lastUpdate, relativeTo: Date())
+        TripProvenanceLine.freshness(
+            lastUpdate: convertible.tripStatus?.lastUpdate,
+            isEstimated: isVehiclePositionEstimated,
+            relativeTo: Date()
         )
     }
-
-    /// Abbreviated ("12s ago"), matching the map callout's freshness line.
-    /// Static because these are stateless and rebuilding one per render is
-    /// measurably wasteful.
-    private static let updatedFormatter: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter
-    }()
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
