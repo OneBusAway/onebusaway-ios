@@ -157,6 +157,9 @@ extension MapViewController {
     func showExternallyRequestedContent() {
         showLaunchRouteIfNeeded()
         showPendingRentalsIfNeeded()
+        #if DEBUG
+        showScreenshotStopIfNeeded()
+        #endif
     }
 
     /// Applies an `onebusaway://rentals` link: `Application` has already switched
@@ -273,6 +276,9 @@ extension MapViewController: RegionsServiceDelegate {
         // A first launch has no region when the map appears; the region picker
         // supplies one here. `apiService` was rebuilt in `willUpdateToRegion`.
         showLaunchRouteIfNeeded()
+        #if DEBUG
+        showScreenshotStopIfNeeded()
+        #endif
     }
 
     public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {

@@ -1,0 +1,15 @@
+{
+  "location": [47.6188, -122.3197],
+  "bookmarks": [
+    {"group": "Work 🏢", "name": "10 to Downtown", "stopID": "1_11080", "routeID": "1_100002"},
+    {"group": "Work 🏢", "name": "1 Line Light Rail", "stopID": "40_99610", "routeID": "40_100479"},
+    {"group": "Home", "name": "1 Line Light Rail", "stopID": "40_1121", "routeID": "40_100479"},
+    {"group": "Home", "name": "10 back home", "stopID": "1_1180", "routeID": "1_100002"}
+  ],
+  "slides": [
+    { "name": "01-bookmarks", "env": {}, "bookmarks": true },
+    { "name": "02-nearby", "env": { "TEST_SCREENSHOT_TAB": "nearby" } },
+    { "name": "03-route", "env": { "TEST_SCREENSHOT_ROUTE_ID": "40_100479" } },
+    { "name": "04-stop", "env": { "TEST_SCREENSHOT_STOP_ID": "40_99610" } }
+  ]
+}

@@ -128,6 +128,10 @@ Now, replace the file `OBAKitCore/Models/Protobuf/gtfs-realtime.proto` with the 
 
 You can find the latest version of the GTFS-RT protobuf file in the https://github.com/google/transit/ repository.
 
+### Generate App Store screenshots
+
+Run `scripts/app_store_screenshots` from the project root. It captures each slide in the simulator, adds the device frame and caption, and writes finished PNGs to `build/app-store-screenshots/slides/`. Add `--duo` for the iPhone Duo set, `--watch` for the Apple Watch set, or `--all-sets` for all three. See [docs/app-store/README.md](docs/app-store/README.md) for the one-time setup, options, and how to change the slides.
+
 ### Update macOS/Xcode versions for GitHub Actions CI
 
 1. Find the latest version of macOS and Xcode here: https://github.com/actions/runner-images/tree/main/images/macos

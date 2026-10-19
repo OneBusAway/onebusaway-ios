@@ -217,6 +217,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         configureAppearanceProxies()
         observeShortcutLifecycle()
+
+        #if DEBUG
+        applyScreenshotLaunchHooks()
+        #endif
     }
 
     private func configureTipKit() {
@@ -368,6 +372,12 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// `.rentalsDeepLinkPending`, so a link that arrives on a cold launch or during
     /// onboarding is applied once the map exists and the region has loaded.
     var pendingRentalsCoordinate: CLLocationCoordinate2D?
+    #if DEBUG
+    /// App Store screenshot hooks, read from the launch environment and claimed
+    /// once the map or region is ready. See `Application+ScreenshotSupport.swift`.
+    var screenshotStopID: StopID?
+    var screenshotBookmarkSeeds: [ScreenshotBookmarkSeed]?
+    #endif
     /// Lives here rather than on the map so it survives root reloads and sees every
     /// deep link, which arrive here before (or instead of) any map appearing.
     lazy var launchRouteGate = LaunchRouteGate(configValue: config.launchRouteID)
@@ -539,6 +549,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     @MainActor @objc public func rootUserInterfaceDidLoad() {
         drainPendingUIPresentations()
         consumePendingLiveActivityShortcut()
+        #if DEBUG
+        seedScreenshotBookmarksIfNeeded()
+        #endif
     }
 
     /// True while the onboarding flow is installed as the window's root — deferred
@@ -790,6 +803,9 @@ public class Application: CoreApplication, PushServiceDelegate {
         // A donated stop shortcut that arrived before `currentRegion` was set
         // is sitting in `pendingStopID`. Drain now that we know which region we are in.
         drainPendingUIPresentations()
+        #if DEBUG
+        seedScreenshotBookmarksIfNeeded()
+        #endif
 
         // Region change does not post `.bookmarksDidChange`, so Shortcuts
         // would keep offering the previous region's trip bookmarks.

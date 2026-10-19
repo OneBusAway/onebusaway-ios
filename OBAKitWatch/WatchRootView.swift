@@ -17,12 +17,19 @@ public struct WatchRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var bookmarksModel: WatchBookmarksModel?
     @State private var nearby: NearbyRoutesModel?
+    @State private var tab = Tab.bookmarks
+    @State private var bookmarksPath = NavigationPath()
+    @State private var nearbyPath = NavigationPath()
+
+    enum Tab: Hashable {
+        case bookmarks, nearby
+    }
 
     public init() {}
 
     public var body: some View {
-        TabView {
-            NavigationStack {
+        TabView(selection: $tab) {
+            NavigationStack(path: $bookmarksPath) {
                 Group {
                     if let bookmarksModel {
                         WatchBookmarksView(model: bookmarksModel)
@@ -37,8 +44,9 @@ public struct WatchRootView: View {
             .tabItem {
                 Label(OBALoc("bookmarks.tab", value: "Bookmarks", comment: "Bookmarks tab title"), systemImage: "bookmark.fill")
             }
+            .tag(Tab.bookmarks)
 
-            NavigationStack {
+            NavigationStack(path: $nearbyPath) {
                 Group {
                     if let nearby {
                         NearbyRoutesView(model: nearby)
@@ -58,7 +66,11 @@ public struct WatchRootView: View {
             .tabItem {
                 Label(OBALoc("nearby.tab", value: "Nearby", comment: "Nearby tab title"), systemImage: "location.fill")
             }
+            .tag(Tab.nearby)
         }
+        #if DEBUG
+        .modifier(ScreenshotHooks(tab: $tab, bookmarksPath: $bookmarksPath, nearbyPath: $nearbyPath, nearby: nearby))
+        #endif
         .task {
             host.refreshRegionsList()
 

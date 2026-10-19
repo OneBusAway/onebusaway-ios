@@ -1,0 +1,252 @@
+#!/usr/bin/env bash
+#
+# Regenerates the App Store screenshot slides end to end:
+#
+#   capture  run AppStoreScreenshotUITests on an iPhone Pro simulator
+#   export   pull the named captures out of the result bundle
+#   frame    add the device bezel (frames-cli)
+#   compose  caption + background, at the App Store size
+#
+# Usage:
+#   scripts/app_store_screenshots [all|capture|export|frame|compose] [--duo|--watch|--all-sets] [--size WxH] [--only test05Alarm]
+#
+# Run from the repo root after scripts/generate_project. Output goes to
+# build/app-store-screenshots/{raw,framed,slides}. --size defaults to 1206x2622
+# (6.3"); 1320x2868 is the 6.9" size. --only runs one slide's test, e.g. to
+# retake one capture; the other raw captures are kept.
+#
+# --duo makes the iPhone Duo set instead, into build/app-store-screenshots/duo:
+# captures with the Duo open and then folded (it asks you to flip it in Device
+# Hub, since nothing can script that), and a compose step that draws the Duo
+# itself, as frames-cli has no Duo frame. --size defaults to 2853x2007.
+#
+# --watch makes the Apple Watch set, into build/app-store-screenshots/watch:
+# screenshots of the watch app on the newest Apple Watch Ultra simulator, at
+# its screen size, uploaded as they are. --only takes a slide name there
+# (02-nearby); the steps other than capture have nothing to do.
+#
+# --all-sets makes all three sets in one go: iPhone, then Duo, then watch, each
+# at its default size. It takes a step, but not --size, --only or
+# SCREENSHOT_UDID, which each fit one set only.
+#
+# The captures use live Puget Sound data, so run during the day, when every
+# route the slides show is running. Setup (frames-cli, Pillow) and the details
+# are in docs/app-store/README.md.
+
+set -euo pipefail
+
+step="all"
+size=""
+only=""
+duo=0
+watch=0
+all_sets=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        all|capture|export|frame|compose) step="$1" ;;
+        --duo) duo=1 ;;
+        --watch) watch=1 ;;
+        --all-sets) all_sets=1 ;;
+        --size) size="$2"; shift ;;
+        --only) only="$2"; shift ;;
+        *) echo "error: unknown argument: $1" >&2; exit 2 ;;
+    esac
+    shift
+done
+
+repo=$(cd "$(dirname "$0")/.." && pwd)
+out="$repo/build/app-store-screenshots"
+derived="$repo/build/app-store-screenshots-derived-data"
+bundle_id="org.onebusaway.iphone"
+suite="OBAKitUITests/AppStoreScreenshotUITests"
+
+if [[ "$all_sets" == 1 ]]; then
+    if [[ "$duo" == 1 || "$watch" == 1 || -n "$size" || -n "$only" || -n "${SCREENSHOT_UDID:-}" ]]; then
+        echo "error: --all-sets takes a step only; run one set for --duo, --watch, --size, --only or SCREENSHOT_UDID" >&2
+        exit 2
+    fi
+    # A set that fails stops the run: each already warns and carries on past
+    # a failed slide, so an exit here means the set itself broke.
+    for set in iPhone Duo Watch; do
+        echo "==> $set set"
+        case "$set" in
+            iPhone) "$0" "$step" ;;
+            Duo) "$0" "$step" --duo ;;
+            Watch) "$0" "$step" --watch ;;
+        esac
+    done
+    echo "Slides: $out/slides, $out/duo/slides, $out/watch"
+    exit 0
+fi
+
+if [[ "$watch" == 1 ]]; then
+    [[ "$duo" == 0 ]] || { echo "error: --duo and --watch are separate sets" >&2; exit 2; }
+    if [[ "$step" != all && "$step" != capture ]]; then
+        echo "The watch set has no $step step: its captures are the slides."
+        exit 0
+    fi
+    if [[ -n "$only" ]] && ! python3 -c 'import json, sys; sys.exit(sys.argv[2] not in [s["name"] for s in json.load(open(sys.argv[1]))["slides"]])' \
+            "$repo/docs/app-store/watch-screenshots.json" "$only"; then
+        echo "error: no watch slide named $only (see docs/app-store/watch-screenshots.json)" >&2
+        exit 2
+    fi
+    udid="${SCREENSHOT_UDID:-$("$repo/scripts/resolve_watch_simulator_udid" --ultra)}"
+    echo "Capturing on watch simulator $udid"
+    xcodebuild build -project "$repo/OBAKit.xcodeproj" -scheme WatchApp -configuration Debug \
+        -destination "platform=watchOS Simulator,id=$udid" -derivedDataPath "$derived" -quiet
+    xcrun simctl boot "$udid" 2>/dev/null || true
+    xcrun simctl bootstatus "$udid" -b >/dev/null
+    app="$derived/Build/Products/Debug-watchsimulator/WatchApp.app"
+    watch_bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
+    xcrun simctl install "$udid" "$app"
+    # Nearby needs location; granted up front so no alert covers a capture.
+    xcrun simctl privacy "$udid" grant location "$watch_bundle_id"
+    [[ -n "$only" ]] || rm -rf "$out/watch"
+    python3 "$repo/scripts/app_store/capture_watch_screenshots.py" "$udid" "$watch_bundle_id" "$out/watch" ${only:+--only "$only"}
+    exit 0
+fi
+
+if [[ "$duo" == 1 ]]; then
+    out="$out/duo"
+    size="${size:-2853x2007}"
+    # Which slides each posture captures; docs/app-store/duo-screenshots.json
+    # uses them. Open is the Duo's main posture, so most slides are open.
+    open_tests=(test01StopArrivals test03TripVehicle test04TripPlanner test05Alarm test06Bookmarks test07OpenSource)
+    folded_tests=(test01StopArrivals test03TripVehicle)
+else
+    size="${size:-1206x2622}"
+fi
+
+# The 6.3" App Store size, or the iPhone Duo; SCREENSHOT_UDID overrides.
+resolve_udid() {
+    if [[ -n "${SCREENSHOT_UDID:-}" ]]; then
+        echo "$SCREENSHOT_UDID"
+    elif [[ "$duo" == 1 ]]; then
+        "$repo/scripts/resolve_simulator_udid" --duo
+    else
+        "$repo/scripts/resolve_simulator_udid" --pro
+    fi
+}
+
+# run_tests <bundle> <udid> <posture> [test ...]: runs the given tests, or the
+# whole suite without any, into the result bundle. A Duo posture, open or
+# folded, is passed to the tests; the iPhone passes "". A failed slide still
+# leaves the others' captures in the bundle.
+run_tests() {
+    local bundle="$1" udid="$2" posture="$3"; shift 3
+    local filters=("-only-testing:$suite")
+    if [[ $# -gt 0 ]]; then
+        filters=()
+        for test in "$@"; do
+            filters+=("-only-testing:$suite/$test")
+        done
+    fi
+    rm -rf "$bundle"
+    # xcodebuild hands TEST_RUNNER_-prefixed variables to the tests, unprefixed.
+    env ${posture:+TEST_RUNNER_SCREENSHOT_POSTURE="$posture"} xcodebuild test-without-building -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
+        -destination "platform=iOS Simulator,id=$udid" -derivedDataPath "$derived" \
+        "${filters[@]}" -resultBundlePath "$bundle" || echo "warning: some slides failed; exporting what was captured" >&2
+}
+
+# The tests in "$@" that --only selects: all of them without --only.
+selected() {
+    for test in "$@"; do
+        if [[ -z "$only" || "$test" == "$only" ]]; then
+            echo "$test"
+        fi
+    done
+}
+
+capture() {
+    if [[ "$duo" == 1 && -n "$only" && -z "$(selected "${open_tests[@]}" "${folded_tests[@]}")" ]]; then
+        echo "error: $only is not in the Duo set (open: ${open_tests[*]}; folded: ${folded_tests[*]})" >&2
+        exit 2
+    fi
+
+    local udid
+    udid=$(resolve_udid)
+    echo "Capturing on simulator $udid"
+    xcrun simctl boot "$udid" 2>/dev/null || true
+    xcrun simctl bootstatus "$udid" -b >/dev/null
+
+    # The App Store convention: 9:41, full battery and signal. The empty
+    # operator name keeps "Carrier" off the Lock Screen.
+    xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 \
+        --wifiBars 3 --cellularMode active --cellularBars 4 --operatorName ""
+
+    xcodebuild build-for-testing -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \
+        -destination "platform=iOS Simulator,id=$udid" -derivedDataPath "$derived" -quiet
+
+    # Grant location up front so no permission alert covers a capture. The app
+    # has to be installed for the grant to stick.
+    xcrun simctl install "$udid" "$derived/Build/Products/Debug-iphonesimulator/App.app"
+    xcrun simctl privacy "$udid" grant location-always "$bundle_id"
+
+    if [[ -z "$only" ]]; then
+        # A full run starts clean, so a slide that skips this time can't ship
+        # last run's capture. --only keeps the others on purpose.
+        rm -rf "$out/raw" "$out/framed" "$out/slides"
+    fi
+
+    if [[ "$duo" == 0 ]]; then
+        run_tests "$out/screenshots.xcresult" "$udid" "" ${only:+"$only"}
+        return
+    fi
+
+    # Start in whichever posture the Duo is in: one click fewer.
+    local posture tests postures=(open folded)
+    if [[ $(python3 "$repo/scripts/app_store/duo_posture.py" "$udid" current) == folded ]]; then
+        postures=(folded open)
+    fi
+    for posture in "${postures[@]}"; do
+        if [[ "$posture" == open ]]; then
+            tests=$(selected "${open_tests[@]}")
+        else
+            tests=$(selected "${folded_tests[@]}")
+        fi
+        if [[ -z "$tests" ]]; then
+            # Last run's bundle would only be exported again.
+            rm -rf "$out/$posture.xcresult"
+            continue
+        fi
+        python3 "$repo/scripts/app_store/duo_posture.py" "$udid" "$posture"
+        # shellcheck disable=SC2086 # one test name per word
+        run_tests "$out/$posture.xcresult" "$udid" "$posture" $tests
+    done
+}
+
+export_captures() {
+    local bundle
+    for bundle in "$out"/*.xcresult; do
+        [[ -e "$bundle" ]] && python3 "$repo/scripts/app_store/export_screenshots.py" "$bundle" "$out/raw"
+    done
+}
+
+frame() {
+    if [[ "$duo" == 1 ]]; then
+        echo "The Duo set has no frame step; compose draws the device."
+        return
+    fi
+    if ! command -v frames >/dev/null; then
+        echo "error: frames-cli is not installed; see docs/app-store/README.md" >&2
+        exit 1
+    fi
+    mkdir -p "$out/framed"
+    frames -c "Cosmic Orange" -o "$out/framed" "$out"/raw/*.png
+}
+
+compose() {
+    if [[ "$duo" == 1 ]]; then
+        python3 "$repo/scripts/app_store/compose_duo_screenshots.py" "$out/raw" "$out/slides" --size "$size"
+    else
+        python3 "$repo/scripts/app_store/compose_screenshots.py" "$out/framed" "$out/slides" --size "$size"
+    fi
+}
+
+case "$step" in
+    capture) capture ;;
+    export) export_captures ;;
+    frame) frame ;;
+    compose) compose ;;
+    all) capture; export_captures; frame; compose ;;
+esac
