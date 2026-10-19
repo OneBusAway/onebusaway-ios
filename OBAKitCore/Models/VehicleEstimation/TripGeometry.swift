@@ -122,3 +122,12 @@ public struct TripGeometry: Sendable {
         return low
     }
 }
+
+public extension TripGeometry.StopTime {
+    /// The stop time a trip-details response reports. `nil` before its service
+    /// date has been set, which leaves its dates unresolved.
+    init?(_ stopTime: TripStopTime) {
+        guard let arrival = stopTime.arrivalDate, let departure = stopTime.departureDate else { return nil }
+        self.init(distanceAlongTrip: stopTime.distanceAlongTrip, arrival: arrival, departure: departure)
+    }
+}
