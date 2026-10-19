@@ -41,6 +41,9 @@ final class TripMapFocus: ObservableObject {
         /// the list can never disagree about which stops are behind the bus.
         let stops: [TripStopListModel.Row]
         let vehicle: TripStatus?
+        /// Debug: beside an estimated marker, also draw where the feed put the
+        /// vehicle. See `FeatureFlags.showsRawVehicleFixKey`.
+        var showsReportedPositions = false
     }
 
     @Published private(set) var content: Content?

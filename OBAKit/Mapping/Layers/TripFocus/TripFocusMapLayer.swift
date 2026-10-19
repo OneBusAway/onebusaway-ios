@@ -81,6 +81,8 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// What the direction chevrons on the line ahead keep clear of.
     private let arrowContext = RouteArrowContext()
     private var vehicleAnnotation: VehicleAnnotation?
+    /// Debug; see `TripMapFocus.Content.showsReportedPositions`.
+    private var reportedPositionAnnotations: [ReportedPositionAnnotation] = []
 
     /// The trip the camera has already been framed for. Framing happens once per
     /// trip, not once per refresh: the position updates every 30s, and re-framing
@@ -114,6 +116,10 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.register(
             TripStopAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: TripStopAnnotationView.reuseIdentifier
+        )
+        mapView.register(
+            ReportedPositionAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: ReportedPositionAnnotationView.reuseIdentifier
         )
     }
 
@@ -173,6 +179,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         refreshArrowMarkers()
         drawShape(split)
         drawVehicle(content)
+        drawReportedPositions()
         frameCameraIfNeeded(content, split: split)
     }
 
@@ -259,6 +266,17 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         }
 
         resplitIfNeeded(estimate: estimate, wasEstimating: wasEstimating)
+        if (estimate != nil) != wasEstimating { drawReportedPositions() }
+    }
+
+    private func drawReportedPositions() {
+        mapView.removeAnnotations(reportedPositionAnnotations)
+        reportedPositionAnnotations.removeAll()
+        guard estimate != nil, let content = focus?.content, content.showsReportedPositions else { return }
+        reportedPositionAnnotations = ReportedPositionKind.positions(of: content.vehicle).map {
+            ReportedPositionAnnotation(kind: $0.kind, coordinate: $0.coordinate)
+        }
+        mapView.addAnnotations(reportedPositionAnnotations)
     }
 
     /// Glides over one tick, so consecutive ticks read as continuous motion.
@@ -357,6 +375,8 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             mapView.removeAnnotation(vehicleAnnotation)
         }
         vehicleAnnotation = nil
+        mapView.removeAnnotations(reportedPositionAnnotations)
+        reportedPositionAnnotations.removeAll()
     }
 
     // MARK: - MapLayer conformance
@@ -399,6 +419,12 @@ final class TripFocusMapLayer: NSObject, MapLayer {
                 for: annotation
             )
         }
+        if annotation is ReportedPositionAnnotation {
+            return mapView.dequeueReusableAnnotationView(
+                withIdentifier: ReportedPositionAnnotationView.reuseIdentifier,
+                for: annotation
+            )
+        }
 
         // Claimed here rather than left to the map's own handling so the marker
         // picks up this trip's route color; layers get first claim.
@@ -437,6 +463,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     func mapAnnotationsWereCleared() {
         stopAnnotations.removeAll()
         vehicleAnnotation = nil
+        reportedPositionAnnotations.removeAll()
     }
 
     func mapOverlaysWereCleared() {

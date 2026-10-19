@@ -323,7 +323,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
                     )
                 },
                 stops: stops,
-                vehicle: status
+                vehicle: status,
+                showsReportedPositions: FeatureFlags.showsRawVehicleFix(userDefaults: application.userDefaults)
             )
         )
     }
