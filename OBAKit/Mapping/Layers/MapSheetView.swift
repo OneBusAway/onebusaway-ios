@@ -215,7 +215,6 @@ struct MapSheetView: View {
         _model = StateObject(wrappedValue: model())
     }
 
-    private static let sheetBackground = Color(uiColor: .systemGroupedBackground)
     private static let gridSpacing: CGFloat = 12
 
     var body: some View {
@@ -235,7 +234,7 @@ struct MapSheetView: View {
                 }
                 .padding(16)
             }
-            .background(Self.sheetBackground)
+            .mapSheetBackground()
             .navigationTitle(OBALoc("map_sheet.title", value: "Map", comment: "Title of the Map sheet"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -280,6 +279,7 @@ struct MapSheetView: View {
         VStack(alignment: .leading, spacing: 6) {
             NavigationLink {
                 RoutesOnMapView(model: model)
+                    .mapSheetBackground()
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
@@ -339,6 +339,13 @@ struct MapSheetView: View {
 }
 
 private extension View {
+    /// Every screen in the sheet's stack wears this, root and pushed alike: left
+    /// to the sheet's Liquid Glass, a pushed screen washes out to mid-grey over a
+    /// dark map, too light for white text.
+    func mapSheetBackground() -> some View {
+        containerBackground(Color(uiColor: .systemGroupedBackground), for: .navigation)
+    }
+
     /// The sheet's full-width cards share the layer tiles' fill and corners, so
     /// they stand out from the grouped background in dark mode too.
     func mapSheetCard() -> some View {
