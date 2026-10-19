@@ -83,4 +83,39 @@ final class StopPageUserActivityTests: OBATestCase {
         #expect(application.pendingStopID == "1_10914")
         #expect(application.pendingStopRegionID == 1)
     }
+
+    // MARK: - Legacy stop page
+
+    /// The legacy page publishes only once arrivals have loaded, so this stubs
+    /// every endpoint a load touches. `MockDataLoader` fatal-errors on anything
+    /// unstubbed, which ends the whole run, not just this test.
+    private func loadedLegacyStopPage() async -> StopViewController {
+        let dataLoader = MockDataLoader(testName: name)
+
+        dataLoader.mock(data: Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020_no_realtime.json")) { request in
+            request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        let emptySurveys = Data(#"{"surveys":[],"region":{"id":1,"name":"Puget Sound"}}"#.utf8)
+        dataLoader.mock(data: emptySurveys) { request in
+            request.url?.path.contains("/surveys.json") ?? false
+        }
+
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let controller = StopViewController(application: buildApplication(queue: queue, dataLoader: dataLoader), stopID: "1_10020")
+        controller.loadViewIfNeeded()
+        await controller.viewModel.refresh()
+        return controller
+    }
+
+    @Test func `The legacy stop page's cleared activity gets its stop and region back`() async throws {
+        let page = await loadedLegacyStopPage()
+        let activity = try #require(page.userActivity)
+
+        clearAndUpdate(activity, from: page)
+
+        #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.stopID] as? String == "1_10020")
+        #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.regionID] as? Int == 1)
+    }
 }
