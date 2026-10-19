@@ -1173,11 +1173,17 @@
 /* Settings > Debug section > Debug mode */
 "settings_controller.debug_section.debug_mode" = "وضع التصحيح";
 
+/* Settings > Debug section > Toggle that draws a vehicle's last reported GPS position and the server's position beside its estimated marker */
+"settings_controller.debug_section.show_raw_vehicle_fix" = "إظهار مواقع المركبات المُبلَّغ عنها";
+
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "التصحيح";
 
 /* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
 "settings_controller.experimental_section.cluster_stops" = "تجميع المواقف المتقاربة على الخريطة";
+
+/* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
+"settings_controller.experimental_section.estimate_vehicle_positions" = "تقدير المواقع الحالية للمركبات";
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "استخدام تجربة لوحة الخريطة";
@@ -1706,6 +1712,9 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "تبدأ باسم %@";
+
+/* How stale the vehicle's last reported position is, when the map shows where the vehicle is estimated to be now rather than where it last reported. %@ is a relative time like '12s ago'. */
+"trip_page.position_estimated_fmt" = "موقع تقديري، تم تحديثه %@";
 
 /* Shown beside a Retry button when loading the trip's stop list failed. */
 "trip_page.stops_failed" = "تعذّر تحميل مواقف هذه الرحلة.";

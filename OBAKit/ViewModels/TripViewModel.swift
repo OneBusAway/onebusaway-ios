@@ -159,7 +159,8 @@ class TripViewModel: ObservableObject {
         let cachePolicy: URLRequest.CachePolicy = FeatureFlags.isVehicleEstimationEnabled(userDefaults: application.userDefaults)
             ? .reloadIgnoringLocalCacheData
             : .useProtocolCachePolicy
-        var clocks: [ServerClockSample] = []
+        var detailsClock: ServerClockSample?
+        var convertibleClock: ServerClockSample?
         async let details = fetchTripDetails(cachePolicy: cachePolicy)
         async let convertible = fetchTripConvertible(cachePolicy: cachePolicy)
         async let polyline = fetchMapPolyline()
@@ -182,7 +183,7 @@ class TripViewModel: ObservableObject {
         do {
             let (newDetails, clock) = try await details
             guard !Task.isCancelled else { return }
-            if let clock { clocks.append(clock) }
+            detailsClock = clock
             applyTripDetails(newDetails)
         } catch {
             guard !Task.isCancelled else { return }
@@ -194,7 +195,7 @@ class TripViewModel: ObservableObject {
         do {
             let (newConvertible, clock) = try await convertible
             guard !Task.isCancelled else { return }
-            if let clock { clocks.append(clock) }
+            convertibleClock = clock
             applyTripConvertible(newConvertible)
         } catch {
             guard !Task.isCancelled else { return }
@@ -209,7 +210,7 @@ class TripViewModel: ObservableObject {
             record(error)
         }
 
-        serverClocks = clocks
+        serverClocks = [detailsClock, convertibleClock].compactMap { $0 }
 
         // URLSession can report NSURLErrorCancelled without this task being
         // cancelled, when a lower layer cancelled the request. Never a

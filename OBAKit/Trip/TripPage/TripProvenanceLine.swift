@@ -54,4 +54,3 @@ nonisolated enum TripProvenanceLine {
         return formatter
     }()
 }
-

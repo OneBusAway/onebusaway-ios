@@ -1173,11 +1173,17 @@
 /* Settings > Debug section > Debug mode */
 "settings_controller.debug_section.debug_mode" = "调试模式";
 
+/* Settings > Debug section > Toggle that draws a vehicle's last reported GPS position and the server's position beside its estimated marker */
+"settings_controller.debug_section.show_raw_vehicle_fix" = "显示车辆上报的位置";
+
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "排错";
 
 /* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
 "settings_controller.experimental_section.cluster_stops" = "在地图上合并相邻车站";
+
+/* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
+"settings_controller.experimental_section.estimate_vehicle_positions" = "估算车辆当前位置";
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "使用地图面板体验";
@@ -1706,6 +1712,9 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "以%@为名启程";
+
+/* How stale the vehicle's last reported position is, when the map shows where the vehicle is estimated to be now rather than where it last reported. %@ is a relative time like '12s ago'. */
+"trip_page.position_estimated_fmt" = "估算位置，更新于 %@";
 
 /* Shown beside a Retry button when loading the trip's stop list failed. */
 "trip_page.stops_failed" = "无法加载此行程的站点。";
