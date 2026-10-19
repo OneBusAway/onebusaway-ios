@@ -284,6 +284,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         let tripID = convertible.tripID
         let statuses = [convertible.tripStatus, details?.status].compactMap { $0 }
         vehicleEstimation.update(VehicleEstimationDriver.Input(
+            vehicleKey: tripID,
             tripID: tripID,
             shape: shape ?? [],
             stopTimes: (details?.stopTimes ?? []).compactMap(TripGeometry.StopTime.init),
