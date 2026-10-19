@@ -197,6 +197,9 @@ final class TripFocusMapDisplayModel: ObservableObject {
     private func draw(_ focus: TripMapFocus) {
         focusCancellables.removeAll()
         resetEstimate()
+        // Read before the first render: a focus already estimating when it is
+        // shown starts split.
+        estimatedSplitProgress = focus.estimatedSplitProgress
         // `@Published` emits in `willSet`: values come from the closures.
         focus.$content
             .sink { [weak self] content in self?.render(content) }
@@ -205,8 +208,10 @@ final class TripFocusMapDisplayModel: ObservableObject {
             .dropFirst()
             .sink { [weak self] estimate in self?.apply(estimate) }
             .store(in: &focusCancellables)
-        // Not `dropFirst()`: a focus already estimating when it is shown starts split.
+        // `dropFirst()`: the current value was read above, and `$content` has
+        // already rendered with it.
         focus.$estimatedSplitProgress
+            .dropFirst()
             .removeDuplicates()
             .sink { [weak self] progress in
                 guard let self else { return }

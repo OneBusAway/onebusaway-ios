@@ -66,12 +66,12 @@ class StopViewModel: ObservableObject {
         let stopLocation: CLLocationCoordinate2D?
     }
 
-    /// The arrivals/departures fetched from the server.
     /// The server clock the latest arrivals carried, for vehicle position
     /// estimation's skew correction. Set before `stopArrivals`, so a sink on that
     /// can read it.
     @Published private(set) var arrivalsServerClock: ServerClockSample?
 
+    /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
 
     /// On-demand services this stop references, for the on-demand card; see `StopOnDemandServicesLoader`.

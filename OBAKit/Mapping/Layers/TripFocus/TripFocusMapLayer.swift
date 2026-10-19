@@ -171,7 +171,8 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         refreshArrowMarkers()
         drawShape(split)
         drawVehicle(content)
-        drawReportedPositions()
+        // `content`, not `focus.content`: this runs in `$content`'s `willSet`.
+        drawReportedPositions(content)
         frameCameraIfNeeded(content, split: split)
     }
 
@@ -257,13 +258,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             }
         }
 
-        if (estimate != nil) != wasEstimating { drawReportedPositions() }
+        if (estimate != nil) != wasEstimating { drawReportedPositions(focus?.content) }
     }
 
-    private func drawReportedPositions() {
+    private func drawReportedPositions(_ content: TripMapFocus.Content?) {
         mapView.removeAnnotations(reportedPositionAnnotations)
         reportedPositionAnnotations.removeAll()
-        reportedPositionAnnotations = (focus?.content?.reportedPositions(isEstimating: estimate != nil) ?? []).map {
+        reportedPositionAnnotations = (content?.reportedPositions(isEstimating: estimate != nil) ?? []).map {
             ReportedPositionAnnotation(kind: $0.kind, coordinate: $0.coordinate)
         }
         mapView.addAnnotations(reportedPositionAnnotations)
