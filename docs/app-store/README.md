@@ -108,6 +108,8 @@ a stop. They come from the newest Apple Watch Ultra simulator, which
 They're 422 × 514, the Ultra's screen size and one of the sizes App Store
 Connect takes for the watch, and they're uploaded as they are, with no frame
 or caption. `--only 03-route` retakes one.
+It builds the `WatchApp` scheme, so the project must be generated without
+`--no-watch`.
 
 The watch has no UI test target, so `scripts/app_store/capture_watch_screenshots.py`
 drives the app directly. It sets the simulated location to Capitol Hill, then

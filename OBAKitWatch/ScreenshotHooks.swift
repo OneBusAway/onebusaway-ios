@@ -28,7 +28,8 @@ struct ScreenshotHooks: ViewModifier {
     @Binding var nearbyPath: NavigationPath
     let nearby: NearbyRoutesModel?
 
-    // Each is cleared once applied, so it happens once.
+    // Each is cleared once applied, so it happens once. A run cancelled by a
+    // region change leaves it set for the restarted run.
     @State private var seeds = ScreenshotBookmarkSeed.fromEnvironment()
     @State private var stopID = ProcessInfo.processInfo.environment["TEST_SCREENSHOT_STOP_ID"]
     @State private var routeID = ProcessInfo.processInfo.environment["TEST_SCREENSHOT_ROUTE_ID"]
@@ -55,16 +56,28 @@ struct ScreenshotHooks: ViewModifier {
 
     private func seedBookmarks() async {
         guard let seeds, let apiService = host.apiService, let region = host.currentRegion else { return }
+
+        let made = await ScreenshotBookmarkSeed.makeBookmarks(seeds, apiService: apiService, regionIdentifier: region.regionIdentifier)
+        // A region change restarts the task, and the restarted one seeds
+        // instead: its fetches weren't cancelled.
+        guard !Task.isCancelled else { return }
         self.seeds = nil
+        guard !made.isEmpty else {
+            Logger.error("Screenshot bookmarks: no seed produced a bookmark; leaving the synced bookmarks alone.")
+            return
+        }
 
         // Groups in the order the seeds name them.
         var groups = [WatchBookmarkGroup]()
+        var groupsByName = [String: WatchBookmarkGroup]()
         var bookmarks = [WatchBookmark]()
-        for (seed, bookmark) in await ScreenshotBookmarkSeed.makeBookmarks(seeds, apiService: apiService, regionIdentifier: region.regionIdentifier) {
-            let group = groups.first { $0.name == seed.group } ?? WatchBookmarkGroup(id: UUID(), name: seed.group)
-            if !groups.contains(group) {
+        for (seed, bookmark) in made {
+            let group = groupsByName[seed.group] ?? {
+                let group = WatchBookmarkGroup(id: UUID(), name: seed.group)
+                groupsByName[seed.group] = group
                 groups.append(group)
-            }
+                return group
+            }()
             bookmark.groupID = group.id
             bookmarks.append(WatchBookmark(bookmark: bookmark))
         }
@@ -78,10 +91,15 @@ struct ScreenshotHooks: ViewModifier {
 
     private func openStop() async {
         guard let stopID, let apiService = host.apiService else { return }
-        self.stopID = nil
         do {
-            bookmarksPath.append(try await apiService.getStop(id: stopID).entry)
+            let stop = try await apiService.getStop(id: stopID).entry
+            guard !Task.isCancelled else { return }
+            self.stopID = nil
+            bookmarksPath.append(stop)
         } catch {
+            // Cancelled: the restarted task opens it instead.
+            guard !Task.isCancelled else { return }
+            self.stopID = nil
             Logger.error("Screenshot stop: \(stopID) failed: \(error)")
         }
     }

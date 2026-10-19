@@ -51,14 +51,15 @@ for runtime in sorted(devices, key=version, reverse=True):
     watches = [d for d in devices[runtime] if sys.argv[1] + "-" in d.get("deviceTypeIdentifier", "")]
     if watches:
         # Newest model first, e.g. "Ultra-4" over "Ultra-3".
-        watches.sort(key=lambda d: [int(n) for n in re.findall(r"-(\d+)-", d["deviceTypeIdentifier"])], reverse=True)
+        if sys.argv[1] != "Apple-Watch":  # the default keeps its first-listed choice
+            watches.sort(key=lambda d: [int(n) for n in re.findall(r"-(\d+)-", d["deviceTypeIdentifier"])], reverse=True)
         print(watches[0]["udid"])
         break
 ' "$family")
 
 if [ -z "$udid" ]; then
     # No device on any watchOS runtime: create one from the newest runtime and
-    # the first Apple Watch device type it supports.
+    # a device type of the requested family (the newest, with --ultra).
     runtime=$(xcrun simctl list runtimes -j | python3 -c '
 import json, re, sys
 runtimes = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "watchOS" and r["isAvailable"]]
@@ -72,7 +73,8 @@ import json, re, sys
 types = [t for t in json.load(sys.stdin)["devicetypes"] if (sys.argv[1] + "-") in t["identifier"]]
 if not types:
     sys.exit("error: no " + sys.argv[1] + " device types are installed.")
-types.sort(key=lambda t: [int(n) for n in re.findall(r"-(\d+)-", t["identifier"])], reverse=True)
+if sys.argv[1] != "Apple-Watch":  # the default keeps its first-listed choice
+    types.sort(key=lambda t: [int(n) for n in re.findall(r"-(\d+)-", t["identifier"])], reverse=True)
 print(types[0]["identifier"])
 ' "$family")
     udid=$(xcrun simctl create "$name" "$devicetype" "$runtime")
