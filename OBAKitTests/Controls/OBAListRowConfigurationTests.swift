@@ -425,7 +425,9 @@ struct OBAListRowConfigurationTests {
         var executedModelTitle: String?
         let onSelect: OBAListViewAction<OBAListRowView.DefaultViewModel> = { model in
             actionExecuted = true
-            executedModelTitle = model.title.text
+            if case let .string(str) = model.title {
+                executedModelTitle = str
+            }
         }
         let actionModel = OBAListRowView.DefaultViewModel(
             title: "Tappable Row",
@@ -529,7 +531,9 @@ struct OBAListRowConfigurationTests {
         var executedSubtitleText: String?
         let onSelectSubtitle: OBAListViewAction<OBAListRowView.SubtitleViewModel> = { model in
             subtitleActionExecuted = true
-            executedSubtitleText = model.subtitle?.text
+            if case let .string(str)? = model.subtitle {
+                executedSubtitleText = str
+            }
         }
         let subtitleActionModel = OBAListRowView.SubtitleViewModel(
             title: "Route 10",
@@ -547,7 +551,7 @@ struct OBAListRowConfigurationTests {
         let attrSubActionModel = OBAListRowView.SubtitleViewModel(
             title: attrTitle,
             subtitle: attrSubtitle,
-            accessoryType: .detailButton,
+            accessoryType: .disclosureIndicator,
             onSelectAction: { _ in attrSubActionExecuted = true }
         )
         attrSubActionModel.onSelectAction?(attrSubActionModel)
@@ -636,7 +640,9 @@ struct OBAListRowConfigurationTests {
         var executedValueTitle: String?
         let onSelectValue: OBAListViewAction<OBAListRowView.ValueViewModel> = { model in
             valueActionExecuted = true
-            executedValueTitle = model.title.text
+            if case let .string(str) = model.title {
+                executedValueTitle = str
+            }
         }
         let valueActionModel = OBAListRowView.ValueViewModel(
             title: "Adult Fare",
@@ -654,7 +660,7 @@ struct OBAListRowConfigurationTests {
         let attrValActionModel = OBAListRowView.ValueViewModel(
             title: attrTitle,
             subtitle: attrSubtitle,
-            accessoryType: .detailButton,
+            accessoryType: .disclosureIndicator,
             onSelectAction: { _ in attrValActionExecuted = true }
         )
         attrValActionModel.onSelectAction?(attrValActionModel)
