@@ -70,7 +70,13 @@ capture() {
     xcrun simctl privacy "$udid" grant location-always "$bundle_id"
 
     local filter="-only-testing:OBAKitUITests/AppStoreScreenshotUITests"
-    [[ -n "$only" ]] && filter="$filter/$only"
+    if [[ -n "$only" ]]; then
+        filter="$filter/$only"
+    else
+        # A full run starts clean, so a slide that skips this time can't ship
+        # last run's capture. --only keeps the others on purpose.
+        rm -rf "$out/raw" "$out/framed" "$out/slides"
+    fi
     rm -rf "$bundle"
     # A failed slide still leaves the others' captures in the bundle.
     xcodebuild test-without-building -project "$repo/OBAKit.xcodeproj" -scheme OBAKitUITests \

@@ -63,6 +63,10 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
             "-donationRequestDismissedDateKey", "<date>2026-01-01T00:00:00Z</date>"
         ]
         app.launchEnvironment["TEST_SUPPRESS_ALERT_BULLETINS"] = "1"
+        // Every launch starts with no Live Activities: slide 2's would otherwise
+        // show in the Dynamic Island over Safari, and repeated `--only` runs of
+        // slide 2 would stack activities on the Lock Screen.
+        app.launchEnvironment["TEST_SCREENSHOT_END_LIVE_ACTIVITIES"] = "1"
         app.launchEnvironment.merge(environment) { _, new in new }
         app.launch()
         return app
@@ -228,9 +232,9 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
 
     /// 07 — The Open Transit Software Foundation's site, in Safari.
     @MainActor func test07OpenSource() throws {
-        // End slide 2's Live Activity first, or it shows in the Dynamic Island
-        // over Safari.
-        let app = launch(environment: ["TEST_SCREENSHOT_END_LIVE_ACTIVITIES": "1"])
+        // Launch once so the app ends slide 2's Live Activity, or it shows in
+        // the Dynamic Island over Safari.
+        let app = launch()
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 30))
         sleep(2)
         app.terminate()

@@ -92,17 +92,12 @@ extension Application {
                     continue
                 }
 
-                let group: BookmarkGroup
-                if let existing = groups[seed.group] {
-                    group = existing
-                } else {
-                    group = BookmarkGroup(name: seed.group, sortOrder: groups.count)
-                    userDataStore.upsert(bookmarkGroup: group)
-                    groups[seed.group] = group
-                }
+                // `add(_:to:)` upserts the group and appends the bookmark to it.
+                let group = groups[seed.group] ?? BookmarkGroup(name: seed.group, sortOrder: groups.count)
+                groups[seed.group] = group
 
                 let bookmark = Bookmark(name: seed.name, regionIdentifier: regionID, arrivalDeparture: arrivalDeparture)
-                userDataStore.add(bookmark, to: group, index: Int.max)
+                userDataStore.add(bookmark, to: group)
             }
         }
     }
