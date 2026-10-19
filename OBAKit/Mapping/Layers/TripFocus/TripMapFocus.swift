@@ -45,12 +45,22 @@ final class TripMapFocus: ObservableObject {
 
     @Published private(set) var content: Content?
 
+    /// Where the vehicle is estimated to be now, once a second; `nil` when it isn't
+    /// estimated, and the map draws `content`'s reported position instead. Separate
+    /// from `content` so a tick moves the marker without redrawing the trip.
+    @Published private(set) var vehicleEstimate: VehicleEstimate?
+
     func apply(_ content: Content?) {
         self.content = content
     }
 
+    func applyVehicleEstimate(_ estimate: VehicleEstimate?) {
+        vehicleEstimate = estimate
+    }
+
     func clear() {
         content = nil
+        vehicleEstimate = nil
     }
 }
 
@@ -63,6 +73,12 @@ extension TripMapFocus.Content {
     /// have been travelled, so the whole shape counts as ahead rather than guessing
     /// at a split.
     var shapeSplit: TripShapeSplit.Result {
+        shapeSplit(atProgress: progress)
+    }
+
+    /// The shape cut at `progress` instead of the reported one: where an estimate
+    /// has the vehicle.
+    func shapeSplit(atProgress progress: Double?) -> TripShapeSplit.Result {
         progress.map {
             TripShapeSplit.split(coordinates: shape, atFraction: $0)
         } ?? TripShapeSplit.Result(spent: [], ahead: shape)

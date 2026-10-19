@@ -87,6 +87,23 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// on each one would snatch the map back from a rider who had panned away.
     private var framedTripID: String?
 
+    // MARK: - Estimated position
+
+    /// The estimate the marker is following, or `nil` to follow the feed.
+    private var estimate: VehicleEstimate?
+
+    /// Where the line is cut while an estimate runs. `nil` cuts it at the reported
+    /// progress, as without one.
+    private var estimatedSplitProgress: Double?
+    private var lastEstimatedSplitAt: Date?
+
+    /// Redrawing the line costs more than moving a marker, so an estimate moves the
+    /// line's join at most this often.
+    static let splitRefreshInterval: TimeInterval = 5
+
+    /// Test seam for `splitRefreshInterval`.
+    var now: () -> Date = Date.init
+
     init(mapView: MKMapView) {
         self.mapView = mapView
         super.init()
@@ -110,6 +127,13 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         focus.$content
             .sink { [weak self] content in self?.render(content) }
             .store(in: &cancellables)
+
+        // `@Published` emits in `willSet`, so the value comes from the closure,
+        // not `focus.vehicleEstimate`.
+        focus.$vehicleEstimate
+            .dropFirst()
+            .sink { [weak self] estimate in self?.apply(estimate) }
+            .store(in: &cancellables)
     }
 
     /// Called when the trip page goes away.
@@ -121,6 +145,9 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         cancellables.removeAll()
         focus = nil
         framedTripID = nil
+        estimate = nil
+        estimatedSplitProgress = nil
+        lastEstimatedSplitAt = nil
         removeAllContent()
     }
 
@@ -139,7 +166,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
         // Split once: the drawing and the camera have to agree about which half
         // of the shape is still ahead of the bus.
-        let split = content.shapeSplit
+        let split = content.shapeSplit(atProgress: estimatedSplitProgress ?? content.progress)
 
         drawStops(content)
         // Before the shape, so its first draw already knows where this trip's stops are.
@@ -195,18 +222,85 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             let from = existing.coordinate
             existing.tripStatus = status
             existing.coordinate = from
-            VehicleCoordinateUpdate.apply(from: from, to: coord, on: existing)
+            // An estimate moves the marker itself; the reported fix is older.
+            if estimate == nil {
+                VehicleCoordinateUpdate.apply(from: from, to: coord, on: existing)
+            }
             if let view = mapView.view(for: existing) as? PulsingVehicleAnnotationView {
                 view.realTimeAnnotationColor = content.routeColor
                 view.applyTripStatus(status)
+                view.applyEstimate(estimate)
             }
             return
         }
 
         removeVehicle()
         let annotation = VehicleAnnotation(tripStatus: status)
+        if let estimate { annotation.coordinate = estimate.coordinate }
         vehicleAnnotation = annotation
         mapView.addAnnotation(annotation)
+    }
+
+    /// Moves the marker to `estimate`, or back to the reported fix for `nil`.
+    private func apply(_ estimate: VehicleEstimate?) {
+        let wasEstimating = self.estimate != nil
+        self.estimate = estimate
+
+        if let vehicleAnnotation {
+            let view = mapView.view(for: vehicleAnnotation) as? PulsingVehicleAnnotationView
+            if let estimate {
+                move(vehicleAnnotation, to: estimate.coordinate, snap: estimate.shouldSnap)
+                view?.applyEstimate(estimate)
+            } else if let content = focus?.content, let coordinate = content.vehicleCoordinate {
+                VehicleCoordinateUpdate.apply(from: vehicleAnnotation.coordinate, to: coordinate, on: vehicleAnnotation)
+                if let status = content.vehicle { view?.applyTripStatus(status) }
+                view?.applyEstimate(nil)
+            }
+        }
+
+        resplitIfNeeded(estimate: estimate, wasEstimating: wasEstimating)
+    }
+
+    /// Glides over one tick, so consecutive ticks read as continuous motion.
+    private func move(_ annotation: VehicleAnnotation, to coordinate: CLLocationCoordinate2D, snap: Bool) {
+        let from = annotation.coordinate
+        let decision = VehicleCoordinateUpdate.decision(from: from, to: coordinate)
+        let isOnScreen = mapView.visibleMapRect.contains(MKMapPoint(from)) || mapView.visibleMapRect.contains(MKMapPoint(coordinate))
+        switch decision {
+        case .unchanged:
+            break
+        case .animate where !snap && isOnScreen:
+            let duration = TimeInterval(VehicleEstimationDriver.tickInterval.components.seconds)
+            UIView.animate(withDuration: duration, delay: 0, options: [.curveLinear, .beginFromCurrentState, .allowUserInteraction]) {
+                annotation.coordinate = coordinate
+            }
+        case .animate, .snap:
+            annotation.coordinate = coordinate
+        }
+    }
+
+    private func resplitIfNeeded(estimate: VehicleEstimate?, wasEstimating: Bool) {
+        guard let content = focus?.content else { return }
+        guard let progress = estimate?.progress else {
+            guard wasEstimating, estimatedSplitProgress != nil else { return }
+            estimatedSplitProgress = nil
+            lastEstimatedSplitAt = nil
+            redrawShape(content)
+            return
+        }
+        let now = now()
+        if let lastEstimatedSplitAt, now.timeIntervalSince(lastEstimatedSplitAt) < Self.splitRefreshInterval { return }
+        lastEstimatedSplitAt = now
+        estimatedSplitProgress = progress
+        redrawShape(content)
+    }
+
+    /// The line alone, cut where the marker is; the stops and the vehicle stay.
+    private func redrawShape(_ content: TripMapFocus.Content) {
+        mapView.removeOverlays(shapeOverlays)
+        shapeOverlays.removeAll()
+        drawShape(content.shapeSplit(atProgress: estimatedSplitProgress ?? content.progress))
+        refreshArrowMarkers()
     }
 
     /// Same bus, not merely the same trip: a block handoff should replace the
