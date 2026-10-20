@@ -26,6 +26,7 @@ struct TripPageActions {
     var onSchedule: () -> Void = {}
     var onAlarm: () -> Void = {}
     var onReportGhostBus: () -> Void = {}
+    var onSelectAlert: (ServiceAlert) -> Void = { _ in }
 }
 
 /// Thin hosting wrapper for `TripPageView`. Its only job is to apply
@@ -152,6 +153,12 @@ struct TripPageView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: StopTripSpacing.tripPage(compactMode)) {
                     card
+
+                    // The trip's own alerts, as the classic trip panel lists them
+                    // above its stops. The stop page's card, so the two read alike.
+                    if let alerts = viewModel.tripDetails?.serviceAlerts, !alerts.isEmpty {
+                        ServiceAlertsSection(alerts: alerts, onSelect: actions.onSelectAlert)
+                    }
 
                     let list = stopList
                     if !list.rows.isEmpty {

@@ -424,6 +424,11 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         }
         actions.onLiveActivity = { [weak self] in self?.startLiveActivity() }
         actions.onReportGhostBus = { [weak self] in self?.showGhostBusReport() }
+        // Modal from wherever the page is, as the classic trip panel opens one.
+        actions.onSelectAlert = { [weak self] alert in
+            guard let self else { return }
+            application.viewRouter.navigateTo(alert: alert, from: self)
+        }
 
         return actions
     }
