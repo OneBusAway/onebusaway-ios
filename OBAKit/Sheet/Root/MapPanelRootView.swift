@@ -540,9 +540,10 @@ struct MapPanelRootView: View {
             applyTripFocusCameraTarget(target)
             tripFocusDisplay.consumeCameraTarget()
         }
-        .mapStyle(mapViewModel.mapType.styleDescriptor(
-            showingPointsOfInterest: layersModel.showsPointsOfInterest
-        ).mapStyle)
+        .modifier(MapPanelMapSettings(
+            style: mapViewModel.mapType.styleDescriptor(showingPointsOfInterest: layersModel.showsPointsOfInterest),
+            userDefaults: application.userDefaults
+        ))
         .safeAreaPadding(.bottom, mapBottomPadding)
         .animation(
             .interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0),

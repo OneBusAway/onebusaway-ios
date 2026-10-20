@@ -129,27 +129,29 @@ public class MapRegionManager: NSObject,
             #if targetEnvironment(simulator)
             return false
             #else
-            return application.userDefaults.bool(forKey: mapViewShowsTrafficKey)
+            return application.userDefaults.bool(forKey: Self.mapViewShowsTrafficKey)
             #endif
         }
         set {
-            application.userDefaults.set(newValue, forKey: mapViewShowsTrafficKey)
+            application.userDefaults.set(newValue, forKey: Self.mapViewShowsTrafficKey)
             mapView.showsTraffic = newValue
         }
     }
-    private let mapViewShowsTrafficKey = "mapRegionManager.mapViewShowsTraffic"
+    /// Read by the map panel's SwiftUI map, which has no `MKMapView` to set.
+    static let mapViewShowsTrafficKey = "mapRegionManager.mapViewShowsTraffic"
 
     /// Whether the map view displays a scale indicator while zooming.
     ///
     /// `true` by default.
     public var mapViewShowsScale: Bool {
-        get { application.userDefaults.bool(forKey: mapViewShowsScaleKey) }
+        get { application.userDefaults.bool(forKey: Self.mapViewShowsScaleKey) }
         set {
-            application.userDefaults.set(newValue, forKey: mapViewShowsScaleKey)
+            application.userDefaults.set(newValue, forKey: Self.mapViewShowsScaleKey)
             mapView.showsScale = newValue
         }
     }
-    private let mapViewShowsScaleKey = "mapRegionManager.mapViewShowsScale"
+    /// Read by the map panel's SwiftUI map, which has no `MKMapView` to set.
+    static let mapViewShowsScaleKey = "mapRegionManager.mapViewShowsScale"
 
     /// Whether the map view shows the direction the user is currently facing in.
     ///
@@ -245,8 +247,8 @@ public class MapRegionManager: NSObject,
         self.application = application
 
         application.userDefaults.register(defaults: [
-            mapViewShowsTrafficKey: true,
-            mapViewShowsScaleKey: true,
+            Self.mapViewShowsTrafficKey: true,
+            Self.mapViewShowsScaleKey: true,
             mapViewShowsHeadingKey: true,
             mapViewMapTypeKey: MKMapType.mutedStandard.rawValue,
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: true,
