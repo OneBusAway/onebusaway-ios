@@ -20,9 +20,12 @@ import OBAKitCore
 /// route enum.
 struct MoreSheetHost: UIViewControllerRepresentable {
     let application: Application
+    /// Closes the sheet. The other index sheets have a Close button; this one
+    /// could only be swiped away.
+    var onClose: () -> Void = {}
 
     func makeUIViewController(context: Context) -> UINavigationController {
-        Self.makeNavigationController(application: application)
+        Self.makeNavigationController(application: application, onClose: onClose)
     }
 
     // `MoreViewController` reads `application` and its stores directly, so
@@ -35,8 +38,14 @@ struct MoreSheetHost: UIViewControllerRepresentable {
     /// representable's `makeUIViewController` synchronously in a unit-test
     /// process). Kept `internal` deliberately — production code must go
     /// through `makeUIViewController`.
-    static func makeNavigationController(application: Application) -> UINavigationController {
+    static func makeNavigationController(application: Application, onClose: @escaping () -> Void = {}) -> UINavigationController {
         let more = MoreViewController(application: application)
+        more.loadViewIfNeeded()
+        // Beside Settings, at the trailing edge: Contact Us holds the leading
+        // slot. Closed through the sheet stack, which owns the sheet, rather
+        // than by UIKit dismissing it out from under SwiftUI.
+        let close = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { _ in onClose() })
+        more.navigationItem.rightBarButtonItems = [close] + (more.navigationItem.rightBarButtonItems ?? [])
         return UINavigationController(rootViewController: more)
     }
 }

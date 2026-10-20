@@ -972,6 +972,8 @@ extension MapPanelRootView {
     /// does on the UIKit map. `Application` has already switched the rental layers on.
     private func applyPendingRentalsFocus() {
         guard let coordinate = application.claimPendingRentalsFocus() else { return }
+        // A sheet left open would cover the vehicles the link asked to show.
+        coordinator.popToRoot()
         rentalsLinkHoldsCamera = true
         needsInitialRecenter = false
         let region = RentalMapLayer.focusRegion(around: coordinate)
