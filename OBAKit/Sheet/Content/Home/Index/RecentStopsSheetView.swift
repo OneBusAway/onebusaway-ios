@@ -11,12 +11,10 @@ import SwiftUI
 import OBAKitCore
 
 /// The Recent Stops index — `AppSheetRoute.recentStopsAll`. A native list over
-/// the same `RecentStopsViewModel` the Recent tab uses.
+/// the same `RecentStopsViewModel` the Recent tab uses, alarms first as there.
 ///
-/// The tab's Alarms section is deliberately absent: the home sheet's header
-/// promises recent *stops*, and alarm deep-links have no place in the sheet
-/// stack. The tab's "Find Stops on Maps" empty-state button is dropped too —
-/// the map is already right behind this sheet.
+/// The tab's "Find Stops on Maps" empty-state button is dropped: the map is
+/// already right behind this sheet.
 struct RecentStopsSheetView: View {
     let application: Application
 
@@ -26,6 +24,8 @@ struct RecentStopsSheetView: View {
 
     @State private var searchText = ""
     @State private var isConfirmingDeleteAll = false
+    /// The alarm whose trip is loading, so a second tap doesn't load it again.
+    @State private var openingAlarm: URL?
 
     init(application: Application) {
         self.application = application
@@ -44,6 +44,22 @@ struct RecentStopsSheetView: View {
 
     private var stops: [Stop] {
         Self.filter(stops: viewModel.recentStops, query: searchText)
+    }
+
+    /// The Recent tab's title for its Alarms section, shared with home's row.
+    static var alarmsTitle: String {
+        OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller")
+    }
+
+    /// The alarms a row can open the trip for, in the store's order. An alarm
+    /// stored without its deep link has nowhere to go, as the tab skips it too.
+    static func openableAlarms(_ alarms: [Alarm]) -> [(alarm: Alarm, deepLink: ArrivalDepartureDeepLink)] {
+        alarms.compactMap { alarm in alarm.deepLink.map { (alarm, $0) } }
+    }
+
+    /// Alarms are listed until the rider searches: the query filters stops.
+    private var alarms: [(alarm: Alarm, deepLink: ArrivalDepartureDeepLink)] {
+        hasActiveQuery ? [] : Self.openableAlarms(viewModel.alarms)
     }
 
     /// Whether the user has actually typed something to filter by, as opposed to
@@ -101,11 +117,40 @@ struct RecentStopsSheetView: View {
             guard StackedSheetReturn.wasUncovered(previousDepth: previousCount, depth: count) else { return }
             viewModel.loadData()
         }
+        // A fired alarm is deleted from the store.
+        .onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { _ in
+            viewModel.loadData()
+        }
+    }
+
+    /// Loads the alarm's arrival and opens its trip over this sheet, as the
+    /// Recent tab pushes it.
+    private func open(_ deepLink: ArrivalDepartureDeepLink, of alarm: Alarm) {
+        guard openingAlarm == nil, let apiService = application.apiService else { return }
+        openingAlarm = alarm.url
+        Task {
+            defer { openingAlarm = nil }
+            do {
+                let arrival = try await apiService.getTripArrivalDepartureAtStop(
+                    stopID: deepLink.stopID,
+                    tripID: deepLink.tripID,
+                    serviceDate: deepLink.serviceDate,
+                    vehicleID: deepLink.vehicleID,
+                    stopSequence: deepLink.stopSequence
+                ).entry
+                coordinator.push(.tripDetails(
+                    TripConvertible(arrivalDeparture: arrival),
+                    destinationStopID: deepLink.destinationStopID
+                ))
+            } catch {
+                await application.displayError(error)
+            }
+        }
     }
 
     @ViewBuilder
     private var content: some View {
-        if stops.isEmpty {
+        if stops.isEmpty && alarms.isEmpty {
             if hasActiveQuery {
                 // A search that matched nothing is not an empty list: telling the
                 // user their viewed stops "will appear here" when they're staring
@@ -130,18 +175,52 @@ struct RecentStopsSheetView: View {
             }
         } else {
             List {
-                ForEach(stops, id: \.id) { stop in
-                    HomeStopRow(stop: stop) {
-                        coordinator.push(.stopDetails(stopID: stop.id))
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(Strings.delete, role: .destructive) {
-                            viewModel.delete(recentStop: stop)
+                if !alarms.isEmpty {
+                    Section(Self.alarmsTitle) {
+                        ForEach(alarms, id: \.alarm.url) { item in
+                            alarmRow(item.deepLink, of: item.alarm)
                         }
+                    }
+                }
+                Section {
+                    ForEach(stops, id: \.id) { stop in
+                        HomeStopRow(stop: stop) {
+                            coordinator.push(.stopDetails(stopID: stop.id))
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(Strings.delete, role: .destructive) {
+                                viewModel.delete(recentStop: stop)
+                            }
+                        }
+                    }
+                } header: {
+                    // Only beside the Alarms section, which needs telling apart.
+                    if !alarms.isEmpty, !stops.isEmpty {
+                        Text(Strings.recentStops)
                     }
                 }
             }
             .searchListChrome()
+        }
+    }
+
+    private func alarmRow(_ deepLink: ArrivalDepartureDeepLink, of alarm: Alarm) -> some View {
+        Button {
+            open(deepLink, of: alarm)
+        } label: {
+            HStack {
+                Label(deepLink.title, systemImage: "alarm")
+                    .foregroundStyle(Color(uiColor: .label))
+                Spacer()
+                if openingAlarm == alarm.url {
+                    ProgressView()
+                }
+            }
+        }
+        .swipeActions(edge: .trailing) {
+            Button(Strings.delete, role: .destructive) {
+                viewModel.delete(alarm: alarm)
+            }
         }
     }
 }

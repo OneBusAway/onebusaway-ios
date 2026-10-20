@@ -103,11 +103,11 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         // children publish values, not the section list, so this is the single
         // place the order and the omission rule live.
         nearby.$stops
-            .combineLatest(recent.$stops, bookmarks.$rows)
-            .sink { [weak self] nearbyStops, recentStops, bookmarkRows in
+            .combineLatest(recent.$stops, recent.$alarmCount, bookmarks.$rows)
+            .sink { [weak self] nearbyStops, recentStops, alarmCount, bookmarkRows in
                 self?.updateVisibleSections(
                     hasNearby: !nearbyStops.isEmpty,
-                    hasRecent: !recentStops.isEmpty,
+                    hasRecent: !recentStops.isEmpty || alarmCount > 0,
                     hasBookmarks: !bookmarkRows.isEmpty
                 )
             }

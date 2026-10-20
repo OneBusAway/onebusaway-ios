@@ -19,6 +19,10 @@ final class HomeRecentStopsSectionModel: ObservableObject {
 
     @Published private(set) var stops: [Stop] = []
 
+    /// Alarms the rider has set. The Recent index lists them, so the section
+    /// stays on home while any are, even with no recent stops.
+    @Published private(set) var alarmCount = 0
+
     private let application: Application
     private let limit: Int
 
@@ -42,6 +46,11 @@ final class HomeRecentStopsSectionModel: ObservableObject {
                 .recentStops(in: application.currentRegion)
                 .prefix(limit)
         )
+        application.userDataStore.deleteExpiredAlarms()
+        let alarmCount = application.userDataStore.alarms.count
+        if alarmCount != self.alarmCount {
+            self.alarmCount = alarmCount
+        }
         guard reloaded != stops else { return }
         stops = reloaded
     }
