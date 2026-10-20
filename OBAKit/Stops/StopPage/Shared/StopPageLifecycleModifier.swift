@@ -34,11 +34,24 @@ private struct StopPageLifecycleModifier: ViewModifier {
 
     @State private var didSeedMode = false
 
+    /// Set on the map panel's stop sheet. Always false where the page is pushed,
+    /// which disappears when covered.
+    @Environment(\.isCoveredBySheet) private var isCoveredBySheet
+
     func body(content: Content) -> some View {
         content
             .task { await viewModel.start() }
             .onAppear(perform: seedLastUsedModeIfNeeded)
             .onDisappear { viewModel.deactivate() }
+            // A sheet over this one hides it without making it disappear. Stop
+            // polling under it, and refresh on the way back.
+            .onChange(of: isCoveredBySheet) { _, isCovered in
+                if isCovered {
+                    viewModel.deactivate()
+                } else {
+                    Task { await viewModel.start() }
+                }
+            }
             .overlay(alignment: .bottom) {
                 if let transientToast {
                     Text(transientToast)

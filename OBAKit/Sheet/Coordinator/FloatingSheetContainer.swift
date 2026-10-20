@@ -31,6 +31,7 @@ struct FloatingSheetContainer<Route: SheetRouteable, SheetContent: View>: ViewMo
                         interactiveDismissDisabled: coordinator.currentRoute.detentConfiguration.isDismissDisabled
                     )
                     .environmentObject(coordinator)
+                    .environment(\.isCoveredBySheet, !coordinator.stackedRoutes.isEmpty)
                     .modifier(
                         StackedSheetLayer(
                             coordinator: coordinator,
@@ -87,12 +88,31 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
                         || coordinator.isStackedSheetCovered(atDepth: depth)
                 )
                 .environmentObject(coordinator)
+                .environment(\.isCoveredBySheet, coordinator.isStackedSheetCovered(atDepth: depth))
                 .modifier(StackedSheetLayer(
                     coordinator: coordinator,
                     depth: depth + 1,
                     sheetContent: sheetContent
                 ))
         }
+    }
+}
+
+// MARK: - Covered by a sheet
+
+private struct IsCoveredBySheetKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Whether another sheet in the pile is presented over this one.
+    ///
+    /// A covered sheet stays in the hierarchy, so `.onDisappear` and
+    /// `viewWillDisappear` never run for it. Screens that poll read this to stop
+    /// while nobody can see them, and refresh when they're uncovered.
+    var isCoveredBySheet: Bool {
+        get { self[IsCoveredBySheetKey.self] }
+        set { self[IsCoveredBySheetKey.self] = newValue }
     }
 }
 

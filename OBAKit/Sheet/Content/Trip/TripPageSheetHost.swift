@@ -47,9 +47,12 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
         )
     }
 
-    // The page's view model refreshes the trip itself, so nothing SwiftUI-side
-    // changes over the sheet's lifetime.
-    func updateUIViewController(_ uiViewController: TripPageViewController, context: Context) { }
+    // The page's view model refreshes the trip itself. The one thing SwiftUI
+    // tells it is whether a sheet covers it: UIKit doesn't, as a sheet over a
+    // sheet sends the page no `viewWillDisappear`.
+    func updateUIViewController(_ uiViewController: TripPageViewController, context: Context) {
+        uiViewController.setCoveredBySheet(context.environment.isCoveredBySheet)
+    }
 
     /// Internal factory seam, for the reason `MoreSheetHost.makeNavigationController`
     /// gives: tests can inspect the wiring without a `UIHostingController`.

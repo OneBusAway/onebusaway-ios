@@ -156,6 +156,21 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         onMapFocusChanged?(mapFocus)
     }
 
+    /// Whether a sheet in the map panel's pile covers this page's sheet.
+    private(set) var isCoveredBySheet = false
+
+    /// Stops the refresh while a sheet covers this page, which UIKit doesn't
+    /// report as disappearing, and refreshes once it's uncovered.
+    func setCoveredBySheet(_ isCovered: Bool) {
+        guard isCovered != isCoveredBySheet else { return }
+        isCoveredBySheet = isCovered
+        if isCovered {
+            viewModel.deactivate()
+        } else if viewIfLoaded?.window != nil {
+            viewModel.start()
+        }
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
