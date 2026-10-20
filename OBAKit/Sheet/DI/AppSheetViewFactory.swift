@@ -182,7 +182,16 @@ final class AppSheetViewFactory {
             viewModel: HomeSheetViewModel(
                 application: self.application,
                 stopsObserver: self.stopsObserver
-            )
+            ),
+            // Modally, as the UIKit map's nearby list opens one: the detail
+            // closes itself from UIKit, which a sheet in the stack can't take.
+            onSelectAlert: { [application, presentingController] alert in
+                guard let host = presentingController() else {
+                    Logger.error("AppSheetViewFactory: dropping an alert's detail — no presenting controller resolved.")
+                    return
+                }
+                application.viewRouter.navigateTo(alert: alert, from: host)
+            }
         )
     }
 

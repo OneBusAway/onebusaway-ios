@@ -280,4 +280,31 @@ final class HomeSheetViewModelTests: OBATestCase {
         #expect(viewModel.recent.alarmCount == 1)
         #expect(viewModel.visibleSections == [.recent])
     }
+
+    /// The UIKit map lists recent high-severity agency alerts above nearby
+    /// stops. The panel showed none anywhere.
+    @Test @MainActor
+    func `A recent high-severity alert puts an alerts section first on home`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let agencies = try Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
+        let agency = try #require(agencies.first)
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = agency.agencyID
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.informedEntity = [entitySelector]
+        transitAlert.activePeriod = [period]
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = "test-recent-high-severity"
+        feedEntity.alert = transitAlert
+        application.alertsStore.insertAlerts([try AgencyAlert(feedEntity: feedEntity, agency: agency)])
+        _ = try RecentStopsSheetViewTests.seedAlarm(id: "1", application: application)
+
+        let viewModel = makeViewModel(application: application)
+
+        #expect(viewModel.alerts.alerts.map(\.id) == ["test-recent-high-severity"])
+        #expect(viewModel.visibleSections == [.alerts, .recent])
+    }
 }

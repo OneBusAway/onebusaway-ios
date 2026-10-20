@@ -19,11 +19,16 @@ struct HomeSheetView: View {
     /// Used by the bookmark rows to format distances.
     private let application: Application
 
+    /// Opens a service alert's detail.
+    private let onSelectAlert: (AgencyAlert) -> Void
+
     init(
         application: Application,
-        viewModel: @autoclosure @escaping () -> HomeSheetViewModel
+        viewModel: @autoclosure @escaping () -> HomeSheetViewModel,
+        onSelectAlert: @escaping (AgencyAlert) -> Void = { _ in }
     ) {
         self.application = application
+        self.onSelectAlert = onSelectAlert
         _viewModel = StateObject(wrappedValue: viewModel())
     }
 
@@ -122,6 +127,9 @@ struct HomeSheetView: View {
     @ViewBuilder
     private func sectionContent(for section: HomeSheetSection) -> some View {
         switch section {
+        case .alerts:
+            alertsSection
+
         case .nearby:
             stopSection(
                 stops: viewModel.nearby.stops,
@@ -174,6 +182,34 @@ struct HomeSheetView: View {
             HomeSectionHeader(title: title) {
                 coordinator.push(seeAll)
             }
+        }
+        .textCase(nil)
+    }
+
+    /// No index to open, so the header is a plain title rather than a
+    /// `HomeSectionHeader` button.
+    private var alertsSection: some View {
+        Section {
+            ForEach(viewModel.alerts.alerts) { alert in
+                Button {
+                    onSelectAlert(alert)
+                } label: {
+                    Label {
+                        Text(alert.title(forLocale: application.locale) ?? Strings.serviceAlerts)
+                            .foregroundStyle(Color(uiColor: .label))
+                            .lineLimit(2)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+        } header: {
+            Text(Strings.serviceAlerts)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(Color(uiColor: .label))
+                .accessibilityAddTraits(.isHeader)
         }
         .textCase(nil)
     }

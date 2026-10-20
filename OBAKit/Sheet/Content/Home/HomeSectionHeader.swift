@@ -40,6 +40,9 @@ struct HomeSectionHeader: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
+        // A heading as well as a button, so VoiceOver's headings rotor finds
+        // each section, as it does the UIKit list's headers.
+        .accessibilityAddTraits(.isHeader)
         .accessibilityHint(OBALoc(
             "home_sheet.section_header.a11y_hint",
             value: "Shows all items in this section.",
