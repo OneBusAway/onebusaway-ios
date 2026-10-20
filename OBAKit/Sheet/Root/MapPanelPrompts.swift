@@ -98,13 +98,7 @@ final class MapPanelPrompts: ObservableObject {
     }
 
     private func showExternalSurveyError() {
-        let alert = UIAlertController(
-            title: OBALoc("survey_launcher.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
-            message: OBALoc("survey_launcher.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        presentingController()?.present(alert, animated: true)
+        presentingController()?.present(ExternalSurveyLauncher.errorAlert(), animated: true)
     }
 
     // MARK: - Feedback prompt
@@ -132,8 +126,8 @@ final class MapPanelPrompts: ObservableObject {
             try? await Task.sleep(for: .seconds(1))
             guard let self, !Task.isCancelled,
                   let host = self.presentingController() else { return }
-            self.feedbackPromptPresenter.presentIfEligible(from: host) {
-                UIApplication.shared.applicationState == .active && self.survey == nil
+            self.feedbackPromptPresenter.presentIfEligible(from: host) { [weak self] in
+                UIApplication.shared.applicationState == .active && self?.survey == nil
             }
         }
     }

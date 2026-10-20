@@ -346,13 +346,7 @@ class MapViewController: UIViewController,
     }
 
     private func showMapExternalSurveyError() {
-        let alert = UIAlertController(
-            title: OBALoc("survey_launcher.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
-            message: OBALoc("survey_launcher.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
-        topmostPresentedController.present(alert, animated: true)
+        topmostPresentedController.present(ExternalSurveyLauncher.errorAlert(), animated: true)
     }
 
     // MARK: - User Location
@@ -677,20 +671,14 @@ class MapViewController: UIViewController,
         // EC12: notify ViewModel so it can refresh data (e.g. weather) without UIKit imports.
         viewModel.onAppBecameActive()
 
-        guard
-            let resignedActiveAt = resignedActiveAt,
-            abs(resignedActiveAt.timeIntervalSinceNow) > 600
-        else {
-            return
-        }
-
-        // Same rule as launch: don't yank a rider in another city onto GPS
-        // just because the app sat in the background for ten minutes (#615).
-        if let region = application.regionsService.currentRegion,
-           let location = application.locationService.currentLocation,
-           !region.contains(location: location) {
-            return
-        }
+        // Shared with the map panel. The UIKit map re-centers whatever it shows,
+        // as it always has.
+        guard let resignedActiveAt, ReturnRecenter.shouldRecenter(
+            absence: abs(resignedActiveAt.timeIntervalSinceNow),
+            region: application.regionsService.currentRegion,
+            location: application.locationService.currentLocation,
+            isShowingSheet: false
+        ) else { return }
 
         centerMapOnUserLocation()
     }
@@ -1151,13 +1139,13 @@ class MapViewController: UIViewController,
     }
 
     func updateVoiceover() {
-        mapRegionManager.preferredLoadDataRegionFudgeFactor = UIAccessibility.isVoiceOverRunning ? 1.5 : MapRegionManager.DefaultLoadDataRegionFudgeFactor
+        mapRegionManager.preferredLoadDataRegionFudgeFactor = UIAccessibility.isVoiceOverRunning ? MapRegionManager.VoiceOverLoadDataRegionFudgeFactor : MapRegionManager.DefaultLoadDataRegionFudgeFactor
 
         if UIAccessibility.isVoiceOverRunning {
             floatingPanel.move(to: .half, animated: true)
 
             if !floatingPanel.userHasSeenFullSheetVoiceoverChange {
-                topmostPresentedController.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
+                topmostPresentedController.present(OBAFloatingPanelController.fullSheetVoiceoverAlert(), animated: true)
                 floatingPanel.userHasSeenFullSheetVoiceoverChange = true
             }
         }

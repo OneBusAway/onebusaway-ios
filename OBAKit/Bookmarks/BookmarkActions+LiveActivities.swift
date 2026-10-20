@@ -41,22 +41,9 @@ extension BookmarkActions {
                 )
                 return bookmarkIdentity.tracksSameTrip(as: staticData)
             })
-            let loadedArrivals = matchingBookmark.flatMap(arrivalDepartures)
-            let arrivals = loadedArrivals ?? []
-            let primaryArrival = BookmarkActions.refreshPrimaryArrival(
-                for: staticData,
-                arrivalDepartures: arrivals
-            )
-
-            let contentState: TripAttributes.ContentState? = {
-                guard matchingBookmark != nil, loadedArrivals != nil else { return nil }
-                return BookmarkActions.buildRefreshContentState(
-                    for: staticData,
-                    arrivalDepartures: arrivals
-                )
-            }()
-
-            if matchingBookmark != nil, loadedArrivals != nil, let contentState {
+            if let arrivals = matchingBookmark.flatMap(arrivalDepartures),
+               let contentState = BookmarkActions.buildRefreshContentState(for: staticData, arrivalDepartures: arrivals) {
+                let primaryArrival = BookmarkActions.refreshPrimaryArrival(for: staticData, arrivalDepartures: arrivals)
                 // Re-arm the push token/lifecycle observers on relaunch. `startLiveActivity`
                 // only tracks activities it creates in-session, so without this a Live Activity
                 // that's still running after a relaunch would never re-establish its observers

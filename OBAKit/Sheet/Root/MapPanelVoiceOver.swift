@@ -29,14 +29,12 @@ enum MapPanelVoiceOver {
               currentDetent == .height(AppSheetRoute.homeCollapsedHeight) else { return nil }
         return .medium
     }
-
-    /// The UIKit map's wider stop load under VoiceOver.
-    static let voiceOverLoadDataRegionFudgeFactor = 1.5
 }
 
 struct MapPanelVoiceOverModifier: ViewModifier {
     let application: Application
-    @ObservedObject var coordinator: SheetCoordinator<AppSheetRoute>
+    /// Read when VoiceOver changes, not rendered from, so not observed.
+    let coordinator: SheetCoordinator<AppSheetRoute>
     let presentingController: () -> UIViewController?
 
     func body(content: Content) -> some View {
@@ -53,7 +51,7 @@ struct MapPanelVoiceOverModifier: ViewModifier {
         let isRunning = UIAccessibility.isVoiceOverRunning
 
         application.mapRegionManager.preferredLoadDataRegionFudgeFactor = isRunning
-            ? MapPanelVoiceOver.voiceOverLoadDataRegionFudgeFactor
+            ? MapRegionManager.VoiceOverLoadDataRegionFudgeFactor
             : MapRegionManager.DefaultLoadDataRegionFudgeFactor
 
         guard coordinator.currentRoute == .home,
@@ -67,10 +65,6 @@ struct MapPanelVoiceOverModifier: ViewModifier {
         let seenKey = OBAFloatingPanelController.UserHasSeenFullSheetVoiceoverChangeUserDefaultsKey
         guard !defaults.bool(forKey: seenKey), let host = presentingController() else { return }
         defaults.set(true, forKey: seenKey)
-        let title = OBALoc("floating_panel.controller.full_sheet_voiceover_change_alert.title", value: "Voiceover detected", comment: "")
-        let message = OBALoc("floating_panel.controller.full_sheet_voiceover_change_alert.message", value: "The sheet will automatically expand when VoiceOver is turned on. To disable this behavior, visit the Settings page.", comment: "")
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(.dismissAction)
-        host.present(alert, animated: true)
+        host.present(OBAFloatingPanelController.fullSheetVoiceoverAlert(), animated: true)
     }
 }

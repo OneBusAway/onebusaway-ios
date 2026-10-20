@@ -31,7 +31,7 @@ struct MapPanelMapSettings: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .mapStyle(style.mapStyle(showsTraffic: Self.effectiveShowsTraffic(showsTraffic)))
+            .mapStyle(style.mapStyle(showsTraffic: MapRegionManager.effectiveShowsTraffic(showsTraffic)))
             .mapControls {
                 MapCompass()
                 // `.automatic` shows the scale while zooming, as `showsScale`
@@ -39,15 +39,5 @@ struct MapPanelMapSettings: ViewModifier {
                 MapScaleView()
                     .mapControlVisibility(showsScale ? .automatic : .hidden)
             }
-    }
-
-    /// Off in the Simulator, as `MapRegionManager.mapViewShowsTraffic` is: the
-    /// traffic layer floods its console with shader errors there.
-    static func effectiveShowsTraffic(_ setting: Bool) -> Bool {
-        #if targetEnvironment(simulator)
-        false
-        #else
-        setting
-        #endif
     }
 }

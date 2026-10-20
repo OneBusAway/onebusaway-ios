@@ -141,7 +141,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                 ProgressHUD.show()
 
                 do {
-                    let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
+                    let arrDep = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink).entry
 
                     self.openTripFromOutside(arrDep, destinationStopID: deepLink.destinationStopID)
                 } catch {

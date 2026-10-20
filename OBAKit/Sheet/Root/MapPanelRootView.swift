@@ -120,7 +120,6 @@ struct MapPanelRootView: View {
     @State private var backgroundedAt: Date?
     @State private var didPromptRegionMismatch = false
     @StateObject private var mismatchCamera = RegionMismatchCameraActions()
-    @StateObject private var regionChange: RegionChangeSignal
     @StateObject private var prompts: MapPanelPrompts
 
     @Environment(\.scenePhase) private var scenePhase
@@ -189,7 +188,6 @@ struct MapPanelRootView: View {
         self.application = application
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
-        _regionChange = StateObject(wrappedValue: RegionChangeSignal(regionsService: application.regionsService))
         _prompts = StateObject(wrappedValue: MapPanelPrompts(
             application: application,
             mapViewModel: mapViewModel,
@@ -344,7 +342,7 @@ struct MapPanelRootView: View {
             mismatchCamera.applyLaunch = false
             applyLaunchCamera()
         }
-        .onReceive(regionChange.$region, perform: showChangedRegion)
+        .onReceive(stopsObserver.$changedRegion, perform: showChangedRegion)
         .onChange(of: mismatchCamera.showSelectedServiceRect) { _, flag in
             guard flag else { return }
             mismatchCamera.showSelectedServiceRect = false
