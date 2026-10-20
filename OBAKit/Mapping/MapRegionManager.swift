@@ -70,6 +70,9 @@ public class MapRegionManager: NSObject,
 
     public static let DefaultLoadDataRegionFudgeFactor: Double = 1.1
 
+    /// Stops load wider under VoiceOver, which reads the map's pins one by one.
+    static let VoiceOverLoadDataRegionFudgeFactor: Double = 1.5
+
     /// The 'fudge factor' around the current size of the map's
     /// visible region when loading map data. This will mean that we load some
     /// stops that are just outside of the visible bounds of the screen, which mean
@@ -121,16 +124,7 @@ public class MapRegionManager: NSObject,
     /// `true` by default.
     public var mapViewShowsTraffic: Bool {
         get {
-            // Disable traffic in the Simulator to work around a bug in Xcode 11 and 12
-            // where the console spews hundreds of error messages that read:
-            // "Compiler error: Invalid library file"
-            //
-            // https://stackoverflow.com/a/63176707
-            #if targetEnvironment(simulator)
-            return false
-            #else
-            return application.userDefaults.bool(forKey: Self.mapViewShowsTrafficKey)
-            #endif
+            Self.effectiveShowsTraffic(application.userDefaults.bool(forKey: Self.mapViewShowsTrafficKey))
         }
         set {
             application.userDefaults.set(newValue, forKey: Self.mapViewShowsTrafficKey)
@@ -139,6 +133,18 @@ public class MapRegionManager: NSObject,
     }
     /// Read by the map panel's SwiftUI map, which has no `MKMapView` to set.
     static let mapViewShowsTrafficKey = "mapRegionManager.mapViewShowsTraffic"
+
+    /// The Show Traffic setting, except in the Simulator, where traffic is off
+    /// to work around a bug in Xcode 11 and 12 where the console spews hundreds
+    /// of "Compiler error: Invalid library file" messages.
+    /// https://stackoverflow.com/a/63176707
+    static func effectiveShowsTraffic(_ setting: Bool) -> Bool {
+        #if targetEnvironment(simulator)
+        false
+        #else
+        setting
+        #endif
+    }
 
     /// Whether the map view displays a scale indicator while zooming.
     ///

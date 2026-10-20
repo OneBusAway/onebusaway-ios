@@ -46,8 +46,10 @@ final class HomeRecentStopsSectionModel: ObservableObject {
                 .recentStops(in: application.currentRegion)
                 .prefix(limit)
         )
-        application.userDataStore.deleteExpiredAlarms()
-        let alarmCount = application.userDataStore.alarms.count
+        // Read-only: the Recent index sweeps expired alarms from the store. This
+        // runs on every activation, so it only counts the ones still due.
+        let now = Date()
+        let alarmCount = application.userDataStore.alarms.filter { ($0.tripDate ?? .distantPast) > now }.count
         if alarmCount != self.alarmCount {
             self.alarmCount = alarmCount
         }

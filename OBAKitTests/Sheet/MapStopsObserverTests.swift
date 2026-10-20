@@ -421,4 +421,18 @@ final class MapStopsObserverTests: OBATestCase {
             count += 1
         }
     }
+
+    /// The panel's map moves on this. Before it, picking a region in More left
+    /// the map, and the stops request, on the old city.
+    @Test func `Changing region tells the panel which region it is now`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let observer = MapStopsObserver(application: application)
+        #expect(observer.changedRegion == nil)
+
+        // Called as `RegionsService` calls it: setting `currentRegion` for real
+        // would rebuild the API service and fetch from the new region.
+        observer.regionsService(application.regionsService, updatedRegion: Fixtures.pugetSoundRegion)
+
+        #expect(observer.changedRegion?.regionIdentifier == Fixtures.pugetSoundRegion.regionIdentifier)
+    }
 }

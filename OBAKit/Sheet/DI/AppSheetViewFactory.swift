@@ -236,15 +236,7 @@ final class AppSheetViewFactory {
                     coordinator.open(.onDemandService(service), from: .stopDetails(stopID: stopID))
                 }
                 presenter.onShowTripPlannerInSheet = { [coordinator = self.coordinator] action, stop, mode in
-                    let stopItem = TripPlannerEndpoints.mapItem(from: stop)
-                    let request: TripPlannerRequest
-                    switch action {
-                    case .directionsToStop:
-                        request = TripPlannerRequest(destination: stopItem, transportMode: mode)
-                    case .directionsFromStop:
-                        request = TripPlannerRequest(origin: stopItem, transportMode: mode)
-                    }
-                    coordinator.open(.tripPlanner(request), from: .stopDetails(stopID: stopID))
+                    coordinator.open(.tripPlanner(action.request(stop: stop, mode: mode)), from: .stopDetails(stopID: stopID))
                 }
                 return presenter
             },

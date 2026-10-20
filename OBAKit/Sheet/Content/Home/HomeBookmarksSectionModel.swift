@@ -209,14 +209,13 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     // MARK: - BookmarkDataDelegate
 
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
+        batchDeliveredArrivals = true
         rebuildRows()
-        // The panel has no Bookmarks tab to do this, and a Live Activity still
-        // running after a relaunch otherwise gets no updates and never
-        // unregisters when it ends.
-        BookmarkActions.updateRunningLiveActivities(application: application) { [weak self] bookmark in
-            self?.loadedArrivals(for: bookmark)
-        }
     }
+
+    /// Whether the batch in flight brought any arrivals. A cancelled or empty
+    /// batch ends too, and has nothing to hand the widget or Live Activities.
+    private var batchDeliveredArrivals = false
 
     /// `bookmark`'s arrivals, or nil when this section hasn't loaded them: it
     /// only fetches the bookmarks it shows.
@@ -240,10 +239,20 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     /// successful fetch look like a region change to any future caller.
     func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool) {
         guard !isLoading else { return }
-        // Fresh arrival times for the widget, once per batch, as the Bookmarks
-        // tab sends them. Bookmark edits are `BookmarkWidgetRefresher`'s.
-        WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
-        guard dataLoader.lastBatchHadError else { return }
+        defer { batchDeliveredArrivals = false }
+        guard dataLoader.lastBatchHadError else {
+            guard batchDeliveredArrivals else { return }
+            // Once per batch that brought arrivals, rather than per stop fetched.
+            // The panel has no Bookmarks tab to do either: fresh arrival times
+            // for the widget (bookmark edits are `BookmarkWidgetRefresher`'s),
+            // and running Live Activities, which after a relaunch otherwise get
+            // no updates and never unregister when they end.
+            WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
+            BookmarkActions.updateRunningLiveActivities(application: application) { [weak self] bookmark in
+                self?.loadedArrivals(for: bookmark)
+            }
+            return
+        }
         lastFetchDate = nil
     }
 }

@@ -24,12 +24,9 @@ final class HomeAlertsSectionModel: NSObject, ObservableObject, AgencyAlertsDele
     init(alertsStore: AgencyAlertsStore) {
         self.alertsStore = alertsStore
         super.init()
+        // The delegate table is weak, so no explicit removal is needed.
         alertsStore.addDelegate(self)
         reload()
-    }
-
-    isolated deinit {
-        alertsStore.removeDelegate(self)
     }
 
     /// Guarded against a no-op write, as the other section models are.

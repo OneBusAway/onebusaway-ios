@@ -30,10 +30,10 @@ final class MapPanelMapSettingsTests: OBATestCase {
 
     @Test func `Traffic stays off in the Simulator`() {
         #if targetEnvironment(simulator)
-        #expect(!MapPanelMapSettings.effectiveShowsTraffic(true))
+        #expect(!MapRegionManager.effectiveShowsTraffic(true))
         #else
-        #expect(MapPanelMapSettings.effectiveShowsTraffic(true))
+        #expect(MapRegionManager.effectiveShowsTraffic(true))
         #endif
-        #expect(!MapPanelMapSettings.effectiveShowsTraffic(false))
+        #expect(!MapRegionManager.effectiveShowsTraffic(false))
     }
 }

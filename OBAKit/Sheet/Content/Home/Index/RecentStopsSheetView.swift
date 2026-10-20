@@ -131,13 +131,7 @@ struct RecentStopsSheetView: View {
         Task {
             defer { openingAlarm = nil }
             do {
-                let arrival = try await apiService.getTripArrivalDepartureAtStop(
-                    stopID: deepLink.stopID,
-                    tripID: deepLink.tripID,
-                    serviceDate: deepLink.serviceDate,
-                    vehicleID: deepLink.vehicleID,
-                    stopSequence: deepLink.stopSequence
-                ).entry
+                let arrival = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink).entry
                 coordinator.push(.tripDetails(
                     TripConvertible(arrivalDeparture: arrival),
                     destinationStopID: deepLink.destinationStopID
