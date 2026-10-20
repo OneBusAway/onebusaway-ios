@@ -433,7 +433,9 @@ struct StopDetailsSheetView: View {
             onWalkingDirections: navigation.showWalkingDirections,
             onDirectionsToHere: navigation.showDirectionsToHere,
             onDirectionsFromHere: navigation.showDirectionsFromHere,
-            onReportProblem: navigation.showReportProblem
+            onReportProblem: navigation.showReportProblem,
+            isProximityAlertActive: viewModel.proximityAlert != nil,
+            onToggleProximityAlert: navigation.toggleProximityAlert
         )
     }
 

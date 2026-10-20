@@ -103,6 +103,25 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// the pushed and modal presentations below.
     var onShowTripInSheet: ((ArrivalDeparture) -> Void)?
 
+    /// Set by a host with a sheet stack, so Nearby Stops opens as one of its
+    /// sheets rather than a separate UIKit stack over them.
+    var onShowNearbyStopsInSheet: ((CLLocationCoordinate2D) -> Void)?
+
+    /// Set by a host with a sheet stack, so an on-demand service card opens as
+    /// one of its sheets. Without it the card pushes, which needs a stack.
+    var onShowOnDemandServiceInSheet: ((OnDemandService) -> Void)?
+
+    /// Set by a host with its own trip planner, so Directions to and from Here,
+    /// and the walk and bike pills, open it. Without it they need classic's map
+    /// tab, and are hidden where there is none.
+    var onShowTripPlannerInSheet: ((StopTripPlannerAction, Stop, TransportMode?) -> Void)?
+
+    /// Whether this host can open the trip planner for the stop.
+    private var canShowTripPlanner: Bool {
+        guard StopTripPlannerAction.isAvailable(application: application) else { return false }
+        return onShowTripPlannerInSheet != nil || StopTripPlannerAction.canPresent(application: application)
+    }
+
     // MARK: - Navigation Handler
 
     /// Builds the handler the SwiftUI layer consumes. `closeSheet` is a no-op
@@ -216,7 +235,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     }
 
     private func makeStopClosures(viewModel: StopViewModel) -> StopClosures {
-        let tripPlannerAvailable = StopTripPlannerAction.canPresent(application: application)
+        let tripPlannerAvailable = canShowTripPlanner
         return StopClosures(
             showWalkingDirections: { [weak self] in
                 guard let coordinate = viewModel.stop?.coordinate else { return }
@@ -230,8 +249,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
             },
             showOnDemandService: { [weak self] service in
-                guard let self, let host = self.presentationHost(for: "on-demand service") else { return }
-                self.application.viewRouter.navigateTo(onDemandService: service, from: host)
+                self?.showOnDemandService(service)
             },
             showBookmarkEditor: { [weak self] departure in
                 self?.showBookmarkEditor(
@@ -376,7 +394,19 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     // MARK: - Location
 
     func showNearbyStops(coordinate: CLLocationCoordinate2D) {
+        if let onShowNearbyStopsInSheet {
+            onShowNearbyStopsInSheet(coordinate)
+            return
+        }
         pushOrPresent(NearbyStopsViewController(coordinate: coordinate, application: application))
+    }
+
+    func showOnDemandService(_ service: OnDemandService) {
+        if let onShowOnDemandServiceInSheet {
+            onShowOnDemandServiceInSheet(service)
+            return
+        }
+        pushOrPresent(OnDemandServiceViewController(application: application, service: service))
     }
 
     func showServiceAlerts(_ alerts: [ServiceAlert]) {
@@ -499,10 +529,14 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         }
     }
 
-    /// Switches to the map tab and opens the classic trip planner with this stop
-    /// as origin or destination, and `mode` chosen when given. Shared by the pushed
-    /// Stop page and the map sheet.
+    /// Opens the trip planner with this stop as origin or destination, and `mode`
+    /// chosen when given: the host's own planner when it has one, otherwise the
+    /// classic map tab's. Shared by the pushed Stop page and the map sheet.
     func showTripPlanner(action: StopTripPlannerAction, stop: Stop, mode: TransportMode? = nil) {
+        if let onShowTripPlannerInSheet {
+            onShowTripPlannerInSheet(action, stop, mode)
+            return
+        }
         StopTripPlannerAction.present(action, stop: stop, mode: mode, application: application, from: presentingController())
     }
 

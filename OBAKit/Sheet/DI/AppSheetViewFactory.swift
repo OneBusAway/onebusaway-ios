@@ -218,6 +218,23 @@ final class AppSheetViewFactory {
                         from: .stopDetails(stopID: stopID)
                     )
                 }
+                presenter.onShowNearbyStopsInSheet = { [coordinator = self.coordinator] coordinate in
+                    coordinator.open(.nearbyStops(coordinate: coordinate), from: .stopDetails(stopID: stopID))
+                }
+                presenter.onShowOnDemandServiceInSheet = { [coordinator = self.coordinator] service in
+                    coordinator.open(.onDemandService(service), from: .stopDetails(stopID: stopID))
+                }
+                presenter.onShowTripPlannerInSheet = { [coordinator = self.coordinator] action, stop, mode in
+                    let stopItem = TripPlannerEndpoints.mapItem(from: stop)
+                    let request: TripPlannerRequest
+                    switch action {
+                    case .directionsToStop:
+                        request = TripPlannerRequest(destination: stopItem, transportMode: mode)
+                    case .directionsFromStop:
+                        request = TripPlannerRequest(origin: stopItem, transportMode: mode)
+                    }
+                    coordinator.open(.tripPlanner(request), from: .stopDetails(stopID: stopID))
+                }
                 return presenter
             },
             feedback: DataLoadFeedbackGenerator(application: self.application),
