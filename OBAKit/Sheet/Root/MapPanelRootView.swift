@@ -515,6 +515,11 @@ struct MapPanelRootView: View {
         .onChange(of: probeController.highlightedServiceID) { _, id in
             layersModel.setHighlightedService(id)
         }
+        .modifier(MapPanelVoiceOverModifier(
+            application: application,
+            coordinator: coordinator,
+            presentingController: factory.presentingController
+        ))
         .modifier(MapPanelPromptsModifier(
             prompts: prompts,
             stackedRoutes: coordinator.stackedRoutes,
