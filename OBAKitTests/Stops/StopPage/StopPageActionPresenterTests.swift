@@ -10,6 +10,7 @@
 import UIKit
 import CoreLocation
 import Testing
+import OTPKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -428,5 +429,58 @@ final class StopPageActionPresenterTests: OBATestCase {
         #expect(alert.preferredStyle == .alert)
         #expect(alert.actions.map(\.title) == [StopTripPlannerAction.directionsToHereTitle, Strings.cancel])
         #expect(alert.actions.last?.style == .cancel)
+    }
+
+    // MARK: - Map panel sheets
+
+    /// The panel used to put Nearby Stops up as a separate UIKit stack, whose
+    /// stops opened pushed pages that knew nothing of the panel's map.
+    @Test func `Nearby stops open in the sheet when the host offers one`() async {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        var opened: [CLLocationCoordinate2D] = []
+        presenter.onShowNearbyStopsInSheet = { opened.append($0) }
+
+        presenter.showNearbyStops(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3))
+
+        #expect(opened.map(\.latitude) == [47.6])
+        #expect(await waitForPresentation(on: host) == nil)
+    }
+
+    /// The on-demand card pushed through `ViewRouter.navigate(to:from:)`, which
+    /// asserts on the panel's stackless host and does nothing in release.
+    @Test func `An on-demand service opens in the sheet when the host offers one`() async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        let service = try Fixtures.dictionaryToModel(type: OnDemandService.self, dictionary: [
+            "id": "CC_1", "agencyId": "CC", "routeId": "CC_1", "name": "Zone", "serviceKind": "zone",
+            "description": NSNull(), "url": NSNull(), "rules": []
+        ])
+        var opened: [String] = []
+        presenter.onShowOnDemandServiceInSheet = { opened.append($0.id) }
+
+        presenter.showOnDemandService(service)
+
+        #expect(opened == ["CC_1"])
+        #expect(await waitForPresentation(on: host) == nil)
+    }
+
+    /// Directions to or from a stop opened the classic map tab's planner, so the
+    /// panel, which has none, hid both and sent the walk and bike pills to Apple
+    /// Maps instead.
+    @Test func `Trip planner from stop goes to the sheet when the host offers one`() throws {
+        let host = makeHost()
+        let (presenter, application) = makePresenter(host: host)
+        #expect(application.viewRouter.rootController == nil)
+        var opened: [(StopTripPlannerAction, StopID, TransportMode?)] = []
+        presenter.onShowTripPlannerInSheet = { opened.append(($0, $1.id, $2)) }
+        let stop = try #require(Fixtures.loadSomeStops().first)
+
+        presenter.showTripPlanner(action: .directionsFromStop, stop: stop, mode: .walk)
+
+        #expect(opened.count == 1)
+        #expect(opened.first?.0 == .directionsFromStop)
+        #expect(opened.first?.1 == stop.id)
+        #expect(opened.first?.2 == .walk)
     }
 }
