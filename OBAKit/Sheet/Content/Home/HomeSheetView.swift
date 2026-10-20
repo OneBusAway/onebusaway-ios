@@ -133,7 +133,8 @@ struct HomeSheetView: View {
             stopSection(
                 stops: viewModel.recent.stops,
                 title: Strings.recentStops,
-                seeAll: .recentStopsAll
+                seeAll: .recentStopsAll,
+                alarmCount: viewModel.recent.alarmCount
             )
 
         case .bookmarks:
@@ -146,9 +147,24 @@ struct HomeSheetView: View {
     private func stopSection(
         stops: [Stop],
         title: String,
-        seeAll: AppSheetRoute
+        seeAll: AppSheetRoute,
+        alarmCount: Int = 0
     ) -> some View {
         Section {
+            // The Recent index lists alarms, as the Recent tab does. This row is
+            // the way to them, and is all the section has with no recent stops.
+            if alarmCount > 0 {
+                Button {
+                    coordinator.push(seeAll)
+                } label: {
+                    LabeledContent {
+                        Text(alarmCount, format: .number)
+                    } label: {
+                        Label(RecentStopsSheetView.alarmsTitle, systemImage: "alarm")
+                    }
+                }
+                .foregroundStyle(Color(uiColor: .label))
+            }
             ForEach(stops, id: \.id) { stop in
                 HomeStopRow(stop: stop) {
                     coordinator.push(.stopDetails(stopID: stop.id))

@@ -266,4 +266,18 @@ final class HomeSheetViewModelTests: OBATestCase {
         #expect(viewModel.bookmarks.loadIfNeeded(now: start))
         #expect(viewModel.bookmarks.loadIfNeeded(now: start.addingTimeInterval(2)) == false)
     }
+
+    /// The Recent index is where alarms are listed, and home's Recent header is
+    /// the way into it. A rider with an alarm and no recent stops still needs
+    /// that way in.
+    @Test @MainActor
+    func `An alarm keeps the Recent section on home without recent stops`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        _ = try RecentStopsSheetViewTests.seedAlarm(id: "1", application: application)
+
+        let viewModel = makeViewModel(application: application)
+
+        #expect(viewModel.recent.alarmCount == 1)
+        #expect(viewModel.visibleSections == [.recent])
+    }
 }
