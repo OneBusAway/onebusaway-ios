@@ -9,6 +9,7 @@
 
 import Foundation
 import OBAKitCore
+import WidgetKit
 
 /// The home sheet's bookmarks preview: the first few bookmarks by the user's
 /// own ordering, with live arrivals for those few only.
@@ -209,6 +210,19 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
 
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
         rebuildRows()
+        // The panel has no Bookmarks tab to do this, and a Live Activity still
+        // running after a relaunch otherwise gets no updates and never
+        // unregisters when it ends.
+        BookmarkActions.updateRunningLiveActivities(application: application) { [weak self] bookmark in
+            self?.loadedArrivals(for: bookmark)
+        }
+    }
+
+    /// `bookmark`'s arrivals, or nil when this section hasn't loaded them: it
+    /// only fetches the bookmarks it shows.
+    func loadedArrivals(for bookmark: Bookmark) -> [ArrivalDeparture]? {
+        guard loader.hasFetchedData(forStopID: bookmark.stopID) else { return nil }
+        return arrivalDepartures(for: bookmark)
     }
 
     /// Clears the staleness stamp when a batch finishes having failed, so the
@@ -225,7 +239,11 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     /// reopen the gate, and clearing the region too would make the next
     /// successful fetch look like a region change to any future caller.
     func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool) {
-        guard !isLoading, dataLoader.lastBatchHadError else { return }
+        guard !isLoading else { return }
+        // Fresh arrival times for the widget, once per batch, as the Bookmarks
+        // tab sends them. Bookmark edits are `BookmarkWidgetRefresher`'s.
+        WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
+        guard dataLoader.lastBatchHadError else { return }
         lastFetchDate = nil
     }
 }
