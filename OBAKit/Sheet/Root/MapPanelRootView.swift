@@ -116,6 +116,8 @@ struct MapPanelRootView: View {
     /// move it off the vehicles the link asked to show.
     @State private var rentalsLinkHoldsCamera = false
     @State private var regionMismatchBulletin: RegionMismatchBulletin?
+    /// When the app last went to the background. See `ReturnRecenter`.
+    @State private var backgroundedAt: Date?
     @State private var didPromptRegionMismatch = false
     @StateObject private var mismatchCamera = RegionMismatchCameraActions()
     @StateObject private var regionChange: RegionChangeSignal
@@ -546,8 +548,14 @@ struct MapPanelRootView: View {
             applyPendingRentalsFocus()
         }
         .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
+            switch newPhase {
+            case .active:
                 mapViewModel.onAppBecameActive()
+                recenterAfterAbsenceIfNeeded()
+            case .background:
+                backgroundedAt = Date()
+            default:
+                break
             }
         }
         .onChange(of: mapViewModel.didReceiveInitialLocation) { _, received in
@@ -866,6 +874,17 @@ extension MapPanelRootView {
         else { return }
         regionMismatchBulletin = bulletin
         bulletin.show(in: uiApp)
+    }
+
+    private func recenterAfterAbsenceIfNeeded() {
+        defer { backgroundedAt = nil }
+        guard let backgroundedAt, ReturnRecenter.shouldRecenter(
+            absence: Date().timeIntervalSince(backgroundedAt),
+            region: application.regionsService.currentRegion,
+            location: application.locationService.currentLocation,
+            isShowingSheet: coordinator.canPop
+        ) else { return }
+        centerOnUser()
     }
 
     /// Opens the place sheet for a dropped pin, over home, and marks it on the map.
