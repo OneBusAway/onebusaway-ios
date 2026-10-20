@@ -428,9 +428,10 @@ struct MapPanelRootView: View {
             applyTripFocusCameraTarget(target)
             tripFocusDisplay.consumeCameraTarget()
         }
-        .mapStyle(mapViewModel.mapType.styleDescriptor(
-            showingPointsOfInterest: layersModel.showsPointsOfInterest
-        ).mapStyle)
+        .modifier(MapPanelMapSettings(
+            style: mapViewModel.mapType.styleDescriptor(showingPointsOfInterest: layersModel.showsPointsOfInterest),
+            userDefaults: application.userDefaults
+        ))
         .safeAreaPadding(.bottom, 180)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
