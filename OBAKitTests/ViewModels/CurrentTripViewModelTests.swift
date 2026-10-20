@@ -452,9 +452,8 @@ final class CurrentTripViewModelTests: OBATestCase {
 
     // MARK: - No-Location Recovery
 
-    /// `.notDetermined` is where a rider who tapped "Not Now" during onboarding
-    /// lands — declining never calls Core Location — so the empty state must
-    /// raise the in-app prompt rather than send them to Settings.
+    /// `.notDetermined` means nobody has asked yet, so the empty state must
+    /// raise the in-app prompt rather than send the rider to Settings.
     @Test @MainActor
     func `Recovery for undetermined authorization requests it in app`() throws {
         #expect(makeViewModel(authorizationStatus: .notDetermined).noLocationRecovery == .requestAuthorization)

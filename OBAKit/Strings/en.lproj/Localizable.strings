@@ -498,29 +498,14 @@
 /* Button that opens iOS Settings so the user can enable location services for the app. */
 "locationservices_alert_gotosettings.button" = "Turn On in Settings";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "%@ works best with your precise location";
-
-/* Cancel button in the precise-location alert; dismisses without raising accuracy from reduced to full. */
-"locationservices_alert_keep_precise_location_off.button" = "Keep Precise Location Off";
-
 /* Cancel button in the location-permission alert; dismisses without granting authorization or opening Settings. */
 "locationservices_alert_keepoff.button" = "Keep Location Off";
-
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "Enable Location Services";
 
 /* Body of the alert prompting the user to turn on location services. */
 "locationservices_alert_off.message" = "You'll get to see where you are on the map and see nearby stops, making it easier to get where you need to go.";
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "%@ works best with your location.";
-
-/* Button that grants one-time full-accuracy location for the current map session while keeping the default reduced-accuracy setting. */
-"locationservices_alert_request_precise_location_once.button" = "Allow Once";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "No logs available.";
@@ -725,9 +710,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Location Services Off";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Precise Location Off";
 
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "Location services unavailable";
@@ -987,9 +969,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "Use My Location";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "Not Now";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "See transit around you";
 
@@ -1008,17 +987,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "Only major, region-wide alerts. No spam — you control the rest in Settings.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "Maybe Later";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "NEW";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "Not Now";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "Turn On Notifications";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "Stay ahead of disruptions";
@@ -1395,6 +1365,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Uses a faster travel speed for walk-time estimates, arrival ETAs, and the Stop page.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ can read your cycling speed from Apple Health. It never writes to Health.";
+
 /* Settings > Bike Mode section title */
 "settings_controller.bike_mode_section.title" = "Bike Mode";
 
@@ -1484,6 +1457,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "Use Health app data";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ can read your walking speed from Apple Health to estimate how long it takes you to reach a stop. It never writes to Health.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Walking Speed";

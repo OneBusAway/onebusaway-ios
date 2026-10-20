@@ -42,60 +42,90 @@ private nonisolated class DonationsConfigBundle: Bundle, @unchecked Sendable {
 @Suite(.serialized)
 final class DonationsManagerTests: OBATestCase {
 
-    private func buildManager(appLaunchCount: Int, donationsEnabled: Bool = true) throws -> DonationsManager {
-        DonationsManager(
+    /// `storefront` is the App Store country code the manager sees. The manager is
+    /// returned after its storefront read has finished, so gating is settled.
+    private func buildManager(appLaunchCount: Int, donationsEnabled: Bool = true, storefront: String? = "USA") async throws -> DonationsManager {
+        let manager = DonationsManager(
             bundle: try DonationsConfigBundle.create(donationsEnabled: donationsEnabled),
             userDefaults: userDefaults,
             obacoService: obacoService,
             analytics: nil,
-            appLaunchCount: { appLaunchCount }
+            appLaunchCount: { appLaunchCount },
+            storefrontCountryCode: { storefront }
         )
+        await manager.refreshStorefront()
+        return manager
     }
 
     // MARK: - Launch Count Gating
 
-    @Test func `Should request donations first launch is false`() throws {
-        let manager = try buildManager(appLaunchCount: 1)
+    @Test func `Should request donations first launch is false`() async throws {
+        let manager = try await buildManager(appLaunchCount: 1)
         #expect(manager.shouldRequestDonations == false)
     }
 
-    @Test func `Should request donations second launch is false`() throws {
-        let manager = try buildManager(appLaunchCount: 2)
+    @Test func `Should request donations second launch is false`() async throws {
+        let manager = try await buildManager(appLaunchCount: 2)
         #expect(manager.shouldRequestDonations == false)
     }
 
-    @Test func `Should request donations third launch is true`() throws {
-        let manager = try buildManager(appLaunchCount: 3)
+    @Test func `Should request donations third launch is true`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3)
         #expect(manager.shouldRequestDonations == true)
     }
 
-    @Test func `Should request donations later launches is true`() throws {
-        let manager = try buildManager(appLaunchCount: 100)
+    @Test func `Should request donations later launches is true`() async throws {
+        let manager = try await buildManager(appLaunchCount: 100)
         #expect(manager.shouldRequestDonations == true)
     }
 
     // MARK: - Composition with Other Gates
 
-    @Test func `Should request donations third launch dismissed is false`() throws {
-        let manager = try buildManager(appLaunchCount: 3)
+    @Test func `Should request donations third launch dismissed is false`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3)
         manager.dismissDonationsRequests()
         #expect(manager.shouldRequestDonations == false)
     }
 
-    @Test func `Should request donations third launch future reminder is false`() throws {
-        let manager = try buildManager(appLaunchCount: 3)
+    @Test func `Should request donations third launch future reminder is false`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3)
         manager.remindUserLater()
         #expect(manager.shouldRequestDonations == false)
     }
 
-    @Test func `Should request donations third launch past reminder is true`() throws {
-        let manager = try buildManager(appLaunchCount: 3)
+    @Test func `Should request donations third launch past reminder is true`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3)
         manager.donationRequestReminderDate = Date(timeIntervalSinceNow: -3600)
         #expect(manager.shouldRequestDonations == true)
     }
 
-    @Test func `Should request donations donations disabled is false`() throws {
-        let manager = try buildManager(appLaunchCount: 3, donationsEnabled: false)
+    @Test func `Should request donations donations disabled is false`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3, donationsEnabled: false)
         #expect(manager.shouldRequestDonations == false)
+    }
+
+    // MARK: - Storefront Gating
+
+    @Test func `Donations are hidden outside the US storefront`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3, storefront: "CAN")
+        #expect(manager.donationsEnabled == false)
+        #expect(manager.shouldRequestDonations == false)
+    }
+
+    @Test func `Donations are shown on the US storefront`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3, storefront: "USA")
+        #expect(manager.storefrontAllowsDonations)
+        #expect(manager.shouldRequestDonations)
+    }
+
+    @Test func `Donations stay hidden until the storefront is known`() async throws {
+        let manager = try await buildManager(appLaunchCount: 3, storefront: nil)
+        #expect(manager.shouldRequestDonations == false)
+    }
+
+    @Test func `An unknown storefront keeps the last known answer`() async throws {
+        _ = try await buildManager(appLaunchCount: 3, storefront: "USA")
+        let manager = try await buildManager(appLaunchCount: 3, storefront: nil)
+        #expect(manager.shouldRequestDonations)
     }
 }

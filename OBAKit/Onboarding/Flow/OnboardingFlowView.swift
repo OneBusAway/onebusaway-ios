@@ -31,7 +31,7 @@ struct OnboardingFlowView: View {
     }
 
     /// Single-step mode: no progress bar; step views may adapt further
-    /// (see `OnboardingNotificationsView`'s NEW badge and "Maybe Later" copy).
+    /// (see `OnboardingNotificationsView`'s NEW badge).
     private var isSingleStep: Bool { steps.count == 1 }
 
     private var progress: (index: Int, total: Int)? {

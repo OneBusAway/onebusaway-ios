@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Seleccionar en Opciones";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "Podrá ver su ubicación en el mapa y ver las paradas cercanas, lo que le facilitará llegar a donde necesita ir.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "%@ funciona mejor con su ubicación precisa";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "Mantenga la ubicación precisa desactivada";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Mantenga la ubicación desactivada";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "%@ funciona mejor con su ubicación.";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "Permitir una vez";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "No hay registros disponibles.";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Servicios de ubicación desactivados";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Ubicación exacta desactivada";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "Informacion de esta aplicación";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "Usar mi ubicación";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "Ahora no";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Ve el transporte a tu alrededor";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "Solo alertas importantes de toda la región. Sin spam: tú controlas el resto en Ajustes.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "Quizás más tarde";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "NUEVO";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "Ahora no";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "Activar notificaciones";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "Adelántate a las interrupciones";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Usa una velocidad de desplazamiento más rápida para las estimaciones de tiempo hasta la parada, las horas de llegada y la página de la parada.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ puede leer tu velocidad en bicicleta desde la app Salud. Nunca escribe datos en Salud.";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Modo bicicleta";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "Usar datos de la app Salud";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ puede leer tu velocidad al caminar desde la app Salud para estimar cuánto tardas en llegar a una parada. Nunca escribe datos en Salud.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Velocidad al Caminar";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d min";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "30+ min";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "Activar los servicios de ubicación";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "Bicicletas";
 /* Map sheet row for the transit stops layer */

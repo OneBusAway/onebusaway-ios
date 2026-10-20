@@ -7,6 +7,7 @@
 
 import Foundation
 import OBAKitCore
+import StoreKit
 import SwiftUI
 
 /// Manages the visibility of donation requests.
@@ -18,17 +19,31 @@ public class DonationsManager {
     ///   - userDefaults: The user defaults object.
     ///   - analytics: The Analytics object.
     ///   - appLaunchCount: Returns the number of times the app has been launched.
+    ///   - storefrontCountryCode: Returns the App Store storefront's ISO 3166-1 alpha-3
+    ///     country code, or `nil` when it can't be determined.
     public init(
         bundle: Bundle,
         userDefaults: UserDefaults,
         obacoService: ObacoAPIService?,
         analytics: Analytics?,
-        appLaunchCount: @escaping () -> Int
+        appLaunchCount: @escaping () -> Int,
+        storefrontCountryCode: @escaping () async -> String? = { await Storefront.current?.countryCode }
     ) {
         self.bundle = bundle
         self.userDefaults = userDefaults
         self.analytics = analytics
         self.appLaunchCount = appLaunchCount
+        self.storefrontCountryCode = storefrontCountryCode
+
+        Task { [weak self] in
+            await self?.refreshStorefront()
+            // The rider can switch App Store country while the app runs; re-read
+            // it then, or the gate stays on the old storefront until relaunch.
+            for await _ in Storefront.updates {
+                guard let self else { return }
+                await self.refreshStorefront()
+            }
+        }
     }
 
     // MARK: - Data
@@ -37,12 +52,32 @@ public class DonationsManager {
     var obacoService: ObacoAPIService?
     private let analytics: Analytics?
     private let appLaunchCount: () -> Int
+    private let storefrontCountryCode: () async -> String?
 
     // MARK: - User Defaults
 
     private let userDefaults: UserDefaults
     private static let donationRequestDismissedDateKey = "donationRequestDismissedDateKey"
     private static let donationRequestReminderDateKey = "donationRequestReminderDateKey"
+    private static let storefrontAllowsDonationsKey = "donationsStorefrontAllowsDonationsKey"
+
+    // MARK: - Storefront
+
+    /// Whether the App Store storefront lets the app ask for donations.
+    ///
+    /// Only the United States storefront may link out to a payment page other than
+    /// In-App Purchase (guideline 3.1.1(a)); App Review rejected 26.4 for showing
+    /// the donation link elsewhere. Cached in user defaults so it is known at
+    /// launch, before `Storefront.current` answers; `false` until it has answered once.
+    var storefrontAllowsDonations: Bool {
+        userDefaults.bool(forKey: DonationsManager.storefrontAllowsDonationsKey)
+    }
+
+    /// Re-reads the storefront. An unknown storefront keeps the last known answer.
+    func refreshStorefront() async {
+        guard let countryCode = await storefrontCountryCode() else { return }
+        userDefaults.set(countryCode == "USA", forKey: DonationsManager.storefrontAllowsDonationsKey)
+    }
 
     // MARK: - Dismiss Donations Request
 
@@ -80,8 +115,13 @@ public class DonationsManager {
 
     // MARK: - State
 
+    /// The app ships donations and the storefront allows them.
+    private var donationsAllowed: Bool {
+        bundle.donationsEnabled && storefrontAllowsDonations
+    }
+
     public var donationsEnabled: Bool {
-        bundle.donationsEnabled && obacoService != nil
+        donationsAllowed && obacoService != nil
     }
 
     /// The minimum number of app launches required before donation requests are shown.
@@ -89,7 +129,7 @@ public class DonationsManager {
 
     /// When true, it means the app should show an inline donation request UI.
     public var shouldRequestDonations: Bool {
-        if !bundle.donationsEnabled { return false }
+        guard donationsAllowed else { return false }
 
         if appLaunchCount() < DonationsManager.minimumAppLaunchesBeforeRequestingDonations { return false }
 

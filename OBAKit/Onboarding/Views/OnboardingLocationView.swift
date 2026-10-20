@@ -10,9 +10,13 @@
 import SwiftUI
 import OBAKitCore
 
-/// Primes the user before the OS location prompt. Replaces the legacy location-authorization
-/// step (spec decision: two-button layout kept deliberately despite the HIG
-/// one-button guidance for pre-alert screens; declining marks the step seen forever).
+/// Primes the user before the OS location prompt.
+///
+/// One button, and it always raises the system prompt: App Review rejects a
+/// pre-permission screen that lets the user dismiss it without reaching the
+/// prompt (guideline 5.1.1(iv); 24.3 and 26.4 were both rejected for it). The
+/// rider declines in the system prompt instead, and the region step that
+/// follows lets them pick a region by hand.
 struct OnboardingLocationView<Provider: RegionProvider>: View {
     var progress: (index: Int, total: Int)?
     @ObservedObject var regionProvider: Provider
@@ -25,15 +29,10 @@ struct OnboardingLocationView<Provider: RegionProvider>: View {
             progress: progress,
             title: OBALoc("onboarding.location.title", value: "See transit around you", comment: "Title of the location onboarding screen"),
             footnote: String(format: OBALoc("onboarding.location.footnote_fmt", value: "%@ only uses your location while the app is open. Change this anytime in Settings.", comment: "Footnote of the location onboarding screen; the argument is the app name"), Bundle.main.appName),
-            primaryTitle: OBALoc("onboarding.location.primary_button", value: "Use My Location", comment: "Button the user taps to grant access to their location."),
+            primaryTitle: Strings.continue,
             primaryAction: {
                 regionProvider.automaticallySelectRegion = true
                 application.locationService.requestInUseAuthorization()
-                advance()
-            },
-            secondaryTitle: OBALoc("onboarding.location.secondary_button", value: "Not Now", comment: "Button the user can tap on to decline access to their location."),
-            secondaryAction: {
-                regionProvider.automaticallySelectRegion = false
                 advance()
             }
         // swiftlint:disable:next multiple_closures_with_trailing_closure

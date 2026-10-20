@@ -48,12 +48,10 @@ struct OnboardingNotificationsView: View {
             title: OBALoc("onboarding.notifications.title", value: "Stay ahead of disruptions", comment: "Title of the notifications onboarding screen"),
             bodyText: OBALoc("onboarding.notifications.body", value: "Get notified about region-wide service alerts — ice storms, flooding, and major events that change how transit runs.", comment: "Body of the notifications onboarding screen"),
             footnote: isSingleStep ? nil : OBALoc("onboarding.notifications.footnote", value: "Only major, region-wide alerts. No spam — you control the rest in Settings.", comment: "Footnote of the notifications onboarding screen"),
-            primaryTitle: OBALoc("onboarding.notifications.primary_button", value: "Turn On Notifications", comment: "Primary button on the notifications onboarding screen"),
-            primaryAction: requestAuthorization,
-            secondaryTitle: isSingleStep
-                ? OBALoc("onboarding.notifications.maybe_later_button", value: "Maybe Later", comment: "Decline button when the notifications step appears alone")
-                : OBALoc("onboarding.notifications.not_now_button", value: "Not Now", comment: "Decline button on the notifications onboarding screen"),
-            secondaryAction: advance
+            // One button that always raises the system prompt, for the same App Review
+            // reason as `OnboardingLocationView`; the rider declines in the prompt.
+            primaryTitle: Strings.continue,
+            primaryAction: requestAuthorization
         ) {
             OnboardingHeroCircle(systemImageName: "bell.fill")
                 .padding(.vertical, 22)

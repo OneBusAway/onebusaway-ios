@@ -125,8 +125,10 @@ public class MoreViewController: UIViewController,
                         return
                     }
 
-                    let safari = SFSafariViewController(url: donationManagementPortal)
-                    self.application.viewRouter.present(safari, from: self)
+                    // The default browser, never an in-app Safari sheet: App Review treats a
+                    // payment page shown inside the app as an in-app purchase mechanism
+                    // (guideline 3.1.1). Only links out to the browser are allowed.
+                    self.application.open(donationManagementPortal, options: [:], completionHandler: nil)
                 }
             )
         ])

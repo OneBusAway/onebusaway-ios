@@ -147,7 +147,9 @@ struct RentalDeepLinkTests {
         "tel:+12065550100", "TEL:+12065550100", "telprompt:+12065550100",
         "sms:+12065550100", "facetime:someone@example.com", "facetime-audio:someone@example.com",
         "mailto:rides@example.com", "file:///etc/hosts", "javascript:alert(1)",
-        "data:text/html,hi", "itms-services://?action=download-manifest&url=https://x.example/m.plist"
+        "data:text/html,hi", "itms-services://?action=download-manifest&url=https://x.example/m.plist",
+        "ITMS-SERVICES://?action=download-manifest&url=https://x.example/m.plist",
+        "itms-apps://apps.apple.com/app/id1", "itmss://apps.apple.com/app/id1"
     ])
     func rejectedFeedSchemesFallThroughToSynthesis(uri: String) throws {
         let rental = try RentalFixtures.vehicle(id: "lime_seattle:abc", rentalUris: ["ios": uri])

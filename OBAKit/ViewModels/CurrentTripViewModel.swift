@@ -283,10 +283,9 @@ extension CurrentTripViewModel {
     /// "Location Services are off system-wide" into `.denied`, so that needs no
     /// branch of its own.
     enum NoLocationRecovery: Equatable {
-        /// Nobody has asked yet. Declining onboarding's location step lands here
-        /// rather than in `.denied` — "Not Now" never calls Core Location — so
-        /// this is the likeliest reason for an absent location. An in-app prompt
-        /// is a far shorter path than a trip to Settings.
+        /// Nobody has asked yet — onboarding was skipped or never reached its
+        /// location step — so an in-app prompt is a far shorter path than a trip
+        /// to Settings.
         case requestAuthorization
 
         /// Access was refused, or Location Services are off system-wide. Nothing
