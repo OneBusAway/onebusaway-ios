@@ -197,6 +197,7 @@ struct MapPanelRootView: View {
     @State private var didPromptRegionMismatch = false
     @StateObject private var mismatchCamera = RegionMismatchCameraActions()
     @StateObject private var regionChange: RegionChangeSignal
+    @StateObject private var prompts: MapPanelPrompts
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
@@ -299,6 +300,11 @@ struct MapPanelRootView: View {
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
         _regionChange = StateObject(wrappedValue: RegionChangeSignal(regionsService: application.regionsService))
+        _prompts = StateObject(wrappedValue: MapPanelPrompts(
+            application: application,
+            mapViewModel: mapViewModel,
+            presentingController: factory.presentingController
+        ))
 
         // Frame the selected region unless GPS is already inside it.
         // `.userLocation` follows the device, which is what opened Taipei
@@ -620,6 +626,13 @@ struct MapPanelRootView: View {
         .onChange(of: probeController.highlightedServiceID) { _, id in
             layersModel.setHighlightedService(id)
         }
+        .modifier(MapPanelPromptsModifier(
+            prompts: prompts,
+            stackedRoutes: coordinator.stackedRoutes,
+            sheetHeight: sheetHeight,
+            toolbarsOpacity: toolbarsOpacity,
+            toolbarsAnimationDuration: toolbarsAnimationDuration
+        ))
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
         }
