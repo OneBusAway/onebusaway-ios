@@ -48,6 +48,14 @@ public struct VehicleEstimate: Sendable {
     /// a fix too far from the marker to glide to.
     public let shouldSnap: Bool
 
+    /// Whether `coordinate` is a position the device worked out, rather than the
+    /// reported fix: what the freshness line tells a VoiceOver rider. A frozen
+    /// marker counts, as it stopped where the horizon left it.
+    public var isEstimatedPosition: Bool {
+        if case .raw = mode { return false }
+        return true
+    }
+
     /// `bearingDegrees` in OBA's convention, which `TripStatus.orientation` uses and
     /// `PulsingVehicleAnnotationView` expects: 0° is east, counter-clockwise.
     public var obaOrientation: Double? {

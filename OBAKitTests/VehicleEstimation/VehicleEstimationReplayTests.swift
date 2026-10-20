@@ -149,11 +149,13 @@ struct VehicleEstimationReplayTests {
         var predictor = VehicleTrack(geometry: geometry)
         var next = 0
         var previous: Replay.Observation?
+        var newestFixTime: Date?
 
         func ingest(_ observation: Replay.Observation) {
             if let fix = fix(observation, tripID: replay.tripId) {
-                // Next-fix error, from a copy so the prediction leaves no trace.
-                if let previous, predictor.hasFix {
+                // Next-fix error, from a copy so the prediction leaves no trace. Only
+                // for a newer fix: a repeat or a late, older one is no prediction.
+                if let previous, predictor.hasFix, newestFixTime.map({ fix.fixTime > $0 }) ?? true {
                     var probe = predictor
                     if let predicted = probe.estimate(at: fix.fixTime) {
                         nextFix.estimate.append(predicted.coordinate.distance(from: fix.coordinate))
@@ -164,7 +166,9 @@ struct VehicleEstimationReplayTests {
                 let receivedAt = Date(timeIntervalSince1970: observation.receivedAt - offset)
                 _ = track.ingest(fix, now: receivedAt)
                 _ = predictor.ingest(fix, now: receivedAt)
+                // What the app draws today, even when it is older than the last.
                 previous = observation
+                newestFixTime = max(newestFixTime ?? fix.fixTime, fix.fixTime)
             }
         }
 

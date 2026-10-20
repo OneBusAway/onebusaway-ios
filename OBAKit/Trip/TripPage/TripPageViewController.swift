@@ -146,7 +146,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         vehicleEstimation.onEstimate = { [weak self] estimate in
             guard let self else { return }
             mapFocus.applyVehicleEstimate(estimate)
-            let isEstimated = estimate.map { $0.mode == .estimated || $0.mode == .holding } ?? false
+            let isEstimated = estimate?.isEstimatedPosition ?? false
             if isEstimated != isVehiclePositionEstimated {
                 isVehiclePositionEstimated = isEstimated
                 render()
