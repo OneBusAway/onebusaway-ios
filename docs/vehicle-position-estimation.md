@@ -26,12 +26,14 @@ the C, D and E Lines and route 21, `trip-details` polled every 15 s for 25 minut
 | Display error, estimate | **146 m** | **421 m** |
 | Display error, reported fix (trip page today) | 313 m | 977 m |
 | Display error, server `position` (stop map today) | 318 m | 1070 m |
-| Next-fix error, estimate | **65 m** | **202 m** |
-| Next-fix error, reported fix | 98 m | 390 m |
-| Next-fix error, server `position` | 114 m | 409 m |
+| Next-fix error, estimate | **65 m** | **186 m** |
+| Next-fix error, reported fix | 107 m | 390 m |
+| Next-fix error, server `position` | 123 m | 409 m |
 
 Display error is what a rider sees: the marker every 5 s against where the bus
-actually was then, interpolated from the fixes that arrive later. The test fails
+actually was then, interpolated from the fixes that arrive later. Next-fix error
+counts only a fix newer than any before it; a repeat or a late, older fix is not a
+prediction. The test fails
 if the estimate stops beating the reported fix on either measure. R1 is settled
 for Java regions: `position` is no better than the raw fix, so the trip page keeps
 `lastKnownLocation` as its fallback.
@@ -53,6 +55,12 @@ for Java regions: `position` is no better than the raw fix, so the trip page kee
   URL cache while the flag is on.
 - **No Android port contract.** Android has its own implementation, so §9's
   shared vectors were dropped.
+- **Estimation also covers the stop map** (Phase 2), not only the trip page that
+  §0 scoped v1 to: each bus on its own trip's shape and schedule.
+- **A frozen marker reads as estimated.** Past the horizon it stays where the
+  horizon left it, up to 120 s of travel past the fix, so the freshness line says
+  "estimated position, updated …", not §7's "Location last updated …". Only a
+  `.raw` estimate draws the reported fix.
 - R2 is fixed and covered by a synthetic test. It has not been reproduced against
   a live maglev region.
 
@@ -69,7 +77,8 @@ Before writing the algorithm, I red-teamed the brief against the code and the
 servers. Several of its premises do not hold. §1 lists them, and they reshape
 the plan:
 
-- **Scope.** v1 covers the **trip page only**.
+- **Scope.** The original plan: v1 covers the **trip page only**. As built, it
+  also covers the stop map (§0.1).
 - **Phase 0 first.** Three prerequisites ship before the estimator. One is a
   decoding bug that probably blanks vehicles on maglev today.
 - **Measure first.** The estimator stays behind a flag until a replay evaluation
@@ -279,7 +288,7 @@ v_sched(s) = (s_{i+1} − s_i) / (arrival_{i+1} − departure_i)   for the stop 
              (Δt ≤ 0 or no stops → nil)
 
 pace ratio from the last two accepted fixes f1, f2 (same trip, 10 s ≤ Δt ≤ 180 s):
-   r_obs = (s2 − s1) / ∫_{s1}^{s2} ds / v_sched(s)     // observed ÷ scheduled time to cover it
+   r_obs = (∫_{s1}^{s2} ds / v_sched(s)) / (f2.fixTime − f1.fixTime)   // scheduled ÷ observed time to cover it
    if no schedule: v_obs = (s2 − s1) / Δt, used directly
 r = clamp(w × r_obs + (1 − w) × 1.0, rMin, rMax),  w = observedWeight × e^{−(now − f2.fixTime)/observedHalfLife·ln2}
 v(s) = r × v_sched(s), capped at maxSpeed

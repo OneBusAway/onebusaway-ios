@@ -423,7 +423,6 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             )
         }
         let serverClocks = [latestServerClock].compactMap { $0 }.filter { $0 != recordedServerClock }
-        recordedServerClock = latestServerClock ?? recordedServerClock
         let token = presentationToken
 
         estimationTask?.cancel()
@@ -431,6 +430,9 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             let inputs = await Self.estimationInputs(for: pending, shapeCache: shapeCache, tripSchedules: tripSchedules)
             guard !Task.isCancelled, let self, self.presentationToken == token, !self.isSuppressed else { return }
             vehicleEstimation.update(inputs, serverClocks: serverClocks)
+            // Only once the driver has it: a gathering cancelled first leaves the
+            // sample for the next refresh to deliver.
+            recordedServerClock = serverClocks.last ?? recordedServerClock
             vehicleEstimation.resume()
         }
     }

@@ -71,14 +71,17 @@ struct TripScheduleCacheTests {
 
     @Test func `A fetch that finishes after removeAll is not cached`() async throws {
         let counter = Counter()
+        let (started, didStart) = AsyncStream.makeStream(of: Void.self)
         let cache = TripScheduleCache { _ in
             await counter.increment()
+            didStart.yield()
             try await Task.sleep(for: .milliseconds(50))
             return Self.schedule()
         }
 
         async let late = cache.schedule(for: Self.request)
-        try await Task.sleep(for: .milliseconds(10))
+        var starts = started.makeAsyncIterator()
+        _ = await starts.next()
         await cache.removeAll()
         _ = try? await late
         _ = try await cache.schedule(for: Self.request)

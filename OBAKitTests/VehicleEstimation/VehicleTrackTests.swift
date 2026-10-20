@@ -288,6 +288,15 @@ struct VehicleTrackTests {
         expectClose(estimate.obaOrientation, 0, within: 0.01)
     }
 
+    @Test(arguments: [
+        (VehicleEstimate.Mode.estimated, true), (.holding, true), (.frozen, true),
+        (.raw(.offShape), false), (.raw(.noSpeed), false),
+    ])
+    func `Every mode but raw draws a position the device worked out`(mode: VehicleEstimate.Mode, isEstimated: Bool) {
+        let estimate = TripMapFocusFixture.estimate(at: F.origin, fixAge: 300, mode: mode)
+        #expect(estimate.isEstimatedPosition == isEstimated)
+    }
+
     @Test func `Progress is the fraction of the shape behind the marker`() {
         var track = track()
         _ = track.ingest(F.fix(north: 250, at: 0), now: F.t0)

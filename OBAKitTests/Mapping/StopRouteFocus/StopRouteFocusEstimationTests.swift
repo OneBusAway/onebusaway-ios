@@ -156,6 +156,20 @@ final class StopRouteFocusEstimationTests {
         #expect(await scheduleFetches.count == 1)
     }
 
+    @Test func `A poll's server clock survives a refresh that cancels its gathering`() async throws {
+        let layer = makeLayer()
+        // The server is 10 s ahead of the device, so the bus is 10 s past its fix.
+        let clock = ServerClockSample(serverTime: F.t0 + 10, receivedAt: F.t0)
+        layer.apply(arrivals: nil, isListFiltered: false, preferences: StopPreferences(), serverClock: clock)
+        // A second refresh before the first gathering has run, as a filter change makes.
+        let departure = departure
+        layer.departureProvider = { _ in departure }
+        layer.update(model: model())
+        await layer.estimationInputsSettled()
+
+        expectClose(marker?.coordinate.latitude, F.point(north: 300).latitude, within: 1e-5)
+    }
+
     @Test func `Ending the presentation stops estimating`() async throws {
         let layer = makeLayer()
         layer.update(model: model())
