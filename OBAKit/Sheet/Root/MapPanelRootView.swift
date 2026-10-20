@@ -225,6 +225,7 @@ struct MapPanelRootView: View {
     }
 
     var body: some View {
+        MapReader { proxy in
         Map(position: $cameraPosition, selection: $mapSelection) {
             UserAnnotation()
             onDemandZoneContent
@@ -270,6 +271,13 @@ struct MapPanelRootView: View {
             }
             tripPlannerMapContent(for: tripPlannerDisplay)
             tripFocusMapContent(for: tripFocusDisplay.display)
+        }
+        // Long-press drops a pin, as on the UIKit map: a place to plan a trip
+        // to, or find stops near. Simultaneous, so panning still works.
+        .simultaneousGesture(DroppedPin.gesture { point in
+            guard let coordinate = proxy.convert(point, from: .local) else { return }
+            dropPin(at: coordinate)
+        })
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             viewportRecorder.record(context.rect)
@@ -858,6 +866,16 @@ extension MapPanelRootView {
         else { return }
         regionMismatchBulletin = bulletin
         bulletin.show(in: uiApp)
+    }
+
+    /// Opens the place sheet for a dropped pin, over home, and marks it on the map.
+    private func dropPin(at coordinate: CLLocationCoordinate2D) {
+        let mapItem = DroppedPin.mapItem(at: coordinate)
+        let route = AppSheetRoute.mapItem(mapItem)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        coordinator.popToRoot()
+        searchDisplay.show(mapItem: mapItem, animated: true, owner: route)
+        coordinator.push(route)
     }
 
     /// The rider changed region. Stops, trips and searches belong to a region's
