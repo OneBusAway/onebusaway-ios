@@ -199,7 +199,9 @@ final class AppSheetViewFactory {
     /// via `MoreSheetHost`. Swap this branch's return type once the SwiftUI
     /// `MoreView` lands.
     func moreView() -> MoreSheetHost {
-        MoreSheetHost(application: application)
+        MoreSheetHost(application: application) { [coordinator] in
+            coordinator.truncateStacked(toDepth: coordinator.stackedRoutes.lastIndex(of: .more) ?? coordinator.stackedRoutes.count)
+        }
     }
 
     /// The Stop page as a native SwiftUI sheet over the map panel.
