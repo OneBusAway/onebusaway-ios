@@ -26,6 +26,8 @@ final class MapPanelPrompts: ObservableObject {
     private let presentingController: () -> UIViewController?
     private lazy var feedbackPromptPresenter = FeedbackPromptPresenter(application: application)
     private var feedbackPromptTask: Task<Void, Never>?
+    /// Set when the app, not the rider, is about to close the sheets.
+    private var ignoresNextStopVisitEnd = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -103,6 +105,15 @@ final class MapPanelPrompts: ObservableObject {
 
     // MARK: - Feedback prompt
 
+    /// The app is closing the sheets itself (a region change, a rentals link),
+    /// so a stop sheet closing isn't the rider finishing with it.
+    ///
+    /// - Parameter stackedRoutes: The sheets open now. Nothing open, nothing to
+    ///   close, and a flag left set would swallow the rider's next real close.
+    func appWillCloseSheets(_ stackedRoutes: [AppSheetRoute]) {
+        ignoresNextStopVisitEnd = stackedRoutes.contains { if case .stopDetails = $0 { true } else { false } }
+    }
+
     /// Whether the rider just closed a stop sheet and is back on the map: the
     /// natural stopping point the UIKit map asks for feedback at.
     ///
@@ -121,6 +132,10 @@ final class MapPanelPrompts: ObservableObject {
         feedbackPromptTask?.cancel()
         feedbackPromptTask = nil
         guard Self.endsStopVisit(previous: previous, current: current) else { return }
+        guard !ignoresNextStopVisitEnd else {
+            ignoresNextStopVisitEnd = false
+            return
+        }
 
         feedbackPromptTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(1))

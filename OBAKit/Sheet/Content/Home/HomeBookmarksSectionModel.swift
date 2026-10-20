@@ -209,7 +209,9 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     // MARK: - BookmarkDataDelegate
 
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        batchDeliveredArrivals = true
+        // Only during a batch: trip schedules land after theirs has ended, and
+        // would otherwise mark the next batch, cancelled or empty, as delivering.
+        if dataLoader.isLoading { batchDeliveredArrivals = true }
         rebuildRows()
     }
 
