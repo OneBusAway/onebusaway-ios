@@ -23,8 +23,9 @@ import Foundation
 ///    of the trip, scaled by the vehicle's observed pace against the schedule, pausing
 ///    `dwell` at each stop, for at most `horizon` seconds and `maxExtrapolationMeters`.
 /// 3. A new fix ahead of the marker is caught up with over `reconcileDuration`; one
-///    behind it holds the marker until the estimate passes it. The marker only moves
-///    backward through a snap.
+///    behind it rewinds the marker back along the shape to it, over
+///    `rewindMinDuration`…`rewindMaxDuration`. Otherwise the marker never moves
+///    backward.
 public struct VehicleTrack: Sendable {
 
     public enum IngestResult: Sendable, Equatable {
@@ -42,6 +43,9 @@ public struct VehicleTrack: Sendable {
 
     public let geometry: TripGeometry
     public var tunables: VehicleEstimationTunables
+    /// Whether a fix behind the marker rewinds it there; off, it jumps. Off for
+    /// Reduce Motion.
+    public var animatesCorrections = true
 
     private struct Anchor: Sendable {
         let fix: VehicleFix
@@ -53,7 +57,7 @@ public struct VehicleTrack: Sendable {
     private enum Reconcile: Sendable {
         case none
         case catchUp(from: Double, start: Date)
-        case hold(at: Double, since: Date)
+        case rewind(from: Double, start: Date, duration: TimeInterval)
     }
 
     /// Oldest first: the two that measure a pace.
@@ -115,17 +119,22 @@ public struct VehicleTrack: Sendable {
     private mutating func reconcile(with anchor: Anchor, now: Date) {
         guard let shown = shownS, !needsSnap else { return }
         let delta = rawEstimate(at: now).s - shown
-        if delta > tunables.snapForwardMeters || delta < -tunables.snapBackMeters {
+        if delta > tunables.snapForwardMeters || delta < -tunables.paceResetBehindMeters {
             // A pace measured across a jump this size would be nonsense.
             anchors = [anchor]
+        }
+        if delta > tunables.snapForwardMeters {
             snapNext()
         } else if delta >= 0 {
             reconcile = .catchUp(from: shown, start: now)
         } else if delta >= -tunables.backwardToleranceMeters {
             // The monotonic clamp in `estimate` waits it out.
             reconcile = .none
+        } else if animatesCorrections {
+            let duration = min(max(-delta / tunables.rewindSpeed, tunables.rewindMinDuration), tunables.rewindMaxDuration)
+            reconcile = .rewind(from: shown, start: now, duration: duration)
         } else {
-            reconcile = .hold(at: shown, since: now)
+            snapNext()
         }
     }
 
@@ -165,7 +174,9 @@ public struct VehicleTrack: Sendable {
 
         let raw = rawEstimate(at: now)
         var s = raw.s
-        var snap = needsSnap
+        let snap = needsSnap
+        // Moving back, or just arrived back: the never-backward clamp stands aside.
+        var isRewinding = false, finishedRewind = false
 
         switch reconcile {
         case .none:
@@ -177,18 +188,18 @@ public struct VehicleTrack: Sendable {
             } else {
                 s = from + (raw.s - from) * max(progress, 0)
             }
-        case let .hold(at, since):
-            if raw.s >= at {
+        case let .rewind(from, start, duration):
+            let progress = now.timeIntervalSince(start) / duration
+            if progress >= 1 {
                 reconcile = .none
-            } else if now.timeIntervalSince(since) > tunables.maxHold {
-                reconcile = .none
-                snap = true
+                finishedRewind = true
             } else {
-                s = at
+                s = from + (raw.s - from) * max(progress, 0)
+                isRewinding = true
             }
         }
 
-        if !snap, let shown = shownS { s = max(s, shown) }
+        if !snap, !isRewinding, !finishedRewind, let shown = shownS { s = max(s, shown) }
         shownS = s
         needsSnap = false
 
@@ -201,7 +212,8 @@ public struct VehicleTrack: Sendable {
             fixTime: latest.fixTime,
             fixAge: age,
             mode: raw.mode,
-            shouldSnap: snap
+            shouldSnap: snap,
+            isRewinding: isRewinding
         )
     }
 

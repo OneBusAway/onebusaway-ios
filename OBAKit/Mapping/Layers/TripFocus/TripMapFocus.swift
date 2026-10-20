@@ -54,16 +54,9 @@ final class TripMapFocus: ObservableObject {
     @Published private(set) var vehicleEstimate: VehicleEstimate?
 
     /// Where to cut the line while an estimate runs, so its gray-to-colored join
-    /// stays at the marker; `nil` cuts it at `content.progress`. Redrawing the line
-    /// costs more than moving a marker, so this moves at most every
-    /// `splitRefreshInterval`. Both maps read it.
+    /// stays at the marker on every tick; `nil` cuts it at `content.progress`.
+    /// Both maps read it.
     @Published private(set) var estimatedSplitProgress: Double?
-
-    static let splitRefreshInterval: TimeInterval = 5
-
-    /// Test seam for `splitRefreshInterval`.
-    var now: () -> Date = Date.init
-    private var lastSplitAt: Date?
 
     func apply(_ content: Content?) {
         self.content = content
@@ -71,22 +64,14 @@ final class TripMapFocus: ObservableObject {
 
     func applyVehicleEstimate(_ estimate: VehicleEstimate?) {
         vehicleEstimate = estimate
-        guard let progress = estimate?.progress else {
-            lastSplitAt = nil
-            if estimatedSplitProgress != nil { estimatedSplitProgress = nil }
-            return
-        }
-        let now = now()
-        if let lastSplitAt, now.timeIntervalSince(lastSplitAt) < Self.splitRefreshInterval { return }
-        lastSplitAt = now
-        estimatedSplitProgress = progress
+        let progress = estimate?.progress
+        if progress != estimatedSplitProgress { estimatedSplitProgress = progress }
     }
 
     func clear() {
         content = nil
         vehicleEstimate = nil
         estimatedSplitProgress = nil
-        lastSplitAt = nil
     }
 }
 

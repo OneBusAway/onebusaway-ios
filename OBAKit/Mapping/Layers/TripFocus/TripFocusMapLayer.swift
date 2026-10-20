@@ -77,6 +77,11 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     private var cancellables = Set<AnyCancellable>()
 
     private var shapeOverlays: [TripShapeOverlay] = []
+    /// Where the line is cut while an estimate runs, as MapKit's unit distance.
+    /// Both halves are then drawn over the whole shape, one stroked up to here and
+    /// the other from here, so a tick moves the join without replacing the line.
+    /// `nil` when the line is cut by splitting the shape itself.
+    private var strokeCut: CGFloat?
     private var stopAnnotations: [TripStopAnnotation] = []
     /// What the direction chevrons on the line ahead keep clear of.
     private let arrowContext = RouteArrowContext()
@@ -169,18 +174,35 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         drawStops(content)
         // Before the shape, so its first draw already knows where this trip's stops are.
         refreshArrowMarkers()
-        drawShape(split)
+        drawShape(content, estimatedProgress: focus?.estimatedSplitProgress)
         drawVehicle(content)
         // `content`, not `focus.content`: this runs in `$content`'s `willSet`.
         drawReportedPositions(content)
         frameCameraIfNeeded(content, split: split)
     }
 
-    private func drawShape(_ split: TripShapeSplit.Result) {
+    private func drawShape(_ content: TripMapFocus.Content, estimatedProgress: Double?) {
         // Spent first, then ahead, so where the two meet the live half wins the
         // z-order. Casing before core within each, for the same reason.
-        add(coordinates: split.spent, isSpent: true)
-        add(coordinates: split.ahead, isSpent: false)
+        if let estimatedProgress {
+            strokeCut = TripShapeSplit.unitDistance(coordinates: content.shape, atFraction: estimatedProgress)
+            add(coordinates: content.shape, isSpent: true)
+            add(coordinates: content.shape, isSpent: false)
+        } else {
+            strokeCut = nil
+            let split = content.shapeSplit()
+            add(coordinates: split.spent, isSpent: true)
+            add(coordinates: split.ahead, isSpent: false)
+        }
+    }
+
+    /// Strokes `renderer` up to the cut, or from it, per `strokeCut`.
+    private func applyStrokeCut(to renderer: MKPolylineRenderer, for overlay: TripShapeOverlay) {
+        if overlay.isSpent {
+            renderer.strokeEnd = strokeCut ?? 1
+        } else {
+            renderer.strokeStart = strokeCut ?? 0
+        }
     }
 
     private func add(coordinates: [CLLocationCoordinate2D], isSpent: Bool) {
@@ -249,7 +271,10 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         if let vehicleAnnotation {
             let view = mapView.view(for: vehicleAnnotation) as? PulsingVehicleAnnotationView
             if let estimate {
-                VehicleCoordinateUpdate.follow(vehicleAnnotation, to: estimate.coordinate, snap: estimate.shouldSnap, in: mapView)
+                VehicleCoordinateUpdate.follow(
+                    vehicleAnnotation, to: estimate.coordinate, snap: estimate.shouldSnap,
+                    duration: VehicleEstimationDriver.glideDuration(for: estimate), in: mapView
+                )
                 view?.applyEstimate(estimate)
             } else if let content = focus?.content, let coordinate = content.vehicleCoordinate {
                 VehicleCoordinateUpdate.apply(from: vehicleAnnotation.coordinate, to: coordinate, on: vehicleAnnotation)
@@ -273,9 +298,19 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     /// The line alone, cut where the marker is; the stops and the vehicle stay.
     private func redrawShape(estimatedProgress: Double?) {
         guard let content = focus?.content else { return }
+        if let estimatedProgress, strokeCut != nil {
+            // Already drawn whole: only the cut moves.
+            strokeCut = TripShapeSplit.unitDistance(coordinates: content.shape, atFraction: estimatedProgress)
+            for overlay in shapeOverlays {
+                guard let renderer = mapView.renderer(for: overlay) as? MKPolylineRenderer else { continue }
+                applyStrokeCut(to: renderer, for: overlay)
+                renderer.setNeedsDisplay()
+            }
+            return
+        }
         mapView.removeOverlays(shapeOverlays)
         shapeOverlays.removeAll()
-        drawShape(content.shapeSplit(estimatedProgress: estimatedProgress))
+        drawShape(content, estimatedProgress: estimatedProgress)
         refreshArrowMarkers()
     }
 
@@ -366,6 +401,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         renderer.lineCap = .round
         renderer.lineJoin = .round
         renderer.alpha = overlay.isSpent ? Style.spentAlpha : 1
+        applyStrokeCut(to: renderer, for: overlay)
 
         return renderer
     }

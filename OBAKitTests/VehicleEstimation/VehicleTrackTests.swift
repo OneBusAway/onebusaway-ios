@@ -180,48 +180,85 @@ struct VehicleTrackTests {
         #expect(shown >= 200)
     }
 
-    @Test func `A fix well behind the marker holds it until the estimate catches up`() {
+    /// The same fixes, never displayed in between: where the marker is headed.
+    private func reference(_ fixes: [(north: Double, at: TimeInterval)], geometry: TripGeometry? = nil) -> VehicleTrack {
+        var reference = geometry.map { track($0) } ?? track()
+        for fix in fixes { _ = reference.ingest(F.fix(north: fix.north, at: fix.at), now: F.t0 + fix.at) }
+        return reference
+    }
+
+    @Test func `A fix behind the marker rewinds it along the shape`() {
         var track = track()
         _ = track.ingest(F.fix(north: 100, at: 0), now: F.t0)
         _ = s(&track, at: 10)                       // shown at 200
         _ = track.ingest(F.fix(north: 150, at: 10), now: F.t0 + 10)
-        expectClose(s(&track, at: 11), 200, within: 0.5)
-        expectClose(s(&track, at: 14), 200, within: 0.5)
-        // The 150 m anchor reaches 200 m after ~5 s (at the slowed pace) and moves on.
-        #expect(s(&track, at: 20)! > 200)
+        var reference = reference([(100, 0), (150, 10)])
+
+        let start = track.estimate(at: F.t0 + 10)
+        #expect(start?.isRewinding == true)
+        expectClose(start?.distanceAlongShape, 200, within: 0.5)
+        // 50 m back takes the shortest rewind, 1.5 s.
+        let midway = track.estimate(at: F.t0 + 10.75)
+        #expect(midway?.isRewinding == true)
+        #expect(midway?.shouldSnap == false)
+        let target = s(&reference, at: 10.75)!
+        #expect(midway!.distanceAlongShape! < 200 && midway!.distanceAlongShape! > target)
+
+        let done = track.estimate(at: F.t0 + 11.5)
+        #expect(done?.isRewinding == false)
+        expectClose(done?.distanceAlongShape, s(&reference, at: 11.5)!, within: 0.01)
     }
 
-    @Test func `A hold that lasts too long snaps back`() {
-        var tunables = VehicleEstimationTunables.default
-        tunables.maxHold = 3
-        var track = track(TripGeometry(shape: F.straightLine(), stopTimes: [], serverTripLength: 1000), tunables: tunables)
-        _ = track.ingest(F.fix(north: 100, at: 0), now: F.t0)
-        _ = track.ingest(F.fix(north: 250, at: 30), now: F.t0 + 30)
-        _ = s(&track, at: 60)                       // shown at 400
-        _ = track.ingest(F.fix(north: 300, at: 60), now: F.t0 + 60)
-        expectClose(s(&track, at: 61), 400, within: 0.5)
-        let after = track.estimate(at: F.t0 + 64)
-        #expect(after?.shouldSnap == true)
-        #expect(after!.distanceAlongShape! < 400)
+    @Test(arguments: [(200.0, 2.0), (300.0, 3.0), (600.0, 3.0)])
+    func `A rewind takes longer the farther it goes, up to 3 s`(back: Double, duration: TimeInterval) {
+        let geometry = TripGeometry(shape: F.straightLine(), stopTimes: [], serverTripLength: 1000)
+        var track = track(geometry)
+        _ = track.ingest(F.fix(north: 700, at: 0), now: F.t0)
+        _ = s(&track, at: 0)                        // shown at 700, no speed yet
+        _ = track.ingest(F.fix(north: 700 - back, at: 1), now: F.t0 + 1)
+
+        #expect(track.estimate(at: F.t0 + 1 + duration - 0.05)?.isRewinding == true)
+        let done = track.estimate(at: F.t0 + 1 + duration + 0.01)
+        #expect(done?.isRewinding == false)
+        #expect(done?.shouldSnap == false)
     }
 
-    @Test func `A fix far behind the marker snaps`() {
+    @Test func `A fix far behind the marker rewinds rather than snapping`() {
         var track = track()
         _ = track.ingest(F.fix(north: 400, at: 0), now: F.t0)
         _ = s(&track, at: 1)
         _ = track.ingest(F.fix(north: 100, at: 1), now: F.t0 + 1)
-        let estimate = track.estimate(at: F.t0 + 1)
-        #expect(estimate?.shouldSnap == true)
-        expectClose(estimate?.distanceAlongShape, 100, within: 0.5)
+
+        let start = track.estimate(at: F.t0 + 1)
+        #expect(start?.shouldSnap == false)
+        #expect(start?.isRewinding == true)
+        let done = track.estimate(at: F.t0 + 4)
+        #expect(done?.isRewinding == false)
+        #expect(done!.distanceAlongShape! < 200)
     }
 
-    @Test func `The marker never moves backward without a snap`() {
+    @Test func `Without animated corrections a fix behind the marker jumps there`() {
+        var track = track()
+        track.animatesCorrections = false
+        _ = track.ingest(F.fix(north: 100, at: 0), now: F.t0)
+        _ = s(&track, at: 10)                       // shown at 200
+        _ = track.ingest(F.fix(north: 150, at: 10), now: F.t0 + 10)
+        var reference = reference([(100, 0), (150, 10)])
+
+        let estimate = track.estimate(at: F.t0 + 10)
+        #expect(estimate?.shouldSnap == true)
+        #expect(estimate?.isRewinding == false)
+        expectClose(estimate?.distanceAlongShape, s(&reference, at: 10)!, within: 0.01)
+    }
+
+    @Test func `The marker moves backward only by rewinding or snapping`() {
         var generator = SeededGenerator(seed: 1312)
         for _ in 0..<100 {
             var track = track(F.tenMetersPerSecond(extraStops: [300, 600]))
             var truth = Double.random(in: 0...200, using: &generator)
             var time = 0.0
             var shown: Double?
+            var wasRewinding = false
             for step in 0..<60 {
                 time += 1
                 if step % 15 == 0 {
@@ -229,10 +266,12 @@ struct VehicleTrackTests {
                     _ = track.ingest(F.fix(north: max(truth, 0), at: time), now: F.t0 + time)
                 }
                 guard let estimate = track.estimate(at: F.t0 + time), let s = estimate.distanceAlongShape else { continue }
-                if let shown, !estimate.shouldSnap {
+                // Sampled once a second, a rewind's last leg lands on the frame after it.
+                if let shown, !estimate.shouldSnap, !estimate.isRewinding, !wasRewinding {
                     #expect(s >= shown - 0.001, "moved back from \(shown) to \(s) at \(time)")
                 }
                 shown = s
+                wasRewinding = estimate.isRewinding
             }
         }
     }

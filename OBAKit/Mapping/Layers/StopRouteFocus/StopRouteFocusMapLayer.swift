@@ -503,7 +503,10 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         for annotation in annotations {
             let view = mapView.view(for: annotation) as? PulsingVehicleAnnotationView
             if let estimate = estimates[annotation.id] {
-                VehicleCoordinateUpdate.follow(annotation, to: estimate.coordinate, snap: estimate.shouldSnap, in: mapView)
+                VehicleCoordinateUpdate.follow(
+                    annotation, to: estimate.coordinate, snap: estimate.shouldSnap,
+                    duration: VehicleEstimationDriver.glideDuration(for: estimate), in: mapView
+                )
                 view?.applyEstimate(estimate)
             } else if previous[annotation.id] != nil {
                 // Back to the feed; the next arrivals poll moves it there.

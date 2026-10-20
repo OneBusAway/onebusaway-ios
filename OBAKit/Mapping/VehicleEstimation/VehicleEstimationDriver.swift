@@ -38,6 +38,9 @@ final class VehicleEstimationDriver {
     }
 
     static let tickInterval: Duration = .seconds(1)
+    /// While a marker rewinds, ticks come this often, so it follows the shape's
+    /// curves back rather than cutting across them.
+    static let rewindFrameInterval: Duration = .milliseconds(33)
     /// With Reduce Motion on, the marker moves this often, without animating.
     static let reduceMotionStepInterval: TimeInterval = 10
 
@@ -63,6 +66,8 @@ final class VehicleEstimationDriver {
     private var singleKey: String?
     private var skew = ClockSkewEstimator()
     private var lastPublishedAt: Date?
+    /// Whether the last estimates had a marker rewinding: ticks at frame rate.
+    private var isRewinding = false
 
     private var tickTask: Task<Void, Never>?
     /// Whether the page wants ticks; the background suspends them without changing it.
@@ -140,6 +145,7 @@ final class VehicleEstimationDriver {
                 let geometry = TripGeometry(shape: shape, stopTimes: input.stopTimes, serverTripLength: input.serverTripLength)
                 vehicle = Vehicle(track: VehicleTrack(geometry: geometry, tunables: tunables), geometryKey: key)
             }
+            vehicle.track.animatesCorrections = !reduceMotion()
             for fix in input.fixes.sorted(by: { $0.fixTime < $1.fixTime }) {
                 _ = vehicle.track.ingest(fix, now: serverNow)
             }
@@ -170,7 +176,8 @@ final class VehicleEstimationDriver {
         guard isResumed, !isInBackground, tickTask == nil else { return }
         tickTask = Task { [weak self, clock] in
             while !Task.isCancelled {
-                do { try await clock.sleep(for: Self.tickInterval) } catch { return }
+                let interval = self?.isRewinding == true ? Self.rewindFrameInterval : Self.tickInterval
+                do { try await clock.sleep(for: interval) } catch { return }
                 self?.publish(force: false)
             }
         }
@@ -195,8 +202,20 @@ final class VehicleEstimationDriver {
             next[key] = vehicles[key]?.track.estimate(at: serverNow)
         }
         lastPublishedAt = deviceNow
+        let startsRewinding = !isRewinding && next.values.contains { $0.isRewinding }
+        isRewinding = next.values.contains { $0.isRewinding }
+        if startsRewinding, tickTask != nil {
+            // The tick asleep for a second would miss most of the rewind.
+            stopTicking()
+            startTickingIfNeeded()
+        }
         onEstimates?(next)
         onEstimate?(singleKey.flatMap { next[$0] })
+    }
+
+    /// How long a marker takes to glide to `estimate`: until the next one arrives.
+    static func glideDuration(for estimate: VehicleEstimate) -> TimeInterval {
+        (estimate.isRewinding ? rewindFrameInterval : tickInterval).timeInterval
     }
 
     /// What, when it changes, means the shape or schedule did: a new trip, or the
@@ -213,5 +232,12 @@ final class VehicleEstimationDriver {
             stopCount = input.stopTimes.count
             serverTripLength = input.serverTripLength
         }
+    }
+}
+
+extension Duration {
+    var timeInterval: TimeInterval {
+        let (seconds, attoseconds) = components
+        return TimeInterval(seconds) + TimeInterval(attoseconds) / 1e18
     }
 }

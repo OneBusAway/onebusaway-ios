@@ -23,7 +23,7 @@ the C, D and E Lines and route 21, `trip-details` polled every 15 s for 25 minut
 
 | | median | p90 |
 |---|---|---|
-| Display error, estimate | **146 m** | **421 m** |
+| Display error, estimate | **146 m** | **411 m** |
 | Display error, reported fix (trip page today) | 313 m | 977 m |
 | Display error, server `position` (stop map today) | 318 m | 1070 m |
 | Next-fix error, estimate | **65 m** | **186 m** |
@@ -57,6 +57,11 @@ for Java regions: `position` is no better than the raw fix, so the trip page kee
   shared vectors were dropped.
 - **Estimation also covers the stop map** (Phase 2), not only the trip page that
   §0 scoped v1 to: each bus on its own trip's shape and schedule.
+- **A fix behind the marker rewinds it** back along the shape, over 1.5–3 s by
+  distance, instead of holding the marker and then snapping. Under Reduce Motion
+  it jumps.
+- **The colored line is cut at the marker every tick,** not every 5 s, so it
+  never trails behind the bus (§6.2).
 - **A frozen marker reads as estimated.** Past the horizon it stays where the
   horizon left it, up to 120 s of travel past the fix, so the freshness line says
   "estimated position, updated …", not §7's "Location last updated …". Only a
@@ -325,10 +330,13 @@ target = estimate(new track, now).s ; shown = track.displayedS
 0 ≤ Δ                 → catch up over reconcileSeconds: displayed glides at the
                         rate Δ/reconcileSeconds + v, then follows the estimate
 −backwardToleranceMeters ≤ Δ < 0 → treat as 0 (absorb jitter)
-−snapBackMeters ≤ Δ < −backwardToleranceMeters → HOLD: displayed = max(shown, estimate(t))
-                        until the estimate passes it; if holding > maxHoldSeconds → snap
-Δ < −snapBackMeters, vehicle/trip change, off-shape → snap (and reset track)
-displayedS is monotonic except through an explicit snap.
+Δ < −backwardToleranceMeters → REWIND (as built; see §0.1): displayed runs back
+                        along the shape to the estimate over |Δ| / rewindSpeed,
+                        clamped to [rewindMinDuration, rewindMaxDuration], with
+                        ticks at ~30 fps while it lasts. Reduce Motion: snap.
+Δ < −paceResetBehindMeters → also start the pace over
+vehicle/trip change, off-shape → snap (and reset track)
+displayedS is monotonic except through a rewind or an explicit snap.
 ```
 
 ### 4.6 Modes and gating, checked before each estimate
@@ -380,10 +388,10 @@ All are provisional until the Phase 0 data comes in.
 | `terminalZoneMeters` | 75 m | |
 | `reconcileSeconds` | 1.5 s | Brief, 1–2 s |
 | `backwardToleranceMeters` | 15 m | |
-| `snapBackMeters` | 150 m | |
-| `maxHoldSeconds` | 20 s | |
+| `rewindSpeed` | 100 m/s | 150 m back takes the minimum; 300 m or more, the maximum |
+| `rewindMinDuration` / `rewindMaxDuration` | 1.5 s / 3 s | |
+| `paceResetBehindMeters` | 150 m | |
 | `snapForwardMeters` | 500 m | Matches `VehicleCoordinateUpdate.snapBeyondMeters` |
-| `splitRefreshInterval` | 5 s | §6.2 |
 | `reduceMotionStepInterval` | 10 s | §6.3 |
 
 ## 5. Data requirements
@@ -438,13 +446,13 @@ scope here.
 ### 6.2 The spent/ahead split
 
 The split comes from `Content.progress`, at fix time. A marker that runs ahead
-of the junction between the gray and colored lines reads as a bug. v1 re-splits
-from `estimate.s / L` every `splitRefreshInterval` (5 s), and only on the
-SwiftUI display model's `spent`/`ahead` and the layer's shape overlays. **Risk:**
-`TripFocusMapLayer.render` removes and re-adds every shape overlay, arrows
-included. At 5 s that may flicker or cost arrow layout. The spike measures it.
-The fallback is to keep the split at the fix and accept the gap (≤ ~30 s of
-travel).
+of the junction between the gray and colored lines reads as a bug: the colored
+line trails behind it. As built, the line is cut at `estimate.s / L` on every
+tick. `TripFocusMapLayer` draws both halves over the whole shape once and moves
+the cut with `MKPolylineRenderer.strokeStart` / `strokeEnd` (MapKit's unit
+distance runs by map points, so `TripShapeSplit.unitDistance` converts), and the
+chevrons ahead drop those before `strokeStart`. The panel's SwiftUI `Map` has no
+stroke range, so it re-splits its polylines each tick.
 
 ### 6.3 Reduce Motion
 
@@ -523,9 +531,9 @@ Design review is owed. This is a starting point, not a decision.
   - the terminal / not-started / completed holds
 - **Reconciliation:**
   - each Δ band in §4.5
-  - the hold expiring into a snap
-  - displayed `s` is monotonic across 100 random fix sequences (property-style,
-    seeded RNG)
+  - a rewind's duration scales with distance, within its bounds
+  - displayed `s` moves backward only by rewinding or snapping, across 100 random
+    fix sequences (property-style, seeded RNG)
 - **Ingest:**
   - a duplicate `lastLocationUpdateTime` is a no-op
   - `activeTripID` mismatch → `.raw`
@@ -620,8 +628,8 @@ skew handling (`currentTime` + `Age`). Still open:
 3. Does SwiftUI `Map` animate an `Annotation`'s coordinate change inside
    `withAnimation`? The panel publishes each tick inside one, but Apple's docs
    don't say whether `Annotation` interpolates.
-4. Does re-splitting the shape every 5 s on `MKMapView` flicker or cost arrow
-   layout (§6.2)?
+4. Does moving `strokeStart` once a second, and at ~30 fps during a rewind,
+   cost noticeable redraw on older devices (§6.2)?
 5. Should dwell be skipped at stops with no boardings expected? That would need
    pickup/drop-off types, which are not in the API.
 6. Visual design for the staleness halo and the frozen state (§6.5). With fixes

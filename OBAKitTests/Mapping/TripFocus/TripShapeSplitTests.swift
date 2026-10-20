@@ -9,6 +9,7 @@
 
 import Testing
 import CoreLocation
+import MapKit
 @testable import OBAKit
 
 @Suite(.serialized)
@@ -52,6 +53,26 @@ struct TripShapeSplitTests {
     }
 
     // MARK: - Splitting
+
+    /// MapKit strokes a polyline from `strokeStart` in its own unit distance,
+    /// which runs by map points, not meters. North to south the two disagree.
+    @Test func `A fraction's unit distance is where it falls on the drawn line`() {
+        var coordinates = [
+            CLLocationCoordinate2D(latitude: 40, longitude: -122),
+            CLLocationCoordinate2D(latitude: 60, longitude: -122),
+            CLLocationCoordinate2D(latitude: 60, longitude: -100),
+        ]
+        let polyline = MKPolyline(coordinates: &coordinates, count: coordinates.count)
+        let first = CLLocation(latitude: 40, longitude: -122).distance(from: CLLocation(latitude: 60, longitude: -122))
+        let second = CLLocation(latitude: 60, longitude: -122).distance(from: CLLocation(latitude: 60, longitude: -100))
+        let atVertex = first / (first + second)
+
+        #expect(TripShapeSplit.unitDistance(coordinates: coordinates, atFraction: 0) == 0)
+        #expect(TripShapeSplit.unitDistance(coordinates: coordinates, atFraction: 1) == 1)
+        let unit = TripShapeSplit.unitDistance(coordinates: coordinates, atFraction: atVertex)
+        #expect(abs(unit - polyline.location(atPointIndex: 1)) < 1e-9)
+        #expect(abs(CGFloat(atVertex) - polyline.location(atPointIndex: 1)) > 0.01)
+    }
 
     @Test func `Splitting mid-segment interpolates a shared join point`() {
         let line = parallel(from: -122, to: -121.99, points: 2)
