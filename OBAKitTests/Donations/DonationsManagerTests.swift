@@ -44,13 +44,19 @@ final class DonationsManagerTests: OBATestCase {
 
     /// `storefront` is the App Store country code the manager sees. The manager is
     /// returned after its storefront read has finished, so gating is settled.
-    private func buildManager(appLaunchCount: Int, donationsEnabled: Bool = true, storefront: String? = "USA") async throws -> DonationsManager {
+    private func buildManager(
+        appLaunchCount: Int,
+        donationsEnabled: Bool = true,
+        storefront: String? = "USA",
+        notificationCenter: NotificationCenter = NotificationCenter()
+    ) async throws -> DonationsManager {
         let manager = DonationsManager(
             bundle: try DonationsConfigBundle.create(donationsEnabled: donationsEnabled),
             userDefaults: userDefaults,
             obacoService: obacoService,
             analytics: nil,
             appLaunchCount: { appLaunchCount },
+            notificationCenter: notificationCenter,
             storefrontCountryCode: { storefront }
         )
         await manager.refreshStorefront()
@@ -127,5 +133,28 @@ final class DonationsManagerTests: OBATestCase {
         _ = try await buildManager(appLaunchCount: 3, storefront: "USA")
         let manager = try await buildManager(appLaunchCount: 3, storefront: nil)
         #expect(manager.shouldRequestDonations)
+    }
+
+    /// The More tab rebuilds on this, so a first-launch answer shows the donate section.
+    @Test func `A changed storefront answer posts a notification`() async throws {
+        let center = NotificationCenter()
+        var posts = 0
+        let token = center.addObserver(forName: .donationsEligibilityDidChange, object: nil, queue: nil) { _ in posts += 1 }
+        defer { center.removeObserver(token) }
+
+        _ = try await buildManager(appLaunchCount: 3, storefront: "USA", notificationCenter: center)
+        #expect(posts == 1)
+    }
+
+    @Test func `An unchanged storefront answer posts nothing`() async throws {
+        _ = try await buildManager(appLaunchCount: 3, storefront: "USA")
+
+        let center = NotificationCenter()
+        var posts = 0
+        let token = center.addObserver(forName: .donationsEligibilityDidChange, object: nil, queue: nil) { _ in posts += 1 }
+        defer { center.removeObserver(token) }
+
+        _ = try await buildManager(appLaunchCount: 3, storefront: "USA", notificationCenter: center)
+        #expect(posts == 0)
     }
 }

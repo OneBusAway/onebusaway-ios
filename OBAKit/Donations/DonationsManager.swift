@@ -19,6 +19,7 @@ public class DonationsManager {
     ///   - userDefaults: The user defaults object.
     ///   - analytics: The Analytics object.
     ///   - appLaunchCount: Returns the number of times the app has been launched.
+    ///   - notificationCenter: Where `.donationsEligibilityDidChange` is posted.
     ///   - storefrontCountryCode: Returns the App Store storefront's ISO 3166-1 alpha-3
     ///     country code, or `nil` when it can't be determined.
     public init(
@@ -27,12 +28,14 @@ public class DonationsManager {
         obacoService: ObacoAPIService?,
         analytics: Analytics?,
         appLaunchCount: @escaping () -> Int,
+        notificationCenter: NotificationCenter = .default,
         storefrontCountryCode: @escaping () async -> String? = { await Storefront.current?.countryCode }
     ) {
         self.bundle = bundle
         self.userDefaults = userDefaults
         self.analytics = analytics
         self.appLaunchCount = appLaunchCount
+        self.notificationCenter = notificationCenter
         self.storefrontCountryCode = storefrontCountryCode
 
         Task { [weak self] in
@@ -52,6 +55,7 @@ public class DonationsManager {
     var obacoService: ObacoAPIService?
     private let analytics: Analytics?
     private let appLaunchCount: () -> Int
+    private let notificationCenter: NotificationCenter
     private let storefrontCountryCode: () async -> String?
 
     // MARK: - User Defaults
@@ -74,9 +78,14 @@ public class DonationsManager {
     }
 
     /// Re-reads the storefront. An unknown storefront keeps the last known answer.
+    /// Posts `.donationsEligibilityDidChange` when the answer changes, so screens
+    /// already showing (or hiding) donation UI can rebuild.
     func refreshStorefront() async {
         guard let countryCode = await storefrontCountryCode() else { return }
-        userDefaults.set(countryCode == "USA", forKey: DonationsManager.storefrontAllowsDonationsKey)
+        let allows = countryCode == "USA"
+        guard allows != storefrontAllowsDonations else { return }
+        userDefaults.set(allows, forKey: DonationsManager.storefrontAllowsDonationsKey)
+        notificationCenter.post(name: .donationsEligibilityDidChange, object: self)
     }
 
     // MARK: - Dismiss Donations Request
@@ -164,4 +173,10 @@ public class DonationsManager {
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(analytics))
     }
+}
+
+extension Notification.Name {
+    /// Posted by `DonationsManager` when the storefront's answer to "may the app ask
+    /// for donations?" changes. Observers re-read `donationsEnabled`.
+    static let donationsEligibilityDidChange = Notification.Name("OBADonationsEligibilityDidChange")
 }

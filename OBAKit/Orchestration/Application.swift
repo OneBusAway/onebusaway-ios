@@ -73,7 +73,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         userDefaults: userDefaults,
         obacoService: obacoService,
         analytics: analytics,
-        appLaunchCount: { [userDataStore] in userDataStore.appLaunchCount }
+        appLaunchCount: { [userDataStore] in userDataStore.appLaunchCount },
+        notificationCenter: notificationCenter
     )
 
     @MainActor

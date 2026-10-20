@@ -1156,7 +1156,7 @@
 "settings_controller.bike_mode_section.footer" = "يستخدم سرعة تنقّل أسرع لتقديرات وقت الوصول إلى الموقف ومواعيد الوصول وصفحة الموقف.";
 
 /* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة ركوبك للدراجة من تطبيق الصحة. ولا يكتب أي بيانات في تطبيق الصحة أبدًا.";
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة ركوبك للدراجة من تطبيق «صحتي». ولا يكتب أي بيانات في تطبيق «صحتي» أبدًا.";
 
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "وضع الدراجة";
@@ -1246,7 +1246,7 @@
 "settings_controller.walking_speed.use_healthkit" = "استخدام بيانات تطبيق «صحتي»";
 
 /* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة مشيك من تطبيق الصحة لتقدير الوقت الذي تستغرقه للوصول إلى المحطة. ولا يكتب أي بيانات في تطبيق الصحة أبدًا.";
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة مشيك من تطبيق «صحتي» لتقدير الوقت الذي تستغرقه للوصول إلى المحطة. ولا يكتب أي بيانات في تطبيق «صحتي» أبدًا.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "سرعة المشي";
