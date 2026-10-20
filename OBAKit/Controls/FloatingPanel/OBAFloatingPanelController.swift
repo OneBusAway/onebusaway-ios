@@ -42,6 +42,12 @@ class OBAFloatingPanelController: FloatingPanelController {
         surfaceView.grabberHandle.isAccessibilityElement = true
         updateAccessibilityValue()
 
+        Self.registerVoiceOverDefaults(in: userDefaults)
+    }
+
+    /// Registered by whichever map is on screen: this panel's, or the map
+    /// panel experience's, which has no `OBAFloatingPanelController`.
+    static func registerVoiceOverDefaults(in userDefaults: UserDefaults) {
         userDefaults.register(defaults: [
             OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey: true,
             OBAFloatingPanelController.UserHasSeenFullSheetVoiceoverChangeUserDefaultsKey: false
