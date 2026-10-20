@@ -145,6 +145,71 @@ final class VehicleEstimationDriverTests {
         expectClose(published.last??.distanceAlongShape, 300, within: 0.5)
     }
 
+    /// Shows the bus 300 m along, then reports it at 250 m: 50 m behind the marker.
+    private func correctBehind() async {
+        driver.update(input())
+        driver.resume()
+        await poll(until: { self.clock.sleeperCount == 1 })
+        for _ in 0..<10 { await advance(1) }       // shown at 300
+        driver.update(input(fixes: [F.fix(north: 250, at: 10)]))
+    }
+
+    /// Moves both clocks one rewind frame, then lets the frame that wakes run.
+    private func advanceFrame() async {
+        await poll(until: { self.clock.sleeperCount == 1 })
+        let before = published.count
+        device.now += TimeInterval(VehicleEstimationDriver.rewindFrameInterval.timeInterval)
+        clock.advance(by: VehicleEstimationDriver.rewindFrameInterval)
+        await poll(until: { self.published.count > before }, "a frame should publish")
+    }
+
+    @Test func `A rewind ticks at frame rate until it lands, then once a second`() async throws {
+        await correctBehind()
+        #expect(published.last??.isRewinding == true)
+
+        await advanceFrame()
+        let first = try #require(published.last??.distanceAlongShape)
+        #expect(first < 300)
+        for _ in 0..<60 where published.last??.isRewinding == true {
+            await advanceFrame()
+        }
+        #expect(published.last??.isRewinding == false)
+
+        // Back to once a second: a frame's worth of time wakes nothing.
+        let count = published.count
+        await poll(until: { self.clock.sleeperCount == 1 })
+        device.now += TimeInterval(VehicleEstimationDriver.rewindFrameInterval.timeInterval)
+        clock.advance(by: VehicleEstimationDriver.rewindFrameInterval)
+        await spin(0.05)
+        #expect(published.count == count)
+    }
+
+    @Test func `With Reduce Motion on, a correction behind the marker jumps`() async {
+        reduceMotion = true
+        driver.update(input())
+        driver.resume()
+        for _ in 0..<10 {
+            await poll(until: { self.clock.sleeperCount == 1 })
+            device.now += 1
+            clock.advance(by: .seconds(1))
+        }
+        await poll(until: { self.published.count == 2 })   // stepped to 300
+
+        driver.update(input(fixes: [F.fix(north: 250, at: 10)]))
+
+        #expect(published.last??.shouldSnap == true)
+        #expect(published.last??.isRewinding == false)
+        expectClose(published.last??.distanceAlongShape, 250, within: 1)
+    }
+
+    @Test func `A marker glides over one tick, or one frame while rewinding`() {
+        let moving = TripMapFocusFixture.estimate(at: F.origin)
+        var rewinding = moving
+        rewinding.isRewinding = true
+        #expect(VehicleEstimationDriver.glideDuration(for: moving) == 1)
+        expectClose(VehicleEstimationDriver.glideDuration(for: rewinding), 0.033, within: 0.001)
+    }
+
     @Test func `A new trip starts over with a snap`() {
         driver.update(input())
         device.now += 5

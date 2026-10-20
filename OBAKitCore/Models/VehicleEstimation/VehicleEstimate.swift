@@ -47,6 +47,9 @@ public struct VehicleEstimate: Sendable {
     /// Jump straight here rather than animating: the first estimate, a new vehicle,
     /// a fix too far from the marker to glide to.
     public let shouldSnap: Bool
+    /// Moving back along the shape to a fix that landed behind the marker. Ticks
+    /// come faster while it lasts, so the marker follows the shape's curves.
+    public internal(set) var isRewinding = false
 
     /// Whether `coordinate` is a position the device worked out, rather than the
     /// reported fix: what the freshness line tells a VoiceOver rider. A frozen
@@ -96,14 +99,18 @@ public struct VehicleEstimationTunables: Sendable, Equatable {
     /// How long the marker takes to catch up with a fix that landed ahead of it.
     public var reconcileDuration: TimeInterval = 1.5
     /// A fix this little behind the marker is noise; the marker waits it out.
+    /// Farther behind, the marker rewinds to it.
     public var backwardToleranceMeters = 15.0
-    /// A fix farther behind than this snaps the marker back.
-    public var snapBackMeters = 150.0
+    /// A rewind covers this many meters a second, within the durations below.
+    public var rewindSpeed = 100.0
+    public var rewindMinDuration: TimeInterval = 1.5
+    public var rewindMaxDuration: TimeInterval = 3
+    /// A fix farther behind than this starts the pace over: one measured across
+    /// a correction that size would be nonsense.
+    public var paceResetBehindMeters = 150.0
     /// Ahead by more than this, the marker snaps instead of gliding. Matches
     /// `VehicleCoordinateUpdate.snapBeyondMeters`.
     public var snapForwardMeters = 500.0
-    /// The longest the marker waits for the estimate to catch up before snapping back.
-    public var maxHold: TimeInterval = 20
 
     public static let `default` = VehicleEstimationTunables()
 

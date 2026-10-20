@@ -229,8 +229,7 @@ final class TripFocusMapDisplayModel: ObservableObject {
         let vehicle = Self.vehicle(content, estimate: estimate)
         if (estimate != nil) != wasEstimating { reportedPositions = content.reportedPositions(isEstimating: estimate != nil) }
         if let estimate, !estimate.shouldSnap, !UIAccessibility.isReduceMotionEnabled {
-            let duration = TimeInterval(VehicleEstimationDriver.tickInterval.components.seconds)
-            withAnimation(.linear(duration: duration)) { self.vehicle = vehicle }
+            withAnimation(.linear(duration: VehicleEstimationDriver.glideDuration(for: estimate))) { self.vehicle = vehicle }
         } else {
             self.vehicle = vehicle
         }
