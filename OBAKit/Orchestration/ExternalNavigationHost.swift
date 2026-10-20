@@ -19,7 +19,14 @@ import OBAKitCore
 @MainActor
 protocol ExternalNavigationHost: AnyObject {
     /// Opens the stop page, over whatever the rider had open.
-    func openStop(_ stopID: StopID)
+    ///
+    /// - Parameter afterDismissal: Runs once a dismissal of a modal over the
+    ///   host, started here, has finished.
+    /// - Returns: true when opening waits on that dismissal, so nothing else
+    ///   should be presented from the outgoing modal yet. The same contract as
+    ///   `Application.withPushableTopViewController`.
+    @discardableResult
+    func openStop(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)?) -> Bool
 
     /// Opens the trip page.
     ///

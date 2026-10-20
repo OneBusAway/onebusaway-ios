@@ -163,8 +163,9 @@ public final class MapPanelRootController: UIViewController {
 
         // MARK: - From outside the app
 
-        func openStop(_ stopID: StopID) {
-            openFromOutside(.stopDetails(stopID: stopID))
+        @discardableResult
+        func openStop(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
+            openFromOutside(.stopDetails(stopID: stopID), afterDismissal: afterDismissal)
         }
 
         func openTrip(_ arrivalDeparture: ArrivalDeparture, destinationStopID: StopID?) {
@@ -188,12 +189,30 @@ public final class MapPanelRootController: UIViewController {
         /// Closes what the rider had open and opens `route` over home, or just
         /// goes home when it is nil. Classic does the same when it pops a tab to
         /// its root for a link. A `route` already on top is left as it is.
-        private func openFromOutside(_ route: AppSheetRoute?) {
-            closeModalsOverSheets { [coordinator] in
-                if let route, coordinator.allRoutes.last == route { return }
+        ///
+        /// - Parameter afterDismissal: Runs once a modal dismissal started here
+        ///   has finished, after `route` is opened.
+        /// - Returns: true when opening waits on that dismissal.
+        @discardableResult
+        private func openFromOutside(_ route: AppSheetRoute?, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
+            closeModalsOverSheets { [coordinator] deferred in
+                defer { if deferred { afterDismissal?() } }
+                if let route, let top = coordinator.allRoutes.last, Self.isSameSheet(top, route) { return }
                 coordinator.popToRoot()
                 if let route { coordinator.push(route) }
             }
+        }
+
+        /// Whether `route` would show what `top` already does. Routes are equal by
+        /// identity, which leaves out a trip's shared destination (#449): the same
+        /// trip with a destination the open sheet lacks has to replace it.
+        static func isSameSheet(_ top: AppSheetRoute, _ route: AppSheetRoute) -> Bool {
+            guard top == route else { return false }
+            if case .tripDetails(_, let topDestination) = top,
+               case .tripDetails(_, let destination) = route {
+                return topDestination == destination
+            }
+            return true
         }
 
         /// Dismisses any UIKit modal presented over the sheet pile (Settings from
@@ -204,10 +223,14 @@ public final class MapPanelRootController: UIViewController {
         /// anything above them is a modal. A sheet can't present while one is up,
         /// and UIKit ignores a `dismiss` issued mid-transition, so a transition
         /// in flight is waited out first.
-        private func closeModalsOverSheets(then completion: @escaping @MainActor () -> Void) {
+        ///
+        /// - Returns: true when `completion` waits on a transition or dismissal;
+        ///   it is passed the same.
+        @discardableResult
+        private func closeModalsOverSheets(then completion: @escaping @MainActor (_ deferred: Bool) -> Void) -> Bool {
             guard let host else {
-                completion()
-                return
+                completion(false)
+                return false
             }
             var chain: [UIViewController] = []
             var next = host.presentedViewController
@@ -217,16 +240,17 @@ public final class MapPanelRootController: UIViewController {
             }
             let sheetCount = 1 + coordinator.stackedRoutes.count
             guard chain.count > sheetCount else {
-                completion()
-                return
+                completion(false)
+                return false
             }
             if let transition = chain.last?.transitionCoordinator {
                 transition.animate(alongsideTransition: nil) { [weak self] _ in
-                    self?.closeModalsOverSheets(then: completion)
+                    self?.closeModalsOverSheets { _ in completion(true) }
                 }
-                return
+                return true
             }
-            chain[sheetCount - 1].dismiss(animated: true) { completion() }
+            chain[sheetCount - 1].dismiss(animated: true) { completion(true) }
+            return true
         }
 
         /// Same message the UIKit map shows: the vehicle exists but isn't assigned

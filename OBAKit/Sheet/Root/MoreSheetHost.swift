@@ -40,7 +40,6 @@ struct MoreSheetHost: UIViewControllerRepresentable {
     /// through `makeUIViewController`.
     static func makeNavigationController(application: Application, onClose: @escaping () -> Void = {}) -> UINavigationController {
         let more = MoreViewController(application: application)
-        more.loadViewIfNeeded()
         // Beside Settings, at the trailing edge: Contact Us holds the leading
         // slot. Closed through the sheet stack, which owns the sheet, rather
         // than by UIKit dismissing it out from under SwiftUI.

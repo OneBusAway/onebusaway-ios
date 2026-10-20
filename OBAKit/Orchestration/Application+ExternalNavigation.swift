@@ -86,8 +86,7 @@ extension Application {
     @discardableResult
     func pushStopFromOutside(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
         if let externalNavigationHost {
-            externalNavigationHost.openStop(stopID)
-            return false
+            return externalNavigationHost.openStop(stopID, afterDismissal: afterDismissal)
         }
         return withPushableTopViewController({ [weak self] from in
             self?.viewRouter.navigateTo(stopID: stopID, from: from)

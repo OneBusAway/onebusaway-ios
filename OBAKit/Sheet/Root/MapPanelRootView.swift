@@ -342,7 +342,9 @@ struct MapPanelRootView: View {
             mismatchCamera.applyLaunch = false
             applyLaunchCamera()
         }
-        .onReceive(stopsObserver.$changedRegion, perform: showChangedRegion)
+        // Not the value a new subscription replays: only a change made while
+        // this view is subscribed closes sheets and moves the map.
+        .onReceive(stopsObserver.$changedRegion.dropFirst(), perform: showChangedRegion)
         .onChange(of: mismatchCamera.showSelectedServiceRect) { _, flag in
             guard flag else { return }
             mismatchCamera.showSelectedServiceRect = false
@@ -901,7 +903,7 @@ extension MapPanelRootView {
     private func showChangedRegion(_ region: Region?) {
         // Nil is the signal's value before any change.
         guard let region else { return }
-        coordinator.popToRoot()
+        closeSheetsOverHome()
         application.mapRegionManager.cancelScheduledStopsRequest()
         stopsObserver.reset()
         if let rect = LaunchMapCamera.regionChangeTarget(
@@ -914,6 +916,18 @@ extension MapPanelRootView {
             centerOnUser()
         }
         Task { await mapViewModel.loadWeather() }
+    }
+
+    /// Back to home, closing any UIKit modal over the sheets first (the region
+    /// picker More presents, Settings): popping the stack under a modal, or
+    /// mid-dismissal, leaves the sheets out of step with it.
+    private func closeSheetsOverHome() {
+        prompts.appWillCloseSheets(coordinator.stackedRoutes)
+        if let host = application.externalNavigationHost {
+            host.show(page: .map)
+        } else {
+            coordinator.popToRoot()
+        }
     }
 
     private func centerOnUser() {
@@ -971,7 +985,7 @@ extension MapPanelRootView {
     private func applyPendingRentalsFocus() {
         guard let coordinate = application.claimPendingRentalsFocus() else { return }
         // A sheet left open would cover the vehicles the link asked to show.
-        coordinator.popToRoot()
+        closeSheetsOverHome()
         rentalsLinkHoldsCamera = true
         needsInitialRecenter = false
         let region = RentalMapLayer.focusRegion(around: coordinate)

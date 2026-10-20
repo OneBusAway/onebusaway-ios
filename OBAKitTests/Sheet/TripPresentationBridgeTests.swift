@@ -143,6 +143,23 @@ final class TripPresentationBridgeTests {
         #expect(destinationStopID == "1_999")
     }
 
+    /// Route equality is by trip, so the destination has to be compared on its
+    /// own, or the link's destination is dropped for the sheet already open.
+    @Test func `A shared trip link replaces the same trip opened without its destination`() throws {
+        let bridge = makeBridge()
+        let arrival = try Fixtures.arrivalDeparture(tripID: "trip_42")
+        bridge.openTrip(arrival, destinationStopID: nil)
+
+        bridge.openTrip(arrival, destinationStopID: "1_999")
+
+        guard case .tripDetails(_, let destinationStopID) = coordinator.stackedRoutes.last else {
+            Issue.record("Expected a trip sheet, got \(coordinator.stackedRoutes)")
+            return
+        }
+        #expect(coordinator.stackedRoutes.count == 1)
+        #expect(destinationStopID == "1_999")
+    }
+
     /// Classic's tabs, as the panel has them: index sheets over home, and the map
     /// is home itself.
     @Test func `A tab from outside the app opens the panel's index sheet`() {

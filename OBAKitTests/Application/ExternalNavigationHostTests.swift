@@ -24,7 +24,10 @@ final class ExternalNavigationHostTests: OBATestCase {
         var trips: [(tripID: String, destinationStopID: StopID?)] = []
         var pages: [ClassicApplicationRootController.Page] = []
 
-        func openStop(_ stopID: StopID) { stops.append(stopID) }
+        func openStop(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)?) -> Bool {
+            stops.append(stopID)
+            return false
+        }
         func openTrip(_ arrivalDeparture: ArrivalDeparture, destinationStopID: StopID?) {
             trips.append((arrivalDeparture.tripID, destinationStopID))
         }

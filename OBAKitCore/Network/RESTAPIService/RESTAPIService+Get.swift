@@ -175,6 +175,17 @@ extension RESTAPIService {
         )
     }
 
+    /// The arrival a deep link (an alarm, a shared trip) names.
+    public nonisolated func getTripArrivalDepartureAtStop(deepLink: ArrivalDepartureDeepLink) async throws -> RESTAPIResponse<ArrivalDeparture> {
+        try await getTripArrivalDepartureAtStop(
+            stopID: deepLink.stopID,
+            tripID: deepLink.tripID,
+            serviceDate: deepLink.serviceDate,
+            vehicleID: deepLink.vehicleID,
+            stopSequence: deepLink.stopSequence
+        )
+    }
+
     /// Get info about a single arrival and departure for a stop
     ///
     /// - API Endpoint: `/api/where/arrival-and-departure-for-stop/{id}.json`
@@ -187,17 +198,6 @@ extension RESTAPIService {
     /// - parameter stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``ArrivalDeparture``.
-    /// The arrival a deep link (an alarm, a shared trip) names.
-    public nonisolated func getTripArrivalDepartureAtStop(deepLink: ArrivalDepartureDeepLink) async throws -> RESTAPIResponse<ArrivalDeparture> {
-        try await getTripArrivalDepartureAtStop(
-            stopID: deepLink.stopID,
-            tripID: deepLink.tripID,
-            serviceDate: deepLink.serviceDate,
-            vehicleID: deepLink.vehicleID,
-            stopSequence: deepLink.stopSequence
-        )
-    }
-
     public nonisolated func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) async throws -> RESTAPIResponse<ArrivalDeparture> {
         let url = urlBuilder.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
         return try await getData(
