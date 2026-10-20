@@ -16,6 +16,9 @@ import Foundation
 /// so each section model can reference `itemLimit` without depending on the
 /// view model that composes them.
 enum HomeSheetSection: Hashable {
+    /// Recent high-severity agency alerts. First, as the UIKit map's nearby
+    /// list has them, and with no index of its own.
+    case alerts
     case nearby
     case recent
     case bookmarks
