@@ -53,7 +53,7 @@ final class TripPresentationBridgeTests {
 
         #expect(coordinator.routeStack == [.home])
         #expect(coordinator.stackedRoutes.map(\.id) == ["tripDetails-trip_42"])
-        guard case .tripDetails(let convertible) = coordinator.stackedRoutes.first else {
+        guard case .tripDetails(let convertible, _) = coordinator.stackedRoutes.first else {
             Issue.record("Expected a trip sheet, got \(coordinator.stackedRoutes)")
             return
         }
@@ -100,5 +100,64 @@ final class TripPresentationBridgeTests {
         #expect(coordinator.stackedRoutes.isEmpty)
         #expect(presentedErrors.count == 1)
         #expect(presentedErrors.first?.presenter === host)
+    }
+    // MARK: - From outside the app
+
+    /// A widget, Live Activity, alarm or link asked for this stop. Whatever the
+    /// rider had open goes, as it does when classic pops to the tab's root.
+    @Test func `A stop from outside the app closes the open sheets and opens over home`() throws {
+        coordinator.push(.routePicker)
+        coordinator.push(.more)
+
+        makeBridge().openStop("1_75403")
+
+        #expect(coordinator.routeStack == [.home])
+        #expect(coordinator.stackedRoutes.map(\.id) == ["stopDetails-1_75403"])
+    }
+
+    @Test func `A stop from outside that is already on top stays as it is`() {
+        let bridge = makeBridge()
+        coordinator.push(.stopDetails(stopID: "1_75403"))
+        coordinator.setStackedDetent(.medium, at: 0)
+
+        bridge.openStop("1_75403")
+
+        #expect(coordinator.stackedRoutes.map(\.id) == ["stopDetails-1_75403"])
+        #expect(coordinator.stackedDetents == [.medium])
+    }
+
+    /// A shared trip link names where the sharer gets off (#449). The sheet has
+    /// to carry it to the trip page, as `TripViewController` gets it in classic.
+    @Test func `A trip from outside the app keeps the shared destination`() throws {
+        coordinator.push(.more)
+        let arrival = try Fixtures.arrivalDeparture(tripID: "trip_42")
+
+        makeBridge().openTrip(arrival, destinationStopID: "1_999")
+
+        #expect(coordinator.stackedRoutes.map(\.id) == ["tripDetails-trip_42"])
+        guard case .tripDetails(let convertible, let destinationStopID) = coordinator.stackedRoutes.first else {
+            Issue.record("Expected a trip sheet, got \(coordinator.stackedRoutes)")
+            return
+        }
+        #expect(convertible.arrivalDeparture === arrival)
+        #expect(destinationStopID == "1_999")
+    }
+
+    /// Classic's tabs, as the panel has them: index sheets over home, and the map
+    /// is home itself.
+    @Test func `A tab from outside the app opens the panel's index sheet`() {
+        let bridge = makeBridge()
+
+        bridge.show(page: .bookmarks)
+        #expect(coordinator.allRoutes == [.home, .bookmarksAll])
+
+        bridge.show(page: .recentStops)
+        #expect(coordinator.allRoutes == [.home, .recentStopsAll])
+
+        bridge.show(page: .more)
+        #expect(coordinator.allRoutes == [.home, .more])
+
+        bridge.show(page: .map)
+        #expect(coordinator.allRoutes == [.home])
     }
 }

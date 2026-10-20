@@ -26,7 +26,7 @@ extension Application {
             NotificationCenter.default.post(name: .alarmFired, object: nil)
             self.launchRouteGate.suppress()
 
-            guard self.topViewController != nil else {
+            guard self.canNavigateFromOutside else {
                 // UI not ready yet (cold launch). Navigate once the scene activates.
                 self.pendingStopID = pushBody.stopID
                 // A region left by an earlier stash would make the drain refuse

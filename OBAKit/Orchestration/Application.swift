@@ -143,13 +143,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                 do {
                     let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
-                    self.withPushableTopViewController { from in
-                        self.viewRouter.navigateTo(
-                            arrivalDeparture: arrDep,
-                            from: from,
-                            destinationStopID: deepLink.destinationStopID
-                        )
-                    }
+                    self.openTripFromOutside(arrDep, destinationStopID: deepLink.destinationStopID)
                 } catch {
                     await self.displayError(error)
                 }
@@ -357,6 +351,11 @@ public class Application: CoreApplication, PushServiceDelegate {
         self.pushService = pushService
         pushService.start(launchOptions: launchOptions)
     }
+
+    /// The map panel's root, which takes navigation from outside the app in
+    /// place of classic's tabs. Nil with the classic root. See
+    /// `ExternalNavigationHost`.
+    weak var externalNavigationHost: ExternalNavigationHost?
 
     /// A stop navigation (fired alarm push, `viewStop` deep link, or a donated
     /// stop `NSUserActivity`) received before the root view controller was
@@ -571,7 +570,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     private func drainPendingUIPresentations() {
         guard !isOnboardingRoot else { return }
 
-        if let stopID = pendingStopID, topViewController != nil {
+        if let stopID = pendingStopID, canNavigateFromOutside {
             if let neededRegion = pendingStopRegionID {
                 // Region still loading: wait. Loaded but different: drop — do not
                 // fetch this stop against the wrong region's API.
@@ -706,7 +705,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Not while onboarding is the root: there is no API service to load the
         // stop with yet, and the page would be pushed over the region picker. The
         // drain picks the stash up once onboarding finishes.
-        if topViewController != nil, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
+        if canNavigateFromOutside, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
             pushStopFromOutside(destination.stopID)
             return
         }

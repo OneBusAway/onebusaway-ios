@@ -22,8 +22,9 @@ extension Application {
     /// the whole presentation stack and push onto the tab underneath.
     ///
     /// Map-panel mode has no classic root, and its sheets are presented
-    /// controllers that must not be torn down, so there it logs and drops; see
-    /// the deep-link TODO on `ViewRouter.rootNavigateTo(page:)`.
+    /// controllers that must not be torn down, so this drops there. Stop and trip
+    /// pages go to `externalNavigationHost` instead; see `pushStopFromOutside`
+    /// and `openTripFromOutside`.
     ///
     /// UIKit ignores a `dismiss` issued while a presentation or dismissal is still
     /// animating, and never calls its completion, so a call that lands mid-transition
@@ -72,13 +73,45 @@ extension Application {
         return true
     }
 
-    /// Pushes the stop page for `stopID` by way of `withPushableTopViewController`.
+    /// Whether a stop or trip page asked for from outside can be shown now,
+    /// rather than stashed until the root UI exists.
+    @MainActor
+    var canNavigateFromOutside: Bool {
+        externalNavigationHost != nil || topViewController != nil
+    }
+
+    /// Opens the stop page for `stopID`: on the map panel when it is the root,
+    /// otherwise by way of `withPushableTopViewController`.
     @MainActor
     @discardableResult
     func pushStopFromOutside(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
-        withPushableTopViewController({ [weak self] from in
+        if let externalNavigationHost {
+            externalNavigationHost.openStop(stopID)
+            return false
+        }
+        return withPushableTopViewController({ [weak self] from in
             self?.viewRouter.navigateTo(stopID: stopID, from: from)
         }, afterDismissal: afterDismissal)
+    }
+
+    /// Opens the trip page for `arrivalDeparture`, the trip counterpart of
+    /// `pushStopFromOutside`.
+    ///
+    /// - Parameter destinationStopID: Where the sharer said they will step off,
+    ///   when this came from a shared trip link that named one. See #449.
+    @MainActor
+    func openTripFromOutside(_ arrivalDeparture: ArrivalDeparture, destinationStopID: StopID?) {
+        if let externalNavigationHost {
+            externalNavigationHost.openTrip(arrivalDeparture, destinationStopID: destinationStopID)
+            return
+        }
+        withPushableTopViewController { [weak self] from in
+            self?.viewRouter.navigateTo(
+                arrivalDeparture: arrivalDeparture,
+                from: from,
+                destinationStopID: destinationStopID
+            )
+        }
     }
 
     /// The controller at the bottom of `controller`'s presentation chain, or nil

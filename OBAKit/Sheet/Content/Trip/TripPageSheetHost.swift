@@ -22,6 +22,9 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     let application: Application
     let tripConvertible: TripConvertible
 
+    /// Where a shared trip link's sharer steps off. See #449.
+    var destinationStopID: StopID?
+
     /// Hands the page's map focus to the panel's map. See
     /// `TripPageViewController.onMapFocusChanged`.
     let onMapFocusChanged: (TripMapFocus?) -> Void
@@ -37,6 +40,7 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
         Self.makeTripPage(
             application: application,
             tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID,
             onMapFocusChanged: onMapFocusChanged,
             onSelectStop: onSelectStop,
             onClose: onClose
@@ -53,11 +57,16 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     static func makeTripPage(
         application: Application,
         tripConvertible: TripConvertible,
+        destinationStopID: StopID? = nil,
         onMapFocusChanged: @escaping (TripMapFocus?) -> Void,
         onSelectStop: @escaping (StopID) -> Void,
         onClose: @escaping () -> Void
     ) -> TripPageViewController {
-        let page = TripPageViewController(application: application, tripConvertible: tripConvertible)
+        let page = TripPageViewController(
+            application: application,
+            tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID
+        )
         page.onMapFocusChanged = onMapFocusChanged
         page.onSelectStop = onSelectStop
         page.onClose = onClose

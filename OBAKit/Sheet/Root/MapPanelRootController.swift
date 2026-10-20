@@ -81,6 +81,8 @@ public final class MapPanelRootController: UIViewController {
         self.bridge = bridge
         super.init(nibName: nil, bundle: nil)
         self.bridge.host = self
+        // Links, notifications and widget taps have no tabs to land on here.
+        application.externalNavigationHost = bridge
     }
 
     required init?(coder: NSCoder) {
@@ -108,7 +110,7 @@ public final class MapPanelRootController: UIViewController {
     /// isn't available before `super.init`, and the closures baked into the
     /// factory need to reach it.
     @MainActor
-    final class TripPresentationBridge {
+    final class TripPresentationBridge: ExternalNavigationHost {
         weak var host: UIViewController?
         private let coordinator: SheetCoordinator<AppSheetRoute>
         private let presentError: (String, UIViewController) -> Void
@@ -157,6 +159,74 @@ public final class MapPanelRootController: UIViewController {
 
             coordinator.popToRoot()
             coordinator.push(route)
+        }
+
+        // MARK: - From outside the app
+
+        func openStop(_ stopID: StopID) {
+            openFromOutside(.stopDetails(stopID: stopID))
+        }
+
+        func openTrip(_ arrivalDeparture: ArrivalDeparture, destinationStopID: StopID?) {
+            openFromOutside(.tripDetails(
+                TripConvertible(arrivalDeparture: arrivalDeparture),
+                destinationStopID: destinationStopID
+            ))
+        }
+
+        /// Classic's tabs, as the panel has them: the map is home itself, and
+        /// the others are index sheets over it.
+        func show(page: ClassicApplicationRootController.Page) {
+            switch page {
+            case .map: openFromOutside(nil)
+            case .recentStops: openFromOutside(.recentStopsAll)
+            case .bookmarks: openFromOutside(.bookmarksAll)
+            case .more: openFromOutside(.more)
+            }
+        }
+
+        /// Closes what the rider had open and opens `route` over home, or just
+        /// goes home when it is nil. Classic does the same when it pops a tab to
+        /// its root for a link. A `route` already on top is left as it is.
+        private func openFromOutside(_ route: AppSheetRoute?) {
+            closeModalsOverSheets { [coordinator] in
+                if let route, coordinator.allRoutes.last == route { return }
+                coordinator.popToRoot()
+                if let route { coordinator.push(route) }
+            }
+        }
+
+        /// Dismisses any UIKit modal presented over the sheet pile (Settings from
+        /// More, the bookmark editor, a share sheet), then calls `completion`.
+        ///
+        /// The sheets themselves are SwiftUI's to close: the base sheet and one
+        /// per stacked route are the bottom of the host's presentation chain, so
+        /// anything above them is a modal. A sheet can't present while one is up,
+        /// and UIKit ignores a `dismiss` issued mid-transition, so a transition
+        /// in flight is waited out first.
+        private func closeModalsOverSheets(then completion: @escaping @MainActor () -> Void) {
+            guard let host else {
+                completion()
+                return
+            }
+            var chain: [UIViewController] = []
+            var next = host.presentedViewController
+            while let presented = next {
+                chain.append(presented)
+                next = presented.presentedViewController
+            }
+            let sheetCount = 1 + coordinator.stackedRoutes.count
+            guard chain.count > sheetCount else {
+                completion()
+                return
+            }
+            if let transition = chain.last?.transitionCoordinator {
+                transition.animate(alongsideTransition: nil) { [weak self] _ in
+                    self?.closeModalsOverSheets(then: completion)
+                }
+                return
+            }
+            chain[sheetCount - 1].dismiss(animated: true) { completion() }
         }
 
         /// Same message the UIKit map shows: the vehicle exists but isn't assigned
