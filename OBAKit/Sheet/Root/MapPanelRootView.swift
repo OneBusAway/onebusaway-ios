@@ -118,6 +118,7 @@ struct MapPanelRootView: View {
     @State private var regionMismatchBulletin: RegionMismatchBulletin?
     @State private var didPromptRegionMismatch = false
     @StateObject private var mismatchCamera = RegionMismatchCameraActions()
+    @StateObject private var regionChange: RegionChangeSignal
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
@@ -185,6 +186,7 @@ struct MapPanelRootView: View {
         self.application = application
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
+        _regionChange = StateObject(wrappedValue: RegionChangeSignal(regionsService: application.regionsService))
 
         // Frame the selected region unless GPS is already inside it.
         // `.userLocation` follows the device, which is what opened Taipei
@@ -326,6 +328,7 @@ struct MapPanelRootView: View {
             mismatchCamera.applyLaunch = false
             applyLaunchCamera()
         }
+        .onReceive(regionChange.$region, perform: showChangedRegion)
         .onChange(of: mismatchCamera.showSelectedServiceRect) { _, flag in
             guard flag else { return }
             mismatchCamera.showSelectedServiceRect = false
@@ -836,6 +839,27 @@ extension MapPanelRootView {
         else { return }
         regionMismatchBulletin = bulletin
         bulletin.show(in: uiApp)
+    }
+
+    /// The rider changed region. Stops, trips and searches belong to a region's
+    /// server, so the sheets showing the old one close, and the map moves to the
+    /// new one, as the UIKit map does in `MapRegionManager`.
+    private func showChangedRegion(_ region: Region?) {
+        // Nil is the signal's value before any change.
+        guard let region else { return }
+        coordinator.popToRoot()
+        application.mapRegionManager.cancelScheduledStopsRequest()
+        stopsObserver.reset()
+        if let rect = LaunchMapCamera.regionChangeTarget(
+            region: region,
+            userLocation: application.locationService.currentLocation
+        ) {
+            viewportRecorder.record(rect)
+            withAnimation { cameraPosition = .rect(rect) }
+        } else {
+            centerOnUser()
+        }
+        Task { await mapViewModel.loadWeather() }
     }
 
     private func centerOnUser() {

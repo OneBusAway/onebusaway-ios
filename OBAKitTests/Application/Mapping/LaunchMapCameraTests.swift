@@ -107,4 +107,19 @@ struct LaunchMapCameraTests {
         #expect(MKMapRectEqualToRect(rect, pugetSound.serviceRect))
         #expect(!showMismatch)
     }
+
+    // MARK: - Changing region
+
+    /// The rider picked another region. The old viewport is in the old city, so
+    /// it never wins, and nobody needs telling the region doesn't match.
+    @Test func `A region change frames the new region's service rect`() {
+        let rect = LaunchMapCamera.regionChangeTarget(region: pugetSound, userLocation: TestData.mockTampaLocation)
+        #expect(rect.map { MKMapRectEqualToRect($0, pugetSound.serviceRect) } == true)
+
+        #expect(LaunchMapCamera.regionChangeTarget(region: pugetSound, userLocation: nil) != nil)
+    }
+
+    @Test func `A region change to the region the rider is in zooms to the rider`() {
+        #expect(LaunchMapCamera.regionChangeTarget(region: pugetSound, userLocation: TestData.mockSeattleLocation) == nil)
+    }
 }
