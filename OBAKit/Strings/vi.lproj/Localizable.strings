@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Bật trong Cài đặt";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "Bạn sẽ thấy vị trí của mình trên bản đồ và các điểm dừng gần đó, giúp bạn dễ dàng đến nơi cần đến hơn.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "Ứng dụng %@ hoạt động tốt nhất với vị trí chính xác của bạn";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "Giữ tắt Vị trí chính xác";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Giữ tắt Vị trí";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "Ứng dụng %@ hoạt động tốt nhất với vị trí của bạn.";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "Cho phép một lần";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "Không có nhật ký nào.";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Dịch vụ định vị đã tắt";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Vị trí chính xác đã tắt";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "Giới thiệu ứng dụng";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "Dùng vị trí của tôi";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "Để sau";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Xem giao thông quanh bạn";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "Chỉ các cảnh báo lớn trên toàn khu vực. Không spam — bạn kiểm soát phần còn lại trong Cài đặt.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "Có thể để sau";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "MỚI";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "Để sau";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "Bật thông báo";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "Luôn nắm bắt các gián đoạn";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Dùng tốc độ di chuyển nhanh hơn cho ước tính thời gian đến điểm dừng, giờ đến dự kiến và trang Điểm dừng.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ có thể đọc tốc độ đạp xe của bạn từ ứng dụng Sức khỏe. Ứng dụng không bao giờ ghi dữ liệu vào Sức khỏe.";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Chế độ xe đạp";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "Dùng dữ liệu ứng dụng Sức khỏe";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ có thể đọc tốc độ đi bộ của bạn từ ứng dụng Sức khỏe để ước tính thời gian bạn đi đến trạm. Ứng dụng không bao giờ ghi dữ liệu vào Sức khỏe.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Tốc độ đi bộ";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d phút";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "30+ phút";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "Bật dịch vụ định vị";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "Xe đạp";
 /* Map sheet row for the transit stops layer */

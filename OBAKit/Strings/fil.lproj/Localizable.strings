@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "I-on sa Mga Setting";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "Makikita mo kung nasaan ka sa mapa at ang mga kalapit na hintuan, para mas madali kang makarating sa pupuntahan mo.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "Pinakamahusay gumagana ang %@ app gamit ang iyong tumpak na lokasyon";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "Panatilihing Naka-off ang Tumpak na Lokasyon";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Panatilihing Naka-off ang Lokasyon";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "Pinakamahusay gumagana ang %@ app gamit ang iyong lokasyon.";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "Payagan Nang Isang Beses";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "Walang available na log.";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Naka-off ang Location Services";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Naka-off ang Precise Location";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "Tungkol sa App na Ito";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "Gamitin ang Aking Lokasyon";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "Hindi Ngayon";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Tingnan ang transportasyon sa paligid mo";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "Mahahalagang alerto lang sa buong rehiyon. Walang spam — ikaw ang kumokontrol sa iba pa sa Settings.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "Sa Ibang Pagkakataon";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "BAGO";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "Hindi Ngayon";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "I-on ang mga Notification";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "Manatiling nangunguna sa mga abala";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Gumagamit ng mas mabilis na bilis ng paglalakbay para sa mga tantiya ng oras papunta sa hintuan, mga oras ng pagdating, at sa pahina ng Hintuan.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "Puwedeng basahin ng %@ ang bilis ng pagbibisikleta mo mula sa Apple Health. Hindi ito kailanman nagsusulat sa Health.";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Mode ng Bisikleta";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "Gamitin ang data ng Health app";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "Puwedeng basahin ng %@ ang bilis ng paglalakad mo mula sa Apple Health para tantiyahin kung gaano katagal bago ka makarating sa hintuan. Hindi ito kailanman nagsusulat sa Health.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Bilis ng Paglalakad";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d min";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "30+ min";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "I-on ang Mga Serbisyo ng Lokasyon";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "Mga bisikleta";
 /* Map sheet row for the transit stops layer */

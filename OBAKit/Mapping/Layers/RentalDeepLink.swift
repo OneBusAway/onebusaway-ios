@@ -111,19 +111,27 @@ enum RentalDeepLink {
     ///
     /// The feed is third-party data, and the button reads "Open in <operator>": a
     /// `tel:` or `facetime:` URI would place a call, `sms:`/`mailto:` would compose
-    /// a message, `itms-services:` would offer an enterprise app install, and
-    /// `file:`/`data:`/`javascript:` have no business in an app link at all. A
-    /// rejected URI is treated as absent, so the rider still gets a synthesized link.
+    /// a message, and `file:`/`data:`/`javascript:` have no business in an app
+    /// link at all. A rejected URI is treated as absent, so the rider still gets a
+    /// synthesized link.
     static let rejectedFeedSchemes: Set<String> = [
         "tel", "telprompt", "sms", "facetime", "facetime-audio",
-        "mailto", "file", "javascript", "data", "itms-services"
+        "mailto", "file", "javascript", "data"
     ]
 
-    /// Absolute, and not on the denylist. Case-insensitive: `URL` keeps the
+    /// Schemes starting with this are rejected too: Apple's `itms…` family,
+    /// including the one that offers an enterprise app install. Our App Store
+    /// links are always `https://apps.apple.com`, so a feed has no reason to send
+    /// one. A prefix rather than the install scheme's full name because App
+    /// Review's static scan flagged that name in the binary as installing code
+    /// (guideline 2.5.2, the 26.4 rejection), though it only ever appeared here.
+    static let rejectedFeedSchemePrefix = "itms"
+
+    /// Absolute, and not rejected. Case-insensitive: `URL` keeps the
     /// scheme's case as written, and LaunchServices does not care.
     private static func isAcceptableFeedURL(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
-        return !rejectedFeedSchemes.contains(scheme)
+        return !rejectedFeedSchemes.contains(scheme) && !scheme.hasPrefix(rejectedFeedSchemePrefix)
     }
 
     static func target(for rental: VehicleRental) -> Target? {

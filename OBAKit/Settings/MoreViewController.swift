@@ -44,6 +44,14 @@ public class MoreViewController: UIViewController,
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: Strings.settings, style: .plain, target: self, action: #selector(showSettings))
 
         application.regionsService.addDelegate(self)
+        application.notificationCenter.addObserver(self, selector: #selector(donationsEligibilityDidChange), name: .donationsEligibilityDidChange, object: nil)
+    }
+
+    /// The storefront answer can arrive after this screen is built (first launch)
+    /// or change while it is up; show or hide the donate section to match.
+    @objc private func donationsEligibilityDidChange() {
+        guard isViewLoaded else { return }
+        listView.applyData()
     }
 
     required init?(coder: NSCoder) {
@@ -120,13 +128,16 @@ public class MoreViewController: UIViewController,
                 onSelectAction: { [weak self] _ in
                     guard
                         let self,
+                        self.application.donationsManager.donationsEnabled,
                         let donationManagementPortal = self.application.applicationBundle.donationManagementPortal
                     else {
                         return
                     }
 
-                    let safari = SFSafariViewController(url: donationManagementPortal)
-                    self.application.viewRouter.present(safari, from: self)
+                    // The default browser, never an in-app Safari sheet: App Review treats a
+                    // payment page shown inside the app as an in-app purchase mechanism
+                    // (guideline 3.1.1). Only links out to the browser are allowed.
+                    self.application.open(donationManagementPortal, options: [:], completionHandler: nil)
                 }
             )
         ])

@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Включить в Настройках";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "Вы будете видеть себя на карте и ближайшие остановки — так проще добраться туда, куда нужно.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "Приложение %@ работает лучше всего с вашей точной геопозицией";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "Оставить точную геопозицию выключенной";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Оставить геопозицию выключенной";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "Приложение %@ работает лучше всего с вашей геопозицией.";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "Разрешить один раз";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "Журналы недоступны.";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Службы геолокации выключены";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Точная геопозиция выключена";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "О приложении";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "Использовать мою геолокацию";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "Не сейчас";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Смотрите транспорт вокруг себя";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "Только важные региональные оповещения. Никакого спама — остальным вы управляете в Настройках.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "Может быть позже";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "НОВОЕ";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "Не сейчас";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "Включить уведомления";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "Будьте в курсе сбоев";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Использует более высокую скорость передвижения для оценки времени до остановки, времени прибытия и на странице остановки.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ может считывать вашу скорость езды на велосипеде из приложения «Здоровье». Приложение никогда не записывает данные в «Здоровье».";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Режим велосипеда";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "Использовать данные приложения «Здоровье»";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ может считывать вашу скорость ходьбы из приложения «Здоровье», чтобы оценить, сколько времени займёт путь до остановки. Приложение никогда не записывает данные в «Здоровье».";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Скорость ходьбы";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d мин.";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "30+ мин.";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "Включить службы геолокации";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "Велосипеды";
 /* Map sheet row for the transit stops layer */

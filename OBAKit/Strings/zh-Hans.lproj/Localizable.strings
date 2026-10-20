@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "前往“设置”页面打开定位分享";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "您将可以在地图上看到自己的位置和周围的公交车站，帮您更轻易地找到要去的乘车站。";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "%@在使用您的详细定位信息时可以提供最佳服务";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "继续拒绝分享详细定位";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "继续拒绝分享定位";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "%@在使用您的定位信息时可以提供最佳服务";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "允许一次";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "暂无日志。";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "定位服务已关闭";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "精确位置已关闭";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "关于这个App";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "使用我的位置";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "暂不";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "查看你周围的交通";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "仅限重要的全区域提醒。没有垃圾信息 — 其余内容由你在设置中自行控制。";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "以后再说";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "新";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "暂不";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "开启通知";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "提前了解服务中断情况";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "在到站时间估算、预计到达时间和车站页面中使用更快的出行速度。";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ 可以从“健康”App 读取你的骑行速度。它从不向“健康”写入数据。";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "骑行模式";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "使用“健康”App数据";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ 可以从“健康”App 读取你的步行速度，以估算你走到车站所需的时间。它从不向“健康”写入数据。";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "步行速度";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d分钟";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "30分钟以上";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "开启定位服务";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "共享单车";
 /* Map sheet row for the transit stops layer */

@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Włącz w ustawieniach";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "Będziesz mógł zobaczyć Twoje bieżące położenie na mapie oraz położenie pobliskich przystanków, co ułatwi przemieszczenie się do celu.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "Aplikacja %@ działa najlepiej z włączoną precyzyjną lokalizacją";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "Pozostaw precyzyjną lokalizację wyłączoną";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "Pozostaw lokalizację wyłączoną";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "Aplikacja %@ działa najlepiej z włączoną lokalizacją.";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "Zezwól raz";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "Brak dostępnych dzienników.";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "Usługi lokalizacji wyłączone";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "Dokładna lokalizacja wyłączona";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "O tej aplikacji";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "Użyj mojej lokalizacji";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "Nie teraz";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Zobacz transport wokół siebie";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "Tylko ważne alerty dotyczące całego regionu. Bez spamu — resztą zarządzasz w Ustawieniach.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "Może później";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "NOWOŚĆ";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "Nie teraz";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "Włącz powiadomienia";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "Bądź na bieżąco z zakłóceniami";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Używa większej prędkości przemieszczania się do szacowania czasu dojazdu na przystanek, godzin przyjazdu i na stronie przystanku.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ może odczytywać Twoją prędkość jazdy na rowerze z aplikacji Zdrowie. Nigdy nie zapisuje danych w aplikacji Zdrowie.";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Tryb rowerowy";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "Użyj danych z aplikacji Zdrowie";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ może odczytywać Twoją prędkość chodu z aplikacji Zdrowie, aby oszacować, ile czasu zajmie Ci dojście do przystanku. Nigdy nie zapisuje danych w aplikacji Zdrowie.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Prędkość chodzenia";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d min";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "30+ min";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "Włącz usługi lokalizacji";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "Rowery";
 /* Map sheet row for the transit stops layer */

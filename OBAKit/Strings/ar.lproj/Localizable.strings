@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "التفعيل من الإعدادات";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "ستتمكن من رؤية موقعك على الخريطة ورؤية المواقف القريبة، مما يسهّل عليك الوصول إلى وجهتك.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "يعمل تطبيق %@ بشكل أفضل مع موقعك الدقيق";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "إبقاء الموقع الدقيق متوقفًا";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "إبقاء الموقع متوقفًا";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "يعمل تطبيق %@ بشكل أفضل مع موقعك.";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "السماح مرة واحدة";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "لا تتوفر سجلات.";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "خدمات الموقع متوقفة";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "الموقع الدقيق متوقف";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "حول هذا التطبيق";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "استخدام موقعي";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "ليس الآن";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "شاهد وسائل النقل من حولك";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "تنبيهات مهمة على مستوى المنطقة فقط. بلا رسائل مزعجة — أنت من يتحكم بالباقي من الإعدادات.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "ربما لاحقًا";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "جديد";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "ليس الآن";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "تشغيل الإشعارات";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "ابقَ على اطّلاع بالانقطاعات";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "يستخدم سرعة تنقّل أسرع لتقديرات وقت الوصول إلى الموقف ومواعيد الوصول وصفحة الموقف.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة ركوبك للدراجة من تطبيق «صحتي». ولا يكتب أي بيانات في تطبيق «صحتي» أبدًا.";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "وضع الدراجة";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "استخدام بيانات تطبيق «صحتي»";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة مشيك من تطبيق «صحتي» لتقدير الوقت الذي تستغرقه للوصول إلى المحطة. ولا يكتب أي بيانات في تطبيق «صحتي» أبدًا.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "سرعة المشي";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d د";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "أكثر من 30 د";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "تفعيل خدمات الموقع";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "الدراجات";
 /* Map sheet row for the transit stops layer */

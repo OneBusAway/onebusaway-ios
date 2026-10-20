@@ -416,39 +416,25 @@ class MapViewController: UIViewController,
     @objc func didTapMapStatus(_ sender: Any) {
         guard isLoadedAndOnScreen else { return }
         let mapStatusViewState = mapStatusView.state(for: application.locationService)
-        guard let alert = MapStatusView.alert(for: mapStatusViewState) else { return }
 
-        var keepLocationOffButton: UIAlertAction {
-            return UIAlertAction(title: OBALoc("locationservices_alert_keepoff.button", value: "Keep Location Off", comment: ""), style: .default)
-        }
-
-        var goToSettingsButton: UIAlertAction {
-            let title = OBALoc("locationservices_alert_gotosettings.button", value: "Turn On in Settings", comment: "")
-            return UIAlertAction(title: title, style: .default, handler: { _ in
-                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-            })
-        }
-
+        // Where iOS can still prompt, raise the system prompt directly. A custom
+        // alert in front of it with a way out is what App Review rejects under
+        // guideline 5.1.1(iv); the rider declines in the system prompt instead.
         switch mapStatusViewState {
         case .notDetermined:
-            alert.addAction(title: Strings.continue) { _ in
-                self.application.locationService.requestInUseAuthorization()
-            }
-            alert.addAction(keepLocationOffButton)
-        case .locationServicesOff:
-            alert.addAction(goToSettingsButton)
-            alert.addAction(keepLocationOffButton)
+            application.locationService.requestInUseAuthorization()
         case .impreciseLocation:
-            alert.addAction(goToSettingsButton)
-            alert.addAction(title: OBALoc("locationservices_alert_request_precise_location_once.button", value: "Allow Once", comment: "")) { _ in
-                self.application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "MapStatusView")
+            application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: MapStatusView.fullAccuracyPurposeKey)
+        case .locationServicesOff:
+            // iOS won't prompt again: offer Settings.
+            let alert = MapStatusView.locationServicesOffAlert { [weak self] in
+                guard let self, let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                self.application.open(url, options: [:], completionHandler: nil)
             }
-            alert.addAction(title: OBALoc("locationservices_alert_keep_precise_location_off.button", value: "Keep Precise Location Off", comment: ""), handler: nil)
+            topmostPresentedController.present(alert, animated: true)
         case .locationServicesUnavailable, .locationServicesOn:
-            // We shouldn't hit this state, but if we do, that's OK.
-            alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+            break
         }
-        topmostPresentedController.present(alert, animated: true)
     }
 
     private lazy var locationButton: UIButton = {

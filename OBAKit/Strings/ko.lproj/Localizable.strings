@@ -440,15 +440,6 @@
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "설정에서 켜기";
 
-/* Body of the alert prompting the user to grant precise location. */
-"locationservices_alert_imprecise.message" = "지도에서 내 위치와 주변 정류장을 확인하여 목적지까지 더 쉽게 이동할 수 있습니다.";
-
-/* Title of the alert prompting the user to upgrade from approximate to precise location. %@ is the app name. */
-"locationservices_alert_imprecise.title" = "%@ 앱은 정확한 위치를 사용할 때 가장 잘 작동합니다";
-
-/* No comment provided by engineer. */
-"locationservices_alert_keep_precise_location_off.button" = "정확한 위치 끈 상태로 유지";
-
 /* No comment provided by engineer. */
 "locationservices_alert_keepoff.button" = "위치 끈 상태로 유지";
 
@@ -457,9 +448,6 @@
 
 /* Title of the alert prompting the user to turn on location services. %@ is the app name. */
 "locationservices_alert_off.title" = "%@ 앱은 위치 정보를 사용할 때 가장 잘 작동합니다.";
-
-/* No comment provided by engineer. */
-"locationservices_alert_request_precise_location_once.button" = "한 번 허용";
 
 /* Message shown when there are no logs to display */
 "log_viewer_controller.no_logs" = "표시할 로그가 없습니다.";
@@ -607,9 +595,6 @@
 
 /* Title of the alert shown when location services are disabled for the app. */
 "map_status_alert.location_services_off.title" = "위치 서비스 꺼짐";
-
-/* Title of the alert shown when the user has restricted the app to reduced-accuracy location. */
-"map_status_alert.precise_location_off.title" = "정확한 위치 꺼짐";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "이 앱 정보";
@@ -846,9 +831,6 @@
 /* Button the user taps to grant access to their location. */
 "onboarding.location.primary_button" = "내 위치 사용";
 
-/* Button the user can tap on to decline access to their location. */
-"onboarding.location.secondary_button" = "나중에";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "주변 대중교통 보기";
 
@@ -867,17 +849,8 @@
 /* Footnote of the notifications onboarding screen */
 "onboarding.notifications.footnote" = "지역 전체의 중요한 알림만 받습니다. 스팸은 없으며, 나머지는 설정에서 직접 관리할 수 있습니다.";
 
-/* Decline button when the notifications step appears alone */
-"onboarding.notifications.maybe_later_button" = "나중에 할게요";
-
 /* Badge shown when the notifications step appears alone for existing users */
 "onboarding.notifications.new_badge" = "신규";
-
-/* Decline button on the notifications onboarding screen */
-"onboarding.notifications.not_now_button" = "나중에";
-
-/* Primary button on the notifications onboarding screen */
-"onboarding.notifications.primary_button" = "알림 켜기";
 
 /* Title of the notifications onboarding screen */
 "onboarding.notifications.title" = "운행 차질에 미리 대비하세요";
@@ -1182,6 +1155,9 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "정류장까지의 소요 시간 추정, 도착 예정 시간, 정류장 화면에 더 빠른 이동 속도를 사용합니다.";
 
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@은(는) 건강 앱에서 사이클링 속도를 읽을 수 있습니다. 건강 앱에 데이터를 기록하지는 않습니다.";
+
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "자전거 모드";
 
@@ -1268,6 +1244,9 @@
 
 /* Settings > Walking Speed section > HealthKit toggle */
 "settings_controller.walking_speed.use_healthkit" = "건강 앱 데이터 사용";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@은(는) 건강 앱에서 걷기 속도를 읽어 정류장까지 걸어가는 데 걸리는 시간을 추정할 수 있습니다. 건강 앱에 데이터를 기록하지는 않습니다.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "보행 속도";
@@ -1918,8 +1897,6 @@
 "ghost_bus_report.wait.minutes_fmt" = "%d분";
 /* Longest wait-duration choice on the ghost bus form. */
 "ghost_bus_report.wait.thirty_plus" = "30분 이상";
-/* Title of the alert asking the user to enable location services. */
-"locationservices_alert_notdetermined.title" = "위치 서비스 켜기";
 /* Map sheet row for the rental bikes layer */
 "map_layers.bikes" = "자전거";
 /* Map sheet row for the transit stops layer */

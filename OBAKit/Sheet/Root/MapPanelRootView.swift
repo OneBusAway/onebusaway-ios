@@ -139,7 +139,7 @@ struct MapPanelRootView: View {
     @State private var pillHeight: CGFloat = 0
 
     // Location-permission alert presentation state. Owned by the root.
-    @State private var permissionAlertState: MapViewModel.TopPillState?
+    @State private var isLocationOffAlertPresented = false
 
     // Live sheet height, clamped to `[0, halfScreenHeight]`. Seeded to the
     // collapsed detent so overlays render at their resting position on the
@@ -652,13 +652,13 @@ struct MapPanelRootView: View {
             // Bind the live alert state only on the base (non-stacking)
             // sheet layer. The `floatingSheet` content builder is re-invoked
             // for every stacked sheet, so binding the shared
-            // `permissionAlertState` on all of them would fire multiple
+            // `isLocationOffAlertPresented` on all of them would fire multiple
             // concurrent `.alert(isPresented:)` presentations against one
             // value. The base sheet shows exactly one route at a time, so
             // this yields a single alert host.
             .mapPermissionAlert(
-                state: route.prefersStacking ? .constant(nil) : $permissionAlertState,
-                onAction: handleAlertAction
+                isPresented: route.prefersStacking ? .constant(false) : $isLocationOffAlertPresented,
+                onOpenSettings: openSettings
             )
             .onGeometryChange(for: CGFloat.self) { [halfScreenHeight] proxy in
                 // The transform closure is @Sendable; snapshot the @State value
@@ -701,18 +701,22 @@ extension MapPanelRootView {
 
     // MARK: - Permission Tap
 
-    /// Sets `permissionAlertState` so the `.alert` attached inside the
-    /// floating sheet presents. We DO NOT invoke the OS permission APIs
-    /// directly from the pill's tap: the alert gives the user a chance to opt
-    /// out ("Keep Location Off") before the native system prompt fires, and —
-    /// for `.locationServicesOff` and `.impreciseLocation` — the action list
-    /// itself is the meaningful choice (there is no re-prompt path on iOS
-    /// after the first denial). `.hidden` and `.zoomInForStops` are routed
-    /// elsewhere by `MapStatusPill` and never reach this handler.
+    /// Where iOS can still prompt (`.notDetermined`, `.impreciseLocation`), the
+    /// pill's tap raises the system prompt directly. A custom alert in front of
+    /// it with a way out ("Keep Location Off") is what App Review rejects under
+    /// guideline 5.1.1(iv); the rider declines in the system prompt instead.
+    /// `.locationServicesOff` has no re-prompt path on iOS, so it sets
+    /// `isLocationOffAlertPresented`, and the alert attached inside the floating sheet
+    /// offers Settings. `.hidden` and `.zoomInForStops` are routed elsewhere
+    /// by `MapStatusPill` and never reach this handler.
     private func handlePermissionTap(_ state: MapViewModel.TopPillState) {
         switch state {
-        case .notDetermined, .locationServicesOff, .impreciseLocation:
-            permissionAlertState = state
+        case .notDetermined:
+            mapViewModel.requestLocationAuthorization()
+        case .impreciseLocation:
+            mapViewModel.requestTemporaryFullAccuracy(purposeKey: MapStatusView.fullAccuracyPurposeKey)
+        case .locationServicesOff:
+            isLocationOffAlertPresented = true
         case .hidden, .zoomInForStops, .zoomInForRentals, .locationServicesUnavailable:
             break
         }
@@ -725,21 +729,6 @@ extension MapPanelRootView {
             forVisibleMapRectHeight: height,
             rentalLayerEnabled: application.mapRegionManager.isAnyRentalLayerShowing
         ))
-    }
-
-    /// Fans out an alert action to the concrete side effect. Kept as its own
-    /// dispatcher so the caller-side switch stays exhaustive over
-    /// `MapPermissionAlert.Action` — adding a case surfaces as a compile
-    /// error rather than a silently-unhandled tap.
-    private func handleAlertAction(_ action: MapPermissionAlert.Action) {
-        switch action {
-        case .requestAuthorization:
-            mapViewModel.requestLocationAuthorization()
-        case .openSettings:
-            openSettings()
-        case .requestPreciseLocation:
-            mapViewModel.requestTemporaryFullAccuracy(purposeKey: "MapStatusView")
-        }
     }
 
 }

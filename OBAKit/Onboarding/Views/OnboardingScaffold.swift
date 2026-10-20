@@ -28,6 +28,9 @@ struct OnboardingHeroCircle: View {
 
 /// Shared chrome for onboarding steps: segmented progress bar, centered
 /// title/body, optional badge and footnote, and a fixed bottom button dock.
+///
+/// One button only, on purpose: a permission step's button must always lead to
+/// the system prompt, with no way to skip it (App Review guideline 5.1.1(iv)).
 struct OnboardingScaffold<Content: View>: View {
     /// `nil` hides the progress bar (single-step mode for returning users).
     var progress: (index: Int, total: Int)?
@@ -38,8 +41,6 @@ struct OnboardingScaffold<Content: View>: View {
     var primaryTitle: String
     var primaryDisabled: Bool
     var primaryAction: () -> Void
-    var secondaryTitle: String?
-    var secondaryAction: (() -> Void)?
     @ViewBuilder var content: Content
 
     init(
@@ -51,8 +52,6 @@ struct OnboardingScaffold<Content: View>: View {
         primaryTitle: String,
         primaryDisabled: Bool = false,
         primaryAction: @escaping () -> Void,
-        secondaryTitle: String? = nil,
-        secondaryAction: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.progress = progress
@@ -63,8 +62,6 @@ struct OnboardingScaffold<Content: View>: View {
         self.primaryTitle = primaryTitle
         self.primaryDisabled = primaryDisabled
         self.primaryAction = primaryAction
-        self.secondaryTitle = secondaryTitle
-        self.secondaryAction = secondaryAction
         self.content = content()
     }
 
@@ -136,15 +133,6 @@ struct OnboardingScaffold<Content: View>: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(primaryDisabled)
-
-                if let secondaryTitle, let secondaryAction {
-                    Button(action: secondaryAction) {
-                        Text(secondaryTitle)
-                            .font(.headline)
-                            .frame(minHeight: 32)
-                    }
-                    .buttonStyle(.borderless)
-                }
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
@@ -173,10 +161,8 @@ struct OnboardingScaffold<Content: View>: View {
     OnboardingScaffold(
         badge: "NEW",
         title: "Stay ahead of disruptions",
-        primaryTitle: "Turn On Notifications",
-        primaryAction: {},
-        secondaryTitle: "Maybe Later",
-        secondaryAction: {}
+        primaryTitle: "Continue",
+        primaryAction: {}
     // swiftlint:disable:next multiple_closures_with_trailing_closure
     ) {
         OnboardingHeroCircle(systemImageName: "bell.fill")
