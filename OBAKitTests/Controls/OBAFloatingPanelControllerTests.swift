@@ -10,6 +10,7 @@
 import FloatingPanel
 import Foundation
 import Testing
+import UIKit
 @testable import OBAKit
 
 /// The grabber's Expand and Collapse actions are how VoiceOver and Switch Control
