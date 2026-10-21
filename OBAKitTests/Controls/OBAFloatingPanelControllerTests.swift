@@ -56,4 +56,43 @@ struct OBAFloatingPanelControllerTests {
         #expect(MapViewController.tripStartedPanelState(isVoiceOverRunning: true) == .half)
         #expect(MapViewController.tripStartedPanelState(isVoiceOverRunning: false) == .tip)
     }
+
+    // MARK: - MapPanelLayout & MapPanelLandscapeLayout
+
+    @Test func `MapPanelLayout initializes with given initial state`() {
+        let layoutTip = MapPanelLayout(initialState: .tip)
+        #expect(layoutTip.initialState == .tip)
+
+        let layoutHalf = MapPanelLayout(initialState: .half)
+        #expect(layoutHalf.initialState == .half)
+
+        let layoutFull = MapPanelLayout(initialState: .full)
+        #expect(layoutFull.initialState == .full)
+
+        #expect(MapPanelLayout.EstimatedDrawerTipStateHeight == 72)
+    }
+
+    @Test func `MapPanelLandscapeLayout properties and anchors`() {
+        let layout = MapPanelLandscapeLayout(initialState: .half)
+
+        #expect(layout.position == .bottom)
+        #expect(layout.initialState == .half)
+        #expect(MapPanelLandscapeLayout.WidthSize == 291)
+        #expect(layout.backdropAlpha(for: .full) == 0.0)
+        #expect(layout.backdropAlpha(for: .half) == 0.0)
+        #expect(layout.backdropAlpha(for: .tip) == 0.0)
+
+        let anchors = layout.anchors
+        #expect(anchors[.full] != nil)
+        #expect(anchors[.half] != nil)
+        #expect(anchors[.tip] != nil)
+
+        // Verify layout constraint preparation
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 600, height: 400))
+        let surface = UIView()
+        container.addSubview(surface)
+
+        let constraints = layout.prepareLayout(surfaceView: surface, in: container)
+        #expect(constraints.count == 2)
+    }
 }
