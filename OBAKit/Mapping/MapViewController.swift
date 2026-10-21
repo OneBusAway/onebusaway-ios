@@ -907,8 +907,14 @@ class MapViewController: UIViewController,
         // nil on the first load. `apply` exists to make that mistake unavailable.
         viewModel.$stopArrivals
             .combineLatest(viewModel.$isListFiltered, viewModel.$stopPreferences)
-            .sink { [weak layer] arrivals, isListFiltered, preferences in
-                layer?.apply(arrivals: arrivals, isListFiltered: isListFiltered, preferences: preferences)
+            .sink { [weak layer, weak viewModel] arrivals, isListFiltered, preferences in
+                // Read back, unlike `stopArrivals`: the view model sets it before them.
+                layer?.apply(
+                    arrivals: arrivals,
+                    isListFiltered: isListFiltered,
+                    preferences: preferences,
+                    serverClock: viewModel?.arrivalsServerClock
+                )
             }
             .store(in: &stopFocusCancellables)
     }

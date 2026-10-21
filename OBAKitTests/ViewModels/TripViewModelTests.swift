@@ -437,4 +437,56 @@ final class TripViewModelTests: OBATestCase {
         await viewModel.loadDataTask?.value
         #expect(viewModel.isLoading == false)
     }
+
+    // MARK: - Estimated vehicle positions
+
+    private func tripDetailsRequests(_ dataLoader: MockDataLoader) -> [URLRequest] {
+        dataLoader.recordedRequests.filter { $0.url?.path.contains("/api/where/trip-details") ?? false }
+    }
+
+    /// maglev marks trip details `max-age=30`. An estimate measured from a cached
+    /// status would think the fix 30 s fresher than it is.
+    @Test @MainActor
+    func `With estimation on, trip polls bypass the HTTP cache`() async throws {
+        userDefaults.set(true, forKey: FeatureFlags.estimatesVehiclePositionsKey)
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        let policies = tripDetailsRequests(dataLoader).map(\.cachePolicy)
+        #expect(!policies.isEmpty)
+        #expect(policies.allSatisfy { $0 == .reloadIgnoringLocalCacheData })
+    }
+
+    @Test @MainActor
+    func `With estimation off, trip polls use the protocol cache policy`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        let policies = tripDetailsRequests(dataLoader).map(\.cachePolicy)
+        #expect(!policies.isEmpty)
+        #expect(policies.allSatisfy { $0 == .useProtocolCachePolicy })
+    }
+
+    @Test @MainActor
+    func `A load publishes the server clocks its responses carried`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = TripViewModel(application: app, tripConvertible: try makeTripConvertible())
+
+        viewModel.loadData()
+        await viewModel.loadDataTask?.value
+
+        // `currentTime` in trip_details_1_18196913.json.
+        let serverTimes = viewModel.serverClocks.map(\.serverTime.timeIntervalSince1970)
+        #expect(serverTimes.contains { abs($0 - 1343587067.230) < 0.001 })
+    }
 }
+

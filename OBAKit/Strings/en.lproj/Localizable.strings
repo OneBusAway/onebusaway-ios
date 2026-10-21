@@ -1377,6 +1377,9 @@
 /* Settings > Debug section > Debug mode */
 "settings_controller.debug_section.debug_mode" = "Debug Mode";
 
+/* Settings > Debug section > Toggle that draws a vehicle's last reported GPS position and the server's position beside its estimated marker */
+"settings_controller.debug_section.show_raw_vehicle_fix" = "Show reported vehicle positions";
+
 /* Settings > Debug section > Name identifying this device for test push notifications */
 "settings_controller.debug_section.test_device_description" = "Test Device Name";
 
@@ -1388,6 +1391,9 @@
 
 /* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
 "settings_controller.experimental_section.cluster_stops" = "Group nearby stops on the map";
+
+/* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
+"settings_controller.experimental_section.estimate_vehicle_positions" = "Estimate where vehicles are now";
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Use map panel experience";
@@ -1990,6 +1996,9 @@
 
 /* Shown in place of the trip page's Track on Lock Screen button once a Live Activity is running for this trip. */
 "trip_page.live_activity_tracking" = "Tracking on Lock Screen";
+
+/* How stale the vehicle's last reported position is, when the map shows where the vehicle is estimated to be now rather than where it last reported. %@ is a relative time like '12s ago'. */
+"trip_page.position_estimated_fmt" = "estimated position, updated %@";
 
 /* How stale the vehicle's reported position is. %@ is a relative time like '12s ago'. */
 "trip_page.position_updated_fmt" = "position updated %@";

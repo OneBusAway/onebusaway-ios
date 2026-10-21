@@ -1173,11 +1173,17 @@
 /* Settings > Debug section > Debug mode */
 "settings_controller.debug_section.debug_mode" = "디버그 모드";
 
+/* Settings > Debug section > Toggle that draws a vehicle's last reported GPS position and the server's position beside its estimated marker */
+"settings_controller.debug_section.show_raw_vehicle_fix" = "보고된 차량 위치 표시";
+
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "디버그";
 
 /* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
 "settings_controller.experimental_section.cluster_stops" = "지도에서 가까운 정류장 묶기";
+
+/* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
+"settings_controller.experimental_section.estimate_vehicle_positions" = "차량의 현재 위치 추정";
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "지도 패널 사용";
@@ -1706,6 +1712,9 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "%@(으)로 운행 시작";
+
+/* How stale the vehicle's last reported position is, when the map shows where the vehicle is estimated to be now rather than where it last reported. %@ is a relative time like '12s ago'. */
+"trip_page.position_estimated_fmt" = "추정 위치, 업데이트 %@";
 
 /* Shown beside a Retry button when loading the trip's stop list failed. */
 "trip_page.stops_failed" = "이 운행의 정류장을 불러오지 못했습니다.";

@@ -32,4 +32,30 @@ nonisolated enum TripProvenanceLine {
         guard !clauses.isEmpty else { return nil }
         return clauses.joined(separator: separator)
     }
+
+    /// How old the vehicle's position is: "position updated 12 sec. ago", or, while
+    /// the map is estimating where the vehicle is now, "estimated position, updated
+    /// 12 sec. ago". `nil` with no update to measure from.
+    @MainActor static func freshness(lastUpdate: Date?, isEstimated: Bool, relativeTo now: Date) -> String? {
+        guard let lastUpdate else { return nil }
+        let age = RelativeDateTimeFormatter.vehiclePositionAge.localizedString(for: lastUpdate, relativeTo: now)
+        let format = isEstimated
+            ? OBALoc("trip_page.position_estimated_fmt", value: "estimated position, updated %@", comment: "How stale the vehicle's last reported position is, when the map shows where the vehicle is estimated to be now rather than where it last reported. %@ is a relative time like '12s ago'.")
+            : OBALoc("trip_page.position_updated_fmt", value: "position updated %@", comment: "How stale the vehicle's reported position is. %@ is a relative time like '12s ago'.")
+        return String(format: format, age)
+    }
+
+}
+
+extension RelativeDateTimeFormatter {
+    /// How old a vehicle's reported position is, abbreviated ("12s ago"): the trip
+    /// card's provenance line and the map's vehicle callout. Shared so the two
+    /// can't drift apart. Static: building one per callout is measurably wasteful.
+    @MainActor static let vehiclePositionAge: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        // `.abbreviated` ("12s ago"), not `.short` ("12 sec. ago") — the design's
+        // freshness line, and short enough not to wrap under the countdown.
+        formatter.unitsStyle = .abbreviated
+        return formatter
+    }()
 }

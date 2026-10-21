@@ -58,6 +58,11 @@ struct StopRouteFocusModel {
         /// snapshotting one here — the annotation REQUIRES a non-nil
         /// `TripStatus`, see Task 7.
         let departureID: String
+        /// This vehicle's own trip and shape, for estimating where it is: the
+        /// route's line is drawn from one departure's shape, which another trip
+        /// on the route need not share. `nil` leaves the vehicle unestimated.
+        var tripID: String?
+        var shapeID: String?
     }
 
     let routes: [DrawnRoute]
@@ -112,7 +117,9 @@ struct StopRouteFocusModel {
                 routeID: departure.routeID,
                 coordinate: coordinate,
                 orientation: departure.orientation,
-                departureID: departure.id
+                departureID: departure.id,
+                tripID: departure.tripID,
+                shapeID: departure.shapeID
             ))
             routesWithVehicles.insert(departure.routeID)
         }

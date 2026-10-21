@@ -21,6 +21,10 @@ public class CoreRESTAPIResponse: NSObject, Decodable {
     public let text: String?
     public let version: Int
 
+    /// `currentTime` against the device clock at receipt; `nil` when the response
+    /// carried no time. Set by the networking layer after decoding.
+    public internal(set) var serverClock: ServerClockSample?
+
     fileprivate enum CodingKeys: String, CodingKey {
         case code, currentTime, data, text, version
     }

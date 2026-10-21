@@ -77,15 +77,27 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     private var cancellables = Set<AnyCancellable>()
 
     private var shapeOverlays: [TripShapeOverlay] = []
+    /// Where the line is cut while an estimate runs, as MapKit's unit distance.
+    /// Both halves are then drawn over the whole shape, one stroked up to here and
+    /// the other from here, so a tick moves the join without replacing the line.
+    /// `nil` when the line is cut by splitting the shape itself.
+    private var strokeCut: CGFloat?
     private var stopAnnotations: [TripStopAnnotation] = []
     /// What the direction chevrons on the line ahead keep clear of.
     private let arrowContext = RouteArrowContext()
     private var vehicleAnnotation: VehicleAnnotation?
+    /// Debug; see `TripMapFocus.Content.showsReportedPositions`.
+    private var reportedPositionAnnotations: [ReportedPositionAnnotation] = []
 
     /// The trip the camera has already been framed for. Framing happens once per
     /// trip, not once per refresh: the position updates every 30s, and re-framing
     /// on each one would snatch the map back from a rider who had panned away.
     private var framedTripID: String?
+
+    // MARK: - Estimated position
+
+    /// The estimate the marker is following, or `nil` to follow the feed.
+    private var estimate: VehicleEstimate?
 
     init(mapView: MKMapView) {
         self.mapView = mapView
@@ -97,6 +109,10 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         mapView.register(
             TripStopAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: TripStopAnnotationView.reuseIdentifier
+        )
+        mapView.register(
+            ReportedPositionAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: ReportedPositionAnnotationView.reuseIdentifier
         )
     }
 
@@ -110,6 +126,19 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         focus.$content
             .sink { [weak self] content in self?.render(content) }
             .store(in: &cancellables)
+
+        // `@Published` emits in `willSet`, so the value comes from the closure,
+        // not `focus.vehicleEstimate`.
+        focus.$vehicleEstimate
+            .dropFirst()
+            .sink { [weak self] estimate in self?.apply(estimate) }
+            .store(in: &cancellables)
+
+        focus.$estimatedSplitProgress
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] progress in self?.redrawShape(estimatedProgress: progress) }
+            .store(in: &cancellables)
     }
 
     /// Called when the trip page goes away.
@@ -121,6 +150,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         cancellables.removeAll()
         focus = nil
         framedTripID = nil
+        estimate = nil
         removeAllContent()
     }
 
@@ -139,21 +169,40 @@ final class TripFocusMapLayer: NSObject, MapLayer {
 
         // Split once: the drawing and the camera have to agree about which half
         // of the shape is still ahead of the bus.
-        let split = content.shapeSplit
+        let split = content.shapeSplit(estimatedProgress: focus?.estimatedSplitProgress)
 
         drawStops(content)
         // Before the shape, so its first draw already knows where this trip's stops are.
         refreshArrowMarkers()
-        drawShape(split)
+        drawShape(content, estimatedProgress: focus?.estimatedSplitProgress)
         drawVehicle(content)
+        // `content`, not `focus.content`: this runs in `$content`'s `willSet`.
+        drawReportedPositions(content)
         frameCameraIfNeeded(content, split: split)
     }
 
-    private func drawShape(_ split: TripShapeSplit.Result) {
+    private func drawShape(_ content: TripMapFocus.Content, estimatedProgress: Double?) {
         // Spent first, then ahead, so where the two meet the live half wins the
         // z-order. Casing before core within each, for the same reason.
-        add(coordinates: split.spent, isSpent: true)
-        add(coordinates: split.ahead, isSpent: false)
+        if let estimatedProgress {
+            strokeCut = TripShapeSplit.unitDistance(coordinates: content.shape, atFraction: estimatedProgress)
+            add(coordinates: content.shape, isSpent: true)
+            add(coordinates: content.shape, isSpent: false)
+        } else {
+            strokeCut = nil
+            let split = content.shapeSplit()
+            add(coordinates: split.spent, isSpent: true)
+            add(coordinates: split.ahead, isSpent: false)
+        }
+    }
+
+    /// Strokes `renderer` up to the cut, or from it, per `strokeCut`.
+    private func applyStrokeCut(to renderer: MKPolylineRenderer, for overlay: TripShapeOverlay) {
+        if overlay.isSpent {
+            renderer.strokeEnd = strokeCut ?? 1
+        } else {
+            renderer.strokeStart = strokeCut ?? 0
+        }
     }
 
     private func add(coordinates: [CLLocationCoordinate2D], isSpent: Bool) {
@@ -195,18 +244,74 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             let from = existing.coordinate
             existing.tripStatus = status
             existing.coordinate = from
-            VehicleCoordinateUpdate.apply(from: from, to: coord, on: existing)
+            // An estimate moves the marker itself; the reported fix is older.
+            if estimate == nil {
+                VehicleCoordinateUpdate.apply(from: from, to: coord, on: existing)
+            }
             if let view = mapView.view(for: existing) as? PulsingVehicleAnnotationView {
                 view.realTimeAnnotationColor = content.routeColor
                 view.applyTripStatus(status)
+                view.applyEstimate(estimate)
             }
             return
         }
 
         removeVehicle()
         let annotation = VehicleAnnotation(tripStatus: status)
+        if let estimate { annotation.coordinate = estimate.coordinate }
         vehicleAnnotation = annotation
         mapView.addAnnotation(annotation)
+    }
+
+    /// Moves the marker to `estimate`, or back to the reported fix for `nil`.
+    private func apply(_ estimate: VehicleEstimate?) {
+        let wasEstimating = self.estimate != nil
+        self.estimate = estimate
+
+        if let vehicleAnnotation {
+            let view = mapView.view(for: vehicleAnnotation) as? PulsingVehicleAnnotationView
+            if let estimate {
+                VehicleCoordinateUpdate.follow(
+                    vehicleAnnotation, to: estimate.coordinate, snap: estimate.shouldSnap,
+                    duration: VehicleEstimationDriver.glideDuration(for: estimate), in: mapView
+                )
+                view?.applyEstimate(estimate)
+            } else if let content = focus?.content, let coordinate = content.vehicleCoordinate {
+                VehicleCoordinateUpdate.apply(from: vehicleAnnotation.coordinate, to: coordinate, on: vehicleAnnotation)
+                if let status = content.vehicle { view?.applyTripStatus(status) }
+                view?.applyEstimate(nil)
+            }
+        }
+
+        if (estimate != nil) != wasEstimating { drawReportedPositions(focus?.content) }
+    }
+
+    private func drawReportedPositions(_ content: TripMapFocus.Content?) {
+        mapView.removeAnnotations(reportedPositionAnnotations)
+        reportedPositionAnnotations.removeAll()
+        reportedPositionAnnotations = (content?.reportedPositions(isEstimating: estimate != nil) ?? []).map {
+            ReportedPositionAnnotation(kind: $0.kind, coordinate: $0.coordinate)
+        }
+        mapView.addAnnotations(reportedPositionAnnotations)
+    }
+
+    /// The line alone, cut where the marker is; the stops and the vehicle stay.
+    private func redrawShape(estimatedProgress: Double?) {
+        guard let content = focus?.content else { return }
+        if let estimatedProgress, strokeCut != nil {
+            // Already drawn whole: only the cut moves.
+            strokeCut = TripShapeSplit.unitDistance(coordinates: content.shape, atFraction: estimatedProgress)
+            for overlay in shapeOverlays {
+                guard let renderer = mapView.renderer(for: overlay) as? MKPolylineRenderer else { continue }
+                applyStrokeCut(to: renderer, for: overlay)
+                renderer.setNeedsDisplay()
+            }
+            return
+        }
+        mapView.removeOverlays(shapeOverlays)
+        shapeOverlays.removeAll()
+        drawShape(content, estimatedProgress: estimatedProgress)
+        refreshArrowMarkers()
     }
 
     /// Same bus, not merely the same trip: a block handoff should replace the
@@ -263,6 +368,8 @@ final class TripFocusMapLayer: NSObject, MapLayer {
             mapView.removeAnnotation(vehicleAnnotation)
         }
         vehicleAnnotation = nil
+        mapView.removeAnnotations(reportedPositionAnnotations)
+        reportedPositionAnnotations.removeAll()
     }
 
     // MARK: - MapLayer conformance
@@ -294,6 +401,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         renderer.lineCap = .round
         renderer.lineJoin = .round
         renderer.alpha = overlay.isSpent ? Style.spentAlpha : 1
+        applyStrokeCut(to: renderer, for: overlay)
 
         return renderer
     }
@@ -302,6 +410,12 @@ final class TripFocusMapLayer: NSObject, MapLayer {
         if annotation is TripStopAnnotation {
             return mapView.dequeueReusableAnnotationView(
                 withIdentifier: TripStopAnnotationView.reuseIdentifier,
+                for: annotation
+            )
+        }
+        if annotation is ReportedPositionAnnotation {
+            return mapView.dequeueReusableAnnotationView(
+                withIdentifier: ReportedPositionAnnotationView.reuseIdentifier,
                 for: annotation
             )
         }
@@ -343,6 +457,7 @@ final class TripFocusMapLayer: NSObject, MapLayer {
     func mapAnnotationsWereCleared() {
         stopAnnotations.removeAll()
         vehicleAnnotation = nil
+        reportedPositionAnnotations.removeAll()
     }
 
     func mapOverlaysWereCleared() {
