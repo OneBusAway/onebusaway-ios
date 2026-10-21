@@ -111,4 +111,10 @@ final class HoverBarTests {
 
         #expect(separator.isAccessibilityElement == false)
     }
+
+    @Test func hoverBarPassThroughViewConvenienceInit() {
+        let view = HoverBarPassThroughView()
+        #expect(view.frame == .zero)
+        #expect(view.subviews.count == 2)
+    }
 }
