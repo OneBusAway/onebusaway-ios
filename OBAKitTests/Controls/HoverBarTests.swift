@@ -112,6 +112,12 @@ final class HoverBarTests {
         #expect(separator.isAccessibilityElement == false)
     }
 
+    @Test func hoverBarSeparatorIntrinsicContentSizeMatchesScale() {
+        let separator = HoverBarSeparator(frame: CGRect(x: 0, y: 0, width: 44, height: 1))
+        #expect(separator.intrinsicContentSize.width == UIView.noIntrinsicMetric)
+        #expect(separator.intrinsicContentSize.height > 0)
+    }
+
     @Test func hoverBarPassThroughViewConvenienceInit() {
         let view = HoverBarPassThroughView()
         #expect(view.frame == .zero)
