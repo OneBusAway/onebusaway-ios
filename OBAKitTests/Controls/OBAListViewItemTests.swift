@@ -468,5 +468,123 @@ struct OBAListViewItemTests {
         #expect(item1 != itemDiffID)
         #expect(item1 != itemDiffTitle)
     }
+
+    // MARK: - OBAListViewMenuActions
+
+    /// Tests configuration generation for OBAListViewMenuActions with a standard preview controller.
+    @Test func testListViewMenuActionsBasicConfiguration() {
+        var previewCalled = false
+        var performCalled = false
+        var menuCalled = false
+
+        let previewController = UIViewController()
+        let menuElement = UIAction(title: "Custom Action") { _ in }
+        let customMenu = UIMenu(title: "Test Menu", children: [menuElement])
+
+        let actions = OBAListViewMenuActions(
+            previewProvider: {
+                previewCalled = true
+                return previewController
+            },
+            performPreviewAction: {
+                performCalled = true
+            },
+            contextMenuProvider: { _ in
+                menuCalled = true
+                return customMenu
+            }
+        )
+
+        let contextConfig = actions.contextMenuConfiguration(identifier: "item_identifier")
+        #expect(contextConfig.identifier as? String == "item_identifier")
+
+        // Trigger action callbacks directly on the model
+        let resolvedController = actions.makePreviewController()
+        #expect(resolvedController === previewController)
+        #expect(previewCalled == true)
+
+        // Trigger performPreviewAction
+        actions.performPreviewAction?()
+        #expect(performCalled == true)
+
+        // Trigger contextMenuProvider
+        let resolvedMenu = actions.contextMenuProvider?([])
+        #expect(resolvedMenu === customMenu)
+        #expect(menuCalled == true)
+    }
+
+    /// Tests that OBAListViewMenuActions automatically calls enterPreviewMode()
+    /// when the previewed controller conforms to the Previewable protocol.
+    @Test func testListViewMenuActionsWithPreviewableController() {
+        class MockPreviewableViewController: UIViewController, Previewable {
+            var enteredPreviewModeCount = 0
+            var exitedPreviewModeCount = 0
+
+            func enterPreviewMode() {
+                enteredPreviewModeCount += 1
+            }
+
+            func exitPreviewMode() {
+                exitedPreviewModeCount += 1
+            }
+        }
+
+        let previewableController = MockPreviewableViewController()
+        #expect(previewableController.enteredPreviewModeCount == 0)
+
+        let actions = OBAListViewMenuActions(
+            previewProvider: { previewableController },
+            performPreviewAction: nil,
+            contextMenuProvider: nil
+        )
+
+        let contextConfig = actions.contextMenuConfiguration(identifier: "preview_item")
+        #expect(contextConfig.identifier as? String == "preview_item")
+
+        // Executing makePreviewController invokes enterPreviewMode() on Previewable controllers
+        let resolvedController = actions.makePreviewController()
+        #expect(resolvedController === previewableController)
+        #expect(previewableController.enteredPreviewModeCount == 1)
+        #expect(previewableController.exitedPreviewModeCount == 0)
+    }
+
+    /// Tests that OBAListViewMenuActions handles nil providers safely without crashing.
+    @Test func testListViewMenuActionsNilProviders() {
+        let actions = OBAListViewMenuActions(
+            previewProvider: nil,
+            performPreviewAction: nil,
+            contextMenuProvider: nil
+        )
+
+        let contextConfig = actions.contextMenuConfiguration(identifier: "nil_providers")
+        #expect(contextConfig.identifier as? String == "nil_providers")
+        #expect(actions.previewProvider?() == nil)
+        #expect(actions.contextMenuProvider?([]) == nil)
+        #expect(actions.performPreviewAction == nil)
+    }
+
+    // MARK: - ReuseIdentifierProviding & OBAListViewCell
+
+    /// Tests default reuse identifier generation for cells conforming to ReuseIdentifierProviding.
+    @Test func testReuseIdentifierProvidingDefault() {
+        #expect(MockListViewCell.ReuseIdentifier == "MockListViewCell_ReuseIdentifier")
+        #expect(OBAListViewCell.ReuseIdentifier == "OBAListViewCell_ReuseIdentifier")
+    }
+
+    /// Tests that OBAListViewCell responds cleanly to apply, willDisplayCell, and blink animations.
+    @Test func testOBAListViewCellLifecycleAndAnimations() {
+        let cell = OBAListViewCell()
+        let config = MockContentConfiguration()
+
+        // Base cell apply should no-op cleanly without trapping
+        cell.apply(config)
+
+        // Test blink animation executes cleanly
+        cell.blink(.blue, delay: 0.0)
+
+        // willDisplayCell should no-op cleanly
+        let listView = OBAListView()
+        cell.willDisplayCell(in: listView)
+    }
 }
 
