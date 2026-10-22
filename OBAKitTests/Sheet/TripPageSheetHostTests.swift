@@ -103,4 +103,43 @@ final class TripPageSheetHostTests: OBATestCase {
 
         #expect(selectedStopIDs == ["1_75403"])
     }
+
+    /// A shared trip link names where the sharer steps off (#449), and the sheet
+    /// has to hand it to the page as `TripViewController` gets it in classic.
+    @Test @MainActor
+    func `Make trip page hands the page a shared destination`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: try Fixtures.tripConvertible(),
+            destinationStopID: "1_999",
+            onMapFocusChanged: { _ in },
+            onSelectStop: { _ in },
+            onClose: {}
+        )
+
+        #expect(page.viewModel.destinationStopID == "1_999")
+    }
+
+    /// A sheet over a sheet sends the page under it no `viewWillDisappear`, so
+    /// its refresh used to run on unseen, under every stop and trip above it.
+    @Test @MainActor
+    func `A covered trip page stops refreshing`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: try Fixtures.tripConvertible(),
+            onMapFocusChanged: { _ in },
+            onSelectStop: { _ in },
+            onClose: {}
+        )
+
+        page.setCoveredBySheet(true)
+        #expect(page.isCoveredBySheet)
+        #expect(!page.viewModel.isLoading)
+
+        page.setCoveredBySheet(false)
+        #expect(!page.isCoveredBySheet)
+    }
 }

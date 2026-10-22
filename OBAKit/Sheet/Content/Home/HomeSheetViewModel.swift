@@ -21,6 +21,7 @@ import OBAKitCore
 @MainActor
 final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelegate {
 
+    let alerts: HomeAlertsSectionModel
     let nearby: HomeNearbyStopsSectionModel
     let recent: HomeRecentStopsSectionModel
     let bookmarks: HomeBookmarksSectionModel
@@ -59,6 +60,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         self.application = application
         self.searchPlaceholder = SearchPlaceholder.text(for: application)
         self.offersTripPlanning = application.features.tripPlanning == .running
+        self.alerts = HomeAlertsSectionModel(alertsStore: application.alertsStore)
         self.nearby = HomeNearbyStopsSectionModel(observer: stopsObserver)
         self.recent = HomeRecentStopsSectionModel(application: application)
         self.bookmarks = HomeBookmarksSectionModel(application: application)
@@ -82,6 +84,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         // automatically. Delivery is synchronous on the child's `willSet`, which
         // is the timing SwiftUI wants.
         Publishers.MergeMany(
+            alerts.objectWillChange,
             nearby.objectWillChange,
             recent.objectWillChange,
             bookmarks.objectWillChange
@@ -103,11 +106,14 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         // children publish values, not the section list, so this is the single
         // place the order and the omission rule live.
         nearby.$stops
-            .combineLatest(recent.$stops, bookmarks.$rows)
-            .sink { [weak self] nearbyStops, recentStops, bookmarkRows in
+            .combineLatest(recent.$stops, recent.$alarmCount, bookmarks.$rows)
+            .combineLatest(alerts.$alerts)
+            .sink { [weak self] content, alerts in
+                let (nearbyStops, recentStops, alarmCount, bookmarkRows) = content
                 self?.updateVisibleSections(
+                    hasAlerts: !alerts.isEmpty,
                     hasNearby: !nearbyStops.isEmpty,
-                    hasRecent: !recentStops.isEmpty,
+                    hasRecent: !recentStops.isEmpty || alarmCount > 0,
                     hasBookmarks: !bookmarkRows.isEmpty
                 )
             }
@@ -125,8 +131,9 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         bookmarks.loadIfNeeded()
     }
 
-    private func updateVisibleSections(hasNearby: Bool, hasRecent: Bool, hasBookmarks: Bool) {
+    private func updateVisibleSections(hasAlerts: Bool, hasNearby: Bool, hasRecent: Bool, hasBookmarks: Bool) {
         var sections: [HomeSheetSection] = []
+        if hasAlerts { sections.append(.alerts) }
         if hasNearby { sections.append(.nearby) }
         if hasRecent { sections.append(.recent) }
         if hasBookmarks { sections.append(.bookmarks) }
@@ -137,6 +144,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     // MARK: - RegionsServiceDelegate
 
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        alerts.reload()
         searchPlaceholder = SearchPlaceholder.text(for: application)
         offersTripPlanning = application.features.tripPlanning == .running
         // Which recents and bookmarks are "current" changed, and neither store

@@ -177,7 +177,14 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     @objc
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         reloadBookmarks()
+        changedRegion = region
     }
+
+    /// The region the rider last changed to, from More > Region, an
+    /// `add-region` link or automatic selection. Nil until one does.
+    /// `MapPanelRootView` moves the map on it: the UIKit map has
+    /// `MapRegionManager` move its `MKMapView`, which the panel never shows.
+    @Published private(set) var changedRegion: Region?
 
     private func reloadBookmarks() {
         let regionBookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)

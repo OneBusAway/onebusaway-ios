@@ -34,7 +34,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// its own `Application` here rather than building a second one, the same
     /// handoff it checks on `MoreSheetHost`.
     let application: Application
-    private let presentingController: () -> UIViewController?
+    let presentingController: () -> UIViewController?
 
     init(application: Application, presentingController: @escaping () -> UIViewController?) {
         self.application = application
@@ -102,6 +102,25 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// here to hand over. Left nil everywhere else, where `showTripPage` keeps
     /// the pushed and modal presentations below.
     var onShowTripInSheet: ((ArrivalDeparture) -> Void)?
+
+    /// Set by a host with a sheet stack, so Nearby Stops opens as one of its
+    /// sheets rather than a separate UIKit stack over them.
+    var onShowNearbyStopsInSheet: ((CLLocationCoordinate2D) -> Void)?
+
+    /// Set by a host with a sheet stack, so an on-demand service card opens as
+    /// one of its sheets. Without it the card pushes, which needs a stack.
+    var onShowOnDemandServiceInSheet: ((OnDemandService) -> Void)?
+
+    /// Set by a host with its own trip planner, so Directions to and from Here,
+    /// and the walk and bike pills, open it. Without it they need classic's map
+    /// tab, and are hidden where there is none.
+    var onShowTripPlannerInSheet: ((StopTripPlannerAction, Stop, TransportMode?) -> Void)?
+
+    /// Whether this host can open the trip planner for the stop.
+    private var canShowTripPlanner: Bool {
+        guard StopTripPlannerAction.isAvailable(application: application) else { return false }
+        return onShowTripPlannerInSheet != nil || StopTripPlannerAction.canPresent(application: application)
+    }
 
     // MARK: - Navigation Handler
 
@@ -216,7 +235,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     }
 
     private func makeStopClosures(viewModel: StopViewModel) -> StopClosures {
-        let tripPlannerAvailable = StopTripPlannerAction.canPresent(application: application)
+        let tripPlannerAvailable = canShowTripPlanner
         return StopClosures(
             showWalkingDirections: { [weak self] in
                 guard let coordinate = viewModel.stop?.coordinate else { return }
@@ -230,8 +249,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
                 self.application.viewRouter.navigateTo(alert: alert, from: host)
             },
             showOnDemandService: { [weak self] service in
-                guard let self, let host = self.presentationHost(for: "on-demand service") else { return }
-                self.application.viewRouter.navigateTo(onDemandService: service, from: host)
+                self?.showOnDemandService(service)
             },
             showBookmarkEditor: { [weak self] departure in
                 self?.showBookmarkEditor(
@@ -376,7 +394,19 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     // MARK: - Location
 
     func showNearbyStops(coordinate: CLLocationCoordinate2D) {
+        if let onShowNearbyStopsInSheet {
+            onShowNearbyStopsInSheet(coordinate)
+            return
+        }
         pushOrPresent(NearbyStopsViewController(coordinate: coordinate, application: application))
+    }
+
+    func showOnDemandService(_ service: OnDemandService) {
+        if let onShowOnDemandServiceInSheet {
+            onShowOnDemandServiceInSheet(service)
+            return
+        }
+        pushOrPresent(OnDemandServiceViewController(application: application, service: service))
     }
 
     func showServiceAlerts(_ alerts: [ServiceAlert]) {
@@ -424,92 +454,10 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         application.viewRouter.present(navigation, from: host, isModal: true)
     }
 
-    /// One available maps app opens directly; more than one presents an action
-    /// sheet to disambiguate.
-    func showWalkingDirections(coordinate: CLLocationCoordinate2D) {
-        var options: [(title: String, url: URL)] = []
-
-        if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: coordinate) {
-            options.append((
-                OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"),
-                appleMapsURL
-            ))
-        }
-
-        #if !targetEnvironment(simulator)
-        if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
-           googleMapsAvailable(coordinate: coordinate) {
-            options.append((
-                OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"),
-                googleMapsURL
-            ))
-        }
-        #endif
-
-        guard let first = options.first else { return }
-
-        if options.count == 1 {
-            application.open(first.url, options: [:], completionHandler: nil)
-            return
-        }
-
-        let sheet = UIAlertController(
-            title: OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"),
-            message: nil,
-            preferredStyle: .actionSheet
-        )
-        for option in options {
-            sheet.addAction(UIAlertAction(title: option.title, style: .default) { [weak self] _ in
-                self?.application.open(option.url, options: [:], completionHandler: nil)
-            })
-        }
-        sheet.addAction(UIAlertAction(title: Strings.cancel, style: .cancel))
-        present(actionSheet: sheet)
-    }
-
-    private func makeTripPlannerClosure(_ action: StopTripPlannerAction, viewModel: StopViewModel) -> () -> Void {
-        return { [weak self] in
-            guard let stop = viewModel.stop else { return }
-            self?.showTripPlanner(action: action, stop: stop)
-        }
-    }
-
-    private func makePillDirections(viewModel: StopViewModel, tripPlannerAvailable: Bool) -> StopPillDirections {
-        StopPillDirections(tripPlannerAvailable: tripPlannerAvailable) { [weak self] behavior in
-            guard let stop = viewModel.stop else { return }
-            self?.showDirections(behavior, stop: stop)
-        }
-    }
-
-    /// A tap on the header's walk or bike pill (#1546). With a trip planner it asks
-    /// before leaving the stop page; "walk" and "bike" read as information first,
-    /// and the planner replaces the whole screen.
-    func showDirections(_ behavior: StopDirectionsPill.Behavior, stop: Stop) {
-        switch behavior {
-        case .askThenPlanTrip(let pill):
-            guard let host = presentationHost(for: "directions prompt") else { return }
-            let prompt = UIAlertController(title: StopDirectionsPill.promptTitle, message: nil, preferredStyle: .alert)
-            prompt.addAction(UIAlertAction(title: StopTripPlannerAction.directionsToHereTitle, style: .default) { [weak self] _ in
-                self?.showTripPlanner(action: .directionsToStop, stop: stop, mode: pill.mode)
-            })
-            prompt.addAction(.cancelAction)
-            host.present(prompt, animated: true)
-        case .openMapsWalkingDirections:
-            showWalkingDirections(coordinate: stop.coordinate)
-        }
-    }
-
-    /// Switches to the map tab and opens the classic trip planner with this stop
-    /// as origin or destination, and `mode` chosen when given. Shared by the pushed
-    /// Stop page and the map sheet.
-    func showTripPlanner(action: StopTripPlannerAction, stop: Stop, mode: TransportMode? = nil) {
-        StopTripPlannerAction.present(action, stop: stop, mode: mode, application: application, from: presentingController())
-    }
-
     /// An unanchored action sheet is a hard crash on a regular-width device.
     /// The sheet presentation is iPhone-only, but the pushed presentation is
     /// not, and both come through here.
-    private func present(actionSheet: UIAlertController) {
+    func present(actionSheet: UIAlertController) {
         guard let host = presentationHost(for: "action sheet") else { return }
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = host.view

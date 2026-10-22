@@ -22,6 +22,9 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     let application: Application
     let tripConvertible: TripConvertible
 
+    /// Where a shared trip link's sharer steps off. See #449.
+    var destinationStopID: StopID?
+
     /// Hands the page's map focus to the panel's map. See
     /// `TripPageViewController.onMapFocusChanged`.
     let onMapFocusChanged: (TripMapFocus?) -> Void
@@ -37,15 +40,19 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
         Self.makeTripPage(
             application: application,
             tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID,
             onMapFocusChanged: onMapFocusChanged,
             onSelectStop: onSelectStop,
             onClose: onClose
         )
     }
 
-    // The page's view model refreshes the trip itself, so nothing SwiftUI-side
-    // changes over the sheet's lifetime.
-    func updateUIViewController(_ uiViewController: TripPageViewController, context: Context) { }
+    // The page's view model refreshes the trip itself. The one thing SwiftUI
+    // tells it is whether a sheet covers it: UIKit doesn't, as a sheet over a
+    // sheet sends the page no `viewWillDisappear`.
+    func updateUIViewController(_ uiViewController: TripPageViewController, context: Context) {
+        uiViewController.setCoveredBySheet(context.environment.isCoveredBySheet)
+    }
 
     /// Internal factory seam, for the reason `MoreSheetHost.makeNavigationController`
     /// gives: tests can inspect the wiring without a `UIHostingController`.
@@ -53,11 +60,16 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     static func makeTripPage(
         application: Application,
         tripConvertible: TripConvertible,
+        destinationStopID: StopID? = nil,
         onMapFocusChanged: @escaping (TripMapFocus?) -> Void,
         onSelectStop: @escaping (StopID) -> Void,
         onClose: @escaping () -> Void
     ) -> TripPageViewController {
-        let page = TripPageViewController(application: application, tripConvertible: tripConvertible)
+        let page = TripPageViewController(
+            application: application,
+            tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID
+        )
         page.onMapFocusChanged = onMapFocusChanged
         page.onSelectStop = onSelectStop
         page.onClose = onClose

@@ -69,6 +69,7 @@ struct StopDetailsSheetView: View {
     /// then, both in debug output and to the factory's tests.
     let stopID: StopID
 
+    @Environment(\.isCoveredBySheet) private var isCoveredBySheet
     @StateObject private var viewModel: StopViewModel
     @EnvironmentObject private var coordinator: SheetCoordinator<AppSheetRoute>
 
@@ -219,7 +220,8 @@ struct StopDetailsSheetView: View {
             .environment(\.obaFormatters, formatters)
             .onChange(of: content.routeIDs) { _, ids in reconcileExpandedRoute(against: ids) }
             .refreshesOnForeground(
-                onForeground: { Task { await viewModel.start() } },
+                // A covered sheet starts when it's uncovered instead.
+                onForeground: { if !isCoveredBySheet { Task { await viewModel.start() } } },
                 onBackground: { viewModel.deactivate() }
             )
             .onReceive(viewModel.$stop.compactMap { $0 }, perform: publishUserActivity(for:))
@@ -433,7 +435,9 @@ struct StopDetailsSheetView: View {
             onWalkingDirections: navigation.showWalkingDirections,
             onDirectionsToHere: navigation.showDirectionsToHere,
             onDirectionsFromHere: navigation.showDirectionsFromHere,
-            onReportProblem: navigation.showReportProblem
+            onReportProblem: navigation.showReportProblem,
+            isProximityAlertActive: viewModel.proximityAlert != nil,
+            onToggleProximityAlert: navigation.toggleProximityAlert
         )
     }
 

@@ -32,10 +32,9 @@ enum StopTripPlannerAction {
         return true
     }
 
-    /// Hide the stop-page actions unless the classic tab root can host
-    /// `MapViewController.showTripPlanner`. Map-panel mode leaves
-    /// `viewRouter.rootController` nil; showing the rows there would be a
-    /// dead button.
+    /// Whether the classic tab root can host `MapViewController.showTripPlanner`.
+    /// A host with its own planner (the map panel) doesn't need it: see
+    /// `StopPageActionPresenter.onShowTripPlannerInSheet`.
     static func canPresent(application: Application, from fromController: UIViewController? = nil) -> Bool {
         isAvailable(application: application) && application.viewRouter.rootController(from: fromController) != nil
     }
@@ -52,7 +51,7 @@ enum StopTripPlannerAction {
         guard canPresent(application: application, from: fromController),
               let rootController = application.viewRouter.rootController(from: fromController) else {
             if isAvailable(application: application) {
-                Logger.error("StopTripPlannerAction: present dropped — no classic root controller (map-panel mode is active)")
+                Logger.error("StopTripPlannerAction: present dropped — no classic root controller, and the host has no planner of its own")
             }
             return
         }
@@ -65,12 +64,22 @@ enum StopTripPlannerAction {
         // as opening a map item or another panel (#883).
         mapController.dismissStopSheetForReplacement()
 
+        let request = action.request(stop: stop, mode: mode)
+        if let origin = request.origin {
+            mapController.showTripPlanner(origin: origin, destination: nil, preselectedMode: mode)
+        } else if let destination = request.destination {
+            mapController.showTripPlanner(destination: destination, preselectedMode: mode)
+        }
+    }
+
+    /// The planner's request: the stop as destination or origin, and `mode`.
+    func request(stop: Stop, mode: TransportMode?) -> TripPlannerRequest {
         let stopMapItem = TripPlannerEndpoints.mapItem(from: stop)
-        switch action {
+        switch self {
         case .directionsToStop:
-            mapController.showTripPlanner(destination: stopMapItem, preselectedMode: mode)
+            return TripPlannerRequest(destination: stopMapItem, transportMode: mode)
         case .directionsFromStop:
-            mapController.showTripPlanner(origin: stopMapItem, destination: nil, preselectedMode: mode)
+            return TripPlannerRequest(origin: stopMapItem, transportMode: mode)
         }
     }
 

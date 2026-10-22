@@ -48,4 +48,14 @@ public enum LaunchMapCamera {
         }
         return .mapRect(rect, showRegionMismatch: showMismatch)
     }
+
+    /// Where the map goes when the rider changes region: to the rider when
+    /// they're in it (nil), otherwise to its service rect. Unlike `target`, the
+    /// last viewport is in the old region, so it is never used.
+    public static func regionChangeTarget(region: Region, userLocation: CLLocation?) -> MKMapRect? {
+        if let userLocation, region.contains(location: userLocation) {
+            return nil
+        }
+        return region.serviceRect
+    }
 }

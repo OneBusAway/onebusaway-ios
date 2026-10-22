@@ -9,6 +9,7 @@
 
 import Foundation
 import OBAKitCore
+import WidgetKit
 
 /// The home sheet's bookmarks preview: the first few bookmarks by the user's
 /// own ordering, with live arrivals for those few only.
@@ -208,7 +209,21 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     // MARK: - BookmarkDataDelegate
 
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
+        // Only during a batch: trip schedules land after theirs has ended, and
+        // would otherwise mark the next batch, cancelled or empty, as delivering.
+        if dataLoader.isLoading { batchDeliveredArrivals = true }
         rebuildRows()
+    }
+
+    /// Whether the batch in flight brought any arrivals. A cancelled or empty
+    /// batch ends too, and has nothing to hand the widget or Live Activities.
+    private var batchDeliveredArrivals = false
+
+    /// `bookmark`'s arrivals, or nil when this section hasn't loaded them: it
+    /// only fetches the bookmarks it shows.
+    func loadedArrivals(for bookmark: Bookmark) -> [ArrivalDeparture]? {
+        guard loader.hasFetchedData(forStopID: bookmark.stopID) else { return nil }
+        return arrivalDepartures(for: bookmark)
     }
 
     /// Clears the staleness stamp when a batch finishes having failed, so the
@@ -225,7 +240,21 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     /// reopen the gate, and clearing the region too would make the next
     /// successful fetch look like a region change to any future caller.
     func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool) {
-        guard !isLoading, dataLoader.lastBatchHadError else { return }
+        guard !isLoading else { return }
+        defer { batchDeliveredArrivals = false }
+        guard dataLoader.lastBatchHadError else {
+            guard batchDeliveredArrivals else { return }
+            // Once per batch that brought arrivals, rather than per stop fetched.
+            // The panel has no Bookmarks tab to do either: fresh arrival times
+            // for the widget (bookmark edits are `BookmarkWidgetRefresher`'s),
+            // and running Live Activities, which after a relaunch otherwise get
+            // no updates and never unregister when they end.
+            WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
+            BookmarkActions.updateRunningLiveActivities(application: application) { [weak self] bookmark in
+                self?.loadedArrivals(for: bookmark)
+            }
+            return
+        }
         lastFetchDate = nil
     }
 }

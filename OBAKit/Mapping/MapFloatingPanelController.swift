@@ -186,7 +186,7 @@ class MapFloatingPanelController: VisualEffectViewController,
                 // This ensures that the next time the user pans the map normally,
                 // the app goes back to its standard, efficient search radius.
                 self?.mapRegionManager.preferredLoadDataRegionFudgeFactor =
-                    UIAccessibility.isVoiceOverRunning ? 1.5 : MapRegionManager.DefaultLoadDataRegionFudgeFactor
+                    UIAccessibility.isVoiceOverRunning ? MapRegionManager.VoiceOverLoadDataRegionFudgeFactor : MapRegionManager.DefaultLoadDataRegionFudgeFactor
             }
 
             self.resetFudgeFactorWorkItem = workItem

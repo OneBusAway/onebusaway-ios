@@ -78,6 +78,10 @@ struct StopPageActionRow: View {
     let onDirectionsToHere: (() -> Void)?
     let onDirectionsFromHere: (() -> Void)?
     let onReportProblem: () -> Void
+    /// Whether a nearby alert is set for this stop, which decides the title.
+    var isProximityAlertActive = false
+    /// Sets or cancels the stop's nearby alert. Nil hides the item.
+    var onToggleProximityAlert: (() -> Void)?
 
     /// No horizontal scrolling accommodation, unlike `StopPageToolbar`: that
     /// exists because captions grow with Dynamic Type until four of them stop
@@ -278,6 +282,17 @@ struct StopPageActionRow: View {
                     Label(StopTripPlannerAction.directionsFromHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond.fill")
                 }
                 .disabled(!state.canActOnStop)
+            }
+
+            // Never disabled, as on the pushed page's toolbar: a rider who can't
+            // use it yet needs the tap to say why.
+            if let onToggleProximityAlert {
+                Button(action: onToggleProximityAlert) {
+                    Label(
+                        ProximityAlertMenuItem.title(isActive: isProximityAlertActive),
+                        systemImage: Icons.proximityAlertSymbolName(isActive: isProximityAlertActive)
+                    )
+                }
             }
         }
 

@@ -52,4 +52,17 @@ struct ExternalSurveyLauncher {
         }
         return true
     }
+
+    /// Shown when the survey's link can't be opened. Shared by the two maps'
+    /// survey cards.
+    @MainActor
+    static func errorAlert() -> UIAlertController {
+        let alert = UIAlertController(
+            title: OBALoc("survey_launcher.external_survey_error.title", value: "Can't Open Survey", comment: "Title shown when an external survey link cannot be opened"),
+            message: OBALoc("survey_launcher.external_survey_error.message", value: "This survey link couldn't be opened. Please try again later.", comment: "Message shown when an external survey link cannot be opened"),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        return alert
+    }
 }

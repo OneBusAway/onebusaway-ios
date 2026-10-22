@@ -81,6 +81,8 @@ public final class MapPanelRootController: UIViewController {
         self.bridge = bridge
         super.init(nibName: nil, bundle: nil)
         self.bridge.host = self
+        // Links, notifications and widget taps have no tabs to land on here.
+        application.externalNavigationHost = bridge
     }
 
     required init?(coder: NSCoder) {
@@ -108,7 +110,7 @@ public final class MapPanelRootController: UIViewController {
     /// isn't available before `super.init`, and the closures baked into the
     /// factory need to reach it.
     @MainActor
-    final class TripPresentationBridge {
+    final class TripPresentationBridge: ExternalNavigationHost {
         weak var host: UIViewController?
         private let coordinator: SheetCoordinator<AppSheetRoute>
         private let presentError: (String, UIViewController) -> Void
@@ -157,6 +159,98 @@ public final class MapPanelRootController: UIViewController {
 
             coordinator.popToRoot()
             coordinator.push(route)
+        }
+
+        // MARK: - From outside the app
+
+        @discardableResult
+        func openStop(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
+            openFromOutside(.stopDetails(stopID: stopID), afterDismissal: afterDismissal)
+        }
+
+        func openTrip(_ arrivalDeparture: ArrivalDeparture, destinationStopID: StopID?) {
+            openFromOutside(.tripDetails(
+                TripConvertible(arrivalDeparture: arrivalDeparture),
+                destinationStopID: destinationStopID
+            ))
+        }
+
+        /// Classic's tabs, as the panel has them: the map is home itself, and
+        /// the others are index sheets over it.
+        func show(page: ClassicApplicationRootController.Page) {
+            switch page {
+            case .map: openFromOutside(nil)
+            case .recentStops: openFromOutside(.recentStopsAll)
+            case .bookmarks: openFromOutside(.bookmarksAll)
+            case .more: openFromOutside(.more)
+            }
+        }
+
+        /// Closes what the rider had open and opens `route` over home, or just
+        /// goes home when it is nil. Classic does the same when it pops a tab to
+        /// its root for a link. A `route` already on top is left as it is.
+        ///
+        /// - Parameter afterDismissal: Runs once a modal dismissal started here
+        ///   has finished, after `route` is opened.
+        /// - Returns: true when opening waits on that dismissal.
+        @discardableResult
+        private func openFromOutside(_ route: AppSheetRoute?, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
+            closeModalsOverSheets { [coordinator] deferred in
+                defer { if deferred { afterDismissal?() } }
+                if let route, let top = coordinator.allRoutes.last, Self.isSameSheet(top, route) { return }
+                coordinator.popToRoot()
+                if let route { coordinator.push(route) }
+            }
+        }
+
+        /// Whether `route` would show what `top` already does. Routes are equal by
+        /// identity, which leaves out a trip's shared destination (#449): the same
+        /// trip with a destination the open sheet lacks has to replace it.
+        static func isSameSheet(_ top: AppSheetRoute, _ route: AppSheetRoute) -> Bool {
+            guard top == route else { return false }
+            if case .tripDetails(_, let topDestination) = top,
+               case .tripDetails(_, let destination) = route {
+                return topDestination == destination
+            }
+            return true
+        }
+
+        /// Dismisses any UIKit modal presented over the sheet pile (Settings from
+        /// More, the bookmark editor, a share sheet), then calls `completion`.
+        ///
+        /// The sheets themselves are SwiftUI's to close: the base sheet and one
+        /// per stacked route are the bottom of the host's presentation chain, so
+        /// anything above them is a modal. A sheet can't present while one is up,
+        /// and UIKit ignores a `dismiss` issued mid-transition, so a transition
+        /// in flight is waited out first.
+        ///
+        /// - Returns: true when `completion` waits on a transition or dismissal;
+        ///   it is passed the same.
+        @discardableResult
+        private func closeModalsOverSheets(then completion: @escaping @MainActor (_ deferred: Bool) -> Void) -> Bool {
+            guard let host else {
+                completion(false)
+                return false
+            }
+            var chain: [UIViewController] = []
+            var next = host.presentedViewController
+            while let presented = next {
+                chain.append(presented)
+                next = presented.presentedViewController
+            }
+            let sheetCount = 1 + coordinator.stackedRoutes.count
+            guard chain.count > sheetCount else {
+                completion(false)
+                return false
+            }
+            if let transition = chain.last?.transitionCoordinator {
+                transition.animate(alongsideTransition: nil) { [weak self] _ in
+                    self?.closeModalsOverSheets { _ in completion(true) }
+                }
+                return true
+            }
+            chain[sheetCount - 1].dismiss(animated: true) { completion(true) }
+            return true
         }
 
         /// Same message the UIKit map shows: the vehicle exists but isn't assigned

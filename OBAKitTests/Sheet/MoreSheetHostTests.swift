@@ -43,4 +43,19 @@ final class MoreSheetHostTests: OBATestCase {
         #expect(nav.viewControllers.count == 1)
         #expect(nav.topViewController is MoreViewController)
     }
+
+    /// The More sheet could only be swiped away; the other index sheets close
+    /// from a button.
+    @Test @MainActor
+    func `The More sheet has a Close button beside Settings`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var closes = 0
+
+        let nav = MoreSheetHost.makeNavigationController(application: application) { closes += 1 }
+        let items = nav.topViewController?.navigationItem.rightBarButtonItems ?? []
+
+        #expect(items.count == 2)
+        #expect(items.last?.title == Strings.settings)
+        #expect(items.first?.primaryAction != nil)
+    }
 }

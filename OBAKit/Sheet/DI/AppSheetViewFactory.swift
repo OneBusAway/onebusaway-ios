@@ -130,8 +130,8 @@ final class AppSheetViewFactory {
         case .tripPlanner(let request):
             tripPlannerView(request: request)
 
-        case .tripDetails(let tripConvertible):
-            tripDetailsView(tripConvertible: tripConvertible)
+        case .tripDetails(let tripConvertible, let destinationStopID):
+            tripDetailsView(tripConvertible: tripConvertible, destinationStopID: destinationStopID)
 
         case .transitAlert, .settings:
             unimplementedView(for: route)
@@ -182,7 +182,16 @@ final class AppSheetViewFactory {
             viewModel: HomeSheetViewModel(
                 application: self.application,
                 stopsObserver: self.stopsObserver
-            )
+            ),
+            // Modally, as the UIKit map's nearby list opens one: the detail
+            // closes itself from UIKit, which a sheet in the stack can't take.
+            onSelectAlert: { [application, presentingController] alert in
+                guard let host = presentingController() else {
+                    Logger.error("AppSheetViewFactory: dropping an alert's detail — no presenting controller resolved.")
+                    return
+                }
+                application.viewRouter.navigateTo(alert: alert, from: host)
+            }
         )
     }
 
@@ -190,7 +199,9 @@ final class AppSheetViewFactory {
     /// via `MoreSheetHost`. Swap this branch's return type once the SwiftUI
     /// `MoreView` lands.
     func moreView() -> MoreSheetHost {
-        MoreSheetHost(application: application)
+        MoreSheetHost(application: application) { [coordinator] in
+            coordinator.truncateStacked(toDepth: coordinator.stackedRoutes.lastIndex(of: .more) ?? coordinator.stackedRoutes.count)
+        }
     }
 
     /// The Stop page as a native SwiftUI sheet over the map panel.
@@ -218,6 +229,15 @@ final class AppSheetViewFactory {
                         from: .stopDetails(stopID: stopID)
                     )
                 }
+                presenter.onShowNearbyStopsInSheet = { [coordinator = self.coordinator] coordinate in
+                    coordinator.open(.nearbyStops(coordinate: coordinate), from: .stopDetails(stopID: stopID))
+                }
+                presenter.onShowOnDemandServiceInSheet = { [coordinator = self.coordinator] service in
+                    coordinator.open(.onDemandService(service), from: .stopDetails(stopID: stopID))
+                }
+                presenter.onShowTripPlannerInSheet = { [coordinator = self.coordinator] action, stop, mode in
+                    coordinator.open(.tripPlanner(action.request(stop: stop, mode: mode)), from: .stopDetails(stopID: stopID))
+                }
                 return presenter
             },
             feedback: DataLoadFeedbackGenerator(application: self.application),
@@ -242,10 +262,11 @@ final class AppSheetViewFactory {
     /// in the panel. Back pops the route rather than letting the page dismiss
     /// itself from UIKit: the coordinator's stack is what holds the sheet on
     /// screen, so it is closed there, as `StopDetailsSheetView`'s Close is.
-    func tripDetailsView(tripConvertible: TripConvertible) -> TripPageSheetHost {
+    func tripDetailsView(tripConvertible: TripConvertible, destinationStopID: StopID? = nil) -> TripPageSheetHost {
         TripPageSheetHost(
             application: application,
             tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID,
             onMapFocusChanged: { [tripFocusMapDisplayModel, coordinator] focus in
                 // Ending the drawing is the route stack's job, not the page's.
                 guard let focus else { return }

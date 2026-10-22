@@ -102,12 +102,7 @@ public class RecentStopsViewController: UIViewController,
         }
 
         do {
-            let response = try await apiService.getTripArrivalDepartureAtStop(
-                stopID: deepLink.stopID,
-                tripID: deepLink.tripID,
-                serviceDate: deepLink.serviceDate,
-                vehicleID: deepLink.vehicleID,
-                stopSequence: deepLink.stopSequence)
+            let response = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink)
 
             await MainActor.run {
                 self.application.viewRouter.navigateTo(

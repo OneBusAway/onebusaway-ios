@@ -244,20 +244,14 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     public func rootNavigateTo(page: ClassicApplicationRootController.Page, from context: UIViewController? = nil) {
         guard let rootController = self.rootController(from: context) else {
-            // Map-panel mode bypasses ViewRouter — `SheetCoordinator` owns
-            // navigation. Log so deep-link / recent-stops paths that still
-            // call this don't silently degrade. (No `assertionFailure`: test
-            // harnesses construct `Application` without a root controller,
-            // and tripping there would crash unrelated tests.)
-            //
-            // TODO(mosliem): map-panel deep-link / page-navigation story.
-            // Today deep links and "open in tab" callers go to a log and
-            // nothing visible happens. Either route `.tab` cases through
-            // `SheetCoordinator.push(...)` analogues (e.g. `.recent` →
-            // `.recentStopsAll`, `.bookmarks` → `.bookmarksAll`) or define a
-            // dedicated deep-link surface on the coordinator before the
-            // map-panel experience leaves the experimental flag.
-            Logger.error("rootNavigateTo(page: \(page)) dropped: no classic root controller (map-panel mode is active)")
+            // Map-panel mode has no tabs; its root shows the page's counterpart.
+            // A missing host only logs, not `assertionFailure`: test harnesses
+            // construct `Application` without any root.
+            if let host = application.externalNavigationHost {
+                host.show(page: page)
+            } else {
+                Logger.error("rootNavigateTo(page: \(page)) dropped: no root controller to navigate")
+            }
             return
         }
         rootController.navigate(to: page)

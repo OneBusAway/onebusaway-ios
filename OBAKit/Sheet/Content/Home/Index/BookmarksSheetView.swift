@@ -20,8 +20,8 @@ import OBAKitCore
 /// `Presentation.sheet`, which swaps pull-to-refresh for a toolbar button,
 /// since a downward drag here is already the sheet's dismiss gesture.
 ///
-/// Manage Bookmarks/Groups is deliberately not offered here — that stays a
-/// tab-level editing surface.
+/// Edit opens Manage Bookmarks/Groups, as the tab's Edit button does: the panel
+/// has no tab to leave it to.
 struct BookmarksSheetView: View {
     let application: Application
 
@@ -30,6 +30,7 @@ struct BookmarksSheetView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var editingBookmark: Bookmark?
+    @State private var isManaging = false
     @State private var isShowingTrackError = false
 
     /// A refresh the user asked for, as opposed to the 30 s poll `start()`
@@ -137,6 +138,11 @@ struct BookmarksSheetView: View {
                         SheetDismissButton(.close) { dismiss() }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
+                        Button(OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller")) {
+                            isManaging = true
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
                         refreshButton
                     }
                     ToolbarItem(placement: .topBarTrailing) {
@@ -163,6 +169,18 @@ struct BookmarksSheetView: View {
                 editingBookmark = nil
                 viewModel.rebuildSections()
             }
+        }
+        .sheet(isPresented: $isManaging) {
+            ManageBookmarksHost(
+                application: application,
+                onChange: { viewModel.rebuildSections() },
+                onClose: { isManaging = false }
+            )
+        }
+        // Swiping the editor away doesn't call its delegate, and a reorder saves
+        // as it goes, so the list rebuilds however the editor went.
+        .onChange(of: isManaging) { _, isManaging in
+            if !isManaging { viewModel.rebuildSections() }
         }
         .alert(
             OBALoc("live_activity.error.title", value: "Unable to Start Tracking", comment: "Alert title when Live Activity fails to start"),

@@ -150,4 +150,39 @@ final class RecentStopsSheetViewTests: OBATestCase {
         #expect(viewModel.recentStops.isEmpty)
         #expect(application.userDataStore.recentStops(in: application.currentRegion).isEmpty)
     }
+
+    // MARK: - Alarms
+
+    /// An alarm the rider set, as the stop page stores one: due in ten minutes,
+    /// with the deep link that reopens its trip.
+    @MainActor
+    static func seedAlarm(id: String, application: Application) throws -> Alarm {
+        let alarm = try Fixtures.loadAlarm(id: id)
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 600), alarmOffset: 5)
+        alarm.deepLink = ArrivalDepartureDeepLink(
+            title: "Route 10 to Downtown",
+            regionID: Fixtures.pugetSoundRegion.regionIdentifier,
+            stopID: "1_75403",
+            tripID: "trip_\(id)",
+            serviceDate: Date(),
+            stopSequence: 7,
+            vehicleID: nil
+        )
+        application.userDataStore.add(alarm: alarm)
+        return alarm
+    }
+
+    /// Riders could set alarms from the panel's stop sheet but never see or
+    /// cancel them: the Recent tab's Alarms section had no panel counterpart.
+    @Test @MainActor func `The sheet lists the alarms it can open a trip for`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let alarm = try Self.seedAlarm(id: "1", application: application)
+        // Without a deep link there is no trip to open, as the tab skips it too.
+        application.userDataStore.add(alarm: try Fixtures.loadAlarm(id: "2"))
+
+        let viewModel = RecentStopsViewModel(application: application)
+        viewModel.loadData()
+
+        #expect(RecentStopsSheetView.openableAlarms(viewModel.alarms).map(\.alarm.url) == [alarm.url])
+    }
 }

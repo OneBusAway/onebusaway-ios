@@ -19,6 +19,10 @@ final class HomeRecentStopsSectionModel: ObservableObject {
 
     @Published private(set) var stops: [Stop] = []
 
+    /// Alarms the rider has set. The Recent index lists them, so the section
+    /// stays on home while any are, even with no recent stops.
+    @Published private(set) var alarmCount = 0
+
     private let application: Application
     private let limit: Int
 
@@ -42,6 +46,16 @@ final class HomeRecentStopsSectionModel: ObservableObject {
                 .recentStops(in: application.currentRegion)
                 .prefix(limit)
         )
+        // Read-only: the Recent index sweeps expired alarms from the store. This
+        // runs on every activation, so it only counts the ones still due, and
+        // only the ones the index can list: it skips an alarm with no deep link.
+        let now = Date()
+        let alarmCount = application.userDataStore.alarms.filter {
+            $0.deepLink != nil && ($0.tripDate ?? .distantPast) > now
+        }.count
+        if alarmCount != self.alarmCount {
+            self.alarmCount = alarmCount
+        }
         guard reloaded != stops else { return }
         stops = reloaded
     }

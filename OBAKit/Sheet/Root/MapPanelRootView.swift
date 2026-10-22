@@ -116,8 +116,11 @@ struct MapPanelRootView: View {
     /// move it off the vehicles the link asked to show.
     @State private var rentalsLinkHoldsCamera = false
     @State private var regionMismatchBulletin: RegionMismatchBulletin?
+    /// When the app last went to the background. See `ReturnRecenter`.
+    @State private var backgroundedAt: Date?
     @State private var didPromptRegionMismatch = false
     @StateObject private var mismatchCamera = RegionMismatchCameraActions()
+    @StateObject private var prompts: MapPanelPrompts
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
@@ -185,6 +188,11 @@ struct MapPanelRootView: View {
         self.application = application
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
+        _prompts = StateObject(wrappedValue: MapPanelPrompts(
+            application: application,
+            mapViewModel: mapViewModel,
+            presentingController: factory.presentingController
+        ))
 
         // Frame the selected region unless GPS is already inside it.
         // `.userLocation` follows the device, which is what opened Taipei
@@ -217,6 +225,7 @@ struct MapPanelRootView: View {
     }
 
     var body: some View {
+        MapReader { proxy in
         Map(position: $cameraPosition, selection: $mapSelection) {
             UserAnnotation()
             onDemandZoneContent
@@ -262,6 +271,13 @@ struct MapPanelRootView: View {
             }
             tripPlannerMapContent(for: tripPlannerDisplay)
             tripFocusMapContent(for: tripFocusDisplay.display)
+        }
+        // Long-press drops a pin, as on the UIKit map: a place to plan a trip
+        // to, or find stops near. Simultaneous, so panning still works.
+        .simultaneousGesture(DroppedPin.gesture { point in
+            guard let coordinate = proxy.convert(point, from: .local) else { return }
+            dropPin(at: coordinate)
+        })
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             viewportRecorder.record(context.rect)
@@ -326,6 +342,9 @@ struct MapPanelRootView: View {
             mismatchCamera.applyLaunch = false
             applyLaunchCamera()
         }
+        // Not the value a new subscription replays: only a change made while
+        // this view is subscribed closes sheets and moves the map.
+        .onReceive(stopsObserver.$changedRegion.dropFirst(), perform: showChangedRegion)
         .onChange(of: mismatchCamera.showSelectedServiceRect) { _, flag in
             guard flag else { return }
             mismatchCamera.showSelectedServiceRect = false
@@ -419,9 +438,10 @@ struct MapPanelRootView: View {
             applyTripFocusCameraTarget(target)
             tripFocusDisplay.consumeCameraTarget()
         }
-        .mapStyle(mapViewModel.mapType.styleDescriptor(
-            showingPointsOfInterest: layersModel.showsPointsOfInterest
-        ).mapStyle)
+        .modifier(MapPanelMapSettings(
+            style: mapViewModel.mapType.styleDescriptor(showingPointsOfInterest: layersModel.showsPointsOfInterest),
+            userDefaults: application.userDefaults
+        ))
         .safeAreaPadding(.bottom, 180)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
@@ -505,6 +525,18 @@ struct MapPanelRootView: View {
         .onChange(of: probeController.highlightedServiceID) { _, id in
             layersModel.setHighlightedService(id)
         }
+        .modifier(MapPanelVoiceOverModifier(
+            application: application,
+            coordinator: coordinator,
+            presentingController: factory.presentingController
+        ))
+        .modifier(MapPanelPromptsModifier(
+            prompts: prompts,
+            stackedRoutes: coordinator.stackedRoutes,
+            sheetHeight: sheetHeight,
+            toolbarsOpacity: toolbarsOpacity,
+            toolbarsAnimationDuration: toolbarsAnimationDuration
+        ))
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
         }
@@ -516,8 +548,14 @@ struct MapPanelRootView: View {
             applyPendingRentalsFocus()
         }
         .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
+            switch newPhase {
+            case .active:
                 mapViewModel.onAppBecameActive()
+                recenterAfterAbsenceIfNeeded()
+            case .background:
+                backgroundedAt = Date()
+            default:
+                break
             }
         }
         .onChange(of: mapViewModel.didReceiveInitialLocation) { _, received in
@@ -838,6 +876,60 @@ extension MapPanelRootView {
         bulletin.show(in: uiApp)
     }
 
+    private func recenterAfterAbsenceIfNeeded() {
+        defer { backgroundedAt = nil }
+        guard let backgroundedAt, ReturnRecenter.shouldRecenter(
+            absence: Date().timeIntervalSince(backgroundedAt),
+            region: application.regionsService.currentRegion,
+            location: application.locationService.currentLocation,
+            isShowingSheet: coordinator.canPop
+        ) else { return }
+        centerOnUser()
+    }
+
+    /// Opens the place sheet for a dropped pin, over home, and marks it on the map.
+    private func dropPin(at coordinate: CLLocationCoordinate2D) {
+        let mapItem = DroppedPin.mapItem(at: coordinate)
+        let route = AppSheetRoute.mapItem(mapItem)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        coordinator.popToRoot()
+        searchDisplay.show(mapItem: mapItem, animated: true, owner: route)
+        coordinator.push(route)
+    }
+
+    /// The rider changed region. Stops, trips and searches belong to a region's
+    /// server, so the sheets showing the old one close, and the map moves to the
+    /// new one, as the UIKit map does in `MapRegionManager`.
+    private func showChangedRegion(_ region: Region?) {
+        // Nil is the signal's value before any change.
+        guard let region else { return }
+        closeSheetsOverHome()
+        application.mapRegionManager.cancelScheduledStopsRequest()
+        stopsObserver.reset()
+        if let rect = LaunchMapCamera.regionChangeTarget(
+            region: region,
+            userLocation: application.locationService.currentLocation
+        ) {
+            viewportRecorder.record(rect)
+            withAnimation { cameraPosition = .rect(rect) }
+        } else {
+            centerOnUser()
+        }
+        Task { await mapViewModel.loadWeather() }
+    }
+
+    /// Back to home, closing any UIKit modal over the sheets first (the region
+    /// picker More presents, Settings): popping the stack under a modal, or
+    /// mid-dismissal, leaves the sheets out of step with it.
+    private func closeSheetsOverHome() {
+        prompts.appWillCloseSheets(coordinator.stackedRoutes)
+        if let host = application.externalNavigationHost {
+            host.show(page: .map)
+        } else {
+            coordinator.popToRoot()
+        }
+    }
+
     private func centerOnUser() {
         guard let location = application.locationService.currentLocation else { return }
         // `mapSize` is `.zero` until `.onGeometryChange` reports the first
@@ -892,6 +984,8 @@ extension MapPanelRootView {
     /// does on the UIKit map. `Application` has already switched the rental layers on.
     private func applyPendingRentalsFocus() {
         guard let coordinate = application.claimPendingRentalsFocus() else { return }
+        // A sheet left open would cover the vehicles the link asked to show.
+        closeSheetsOverHome()
         rentalsLinkHoldsCamera = true
         needsInitialRecenter = false
         let region = RentalMapLayer.focusRegion(around: coordinate)
