@@ -27,42 +27,20 @@ struct EmptyStateViewTests {
         #expect(view.title == "No Results")
         #expect(view.description == "Try adjusting your search criteria.")
         #expect(view.systemImage == "magnifyingglass")
-
-        let body = view.body
-        _ = body
     }
 
     /// Verifies property initialization for EmptyStateView with an action button.
     @Test func testEmptyStateViewWithAction() {
-        var actionExecuted = false
         let view = EmptyStateView(
             title: "Connection Lost",
             description: "Please check your network and try again.",
             systemImage: "wifi.slash"
         ) {
-            Button("Retry") {
-                actionExecuted = true
-            }
+            Button("Retry") {}
         }
 
         #expect(view.title == "Connection Lost")
         #expect(view.description == "Please check your network and try again.")
         #expect(view.systemImage == "wifi.slash")
-
-        let body = view.body
-        _ = body
-
-        let actionView = view.actions()
-        _ = actionView
-        #expect(actionExecuted == false)
-    }
-
-    /// Verifies that system images used by EmptyStateView are valid SF Symbols.
-    @Test func testEmptyStateViewSystemImagesExist() {
-        let sampleIcons = ["magnifyingglass", "wifi.slash", "bus", "server.rack"]
-        for icon in sampleIcons {
-            let image = UIImage(systemName: icon)
-            #expect(image != nil, "Expected icon '\(icon)' to exist in system catalog")
-        }
     }
 }

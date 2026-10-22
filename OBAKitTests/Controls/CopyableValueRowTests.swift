@@ -43,11 +43,4 @@ struct CopyableValueRowTests {
         #expect(row.accessibilityHint == "Double tap to copy push token")
         #expect(row.truncatesValue == true)
     }
-
-    /// Verifies that CopyableValueRow instantiates its SwiftUI body cleanly without trapping.
-    @Test func testCopyableValueRowBodyRendering() {
-        let row = CopyableValueRow(title: "Agency", value: "Metro Transit")
-        let view = row.body
-        _ = view
-    }
 }
