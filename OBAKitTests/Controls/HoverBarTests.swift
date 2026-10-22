@@ -42,26 +42,36 @@ final class HoverBarTests {
 
     @Test func hoverBarPassThroughViewShowShadowToggle() {
         let view = HoverBarPassThroughView(frame: CGRect(x: 0, y: 0, width: 80, height: 80))
+        let shadowImageView = view.subviews.first as? UIImageView
 
         #expect(view.showShadow == true)
+        #expect(shadowImageView?.isHidden == false)
 
         view.showShadow = false
         #expect(view.showShadow == false)
+        #expect(shadowImageView?.isHidden == true)
 
         view.showShadow = true
         #expect(view.showShadow == true)
+        #expect(shadowImageView?.isHidden == false)
     }
 
     @Test func hoverBarPassThroughViewShowCapInsetLinesToggle() {
         let view = HoverBarPassThroughView(frame: CGRect(x: 0, y: 0, width: 80, height: 80))
+        let shadowImageView = view.subviews.first as? UIImageView
+        let initialImage = shadowImageView?.image
 
         #expect(view.showCapInsetLines == false)
+        #expect(initialImage != nil)
 
         view.showCapInsetLines = true
         #expect(view.showCapInsetLines == true)
+        #expect(shadowImageView?.image !== initialImage)
 
+        let capInsetLinesImage = shadowImageView?.image
         view.showCapInsetLines = false
         #expect(view.showCapInsetLines == false)
+        #expect(shadowImageView?.image !== capInsetLinesImage)
     }
 
     // MARK: - HoverBar Tests
@@ -114,8 +124,10 @@ final class HoverBarTests {
 
     @Test func hoverBarSeparatorIntrinsicContentSizeMatchesScale() {
         let separator = HoverBarSeparator(frame: CGRect(x: 0, y: 0, width: 44, height: 1))
+        let expectedHeight = 1.0 / separator.traitCollection.displayScale
+
         #expect(separator.intrinsicContentSize.width == UIView.noIntrinsicMetric)
-        #expect(separator.intrinsicContentSize.height > 0)
+        #expect(separator.intrinsicContentSize.height == expectedHeight)
     }
 
     @Test func hoverBarPassThroughViewConvenienceInit() {

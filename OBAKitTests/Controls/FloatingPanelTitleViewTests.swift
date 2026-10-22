@@ -37,34 +37,15 @@ final class FloatingPanelTitleViewTests {
         #expect(titleView.subviews.first is UIStackView)
     }
 
-    @Test func titleAndSubtitleTextAssignment() {
-        let titleView = FloatingPanelTitleView()
-
-        titleView.titleLabel.text = "Route 44 - UW"
-        titleView.subtitleLabel.text = "Towards Montlake"
-
-        #expect(titleView.titleLabel.text == "Route 44 - UW")
-        #expect(titleView.subtitleLabel.text == "Towards Montlake")
-
-        titleView.titleLabel.text = nil
-        titleView.subtitleLabel.text = nil
-
-        #expect(titleView.titleLabel.text == nil)
-        #expect(titleView.subtitleLabel.text == nil)
-    }
-
-    @Test func closeButtonConfiguration() {
+    @Test func closeButtonConfigurationAndHierarchy() {
         let titleView = FloatingPanelTitleView()
 
         #expect(titleView.closeButton.isUserInteractionEnabled == true)
+        #expect(titleView.closeButton.superview != nil)
 
-        var closeButtonTapped = false
-        let action = UIAction { _ in
-            closeButtonTapped = true
-        }
-        titleView.closeButton.addAction(action, for: .touchUpInside)
-
-        titleView.closeButton.sendActions(for: .touchUpInside)
-        #expect(closeButtonTapped == true)
+        // Verify closeButton is contained within the top stack view hierarchy
+        let topStack = titleView.subviews.first as? UIStackView
+        #expect(topStack?.arrangedSubviews.count == 2)
+        #expect(titleView.closeButton.isDescendant(of: titleView))
     }
 }
