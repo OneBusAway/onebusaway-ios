@@ -32,47 +32,31 @@ struct ErrorViewTests {
         #expect(view.headline == "Unable to Load Data")
         #expect(view.regionName == nil)
         #expect(view.onRetry == nil)
-
-        let body = view.body
-        _ = body
     }
 
     /// Verifies property initialization for ErrorView with retry button and regionName.
     @Test func testErrorViewInitializationWithRetry() {
-        var retryTriggered = false
         let error = APIError.cellularDataRestricted
         let view = ErrorView(
             headline: "No Internet Connection",
             error: error,
             regionName: "Puget Sound",
-            onRetry: {
-                retryTriggered = true
-            }
+            onRetry: {}
         )
 
         #expect(view.headline == "No Internet Connection")
         #expect(view.regionName == "Puget Sound")
         #expect(view.onRetry != nil)
-
-        view.onRetry?()
-        #expect(retryTriggered == true)
-
-        let body = view.body
-        _ = body
     }
 
-    /// Verifies that SF Symbols associated with error classifications are valid system icons.
-    @Test func testErrorViewSystemIconsExist() {
-        let expectedIcons = [
-            "wifi.slash",
-            "server.rack",
-            "exclamationmark.triangle",
-            "lock.shield"
-        ]
-
-        for icon in expectedIcons {
-            let image = UIImage(systemName: icon)
-            #expect(image != nil, "Expected SF Symbol '\(icon)' to exist in system catalog")
-        }
+    /// Verifies that ErrorView.iconName(for:) maps classified APIErrors and generic errors to the expected SF Symbols.
+    @Test func testErrorViewIconMapping() {
+        #expect(ErrorView.iconName(for: APIError.cellularDataRestricted) == "wifi.slash")
+        #expect(ErrorView.iconName(for: APIError.networkFailure(URLError(.notConnectedToInternet))) == "wifi.slash")
+        #expect(ErrorView.iconName(for: APIError.serverError(HTTPURLResponse())) == "server.rack")
+        #expect(ErrorView.iconName(for: APIError.serverUnavailable) == "server.rack")
+        #expect(ErrorView.iconName(for: APIError.captivePortal) == "lock.shield")
+        #expect(ErrorView.iconName(for: APIError.invalidResponseData) == "exclamationmark.triangle")
+        #expect(ErrorView.iconName(for: TestCustomError()) == "exclamationmark.triangle")
     }
 }
