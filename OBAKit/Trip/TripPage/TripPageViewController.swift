@@ -141,6 +141,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // the bar doesn't vanish from the page above at the start of a back swipe.
         hideNavigationBar(animated: animated)
         disableIdleTimer()
+        beginUserActivity()
         viewModel.start()
         onMapFocusChanged?(mapFocus)
     }
@@ -158,6 +159,25 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         }
 
         restoreNavigationBar(animated: animated)
+    }
+
+    // MARK: - NSUserActivity
+
+    /// Publishes this trip's `NSUserActivity` for Handoff, as `TripViewController`
+    /// does. The builder leaves it out of Siri predictions, because a trip ID is
+    /// single-use, and builds none for a trip with no `ArrivalDeparture`, such as
+    /// one opened from a vehicle.
+    ///
+    /// Internal for tests, which can't let the page appear: that starts the trip's loads.
+    func beginUserActivity() {
+        guard
+            let region = application.regionsService.currentRegion,
+            let activity = application.userActivityBuilder?.userActivity(for: viewModel.tripConvertible, region: region)
+        else {
+            return
+        }
+
+        self.userActivity = activity
     }
 
     // MARK: - Navigation bar
