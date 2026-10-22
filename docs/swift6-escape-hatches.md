@@ -14,13 +14,15 @@ without new factories or Apple annotations.
 - `DecodingErrorReporter.reportHandler` is a `Mutex` instead of
   `nonisolated(unsafe)` plus `NSLock`. Existing
   `DecodingErrorReporterTests` still drive get/set/`report`.
+- `UncheckedSendableBox` is gone. Main needs Xcode 27.1 (it uses iOS 27.1
+  SDK API), and its Swift compiler accepts a plain `await` on
+  `MKMapItemRequest.mapItem` and `MKLookAroundSceneRequest.scene` from the
+  main actor, so `MapRegionManager.handleMapFeatureSelection` and
+  `MapItemViewModel.fetchScene` no longer hop through a detached task.
 
 ## Left alone on purpose
 
 - `Trip.route` stays a public `var`. `TripTests` assign it because `References`
   has no public memberwise factory.
-- `UncheckedSendableBox` stays. MapKit's `MKDirections.Request` /
-  `MKLookAroundSceneRequest` still need a sole-owner hop at
-  `MapRegionManager.handleMapFeatureSelection` and `MapItemViewModel.fetchScene`.
 - `AnalyticsOrchestrator.userDefaults`, `Icons.iconCache`, and other
   `NSCache` / `UserDefaults` marks wait on Apple `Sendable` annotations.
