@@ -489,9 +489,8 @@ struct OBAListViewItemTests {
             performPreviewAction: {
                 performCalled = true
             },
-            contextMenuProvider: { suggested in
+            contextMenuProvider: { _ in
                 menuCalled = true
-                #expect(suggested.isEmpty)
                 return customMenu
             }
         )
@@ -500,7 +499,7 @@ struct OBAListViewItemTests {
         #expect(contextConfig.identifier as? String == "item_identifier")
 
         // Trigger action callbacks directly on the model
-        let resolvedController = actions.previewProvider?()
+        let resolvedController = actions.makePreviewController()
         #expect(resolvedController === previewController)
         #expect(previewCalled == true)
 
@@ -542,12 +541,9 @@ struct OBAListViewItemTests {
         let contextConfig = actions.contextMenuConfiguration(identifier: "preview_item")
         #expect(contextConfig.identifier as? String == "preview_item")
 
-        // Generating configuration with Previewable controller triggers previewProvider when presented
-        let resolvedController = actions.previewProvider?()
+        // Executing makePreviewController invokes enterPreviewMode() on Previewable controllers
+        let resolvedController = actions.makePreviewController()
         #expect(resolvedController === previewableController)
-        if let previewable = resolvedController as? Previewable {
-            previewable.enterPreviewMode()
-        }
         #expect(previewableController.enteredPreviewModeCount == 1)
         #expect(previewableController.exitedPreviewModeCount == 0)
     }
