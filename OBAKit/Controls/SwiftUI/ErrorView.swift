@@ -21,7 +21,7 @@ struct ErrorView: View {
         let classified = ErrorClassifier.classify(error, regionName: regionName)
 
         VStack(spacing: 16) {
-            Image(systemName: iconName(for: classified))
+            Image(systemName: Self.iconName(for: classified))
                 .font(.largeTitle)
                 .foregroundStyle(.red)
             Text(headline)
@@ -41,7 +41,7 @@ struct ErrorView: View {
     }
 
     /// Returns an appropriate SF Symbol name based on the classified error type.
-    private func iconName(for classified: Error) -> String {
+    static func iconName(for classified: Error) -> String {
         guard let apiError = classified as? APIError else {
             return "exclamationmark.triangle"
         }
