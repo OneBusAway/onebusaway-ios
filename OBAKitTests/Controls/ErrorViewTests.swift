@@ -53,10 +53,10 @@ struct ErrorViewTests {
     @Test func testErrorViewIconMapping() {
         #expect(ErrorView.iconName(for: APIError.cellularDataRestricted) == "wifi.slash")
         #expect(ErrorView.iconName(for: APIError.networkFailure(URLError(.notConnectedToInternet))) == "wifi.slash")
-        #expect(ErrorView.iconName(for: APIError.serverError(HTTPURLResponse())) == "server.rack")
-        #expect(ErrorView.iconName(for: APIError.serverUnavailable) == "server.rack")
+        #expect(ErrorView.iconName(for: APIError.serverError(regionName: "Puget Sound")) == "server.rack")
+        #expect(ErrorView.iconName(for: APIError.serverUnavailable(regionName: "Puget Sound", statusCode: 503)) == "server.rack")
         #expect(ErrorView.iconName(for: APIError.captivePortal) == "lock.shield")
-        #expect(ErrorView.iconName(for: APIError.invalidResponseData) == "exclamationmark.triangle")
+        #expect(ErrorView.iconName(for: APIError.invalidResponseData(regionName: "Puget Sound")) == "exclamationmark.triangle")
         #expect(ErrorView.iconName(for: TestCustomError()) == "exclamationmark.triangle")
     }
 }
