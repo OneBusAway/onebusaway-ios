@@ -106,6 +106,36 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(self.userDefaultsStore.findGroup(id: deletedGroup.id) == nil)
     }
 
+    /// Verifies that upsert and delete operations each post exactly one `.bookmarkGroupsDidChange` notification.
+    @Test func `Bookmark groups notification posting count`() {
+        let notificationCount = SendableBox(0)
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarkGroupsDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in
+            notificationCount.value += 1
+        }
+        defer {
+            NotificationCenter.default.removeObserver(token)
+        }
+
+        var group = BookmarkGroup(name: "Test Group", sortOrder: 0)
+
+        // Insert new group
+        userDefaultsStore.upsert(bookmarkGroup: group)
+        #expect(notificationCount.value == 1)
+
+        // Update existing group
+        group.name = "Updated Group"
+        userDefaultsStore.upsert(bookmarkGroup: group)
+        #expect(notificationCount.value == 2)
+
+        // Delete existing group
+        userDefaultsStore.deleteGroup(group)
+        #expect(notificationCount.value == 3)
+    }
+
     // MARK: - Bookmarks
 
     @Test func `Bookmarks retrieval not in group`() {
