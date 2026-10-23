@@ -620,6 +620,34 @@ final class ApplicationTests: OBATestCase {
         #expect(app.pendingStopRegionID == 1)
     }
 
+    /// A restored or handed-off trip arrives before the root UI and the API
+    /// service exist, and with no `webpageURL` in a region without a sidecar.
+    /// It used to be dropped; now it waits in `pendingTripDeepLink`.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1625
+    @Test func `Application continues a trip user activity on cold launch`() async {
+        let app = makeApplicationForUserActivity()
+        guard let builder = app.userActivityBuilder else {
+            Issue.record("Test host is missing NSUserActivityTypes")
+            return
+        }
+
+        let activity = NSUserActivity(activityType: builder.tripActivityType)
+        activity.userInfo = [
+            UserActivityBuilder.UserInfoKeys.regionID: 1,
+            UserActivityBuilder.UserInfoKeys.stopID: "1_75403",
+            UserActivityBuilder.UserInfoKeys.tripID: "1_545_trip",
+            UserActivityBuilder.UserInfoKeys.serviceDate: Date(timeIntervalSince1970: 1_710_273_600),
+            UserActivityBuilder.UserInfoKeys.stopSequence: 12
+        ]
+
+        let result = await MainActor.run {
+            app.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
+        }
+        #expect(result)
+        #expect(app.pendingTripDeepLink?.tripID == "1_545_trip")
+        #expect(app.pendingTripDeepLink?.regionID == 1)
+    }
+
     @Test func `Application continues a browsing-web stop URL`() async {
         let app = makeApplicationForUserActivity()
 
