@@ -49,6 +49,7 @@ final class AgencyAlertsViewControllerTests: OBATestCase {
 
     @Test func testInitializationAndDefaultProperties() {
         let controller = AgencyAlertsViewController(application: app)
+        controller.loadViewIfNeeded()
 
         let expectedTitle = OBALoc("agency_alerts_controller.title", value: "Alerts", comment: "The title of the Agency Alerts controller.")
         #expect(controller.title == expectedTitle)

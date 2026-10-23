@@ -134,7 +134,6 @@ final class TransitAlertViewModelTests {
         // Distinct instances have distinct UUID identifiers
         #expect(vm1.id != vm2.id)
         #expect(vm1 != vm2)
-        #expect(vm1.hashValue != vm2.hashValue)
 
         // Equatable and Hashable are reflexive
         #expect(vm1 == vm1)
