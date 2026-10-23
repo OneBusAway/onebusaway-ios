@@ -19,6 +19,11 @@ without new factories or Apple annotations.
   `MKMapItemRequest.mapItem` and `MKLookAroundSceneRequest.scene` from the
   main actor, so `MapRegionManager.handleMapFeatureSelection` and
   `MapItemViewModel.fetchScene` no longer hop through a detached task.
+- `SurveyService.userDataStore` and `.application`, and
+  `LiveActivityTracker.registry`, lose `nonisolated(unsafe)`. It was only
+  there so a `nonisolated init` could set them. Every caller (`CoreApplication`,
+  the preview environment, the tests) is on the main actor, so both inits are
+  now main-actor isolated like the rest of the class.
 
 ## Left alone on purpose
 

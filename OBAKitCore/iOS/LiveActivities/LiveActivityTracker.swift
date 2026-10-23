@@ -37,7 +37,7 @@ import ActivityKit
 @MainActor
 public final class LiveActivityTracker {
 
-    nonisolated(unsafe) private let registry: LiveActivityRegistry
+    private let registry: LiveActivityRegistry
 
     /// One token-forwarding task per activity id.
     private var tokenTasks: [String: Task<Void, Never>] = [:]
@@ -45,7 +45,7 @@ public final class LiveActivityTracker {
     /// One lifecycle-observation task per activity id.
     private var lifecycleTasks: [String: Task<Void, Never>] = [:]
 
-    public nonisolated init(registry: LiveActivityRegistry) {
+    public init(registry: LiveActivityRegistry) {
         self.registry = registry
     }
 
