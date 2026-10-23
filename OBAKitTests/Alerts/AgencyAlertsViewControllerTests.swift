@@ -38,6 +38,7 @@ final class AgencyAlertsViewControllerTests: OBATestCase {
         queue.maxConcurrentOperationCount = 1
 
         let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         app = buildApplication(queue: queue, dataLoader: dataLoader)
     }
 
