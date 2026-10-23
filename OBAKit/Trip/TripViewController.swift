@@ -129,6 +129,10 @@ class TripViewController: UIViewController,
 
     // MARK: - NSUserActivity
 
+    /// The builder's `userInfo` for the published activity, which
+    /// `updateUserActivityState(_:)` puts back.
+    private var activityUserInfo: [AnyHashable: Any]?
+
     /// Creates and assigns an `NSUserActivity` object corresponding to this trip.
     private func beginUserActivity() {
         guard
@@ -138,7 +142,21 @@ class TripViewController: UIViewController,
             return
         }
 
+        // Stashed first: once the activity is assigned, UIKit may call the override at any save.
+        activityUserInfo = activity.userInfo
         self.userActivity = activity
+        // Asks UIKit to call `updateUserActivityState(_:)` at its next save.
+        activity.needsSave = true
+    }
+
+    /// Puts back the trip and region, which UIKit clears before calling this. The
+    /// activity needs them to route in a region without a sidecar.
+    /// See: https://developer.apple.com/documentation/uikit/uiresponder/useractivity
+    override func updateUserActivityState(_ activity: NSUserActivity) {
+        super.updateUserActivityState(activity)
+        if let activityUserInfo {
+            activity.addUserInfoEntries(from: activityUserInfo)
+        }
     }
 
     // MARK: Previewable

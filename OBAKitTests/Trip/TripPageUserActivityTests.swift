@@ -46,4 +46,47 @@ final class TripPageUserActivityTests: OBATestCase {
         #expect(activity.isEligibleForHandoff)
         #expect(!activity.isEligibleForPrediction)
     }
+
+    // MARK: - userInfo
+
+    /// UIKit clears the `userInfo` of an activity a responder owns before it
+    /// calls `updateUserActivityState(_:)`, so the page has to put its trip and
+    /// region back. The builder also never assigned them in the first place.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1625
+    @Test func `A cleared trip activity gets its trip and region back`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let page = try TripPageFixture.makeOnScreenPage(application: application)
+        page.beginUserActivity()
+        let activity = try #require(page.userActivity)
+
+        clearAndUpdate(activity, from: page)
+
+        #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.tripID] as? String == "1_40984902")
+        #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.regionID] as? Int == 1)
+    }
+
+    /// The test region has a sidecar, so the activity also carries a
+    /// `webpageURL`, which routes on its own. Dropping it leaves `userInfo` as
+    /// the only way in, as in a region without a sidecar.
+    @Test func `A cleared trip activity still routes with no webpage URL`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let page = try TripPageFixture.makeOnScreenPage(application: application)
+        page.beginUserActivity()
+        let activity = try #require(page.userActivity)
+        #expect(activity.webpageURL != nil, "Premise: without dropping this URL, the activity would route on it alone")
+        activity.webpageURL = nil
+
+        clearAndUpdate(activity, from: page)
+        let handled = application.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
+
+        #expect(handled)
+        #expect(application.pendingTripDeepLink?.tripID == "1_40984902")
+        #expect(application.pendingTripDeepLink?.regionID == 1)
+    }
+
+    /// Does to `activity` what UIKit does before asking `responder` to update it.
+    private func clearAndUpdate(_ activity: NSUserActivity, from responder: UIResponder) {
+        activity.userInfo = [:]
+        responder.updateUserActivityState(activity)
+    }
 }

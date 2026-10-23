@@ -163,6 +163,35 @@ public class AppLinksRouter: NSObject {
         return StopDestination(stopID: stopID, regionID: regionID)
     }
 
+    // MARK: - Trip user activities
+
+    /// Reads the trip out of a trip activity's `userInfo`, which, unlike its
+    /// `webpageURL`, exists in a region without a sidecar. Nil when a key is
+    /// missing, so the caller can fall back to the URL.
+    static func tripDeepLink(userInfo: [AnyHashable: Any]?, title: String?) -> ArrivalDepartureDeepLink? {
+        typealias Keys = UserActivityBuilder.UserInfoKeys
+        guard
+            let userInfo,
+            let regionID = regionIdentifier(from: userInfo[Keys.regionID]),
+            let stopID = userInfo[Keys.stopID] as? StopID,
+            let tripID = userInfo[Keys.tripID] as? TripIdentifier,
+            let serviceDate = userInfo[Keys.serviceDate] as? Date,
+            let stopSequence = userInfo[Keys.stopSequence] as? Int
+        else {
+            return nil
+        }
+
+        return ArrivalDepartureDeepLink(
+            title: title ?? "",
+            regionID: regionID,
+            stopID: stopID,
+            tripID: tripID,
+            serviceDate: serviceDate,
+            stopSequence: stopSequence,
+            vehicleID: userInfo[Keys.vehicleID] as? String
+        )
+    }
+
     /// Plist round-trips turn `Int` into `NSNumber`; some Shortcuts builds
     /// stringify it. `as? Int` only covers the first two via bridging.
     private static func regionIdentifier(from value: Any?) -> Int? {
@@ -231,6 +260,11 @@ public class AppLinksRouter: NSObject {
     }
 
     private func routeTrip(userActivity: NSUserActivity) -> Bool {
+        if let deepLink = Self.tripDeepLink(userInfo: userActivity.userInfo, title: userActivity.title) {
+            showArrivalDepartureDeepLink?(deepLink)
+            return true
+        }
+
         guard let url = userActivity.webpageURL else {
             return false
         }

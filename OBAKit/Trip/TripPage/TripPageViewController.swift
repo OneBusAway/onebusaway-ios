@@ -163,6 +163,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
     // MARK: - NSUserActivity
 
+    /// The builder's `userInfo` for the published activity, which
+    /// `updateUserActivityState(_:)` puts back.
+    private var activityUserInfo: [AnyHashable: Any]?
+
     /// Publishes this trip's `NSUserActivity` for Handoff, as `TripViewController`
     /// does. The builder leaves it out of Siri predictions, because a trip ID is
     /// single-use, and builds none for a trip with no `ArrivalDeparture`, such as
@@ -177,7 +181,22 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             return
         }
 
+        // Stashed first: once the activity is assigned, UIKit may call the override at any save.
+        activityUserInfo = activity.userInfo
         self.userActivity = activity
+        // Asks UIKit to call `updateUserActivityState(_:)` at its next save.
+        activity.needsSave = true
+    }
+
+    /// UIKit clears the `userInfo` of an activity a responder owns before calling
+    /// this. Without the trip and region, the activity can route only through
+    /// `webpageURL`, which a region without a sidecar doesn't have.
+    /// See: https://developer.apple.com/documentation/uikit/uiresponder/useractivity
+    override func updateUserActivityState(_ activity: NSUserActivity) {
+        super.updateUserActivityState(activity)
+        if let activityUserInfo {
+            activity.addUserInfoEntries(from: activityUserInfo)
+        }
     }
 
     // MARK: - Navigation bar
