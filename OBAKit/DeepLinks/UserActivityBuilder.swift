@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import AppIntents
 import Foundation
 import Intents
 import OBAKitCore
@@ -65,8 +66,12 @@ class UserActivityBuilder: NSObject {
 
         activity.isEligibleForPrediction = true
         activity.suggestedInvocationPhrase = OBALoc("user_activity_builder.show_me_my_bus", value: "Show me my bus", comment: "Suggested invocation phrase for Siri Shortcut")
-        activity.persistentIdentifier = "region_\(region.regionIdentifier)_stop_\(stop.id)"
+        let identifier = StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stop.id)
+        activity.persistentIdentifier = identifier
         activity.targetContentIdentifier = activity.persistentIdentifier
+        if #available(iOS 18.2, *) {
+            activity.appEntityIdentifier = EntityIdentifier(for: StopEntity.self, identifier: identifier)
+        }
 
         activity.requiredUserInfoKeys = [UserInfoKeys.stopID, UserInfoKeys.regionID]
         activity.userInfo = [UserInfoKeys.stopID: stop.id, UserInfoKeys.regionID: region.regionIdentifier]

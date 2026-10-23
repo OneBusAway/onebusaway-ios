@@ -23,13 +23,14 @@ import sys
 EXPECTED = {
     "actions": {
         "NextDeparturesIntent",
+        "OpenStopIntent",
         "TrackBookmarkIntent",
         # OBAWidget
         "ConfigurationAppIntent",
         "RefreshWidgetIntent",
     },
-    "entities": {"BookmarkEntity"},
-    "queries": {"BookmarkEntityQuery"},
+    "entities": {"BookmarkEntity", "StopEntity"},
+    "queries": {"BookmarkEntityQuery", "StopEntityQuery"},
     "autoShortcuts": {"NextDeparturesIntent", "TrackBookmarkIntent"},
 }
 
