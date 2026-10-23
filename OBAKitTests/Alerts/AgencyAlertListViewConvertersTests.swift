@@ -34,7 +34,7 @@ final class AgencyAlertListViewConvertersTests: OBATestCase {
             fatalError("init(coder:) has not been implemented")
         }
 
-        override func presentAlert(_ alert: TransitAlertDataListViewModel) {
+        func presentAlert(_ alert: TransitAlertDataListViewModel) {
             presentedAlerts.append(alert)
         }
     }
