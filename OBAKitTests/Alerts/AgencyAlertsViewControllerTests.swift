@@ -51,7 +51,7 @@ final class AgencyAlertsViewControllerTests: OBATestCase {
         let controller = AgencyAlertsViewController(application: app)
         controller.loadViewIfNeeded()
 
-        let expectedTitle = OBALoc("agency_alerts_controller.title", value: "Alerts", comment: "The title of the Agency Alerts controller.")
+        let expectedTitle = OBAKit.OBALoc("agency_alerts_controller.title", value: "Alerts", comment: "The title of the Agency Alerts controller.")
         #expect(controller.title == expectedTitle)
         #expect(controller.listView.obaDataSource === controller)
         #expect(controller.listView.collapsibleSectionsDelegate === controller)

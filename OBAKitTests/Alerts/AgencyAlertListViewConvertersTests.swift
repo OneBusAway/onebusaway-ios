@@ -63,8 +63,11 @@ final class AgencyAlertListViewConvertersTests: OBATestCase {
         body: String = "",
         urlString: String? = nil
     ) throws -> AgencyAlert {
+        let agencies = try Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
+        let matchedAgency = agencies.first { $0.agency.name == agencyName }
+
         var entitySelector = TransitRealtime_EntitySelector()
-        entitySelector.agencyID = agencyName ?? ""
+        entitySelector.agencyID = matchedAgency?.agencyID ?? ""
 
         var titleTranslation = TransitRealtime_TranslatedString.Translation()
         titleTranslation.language = "en"
@@ -90,29 +93,7 @@ final class AgencyAlertListViewConvertersTests: OBATestCase {
         feedEntity.id = id
         feedEntity.alert = transitAlert
 
-        let agency: AgencyWithCoverage?
-        if let agencyName {
-            agency = buildAgencyWithCoverage(id: agencyName, name: agencyName)
-        } else {
-            agency = nil
-        }
-
-        return try AgencyAlert(feedEntity: feedEntity, agency: agency)
-    }
-
-    private func buildAgencyWithCoverage(id: String, name: String) -> AgencyWithCoverage {
-        let agency = Agency(
-            id: id,
-            name: name,
-            url: URL(string: "https://example.com")!,
-            timezone: "America/Los_Angeles",
-            lang: "en",
-            phone: nil,
-            fareUrl: nil,
-            email: nil,
-            isPrivate: false
-        )
-        return AgencyWithCoverage(agency: agency, lat: 47.6, lon: -122.3, latSpan: 0.1, lonSpan: 0.1)
+        return try AgencyAlert(feedEntity: feedEntity, agency: matchedAgency)
     }
 
     private func loadServiceAlert() throws -> ServiceAlert {
@@ -124,8 +105,8 @@ final class AgencyAlertListViewConvertersTests: OBATestCase {
     // MARK: - listSections(agencyAlerts:) Tests
 
     @Test func testListSectionsGroupsByAgencyAndSortsSections() throws {
-        let alertKCM1 = try makeAgencyAlert(id: "1", title: "Route 44 Detour", agencyName: "King County Metro")
-        let alertKCM2 = try makeAgencyAlert(id: "2", title: "Route 48 Reroute", agencyName: "King County Metro")
+        let alertKCM1 = try makeAgencyAlert(id: "1", title: "Route 44 Detour", agencyName: "Metro Transit")
+        let alertKCM2 = try makeAgencyAlert(id: "2", title: "Route 48 Reroute", agencyName: "Metro Transit")
         let alertST = try makeAgencyAlert(id: "3", title: "Link Light Rail Delay", agencyName: "Sound Transit")
         let alertRegionWide = try makeAgencyAlert(id: "4", title: "Snow Route Activation", agencyName: nil)
 
@@ -133,13 +114,13 @@ final class AgencyAlertListViewConvertersTests: OBATestCase {
 
         #expect(sections.count == 3)
 
-        // Sections are sorted by section ID: "agency_alerts_", "agency_alerts_King County Metro", "agency_alerts_Sound Transit"
+        // Sections are sorted by section ID: "agency_alerts_", "agency_alerts_Metro Transit", "agency_alerts_Sound Transit"
         #expect(sections[0].id == "agency_alerts_")
         #expect(sections[0].title == "")
         #expect(sections[0].contents.count == 1)
 
-        #expect(sections[1].id == "agency_alerts_King County Metro")
-        #expect(sections[1].title == "King County Metro")
+        #expect(sections[1].id == "agency_alerts_Metro Transit")
+        #expect(sections[1].title == "Metro Transit")
         #expect(sections[1].contents.count == 2)
 
         // Contents within a section are sorted by title: Route 44 comes before Route 48
@@ -154,7 +135,7 @@ final class AgencyAlertListViewConvertersTests: OBATestCase {
     }
 
     @Test func testListSectionsOnSelectActionTriggersPresentAlert() throws {
-        let alert = try makeAgencyAlert(id: "alert_tap", title: "Tap Me", agencyName: "Metro")
+        let alert = try makeAgencyAlert(id: "alert_tap", title: "Tap Me", agencyName: "Metro Transit")
         let sections = mockController.listSections(agencyAlerts: [alert])
 
         #expect(sections.count == 1)
