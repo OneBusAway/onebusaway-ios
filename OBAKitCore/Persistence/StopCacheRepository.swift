@@ -25,22 +25,37 @@ public final class StopCacheRepository: Sendable {
 
     /// Fetches cached stops within the given coordinate bounds for a specific region.
     /// Uses a bounding-box query on lat/lon columns as described in the issue requirements.
+    ///
+    /// - Parameter limit: Returns at most this many stops, nearest the box's
+    ///   centre first. With a whole region synced (#1555) a map-sized box can
+    ///   hold hundreds of stops, and every one returned is decoded.
     public func stopsInRegion(
         minLat: Double,
         maxLat: Double,
         minLon: Double,
         maxLon: Double,
-        regionId: Int
+        regionId: Int,
+        limit: Int? = nil
     ) -> [Stop] {
         do {
             let cachedStops = try database.dbQueue.read { db in
-                try CachedStop
+                var request = CachedStop
                     .filter(CachedStop.Columns.regionId == regionId)
                     .filter(CachedStop.Columns.latitude >= minLat)
                     .filter(CachedStop.Columns.latitude <= maxLat)
                     .filter(CachedStop.Columns.longitude >= minLon)
                     .filter(CachedStop.Columns.longitude <= maxLon)
-                    .fetchAll(db)
+                if let limit {
+                    // Squared distance in degrees, with longitude scaled to a degree
+                    // of latitude at the centre: plenty to rank stops a few km apart.
+                    let centerLat = (minLat + maxLat) / 2
+                    let centerLon = (minLon + maxLon) / 2
+                    let scale = cos(centerLat * .pi / 180)
+                    let dLat = CachedStop.Columns.latitude - centerLat
+                    let dLon = (CachedStop.Columns.longitude - centerLon) * scale
+                    request = request.order(dLat * dLat + dLon * dLon).limit(limit)
+                }
+                return try request.fetchAll(db)
             }
             return try stops(from: cachedStops, regionId: regionId)
         } catch {

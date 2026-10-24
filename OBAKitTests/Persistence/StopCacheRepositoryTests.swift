@@ -323,6 +323,24 @@ final class StopCacheRepositoryTests {
         #expect(results[0].direction == .unknown)
     }
 
+    // MARK: - Limited Reads (#1555)
+
+    /// At 60°N a degree of longitude is half a degree of latitude, so the stop
+    /// 0.015° east is nearer than the one 0.01° north. Without that scaling the
+    /// two would swap.
+    @Test func `A limited read returns the nearest stops first`() {
+        repository.saveStops([
+            makeStop(id: "north", lat: 60.010, lon: 10.000),
+            makeStop(id: "east", lat: 60.000, lon: 10.015),
+            makeStop(id: "near", lat: 60.002, lon: 10.000),
+            makeStop(id: "far", lat: 60.040, lon: 10.000)
+        ], regionId: 1)
+        repository.saveStops([makeStop(id: "other_region", lat: 60.000, lon: 10.000)], regionId: 2)
+
+        let results = repository.stopsInRegion(minLat: 59.95, maxLat: 60.05, minLon: 9.95, maxLon: 10.05, regionId: 1, limit: 3)
+        #expect(results.map(\.id) == ["near", "east", "north"])
+    }
+
     // MARK: - Routes Stored Once (#1555)
 
     private func makeRoute(id: String, shortName: String) -> Route {

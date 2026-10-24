@@ -1546,7 +1546,8 @@ extension MapRegionManager {
             Logger.error("API stop request failed, attempting cache fallback: \(error)")
 
             // On API failure, try serving from cache before showing error.
-            let cachedStops = cachedStops(in: mapRegion)
+            let cachedStops = await cachedStops(in: mapRegion)
+            if Task.isCancelled { return }
             if !cachedStops.isEmpty {
                 await MainActor.run {
                     self.setStops(cachedStops)
@@ -1557,12 +1558,21 @@ extension MapRegionManager {
         }
     }
 
+    /// The most stops one cached read returns, nearest the centre first. With a
+    /// whole region synced (#1555) the box can hold hundreds; the panel keeps
+    /// only the 400 nearest anyway (`MapStopsObserver`'s render cap).
+    static let cachedStopReadLimit = 400
+
     /// Reads cached stops for `mapRegion` (already fudge-factor expanded) from
-    /// `StopCacheRepository`, using a bounding-box query. Returns `[]` when the
-    /// repository or current region is unavailable, or nothing is cached.
+    /// `StopCacheRepository`, using a bounding-box query capped at
+    /// `cachedStopReadLimit`. Returns `[]` when the repository or current region
+    /// is unavailable, or nothing is cached.
+    ///
+    /// The read and decode run off the main actor: with a full cache they take
+    /// milliseconds that panning shouldn't pay.
     ///
     /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
-    private func cachedStops(in mapRegion: MKCoordinateRegion) -> [Stop] {
+    private func cachedStops(in mapRegion: MKCoordinateRegion) async -> [Stop] {
         guard
             let regionId = application.currentRegion?.regionIdentifier,
             let repository = application.stopCacheRepository
@@ -1574,12 +1584,16 @@ extension MapRegionManager {
         let maxLat = mapRegion.center.latitude + mapRegion.span.latitudeDelta / 2.0
         let minLon = mapRegion.center.longitude - mapRegion.span.longitudeDelta / 2.0
         let maxLon = mapRegion.center.longitude + mapRegion.span.longitudeDelta / 2.0
+        let limit = Self.cachedStopReadLimit
 
-        return repository.stopsInRegion(
-            minLat: minLat, maxLat: maxLat,
-            minLon: minLon, maxLon: maxLon,
-            regionId: regionId
-        )
+        return await Task.detached(priority: .userInitiated) {
+            repository.stopsInRegion(
+                minLat: minLat, maxLat: maxLat,
+                minLon: minLon, maxLon: maxLon,
+                regionId: regionId,
+                limit: limit
+            )
+        }.value
     }
 
     /// Persists `stops` to `StopCacheRepository` for offline use.
@@ -1646,7 +1660,7 @@ extension MapRegionManager {
         // cancelled — a settle superseded by a newer one shouldn't pay for a
         // GRDB read whose result would be thrown away.
         guard !Task.isCancelled else { return false }
-        let cachedStops = cachedStops(in: fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor))
+        let cachedStops = await cachedStops(in: fudgedRegion(for: region, factor: preferredLoadDataRegionFudgeFactor))
         guard !cachedStops.isEmpty, !Task.isCancelled else { return false }
 
         await MainActor.run {
