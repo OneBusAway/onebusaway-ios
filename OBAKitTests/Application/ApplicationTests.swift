@@ -634,6 +634,18 @@ final class ApplicationTests: OBATestCase {
         #expect(app.pendingStopRegionID == 1)
     }
 
+    /// Region stop sync starts only from `didFinishLaunching`. The test host
+    /// builds thousands of `Application`s that never launch; if one synced on a
+    /// region change, `MockDataLoader` would crash the run on the unstubbed request.
+    @Test func `An Application that never launched never syncs region stops`() {
+        let app = makeApplicationForUserActivity()
+
+        app.regionsService(app.regionsService, updatedRegion: Fixtures.pugetSoundRegion)
+        app.scheduleRegionStopSync()
+
+        #expect(app.regionStopSyncScheduler == nil)
+    }
+
     private func makeApplicationForUserActivity() -> Application {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
