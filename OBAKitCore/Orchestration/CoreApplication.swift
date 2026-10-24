@@ -166,6 +166,31 @@ open class CoreApplication: NSObject,
         return StopCacheRepository(database: database)
     }()
 
+    // MARK: - Region Stop Sync
+
+    /// Keeps a copy of every stop in the current region in the stop cache (#1555).
+    /// Nil until `startRegionStopSync()`, which only a launched app calls, so the
+    /// unit-test host's many `Application`s never fetch a region.
+    private(set) var regionStopSyncScheduler: RegionStopSyncScheduler?
+
+    /// Starts syncing the current region's stops, beginning with one sync now.
+    public func startRegionStopSync() {
+        // Without a repository, `stopCacheDatabase` has already logged why.
+        guard regionStopSyncScheduler == nil, let repository = stopCacheRepository else { return }
+        regionStopSyncScheduler = RegionStopSyncScheduler(service: RegionStopSyncService(repository: repository, appVersion: config.appVersion))
+        scheduleRegionStopSync()
+    }
+
+    /// Asks for a sync of the current region after a short pause. Does nothing
+    /// before `startRegionStopSync()`, or before a region is chosen, when
+    /// `regionsService(_:updatedRegion:)` asks instead.
+    public func scheduleRegionStopSync() {
+        guard let scheduler = regionStopSyncScheduler,
+              let regionID = currentRegion?.regionIdentifier,
+              let apiService else { return }
+        scheduler.schedule(regionID: regionID, using: apiService)
+    }
+
     /// Purges cached stops older than 30 days for the current region.
     /// Called during `refreshServices()` (app launch and region change).
     private func purgeStaleStopCache() {
@@ -341,7 +366,8 @@ open class CoreApplication: NSObject,
     }
 
     open func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        // nop
+        // `willUpdateToRegion` has already rebuilt `apiService` for this region.
+        scheduleRegionStopSync()
     }
 
     // MARK: - Migration

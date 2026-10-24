@@ -259,8 +259,18 @@ public final class Stop: NSObject, Identifiable, Codable, HasReferences, @unchec
             try container.encode(onDemandServiceIDs, forKey: .onDemandServiceIDs)
         }
         try container.encodeIfPresent(regionIdentifier, forKey: .regionIdentifier)
-        try container.encodeIfPresent(routes, forKey: .routes)
+        if encoder.userInfo[Self.omitsRoutesUserInfoKey] as? Bool != true {
+            try container.encodeIfPresent(routes, forKey: .routes)
+        }
         try container.encode(wheelchairBoarding.rawValue, forKey: .wheelchairBoarding)
+    }
+
+    /// Set to `true` in an encoder's `userInfo` to leave `routes` out. The stop
+    /// cache stores routes once per region instead, since a full copy in every
+    /// stop made a synced region several times larger (#1555). Recent stops and
+    /// bookmarks don't set it, so they keep their routes.
+    static var omitsRoutesUserInfoKey: CodingUserInfoKey {
+        CodingUserInfoKey(rawValue: "omitsRoutes")!
     }
 
     // MARK: - HasReferences
