@@ -82,6 +82,27 @@ final class StopEntityMappingTests: OBATestCase {
         #expect(StopEntityMapping.suggested(bookmarks: bookmarks, recentStops: recentStops, regionID: nil).isEmpty)
     }
 
+    /// Spotlight ranks bookmarked stops above recent ones, so a stop that is
+    /// both belongs only to the higher tier. Drop the shared dedupe and A is
+    /// indexed twice, once at each priority.
+    @Test func `Index tiers put each stop in its highest tier only`() throws {
+        let stopA = makeStop(id: "1_100", name: "Pine St & 3rd Ave", regionIdentifier: 1)
+        let stopB = makeStop(id: "1_200", name: "Pike St & 4th Ave", regionIdentifier: 1)
+        let stopC = makeStop(id: "1_300", name: "Union St & 5th Ave", regionIdentifier: 1)
+        let otherRegion = makeStop(id: "2_400", name: "Plac Wolności", regionIdentifier: 2)
+
+        let bookmarks = [
+            Bookmark(name: "Home", regionIdentifier: 1, stop: stopA),
+            try makeTripBookmark(stop: stopA, regionIdentifier: 1),
+            Bookmark(name: "Away", regionIdentifier: 2, stop: otherRegion)
+        ]
+        let recentStops = [stopC, stopA, stopB, stopC, otherRegion]
+
+        let tiers = StopEntityMapping.tiers(bookmarks: bookmarks, recentStops: recentStops, regionID: 1)
+        #expect(tiers.bookmarked.map(\.id) == ["region_1_stop_1_100"])
+        #expect(tiers.recent.map(\.id) == ["region_1_stop_1_300", "region_1_stop_1_200"])
+    }
+
     @Test func `Stop search matches the name or the start of the code, at most 20`() {
         let polish = StopEntityMapping.entity(for: makeStop(id: "2_1201", name: "Plac Wolności", code: "1201", regionIdentifier: 2), regionID: 2)
         let pine = StopEntityMapping.entity(for: makeStop(id: "1_75403", name: "3rd Ave & Pine St", code: "75403", regionIdentifier: 1), regionID: 1)

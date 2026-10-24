@@ -677,6 +677,20 @@ final class ApplicationTests: OBATestCase {
         #expect(app.pendingStopRegionID == 1)
     }
 
+    /// A region change is where the previous region's stops leave Spotlight.
+    /// Remove the call from `regionsService(_:updatedRegion:)` and nothing is cleared.
+    @Test func `A region change replaces the Spotlight index`() async {
+        let app = makeApplicationForUserActivity()
+        let index = FakeStopIndex()
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: app.userDataStore, stopCache: nil, currentRegion: { Fixtures.pugetSoundRegion }, isIndexingAvailable: { true })
+        app.stopSpotlightIndexer = indexer
+
+        app.regionsService(app.regionsService, updatedRegion: Fixtures.pugetSoundRegion)
+        await indexer.currentRun?.value
+
+        #expect(await index.log == [.deleteAll])
+    }
+
     private func makeApplicationForUserActivity() -> Application {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
