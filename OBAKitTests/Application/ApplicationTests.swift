@@ -646,6 +646,31 @@ final class ApplicationTests: OBATestCase {
         #expect(app.regionStopSyncScheduler == nil)
     }
 
+    /// Once launched, a region change and each activation ask for a sync. Each is
+    /// cancelled during the pause, before any request, which `MockDataLoader`
+    /// would trap on.
+    @Test func `A launched Application schedules a region stop sync on a region change and on activation`() async throws {
+        let (app, _) = makeAppAndPushService()
+        app.startRegionStopSync()
+        let scheduler = try #require(app.regionStopSyncScheduler)
+        // No region yet, so nothing to sync.
+        #expect(scheduler.pendingSync == nil)
+
+        app.regionsService.currentRegion = Fixtures.tampaRegion
+        try await cancelPendingSync(of: scheduler)
+
+        app.applicationDidBecomeActive(UIApplication.shared)
+        try await cancelPendingSync(of: scheduler)
+    }
+
+    /// Requires a sync to be waiting, then cancels it and waits for it to end.
+    private func cancelPendingSync(of scheduler: RegionStopSyncScheduler) async throws {
+        let pending = try #require(scheduler.pendingSync)
+        pending.cancel()
+        await pending.value
+        #expect(scheduler.pendingSync == nil)
+    }
+
     private func makeApplicationForUserActivity() -> Application {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)

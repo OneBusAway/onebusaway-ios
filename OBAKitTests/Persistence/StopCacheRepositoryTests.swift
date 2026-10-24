@@ -389,17 +389,36 @@ final class StopCacheRepositoryTests {
         #expect((json["routes"] as? [[String: Any]])?.count == 1)
     }
 
-    @Test func `A stop cached before schema v3 still reads with its embedded routes`() throws {
+    /// v3 adds columns rather than rebuilding the table, so the stops a rider's
+    /// map already cached survive the upgrade, and still read with the routes
+    /// their pre-v3 blobs embed.
+    @Test func `Upgrading a v2 cache keeps its stops and their embedded routes`() throws {
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("stop_cache_v2_\(UUID().uuidString).sqlite").path
+        defer {
+            for suffix in ["", "-wal", "-shm"] {
+                try? FileManager.default.removeItem(atPath: path + suffix)
+            }
+        }
         let stop = makeStop(id: "1_old", routes: [makeRoute(id: "1_49", shortName: "49")])
-        try database.dbQueue.write { db in
-            try db.execute(
-                sql: "INSERT INTO cachedStop (id, regionId, latitude, longitude, lastUpdated, stopData) VALUES (?, ?, ?, ?, ?, ?)",
-                arguments: ["1_old", 1, 47.6062, -122.3321, Date().timeIntervalSince1970, try JSONEncoder().encode(stop)]
-            )
+        do {
+            let v2 = try StopCacheDatabase(databasePath: path, migratingUpTo: "v2_stopDataBlob")
+            try v2.dbQueue.write { db in
+                try db.execute(
+                    sql: "INSERT INTO cachedStop (id, regionId, latitude, longitude, lastUpdated, stopData) VALUES (?, ?, ?, ?, ?, ?)",
+                    arguments: ["1_old", 1, 47.6062, -122.3321, Date().timeIntervalSince1970, try JSONEncoder().encode(stop)]
+                )
+            }
         }
 
+        let upgraded = try StopCacheDatabase(databasePath: path)
+        let repository = StopCacheRepository(database: upgraded)
+
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        #expect(results.map(\.id) == ["1_old"])
         #expect(results.map { $0.routes.map(\.id) } == [["1_49"]])
+        let unnamed = try upgraded.dbQueue.read { try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStop WHERE name IS NULL AND code IS NULL") }
+        #expect(unnamed == 1)
+        #expect(try repository.syncState(regionId: 1) == nil)
     }
 
     @Test func `A stop whose route row is gone reads with no routes rather than nil`() throws {

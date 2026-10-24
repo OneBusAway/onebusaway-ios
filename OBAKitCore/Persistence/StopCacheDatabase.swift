@@ -47,20 +47,27 @@ public final class StopCacheDatabase: Sendable {
         }
 
         dbQueue = queue
-        try runMigrations()
+        try Self.makeMigrator().migrate(dbQueue)
     }
 
     /// Creates an in-memory database for testing.
     public init(inMemory: Bool) throws {
         precondition(inMemory, "Use init(databasePath:) for persistent databases")
         dbQueue = try DatabaseQueue()
-        try runMigrations()
+        try Self.makeMigrator().migrate(dbQueue)
+    }
+
+    /// Creates a database at `databasePath` migrated only through
+    /// `lastMigration`, so tests can upgrade a real older schema.
+    init(databasePath: String, migratingUpTo lastMigration: String) throws {
+        dbQueue = try DatabaseQueue(path: databasePath)
+        try Self.makeMigrator().migrate(dbQueue, upTo: lastMigration)
     }
 
     // MARK: - Migrations
 
     // swiftlint:disable:next function_body_length
-    private func runMigrations() throws {
+    private static func makeMigrator() -> DatabaseMigrator {
         var migrator = DatabaseMigrator()
 
         // v1: Original schema with individual columns for every Stop field.
@@ -161,6 +168,6 @@ public final class StopCacheDatabase: Sendable {
             }
         }
 
-        try migrator.migrate(dbQueue)
+        return migrator
     }
 }

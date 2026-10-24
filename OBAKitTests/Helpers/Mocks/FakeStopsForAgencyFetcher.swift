@@ -12,7 +12,8 @@ import Foundation
 
 /// A region's server for `RegionStopSyncService` tests. Records each call as it
 /// starts, answers from `answers`, and can hold one agency's answer until the
-/// test releases it.
+/// test releases it, optionally failing it then as a cancelled URLSession
+/// request does.
 actor FakeStopsForAgencyFetcher: StopsForAgencyFetching {
     private(set) var calls: [String] = []
     private(set) var isHolding = false
@@ -21,7 +22,9 @@ actor FakeStopsForAgencyFetcher: StopsForAgencyFetching {
     private let maglev: Bool
     private var answers: [String: Result<StopsForAgencyResult, any Error>]
     private var heldAgency: String?
+    private var heldFailure: (any Error)?
     private var heldCall: CheckedContinuation<Void, Never>?
+    private var holdingWaiters: [CheckedContinuation<Void, Never>] = []
 
     init(agencyIDs: [String], maglev: Bool = false, answers: [String: Result<StopsForAgencyResult, any Error>]) {
         self.agencyIDs = agencyIDs
@@ -29,8 +32,17 @@ actor FakeStopsForAgencyFetcher: StopsForAgencyFetching {
         self.answers = answers
     }
 
-    func hold(agency: String) {
+    /// Holds `agency`'s answer until `release()`. With `failure`, the held call
+    /// then throws it instead of answering.
+    func hold(agency: String, failingWith failure: (any Error)? = nil) {
         heldAgency = agency
+        heldFailure = failure
+    }
+
+    /// Returns once a call is being held. Pair with a test time limit.
+    func waitUntilHolding() async {
+        if isHolding { return }
+        await withCheckedContinuation { holdingWaiters.append($0) }
     }
 
     func release() {
@@ -53,8 +65,13 @@ actor FakeStopsForAgencyFetcher: StopsForAgencyFetching {
         if heldAgency == id {
             heldAgency = nil
             isHolding = true
+            holdingWaiters.forEach { $0.resume() }
+            holdingWaiters.removeAll()
             await withCheckedContinuation { heldCall = $0 }
             isHolding = false
+            if let heldFailure {
+                throw heldFailure
+            }
         }
         guard let answer = answers[id] else {
             throw APIError.requestNotFound(HTTPURLResponse(url: URL(string: "https://www.example.com")!, statusCode: 404, httpVersion: "2", headerFields: ["Content-Type": "application/json"])!)

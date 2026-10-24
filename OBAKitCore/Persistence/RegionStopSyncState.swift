@@ -12,10 +12,10 @@ import GRDB
 
 /// What happened the last time a region's stops were synced from
 /// `stops-for-agency` (#1555). One row per region.
-public struct RegionStopSyncState: Codable, Equatable, Sendable, FetchableRecord, PersistableRecord {
-    public static let databaseTableName = "regionStopSync"
+struct RegionStopSyncState: Codable, Equatable, Sendable, FetchableRecord, PersistableRecord {
+    static let databaseTableName = "regionStopSync"
 
-    public enum Outcome: String, Codable, Sendable {
+    enum Outcome: String, Codable, Sendable {
         /// Every agency's stops were written, and stops the server no longer
         /// lists were deleted.
         case complete
@@ -35,39 +35,31 @@ public struct RegionStopSyncState: Codable, Equatable, Sendable, FetchableRecord
         case skippedMultiAgency
     }
 
-    public let regionId: Int
-    public let outcome: Outcome
-    public let lastAttemptAt: Date
+    let regionId: Int
+    let outcome: Outcome
+    let lastAttemptAt: Date
 
-    /// When a sync last completed, or a conditional request last confirmed
-    /// nothing changed. Nil until the first complete sync.
-    public let lastSuccessAt: Date?
+    /// When a full sync last completed. A 304 doesn't move it: the rows keep
+    /// that sync's stamp, and a full sync must restamp them every week, well
+    /// before the 30-day purge would remove them. Nil until the first one.
+    let lastSuccessAt: Date?
 
     /// maglev's feed fingerprint from the last complete sync, sent back as
     /// `If-None-Match`. Always nil for Java servers, whose ETag changes on
     /// every response.
-    public let etag: String?
+    let etag: String?
 
     /// The app version that recorded this, so an update re-probes a server
     /// recorded as unsupported.
-    public let appVersion: String
+    let appVersion: String
 
     // Seconds since 1970, like `cachedStop.lastUpdated`, rather than GRDB's
     // millisecond date strings.
-    public static func databaseDateEncodingStrategy(for column: String) -> DatabaseDateEncodingStrategy {
+    static func databaseDateEncodingStrategy(for column: String) -> DatabaseDateEncodingStrategy {
         .timeIntervalSince1970
     }
 
-    public static func databaseDateDecodingStrategy(for column: String) -> DatabaseDateDecodingStrategy {
+    static func databaseDateDecodingStrategy(for column: String) -> DatabaseDateDecodingStrategy {
         .timeIntervalSince1970
-    }
-
-    public init(regionId: Int, outcome: Outcome, lastAttemptAt: Date, lastSuccessAt: Date?, etag: String?, appVersion: String) {
-        self.regionId = regionId
-        self.outcome = outcome
-        self.lastAttemptAt = lastAttemptAt
-        self.lastSuccessAt = lastSuccessAt
-        self.etag = etag
-        self.appVersion = appVersion
     }
 }

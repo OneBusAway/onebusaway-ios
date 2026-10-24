@@ -11,14 +11,14 @@ import Foundation
 
 /// The server calls a region sync makes. `RESTAPIService` is the real one; tests
 /// substitute a fake.
-public protocol StopsForAgencyFetching: Sendable {
+protocol StopsForAgencyFetching: Sendable {
     func getAgencyIDs() async throws -> [String]
     func isMaglevServer() async throws -> Bool
     func getStopsForAgency(id: String, ifNoneMatch etag: String?) async throws -> StopsForAgencyResult
 }
 
 extension RESTAPIService: StopsForAgencyFetching {
-    public nonisolated func getAgencyIDs() async throws -> [String] {
+    nonisolated func getAgencyIDs() async throws -> [String] {
         try await getAgenciesWithCoverage().list.map(\.agencyID)
     }
 }
@@ -34,13 +34,13 @@ extension RESTAPIService: StopsForAgencyFetching {
 /// No mutable state, so `Sendable` without being an actor. Runs from a detached
 /// task (see `RegionStopSyncScheduler`): decoding a large region takes about a
 /// second and must stay off the main actor.
-public final class RegionStopSyncService: Sendable {
+final class RegionStopSyncService: Sendable {
     private let repository: StopCacheRepository
     private let appVersion: String
     private let now: @Sendable () -> Date
     private let batchSize: Int
 
-    public init(repository: StopCacheRepository, appVersion: String, now: @escaping @Sendable () -> Date = { Date() }, batchSize: Int = 500) {
+    init(repository: StopCacheRepository, appVersion: String, now: @escaping @Sendable () -> Date = { Date() }, batchSize: Int = 500) {
         self.repository = repository
         self.appVersion = appVersion
         self.now = now
@@ -52,7 +52,7 @@ public final class RegionStopSyncService: Sendable {
     /// Cancelling the calling task stops it before its next request or batch, so
     /// after a region switch nothing more is written for the old region. A
     /// cancelled sync records nothing; the next one starts over.
-    public func sync(regionID: Int, using fetcher: any StopsForAgencyFetching) async {
+    func sync(regionID: Int, using fetcher: any StopsForAgencyFetching) async {
         let previous: RegionStopSyncState?
         do {
             previous = try repository.syncState(regionId: regionID)
@@ -106,10 +106,10 @@ public final class RegionStopSyncService: Sendable {
         }
 
         guard case let .finished(failedAgencies, newETag, wroteAny) = try await fetchAgencies(
-            agencyIDs, regionID: regionID, fetcher: fetcher, start: start, etag: etag, isMaglev: isMaglev
+            agencyIDs, regionID: regionID, fetcher: fetcher, start: start, etag: etag, isMaglev: isMaglev, previous: previous
         ) else { return }
 
-        // A request cancelled mid-flight arrives as an agency failure.
+        // Cancelled after the last agency's answer: record nothing.
         try Task.checkCancellation()
 
         if failedAgencies == agencyIDs.count {
@@ -141,11 +141,12 @@ public final class RegionStopSyncService: Sendable {
         fetcher: any StopsForAgencyFetching,
         start: Date,
         etag: String?,
-        isMaglev: Bool
+        isMaglev: Bool,
+        previous: RegionStopSyncState?
     ) async throws -> AgencyPass {
         var failedAgencies = 0
         var newETag: String?
-        var writtenIDs = Set<StopID>()
+        var wroteAny = false
         for (index, agencyID) in agencyIDs.enumerated() {
             try Task.checkCancellation()
             let result: StopsForAgencyResult
@@ -158,6 +159,8 @@ public final class RegionStopSyncService: Sendable {
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
+                // URLSession reports a cancelled request as URLError.cancelled.
+                if Task.isCancelled { throw CancellationError() }
                 Logger.warn("Region stop sync: agency \(agencyID) of region \(regionID) failed: \(error)")
                 failedAgencies += 1
                 continue
@@ -166,20 +169,20 @@ public final class RegionStopSyncService: Sendable {
             switch result {
             case .notModified:
                 // maglev's ETag fingerprints the whole feed: nothing in the region changed.
-                record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: etag)
+                // The rows keep the last full sync's stamp, so `lastSuccessAt` keeps it
+                // too, and the weekly full sync restamps them before the 30-day purge.
+                record(.complete, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: etag)
                 return .recorded
             case .stops(let stops, let responseETag):
                 if index == 0 && isMaglev {
                     newETag = responseETag
                 }
-                // Java never lists a stop under two agencies, but a duplicate would
-                // only cost a second write; skip it anyway.
-                let fresh = stops.filter { writtenIDs.insert($0.id).inserted }
-                try write(fresh, regionID: regionID, syncedAt: start)
+                try write(stops, regionID: regionID, syncedAt: start)
+                wroteAny = wroteAny || !stops.isEmpty
             }
         }
 
-        return .finished(failedAgencies: failedAgencies, newETag: newETag, wroteAny: !writtenIDs.isEmpty)
+        return .finished(failedAgencies: failedAgencies, newETag: newETag, wroteAny: wroteAny)
     }
 
     /// Writes in batches, so each hold on the database is short and a cancelled

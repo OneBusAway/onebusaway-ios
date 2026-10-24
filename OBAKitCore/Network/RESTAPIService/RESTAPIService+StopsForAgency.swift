@@ -10,7 +10,7 @@
 import Foundation
 
 /// The answer to ``RESTAPIService/getStopsForAgency(id:ifNoneMatch:)``.
-public enum StopsForAgencyResult: Sendable {
+enum StopsForAgencyResult: Sendable {
     /// The agency's stops, and the server's ETag if it sent one.
     case stops([Stop], etag: String?)
 
@@ -44,7 +44,7 @@ extension RESTAPIService {
     ///     the Java server's changes on every response.
     /// - throws: ``APIError`` or a decoding error, unchanged, so the caller can
     ///   tell a server without the endpoint from a request that failed.
-    public nonisolated func getStopsForAgency(id: String, ifNoneMatch etag: String? = nil) async throws -> StopsForAgencyResult {
+    nonisolated func getStopsForAgency(id: String, ifNoneMatch etag: String? = nil) async throws -> StopsForAgencyResult {
         let url = urlBuilder.getStopsForAgency(id: id)
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60)
         request.allowsConstrainedNetworkAccess = false
@@ -90,13 +90,18 @@ extension RESTAPIService {
     /// and maglev copies the Java server's `git.build.version` key.
     ///
     /// A maglev from before 2026-02-22 has no `config.json` route and answers
-    /// with its web page. That reads as not maglev.
-    public nonisolated func isMaglevServer() async throws -> Bool {
+    /// with its web page, and a server without the route may answer with an HTML
+    /// 404. Both read as not maglev. Any other failure throws, so a maglev server
+    /// isn't taken for Java because of a passing outage.
+    nonisolated func isMaglevServer() async throws -> Bool {
         do {
             let response = try await getData(for: urlBuilder.getConfig(), decodeRESTAPIResponseAs: ServerIdentity.self)
             return response.entry.id == Self.maglevServerID
         } catch let APIError.invalidContentType(_, _, actualContentType) {
             logger.info("config.json answered \(actualContentType ?? "<nil>", privacy: .public); treating the server as not maglev.")
+            return false
+        } catch let APIError.requestNotFound(response) where isHTML(response.contentType) {
+            logger.info("config.json answered with an HTML 404; treating the server as not maglev.")
             return false
         }
     }
@@ -116,18 +121,20 @@ extension APIError {
     /// the blank 200 that `APIService+GetData` maps to `.requestNotFound`. Here a
     /// blank 200 or a JSON 404 is a failed attempt to retry, not a missing
     /// endpoint (#1555).
-    public var meansStopsForAgencyUnsupported: Bool {
+    var meansStopsForAgencyUnsupported: Bool {
         switch self {
         case .requestNotFound(let response):
-            return response.statusCode == 404 && Self.isHTML(response.contentType)
+            return response.statusCode == 404 && isHTML(response.contentType)
         case .invalidContentType(_, _, let actualContentType):
-            return Self.isHTML(actualContentType)
+            return isHTML(actualContentType)
         default:
             return false
         }
     }
+}
 
-    private static func isHTML(_ contentType: String?) -> Bool {
-        contentType?.lowercased().hasPrefix("text/html") ?? false
-    }
+/// Whether a `Content-Type` is an HTML page: what servers without an endpoint
+/// answer with.
+private func isHTML(_ contentType: String?) -> Bool {
+    contentType?.lowercased().hasPrefix("text/html") ?? false
 }

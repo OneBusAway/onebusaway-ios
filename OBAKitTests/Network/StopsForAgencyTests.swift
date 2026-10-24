@@ -98,6 +98,20 @@ final class StopsForAgencyTests: OBATestCase {
         dataLoader.removeMappedResponses()
         _ = mock(path: "/api/where/config.json", data: Data("<!doctype html><html></html>".utf8), contentType: "text/html; charset=utf-8")
         #expect(try await service.isMaglevServer() == false)
+
+        dataLoader.removeMappedResponses()
+        _ = mock(path: "/api/where/config.json", data: Data("<html><body>HTTP Status 404</body></html>".utf8), statusCode: 404, contentType: "text/html;charset=utf-8")
+        #expect(try await service.isMaglevServer() == false)
+    }
+
+    /// An outage mustn't make a maglev server look like Java: a multi-agency
+    /// maglev region would then sync, and show its shared stops twice.
+    @Test func `A config.json failure that isn't an HTML page throws`() async {
+        _ = mock(path: "/api/where/config.json", data: Data(#"{"code":503}"#.utf8), statusCode: 503)
+
+        await #expect(throws: APIError.self) {
+            _ = try await self.service.isMaglevServer()
+        }
     }
 
     /// Only an HTML page means the server lacks the endpoint. A JSON 404, a blank

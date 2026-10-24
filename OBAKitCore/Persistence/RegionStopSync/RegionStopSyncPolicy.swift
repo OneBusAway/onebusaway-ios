@@ -10,9 +10,9 @@
 import Foundation
 
 /// When a region's stops are due for another sync from `stops-for-agency` (#1555).
-public enum RegionStopSyncPolicy {
+enum RegionStopSyncPolicy {
 
-    public enum Decision: Equatable, Sendable {
+    enum Decision: Equatable, Sendable {
         case skip
         case full
 
@@ -34,7 +34,7 @@ public enum RegionStopSyncPolicy {
     /// the app is updated first.
     static let reprobeInterval: TimeInterval = 7 * 86_400
 
-    public static func decision(for state: RegionStopSyncState?, now: Date, appVersion: String) -> Decision {
+    static func decision(for state: RegionStopSyncState?, now: Date, appVersion: String) -> Decision {
         guard let state else { return .full }
         let sinceAttempt = now.timeIntervalSince(state.lastAttemptAt)
 

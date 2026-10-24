@@ -125,7 +125,7 @@ public final class StopCacheRepository: Sendable {
     ///
     /// Unlike `saveStops`, this throws: a sync that recorded itself complete
     /// after a failed write would then delete stops it never replaced.
-    public func writeSyncedStops(_ stops: [Stop], regionId: Int, syncedAt: Date) throws {
+    func writeSyncedStops(_ stops: [Stop], regionId: Int, syncedAt: Date) throws {
         try database.dbQueue.write { db in
             try write(stops, regionId: regionId, at: syncedAt, in: db)
         }
@@ -175,7 +175,7 @@ public final class StopCacheRepository: Sendable {
     /// After a complete sync, deletes the region's stops and routes the sync
     /// didn't write: those the server no longer lists. Stops the map saved
     /// during the sync are newer than `syncStart`, so they stay.
-    public func deleteStops(regionId: Int, notWrittenSince syncStart: Date) throws {
+    func deleteStops(regionId: Int, notWrittenSince syncStart: Date) throws {
         try deleteRows(regionId: regionId, olderThan: syncStart)
     }
 
@@ -214,13 +214,13 @@ public final class StopCacheRepository: Sendable {
     // MARK: - Region Sync State
 
     /// What the last sync of `regionId` did, or nil if it was never synced.
-    public func syncState(regionId: Int) throws -> RegionStopSyncState? {
+    func syncState(regionId: Int) throws -> RegionStopSyncState? {
         try database.dbQueue.read { db in
             try RegionStopSyncState.fetchOne(db, key: regionId)
         }
     }
 
-    public func saveSyncState(_ state: RegionStopSyncState) throws {
+    func saveSyncState(_ state: RegionStopSyncState) throws {
         try database.dbQueue.write { db in
             try state.save(db)
         }

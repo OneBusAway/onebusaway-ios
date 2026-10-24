@@ -48,7 +48,7 @@ final class RegionStopSyncSchedulerTests {
 
     /// Region A's sync is mid-flight when the rider switches to B. A's late
     /// answer is never written; B's is.
-    @Test func `A new request cancels the sync in flight`() async throws {
+    @Test(.timeLimit(.minutes(1))) func `A request for another region cancels the sync in flight`() async throws {
         let regionA = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_late")])
         let regionB = FakeStopsForAgencyFetcher(agencyIDs: ["2"], answers: ["2": answer("2_b")])
         await regionA.hold(agency: "1")
@@ -56,12 +56,7 @@ final class RegionStopSyncSchedulerTests {
 
         scheduler.schedule(regionID: 1, using: regionA)
         let syncA = scheduler.pendingSync
-        var waits = 0
-        while await !regionA.isHolding, waits < 3_000 {
-            try await Task.sleep(for: .milliseconds(10))
-            waits += 1
-        }
-        #expect(await regionA.isHolding)
+        await regionA.waitUntilHolding()
 
         scheduler.schedule(regionID: 2, using: regionB)
         await regionA.release()
@@ -70,6 +65,26 @@ final class RegionStopSyncSchedulerTests {
 
         #expect(try cachedIDs(region: 1).isEmpty)
         #expect(try cachedIDs(region: 2) == ["2_b"])
+    }
+
+    /// Activation fires whenever a system alert or Control Center is dismissed.
+    /// Restarting a slow sync each time could keep it from ever finishing.
+    @Test(.timeLimit(.minutes(1))) func `A request for the region already syncing leaves it alone`() async throws {
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_a")])
+        await fetcher.hold(agency: "1")
+        let scheduler = makeScheduler(delay: .zero)
+
+        scheduler.schedule(regionID: 1, using: fetcher)
+        let sync = scheduler.pendingSync
+        await fetcher.waitUntilHolding()
+
+        scheduler.schedule(regionID: 1, using: fetcher)
+        await fetcher.release()
+        await sync?.value
+        await scheduler.pendingSync?.value
+
+        #expect(await fetcher.calls == ["agencies", "config", "stops 1"])
+        #expect(try cachedIDs(region: 1) == ["1_a"])
     }
 }
 

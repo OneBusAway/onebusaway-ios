@@ -171,7 +171,7 @@ open class CoreApplication: NSObject,
     /// Keeps a copy of every stop in the current region in the stop cache (#1555).
     /// Nil until `startRegionStopSync()`, which only a launched app calls, so the
     /// unit-test host's many `Application`s never fetch a region.
-    public private(set) var regionStopSyncScheduler: RegionStopSyncScheduler?
+    private(set) var regionStopSyncScheduler: RegionStopSyncScheduler?
 
     /// Starts syncing the current region's stops, beginning with one sync now.
     public func startRegionStopSync() {

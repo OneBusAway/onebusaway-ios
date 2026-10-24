@@ -67,6 +67,17 @@ final class RegionStopSyncServiceTests {
         #expect(try repository.syncState(regionId: 1)?.outcome == .complete)
     }
 
+    /// Every agency answering `[]` is likelier a server problem than a region
+    /// with no stops, so the stops the map cached stay.
+    @Test func `Every agency answering with no stops deletes nothing`() async throws {
+        try repository.writeSyncedStops([stop("1_kept")], regionId: 1, syncedAt: earlier)
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops(), "2": stops()])
+
+        await makeService().sync(regionID: 1, using: fetcher)
+
+        #expect(try cachedIDs() == ["1_kept"])
+    }
+
     @Test func `An HTML page from the first agency records unsupported and writes nothing`() async throws {
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": error(404, "text/html;charset=utf-8"), "2": stops("2_c")])
 
@@ -126,6 +137,7 @@ final class RegionStopSyncServiceTests {
     @Test func `A maglev region keeps its ETag and checks it the next day`() async throws {
         let first = FakeStopsForAgencyFetcher(agencyIDs: ["1"], maglev: true, answers: ["1": .success(.stops([stop("1_a")], etag: "3f9a"))])
         await makeService().sync(regionID: 1, using: first)
+        let firstSync = clock.value
         #expect(try repository.syncState(regionId: 1)?.etag == "3f9a")
 
         clock.value = clock.value.addingTimeInterval(86_400)
@@ -135,7 +147,32 @@ final class RegionStopSyncServiceTests {
         #expect(await second.calls == ["agencies", "config", "stops 1 if-none-match 3f9a"])
         let state = try #require(try repository.syncState(regionId: 1))
         #expect(state.outcome == .complete)
-        #expect(state.lastSuccessAt == clock.value)
+        #expect(state.lastAttemptAt == clock.value)
+        #expect(state.lastSuccessAt == firstSync)
+        #expect(try cachedIDs() == ["1_a"])
+    }
+
+    /// A 304 writes no rows, so it can't stand in for the weekly full sync: the
+    /// rows would keep their first stamp until the 30-day purge deleted them.
+    @Test func `Daily 304s still leave a full sync every week`() async throws {
+        let first = FakeStopsForAgencyFetcher(agencyIDs: ["1"], maglev: true, answers: ["1": .success(.stops([stop("1_a")], etag: "3f9a"))])
+        await makeService().sync(regionID: 1, using: first)
+        let firstSync = clock.value
+
+        for _ in 1...6 {
+            clock.value = clock.value.addingTimeInterval(86_400)
+            let daily = FakeStopsForAgencyFetcher(agencyIDs: ["1"], maglev: true, answers: ["1": .success(.notModified)])
+            await makeService().sync(regionID: 1, using: daily)
+            #expect(await daily.calls.last == "stops 1 if-none-match 3f9a")
+        }
+
+        clock.value = clock.value.addingTimeInterval(86_400)
+        let weekly = FakeStopsForAgencyFetcher(agencyIDs: ["1"], maglev: true, answers: ["1": .success(.stops([stop("1_a")], etag: "3f9a"))])
+        await makeService().sync(regionID: 1, using: weekly)
+
+        #expect(await weekly.calls == ["agencies", "config", "stops 1"])
+        // Restamped, so the purge 31 days after the first sync keeps it.
+        repository.deleteStopsOlderThan(firstSync.addingTimeInterval(86_400), regionId: 1)
         #expect(try cachedIDs() == ["1_a"])
     }
 
@@ -160,25 +197,54 @@ final class RegionStopSyncServiceTests {
 
     /// The second agency's answer arrives after the sync was cancelled, as after
     /// a region switch: none of it is written, and nothing is recorded.
-    @Test func `A cancelled sync writes nothing more and records nothing`() async throws {
+    @Test(.timeLimit(.minutes(1))) func `A cancelled sync writes nothing more and records nothing`() async throws {
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops("1_a"), "2": stops("2_late")])
         await fetcher.hold(agency: "2")
         let service = makeService()
         let sync = Task { await service.sync(regionID: 1, using: fetcher) }
 
-        // Bounded at 30 s, so a sync that never reaches the hold fails instead of hanging.
-        var waits = 0
-        while await !fetcher.isHolding, waits < 3_000 {
-            try await Task.sleep(for: .milliseconds(10))
-            waits += 1
-        }
-        #expect(await fetcher.isHolding)
+        await fetcher.waitUntilHolding()
         sync.cancel()
         await fetcher.release()
         await sync.value
 
         #expect(try cachedIDs() == ["1_a"])
         #expect(try repository.syncState(regionId: 1) == nil)
+    }
+
+    /// URLSession fails a cancelled request with URLError.cancelled rather than
+    /// CancellationError. That's still a cancelled sync, not a failed agency.
+    @Test(.timeLimit(.minutes(1))) func `A request URLSession cancelled records nothing`() async throws {
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops("1_a"), "2": stops("2_c")])
+        await fetcher.hold(agency: "2", failingWith: URLError(.cancelled))
+        let service = makeService()
+        let sync = Task { await service.sync(regionID: 1, using: fetcher) }
+
+        await fetcher.waitUntilHolding()
+        sync.cancel()
+        await fetcher.release()
+        await sync.value
+
+        #expect(try cachedIDs() == ["1_a"])
+        #expect(try repository.syncState(regionId: 1) == nil)
+    }
+
+    /// The map saves stops while a sync runs. They're newer than the sync's
+    /// start, so its sweep keeps them even though the server didn't list them.
+    @Test(.timeLimit(.minutes(1))) func `Stops the map saves during a sync survive its sweep`() async throws {
+        clock.value = Date()
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops("1_a"), "2": stops("2_c")])
+        await fetcher.hold(agency: "2")
+        let service = makeService()
+        let sync = Task { await service.sync(regionID: 1, using: fetcher) }
+
+        await fetcher.waitUntilHolding()
+        repository.saveStops([stop("1_map")], regionId: 1)
+        await fetcher.release()
+        await sync.value
+
+        #expect(try cachedIDs() == ["1_a", "1_map", "2_c"])
+        #expect(try repository.syncState(regionId: 1)?.outcome == .complete)
     }
 }
 

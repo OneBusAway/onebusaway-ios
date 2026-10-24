@@ -13,42 +13,73 @@ import Synchronization
 /// Runs `RegionStopSyncService` after a short pause, so a launch, its first
 /// activation and a region change in quick succession make one sync, not three.
 ///
-/// Each request cancels the one before it, whether it is still waiting or
-/// already syncing, so after a region switch nothing more is written for the old
-/// region. `Mutex` keeps the class `Sendable`, so `deinit` can cancel too.
-public final class RegionStopSyncScheduler: Sendable {
+/// A request for the region whose sync is already waiting or running leaves
+/// that sync alone: activation fires whenever a system alert or Control Center
+/// is dismissed, and restarting would throw away a slow sync's progress. A
+/// request for another region cancels it, so after a region switch nothing more
+/// is written for the old region. `Mutex` keeps the class `Sendable`, so
+/// `deinit` can cancel too.
+final class RegionStopSyncScheduler: Sendable {
+    private struct Pending {
+        let regionID: Int
+        let id: UInt64
+        let task: Task<Void, Never>
+    }
+
+    private struct State {
+        var nextID: UInt64 = 0
+        var pending: Pending?
+    }
+
     private let service: RegionStopSyncService
     private let delay: Duration
-    private let pending = Mutex<Task<Void, Never>?>(nil)
+    private let state = Mutex(State())
 
-    public init(service: RegionStopSyncService, delay: Duration = .seconds(5)) {
+    init(service: RegionStopSyncService, delay: Duration = .seconds(5)) {
         self.service = service
         self.delay = delay
     }
 
     deinit {
-        pending.withLock { $0?.cancel() }
+        state.withLock { $0.pending?.task.cancel() }
     }
 
-    /// The request in flight, if any. Internal so tests can await it.
+    /// The sync waiting or running, if any. Internal so tests can await it.
     var pendingSync: Task<Void, Never>? {
-        pending.withLock { $0 }
+        state.withLock { $0.pending?.task }
     }
 
-    /// Syncs `regionID` through `fetcher` after the pause, replacing any earlier
-    /// request.
-    public func schedule(regionID: Int, using fetcher: any StopsForAgencyFetching) {
+    /// Syncs `regionID` through `fetcher` after the pause, unless a sync for
+    /// `regionID` is already waiting or running.
+    func schedule(regionID: Int, using fetcher: any StopsForAgencyFetching) {
         let service = service
         let delay = delay
-        pending.withLock { task in
-            task?.cancel()
-            task = Task.detached(priority: .utility) {
+        state.withLock { state in
+            if state.pending?.regionID == regionID {
+                return
+            }
+            state.pending?.task.cancel()
+
+            let id = state.nextID
+            state.nextID += 1
+            let task = Task.detached(priority: .utility) { [weak self] in
+                defer { self?.finish(id) }
                 do {
                     try await Task.sleep(for: delay)
                 } catch {
                     return
                 }
                 await service.sync(regionID: regionID, using: fetcher)
+            }
+            state.pending = Pending(regionID: regionID, id: id, task: task)
+        }
+    }
+
+    /// Forgets the sync `id` once it ends, unless a newer one replaced it.
+    private func finish(_ id: UInt64) {
+        state.withLock { state in
+            if state.pending?.id == id {
+                state.pending = nil
             }
         }
     }
