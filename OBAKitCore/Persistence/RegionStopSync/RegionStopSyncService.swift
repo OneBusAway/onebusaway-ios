@@ -161,6 +161,12 @@ final class RegionStopSyncService: Sendable {
             } catch {
                 // URLSession reports a cancelled request as URLError.cancelled.
                 if Task.isCancelled { throw CancellationError() }
+                if (error as? URLError)?.networkUnavailableReason == .constrained {
+                    // Low Data Mode refuses every agency alike; the retry comes later.
+                    Logger.info("Region stop sync: Low Data Mode is on, so region \(regionID) waits.")
+                    record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
+                    return .recorded
+                }
                 Logger.warn("Region stop sync: agency \(agencyID) of region \(regionID) failed: \(error)")
                 failedAgencies += 1
                 continue

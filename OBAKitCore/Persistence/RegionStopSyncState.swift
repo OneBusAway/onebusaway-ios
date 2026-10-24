@@ -23,8 +23,8 @@ struct RegionStopSyncState: Codable, Equatable, Sendable, FetchableRecord, Persi
         /// Some agencies failed. What arrived was written; nothing was deleted.
         case partial
 
-        /// Nothing usable arrived: agencies-with-coverage failed, or the first
-        /// agency failed without proving the endpoint is missing.
+        /// Nothing usable arrived: agencies-with-coverage failed or listed no
+        /// agencies, every agency failed, or Low Data Mode refused the download.
         case failed
 
         /// The first agency's answer was an HTML page: the server lacks the endpoint.

@@ -111,6 +111,19 @@ final class RegionStopSyncServiceTests {
         #expect(state.lastSuccessAt == earlier)
     }
 
+    /// The request never leaves the device on Low Data Mode, and the next agency
+    /// would be refused the same way, so the sync stops and retries later.
+    @Test func `Low Data Mode stops the sync at the first agency`() async throws {
+        let constrained = URLError(.notConnectedToInternet, userInfo: [NSURLErrorNetworkUnavailableReasonKey: URLError.NetworkUnavailableReason.constrained.rawValue])
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": .failure(constrained), "2": stops("2_c")])
+
+        await makeService().sync(regionID: 1, using: fetcher)
+
+        #expect(await fetcher.calls == ["agencies", "config", "stops 1"])
+        #expect(try cachedIDs().isEmpty)
+        #expect(try repository.syncState(regionId: 1)?.outcome == .failed)
+    }
+
     /// Treating no agencies as a complete sync would delete every cached stop.
     @Test func `A server listing no agencies fails without deleting anything`() async throws {
         try repository.writeSyncedStops([stop("1_kept")], regionId: 1, syncedAt: earlier)
