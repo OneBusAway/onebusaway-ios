@@ -323,6 +323,135 @@ final class StopCacheRepositoryTests {
         #expect(results[0].direction == .unknown)
     }
 
+    // MARK: - Routes Stored Once (#1555)
+
+    private func makeRoute(id: String, shortName: String) -> Route {
+        let dict: [String: Any] = ["agencyId": "1", "id": id, "shortName": shortName, "type": 3]
+        let data = try! JSONSerialization.data(withJSONObject: dict)
+        return try! JSONDecoder().decode(Route.self, from: data)
+    }
+
+    private func makeStop(id: String, routes: [Route]) -> Stop {
+        let stop = makeStop(id: id, code: id, name: "Stop \(id)", routeIDs: routes.map(\.id))
+        stop.routes = routes
+        return stop
+    }
+
+    private func count(_ table: String) throws -> Int {
+        try database.dbQueue.read { try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM \(table)") } ?? -1
+    }
+
+    /// A route serving many stops used to be stored once per stop, with its
+    /// agency, which made a synced region several times larger.
+    @Test func `A cached stop stores its routes once, outside its blob`() throws {
+        let r10 = makeRoute(id: "1_10", shortName: "10")
+        let r49 = makeRoute(id: "1_49", shortName: "49")
+        repository.saveStops([makeStop(id: "1_a", routes: [r49]), makeStop(id: "1_b", routes: [r49, r10])], regionId: 1)
+
+        #expect(try count("cachedRoute") == 2)
+        let blobs = try database.dbQueue.read { try Data.fetchAll($0, sql: "SELECT stopData FROM cachedStop") }
+        for blob in blobs {
+            let json = try #require(try JSONSerialization.jsonObject(with: blob) as? [String: Any])
+            #expect(json["routes"] == nil)
+        }
+        let names = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT name FROM cachedStop ORDER BY id") }
+        let codes = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT code FROM cachedStop ORDER BY id") }
+        #expect(names == ["Stop 1_a", "Stop 1_b"])
+        #expect(codes == ["1_a", "1_b"])
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1).sorted { $0.id < $1.id }
+        #expect(results.map { $0.routes.map(\.id) } == [["1_49"], ["1_10", "1_49"]])
+        #expect(results.last?.routes.map(\.shortName) == ["10", "49"])
+    }
+
+    /// Recent stops and bookmarks encode stops too, and must keep their routes.
+    @Test func `Stops encoded outside the cache keep their routes`() throws {
+        let stop = makeStop(id: "1_a", routes: [makeRoute(id: "1_49", shortName: "49")])
+        let json = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(stop)) as? [String: Any])
+        #expect((json["routes"] as? [[String: Any]])?.count == 1)
+    }
+
+    @Test func `A stop cached before schema v3 still reads with its embedded routes`() throws {
+        let stop = makeStop(id: "1_old", routes: [makeRoute(id: "1_49", shortName: "49")])
+        try database.dbQueue.write { db in
+            try db.execute(
+                sql: "INSERT INTO cachedStop (id, regionId, latitude, longitude, lastUpdated, stopData) VALUES (?, ?, ?, ?, ?, ?)",
+                arguments: ["1_old", 1, 47.6062, -122.3321, Date().timeIntervalSince1970, try JSONEncoder().encode(stop)]
+            )
+        }
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        #expect(results.map { $0.routes.map(\.id) } == [["1_49"]])
+    }
+
+    @Test func `A stop whose route row is gone reads with no routes rather than nil`() throws {
+        repository.saveStops([makeStop(id: "1_a", routes: [makeRoute(id: "1_49", shortName: "49")])], regionId: 1)
+        try database.dbQueue.write { try $0.execute(sql: "DELETE FROM cachedRoute") }
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        #expect(results.count == 1)
+        #expect(results.first?.routes.isEmpty == true)
+    }
+
+    // MARK: - Region Sync Writes (#1555)
+
+    @Test func `Synced stops and their routes carry the sync's start time`() throws {
+        let syncStart = Date(timeIntervalSince1970: 1_790_000_000)
+        try repository.writeSyncedStops([makeStop(id: "1_a", routes: [makeRoute(id: "1_49", shortName: "49")])], regionId: 1, syncedAt: syncStart)
+
+        let stamps = try database.dbQueue.read {
+            try Double.fetchAll($0, sql: "SELECT lastUpdated FROM cachedStop UNION ALL SELECT lastUpdated FROM cachedRoute")
+        }
+        #expect(stamps == [1_790_000_000, 1_790_000_000])
+    }
+
+    /// A complete sync deletes stops the server no longer lists: everything in
+    /// the region older than the sync. Other regions are untouched.
+    @Test func `A complete sync's sweep deletes only what it didn't write, in that region`() throws {
+        let earlier = Date(timeIntervalSince1970: 1_790_000_000)
+        let syncStart = Date(timeIntervalSince1970: 1_790_600_000)
+        try repository.writeSyncedStops([makeStop(id: "1_gone", routes: [makeRoute(id: "1_old", shortName: "old")])], regionId: 1, syncedAt: earlier)
+        try repository.writeSyncedStops([makeStop(id: "2_other", routes: [makeRoute(id: "2_r", shortName: "r")])], regionId: 2, syncedAt: earlier)
+        try repository.writeSyncedStops([makeStop(id: "1_kept", routes: [makeRoute(id: "1_49", shortName: "49")])], regionId: 1, syncedAt: syncStart)
+
+        try repository.deleteStops(regionId: 1, notWrittenSince: syncStart)
+
+        let stops = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop ORDER BY id") }
+        let routes = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedRoute ORDER BY id") }
+        #expect(stops == ["1_kept", "2_other"])
+        #expect(routes == ["1_49", "2_r"])
+    }
+
+    /// The issue's rule: the 30-day purge never evicts what a sync wrote within
+    /// the last 30 days.
+    @Test func `The 30-day purge keeps stops a recent sync wrote`() throws {
+        let now = Date()
+        try repository.writeSyncedStops([makeStop(id: "1_recent", routes: [])], regionId: 1, syncedAt: now.addingTimeInterval(-1 * 86_400))
+        try repository.writeSyncedStops([makeStop(id: "1_stale", routes: [])], regionId: 1, syncedAt: now.addingTimeInterval(-31 * 86_400))
+
+        repository.deleteStopsOlderThan(now.addingTimeInterval(-30 * 86_400), regionId: 1)
+
+        let stops = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop") }
+        #expect(stops == ["1_recent"])
+    }
+
+    @Test func `Sync state round-trips, and clearing the cache forgets it`() throws {
+        let state = RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: Date(timeIntervalSince1970: 1_790_000_000),
+            lastSuccessAt: Date(timeIntervalSince1970: 1_790_000_000),
+            etag: "3f9a",
+            appVersion: "26.5"
+        )
+        try repository.saveSyncState(state)
+        #expect(try repository.syncState(regionId: 1) == state)
+        #expect(try repository.syncState(regionId: 2) == nil)
+
+        repository.clearCache(regionId: 1)
+        #expect(try repository.syncState(regionId: 1) == nil)
+    }
+
     // MARK: - Failable Init
 
     @Test func `Save stops persists all valid stops`() {

@@ -128,6 +128,39 @@ public final class StopCacheDatabase: Sendable {
             )
         }
 
+        // v3: region stop sync (#1555). Columns are added rather than the table
+        // rebuilt, so stops the map already cached survive the upgrade.
+        //   - name, code: lookups by either needn't decode stopData.
+        //   - cachedRoute: each route once per region. New stop blobs leave their
+        //     routes out (see CachedStop); older blobs still embed them.
+        //   - regionStopSync: what the last sync of each region did.
+        migrator.registerMigration("v3_regionStopSync") { db in
+            try db.alter(table: "cachedStop") { t in
+                t.add(column: "name", .text)
+                t.add(column: "code", .text)
+            }
+            try db.create(index: "idx_cachedStop_name", on: "cachedStop", columns: ["regionId", "name"])
+            try db.create(index: "idx_cachedStop_code", on: "cachedStop", columns: ["regionId", "code"])
+
+            try db.create(table: "cachedRoute") { t in
+                t.column("id", .text).notNull()
+                t.column("regionId", .integer).notNull()
+                t.column("lastUpdated", .double).notNull()
+                t.column("routeData", .blob).notNull()
+                t.primaryKey(["regionId", "id"])
+            }
+            try db.create(index: "idx_cachedRoute_lastUpdated", on: "cachedRoute", columns: ["regionId", "lastUpdated"])
+
+            try db.create(table: "regionStopSync") { t in
+                t.primaryKey("regionId", .integer)
+                t.column("outcome", .text).notNull()
+                t.column("lastAttemptAt", .double).notNull()
+                t.column("lastSuccessAt", .double)
+                t.column("etag", .text)
+                t.column("appVersion", .text).notNull()
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }
