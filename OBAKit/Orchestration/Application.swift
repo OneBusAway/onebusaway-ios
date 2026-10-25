@@ -150,6 +150,11 @@ public class Application: CoreApplication, PushServiceDelegate {
                 let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
                 self.withPushableTopViewController { from in
+                    // The rider may have switched regions while this loaded.
+                    guard self.currentRegion?.regionIdentifier == deepLink.regionID else {
+                        Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
+                        return
+                    }
                     self.viewRouter.navigateTo(
                         arrivalDeparture: arrDep,
                         from: from,
@@ -580,24 +585,23 @@ public class Application: CoreApplication, PushServiceDelegate {
         guard !isOnboardingRoot else { return }
 
         if let stopID = pendingStopID, topViewController != nil {
+            var wrongRegion = false
             if let neededRegion = pendingStopRegionID {
                 // Region still loading: wait. Loaded but different: drop — do not
-                // fetch this stop against the wrong region's API.
+                // fetch this stop against the wrong region's API, but keep draining.
                 guard let current = currentRegion?.regionIdentifier else { return }
-                if current != neededRegion {
-                    pendingStopID = nil
-                    pendingStopRegionID = nil
-                    return
-                }
+                wrongRegion = current != neededRegion
             }
             pendingStopID = nil
             pendingStopRegionID = nil
-            // While a modal is on its way out, anything presented from it goes with
-            // it, so stop here; the dismissal re-runs this drain for the rest.
-            let dismissing = pushStopFromOutside(stopID) { [weak self] in
-                self?.drainPendingUIPresentations()
+            if !wrongRegion {
+                // While a modal is on its way out, anything presented from it goes with
+                // it, so stop here; the dismissal re-runs this drain for the rest.
+                let dismissing = pushStopFromOutside(stopID) { [weak self] in
+                    self?.drainPendingUIPresentations()
+                }
+                if dismissing { return }
             }
-            if dismissing { return }
         }
 
         // Waits while the region or its API service is still loading.

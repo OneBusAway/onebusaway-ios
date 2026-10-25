@@ -137,7 +137,7 @@ public class AppLinksRouter: NSObject {
     static func stopDestination(userInfo: [AnyHashable: Any]?, webpageURL: URL?) -> StopDestination? {
         if let userInfo,
            let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
-           let regionID = regionIdentifier(from: userInfo[UserActivityBuilder.UserInfoKeys.regionID]) {
+           let regionID = integerValue(from: userInfo[UserActivityBuilder.UserInfoKeys.regionID]) {
             return StopDestination(stopID: stopID, regionID: regionID)
         }
 
@@ -172,11 +172,11 @@ public class AppLinksRouter: NSObject {
         typealias Keys = UserActivityBuilder.UserInfoKeys
         guard
             let userInfo,
-            let regionID = regionIdentifier(from: userInfo[Keys.regionID]),
+            let regionID = integerValue(from: userInfo[Keys.regionID]),
             let stopID = userInfo[Keys.stopID] as? StopID,
             let tripID = userInfo[Keys.tripID] as? TripIdentifier,
             let serviceDate = userInfo[Keys.serviceDate] as? Date,
-            let stopSequence = userInfo[Keys.stopSequence] as? Int
+            let stopSequence = integerValue(from: userInfo[Keys.stopSequence])
         else {
             return nil
         }
@@ -194,7 +194,7 @@ public class AppLinksRouter: NSObject {
 
     /// Plist round-trips turn `Int` into `NSNumber`; some Shortcuts builds
     /// stringify it. `as? Int` only covers the first two via bridging.
-    private static func regionIdentifier(from value: Any?) -> Int? {
+    private static func integerValue(from value: Any?) -> Int? {
         if let int = value as? Int { return int }
         if let number = value as? NSNumber { return number.intValue }
         if let string = value as? String { return Int(string) }

@@ -62,6 +62,11 @@ struct TripUserActivityRoutingTests {
         #expect(deepLink.regionID == 1)
     }
 
+    @Test func `Trip deep link reads a stop sequence restored as a string`() throws {
+        let deepLink = try #require(AppLinksRouter.tripDeepLink(userInfo: userInfo(stopSequence: "12"), title: nil))
+        #expect(deepLink.stopSequence == 12)
+    }
+
     @Test func `Trip deep link does not need a vehicle`() throws {
         var info = userInfo()
         info[Keys.vehicleID] = nil
