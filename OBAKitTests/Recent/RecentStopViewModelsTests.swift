@@ -26,7 +26,6 @@ struct RecentStopViewModelsTests {
         direction: String = "NE",
         routeType: Route.RouteType = .bus
     ) throws -> Stop {
-        let stop = try Fixtures.loadSomeStops().first!
         let dictionary: [String: Any] = [
             "id": id,
             "name": name,
@@ -88,29 +87,32 @@ struct RecentStopViewModelsTests {
         #expect(rowConfig.imageConfig.tintColor == nil)
         #expect(rowConfig.imageConfig.maximumSize == CGSize(width: Icons.squircleIconSize, height: Icons.squircleIconSize))
 
-        if case .attributed(let styledTitle) = rowConfig.text {
-            #expect(styledTitle.string == item.name)
-            let attributes = styledTitle.attributes(at: 0, effectiveRange: nil)
-            let font = attributes[.font] as? UIFont
-            let color = attributes[.foregroundColor] as? UIColor
-            #expect(font == UIFont.preferredFont(forTextStyle: .title3).bold)
-            #expect(color == UIColor.label)
-        } else {
-            Issue.record("Expected .attributed text for title")
+        guard case .attributed(let maybeStyledTitle) = rowConfig.text,
+              let styledTitle = maybeStyledTitle else {
+            Issue.record("Expected non-nil .attributed text for title")
+            return
         }
 
-        if let secondary = rowConfig.secondaryText {
-            if case .attributed(let styledSubtitle) = secondary {
-                #expect(styledSubtitle.string == stop.subtitle)
-                let attributes = styledSubtitle.attributes(at: 0, effectiveRange: nil)
-                let font = attributes[.font] as? UIFont
-                let color = attributes[.foregroundColor] as? UIColor
-                #expect(font == UIFont.preferredFont(forTextStyle: .body))
-                #expect(color == UIColor.label)
-            } else {
-                Issue.record("Expected .attributed secondary text")
-            }
+        #expect(styledTitle.string == item.name)
+        let titleAttributes = styledTitle.attributes(at: 0, effectiveRange: nil)
+        let font = titleAttributes[.font] as? UIFont
+        let color = titleAttributes[.foregroundColor] as? UIColor
+        #expect(font == UIFont.preferredFont(forTextStyle: .title3).bold)
+        #expect(color == UIColor.label)
+
+        let secondary = try #require(rowConfig.secondaryText)
+        guard case .attributed(let maybeStyledSubtitle) = secondary,
+              let styledSubtitle = maybeStyledSubtitle else {
+            Issue.record("Expected non-nil .attributed secondary text")
+            return
         }
+
+        #expect(styledSubtitle.string == stop.subtitle)
+        let subtitleAttributes = styledSubtitle.attributes(at: 0, effectiveRange: nil)
+        let subtitleFont = subtitleAttributes[.font] as? UIFont
+        let subtitleColor = subtitleAttributes[.foregroundColor] as? UIColor
+        #expect(subtitleFont == UIFont.preferredFont(forTextStyle: .body))
+        #expect(subtitleColor == UIColor.label)
     }
 
     // MARK: - StopRowItem Actions & Equality

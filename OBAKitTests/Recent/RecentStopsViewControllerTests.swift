@@ -57,7 +57,11 @@ final class RecentStopsViewControllerTests: OBATestCase {
     // MARK: - Empty Data
 
     @Test func testEmptyDataConfiguration() {
-        let controller = RecentStopsViewController(application: app)
+        let root = ClassicApplicationRootController(application: app)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = root
+
+        let controller = root.recentStopsController
         let dummyListView = OBAListView()
         let emptyData = controller.emptyData(for: dummyListView)
 
@@ -76,8 +80,9 @@ final class RecentStopsViewControllerTests: OBATestCase {
         #expect(viewModel.buttonConfig?.largeContentImage == Icons.mapTabIcon)
         #expect(viewModel.buttonConfig?.showsActivityIndicatorOnTap == false)
 
-        // Verify button action executes without crashing
+        #expect(root.selectedIndex != ClassicApplicationRootController.Page.map.rawValue)
         viewModel.buttonConfig?.action()
+        #expect(root.selectedIndex == ClassicApplicationRootController.Page.map.rawValue)
     }
 
     // MARK: - Section Generation
