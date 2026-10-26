@@ -165,8 +165,9 @@ final class RecentStopsViewControllerTests: OBATestCase {
         let menuActions = controller.contextMenu(OBAListView(), for: rowItem.typeErased)
         let actions = try #require(menuActions)
 
-        let previewController = actions.previewProvider?()
-        #expect(previewController != nil)
+        let previewController = try #require(actions.previewProvider?())
+        let stopID = (previewController as? StopPageViewController)?.viewModel.stopID ?? (previewController as? StopViewController)?.stopID
+        #expect(stopID == stop.id)
     }
 
     @Test func testContextMenuReturnsNilForUnrecognizedItem() {
