@@ -80,6 +80,7 @@ final class RecentStopsViewControllerTests: OBATestCase {
         #expect(viewModel.buttonConfig?.largeContentImage == Icons.mapTabIcon)
         #expect(viewModel.buttonConfig?.showsActivityIndicatorOnTap == false)
 
+        root.selectedIndex = ClassicApplicationRootController.Page.recentStops.rawValue
         #expect(root.selectedIndex != ClassicApplicationRootController.Page.map.rawValue)
         viewModel.buttonConfig?.action()
         #expect(root.selectedIndex == ClassicApplicationRootController.Page.map.rawValue)
