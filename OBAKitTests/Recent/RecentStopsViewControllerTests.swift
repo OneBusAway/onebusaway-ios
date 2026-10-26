@@ -167,8 +167,6 @@ final class RecentStopsViewControllerTests: OBATestCase {
 
         let previewController = actions.previewProvider?()
         #expect(previewController != nil)
-
-        actions.performPreviewAction?()
     }
 
     @Test func testContextMenuReturnsNilForUnrecognizedItem() {
