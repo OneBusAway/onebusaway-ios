@@ -1512,6 +1512,9 @@
 /* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_controller.transfer_show_earlier_departures_fmt" = "Show %d earlier departures";
 
+/* Title of a transit stop in Shortcuts and Siri when the app has no name for it. The parameter is the stop's ID, such as 1_75403. */
+"stop_entity.fallback_title_fmt" = "Stop %@";
+
 /* Spoken suffix on the currently-focused route chip. */
 "stop_header.chip.highlighted" = "highlighted on map";
 

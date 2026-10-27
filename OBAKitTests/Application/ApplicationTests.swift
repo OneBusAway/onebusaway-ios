@@ -662,6 +662,21 @@ final class ApplicationTests: OBATestCase {
         #expect(app.pendingStopRegionID == 1)
     }
 
+    /// The Open Stop shortcut reaches `Application` only through this
+    /// notification. Before the root UI exists the stop is stashed, the same
+    /// as a donated stop activity. Remove the observer and nothing is stashed.
+    @Test func `An Open Stop request opens the stop`() async {
+        let app = makeApplicationForUserActivity()
+
+        OpenStopRequest.post(AppLinksRouter.StopDestination(stopID: "1_75403", regionID: 1))
+
+        // A `.main` observer posted to from the main thread runs before `post`
+        // returns, but that isn't documented, so wait for it.
+        await poll(until: { app.pendingStopID != nil }, "Open Stop request was never handled")
+        #expect(app.pendingStopID == "1_75403")
+        #expect(app.pendingStopRegionID == 1)
+    }
+
     private func makeApplicationForUserActivity() -> Application {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
