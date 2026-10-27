@@ -1,0 +1,97 @@
+{
+  "code": 200,
+  "currentTime": 1792832199655,
+  "data": {
+    "limitExceeded": false,
+    "list": [
+      {
+        "code": "1013",
+        "direction": "S",
+        "id": "1_1013",
+        "lat": 28.029104,
+        "locationType": 0,
+        "lon": -82.46782,
+        "name": "N Boulevard @ Yukon St",
+        "parent": "",
+        "routeIds": [
+          "1_45"
+        ],
+        "staticRouteIds": [
+          "1_45"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "1014",
+        "direction": "S",
+        "id": "1_1014",
+        "lat": 28.02507,
+        "locationType": 0,
+        "lon": -82.46781,
+        "name": "N Boulevard @ Waters Av",
+        "parent": "",
+        "routeIds": [
+          "1_45"
+        ],
+        "staticRouteIds": [
+          "1_45"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "1015",
+        "direction": "S",
+        "id": "1_1015",
+        "lat": 28.021847,
+        "locationType": 0,
+        "lon": -82.46782,
+        "name": "N Boulevard @ Sitka St",
+        "parent": "",
+        "routeIds": [
+          "1_45"
+        ],
+        "staticRouteIds": [
+          "1_45"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      }
+    ],
+    "outOfRange": false,
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "https://www.gohart.org/Pages/fares-cards.aspx",
+          "id": "1",
+          "lang": "en",
+          "name": "Hillsborough Area Regional Transit",
+          "phone": "813-254-4278",
+          "privateService": false,
+          "timezone": "America/New_York",
+          "url": "http://www.gohart.org"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "1",
+          "color": "09346D",
+          "description": "",
+          "id": "1_45",
+          "longName": "University Area/Westshore",
+          "nullSafeShortName": "45",
+          "shortName": "45",
+          "textColor": "FFFFFF",
+          "type": 3,
+          "url": "http://www.gohart.org/Pages/maps-schedules.aspx"
+        }
+      ],
+      "situations": [],
+      "stopTimes": [],
+      "stops": [],
+      "trips": []
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

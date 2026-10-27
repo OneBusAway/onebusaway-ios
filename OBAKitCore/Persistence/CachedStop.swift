@@ -16,7 +16,12 @@ import GRDB
 /// Instead of duplicating every Stop field as individual columns (which is fragile
 /// if Stop.CodingKeys change), we store the full JSON-encoded Stop as a blob.
 /// Only the fields needed for spatial queries and cache management are kept as
-/// indexed columns: `id`, `regionId`, `latitude`, `longitude`, `lastUpdated`.
+/// indexed columns: `id`, `regionId`, `latitude`, `longitude`, `lastUpdated`,
+/// plus `name` and `code` so lookups by either needn't decode the blob.
+///
+/// The blob leaves out `routes`: `CachedRoute` stores each route once per region,
+/// and `StopCacheRepository` attaches them when it reads stops back (#1555).
+/// Rows written before schema v3 still embed their routes and still decode.
 ///
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
 struct CachedStop: Codable, FetchableRecord, PersistableRecord {
@@ -29,11 +34,20 @@ struct CachedStop: Codable, FetchableRecord, PersistableRecord {
     let lastUpdated: Double
     let stopData: Data
 
+    /// Nil on rows written before schema v3, until the stop is saved again.
+    let name: String?
+    let code: String?
+
     /// Creates a cache record from an API `Stop` model.
     /// Returns `nil` if the stop cannot be encoded, ensuring we never persist corrupted data.
-    init?(stop: Stop, regionId: Int) {
+    /// - Parameter lastUpdated: When the stop was written. A region sync stamps
+    ///   every row with the time it started, so a complete sync can find the rows
+    ///   it didn't touch.
+    init?(stop: Stop, regionId: Int, lastUpdated: Date = Date()) {
+        let encoder = JSONEncoder()
+        encoder.userInfo[Stop.omitsRoutesUserInfoKey] = true
         do {
-            self.stopData = try JSONEncoder().encode(stop)
+            self.stopData = try encoder.encode(stop)
         } catch {
             Logger.error("Failed to encode stop \(stop.id) for caching: \(error)")
             return nil
@@ -43,11 +57,17 @@ struct CachedStop: Codable, FetchableRecord, PersistableRecord {
         self.regionId = regionId
         self.latitude = stop.location.coordinate.latitude
         self.longitude = stop.location.coordinate.longitude
-        self.lastUpdated = Date().timeIntervalSince1970
+        self.lastUpdated = lastUpdated.timeIntervalSince1970
+        self.name = stop.name
+        self.code = stop.code
     }
 
     /// Reconstructs an API `Stop` by decoding the stored JSON blob.
     /// Uses Stop's own Codable conformance — no manual key matching required.
+    ///
+    /// `routes` is nil unless the row predates schema v3 and embeds them.
+    /// `StopCacheRepository` fills it in from `CachedRoute`; read stops through
+    /// the repository, not this.
     func toStop() -> Stop? {
         do {
             let stop = try JSONDecoder().decode(Stop.self, from: stopData)
@@ -55,14 +75,6 @@ struct CachedStop: Codable, FetchableRecord, PersistableRecord {
             // been encoded before loadReferences() set regionIdentifier, and
             // Stop.isEqual() / hash use regionIdentifier for identity.
             stop.regionIdentifier = regionId
-            // Ensure routes is never nil to prevent force-unwrap crashes.
-            // In production, API stops have routes populated via loadReferences()
-            // before caching. But as a safety net (e.g., if a stop was cached before
-            // loadReferences ran), we default to an empty array.
-            if stop.routes == nil {
-                Logger.info("Cached stop \(id) has nil routes; defaulting to empty array")
-                stop.routes = []
-            }
             return stop
         } catch {
             Logger.error("Failed to decode cached stop \(id): \(error)")

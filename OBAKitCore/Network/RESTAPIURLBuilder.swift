@@ -281,6 +281,20 @@ extension RESTAPIURLBuilder {
         ))
     }
 
+    /// Creates a full URL for the `getStopsForAgency` API call, including query params.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-agency/{id}.json`
+    ///
+    /// - Parameters:
+    ///   - id: The agency ID.
+    /// - Returns: An URL suitable for making a request to retrieve information.
+    public func getStopsForAgency(id: String) -> URL {
+        generateURL(path: String(
+            format: "/api/where/stops-for-agency/%@.json",
+            NetworkHelpers.escapePathVariable(id)
+        ))
+    }
+
     /// Creates a full URL for the `getRoute` API call, including query params.
     ///
     /// - API Endpoint: `/api/where/routes-for-location.json`
@@ -331,6 +345,15 @@ extension RESTAPIURLBuilder {
     /// - Returns: An URL suitable for making a request to retrieve information.
     public func getAgenciesWithCoverage() -> URL {
         generateURL(path: "/api/where/agencies-with-coverage.json")
+    }
+
+    /// Creates a full URL for the server's `config` API call.
+    ///
+    /// - API Endpoint: `/api/where/config.json`
+    ///
+    /// - Returns: An URL suitable for making a request to retrieve information.
+    public func getConfig() -> URL {
+        generateURL(path: "/api/where/config.json")
     }
 
     // MARK: - Schedules

@@ -487,6 +487,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         if let provider = config.appShortcutsProvider {
             appShortcutParametersRefresher = AppShortcutParametersRefresher(provider: provider)
         }
+        startRegionStopSync()
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
@@ -535,6 +536,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         #endif
 
         alertsStore.checkForUpdates()
+        scheduleRegionStopSync()
 
         // Re-register the push token with OBACloud so the server's inactivity prune never
         // drops this device, and so locale changes propagate. The manager dedupes, so this
