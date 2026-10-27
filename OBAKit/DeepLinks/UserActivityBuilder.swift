@@ -123,6 +123,8 @@ class UserActivityBuilder: NSObject {
             userInfo[UserInfoKeys.vehicleID] = vehicleID
         }
 
+        activity.userInfo = userInfo
+
         if let router = application.appLinksRouter {
             activity.webpageURL = router.encode(arrivalDeparture: arrDep, region: region)
         }
