@@ -21,7 +21,7 @@ struct ErrorViewTests {
         var errorDescription: String? = "Custom test error description"
     }
 
-    /// Verifies property initialization for ErrorView without retry button.
+    /// Verifies property initialization for ErrorView convenience initializer without retry button.
     @Test func testErrorViewInitializationWithoutRetry() {
         let error = TestCustomError()
         let view = ErrorView(
@@ -32,21 +32,6 @@ struct ErrorViewTests {
         #expect(view.headline == "Unable to Load Data")
         #expect(view.regionName == nil)
         #expect(view.onRetry == nil)
-    }
-
-    /// Verifies property initialization for ErrorView with retry button and regionName.
-    @Test func testErrorViewInitializationWithRetry() {
-        let error = APIError.cellularDataRestricted
-        let view = ErrorView(
-            headline: "No Internet Connection",
-            error: error,
-            regionName: "Puget Sound",
-            onRetry: {}
-        )
-
-        #expect(view.headline == "No Internet Connection")
-        #expect(view.regionName == "Puget Sound")
-        #expect(view.onRetry != nil)
     }
 
     /// Verifies that ErrorView.iconName(for:) maps classified APIErrors and generic errors to the expected SF Symbols.

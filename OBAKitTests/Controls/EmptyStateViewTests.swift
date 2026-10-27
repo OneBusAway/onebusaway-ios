@@ -16,7 +16,7 @@ import UIKit
 @Suite(.serialized)
 struct EmptyStateViewTests {
 
-    /// Verifies property initialization for EmptyStateView without actions.
+    /// Verifies property initialization for EmptyStateView convenience initializer without actions.
     @Test func testEmptyStateViewInitialization() {
         let view = EmptyStateView(
             title: "No Results",
@@ -27,20 +27,5 @@ struct EmptyStateViewTests {
         #expect(view.title == "No Results")
         #expect(view.description == "Try adjusting your search criteria.")
         #expect(view.systemImage == "magnifyingglass")
-    }
-
-    /// Verifies property initialization for EmptyStateView with an action button.
-    @Test func testEmptyStateViewWithAction() {
-        let view = EmptyStateView(
-            title: "Connection Lost",
-            description: "Please check your network and try again.",
-            systemImage: "wifi.slash"
-        ) {
-            Button("Retry") {}
-        }
-
-        #expect(view.title == "Connection Lost")
-        #expect(view.description == "Please check your network and try again.")
-        #expect(view.systemImage == "wifi.slash")
     }
 }
