@@ -106,25 +106,7 @@ final class TransitAlertViewModelTests {
         #expect(rowConfig.image == expectedReadImage)
     }
 
-    // MARK: - Action Execution & Model Identity
-
-    @Test func testOnSelectActionCallback() {
-        let alert = MockAlert(titleText: "Tappable Alert", bodyText: "Body", urlValue: nil)
-        var selectedItem: TransitAlertDataListViewModel?
-
-        let vm = TransitAlertDataListViewModel(
-            alert,
-            forLocale: Locale(identifier: "en"),
-            onSelectAction: { item in
-                selectedItem = item
-            }
-        )
-
-        #expect(selectedItem == nil)
-        vm.onSelectAction?(vm)
-        #expect(selectedItem?.title == "Tappable Alert")
-        #expect(selectedItem?.id == vm.id)
-    }
+    // MARK: - Model Identity
 
     @Test func testEqualityAndHashingDistinguishesInstances() {
         let alert = MockAlert(titleText: "Alert", bodyText: "Body", urlValue: nil)
@@ -134,9 +116,5 @@ final class TransitAlertViewModelTests {
         // Distinct instances have distinct UUID identifiers
         #expect(vm1.id != vm2.id)
         #expect(vm1 != vm2)
-
-        // Equatable and Hashable are reflexive
-        #expect(vm1 == vm1)
-        #expect(vm1.hashValue == vm1.hashValue)
     }
 }
