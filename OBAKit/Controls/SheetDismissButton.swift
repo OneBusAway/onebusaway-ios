@@ -41,7 +41,7 @@ struct SheetDismissButton: View {
     }
 
     @available(iOS 26.0, *)
-    private var role: ButtonRole {
+    var role: ButtonRole {
         switch kind {
         case .close: .close
         case .cancel: .cancel
@@ -49,7 +49,7 @@ struct SheetDismissButton: View {
         }
     }
 
-    private var title: String {
+    var title: String {
         switch kind {
         case .close: Strings.close
         case .cancel: Strings.cancel

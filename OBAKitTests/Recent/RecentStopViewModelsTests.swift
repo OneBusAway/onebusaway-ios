@@ -115,33 +115,12 @@ struct RecentStopViewModelsTests {
         #expect(subtitleColor == UIColor.label)
     }
 
-    // MARK: - StopRowItem Actions & Equality
-
-    @Test func testStopRowItemSelectAndDeleteActions() throws {
-        let stop = try makeStop()
-        var selectedItem: StopRowItem?
-        var deletedItem: StopRowItem?
-
-        let item = StopRowItem(
-            withStop: stop,
-            onSelect: { selectedItem = $0 },
-            onDelete: { deletedItem = $0 }
-        )
-
-        item.onSelectAction?(item)
-        #expect(selectedItem?.stopID == stop.id)
-
-        item.onDeleteAction?(item)
-        #expect(deletedItem?.stopID == stop.id)
-    }
+    // MARK: - StopRowItem Equality
 
     @Test func testStopRowItemEqualityAndHashing() throws {
         let stop = try makeStop()
         let item1 = StopRowItem(withStop: stop, onSelect: nil, onDelete: nil)
         let item2 = StopRowItem(withStop: stop, onSelect: nil, onDelete: nil)
-
-        #expect(item1 == item1)
-        #expect(item1.hashValue == item1.hashValue)
 
         // Separate instances generate distinct UUIDs
         #expect(item1 != item2)
@@ -162,13 +141,10 @@ struct RecentStopViewModelsTests {
         )
         alarm.deepLink = deepLink
 
-        var selectedAlarm: RecentStopsViewController.AlarmViewModel?
-        var deletedAlarm: RecentStopsViewController.AlarmViewModel?
-
         let viewModel = RecentStopsViewController.AlarmViewModel(
             withAlarm: alarm,
-            onSelect: { selectedAlarm = $0 },
-            onDelete: { deletedAlarm = $0 }
+            onSelect: nil,
+            onDelete: nil
         )
 
         let vm = try #require(viewModel)
@@ -176,12 +152,6 @@ struct RecentStopViewModelsTests {
         #expect(vm.id == alarm.url)
         #expect(vm.alarm == alarm)
         #expect(vm.deepLink == deepLink)
-
-        vm.onSelectAction?(vm)
-        #expect(selectedAlarm?.id == alarm.url)
-
-        vm.onDeleteAction?(vm)
-        #expect(deletedAlarm?.id == alarm.url)
     }
 
     @Test func testAlarmViewModelInitializationFailsWhenDeepLinkNil() throws {

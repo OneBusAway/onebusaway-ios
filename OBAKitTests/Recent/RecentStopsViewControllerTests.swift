@@ -113,7 +113,13 @@ final class RecentStopsViewControllerTests: OBATestCase {
         // When there are no alarms, the stops section title is nil
         #expect(sections[0].title == nil)
         #expect(sections[0].contents.count == 1)
-        #expect(sections[0].contents.first?.as(StopRowItem.self)?.stopID == stop.id)
+        let rowItem = try #require(sections[0].contents.first?.as(StopRowItem.self))
+        #expect(rowItem.stopID == stop.id)
+
+        // Verifies row delete action removes stop from data store
+        rowItem.onDeleteAction?(rowItem)
+        let updatedRecentStops = app.userDataStore.recentStops(in: Fixtures.pugetSoundRegion)
+        #expect(!updatedRecentStops.contains(stop))
     }
 
     @Test func testItemsSectionsWithAlarmsAndStops() throws {

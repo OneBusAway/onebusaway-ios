@@ -18,51 +18,24 @@ import UIKit
 @Suite(.serialized)
 struct SheetDismissButtonTests {
 
-    @Test func testKindAllCasesInitialization() {
-        let closeKind = SheetDismissButton.Kind.close
-        let cancelKind = SheetDismissButton.Kind.cancel
-        let doneKind = SheetDismissButton.Kind.done
+    @Test func testKindTitleMapping() {
+        let closeButton = SheetDismissButton(.close) {}
+        let cancelButton = SheetDismissButton(.cancel) {}
+        let doneButton = SheetDismissButton(.done) {}
 
-        #expect(closeKind != cancelKind)
-        #expect(cancelKind != doneKind)
-        #expect(closeKind != doneKind)
+        #expect(closeButton.title == Strings.close)
+        #expect(cancelButton.title == Strings.cancel)
+        #expect(doneButton.title == Strings.done)
     }
 
-    @Test func testDismissButtonActionCallback() {
-        var actionFired = false
-        let button = SheetDismissButton(.close) {
-            actionFired = true
-        }
+    @available(iOS 26.0, *)
+    @Test func testKindRoleMapping() {
+        let closeButton = SheetDismissButton(.close) {}
+        let cancelButton = SheetDismissButton(.cancel) {}
+        let doneButton = SheetDismissButton(.done) {}
 
-        #expect(button.kind == .close)
-        #expect(actionFired == false)
-
-        button.action()
-        #expect(actionFired == true)
-    }
-
-    @Test func testDismissButtonKindsStoreExpectedKinds() {
-        var cancelFired = false
-        let cancelButton = SheetDismissButton(.cancel) {
-            cancelFired = true
-        }
-        #expect(cancelButton.kind == .cancel)
-        cancelButton.action()
-        #expect(cancelFired == true)
-
-        var doneFired = false
-        let doneButton = SheetDismissButton(.done) {
-            doneFired = true
-        }
-        #expect(doneButton.kind == .done)
-        doneButton.action()
-        #expect(doneFired == true)
-    }
-
-    @Test func testDismissButtonViewBodyEvaluation() {
-        let button = SheetDismissButton(.done) {}
-        let host = UIHostingController(rootView: button)
-        _ = host.view
-        #expect(host.view != nil)
+        #expect(closeButton.role == .close)
+        #expect(cancelButton.role == .cancel)
+        #expect(doneButton.role == .confirm)
     }
 }
