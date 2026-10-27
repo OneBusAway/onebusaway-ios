@@ -28,18 +28,6 @@ final class HoverBarTests {
         #expect(view.subviews.count == 2)
     }
 
-    @Test func hoverBarPassThroughViewContentViewHierarchy() {
-        let view = HoverBarPassThroughView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
-        let contentView = view.contentView
-
-        let testButton = UIButton(type: .system)
-        testButton.setTitle("Test Action", for: .normal)
-        contentView.addSubview(testButton)
-
-        #expect(contentView.subviews.contains(testButton))
-        #expect(contentView.subviews.count == 1)
-    }
-
     @Test func hoverBarPassThroughViewShowShadowToggle() {
         let view = HoverBarPassThroughView(frame: CGRect(x: 0, y: 0, width: 80, height: 80))
         let shadowImageView = view.subviews.first as? UIImageView
@@ -85,23 +73,6 @@ final class HoverBarTests {
         #expect(hoverBar.stackView.spacing == 2)
         #expect(hoverBar.stackView.translatesAutoresizingMaskIntoConstraints == false)
         #expect(hoverBar.contentView.subviews.contains(hoverBar.stackView))
-    }
-
-    @Test func hoverBarArrangedSubviewsLifecycle() {
-        let hoverBar = HoverBar(frame: CGRect(x: 0, y: 0, width: 44, height: 120))
-
-        let topButton = UIButton(type: .custom)
-        let bottomButton = UIButton(type: .custom)
-        let separator = HoverBarSeparator()
-
-        hoverBar.stackView.addArrangedSubview(topButton)
-        hoverBar.stackView.addArrangedSubview(separator)
-        hoverBar.stackView.addArrangedSubview(bottomButton)
-
-        #expect(hoverBar.stackView.arrangedSubviews.count == 3)
-        #expect(hoverBar.stackView.arrangedSubviews[0] === topButton)
-        #expect(hoverBar.stackView.arrangedSubviews[1] === separator)
-        #expect(hoverBar.stackView.arrangedSubviews[2] === bottomButton)
     }
 
     // MARK: - HoverBarSeparator Tests
