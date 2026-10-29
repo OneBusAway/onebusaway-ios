@@ -19,8 +19,8 @@ final class RegionStopSyncSchedulerTests {
     private let database = try! StopCacheDatabase(inMemory: true)
     private lazy var repository = StopCacheRepository(database: database)
 
-    private func makeScheduler(delay: Duration) -> RegionStopSyncScheduler {
-        RegionStopSyncScheduler(service: RegionStopSyncService(repository: repository, appVersion: "26.5"), delay: delay)
+    private func makeScheduler(delay: Duration, onStopsWritten: @escaping @Sendable (Int) async -> Void = { _ in }) -> RegionStopSyncScheduler {
+        RegionStopSyncScheduler(service: RegionStopSyncService(repository: repository, appVersion: "26.5"), delay: delay, onStopsWritten: onStopsWritten)
     }
 
     private func answer(_ ids: StopID...) -> Result<StopsForAgencyResult, any Error> {
@@ -85,6 +85,32 @@ final class RegionStopSyncSchedulerTests {
 
         #expect(await fetcher.calls == ["agencies", "config", "stops 1"])
         #expect(try cachedIDs(region: 1) == ["1_a"])
+    }
+
+    /// The app rebuilds its Spotlight index from the cache when told.
+    @Test func `A sync that writes stops reports its region`() async {
+        let reported = SendableBox<[Int]>([])
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_a")])
+        let scheduler = makeScheduler(delay: .zero) { reported.value.append($0) }
+
+        scheduler.schedule(regionID: 1, using: fetcher)
+        await scheduler.pendingSync?.value
+
+        #expect(reported.value == [1])
+    }
+
+    /// The fetcher's calls show the sync ran; it found no stops, so the
+    /// index isn't rebuilt for nothing.
+    @Test func `A sync that writes nothing reports nothing`() async {
+        let reported = SendableBox<[Int]>([])
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer()])
+        let scheduler = makeScheduler(delay: .zero) { reported.value.append($0) }
+
+        scheduler.schedule(regionID: 1, using: fetcher)
+        await scheduler.pendingSync?.value
+
+        #expect(await fetcher.calls == ["agencies", "config", "stops 1"])
+        #expect(reported.value.isEmpty)
     }
 }
 

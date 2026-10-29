@@ -882,6 +882,14 @@ public class Application: CoreApplication, PushServiceDelegate {
         stopSpotlightIndexer?.replaceAll()
     }
 
+    /// The launch and region-change rebuilds read the cache before the region's
+    /// sync writes to it, so the index is rebuilt again once it has. A sync that
+    /// finishes as the rider switches regions is ignored: the switch rebuilt it.
+    public override func regionStopSyncWroteStops(regionID: Int) {
+        guard regionID == currentRegion?.regionIdentifier else { return }
+        stopSpotlightIndexer?.replaceAll()
+    }
+
     public func regionsService(_ service: RegionsService, displayError error: Error) {
         Task {
             await displayError(error)

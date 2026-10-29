@@ -691,6 +691,25 @@ final class ApplicationTests: OBATestCase {
         #expect(await index.log == [.deleteAll])
     }
 
+    /// The launch and region-change rebuilds run before the sync writes the
+    /// region's stops. Another region's sync is ignored; the second call is the
+    /// positive control. Remove the call from `regionStopSyncWroteStops(regionID:)`
+    /// and nothing is cleared.
+    @Test func `Only a sync of the current region replaces the Spotlight index`() async {
+        let (app, _) = makeAppAndPushService()
+        app.regionsService.currentRegion = Fixtures.tampaRegion
+        let index = FakeStopIndex()
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: app.userDataStore, stopCache: nil, currentRegion: { Fixtures.tampaRegion }, isIndexingAvailable: { true })
+        app.stopSpotlightIndexer = indexer
+
+        app.regionStopSyncWroteStops(regionID: Fixtures.pugetSoundRegion.regionIdentifier)
+        #expect(indexer.currentRun == nil)
+
+        app.regionStopSyncWroteStops(regionID: Fixtures.tampaRegion.regionIdentifier)
+        await indexer.currentRun?.value
+        #expect(await index.log == [.deleteAll])
+    }
+
     private func makeApplicationForUserActivity() -> Application {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)

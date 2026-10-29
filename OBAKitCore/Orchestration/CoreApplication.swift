@@ -177,9 +177,18 @@ open class CoreApplication: NSObject,
     public func startRegionStopSync() {
         // Without a repository, `stopCacheDatabase` has already logged why.
         guard regionStopSyncScheduler == nil, let repository = stopCacheRepository else { return }
-        regionStopSyncScheduler = RegionStopSyncScheduler(service: RegionStopSyncService(repository: repository, appVersion: config.appVersion))
+        regionStopSyncScheduler = RegionStopSyncScheduler(
+            service: RegionStopSyncService(repository: repository, appVersion: config.appVersion),
+            onStopsWritten: { [weak self] regionID in
+                await self?.regionStopSyncWroteStops(regionID: regionID)
+            }
+        )
         scheduleRegionStopSync()
     }
+
+    /// Called after a sync of `regionID` wrote stops to the cache. Does nothing
+    /// here; `Application` rebuilds the Spotlight index from the cache.
+    open func regionStopSyncWroteStops(regionID: Int) {}
 
     /// Asks for a sync of the current region after a short pause. Does nothing
     /// before `startRegionStopSync()`, or before a region is chosen, when

@@ -85,11 +85,13 @@ final class StopSpotlightIndexer {
 
     /// Clears the index, then fills it from the current region. Runs at launch
     /// and on region change, which is how the previous region's stops leave
-    /// Spotlight.
+    /// Spotlight, and after a region sync writes stops, which is how synced
+    /// stops arrive and the ones the server dropped leave.
     ///
     /// The 30-day cache purge (`CoreApplication.purgeStaleStopCache()`) runs at
-    /// the same moments, so this can index a stop the purge removes a moment
-    /// later. That stop opens normally and is gone after the next launch.
+    /// launch and on region change too, so this can index a stop the purge
+    /// removes a moment later. That stop opens normally and is gone after the
+    /// next launch.
     func replaceAll() {
         guard let snapshot = makeSnapshot() else { return }
         let index = index
