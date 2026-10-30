@@ -48,23 +48,26 @@ final class RegionStopSyncService: Sendable {
     }
 
     /// Syncs `regionID` through `fetcher` if `RegionStopSyncPolicy` says it's due.
+    /// Returns whether a complete or partial sync wrote stops, so the caller can
+    /// rebuild what it derives from the cache.
     ///
     /// Cancelling the calling task stops it before its next request or batch, so
     /// after a region switch nothing more is written for the old region. A
-    /// cancelled sync records nothing; the next one starts over.
-    func sync(regionID: Int, using fetcher: any StopsForAgencyFetching) async {
+    /// cancelled sync records nothing and returns false; the next one starts over.
+    @discardableResult
+    func sync(regionID: Int, using fetcher: any StopsForAgencyFetching) async -> Bool {
         let previous: RegionStopSyncState?
         do {
             previous = try repository.syncState(regionId: regionID)
         } catch {
             Logger.error("Region stop sync: couldn't read the sync state of region \(regionID): \(error)")
-            return
+            return false
         }
 
         let etag: String?
         switch RegionStopSyncPolicy.decision(for: previous, now: now(), appVersion: appVersion) {
         case .skip:
-            return
+            return false
         case .full:
             etag = nil
         case .conditional(let previousETag):
@@ -73,25 +76,27 @@ final class RegionStopSyncService: Sendable {
 
         let start = now()
         do {
-            try await run(regionID: regionID, fetcher: fetcher, start: start, etag: etag, previous: previous)
+            return try await run(regionID: regionID, fetcher: fetcher, start: start, etag: etag, previous: previous)
         } catch is CancellationError {
-            return
+            return false
         } catch {
             // URLSession reports a cancelled request as URLError.cancelled, not
             // CancellationError; either way a cancelled sync records nothing.
-            if Task.isCancelled { return }
+            if Task.isCancelled { return false }
             Logger.error("Region stop sync of region \(regionID) failed: \(error)")
             record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
+            return false
         }
     }
 
-    private func run(regionID: Int, fetcher: any StopsForAgencyFetching, start: Date, etag: String?, previous: RegionStopSyncState?) async throws {
+    /// Returns whether it wrote stops.
+    private func run(regionID: Int, fetcher: any StopsForAgencyFetching, start: Date, etag: String?, previous: RegionStopSyncState?) async throws -> Bool {
         let agencyIDs = try await fetcher.getAgencyIDs()
         try Task.checkCancellation()
         guard !agencyIDs.isEmpty else {
             Logger.warn("Region stop sync: region \(regionID)'s server lists no agencies.")
             record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
-            return
+            return false
         }
 
         let isMaglev = try await fetcher.isMaglevServer()
@@ -102,12 +107,12 @@ final class RegionStopSyncService: Sendable {
             // is to skip such regions; every live multi-agency region runs Java.
             Logger.info("Region stop sync: skipping region \(regionID), a maglev server with \(agencyIDs.count) agencies.")
             record(.skippedMultiAgency, regionID: regionID, at: start, lastSuccessAt: nil, etag: nil)
-            return
+            return false
         }
 
         guard case let .finished(failedAgencies, newETag, wroteAny) = try await fetchAgencies(
             agencyIDs, regionID: regionID, fetcher: fetcher, start: start, etag: etag, isMaglev: isMaglev, previous: previous
-        ) else { return }
+        ) else { return false }
 
         // Cancelled after the last agency's answer: record nothing.
         try Task.checkCancellation()
@@ -124,6 +129,7 @@ final class RegionStopSyncService: Sendable {
             }
             record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag)
         }
+        return wroteAny
     }
 
     /// How fetching every agency ended: with an outcome already recorded (no

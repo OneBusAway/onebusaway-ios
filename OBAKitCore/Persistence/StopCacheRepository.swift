@@ -64,6 +64,38 @@ public final class StopCacheRepository: Sendable {
         }
     }
 
+    /// One page of `stops(regionId:after:limit:)`.
+    public struct Page: Sendable {
+        /// The page's stops that decoded. A corrupted row is left out.
+        public let stops: [Stop]
+
+        /// Pass as `after` for the next page; nil when there are no more rows.
+        /// It is the id of the last row read, decoded or not, so a page of
+        /// corrupted rows neither ends paging early nor re-reads itself.
+        public let cursor: StopID?
+    }
+
+    /// Reads a region's cached stops in id order, `limit` rows at a time.
+    ///
+    /// Short pages keep each hold on the shared database queue brief, so the
+    /// map's reads aren't stuck behind a scan of the whole region.
+    public func stops(regionId: Int, after cursor: StopID?, limit: Int) -> Page {
+        do {
+            let cachedStops = try database.dbQueue.read { db in
+                var request = CachedStop.filter(CachedStop.Columns.regionId == regionId)
+                if let cursor {
+                    request = request.filter(CachedStop.Columns.id > cursor)
+                }
+                return try request.order(CachedStop.Columns.id).limit(limit).fetchAll(db)
+            }
+            let nextCursor = cachedStops.count == limit ? cachedStops.last?.id : nil
+            return Page(stops: try stops(from: cachedStops, regionId: regionId), cursor: nextCursor)
+        } catch {
+            Logger.error("Failed to fetch a page of cached stops in region \(regionId): \(error)")
+            return Page(stops: [], cursor: nil)
+        }
+    }
+
     /// Decodes `cachedStops` and gives each stop its routes from `cachedRoute`,
     /// in a second short read so neither holds the shared queue for long.
     /// Every returned stop has non-nil `routes`.

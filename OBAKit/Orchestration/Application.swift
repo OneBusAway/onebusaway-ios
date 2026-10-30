@@ -193,6 +193,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// Created in `application(_:didFinishLaunching:)`, so only the launched app refreshes Shortcuts.
     private var appShortcutParametersRefresher: AppShortcutParametersRefresher?
 
+    /// See `startStopSpotlightIndexing()`. Internal so a test can install one.
+    var stopSpotlightIndexer: StopSpotlightIndexer?
+
     // MARK: - Init
 
     /// Creates a new `Application` object.
@@ -488,6 +491,8 @@ public class Application: CoreApplication, PushServiceDelegate {
             appShortcutParametersRefresher = AppShortcutParametersRefresher(provider: provider)
         }
         startRegionStopSync()
+
+        startStopSpotlightIndexing()
 
         if userDataStore.walkingSpeedSource == .healthKit {
             Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
@@ -872,6 +877,17 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Region change does not post `.bookmarksDidChange`, so Shortcuts
         // would keep offering the previous region's trip bookmarks.
         appShortcutParametersRefresher?.refresh()
+
+        // Deletes the previous region's stops from Spotlight, then indexes this one's.
+        stopSpotlightIndexer?.replaceAll()
+    }
+
+    /// The launch and region-change rebuilds read the cache before the region's
+    /// sync writes to it, so the index is rebuilt again once it has. A sync that
+    /// finishes as the rider switches regions is ignored: the switch rebuilt it.
+    public override func regionStopSyncWroteStops(regionID: Int) {
+        guard regionID == currentRegion?.regionIdentifier else { return }
+        stopSpotlightIndexer?.replaceAll()
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {
