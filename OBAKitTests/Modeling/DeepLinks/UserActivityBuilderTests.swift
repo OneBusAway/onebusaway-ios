@@ -41,7 +41,8 @@ final class UserActivityBuilderTests: OBATestCase {
         #expect(activity.targetContentIdentifier == expectedIdentifier)
         #expect(activity.isEligibleForHandoff == true)
         #expect(activity.isEligibleForSearch == true)
-        #expect(activity.isEligibleForPrediction == true)
+        // Stops are predicted from the `OpenStopIntent` donation instead.
+        #expect(activity.isEligibleForPrediction == false)
         #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.stopID] as? String == stop.id)
         #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.regionID] as? Int == region.regionIdentifier)
     }
