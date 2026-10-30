@@ -49,7 +49,8 @@ class UserActivityBuilder: NSObject {
 
     /// Creates an `NSUserActivity` for a `Stop`.
     ///
-    /// In addition to configuring the activity for Handoff, this method also includes support for Siri predictions and invocations.
+    /// Configures the activity for Handoff and Spotlight. Siri predicts stops
+    /// from the `OpenStopIntent` the stop pages donate, not from this activity.
     ///
     /// - Parameters:
     ///   - stop: The stop for which the activity will be created.
@@ -60,11 +61,13 @@ class UserActivityBuilder: NSObject {
 
         activity.isEligibleForHandoff = true
 
-        // Per WWDC 2018 Session "Intro to Siri Shortcuts", this must be set to `true`
-        // for `isEligibleForPrediction` to have any effect. Timecode: 8:30
         activity.isEligibleForSearch = true
 
-        activity.isEligibleForPrediction = true
+        // Apple: "Set this property to false if you're already donating App
+        // Intents." Opening a stop donates `OpenStopIntent` (#1556), so the
+        // activity predicting too would count each open twice.
+        // See: https://developer.apple.com/documentation/foundation/nsuseractivity/iseligibleforprediction
+        activity.isEligibleForPrediction = false
         activity.suggestedInvocationPhrase = OBALoc("user_activity_builder.show_me_my_bus", value: "Show me my bus", comment: "Suggested invocation phrase for Siri Shortcut")
         let identifier = StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stop.id)
         activity.persistentIdentifier = identifier
