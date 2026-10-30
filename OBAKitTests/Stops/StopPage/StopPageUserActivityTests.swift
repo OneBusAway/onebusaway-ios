@@ -89,7 +89,7 @@ final class StopPageUserActivityTests: OBATestCase {
     /// The legacy page publishes only once arrivals have loaded, so this stubs
     /// every endpoint a load touches. `MockDataLoader` fatal-errors on anything
     /// unstubbed, which ends the whole run, not just this test.
-    private func loadedLegacyStopPage() async -> StopViewController {
+    private func loadedLegacyStopPage(intentDonor: any IntentDonor = FakeIntentDonor()) async -> StopViewController {
         let dataLoader = MockDataLoader(testName: name)
 
         dataLoader.mock(data: Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020_no_realtime.json")) { request in
@@ -103,7 +103,9 @@ final class StopPageUserActivityTests: OBATestCase {
 
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-        let controller = StopViewController(application: buildApplication(queue: queue, dataLoader: dataLoader), stopID: "1_10020")
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        application.intentDonor = intentDonor
+        let controller = StopViewController(application: application, stopID: "1_10020")
         controller.loadViewIfNeeded()
         await controller.viewModel.refresh()
         return controller
@@ -117,5 +119,68 @@ final class StopPageUserActivityTests: OBATestCase {
 
         #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.stopID] as? String == "1_10020")
         #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.regionID] as? Int == 1)
+    }
+
+    // MARK: - Open Stop donation
+
+    // Opening a stop donates `OpenStopIntent`, which replaces the activity's own
+    // prediction. Both pages publish their activity far more often than a rider
+    // opens a stop, so each has to donate only once.
+
+    @Test func `Opening a stop page donates Open Stop for that stop`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+
+        _ = try publishedStopPage(application: application)
+
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+    }
+
+    /// Coming back from a pushed page, such as a trip, isn't a new open.
+    @Test func `A stop page that appears again doesn't donate again`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+        let page = try publishedStopPage(application: application)
+
+        page.beginAppearanceTransition(false, animated: false)
+        page.endAppearanceTransition()
+        page.beginAppearanceTransition(true, animated: false)
+        page.endAppearanceTransition()
+
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+    }
+
+    /// The legacy page republishes its activity on every arrivals refresh.
+    @Test func `The legacy stop page donates once, not on every refresh`() async {
+        let donor = FakeIntentDonor()
+        let page = await loadedLegacyStopPage(intentDonor: donor)
+
+        await page.viewModel.refresh()
+
+        #expect(donor.openedStops == ["region_1_stop_1_10020"])
+    }
+
+    /// The rule both pages share: the same stop's activity again isn't an open,
+    /// another stop's is.
+    @Test func `Only an activity for a different stop donates again`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+        let builder = try #require(application.userActivityBuilder)
+        let region = try #require(application.regionsService.currentRegion)
+        let stops = try Fixtures.loadSomeStops()
+        try #require(stops.count >= 2)
+        let first = builder.userActivity(for: stops[0], region: region)
+
+        application.donateOpenStop(stops[0], publishing: first, replacing: nil)
+        application.donateOpenStop(stops[0], publishing: builder.userActivity(for: stops[0], region: region), replacing: first)
+        application.donateOpenStop(stops[1], publishing: builder.userActivity(for: stops[1], region: region), replacing: first)
+
+        #expect(donor.openedStops == [
+            StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stops[0].id),
+            StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stops[1].id)
+        ])
     }
 }
