@@ -83,4 +83,57 @@ final class StopPageUserActivityTests: OBATestCase {
         #expect(application.pendingStopID == "1_10914")
         #expect(application.pendingStopRegionID == 1)
     }
+
+    // MARK: - Open Stop donation
+
+    // Opening a stop donates `OpenStopIntent`, which replaces the activity's own
+    // prediction. Both pages publish their activity far more often than a rider
+    // opens a stop, so each has to donate only once.
+
+    @Test func `Opening a stop page donates Open Stop for that stop`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+
+        _ = try publishedStopPage(application: application)
+
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+    }
+
+    /// Coming back from a pushed page, such as a trip, isn't a new open.
+    @Test func `A stop page that appears again doesn't donate again`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+        let page = try publishedStopPage(application: application)
+
+        page.beginAppearanceTransition(false, animated: false)
+        page.endAppearanceTransition()
+        page.beginAppearanceTransition(true, animated: false)
+        page.endAppearanceTransition()
+
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+    }
+
+    /// The rule both pages share: the same stop's activity again isn't an open,
+    /// another stop's is.
+    @Test func `Only an activity for a different stop donates again`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+        let builder = try #require(application.userActivityBuilder)
+        let region = try #require(application.regionsService.currentRegion)
+        let stops = try Fixtures.loadSomeStops()
+        try #require(stops.count >= 2)
+        let first = builder.userActivity(for: stops[0], region: region)
+
+        application.donateOpenStop(stops[0], publishing: first, replacing: nil)
+        application.donateOpenStop(stops[0], publishing: builder.userActivity(for: stops[0], region: region), replacing: first)
+        application.donateOpenStop(stops[1], publishing: builder.userActivity(for: stops[1], region: region), replacing: first)
+
+        #expect(donor.openedStops == [
+            StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stops[0].id),
+            StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stops[1].id)
+        ])
+    }
 }

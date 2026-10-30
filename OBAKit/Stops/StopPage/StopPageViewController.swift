@@ -204,11 +204,13 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// same stop and region even if the current region changes later.
     private var activityUserInfo: [AnyHashable: Any]?
 
-    /// Publishes this stop's `NSUserActivity` for Handoff, Siri and Spotlight.
+    /// Publishes this stop's `NSUserActivity` for Handoff, Siri and Spotlight,
+    /// and donates Open Stop the first time it publishes one for the stop.
     /// Called on appearance and whenever the stop resolves.
     private func beginUserActivity() {
         guard let stop = viewModel.stop else { return }
         let activity = actionPresenter.makeUserActivity(stop: stop)
+        application.donateOpenStop(stop, publishing: activity, replacing: userActivity)
         // Stashed first: once the activity is assigned, UIKit may call the override at any save.
         activityUserInfo = activity?.userInfo
         self.userActivity = activity

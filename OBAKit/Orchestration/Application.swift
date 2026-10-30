@@ -122,6 +122,9 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
+    /// See `donateOpenStop(_:publishing:replacing:)`. Internal so tests can install a fake.
+    var intentDonor: any IntentDonor = SystemIntentDonor()
+
     /// Handles all deep-linking into the app.
     @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = makeAppLinksRouter()
 
