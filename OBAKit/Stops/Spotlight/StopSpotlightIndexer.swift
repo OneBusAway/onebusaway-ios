@@ -53,6 +53,12 @@ final class StopSpotlightIndexer {
     /// Internal so tests can await it instead of polling.
     private(set) var currentRun: Task<Void, Never>?
 
+    /// The stops the latest requested run indexes at priority 3, so a bookmark
+    /// change can tell which ones lost their bookmark. Set on request, not on
+    /// success, so a run that fails leaves it ahead of the index until the next
+    /// replace.
+    private var indexedBookmarks: [StopEntity] = []
+
     /// Observes `NotificationCenter.default` because that is where
     /// `UserDefaultsStore` posts `.bookmarksDidChange`. Selector-based observation
     /// is removed on dealloc.
@@ -97,6 +103,7 @@ final class StopSpotlightIndexer {
         let index = index
         let stopCache = stopCache
         let batchSize = batchSize
+        indexedBookmarks = snapshot.bookmarked
 
         enqueue(cancellingPrevious: true) {
             // If this fails, indexing on top of the old entries would mix regions.
@@ -114,14 +121,26 @@ final class StopSpotlightIndexer {
     ///
     /// Waits for the run in flight rather than racing it: a replace that took
     /// its snapshot before this bookmark existed would otherwise delete this
-    /// upsert. A stop that is no longer bookmarked keeps priority 3 until the
-    /// next launch. It still appears and opens; only its ranking is stale.
+    /// upsert.
+    ///
+    /// A stop that lost its bookmark drops to the tier a replace would give it:
+    /// 2 if it's recent, otherwise 1. One that isn't cached either is indexed at
+    /// 1 and stays there until the next replace drops it.
     func indexBookmarks() {
         guard let snapshot = makeSnapshot() else { return }
         let index = index
 
+        let bookmarkedIDs = Set(snapshot.bookmarked.map(\.stopID))
+        let recentIDs = Set(snapshot.recent.map(\.stopID))
+        let unbookmarked = indexedBookmarks.filter { !bookmarkedIDs.contains($0.stopID) }
+        let nowRecent = unbookmarked.filter { recentIDs.contains($0.stopID) }
+        let nowCached = unbookmarked.filter { !recentIDs.contains($0.stopID) }
+        indexedBookmarks = snapshot.bookmarked
+
         enqueue(cancellingPrevious: false) {
             try await Self.submit(snapshot.bookmarked, priority: 3, to: index)
+            try await Self.submit(nowRecent, priority: 2, to: index)
+            try await Self.submit(nowCached, priority: 1, to: index)
         }
     }
 

@@ -187,6 +187,34 @@ final class StopSpotlightIndexerTests: OBATestCase {
         #expect(await index.log == [.index([entityID("1_a", in: puget), entityID("1_b", in: puget)], priority: 3)])
     }
 
+    /// Without the drop, both stops would keep priority 3 until the next replace.
+    @Test func `A removed bookmark's stop drops to the recent or cached tier`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let stopC = makeStop("1_c", in: puget)
+        let store = makeStore(bookmarked: [stopA, stopB, stopC], recent: [stopB], region: puget)
+        let index = FakeStopIndex()
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, currentRegion: { self.puget }, isIndexingAvailable: { true })
+        indexer.replaceAll()
+        await indexer.currentRun?.value
+
+        for stop in [stopA, stopB] {
+            let previousRun = indexer.currentRun
+            store.delete(bookmark: try #require(store.bookmarks.first { $0.stop.id == stop.id }))
+            await poll(until: { indexer.currentRun != previousRun }, timeout: .seconds(30), "The bookmark change never reached the indexer")
+            await indexer.currentRun?.value
+        }
+
+        #expect(await index.log == [
+            .deleteAll,
+            .index([entityID("1_a", in: puget), entityID("1_b", in: puget), entityID("1_c", in: puget)], priority: 3),
+            .index([entityID("1_b", in: puget), entityID("1_c", in: puget)], priority: 3),
+            .index([entityID("1_a", in: puget)], priority: 1),
+            .index([entityID("1_c", in: puget)], priority: 3),
+            .index([entityID("1_b", in: puget)], priority: 2)
+        ])
+    }
+
     /// The replace took its snapshot before B was bookmarked. Run beside it,
     /// the upsert would land before the replace's delete and B would be lost.
     @Test(.timeLimit(.minutes(1))) func `A bookmark change during a replace runs after it`() async {
