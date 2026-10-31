@@ -24,6 +24,11 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
     /// The stop id of the stop visited during the trip
     public let stopID: StopID
 
+    /// How far along the trip's shape the stop is, in meters, as the server measures
+    /// the shape. Comparable to `TripStatus.distanceAlongTrip`, not to the length of the
+    /// decoded polyline; see `TripGeometry`. `nil` when the server omits it.
+    public let distanceAlongTrip: Double?
+
     /// The stop visited during the trip.
     public private(set) var stop: Stop!
 
@@ -40,6 +45,7 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
         case arrival = "arrivalTime"
         case departure = "departureTime"
         case stopID = "stopId"
+        case distanceAlongTrip
     }
 
     public required init(from decoder: Decoder) throws {
@@ -48,6 +54,7 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
         arrival = try container.decode(TimeInterval.self, forKey: .arrival)
         departure = try container.decode(TimeInterval.self, forKey: .departure)
         stopID = try container.decode(String.self, forKey: .stopID)
+        distanceAlongTrip = try container.decodeIfPresent(Double.self, forKey: .distanceAlongTrip)
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -56,6 +63,7 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
         return
             arrival == rhs.arrival &&
             departure == rhs.departure &&
+            distanceAlongTrip == rhs.distanceAlongTrip &&
             regionIdentifier == rhs.regionIdentifier &&
             stopID == rhs.stopID
     }
@@ -64,6 +72,7 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
         var hasher = Hasher()
         hasher.combine(arrival)
         hasher.combine(departure)
+        hasher.combine(distanceAlongTrip)
         hasher.combine(regionIdentifier)
         hasher.combine(stopID)
         return hasher.finalize()

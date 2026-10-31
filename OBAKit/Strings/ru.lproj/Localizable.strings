@@ -1173,11 +1173,17 @@
 /* Settings > Debug section > Debug mode */
 "settings_controller.debug_section.debug_mode" = "Режим отладки";
 
+/* Settings > Debug section > Toggle that draws a vehicle's last reported GPS position and the server's position beside its estimated marker */
+"settings_controller.debug_section.show_raw_vehicle_fix" = "Показывать переданное местоположение транспорта";
+
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Отладка";
 
 /* Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin */
 "settings_controller.experimental_section.cluster_stops" = "Группировать близкие остановки на карте";
+
+/* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
+"settings_controller.experimental_section.estimate_vehicle_positions" = "Оценивать текущее местоположение транспорта";
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Использовать панель карты";
@@ -1709,6 +1715,9 @@
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Начинает движение как %@";
+
+/* How stale the vehicle's last reported position is, when the map shows where the vehicle is estimated to be now rather than where it last reported. %@ is a relative time like '12s ago'. */
+"trip_page.position_estimated_fmt" = "примерное местоположение, обновлено %@";
 
 /* Shown beside a Retry button when loading the trip's stop list failed. */
 "trip_page.stops_failed" = "Не удалось загрузить остановки этого рейса.";

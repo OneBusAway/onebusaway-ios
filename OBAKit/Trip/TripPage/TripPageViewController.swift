@@ -129,6 +129,30 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             }
             .store(in: &cancellables)
 
+        // Published last in a load, after the statuses it dates.
+        viewModel.$serverClocks
+            .dropFirst()
+            .sink { [weak self] clocks in
+                guard let self else { return }
+                updateVehicleEstimation(
+                    convertible: viewModel.tripConvertible,
+                    details: viewModel.tripDetails,
+                    shape: viewModel.routePolylineCoordinates,
+                    serverClocks: clocks
+                )
+            }
+            .store(in: &cancellables)
+
+        vehicleEstimation.onEstimate = { [weak self] estimate in
+            guard let self else { return }
+            mapFocus.applyVehicleEstimate(estimate)
+            let isEstimated = estimate?.isEstimatedPosition ?? false
+            if isEstimated != isVehiclePositionEstimated {
+                isVehiclePositionEstimated = isEstimated
+                render()
+            }
+        }
+
         viewModel.$isLoading
             .sink { [weak self] isLoading in self?.refreshBarButton.isEnabled = !isLoading }
             .store(in: &cancellables)
@@ -143,6 +167,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         disableIdleTimer()
         beginUserActivity()
         viewModel.start()
+        vehicleEstimation.resume()
         onMapFocusChanged?(mapFocus)
     }
 
@@ -150,6 +175,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         super.viewWillDisappear(animated)
         enableIdleTimer()
         viewModel.deactivate()
+        vehicleEstimation.pause()
 
         // Only on the way out of the stack. A modal presented over this page
         // (the alarm bulletin, the bookmark editor) also fires this, and giving
@@ -279,6 +305,33 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// page to be on a navigation stack.
     var onSelectStop: ((StopID) -> Void)?
 
+    /// Estimates where the trip's vehicle is between polls; see `VehicleEstimationDriver`.
+    private lazy var vehicleEstimation = VehicleEstimationDriver(isEnabled: { [weak self] in
+        guard let self else { return false }
+        return FeatureFlags.isVehicleEstimationEnabled(userDefaults: application.userDefaults)
+    })
+
+    /// Whether the map is drawing an estimate, for the card's freshness line.
+    private var isVehiclePositionEstimated = false
+
+    private func updateVehicleEstimation(
+        convertible: TripConvertible,
+        details: TripDetails?,
+        shape: [CLLocationCoordinate2D]?,
+        serverClocks: [ServerClockSample]
+    ) {
+        let tripID = convertible.tripID
+        let statuses = [convertible.tripStatus, details?.status].compactMap { $0 }
+        vehicleEstimation.update(VehicleEstimationDriver.Input(
+            vehicleKey: tripID,
+            tripID: tripID,
+            shape: shape ?? [],
+            stopTimes: (details?.stopTimes ?? []).compactMap(TripGeometry.StopTime.init),
+            serverTripLength: statuses.first?.totalDistanceAlongTrip,
+            fixes: statuses.compactMap { VehicleFix(tripStatus: $0, tripID: tripID) }
+        ), serverClocks: serverClocks)
+    }
+
     private func publishMapFocus(
         convertible: TripConvertible,
         details: TripDetails?,
@@ -309,7 +362,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
                     )
                 },
                 stops: stops,
-                vehicle: status
+                vehicle: status,
+                showsReportedPositions: FeatureFlags.showsRawVehicleFix(userDefaults: application.userDefaults)
             )
         )
     }
@@ -335,7 +389,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             showsBackRow: !showsSystemNavigationBar,
             hasAlarm: existingAlarm != nil,
             isTrackingLiveActivity: isTrackingLiveActivity,
-            isCollapsed: isAtTip
+            isCollapsed: isAtTip,
+            isVehiclePositionEstimated: isVehiclePositionEstimated
         )
     }
 

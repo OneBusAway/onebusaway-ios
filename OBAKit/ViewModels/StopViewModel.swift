@@ -66,6 +66,11 @@ class StopViewModel: ObservableObject {
         let stopLocation: CLLocationCoordinate2D?
     }
 
+    /// The server clock the latest arrivals carried, for vehicle position
+    /// estimation's skew correction. Set before `stopArrivals`, so a sink on that
+    /// can read it.
+    @Published private(set) var arrivalsServerClock: ServerClockSample?
+
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
 
@@ -354,13 +359,16 @@ class StopViewModel: ObservableObject {
         var pendingExtensionMinutes: UInt?
 
         do {
-            let result = try await apiService.getArrivalsAndDeparturesForStop(
+            let response = try await apiService.getArrivalsAndDeparturesForStop(
                 id: stopID,
                 minutesBefore: minutesBefore,
-                minutesAfter: minutesAfter
-            ).entry
+                minutesAfter: minutesAfter,
+                cachePolicy: FeatureFlags.realtimeCachePolicy(userDefaults: environment.userDefaults)
+            )
+            let result = response.entry
 
             if let loadedStop = result.stop {
+                arrivalsServerClock = response.serverClock
                 applySuccessfulFetch(stop: loadedStop, arrivals: result)
                 performInitialStopSetupIfNeeded(for: loadedStop)
 

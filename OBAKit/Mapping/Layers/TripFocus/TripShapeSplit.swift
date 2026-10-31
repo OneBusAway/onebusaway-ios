@@ -9,6 +9,7 @@
 
 import CoreLocation
 import Foundation
+import MapKit
 
 /// Cuts a trip's shape into the part the vehicle has already covered and the
 /// part still ahead of it, so the two can be drawn in different colors.
@@ -39,6 +40,15 @@ nonisolated enum TripShapeSplit {
     static func fraction(distanceAlongTrip: Double, totalDistanceAlongTrip: Double) -> Double? {
         guard totalDistanceAlongTrip > 0 else { return nil }
         return min(max(distanceAlongTrip / totalDistanceAlongTrip, 0), 1)
+    }
+
+    /// Where `split` would cut, as MapKit's unit distance along a polyline of
+    /// `coordinates`: what `MKPolylineRenderer.strokeStart` takes. That runs by
+    /// map points, which stretch with latitude, so it is not `fraction` itself.
+    static func unitDistance(coordinates: [CLLocationCoordinate2D], atFraction fraction: Double) -> CGFloat {
+        let total = mapLength(coordinates)
+        guard total > 0 else { return 0 }
+        return CGFloat(min(mapLength(split(coordinates: coordinates, atFraction: fraction).spent) / total, 1))
     }
 
     static func split(coordinates: [CLLocationCoordinate2D], atFraction fraction: Double) -> Result {
@@ -105,6 +115,13 @@ nonisolated enum TripShapeSplit {
     /// nothing while still occupying the map's overlay list.
     private static func normalized(spent: [CLLocationCoordinate2D], ahead: [CLLocationCoordinate2D]) -> Result {
         Result(spent: spent.count >= 2 ? spent : [], ahead: ahead.count >= 2 ? ahead : [])
+    }
+
+    private static func mapLength(_ coordinates: [CLLocationCoordinate2D]) -> Double {
+        zip(coordinates, coordinates.dropFirst()).reduce(0) { length, segment in
+            let from = MKMapPoint(segment.0), to = MKMapPoint(segment.1)
+            return length + hypot(to.x - from.x, to.y - from.y)
+        }
     }
 
     private static func distance(_ from: CLLocationCoordinate2D, _ to: CLLocationCoordinate2D) -> CLLocationDistance {

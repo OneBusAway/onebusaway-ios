@@ -77,4 +77,30 @@ enum VehicleCoordinateUpdate {
             }
         }
     }
+
+    /// Moves `annotation` to an estimate. Glides over `duration`, until the next
+    /// estimate, so consecutive ones read as continuous motion; jumps for a snap, for a hop
+    /// `decision(from:to:)` would snap, and when the marker is off screen at both
+    /// ends, where animating it would be work nobody sees.
+    static func follow(
+        _ annotation: MKPointAnnotation,
+        to coordinate: CLLocationCoordinate2D,
+        snap: Bool,
+        duration: TimeInterval,
+        in mapView: MKMapView
+    ) {
+        let from = annotation.coordinate
+        let visible = mapView.visibleMapRect
+        let isOnScreen = visible.contains(MKMapPoint(from)) || visible.contains(MKMapPoint(coordinate))
+        switch decision(from: from, to: coordinate) {
+        case .unchanged:
+            break
+        case .animate where !snap && isOnScreen:
+            UIView.animate(withDuration: duration, delay: 0, options: [.curveLinear, .beginFromCurrentState, .allowUserInteraction]) {
+                annotation.coordinate = coordinate
+            }
+        case .animate, .snap:
+            annotation.coordinate = coordinate
+        }
+    }
 }

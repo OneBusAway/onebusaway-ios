@@ -261,7 +261,11 @@ struct MapPanelRootView: View {
                 )
             }
             tripPlannerMapContent(for: tripPlannerDisplay)
-            tripFocusMapContent(for: tripFocusDisplay.display)
+            tripFocusMapContent(
+                for: tripFocusDisplay.display,
+                vehicle: tripFocusDisplay.vehicle,
+                reportedPositions: tripFocusDisplay.reportedPositions
+            )
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             viewportRecorder.record(context.rect)

@@ -48,6 +48,8 @@ final class TripDetailsModelOperationTests: OBATestCase {
         #expect(stopTime.arrivalDate.timeIntervalSince1970 == 1343690462)
         #expect(stopTime.departureDate.timeIntervalSince1970 == 1343690462)
         #expect(stopTime.stopID == "1_9610")
+        #expect(stopTime.distanceAlongTrip == 0)
+        expectClose(tripDetails.stopTimes[1].distanceAlongTrip!, 337.331, within: 0.001)
 
         #expect(tripDetails.previousTrip!.id == "1_18196851")
         #expect(tripDetails.previousTrip!.headsign == "UNIVERSITY DISTRICT ROOSEVELT")
@@ -72,5 +74,14 @@ final class TripDetailsModelOperationTests: OBATestCase {
 
         let trip = try await restService.getTrip(tripID: tripID, vehicleID: "12345", serviceDate: Date()).entry
         self.checkExpectations(trip)
+    }
+
+    /// Not every server sends a stop's distance. An absent one is `nil`, not `0`.
+    @Test func `Stop time without distance along trip decodes as nil`() throws {
+        let stopTime = try Fixtures.dictionaryToModel(
+            type: TripStopTime.self,
+            dictionary: ["arrivalTime": 100, "departureTime": 110, "stopId": "1_1"]
+        )
+        #expect(stopTime.distanceAlongTrip == nil)
     }
 }
