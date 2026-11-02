@@ -17,17 +17,17 @@ import OBAKitCore
 final class AdjacentTripControllerTests {
 
     private func makeTrip(id: String, routeHeadsign: String) -> Trip {
-        Trip(
-            id: id,
-            routeID: "1_100",
-            tripHeadsign: routeHeadsign,
-            serviceID: "1_wkdy",
-            shapeID: "1_shape",
-            directionID: "0",
-            blockID: "1_block",
-            routeShortName: "10",
-            tripShortName: nil
-        )
+        let dictionary: [String: Any] = [
+            "id": id,
+            "blockId": "1_block",
+            "routeId": "1_100",
+            "serviceId": "1_wkdy",
+            "shapeId": "1_shape",
+            "tripHeadsign": routeHeadsign,
+            "directionId": "0",
+            "routeShortName": "10"
+        ]
+        return try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: dictionary)
     }
 
     @Test func testAdjacentTripItemConfigurationMapping() {
