@@ -25,7 +25,9 @@ final class AdjacentTripControllerTests {
             "shapeId": "1_shape",
             "tripHeadsign": routeHeadsign,
             "directionId": "0",
-            "routeShortName": "10"
+            "routeShortName": "10",
+            "tripShortName": "Express",
+            "timeZone": "America/Los_Angeles"
         ]
         return try! Fixtures.dictionaryToModel(type: Trip.self, dictionary: dictionary)
     }
@@ -49,7 +51,7 @@ final class AdjacentTripControllerTests {
         }
 
         #expect(adjacentConfig.order == .previous)
-        #expect(adjacentConfig.routeHeadsign == "Downtown")
+        #expect(adjacentConfig.routeHeadsign == "10 - Downtown")
         #expect(ObjectIdentifier(adjacentConfig.obaContentView) == ObjectIdentifier(TripStopCell.self))
     }
 
