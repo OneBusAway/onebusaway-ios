@@ -50,7 +50,7 @@ final class AdjacentTripControllerTests {
 
         #expect(adjacentConfig.order == .previous)
         #expect(adjacentConfig.routeHeadsign == "Downtown")
-        #expect(adjacentConfig.obaContentView == TripStopCell.self)
+        #expect(ObjectIdentifier(adjacentConfig.obaContentView) == ObjectIdentifier(TripStopCell.self))
     }
 
     @Test func testAdjacentTripItemEqualityAndHashing() {
