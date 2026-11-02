@@ -47,8 +47,9 @@ final class RegionStopSyncServiceTests {
         try repository.writeSyncedStops([stop("1_dropped")], regionId: 1, syncedAt: earlier)
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops("1_a", "1_b"), "2": stops("2_c")])
 
-        await makeService().sync(regionID: 1, using: fetcher)
+        let wroteStops = await makeService().sync(regionID: 1, using: fetcher)
 
+        #expect(wroteStops)
         #expect(try cachedIDs() == ["1_a", "1_b", "2_c"])
         let state = try #require(try repository.syncState(regionId: 1))
         #expect(state.outcome == .complete)
@@ -73,8 +74,9 @@ final class RegionStopSyncServiceTests {
         try repository.writeSyncedStops([stop("1_kept")], regionId: 1, syncedAt: earlier)
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops(), "2": stops()])
 
-        await makeService().sync(regionID: 1, using: fetcher)
+        let wroteStops = await makeService().sync(regionID: 1, using: fetcher)
 
+        #expect(!wroteStops)
         #expect(try cachedIDs() == ["1_kept"])
     }
 
@@ -94,8 +96,9 @@ final class RegionStopSyncServiceTests {
         try repository.writeSyncedStops([stop("1_kept")], regionId: 1, syncedAt: earlier)
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops("1_a"), "2": error(429, "application/json")])
 
-        await makeService().sync(regionID: 1, using: fetcher)
+        let wroteStops = await makeService().sync(regionID: 1, using: fetcher)
 
+        #expect(wroteStops)
         #expect(try cachedIDs() == ["1_a", "1_kept"])
         #expect(try repository.syncState(regionId: 1)?.outcome == .partial)
     }
@@ -155,8 +158,9 @@ final class RegionStopSyncServiceTests {
 
         clock.value = clock.value.addingTimeInterval(86_400)
         let second = FakeStopsForAgencyFetcher(agencyIDs: ["1"], maglev: true, answers: ["1": .success(.notModified)])
-        await makeService().sync(regionID: 1, using: second)
+        let wroteStops = await makeService().sync(regionID: 1, using: second)
 
+        #expect(!wroteStops)
         #expect(await second.calls == ["agencies", "config", "stops 1 if-none-match 3f9a"])
         let state = try #require(try repository.syncState(regionId: 1))
         #expect(state.outcome == .complete)
@@ -194,8 +198,9 @@ final class RegionStopSyncServiceTests {
         try repository.saveSyncState(RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: yesterday, lastSuccessAt: yesterday, etag: nil, appVersion: "26.5"))
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_a")])
 
-        await makeService().sync(regionID: 1, using: fetcher)
+        let wroteStops = await makeService().sync(regionID: 1, using: fetcher)
 
+        #expect(!wroteStops)
         #expect(await fetcher.calls.isEmpty)
     }
 
@@ -219,8 +224,8 @@ final class RegionStopSyncServiceTests {
         await fetcher.waitUntilHolding()
         sync.cancel()
         await fetcher.release()
-        await sync.value
 
+        #expect(await !sync.value)
         #expect(try cachedIDs() == ["1_a"])
         #expect(try repository.syncState(regionId: 1) == nil)
     }

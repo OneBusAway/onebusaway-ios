@@ -33,11 +33,15 @@ final class RegionStopSyncScheduler: Sendable {
 
     private let service: RegionStopSyncService
     private let delay: Duration
+    private let onStopsWritten: @Sendable (Int) async -> Void
     private let state = Mutex(State())
 
-    init(service: RegionStopSyncService, delay: Duration = .seconds(5)) {
+    /// `onStopsWritten` gets the region's ID after a sync of it wrote stops, and
+    /// is awaited before the sync ends.
+    init(service: RegionStopSyncService, delay: Duration = .seconds(5), onStopsWritten: @escaping @Sendable (Int) async -> Void) {
         self.service = service
         self.delay = delay
+        self.onStopsWritten = onStopsWritten
     }
 
     deinit {
@@ -54,6 +58,7 @@ final class RegionStopSyncScheduler: Sendable {
     func schedule(regionID: Int, using fetcher: any StopsForAgencyFetching) {
         let service = service
         let delay = delay
+        let onStopsWritten = onStopsWritten
         state.withLock { state in
             if state.pending?.regionID == regionID {
                 return
@@ -69,7 +74,9 @@ final class RegionStopSyncScheduler: Sendable {
                 } catch {
                     return
                 }
-                await service.sync(regionID: regionID, using: fetcher)
+                if await service.sync(regionID: regionID, using: fetcher) {
+                    await onStopsWritten(regionID)
+                }
             }
             state.pending = Pending(regionID: regionID, id: id, task: task)
         }

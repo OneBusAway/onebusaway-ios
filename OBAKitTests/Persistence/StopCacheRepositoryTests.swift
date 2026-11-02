@@ -297,6 +297,66 @@ final class StopCacheRepositoryTests {
         #expect(results[0].id == "valid_1")
     }
 
+    // MARK: - Paged Reads
+
+    /// Every page of a region's stops, stopping after 10 so a cursor that
+    /// fails to advance fails the test instead of hanging it.
+    private func allPages(regionId: Int, limit: Int) -> [StopCacheRepository.Page] {
+        var pages = [StopCacheRepository.Page]()
+        var cursor: StopID?
+        repeat {
+            let page = repository.stops(regionId: regionId, after: cursor, limit: limit)
+            pages.append(page)
+            cursor = page.cursor
+        } while cursor != nil && pages.count < 10
+        return pages
+    }
+
+    @Test func `Paged stops return only that region, in id order`() {
+        let ids = ["1_e", "1_b", "1_d", "1_a", "1_c"]
+        repository.saveStops(ids.map { makeStop(id: $0) }, regionId: 1)
+        repository.saveStops([makeStop(id: "1_0")], regionId: 2)
+
+        let pages = allPages(regionId: 1, limit: 2)
+        #expect(pages.map { $0.stops.map(\.id) } == [["1_a", "1_b"], ["1_c", "1_d"], ["1_e"]])
+        #expect(pages.last?.cursor == nil)
+    }
+
+    /// A full last page can't tell whether more rows follow, so it costs one
+    /// extra, empty read. An empty region needs exactly one.
+    @Test func `Paging ends on an empty region and after an exact multiple of the limit`() {
+        let empty = allPages(regionId: 1, limit: 2)
+        #expect(empty.map { $0.stops.map(\.id) } == [[]])
+        #expect(empty.map(\.cursor) == [nil])
+
+        repository.saveStops(["1_a", "1_b", "1_c", "1_d"].map { makeStop(id: $0) }, regionId: 1)
+        let exact = allPages(regionId: 1, limit: 2)
+        #expect(exact.map { $0.stops.map(\.id) } == [["1_a", "1_b"], ["1_c", "1_d"], []])
+        #expect(exact.map(\.cursor) == ["1_b", "1_d", nil])
+    }
+
+    /// The cursor comes from the rows read, not the stops decoded. Taken from
+    /// the decoded stops, a page with none would end paging early and `1_c`
+    /// would never be read.
+    @Test func `A page of corrupted rows doesn't end paging`() throws {
+        try database.dbQueue.write { db in
+            for id in ["1_a", "1_b"] {
+                try db.execute(
+                    sql: """
+                        INSERT INTO cachedStop (id, regionId, latitude, longitude, lastUpdated, stopData)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                    arguments: [id, 1, 47.6, -122.3, Date().timeIntervalSince1970, Data("NOT_VALID_JSON".utf8)]
+                )
+            }
+        }
+        repository.saveStops([makeStop(id: "1_c")], regionId: 1)
+
+        let pages = allPages(regionId: 1, limit: 2)
+        #expect(pages.map { $0.stops.map(\.id) } == [[], ["1_c"]])
+        #expect(pages.map(\.cursor) == ["1_b", nil])
+    }
+
     // MARK: - Nil Direction / WheelchairBoarding
 
     @Test func `Stop with nil direction and wheelchair boarding round trips correctly`() {

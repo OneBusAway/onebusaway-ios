@@ -156,14 +156,28 @@ nonisolated enum StopEntityMapping {
     /// `regionID` only. A trip bookmark contributes its stop.
     static func suggested(bookmarks: [Bookmark], recentStops: [Stop], regionID: Int?) -> [StopEntity] {
         guard let regionID else { return [] }
-        let bookmarked = bookmarks.filter { $0.regionIdentifier == regionID }.map(\.stop)
-        let recent = recentStops.filter { $0.regionIdentifier == regionID }
+        let byTier = tiers(bookmarks: bookmarks, recentStops: recentStops, regionID: regionID)
+        return byTier.bookmarked + byTier.recent
+    }
 
-        // Stores written before `addRecentStop` deduplicated can hold a stop twice.
+    /// The same stops as `suggested`, split by where they came from, which is
+    /// how Spotlight ranks them. A stop that is bookmarked and recent is only
+    /// in `bookmarked`.
+    static func tiers(bookmarks: [Bookmark], recentStops: [Stop], regionID: Int) -> (bookmarked: [StopEntity], recent: [StopEntity]) {
+        // One set across both tiers, so a stop lands only in the higher one. It
+        // also covers stores written before `addRecentStop` deduplicated, which
+        // can hold a recent stop twice.
         var seen = Set<StopID>()
-        return (bookmarked + recent)
+        let bookmarked = bookmarks
+            .filter { $0.regionIdentifier == regionID }
+            .map(\.stop)
             .filter { seen.insert($0.id).inserted }
-            .map { entity(for: $0, regionID: regionID) }
+        let recent = recentStops
+            .filter { $0.regionIdentifier == regionID && seen.insert($0.id).inserted }
+        return (
+            bookmarked.map { entity(for: $0, regionID: regionID) },
+            recent.map { entity(for: $0, regionID: regionID) }
+        )
     }
 
     /// Looks each id up among every bookmark and recent stop, in any region, so
