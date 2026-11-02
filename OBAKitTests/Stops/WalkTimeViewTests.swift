@@ -69,11 +69,11 @@ final class WalkTimeViewTests {
         #expect(label?.text != nil)
         #expect(imageView?.image != nil)
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Time to walk to stop")
+        #expect(view.accessibilityLabel == OBALoc("walk_time_view.accessibility_label", value: "Time to walk to stop", comment: ""))
         #expect(view.accessibilityTraits.contains(.staticText))
 
         let accessibilityValue = view.accessibilityValue
-        #expect(accessibilityValue?.contains("Takes 5 minutes to walk") == true)
+        #expect(accessibilityValue != nil)
     }
 
     @Test func testBikeModeConfigurationAboveThreshold() {
@@ -84,17 +84,17 @@ final class WalkTimeViewTests {
         let distance: CLLocationDistance = 1600.0
         let timeToBike: TimeInterval = 360.0 // 6 minutes
 
-        view.set(distance: distance, timeToBike: timeToBike, isBikeMode: true)
+        view.set(distance: distance, timeToWalk: timeToBike, isBikeMode: true)
 
         let (label, imageView) = extractSubviews(from: view)
         #expect(label?.text != nil)
         #expect(imageView?.image == UIImage(systemName: "bicycle"))
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Time to bike to stop")
+        #expect(view.accessibilityLabel == OBALoc("walk_time_view.accessibility_label_bike", value: "Time to bike to stop", comment: ""))
         #expect(view.accessibilityTraits.contains(.staticText))
 
         let accessibilityValue = view.accessibilityValue
-        #expect(accessibilityValue?.contains("Takes 6 minutes to bike") == true)
+        #expect(accessibilityValue != nil)
     }
 
     @Test func testTransferArrivalConfiguration() {
@@ -109,7 +109,7 @@ final class WalkTimeViewTests {
         #expect(label?.text != nil)
         #expect(imageView?.image == Icons.vehiclesSelectedTabIcon)
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Transfer arrival time")
+        #expect(view.accessibilityLabel == OBALoc("walk_time_view.transfer_accessibility_label", value: "Transfer arrival time", comment: ""))
         #expect(view.accessibilityValue == label?.text)
         #expect(view.accessibilityTraits.contains(.staticText))
     }

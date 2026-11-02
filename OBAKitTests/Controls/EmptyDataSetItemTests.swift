@@ -16,6 +16,15 @@ import OBAKitCore
 @Suite(.serialized)
 final class EmptyDataSetItemTests {
 
+    private var dummyResponse: HTTPURLResponse {
+        HTTPURLResponse(
+            url: URL(string: "https://example.com/api")!,
+            statusCode: 404,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+    }
+
     @Test func testInitWithExplicitProperties() {
         let item = EmptyDataSetItem(
             id: "custom_empty",
@@ -48,11 +57,11 @@ final class EmptyDataSetItemTests {
         #expect(networkItem.body == networkError.localizedDescription)
         #expect(networkItem.image == UIImage(systemName: "wifi.slash"))
 
-        let serverError = APIError.serverError
+        let serverError = APIError.serverError(regionName: "Puget Sound")
         let serverItem = EmptyDataSetItem(id: "server_err", error: serverError)
         #expect(serverItem.image == UIImage(systemName: "server.rack"))
 
-        let notFoundError = APIError.requestNotFound
+        let notFoundError = APIError.requestNotFound(dummyResponse)
         let notFoundItem = EmptyDataSetItem(id: "not_found", error: notFoundError)
         #expect(notFoundItem.image == UIImage(systemName: "questionmark.square.dashed"))
 
@@ -63,7 +72,7 @@ final class EmptyDataSetItemTests {
 
     @Test func testInitWithErrorRespectsExplicitImageOverride() {
         let overrideImage = UIImage(systemName: "star.fill")
-        let error = APIError.serverError
+        let error = APIError.serverError(regionName: "Puget Sound")
         let item = EmptyDataSetItem(id: "override_img", error: error, image: overrideImage)
 
         #expect(item.image == overrideImage)

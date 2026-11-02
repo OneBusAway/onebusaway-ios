@@ -17,11 +17,17 @@ import OBAKitCore
 final class TripCardViewTests {
 
     @Test func testRouteToHeadsignFormatting() {
+        let fmt = OBALoc(
+            "trip_page.card.a11y_no_arrival_fmt",
+            value: "Route %@ to %@",
+            comment: ""
+        )
+
         let title1 = TripCardView.routeToHeadsign("10", "Capitol Hill")
-        #expect(title1 == "Route 10 to Capitol Hill")
+        #expect(title1 == String(format: fmt, "10", "Capitol Hill"))
 
         let title2 = TripCardView.routeToHeadsign("RapidRide E Line", "Downtown Seattle")
-        #expect(title2 == "Route RapidRide E Line to Downtown Seattle")
+        #expect(title2 == String(format: fmt, "RapidRide E Line", "Downtown Seattle"))
     }
 
     @Test func testTripCardViewInitializationProperties() {

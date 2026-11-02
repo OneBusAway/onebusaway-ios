@@ -16,6 +16,18 @@ import OBAKitCore
 @Suite(.serialized)
 final class TripSegmentViewTests {
 
+    private var destinationLabel: String {
+        OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "")
+    }
+
+    private var boardingLabel: String {
+        OBALoc("trip_stop.boarding_stop.accessibility_label", value: "Boarding stop", comment: "")
+    }
+
+    private var vehicleLocationLabel: String {
+        OBALoc("trip_stop.vehicle_location.accessibility_label", value: "Vehicle is here", comment: "")
+    }
+
     @Test func testDestinationStatusAccessibilityLabelCombinations() {
         let view = TripSegmentView()
 
@@ -27,27 +39,27 @@ final class TripSegmentViewTests {
         // 2. User destination only
         view.setDestinationStatus(user: true, vehicle: false, boarding: false)
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Your destination")
+        #expect(view.accessibilityLabel == destinationLabel)
 
         // 3. Boarding stop only
         view.setDestinationStatus(user: false, vehicle: false, boarding: true)
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Boarding stop")
+        #expect(view.accessibilityLabel == boardingLabel)
 
         // 4. Vehicle location only
         view.setDestinationStatus(user: false, vehicle: true, boarding: false)
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Vehicle is here")
+        #expect(view.accessibilityLabel == vehicleLocationLabel)
 
         // 5. Multiple flags (User destination + vehicle location)
         view.setDestinationStatus(user: true, vehicle: true, boarding: false)
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Your destination, Vehicle is here")
+        #expect(view.accessibilityLabel == "\(destinationLabel), \(vehicleLocationLabel)")
 
         // 6. User destination + boarding stop + vehicle location
         view.setDestinationStatus(user: true, vehicle: true, boarding: true)
         #expect(view.isAccessibilityElement)
-        #expect(view.accessibilityLabel == "Your destination, Boarding stop, Vehicle is here")
+        #expect(view.accessibilityLabel == "\(destinationLabel), \(boardingLabel), \(vehicleLocationLabel)")
     }
 
     @Test func testTopLineColorTransitionsBasedOnTemporalStateAndRideBounds() {

@@ -75,23 +75,31 @@ final class AdjacentTripControllerTests {
 
     @Test func testTripStopCellAppliesPreviousAdjacentTrip() {
         let cell = TripStopCell(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
-        let config = AdjacentTripRowConfiguration(order: .previous, routeHeadsign: "10 - Downtown Seattle")
+        let headsign = "10 - Downtown Seattle"
+        let config = AdjacentTripRowConfiguration(order: .previous, routeHeadsign: headsign)
 
         cell.apply(config)
 
-        #expect(cell.titleLabel.text == "Starts as 10 - Downtown Seattle")
-        #expect(cell.accessibilityLabel == "Starts as 10 - Downtown Seattle")
+        let expectedFormat = OBALoc("trip_details_controller.starts_as_fmt", value: "Starts as %@", comment: "")
+        let expectedTitle = String(format: expectedFormat, headsign)
+
+        #expect(cell.titleLabel.text == expectedTitle)
+        #expect(cell.accessibilityLabel == expectedTitle)
         #expect(cell.tripSegmentView.adjacentTripOrder == .previous)
     }
 
     @Test func testTripStopCellAppliesNextAdjacentTrip() {
         let cell = TripStopCell(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
-        let config = AdjacentTripRowConfiguration(order: .next, routeHeadsign: "49 - University District")
+        let headsign = "49 - University District"
+        let config = AdjacentTripRowConfiguration(order: .next, routeHeadsign: headsign)
 
         cell.apply(config)
 
-        #expect(cell.titleLabel.text == "Continues as 49 - University District")
-        #expect(cell.accessibilityLabel == "Continues as 49 - University District")
+        let expectedFormat = OBALoc("trip_details_controller.continues_as_fmt", value: "Continues as %@", comment: "")
+        let expectedTitle = String(format: expectedFormat, headsign)
+
+        #expect(cell.titleLabel.text == expectedTitle)
+        #expect(cell.accessibilityLabel == expectedTitle)
         #expect(cell.tripSegmentView.adjacentTripOrder == .next)
     }
 }

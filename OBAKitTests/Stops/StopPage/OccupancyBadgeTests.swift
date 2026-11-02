@@ -28,28 +28,28 @@ struct OccupancyBadgeTests {
     }
 
     @Test func testShortLabelMapping() {
-        #expect(OccupancyBadge.shortLabel(.empty) == "Empty")
-        #expect(OccupancyBadge.shortLabel(.manySeatsAvailable) == "Many seats")
-        #expect(OccupancyBadge.shortLabel(.fewSeatsAvailable) == "Some seats")
-        #expect(OccupancyBadge.shortLabel(.standingRoomOnly) == "Standing room")
-        #expect(OccupancyBadge.shortLabel(.crushedStandingRoomOnly) == "Crowded")
-        #expect(OccupancyBadge.shortLabel(.full) == "Full")
-        #expect(OccupancyBadge.shortLabel(.notBoardable) == "Not boarding")
-        #expect(OccupancyBadge.shortLabel(.notAcceptingPassengers) == "Not boarding")
-        #expect(OccupancyBadge.shortLabel(.noDataAvailable) == "Unknown")
-        #expect(OccupancyBadge.shortLabel(.unknown) == "Unknown")
+        #expect(OccupancyBadge.shortLabel(.empty) == OBALoc("occupancy_status.short.empty", value: "Empty", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.manySeatsAvailable) == OBALoc("occupancy_status.short.many_seats", value: "Many seats", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.fewSeatsAvailable) == OBALoc("occupancy_status.short.some_seats", value: "Some seats", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.standingRoomOnly) == OBALoc("occupancy_status.short.standing_room", value: "Standing room", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.crushedStandingRoomOnly) == OBALoc("occupancy_status.short.crowded", value: "Crowded", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.full) == OBALoc("occupancy_status.short.full", value: "Full", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.notBoardable) == OBALoc("occupancy_status.short.not_boarding", value: "Not boarding", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.notAcceptingPassengers) == OBALoc("occupancy_status.short.not_boarding", value: "Not boarding", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.noDataAvailable) == OBALoc("occupancy_status.short.unknown", value: "Unknown", comment: ""))
+        #expect(OccupancyBadge.shortLabel(.unknown) == OBALoc("occupancy_status.short.unknown", value: "Unknown", comment: ""))
     }
 
     @Test func testLocalizedDescriptionMapping() {
-        #expect(OccupancyBadge.localizedDescription(.empty) == "Empty")
-        #expect(OccupancyBadge.localizedDescription(.manySeatsAvailable) == "Many seats available")
-        #expect(OccupancyBadge.localizedDescription(.fewSeatsAvailable) == "Few seats available")
-        #expect(OccupancyBadge.localizedDescription(.standingRoomOnly) == "Standing room only")
-        #expect(OccupancyBadge.localizedDescription(.crushedStandingRoomOnly) == "Crushed standing room only")
-        #expect(OccupancyBadge.localizedDescription(.full) == "Full")
-        #expect(OccupancyBadge.localizedDescription(.notBoardable) == "Not accepting passengers")
-        #expect(OccupancyBadge.localizedDescription(.notAcceptingPassengers) == "Not accepting passengers")
-        #expect(OccupancyBadge.localizedDescription(.noDataAvailable) == "Unknown")
-        #expect(OccupancyBadge.localizedDescription(.unknown) == "Unknown")
+        #expect(OccupancyBadge.localizedDescription(.empty) == OBALoc("occupancy_status.empty", value: "Empty", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.manySeatsAvailable) == OBALoc("occupancy_status.many_seats_available", value: "Many seats available", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.fewSeatsAvailable) == OBALoc("occupancy_status.few_seats_available", value: "Few seats available", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.standingRoomOnly) == OBALoc("occupancy_status.standing_room_only", value: "Standing room only", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.crushedStandingRoomOnly) == OBALoc("occupancy_status.crushed_standing_room_only", value: "Crushed standing room only", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.full) == OBALoc("occupancy_status.full", value: "Full", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.notBoardable) == OBALoc("occupancy_status.not_accepting_passengers", value: "Not accepting passengers", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.notAcceptingPassengers) == OBALoc("occupancy_status.not_accepting_passengers", value: "Not accepting passengers", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.noDataAvailable) == OBALoc("occupancy_status.unknown", value: "Unknown", comment: ""))
+        #expect(OccupancyBadge.localizedDescription(.unknown) == OBALoc("occupancy_status.unknown", value: "Unknown", comment: ""))
     }
 }

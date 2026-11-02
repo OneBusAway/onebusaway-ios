@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Foundation
 import Testing
 import OBAKitCore
 @testable import OBAKit
@@ -18,22 +19,30 @@ final class DepartureAccessibilityTests {
     private func makeArrivalDeparture(
         predicted: Bool,
         occupancy: ArrivalDeparture.OccupancyStatus? = nil
-    ) -> ArrivalDeparture {
-        ArrivalDeparture(
-            routeID: "1_100",
-            routeShortName: "10",
-            tripID: "1_1000",
-            serviceDate: Date(),
-            stopID: "1_999",
-            stopSequence: 1,
-            blockTripSequence: 1,
-            routeLongName: "Downtown",
-            arrivalDepartureStatus: .departing,
-            predicted: predicted,
-            predictedDepartureDate: predicted ? Date().addingTimeInterval(300) : nil,
-            scheduledDepartureDate: Date().addingTimeInterval(300),
-            occupancyStatus: occupancy
-        )
+    ) throws -> ArrivalDeparture {
+        var dictionary: [String: Any] = [
+            "arrivalEnabled": true,
+            "blockTripSequence": 1,
+            "departureEnabled": true,
+            "distanceFromStop": 100.0,
+            "lastUpdateTime": 1_700_000_000,
+            "numberOfStopsAway": 1,
+            "predicted": predicted,
+            "routeId": "1_100",
+            "scheduledArrivalTime": 1_700_000_000,
+            "scheduledDepartureTime": 1_700_000_000,
+            "serviceDate": 1_700_000_000,
+            "situationIds": [],
+            "status": "SCHEDULED",
+            "stopId": "1_999",
+            "stopSequence": 1,
+            "tripId": "1_1000",
+            "vehicleId": "vehicle_1"
+        ]
+        if let occupancy {
+            dictionary["occupancyStatus"] = occupancy.rawValue
+        }
+        return try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dictionary)
     }
 
     private var dummyTimeDisplay: DepartureTimeDisplay {
@@ -44,8 +53,8 @@ final class DepartureAccessibilityTests {
         )
     }
 
-    @Test func testRealtimeWithKnownOccupancyIncludesOccupancy() {
-        let departure = makeArrivalDeparture(predicted: true, occupancy: .manySeatsAvailable)
+    @Test func testRealtimeWithKnownOccupancyIncludesOccupancy() throws {
+        let departure = try makeArrivalDeparture(predicted: true, occupancy: .manySeatsAvailable)
         let status = DepartureStatus(arrivalDeparture: departure)
         #expect(status.showsOccupancy)
 
@@ -56,11 +65,12 @@ final class DepartureAccessibilityTests {
             timeDisplay: dummyTimeDisplay
         )
 
-        #expect(label == "Route 10 to Downtown departs in 5 minutes, at 10:30 AM, Many seats available")
+        let expectedOccupancy = OccupancyBadge.localizedDescription(.manySeatsAvailable)
+        #expect(label == "Route 10 to Downtown departs in 5 minutes, at 10:30 AM, \(expectedOccupancy)")
     }
 
-    @Test func testScheduledOnlyOmitsOccupancyEvenWhenOccupancyIsPresent() {
-        let departure = makeArrivalDeparture(predicted: false, occupancy: .standingRoomOnly)
+    @Test func testScheduledOnlyOmitsOccupancyEvenWhenOccupancyIsPresent() throws {
+        let departure = try makeArrivalDeparture(predicted: false, occupancy: .standingRoomOnly)
         let status = DepartureStatus(arrivalDeparture: departure)
         #expect(!status.showsOccupancy)
 
@@ -74,8 +84,8 @@ final class DepartureAccessibilityTests {
         #expect(label == "Route 10 to Downtown departs in 5 minutes, at 10:30 AM")
     }
 
-    @Test func testRealtimeWithUnknownOrNilOccupancyOmitsOccupancy() {
-        let departureWithUnknown = makeArrivalDeparture(predicted: true, occupancy: .unknown)
+    @Test func testRealtimeWithUnknownOrNilOccupancyOmitsOccupancy() throws {
+        let departureWithUnknown = try makeArrivalDeparture(predicted: true, occupancy: .unknown)
         let statusWithUnknown = DepartureStatus(arrivalDeparture: departureWithUnknown)
 
         let labelWithUnknown = DepartureAccessibility.label(
@@ -86,7 +96,7 @@ final class DepartureAccessibilityTests {
         )
         #expect(labelWithUnknown == "Route 10 departs in 5 minutes, at 10:30 AM")
 
-        let departureWithNil = makeArrivalDeparture(predicted: true, occupancy: nil)
+        let departureWithNil = try makeArrivalDeparture(predicted: true, occupancy: nil)
         let statusWithNil = DepartureStatus(arrivalDeparture: departureWithNil)
 
         let labelWithNil = DepartureAccessibility.label(
@@ -98,8 +108,8 @@ final class DepartureAccessibilityTests {
         #expect(labelWithNil == "Route 10 departs in 5 minutes, at 10:30 AM")
     }
 
-    @Test func testExtraClausesAreAppendedAtEnd() {
-        let departure = makeArrivalDeparture(predicted: true, occupancy: .fewSeatsAvailable)
+    @Test func testExtraClausesAreAppendedAtEnd() throws {
+        let departure = try makeArrivalDeparture(predicted: true, occupancy: .fewSeatsAvailable)
         let status = DepartureStatus(arrivalDeparture: departure)
 
         let label = DepartureAccessibility.label(
@@ -110,6 +120,7 @@ final class DepartureAccessibilityTests {
             extraClauses: ["Alarm set for 5 minutes before", "Likely missed"]
         )
 
-        #expect(label == "Route 10 arrives now, at 10:30 AM, Few seats available, Alarm set for 5 minutes before, Likely missed")
+        let expectedOccupancy = OccupancyBadge.localizedDescription(.fewSeatsAvailable)
+        #expect(label == "Route 10 arrives now, at 10:30 AM, \(expectedOccupancy), Alarm set for 5 minutes before, Likely missed")
     }
 }
