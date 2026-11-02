@@ -46,10 +46,17 @@ final class DepartureAccessibilityTests {
     }
 
     private var dummyTimeDisplay: DepartureTimeDisplay {
-        DepartureTimeDisplay(
-            scheduledTime: "10:30 AM",
-            predictedTime: nil,
-            accessibilityTimeDescription: "at 10:30 AM"
+        let formatters = Formatters(
+            locale: Locale(identifier: "en_US"),
+            calendar: Calendar(identifier: .gregorian),
+            themeColors: ThemeColors()
+        )
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        return DepartureTimeDisplay(
+            scheduledDate: date,
+            expectedDate: date,
+            isRealTime: true,
+            formatters: formatters
         )
     }
 
@@ -58,15 +65,16 @@ final class DepartureAccessibilityTests {
         let status = DepartureStatus(arrivalDeparture: departure)
         #expect(status.showsOccupancy)
 
+        let timeDisplay = dummyTimeDisplay
         let label = DepartureAccessibility.label(
             identity: "Route 10 to Downtown departs in 5 minutes",
             departure: departure,
             status: status,
-            timeDisplay: dummyTimeDisplay
+            timeDisplay: timeDisplay
         )
 
         let expectedOccupancy = OccupancyBadge.localizedDescription(.manySeatsAvailable)
-        #expect(label == "Route 10 to Downtown departs in 5 minutes, at 10:30 AM, \(expectedOccupancy)")
+        #expect(label == "Route 10 to Downtown departs in 5 minutes, \(timeDisplay.accessibilityTimeDescription), \(expectedOccupancy)")
     }
 
     @Test func testScheduledOnlyOmitsOccupancyEvenWhenOccupancyIsPresent() throws {
@@ -74,27 +82,29 @@ final class DepartureAccessibilityTests {
         let status = DepartureStatus(arrivalDeparture: departure)
         #expect(!status.showsOccupancy)
 
+        let timeDisplay = dummyTimeDisplay
         let label = DepartureAccessibility.label(
             identity: "Route 10 to Downtown departs in 5 minutes",
             departure: departure,
             status: status,
-            timeDisplay: dummyTimeDisplay
+            timeDisplay: timeDisplay
         )
 
-        #expect(label == "Route 10 to Downtown departs in 5 minutes, at 10:30 AM")
+        #expect(label == "Route 10 to Downtown departs in 5 minutes, \(timeDisplay.accessibilityTimeDescription)")
     }
 
     @Test func testRealtimeWithUnknownOrNilOccupancyOmitsOccupancy() throws {
         let departureWithUnknown = try makeArrivalDeparture(predicted: true, occupancy: .unknown)
         let statusWithUnknown = DepartureStatus(arrivalDeparture: departureWithUnknown)
 
+        let timeDisplay = dummyTimeDisplay
         let labelWithUnknown = DepartureAccessibility.label(
             identity: "Route 10 departs in 5 minutes",
             departure: departureWithUnknown,
             status: statusWithUnknown,
-            timeDisplay: dummyTimeDisplay
+            timeDisplay: timeDisplay
         )
-        #expect(labelWithUnknown == "Route 10 departs in 5 minutes, at 10:30 AM")
+        #expect(labelWithUnknown == "Route 10 departs in 5 minutes, \(timeDisplay.accessibilityTimeDescription)")
 
         let departureWithNil = try makeArrivalDeparture(predicted: true, occupancy: nil)
         let statusWithNil = DepartureStatus(arrivalDeparture: departureWithNil)
@@ -103,24 +113,25 @@ final class DepartureAccessibilityTests {
             identity: "Route 10 departs in 5 minutes",
             departure: departureWithNil,
             status: statusWithNil,
-            timeDisplay: dummyTimeDisplay
+            timeDisplay: timeDisplay
         )
-        #expect(labelWithNil == "Route 10 departs in 5 minutes, at 10:30 AM")
+        #expect(labelWithNil == "Route 10 departs in 5 minutes, \(timeDisplay.accessibilityTimeDescription)")
     }
 
     @Test func testExtraClausesAreAppendedAtEnd() throws {
         let departure = try makeArrivalDeparture(predicted: true, occupancy: .fewSeatsAvailable)
         let status = DepartureStatus(arrivalDeparture: departure)
 
+        let timeDisplay = dummyTimeDisplay
         let label = DepartureAccessibility.label(
             identity: "Route 10 arrives now",
             departure: departure,
             status: status,
-            timeDisplay: dummyTimeDisplay,
+            timeDisplay: timeDisplay,
             extraClauses: ["Alarm set for 5 minutes before", "Likely missed"]
         )
 
         let expectedOccupancy = OccupancyBadge.localizedDescription(.fewSeatsAvailable)
-        #expect(label == "Route 10 arrives now, at 10:30 AM, \(expectedOccupancy), Alarm set for 5 minutes before, Likely missed")
+        #expect(label == "Route 10 arrives now, \(timeDisplay.accessibilityTimeDescription), \(expectedOccupancy), Alarm set for 5 minutes before, Likely missed")
     }
 }
