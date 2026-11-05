@@ -234,9 +234,24 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         destinationStopID: StopID? = nil
     ) {
         guard shouldNavigate(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
-        let tripController = TripViewController(
+        let tripController = TripPageViewController(
             application: application,
             arrivalDeparture: arrivalDeparture,
+            destinationStopID: destinationStopID
+        )
+        navigate(to: tripController, from: fromController)
+    }
+
+    /// - Parameter destinationStopID: Where the sharer said they will step off,
+    ///   when this came from a shared trip link that named one. See #449.
+    public func navigateTo(
+        tripConvertible: TripConvertible,
+        from fromController: UIViewController,
+        destinationStopID: StopID? = nil
+    ) {
+        let tripController = TripPageViewController(
+            application: application,
+            tripConvertible: tripConvertible,
             destinationStopID: destinationStopID
         )
         navigate(to: tripController, from: fromController)

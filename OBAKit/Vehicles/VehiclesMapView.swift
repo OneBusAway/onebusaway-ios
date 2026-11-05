@@ -86,7 +86,7 @@ struct VehiclesMapView: View {
               let window = windowScene.windows.first,
               let rootVC = window.rootViewController else { return }
 
-        let tripVC = TripViewController(
+        let tripVC = TripPageViewController(
             application: viewModel.application,
             tripConvertible: tripConvertible
         )

@@ -10,15 +10,15 @@
 import SwiftUI
 import OBAKitCore
 
-/// Lazily-built UIKit preview for row long-presses; the `TripViewController` is
+/// Lazily-built UIKit preview for row long-presses; the `TripPageViewController` is
 /// constructed only when SwiftUI actually presents the context-menu preview.
 struct TripViewControllerPreview: UIViewControllerRepresentable {
     let departure: ArrivalDeparture
     let application: Application
 
-    func makeUIViewController(context: Context) -> TripViewController {
-        TripViewController(application: application, arrivalDeparture: departure)
+    func makeUIViewController(context: Context) -> TripPageViewController {
+        TripPageViewController(application: application, arrivalDeparture: departure)
     }
 
-    func updateUIViewController(_ uiViewController: TripViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: TripPageViewController, context: Context) {}
 }

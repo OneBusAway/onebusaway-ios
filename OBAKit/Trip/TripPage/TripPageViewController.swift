@@ -56,10 +56,19 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// strip behind its grabber to match or it reads as a white bar across the top.
     let sheetSurfaceColor: UIColor? = .systemGroupedBackground
 
-    init(application: Application, tripConvertible: TripConvertible, originTitle: String? = nil) {
+    init(
+        application: Application,
+        tripConvertible: TripConvertible,
+        originTitle: String? = nil,
+        destinationStopID: StopID? = nil
+    ) {
         self.application = application
         self.originTitle = originTitle
-        self.viewModel = TripViewModel(application: application, tripConvertible: tripConvertible)
+        self.viewModel = TripViewModel(
+            application: application,
+            tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID
+        )
 
         // The page's actions capture `self`, which doesn't exist until after
         // `super.init`. Seed with the inert default set and replace immediately.
@@ -74,11 +83,17 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         render()
     }
 
-    convenience init(application: Application, arrivalDeparture: ArrivalDeparture, originTitle: String? = nil) {
+    convenience init(
+        application: Application,
+        arrivalDeparture: ArrivalDeparture,
+        originTitle: String? = nil,
+        destinationStopID: StopID? = nil
+    ) {
         self.init(
             application: application,
             tripConvertible: TripConvertible(arrivalDeparture: arrivalDeparture),
-            originTitle: originTitle
+            originTitle: originTitle,
+            destinationStopID: destinationStopID
         )
     }
 

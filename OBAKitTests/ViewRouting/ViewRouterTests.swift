@@ -33,4 +33,46 @@ final class ViewRouterTests: OBATestCase {
         let isStopController = pushed is StopViewController || pushed is StopPageViewController
         #expect(isStopController, "Expected pushed controller to be a stop controller")
     }
+
+    @Test func `Navigate to arrivalDeparture pushes TripPageViewController`() throws {
+        let queue = OperationQueue()
+        let dataLoader = MockDataLoader(testName: "ViewRouterTests")
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let root = UIViewController()
+        let navigation = UINavigationController(rootViewController: root)
+
+        let arrivalDeparture = try Fixtures.arrivalDeparture()
+        application.viewRouter.navigateTo(
+            arrivalDeparture: arrivalDeparture,
+            from: root,
+            destinationStopID: "1_999"
+        )
+
+        let pushed = try #require(navigation.viewControllers.last)
+        #expect(pushed !== root, "Expected a new view controller to be pushed")
+        let tripPage = try #require(pushed as? TripPageViewController, "Expected pushed controller to be TripPageViewController")
+        #expect(tripPage.viewModel.destinationStopID == "1_999")
+    }
+
+    @Test func `Navigate to tripConvertible pushes TripPageViewController`() throws {
+        let queue = OperationQueue()
+        let dataLoader = MockDataLoader(testName: "ViewRouterTests")
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        let root = UIViewController()
+        let navigation = UINavigationController(rootViewController: root)
+
+        let convertible = TripConvertible(arrivalDeparture: try Fixtures.arrivalDeparture())
+        application.viewRouter.navigateTo(
+            tripConvertible: convertible,
+            from: root,
+            destinationStopID: "1_888"
+        )
+
+        let pushed = try #require(navigation.viewControllers.last)
+        #expect(pushed !== root, "Expected a new view controller to be pushed")
+        let tripPage = try #require(pushed as? TripPageViewController, "Expected pushed controller to be TripPageViewController")
+        #expect(tripPage.viewModel.destinationStopID == "1_888")
+    }
 }
