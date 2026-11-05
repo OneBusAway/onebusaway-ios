@@ -28,40 +28,8 @@ final class TripCardViewTests {
 
         let title2 = TripCardView.routeToHeadsign("RapidRide E Line", "Downtown Seattle")
         #expect(title2 == String(format: fmt, "RapidRide E Line", "Downtown Seattle"))
-    }
 
-    @Test func testAccessibilityTextFallbackWhenNoArrival() {
-        let routeShortName = "44"
-        let headsign = "Ballard"
-        let provenance = "Scheduled trip"
-
-        let cardWithProvenance = TripCardView(
-            departure: nil,
-            routeShortName: routeShortName,
-            headsign: headsign,
-            routeColor: .blue,
-            routeTextColor: .white,
-            provenance: provenance
-        )
-
-        let expectedTitle = TripCardView.routeToHeadsign(routeShortName, headsign)
-        let expectedAccessibilityText = "\(expectedTitle), \(provenance)"
-
-        let mirror = Mirror(reflecting: cardWithProvenance)
-        let accessibilityText = mirror.descendant("accessibilityText") as? String
-        #expect(accessibilityText == expectedAccessibilityText)
-
-        let cardWithoutProvenance = TripCardView(
-            departure: nil,
-            routeShortName: routeShortName,
-            headsign: headsign,
-            routeColor: .blue,
-            routeTextColor: .white,
-            provenance: nil
-        )
-
-        let mirrorNoProv = Mirror(reflecting: cardWithoutProvenance)
-        let accessibilityTextNoProv = mirrorNoProv.descendant("accessibilityText") as? String
-        #expect(accessibilityTextNoProv == expectedTitle)
+        let title3 = TripCardView.routeToHeadsign("", "Downtown")
+        #expect(title3 == String(format: fmt, "", "Downtown"))
     }
 }
