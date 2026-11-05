@@ -286,7 +286,15 @@ struct StopViewControllerPreview: UIViewControllerRepresentable {
     let application: Application
 
     func makeUIViewController(context: Context) -> UIViewController {
-        application.viewRouter.makeStopController(stopID: stopID)
+        makeController()
+    }
+
+    /// In preview mode, like every other peek. SwiftUI can't commit this preview, so
+    /// it stays there. Separate because tests can't build a `Context`.
+    func makeController() -> UIViewController {
+        let controller = application.viewRouter.makeStopController(stopID: stopID)
+        (controller as? Previewable)?.enterPreviewMode()
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
