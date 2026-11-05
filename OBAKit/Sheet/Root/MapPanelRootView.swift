@@ -56,6 +56,51 @@ func paddedMapRect(
     return paddedRect
 }
 
+// MARK: - MapPanelBottomPadding
+
+/// Computes detent-aware bottom safe-area padding for `MapPanelRootView`'s Map,
+/// ensuring map annotations, user location, and camera viewports remain visible above
+/// the currently active sheet without slipping underneath.
+struct MapPanelBottomPadding {
+    /// Minimum height (in points) of visible map retained at the top of the screen
+    /// when the sheet is expanded to `.large` or `largeDetent`, avoiding viewport collapse.
+    static let minimumVisibleMapHeight: CGFloat = 120
+
+    /// Calculates effective bottom safe area padding for the map given the
+    /// measured or estimated height of the frontmost sheet and total map height.
+    static func effectivePadding(
+        sheetHeight: CGFloat,
+        totalMapHeight: CGFloat,
+        collapsedHeight: CGFloat = AppSheetRoute.homeCollapsedHeight
+    ) -> CGFloat {
+        guard totalMapHeight > 0 else {
+            return collapsedHeight
+        }
+        let maxAllowed = max(collapsedHeight, totalMapHeight - minimumVisibleMapHeight)
+        return min(max(sheetHeight, collapsedHeight), maxAllowed)
+    }
+
+    /// Estimates the height in points for a given `PresentationDetent`, used for immediate
+    /// transitions before geometry measurement settles.
+    static func estimatedHeight(
+        for detent: PresentationDetent,
+        halfScreenHeight: CGFloat,
+        totalMapHeight: CGFloat
+    ) -> CGFloat {
+        if detent == .height(AppSheetRoute.homeCollapsedHeight) {
+            return AppSheetRoute.homeCollapsedHeight
+        } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
+            return AppSheetRoute.tripPlannerTipHeight
+        } else if detent == .medium {
+            return halfScreenHeight
+        } else if detent == AppSheetRoute.largeDetent || detent == .large {
+            return totalMapHeight > 0 ? totalMapHeight * 0.99 : halfScreenHeight * 2
+        } else {
+            return halfScreenHeight
+        }
+    }
+}
+
 // MARK: - MapPinSelection
 
 /// What the panel map's `selection` can hold. Stops, rentals, trip-planner
@@ -148,7 +193,21 @@ struct MapPanelRootView: View {
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
 
+    // Live un-clamped height of the frontmost sheet, tracked dynamically from
+    // the sheet's `.onGeometryChange` so map safe-area insets keep annotations
+    // and camera viewports positioned in the visible portion above the sheet.
+    @State private var rawSheetHeight: CGFloat = AppSheetRoute.homeCollapsedHeight
+
     @State private var halfScreenHeight: CGFloat = 350
+
+    /// Dynamic bottom safe area padding for the Map, tracking the frontmost sheet's height
+    /// so map annotations and camera centers remain visible in the top portion above the sheet.
+    private var mapBottomPadding: CGFloat {
+        MapPanelBottomPadding.effectivePadding(
+            sheetHeight: rawSheetHeight,
+            totalMapHeight: mapSize.height
+        )
+    }
 
     /// The on-demand dock's measured height; zero while it shows nothing. The
     /// control stack rides above it (spec 2.4).
@@ -373,6 +432,7 @@ struct MapPanelRootView: View {
         // without dismissing anything, and still clears on a real exit, including
         // the drag-down the OS routes through `truncateStacked`.
         .onChange(of: coordinator.stackedRoutes) { _, _ in
+            updateRawSheetHeightForCurrentRoute()
             searchDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
             // Clear the trip planner when `.tripPlanner` is no longer on the stack.
             // Unlike searchDisplay which uses `.clearIfOwnerAbsent`, the trip planner
@@ -422,16 +482,16 @@ struct MapPanelRootView: View {
         .mapStyle(mapViewModel.mapType.styleDescriptor(
             showingPointsOfInterest: layersModel.showsPointsOfInterest
         ).mapStyle)
-        .safeAreaPadding(.bottom, 180)
+        .safeAreaPadding(.bottom, mapBottomPadding)
+        .animation(
+            .interpolatingSpring(duration: toolbarsAnimationDuration > 0 ? toolbarsAnimationDuration : 0.25, bounce: 0, initialVelocity: 0),
+            value: mapBottomPadding
+        )
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
         } action: { _, newValue in
             halfScreenHeight = newValue
         }
-        // TODO: Detent-aware bottom padding. Pinned to the collapsed sheet
-        // height today, so dragging the sheet up to `.medium` or
-        // `largeDetent` lets the user-location annotation and any future map
-        // overlays slip under the sheet.
         .overlay(alignment: .topLeading) {
             weatherButton
         }
@@ -481,6 +541,7 @@ struct MapPanelRootView: View {
             onDemandDock
         }
         .onChange(of: sheetRoutes.map(\.id)) { _, _ in
+            updateRawSheetHeightForCurrentRoute()
             // The focus hides the dock, and leaving the bar drops the highlight;
             // a zone detail page keeps it until the page closes (spec 2.3, ruling F15).
             let heldHighlight = probeController.highlightedServiceID
@@ -498,6 +559,17 @@ struct MapPanelRootView: View {
         }
         .onChange(of: sheetHeight) { _, newValue in
             probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
+        }
+        .onChange(of: coordinator.currentDetent) { _, newDetent in
+            if coordinator.stackedRoutes.isEmpty {
+                withAnimation(.interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0)) {
+                    rawSheetHeight = MapPanelBottomPadding.estimatedHeight(
+                        for: newDetent,
+                        halfScreenHeight: halfScreenHeight,
+                        totalMapHeight: mapSize.height
+                    )
+                }
+            }
         }
         .onChange(of: layersModel.isOnDemandLayerEnabled, initial: true) { _, enabled in
             probeController.setLayerEnabled(enabled)
@@ -660,19 +732,25 @@ struct MapPanelRootView: View {
                 isPresented: route.prefersStacking ? .constant(false) : $isLocationOffAlertPresented,
                 onOpenSettings: openSettings
             )
-            .onGeometryChange(for: CGFloat.self) { [halfScreenHeight] proxy in
-                // The transform closure is @Sendable; snapshot the @State value
-                // instead of reading main-actor view state inside it.
-                max(min(proxy.size.height, halfScreenHeight), 0)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.height
             } action: { oldValue, newValue in
+                // Track live height of whichever sheet is currently frontmost
+                let isFrontmost = (coordinator.stackedRoutes.last == route)
+                    || (coordinator.stackedRoutes.isEmpty && coordinator.currentRoute == route)
+                if isFrontmost {
+                    rawSheetHeight = newValue
+                }
+
                 guard !route.prefersStacking else { return }
 
-                sheetHeight = newValue
+                let clamped = max(min(newValue, halfScreenHeight), 0)
+                sheetHeight = clamped
 
                 /// Opacity calculation — fade band sits immediately
                 /// below `halfScreenHeight`.
                 let fadeStart = halfScreenHeight - toolbarFadeRange
-                let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
+                let progress = max(min((clamped - fadeStart) / toolbarFadeRange, 1), 0)
                 toolbarsOpacity = 1 - progress
 
                 /// Animation duration
@@ -768,20 +846,35 @@ extension MapPanelRootView {
         }
     }
 
+    /// Synchronizes `rawSheetHeight` with the expected height of whichever route is currently
+    /// active (e.g. immediately upon push or dismissal, before geometry measurement settles).
+    private func updateRawSheetHeightForCurrentRoute() {
+        let detent: PresentationDetent
+        if let topStacked = coordinator.stackedEntries.last {
+            detent = topStacked.detent
+        } else {
+            detent = coordinator.currentDetent
+        }
+        withAnimation(.interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0)) {
+            rawSheetHeight = MapPanelBottomPadding.estimatedHeight(
+                for: detent,
+                halfScreenHeight: halfScreenHeight,
+                totalMapHeight: mapSize.height
+            )
+        }
+    }
+
     /// Frames an open trip in the part of the map its sheet leaves visible.
     ///
-    /// The trip sheet opens at `.medium`, which covers about half the map, so the
-    /// bottom inset is half the map's height. The rect bounds the bus's and the
-    /// rider's coordinates, which are the middles of their markers, so every edge
-    /// also leaves a marker's width of room: with the margin alone, a bus on the
-    /// edge was drawn half off the screen. `paddedMapRect` turns the insets into
-    /// map points against the map's current size.
+    /// The map's `safeAreaPadding(.bottom, mapBottomPadding)` already insets the viewport
+    /// dynamically to clear the sheet height, so `edgePadding` only needs symmetrical
+    /// vehicle marker margin plus top pill clearance.
     private func applyTripFocusCameraTarget(_ target: TripFocusMapDisplayModel.CameraTarget) {
         let edge = ThemeMetrics.controllerMargin + TripFocusMapLayer.Style.vehicleDiameter
         let insets = UIEdgeInsets(
             top: edge + pillHeight,
             left: edge,
-            bottom: halfScreenHeight + edge,
+            bottom: edge,
             right: edge
         )
         withAnimation {
