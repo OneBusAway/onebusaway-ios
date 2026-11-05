@@ -510,7 +510,10 @@ public class StopViewController: UIViewController,
         else { return }
 
         let activity = userActivityBuilder.userActivity(for: stop, region: region)
-        application.donateOpenStop(stop, publishing: activity, replacing: userActivity)
+        // A peek isn't an open. `exitPreviewMode()` donates if the rider commits it.
+        if !inPreviewMode {
+            application.donateOpenStop(stop, publishing: activity, replacing: userActivity)
+        }
         // Stashed first: once the activity is assigned, UIKit may call the override at any save.
         activityUserInfo = activity.userInfo
         self.userActivity = activity
@@ -1316,18 +1319,25 @@ public class StopViewController: UIViewController,
         viewModel.updateStopPreferences(stopPreferences)
     }
 
-    // MARK: - Previewable
-
     private var inPreviewMode = false
+}
 
+// MARK: - Previewable
+
+extension StopViewController {
     func enterPreviewMode() {
         inPreviewMode = true
     }
 
     func exitPreviewMode() {
         inPreviewMode = false
-    }
 
+        // The peek published without donating, so this has nothing to compare with.
+        // With no arrivals loaded yet, the first publish donates instead.
+        if let stop {
+            application.donateOpenStop(stop, publishing: userActivity, replacing: nil)
+        }
+    }
 }
 
 // MARK: - Bookmarks

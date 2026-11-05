@@ -125,6 +125,10 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// See `donateOpenStop(_:publishing:replacing:)`. Internal so tests can install a fake.
     var intentDonor: any IntentDonor = SystemIntentDonor()
 
+    /// The stop `OpenStopIntent` last asked to open, until that stop's page takes
+    /// it. See `donateOpenStop(_:publishing:replacing:)`.
+    var stopOpenedByIntent: AppLinksRouter.StopDestination?
+
     /// Handles all deep-linking into the app.
     @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = makeAppLinksRouter()
 
@@ -688,6 +692,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                 return
             }
             MainActor.assumeIsolated {
+                self.stopOpenedByIntent = destination
                 self.queueOrOpenStop(destination)
             }
         }
@@ -750,6 +755,8 @@ public class Application: CoreApplication, PushServiceDelegate {
                     comment: "Shown when the rider taps a link or notification for a stop that belongs to a transit region other than the currently selected one."
                 )))
             }
+            // Nothing opens now, so there's no open for `donateOpenStop` to skip.
+            stopOpenedByIntent = nil
             return
         }
 

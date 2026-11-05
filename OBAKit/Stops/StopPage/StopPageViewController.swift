@@ -211,7 +211,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     private func beginUserActivity() {
         guard let stop = viewModel.stop else { return }
         let activity = actionPresenter.makeUserActivity(stop: stop)
-        application.donateOpenStop(stop, publishing: activity, replacing: userActivity)
+        // A peek isn't an open. `exitPreviewMode()` donates if the rider commits it.
+        if !inPreviewMode {
+            application.donateOpenStop(stop, publishing: activity, replacing: userActivity)
+        }
         // Stashed first: once the activity is assigned, UIKit may call the override at any save.
         activityUserInfo = activity?.userInfo
         self.userActivity = activity
@@ -431,6 +434,12 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
         inPreviewMode = false
         configureBarButtons()
         refreshBottomToolbar()
+
+        // The peek published without donating, so this has nothing to compare with.
+        // With no stop loaded yet, the first publish donates instead.
+        if let stop = viewModel.stop {
+            application.donateOpenStop(stop, publishing: userActivity, replacing: nil)
+        }
     }
 
     /// Rebuilds the SwiftUI root so the toolbar appears or disappears with preview mode. Scoped

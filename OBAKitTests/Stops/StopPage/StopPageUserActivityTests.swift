@@ -47,6 +47,13 @@ final class StopPageUserActivityTests: OBATestCase {
         return page
     }
 
+    private func reappear(_ page: UIViewController) {
+        page.beginAppearanceTransition(false, animated: false)
+        page.endAppearanceTransition()
+        page.beginAppearanceTransition(true, animated: false)
+        page.endAppearanceTransition()
+    }
+
     /// Does to `activity` what UIKit does before asking `responder` to update it.
     private func clearAndUpdate(_ activity: NSUserActivity, from responder: UIResponder) {
         activity.userInfo = [:]
@@ -86,10 +93,10 @@ final class StopPageUserActivityTests: OBATestCase {
 
     // MARK: - Legacy stop page
 
-    /// The legacy page publishes only once arrivals have loaded, so this stubs
-    /// every endpoint a load touches. `MockDataLoader` fatal-errors on anything
-    /// unstubbed, which ends the whole run, not just this test.
-    private func loadedLegacyStopPage(intentDonor: any IntentDonor = FakeIntentDonor()) async -> StopViewController {
+    /// An application that can load stop 1_10020. This stubs every endpoint a load
+    /// touches: `MockDataLoader` fatal-errors on anything unstubbed, which ends the
+    /// whole run, not just this test.
+    private func applicationLoadingStops(intentDonor: any IntentDonor) -> Application {
         let dataLoader = MockDataLoader(testName: name)
 
         dataLoader.mock(data: Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020_no_realtime.json")) { request in
@@ -105,6 +112,12 @@ final class StopPageUserActivityTests: OBATestCase {
 
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         application.intentDonor = intentDonor
+        return application
+    }
+
+    /// The legacy page publishes only once arrivals have loaded.
+    private func loadedLegacyStopPage(intentDonor: any IntentDonor = FakeIntentDonor()) async -> StopViewController {
+        let application = applicationLoadingStops(intentDonor: intentDonor)
         let controller = StopViewController(application: application, stopID: "1_10020")
         controller.loadViewIfNeeded()
         await controller.viewModel.refresh()
@@ -144,10 +157,7 @@ final class StopPageUserActivityTests: OBATestCase {
         application.intentDonor = donor
         let page = try publishedStopPage(application: application)
 
-        page.beginAppearanceTransition(false, animated: false)
-        page.endAppearanceTransition()
-        page.beginAppearanceTransition(true, animated: false)
-        page.endAppearanceTransition()
+        reappear(page)
 
         #expect(donor.openedStops == ["region_1_stop_1_10914"])
     }
@@ -182,5 +192,123 @@ final class StopPageUserActivityTests: OBATestCase {
             StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stops[0].id),
             StopEntityMapping.identifier(regionID: region.regionIdentifier, stopID: stops[1].id)
         ])
+    }
+
+    // MARK: - Peeks
+
+    /// A peek appears and publishes like an open page, but the rider only glanced
+    /// at it. The last check is what the identifier comparison is for: landing on
+    /// screen after the commit publishes again.
+    @Test func `A peeked stop page donates only when the peek is committed`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+        let page = StopPageViewController(application: application, stop: try #require(Fixtures.loadSomeStops().first))
+
+        page.enterPreviewMode()
+        page.loadViewIfNeeded()
+        page.beginAppearanceTransition(true, animated: false)
+        page.endAppearanceTransition()
+        #expect(page.userActivity != nil, "Premise: a peek still publishes its activity")
+        #expect(donor.openedStops.isEmpty)
+
+        page.exitPreviewMode()
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+
+        reappear(page)
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+    }
+
+    @Test func `A peeked legacy stop page donates only when the peek is committed`() async {
+        let donor = FakeIntentDonor()
+        let page = StopViewController(application: applicationLoadingStops(intentDonor: donor), stopID: "1_10020")
+
+        page.enterPreviewMode()
+        page.loadViewIfNeeded()
+        await page.viewModel.refresh()
+        #expect(page.userActivity != nil, "Premise: a peek still publishes its activity")
+        #expect(donor.openedStops.isEmpty)
+
+        page.exitPreviewMode()
+        #expect(donor.openedStops == ["region_1_stop_1_10020"])
+
+        await page.viewModel.refresh()
+        #expect(donor.openedStops == ["region_1_stop_1_10020"])
+    }
+
+    /// Committed before anything loaded, there's no activity to donate for yet.
+    @Test func `A peek committed before its stop loads donates when it loads`() async {
+        let donor = FakeIntentDonor()
+        let page = StopViewController(application: applicationLoadingStops(intentDonor: donor), stopID: "1_10020")
+
+        page.enterPreviewMode()
+        page.loadViewIfNeeded()
+        page.exitPreviewMode()
+        #expect(donor.openedStops.isEmpty)
+
+        await page.viewModel.refresh()
+        #expect(donor.openedStops == ["region_1_stop_1_10020"])
+    }
+
+    /// The one peek that used to skip preview mode. SwiftUI's preview can't be
+    /// committed, so it never donates.
+    @Test func `A Bookmarks peek doesn't donate`() async throws {
+        let donor = FakeIntentDonor()
+        let application = applicationLoadingStops(intentDonor: donor)
+        let preview = StopViewControllerPreview(stopID: "1_10020", application: application)
+        let page = try #require(preview.makeController() as? StopPageViewController)
+
+        page.loadViewIfNeeded()
+        await page.viewModel.refresh()
+        page.beginAppearanceTransition(true, animated: false)
+        page.endAppearanceTransition()
+
+        #expect(page.userActivity != nil, "Premise: the stop loaded and its activity was published")
+        #expect(donor.openedStops.isEmpty)
+    }
+
+    // MARK: - Stops the intent opened
+
+    /// The system already records intents it runs. Only that open is skipped: the
+    /// rider opening the same stop by hand afterward still counts.
+    @Test func `A stop opened by Open Stop isn't donated again`() async throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+
+        OpenStopRequest.post(AppLinksRouter.StopDestination(stopID: "1_10914", regionID: 1))
+        await poll(until: { application.stopOpenedByIntent != nil }, "Open Stop request was never handled")
+
+        let opened = try publishedStopPage(application: application)
+        #expect(opened.userActivity != nil, "Premise: the page published its activity")
+        #expect(donor.openedStops.isEmpty)
+
+        _ = try publishedStopPage(application: application)
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+    }
+
+    /// A request for another region is dropped, so no page will ever take it. If
+    /// it stayed set, the rider opening that stop there later wouldn't be donated.
+    @Test func `A dropped Open Stop request isn't remembered`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let destination = AppLinksRouter.StopDestination(stopID: "1_10914", regionID: 999)
+        application.stopOpenedByIntent = destination
+
+        application.queueOrOpenStop(destination)
+
+        #expect(application.stopOpenedByIntent == nil)
+    }
+
+    @Test func `Another stop still donates while an Open Stop request is waiting`() async throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+
+        OpenStopRequest.post(AppLinksRouter.StopDestination(stopID: "1_75403", regionID: 1))
+        await poll(until: { application.stopOpenedByIntent != nil }, "Open Stop request was never handled")
+
+        _ = try publishedStopPage(application: application)
+
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
     }
 }

@@ -19,10 +19,20 @@ extension Application {
     /// refresh. Those keep the identifier, so each page instance counts only its
     /// first activity for a stop as an open. A new page for the same stop counts
     /// again.
+    ///
+    /// A stop that `OpenStopIntent` opened isn't donated, because the system already
+    /// records the intents it runs. That covers the one open: a request that never
+    /// reaches a page costs that stop one donation at most.
     func donateOpenStop(_ stop: Stop, publishing activity: NSUserActivity?, replacing previous: NSUserActivity?) {
         guard let activity,
               activity.persistentIdentifier != previous?.persistentIdentifier,
               let region = regionsService.currentRegion else { return }
+
+        if stopOpenedByIntent == AppLinksRouter.StopDestination(stopID: stop.id, regionID: region.regionIdentifier) {
+            stopOpenedByIntent = nil
+            return
+        }
+
         intentDonor.donateOpenStop(StopEntityMapping.entity(for: stop, regionID: region.regionIdentifier))
     }
 }
