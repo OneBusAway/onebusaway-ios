@@ -138,6 +138,23 @@ struct MapPanelBottomPaddingTests {
         #expect(height == 390)
     }
 
+    @Test func `Tallest visible sheet height preserves measured height over estimate for existing sheet`() {
+        let baseRoute = AppSheetRoute.home
+        let visibleRoutes: [AppSheetRoute] = [baseRoute]
+        let measuredHeights: [AppSheetRoute: CGFloat] = [
+            baseRoute: 382.5
+        ]
+
+        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
+            visibleRoutes: visibleRoutes,
+            measuredHeights: measuredHeights,
+            estimatedHeightForRoute: { _ in 350 }
+        )
+
+        // Measured 382.5pt must be preserved over the 350pt estimate
+        #expect(height == 382.5)
+    }
+
     @Test func `Tallest visible sheet height returns minimumPaddingFloor when visible routes is empty`() {
         let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
             visibleRoutes: [AppSheetRoute](),

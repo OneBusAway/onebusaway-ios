@@ -621,7 +621,11 @@ struct MapPanelRootView: View {
         .onChange(of: sheetHeight) { _, newValue in
             probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
         }
-        .onChange(of: coordinator.currentDetent) { _, newDetent in
+        .onChange(of: coordinator.currentDetent) { oldDetent, newDetent in
+            guard oldDetent != newDetent else { return }
+            // Use estimate only when no measurement exists yet; let geometry updates
+            // track sheets changing detents so precise measurements are preserved.
+            guard measuredSheetHeights[coordinator.currentRoute] == nil else { return }
             let estimated = MapPanelBottomPadding.estimatedHeight(
                 for: newDetent,
                 halfScreenHeight: halfScreenHeight,
@@ -631,8 +635,11 @@ struct MapPanelRootView: View {
                 measuredSheetHeights[coordinator.currentRoute] = estimated
             }
         }
-        .onChange(of: coordinator.stackedDetents) { _, _ in
-            for entry in coordinator.stackedEntries {
+        .onChange(of: coordinator.stackedEntries) { _, newEntries in
+            // Use estimates only when no measurement exists yet for an entry. Preserves
+            // existing measured sheet heights for sheets whose detents didn't change and
+            // lets geometry updates handle sheets changing detents.
+            for entry in newEntries where measuredSheetHeights[entry.route] == nil {
                 let estimated = MapPanelBottomPadding.estimatedHeight(
                     for: entry.detent,
                     halfScreenHeight: halfScreenHeight,
