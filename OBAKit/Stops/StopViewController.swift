@@ -501,7 +501,8 @@ public class StopViewController: UIViewController,
     /// it names the same stop and region as the activity's identifier and URL.
     private var activityUserInfo: [AnyHashable: Any]?
 
-    /// Creates and assigns an `NSUserActivity` object corresponding to this stop.
+    /// Creates and assigns an `NSUserActivity` object corresponding to this stop,
+    /// and donates Open Stop the first time it publishes one for the stop.
     private func beginUserActivity() {
         guard let stop = stop,
               let region = application.regionsService.currentRegion,
@@ -509,6 +510,10 @@ public class StopViewController: UIViewController,
         else { return }
 
         let activity = userActivityBuilder.userActivity(for: stop, region: region)
+        // A peek isn't an open. `exitPreviewMode()` donates if the rider commits it.
+        if !inPreviewMode {
+            application.donateOpenStop(stop, publishing: activity, replacing: userActivity)
+        }
         // Stashed first: once the activity is assigned, UIKit may call the override at any save.
         activityUserInfo = activity.userInfo
         self.userActivity = activity
@@ -1314,18 +1319,25 @@ public class StopViewController: UIViewController,
         viewModel.updateStopPreferences(stopPreferences)
     }
 
-    // MARK: - Previewable
-
     private var inPreviewMode = false
+}
 
+// MARK: - Previewable
+
+extension StopViewController {
     func enterPreviewMode() {
         inPreviewMode = true
     }
 
     func exitPreviewMode() {
         inPreviewMode = false
-    }
 
+        // The peek published without donating, so this has nothing to compare with.
+        // With no arrivals loaded yet, the first publish donates instead.
+        if let stop {
+            application.donateOpenStop(stop, publishing: userActivity, replacing: nil)
+        }
+    }
 }
 
 // MARK: - Bookmarks
