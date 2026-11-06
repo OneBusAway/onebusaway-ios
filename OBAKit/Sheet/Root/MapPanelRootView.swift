@@ -88,12 +88,33 @@ struct MapPanelBottomPadding {
     /// Selects the largest sheet height among all currently visible sheets on screen.
     ///
     /// When sheets are stacked (e.g. `.tripPlanner` or `.stopDetails` opened over `.home` or `.mapItem`),
-    /// the base sheet remains visible peeking beneath. If the top sheet is dragged down to a small detent
+    /// the base sheet remains visible peeking beneath. If the top sheet is at a small detent
     /// (e.g. 80pt tip), the map's safe area padding must follow the tallest visible sheet so map
     /// annotations and camera framing do not slip under the taller underlying sheet.
     ///
-    /// For each visible route, this uses its measured height if available, or falls back to an
-    /// estimated height for newly pushed routes whose geometry measurement hasn't completed yet.
+    /// Updates padding when the sheet detent settles rather than on every frame of a drag, preventing
+    /// viewport jitter, unnecessary body re-evaluations, and stop reload churn while the sheet is in motion.
+    static func tallestVisibleSheetHeight<Route: Hashable>(
+        visibleRoutes: [Route],
+        detentForRoute: (Route) -> PresentationDetent,
+        halfScreenHeight: CGFloat,
+        totalMapHeight: CGFloat,
+        defaultHeight: CGFloat = minimumPaddingFloor
+    ) -> CGFloat {
+        guard !visibleRoutes.isEmpty else {
+            return defaultHeight
+        }
+        let heights = visibleRoutes.map { route in
+            estimatedHeight(
+                for: detentForRoute(route),
+                halfScreenHeight: halfScreenHeight,
+                totalMapHeight: totalMapHeight
+            )
+        }
+        return heights.max() ?? defaultHeight
+    }
+
+    /// Selects the largest sheet height among all currently visible sheets on screen using explicit heights.
     static func tallestVisibleSheetHeight<Route: Hashable>(
         visibleRoutes: [Route],
         measuredHeights: [Route: CGFloat],
@@ -222,27 +243,20 @@ struct MapPanelRootView: View {
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
 
-    /// Measured heights of currently visible sheets, tracked dynamically via `.onGeometryChange`
-    /// on each sheet layer. Keyed by route so stacked sheets retain their own heights independently.
-    @State private var measuredSheetHeights: [AppSheetRoute: CGFloat] = [:]
-
     @State private var halfScreenHeight: CGFloat = 350
 
     /// Dynamic un-clamped height of the tallest visible sheet on screen, computed from
-    /// measured sheet heights with fallback to estimated heights for newly pushed routes.
+    /// the settled detents of all visible sheets. Updates when a sheet snaps or transitions
+    /// to a detent rather than on every drag frame, avoiding map viewport jitter.
     private var rawSheetHeight: CGFloat {
         let visible = [coordinator.currentRoute] + coordinator.stackedRoutes
         return MapPanelBottomPadding.tallestVisibleSheetHeight(
             visibleRoutes: visible,
-            measuredHeights: measuredSheetHeights,
-            estimatedHeightForRoute: { route in
-                let detent = detent(for: route)
-                return MapPanelBottomPadding.estimatedHeight(
-                    for: detent,
-                    halfScreenHeight: halfScreenHeight,
-                    totalMapHeight: mapSize.height
-                )
-            }
+            detentForRoute: { route in
+                detent(for: route)
+            },
+            halfScreenHeight: halfScreenHeight,
+            totalMapHeight: mapSize.height
         )
     }
 
@@ -263,11 +277,6 @@ struct MapPanelRootView: View {
             return entry.detent
         }
         return route.detentConfiguration.initialDetent
-    }
-
-    private func pruneMeasuredSheetHeights() {
-        let visible = Set([coordinator.currentRoute] + coordinator.stackedRoutes)
-        measuredSheetHeights = measuredSheetHeights.filter { visible.contains($0.key) }
     }
 
     /// The on-demand dock's measured height; zero while it shows nothing. The
@@ -493,7 +502,6 @@ struct MapPanelRootView: View {
         // without dismissing anything, and still clears on a real exit, including
         // the drag-down the OS routes through `truncateStacked`.
         .onChange(of: coordinator.stackedRoutes) { _, _ in
-            pruneMeasuredSheetHeights()
             searchDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
             // Clear the trip planner when `.tripPlanner` is no longer on the stack.
             // Unlike searchDisplay which uses `.clearIfOwnerAbsent`, the trip planner
@@ -545,7 +553,7 @@ struct MapPanelRootView: View {
         ).mapStyle)
         .safeAreaPadding(.bottom, mapBottomPadding)
         .animation(
-            .interpolatingSpring(duration: toolbarsAnimationDuration > 0 ? toolbarsAnimationDuration : 0.25, bounce: 0, initialVelocity: 0),
+            .interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0),
             value: mapBottomPadding
         )
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -602,7 +610,6 @@ struct MapPanelRootView: View {
             onDemandDock
         }
         .onChange(of: sheetRoutes.map(\.id)) { _, _ in
-            pruneMeasuredSheetHeights()
             // The focus hides the dock, and leaving the bar drops the highlight;
             // a zone detail page keeps it until the page closes (spec 2.3, ruling F15).
             let heldHighlight = probeController.highlightedServiceID
@@ -620,35 +627,6 @@ struct MapPanelRootView: View {
         }
         .onChange(of: sheetHeight) { _, newValue in
             probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
-        }
-        .onChange(of: coordinator.currentDetent) { oldDetent, newDetent in
-            guard oldDetent != newDetent else { return }
-            // Use estimate only when no measurement exists yet; let geometry updates
-            // track sheets changing detents so precise measurements are preserved.
-            guard measuredSheetHeights[coordinator.currentRoute] == nil else { return }
-            let estimated = MapPanelBottomPadding.estimatedHeight(
-                for: newDetent,
-                halfScreenHeight: halfScreenHeight,
-                totalMapHeight: mapSize.height
-            )
-            withAnimation(.interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0)) {
-                measuredSheetHeights[coordinator.currentRoute] = estimated
-            }
-        }
-        .onChange(of: coordinator.stackedEntries) { _, newEntries in
-            // Use estimates only when no measurement exists yet for an entry. Preserves
-            // existing measured sheet heights for sheets whose detents didn't change and
-            // lets geometry updates handle sheets changing detents.
-            for entry in newEntries where measuredSheetHeights[entry.route] == nil {
-                let estimated = MapPanelBottomPadding.estimatedHeight(
-                    for: entry.detent,
-                    halfScreenHeight: halfScreenHeight,
-                    totalMapHeight: mapSize.height
-                )
-                withAnimation(.interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0)) {
-                    measuredSheetHeights[entry.route] = estimated
-                }
-            }
         }
         .onChange(of: layersModel.isOnDemandLayerEnabled, initial: true) { _, enabled in
             probeController.setLayerEnabled(enabled)
@@ -814,9 +792,6 @@ struct MapPanelRootView: View {
             .onGeometryChange(for: CGFloat.self) { proxy in
                 proxy.size.height
             } action: { oldValue, newValue in
-                // Track live height of each sheet individually in measuredSheetHeights
-                measuredSheetHeights[route] = newValue
-
                 guard !route.prefersStacking else { return }
 
                 let clamped = max(min(newValue, halfScreenHeight), 0)
@@ -906,11 +881,7 @@ extension MapPanelRootView {
                 cameraPosition = .region(region)
             }
         case .rect(let rect, let edgePadding, let animated):
-            // The map's safeAreaPadding(.bottom, mapBottomPadding) already clears the sheet height.
-            // Subtract bottom safe area clearance from edgePadding.bottom to prevent double-counting.
-            var adjustedPadding = edgePadding
-            adjustedPadding.bottom = max(edgePadding.bottom - mapBottomPadding, edgePadding.top)
-            let paddedRect = paddedMapRect(rect, edgePadding: adjustedPadding, mapSize: mapSize)
+            let paddedRect = paddedMapRect(rect, edgePadding: edgePadding, mapSize: mapSize)
             if animated {
                 withAnimation { cameraPosition = .rect(paddedRect) }
             } else {
@@ -927,15 +898,18 @@ extension MapPanelRootView {
 
     /// Frames an open trip in the part of the map its sheet leaves visible.
     ///
-    /// The map's `safeAreaPadding(.bottom, mapBottomPadding)` already insets the viewport
-    /// dynamically to clear the sheet height, so `edgePadding` only needs symmetrical
-    /// vehicle marker margin plus top pill clearance.
+    /// The trip sheet opens at `.medium`, which covers about half the map, so the
+    /// bottom inset is half the map's height. The rect bounds the bus's and the
+    /// rider's coordinates, which are the middles of their markers, so every edge
+    /// also leaves a marker's width of room: with the margin alone, a bus on the
+    /// edge was drawn half off the screen. `paddedMapRect` turns the insets into
+    /// map points against the map's current size.
     private func applyTripFocusCameraTarget(_ target: TripFocusMapDisplayModel.CameraTarget) {
         let edge = ThemeMetrics.controllerMargin + TripFocusMapLayer.Style.vehicleDiameter
         let insets = UIEdgeInsets(
             top: edge + pillHeight,
             left: edge,
-            bottom: edge,
+            bottom: halfScreenHeight + edge,
             right: edge
         )
         withAnimation {

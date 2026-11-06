@@ -164,6 +164,52 @@ struct MapPanelBottomPaddingTests {
         #expect(height == MapPanelBottomPadding.minimumPaddingFloor)
     }
 
+    @Test func `Tallest visible sheet height with detentForRoute selects base detent when stacked sheet is at tip detent`() {
+        let baseRoute = AppSheetRoute.home
+        let topStackedRoute = AppSheetRoute.tripPlanner(TripPlannerRequest(origin: nil, destination: nil))
+        let visibleRoutes: [AppSheetRoute] = [baseRoute, topStackedRoute]
+
+        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
+            visibleRoutes: visibleRoutes,
+            detentForRoute: { route in
+                route == baseRoute ? .medium : .height(AppSheetRoute.tripPlannerTipHeight)
+            },
+            halfScreenHeight: 350,
+            totalMapHeight: 800
+        )
+
+        // Base sheet at .medium (350pt) must be selected over the 80pt tip detent
+        #expect(height == 350)
+    }
+
+    @Test func `Tallest visible sheet height with detentForRoute selects stacked detent when stacked is larger`() {
+        let baseRoute = AppSheetRoute.home
+        let topStackedRoute = AppSheetRoute.stopDetails(stopID: "1_10020")
+        let visibleRoutes: [AppSheetRoute] = [baseRoute, topStackedRoute]
+
+        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
+            visibleRoutes: visibleRoutes,
+            detentForRoute: { route in
+                route == baseRoute ? .height(AppSheetRoute.homeCollapsedHeight) : .medium
+            },
+            halfScreenHeight: 350,
+            totalMapHeight: 800
+        )
+
+        // Stacked sheet at .medium (350pt) must be selected over 75pt collapsed
+        #expect(height == 350)
+    }
+
+    @Test func `Tallest visible sheet height with detentForRoute returns minimumPaddingFloor when routes empty`() {
+        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
+            visibleRoutes: [AppSheetRoute](),
+            detentForRoute: { _ in .medium },
+            halfScreenHeight: 350,
+            totalMapHeight: 800
+        )
+        #expect(height == MapPanelBottomPadding.minimumPaddingFloor)
+    }
+
     @Test func `Estimated height resolves homeCollapsedHeight detent`() {
         let height = MapPanelBottomPadding.estimatedHeight(
             for: .height(AppSheetRoute.homeCollapsedHeight),
