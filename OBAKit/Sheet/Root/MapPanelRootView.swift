@@ -56,6 +56,84 @@ func paddedMapRect(
     return paddedRect
 }
 
+// MARK: - MapPanelBottomPadding
+
+/// Computes detent-aware bottom safe-area padding for `MapPanelRootView`'s Map,
+/// ensuring map annotations, user location, and camera viewports remain visible above
+/// the currently active sheet without slipping underneath.
+struct MapPanelBottomPadding {
+    /// Minimum height (in points) of visible map retained at the top of the screen
+    /// when the sheet is expanded to `.large` or `largeDetent`, avoiding viewport collapse.
+    static let minimumVisibleMapHeight: CGFloat = 120
+
+    /// Minimum bottom padding floor (in points) applied to the map at collapsed sheet detents
+    /// to ensure Apple's logo and Legal link remain completely visible and tappable above
+    /// floating controls (such as `MyTripButton`).
+    static let minimumPaddingFloor: CGFloat = 180
+
+    /// Calculates effective bottom safe area padding for the map given the
+    /// height of the tallest sheet and total map height.
+    static func effectivePadding(
+        sheetHeight: CGFloat,
+        totalMapHeight: CGFloat,
+        floor: CGFloat = minimumPaddingFloor
+    ) -> CGFloat {
+        guard totalMapHeight > 0 else {
+            return floor
+        }
+        let maxAllowed = max(floor, totalMapHeight - minimumVisibleMapHeight)
+        return min(max(sheetHeight, floor), maxAllowed)
+    }
+
+    /// Selects the largest sheet height among all currently visible sheets on screen.
+    ///
+    /// When sheets are stacked (e.g. `.tripPlanner` or `.stopDetails` opened over `.home` or `.mapItem`),
+    /// the base sheet remains visible peeking beneath. If the top sheet is at a small detent
+    /// (e.g. 80pt tip), the map's safe area padding must follow the tallest visible sheet so map
+    /// annotations and camera framing do not slip under the taller underlying sheet.
+    ///
+    /// Updates padding when the sheet detent settles rather than on every frame of a drag, preventing
+    /// viewport jitter, unnecessary body re-evaluations, and stop reload churn while the sheet is in motion.
+    static func tallestVisibleSheetHeight<Route: Hashable>(
+        visibleRoutes: [Route],
+        detentForRoute: (Route) -> PresentationDetent,
+        halfScreenHeight: CGFloat,
+        totalMapHeight: CGFloat,
+        defaultHeight: CGFloat = minimumPaddingFloor
+    ) -> CGFloat {
+        guard !visibleRoutes.isEmpty else {
+            return defaultHeight
+        }
+        let heights = visibleRoutes.map { route in
+            estimatedHeight(
+                for: detentForRoute(route),
+                halfScreenHeight: halfScreenHeight,
+                totalMapHeight: totalMapHeight
+            )
+        }
+        return heights.max() ?? defaultHeight
+    }
+
+    /// Resolves the height in points for a given `PresentationDetent`.
+    static func estimatedHeight(
+        for detent: PresentationDetent,
+        halfScreenHeight: CGFloat,
+        totalMapHeight: CGFloat
+    ) -> CGFloat {
+        if detent == .height(AppSheetRoute.homeCollapsedHeight) {
+            return AppSheetRoute.homeCollapsedHeight
+        } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
+            return AppSheetRoute.tripPlannerTipHeight
+        } else if detent == .medium {
+            return halfScreenHeight
+        } else if detent == AppSheetRoute.largeDetent || detent == .large {
+            return totalMapHeight > 0 ? totalMapHeight * 0.99 : halfScreenHeight * 2
+        } else {
+            return halfScreenHeight
+        }
+    }
+}
+
 // MARK: - MapPinSelection
 
 /// What the panel map's `selection` can hold. Stops, rentals, trip-planner
@@ -149,6 +227,40 @@ struct MapPanelRootView: View {
     @State private var toolbarsOpacity: CGFloat = 1
 
     @State private var halfScreenHeight: CGFloat = 350
+
+    /// Dynamic un-clamped height of the tallest visible sheet on screen, computed from
+    /// the settled detents of all visible sheets. Updates when a sheet snaps or transitions
+    /// to a detent rather than on every drag frame, avoiding map viewport jitter.
+    private var rawSheetHeight: CGFloat {
+        let visible = [coordinator.currentRoute] + coordinator.stackedRoutes
+        return MapPanelBottomPadding.tallestVisibleSheetHeight(
+            visibleRoutes: visible,
+            detentForRoute: { route in
+                detent(for: route)
+            },
+            halfScreenHeight: halfScreenHeight,
+            totalMapHeight: mapSize.height
+        )
+    }
+
+    /// Dynamic bottom safe area padding for the Map, tracking the tallest visible sheet's height
+    /// so map annotations and camera centers remain visible in the top portion above the sheet.
+    private var mapBottomPadding: CGFloat {
+        MapPanelBottomPadding.effectivePadding(
+            sheetHeight: rawSheetHeight,
+            totalMapHeight: mapSize.height
+        )
+    }
+
+    private func detent(for route: AppSheetRoute) -> PresentationDetent {
+        if route == coordinator.currentRoute {
+            return coordinator.currentDetent
+        }
+        if let entry = coordinator.stackedEntries.first(where: { $0.route == route }) {
+            return entry.detent
+        }
+        return route.detentConfiguration.initialDetent
+    }
 
     /// The on-demand dock's measured height; zero while it shows nothing. The
     /// control stack rides above it (spec 2.4).
@@ -422,16 +534,16 @@ struct MapPanelRootView: View {
         .mapStyle(mapViewModel.mapType.styleDescriptor(
             showingPointsOfInterest: layersModel.showsPointsOfInterest
         ).mapStyle)
-        .safeAreaPadding(.bottom, 180)
+        .safeAreaPadding(.bottom, mapBottomPadding)
+        .animation(
+            .interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0),
+            value: mapBottomPadding
+        )
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
         } action: { _, newValue in
             halfScreenHeight = newValue
         }
-        // TODO: Detent-aware bottom padding. Pinned to the collapsed sheet
-        // height today, so dragging the sheet up to `.medium` or
-        // `largeDetent` lets the user-location annotation and any future map
-        // overlays slip under the sheet.
         .overlay(alignment: .topLeading) {
             weatherButton
         }
