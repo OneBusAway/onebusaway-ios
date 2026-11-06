@@ -352,7 +352,7 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The user's preferred walking speed in meters per second.
     var walkingSpeedMetersPerSecond: Double { get set }
 
-    /// The source of the walking speed value (manual preset or HealthKit).
+    /// The source of the walking speed value (manual preset or synced).
     var walkingSpeedSource: WalkingSpeedSource { get set }
 
     // MARK: - Bike Mode
@@ -361,11 +361,11 @@ public protocol UserDataStore: NSObjectProtocol {
     /// app-wide should use `bikeSpeedMetersPerSecond` instead of `walkingSpeedMetersPerSecond`.
     var bikeModeEnabled: Bool { get set }
 
-    /// The user's effective cycling speed in meters per second (HealthKit-synced value,
+    /// The user's effective cycling speed in meters per second (synced value,
     /// or `BikeSpeed.defaultMetersPerSecond` when no sync has ever succeeded).
     var bikeSpeedMetersPerSecond: Double { get set }
 
-    /// The source of the bike speed value (fixed fallback constant or HealthKit).
+    /// The source of the bike speed value (fixed fallback constant or synced).
     var bikeSpeedSource: BikeSpeedSource { get set }
 
     // MARK: - Alarm Lead Time
@@ -1317,7 +1317,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     /// Reads clamp into BikeSpeed.validRange. Stored values below the 2.0 floor
     /// from the earlier 1.0 range read back as 2.0 without changing the stored
-    /// value or the source. The next successful HealthKit sync overwrites them.
+    /// value or the source. The next successful speed sync overwrites them.
     public var bikeSpeedMetersPerSecond: Double {
         get {
             let stored = userDefaults.double(forKey: UserDefaultsKeys.bikeSpeedMetersPerSecond)

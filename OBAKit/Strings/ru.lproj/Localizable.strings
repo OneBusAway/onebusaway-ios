@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Использует более высокую скорость передвижения для оценки времени до остановки, времени прибытия и на странице остановки.";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ может считывать вашу скорость езды на велосипеде из приложения «Здоровье». Приложение никогда не записывает данные в «Здоровье».";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Режим велосипеда";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "Использовать данные приложения «Здоровье»";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "Не удалось синхронизировать скорость езды на велосипеде из приложения «Здоровье». Будет использована стандартная скорость велосипеда.";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Обновлять регионы при каждом запуске";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "Быстрая (~6,5 км/ч)";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "Не удалось синхронизировать скорость ходьбы из приложения «Здоровье». Разрешите доступ в Настройках > Конфиденциальность и безопасность > Здоровье.";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "Медленная (~3 км/ч)";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "Скорость ходьбы";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "Использовать данные приложения «Здоровье»";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ может считывать вашу скорость ходьбы из приложения «Здоровье», чтобы оценить, сколько времени займёт путь до остановки. Приложение никогда не записывает данные в «Здоровье».";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Скорость ходьбы";

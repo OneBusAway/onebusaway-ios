@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "يستخدم سرعة تنقّل أسرع لتقديرات وقت الوصول إلى الموقف ومواعيد الوصول وصفحة الموقف.";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة ركوبك للدراجة من تطبيق «صحتي». ولا يكتب أي بيانات في تطبيق «صحتي» أبدًا.";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "وضع الدراجة";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "استخدام بيانات تطبيق «صحتي»";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "تعذّرت مزامنة سرعة ركوب الدراجة من تطبيق «صحتي». سيتم استخدام سرعة قياسية للدراجة بدلًا من ذلك.";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "تحديث المناطق عند كل تشغيل";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "سريعة (~6.5 كم/س)";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "تعذّرت مزامنة سرعة المشي من تطبيق «صحتي». تحقق من الإعدادات > الخصوصية والأمان > صحتي للسماح بالوصول.";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "بطيئة (~3 كم/س)";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "سرعة المشي";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "استخدام بيانات تطبيق «صحتي»";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "يمكن لـ %@ قراءة سرعة مشيك من تطبيق «صحتي» لتقدير الوقت الذي تستغرقه للوصول إلى المحطة. ولا يكتب أي بيانات في تطبيق «صحتي» أبدًا.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "سرعة المشي";

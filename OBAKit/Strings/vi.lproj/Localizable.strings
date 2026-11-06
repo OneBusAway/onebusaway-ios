@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Dùng tốc độ di chuyển nhanh hơn cho ước tính thời gian đến điểm dừng, giờ đến dự kiến và trang Điểm dừng.";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ có thể đọc tốc độ đạp xe của bạn từ ứng dụng Sức khỏe. Ứng dụng không bao giờ ghi dữ liệu vào Sức khỏe.";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Chế độ xe đạp";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "Dùng dữ liệu ứng dụng Sức khỏe";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "Không thể đồng bộ tốc độ đạp xe từ Sức khỏe. Sẽ dùng tốc độ đạp xe tiêu chuẩn.";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Làm mới khu vực mỗi lần khởi chạy";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "Nhanh (~6,5 km/h)";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "Không thể đồng bộ tốc độ đi bộ từ Sức khỏe. Hãy kiểm tra Cài đặt > Quyền riêng tư & Bảo mật > Sức khỏe để cho phép truy cập.";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "Chậm (~3 km/h)";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "Tốc độ đi bộ";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "Dùng dữ liệu ứng dụng Sức khỏe";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ có thể đọc tốc độ đi bộ của bạn từ ứng dụng Sức khỏe để ước tính thời gian bạn đi đến trạm. Ứng dụng không bao giờ ghi dữ liệu vào Sức khỏe.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Tốc độ đi bộ";

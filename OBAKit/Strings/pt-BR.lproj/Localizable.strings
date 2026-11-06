@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Usa uma velocidade de deslocamento maior para as estimativas de tempo até a parada, os horários de chegada e a página da parada.";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "O %@ pode ler sua velocidade de bicicleta no app Saúde. Ele nunca grava dados no Saúde.";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Modo bicicleta";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "Usar dados do app Saúde";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "Não foi possível sincronizar a velocidade de bicicleta com o app Saúde. Será usada uma velocidade de bicicleta padrão.";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Atualizar regiões a cada inicialização";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "Rápida (~6,5 km/h)";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "Não foi possível sincronizar a velocidade de caminhada com o app Saúde. Verifique Ajustes > Privacidade e Segurança > Saúde para permitir o acesso.";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "Lenta (~3 km/h)";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "Velocidade de caminhada";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "Usar dados do app Saúde";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "O %@ pode ler sua velocidade de caminhada no app Saúde para estimar quanto tempo você leva para chegar a uma parada. Ele nunca grava dados no Saúde.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Velocidade de Caminhada";

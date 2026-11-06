@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import HealthKit
 @testable import OBAKit
 @testable import OBAKitCore
 import Foundation
@@ -20,7 +19,7 @@ import Testing
 @Suite(.serialized)
 final class SettingsWalkingModeTests: OBATestCase {
 
-    private final class SpyProvider: WalkingSpeedHealthKitProviding {
+    private final class SpyProvider: SpeedProviding {
         var isAvailable = true
         var sampleSpeed: Double?
         private(set) var requestAuthorizationCount = 0
@@ -29,7 +28,7 @@ final class SettingsWalkingModeTests: OBATestCase {
             requestAuthorizationCount += 1
         }
 
-        func fetchLatestWalkingSpeed() async -> Double? {
+        func fetchSpeed() async -> Double? {
             sampleSpeed
         }
     }
@@ -46,7 +45,12 @@ final class SettingsWalkingModeTests: OBATestCase {
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         provider = SpyProvider()
-        application.walkingSpeedManager = WalkingSpeedManager(userDataStore: application.userDataStore, healthKit: provider)
+        application.walkingSpeedManager = WalkingSpeedManager(userDataStore: application.userDataStore, provider: provider)
+        application.config.speedSync = SpeedSyncConfiguration(
+            walkingProvider: provider,
+            bikeProvider: provider,
+            text: SpeedSyncText(toggleTitle: "", walkingFooter: "", walkingFailureMessage: "", bikeFooter: "", bikeFailureMessage: "")
+        )
     }
 
     isolated deinit {
@@ -78,9 +82,8 @@ final class SettingsWalkingModeTests: OBATestCase {
     /// Opening Settings must not sync at all. A walker with no samples in the
     /// last 30 days keeps the opt-in and sees no error toast. Only an explicit
     /// toggle-on sync may downgrade the source to `.manual`.
-    @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))
-    func `Opening settings with a stale walking health kit source keeps the opt-in`() async throws {
-        store.walkingSpeedSource = .healthKit
+    @Test func `Opening settings with a stale walking health kit source keeps the opt-in`() async throws {
+        store.walkingSpeedSource = .synced
         store.walkingSpeedMetersPerSecond = 1.65
         provider.sampleSpeed = nil
         let vm = makeViewModel()
@@ -88,8 +91,8 @@ final class SettingsWalkingModeTests: OBATestCase {
         try await settle()
 
         #expect(self.provider.requestAuthorizationCount == 0)
-        #expect(self.store.walkingSpeedSource == .healthKit)
+        #expect(self.store.walkingSpeedSource == .synced)
         expectClose(self.store.walkingSpeedMetersPerSecond, 1.65)
-        #expect(vm.walkingSpeedUsesHealthKit == true)
+        #expect(vm.walkingSpeedIsSynced == true)
     }
 }

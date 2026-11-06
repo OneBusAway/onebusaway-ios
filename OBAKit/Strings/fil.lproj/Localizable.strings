@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Gumagamit ng mas mabilis na bilis ng paglalakbay para sa mga tantiya ng oras papunta sa hintuan, mga oras ng pagdating, at sa pahina ng Hintuan.";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "Puwedeng basahin ng %@ ang bilis ng pagbibisikleta mo mula sa Apple Health. Hindi ito kailanman nagsusulat sa Health.";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Mode ng Bisikleta";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "Gamitin ang data ng Health app";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "Hindi ma-sync ang bilis ng pagbibisikleta mula sa Health. Gagamit na lang ng karaniwang bilis ng bisikleta.";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "I-refresh ang mga rehiyon sa bawat paglunsad";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "Mabilis (~6.5 km/h)";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "Hindi ma-sync ang bilis ng paglalakad mula sa Health. Tingnan ang Settings > Privacy & Security > Health para payagan ang access.";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "Mabagal (~3 km/h)";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "Bilis ng paglalakad";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "Gamitin ang data ng Health app";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "Puwedeng basahin ng %@ ang bilis ng paglalakad mo mula sa Apple Health para tantiyahin kung gaano katagal bago ka makarating sa hintuan. Hindi ito kailanman nagsusulat sa Health.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Bilis ng Paglalakad";

@@ -12,9 +12,9 @@ targets:
         name: App
         group: OneBusAway
         # gpx files are simulated-location fixtures for schemes, not app
-        # resources; keep them out of the bundle. watch.yml is project wiring,
-        # not a resource.
-        excludes: ["gpx_files", "watch.yml"]
+        # resources; keep them out of the bundle. project.yml and watch.yml are
+        # project wiring, not resources.
+        excludes: ["gpx_files", "project.yml", "watch.yml"]
       - path: Apps/Shared/CommonClient
         name: Common
         group: OneBusAway
@@ -29,7 +29,6 @@ targets:
           - applinks:sidecar.onebusaway.org
         com.apple.developer.in-app-payments:
           - merchant.org.onebusaway.iphone
-        com.apple.developer.healthkit: true
     info:
       path: Apps/OneBusAway/Info.plist
       properties:
@@ -112,3 +111,6 @@ include:
   - path: Apps/OneBusAway/watch.yml
     relativePaths: false
     enable: ${OBA_WATCH}
+  - path: Apps/Shared/healthkit.yml
+    relativePaths: false
+    enable: ${OBA_HEALTHKIT}

@@ -1,0 +1,29 @@
+############
+# Apple Health integration
+############
+#
+# Every line of HealthKit wiring. Included from each app's project.yml only when
+# OBA_HEALTHKIT is set (`scripts/generate_project <App> --healthkit`). Off by
+# default: App Review rejected the integration under guideline 2.5.1 in 26.4.
+# See Apps/Shared/HealthKit/README.md before turning it on.
+#
+# Included with `relativePaths: false`, so paths resolve from the repo root.
+
+targets:
+  App:
+    sources:
+      - path: Apps/Shared/HealthKit/Sources
+        name: HealthKit
+    entitlements:
+      properties:
+        com.apple.developer.healthkit: true
+    info:
+      properties:
+        # Keep both purpose strings. The app only reads (`toShare: []`), but App
+        # Review rejects a build that carries the HealthKit entitlement without
+        # NSHealthUpdateUsageDescription.
+        NSHealthShareUsageDescription: Uses your walking or cycling speed from the Health app to give you more accurate arrival time estimates.
+        NSHealthUpdateUsageDescription: Uses your walking or cycling speed from the Health app to give you more accurate arrival time estimates.
+    settings:
+      base:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) OBA_HEALTHKIT

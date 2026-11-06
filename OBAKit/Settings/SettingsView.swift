@@ -125,24 +125,22 @@ struct SettingsView: View {
                     Text(preset.localizedTitle).tag(preset)
                 }
             }
-            .disabled(viewModel.isHealthKitAvailable && viewModel.walkingSpeedUsesHealthKit)
-            if viewModel.isHealthKitAvailable {
-                healthKitToggle(OBALoc("settings_controller.walking_speed.use_healthkit", value: "Use Health app data", comment: "Settings > Walking Speed section > HealthKit toggle"), isOn: $viewModel.walkingSpeedUsesHealthKit)
+            .disabled(viewModel.speedSyncText != nil && viewModel.walkingSpeedIsSynced)
+            if let text = viewModel.speedSyncText {
+                speedSyncToggle(text.toggleTitle, isOn: $viewModel.walkingSpeedIsSynced)
             }
         } header: {
             Text(OBALoc("settings_controller.walking_speed_section.title", value: "Walking Speed", comment: "Settings > Walking Speed section title"))
         } footer: {
-            if viewModel.isHealthKitAvailable {
-                // App Review (guideline 2.5.1) requires the HealthKit integration to be
-                // identified in the UI, not only in the permission sheet.
-                Text(String(format: OBALoc("settings_controller.walking_speed_section.healthkit_footer_fmt", value: "%@ can read your walking speed from Apple Health to estimate how long it takes you to reach a stop. It never writes to Health.", comment: "Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name"), Bundle.main.appName))
+            if let text = viewModel.speedSyncText {
+                Text(text.walkingFooter)
             }
         }
     }
 
-    /// A switch that turns on Apple Health sync, marked with a Health glyph so the
-    /// HealthKit integration is identifiable at a glance.
-    private func healthKitToggle(_ title: String, isOn: Binding<Bool>) -> some View {
+    /// A switch that turns on speed sync, marked with a glyph so the integration is
+    /// identifiable at a glance.
+    private func speedSyncToggle(_ title: String, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
             Label {
                 Text(title)
@@ -158,16 +156,16 @@ struct SettingsView: View {
     private var bikeModeSection: some View {
         Section {
             Toggle(OBALoc("settings_controller.bike_mode.title", value: "Bike Mode", comment: "Settings > Bike Mode > on/off toggle"), isOn: $viewModel.bikeModeEnabled)
-            if viewModel.isHealthKitAvailable {
-                healthKitToggle(OBALoc("settings_controller.bike_mode.use_healthkit", value: "Use Health app data", comment: "Settings > Bike Mode section > HealthKit toggle"), isOn: $viewModel.bikeSpeedUsesHealthKit)
+            if let text = viewModel.speedSyncText {
+                speedSyncToggle(text.toggleTitle, isOn: $viewModel.bikeSpeedIsSynced)
             }
         } header: {
             Text(OBALoc("settings_controller.bike_mode_section.title", value: "Bike Mode", comment: "Settings > Bike Mode section title"))
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
                 Text(OBALoc("settings_controller.bike_mode_section.footer", value: "Uses a faster travel speed for walk-time estimates, arrival ETAs, and the Stop page.", comment: "Settings > Bike Mode section footer"))
-                if viewModel.isHealthKitAvailable {
-                    Text(String(format: OBALoc("settings_controller.bike_mode_section.healthkit_footer_fmt", value: "%@ can read your cycling speed from Apple Health. It never writes to Health.", comment: "Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name"), Bundle.main.appName))
+                if let text = viewModel.speedSyncText {
+                    Text(text.bikeFooter)
                 }
             }
         }

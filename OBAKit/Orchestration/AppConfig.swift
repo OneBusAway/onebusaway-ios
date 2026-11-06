@@ -24,6 +24,9 @@ public class AppConfig: CoreAppConfig {
     /// `AppShortcutsProvider` inside a Swift package.
     public var appShortcutsProvider: (any AppShortcutsProvider.Type)?
 
+    /// The app's source of measured walking and cycling speeds, if it has one.
+    public var speedSync: SpeedSyncConfiguration?
+
     /// The raw `OBAKitConfig.LaunchRouteID`: a route the map opens on at launch. See `LaunchRouteGate`.
     public let launchRouteID: String?
 
