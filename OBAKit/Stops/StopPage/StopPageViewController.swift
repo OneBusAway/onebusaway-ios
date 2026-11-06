@@ -204,7 +204,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     /// same stop and region even if the current region changes later.
     private var activityUserInfo: [AnyHashable: Any]?
 
-    /// Publishes this stop's `NSUserActivity` for Handoff, Siri and Spotlight,
+    /// Publishes this stop's `NSUserActivity` for Handoff and Spotlight,
     /// and donates Open Stop the first time it publishes one for the stop. Ports
     /// `StopViewController.beginUserActivity()`; called on appearance and
     /// whenever the stop resolves.

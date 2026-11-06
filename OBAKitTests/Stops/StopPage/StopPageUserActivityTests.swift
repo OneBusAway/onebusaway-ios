@@ -311,4 +311,24 @@ final class StopPageUserActivityTests: OBATestCase {
 
         #expect(donor.openedStops == ["region_1_stop_1_10914"])
     }
+
+    // MARK: - Map panel stop sheet
+
+    /// The sheet clears its activity when it disappears and publishes again when
+    /// it comes back, which isn't a new open. A new sheet is.
+    @Test func `The map panel's stop sheet donates once per sheet`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let donor = FakeIntentDonor()
+        application.intentDonor = donor
+        let stop = try #require(Fixtures.loadSomeStops().first)
+
+        let sheet = StopPageActionPresenter(application: application, presentingController: { nil })
+        _ = sheet.makeSheetUserActivity(stop: stop)
+        _ = sheet.makeSheetUserActivity(stop: stop)
+        #expect(donor.openedStops == ["region_1_stop_1_10914"])
+
+        let newSheet = StopPageActionPresenter(application: application, presentingController: { nil })
+        _ = newSheet.makeSheetUserActivity(stop: stop)
+        #expect(donor.openedStops == ["region_1_stop_1_10914", "region_1_stop_1_10914"])
+    }
 }

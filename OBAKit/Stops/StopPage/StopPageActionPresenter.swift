@@ -750,12 +750,25 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
 
     // MARK: - User Activity
 
-    /// Publishes this stop's `NSUserActivity` for Handoff, Siri and Spotlight.
+    /// Builds this stop's `NSUserActivity` for Handoff and Spotlight.
     func makeUserActivity(stop: Stop) -> NSUserActivity? {
         guard let region = application.regionsService.currentRegion,
               let builder = application.userActivityBuilder
         else { return nil }
         return builder.userActivity(for: stop, region: region)
+    }
+
+    /// The map panel sheet's last activity. The sheet clears its own copy when it
+    /// disappears, and coming back and publishing again isn't a new open.
+    private var lastSheetActivity: NSUserActivity?
+
+    /// `makeUserActivity(stop:)` for the map panel's stop sheet, which also donates
+    /// Open Stop. This presenter lives as long as the sheet, so a new sheet counts.
+    func makeSheetUserActivity(stop: Stop) -> NSUserActivity? {
+        let activity = makeUserActivity(stop: stop)
+        application.donateOpenStop(stop, publishing: activity, replacing: lastSheetActivity)
+        lastSheetActivity = activity
+        return activity
     }
 
     // MARK: - Snapshot
