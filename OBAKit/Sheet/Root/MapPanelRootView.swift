@@ -72,7 +72,7 @@ struct MapPanelBottomPadding {
     static let minimumPaddingFloor: CGFloat = 180
 
     /// Calculates effective bottom safe area padding for the map given the
-    /// measured or estimated height of the tallest sheet and total map height.
+    /// height of the tallest sheet and total map height.
     static func effectivePadding(
         sheetHeight: CGFloat,
         totalMapHeight: CGFloat,
@@ -114,24 +114,7 @@ struct MapPanelBottomPadding {
         return heights.max() ?? defaultHeight
     }
 
-    /// Selects the largest sheet height among all currently visible sheets on screen using explicit heights.
-    static func tallestVisibleSheetHeight<Route: Hashable>(
-        visibleRoutes: [Route],
-        measuredHeights: [Route: CGFloat],
-        estimatedHeightForRoute: (Route) -> CGFloat,
-        defaultHeight: CGFloat = minimumPaddingFloor
-    ) -> CGFloat {
-        guard !visibleRoutes.isEmpty else {
-            return defaultHeight
-        }
-        let heights = visibleRoutes.map { route in
-            measuredHeights[route] ?? estimatedHeightForRoute(route)
-        }
-        return heights.max() ?? defaultHeight
-    }
-
-    /// Estimates the height in points for a given `PresentationDetent`, used for immediate
-    /// transitions before geometry measurement settles.
+    /// Resolves the height in points for a given `PresentationDetent`.
     static func estimatedHeight(
         for detent: PresentationDetent,
         halfScreenHeight: CGFloat,
@@ -789,18 +772,19 @@ struct MapPanelRootView: View {
                 isPresented: route.prefersStacking ? .constant(false) : $isLocationOffAlertPresented,
                 onOpenSettings: openSettings
             )
-            .onGeometryChange(for: CGFloat.self) { proxy in
-                proxy.size.height
+            .onGeometryChange(for: CGFloat.self) { [halfScreenHeight] proxy in
+                // The transform closure is @Sendable; snapshot the @State value
+                // instead of reading main-actor view state inside it.
+                max(min(proxy.size.height, halfScreenHeight), 0)
             } action: { oldValue, newValue in
                 guard !route.prefersStacking else { return }
 
-                let clamped = max(min(newValue, halfScreenHeight), 0)
-                sheetHeight = clamped
+                sheetHeight = newValue
 
                 /// Opacity calculation — fade band sits immediately
                 /// below `halfScreenHeight`.
                 let fadeStart = halfScreenHeight - toolbarFadeRange
-                let progress = max(min((clamped - fadeStart) / toolbarFadeRange, 1), 0)
+                let progress = max(min((newValue - fadeStart) / toolbarFadeRange, 1), 0)
                 toolbarsOpacity = 1 - progress
 
                 /// Animation duration

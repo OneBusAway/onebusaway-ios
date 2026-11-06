@@ -62,106 +62,21 @@ struct MapPanelBottomPaddingTests {
         #expect(padding == 680)
     }
 
-    @Test func `Tallest visible sheet height selects base sheet height when top stacked sheet is dragged to tip detent`() {
-        let baseRoute = AppSheetRoute.home
-        let topStackedRoute = AppSheetRoute.tripPlanner(TripPlannerRequest(origin: nil, destination: nil))
-
-        let visibleRoutes: [AppSheetRoute] = [baseRoute, topStackedRoute]
-        let measuredHeights: [AppSheetRoute: CGFloat] = [
-            baseRoute: 390,
-            topStackedRoute: 80
-        ]
-
-        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
-            visibleRoutes: visibleRoutes,
-            measuredHeights: measuredHeights,
-            estimatedHeightForRoute: { _ in 0 }
-        )
-
-        // Must pick the 390pt base sheet height so map annotations don't slip under the base sheet
-        #expect(height == 390)
-    }
-
-    @Test func `Tallest visible sheet height selects stacked sheet height when stacked sheet is taller than base`() {
-        let baseRoute = AppSheetRoute.home
-        let topStackedRoute = AppSheetRoute.stopDetails(stopID: "1_10020")
-
-        let visibleRoutes: [AppSheetRoute] = [baseRoute, topStackedRoute]
-        let measuredHeights: [AppSheetRoute: CGFloat] = [
-            baseRoute: 75,
-            topStackedRoute: 420
-        ]
-
-        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
-            visibleRoutes: visibleRoutes,
-            measuredHeights: measuredHeights,
-            estimatedHeightForRoute: { _ in 0 }
-        )
-
-        #expect(height == 420)
-    }
-
-    @Test func `Tallest visible sheet height falls back to estimated height for unmeasured newly pushed route`() {
-        let baseRoute = AppSheetRoute.home
-        let newlyPushedRoute = AppSheetRoute.routePicker
-
-        let visibleRoutes: [AppSheetRoute] = [baseRoute, newlyPushedRoute]
-        let measuredHeights: [AppSheetRoute: CGFloat] = [
-            baseRoute: 75
-        ]
-
-        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
-            visibleRoutes: visibleRoutes,
-            measuredHeights: measuredHeights,
-            estimatedHeightForRoute: { route in
-                route == newlyPushedRoute ? 360 : 75
-            }
-        )
-
-        #expect(height == 360)
-    }
-
-    @Test func `Tallest visible sheet height retains base sheet measured height after stacked sheet dismissal`() {
+    @Test func `Tallest visible sheet height with detentForRoute retains base detent after stacked sheet dismissal`() {
         let baseRoute = AppSheetRoute.home
         // Stacked sheet was dismissed, only baseRoute is visible
         let visibleRoutes: [AppSheetRoute] = [baseRoute]
-        let measuredHeights: [AppSheetRoute: CGFloat] = [
-            baseRoute: 390
-        ]
 
         let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
             visibleRoutes: visibleRoutes,
-            measuredHeights: measuredHeights,
-            estimatedHeightForRoute: { _ in 75 }
+            detentForRoute: { route in
+                route == baseRoute ? .medium : .height(AppSheetRoute.homeCollapsedHeight)
+            },
+            halfScreenHeight: 350,
+            totalMapHeight: 800
         )
 
-        #expect(height == 390)
-    }
-
-    @Test func `Tallest visible sheet height preserves measured height over estimate for existing sheet`() {
-        let baseRoute = AppSheetRoute.home
-        let visibleRoutes: [AppSheetRoute] = [baseRoute]
-        let measuredHeights: [AppSheetRoute: CGFloat] = [
-            baseRoute: 382.5
-        ]
-
-        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
-            visibleRoutes: visibleRoutes,
-            measuredHeights: measuredHeights,
-            estimatedHeightForRoute: { _ in 350 }
-        )
-
-        // Measured 382.5pt must be preserved over the 350pt estimate
-        #expect(height == 382.5)
-    }
-
-    @Test func `Tallest visible sheet height returns minimumPaddingFloor when visible routes is empty`() {
-        let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
-            visibleRoutes: [AppSheetRoute](),
-            measuredHeights: [:],
-            estimatedHeightForRoute: { _ in 0 }
-        )
-        #expect(height == MapPanelBottomPadding.minimumPaddingFloor)
+        #expect(height == 350)
     }
 
     @Test func `Tallest visible sheet height with detentForRoute selects base detent when stacked sheet is at tip detent`() {
