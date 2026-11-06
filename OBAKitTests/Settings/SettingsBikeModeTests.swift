@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import HealthKit
 @testable import OBAKit
 @testable import OBAKitCore
 import Foundation
@@ -23,7 +22,7 @@ import Testing
 final class SettingsBikeModeTests: OBATestCase {
 
     /// Records authorization requests so a test can assert that merely opening Settings makes none.
-    private final class SpyProvider: BikeSpeedHealthKitProviding {
+    private final class SpyProvider: SpeedProviding {
         var isAvailable = true
         var sampleSpeed: Double?
         private(set) var requestAuthorizationCount = 0
@@ -32,7 +31,7 @@ final class SettingsBikeModeTests: OBATestCase {
             requestAuthorizationCount += 1
         }
 
-        func fetchAverageBikeSpeed() async -> Double? {
+        func fetchSpeed() async -> Double? {
             sampleSpeed
         }
     }
@@ -49,7 +48,12 @@ final class SettingsBikeModeTests: OBATestCase {
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         provider = SpyProvider()
-        application.bikeModeManager = BikeModeManager(userDataStore: application.userDataStore, healthKit: provider)
+        application.bikeModeManager = BikeModeManager(userDataStore: application.userDataStore, provider: provider)
+        application.config.speedSync = SpeedSyncConfiguration(
+            walkingProvider: provider,
+            bikeProvider: provider,
+            text: SpeedSyncText(toggleTitle: "", walkingFooter: "", walkingFailureMessage: "", bikeFooter: "", bikeFailureMessage: "")
+        )
     }
 
     isolated deinit {
@@ -105,50 +109,46 @@ final class SettingsBikeModeTests: OBATestCase {
 
     // MARK: - Use Health app data switch
 
-    @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))
-    func `Health kit switch seeds from the speed source`() throws {
-        store.bikeSpeedSource = .healthKit
+    @Test func `Health kit switch seeds from the speed source`() throws {
+        store.bikeSpeedSource = .synced
         provider.sampleSpeed = 5.0
         let vm = makeViewModel()
 
-        #expect(vm.bikeSpeedUsesHealthKit == true)
+        #expect(vm.bikeSpeedIsSynced == true)
     }
 
-    @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))
-    func `Turning health kit on syncs and marks the source`() async throws {
+    @Test func `Turning health kit on syncs and marks the source`() async throws {
         store.bikeSpeedSource = .manual
         provider.sampleSpeed = 5.0
         let vm = makeViewModel()
 
-        vm.bikeSpeedUsesHealthKit = true
-        try await settle { self.store.bikeSpeedSource == .healthKit }
+        vm.bikeSpeedIsSynced = true
+        try await settle { self.store.bikeSpeedSource == .synced }
 
         #expect(self.provider.requestAuthorizationCount == 1)
-        #expect(self.store.bikeSpeedSource == .healthKit)
+        #expect(self.store.bikeSpeedSource == .synced)
         expectClose(self.store.bikeSpeedMetersPerSecond, 5.0)
-        #expect(vm.bikeSpeedUsesHealthKit == true)
+        #expect(vm.bikeSpeedIsSynced == true)
     }
 
-    @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))
-    func `Turning health kit on with no sample reverts the switch`() async throws {
+    @Test func `Turning health kit on with no sample reverts the switch`() async throws {
         store.bikeSpeedSource = .manual
         provider.sampleSpeed = nil
         let vm = makeViewModel()
 
-        vm.bikeSpeedUsesHealthKit = true
-        try await settle { vm.bikeSpeedUsesHealthKit == false }
+        vm.bikeSpeedIsSynced = true
+        try await settle { vm.bikeSpeedIsSynced == false }
 
         #expect(self.provider.requestAuthorizationCount == 1)
         #expect(self.store.bikeSpeedSource == .manual)
-        #expect(vm.bikeSpeedUsesHealthKit == false)
+        #expect(vm.bikeSpeedIsSynced == false)
     }
 
     /// Opening Settings must not sync at all: a rider with no samples in the last 30 days
     /// (common in winter) keeps their opt-in and sees no error toast. Only an explicit
     /// toggle-on sync may downgrade the source to `.manual` (#1458.2).
-    @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))
-    func `Opening settings with a stale health kit source keeps the opt-in`() async throws {
-        store.bikeSpeedSource = .healthKit
+    @Test func `Opening settings with a stale health kit source keeps the opt-in`() async throws {
+        store.bikeSpeedSource = .synced
         store.bikeSpeedMetersPerSecond = 5.0
         provider.sampleSpeed = nil
         let vm = makeViewModel()
@@ -156,20 +156,19 @@ final class SettingsBikeModeTests: OBATestCase {
         try await settle()
 
         #expect(self.provider.requestAuthorizationCount == 0)
-        #expect(self.store.bikeSpeedSource == .healthKit)
+        #expect(self.store.bikeSpeedSource == .synced)
         expectClose(self.store.bikeSpeedMetersPerSecond, 5.0)
-        #expect(vm.bikeSpeedUsesHealthKit == true)
+        #expect(vm.bikeSpeedIsSynced == true)
     }
 
-    @Test(.enabled(if: HKHealthStore.isHealthDataAvailable()))
-    func `Turning health kit off persists manual and keeps the speed`() async throws {
-        store.bikeSpeedSource = .healthKit
+    @Test func `Turning health kit off persists manual and keeps the speed`() async throws {
+        store.bikeSpeedSource = .synced
         store.bikeSpeedMetersPerSecond = 5.0
         provider.sampleSpeed = 5.0
         let vm = makeViewModel()
         try await settle()
 
-        vm.bikeSpeedUsesHealthKit = false
+        vm.bikeSpeedIsSynced = false
 
         #expect(self.store.bikeSpeedSource == .manual)
         expectClose(self.store.bikeSpeedMetersPerSecond, 5.0)

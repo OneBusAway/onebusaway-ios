@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "Usa una velocidad de desplazamiento más rápida para las estimaciones de tiempo hasta la parada, las horas de llegada y la página de la parada.";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ puede leer tu velocidad en bicicleta desde la app Salud. Nunca escribe datos en Salud.";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "Modo bicicleta";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "Usar datos de la app Salud";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "No se pudo sincronizar la velocidad en bicicleta desde Salud. Se usará una velocidad en bicicleta estándar.";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Actualizar las regiones al inicio";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "Rápida (~4 mph)";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "No se pudo sincronizar la velocidad al caminar desde Salud. Revise Configuración > Privacidad y seguridad > Salud para permitir el acceso.";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "Lenta (~2 mph)";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "Velocidad al caminar";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "Usar datos de la app Salud";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ puede leer tu velocidad al caminar desde la app Salud para estimar cuánto tardas en llegar a una parada. Nunca escribe datos en Salud.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "Velocidad al Caminar";

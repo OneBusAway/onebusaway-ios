@@ -98,10 +98,7 @@ let package = Package(
                 .process("Settings/OBAKit_Credits.plist"),
                 .process("WebView/document_web_view_content.html"),
             ],
-            swiftSettings: strictConcurrency + [.defaultIsolation(MainActor.self)],
-            // Health-based features read HealthKit; the app declares the purpose
-            // strings.
-            linkerSettings: [.linkedFramework("HealthKit")]
+            swiftSettings: strictConcurrency + [.defaultIsolation(MainActor.self)]
         ),
 
         // The watch app's SwiftUI screens and host. Logic stays in OBAKitCore,

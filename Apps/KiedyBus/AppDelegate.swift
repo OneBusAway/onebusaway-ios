@@ -50,6 +50,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, ApplicationDelegate
 
         let appConfig = AppConfig(appBundle: .main, userDefaults: userDefaults, analytics: nil)
         appConfig.appShortcutsProvider = OBAAppShortcuts.self
+        #if OBA_HEALTHKIT
+        appConfig.speedSync = .healthKit()
+        #endif
 
         app = Application(config: appConfig)
 

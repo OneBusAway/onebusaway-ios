@@ -1,0 +1,14 @@
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Não foi possível sincronizar a velocidade de bicicleta com o app Saúde. Será usada uma velocidade de bicicleta padrão.";
+
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "O %@ pode ler sua velocidade de bicicleta no app Saúde. Ele nunca grava dados no Saúde.";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "Não foi possível sincronizar a velocidade de caminhada com o app Saúde. Verifique Ajustes > Privacidade e Segurança > Saúde para permitir o acesso.";
+
+/* Settings > Walking Speed and Bike Mode sections > HealthKit toggle */
+"settings_controller.use_healthkit" = "Usar dados do app Saúde";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "O %@ pode ler sua velocidade de caminhada no app Saúde para estimar quanto tempo você leva para chegar a uma parada. Ele nunca grava dados no Saúde.";

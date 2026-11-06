@@ -12,7 +12,7 @@ import Foundation
 // Raw values are persisted to UserDefaults — do not reorder or renumber existing cases.
 @objc public enum WalkingSpeedSource: Int {
     case manual = 0    // user picked a preset
-    case healthKit = 1 // synced from HealthKit
+    case synced = 1 // synced from the app's speed provider
 }
 
 /// Shared constants for walking speed handling.

@@ -360,8 +360,8 @@ final class UserDefaultsStoreTests: OBATestCase {
     }
 
     @Test func `Walking speed source round trip`() {
-        userDefaultsStore.walkingSpeedSource = .healthKit
-        #expect(self.userDefaultsStore.walkingSpeedSource == .healthKit)
+        userDefaultsStore.walkingSpeedSource = .synced
+        #expect(self.userDefaultsStore.walkingSpeedSource == .synced)
 
         userDefaultsStore.walkingSpeedSource = .manual
         #expect(self.userDefaultsStore.walkingSpeedSource == .manual)
@@ -408,8 +408,8 @@ final class UserDefaultsStoreTests: OBATestCase {
     }
 
     @Test func `Bike speed source round trip`() {
-        userDefaultsStore.bikeSpeedSource = .healthKit
-        #expect(UserDefaultsStore(userDefaults: userDefaults).bikeSpeedSource == .healthKit)
+        userDefaultsStore.bikeSpeedSource = .synced
+        #expect(UserDefaultsStore(userDefaults: userDefaults).bikeSpeedSource == .synced)
 
         userDefaultsStore.bikeSpeedSource = .manual
         #expect(UserDefaultsStore(userDefaults: userDefaults).bikeSpeedSource == .manual)
