@@ -339,7 +339,7 @@ struct StopDetailsSheetView: View {
 
     private func publishUserActivity(for stop: Stop) {
         userActivity?.invalidate()
-        let activity = presenter.makeUserActivity(stop: stop)
+        let activity = presenter.makeSheetUserActivity(stop: stop)
         activity?.becomeCurrent()
         userActivity = activity
     }
