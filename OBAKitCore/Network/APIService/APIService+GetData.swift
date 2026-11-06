@@ -64,8 +64,8 @@ extension APIService {
         return (data, httpResponse)
     }
 
-    nonisolated func getData(for url: URL) async throws -> (Data, HTTPURLResponse) {
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+    nonisolated func getData(for url: URL, cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy) async throws -> (Data, HTTPURLResponse) {
+        var request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 10.0)
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
         // Force en-US locale to prevent server-side locale-dependent number parsing issues.
         // Some OBA servers use Accept-Language to set their parsing locale, causing 400 errors
@@ -76,7 +76,16 @@ extension APIService {
     }
 
     nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type, using decoder: DataDecoder) async throws -> T {
-        let (data, response) = try await self.getData(for: url)
+        try await getDataAndResponse(for: url, decodeAs: decodeAs, using: decoder, cachePolicy: .useProtocolCachePolicy).0
+    }
+
+    private nonisolated func getDataAndResponse<T: Decodable>(
+        for url: URL,
+        decodeAs: T.Type,
+        using decoder: DataDecoder,
+        cachePolicy: URLRequest.CachePolicy
+    ) async throws -> (T, HTTPURLResponse) {
+        let (data, response) = try await self.getData(for: url, cachePolicy: cachePolicy)
 
         guard response.hasJSONContentType else {
             logger.error("Failed network request for \(url, privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
@@ -91,7 +100,7 @@ extension APIService {
         }
 
         do {
-            return try decoder.decode(T.self, from: data)
+            return (try decoder.decode(T.self, from: data), response)
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             logger.error("Decoder failed for \(url, privacy: .public): \(message, privacy: .public)")
@@ -103,9 +112,20 @@ extension APIService {
         }
     }
 
-    /// Convenience.
-    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type, using decoder: DataDecoder) async throws -> RESTAPIResponse<T> {
-        return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder)
+    /// Convenience. Also records the response's `ServerClockSample`.
+    nonisolated func getData<T: Decodable>(
+        for url: URL,
+        decodeRESTAPIResponseAs decodeType: T.Type,
+        using decoder: DataDecoder,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) async throws -> RESTAPIResponse<T> {
+        let (decoded, response) = try await getDataAndResponse(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder, cachePolicy: cachePolicy)
+        decoded.serverClock = ServerClockSample(
+            currentTime: decoded.currentTime,
+            age: response.value(forHTTPHeaderField: "Age"),
+            receivedAt: Date()
+        )
+        return decoded
     }
 
     nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {

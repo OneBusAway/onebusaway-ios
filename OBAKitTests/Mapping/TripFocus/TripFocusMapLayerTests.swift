@@ -274,4 +274,153 @@ final class TripFocusMapLayerTests {
 
         #expect(shapeOverlays.isEmpty)
     }
+
+    // MARK: - Estimated position
+
+    private var vehicleAnnotations: [VehicleAnnotation] {
+        mapView.annotations.compactMap { $0 as? VehicleAnnotation }
+    }
+
+    /// The shape fixture runs east along latitude 47.
+    private let alongShape = CLLocationCoordinate2D(latitude: 47, longitude: -121.975)
+
+    @Test func `An estimate moves the vehicle marker without replacing it`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+        let marker = try #require(vehicleAnnotations.first)
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        #expect(vehicleAnnotations.count == 1)
+        #expect(vehicleAnnotations.first === marker)
+        #expect(marker.coordinate.latitude == alongShape.latitude)
+        #expect(marker.coordinate.longitude == alongShape.longitude)
+    }
+
+    /// Polls still arrive every 30 s with the raw fix. Moving the marker to it
+    /// would yank an estimated bus back to where it was a minute ago.
+    @Test func `A poll does not drag an estimated marker back to the reported fix`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.apply(content(shape: shape(), progress: 0.25, vehicle: status))
+
+        let marker = try #require(vehicleAnnotations.first)
+        #expect(marker.coordinate.longitude == alongShape.longitude)
+    }
+
+    @Test func `A marker drawn while an estimate is running starts at the estimate`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.2))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.apply(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+
+        let marker = try #require(vehicleAnnotations.first)
+        #expect(marker.coordinate.longitude == alongShape.longitude)
+    }
+
+    @Test func `Clearing the estimate puts the marker back on the reported fix`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        focus.applyVehicleEstimate(nil)
+
+        let marker = try #require(vehicleAnnotations.first)
+        #expect(marker.coordinate.latitude == status.coordinate.latitude)
+        #expect(marker.coordinate.longitude == status.coordinate.longitude)
+    }
+
+    private func unit(_ fraction: Double) -> CGFloat {
+        TripShapeSplit.unitDistance(coordinates: shape(), atFraction: fraction)
+    }
+
+    private func lineRenderer(isSpent: Bool, part: RouteLinePart = .core) throws -> MKPolylineRenderer {
+        let overlay = try #require(shapeOverlays.first { $0.isSpent == isSpent && $0.part == part })
+        return try #require(renderer(for: overlay) as? MKPolylineRenderer)
+    }
+
+    /// The line's gray-to-colored join is where the bus is, on every tick: the
+    /// colored line never trails behind the marker. A tick moves the join by
+    /// stroking less of a line drawn once, not by drawing a new one.
+    @Test func `Every tick cuts the line at the marker without replacing it`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.6))
+        let drawn = shapeOverlays.map(ObjectIdentifier.init)
+        #expect(shapeOverlays.allSatisfy { $0.pointCount == shape().count })
+        expectClose(Double(try lineRenderer(isSpent: false).strokeStart), Double(unit(0.6)), within: 1e-9)
+        expectClose(Double(try lineRenderer(isSpent: true).strokeEnd), Double(unit(0.6)), within: 1e-9)
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.61, shouldSnap: false))
+        #expect(shapeOverlays.map(ObjectIdentifier.init) == drawn)
+        expectClose(Double(try lineRenderer(isSpent: false).strokeStart), Double(unit(0.61)), within: 1e-9)
+        expectClose(Double(try lineRenderer(isSpent: false, part: .casing).strokeStart), Double(unit(0.61)), within: 1e-9)
+        expectClose(Double(try lineRenderer(isSpent: true).strokeEnd), Double(unit(0.61)), within: 1e-9)
+    }
+
+    @Test func `Direction arrows start at the marker`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.6))
+
+        let arrows = try #require(try lineRenderer(isSpent: false, part: .arrows) as? RouteArrowRenderer)
+        let cut = MKMapPoint(TripShapeSplit.split(coordinates: shape(), atFraction: 0.6).ahead[0]).x
+        let placed = arrows.arrows(scale: 0.05)
+        #expect(!placed.isEmpty)
+        #expect(placed.allSatisfy { $0.point.x >= cut })
+    }
+
+    @Test func `A poll keeps the line cut at the estimate`() throws {
+        let status = try vehicle()
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: status))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.6))
+
+        focus.apply(content(shape: shape(), progress: 0.25, vehicle: status))
+
+        expectClose(Double(try lineRenderer(isSpent: false).strokeStart), Double(unit(0.6)), within: 1e-9)
+    }
+
+    @Test func `Without an estimate the line is cut at the reported progress again`() throws {
+        let focus = focus(content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape, progress: 0.6))
+
+        focus.applyVehicleEstimate(nil)
+
+        let spent = try #require(shapeOverlays.first { $0.isSpent && $0.part == .core })
+        expectClose(spent.points()[spent.pointCount - 1].coordinate.longitude, -121.992, within: 0.0005)
+        #expect(try lineRenderer(isSpent: false).strokeStart == 0)
+    }
+
+    // MARK: - Reported positions (debug)
+
+    private var reportedPositions: [ReportedPositionAnnotation] {
+        mapView.annotations.compactMap { $0 as? ReportedPositionAnnotation }
+    }
+
+    @Test func `The debug overlay marks the reported fix and the server's position beside an estimate`() throws {
+        let status = try vehicle()
+        let focus = focus(TripMapFocusFixture.content(shape: shape(), progress: 0.2, vehicle: status, showsReportedPositions: true))
+        #expect(reportedPositions.isEmpty)
+
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+
+        let gps = try #require(reportedPositions.first { $0.kind == .lastKnownLocation })
+        #expect(gps.coordinate.latitude == status.lastKnownLocation?.coordinate.latitude)
+        let server = try #require(reportedPositions.first { $0.kind == .serverPosition })
+        #expect(server.coordinate.latitude == status.position?.coordinate.latitude)
+        #expect(reportedPositions.count == 2)
+
+        focus.apply(TripMapFocusFixture.content(shape: shape(), progress: 0.25, vehicle: status, showsReportedPositions: true))
+        #expect(reportedPositions.count == 2)
+
+        focus.applyVehicleEstimate(nil)
+        #expect(reportedPositions.isEmpty)
+    }
+
+    @Test func `Without the debug toggle no reported positions are drawn`() throws {
+        let focus = focus(TripMapFocusFixture.content(shape: shape(), progress: 0.2, vehicle: try vehicle()))
+        focus.applyVehicleEstimate(TripMapFocusFixture.estimate(at: alongShape))
+        #expect(reportedPositions.isEmpty)
+    }
 }
+

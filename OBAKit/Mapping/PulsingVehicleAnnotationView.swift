@@ -105,6 +105,62 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
         headingImageView.isHidden = false
     }
 
+    // MARK: - Estimated position
+
+    /// Points the marker along the shape and shows the fix's age, for a vehicle
+    /// whose position is estimated. `nil` puts back what `applyTripStatus` drew.
+    ///
+    /// Call after `applyTripStatus`, which resets the heading to the feed's.
+    func applyEstimate(_ estimate: VehicleEstimate?) {
+        let staleness = VehicleMarkerStaleness(estimate: estimate)
+        alpha = staleness.alpha
+
+        if isRealTime {
+            let wantedDelay = staleness.pulseDelay
+            if delayBetweenPulseCycles != wantedDelay { delayBetweenPulseCycles = wantedDelay }
+        }
+
+        if let orientation = estimate?.obaOrientation, isRealTime {
+            // Negated for the same reason as in `updateHeading(tripStatus:)`.
+            headingImageView.transform = CGAffineTransform(rotationAngle: CGFloat(-orientation.radians))
+            headingImageView.isHidden = !staleness.showsHeading
+        } else if !staleness.showsHeading {
+            headingImageView.isHidden = true
+        }
+
+        setUncertaintyHalo(diameter: staleness.haloDiameter)
+    }
+
+    /// A recycled view may have shown another vehicle's stale estimate.
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        alpha = 1
+        setUncertaintyHalo(diameter: 0)
+    }
+
+    private lazy var uncertaintyLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.lineWidth = 1
+        return layer
+    }()
+
+    /// The halo's current size, in points. 0 when there is none.
+    private(set) var uncertaintyHaloDiameter: CGFloat = 0
+
+    private func setUncertaintyHalo(diameter: CGFloat) {
+        guard diameter != uncertaintyHaloDiameter else { return }
+        uncertaintyHaloDiameter = diameter
+        guard diameter > 0 else {
+            uncertaintyLayer.removeFromSuperlayer()
+            return
+        }
+        if uncertaintyLayer.superlayer == nil { layer.insertSublayer(uncertaintyLayer, at: 0) }
+        let rect = CGRect(x: bounds.midX - diameter / 2, y: bounds.midY - diameter / 2, width: diameter, height: diameter)
+        uncertaintyLayer.path = UIBezierPath(ovalIn: rect).cgPath
+        uncertaintyLayer.fillColor = realTimeAnnotationColor.withAlphaComponent(0.15).cgColor
+        uncertaintyLayer.strokeColor = realTimeAnnotationColor.withAlphaComponent(0.35).cgColor
+    }
+
     // MARK: - Appearance
 
     /// The annotation color for a vehicle with available real-time data.

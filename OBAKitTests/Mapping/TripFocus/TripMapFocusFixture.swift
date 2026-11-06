@@ -9,7 +9,7 @@
 
 import CoreLocation
 import UIKit
-import OBAKitCore
+@testable import OBAKitCore
 @testable import OBAKit
 
 /// The trip values shared by the suites that draw one: `TripFocusMapLayerTests`
@@ -51,7 +51,8 @@ enum TripMapFocusFixture {
         shape: [CLLocationCoordinate2D],
         progress: Double?,
         stops: [TripStopListModel.Row] = [],
-        vehicle: TripStatus? = nil
+        vehicle: TripStatus? = nil,
+        showsReportedPositions: Bool = false
     ) -> TripMapFocus.Content {
         TripMapFocus.Content(
             tripID: tripID,
@@ -60,7 +61,8 @@ enum TripMapFocusFixture {
             shape: shape,
             progress: progress,
             stops: stops,
-            vehicle: vehicle
+            vehicle: vehicle,
+            showsReportedPositions: showsReportedPositions
         )
     }
 
@@ -72,5 +74,26 @@ enum TripMapFocusFixture {
             type: VehicleStatus.self,
             fileName: "api_where_vehicle_1_4351.json"
         ).tripStatus
+    }
+
+    /// An estimate at `coordinate`, as `VehicleTrack` would publish it.
+    static func estimate(
+        at coordinate: CLLocationCoordinate2D,
+        progress: Double? = 0.5,
+        bearing: Double? = 90,
+        fixAge: TimeInterval = 10,
+        mode: VehicleEstimate.Mode = .estimated,
+        shouldSnap: Bool = true
+    ) -> VehicleEstimate {
+        VehicleEstimate(
+            coordinate: coordinate,
+            distanceAlongShape: progress.map { $0 * 1000 },
+            progress: progress,
+            bearingDegrees: bearing,
+            fixTime: Date(),
+            fixAge: fixAge,
+            mode: mode,
+            shouldSnap: shouldSnap
+        )
     }
 }

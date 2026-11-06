@@ -1454,4 +1454,32 @@ final class StopViewModelTests: OBATestCase {
 
         #expect(emissions == baseline)
     }
+
+    // MARK: - Estimated vehicle positions
+
+    @Test @MainActor
+    func `A refresh records the arrivals' server clock`() async {
+        let (viewModel, _) = buildViewModel(arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+
+        await viewModel.refresh()
+
+        // `currentTime` in arrivals_and_departures_for_stop_1_10020.json.
+        let serverTime = viewModel.arrivalsServerClock?.serverTime.timeIntervalSince1970
+        expectClose(serverTime, 1343583481.632, within: 0.001)
+    }
+
+    @Test @MainActor
+    func `With estimation on, arrivals bypass the HTTP cache`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json")
+        app.userDefaults.set(true, forKey: FeatureFlags.estimatesVehiclePositionsKey)
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        await viewModel.refresh()
+
+        let arrivals = dataLoader.recordedRequests.filter { $0.url?.path.contains("arrivals-and-departures-for-stop") ?? false }
+        #expect(!arrivals.isEmpty)
+        #expect(arrivals.allSatisfy { $0.cachePolicy == .reloadIgnoringLocalCacheData })
+    }
 }
+

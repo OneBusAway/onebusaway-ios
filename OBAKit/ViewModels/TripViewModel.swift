@@ -41,6 +41,10 @@ class TripViewModel: ObservableObject {
     /// on the tap that started it.
     @Published private(set) var isLoading = false
 
+    /// The server clocks the last load's responses carried, for vehicle position
+    /// estimation's skew correction.
+    @Published private(set) var serverClocks: [ServerClockSample] = []
+
     /// When a load last brought the trip back: its details, or its arrival at
     /// the rider's stop. `nil` until one has. A load that fails leaves it alone,
     /// because the page is still showing what that earlier load fetched (#1581).
@@ -150,8 +154,11 @@ class TripViewModel: ObservableObject {
         // them: the page then said the list "isn't available" until a refresh
         // 30 seconds later. A throw caught inside this scope leaves the other
         // fetches running.
-        async let details = fetchTripDetails()
-        async let convertible = fetchTripConvertible()
+        let cachePolicy = FeatureFlags.realtimeCachePolicy(userDefaults: application.userDefaults)
+        var detailsClock: ServerClockSample?
+        var convertibleClock: ServerClockSample?
+        async let details = fetchTripDetails(cachePolicy: cachePolicy)
+        async let convertible = fetchTripConvertible(cachePolicy: cachePolicy)
         async let polyline = fetchMapPolyline()
         var failure: Error?
         // The first failure the rider should hear about. A lower-layer
@@ -170,8 +177,9 @@ class TripViewModel: ObservableObject {
         // context menu preview) surface an error; it leaves `isLoading` to the
         // load that replaced it, or to `deactivate()`.
         do {
-            let newDetails = try await details
+            let (newDetails, clock) = try await details
             guard !Task.isCancelled else { return }
+            detailsClock = clock
             applyTripDetails(newDetails)
         } catch {
             guard !Task.isCancelled else { return }
@@ -181,8 +189,9 @@ class TripViewModel: ObservableObject {
             record(error)
         }
         do {
-            let newConvertible = try await convertible
+            let (newConvertible, clock) = try await convertible
             guard !Task.isCancelled else { return }
+            convertibleClock = clock
             applyTripConvertible(newConvertible)
         } catch {
             guard !Task.isCancelled else { return }
@@ -196,6 +205,8 @@ class TripViewModel: ObservableObject {
             guard !Task.isCancelled else { return }
             record(error)
         }
+
+        serverClocks = [detailsClock, convertibleClock].compactMap { $0 }
 
         // URLSession can report NSURLErrorCancelled without this task being
         // cancelled, when a lower layer cancelled the request. Never a
@@ -229,29 +240,32 @@ class TripViewModel: ObservableObject {
         if let newPolyline { routePolylineCoordinates = newPolyline }
     }
 
-    private func fetchTripConvertible() async throws -> TripConvertible? {
+    private func fetchTripConvertible(cachePolicy: URLRequest.CachePolicy) async throws -> (TripConvertible?, ServerClockSample?) {
         guard let apiService = application.apiService,
-              let arrivalDeparture = tripConvertible.arrivalDeparture else { return nil }
+              let arrivalDeparture = tripConvertible.arrivalDeparture else { return (nil, nil) }
 
-        let newArrDep = try await apiService.getTripArrivalDepartureAtStop(
+        let response = try await apiService.getTripArrivalDepartureAtStop(
             stopID: arrivalDeparture.stopID,
             tripID: arrivalDeparture.tripID,
             serviceDate: arrivalDeparture.serviceDate,
             vehicleID: arrivalDeparture.vehicleID,
-            stopSequence: arrivalDeparture.stopSequence
-        ).entry
+            stopSequence: arrivalDeparture.stopSequence,
+            cachePolicy: cachePolicy
+        )
 
-        return TripConvertible(arrivalDeparture: newArrDep)
+        return (TripConvertible(arrivalDeparture: response.entry), response.serverClock)
     }
 
-    private func fetchTripDetails() async throws -> TripDetails? {
-        guard let apiService = application.apiService else { return nil }
+    private func fetchTripDetails(cachePolicy: URLRequest.CachePolicy) async throws -> (TripDetails?, ServerClockSample?) {
+        guard let apiService = application.apiService else { return (nil, nil) }
 
-        return try await apiService.getTrip(
+        let response = try await apiService.getTrip(
             tripID: tripConvertible.trip.id,
             vehicleID: tripConvertible.vehicleID,
-            serviceDate: tripConvertible.serviceDate
-        ).entry
+            serviceDate: tripConvertible.serviceDate,
+            cachePolicy: cachePolicy
+        )
+        return (response.entry, response.serverClock)
     }
 
     private func fetchMapPolyline() async throws -> [CLLocationCoordinate2D]? {

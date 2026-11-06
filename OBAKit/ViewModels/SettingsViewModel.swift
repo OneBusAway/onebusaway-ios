@@ -89,6 +89,8 @@ final class SettingsViewModel {
         usesMapPanelExperience = defaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey)
         usesNewStopPage = FeatureFlags.isNewStopPageEnabled(userDefaults: defaults)
         clustersStops = defaults.bool(forKey: FeatureFlags.clustersStopsKey)
+        estimatesVehiclePositions = FeatureFlags.isVehicleEstimationEnabled(userDefaults: defaults)
+        showsRawVehicleFix = FeatureFlags.showsRawVehicleFix(userDefaults: defaults)
 
         hapticFeedbackOnReload = defaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         alwaysShowsFullSheetOnVoiceOver = defaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
@@ -170,6 +172,15 @@ final class SettingsViewModel {
 
     var clustersStops: Bool {
         didSet { application.userDefaults.set(clustersStops, forKey: FeatureFlags.clustersStopsKey) }
+    }
+
+    var estimatesVehiclePositions: Bool {
+        didSet { application.userDefaults.set(estimatesVehiclePositions, forKey: FeatureFlags.estimatesVehiclePositionsKey) }
+    }
+
+    /// Debug; see `FeatureFlags.showsRawVehicleFixKey`.
+    var showsRawVehicleFix: Bool {
+        didSet { application.userDefaults.set(showsRawVehicleFix, forKey: FeatureFlags.showsRawVehicleFixKey) }
     }
 
     // MARK: - Accessibility

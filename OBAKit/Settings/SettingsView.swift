@@ -97,6 +97,7 @@ struct SettingsView: View {
             Toggle(OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle"), isOn: $viewModel.usesMapPanelExperience)
             Toggle(OBALoc("settings_controller.experimental_section.new_stop_page", value: "Use new stop page", comment: "Settings > Experimental section > New stop page toggle"), isOn: $viewModel.usesNewStopPage)
             Toggle(OBALoc("settings_controller.experimental_section.cluster_stops", value: "Group nearby stops on the map", comment: "Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin"), isOn: $viewModel.clustersStops)
+            Toggle(OBALoc("settings_controller.experimental_section.estimate_vehicle_positions", value: "Estimate where vehicles are now", comment: "Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported"), isOn: $viewModel.estimatesVehiclePositions)
         } header: {
             Text(OBALoc("settings_controller.experimental_section.title", value: "Experimental", comment: "Settings > Experimental section title"))
         } footer: {
@@ -212,6 +213,8 @@ struct SettingsView: View {
 
             if viewModel.debugMode {
                 Toggle(OBALoc("settings_controller.debug_section.always_refresh_regions", value: "Refresh regions on every launch", comment: "Settings > Debug section > Refresh regions on every launch"), isOn: $viewModel.alwaysRefreshesRegionsOnLaunch)
+
+                Toggle(OBALoc("settings_controller.debug_section.show_raw_vehicle_fix", value: "Show reported vehicle positions", comment: "Settings > Debug section > Toggle that draws a vehicle's last reported GPS position and the server's position beside its estimated marker"), isOn: $viewModel.showsRawVehicleFix)
 
                 if viewModel.canCrash {
                     Button(action: viewModel.crashApp) {

@@ -98,4 +98,26 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
 
         #expect(!self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey))
     }
+
+    // MARK: - Estimated vehicle positions
+
+    @Test func `Vehicle position estimation seeds off by default`() throws {
+        let vm = makeViewModel()
+        #expect(!vm.estimatesVehiclePositions)
+        #expect(!FeatureFlags.isVehicleEstimationEnabled(userDefaults: application.userDefaults))
+    }
+
+    @Test func `Vehicle position estimation toggling on persists immediately`() throws {
+        let vm = makeViewModel()
+        vm.estimatesVehiclePositions = true
+        #expect(FeatureFlags.isVehicleEstimationEnabled(userDefaults: application.userDefaults))
+    }
+
+    @Test func `The raw vehicle fix overlay seeds off and persists`() throws {
+        let vm = makeViewModel()
+        #expect(!vm.showsRawVehicleFix)
+        vm.showsRawVehicleFix = true
+        #expect(FeatureFlags.showsRawVehicleFix(userDefaults: application.userDefaults))
+    }
 }
+

@@ -167,11 +167,17 @@ extension RESTAPIService {
     /// - parameter minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``StopArrivals``.
-    public nonisolated func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) async throws -> RESTAPIResponse<StopArrivals> {
+    public nonisolated func getArrivalsAndDeparturesForStop(
+        id: StopID,
+        minutesBefore: UInt,
+        minutesAfter: UInt,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) async throws -> RESTAPIResponse<StopArrivals> {
         let url = urlBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         return try await getData(
             for: url,
-            decodeRESTAPIResponseAs: StopArrivals.self
+            decodeRESTAPIResponseAs: StopArrivals.self,
+            cachePolicy: cachePolicy
         )
     }
 
@@ -187,11 +193,19 @@ extension RESTAPIService {
     /// - parameter stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``ArrivalDeparture``.
-    public nonisolated func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) async throws -> RESTAPIResponse<ArrivalDeparture> {
+    public nonisolated func getTripArrivalDepartureAtStop(
+        stopID: String,
+        tripID: String,
+        serviceDate: Date,
+        vehicleID: String?,
+        stopSequence: Int,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) async throws -> RESTAPIResponse<ArrivalDeparture> {
         let url = urlBuilder.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
         return try await getData(
             for: url,
-            decodeRESTAPIResponseAs: ArrivalDeparture.self
+            decodeRESTAPIResponseAs: ArrivalDeparture.self,
+            cachePolicy: cachePolicy
         )
     }
 
@@ -206,10 +220,16 @@ extension RESTAPIService {
     /// - parameter serviceDate: The service date for this trip.
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``TripDetails``.
-    public nonisolated func getTrip(tripID: String, vehicleID: String?, serviceDate: Date?) async throws -> RESTAPIResponse<TripDetails> {
+    public nonisolated func getTrip(
+        tripID: String,
+        vehicleID: String?,
+        serviceDate: Date?,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) async throws -> RESTAPIResponse<TripDetails> {
         return try await getData(
             for: urlBuilder.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate),
-            decodeRESTAPIResponseAs: TripDetails.self
+            decodeRESTAPIResponseAs: TripDetails.self,
+            cachePolicy: cachePolicy
         )
     }
 
@@ -337,7 +357,11 @@ extension RESTAPIService {
         return try await getData(for: url, decodeAs: decodeType, using: self.decoder)
     }
 
-    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type) async throws -> RESTAPIResponse<T> {
-        return try await getData(for: url, decodeRESTAPIResponseAs: decodeType, using: self.decoder)
+    nonisolated func getData<T: Decodable>(
+        for url: URL,
+        decodeRESTAPIResponseAs decodeType: T.Type,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) async throws -> RESTAPIResponse<T> {
+        return try await getData(for: url, decodeRESTAPIResponseAs: decodeType, using: self.decoder, cachePolicy: cachePolicy)
     }
 }
