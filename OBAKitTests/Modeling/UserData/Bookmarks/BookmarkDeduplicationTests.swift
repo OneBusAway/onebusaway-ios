@@ -19,8 +19,10 @@ final class BookmarkDeduplicationTests: OBATestCase {
         let dict: [String: Any] = [
             "id": id,
             "name": "Test Stop \(id)",
+            "code": id,
             "lat": 47.6062,
             "lon": -122.3321,
+            "locationType": 0,
             "routeIds": ["1_100"]
         ]
         return try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)

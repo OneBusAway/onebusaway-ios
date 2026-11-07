@@ -459,6 +459,7 @@ final class FormattersTests: OBATestCase {
             "name": name,
             "lat": 47.6062,
             "lon": -122.3321,
+            "locationType": 0,
             "routeIds": ["1_100"]
         ]
         if let direction = direction {
