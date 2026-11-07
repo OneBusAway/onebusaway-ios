@@ -540,5 +540,4 @@ final class FormattersTests: OBATestCase {
         let interval = DateInterval(start: startDate, end: endDate)
         #expect(formatters.formattedDateRange(interval) == rangeStr)
     }
-    }
 }
