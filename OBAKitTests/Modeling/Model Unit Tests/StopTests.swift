@@ -147,28 +147,43 @@ final class StopTests: OBATestCase {
 
     // MARK: - Prioritized Route Type For Display
 
-    @Test func `Prioritized route type selects ferry over bus`() {
+    private func makeRoute(id: String, shortName: String, routeType: Int) throws -> Route {
+        try Fixtures.dictionaryToModel(type: Route.self, dictionary: [
+            "agencyId": "1",
+            "id": id,
+            "shortName": shortName,
+            "type": routeType
+        ])
+    }
+
+    @Test func `Prioritized route type selects ferry over bus`() throws {
         let stop = Stop(id: "stop_multi", name: "Colman Dock")
-        let busRoute = Route(id: "route_bus", shortName: "Bus", routeType: .bus)
-        let ferryRoute = Route(id: "route_ferry", shortName: "Ferry", routeType: .ferry)
+        let busRoute = try makeRoute(id: "route_bus", shortName: "Bus", routeType: Route.RouteType.bus.rawValue)
+        let ferryRoute = try makeRoute(id: "route_ferry", shortName: "Ferry", routeType: Route.RouteType.ferry.rawValue)
         stop.routes = [busRoute, ferryRoute]
 
         #expect(stop.prioritizedRouteTypeForDisplay == .ferry)
     }
 
-    @Test func `Prioritized route type selects light rail over bus`() {
+    @Test func `Prioritized route type selects light rail over bus`() throws {
         let stop = Stop(id: "stop_station", name: "Westlake")
-        let busRoute = Route(id: "route_bus", shortName: "Bus", routeType: .bus)
-        let lightRailRoute = Route(id: "route_light_rail", shortName: "1 Line", routeType: .lightRail)
+        let busRoute = try makeRoute(id: "route_bus", shortName: "Bus", routeType: Route.RouteType.bus.rawValue)
+        let lightRailRoute = try makeRoute(id: "route_light_rail", shortName: "1 Line", routeType: Route.RouteType.lightRail.rawValue)
         stop.routes = [busRoute, lightRailRoute]
 
         #expect(stop.prioritizedRouteTypeForDisplay == .lightRail)
     }
 
-    @Test func `Prioritized route type falls back to unknown when no routes match hierarchy`() {
+    @Test func `Prioritized route type falls back to unknown when no routes match hierarchy`() throws {
         let stop = Stop(id: "stop_empty", name: "Empty Stop")
         stop.routes = []
         #expect(stop.prioritizedRouteTypeForDisplay == .unknown)
+
+        // Cable car (route type 5) is not in the priority list (.ferry, .lightRail, .subway, .rail, .bus)
+        let cableCarRoute = try makeRoute(id: "route_cable_car", shortName: "Cable Car", routeType: Route.RouteType.cableCar.rawValue)
+        let unlistedStop = Stop(id: "stop_cable_car", name: "California St")
+        unlistedStop.routes = [cableCarRoute]
+        #expect(unlistedStop.prioritizedRouteTypeForDisplay == .unknown)
     }
 
     // MARK: - Stop Equality and Hash

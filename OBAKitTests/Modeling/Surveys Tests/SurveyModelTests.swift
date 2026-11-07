@@ -45,7 +45,7 @@ final class SurveyModelTests: OBATestCase {
 
     // MARK: - Survey Questions Filtering
 
-    @Test func `getQuestions filters out invalid question content`() {
+    @Test func `getQuestions preserves questions across all supported content types`() {
         let validText = SurveysTestHelpers.makeSurveyQuestion(
             id: 1,
             position: 1,

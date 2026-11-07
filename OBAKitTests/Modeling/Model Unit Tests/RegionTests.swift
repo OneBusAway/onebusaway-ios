@@ -179,9 +179,20 @@ final class RegionTests: OBATestCase {
             ["lat": centerLat, "lon": centerLon, "latSpan": 0.5, "lonSpan": 0.5]
         ])
 
-        let centerLoc = CLLocation(latitude: centerLat, longitude: centerLon)
-        let distanceAtCenter = region.distanceFrom(location: centerLoc)
-        #expect(distanceAtCenter < 50.0) // Within 50 meters of calculated center
+        // Region.centerCoordinate is the midpoint of serviceRect in MKMapPoint
+        // (Mercator) space, which maps back ~66 m north of the input latitude
+        // for a 0.5° latitude span around 47.61°. Verify against region.centerCoordinate.
+        let calculatedCenterLoc = CLLocation(
+            latitude: region.centerCoordinate.latitude,
+            longitude: region.centerCoordinate.longitude
+        )
+        let distanceAtCalculatedCenter = region.distanceFrom(location: calculatedCenterLoc)
+        #expect(distanceAtCalculatedCenter < 1.0)
+
+        // Tolerance around the raw bound coordinates accounts for the Mercator projection offset.
+        let boundCenterLoc = CLLocation(latitude: centerLat, longitude: centerLon)
+        let distanceAtBoundCenter = region.distanceFrom(location: boundCenterLoc)
+        #expect(distanceAtBoundCenter < 100.0)
 
         let offsetLoc = CLLocation(latitude: 47.7, longitude: -122.3331)
         let distanceOffset = region.distanceFrom(location: offsetLoc)
