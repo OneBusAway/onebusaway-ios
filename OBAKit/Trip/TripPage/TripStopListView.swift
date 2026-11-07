@@ -216,7 +216,7 @@ private struct TripStopRow: View {
         }
         if row.isVehicleHere {
             clauses.append(OBALoc("trip_page.stop_list.a11y_vehicle_here", value: "vehicle is here", comment: "VoiceOver clause on the stop the vehicle is currently at."))
-        } else if isBehind {
+        } else if row.isPassed {
             clauses.append(OBALoc("trip_page.stop_list.a11y_passed", value: "already passed", comment: "VoiceOver clause on a stop the vehicle has already served."))
         }
         if row.isUserStop {
