@@ -474,15 +474,19 @@ final class FormattersTests: OBATestCase {
         #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains(expectedNorth))
 
         let stopWithoutDir = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: nil)
-        #expect(Formatters.formattedCodeAndDirection(stop: stopWithoutDir) == "Stop #10020")
+        let numericFmt = NSLocalizedString("formatters.stop.stop_code_numeric", bundle: Bundle.obaKitCore, comment: "")
+        let expectedNumeric = String(format: numericFmt, "10020")
+        #expect(Formatters.formattedCodeAndDirection(stop: stopWithoutDir) == expectedNumeric)
     }
 
     @Test func `Formatted stop code formats non-empty and empty codes`() throws {
         let stopWithCode = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: nil)
-        #expect(Formatters.formattedStopCode(stop: stopWithCode) == "Stop #10020")
+        let numericFmt = NSLocalizedString("formatters.stop.stop_code_numeric", bundle: Bundle.obaKitCore, comment: "")
+        #expect(Formatters.formattedStopCode(stop: stopWithCode) == String(format: numericFmt, "10020"))
 
         let stopEmptyCode = try makeStop(id: "1_10020", code: "", name: "3rd & Pike", direction: nil)
-        #expect(Formatters.formattedStopCode(stop: stopEmptyCode) == "Stop: '" + "'")
+        let nonNumericFmt = NSLocalizedString("formatters.stop.stop_code_non_numeric", bundle: Bundle.obaKitCore, comment: "")
+        #expect(Formatters.formattedStopCode(stop: stopEmptyCode) == String(format: nonNumericFmt, ""))
     }
 
     @Test func `Formatted routes lists routes with custom limits`() throws {

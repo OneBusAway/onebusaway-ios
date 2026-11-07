@@ -94,6 +94,7 @@ final class TripStopTimeTests: OBATestCase {
             "lon": -122.3,
             "direction": "N",
             "code": "10020",
+            "locationType": 0,
             "routeIds": ["1_100"]
         ]
         let referencesData: [String: Any] = [
