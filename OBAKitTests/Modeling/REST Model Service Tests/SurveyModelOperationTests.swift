@@ -101,29 +101,29 @@ final class SurveyModelOperationTests: OBATestCase {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         let successData = Fixtures.loadData(file: "survey_submission_response.json")
 
-        var capturedMethod: String?
-        var capturedContentType: String?
-        var capturedBodyData: Data?
+        let capturedMethod = SendableBox<String?>(nil)
+        let capturedContentType = SendableBox<String?>(nil)
+        let capturedBodyData = SendableBox<Data?>(nil)
 
         dataLoader.mock(data: successData) { request in
             guard request.url?.path == "/api/v1/survey_responses/" else { return false }
-            capturedMethod = request.httpMethod
-            capturedContentType = request.value(forHTTPHeaderField: "Content-Type")
-            capturedBodyData = request.httpBody
+            capturedMethod.value = request.httpMethod
+            capturedContentType.value = request.value(forHTTPHeaderField: "Content-Type")
+            capturedBodyData.value = request.httpBody
             return true
         }
 
         let submission = makeSubmission()
         let result = try await restService.submitSurveyResponse(submission)
 
-        #expect(capturedMethod == "POST")
-        #expect(capturedContentType == "application/json")
+        #expect(capturedMethod.value == "POST")
+        #expect(capturedContentType.value == "application/json")
         #expect(result.id == "808d3a515daa39f4c15a")
         #expect(result.updatePath == "/api/v1/survey_responses/808d3a515daa39f4c15a")
         #expect(result.userIdentifier == "b94e83ae-5337-42f4-bec7-2736e7929dcb")
 
         // Verify request payload contents on wire
-        let bodyData = try #require(capturedBodyData)
+        let bodyData = try #require(capturedBodyData.value)
         let json = try #require(try JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         #expect(json["user_identifier"] as? String == "user-123")
         #expect(json["survey_id"] as? Int == 1)
@@ -156,17 +156,17 @@ final class SurveyModelOperationTests: OBATestCase {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         let successData = Fixtures.loadData(file: "survey_submission_response.json")
 
-        var capturedMethod: String?
-        var capturedContentType: String?
-        var capturedBodyData: Data?
-        var capturedPath: String?
+        let capturedMethod = SendableBox<String?>(nil)
+        let capturedContentType = SendableBox<String?>(nil)
+        let capturedBodyData = SendableBox<Data?>(nil)
+        let capturedPath = SendableBox<String?>(nil)
 
         dataLoader.mock(data: successData) { request in
             guard let path = request.url?.path, path.hasPrefix("/api/v1/survey_responses/") else { return false }
-            capturedMethod = request.httpMethod
-            capturedContentType = request.value(forHTTPHeaderField: "Content-Type")
-            capturedBodyData = request.httpBody
-            capturedPath = path
+            capturedMethod.value = request.httpMethod
+            capturedContentType.value = request.value(forHTTPHeaderField: "Content-Type")
+            capturedBodyData.value = request.httpBody
+            capturedPath.value = path
             return true
         }
 
@@ -180,12 +180,12 @@ final class SurveyModelOperationTests: OBATestCase {
             additionalResponses: additionalAnswers
         )
 
-        #expect(capturedMethod == "PUT")
-        #expect(capturedContentType == "application/json")
-        #expect(capturedPath == "/api/v1/survey_responses/resp_update_789")
+        #expect(capturedMethod.value == "PUT")
+        #expect(capturedContentType.value == "application/json")
+        #expect(capturedPath.value == "/api/v1/survey_responses/resp_update_789")
         #expect(result.id == "808d3a515daa39f4c15a")
 
-        let bodyData = try #require(capturedBodyData)
+        let bodyData = try #require(capturedBodyData.value)
         let bodyJson = try #require(try JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         let responsesString = try #require(bodyJson["responses"] as? String)
         let parsed = try #require(try JSONSerialization.jsonObject(with: Data(responsesString.utf8)) as? [[String: Any]])
@@ -198,9 +198,9 @@ final class SurveyModelOperationTests: OBATestCase {
         let dataLoader = (restService.dataLoader as! MockDataLoader)
         let successData = Fixtures.loadData(file: "survey_submission_response.json")
 
-        var capturedPath: String?
+        let capturedPath = SendableBox<String?>(nil)
         dataLoader.mock(data: successData) { request in
-            capturedPath = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.percentEncodedPath }
+            capturedPath.value = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.percentEncodedPath }
             return true
         }
 
@@ -211,7 +211,7 @@ final class SurveyModelOperationTests: OBATestCase {
             ]
         )
 
-        #expect(capturedPath == "/api/v1/survey_responses/resp%2Fwith%20slash")
+        #expect(capturedPath.value == "/api/v1/survey_responses/resp%2Fwith%20slash")
     }
 
     @Test func `updateSurveyResponse throws surveyServiceNotConfigured when surveyBaseURL is nil`() async {
