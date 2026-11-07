@@ -102,6 +102,45 @@ final class RESTAPIURLBuilderTests {
         #expect(url?.absoluteString == "https://surveys.onebusaway.org/api/v1/survey_responses/?key=TEST")
     }
 
+    @Test func testGetSurveysWithoutSurveyBaseURLReturnsNil() {
+        let builderWithoutSurveys = RESTAPIURLBuilder(
+            baseURL: URL(string: "https://api.pugetsound.onebusaway.org")!,
+            defaultQueryItems: [URLQueryItem(name: "key", value: "TEST")],
+            surveyBaseURL: nil
+        )
+        #expect(builderWithoutSurveys.getSurveys(userID: "user123", regionID: 1) == nil)
+    }
+
+    @Test func testSubmitSurveyResponseWithoutSurveyBaseURLReturnsNil() {
+        let builderWithoutSurveys = RESTAPIURLBuilder(
+            baseURL: URL(string: "https://api.pugetsound.onebusaway.org")!,
+            defaultQueryItems: [URLQueryItem(name: "key", value: "TEST")],
+            surveyBaseURL: nil
+        )
+        #expect(builderWithoutSurveys.submitSurveyResponse() == nil)
+    }
+
+    @Test func testUpdateSurveyResponse() {
+        let url = builder.updateSurveyResponse(responseID: "resp_123")
+        #expect(url?.absoluteString == "https://surveys.onebusaway.org/api/v1/survey_responses/resp_123?key=TEST")
+    }
+
+    @Test func testUpdateSurveyResponseEscapesResponseID() {
+        let url = builder.updateSurveyResponse(responseID: "resp/123 special")
+        let unwrappedURL = try! #require(url)
+        let components = URLComponents(url: unwrappedURL, resolvingAgainstBaseURL: false)
+        #expect(components?.path == "/api/v1/survey_responses/resp%2F123%20special")
+    }
+
+    @Test func testUpdateSurveyResponseWithoutSurveyBaseURLReturnsNil() {
+        let builderWithoutSurveys = RESTAPIURLBuilder(
+            baseURL: URL(string: "https://api.pugetsound.onebusaway.org")!,
+            defaultQueryItems: [URLQueryItem(name: "key", value: "TEST")],
+            surveyBaseURL: nil
+        )
+        #expect(builderWithoutSurveys.updateSurveyResponse(responseID: "resp_123") == nil)
+    }
+
     // MARK: - On-demand
 
     private func queryValue(_ url: URL, _ name: String) -> String? {

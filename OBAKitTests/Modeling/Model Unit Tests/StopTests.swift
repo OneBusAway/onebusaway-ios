@@ -76,4 +76,112 @@ final class StopTests: OBATestCase {
         #expect(withPointer != withoutPointer)
         #expect(withPointer.hash != withoutPointer.hash)
     }
+
+    // MARK: - Direction Parsing & Canonical Abbreviations
+
+    @Test(arguments: [
+        ("N", Direction.n, "N"),
+        ("NE", Direction.ne, "NE"),
+        ("E", Direction.e, "E"),
+        ("SE", Direction.se, "SE"),
+        ("S", Direction.s, "S"),
+        ("SW", Direction.sw, "SW"),
+        ("W", Direction.w, "W"),
+        ("NW", Direction.nw, "NW"),
+        ("n", Direction.n, "N"),
+        ("sw", Direction.sw, "SW"),
+        ("UNKNOWN", Direction.unknown, nil as String?),
+        ("invalid", Direction.unknown, nil as String?)
+    ])
+    func `Stop direction parsing and canonical abbreviations`(raw: String, expectedDir: Direction, expectedAbbr: String?) {
+        let stop = Stop(id: "stop_1", name: "Main St", direction: raw)
+        #expect(stop.direction == expectedDir)
+        #expect(stop.direction.canonicalAbbreviation == expectedAbbr)
+    }
+
+    @Test func `Direction nil yields unknown direction`() {
+        let stop = Stop(id: "stop_nil", name: "Main St", direction: nil)
+        #expect(stop.direction == .unknown)
+        #expect(stop.direction.canonicalAbbreviation == nil)
+    }
+
+    @Test func `Direction Comparable ordering`() {
+        #expect(Direction.n < Direction.s)
+        #expect(Direction.e < Direction.w)
+        #expect(Direction.nw < Direction.unknown)
+    }
+
+    // MARK: - WheelchairBoarding Decoding
+
+    @Test(arguments: [
+        ("ACCESSIBLE", WheelchairBoarding.accessible),
+        ("NOT_ACCESSIBLE", WheelchairBoarding.notAccessible),
+        ("UNKNOWN", WheelchairBoarding.unknown),
+        ("any_unrecognized_value", WheelchairBoarding.unknown)
+    ])
+    func `WheelchairBoarding decoding fallback`(raw: String, expected: WheelchairBoarding) throws {
+        let json = "\"\(raw)\""
+        let decoded = try JSONDecoder().decode(WheelchairBoarding.self, from: Data(json.utf8))
+        #expect(decoded == expected)
+    }
+
+    // MARK: - StopLocationType Decoding
+
+    @Test(arguments: [
+        (0, StopLocationType.stop),
+        (1, StopLocationType.station),
+        (2, StopLocationType.stationEntrance),
+        (99, StopLocationType.unknown)
+    ])
+    func `StopLocationType decoding fallback`(raw: Int, expected: StopLocationType) throws {
+        let json = "\(raw)"
+        let decoded = try JSONDecoder().decode(StopLocationType.self, from: Data(json.utf8))
+        #expect(decoded == expected)
+    }
+
+    // MARK: - Prioritized Route Type For Display
+
+    @Test func `Prioritized route type selects ferry over bus`() {
+        let stop = Stop(id: "stop_multi", name: "Colman Dock")
+        let busRoute = Route(id: "route_bus", shortName: "Bus", routeType: .bus)
+        let ferryRoute = Route(id: "route_ferry", shortName: "Ferry", routeType: .ferry)
+        stop.routes = [busRoute, ferryRoute]
+
+        #expect(stop.prioritizedRouteTypeForDisplay == .ferry)
+    }
+
+    @Test func `Prioritized route type selects light rail over bus`() {
+        let stop = Stop(id: "stop_station", name: "Westlake")
+        let busRoute = Route(id: "route_bus", shortName: "Bus", routeType: .bus)
+        let lightRailRoute = Route(id: "route_light_rail", shortName: "1 Line", routeType: .lightRail)
+        stop.routes = [busRoute, lightRailRoute]
+
+        #expect(stop.prioritizedRouteTypeForDisplay == .lightRail)
+    }
+
+    @Test func `Prioritized route type falls back to unknown when no routes match hierarchy`() {
+        let stop = Stop(id: "stop_empty", name: "Empty Stop")
+        stop.routes = []
+        #expect(stop.prioritizedRouteTypeForDisplay == .unknown)
+    }
+
+    // MARK: - Stop Equality and Hash
+
+    @Test func `Stop equality compares core properties`() {
+        let stop1 = Stop(id: "stop_a", name: "Broadway", code: "1001", direction: "N")
+        let stop2 = Stop(id: "stop_a", name: "Broadway", code: "1001", direction: "N")
+        let stopDiffName = Stop(id: "stop_a", name: "Broadway E", code: "1001", direction: "N")
+        let stopDiffCode = Stop(id: "stop_a", name: "Broadway", code: "1002", direction: "N")
+
+        #expect(stop1 == stop2)
+        #expect(stop1.hashValue == stop2.hashValue)
+        #expect(stop1 != stopDiffName)
+        #expect(stop1 != stopDiffCode)
+    }
+
+    @Test func `Stop custom debug description includes id and name`() {
+        let stop = Stop(id: "stop_debug", name: "Pine & 4th")
+        #expect(stop.debugDescription.contains("stop_debug"))
+        #expect(stop.debugDescription.contains("Pine & 4th"))
+    }
 }
