@@ -114,9 +114,9 @@ final class StopTests: OBATestCase {
     // MARK: - WheelchairBoarding Decoding
 
     @Test(arguments: [
-        ("ACCESSIBLE", WheelchairBoarding.accessible),
-        ("NOT_ACCESSIBLE", WheelchairBoarding.notAccessible),
-        ("UNKNOWN", WheelchairBoarding.unknown),
+        ("accessible", WheelchairBoarding.accessible),
+        ("notAccessible", WheelchairBoarding.notAccessible),
+        ("unknown", WheelchairBoarding.unknown),
         ("any_unrecognized_value", WheelchairBoarding.unknown)
     ])
     func `WheelchairBoarding decoding fallback`(raw: String, expected: WheelchairBoarding) throws {

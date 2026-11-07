@@ -68,8 +68,11 @@ final class SurveyModelOperationTests: OBATestCase {
         )
         let serviceWithoutRegion = RESTAPIService(configWithoutRegion, dataLoader: MockDataLoader(testName: name))
 
-        await #expect(throws: APIError.noRegionSelected) {
+        await #expect {
             try await serviceWithoutRegion.getSurveys(userID: uuid)
+        } throws: { error in
+            guard let apiError = error as? APIError, case .noRegionSelected = apiError else { return false }
+            return true
         }
     }
 
@@ -84,8 +87,11 @@ final class SurveyModelOperationTests: OBATestCase {
         )
         let serviceWithoutSurvey = RESTAPIService(configWithoutSurveyURL, dataLoader: MockDataLoader(testName: name))
 
-        await #expect(throws: APIError.surveyServiceNotConfigured) {
+        await #expect {
             try await serviceWithoutSurvey.getSurveys(userID: uuid)
+        } throws: { error in
+            guard let apiError = error as? APIError, case .surveyServiceNotConfigured = apiError else { return false }
+            return true
         }
     }
 
@@ -136,8 +142,11 @@ final class SurveyModelOperationTests: OBATestCase {
         )
         let serviceWithoutSurvey = RESTAPIService(configWithoutSurveyURL, dataLoader: MockDataLoader(testName: name))
 
-        await #expect(throws: APIError.surveyServiceNotConfigured) {
+        await #expect {
             try await serviceWithoutSurvey.submitSurveyResponse(makeSubmission())
+        } throws: { error in
+            guard let apiError = error as? APIError, case .surveyServiceNotConfigured = apiError else { return false }
+            return true
         }
     }
 
@@ -191,7 +200,7 @@ final class SurveyModelOperationTests: OBATestCase {
 
         var capturedPath: String?
         dataLoader.mock(data: successData) { request in
-            capturedPath = request.url?.path
+            capturedPath = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.percentEncodedPath }
             return true
         }
 
@@ -216,11 +225,14 @@ final class SurveyModelOperationTests: OBATestCase {
         )
         let serviceWithoutSurvey = RESTAPIService(configWithoutSurveyURL, dataLoader: MockDataLoader(testName: name))
 
-        await #expect(throws: APIError.surveyServiceNotConfigured) {
+        await #expect {
             try await serviceWithoutSurvey.updateSurveyResponse(
                 responseID: "any_id",
                 additionalResponses: []
             )
+        } throws: { error in
+            guard let apiError = error as? APIError, case .surveyServiceNotConfigured = apiError else { return false }
+            return true
         }
     }
 
@@ -241,8 +253,11 @@ final class SurveyModelOperationTests: OBATestCase {
         ) { $0.url?.path == "/api/v1/survey_responses/" }
         dataLoader.mock(response: mockResponse)
 
-        await #expect(throws: APIError.requestNotFound) {
+        await #expect {
             try await restService.submitSurveyResponse(makeSubmission())
+        } throws: { error in
+            guard let apiError = error as? APIError, case .requestNotFound(let response) = apiError else { return false }
+            return response.statusCode == 404
         }
     }
 
@@ -261,11 +276,14 @@ final class SurveyModelOperationTests: OBATestCase {
         ) { $0.url?.path.contains("err_500") == true }
         dataLoader.mock(response: mockResponse)
 
-        await #expect(throws: APIError.invalidServerResponse) {
+        await #expect {
             try await restService.updateSurveyResponse(
                 responseID: "err_500",
                 additionalResponses: []
             )
+        } throws: { error in
+            guard let apiError = error as? APIError, case .requestFailure(let response) = apiError else { return false }
+            return response.statusCode == 500
         }
     }
 }

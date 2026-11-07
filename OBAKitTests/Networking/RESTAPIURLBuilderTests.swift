@@ -125,11 +125,11 @@ final class RESTAPIURLBuilderTests {
         #expect(url?.absoluteString == "https://surveys.onebusaway.org/api/v1/survey_responses/resp_123?key=TEST")
     }
 
-    @Test func testUpdateSurveyResponseEscapesResponseID() {
+    @Test func testUpdateSurveyResponseEscapesResponseID() throws {
         let url = builder.updateSurveyResponse(responseID: "resp/123 special")
-        let unwrappedURL = try! #require(url)
+        let unwrappedURL = try #require(url)
         let components = URLComponents(url: unwrappedURL, resolvingAgainstBaseURL: false)
-        #expect(components?.path == "/api/v1/survey_responses/resp%2F123%20special")
+        #expect(components?.percentEncodedPath == "/api/v1/survey_responses/resp%2F123%20special")
     }
 
     @Test func testUpdateSurveyResponseWithoutSurveyBaseURLReturnsNil() {
