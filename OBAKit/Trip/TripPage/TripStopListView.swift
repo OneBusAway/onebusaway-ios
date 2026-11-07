@@ -97,9 +97,11 @@ private struct TripStopRow: View {
     @ScaledMetric(relativeTo: .body) private var vehicleDotSize = TripStopRailMetrics.width
     @ScaledMetric(relativeTo: .body) private var lineWidth = TripStopRailMetrics.lineWidth
 
-    /// Dimmed once the bus is past. The vehicle's own stop stays active — it is
-    /// where the rider's attention belongs.
-    private var isBehind: Bool { row.isPassed && !row.isVehicleHere }
+    /// Dimmed once the bus is past or outside the shared ride. The vehicle's own
+    /// stop stays active — it is where the rider's attention belongs.
+    private var isBehind: Bool {
+        (row.isPassed && !row.isVehicleHere) || (row.isOutsideRide && !row.isVehicleHere)
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -222,6 +224,9 @@ private struct TripStopRow: View {
         }
         if row.isBoardingStop {
             clauses.append(OBALoc("trip_stop.boarding_stop.accessibility_label", value: "Boarding stop", comment: "Voiceover text explaining that this stop is where the rider boarded the vehicle"))
+        }
+        if row.isOutsideRide {
+            clauses.append(OBALoc("trip_stop.outside_ride.accessibility_label", value: "Not part of the shared ride", comment: "VoiceOver text for a stop outside the part of a trip that someone shared with you by link (before they board or after they get off)"))
         }
         if row.isTerminal {
             clauses.append(OBALoc("trip_page.stop_list.a11y_terminal", value: "last stop", comment: "VoiceOver clause on the final stop of the trip."))
