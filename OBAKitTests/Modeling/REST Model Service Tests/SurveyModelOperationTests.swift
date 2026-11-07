@@ -108,7 +108,7 @@ final class SurveyModelOperationTests: OBATestCase {
         let capturedBodyData = SendableBox<Data?>(nil)
 
         dataLoader.mock(data: successData) { request in
-            guard request.url?.path == "/api/v1/survey_responses/" else { return false }
+            guard let path = request.url?.path, path == "/api/v1/survey_responses/" || path == "/api/v1/survey_responses" else { return false }
             capturedMethod.value = request.httpMethod
             capturedContentType.value = request.value(forHTTPHeaderField: "Content-Type")
             capturedBodyData.value = request.httpBody
@@ -254,7 +254,10 @@ final class SurveyModelOperationTests: OBATestCase {
             data: Data("{\"message\": \"Not Found\"}".utf8),
             urlResponse: urlResponse,
             error: nil
-        ) { $0.url?.path == "/api/v1/survey_responses/" }
+        ) { request in
+            guard let path = request.url?.path else { return false }
+            return path == "/api/v1/survey_responses/" || path == "/api/v1/survey_responses"
+        }
         dataLoader.mock(response: mockResponse)
 
         let thrown = await #expect(throws: APIError.self) {
