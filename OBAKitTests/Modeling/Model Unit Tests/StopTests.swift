@@ -79,24 +79,26 @@ final class StopTests: OBATestCase {
 
     // MARK: - Direction Parsing & Canonical Abbreviations
 
-    @Test(arguments: [
-        ("N", Direction.n, "N"),
-        ("NE", Direction.ne, "NE"),
-        ("E", Direction.e, "E"),
-        ("SE", Direction.se, "SE"),
-        ("S", Direction.s, "S"),
-        ("SW", Direction.sw, "SW"),
-        ("W", Direction.w, "W"),
-        ("NW", Direction.nw, "NW"),
-        ("n", Direction.n, "N"),
-        ("sw", Direction.sw, "SW"),
-        ("UNKNOWN", Direction.unknown, nil as String?),
-        ("invalid", Direction.unknown, nil as String?)
-    ])
-    func `Stop direction parsing and canonical abbreviations`(raw: String, expectedDir: Direction, expectedAbbr: String?) {
-        let stop = Stop(id: "stop_1", name: "Main St", direction: raw)
-        #expect(stop.direction == expectedDir)
-        #expect(stop.direction.canonicalAbbreviation == expectedAbbr)
+    @Test func `Stop direction parsing and canonical abbreviations`() {
+        let cases: [(String, Direction, String?)] = [
+            ("N", .n, "N"),
+            ("NE", .ne, "NE"),
+            ("E", .e, "E"),
+            ("SE", .se, "SE"),
+            ("S", .s, "S"),
+            ("SW", .sw, "SW"),
+            ("W", .w, "W"),
+            ("NW", .nw, "NW"),
+            ("n", .n, "N"),
+            ("sw", .sw, "SW"),
+            ("UNKNOWN", .unknown, nil),
+            ("invalid", .unknown, nil)
+        ]
+        for (raw, expectedDir, expectedAbbr) in cases {
+            let stop = Stop(id: "stop_1", name: "Main St", direction: raw)
+            #expect(stop.direction == expectedDir)
+            #expect(stop.direction.canonicalAbbreviation == expectedAbbr)
+        }
     }
 
     @Test func `Direction nil yields unknown direction`() {
@@ -113,30 +115,34 @@ final class StopTests: OBATestCase {
 
     // MARK: - WheelchairBoarding Decoding
 
-    @Test(arguments: [
-        ("accessible", WheelchairBoarding.accessible),
-        ("notAccessible", WheelchairBoarding.notAccessible),
-        ("unknown", WheelchairBoarding.unknown),
-        ("any_unrecognized_value", WheelchairBoarding.unknown)
-    ])
-    func `WheelchairBoarding decoding fallback`(raw: String, expected: WheelchairBoarding) throws {
-        let json = "\"\(raw)\""
-        let decoded = try JSONDecoder().decode(WheelchairBoarding.self, from: Data(json.utf8))
-        #expect(decoded == expected)
+    @Test func `WheelchairBoarding decoding fallback`() throws {
+        let cases: [(String, WheelchairBoarding)] = [
+            ("accessible", .accessible),
+            ("notAccessible", .notAccessible),
+            ("unknown", .unknown),
+            ("any_unrecognized_value", .unknown)
+        ]
+        for (raw, expected) in cases {
+            let json = "\"\(raw)\""
+            let decoded = try JSONDecoder().decode(WheelchairBoarding.self, from: Data(json.utf8))
+            #expect(decoded == expected)
+        }
     }
 
     // MARK: - StopLocationType Decoding
 
-    @Test(arguments: [
-        (0, StopLocationType.stop),
-        (1, StopLocationType.station),
-        (2, StopLocationType.stationEntrance),
-        (99, StopLocationType.unknown)
-    ])
-    func `StopLocationType decoding fallback`(raw: Int, expected: StopLocationType) throws {
-        let json = "\(raw)"
-        let decoded = try JSONDecoder().decode(StopLocationType.self, from: Data(json.utf8))
-        #expect(decoded == expected)
+    @Test func `StopLocationType decoding fallback`() throws {
+        let cases: [(Int, StopLocationType)] = [
+            (0, .stop),
+            (1, .station),
+            (2, .stationEntrance),
+            (99, .unknown)
+        ]
+        for (raw, expected) in cases {
+            let json = "\(raw)"
+            let decoded = try JSONDecoder().decode(StopLocationType.self, from: Data(json.utf8))
+            #expect(decoded == expected)
+        }
     }
 
     // MARK: - Prioritized Route Type For Display
