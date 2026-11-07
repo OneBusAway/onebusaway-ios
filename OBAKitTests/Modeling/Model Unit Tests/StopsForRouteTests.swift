@@ -48,8 +48,8 @@ final class StopsForRouteTests: OBATestCase {
 
         // Verify computed bounding mapRect contains valid geometric bounds
         let mapRect = entry.mapRect
-        #expect(!MKMapRectIsNull(mapRect))
-        #expect(!MKMapRectIsEmpty(mapRect))
+        #expect(!mapRect.isNull)
+        #expect(!mapRect.isEmpty)
         #expect(mapRect.size.width > 0)
         #expect(mapRect.size.height > 0)
     }
@@ -102,7 +102,8 @@ final class StopsForRouteTests: OBATestCase {
         let response = try loadStopsForRoutePayload()
         let entry = response.entry
 
-        entry.loadReferences(response.references, regionIdentifier: 99)
+        let references = try #require(response.references)
+        entry.loadReferences(references, regionIdentifier: 99)
         #expect(entry.regionIdentifier == 99)
 
         for grouping in entry.stopGroupings {

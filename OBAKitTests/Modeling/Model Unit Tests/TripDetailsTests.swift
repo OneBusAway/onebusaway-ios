@@ -53,7 +53,7 @@ final class TripDetailsTests: OBATestCase {
 
         // Status
         #expect(tripDetails.status != nil)
-        #expect(tripDetails.status?.tripID == "1_18196913")
+        #expect(tripDetails.status?.activeTripID == "1_18196913")
         #expect(tripDetails.status?.vehicleID == "1_3601")
         #expect(tripDetails.status?.isRealTime == true)
     }

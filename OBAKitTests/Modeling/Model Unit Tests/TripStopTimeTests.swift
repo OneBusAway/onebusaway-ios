@@ -96,8 +96,10 @@ final class TripStopTimeTests: OBATestCase {
             "code": "10020",
             "routeIds": ["1_100"]
         ]
-        let stop = try Fixtures.dictionaryToModel(type: Stop.self, dictionary: stopDict)
-        let references = References(agencies: [], routes: [], situations: [], stops: [stop], trips: [])
+        let referencesData: [String: Any] = [
+            "stops": [stopDict]
+        ]
+        let references = try Fixtures.dictionaryToModel(type: References.self, dictionary: referencesData)
 
         stopTime1.loadReferences(references, regionIdentifier: 1)
         stopTime2.loadReferences(references, regionIdentifier: 2)
