@@ -470,7 +470,8 @@ final class FormattersTests: OBATestCase {
     @Test func `Formatted stop code and direction`() throws {
         let stopWithDir = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: "N")
         #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains("10020"))
-        #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains("Northbound"))
+        let expectedNorth = NSLocalizedString("formatters.cardinal_adjective.north", bundle: Bundle.obaKitCore, comment: "")
+        #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains(expectedNorth))
 
         let stopWithoutDir = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: nil)
         #expect(Formatters.formattedCodeAndDirection(stop: stopWithoutDir) == "Stop #10020")
@@ -514,14 +515,15 @@ final class FormattersTests: OBATestCase {
     }
 
     @Test func `Adjective form of cardinal direction returns localized strings`() {
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.n) == "Northbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.s) == "Southbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.e) == "Eastbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.w) == "Westbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.ne) == "NE bound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.nw) == "NW bound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.se) == "SE bound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.sw) == "SW bound")
+        let bundle = Bundle.obaKitCore
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.n) == NSLocalizedString("formatters.cardinal_adjective.north", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.s) == NSLocalizedString("formatters.cardinal_adjective.south", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.e) == NSLocalizedString("formatters.cardinal_adjective.east", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.w) == NSLocalizedString("formatters.cardinal_adjective.west", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.ne) == NSLocalizedString("formatters.cardinal_adjective.northeast", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.nw) == NSLocalizedString("formatters.cardinal_adjective.northwest", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.se) == NSLocalizedString("formatters.cardinal_adjective.southeast", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.sw) == NSLocalizedString("formatters.cardinal_adjective.southwest", bundle: bundle, comment: ""))
         #expect(Formatters.adjectiveFormOfCardinalDirection(.unknown) == nil)
     }
 
