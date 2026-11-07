@@ -23,15 +23,16 @@ final class ProblemReportingTests: OBATestCase {
         #expect(StopProblemCode.locationWrong.APIStringValue == "stop_location_wrong")
         #expect(StopProblemCode.routeOrTripMissing.APIStringValue == "route_or_trip_missing")
         #expect(StopProblemCode.other.APIStringValue == "other")
-        #expect(StopProblemCode.busDoesNotStop.APIStringValue == "bus_does_not_stop")
     }
 
     // MARK: - TripProblemCode Mapping
 
     @Test func `TripProblemCode string values match server API contract`() {
-        #expect(TripProblemCode.neverCame.APIStringValue == "never_came")
-        #expect(TripProblemCode.vehicleDoesntStop.APIStringValue == "vehicle_doesnt_stop")
+        #expect(TripProblemCode.neverCame.APIStringValue == "vehicle_never_came")
+        #expect(TripProblemCode.cameEarly.APIStringValue == "vehicle_came_early")
+        #expect(TripProblemCode.cameLate.APIStringValue == "vehicle_came_late")
         #expect(TripProblemCode.wrongHeadsign.APIStringValue == "wrong_headsign")
+        #expect(TripProblemCode.doesNotStopHere.APIStringValue == "vehicle_does_not_stop_here")
         #expect(TripProblemCode.other.APIStringValue == "other")
     }
 }

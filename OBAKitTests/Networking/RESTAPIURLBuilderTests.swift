@@ -395,8 +395,8 @@ final class RESTAPIURLBuilderTests {
 
     @Test func testGetStopProblemAllFields() {
         let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 47.6097, longitude: -122.3331), altitude: 10, horizontalAccuracy: 5.5, verticalAccuracy: 2.0, timestamp: Date())
-        let url = builder.getStopProblem(stopID: "1_10020", code: .busDoesNotStop, comment: "Bus drove past", location: location)
-        #expect(queryValue(url, "code") == "bus_does_not_stop")
+        let url = builder.getStopProblem(stopID: "1_10020", code: .nameWrong, comment: "Bus drove past", location: location)
+        #expect(queryValue(url, "code") == "stop_name_wrong")
         #expect(queryValue(url, "userComment") == "Bus drove past")
         #expect(queryValue(url, "userLat") == "47.6097")
         #expect(queryValue(url, "userLon") == "-122.3331")
@@ -420,7 +420,7 @@ final class RESTAPIURLBuilderTests {
             serviceDate: serviceDate,
             vehicleID: "1_veh200",
             stopID: "1_stop300",
-            code: .vehicleDoesntStop,
+            code: .doesNotStopHere,
             comment: "Drove right past the stop",
             userOnVehicle: true,
             location: location
@@ -431,7 +431,7 @@ final class RESTAPIURLBuilderTests {
         #expect(queryValue(url, "serviceDate") == "1600000000000")
         #expect(queryValue(url, "vehicleId") == "1_veh200")
         #expect(queryValue(url, "stopId") == "1_stop300")
-        #expect(queryValue(url, "code") == "vehicle_doesnt_stop")
+        #expect(queryValue(url, "code") == "vehicle_does_not_stop_here")
         #expect(queryValue(url, "userComment") == "Drove right past the stop")
         #expect(queryValue(url, "userOnVehicle") == "true")
         #expect(queryValue(url, "userLat") == "47.6097")
@@ -455,7 +455,7 @@ final class RESTAPIURLBuilderTests {
         #expect(queryValue(url, "serviceDate") == "1600000000000")
         #expect(queryValue(url, "vehicleId") == nil)
         #expect(queryValue(url, "stopId") == nil)
-        #expect(queryValue(url, "code") == "never_came")
+        #expect(queryValue(url, "code") == "vehicle_never_came")
         #expect(queryValue(url, "userComment") == nil)
         #expect(queryValue(url, "userOnVehicle") == "false")
         #expect(queryValue(url, "userLat") == nil)

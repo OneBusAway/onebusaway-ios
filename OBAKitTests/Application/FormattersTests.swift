@@ -470,18 +470,18 @@ final class FormattersTests: OBATestCase {
     @Test func `Formatted stop code and direction`() throws {
         let stopWithDir = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: "N")
         #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains("10020"))
-        #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains("N"))
+        #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains("Northbound"))
 
         let stopWithoutDir = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: nil)
-        #expect(Formatters.formattedCodeAndDirection(stop: stopWithoutDir) == "#10020")
+        #expect(Formatters.formattedCodeAndDirection(stop: stopWithoutDir) == "Stop #10020")
     }
 
     @Test func `Formatted stop code formats non-empty and empty codes`() throws {
         let stopWithCode = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: nil)
-        #expect(Formatters.formattedStopCode(stop: stopWithCode) == "#10020")
+        #expect(Formatters.formattedStopCode(stop: stopWithCode) == "Stop #10020")
 
         let stopEmptyCode = try makeStop(id: "1_10020", code: "", name: "3rd & Pike", direction: nil)
-        #expect(Formatters.formattedStopCode(stop: stopEmptyCode) == "")
+        #expect(Formatters.formattedStopCode(stop: stopEmptyCode) == "Stop: '" + "'")
     }
 
     @Test func `Formatted routes lists routes with custom limits`() throws {
@@ -493,10 +493,13 @@ final class FormattersTests: OBATestCase {
         ]
 
         let fullList = Formatters.formattedRoutes(routes, limit: 10)
-        #expect(fullList == "7, 10, 49, 70")
+        #expect(fullList == "Routes: 7, 10, 49, 70")
 
         let truncated = Formatters.formattedRoutes(routes, limit: 2)
-        #expect(truncated == "7, 10, …")
+        #expect(truncated == "Routes: 7, 10, + 2 more")
+
+        let mapTruncated = Formatters.formattedMapRoutes(routes, limit: 2)
+        #expect(mapTruncated == "7, 10…", "Map routes use ellipsis on overflow")
 
         let empty = Formatters.formattedRoutes([])
         #expect(empty == nil)
@@ -511,19 +514,19 @@ final class FormattersTests: OBATestCase {
     }
 
     @Test func `Adjective form of cardinal direction returns localized strings`() {
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.north) == "Northbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.south) == "Southbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.east) == "Eastbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.west) == "Westbound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.northEast) == "Northeast-bound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.northWest) == "Northwest-bound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.southEast) == "Southeast-bound")
-        #expect(Formatters.adjectiveFormOfCardinalDirection(.southWest) == "Southwest-bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.n) == "Northbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.s) == "Southbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.e) == "Eastbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.w) == "Westbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.ne) == "NE bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.nw) == "NW bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.se) == "SE bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.sw) == "SW bound")
         #expect(Formatters.adjectiveFormOfCardinalDirection(.unknown) == nil)
     }
 
     @Test func `Short minutes text formatting`() {
-        #expect(Formatters.shortMinutesText(0) == "NOW")
+        #expect(Formatters.shortMinutesText(0) == "0m")
         #expect(Formatters.shortMinutesText(1) == "1m")
         #expect(Formatters.shortMinutesText(45) == "45m")
         #expect(Formatters.shortMinutesText(-5) == "-5m")

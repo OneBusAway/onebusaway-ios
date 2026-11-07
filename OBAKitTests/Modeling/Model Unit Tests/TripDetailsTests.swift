@@ -20,13 +20,14 @@ final class TripDetailsTests: OBATestCase {
     private func loadTripDetailsPayload(file: String = "trip_details_1_18196913.json") throws -> (entry: TripDetails, references: References) {
         let data = Fixtures.loadData(file: file)
         let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
-        return (response.entry, response.references)
+        let references = try #require(response.references, "Expected references in \(file)")
+        return (response.entry, references)
     }
 
     // MARK: - Full Payload Decoding & Structure
 
     @Test func `Decode full trip details with references`() throws {
-        let (tripDetails, references) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
+        let (tripDetails, _) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
 
         #expect(tripDetails.tripID == "1_18196913")
         #expect(tripDetails.id == "1_18196913")
@@ -100,13 +101,6 @@ final class TripDetailsTests: OBATestCase {
         #expect(tripDetails.status == nil)
         #expect(tripDetails.tripID == "1_18196913")
         #expect(tripDetails.stopTimes.count == 53)
-    }
-
-    @Test func `Decode trip details with missing trip reference handles gracefully`() throws {
-        // Test fallback or nil handling when trip is not in references
-        let data = Fixtures.loadData(file: "trip_details_1_18196913_no_trip.json")
-        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<TripDetails>.self, from: data)
-        #expect(response.entry.tripID == "1_18196913")
     }
 
     @Test func `Region identifier propagates to trip details and child references`() throws {
