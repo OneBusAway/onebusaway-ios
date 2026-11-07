@@ -57,9 +57,37 @@ struct TripStopListModel {
         let isPassed: Bool
         let isVehicleHere: Bool
         let isUserStop: Bool
+        /// Where the rider got on, when a shared link named where they step off.
+        /// When set, this row carries the boarding stop marker and `isUserStop`
+        /// marks the destination. See `RiderStops.boardingMarkerIndex`.
+        let isBoardingStop: Bool
         /// The end of the line. Carries the terminal marker on the map and the
         /// end cap on the list's connector.
         let isTerminal: Bool
+
+        init(
+            id: String,
+            stopID: StopID,
+            name: String,
+            coordinate: CLLocationCoordinate2D?,
+            date: Date?,
+            isPassed: Bool,
+            isVehicleHere: Bool,
+            isUserStop: Bool,
+            isBoardingStop: Bool = false,
+            isTerminal: Bool
+        ) {
+            self.id = id
+            self.stopID = stopID
+            self.name = name
+            self.coordinate = coordinate
+            self.date = date
+            self.isPassed = isPassed
+            self.isVehicleHere = isVehicleHere
+            self.isUserStop = isUserStop
+            self.isBoardingStop = isBoardingStop
+            self.isTerminal = isTerminal
+        }
     }
 
     let rows: [Row]
@@ -73,11 +101,25 @@ struct TripStopListModel {
         stopTimes: [S],
         userStopID: StopID?,
         userStopSequence: Int?,
-        closestStopID: StopID?
+        closestStopID: StopID?,
+        sharedDestinationStopID: StopID? = nil
     ) -> TripStopListModel {
-        let userIndex = userStopID.flatMap {
+        let riderStops: RiderStops? = userStopID.map {
+            riderStops(
+                in: stopTimes,
+                userStopID: $0,
+                userStopSequence: userStopSequence,
+                sharedDestinationStopID: sharedDestinationStopID
+            )
+        }
+        let fallbackDestinationIndex: Int? = (riderStops == nil && sharedDestinationStopID != nil)
+            ? destinationStopIndex(in: stopTimes, destinationStopID: sharedDestinationStopID, boardingIndex: nil)
+            : nil
+
+        let userIndex = riderStops?.userStopIndex ?? fallbackDestinationIndex ?? userStopID.flatMap {
             index(in: stopTimes, stopID: $0, stopSequence: userStopSequence)
         }
+        let boardingIndex = riderStops?.boardingMarkerIndex
         let vehicleIndex = vehicleIndex(in: stopTimes, closestStopID: closestStopID, userIndex: userIndex)
 
         let rows = stopTimes.enumerated().map { index, stopTime in
@@ -90,6 +132,7 @@ struct TripStopListModel {
                 isPassed: vehicleIndex.map { index < $0 } ?? false,
                 isVehicleHere: index == vehicleIndex,
                 isUserStop: index == userIndex,
+                isBoardingStop: index == boardingIndex,
                 isTerminal: index == stopTimes.count - 1
             )
         }

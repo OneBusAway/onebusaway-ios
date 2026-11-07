@@ -35,13 +35,15 @@ struct TripStopListModelTests {
         _ stops: [StopTimeStub],
         userStopID: StopID? = nil,
         userStopSequence: Int? = nil,
-        closestStopID: StopID? = nil
+        closestStopID: StopID? = nil,
+        sharedDestinationStopID: StopID? = nil
     ) -> TripStopListModel {
         TripStopListModel.make(
             stopTimes: stops,
             userStopID: userStopID,
             userStopSequence: userStopSequence,
-            closestStopID: closestStopID
+            closestStopID: closestStopID,
+            sharedDestinationStopID: sharedDestinationStopID
         )
     }
 
@@ -311,6 +313,44 @@ struct TripStopListModelTests {
         #expect(stops.boardingIndex == 1)
         #expect(stops.userStopIndex == 1)
         #expect(stops.boardingMarkerIndex == nil)
+    }
+
+    @Test func `make with shared destination marks destination as isUserStop and boarding stop as isBoardingStop`() {
+        let model = make(
+            line(["A", "B", "C", "D"]),
+            userStopID: "B",
+            userStopSequence: 1,
+            sharedDestinationStopID: "D"
+        )
+
+        #expect(model.userIndex == 3)
+        #expect(model.rows.map(\.isUserStop) == [false, false, false, true])
+        #expect(model.rows.map(\.isBoardingStop) == [false, true, false, false])
+    }
+
+    @Test func `make without shared destination marks boarding stop as isUserStop and no boarding marker`() {
+        let model = make(
+            line(["A", "B", "C", "D"]),
+            userStopID: "B",
+            userStopSequence: 1
+        )
+
+        #expect(model.userIndex == 1)
+        #expect(model.rows.map(\.isUserStop) == [false, true, false, false])
+        #expect(model.rows.map(\.isBoardingStop) == [false, false, false, false])
+    }
+
+    @Test func `make with unreachable shared destination leaves boarding stop as isUserStop`() {
+        let model = make(
+            line(["A", "B", "C"]),
+            userStopID: "B",
+            userStopSequence: 1,
+            sharedDestinationStopID: "A"
+        )
+
+        #expect(model.userIndex == 1)
+        #expect(model.rows.map(\.isUserStop) == [false, true, false])
+        #expect(model.rows.map(\.isBoardingStop) == [false, false, false])
     }
 
     /// The sequence pins which visit the rider boards at; the exit is searched
