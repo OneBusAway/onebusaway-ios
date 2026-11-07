@@ -15,7 +15,7 @@ import OBAKitCore
 ///
 /// After the user picks a route in `RoutePickerViewController`, this controller:
 /// 1. Asks `CurrentTripViewModel` to query nearby active vehicles on that route.
-/// 2. If one match → navigates directly to `TripPageViewController`.
+/// 2. If one match → navigates directly to `TripViewController`.
 /// 3. If multiple → shows a disambiguation list.
 /// 4. If none → shows an appropriate error state.
 class CurrentTripViewController: UIViewController,
@@ -121,7 +121,7 @@ class CurrentTripViewController: UIViewController,
                     return
                 }
                 self.dataLoadFeedbackGenerator.dataLoad(.success)
-                let tripController = TripPageViewController(application: self.application, arrivalDeparture: arrival)
+                let tripController = TripViewController(application: self.application, arrivalDeparture: arrival)
                 var stack = nav.viewControllers
                 stack[stack.count - 1] = tripController
                 nav.setViewControllers(stack, animated: true)
@@ -234,7 +234,7 @@ class CurrentTripViewController: UIViewController,
     }
 
     private func didSelectResult(_ result: NearbyTripMatcher.MatchResult) {
-        let tripController = TripPageViewController(application: application, arrivalDeparture: result.arrivalDeparture)
+        let tripController = TripViewController(application: application, arrivalDeparture: result.arrivalDeparture)
         application.viewRouter.navigate(to: tripController, from: self)
     }
 

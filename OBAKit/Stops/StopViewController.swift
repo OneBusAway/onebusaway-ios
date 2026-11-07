@@ -1000,7 +1000,7 @@ public class StopViewController: UIViewController,
 
     private func previewStopArrival(_ viewModel: ArrivalDepartureItem) -> UIViewController? {
         guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return nil }
-        let vc = TripPageViewController(application: self.application, arrivalDeparture: arrivalDeparture)
+        let vc = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
         self.previewingVC = (viewModel.id, vc)
         return vc
     }
@@ -1008,7 +1008,8 @@ public class StopViewController: UIViewController,
     private func performPreviewStopArrival(_ viewModel: ArrivalDepartureItem) {
         if let previewingVC = self.previewingVC,
            previewingVC.identifier == viewModel.id,
-           let tripVC = previewingVC.vc as? TripPageViewController {
+           let tripVC = previewingVC.vc as? TripViewController {
+            tripVC.exitPreviewMode()
             application.viewRouter.navigate(to: tripVC, from: self)
         } else {
             guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return }

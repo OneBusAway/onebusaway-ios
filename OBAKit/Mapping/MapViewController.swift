@@ -1529,8 +1529,7 @@ extension MapViewController {
                 show(stop: result)
             case let result as VehicleStatus:
                 if let convertible = TripConvertible(vehicleStatus: result) {
-                    let tripController = TripPageViewController(application: application, tripConvertible: convertible)
-                    wireTripFocus(for: tripController)
+                    let tripController = TripViewController(application: application, tripConvertible: convertible)
                     application.viewRouter.navigate(to: tripController, from: self)
                 }
                 else {

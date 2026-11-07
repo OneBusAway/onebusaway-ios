@@ -13,7 +13,6 @@ import Combine
 import FloatingPanel
 import OBAKitCore
 
-@available(*, deprecated, message: "Use TripPageViewController instead.")
 class TripViewController: UIViewController,
     AppContext,
     FloatingPanelControllerDelegate,
