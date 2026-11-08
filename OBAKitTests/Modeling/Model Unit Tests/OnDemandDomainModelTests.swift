@@ -31,7 +31,7 @@ final class OnDemandDomainModelTests {
 
     @Test func `Decode OnDemandEligibility with certificationRequired requirement`() throws {
         let json: [String: Any] = [
-            "requirement": "certification_required"
+            "requirement": "certificationRequired"
         ]
 
         let eligibility = try Fixtures.dictionaryToModel(type: OnDemandEligibility.self, dictionary: json)
