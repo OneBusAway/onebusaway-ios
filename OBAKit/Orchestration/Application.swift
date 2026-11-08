@@ -491,10 +491,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     /// A rider who synced a speed on a build with a provider keeps that speed on a build
-    /// without one, as a manual value: nothing can refresh it, and Settings has no switch
-    /// to turn it off. Walking snaps to the preset the picker shows, as an opt-out does.
+    /// without one, or on a device where it is unavailable, as a manual value: nothing can
+    /// refresh it, and Settings has no switch to turn it off. Walking snaps to the preset
+    /// the picker shows, as an opt-out does.
     func retireSyncedSpeedsIfUnsupported() {
-        guard config.speedSync == nil else { return }
+        guard config.speedSync?.isAvailable != true else { return }
 
         if userDataStore.walkingSpeedSource == .synced {
             walkingSpeedManager.stopSyncing()

@@ -78,6 +78,17 @@ final class SpeedSyncRetirementTests: OBATestCase {
         #expect(store.bikeSpeedSource == .synced)
     }
 
+    @Test func `With an unavailable provider a synced speed becomes manual`() {
+        installProvider(isAvailable: false)
+        store.walkingSpeedSource = .synced
+        store.bikeSpeedSource = .synced
+
+        application.retireSyncedSpeedsIfUnsupported()
+
+        #expect(store.walkingSpeedSource == .manual)
+        #expect(store.bikeSpeedSource == .manual)
+    }
+
     @Test func `Settings offers no sync switches without a provider`() {
         #expect(SettingsViewModel(application: application).speedSyncText == nil)
     }
