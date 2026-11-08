@@ -51,11 +51,8 @@ final class TripDetailsTests: OBATestCase {
         #expect(firstStopTime.arrivalDate != nil)
         #expect(firstStopTime.departureDate != nil)
 
-        // Status
-        #expect(tripDetails.status != nil)
-        #expect(tripDetails.status?.activeTripID == "1_18196913")
-        #expect(tripDetails.status?.vehicleID == "1_3601")
-        #expect(tripDetails.status?.isRealTime == true)
+        // Status is nil in trip_details_1_18196913.json
+        #expect(tripDetails.status == nil)
     }
 
     // MARK: - Service Date Distribution into StopTimes
@@ -72,7 +69,7 @@ final class TripDetailsTests: OBATestCase {
 
             // Departure is on or after arrival
             #expect(departureDate >= arrivalDate)
-            // Both are strictly after the start of serviceDate
+            // Both are on or after the start of serviceDate
             #expect(arrivalDate >= tripDetails.serviceDate)
         }
     }
@@ -84,13 +81,14 @@ final class TripDetailsTests: OBATestCase {
 
         // In this specific fixture blockId is 1_2955396
         #expect(tripDetails.trip.blockID == "1_2955396")
-        // If the fixture does not provide nextTripId / previousTripId, they decode as nil safely
-        if let nextTrip = tripDetails.nextTrip {
-            #expect(!nextTrip.id.isEmpty)
-        }
-        if let previousTrip = tripDetails.previousTrip {
-            #expect(!previousTrip.id.isEmpty)
-        }
+        
+        let previousTrip = try #require(tripDetails.previousTrip)
+        #expect(previousTrip.id == "1_18196851")
+        #expect(previousTrip.headsign == "UNIVERSITY DISTRICT ROOSEVELT")
+
+        let nextTrip = try #require(tripDetails.nextTrip)
+        #expect(nextTrip.id == "1_18196555")
+        #expect(nextTrip.headsign == "UNIVERSITY DISTRICT WEDGWOOD")
     }
 
     // MARK: - Missing or Nil Components Handling

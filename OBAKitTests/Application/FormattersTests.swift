@@ -512,11 +512,12 @@ final class FormattersTests: OBATestCase {
     }
 
     @Test func `Route type to string converts standard GTFS types`() {
-        #expect(Formatters.routeTypeToString(.lightRail) != nil)
-        #expect(Formatters.routeTypeToString(.subway) != nil)
-        #expect(Formatters.routeTypeToString(.rail) != nil)
-        #expect(Formatters.routeTypeToString(.bus) != nil)
-        #expect(Formatters.routeTypeToString(.ferry) != nil)
+        let bundle = Bundle.obaKitCore
+        #expect(Formatters.routeTypeToString(.lightRail) == NSLocalizedString("route_type.light_rail", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.subway) == NSLocalizedString("route_type.subway", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.rail) == NSLocalizedString("route_type.rail", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.bus) == NSLocalizedString("route_type.bus", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.ferry) == NSLocalizedString("route_type.ferry", bundle: bundle, comment: ""))
     }
 
     @Test func `Adjective form of cardinal direction returns localized strings`() {
@@ -545,9 +546,10 @@ final class FormattersTests: OBATestCase {
         let endDate = Date(timeIntervalSince1970: 1672534800)
 
         let rangeStr = formatters.formattedDateRange(from: startDate, to: endDate)
-        #expect(!rangeStr.isEmpty)
+        let expectedRange = formatters.dateIntervalFormatter.string(from: startDate, to: endDate)
+        #expect(rangeStr == expectedRange)
 
         let interval = DateInterval(start: startDate, end: endDate)
-        #expect(formatters.formattedDateRange(interval) == rangeStr)
+        #expect(formatters.formattedDateRange(interval) == expectedRange)
     }
 }

@@ -90,9 +90,9 @@ final class StopsForRouteTests: OBATestCase {
         // Direction 1 Group
         let group1 = grouping.stopGroups[1]
         #expect(group1.id == "1")
-        #expect(group1.name == "Downtown Seattle Via 15th Ave E")
+        #expect(group1.name == "Downtown Seattle")
         #expect(group1.groupingType == "destination")
-        #expect(group1.stops.count == 16)
+        #expect(group1.stops.count == 19)
         #expect(!group1.polylines.isEmpty)
     }
 
