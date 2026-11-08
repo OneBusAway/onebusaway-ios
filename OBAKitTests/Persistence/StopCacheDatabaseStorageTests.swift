@@ -260,8 +260,22 @@ final class StopCacheDatabaseStorageTests {
     }
 
     @Test func `clearCache purges stops, associated routes, and sync state atomically`() throws {
-        let stops = [makeStop(id: "clear_1", routeIDs: ["r_100"])]
+        let stop = makeStop(id: "clear_1", routeIDs: ["r_100"])
+        let route = try Fixtures.createRoute(id: "r_100")
+        stop.routes = [route]
+        let stops = [stop]
         repository.saveStops(stops, regionId: testRegion1)
+
+        // Verify route and stop were persisted in SQLite before clearing
+        let routeCountBefore = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedRoute WHERE regionId = ? AND id = ?", arguments: [testRegion1, "r_100"])
+        }
+        #expect(routeCountBefore == 1)
+
+        let stopCountBefore = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedStop WHERE regionId = ? AND id = ?", arguments: [testRegion1, "clear_1"])
+        }
+        #expect(stopCountBefore == 1)
 
         let state = RegionStopSyncState(
             regionId: testRegion1,
