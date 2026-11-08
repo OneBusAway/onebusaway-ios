@@ -26,7 +26,8 @@ final class ArrivalDeparturePipelineTests {
             tripID: "trip_valid"
         )
 
-        // Unix epoch 0 (1970) is ~31 years before reference date (2001)
+        // Reference date sentinel Date(timeIntervalSinceReferenceDate: 0) is 2001-01-01 00:00:00 UTC,
+        // which falls before the earliest plausible date cutoff of Date(timeIntervalSinceReferenceDate: 1.0).
         let epochSentinel = try Fixtures.arrivalDeparture(
             predicted: false,
             scheduledArrival: 0,
