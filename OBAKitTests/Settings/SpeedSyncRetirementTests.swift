@@ -18,12 +18,6 @@ import Testing
 @Suite(.serialized)
 final class SpeedSyncRetirementTests: OBATestCase {
 
-    private struct NoSpeedProvider: SpeedProviding {
-        var isAvailable = true
-        func requestAuthorization() async throws {}
-        func fetchSpeed() async -> Double? { nil }
-    }
-
     private var queue: OperationQueue!
     private var application: Application!
 
@@ -41,12 +35,7 @@ final class SpeedSyncRetirementTests: OBATestCase {
     }
 
     private func installProvider(isAvailable: Bool = true) {
-        let provider = NoSpeedProvider(isAvailable: isAvailable)
-        application.config.speedSync = SpeedSyncConfiguration(
-            walkingProvider: provider,
-            bikeProvider: provider,
-            text: SpeedSyncText(toggleTitle: "", walkingFooter: "", walkingFailureMessage: "", bikeFooter: "", bikeFailureMessage: "")
-        )
+        application.config.speedSync = .stub(FakeSpeedProvider(isAvailable: isAvailable))
     }
 
     @Test func `Without a provider a synced walking speed becomes the nearest manual preset`() {

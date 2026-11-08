@@ -28,17 +28,11 @@ final class BikeModeManager {
         self.provider = provider
     }
 
-    /// Invalidates any sync still in flight, before an opt-out is persisted,
-    /// so the stale sync's trailing write is abandoned instead of resurrecting `.synced`.
-    private func cancelPendingSync() {
-        syncGeneration += 1
-    }
-
     /// Leaves speed sync, abandoning any sync still in flight so it can't write `.synced`
     /// back over the `.manual` persisted here.
     /// Unlike walking there's no manual speed to snap to; the stored speed stays as it is.
     func stopSyncing() {
-        cancelPendingSync()
+        syncGeneration += 1
         userDataStore.bikeSpeedSource = .manual
     }
 
@@ -51,7 +45,7 @@ final class BikeModeManager {
     /// sample". A user who genuinely granted access but has no recent cycling-speed samples
     /// (e.g. no Apple Watch) is also routed to `.manual` — that's intentional.
     ///
-    /// A sync invalidated by `cancelPendingSync()` (the user opted out while it was in
+    /// A sync invalidated by `stopSyncing()` (the user opted out while it was in
     /// flight) abandons without touching the store, so the opt-out wins.
     @discardableResult
     func requestAuthorizationAndSync() async -> Bool {

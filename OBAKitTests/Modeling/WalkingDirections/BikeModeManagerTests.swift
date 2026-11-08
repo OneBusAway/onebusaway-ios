@@ -14,62 +14,6 @@ import Testing
 @Suite(.serialized)
 final class BikeModeManagerTests: OBATestCase {
 
-    private struct FakeProvider: SpeedProviding {
-        var isAvailable: Bool = true
-        var authorizationError: Error?
-        var sampleSpeed: Double?
-
-        func requestAuthorization() async throws {
-            if let authorizationError {
-                throw authorizationError
-            }
-        }
-
-        func fetchSpeed() async -> Double? {
-            sampleSpeed
-        }
-    }
-
-    /// Defers the average until the test releases it, so an opt-out can race a sync in flight.
-    private actor FetchGate {
-        private var continuation: CheckedContinuation<Double?, Never>?
-        private var fetchingContinuation: CheckedContinuation<Void, Never>?
-
-        func wait() async -> Double? {
-            await withCheckedContinuation { continuation in
-                self.continuation = continuation
-                // Signal arrival: a test awaiting `waitUntilFetching()` now proceeds.
-                self.fetchingContinuation?.resume()
-                self.fetchingContinuation = nil
-            }
-        }
-
-        /// Returns only after `wait()` has stored its continuation, so the test knows
-        /// the sync is parked in the fetch (and not still before it) before cancelling.
-        func waitUntilFetching() async {
-            guard continuation == nil else { return }
-            await withCheckedContinuation { continuation in
-                self.fetchingContinuation = continuation
-            }
-        }
-
-        func resume(returning value: Double?) {
-            continuation?.resume(returning: value)
-            continuation = nil
-        }
-    }
-
-    private struct GatedProvider: SpeedProviding {
-        var isAvailable: Bool = true
-        let gate: FetchGate
-
-        func requestAuthorization() async throws {}
-
-        func fetchSpeed() async -> Double? {
-            await gate.wait()
-        }
-    }
-
     private struct DummyError: Error {}
 
     private var store: UserDefaultsStore {
@@ -84,7 +28,7 @@ final class BikeModeManagerTests: OBATestCase {
 
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(sampleSpeed: nil)
+            provider: FakeSpeedProvider(sampleSpeed: nil)
         )
 
         let result = await manager.requestAuthorizationAndSync()
@@ -95,13 +39,13 @@ final class BikeModeManagerTests: OBATestCase {
         expectClose(self.store.bikeSpeedMetersPerSecond, 4.5)
     }
 
-    @Test func `Request and sync when sample in range writes value and marks health kit`() async {
+    @Test func `Request and sync when sample in range writes value and marks synced`() async {
         store.bikeSpeedSource = .manual
         store.bikeSpeedMetersPerSecond = 4.2
 
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(sampleSpeed: 5.5)
+            provider: FakeSpeedProvider(sampleSpeed: 5.5)
         )
 
         let result = await manager.requestAuthorizationAndSync()
@@ -118,7 +62,7 @@ final class BikeModeManagerTests: OBATestCase {
         // 30 m/s sits well outside BikeSpeed.validRange (2.0...20.0).
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(sampleSpeed: 30.0)
+            provider: FakeSpeedProvider(sampleSpeed: 30.0)
         )
 
         let result = await manager.requestAuthorizationAndSync()
@@ -137,7 +81,7 @@ final class BikeModeManagerTests: OBATestCase {
         // walking; the raised 2.0 bound (above the 1.8 fast-walk preset) rejects it (#1458.1).
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(sampleSpeed: 1.2)
+            provider: FakeSpeedProvider(sampleSpeed: 1.2)
         )
 
         let result = await manager.requestAuthorizationAndSync()
@@ -151,10 +95,10 @@ final class BikeModeManagerTests: OBATestCase {
         store.bikeSpeedSource = .synced
         store.bikeSpeedMetersPerSecond = 4.2
 
-        let gate = FetchGate()
+        let gate = SpeedFetchGate()
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: GatedProvider(gate: gate)
+            provider: GatedSpeedProvider(gate: gate)
         )
 
         async let sync = manager.requestAuthorizationAndSync()
@@ -179,7 +123,7 @@ final class BikeModeManagerTests: OBATestCase {
 
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(authorizationError: DummyError(), sampleSpeed: 5.0)
+            provider: FakeSpeedProvider(authorizationError: DummyError(), sampleSpeed: 5.0)
         )
 
         let result = await manager.requestAuthorizationAndSync()
@@ -188,12 +132,12 @@ final class BikeModeManagerTests: OBATestCase {
         #expect(self.store.bikeSpeedSource == .manual)
     }
 
-    @Test func `Request and sync when health kit unavailable forces manual`() async {
+    @Test func `Request and sync when provider unavailable forces manual`() async {
         store.bikeSpeedSource = .synced
 
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(isAvailable: false, sampleSpeed: 5.0)
+            provider: FakeSpeedProvider(isAvailable: false, sampleSpeed: 5.0)
         )
 
         let result = await manager.requestAuthorizationAndSync()
@@ -210,7 +154,7 @@ final class BikeModeManagerTests: OBATestCase {
 
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(sampleSpeed: nil)
+            provider: FakeSpeedProvider(sampleSpeed: nil)
         )
 
         await manager.refreshIfPossible()
@@ -226,7 +170,7 @@ final class BikeModeManagerTests: OBATestCase {
 
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(sampleSpeed: 6.0)
+            provider: FakeSpeedProvider(sampleSpeed: 6.0)
         )
 
         await manager.refreshIfPossible()
@@ -241,7 +185,7 @@ final class BikeModeManagerTests: OBATestCase {
 
         let manager = BikeModeManager(
             userDataStore: store,
-            provider: FakeProvider(sampleSpeed: 0.5)
+            provider: FakeSpeedProvider(sampleSpeed: 0.5)
         )
 
         await manager.refreshIfPossible()

@@ -25,17 +25,11 @@ final class WalkingSpeedManager {
         self.provider = provider
     }
 
-    /// Invalidates any sync still in flight, before an opt-out is persisted,
-    /// so the stale sync's trailing write is abandoned instead of resurrecting `.synced`.
-    private func cancelPendingSync() {
-        syncGeneration += 1
-    }
-
     /// Leaves speed sync, abandoning any sync still in flight so it can't write `.synced`
     /// back over the `.manual` persisted here.
     /// Back on manual, the speed is the preset nearest the stored speed.
     func stopSyncing() {
-        cancelPendingSync()
+        syncGeneration += 1
         userDataStore.walkingSpeedSource = .manual
         userDataStore.walkingSpeedMetersPerSecond = WalkingSpeedPreset.nearest(to: userDataStore.walkingSpeedMetersPerSecond).rawValue
     }
@@ -48,7 +42,7 @@ final class WalkingSpeedManager {
     /// for a denying user, success here is defined as "actually retrieved a usable
     /// sample". A user who genuinely granted access but has no recent walking-speed
     /// samples (e.g. no Apple Watch) is also routed to `.manual` — that's intentional.
-    /// A sync invalidated by `cancelPendingSync()` (the user opted out while it was in
+    /// A sync invalidated by `stopSyncing()` (the user opted out while it was in
     /// flight) abandons without touching the store, so the opt-out wins.
     @discardableResult
     func requestAuthorizationAndSync() async -> Bool {

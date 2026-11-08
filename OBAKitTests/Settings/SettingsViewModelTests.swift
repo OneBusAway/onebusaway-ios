@@ -13,7 +13,7 @@ import Foundation
 import Testing
 
 /// The rules that tie Settings rows to each other, and the write-through that
-/// replaced saving on dismissal. HealthKit and the Experimental flags have
+/// replaced saving on dismissal. Speed sync and the Experimental flags have
 /// their own suites.
 @MainActor
 @Suite(.serialized)
@@ -120,7 +120,7 @@ final class SettingsViewModelTests: OBATestCase {
         #expect(self.application.mapRegionManager.mapViewShowsScale)
     }
 
-    @Test func `Turning walking health kit off saves manual at the preset on screen`() {
+    @Test func `Turning walking sync off saves manual at the preset on screen`() {
         application.userDataStore.walkingSpeedSource = .synced
         application.userDataStore.walkingSpeedMetersPerSecond = 1.65
         let vm = SettingsViewModel(application: application)
@@ -133,8 +133,8 @@ final class SettingsViewModelTests: OBATestCase {
     }
 
     /// A sync that lands while Settings is open changes the stored speed after `init`
-    /// seeded the picker; turning HealthKit off must snap the synced speed, not the seed.
-    @Test func `Turning walking health kit off snaps the speed synced during this visit`() {
+    /// seeded the picker; turning sync off must snap the synced speed, not the seed.
+    @Test func `Turning walking sync off snaps the speed synced during this visit`() {
         application.userDataStore.walkingSpeedSource = .synced
         application.userDataStore.walkingSpeedMetersPerSecond = 0.9
         let vm = SettingsViewModel(application: application)
