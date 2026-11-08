@@ -13,17 +13,17 @@ import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-private struct MockRequestPayload: Codable, Equatable {
+private nonisolated struct MockRequestPayload: Codable, Equatable, Sendable {
     let name: String
     let amount: Int
 }
 
-private struct MockResponsePayload: Codable, Equatable {
+private nonisolated struct MockResponsePayload: Codable, Equatable, Sendable {
     let id: String
     let success: Bool
 }
 
-private final class TestAPIService: APIService {
+private nonisolated final class TestAPIService: APIService {
     let configuration: APIServiceConfiguration
     let dataLoader: URLDataLoader
     let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "TestAPIService")
@@ -45,7 +45,15 @@ final class APIServiceSendDataTests: OBATestCase {
         try await super.init()
 
         dataLoader = try #require(restService.dataLoader as? MockDataLoader)
-        service = TestAPIService(restService.configuration, dataLoader: dataLoader)
+        let config = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            surveyBaseURL: surveyBaseURL
+        )
+        service = TestAPIService(config, dataLoader: dataLoader)
     }
 
     // MARK: - Successful POST & PUT
@@ -99,17 +107,15 @@ final class APIServiceSendDataTests: OBATestCase {
         let requestPayload = MockRequestPayload(name: "Item", amount: 10)
         let response = HTTPURLResponse(url: endpointURL, statusCode: 404, httpVersion: "2.0", headerFields: nil)!
         let mockResponse = MockDataResponse(data: Data(), urlResponse: response, error: nil) { $0.url == self.endpointURL }
-        dataLoader.mock(mockResponse: mockResponse)
+        dataLoader.mock(response: mockResponse)
 
         do {
             let _: MockResponsePayload = try await service.postData(url: endpointURL, data: requestPayload)
             Issue.record("Expected APIError.requestNotFound to be thrown")
         } catch let error as APIError {
-            switch error {
-            case .requestNotFound:
-                #expect(true)
-            default:
+            guard case .requestNotFound = error else {
                 Issue.record("Expected .requestNotFound, got \(error)")
+                return
             }
         } catch {
             Issue.record("Unexpected error: \(error)")
@@ -120,17 +126,15 @@ final class APIServiceSendDataTests: OBATestCase {
         let requestPayload = MockRequestPayload(name: "Item", amount: 10)
         let response = HTTPURLResponse(url: endpointURL, statusCode: 500, httpVersion: "2.0", headerFields: nil)!
         let mockResponse = MockDataResponse(data: Data("Server Error".utf8), urlResponse: response, error: nil) { $0.url == self.endpointURL }
-        dataLoader.mock(mockResponse: mockResponse)
+        dataLoader.mock(response: mockResponse)
 
         do {
             let _: MockResponsePayload = try await service.postData(url: endpointURL, data: requestPayload)
             Issue.record("Expected APIError.requestFailure to be thrown")
         } catch let error as APIError {
-            switch error {
-            case .requestFailure:
-                #expect(true)
-            default:
+            guard case .requestFailure = error else {
                 Issue.record("Expected .requestFailure, got \(error)")
+                return
             }
         } catch {
             Issue.record("Unexpected error: \(error)")
@@ -141,17 +145,15 @@ final class APIServiceSendDataTests: OBATestCase {
         let requestPayload = MockRequestPayload(name: "Item", amount: 10)
         let captiveError = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
         let mockResponse = MockDataResponse(data: Data(), urlResponse: nil, error: captiveError) { $0.url == self.endpointURL }
-        dataLoader.mock(mockResponse: mockResponse)
+        dataLoader.mock(response: mockResponse)
 
         do {
             let _: MockResponsePayload = try await service.postData(url: endpointURL, data: requestPayload)
             Issue.record("Expected APIError.captivePortal to be thrown")
         } catch let error as APIError {
-            switch error {
-            case .captivePortal:
-                #expect(true)
-            default:
+            guard case .captivePortal = error else {
                 Issue.record("Expected .captivePortal, got \(error)")
+                return
             }
         } catch {
             Issue.record("Unexpected error type: \(error)")

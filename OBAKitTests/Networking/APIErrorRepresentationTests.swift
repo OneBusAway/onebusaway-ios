@@ -64,24 +64,21 @@ final class APIErrorRepresentationTests {
     @Test func `Captive portal error description`() {
         let error = APIError.captivePortal
         let description = error.errorDescription
-        #expect(description != nil)
-        #expect(!description!.isEmpty)
+        #expect(description?.isEmpty == false)
     }
 
     @Test func `Invalid content type error description format`() {
         let error = APIError.invalidContentType(originalError: nil, expectedContentType: "application/json", actualContentType: "text/plain")
         let description = error.errorDescription
-        #expect(description != nil)
-        #expect(description!.contains("application/json"))
-        #expect(description!.contains("text/plain"))
+        #expect(description?.contains("application/json") == true)
+        #expect(description?.contains("text/plain") == true)
     }
 
     @Test func `Invalid content type error description when actual is nil`() {
         let error = APIError.invalidContentType(originalError: nil, expectedContentType: "application/json", actualContentType: nil)
         let description = error.errorDescription
-        #expect(description != nil)
-        #expect(description!.contains("application/json"))
-        #expect(description!.contains("(nil)"))
+        #expect(description?.contains("application/json") == true)
+        #expect(description?.contains("(nil)") == true)
     }
 
     @Test func `Network failure with failing URL includes host`() {
@@ -97,15 +94,13 @@ final class APIErrorRepresentationTests {
 
         let error = APIError.networkFailure(underlying)
         let description = error.errorDescription
-        #expect(description != nil)
-        #expect(description!.contains("api.pugetsound.onebusaway.org"))
+        #expect(description?.contains("api.pugetsound.onebusaway.org") == true)
     }
 
     @Test func `Network failure without underlying error provides fallback message`() {
         let error = APIError.networkFailure(nil)
         let description = error.errorDescription
-        #expect(description != nil)
-        #expect(!description!.isEmpty)
+        #expect(description?.isEmpty == false)
     }
 
     @Test func `Request failure description strips query params`() {
@@ -114,10 +109,9 @@ final class APIErrorRepresentationTests {
         let error = APIError.requestFailure(response500)
 
         let description = error.errorDescription
-        #expect(description != nil)
-        #expect(description!.contains("500"))
-        #expect(description!.contains("https://api.example.com/api/where/stops.json"))
-        #expect(!description!.contains("key=TEST"))
+        #expect(description?.contains("500") == true)
+        #expect(description?.contains("https://api.example.com/api/where/stops.json") == true)
+        #expect(description?.contains("key=TEST") == false)
     }
 
     @Test func `Request not found description includes full URL`() {
@@ -126,9 +120,8 @@ final class APIErrorRepresentationTests {
         let error = APIError.requestNotFound(response404)
 
         let description = error.errorDescription
-        #expect(description != nil)
-        #expect(description!.contains("404"))
-        #expect(description!.contains(url.absoluteString))
+        #expect(description?.contains("404") == true)
+        #expect(description?.contains(url.absoluteString) == true)
     }
 
     @Test func `Regional errors contain region name`() {
@@ -146,12 +139,12 @@ final class APIErrorRepresentationTests {
 
     @Test func `Rate limited, survey not configured, and no region selected descriptions`() {
         let rateLimited = APIError.rateLimited
-        #expect(rateLimited.errorDescription != nil)
+        #expect(rateLimited.errorDescription?.isEmpty == false)
 
         let surveyNotConfigured = APIError.surveyServiceNotConfigured
-        #expect(surveyNotConfigured.errorDescription != nil)
+        #expect(surveyNotConfigured.errorDescription?.isEmpty == false)
 
         let noRegion = APIError.noRegionSelected
-        #expect(noRegion.errorDescription != nil)
+        #expect(noRegion.errorDescription?.isEmpty == false)
     }
 }

@@ -27,22 +27,22 @@ final class RESTAPIServiceOperationsTests: OBATestCase {
     // MARK: - getTrip ArrivalDeparture
 
     @Test func `getTripArrivalDepartureAtStop requests correct URL and decodes entry`() async throws {
-        let stopID = "1_75414"
-        let tripID = "1_18196913"
-        let serviceDate = Date(timeIntervalSince1970: 1_588_834_800)
+        let stopID = "1_11420"
+        let tripID = "1_40989208"
+        let serviceDate = Date(timeIntervalSince1970: 1_538_809_200)
         let vehicleID = "1_4351"
-        let stopSequence = 5
+        let stopSequence = 4
 
-        let fixtureData = Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_75414.json")
+        let fixtureData = Fixtures.loadData(file: "arrival-and-departure-for-stop-1_11420.json")
 
         dataLoader.mock(data: fixtureData) { request in
             guard let url = request.url else { return false }
             return url.path.contains("/api/where/arrival-and-departure-for-stop/\(stopID).json") &&
                 url.containsQueryParams([
                     "tripId": tripID,
-                    "serviceDate": "1588834800000",
+                    "serviceDate": "1538809200000",
                     "vehicleId": vehicleID,
-                    "stopSequence": "5"
+                    "stopSequence": "4"
                 ])
         }
 
@@ -87,7 +87,7 @@ final class RESTAPIServiceOperationsTests: OBATestCase {
 
         let targetURL = restService.urlBuilder.getOnDemandServices(region: region, geometryDetail: .simplified)
         let response404 = HTTPURLResponse(url: targetURL, statusCode: 404, httpVersion: "2.0", headerFields: nil)!
-        dataLoader.mock(mockResponse: MockDataResponse(data: Data(), urlResponse: response404, error: nil) { $0.url?.path == targetURL.path })
+        dataLoader.mock(response: MockDataResponse(data: Data(), urlResponse: response404, error: nil) { $0.url?.path == targetURL.path })
 
         #expect(!restService.onDemandSupport.isKnownUnsupported(baseURL: restService.baseURL))
 
@@ -109,7 +109,7 @@ final class RESTAPIServiceOperationsTests: OBATestCase {
             httpVersion: "2.0",
             headerFields: ["Content-Type": "text/html; charset=utf-8"]
         )!
-        dataLoader.mock(mockResponse: MockDataResponse(data: Data("<html></html>".utf8), urlResponse: htmlResponse, error: nil) { $0.url?.path == targetURL.path })
+        dataLoader.mock(response: MockDataResponse(data: Data("<html></html>".utf8), urlResponse: htmlResponse, error: nil) { $0.url?.path == targetURL.path })
 
         await #expect(throws: APIError.self) {
             _ = try await self.restService.getOnDemandServices(near: coordinate, radiusMeters: 500, geometryDetail: .none)

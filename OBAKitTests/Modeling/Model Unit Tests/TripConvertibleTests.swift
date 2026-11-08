@@ -86,6 +86,7 @@ final class TripConvertibleTests {
         let vehicleData: [String: Any] = [
             "vehicleId": "1_9999",
             "lastUpdateTime": 1588888744000,
+            "lastLocationUpdateTime": 1588888744000,
             "phase": "in_progress",
             "status": "SCHEDULED",
             "tripId": "1_isolated_trip",

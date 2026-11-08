@@ -45,17 +45,15 @@ final class PolylineEntityTests {
         expectClose(coordinate.longitude, -122.3225, within: 0.01)
     }
 
-    @Test func `PolylineEntity with invalid points produces nil or empty polyline safely`() throws {
-        // Empty string or completely invalid polyline string
+    @Test func `PolylineEntity with empty points produces nil or empty polyline safely`() throws {
         let emptyDict: [String: Any] = [
             "points": ""
         ]
         let emptyEntity = try Fixtures.dictionaryToModel(type: PolylineEntity.self, dictionary: emptyDict)
         #expect(emptyEntity.points.isEmpty)
-        // Polyline("") yields nil or 0 points
-        if let mk = emptyEntity.polyline {
-            #expect(mk.pointCount == 0)
-        }
+        // Polyline("") coordinates decode as empty array, producing 0 point MKPolyline or nil
+        let pointCount = emptyEntity.polyline?.pointCount ?? 0
+        #expect(pointCount == 0)
     }
 
     @Test func `Decode failure when points key missing`() {
