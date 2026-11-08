@@ -61,8 +61,8 @@ final class RESTAPIServiceOperationsTests: OBATestCase {
     // MARK: - getVehicleTrip
 
     @Test func `getVehicleTrip requests trip-for-vehicle and decodes trip details`() async throws {
-        let vehicleID = "1_2799"
-        let fixtureData = Fixtures.loadData(file: "trip-for-vehicle-1_2799.json")
+        let vehicleID = "1_1234"
+        let fixtureData = Fixtures.loadData(file: "trip_details_1_18196913.json")
 
         dataLoader.mock(data: fixtureData) { request in
             guard let url = request.url else { return false }
@@ -72,8 +72,8 @@ final class RESTAPIServiceOperationsTests: OBATestCase {
         let response = try await restService.getVehicleTrip(vehicleID: vehicleID)
 
         #expect(response.code == 200)
-        #expect(response.entry.status?.activeTripID == "1_40956737")
-        #expect(response.entry.status?.blockTripSequence == 3)
+        #expect(response.entry.tripID == "1_18196913")
+        #expect(response.entry.stopTimes.count == 53)
     }
 
     // MARK: - OnDemand Absence Recording

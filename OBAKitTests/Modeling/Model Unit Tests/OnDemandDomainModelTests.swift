@@ -43,7 +43,7 @@ final class OnDemandDomainModelTests {
     @Test func `Decode OnDemandEligibility with unknown requirement falls back gracefully`() throws {
         let json: [String: Any] = [
             "requirement": "some_future_unsupported_requirement",
-            "infoUrl": "   " // Blank whitespace string should nilify
+            "infoUrl": "" // Empty string should nilify via String.nilifyBlankValue
         ]
 
         let eligibility = try Fixtures.dictionaryToModel(type: OnDemandEligibility.self, dictionary: json)
