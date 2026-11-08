@@ -131,7 +131,8 @@ struct TripPageView: View {
             stopTimes: viewModel.tripDetails?.stopTimes ?? [],
             userStopID: departure?.stopID,
             userStopSequence: departure?.stopSequence,
-            closestStopID: convertible.tripStatus?.closestStopID
+            closestStopID: convertible.tripStatus?.closestStopID,
+            sharedDestinationStopID: viewModel.destinationStopID
         )
     }
 
@@ -227,9 +228,13 @@ struct TripPageView: View {
         }
     }
 
+    private var activeDeparture: ArrivalDeparture? {
+        viewModel.destinationArrivalDeparture ?? departure
+    }
+
     private var card: some View {
         TripCardView(
-            departure: departure,
+            departure: activeDeparture,
             routeShortName: route?.shortName ?? "",
             headsign: departure?.tripHeadsign ?? convertible.trip.headsign ?? route?.shortName ?? "",
             routeColor: routeColor,

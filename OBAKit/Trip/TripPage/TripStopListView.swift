@@ -97,9 +97,11 @@ private struct TripStopRow: View {
     @ScaledMetric(relativeTo: .body) private var vehicleDotSize = TripStopRailMetrics.width
     @ScaledMetric(relativeTo: .body) private var lineWidth = TripStopRailMetrics.lineWidth
 
-    /// Dimmed once the bus is past. The vehicle's own stop stays active — it is
-    /// where the rider's attention belongs.
-    private var isBehind: Bool { row.isPassed && !row.isVehicleHere }
+    /// Dimmed once the bus is past or outside the shared ride. The vehicle's own
+    /// stop stays active — it is where the rider's attention belongs.
+    private var isBehind: Bool {
+        (row.isPassed && !row.isVehicleHere) || (row.isOutsideRide && !row.isVehicleHere)
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -132,7 +134,7 @@ private struct TripStopRow: View {
 
     private var name: some View {
         Text(row.name)
-            .font(.subheadline.weight(row.isUserStop ? .heavy : .regular))
+            .font(.subheadline.weight((row.isUserStop || row.isBoardingStop) ? .heavy : .regular))
             .foregroundStyle(isBehind ? Color(uiColor: .tertiaryLabel) : .primary)
             .lineLimit(2)
     }
@@ -184,6 +186,11 @@ private struct TripStopRow: View {
             Circle()
                 .fill(routeColor)
                 .frame(width: userDotSize, height: userDotSize)
+        } else if row.isBoardingStop {
+            Circle()
+                .strokeBorder(routeColor, lineWidth: lineWidth * 1.5)
+                .background(Circle().fill(Color(uiColor: .secondarySystemGroupedBackground)))
+                .frame(width: userDotSize, height: userDotSize)
         } else if isBehind {
             Circle()
                 .fill(Color(uiColor: .systemGray3))
@@ -209,11 +216,17 @@ private struct TripStopRow: View {
         }
         if row.isVehicleHere {
             clauses.append(OBALoc("trip_page.stop_list.a11y_vehicle_here", value: "vehicle is here", comment: "VoiceOver clause on the stop the vehicle is currently at."))
-        } else if isBehind {
+        } else if row.isPassed {
             clauses.append(OBALoc("trip_page.stop_list.a11y_passed", value: "already passed", comment: "VoiceOver clause on a stop the vehicle has already served."))
         }
         if row.isUserStop {
             clauses.append(OBALoc("trip_page.stop_list.a11y_your_stop", value: "your stop", comment: "VoiceOver clause on the rider's own stop."))
+        }
+        if row.isBoardingStop {
+            clauses.append(OBALoc("trip_stop.boarding_stop.accessibility_label", value: "Boarding stop", comment: "Voiceover text explaining that this stop is where the rider boarded the vehicle"))
+        }
+        if row.isOutsideRide {
+            clauses.append(OBALoc("trip_stop.outside_ride.accessibility_label", value: "Not part of the shared ride", comment: "VoiceOver text for a stop outside the part of a trip that someone shared with you by link (before they board or after they get off)"))
         }
         if row.isTerminal {
             clauses.append(OBALoc("trip_page.stop_list.a11y_terminal", value: "last stop", comment: "VoiceOver clause on the final stop of the trip."))
