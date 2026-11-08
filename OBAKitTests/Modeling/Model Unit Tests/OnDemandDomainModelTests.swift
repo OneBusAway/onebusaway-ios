@@ -68,9 +68,9 @@ final class OnDemandDomainModelTests {
     @Test func `ServiceKind enum decoding known cases`() throws {
         let kinds: [String: ServiceKind] = [
             "zone": .zone,
-            "zone_to_zone": .zoneToZone,
-            "stop_group": .stopGroup,
-            "deviated_route": .deviatedRoute
+            "zoneToZone": .zoneToZone,
+            "stopGroup": .stopGroup,
+            "deviatedRoute": .deviatedRoute
         ]
 
         for (raw, expected) in kinds {
@@ -90,11 +90,11 @@ final class OnDemandDomainModelTests {
 
     @Test func `MatchReason enum decoding known cases`() throws {
         let reasons: [String: MatchReason] = [
-            "area_contains_point": .areaContainsPoint,
-            "stop_within_radius": .stopWithinRadius,
-            "area_nearby": .areaNearby,
-            "area_intersects_viewport": .areaIntersectsViewport,
-            "stop_within_viewport": .stopWithinViewport
+            "areaContainsPoint": .areaContainsPoint,
+            "stopWithinRadius": .stopWithinRadius,
+            "areaNearby": .areaNearby,
+            "areaIntersectsViewport": .areaIntersectsViewport,
+            "stopWithinViewport": .stopWithinViewport
         ]
 
         for (raw, expected) in reasons {

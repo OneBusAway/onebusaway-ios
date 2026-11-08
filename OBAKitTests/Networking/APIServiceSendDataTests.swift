@@ -101,8 +101,18 @@ final class APIServiceSendDataTests: OBATestCase {
         let mockResponse = MockDataResponse(data: Data(), urlResponse: response, error: nil) { $0.url == self.endpointURL }
         dataLoader.mock(mockResponse: mockResponse)
 
-        await #expect(throws: APIError.self) {
-            let _: MockResponsePayload = try await self.service.postData(url: self.endpointURL, data: requestPayload)
+        do {
+            let _: MockResponsePayload = try await service.postData(url: endpointURL, data: requestPayload)
+            Issue.record("Expected APIError.requestNotFound to be thrown")
+        } catch let error as APIError {
+            switch error {
+            case .requestNotFound:
+                #expect(true)
+            default:
+                Issue.record("Expected .requestNotFound, got \(error)")
+            }
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
@@ -112,8 +122,18 @@ final class APIServiceSendDataTests: OBATestCase {
         let mockResponse = MockDataResponse(data: Data("Server Error".utf8), urlResponse: response, error: nil) { $0.url == self.endpointURL }
         dataLoader.mock(mockResponse: mockResponse)
 
-        await #expect(throws: APIError.self) {
-            let _: MockResponsePayload = try await self.service.postData(url: self.endpointURL, data: requestPayload)
+        do {
+            let _: MockResponsePayload = try await service.postData(url: endpointURL, data: requestPayload)
+            Issue.record("Expected APIError.requestFailure to be thrown")
+        } catch let error as APIError {
+            switch error {
+            case .requestFailure:
+                #expect(true)
+            default:
+                Issue.record("Expected .requestFailure, got \(error)")
+            }
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
