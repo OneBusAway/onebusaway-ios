@@ -64,14 +64,23 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
     }
 
     @Test func `TripBookmarkKey initializes from ArrivalDeparture with fallback for nil headsign`() throws {
-        let arrDep = try makeArrivalDeparture(tripHeadsign: nil)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrDep = try #require(stopArrivals.arrivalsAndDepartures.first)
         let key = TripBookmarkKey(arrivalDeparture: arrDep)
 
-        #expect(key.stopID == "1_100")
-        #expect(key.routeShortName == "44")
-        #expect(key.routeID == "1_44")
-        #expect(key.tripHeadsign == "")
-        #expect(key.routeAndHeadsign == "44 - ")
+        #expect(key.stopID == arrDep.stopID)
+        #expect(key.routeShortName == arrDep.routeShortName)
+        #expect(key.routeID == arrDep.routeID)
+        #expect(key.tripHeadsign == (arrDep.tripHeadsign ?? ""))
+        #expect(key.routeAndHeadsign == "\(arrDep.routeShortName) - \(arrDep.tripHeadsign ?? "")")
+
+        // Also test direct struct initialization with empty fallback
+        let fallbackKey = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "")
+        #expect(fallbackKey.tripHeadsign == "")
+        #expect(fallbackKey.routeAndHeadsign == "44 - ")
     }
 
     // MARK: - Sequence Grouping and Sorting

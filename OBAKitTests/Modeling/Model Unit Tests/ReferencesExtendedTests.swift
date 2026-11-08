@@ -54,8 +54,11 @@ final class ReferencesExtendedTests: OBATestCase {
 
     // MARK: - Situations Collection
 
-    @Test func `References situations decode service alerts with valid summaries`() {
-        let situations = references.serviceAlerts
+    @Test func `References situations decode service alerts with valid summaries`() throws {
+        let alertData = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<ArrivalDeparture>.self, from: alertData)
+        let alertReferences = try #require(response.references)
+        let situations = alertReferences.serviceAlerts
         #expect(!situations.isEmpty)
 
         for alert in situations {

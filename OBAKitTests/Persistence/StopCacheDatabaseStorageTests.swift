@@ -1,5 +1,5 @@
 //
-//  StopCacheDatabasePruneTests.swift
+//  StopCacheDatabaseStorageTests.swift
 //  OBAKitTests
 //
 //  Copyright © Open Transit Software Foundation
@@ -14,10 +14,10 @@ import Testing
 @testable import OBAKitCore
 
 /// Tests for `StopCacheDatabase` and `StopCacheRepository` multi-region isolation,
-/// custom SQL queries, and purge boundary rules.
+/// custom SQL queries, spatial bounding box filtering, and sync state persistence.
 @MainActor
 @Suite(.serialized)
-final class StopCacheDatabasePruneTests {
+final class StopCacheDatabaseStorageTests {
 
     private let database: StopCacheDatabase
     private let repository: StopCacheRepository
@@ -226,5 +226,90 @@ final class StopCacheDatabasePruneTests {
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM regionStopSync WHERE regionId = ?", arguments: [testRegion1])
         }
         #expect(totalRows == 1)
+    }
+
+    // MARK: - Pagination and Cursor Querying
+
+    @Test func `stops with cursor pagination iterates in ascending StopID order`() throws {
+        let stops = [
+            makeStop(id: "stop_01", name: "Alpha"),
+            makeStop(id: "stop_02", name: "Beta"),
+            makeStop(id: "stop_03", name: "Gamma"),
+            makeStop(id: "stop_04", name: "Delta"),
+            makeStop(id: "stop_05", name: "Epsilon")
+        ]
+        repository.saveStops(stops, regionId: testRegion1)
+
+        // Read page 1 with limit 2
+        let page1 = repository.stops(regionId: testRegion1, after: nil, limit: 2)
+        #expect(page1.stops.count == 2)
+        #expect(page1.stops.map(\.id) == ["stop_01", "stop_02"])
+        #expect(page1.cursor == "stop_02")
+
+        // Read page 2 with limit 2 starting after cursor
+        let page2 = repository.stops(regionId: testRegion1, after: page1.cursor, limit: 2)
+        #expect(page2.stops.count == 2)
+        #expect(page2.stops.map(\.id) == ["stop_03", "stop_04"])
+        #expect(page2.cursor == "stop_04")
+
+        // Read page 3 (last element)
+        let page3 = repository.stops(regionId: testRegion1, after: page2.cursor, limit: 2)
+        #expect(page3.stops.count == 1)
+        #expect(page3.stops.map(\.id) == ["stop_05"])
+        #expect(page3.cursor == nil)
+    }
+
+    @Test func `clearCache purges stops, associated routes, and sync state atomically`() throws {
+        let stops = [makeStop(id: "clear_1", routeIDs: ["r_100"])]
+        repository.saveStops(stops, regionId: testRegion1)
+
+        let state = RegionStopSyncState(
+            regionId: testRegion1,
+            outcome: .complete,
+            lastAttemptAt: Date(),
+            lastSuccessAt: Date(),
+            etag: "test_etag",
+            appVersion: "1.0"
+        )
+        try repository.saveSyncState(state)
+
+        // Verify data exists
+        #expect(try repository.syncState(regionId: testRegion1) != nil)
+
+        // Clear cache
+        repository.clearCache(regionId: testRegion1)
+
+        // Verify everything cleared for region 1
+        #expect(try repository.syncState(regionId: testRegion1) == nil)
+        let stopCount = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedStop WHERE regionId = ?", arguments: [testRegion1])
+        }
+        #expect(stopCount == 0)
+
+        let routeCount = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedRoute WHERE regionId = ?", arguments: [testRegion1])
+        }
+        #expect(routeCount == 0)
+    }
+
+    @Test func `deleteStopsOlderThan purges expired records while retaining fresh records`() throws {
+        let past = Date(timeIntervalSince1970: 1_700_000_000)
+        let recent = Date(timeIntervalSince1970: 1_700_100_000)
+
+        try repository.writeSyncedStops([makeStop(id: "old_stop")], regionId: testRegion1, syncedAt: past)
+        try repository.writeSyncedStops([makeStop(id: "fresh_stop")], regionId: testRegion1, syncedAt: recent)
+
+        let cutoff = Date(timeIntervalSince1970: 1_700_050_000)
+        repository.deleteStopsOlderThan(cutoff, regionId: testRegion1)
+
+        let surviving = repository.stopsInRegion(
+            minLat: 40.0,
+            maxLat: 50.0,
+            minLon: -130.0,
+            maxLon: -120.0,
+            regionId: testRegion1
+        )
+        #expect(surviving.count == 1)
+        #expect(surviving.first?.id == "fresh_stop")
     }
 }
