@@ -128,6 +128,22 @@ struct TripStopListModelTests {
         #expect(make(stops, userStopID: "C", closestStopID: "A").vehicleIndex == index)
     }
 
+    /// A shared trip moves the rider's-stop marker to the destination, but the
+    /// vehicle stays anchored on the boarding stop. The vehicle's closest stop X
+    /// is visited before boarding at B (row 0) and again during the ride (row 3):
+    /// anchored on boarding it is row 0, where the vehicle-only lookup puts it
+    /// too. Anchored on the destination D it would be row 3.
+    @Test func `On a loop, a shared trip anchors the vehicle on the boarding stop, not the destination`() {
+        let stops = line(["X", "A", "B", "X", "C", "D"])
+
+        let model = make(stops, userStopID: "B", closestStopID: "X", sharedDestinationStopID: "D")
+
+        #expect(model.userIndex == 5)
+        #expect(model.boardingIndex == 2)
+        #expect(model.vehicleIndex == 0)
+        #expect(TripStopListModel.vehicleStopIndex(in: stops, closestStopID: "X", userStopID: "B", userStopSequence: nil) == 0)
+    }
+
     @Test func `Without a rider's stop, the vehicle resolves to its first visit`() {
         let model = make(line(["A", "B", "A", "C"]), closestStopID: "A")
 

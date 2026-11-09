@@ -165,7 +165,16 @@ struct TripStopListModel {
         }
 
         let rideIndices = riderStops?.rideIndices
-        let vehicleIndex = vehicleIndex(in: stopTimes, closestStopID: closestStopID, userIndex: userIndex)
+        // Anchored on where the rider boards even when the marker has moved to a
+        // shared destination, as `vehicleStopIndex(in:closestStopID:arrivalDeparture:)`
+        // anchors. The trip arrives as the boarding stop's `ArrivalDeparture`, so
+        // that is the one stop the shared trip's own data is about, and on a loop
+        // the two can't then place the vehicle on different visits.
+        let vehicleIndex = vehicleIndex(
+            in: stopTimes,
+            closestStopID: closestStopID,
+            userIndex: riderStops?.boardingIndex ?? userIndex
+        )
 
         let rows = stopTimes.enumerated().map { index, stopTime in
             Row(
