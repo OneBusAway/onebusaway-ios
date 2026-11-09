@@ -63,7 +63,8 @@ final class OnDemandDomainModelTests {
         #expect(e1 != e3)
     }
 
-    // MARK: - ServiceKind Enum Decoding & Fallback
+    // MARK: - ServiceKind Enum Decoding
+    // Note: Unknown fallback is tested in OnDemandModelTests.swift
 
     @Test func `ServiceKind enum decoding known cases`() throws {
         let kinds: [String: ServiceKind] = [
@@ -80,13 +81,8 @@ final class OnDemandDomainModelTests {
         }
     }
 
-    @Test func `ServiceKind enum decoding unknown fallback`() throws {
-        let data = Data("\"future_kind\"".utf8)
-        let decoded = try JSONDecoder().decode(ServiceKind.self, from: data)
-        #expect(decoded == .unknown)
-    }
-
-    // MARK: - MatchReason Enum Decoding & Fallback
+    // MARK: - MatchReason Enum Decoding
+    // Note: Unknown fallback is tested in OnDemandModelTests.swift
 
     @Test func `MatchReason enum decoding known cases`() throws {
         let reasons: [String: MatchReason] = [
@@ -102,12 +98,6 @@ final class OnDemandDomainModelTests {
             let decoded = try JSONDecoder().decode(MatchReason.self, from: data)
             #expect(decoded == expected)
         }
-    }
-
-    @Test func `MatchReason enum decoding unknown fallback`() throws {
-        let data = Data("\"new_server_reason\"".utf8)
-        let decoded = try JSONDecoder().decode(MatchReason.self, from: data)
-        #expect(decoded == .unknown)
     }
 
     // MARK: - OnDemandGeometryDetail
