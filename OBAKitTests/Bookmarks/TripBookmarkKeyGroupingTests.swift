@@ -50,6 +50,57 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         return try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dict)
     }
 
+    private func makeReferences(
+        routeID: String = "1_44",
+        routeShortName: String = "44",
+        stopID: String = "1_100",
+        tripID: String = "trip_ref",
+        tripHeadsign: String? = nil
+    ) throws -> References {
+        var tripDict: [String: Any] = [
+            "id": tripID,
+            "blockId": "block_\(tripID)",
+            "routeId": routeID,
+            "serviceId": "service_ref",
+            "routeShortName": routeShortName,
+            "tripShortName": "Trip",
+            "timeZone": "America/Los_Angeles"
+        ]
+        if let tripHeadsign {
+            tripDict["tripHeadsign"] = tripHeadsign
+        }
+
+        let referencesData: [String: Any] = [
+            "agencies": [[
+                "id": "agency_1",
+                "name": "Metro Transit",
+                "url": "https://example.com",
+                "timezone": "America/Los_Angeles",
+                "lang": "en",
+                "phone": "555-0123",
+                "privateService": false
+            ]],
+            "routes": [[
+                "id": routeID,
+                "agencyId": "agency_1",
+                "shortName": routeShortName,
+                "type": 3
+            ]],
+            "stops": [[
+                "id": stopID,
+                "code": "100",
+                "name": "Transit Center",
+                "lat": 47.6097,
+                "lon": -122.3331,
+                "locationType": 0,
+                "routeIds": [routeID]
+            ]],
+            "trips": [tripDict]
+        ]
+
+        return try Fixtures.dictionaryToModel(type: References.self, dictionary: referencesData)
+    }
+
     // MARK: - Key Equality and Hashing
 
     @Test func `TripBookmarkKey equality and routeAndHeadsign formatting`() {
@@ -63,7 +114,7 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         #expect(key1.routeAndHeadsign == "44 - Ballard")
     }
 
-    @Test func `TripBookmarkKey initializes from ArrivalDeparture with fallback for nil headsign`() throws {
+    @Test func `TripBookmarkKey initializes from ArrivalDeparture with populated headsign`() throws {
         let stopArrivals = try Fixtures.loadRESTAPIPayload(
             type: StopArrivals.self,
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
@@ -76,11 +127,36 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         #expect(key.routeID == arrDep.routeID)
         #expect(key.tripHeadsign == (arrDep.tripHeadsign ?? ""))
         #expect(key.routeAndHeadsign == "\(arrDep.routeShortName) - \(arrDep.tripHeadsign ?? "")")
+    }
 
-        // Also test direct struct initialization with empty fallback
-        let fallbackKey = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "")
-        #expect(fallbackKey.tripHeadsign == "")
-        #expect(fallbackKey.routeAndHeadsign == "44 - ")
+    @Test func `TripBookmarkKey initializes from ArrivalDeparture with fallback for nil headsign`() throws {
+        // Build ArrivalDeparture with no tripHeadsign key in payload
+        let arrDep = try makeArrivalDeparture(
+            stopID: "1_100",
+            routeShortName: "44",
+            routeID: "1_44",
+            tripHeadsign: nil,
+            scheduledArrival: 1_700_000_000
+        )
+        // Load references whose trip has a nil headsign so arrivalDeparture.tripHeadsign
+        // evaluates to nil and TripBookmarkKey's ?? "" fallback path is executed.
+        let references = try makeReferences(
+            routeID: "1_44",
+            routeShortName: "44",
+            stopID: "1_100",
+            tripID: "trip_1700000000",
+            tripHeadsign: nil
+        )
+        arrDep.loadReferences(references, regionIdentifier: 1)
+
+        #expect(arrDep.tripHeadsign == nil)
+
+        let key = TripBookmarkKey(arrivalDeparture: arrDep)
+        #expect(key.stopID == "1_100")
+        #expect(key.routeShortName == "44")
+        #expect(key.routeID == "1_44")
+        #expect(key.tripHeadsign == "")
+        #expect(key.routeAndHeadsign == "44 - ")
     }
 
     // MARK: - Sequence Grouping and Sorting
