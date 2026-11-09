@@ -45,10 +45,6 @@ final class FrequencyModelExtendedTests: OBATestCase {
     // MARK: - Equality and Hash
 
     @Test func `Frequency equality compares startTime, endTime, and headway`() {
-        let d1 = Date(timeIntervalSince1970: 1000)
-        let d2 = Date(timeIntervalSince1970: 2000)
-        let d3 = Date(timeIntervalSince1970: 3000)
-
         let f1 = try! JSONDecoder.standard.decode(Frequency.self, from: makeJSON(startTime: 1000000, endTime: 2000000, headway: 300))
         let f2 = try! JSONDecoder.standard.decode(Frequency.self, from: makeJSON(startTime: 1000000, endTime: 2000000, headway: 300))
         let fDiffHeadway = try! JSONDecoder.standard.decode(Frequency.self, from: makeJSON(startTime: 1000000, endTime: 2000000, headway: 600))

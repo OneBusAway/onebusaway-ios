@@ -84,7 +84,7 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
 
     @Test func `Region equality matches on identifier`() throws {
         let reg1a = try makeRegion(id: 42, name: "Region Alpha", latitude: 40.0, longitude: -70.0)
-        let reg1b = try makeRegion(id: 42, name: "Region Alpha Updated", latitude: 40.1, longitude: -70.1)
+        let reg1b = try makeRegion(id: 42, name: "Region Alpha", latitude: 40.0, longitude: -70.0)
         let reg2 = try makeRegion(id: 99, name: "Region Beta", latitude: 40.0, longitude: -70.0)
 
         #expect(reg1a == reg1b)

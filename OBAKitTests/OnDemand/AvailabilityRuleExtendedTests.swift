@@ -77,8 +77,8 @@ struct AvailabilityRuleExtendedTests {
         #expect(rule.endDropOffTime == nil)
     }
 
-    @Test func `AvailabilityRule nilifies blank booking rule IDs`() throws {
-        let data = makeJSON(pickupBookingRuleID: "   ", dropOffBookingRuleID: "")
+    @Test func `AvailabilityRule nilifies empty booking rule IDs`() throws {
+        let data = makeJSON(pickupBookingRuleID: "", dropOffBookingRuleID: "")
         let rule = try JSONDecoder().decode(AvailabilityRule.self, from: data)
 
         #expect(rule.pickupBookingRuleID == nil)

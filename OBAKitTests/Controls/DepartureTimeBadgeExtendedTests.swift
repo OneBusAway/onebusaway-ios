@@ -39,7 +39,7 @@ final class DepartureTimeBadgeExtendedTests {
 
         #expect(config.displayText == "4m")
         #expect(config.backgroundColor == ThemeColors().departureEarlyBackground.cgColor)
-        #expect(config.accessibilityLabel.contains("2 min early") || config.accessibilityLabel.contains("early"))
+        #expect(config.accessibilityLabel.contains("2 min early"))
     }
 
     // MARK: - Present Temporal State (Now)

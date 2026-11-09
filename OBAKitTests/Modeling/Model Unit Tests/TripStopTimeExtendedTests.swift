@@ -70,14 +70,14 @@ final class TripStopTimeExtendedTests: OBATestCase {
         #expect(departureDate.timeIntervalSince(baseDate) == 90120)
     }
 
-    // MARK: - Hash Code Collision Resilience
+    // MARK: - Inequality and Distinction
 
-    @Test func `Different stop times yield distinct hash values`() throws {
+    @Test func `Different stop times compare unequal via isEqual`() throws {
         let stopTimeA = try makeStopTime(arrival: 3600, departure: 3660, stopID: "1_100")
         let stopTimeB = try makeStopTime(arrival: 3600, departure: 3660, stopID: "1_101")
         let stopTimeC = try makeStopTime(arrival: 3601, departure: 3660, stopID: "1_100")
 
-        #expect(stopTimeA.hash != stopTimeB.hash)
-        #expect(stopTimeA.hash != stopTimeC.hash)
+        #expect(!stopTimeA.isEqual(stopTimeB))
+        #expect(!stopTimeA.isEqual(stopTimeC))
     }
 }

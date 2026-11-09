@@ -28,6 +28,8 @@ final class ViewRouterExtendedNavigationTests: OBATestCase {
 
         let pushed = try #require(navigation.viewControllers.last)
         #expect(pushed !== root)
+        let isStopController = pushed is StopViewController || pushed is StopPageViewController
+        #expect(isStopController, "Expected pushed controller to be a stop controller")
     }
 
     // MARK: - Navigation with Destination Stop

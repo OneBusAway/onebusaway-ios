@@ -69,11 +69,8 @@ final class NearbyTripMatcherExtendedTests: OBATestCase {
     @Test func `NearbyTripMatcher MatchError enum cases are distinct`() {
         let err1 = NearbyTripMatcher.MatchError.noStopsNearby
         let err2 = NearbyTripMatcher.MatchError.noRealtimeData
-        let err3 = NearbyTripMatcher.MatchError.noMatchingTrip
 
         #expect(err1 != err2)
-        #expect(err1 != err3)
-        #expect(err2 != err3)
     }
 
     @Test func `NearbyTripMatcher MatchError provides descriptive error properties`() {

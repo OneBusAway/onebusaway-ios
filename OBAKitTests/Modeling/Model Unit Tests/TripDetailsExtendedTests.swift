@@ -53,7 +53,6 @@ final class TripDetailsExtendedTests: OBATestCase {
         // Load references manually to check service alert extraction
         tripDetails.loadReferences(references, regionIdentifier: 1)
 
-        #expect(tripDetails.serviceAlerts.isEmpty || !tripDetails.serviceAlerts.isEmpty)
         #expect(tripDetails.regionIdentifier == 1)
     }
 
@@ -66,13 +65,11 @@ final class TripDetailsExtendedTests: OBATestCase {
         let rootTrip = try #require(tripDetails.trip)
         let blockID = try #require(rootTrip.blockID)
 
-        if let previousTrip = tripDetails.previousTrip {
-            #expect(previousTrip.blockID == blockID)
-        }
+        let previousTrip = try #require(tripDetails.previousTrip)
+        #expect(previousTrip.blockID == blockID)
 
-        if let nextTrip = tripDetails.nextTrip {
-            #expect(nextTrip.blockID == blockID)
-        }
+        let nextTrip = try #require(tripDetails.nextTrip)
+        #expect(nextTrip.blockID == blockID)
     }
 
     // MARK: - Stop Time Lookup

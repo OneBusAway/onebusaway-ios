@@ -70,9 +70,9 @@ final class VehicleStatusModelExtendedTests: OBATestCase {
         #expect(status.id == "1_4321")
         #expect(status.phase == "in_progress")
         #expect(status.status == "default")
-        #expect(status.location != nil)
-        #expect(abs(status.location!.coordinate.latitude - 47.6097) < 0.0001)
-        #expect(abs(status.location!.coordinate.longitude - (-122.3331)) < 0.0001)
+        let location = try #require(status.location)
+        #expect(abs(location.coordinate.latitude - 47.6097) < 0.0001)
+        #expect(abs(location.coordinate.longitude - (-122.3331)) < 0.0001)
     }
 
     @Test func `VehicleStatus treats zero epoch lastLocationUpdateTime as nil`() throws {
