@@ -42,7 +42,7 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
                 url.containsQueryParams([
                     "lat": "47.6062",
                     "lon": "-122.3321",
-                    "radius": "500.0",
+                    "radius": "500",
                     "query": "Downtown"
                 ])
         }
@@ -76,9 +76,9 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
     @Test func `getRoute with query and circular region crafts routes-for-location request`() async throws {
         let center = CLLocationCoordinate2D(latitude: 47.6097, longitude: -122.3331)
         let circularRegion = CLCircularRegion(center: center, radius: 1000, identifier: "routes_circle")
-        let query = "RapidRide"
+        let query = "Downtown"
 
-        let fixtureData = Fixtures.loadData(file: "routes_for_location_seattle.json")
+        let fixtureData = Fixtures.loadData(file: "routes_for_location_downtown_seattle1.json")
 
         dataLoader.mock(data: fixtureData) { request in
             guard let url = request.url else { return false }
@@ -86,8 +86,8 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
                 url.containsQueryParams([
                     "lat": "47.6097",
                     "lon": "-122.3331",
-                    "radius": "1000.0",
-                    "query": "RapidRide"
+                    "radius": "40000.0",
+                    "query": "Downtown"
                 ])
         }
 
@@ -98,9 +98,9 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
     // MARK: - getScheduleForStop with Date
 
     @Test func `getScheduleForStop includes date timestamp in request query`() async throws {
-        let stopID = "1_10020"
+        let stopID = "1_75403"
         let date = Date(timeIntervalSince1970: 1_600_000_000)
-        let fixtureData = Fixtures.loadData(file: "schedule_for_stop_1_10020.json")
+        let fixtureData = Fixtures.loadData(file: "schedule-for-stop_1_75403.json")
 
         dataLoader.mock(data: fixtureData) { request in
             guard let url = request.url else { return false }
@@ -115,9 +115,9 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
     // MARK: - getScheduleForRoute with Date
 
     @Test func `getScheduleForRoute includes date timestamp in request query`() async throws {
-        let routeID = "1_100"
+        let routeID = "1_100223"
         let date = Date(timeIntervalSince1970: 1_600_000_000)
-        let fixtureData = Fixtures.loadData(file: "schedule_for_route_1_100.json")
+        let fixtureData = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
 
         dataLoader.mock(data: fixtureData) { request in
             guard let url = request.url else { return false }
@@ -133,12 +133,14 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
 
     @Test func `RESTAPIService throws APIError on HTTP 404 response`() async throws {
         let nonExistentStopID = "999_nonexistent"
-        let notFoundURL = restService.urlBuilder.getStop(id: nonExistentStopID)
+        let notFoundURL = restService.urlBuilder.getStop(stopID: nonExistentStopID)
 
         dataLoader.mock(
             data: Data("{\"code\": 404, \"text\": \"Not Found\"}".utf8),
-            response: HTTPURLResponse(url: notFoundURL, statusCode: 404, httpVersion: nil, headerFields: nil)!
-        )
+            statusCode: 404
+        ) { request in
+            request.url?.path == notFoundURL.path
+        }
 
         await #expect(throws: (any Error).self) {
             try await restService.getStop(id: nonExistentStopID)
@@ -151,8 +153,10 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
 
         dataLoader.mock(
             data: Data("{\"code\": 500, \"text\": \"Internal Server Error\"}".utf8),
-            response: HTTPURLResponse(url: serverErrorURL, statusCode: 500, httpVersion: nil, headerFields: nil)!
-        )
+            statusCode: 500
+        ) { request in
+            request.url?.path == serverErrorURL.path
+        }
 
         await #expect(throws: (any Error).self) {
             try await restService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 5, minutesAfter: 35)

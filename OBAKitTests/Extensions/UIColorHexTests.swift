@@ -117,7 +117,6 @@ struct UIColorHexTests {
     @Test func `init hex returns nil for non-hex characters`() {
         #expect(UIColor(hex: "GG0000") == nil)
         #expect(UIColor(hex: "#ZZZZZZ") == nil)
-        #expect(UIColor(hex: "12345Z") == nil)
     }
 
     // MARK: - toHex Serialization

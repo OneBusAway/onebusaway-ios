@@ -100,4 +100,21 @@ final class StopDistanceCalculationTests: OBATestCase {
         #expect(allThree.count == 3)
         #expect(allThree.map(\.id) == ["closest", "medium", "farthest"])
     }
+
+    @Test func `nearest orders stops using cosine-scaled longitude at high latitude`() throws {
+        // At latitude 60, cos(60 deg) == 0.5.
+        // center: (60.0, 0.0)
+        // stopLon: (60.0, 1.5) -> lon delta = 1.5, scaled delta = 0.75, squaredDist = 0.5625
+        // stopLat: (60.9, 0.0) -> lat delta = 0.9, squaredDist = 0.81
+        // Without cosine scaling, stopLat (delta 0.9) would be ranked closer than stopLon (delta 1.5).
+        // With cosine scaling, stopLon (scaled 0.75) is closer than stopLat (0.90).
+        let center = CLLocationCoordinate2D(latitude: 60.0, longitude: 0.0)
+        let stopLon = try makeStop(id: "stop_lon_closer_when_scaled", latitude: 60.0, longitude: 1.5)
+        let stopLat = try makeStop(id: "stop_lat_further_when_scaled", latitude: 60.9, longitude: 0.0)
+
+        let ranked = Stop.nearest([stopLat, stopLon], to: center, limit: 2)
+        #expect(ranked.count == 2)
+        #expect(ranked[0].id == "stop_lon_closer_when_scaled")
+        #expect(ranked[1].id == "stop_lat_further_when_scaled")
+    }
 }

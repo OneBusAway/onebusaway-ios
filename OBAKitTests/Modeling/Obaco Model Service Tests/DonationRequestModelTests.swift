@@ -23,20 +23,20 @@ struct DonationRequestModelTests {
         headline: String = "Support Open Transit",
         body: String = "OneBusAway is made possible by riders like you.",
         actionButtonText: String = "Donate Now"
-    ) -> Data {
+    ) throws -> Data {
         let dict: [String: Any] = [
             "id": id,
             "headline": headline,
             "body": body,
             "actionButtonText": actionButtonText
         ]
-        return try! JSONSerialization.data(withJSONObject: dict)
+        return try JSONSerialization.data(withJSONObject: dict)
     }
 
     // MARK: - Decoding and Properties
 
     @Test func `DonationRequest decodes expected fields from JSON payload`() throws {
-        let data = makeJSON()
+        let data = try makeJSON()
         let request = try JSONDecoder().decode(DonationRequest.self, from: data)
 
         #expect(request.id == "donation_campaign_2026")
@@ -45,13 +45,13 @@ struct DonationRequestModelTests {
         #expect(request.actionButtonText == "Donate Now")
     }
 
-    @Test func `DonationRequest decoding fails when required keys are missing`() {
+    @Test func `DonationRequest decoding fails when required keys are missing`() throws {
         let incomplete: [String: Any] = [
             "id": "partial_campaign",
             "headline": "Incomplete Data"
             // Missing body and actionButtonText
         ]
-        let data = try! JSONSerialization.data(withJSONObject: incomplete)
+        let data = try JSONSerialization.data(withJSONObject: incomplete)
 
         #expect(throws: DecodingError.self) {
             try JSONDecoder().decode(DonationRequest.self, from: data)
@@ -100,5 +100,9 @@ struct DonationRequestModelTests {
         #expect(set.count == 2)
         #expect(set.contains(req1))
         #expect(set.contains(req2))
+
+        let dict: [DonationRequest: String] = [req1: "Val1", req2: "Val2"]
+        #expect(dict[req1] == "Val1")
+        #expect(dict[req2] == "Val2")
     }
 }
