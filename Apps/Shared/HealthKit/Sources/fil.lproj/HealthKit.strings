@@ -1,0 +1,14 @@
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Hindi ma-sync ang bilis ng pagbibisikleta mula sa Health. Gagamit na lang ng karaniwang bilis ng bisikleta.";
+
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "Puwedeng basahin ng %@ ang bilis ng pagbibisikleta mo mula sa Apple Health. Hindi ito kailanman nagsusulat sa Health.";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "Hindi ma-sync ang bilis ng paglalakad mula sa Health. Tingnan ang Settings > Privacy & Security > Health para payagan ang access.";
+
+/* Settings > Walking Speed and Bike Mode sections > HealthKit toggle */
+"settings_controller.use_healthkit" = "Gamitin ang data ng Health app";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "Puwedeng basahin ng %@ ang bilis ng paglalakad mo mula sa Apple Health para tantiyahin kung gaano katagal bago ka makarating sa hintuan. Hindi ito kailanman nagsusulat sa Health.";

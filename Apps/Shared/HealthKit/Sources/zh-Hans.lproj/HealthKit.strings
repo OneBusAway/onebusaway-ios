@@ -1,0 +1,14 @@
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "无法从“健康”App同步骑行速度。将使用标准骑行速度。";
+
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ 可以从“健康”App 读取你的骑行速度。它从不向“健康”写入数据。";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "无法从“健康”App同步步行速度。请检查“设置”>“隐私与安全性”>“健康”以允许访问。";
+
+/* Settings > Walking Speed and Bike Mode sections > HealthKit toggle */
+"settings_controller.use_healthkit" = "使用“健康”App数据";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ 可以从“健康”App 读取你的步行速度，以估算你走到车站所需的时间。它从不向“健康”写入数据。";

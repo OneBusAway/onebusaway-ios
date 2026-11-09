@@ -24,6 +24,6 @@ final class BikeSpeedTests: OBATestCase {
 
     @Test func `BikeSpeedSource enum raw integer values are stable for persistence`() {
         #expect(BikeSpeedSource.manual.rawValue == 0)
-        #expect(BikeSpeedSource.healthKit.rawValue == 1)
+        #expect(BikeSpeedSource.synced.rawValue == 1)
     }
 }

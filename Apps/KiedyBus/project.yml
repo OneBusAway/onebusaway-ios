@@ -12,8 +12,8 @@ targets:
         name: App
         group: KiedyBus
         # gpx files are simulated-location fixtures for schemes, not app
-        # resources; keep them out of the bundle.
-        excludes: ["gpx_files"]
+        # resources; keep them out of the bundle. project.yml is project wiring.
+        excludes: ["gpx_files", "project.yml"]
       - path: Apps/Shared/CommonClient
         name: Common
         group: KiedyBus
@@ -22,7 +22,6 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.pl.kiedybus.iphone
-        com.apple.developer.healthkit: true
     info:
       path: Apps/KiedyBus/Info.plist
       properties:
@@ -91,4 +90,7 @@ include:
   - path: Apps/Shared/info_plist.yml
   - path: OBAKitTests/project.yml
   - path: OBAWidget/project.yml
+  - path: Apps/Shared/healthkit.yml
+    relativePaths: false
+    enable: ${OBA_HEALTHKIT}
 

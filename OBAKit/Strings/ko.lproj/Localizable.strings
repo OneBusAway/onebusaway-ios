@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "정류장까지의 소요 시간 추정, 도착 예정 시간, 정류장 화면에 더 빠른 이동 속도를 사용합니다.";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@은(는) 건강 앱에서 사이클링 속도를 읽을 수 있습니다. 건강 앱에 데이터를 기록하지는 않습니다.";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "자전거 모드";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "건강 앱 데이터 사용";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "건강 앱에서 자전거 속도를 동기화할 수 없습니다. 표준 자전거 속도를 사용합니다.";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "실행할 때마다 지역 새로고침";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "빠름 (시속 약 6.5km)";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "건강 앱에서 보행 속도를 동기화할 수 없습니다. 설정 > 개인정보 보호 및 보안 > 건강에서 접근을 허용해 주세요.";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "느림 (시속 약 3km)";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "보행 속도";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "건강 앱 데이터 사용";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@은(는) 건강 앱에서 걷기 속도를 읽어 정류장까지 걸어가는 데 걸리는 시간을 추정할 수 있습니다. 건강 앱에 데이터를 기록하지는 않습니다.";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "보행 속도";

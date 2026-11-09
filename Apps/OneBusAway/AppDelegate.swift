@@ -54,6 +54,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, ApplicationDelegate
 
         let appConfig = AppConfig(appBundle: .main, userDefaults: userDefaults, analytics: analyticsClient)
         appConfig.appShortcutsProvider = OBAAppShortcuts.self
+        appConfig.speedSync = .appDefault
 
         pushService = OBACloudPushService()
         appConfig.pushServiceProvider = pushService

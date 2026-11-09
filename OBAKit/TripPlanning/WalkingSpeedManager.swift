@@ -8,43 +8,45 @@
 //
 
 import Foundation
-import HealthKit
 import OBAKitCore
 
-/// Resolves the user's walking speed from HealthKit (if authorized) or falls back to a user preference.
+/// Resolves the user's walking speed from the app's speed provider (if it has one and is authorized) or falls back to a user preference.
 @MainActor
 final class WalkingSpeedManager {
-    private let healthKit: WalkingSpeedHealthKitProviding
+    private let provider: (any SpeedProviding)?
     private let userDataStore: UserDataStore
 
-    /// Bumped every time the user opts out of HealthKit so a sync that started earlier
-    /// cannot write `.healthKit` back over the `.manual` the opt-out persisted (#1458.3).
+    /// Bumped every time the user opts out of speed sync so a sync that started earlier
+    /// cannot write `.synced` back over the `.manual` the opt-out persisted (#1458.3).
     private var syncGeneration = 0
 
-    init(userDataStore: UserDataStore, healthKit: WalkingSpeedHealthKitProviding = HKHealthStoreWalkingSpeedProvider()) {
+    init(userDataStore: UserDataStore, provider: (any SpeedProviding)?) {
         self.userDataStore = userDataStore
-        self.healthKit = healthKit
+        self.provider = provider
     }
 
-    /// Invalidates any sync still in flight. Call it before persisting a HealthKit opt-out
-    /// so the stale sync's trailing write is abandoned instead of resurrecting `.healthKit`.
-    func cancelPendingSync() {
+    /// Leaves speed sync, abandoning any sync still in flight so it can't write `.synced`
+    /// back over the `.manual` persisted here.
+    /// Back on manual, the speed is the preset nearest the stored speed.
+    func stopSyncing() {
         syncGeneration += 1
+        userDataStore.walkingSpeedSource = .manual
+        userDataStore.walkingSpeedMetersPerSecond = WalkingSpeedPreset.nearest(to: userDataStore.walkingSpeedMetersPerSecond).rawValue
     }
 
-    /// Requests HealthKit authorization and attempts to sync the latest walking speed.
+    /// Requests the provider's authorization and attempts to sync the latest walking speed.
     ///
-    /// Apple's HealthKit privacy model does not surface read-permission denials: the
+    /// The provider's privacy model does not surface read-permission denials: the
     /// authorization request succeeds even when the user taps "Don't Allow", and a
     /// subsequent query just returns no samples. To avoid leaving the toggle stuck ON
     /// for a denying user, success here is defined as "actually retrieved a usable
     /// sample". A user who genuinely granted access but has no recent walking-speed
     /// samples (e.g. no Apple Watch) is also routed to `.manual` — that's intentional.
-    /// A sync invalidated by `cancelPendingSync()` (the user opted out while it was in
+    /// A sync invalidated by `stopSyncing()` (the user opted out while it was in
     /// flight) abandons without touching the store, so the opt-out wins.
     @discardableResult
-    func requestHealthKitAuthorizationAndSync() async -> Bool {
-        guard healthKit.isAvailable else {
+    func requestAuthorizationAndSync() async -> Bool {
+        guard let provider, provider.isAvailable else {
             userDataStore.walkingSpeedSource = .manual
             return false
         }
@@ -52,9 +54,9 @@ final class WalkingSpeedManager {
         let generation = syncGeneration
 
         do {
-            try await healthKit.requestAuthorization()
+            try await provider.requestAuthorization()
         } catch {
-            Logger.error("WalkingSpeedManager: HealthKit requestAuthorization failed: \(error)")
+            Logger.error("WalkingSpeedManager: provider requestAuthorization failed: \(error)")
             guard generation == syncGeneration else { return false }
             userDataStore.walkingSpeedSource = .manual
             return false
@@ -62,22 +64,22 @@ final class WalkingSpeedManager {
 
         guard generation == syncGeneration else { return false }
 
-        let didSync = await syncLatestWalkingSpeed(expectedGeneration: generation)
+        let didSync = await syncLatestWalkingSpeed(from: provider, expectedGeneration: generation)
         if !didSync, generation == syncGeneration {
             userDataStore.walkingSpeedSource = .manual
         }
         return didSync
     }
 
-    /// Passive refresh used at launch when the user already opted into HealthKit previously.
+    /// Passive refresh used at launch when the user already opted into speed sync.
     /// Updates `walkingSpeedMetersPerSecond` if a fresh sample is available, but never
     /// flips `walkingSpeedSource` to `.manual` — an idle user (e.g. left their Apple Watch
     /// at home for a month) keeps their previously-synced value and their stated intent.
     /// Only the active toggle-on path in Settings can downgrade the source.
-    func refreshFromHealthKitIfPossible() async {
-        guard healthKit.isAvailable else { return }
+    func refreshIfPossible() async {
+        guard let provider, provider.isAvailable else { return }
         let generation = syncGeneration
-        await syncLatestWalkingSpeed(expectedGeneration: generation)
+        await syncLatestWalkingSpeed(from: provider, expectedGeneration: generation)
     }
 
     /// Fetches the latest walking-speed sample and writes it to the store if it's in `WalkingSpeed.validRange`.
@@ -86,8 +88,8 @@ final class WalkingSpeedManager {
     /// When `expectedGeneration` no longer matches (opt-out raced the sync), the write is
     /// abandoned and `false` is returned without touching the store.
     @discardableResult
-    private func syncLatestWalkingSpeed(expectedGeneration: Int? = nil) async -> Bool {
-        guard let mps = await healthKit.fetchLatestWalkingSpeed(),
+    private func syncLatestWalkingSpeed(from provider: any SpeedProviding, expectedGeneration: Int? = nil) async -> Bool {
+        guard let mps = await provider.fetchSpeed(),
               WalkingSpeed.validRange.contains(mps)
         else {
             return false
@@ -98,7 +100,7 @@ final class WalkingSpeedManager {
         }
 
         userDataStore.walkingSpeedMetersPerSecond = mps
-        userDataStore.walkingSpeedSource = .healthKit
+        userDataStore.walkingSpeedSource = .synced
         return true
     }
 }

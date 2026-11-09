@@ -6,8 +6,9 @@ require "open3"
 
 args = ARGV.dup
 no_watch = args.delete("--no-watch")
+healthkit = args.delete("--healthkit")
 app = args.shift
-abort "Unknown argument(s): #{args.join(' ')}. Usage: scripts/generate_project <APP NAME> [--no-watch]" unless args.empty?
+abort "Unknown argument(s): #{args.join(' ')}. Usage: scripts/generate_project <APP NAME> [--no-watch] [--healthkit]" unless args.empty?
 
 if app.nil?
   display_usage_information
@@ -28,6 +29,15 @@ else
   ENV["OBA_WATCH"] = "true"
 end
 
+# Same mechanism as OBA_WATCH, but off by default: App Review rejected the Apple
+# Health integration, so no build includes it unless asked. See
+# Apps/Shared/HealthKit/README.md.
+if healthkit
+  ENV["OBA_HEALTHKIT"] = "true"
+else
+  ENV.delete("OBA_HEALTHKIT")
+end
+
 generate_project(app)
 check_watch_identity(app) unless no_watch
 
@@ -35,13 +45,14 @@ puts `scripts/version`
 
 BEGIN {
   def display_usage_information
-    puts "Usage: scripts/generate_project <APP NAME> [--no-watch]"
+    puts "Usage: scripts/generate_project <APP NAME> [--no-watch] [--healthkit]"
     puts "Available Apps:"
     apps = (Dir.glob("Apps/*") - ["Apps/Shared"]).sort
     apps.each do |app|
       puts "  #{app.split("/").last}"
     end
     puts "  --no-watch   skip the watch targets (faster iOS-only builds; no watchOS platform needed)"
+    puts "  --healthkit  include the Apple Health integration (Apps/Shared/healthkit.yml)"
   end
 
   def check_for_project_file(app)

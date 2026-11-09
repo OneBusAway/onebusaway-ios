@@ -1155,17 +1155,8 @@
 /* Settings > Bike Mode section footer */
 "settings_controller.bike_mode_section.footer" = "在到站時間估算、預計抵達時間與站牌頁面中使用較快的移動速度。";
 
-/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ 可以從「健康」App 讀取你的騎乘速度。它從不將資料寫入「健康」。";
-
 /* Settings > Bike Mode > on/off toggle */
 "settings_controller.bike_mode.title" = "騎乘模式";
-
-/* Settings > Bike Mode section > HealthKit toggle */
-"settings_controller.bike_mode.use_healthkit" = "使用「健康」App 資料";
-
-/* Settings > Bike Mode > HealthKit denial or no-data toast */
-"settings_controller.bike_mode.healthkit_unavailable" = "無法從「健康」同步騎乘速度。將使用標準騎乘速度。";
 
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "每次啟動時重新整理區域";
@@ -1233,20 +1224,11 @@
 /* Settings > Walking Speed > Fast preset label */
 "settings_controller.walking_speed.fast" = "快（約 6.5 公里/小時）";
 
-/* Settings > Walking Speed > HealthKit denial or no-data toast */
-"settings_controller.walking_speed.healthkit_unavailable" = "無法從「健康」同步步行速度。請檢查「設定」>「隱私權與安全性」>「健康」以允許取用。";
-
 /* Settings > Walking Speed > Slow preset label */
 "settings_controller.walking_speed.slow" = "慢（約 3 公里/小時）";
 
 /* Settings > Walking Speed section > Speed picker */
 "settings_controller.walking_speed.title" = "步行速度";
-
-/* Settings > Walking Speed section > HealthKit toggle */
-"settings_controller.walking_speed.use_healthkit" = "使用「健康」App 資料";
-
-/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
-"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ 可以從「健康」App 讀取你的步行速度，以估算你走到站牌所需的時間。它從不將資料寫入「健康」。";
 
 /* Settings > Walking Speed section title */
 "settings_controller.walking_speed_section.title" = "步行速度";

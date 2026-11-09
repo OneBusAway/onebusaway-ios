@@ -1,6 +1,6 @@
 //
-//  WalkingSpeedHealthKitProviding.swift
-//  OBAKit
+//  HKHealthStoreWalkingSpeedProvider.swift
+//  OneBusAway
 //
 //  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
@@ -9,25 +9,11 @@
 
 import Foundation
 import HealthKit
+import OBAKit
 import OBAKitCore
 
-/// Narrow seam around the two HealthKit operations `WalkingSpeedManager` needs.
-/// Exists so the manager's denial/sync state machine can be tested without a live `HKHealthStore`.
-protocol WalkingSpeedHealthKitProviding {
-    /// `true` when HealthKit is usable on this device and the walking-speed quantity type is available.
-    var isAvailable: Bool { get }
-
-    /// Requests read authorization for walking-speed samples.
-    /// May complete successfully even when the user denies — denial is detected by the absence of samples.
-    func requestAuthorization() async throws
-
-    /// Returns the most recent walking-speed sample (m/s) from the last 30 days, or `nil` if none exists or the query fails.
-    /// Does not apply range validation; the caller decides what counts as a usable sample.
-    func fetchLatestWalkingSpeed() async -> Double?
-}
-
-struct HKHealthStoreWalkingSpeedProvider: WalkingSpeedHealthKitProviding {
-    private let healthStore = HKHealthStore()
+struct HKHealthStoreWalkingSpeedProvider: SpeedProviding {
+    let healthStore: HKHealthStore
 
     private static var walkingSpeedType: HKQuantityType? {
         HKQuantityType.quantityType(forIdentifier: .walkingSpeed)
@@ -42,7 +28,8 @@ struct HKHealthStoreWalkingSpeedProvider: WalkingSpeedHealthKitProviding {
         try await healthStore.requestAuthorization(toShare: [], read: [type])
     }
 
-    func fetchLatestWalkingSpeed() async -> Double? {
+    /// The most recent sample.
+    func fetchSpeed() async -> Double? {
         guard let type = Self.walkingSpeedType else { return nil }
 
         let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? .distantPast

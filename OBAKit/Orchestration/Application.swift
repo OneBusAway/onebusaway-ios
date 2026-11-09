@@ -64,7 +64,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// App configuration parameters: API keys, region server, user UUID, and other
     /// configuration values.
-    private let config: AppConfig
+    let config: AppConfig
 
     // MARK: - Public Properties
 
@@ -103,7 +103,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     lazy var toastManager = ToastManager()
 
     @MainActor
-    lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore)
+    lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore, provider: config.speedSync?.walkingProvider)
 
     /// Owns the rider's destination proximity alerts.
     ///
@@ -118,7 +118,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     )
 
     @MainActor
-    lazy var bikeModeManager = BikeModeManager(userDataStore: userDataStore)
+    lazy var bikeModeManager = BikeModeManager(userDataStore: userDataStore, provider: config.speedSync?.bikeProvider)
 
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
@@ -494,16 +494,34 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         startStopSpotlightIndexing()
 
-        if userDataStore.walkingSpeedSource == .healthKit {
-            Task { await walkingSpeedManager.refreshFromHealthKitIfPossible() }
+        retireSyncedSpeedsIfUnsupported()
+
+        if userDataStore.walkingSpeedSource == .synced {
+            Task { await walkingSpeedManager.refreshIfPossible() }
         }
 
         // Matches the walking-speed refresh above: gated on the sync source alone, not
         // on whether Bike Mode is currently toggled on. The header's bike chip is always
         // shown regardless of mode, so a rider who synced once and later turned Bike Mode
         // off would otherwise keep a frozen cycling-speed ETA on every stop header forever.
-        if userDataStore.bikeSpeedSource == .healthKit {
-            Task { await bikeModeManager.refreshFromHealthKitIfPossible() }
+        if userDataStore.bikeSpeedSource == .synced {
+            Task { await bikeModeManager.refreshIfPossible() }
+        }
+    }
+
+    /// A rider who synced a speed on a build with a provider keeps that speed on a build
+    /// without one, or on a device where it is unavailable, as a manual value: nothing can
+    /// refresh it, and Settings has no switch to turn it off. Walking snaps to the preset
+    /// the picker shows, as an opt-out does.
+    func retireSyncedSpeedsIfUnsupported() {
+        guard config.speedSync?.isAvailable != true else { return }
+
+        if userDataStore.walkingSpeedSource == .synced {
+            walkingSpeedManager.stopSyncing()
+        }
+
+        if userDataStore.bikeSpeedSource == .synced {
+            bikeModeManager.stopSyncing()
         }
     }
 

@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import HealthKit
 import Observation
 import OBAKitCore
 
@@ -16,7 +15,7 @@ import OBAKitCore
 ///
 /// Every setting is seeded from where it's stored in `init`, and written back the
 /// moment it changes. Seeding in `init` is what keeps opening Settings free of side
-/// effects: `didSet` doesn't run there, so no HealthKit sync starts, no source is
+/// effects: `didSet` doesn't run there, so no speed sync starts, no source is
 /// downgraded and no toast appears until the rider actually flips a switch (#1458.2).
 /// Writing on change means nothing is lost when the rider kills the app to make an
 /// Experimental or Debug setting take effect.
@@ -33,16 +32,16 @@ final class SettingsViewModel {
     /// it. Set by the hosting controller.
     @ObservationIgnored var share: (Result<URL, Error>) -> Void = { _ in }
 
-    /// Identifies the latest HealthKit sync per switch. Minted on every toggle-on; a
+    /// Identifies the latest speed sync per switch. Minted on every toggle-on; a
     /// stale completion (off → on while an older sync was still in flight) sees a
     /// mismatched ID and leaves the switch and toast alone.
-    @ObservationIgnored private var walkingHealthKitSyncID = 0
-    @ObservationIgnored private var bikeHealthKitSyncID = 0
+    @ObservationIgnored private var walkingSpeedSyncID = 0
+    @ObservationIgnored private var bikeSpeedSyncID = 0
 
     // MARK: - Static Context
 
-    /// Whether the HealthKit switches are offered at all.
-    let isHealthKitAvailable: Bool
+    /// The app's copy for the speed sync switches, or `nil` when they aren't offered.
+    let speedSyncText: SpeedSyncText?
 
     /// Whether the Privacy section is shown: there's nothing to opt out of without analytics.
     let hasAnalytics: Bool
@@ -61,9 +60,9 @@ final class SettingsViewModel {
 
     // MARK: - Init
 
-    init(application: Application, isHealthKitAvailable: Bool = HKHealthStore.isHealthDataAvailable()) {
+    init(application: Application) {
         self.application = application
-        self.isHealthKitAvailable = isHealthKitAvailable
+        speedSyncText = application.config.speedSync.flatMap { $0.isAvailable ? $0.text : nil }
 
         let defaults = application.userDefaults
         let store = application.userDataStore
@@ -97,10 +96,10 @@ final class SettingsViewModel {
         compactsStopAndTripPages = store.stopTripCompactMode
 
         walkingSpeed = WalkingSpeedPreset.nearest(to: store.walkingSpeedMetersPerSecond)
-        walkingSpeedUsesHealthKit = store.walkingSpeedSource == .healthKit
+        walkingSpeedIsSynced = store.walkingSpeedSource == .synced
 
         bikeModeEnabled = store.bikeModeEnabled
-        bikeSpeedUsesHealthKit = store.bikeSpeedSource == .healthKit
+        bikeSpeedIsSynced = store.bikeSpeedSource == .synced
 
         alwaysShowsSurveysOnStops = store.alwaysShowSurveysOnStops
         reportingEnabled = application.analytics?.reportingEnabled() ?? false
@@ -196,34 +195,26 @@ final class SettingsViewModel {
 
     // MARK: - Walking Speed
 
-    /// The manual speed. Read-only in the UI while `walkingSpeedUsesHealthKit` is on.
+    /// The manual speed. Read-only in the UI while `walkingSpeedIsSynced` is on.
     var walkingSpeed: WalkingSpeedPreset {
         didSet { application.userDataStore.walkingSpeedMetersPerSecond = walkingSpeed.rawValue }
     }
 
-    var walkingSpeedUsesHealthKit: Bool {
+    var walkingSpeedIsSynced: Bool {
         didSet {
-            guard walkingSpeedUsesHealthKit != oldValue else { return }
-            if walkingSpeedUsesHealthKit {
-                // The manager writes `.healthKit` itself once a usable sample lands.
-                syncFromHealthKit(
-                    application.walkingSpeedManager.requestHealthKitAuthorizationAndSync,
-                    syncID: \.walkingHealthKitSyncID,
-                    isOn: \.walkingSpeedUsesHealthKit,
-                    failureMessage: OBALoc(
-                        "settings_controller.walking_speed.healthkit_unavailable",
-                        value: "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.",
-                        comment: "Settings > Walking Speed > HealthKit denial or no-data toast"
-                    )
+            guard walkingSpeedIsSynced != oldValue else { return }
+            if walkingSpeedIsSynced {
+                // The manager writes `.synced` itself once a usable sample lands.
+                syncSpeed(
+                    application.walkingSpeedManager.requestAuthorizationAndSync,
+                    syncID: \.walkingSpeedSyncID,
+                    isOn: \.walkingSpeedIsSynced,
+                    failureMessage: speedSyncText?.walkingFailureMessage
                 )
             } else {
-                // Invalidate a sync still in flight before persisting `.manual`, so its
-                // trailing write can't resurrect `.healthKit` (#1458.3). Back on manual,
-                // the speed is the nearest preset to the stored speed, re-read here because
-                // a sync during this visit may have changed it since `init` seeded the picker.
-                // Assigning `walkingSpeed` persists it through its own `didSet`.
-                application.walkingSpeedManager.cancelPendingSync()
-                application.userDataStore.walkingSpeedSource = .manual
+                // Re-read the speed, because a sync during this visit may have changed
+                // it since `init` seeded the picker (#1458.3).
+                application.walkingSpeedManager.stopSyncing()
                 walkingSpeed = WalkingSpeedPreset.nearest(to: application.userDataStore.walkingSpeedMetersPerSecond)
             }
         }
@@ -235,39 +226,31 @@ final class SettingsViewModel {
         didSet { application.userDataStore.bikeModeEnabled = bikeModeEnabled }
     }
 
-    var bikeSpeedUsesHealthKit: Bool {
+    var bikeSpeedIsSynced: Bool {
         didSet {
-            guard bikeSpeedUsesHealthKit != oldValue else { return }
-            if bikeSpeedUsesHealthKit {
-                // The manager writes `.healthKit` itself once a usable sample lands.
-                syncFromHealthKit(
-                    application.bikeModeManager.requestHealthKitAuthorizationAndSync,
-                    syncID: \.bikeHealthKitSyncID,
-                    isOn: \.bikeSpeedUsesHealthKit,
-                    failureMessage: OBALoc(
-                        "settings_controller.bike_mode.healthkit_unavailable",
-                        value: "Couldn't sync cycling speed from Health. Using a standard biking speed instead.",
-                        comment: "Settings > Bike Mode > HealthKit denial or no-data toast"
-                    )
+            guard bikeSpeedIsSynced != oldValue else { return }
+            if bikeSpeedIsSynced {
+                // The manager writes `.synced` itself once a usable sample lands.
+                syncSpeed(
+                    application.bikeModeManager.requestAuthorizationAndSync,
+                    syncID: \.bikeSpeedSyncID,
+                    isOn: \.bikeSpeedIsSynced,
+                    failureMessage: speedSyncText?.bikeFailureMessage
                 )
             } else {
-                // Cancel first so a sync in flight can't write `.healthKit` back over
-                // this opt-out when it lands (#1458.3). Unlike walking there's no
-                // manual speed to snap to; the stored speed stays as it is.
-                application.bikeModeManager.cancelPendingSync()
-                application.userDataStore.bikeSpeedSource = .manual
+                application.bikeModeManager.stopSyncing()
             }
         }
     }
 
-    /// Runs a HealthKit authorization and sync for a switch the rider just turned on.
+    /// Runs a speed provider authorization and sync for a switch the rider just turned on.
     /// On failure, turns the switch back off and toasts — unless a newer toggle-on has
     /// taken over the switch, or the rider already turned it off themselves.
-    private func syncFromHealthKit(
+    private func syncSpeed(
         _ requestAuthorizationAndSync: @escaping () async -> Bool,
         syncID: ReferenceWritableKeyPath<SettingsViewModel, Int>,
         isOn: ReferenceWritableKeyPath<SettingsViewModel, Bool>,
-        failureMessage: String
+        failureMessage: String?
     ) {
         self[keyPath: syncID] += 1
         let id = self[keyPath: syncID]
@@ -275,7 +258,7 @@ final class SettingsViewModel {
             let granted = await requestAuthorizationAndSync()
             guard !granted, id == self[keyPath: syncID], self[keyPath: isOn] else { return }
             self[keyPath: isOn] = false
-            showErrorToast(failureMessage)
+            if let failureMessage { showErrorToast(failureMessage) }
         }
     }
 

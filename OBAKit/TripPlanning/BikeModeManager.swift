@@ -8,47 +8,48 @@
 //
 
 import Foundation
-import HealthKit
 import OBAKitCore
 
-/// Resolves the user's cycling speed from HealthKit (if authorized) or falls back to
+/// Resolves the user's cycling speed from the app's speed provider (if it has one and is authorized) or falls back to
 /// `BikeSpeed.defaultMetersPerSecond`. Does not own whether Bike Mode itself is enabled —
 /// that's `UserDataStore.bikeModeEnabled`, set directly by the Settings UI. This manager only
 /// owns `bikeSpeedMetersPerSecond` / `bikeSpeedSource`.
 @MainActor
 final class BikeModeManager {
-    private let healthKit: BikeSpeedHealthKitProviding
+    private let provider: (any SpeedProviding)?
     private let userDataStore: UserDataStore
 
-    /// Bumped every time the user opts out of HealthKit so a sync that started earlier
-    /// cannot write `.healthKit` back over the `.manual` the opt-out persisted (#1458.3).
+    /// Bumped every time the user opts out of speed sync so a sync that started earlier
+    /// cannot write `.synced` back over the `.manual` the opt-out persisted (#1458.3).
     private var syncGeneration = 0
 
-    init(userDataStore: UserDataStore, healthKit: BikeSpeedHealthKitProviding = HKHealthStoreBikeSpeedProvider()) {
+    init(userDataStore: UserDataStore, provider: (any SpeedProviding)?) {
         self.userDataStore = userDataStore
-        self.healthKit = healthKit
+        self.provider = provider
     }
 
-    /// Invalidates any sync still in flight. Call it before persisting a HealthKit opt-out
-    /// so the stale sync's trailing write is abandoned instead of resurrecting `.healthKit`.
-    func cancelPendingSync() {
+    /// Leaves speed sync, abandoning any sync still in flight so it can't write `.synced`
+    /// back over the `.manual` persisted here.
+    /// Unlike walking there's no manual speed to snap to; the stored speed stays as it is.
+    func stopSyncing() {
         syncGeneration += 1
+        userDataStore.bikeSpeedSource = .manual
     }
 
-    /// Requests HealthKit authorization and attempts to sync the average cycling speed.
+    /// Requests the provider's authorization and attempts to sync the average cycling speed.
     ///
-    /// Apple's HealthKit privacy model does not surface read-permission denials: the
+    /// The provider's privacy model does not surface read-permission denials: the
     /// authorization request succeeds even when the user taps "Don't Allow", and a
     /// subsequent query just returns no samples. To avoid leaving the source stuck on
-    /// HealthKit for a denying user, success here is defined as "actually retrieved a usable
+    /// speed sync for a denying user, success here is defined as "actually retrieved a usable
     /// sample". A user who genuinely granted access but has no recent cycling-speed samples
     /// (e.g. no Apple Watch) is also routed to `.manual` — that's intentional.
     ///
-    /// A sync invalidated by `cancelPendingSync()` (the user opted out while it was in
+    /// A sync invalidated by `stopSyncing()` (the user opted out while it was in
     /// flight) abandons without touching the store, so the opt-out wins.
     @discardableResult
-    func requestHealthKitAuthorizationAndSync() async -> Bool {
-        guard healthKit.isAvailable else {
+    func requestAuthorizationAndSync() async -> Bool {
+        guard let provider, provider.isAvailable else {
             userDataStore.bikeSpeedSource = .manual
             return false
         }
@@ -56,9 +57,9 @@ final class BikeModeManager {
         let generation = syncGeneration
 
         do {
-            try await healthKit.requestAuthorization()
+            try await provider.requestAuthorization()
         } catch {
-            Logger.error("BikeModeManager: HealthKit requestAuthorization failed: \(error)")
+            Logger.error("BikeModeManager: provider requestAuthorization failed: \(error)")
             guard generation == syncGeneration else { return false }
             userDataStore.bikeSpeedSource = .manual
             return false
@@ -66,21 +67,21 @@ final class BikeModeManager {
 
         guard generation == syncGeneration else { return false }
 
-        let didSync = await syncAverageBikeSpeed(expectedGeneration: generation)
+        let didSync = await syncAverageBikeSpeed(from: provider, expectedGeneration: generation)
         if !didSync, generation == syncGeneration {
             userDataStore.bikeSpeedSource = .manual
         }
         return didSync
     }
 
-    /// Passive refresh used at launch when the user already opted into HealthKit previously.
+    /// Passive refresh used at launch when the user already opted into speed sync.
     /// Updates `bikeSpeedMetersPerSecond` if a fresh sample is available, but never flips
     /// `bikeSpeedSource` to `.manual` — an idle user keeps their previously-synced value and
     /// their stated intent. Only the active sync path in Settings can downgrade the source.
-    func refreshFromHealthKitIfPossible() async {
-        guard healthKit.isAvailable else { return }
+    func refreshIfPossible() async {
+        guard let provider, provider.isAvailable else { return }
         let generation = syncGeneration
-        await syncAverageBikeSpeed(expectedGeneration: generation)
+        await syncAverageBikeSpeed(from: provider, expectedGeneration: generation)
     }
 
     /// Fetches the average cycling speed and writes it to the store if it's in `BikeSpeed.validRange`.
@@ -89,8 +90,8 @@ final class BikeModeManager {
     /// When `expectedGeneration` no longer matches (opt-out raced the sync), the write is
     /// abandoned and `false` is returned without touching the store.
     @discardableResult
-    private func syncAverageBikeSpeed(expectedGeneration: Int? = nil) async -> Bool {
-        guard let mps = await healthKit.fetchAverageBikeSpeed(),
+    private func syncAverageBikeSpeed(from provider: any SpeedProviding, expectedGeneration: Int? = nil) async -> Bool {
+        guard let mps = await provider.fetchSpeed(),
               BikeSpeed.validRange.contains(mps)
         else {
             return false
@@ -101,7 +102,7 @@ final class BikeModeManager {
         }
 
         userDataStore.bikeSpeedMetersPerSecond = mps
-        userDataStore.bikeSpeedSource = .healthKit
+        userDataStore.bikeSpeedSource = .synced
         return true
     }
 }

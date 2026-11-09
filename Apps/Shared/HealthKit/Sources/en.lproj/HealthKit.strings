@@ -1,0 +1,14 @@
+/* Settings > Bike Mode > HealthKit denial or no-data toast */
+"settings_controller.bike_mode.healthkit_unavailable" = "Couldn't sync cycling speed from Health. Using a standard biking speed instead.";
+
+/* Settings > Bike Mode section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.bike_mode_section.healthkit_footer_fmt" = "%@ can read your cycling speed from Apple Health. It never writes to Health.";
+
+/* Settings > Walking Speed > HealthKit denial or no-data toast */
+"settings_controller.walking_speed.healthkit_unavailable" = "Couldn't sync walking speed from Health. Check Settings > Privacy & Security > Health to allow access.";
+
+/* Settings > Walking Speed and Bike Mode sections > HealthKit toggle */
+"settings_controller.use_healthkit" = "Use Health app data";
+
+/* Settings > Walking Speed section footer identifying the Apple Health integration; the argument is the app name */
+"settings_controller.walking_speed_section.healthkit_footer_fmt" = "%@ can read your walking speed from Apple Health to estimate how long it takes you to reach a stop. It never writes to Health.";
