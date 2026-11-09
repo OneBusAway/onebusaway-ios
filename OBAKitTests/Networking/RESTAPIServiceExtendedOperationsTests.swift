@@ -97,7 +97,7 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
 
     // MARK: - getScheduleForStop with Date
 
-    @Test func `getScheduleForStop includes date timestamp in request query`() async throws {
+    @Test func `getScheduleForStop includes formatted date in request query`() async throws {
         let stopID = "1_75403"
         let date = Date(timeIntervalSince1970: 1_600_000_000)
         let fixtureData = Fixtures.loadData(file: "schedule-for-stop_1_75403.json")
@@ -105,7 +105,7 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
         dataLoader.mock(data: fixtureData) { request in
             guard let url = request.url else { return false }
             return url.path.contains("/api/where/schedule-for-stop/\(stopID).json") &&
-                url.containsQueryParams(["date": "1600000000000"])
+                url.containsQueryParams(["date": "2020-09-13"])
         }
 
         let response = try await restService.getScheduleForStop(stopID: stopID, date: date)
@@ -114,7 +114,7 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
 
     // MARK: - getScheduleForRoute with Date
 
-    @Test func `getScheduleForRoute includes date timestamp in request query`() async throws {
+    @Test func `getScheduleForRoute includes formatted date in request query`() async throws {
         let routeID = "1_100223"
         let date = Date(timeIntervalSince1970: 1_600_000_000)
         let fixtureData = Fixtures.loadData(file: "schedule-for-route_1_100223.json")
@@ -122,7 +122,7 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
         dataLoader.mock(data: fixtureData) { request in
             guard let url = request.url else { return false }
             return url.path.contains("/api/where/schedule-for-route/\(routeID).json") &&
-                url.containsQueryParams(["date": "1600000000000"])
+                url.containsQueryParams(["date": "2020-09-13"])
         }
 
         let response = try await restService.getScheduleForRoute(routeID: routeID, date: date)
@@ -142,8 +142,13 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
             request.url?.path == notFoundURL.path
         }
 
-        await #expect(throws: (any Error).self) {
-            try await restService.getStop(id: nonExistentStopID)
+        do {
+            _ = try await restService.getStop(id: nonExistentStopID)
+            Issue.record("Expected APIError.requestNotFound")
+        } catch APIError.requestNotFound(let response) {
+            #expect(response.statusCode == 404)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
@@ -158,8 +163,13 @@ final class RESTAPIServiceExtendedOperationsTests: OBATestCase {
             request.url?.path == serverErrorURL.path
         }
 
-        await #expect(throws: (any Error).self) {
-            try await restService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 5, minutesAfter: 35)
+        do {
+            _ = try await restService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 5, minutesAfter: 35)
+            Issue.record("Expected APIError.requestFailure")
+        } catch APIError.requestFailure(let response) {
+            #expect(response.statusCode == 500)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 }
