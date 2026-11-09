@@ -22,9 +22,9 @@ struct OnDemandGeometryDetailTests {
     }
 
     @Test func `OnDemandGeometryDetail initializes correctly from valid strings`() {
-        #expect(OnDemandGeometryDetail(rawValue: "none") == .none)
-        #expect(OnDemandGeometryDetail(rawValue: "simplified") == .simplified)
-        #expect(OnDemandGeometryDetail(rawValue: "full") == .full)
+        #expect(OnDemandGeometryDetail(rawValue: "none") == OnDemandGeometryDetail.none)
+        #expect(OnDemandGeometryDetail(rawValue: "simplified") == OnDemandGeometryDetail.simplified)
+        #expect(OnDemandGeometryDetail(rawValue: "full") == OnDemandGeometryDetail.full)
         #expect(OnDemandGeometryDetail(rawValue: "unknown") == nil)
         #expect(OnDemandGeometryDetail(rawValue: "") == nil)
     }

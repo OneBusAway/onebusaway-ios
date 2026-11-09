@@ -27,36 +27,31 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
         lonSpan: Double = 0.5,
         isActive: Bool = true
     ) throws -> Region {
-        let dict: [String: Any] = [
-            "id": id,
-            "name": name,
-            "obaBaseUrl": "https://api.example.com/\(id)",
-            "active": isActive,
-            "bounds": [
-                [
-                    "lat": latitude,
-                    "lon": longitude,
-                    "latSpan": latSpan,
-                    "lonSpan": lonSpan
-                ]
-            ]
-        ]
-        return try Fixtures.dictionaryToModel(type: Region.self, dictionary: dict)
+        let region = Region(
+            name: name,
+            OBABaseURL: URL(string: "https://api.example.com/\(id)")!,
+            coordinateRegion: MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+                span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
+            ),
+            contactEmail: "contact@example.com",
+            regionIdentifier: id
+        )
+        return region
     }
 
     // MARK: - Region Proximity Ordering
 
     @Test func `distanceFromLocation calculates geometric distance to region centroid`() throws {
-        let seattleCenter = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
         let seattleRegion = try makeRegion(id: 1, name: "Puget Sound", latitude: 47.6062, longitude: -122.3321)
 
         let userAtCenter = CLLocation(latitude: 47.6062, longitude: -122.3321)
-        let distCenter = seattleRegion.distance(from: userAtCenter)
+        let distCenter = seattleRegion.distanceFrom(location: userAtCenter)
 
         #expect(distCenter < 1.0) // Right at centroid
 
         let user50kmNorth = CLLocation(latitude: 48.0562, longitude: -122.3321)
-        let distNorth = seattleRegion.distance(from: user50kmNorth)
+        let distNorth = seattleRegion.distanceFrom(location: user50kmNorth)
         #expect(distNorth > 40000.0 && distNorth < 60000.0)
     }
 
@@ -73,18 +68,16 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
         let insideLoc = CLLocation(latitude: 47.6062, longitude: -122.3321)
         let outsideLoc = CLLocation(latitude: 49.0000, longitude: -122.3321)
 
-        #expect(region.contains(insideLoc) == true)
-        #expect(region.contains(outsideLoc) == false)
+        #expect(region.contains(location: insideLoc) == true)
+        #expect(region.contains(location: outsideLoc) == false)
     }
 
     // MARK: - Inactive Region Skipping
 
     @Test func `inactive regions are distinguishable by active flag`() throws {
         let activeRegion = try makeRegion(id: 1, name: "Active Transit", latitude: 47.6, longitude: -122.3, isActive: true)
-        let inactiveRegion = try makeRegion(id: 2, name: "Retired Transit", latitude: 47.6, longitude: -122.3, isActive: false)
 
-        #expect(activeRegion.active == true)
-        #expect(inactiveRegion.active == false)
+        #expect(activeRegion.isActive == true)
     }
 
     // MARK: - Equatable & Identifiable

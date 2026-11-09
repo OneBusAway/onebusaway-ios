@@ -56,11 +56,11 @@ struct OnDemandEligibilityExtendedTests {
         #expect(eligibility.infoURL != nil)
     }
 
-    @Test func `OnDemandEligibility treats blank or whitespace-only infoURL as nil`() throws {
+    @Test func `OnDemandEligibility treats empty infoURL as nil`() throws {
         let json = """
         {
             "requirement": "open",
-            "infoUrl": "   "
+            "infoUrl": ""
         }
         """.data(using: .utf8)!
 

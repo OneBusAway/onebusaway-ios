@@ -32,9 +32,9 @@ final class BookmarkDestinationStatusTests: OBATestCase {
         let date1 = Date(timeIntervalSince1970: 1700000000)
         let date2 = Date(timeIntervalSince1970: 1700000600)
 
-        let arrival1 = DestinationArrival(destinationArrivalTime: date1, tripHeadsign: "Downtown")
-        let arrival2 = DestinationArrival(destinationArrivalTime: date1, tripHeadsign: "Downtown")
-        let arrival3 = DestinationArrival(destinationArrivalTime: date2, tripHeadsign: "Downtown")
+        let arrival1 = DestinationArrival(arrivalDate: date1, scheduledArrivalDate: date1, isRealTime: true)
+        let arrival2 = DestinationArrival(arrivalDate: date1, scheduledArrivalDate: date1, isRealTime: true)
+        let arrival3 = DestinationArrival(arrivalDate: date2, scheduledArrivalDate: date2, isRealTime: false)
 
         let status1 = BookmarkDestinationStatus.arrives(arrival1)
         let status2 = BookmarkDestinationStatus.arrives(arrival2)

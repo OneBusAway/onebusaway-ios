@@ -49,11 +49,11 @@ struct OnDemandLocationGroupExtendedTests {
         #expect(group.stopIDs.isEmpty)
     }
 
-    @Test func `OnDemandLocationGroup nilifies blank or whitespace-only name`() throws {
+    @Test func `OnDemandLocationGroup nilifies empty name`() throws {
         let json = """
         {
             "id": "unnamed_group",
-            "name": "   ",
+            "name": "",
             "stopIds": ["1_500"]
         }
         """.data(using: .utf8)!

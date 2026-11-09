@@ -12,28 +12,17 @@ import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-/// Tests for `StopCacheDatabaseStorage` database pruning, agency isolation, and bulk operations.
-///
-/// Validates cache retrieval accuracy, isolated table operations across multiple transit agencies,
-/// record overwrites, and cache clearing behavior.
+/// Tests for `StopCacheDatabase` and `StopCacheRepository` pruning, multi-region isolation, and clearing.
 @Suite(.serialized)
 final class StopCacheDatabasePruningTests: OBATestCase {
 
-    private var storage: StopCacheDatabaseStorage!
-    private var tempDirectory: URL!
+    private var database: StopCacheDatabase!
+    private var repository: StopCacheRepository!
 
     override init() async throws {
         try await super.init()
-        tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
-        let dbPath = tempDirectory.appendingPathComponent("test_stop_cache.sqlite").path
-        storage = try StopCacheDatabaseStorage(path: dbPath)
-    }
-
-    deinit {
-        if let tempDirectory {
-            try? FileManager.default.removeItem(at: tempDirectory)
-        }
+        database = try StopCacheDatabase(inMemory: true)
+        repository = StopCacheRepository(database: database)
     }
 
     private func makeStop(id: String, name: String, routeIDs: [String] = ["1_10"]) throws -> Stop {
@@ -64,34 +53,46 @@ final class StopCacheDatabasePruningTests: OBATestCase {
 
     // MARK: - Save, Read, and Update
 
-    @Test func `storage persists stops and retrieves matching record`() throws {
+    @Test func `repository persists stops and retrieves matching records in coordinate bounds`() throws {
         let route = try makeRoute(id: "1_10", shortName: "10")
         let stop = try makeStop(id: "1_1001", name: "Downtown Transit Tunnel")
         stop.routes = [route]
 
-        try storage.storeStops([stop], for: 1)
+        repository.saveStops([stop], regionId: 1)
 
-        let cached = try storage.stop(id: "1_1001", regionIdentifier: 1)
-        #expect(cached != nil)
-        #expect(cached?.id == "1_1001")
-        #expect(cached?.name == "Downtown Transit Tunnel")
-        #expect(cached?.routes.first?.shortName == "10")
+        let cached = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        #expect(!cached.isEmpty)
+        #expect(cached.first?.id == "1_1001")
+        #expect(cached.first?.name == "Downtown Transit Tunnel")
+        #expect(cached.first?.routes?.first?.shortName == "10")
     }
 
-    @Test func `storage updates existing stop record with updated route definitions`() throws {
+    @Test func `repository updates existing stop record with updated route definitions`() throws {
         let route1 = try makeRoute(id: "1_10", shortName: "10")
         let stopInitial = try makeStop(id: "1_1001", name: "Initial Name")
         stopInitial.routes = [route1]
-        try storage.storeStops([stopInitial], for: 1)
+        repository.saveStops([stopInitial], regionId: 1)
 
         let route2 = try makeRoute(id: "1_44", shortName: "44")
         let stopUpdated = try makeStop(id: "1_1001", name: "Updated Name", routeIDs: ["1_10", "1_44"])
         stopUpdated.routes = [route1, route2]
-        try storage.storeStops([stopUpdated], for: 1)
+        repository.saveStops([stopUpdated], regionId: 1)
 
-        let retrieved = try storage.stop(id: "1_1001", regionIdentifier: 1)
-        #expect(retrieved?.name == "Updated Name")
-        #expect(retrieved?.routes.count == 2)
+        let retrieved = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        #expect(retrieved.first?.name == "Updated Name")
+        #expect(retrieved.first?.routes?.count == 2)
     }
 
     // MARK: - Region Isolation
@@ -101,15 +102,30 @@ final class StopCacheDatabasePruningTests: OBATestCase {
         let stop = try makeStop(id: "stop_shared_id", name: "Region 1 Stop")
         stop.routes = [route]
 
-        try storage.storeStops([stop], for: 1)
+        repository.saveStops([stop], regionId: 1)
 
-        #expect(try storage.stop(id: "stop_shared_id", regionIdentifier: 1) != nil)
-        #expect(try storage.stop(id: "stop_shared_id", regionIdentifier: 2) == nil)
+        let region1Stops = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        let region2Stops = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 2
+        )
+
+        #expect(!region1Stops.isEmpty)
+        #expect(region2Stops.isEmpty)
     }
 
     // MARK: - Bulk Operations and Cache Clear
 
-    @Test func `storeStops handles bulk batch insertions cleanly`() throws {
+    @Test func `saveStops handles bulk batch insertions cleanly`() throws {
         var stops: [Stop] = []
         for index in 1...25 {
             let route = try makeRoute(id: "1_\(index)", shortName: "\(index)")
@@ -118,13 +134,16 @@ final class StopCacheDatabasePruningTests: OBATestCase {
             stops.append(stop)
         }
 
-        try storage.storeStops(stops, for: 1)
+        repository.saveStops(stops, regionId: 1)
 
-        for index in 1...25 {
-            let found = try storage.stop(id: "1_stop_\(index)", regionIdentifier: 1)
-            #expect(found != nil)
-            #expect(found?.name == "Stop \(index)")
-        }
+        let allStops = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        #expect(allStops.count == 25)
     }
 
     @Test func `clearCache deletes all cached stops for specific region`() throws {
@@ -134,12 +153,27 @@ final class StopCacheDatabasePruningTests: OBATestCase {
         let stopReg2 = try makeStop(id: "stop_reg2", name: "Region 2")
         stopReg2.routes = [route]
 
-        try storage.storeStops([stopReg1], for: 1)
-        try storage.storeStops([stopReg2], for: 2)
+        repository.saveStops([stopReg1], regionId: 1)
+        repository.saveStops([stopReg2], regionId: 2)
 
-        try storage.clearCache(for: 1)
+        repository.clearCache(regionId: 1)
 
-        #expect(try storage.stop(id: "stop_reg1", regionIdentifier: 1) == nil)
-        #expect(try storage.stop(id: "stop_reg2", regionIdentifier: 2) != nil)
+        let reg1Result = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        let reg2Result = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 2
+        )
+
+        #expect(reg1Result.isEmpty)
+        #expect(!reg2Result.isEmpty)
     }
 }

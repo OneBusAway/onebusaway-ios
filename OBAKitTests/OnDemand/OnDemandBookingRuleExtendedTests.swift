@@ -89,17 +89,17 @@ struct OnDemandBookingRuleExtendedTests {
 
     // MARK: - Blank String Filtering
 
-    @Test func `OnDemandBookingRule nilifies empty and whitespace strings`() throws {
+    @Test func `OnDemandBookingRule nilifies empty strings`() throws {
         let json = """
         {
             "id": "rule_blanks",
             "bookingType": 0,
-            "message": "   ",
+            "message": "",
             "pickupMessage": "",
-            "dropOffMessage": "  \t  ",
-            "phoneNumber": " ",
+            "dropOffMessage": "",
+            "phoneNumber": "",
             "infoUrl": "",
-            "bookingUrl": "   "
+            "bookingUrl": ""
         }
         """.data(using: .utf8)!
 

@@ -56,15 +56,18 @@ struct LaunchMapCameraExtendedTests {
         #expect(!showMismatch)
     }
 
-    @Test func `Disjoint last visible rect is discarded in favor of region serviceRect`() {
+    @Test func `Disjoint last visible rect is discarded in favor of region serviceRect when user location triggers mismatch`() {
         // Tampa map rect has no overlap with Puget Sound
         let tampaCoord = CLLocationCoordinate2D(latitude: 27.9506, longitude: -82.4572)
         let tampaPoint = MKMapPoint(tampaCoord)
         let tampaRect = MKMapRect(x: tampaPoint.x - 1000, y: tampaPoint.y - 1000, width: 2000, height: 2000)
 
+        // When user location is provided outside the region (e.g. Tampa), showMismatch is true
+        // and a disjoint lastVisibleMapRect falls back to selectedRegion.serviceRect
+        let outsideUserLocation = CLLocation(latitude: 27.9506, longitude: -82.4572)
         let target = LaunchMapCamera.target(
             selectedRegion: pugetSound,
-            userLocation: nil,
+            userLocation: outsideUserLocation,
             lastVisibleMapRect: tampaRect
         )
 
@@ -74,6 +77,6 @@ struct LaunchMapCameraExtendedTests {
         }
 
         #expect(MKMapRectEqualToRect(rect, pugetSound.serviceRect))
-        #expect(!showMismatch)
+        #expect(showMismatch)
     }
 }
