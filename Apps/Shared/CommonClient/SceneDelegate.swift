@@ -104,7 +104,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func stateRestorationActivity(for scene: UIScene) -> NSUserActivity? {
-        userActivity(for: window?.rootViewController)
+        Self.userActivity(for: window?.rootViewController)
     }
 
     // MARK: - Private
@@ -115,7 +115,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
     }
 
-    private func userActivity(for viewController: UIViewController?) -> NSUserActivity? {
+    // MARK: - State restoration
+
+    /// The activity to save for this scene: the frontmost one published under
+    /// `viewController`.
+    ///
+    /// Static and internal for tests. It reads nothing from the scene.
+    static func userActivity(for viewController: UIViewController?) -> NSUserActivity? {
         guard let viewController else { return nil }
 
         if let activity = userActivity(for: viewController.presentedViewController) {
@@ -129,6 +135,18 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         if let nav = viewController as? UINavigationController {
             for child in nav.viewControllers.reversed() {
+                if let activity = userActivity(for: child) {
+                    return activity
+                }
+            }
+        }
+
+        // FloatingPanel content is a child, not presented or pushed. The last child
+        // added is on top. Tab bars are skipped because `children` is every tab, which
+        // would restore one the rider isn't on. Navigation controllers are skipped only
+        // because the branch above walked them.
+        if !(viewController is UITabBarController), !(viewController is UINavigationController) {
+            for child in viewController.children.reversed() {
                 if let activity = userActivity(for: child) {
                     return activity
                 }

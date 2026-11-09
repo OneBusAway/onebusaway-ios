@@ -19,6 +19,18 @@
 /* App Shortcuts: short tile label for Next Departures in Shortcuts and Spotlight. */
 "next_departures_intent.short_title" = "下一班发车";
 
+/* App Intents: name of the Shortcuts action that opens a transit stop in the app. */
+"open_stop_intent.title" = "打开车站";
+
+/* App Intents: description of the Open Stop action in Shortcuts. */
+"open_stop_intent.description" = "打开车站以查看班次。";
+
+/* App Intents: type name of a transit stop in Shortcuts, Siri and Spotlight. Singular noun. */
+"stop_entity.type_name" = "车站";
+
+/* App Intents: label of the stop parameter on the Open Stop action. */
+"stop_entity.parameter_title" = "车站";
+
 /* App Intents: name of the Shortcuts action that starts a Live Activity for a bookmarked trip. */
 "track_bookmark_intent.title" = "追踪书签";
 

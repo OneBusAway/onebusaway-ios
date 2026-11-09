@@ -137,7 +137,7 @@ public class AppLinksRouter: NSObject {
     static func stopDestination(userInfo: [AnyHashable: Any]?, webpageURL: URL?) -> StopDestination? {
         if let userInfo,
            let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
-           let regionID = regionIdentifier(from: userInfo[UserActivityBuilder.UserInfoKeys.regionID]) {
+           let regionID = integerValue(from: userInfo[UserActivityBuilder.UserInfoKeys.regionID]) {
             return StopDestination(stopID: stopID, regionID: regionID)
         }
 
@@ -163,9 +163,38 @@ public class AppLinksRouter: NSObject {
         return StopDestination(stopID: stopID, regionID: regionID)
     }
 
+    // MARK: - Trip user activities
+
+    /// Reads the trip out of a trip activity's `userInfo`, which, unlike its
+    /// `webpageURL`, exists in a region without a sidecar. Nil when a key is
+    /// missing, so the caller can fall back to the URL.
+    static func tripDeepLink(userInfo: [AnyHashable: Any]?, title: String?) -> ArrivalDepartureDeepLink? {
+        typealias Keys = UserActivityBuilder.UserInfoKeys
+        guard
+            let userInfo,
+            let regionID = integerValue(from: userInfo[Keys.regionID]),
+            let stopID = userInfo[Keys.stopID] as? StopID,
+            let tripID = userInfo[Keys.tripID] as? TripIdentifier,
+            let serviceDate = userInfo[Keys.serviceDate] as? Date,
+            let stopSequence = integerValue(from: userInfo[Keys.stopSequence])
+        else {
+            return nil
+        }
+
+        return ArrivalDepartureDeepLink(
+            title: title ?? "",
+            regionID: regionID,
+            stopID: stopID,
+            tripID: tripID,
+            serviceDate: serviceDate,
+            stopSequence: stopSequence,
+            vehicleID: userInfo[Keys.vehicleID] as? String
+        )
+    }
+
     /// Plist round-trips turn `Int` into `NSNumber`; some Shortcuts builds
     /// stringify it. `as? Int` only covers the first two via bridging.
-    private static func regionIdentifier(from value: Any?) -> Int? {
+    private static func integerValue(from value: Any?) -> Int? {
         if let int = value as? Int { return int }
         if let number = value as? NSNumber { return number.intValue }
         if let string = value as? String { return Int(string) }
@@ -231,6 +260,11 @@ public class AppLinksRouter: NSObject {
     }
 
     private func routeTrip(userActivity: NSUserActivity) -> Bool {
+        if let deepLink = Self.tripDeepLink(userInfo: userActivity.userInfo, title: userActivity.title) {
+            showArrivalDepartureDeepLink?(deepLink)
+            return true
+        }
+
         guard let url = userActivity.webpageURL else {
             return false
         }

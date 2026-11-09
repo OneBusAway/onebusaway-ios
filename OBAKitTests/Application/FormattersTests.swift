@@ -438,4 +438,118 @@ final class FormattersTests: OBATestCase {
         let timeStr = formatters.timeFormatter.string(from: date)
         #expect(result == "scheduled to depart in 20 minutes at \(timeStr).")
     }
+
+    // MARK: - Stop and Route Formatting Helpers
+
+    private func makeRoute(id: String, shortName: String, type: Int, agencyID: String = "1") throws -> Route {
+        let dict: [String: Any] = [
+            "id": id,
+            "shortName": shortName,
+            "longName": "Route \(shortName)",
+            "type": type,
+            "agencyId": agencyID
+        ]
+        return try Fixtures.dictionaryToModel(type: Route.self, dictionary: dict)
+    }
+
+    private func makeStop(id: String, code: String, name: String, direction: String?) throws -> Stop {
+        var dict: [String: Any] = [
+            "id": id,
+            "code": code,
+            "name": name,
+            "lat": 47.6062,
+            "lon": -122.3321,
+            "locationType": 0,
+            "routeIds": ["1_100"]
+        ]
+        if let direction = direction {
+            dict["direction"] = direction
+        }
+        return try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)
+    }
+
+    @Test func `Formatted stop code and direction`() throws {
+        let stopWithDir = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: "N")
+        #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains("10020"))
+        let expectedNorth = NSLocalizedString("formatters.cardinal_adjective.north", bundle: Bundle.obaKitCore, comment: "")
+        #expect(Formatters.formattedCodeAndDirection(stop: stopWithDir).contains(expectedNorth))
+
+        let stopWithoutDir = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: nil)
+        let numericFmt = NSLocalizedString("formatters.stop.stop_code_numeric", bundle: Bundle.obaKitCore, comment: "")
+        let expectedNumeric = String(format: numericFmt, "10020")
+        #expect(Formatters.formattedCodeAndDirection(stop: stopWithoutDir) == expectedNumeric)
+    }
+
+    @Test func `Formatted stop code formats non-empty and empty codes`() throws {
+        let stopWithCode = try makeStop(id: "1_10020", code: "10020", name: "3rd & Pike", direction: nil)
+        let numericFmt = NSLocalizedString("formatters.stop.stop_code_numeric", bundle: Bundle.obaKitCore, comment: "")
+        #expect(Formatters.formattedStopCode(stop: stopWithCode) == String(format: numericFmt, "10020"))
+
+        let stopEmptyCode = try makeStop(id: "1_10020", code: "", name: "3rd & Pike", direction: nil)
+        let nonNumericFmt = NSLocalizedString("formatters.stop.stop_code_non_numeric", bundle: Bundle.obaKitCore, comment: "")
+        #expect(Formatters.formattedStopCode(stop: stopEmptyCode) == String(format: nonNumericFmt, ""))
+    }
+
+    @Test func `Formatted routes lists routes with custom limits`() throws {
+        let routes = [
+            try makeRoute(id: "1", shortName: "7", type: 3),
+            try makeRoute(id: "2", shortName: "10", type: 3),
+            try makeRoute(id: "3", shortName: "49", type: 3),
+            try makeRoute(id: "4", shortName: "70", type: 3)
+        ]
+
+        let fullList = Formatters.formattedRoutes(routes, limit: 10)
+        #expect(fullList == "Routes: 7, 10, 49, 70")
+
+        let truncated = Formatters.formattedRoutes(routes, limit: 2)
+        #expect(truncated == "Routes: 7, 10, + 2 more")
+
+        let mapTruncated = Formatters.formattedMapRoutes(routes, limit: 2)
+        #expect(mapTruncated == "7, 10…", "Map routes use ellipsis on overflow")
+
+        let empty = Formatters.formattedRoutes([])
+        #expect(empty == nil)
+    }
+
+    @Test func `Route type to string converts standard GTFS types`() {
+        let bundle = Bundle.obaKitCore
+        #expect(Formatters.routeTypeToString(.lightRail) == NSLocalizedString("route_type.light_rail", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.subway) == NSLocalizedString("route_type.subway", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.rail) == NSLocalizedString("route_type.rail", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.bus) == NSLocalizedString("route_type.bus", bundle: bundle, comment: ""))
+        #expect(Formatters.routeTypeToString(.ferry) == NSLocalizedString("route_type.ferry", bundle: bundle, comment: ""))
+    }
+
+    @Test func `Adjective form of cardinal direction returns localized strings`() {
+        let bundle = Bundle.obaKitCore
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.n) == NSLocalizedString("formatters.cardinal_adjective.north", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.s) == NSLocalizedString("formatters.cardinal_adjective.south", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.e) == NSLocalizedString("formatters.cardinal_adjective.east", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.w) == NSLocalizedString("formatters.cardinal_adjective.west", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.ne) == NSLocalizedString("formatters.cardinal_adjective.northeast", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.nw) == NSLocalizedString("formatters.cardinal_adjective.northwest", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.se) == NSLocalizedString("formatters.cardinal_adjective.southeast", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.sw) == NSLocalizedString("formatters.cardinal_adjective.southwest", bundle: bundle, comment: ""))
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.unknown) == nil)
+    }
+
+    @Test func `Short minutes text formatting`() {
+        #expect(Formatters.shortMinutesText(0) == "0m")
+        #expect(Formatters.shortMinutesText(1) == "1m")
+        #expect(Formatters.shortMinutesText(45) == "45m")
+        #expect(Formatters.shortMinutesText(-5) == "-5m")
+    }
+
+    @Test func `Formatted date range from start to end date`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let startDate = Date(timeIntervalSince1970: 1672531200)
+        let endDate = Date(timeIntervalSince1970: 1672534800)
+
+        let rangeStr = formatters.formattedDateRange(from: startDate, to: endDate)
+        let expectedRange = formatters.dateIntervalFormatter.string(from: startDate, to: endDate)
+        #expect(rangeStr == expectedRange)
+
+        let interval = DateInterval(start: startDate, end: endDate)
+        #expect(formatters.formattedDateRange(interval) == expectedRange)
+    }
 }

@@ -1,0 +1,25 @@
+{
+  "code": 200,
+  "currentTime": 1792831457727,
+  "text": "OK",
+  "version": 2,
+  "data": {
+    "entry": {
+      "id": "oba-maglev",
+      "name": "OneBusAway Go",
+      "serviceDateFrom": "",
+      "serviceDateTo": "",
+      "gitProperties": {
+        "git.build.version": "0.1.1-2457-g2401ee3"
+      }
+    },
+    "references": {
+      "agencies": [],
+      "routes": [],
+      "situations": [],
+      "stopTimes": [],
+      "stops": [],
+      "trips": []
+    }
+  }
+}

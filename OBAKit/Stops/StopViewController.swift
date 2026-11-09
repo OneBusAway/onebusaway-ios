@@ -497,6 +497,10 @@ public class StopViewController: UIViewController,
 
     // MARK: - NSUserActivity
 
+    /// The builder's `userInfo` for the published activity, from the same build, so
+    /// it names the same stop and region as the activity's identifier and URL.
+    private var activityUserInfo: [AnyHashable: Any]?
+
     /// Creates and assigns an `NSUserActivity` object corresponding to this stop.
     private func beginUserActivity() {
         guard let stop = stop,
@@ -504,7 +508,22 @@ public class StopViewController: UIViewController,
               let userActivityBuilder = application.userActivityBuilder
         else { return }
 
-        self.userActivity = userActivityBuilder.userActivity(for: stop, region: region)
+        let activity = userActivityBuilder.userActivity(for: stop, region: region)
+        // Stashed first: once the activity is assigned, UIKit may call the override at any save.
+        activityUserInfo = activity.userInfo
+        self.userActivity = activity
+        // Asks UIKit to call `updateUserActivityState(_:)` at its next save.
+        activity.needsSave = true
+    }
+
+    /// Puts back the stop and region, which UIKit clears before calling this. A
+    /// suggestion needs them to route in a region without a sidecar.
+    /// See: https://developer.apple.com/documentation/uikit/uiresponder/useractivity
+    public override func updateUserActivityState(_ activity: NSUserActivity) {
+        super.updateUserActivityState(activity)
+        if let activityUserInfo {
+            activity.addUserInfoEntries(from: activityUserInfo)
+        }
     }
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)

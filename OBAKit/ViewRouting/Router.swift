@@ -190,9 +190,9 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: makeStopController(stop: stop, bookmark: bookmark, transferContext: transferContext), from: fromController)
     }
 
-    public func navigateTo(stopID: StopID, from fromController: UIViewController) {
+    public func navigateTo(stopID: StopID, from fromController: UIViewController, transferContext: TransferContext? = nil) {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
-        navigate(to: makeStopController(stopID: stopID), from: fromController)
+        navigate(to: makeStopController(stopID: stopID, transferContext: transferContext), from: fromController)
     }
 
     /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
@@ -218,12 +218,15 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         return stopController
     }
 
-    public func makeStopController(stopID: StopID, showToolbarOnBottom: Bool = false) -> UIViewController {
+    public func makeStopController(stopID: StopID, transferContext: TransferContext? = nil, showToolbarOnBottom: Bool = false) -> UIViewController {
+        let stopController: StopContextConfigurable
         if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            return StopPageViewController(application: application, stopID: stopID, showToolbarOnBottom: showToolbarOnBottom)
+            stopController = StopPageViewController(application: application, stopID: stopID, showToolbarOnBottom: showToolbarOnBottom)
         } else {
-            return StopViewController(application: application, stopID: stopID)
+            stopController = StopViewController(application: application, stopID: stopID)
         }
+        stopController.transferContext = application.userDataStore.displayedTransferContext(transferContext)
+        return stopController
     }
 
     /// - Parameter destinationStopID: Where the sharer said they will step off,

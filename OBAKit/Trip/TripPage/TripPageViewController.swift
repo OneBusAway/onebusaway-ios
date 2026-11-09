@@ -56,10 +56,19 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// strip behind its grabber to match or it reads as a white bar across the top.
     let sheetSurfaceColor: UIColor? = .systemGroupedBackground
 
-    init(application: Application, tripConvertible: TripConvertible, originTitle: String? = nil) {
+    init(
+        application: Application,
+        tripConvertible: TripConvertible,
+        originTitle: String? = nil,
+        destinationStopID: StopID? = nil
+    ) {
         self.application = application
         self.originTitle = originTitle
-        self.viewModel = TripViewModel(application: application, tripConvertible: tripConvertible)
+        self.viewModel = TripViewModel(
+            application: application,
+            tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID
+        )
 
         // The page's actions capture `self`, which doesn't exist until after
         // `super.init`. Seed with the inert default set and replace immediately.
@@ -74,11 +83,17 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         render()
     }
 
-    convenience init(application: Application, arrivalDeparture: ArrivalDeparture, originTitle: String? = nil) {
+    convenience init(
+        application: Application,
+        arrivalDeparture: ArrivalDeparture,
+        originTitle: String? = nil,
+        destinationStopID: StopID? = nil
+    ) {
         self.init(
             application: application,
             tripConvertible: TripConvertible(arrivalDeparture: arrivalDeparture),
-            originTitle: originTitle
+            originTitle: originTitle,
+            destinationStopID: destinationStopID
         )
     }
 
@@ -141,6 +156,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // the bar doesn't vanish from the page above at the start of a back swipe.
         hideNavigationBar(animated: animated)
         disableIdleTimer()
+        beginUserActivity()
         viewModel.start()
         onMapFocusChanged?(mapFocus)
     }
@@ -158,6 +174,44 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         }
 
         restoreNavigationBar(animated: animated)
+    }
+
+    // MARK: - NSUserActivity
+
+    /// The builder's `userInfo` for the published activity, which
+    /// `updateUserActivityState(_:)` puts back.
+    private var activityUserInfo: [AnyHashable: Any]?
+
+    /// Publishes this trip's `NSUserActivity` for Handoff, as `TripViewController`
+    /// does. The builder leaves it out of Siri predictions, because a trip ID is
+    /// single-use, and builds none for a trip with no `ArrivalDeparture`, such as
+    /// one opened from a vehicle.
+    ///
+    /// Internal for tests, which can't let the page appear: that starts the trip's loads.
+    func beginUserActivity() {
+        guard
+            let region = application.regionsService.currentRegion,
+            let activity = application.userActivityBuilder?.userActivity(for: viewModel.tripConvertible, region: region)
+        else {
+            return
+        }
+
+        // Stashed first: once the activity is assigned, UIKit may call the override at any save.
+        activityUserInfo = activity.userInfo
+        self.userActivity = activity
+        // Asks UIKit to call `updateUserActivityState(_:)` at its next save.
+        activity.needsSave = true
+    }
+
+    /// UIKit clears the `userInfo` of an activity a responder owns before calling
+    /// this. Without the trip and region, the activity can route only through
+    /// `webpageURL`, which a region without a sidecar doesn't have.
+    /// See: https://developer.apple.com/documentation/uikit/uiresponder/useractivity
+    override func updateUserActivityState(_ activity: NSUserActivity) {
+        super.updateUserActivityState(activity)
+        if let activityUserInfo {
+            activity.addUserInfoEntries(from: activityUserInfo)
+        }
     }
 
     // MARK: - Navigation bar
@@ -238,6 +292,9 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// Set by a host that opens stops itself: the map panel, which shows a stop as a
     /// sheet of its own. `nil` pushes the stop through `ViewRouter`, which needs this
     /// page to be on a navigation stack.
+    ///
+    /// A stop opened this way gets no transfer context: `SheetRoute.stopDetails`
+    /// carries only the stop's ID.
     var onSelectStop: ((StopID) -> Void)?
 
     private func publishMapFocus(
@@ -378,13 +435,16 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.canReportGhostBus = application.features.obaco == .running
 
         actions.onBack = { [weak self] in self?.goBack() }
-        actions.onSelectStop = { [weak self] stopID in
+        actions.onSelectStop = { [weak self] row in
             guard let self else { return }
             if let onSelectStop {
-                onSelectStop(stopID)
+                onSelectStop(row.stopID)
                 return
             }
-            application.viewRouter.navigateTo(stopID: stopID, from: self)
+            // The row's own time, not a lookup by stop ID: a loop route calls at
+            // the same stop twice, and the rider tapped one visit in particular.
+            let transferContext = TransferContext.toStop(row.stopID, arrivalDate: row.date, from: departure)
+            application.viewRouter.navigateTo(stopID: row.stopID, from: self, transferContext: transferContext)
         }
         actions.onBookmark = { [weak self] in self?.showBookmarkEditor() }
         actions.onSchedule = { [weak self] in self?.showSchedule() }

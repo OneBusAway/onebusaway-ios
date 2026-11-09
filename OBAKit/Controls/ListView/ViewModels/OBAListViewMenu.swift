@@ -36,15 +36,19 @@ public struct OBAListViewMenuActions {
     public let performPreviewAction: VoidBlock?
     public let contextMenuProvider: MenuProvider?
 
+    func makePreviewController() -> UIViewController? {
+        guard let controller = self.previewProvider?() else { return nil }
+
+        if let previewable = controller as? Previewable {
+            previewable.enterPreviewMode()
+        }
+
+        return controller
+    }
+
     func contextMenuConfiguration(identifier: String?) -> UIContextMenuConfiguration {
         let previewProvider: UIContextMenuContentPreviewProvider = {
-            guard let controller = self.previewProvider?() else { return nil }
-
-            if let previewable = controller as? Previewable {
-                previewable.enterPreviewMode()
-            }
-
-            return controller
+            return self.makePreviewController()
         }
 
         let actionProvider: UIContextMenuActionProvider = { suggestedActions in

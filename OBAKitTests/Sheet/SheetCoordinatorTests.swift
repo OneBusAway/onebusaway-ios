@@ -165,6 +165,81 @@ final class SheetCoordinatorTests {
         #expect(coordinator.stackedDetents == [.large, .large])
     }
 
+    // MARK: - claimUnwindFocus(atDepth:)
+
+    /// Stop, trip, another stop, then the first stop from that trip: three sheets
+    /// close at once. The layer that closed them, the one hosted by the stop
+    /// revealed, claims the focus move, and claims it once.
+    @Test func `Going back further down is claimed once by the layer it closed`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t1"))
+        coordinator.push(stop)
+        coordinator.push(trip)
+        coordinator.push(.stopDetails(stopID: "1_10914"))
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t2")))
+
+        coordinator.open(stop, from: coordinator.stackedRoutes[3])
+
+        #expect(coordinator.stackedRoutes == [stop])
+        // Layers above the one that closed sit on sheets that closed with it.
+        #expect(coordinator.claimUnwindFocus(atDepth: 2) == false)
+        #expect(coordinator.claimUnwindFocus(atDepth: 1))
+        #expect(coordinator.claimUnwindFocus(atDepth: 1) == false)
+    }
+
+    /// A sheet the rider closes, or one an `open` replaces with a sheet of its own,
+    /// leaves focus to UIKit, which returns it to the control that opened the sheet.
+    @Test func `Only going back further down moves focus`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        coordinator.push(stop)
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+
+        coordinator.pop()
+        #expect(coordinator.claimUnwindFocus(atDepth: 1) == false)
+
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+        coordinator.truncateStacked(toDepth: 1)
+        #expect(coordinator.claimUnwindFocus(atDepth: 1) == false)
+
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+        coordinator.open(.tripDetails(try Fixtures.tripConvertible(tripID: "t2")), from: stop)
+        #expect(coordinator.claimUnwindFocus(atDepth: 1) == false)
+    }
+
+    /// The route is already frontmost, so nothing closes and no dismissal would
+    /// ever claim the move: left set, it would fire on an unrelated swipe later.
+    @Test func `Going back to the frontmost sheet leaves nothing to claim`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        let trip = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "t1"))
+        coordinator.push(stop)
+        coordinator.push(trip)
+
+        coordinator.open(trip, from: stop)
+
+        #expect(coordinator.unwindFocusDepth == nil)
+    }
+
+    /// A sheet opened, or the whole pile cleared, before the unwind's dismissal
+    /// finishes: the new state owns focus, so the pending move is dropped.
+    @Test func `A push or pop to root drops a pending unwind`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        coordinator.push(stop)
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+
+        coordinator.open(stop, from: coordinator.stackedRoutes[1])
+        coordinator.push(.mapSettings)
+        #expect(coordinator.unwindFocusDepth == nil)
+
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+        coordinator.open(stop, from: coordinator.stackedRoutes[2])
+        coordinator.popToRoot()
+        #expect(coordinator.unwindFocusDepth == nil)
+    }
+
     // MARK: - isStackedSheetCovered(atDepth:)
 
     /// Only the frontmost stacked sheet can be swiped away. The rest have a sheet

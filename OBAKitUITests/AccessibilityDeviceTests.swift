@@ -23,10 +23,7 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
         continueAfterFailure = true
 
         app = XCUIApplication()
-        app.launchArguments += [
-            "-AppleLanguages", "(en)",
-            "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>"
-        ]
+        app.launchArguments += OnboardingBypass.launchArguments
         app.launchEnvironment["TEST_SUPPRESS_ALERT_BULLETINS"] = "1"
 
         addUIInterruptionMonitor(withDescription: "Permissions") { alert in

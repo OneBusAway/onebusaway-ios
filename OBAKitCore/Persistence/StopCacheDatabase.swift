@@ -47,20 +47,27 @@ public final class StopCacheDatabase: Sendable {
         }
 
         dbQueue = queue
-        try runMigrations()
+        try Self.makeMigrator().migrate(dbQueue)
     }
 
     /// Creates an in-memory database for testing.
     public init(inMemory: Bool) throws {
         precondition(inMemory, "Use init(databasePath:) for persistent databases")
         dbQueue = try DatabaseQueue()
-        try runMigrations()
+        try Self.makeMigrator().migrate(dbQueue)
+    }
+
+    /// Creates a database at `databasePath` migrated only through
+    /// `lastMigration`, so tests can upgrade a real older schema.
+    init(databasePath: String, migratingUpTo lastMigration: String) throws {
+        dbQueue = try DatabaseQueue(path: databasePath)
+        try Self.makeMigrator().migrate(dbQueue, upTo: lastMigration)
     }
 
     // MARK: - Migrations
 
     // swiftlint:disable:next function_body_length
-    private func runMigrations() throws {
+    private static func makeMigrator() -> DatabaseMigrator {
         var migrator = DatabaseMigrator()
 
         // v1: Original schema with individual columns for every Stop field.
@@ -128,6 +135,39 @@ public final class StopCacheDatabase: Sendable {
             )
         }
 
-        try migrator.migrate(dbQueue)
+        // v3: region stop sync (#1555). Columns are added rather than the table
+        // rebuilt, so stops the map already cached survive the upgrade.
+        //   - name, code: lookups by either needn't decode stopData.
+        //   - cachedRoute: each route once per region. New stop blobs leave their
+        //     routes out (see CachedStop); older blobs still embed them.
+        //   - regionStopSync: what the last sync of each region did.
+        migrator.registerMigration("v3_regionStopSync") { db in
+            try db.alter(table: "cachedStop") { t in
+                t.add(column: "name", .text)
+                t.add(column: "code", .text)
+            }
+            try db.create(index: "idx_cachedStop_name", on: "cachedStop", columns: ["regionId", "name"])
+            try db.create(index: "idx_cachedStop_code", on: "cachedStop", columns: ["regionId", "code"])
+
+            try db.create(table: "cachedRoute") { t in
+                t.column("id", .text).notNull()
+                t.column("regionId", .integer).notNull()
+                t.column("lastUpdated", .double).notNull()
+                t.column("routeData", .blob).notNull()
+                t.primaryKey(["regionId", "id"])
+            }
+            try db.create(index: "idx_cachedRoute_lastUpdated", on: "cachedRoute", columns: ["regionId", "lastUpdated"])
+
+            try db.create(table: "regionStopSync") { t in
+                t.primaryKey("regionId", .integer)
+                t.column("outcome", .text).notNull()
+                t.column("lastAttemptAt", .double).notNull()
+                t.column("lastSuccessAt", .double)
+                t.column("etag", .text)
+                t.column("appVersion", .text).notNull()
+            }
+        }
+
+        return migrator
     }
 }

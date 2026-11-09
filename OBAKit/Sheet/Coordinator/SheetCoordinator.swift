@@ -47,6 +47,14 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     var stackedRoutes: [Route] { stackedEntries.map(\.route) }
     var stackedDetents: [PresentationDetent] { stackedEntries.map(\.detent) }
 
+    /// The stacked layer whose sheets `open(_:from:)` closed to go back to a route
+    /// already open further down, until that layer's dismissal claims it.
+    /// See `claimUnwindFocus(atDepth:)`.
+    ///
+    /// Not `@Published`: nothing draws from it, and publishing it would redraw
+    /// every layer for a value only one of them reads, once.
+    private(set) var unwindFocusDepth: Int?
+
     /// Every route on screen: the base sheet's stack from its root up, then the
     /// stacked sheets from the bottom up.
     var allRoutes: [Route] { routeStack + stackedRoutes }
@@ -83,6 +91,9 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
                 !route.detentConfiguration.isDismissDisabled,
                 "Stacked routes must have isDismissDisabled == false; \(route) does not."
             )
+            // A sheet opening on top takes VoiceOver itself, so an unwind still
+            // closing beneath it has no focus left to move.
+            unwindFocusDepth = nil
             stackedEntries.append(StackedEntry(route: route, detent: route.detentConfiguration.initialDetent))
         } else {
             additionalRoutes.append(route)
@@ -112,7 +123,12 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// nothing below, and `route` is pushed on top.
     func open(_ route: Route, from source: Route) {
         if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
-            truncateStacked(toDepth: existing + 1)
+            let closingDepth = existing + 1
+            // Already on top: nothing closes, so there is no dismissal to claim this.
+            if closingDepth < stackedEntries.count {
+                unwindFocusDepth = closingDepth
+            }
+            truncateStacked(toDepth: closingDepth)
             return
         }
         if let sourceDepth = stackedEntries.lastIndex(where: { $0.route == source }) {
@@ -167,6 +183,20 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         depth < stackedEntries.count - 1
     }
 
+    /// Whether the dismissal of the stacked layer at `depth` was an unwind by
+    /// `open(_:from:)`, after which VoiceOver should move to the sheet revealed.
+    /// `true` once per unwind: claiming it clears it.
+    ///
+    /// Going back to a sheet further down closes every sheet above it at once, and
+    /// UIKit leaves focus wherever it lands — possibly on a sheet that is closing.
+    /// A sheet the rider drags away is left alone: UIKit returns focus to the
+    /// control that opened it, which is better than the top of the sheet revealed.
+    func claimUnwindFocus(atDepth depth: Int) -> Bool {
+        guard unwindFocusDepth == depth else { return false }
+        unwindFocusDepth = nil
+        return true
+    }
+
     /// Bounds-checked accessor for the stacked route at `depth`.
     /// Returns `nil` when `depth` is past the current pile.
     func stackedRoute(at depth: Int) -> Route? {
@@ -182,6 +212,7 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
 
     /// Clears the stacked layer and unwinds the content stack to its root.
     func popToRoot() {
+        unwindFocusDepth = nil
         stackedEntries.removeAll()
         additionalRoutes.removeAll()
         currentDetent = root.detentConfiguration.initialDetent

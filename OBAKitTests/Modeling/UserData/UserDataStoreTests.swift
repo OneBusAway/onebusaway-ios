@@ -456,4 +456,45 @@ final class UserDefaultsStoreTests: OBATestCase {
         #expect(self.userDefaults.object(forKey: "UserDataStore.defaultAlarmLeadTimeMinutes") == nil)
     }
 
+
+    // MARK: - Stop Preferences Store
+
+    @Test func `Stop preferences defaults to initial preferences when unconfigured`() {
+        let stopID = "1_10020"
+        let prefs = userDefaultsStore.preferences(stopID: stopID, region: region)
+
+        #expect(prefs.sortType == .time)
+        #expect(prefs.hiddenRoutes.isEmpty)
+        #expect(prefs.hasHiddenRoutes == false)
+    }
+
+    @Test func `Stop preferences persistence and retrieval`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        var customPrefs = StopPreferences(sortType: .route, hiddenRoutes: ["1_100", "1_44"])
+
+        userDefaultsStore.set(stopPreferences: customPrefs, stop: stop, region: region)
+
+        let retrieved = userDefaultsStore.preferences(stopID: stop.id, region: region)
+        #expect(retrieved.sortType == .route)
+        #expect(retrieved.hiddenRoutes == ["1_100", "1_44"])
+        #expect(retrieved.hasHiddenRoutes == true)
+
+        // Modify and re-save
+        customPrefs.toggleRouteIDHidden("1_44")
+        userDefaultsStore.set(stopPreferences: customPrefs, stop: stop, region: region)
+
+        let updated = userDefaultsStore.preferences(stopID: stop.id, region: region)
+        #expect(updated.hiddenRoutes == ["1_100"])
+    }
+
+    @Test func `Stop preferences isolation between different regions`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let otherRegion = try #require(Fixtures.loadSomeRegions().first)
+
+        let customPrefs = StopPreferences(sortType: .route, hiddenRoutes: ["1_100"])
+        userDefaultsStore.set(stopPreferences: customPrefs, stop: stop, region: region)
+
+        let prefsForOtherRegion = userDefaultsStore.preferences(stopID: stop.id, region: otherRegion)
+        #expect(prefsForOtherRegion.hiddenRoutes.isEmpty, "Preferences must be scoped to region")
+    }
 }

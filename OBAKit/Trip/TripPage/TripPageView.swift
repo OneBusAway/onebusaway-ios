@@ -20,7 +20,9 @@ struct TripPageActions {
     var canStartLiveActivity = false
     var canReportGhostBus = false
     var onBack: () -> Void = {}
-    var onSelectStop: (StopID) -> Void = { _ in }
+    /// The whole row, not just its stop: the time on it is when this trip
+    /// reaches the stop, which the stop it opens needs for transfers.
+    var onSelectStop: (TripStopListModel.Row) -> Void = { _ in }
     var onLiveActivity: () -> Void = {}
     var onBookmark: () -> Void = {}
     var onSchedule: () -> Void = {}
@@ -131,7 +133,8 @@ struct TripPageView: View {
             stopTimes: viewModel.tripDetails?.stopTimes ?? [],
             userStopID: departure?.stopID,
             userStopSequence: departure?.stopSequence,
-            closestStopID: convertible.tripStatus?.closestStopID
+            closestStopID: convertible.tripStatus?.closestStopID,
+            sharedDestinationStopID: viewModel.destinationStopID
         )
     }
 
@@ -161,7 +164,7 @@ struct TripPageView: View {
                             model: list,
                             routeColor: routeColor,
                             routeType: route?.routeType ?? .unknown,
-                            onSelect: { actions.onSelectStop($0.stopID) }
+                            onSelect: { actions.onSelectStop($0) }
                         )
                     } else {
                         // Never render the absence as blank space. The stop list is
@@ -227,9 +230,13 @@ struct TripPageView: View {
         }
     }
 
+    private var activeDeparture: ArrivalDeparture? {
+        viewModel.destinationArrivalDeparture ?? departure
+    }
+
     private var card: some View {
         TripCardView(
-            departure: departure,
+            departure: activeDeparture,
             routeShortName: route?.shortName ?? "",
             headsign: departure?.tripHeadsign ?? convertible.trip.headsign ?? route?.shortName ?? "",
             routeColor: routeColor,

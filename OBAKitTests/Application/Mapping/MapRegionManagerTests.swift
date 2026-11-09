@@ -422,6 +422,43 @@ final class MapRegionManagerTests: OBATestCase {
         #expect(Set(mgr.stops.map(\.id)) == Set(fixtureStops.map(\.id)))
     }
 
+    /// With a whole region synced (#1555) the box around a settle can hold
+    /// hundreds of cached stops. One read returns the nearest 400 only, so the
+    /// 50 near the edge of the view are left out.
+    @Test func `Schedule stops request serves at most the 400 nearest cached stops`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = makeSeattleApplication(dataLoader: dataLoader)
+        let mgr = MapRegionManager(application: application)
+        let regionId = try #require(application.currentRegion?.regionIdentifier)
+        clearStopCache(for: application)
+
+        let center = CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308)
+        // A 20 × 20 grid about 200 m across, and a row near the top of the view.
+        let near: [Stop] = (0..<400).map { index in
+            let dLat = Double(index / 20 - 10) * 0.0001
+            let dLon = Double(index % 20 - 10) * 0.0001
+            let location = CLLocation(latitude: center.latitude + dLat, longitude: center.longitude + dLon)
+            return Stop(id: "near_\(index)", name: "Near \(index)", location: location)
+        }
+        let edge: [Stop] = (0..<50).map { index in
+            let location = CLLocation(latitude: center.latitude + 0.03, longitude: center.longitude + Double(index) * 0.0005)
+            return Stop(id: "edge_\(index)", name: "Edge \(index)", location: location)
+        }
+        application.stopCacheRepository?.saveStops(near + edge, regionId: regionId)
+
+        let recorder = StopsRecorder()
+        mgr.addDelegate(recorder)
+        mgr.scheduleStopsRequest(in: MKCoordinateRegion(center: center, latitudinalMeters: 8000, longitudinalMeters: 8000))
+
+        await poll(until: { !recorder.deliveries.isEmpty }, "the cache was never served")
+        let firstDelivery = try #require(recorder.deliveries.first)
+        #expect(MapRegionManager.cachedStopReadLimit == 400)
+        #expect(Set(firstDelivery.map(\.id)) == Set(near.map(\.id)))
+
+        mgr.cancelScheduledStopsRequest()
+        clearStopCache(for: application)
+    }
+
     /// A cache miss is a no-op: the previously-loaded stops stay on the map until
     /// the network refresh repopulates the cache — no empty set is ever
     /// published (which would flash the map blank between the settle and the

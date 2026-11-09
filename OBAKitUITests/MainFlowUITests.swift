@@ -11,10 +11,10 @@ import XCTest
 
 /// Smoke tests for the main app UI with a region already selected.
 ///
-/// The current region is injected through the UserDefaults argument domain
-/// (`-OBACurrentRegionIdentifierUserDefaultsKey <integer>1</integer>` = Puget Sound,
-/// which is bundled in regions.json), so onboarding is skipped without any
-/// stored state on the simulator.
+/// The region and the onboarding seen-step store are both injected through the
+/// UserDefaults argument domain, so the app reaches the main UI without relying
+/// on anything left on the simulator. See `OnboardingBypass` for why the region
+/// alone is not enough.
 // nonisolated: the target defaults to the main actor, and XCTestCase\'s
 // initializers and setUp are nonisolated.
 nonisolated final class MainFlowUITests: XCTestCase {
@@ -25,10 +25,7 @@ nonisolated final class MainFlowUITests: XCTestCase {
         continueAfterFailure = false
 
         app = XCUIApplication()
-        app.launchArguments += [
-            "-AppleLanguages", "(en)",
-            "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>"
-        ]
+        app.launchArguments += OnboardingBypass.launchArguments
 
         // These tests run against the live network: a real high-severity alert in
         // the region would otherwise pop a modal bulletin over the UI mid-test.

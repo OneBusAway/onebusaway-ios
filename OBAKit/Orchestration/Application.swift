@@ -133,32 +133,40 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         router?.showArrivalDepartureDeepLink = { [weak self] deepLink in
-            guard let self, let apiService = self.apiService else {
-                return
-            }
-
-            Task(priority: .userInitiated) { @MainActor in
-                ProgressHUD.show()
-
-                do {
-                    let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
-
-                    self.withPushableTopViewController { from in
-                        self.viewRouter.navigateTo(
-                            arrivalDeparture: arrDep,
-                            from: from,
-                            destinationStopID: deepLink.destinationStopID
-                        )
-                    }
-                } catch {
-                    await self.displayError(error)
-                }
-
-                ProgressHUD.dismiss()
-            }
+            self?.queueOrOpenTrip(deepLink)
         }
 
         return router
+    }
+
+    /// Loads the trip in `deepLink` and pushes it. Needs an API service and a
+    /// root UI to push from; `queueOrOpenTrip(_:)` stashes it until both exist.
+    @MainActor
+    private func openTrip(_ deepLink: ArrivalDepartureDeepLink, apiService: RESTAPIService) {
+        Task(priority: .userInitiated) { @MainActor in
+            ProgressHUD.show()
+
+            do {
+                let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
+
+                self.withPushableTopViewController { from in
+                    // The rider may have switched regions while this loaded.
+                    guard self.currentRegion?.regionIdentifier == deepLink.regionID else {
+                        Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
+                        return
+                    }
+                    self.viewRouter.navigateTo(
+                        arrivalDeparture: arrDep,
+                        from: from,
+                        destinationStopID: deepLink.destinationStopID
+                    )
+                }
+            } catch {
+                await self.displayError(error)
+            }
+
+            ProgressHUD.dismiss()
+        }
     }
 
     /// The application delegate object.
@@ -184,6 +192,9 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// Created in `application(_:didFinishLaunching:)`, so only the launched app refreshes Shortcuts.
     private var appShortcutParametersRefresher: AppShortcutParametersRefresher?
+
+    /// See `startStopSpotlightIndexing()`. Internal so a test can install one.
+    var stopSpotlightIndexer: StopSpotlightIndexer?
 
     // MARK: - Init
 
@@ -367,6 +378,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// historically did not carry a region. When set, drain refuses to open the
     /// stop against a different region's API.
     var pendingStopRegionID: Int?
+    /// A trip navigation (Handoff, state restoration, or a trip deep link) received
+    /// before the root view controller was installed, or before `currentRegion` and
+    /// its API service had loaded. Drained once all of them exist, like `pendingStopID`.
+    /// Internal so tests can assert the trip was stashed rather than dropped.
+    var pendingTripDeepLink: ArrivalDepartureDeepLink?
     /// The coordinate of an `onebusaway://rentals` link, held until a map can show
     /// it — the map's counterpart of `pendingStopID`. Whichever map surface is
     /// installed takes it with `claimPendingRentalsFocus()`, on appearing or on
@@ -474,6 +490,9 @@ public class Application: CoreApplication, PushServiceDelegate {
         if let provider = config.appShortcutsProvider {
             appShortcutParametersRefresher = AppShortcutParametersRefresher(provider: provider)
         }
+        startRegionStopSync()
+
+        startStopSpotlightIndexing()
 
         retireSyncedSpeedsIfUnsupported()
 
@@ -540,6 +559,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         #endif
 
         alertsStore.checkForUpdates()
+        scheduleRegionStopSync()
 
         // Re-register the push token with OBACloud so the server's inactivity prune never
         // drops this device, and so locale changes propagate. The manager dedupes, so this
@@ -590,24 +610,35 @@ public class Application: CoreApplication, PushServiceDelegate {
         guard !isOnboardingRoot else { return }
 
         if let stopID = pendingStopID, topViewController != nil {
+            var wrongRegion = false
             if let neededRegion = pendingStopRegionID {
                 // Region still loading: wait. Loaded but different: drop — do not
-                // fetch this stop against the wrong region's API.
+                // fetch this stop against the wrong region's API, but keep draining.
                 guard let current = currentRegion?.regionIdentifier else { return }
-                if current != neededRegion {
-                    pendingStopID = nil
-                    pendingStopRegionID = nil
-                    return
-                }
+                wrongRegion = current != neededRegion
             }
             pendingStopID = nil
             pendingStopRegionID = nil
-            // While a modal is on its way out, anything presented from it goes with
-            // it, so stop here; the dismissal re-runs this drain for the rest.
-            let dismissing = pushStopFromOutside(stopID) { [weak self] in
-                self?.drainPendingUIPresentations()
+            if !wrongRegion {
+                // While a modal is on its way out, anything presented from it goes with
+                // it, so stop here; the dismissal re-runs this drain for the rest.
+                let dismissing = pushStopFromOutside(stopID) { [weak self] in
+                    self?.drainPendingUIPresentations()
+                }
+                if dismissing { return }
             }
-            if dismissing { return }
+        }
+
+        // Waits while the region or its API service is still loading.
+        if let deepLink = pendingTripDeepLink, topViewController != nil,
+           let current = currentRegion?.regionIdentifier, let apiService {
+            pendingTripDeepLink = nil
+            if current == deepLink.regionID {
+                openTrip(deepLink, apiService: apiService)
+            } else {
+                // Do not fetch this trip against the wrong region's API.
+                Logger.warn("Trip \(deepLink.tripID) belongs to region \(deepLink.regionID) but region \(current) is selected; dropping it.")
+            }
         }
 
         if pendingRentalsCoordinate != nil, topViewController != nil {
@@ -655,6 +686,24 @@ public class Application: CoreApplication, PushServiceDelegate {
             guard let self else { return }
             MainActor.assumeIsolated {
                 self.consumePendingLiveActivityShortcut()
+            }
+        }
+
+        // Open Stop has no queue to peek: its request arrives only as this
+        // notification, and `queueOrOpenStop(_:)` stashes the stop if the UI or
+        // region isn't ready yet.
+        notificationCenter.addObserver(
+            forName: .openStopRequested,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            guard let destination = notification.userInfo?[OpenStopRequest.destinationUserInfoKey] as? AppLinksRouter.StopDestination else {
+                Logger.warn("Open Stop request has no stop destination; nothing to open.")
+                return
+            }
+            MainActor.assumeIsolated {
+                self.queueOrOpenStop(destination)
             }
         }
     }
@@ -731,6 +780,23 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         pendingStopID = destination.stopID
         pendingStopRegionID = destination.regionID
+    }
+
+    /// Opens the trip in `deepLink` now, or stashes it until the root UI, the
+    /// trip's region, and its API service exist. Does not fetch this trip against
+    /// a different region's API.
+    func queueOrOpenTrip(_ deepLink: ArrivalDepartureDeepLink) {
+        if let current = currentRegion?.regionIdentifier, current != deepLink.regionID {
+            Logger.warn("Trip \(deepLink.tripID) belongs to region \(deepLink.regionID) but region \(current) is selected; dropping it.")
+            return
+        }
+
+        if topViewController != nil, !isOnboardingRoot, currentRegion?.regionIdentifier == deepLink.regionID, let apiService {
+            openTrip(deepLink, apiService: apiService)
+            return
+        }
+
+        pendingTripDeepLink = deepLink
     }
 
     @objc public func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
@@ -829,6 +895,17 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Region change does not post `.bookmarksDidChange`, so Shortcuts
         // would keep offering the previous region's trip bookmarks.
         appShortcutParametersRefresher?.refresh()
+
+        // Deletes the previous region's stops from Spotlight, then indexes this one's.
+        stopSpotlightIndexer?.replaceAll()
+    }
+
+    /// The launch and region-change rebuilds read the cache before the region's
+    /// sync writes to it, so the index is rebuilt again once it has. A sync that
+    /// finishes as the rider switches regions is ignored: the switch rebuilt it.
+    public override func regionStopSyncWroteStops(regionID: Int) {
+        guard regionID == currentRegion?.regionIdentifier else { return }
+        stopSpotlightIndexer?.replaceAll()
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {

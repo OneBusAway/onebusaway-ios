@@ -419,6 +419,56 @@ struct OBAListRowConfigurationTests {
         #expect(attrModel.accessoryType == .disclosureIndicator)
 
         #expect(stringModel != attrModel)
+
+        // Test onSelectAction execution
+        var actionExecuted = false
+        var executedModelTitle: String?
+        let onSelect: OBAListViewAction<OBAListRowView.DefaultViewModel> = { model in
+            actionExecuted = true
+            if case let .string(str) = model.title {
+                executedModelTitle = str
+            }
+        }
+        let actionModel = OBAListRowView.DefaultViewModel(
+            title: "Tappable Row",
+            accessoryType: .disclosureIndicator,
+            onSelectAction: onSelect
+        )
+        #expect(actionModel.onSelectAction != nil)
+        actionModel.onSelectAction?(actionModel)
+        #expect(actionExecuted == true)
+        #expect(executedModelTitle == "Tappable Row")
+
+        // Test attributed title with onSelectAction
+        var attrActionExecuted = false
+        let attrActionModel = OBAListRowView.DefaultViewModel(
+            title: attrTitle,
+            accessoryType: .checkmark,
+            onSelectAction: { _ in attrActionExecuted = true }
+        )
+        attrActionModel.onSelectAction?(attrActionModel)
+        #expect(attrActionExecuted == true)
+
+        // Test image assignment and configuration forwarding
+        var imageModel = OBAListRowView.DefaultViewModel(title: "With Image")
+        let testImage = UIImage(systemName: "bus")
+        imageModel.image = testImage
+        #expect(imageModel.image == testImage)
+        guard case let .custom(imgContentConfig) = imageModel.configuration,
+              let imgRowConfig = imgContentConfig as? OBAListRowConfiguration else {
+            Issue.record("Expected OBAListRowConfiguration inside .custom")
+            return
+        }
+        #expect(imgRowConfig.image == testImage)
+
+        // Test equality and hashing: distinct UUIDs should mean inequality
+        let modelA = OBAListRowView.DefaultViewModel(title: "Equal Check")
+        let modelB = OBAListRowView.DefaultViewModel(title: "Equal Check")
+        #expect(modelA.id != modelB.id)
+        #expect(modelA != modelB)
+        let modelCopy = modelA
+        #expect(modelA == modelCopy)
+        #expect(modelA.hashValue == modelCopy.hashValue)
     }
 
     /// Tests OBAListRowView.SubtitleViewModel initialization and configuration conversion.
@@ -476,6 +526,58 @@ struct OBAListRowConfigurationTests {
         let attrCheckmark = OBAListRowView.SubtitleViewModel(title: attrTitle, subtitle: attrSubtitle, accessoryType: .checkmark)
         #expect(attrCheckmark.accessoryType == .checkmark)
         #expect(rowConfiguration(from: attrCheckmark)?.accessoryType == .checkmark)
+
+        // Test onSelectAction execution on SubtitleViewModel
+        var subtitleActionExecuted = false
+        var executedSubtitleText: String?
+        let onSelectSubtitle: OBAListViewAction<OBAListRowView.SubtitleViewModel> = { model in
+            subtitleActionExecuted = true
+            if case let .string(str)? = model.subtitle {
+                executedSubtitleText = str
+            }
+        }
+        let subtitleActionModel = OBAListRowView.SubtitleViewModel(
+            title: "Route 10",
+            subtitle: "To Capitol Hill",
+            accessoryType: .disclosureIndicator,
+            onSelectAction: onSelectSubtitle
+        )
+        #expect(subtitleActionModel.onSelectAction != nil)
+        subtitleActionModel.onSelectAction?(subtitleActionModel)
+        #expect(subtitleActionExecuted == true)
+        #expect(executedSubtitleText == "To Capitol Hill")
+
+        // Test attributed SubtitleViewModel with onSelectAction
+        var attrSubActionExecuted = false
+        let attrSubActionModel = OBAListRowView.SubtitleViewModel(
+            title: attrTitle,
+            subtitle: attrSubtitle,
+            accessoryType: .disclosureIndicator,
+            onSelectAction: { _ in attrSubActionExecuted = true }
+        )
+        attrSubActionModel.onSelectAction?(attrSubActionModel)
+        #expect(attrSubActionExecuted == true)
+
+        // Test image assignment and forwarding on SubtitleViewModel
+        var subImageModel = OBAListRowView.SubtitleViewModel(title: "With Image", subtitle: "Image Subtitle")
+        let subImage = UIImage(systemName: "tram")
+        subImageModel.image = subImage
+        #expect(subImageModel.image == subImage)
+        guard case let .custom(subImgContentConfig) = subImageModel.configuration,
+              let subImgRowConfig = subImgContentConfig as? OBAListRowConfiguration else {
+            Issue.record("Expected OBAListRowConfiguration inside .custom")
+            return
+        }
+        #expect(subImgRowConfig.image == subImage)
+
+        // Test equality and hashing on SubtitleViewModel
+        let subA = OBAListRowView.SubtitleViewModel(title: "Same", subtitle: "Sub")
+        let subB = OBAListRowView.SubtitleViewModel(title: "Same", subtitle: "Sub")
+        #expect(subA.id != subB.id)
+        #expect(subA != subB)
+        let subCopy = subA
+        #expect(subA == subCopy)
+        #expect(subA.hashValue == subCopy.hashValue)
     }
 
     /// Tests OBAListRowView.ValueViewModel initialization and configuration conversion.
@@ -534,6 +636,58 @@ struct OBAListRowConfigurationTests {
         let attrCheckmark = OBAListRowView.ValueViewModel(title: attrTitle, subtitle: attrSubtitle, accessoryType: .checkmark)
         #expect(attrCheckmark.accessoryType == .checkmark)
         #expect(rowConfiguration(from: attrCheckmark)?.accessoryType == .checkmark)
+
+        // Test onSelectAction execution on ValueViewModel
+        var valueActionExecuted = false
+        var executedValueTitle: String?
+        let onSelectValue: OBAListViewAction<OBAListRowView.ValueViewModel> = { model in
+            valueActionExecuted = true
+            if case let .string(str) = model.title {
+                executedValueTitle = str
+            }
+        }
+        let valueActionModel = OBAListRowView.ValueViewModel(
+            title: "Adult Fare",
+            subtitle: "$3.00",
+            accessoryType: .disclosureIndicator,
+            onSelectAction: onSelectValue
+        )
+        #expect(valueActionModel.onSelectAction != nil)
+        valueActionModel.onSelectAction?(valueActionModel)
+        #expect(valueActionExecuted == true)
+        #expect(executedValueTitle == "Adult Fare")
+
+        // Test attributed ValueViewModel with onSelectAction
+        var attrValActionExecuted = false
+        let attrValActionModel = OBAListRowView.ValueViewModel(
+            title: attrTitle,
+            subtitle: attrSubtitle,
+            accessoryType: .disclosureIndicator,
+            onSelectAction: { _ in attrValActionExecuted = true }
+        )
+        attrValActionModel.onSelectAction?(attrValActionModel)
+        #expect(attrValActionExecuted == true)
+
+        // Test image assignment and forwarding on ValueViewModel
+        var valImageModel = OBAListRowView.ValueViewModel(title: "With Image", subtitle: "Image Subtitle")
+        let valImage = UIImage(systemName: "creditcard")
+        valImageModel.image = valImage
+        #expect(valImageModel.image == valImage)
+        guard case let .custom(valImgContentConfig) = valImageModel.configuration,
+              let valImgRowConfig = valImgContentConfig as? OBAListRowConfiguration else {
+            Issue.record("Expected OBAListRowConfiguration inside .custom")
+            return
+        }
+        #expect(valImgRowConfig.image == valImage)
+
+        // Test equality and hashing on ValueViewModel
+        let valA = OBAListRowView.ValueViewModel(title: "Same", subtitle: "Val")
+        let valB = OBAListRowView.ValueViewModel(title: "Same", subtitle: "Val")
+        #expect(valA.id != valB.id)
+        #expect(valA != valB)
+        let valCopy = valA
+        #expect(valA == valCopy)
+        #expect(valA.hashValue == valCopy.hashValue)
     }
 
     // MARK: - Helpers

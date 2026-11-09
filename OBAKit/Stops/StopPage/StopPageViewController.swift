@@ -198,12 +198,35 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     // MARK: - NSUserActivity
 
+    /// The builder's `userInfo` for the published activity, which
+    /// `updateUserActivityState(_:)` puts back. Taken from the same build as the
+    /// activity's `persistentIdentifier` and `webpageURL`, so all three name the
+    /// same stop and region even if the current region changes later.
+    private var activityUserInfo: [AnyHashable: Any]?
+
     /// Publishes this stop's `NSUserActivity` for Handoff, Siri and Spotlight.
     /// Ports `StopViewController.beginUserActivity()`; called on appearance and
     /// whenever the stop resolves.
     private func beginUserActivity() {
         guard let stop = viewModel.stop else { return }
-        self.userActivity = actionPresenter.makeUserActivity(stop: stop)
+        let activity = actionPresenter.makeUserActivity(stop: stop)
+        // Stashed first: once the activity is assigned, UIKit may call the override at any save.
+        activityUserInfo = activity?.userInfo
+        self.userActivity = activity
+        // Asks UIKit to call `updateUserActivityState(_:)` at its next save.
+        activity?.needsSave = true
+    }
+
+    /// UIKit clears the `userInfo` of an activity a responder owns before calling
+    /// this, so each responder sharing it can add its own. Without the stop and
+    /// region, a Siri suggestion can route only through `webpageURL`, which a
+    /// region without a sidecar doesn't have.
+    /// See: https://developer.apple.com/documentation/uikit/uiresponder/useractivity
+    override func updateUserActivityState(_ activity: NSUserActivity) {
+        super.updateUserActivityState(activity)
+        if let activityUserInfo {
+            activity.addUserInfoEntries(from: activityUserInfo)
+        }
     }
 
     // MARK: - Navigation Handler

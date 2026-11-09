@@ -1,0 +1,23 @@
+{
+  "code": 200,
+  "currentTime": 1792832061687,
+  "text": "OK",
+  "version": 2,
+  "data": {
+    "entry": {
+      "id": "",
+      "name": "",
+      "gitProperties": {
+        "git.build.version": "2.7.1"
+      }
+    },
+    "references": {
+      "agencies": [],
+      "routes": [],
+      "situations": [],
+      "stopTimes": [],
+      "stops": [],
+      "trips": []
+    }
+  }
+}

@@ -54,4 +54,27 @@ final class DepartureStatusTests {
             #expect(UIImage(systemName: glyph) != nil, "\(glyph) isn't an SF Symbol")
         }
     }
+
+    @Test func testAccessibilityStatusDescriptionFormatsLiveAndScheduled() {
+        let liveOnTime = DepartureStatus(isRealTime: true, scheduleStatus: .onTime, deviationMinutes: 0)
+        #expect(liveOnTime.accessibilityStatusDescription == "live tracking, on time")
+
+        let liveLate = DepartureStatus(isRealTime: true, scheduleStatus: .delayed, deviationMinutes: 7)
+        #expect(liveLate.accessibilityStatusDescription == "live tracking, 7 min late")
+
+        let scheduled = DepartureStatus(isRealTime: false, scheduleStatus: .unknown, deviationMinutes: 0)
+        #expect(scheduled.accessibilityStatusDescription == "scheduled time only, no live data")
+    }
+
+    @Test func testFallbackColorAndLabelForUnknownOrNonRealtime() {
+        let unknownRealtime = DepartureStatus(isRealTime: true, scheduleStatus: .unknown, deviationMinutes: 0)
+        #expect(unknownRealtime.color == UIColor.secondaryLabel)
+        #expect(unknownRealtime.label == "schedule data")
+        #expect(unknownRealtime.glyphName == "clock")
+
+        let notRealtimeWithEarlyStatus = DepartureStatus(isRealTime: false, scheduleStatus: .early, deviationMinutes: -5)
+        #expect(notRealtimeWithEarlyStatus.color == UIColor.secondaryLabel)
+        #expect(notRealtimeWithEarlyStatus.label == "schedule data")
+        #expect(notRealtimeWithEarlyStatus.glyphName == "clock")
+    }
 }

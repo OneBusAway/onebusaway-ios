@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import AppIntents
 import Foundation
 import Testing
 @testable import OBAKit
@@ -43,6 +44,19 @@ final class UserActivityBuilderTests: OBATestCase {
         #expect(activity.isEligibleForPrediction == true)
         #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.stopID] as? String == stop.id)
         #expect(activity.userInfo?[UserActivityBuilder.UserInfoKeys.regionID] as? Int == region.regionIdentifier)
+    }
+
+    /// Lets Siri and Spotlight treat a viewed stop as the same `StopEntity`
+    /// that Shortcuts and the index use.
+    @available(iOS 18.2, *)
+    @Test func `Stop user activity names its stop entity`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = buildApplication(queue: queue, dataLoader: dataLoader)
+        let builder = try #require(UserActivityBuilder(application: app, validatingActivityTypes: false))
+        let stop = try #require(Fixtures.loadSomeStops().first)
+
+        let activity = builder.userActivity(for: stop, region: Fixtures.pugetSoundRegion)
+        #expect(activity.appEntityIdentifier == EntityIdentifier(for: StopEntity.self, identifier: "region_1_stop_1_10914"))
     }
 
     @Test func `Trip user activity sets target content identifier`() async throws {

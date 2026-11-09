@@ -620,6 +620,34 @@ final class ApplicationTests: OBATestCase {
         #expect(app.pendingStopRegionID == 1)
     }
 
+    /// A restored or handed-off trip arrives before the root UI and the API
+    /// service exist, and with no `webpageURL` in a region without a sidecar.
+    /// It used to be dropped; now it waits in `pendingTripDeepLink`.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1625
+    @Test func `Application continues a trip user activity on cold launch`() async {
+        let app = makeApplicationForUserActivity()
+        guard let builder = app.userActivityBuilder else {
+            Issue.record("Test host is missing NSUserActivityTypes")
+            return
+        }
+
+        let activity = NSUserActivity(activityType: builder.tripActivityType)
+        activity.userInfo = [
+            UserActivityBuilder.UserInfoKeys.regionID: 1,
+            UserActivityBuilder.UserInfoKeys.stopID: "1_75403",
+            UserActivityBuilder.UserInfoKeys.tripID: "1_545_trip",
+            UserActivityBuilder.UserInfoKeys.serviceDate: Date(timeIntervalSince1970: 1_710_273_600),
+            UserActivityBuilder.UserInfoKeys.stopSequence: 12
+        ]
+
+        let result = await MainActor.run {
+            app.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
+        }
+        #expect(result)
+        #expect(app.pendingTripDeepLink?.tripID == "1_545_trip")
+        #expect(app.pendingTripDeepLink?.regionID == 1)
+    }
+
     @Test func `Application continues a browsing-web stop URL`() async {
         let app = makeApplicationForUserActivity()
 
@@ -632,6 +660,54 @@ final class ApplicationTests: OBATestCase {
         #expect(result)
         #expect(app.pendingStopID == "1_75403")
         #expect(app.pendingStopRegionID == 1)
+    }
+
+    /// The Open Stop shortcut reaches `Application` only through this
+    /// notification. Before the root UI exists the stop is stashed, the same
+    /// as a donated stop activity. Remove the observer and nothing is stashed.
+    @Test func `An Open Stop request opens the stop`() async {
+        let app = makeApplicationForUserActivity()
+
+        OpenStopRequest.post(AppLinksRouter.StopDestination(stopID: "1_75403", regionID: 1))
+
+        // A `.main` observer posted to from the main thread runs before `post`
+        // returns, but that isn't documented, so wait for it.
+        await poll(until: { app.pendingStopID != nil }, "Open Stop request was never handled")
+        #expect(app.pendingStopID == "1_75403")
+        #expect(app.pendingStopRegionID == 1)
+    }
+
+    /// A region change is where the previous region's stops leave Spotlight.
+    /// Remove the call from `regionsService(_:updatedRegion:)` and nothing is cleared.
+    @Test func `A region change replaces the Spotlight index`() async {
+        let app = makeApplicationForUserActivity()
+        let index = FakeStopIndex()
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: app.userDataStore, stopCache: nil, currentRegion: { Fixtures.pugetSoundRegion }, isIndexingAvailable: { true })
+        app.stopSpotlightIndexer = indexer
+
+        app.regionsService(app.regionsService, updatedRegion: Fixtures.pugetSoundRegion)
+        await indexer.currentRun?.value
+
+        #expect(await index.log == [.deleteAll])
+    }
+
+    /// The launch and region-change rebuilds run before the sync writes the
+    /// region's stops. Another region's sync is ignored; the second call is the
+    /// positive control. Remove the call from `regionStopSyncWroteStops(regionID:)`
+    /// and nothing is cleared.
+    @Test func `Only a sync of the current region replaces the Spotlight index`() async {
+        let (app, _) = makeAppAndPushService()
+        app.regionsService.currentRegion = Fixtures.tampaRegion
+        let index = FakeStopIndex()
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: app.userDataStore, stopCache: nil, currentRegion: { Fixtures.tampaRegion }, isIndexingAvailable: { true })
+        app.stopSpotlightIndexer = indexer
+
+        app.regionStopSyncWroteStops(regionID: Fixtures.pugetSoundRegion.regionIdentifier)
+        #expect(indexer.currentRun == nil)
+
+        app.regionStopSyncWroteStops(regionID: Fixtures.tampaRegion.regionIdentifier)
+        await indexer.currentRun?.value
+        #expect(await index.log == [.deleteAll])
     }
 
     private func makeApplicationForUserActivity() -> Application {
@@ -692,6 +768,45 @@ final class ApplicationTests: OBATestCase {
         app.regionsService(app.regionsService, updatedRegion: testRegion)
 
         // Analytics should have been called - reportSetRegion doesn't add to reportedEvents, but the test exercises the code path
+    }
+
+    // MARK: - Region Stop Sync Tests
+
+    /// Region stop sync starts only from `didFinishLaunching`. The test host
+    /// builds thousands of `Application`s that never launch; if one synced on a
+    /// region change, `MockDataLoader` would crash the run on the unstubbed request.
+    @Test func `An Application that never launched never syncs region stops`() {
+        let app = makeApplicationForUserActivity()
+
+        app.regionsService(app.regionsService, updatedRegion: Fixtures.pugetSoundRegion)
+        app.scheduleRegionStopSync()
+
+        #expect(app.regionStopSyncScheduler == nil)
+    }
+
+    /// Once launched, a region change and each activation ask for a sync. Each is
+    /// cancelled during the pause, before any request, which `MockDataLoader`
+    /// would trap on.
+    @Test func `A launched Application schedules a region stop sync on a region change and on activation`() async throws {
+        let (app, _) = makeAppAndPushService()
+        app.startRegionStopSync()
+        let scheduler = try #require(app.regionStopSyncScheduler)
+        // No region yet, so nothing to sync.
+        #expect(scheduler.pendingSync == nil)
+
+        app.regionsService.currentRegion = Fixtures.tampaRegion
+        try await cancelPendingSync(of: scheduler)
+
+        app.applicationDidBecomeActive(UIApplication.shared)
+        try await cancelPendingSync(of: scheduler)
+    }
+
+    /// Requires a sync to be waiting, then cancels it and waits for it to end.
+    private func cancelPendingSync(of scheduler: RegionStopSyncScheduler) async throws {
+        let pending = try #require(scheduler.pendingSync)
+        pending.cancel()
+        await pending.value
+        #expect(scheduler.pendingSync == nil)
     }
 
     // MARK: - Push Service Tests
