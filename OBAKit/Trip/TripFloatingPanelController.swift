@@ -395,13 +395,11 @@ class TripFloatingPanelController: UIViewController,
     }
 
     private func buildTransferContext(for tripStop: TripStopViewModel) -> TransferContext? {
-        guard let arrivalDeparture = tripConvertible?.arrivalDeparture else { return nil }
-
-        // Only provide transfer context for stops that are not the user's
-        // boarding stop — transferring to the same stop is not meaningful.
-        guard tripStop.stop.id != arrivalDeparture.stopID else { return nil }
-
-        return .from(arrivalDeparture: arrivalDeparture, arrivalDate: tripStop.stopTime.arrivalDate)
+        TransferContext.toStop(
+            tripStop.stop.id,
+            arrivalDate: tripStop.stopTime.arrivalDate,
+            from: tripConvertible?.arrivalDeparture
+        )
     }
 
     private func showOnMap(_ tripStop: TripStopViewModel) {

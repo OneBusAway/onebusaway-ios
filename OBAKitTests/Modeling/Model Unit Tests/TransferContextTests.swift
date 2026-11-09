@@ -150,6 +150,43 @@ final class TransferContextTests: OBATestCase {
         #expect(context.fromRouteDisplay == expectedDisplay)
     }
 
+    // MARK: - toStop
+
+    /// Route 75 to Northgate Lake City, boarding at stop 1_75414.
+    private func boardingDeparture() throws -> ArrivalDeparture {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_75414.json"
+        )
+        return try #require(stopArrivals.arrivalsAndDepartures.first)
+    }
+
+    @Test func `toStop builds the context for a stop after boarding`() throws {
+        let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
+
+        let context = try #require(TransferContext.toStop("1_75403", arrivalDate: arrivalTime, from: try boardingDeparture()))
+
+        #expect(context.arrivalTime == arrivalTime)
+        #expect(context.fromRouteShortName == "75")
+        #expect(context.fromTripHeadsign == "Northgate Lake City")
+        #expect(context.fromTripID == "1_39683959")
+    }
+
+    @Test func `toStop builds none for the boarding stop`() throws {
+        let departure = try boardingDeparture()
+        #expect(departure.stopID == "1_75414")
+
+        #expect(TransferContext.toStop("1_75414", arrivalDate: Date(timeIntervalSince1970: 1_000_000), from: departure) == nil)
+    }
+
+    @Test func `toStop builds none without a departure`() {
+        #expect(TransferContext.toStop("1_75403", arrivalDate: Date(timeIntervalSince1970: 1_000_000), from: nil) == nil)
+    }
+
+    @Test func `toStop builds none without an arrival time`() throws {
+        #expect(TransferContext.toStop("1_75403", arrivalDate: nil, from: try boardingDeparture()) == nil)
+    }
+
     @Test func `Init stores fromTripID`() {
         let context = TransferContext(
             arrivalTime: Date(timeIntervalSince1970: 1_000_000),

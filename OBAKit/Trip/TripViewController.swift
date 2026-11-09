@@ -418,11 +418,11 @@ class TripViewController: UIViewController,
     }
 
     private func openStop(_ stopTime: TripStopTime, on mapView: MKMapView) {
-        var transferContext: TransferContext?
-        if let arrivalDeparture = tripConvertible.arrivalDeparture,
-           stopTime.stopID != arrivalDeparture.stopID {
-            transferContext = .from(arrivalDeparture: arrivalDeparture, arrivalDate: stopTime.arrivalDate)
-        }
+        let transferContext = TransferContext.toStop(
+            stopTime.stopID,
+            arrivalDate: stopTime.arrivalDate,
+            from: tripConvertible.arrivalDeparture
+        )
 
         // Same reason as `MapViewController`: leaving the tapped pin selected
         // only strands a highlight. MapKit will not fire `didSelect` again.
