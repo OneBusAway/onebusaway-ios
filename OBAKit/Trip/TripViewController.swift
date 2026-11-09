@@ -13,6 +13,7 @@ import Combine
 import FloatingPanel
 import OBAKitCore
 
+@available(*, deprecated, message: "Use TripMapHostViewController. See #1641.")
 class TripViewController: UIViewController,
     AppContext,
     FloatingPanelControllerDelegate,
@@ -600,6 +601,7 @@ class TripViewController: UIViewController,
 
 // MARK: - ViewModel Binding
 
+@available(*, deprecated, message: "Use TripMapHostViewController. See #1641.")
 private extension TripViewController {
     func bindTripContent() {
         viewModel.$tripConvertible
