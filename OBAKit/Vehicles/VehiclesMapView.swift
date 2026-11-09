@@ -86,10 +86,7 @@ struct VehiclesMapView: View {
               let window = windowScene.windows.first,
               let rootVC = window.rootViewController else { return }
 
-        let tripVC = TripViewController(
-            application: viewModel.application,
-            tripConvertible: tripConvertible
-        )
+        let tripVC = viewModel.application.viewRouter.makeTripController(tripConvertible: tripConvertible)
 
         // Find the navigation controller and push
         if let tabBarController = rootVC as? UITabBarController,
