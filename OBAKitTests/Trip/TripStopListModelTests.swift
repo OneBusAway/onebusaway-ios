@@ -533,35 +533,26 @@ struct TripStopListModelTests {
         #expect(Set(model.groups.map(\.id)).count == 2)
     }
 
+    /// Long enough for a run to form on each side of the boarding stop: the
+    /// vehicle at row 0 ("A"), boarding at row 6 ("G"), the destination at row 12
+    /// ("M"), five stops between each. Neither run may swallow a rider's stop.
     @Test func `A shared destination and boarding stop are both kept out of collapsed runs`() {
-        // Vehicle at row 0 ("A"), boarding at row 2 ("C"), destination at row 6 ("G")
-        let stops = line(["A", "B", "C", "D", "E", "F", "G", "H", "I"])
+        let stops = line((0..<16).map { String(UnicodeScalar(65 + $0)!) })
         let model = make(
             stops,
-            userStopID: "C",
-            userStopSequence: 2,
+            userStopID: "G",
+            userStopSequence: 6,
             closestStopID: "A",
-            sharedDestinationStopID: "G"
+            sharedDestinationStopID: "M"
         )
 
         #expect(model.vehicleIndex == 0)
-        #expect(model.boardingIndex == 2)
-        #expect(model.userIndex == 6)
+        #expect(model.boardingIndex == 6)
+        #expect(model.userIndex == 12)
 
-        for group in model.groups {
-            #expect(!group.range.contains(2), "Boarding stop at row 2 must not be collapsed into run \(group.id)")
-            #expect(!group.range.contains(6), "Destination stop at row 6 must not be collapsed into run \(group.id)")
-        }
-
-        let items = model.items(expanded: [])
-        let stopIDs = items.compactMap { item -> StopID? in
-            switch item {
-            case .stop(let row): return row.stopID
-            case .group: return nil
-            }
-        }
-        #expect(stopIDs.contains("C"), "Boarding stop must stay listed")
-        #expect(stopIDs.contains("G"), "Destination stop must stay listed")
+        #expect(model.groups.map(\.id) == ["approaching-boarding", "approaching"])
+        #expect(model.groups.map(\.range) == [1..<6, 7..<12])
+        #expect(shape(model) == ["A", "[5]", "G", "[5]", "M", "N", "O", "P"])
     }
 
     @Test func `Passed and approaching runs split around boarding and destination stops`() {
