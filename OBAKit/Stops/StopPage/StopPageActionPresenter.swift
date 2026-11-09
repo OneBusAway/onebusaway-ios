@@ -271,9 +271,10 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     /// and the departure row's tap target.
     ///
     /// Not through `ViewRouter.navigateTo(arrivalDeparture:from:)`, which wraps the
-    /// page in `TripMapHostViewController` for the surfaces that push it
-    /// full-screen with no map behind them. The Stop page already sits over the map
-    /// tab's map, so the page goes here bare and draws the trip on that map.
+    /// page in `TripMapHostViewController` with a map of its own. On the map tab
+    /// the Stop page sits over a map that draws the trip (`onTripPagePush`,
+    /// `onShowTripInSheet`), so the page goes bare. A Stop page pushed anywhere
+    /// else still pushes the bare page, with no map behind it.
     func showTripPage(for arrivalDeparture: ArrivalDeparture, originTitle: String?) {
         // A host with a sheet stack takes the trip whole: it opens the page as a
         // sheet over its own map and draws the trip on that map. Falling through

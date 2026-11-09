@@ -97,12 +97,24 @@ final class TripMapHostViewController: UIViewController,
         tripPage.setAtTip(floatingPanel.state == .tip)
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateMapLayoutMargins()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         // As `TripViewController` did: the map is hidden from VoiceOver, so the
         // panel is the whole screen to a VoiceOver user.
         if UIAccessibility.isVoiceOverRunning, !isBeingPreviewed {
             floatingPanel.move(to: .full, animated: true)
+        }
+
+        // A committed preview frames the trip again now that it has the screen.
+        // Framed while still in the preview, it would fit a 320 pt glance.
+        if needsReframeAfterPreview, let shownFocus {
+            needsReframeAfterPreview = false
+            showOnMap(shownFocus)
         }
     }
 
@@ -249,6 +261,37 @@ final class TripMapHostViewController: UIViewController,
     /// detent. See `TripPageViewController.setAtTip(_:)`.
     func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
         tripPage.setAtTip(fpc.state == .tip)
+        updateMapLayoutMargins()
+    }
+
+    /// Keeps the map's own furniture (the legal label, the scale, the compass)
+    /// in the part of the map the panel leaves uncovered, as `TripViewController`
+    /// did. Left alone at `.full`, where nothing of the map shows.
+    private func updateMapLayoutMargins() {
+        guard floatingPanel.state != .full else { return }
+        mapView.layoutMargins = Self.mapLayoutMargins(
+            panelState: floatingPanel.state,
+            panelCoverage: isBeingPreviewed ? .none : (traitCollection.horizontalSizeClass == .regular ? .leading : .bottomHalf),
+            safeAreaHeight: view.safeAreaLayoutGuide.layoutFrame.height
+        )
+    }
+
+    /// Internal for tests. Physical rather than directional insets: the
+    /// landscape panel sits on the left in either layout direction.
+    static func mapLayoutMargins(
+        panelState: FloatingPanelState,
+        panelCoverage: PanelCoverage,
+        safeAreaHeight: CGFloat
+    ) -> UIEdgeInsets {
+        switch panelCoverage {
+        case .none:
+            return .zero
+        case .leading:
+            return UIEdgeInsets(top: 0, left: MapPanelLandscapeLayout.WidthSize + ThemeMetrics.padding, bottom: 0, right: 0)
+        case .bottomHalf:
+            let bottom = panelState == .half ? safeAreaHeight / 2 : MapPanelLayout.EstimatedDrawerTipStateHeight
+            return UIEdgeInsets(top: 0, left: 0, bottom: bottom, right: 0)
+        }
     }
 
     // MARK: - Previewable
@@ -265,16 +308,17 @@ final class TripMapHostViewController: UIViewController,
         }
     }
 
-    /// Brings the panel up when a preview is committed and pushed, and frames the
-    /// trip again: the preview framed it into the whole map, half of which the
-    /// panel now covers.
+    /// Set when a preview is committed, so the trip is framed again once the
+    /// host has the screen. See `viewDidAppear(_:)`.
+    private var needsReframeAfterPreview = false
+
+    /// Brings the panel up when a preview is committed and pushed. The panel
+    /// is already at `.half` behind the hidden view, where it opened.
     func exitPreviewMode() {
         isBeingPreviewed = false
         guard isViewLoaded else { return }
         floatingPanel.view.isHidden = false
-        floatingPanel.move(to: .half, animated: true)
-        if let shownFocus {
-            showOnMap(shownFocus)
-        }
+        needsReframeAfterPreview = true
+        updateMapLayoutMargins()
     }
 }

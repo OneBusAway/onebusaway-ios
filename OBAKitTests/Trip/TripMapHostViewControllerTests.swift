@@ -143,6 +143,9 @@ final class TripMapHostViewControllerTests: OBATestCase {
         let context = try #require(stop.transferContext)
         #expect(context.arrivalTime == Date(timeIntervalSince1970: 1_541_142_600))
         #expect(context.fromTripID == "1_40984902")
+
+        let analytics = try #require(application.analytics as? AnalyticsMock)
+        #expect(analytics.reportedEvents.filter { $0.label == AnalyticsLabels.mapStopAnnotationTapped }.count == 1)
     }
 
     @Test func `Camera insets keep the trip clear of the panel`() {
@@ -173,6 +176,39 @@ final class TripMapHostViewControllerTests: OBATestCase {
             panelCoverage: .none
         )
         #expect(preview.bottom == 42)
+    }
+
+    /// The map's legal label, scale and compass stay in the strip of map the
+    /// panel leaves uncovered.
+    @Test func `Map margins keep the map's own labels clear of the panel`() {
+        let half = TripMapHostViewController.mapLayoutMargins(panelState: .half, panelCoverage: .bottomHalf, safeAreaHeight: 763)
+        #expect(half == UIEdgeInsets(top: 0, left: 0, bottom: 381.5, right: 0))
+
+        let tip = TripMapHostViewController.mapLayoutMargins(panelState: .tip, panelCoverage: .bottomHalf, safeAreaHeight: 763)
+        #expect(tip == UIEdgeInsets(top: 0, left: 0, bottom: 72, right: 0))
+
+        // 291 pt column + 8 pt padding, on the physical left.
+        let iPad = TripMapHostViewController.mapLayoutMargins(panelState: .half, panelCoverage: .leading, safeAreaHeight: 724)
+        #expect(iPad == UIEdgeInsets(top: 0, left: 299, bottom: 0, right: 0))
+
+        let preview = TripMapHostViewController.mapLayoutMargins(panelState: .half, panelCoverage: .none, safeAreaHeight: 763)
+        #expect(preview == .zero)
+    }
+
+    /// Read back, a view's margins include its safe area, which is subtracted
+    /// here to leave the margin the host set.
+    @Test func `On screen, the map's margins follow the panel`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let host = TripMapHostViewController(application: makeApplication(dataLoader: dataLoader), arrivalDeparture: try makeDeparture())
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        let window = try show(navigation)
+        push(host, onto: navigation, in: window)
+        let setBottom = { host.mapView.layoutMargins.bottom - host.mapView.safeAreaInsets.bottom }
+        #expect(host.floatingPanel.state == .half)
+        #expect(setBottom() == host.view.safeAreaLayoutGuide.layoutFrame.height / 2)
+
+        host.floatingPanel.move(to: .tip, animated: false)
+        #expect(setBottom() == 72)
     }
 
     // MARK: - Panel
@@ -240,6 +276,26 @@ final class TripMapHostViewControllerTests: OBATestCase {
         window.layoutIfNeeded()
 
         #expect(navigation.viewControllers == [root])
+    }
+
+    /// Embedded, the page's title and its iPhone Duo refresh button belong on
+    /// the host: the bar shows the host's item, and a screen pushed over the
+    /// host takes its back title from the host.
+    @Test func `The host carries the page's title, and its refresh button where bars are vertical`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let host = TripMapHostViewController(application: makeApplication(dataLoader: dataLoader), arrivalDeparture: try makeDeparture())
+        host.tripPage.presentsBarsVerticallyOverride = true
+        let navigation = UINavigationController(rootViewController: UIViewController())
+        let window = try show(navigation)
+
+        push(host, onto: navigation, in: window)
+
+        #expect(host.title == "Route 49 to Downtown Seattle Broadway")
+        #expect(host.navigationItem.rightBarButtonItem != nil)
+        #expect(!navigation.isNavigationBarHidden)
+        // Rendered against the stack, not before the host was on one.
+        #expect(host.tripPage.rootView.backBehavior == .pop)
+        #expect(!host.tripPage.rootView.showsBackRow)
     }
 
     /// The page hides the bar for the host, gives it to a screen pushed on top,

@@ -155,6 +155,12 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // pushed on top gave that page the bar back. Animated with the pop, so
         // the bar doesn't vanish from the page above at the start of a back swipe.
         hideNavigationBar(animated: animated)
+        // Embedded in `TripMapHostViewController`, the page can load and render
+        // before the host is on a stack, from a back row with nothing to ask.
+        // By now it is, so the row's glyph and the host's title can be right.
+        if stackEntry !== self {
+            render()
+        }
         disableIdleTimer()
         beginUserActivity()
         viewModel.start()
@@ -370,8 +376,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// action gates and the two pieces of state this controller owns.
     private func render() {
         existingAlarm = lookUpAlarm()
-        title = pageTitle
-        navigationItem.rightBarButtonItem = showsSystemNavigationBar ? refreshBarButton : nil
+        // On the controller the stack shows: embedded, the host's bar reads the
+        // host's item, and a page pushed over it takes its back title from there.
+        stackEntry.title = pageTitle
+        stackEntry.navigationItem.rightBarButtonItem = showsSystemNavigationBar ? refreshBarButton : nil
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
