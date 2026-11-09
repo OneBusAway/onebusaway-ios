@@ -43,6 +43,9 @@ final class TripShapeOverlay: MKPolyline {
 
 /// A stop on the focused trip.
 final class TripStopAnnotation: NSObject, MKAnnotation {
+    /// The list row this dot was drawn from, so a tap on the dot can open the
+    /// stop the way a tap on the row does. See `TripMapHostViewController`.
+    let row: TripStopListModel.Row
     let coordinate: CLLocationCoordinate2D
     let title: String?
     let isPassed: Bool
@@ -51,6 +54,7 @@ final class TripStopAnnotation: NSObject, MKAnnotation {
     let routeColor: UIColor
 
     init(row: TripStopListModel.Row, coordinate: CLLocationCoordinate2D, routeColor: UIColor) {
+        self.row = row
         self.coordinate = coordinate
         self.title = row.name
         self.isPassed = row.isPassed && !row.isVehicleHere
