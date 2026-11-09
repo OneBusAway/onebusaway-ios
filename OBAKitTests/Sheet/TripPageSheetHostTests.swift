@@ -99,7 +99,17 @@ final class TripPageSheetHostTests: OBATestCase {
             onSelectStop: { selectedStopIDs.append($0) },
             onClose: {}
         )
-        page.rootView.actions.onSelectStop("1_75403")
+        page.rootView.actions.onSelectStop(TripStopListModel.Row(
+            id: "4-1_75403",
+            stopID: "1_75403",
+            name: "Stop 4",
+            coordinate: nil,
+            date: nil,
+            isPassed: false,
+            isVehicleHere: false,
+            isUserStop: false,
+            isTerminal: false
+        ))
 
         #expect(selectedStopIDs == ["1_75403"])
     }

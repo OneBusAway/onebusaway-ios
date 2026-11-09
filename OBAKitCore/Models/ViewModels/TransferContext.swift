@@ -57,6 +57,22 @@ public struct TransferContext: Equatable, Hashable {
         )
     }
 
+    /// The context for stepping off the rider's trip at one of its stops, which
+    /// the trip screens hand to the stop they open when a stop is tapped.
+    ///
+    /// - Parameters:
+    ///   - stopID: The stop being opened.
+    ///   - arrivalDate: When the trip reaches that stop. On a loop route that
+    ///     calls at the stop twice, the time of the visit that was tapped.
+    ///   - arrivalDeparture: The departure the rider is on.
+    /// - Returns: `nil` without a departure (a trip opened from a vehicle has
+    ///   no boarding stop), without a time, or for the stop the rider boards
+    ///   at: transferring to the same stop is not meaningful.
+    public static func toStop(_ stopID: StopID, arrivalDate: Date?, from arrivalDeparture: ArrivalDeparture?) -> TransferContext? {
+        guard let arrivalDeparture, let arrivalDate, stopID != arrivalDeparture.stopID else { return nil }
+        return .from(arrivalDeparture: arrivalDeparture, arrivalDate: arrivalDate)
+    }
+
     /// Computes minutes from the transfer arrival time to the given departure date.
     /// Positive values mean the departure is after arrival; negative means before.
     public func minutesUntilDeparture(from departureDate: Date) -> Int {

@@ -292,6 +292,9 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// Set by a host that opens stops itself: the map panel, which shows a stop as a
     /// sheet of its own. `nil` pushes the stop through `ViewRouter`, which needs this
     /// page to be on a navigation stack.
+    ///
+    /// A stop opened this way gets no transfer context: `SheetRoute.stopDetails`
+    /// carries only the stop's ID.
     var onSelectStop: ((StopID) -> Void)?
 
     private func publishMapFocus(
@@ -432,13 +435,16 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.canReportGhostBus = application.features.obaco == .running
 
         actions.onBack = { [weak self] in self?.goBack() }
-        actions.onSelectStop = { [weak self] stopID in
+        actions.onSelectStop = { [weak self] row in
             guard let self else { return }
             if let onSelectStop {
-                onSelectStop(stopID)
+                onSelectStop(row.stopID)
                 return
             }
-            application.viewRouter.navigateTo(stopID: stopID, from: self)
+            // The row's own time, not a lookup by stop ID: a loop route calls at
+            // the same stop twice, and the rider tapped one visit in particular.
+            let transferContext = TransferContext.toStop(row.stopID, arrivalDate: row.date, from: departure)
+            application.viewRouter.navigateTo(stopID: row.stopID, from: self, transferContext: transferContext)
         }
         actions.onBookmark = { [weak self] in self?.showBookmarkEditor() }
         actions.onSchedule = { [weak self] in self?.showSchedule() }
