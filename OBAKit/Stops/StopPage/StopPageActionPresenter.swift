@@ -174,7 +174,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
             makeTripPreview: { [weak self] departure in
                 guard let self else { return AnyView(EmptyView()) }
                 return AnyView(
-                    TripViewControllerPreview(departure: departure, application: self.application)
+                    TripMapHostPreview(departure: departure, application: self.application)
                         .frame(width: 320, height: 400)
                 )
             }
