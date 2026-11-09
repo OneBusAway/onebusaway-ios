@@ -116,6 +116,24 @@ struct TripStopListModel {
         self.boardingIndex = boardingIndex ?? rows.firstIndex { $0.isBoardingStop }
     }
 
+    /// The stop list the trip page shows for `convertible`. Its list and its
+    /// map's dots are both built from this, so they can't disagree about which
+    /// stop is the rider's on a shared trip.
+    static func make(
+        convertible: TripConvertible,
+        details: TripDetails?,
+        sharedDestinationStopID: StopID?
+    ) -> TripStopListModel {
+        let departure = convertible.arrivalDeparture
+        return make(
+            stopTimes: details?.stopTimes ?? [],
+            userStopID: departure?.stopID,
+            userStopSequence: departure?.stopSequence,
+            closestStopID: convertible.tripStatus?.closestStopID,
+            sharedDestinationStopID: sharedDestinationStopID
+        )
+    }
+
     static func make<S: TripStopListEntry>(
         stopTimes: [S],
         userStopID: StopID?,

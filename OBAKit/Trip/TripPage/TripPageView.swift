@@ -129,15 +129,7 @@ struct TripPageView: View {
         Color(uiColor: route?.color ?? ThemeColors.shared.brand)
     }
 
-    private var stopList: TripStopListModel {
-        TripStopListModel.make(
-            stopTimes: viewModel.tripDetails?.stopTimes ?? [],
-            userStopID: departure?.stopID,
-            userStopSequence: departure?.stopSequence,
-            closestStopID: convertible.tripStatus?.closestStopID,
-            sharedDestinationStopID: viewModel.destinationStopID
-        )
-    }
+    private var stopList: TripStopListModel { viewModel.stopList }
 
     var body: some View {
         VStack(spacing: 0) {

@@ -77,6 +77,20 @@ class TripViewModel: ObservableObject {
     /// every other way into the trip screen. See #449.
     let destinationStopID: StopID?
 
+    /// The stops the trip page lists, read from this model's current values.
+    ///
+    /// Not for a `@Published` sink, which runs before the new value is stored:
+    /// one builds from the sink's own values with
+    /// `TripStopListModel.make(convertible:details:sharedDestinationStopID:)`,
+    /// as `TripPageViewController.publishMapFocus` does.
+    var stopList: TripStopListModel {
+        TripStopListModel.make(
+            convertible: tripConvertible,
+            details: tripDetails,
+            sharedDestinationStopID: destinationStopID
+        )
+    }
+
     /// Set by the UI layer to gate programmatic auto-refreshes.
     /// e.g. `viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }`
     var shouldSkipProgrammaticRefresh: (() -> Bool)?

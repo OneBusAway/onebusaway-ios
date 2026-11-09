@@ -332,13 +332,13 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         shape: [CLLocationCoordinate2D]?
     ) {
         let status = convertible.tripStatus
-        let departure = convertible.arrivalDeparture
 
+        // The list's own rows, shared destination included, so a shared trip's
+        // map marks the same stop as the rider's that the list does.
         let stops = TripStopListModel.make(
-            stopTimes: details?.stopTimes ?? [],
-            userStopID: departure?.stopID,
-            userStopSequence: departure?.stopSequence,
-            closestStopID: status?.closestStopID
+            convertible: convertible,
+            details: details,
+            sharedDestinationStopID: viewModel.destinationStopID
         ).rows
 
         mapFocus.apply(
