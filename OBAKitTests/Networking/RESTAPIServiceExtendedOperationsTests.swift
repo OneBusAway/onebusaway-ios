@@ -9,7 +9,6 @@
 
 import CoreLocation
 import Foundation
-import MapKit
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore

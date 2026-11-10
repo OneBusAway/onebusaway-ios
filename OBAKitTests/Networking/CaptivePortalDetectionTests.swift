@@ -32,8 +32,24 @@ final class CaptivePortalDetectionTests: OBATestCase {
         #expect(service.errorLooksLikeCaptivePortal(NSError(domain: NSCocoaErrorDomain, code: 3840)))
     }
 
-    @Test func `Unrelated error does not look like a captive portal`() {
+    @Test func `Unrelated domain with code 3840 is not misidentified as captive portal`() {
         let service = buildRESTService()
-        #expect(service.errorLooksLikeCaptivePortal(NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)) == false)
+        let unrelatedError = NSError(domain: "com.onebusaway.unrelated", code: 3840)
+        #expect(!service.errorLooksLikeCaptivePortal(unrelatedError))
+    }
+
+    @Test func `Standard network errors are not classified as captive portal`() {
+        let service = buildRESTService()
+        let errors = [
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut),
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet),
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorNetworkConnectionLost),
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorDNSLookupFailed),
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost)
+        ]
+
+        for err in errors {
+            #expect(!service.errorLooksLikeCaptivePortal(err))
+        }
     }
 }

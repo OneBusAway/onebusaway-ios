@@ -120,13 +120,16 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
             fileName: "arrivals-and-departures-for-stop-1_10914.json"
         )
         let arrDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let headsign = try #require(arrDep.tripHeadsign)
+        #expect(headsign == "Downtown Seattle Broadway")
+
         let key = TripBookmarkKey(arrivalDeparture: arrDep)
 
         #expect(key.stopID == arrDep.stopID)
-        #expect(key.routeShortName == arrDep.routeShortName)
-        #expect(key.routeID == arrDep.routeID)
-        #expect(key.tripHeadsign == (arrDep.tripHeadsign ?? ""))
-        #expect(key.routeAndHeadsign == "\(arrDep.routeShortName) - \(arrDep.tripHeadsign ?? "")")
+        #expect(key.routeShortName == "49")
+        #expect(key.routeID == "1_100447")
+        #expect(key.tripHeadsign == "Downtown Seattle Broadway")
+        #expect(key.routeAndHeadsign == "49 - Downtown Seattle Broadway")
     }
 
     @Test func `TripBookmarkKey initializes from ArrivalDeparture with fallback for nil headsign`() throws {

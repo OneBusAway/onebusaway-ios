@@ -67,4 +67,41 @@ final class StopDistanceTests: OBATestCase {
         // Seattle is well north of the equator, so cos(lat) < 1.
         #expect(lonDistance < latDistance)
     }
+
+    /// At high latitudes (e.g. 60°), longitude delta is scaled by cos(60°) = 0.5 before squaring,
+    /// so a stop with larger raw longitude offset is ranked closer than a stop with smaller latitude offset.
+    @Test func `Nearest orders stops using cosine-scaled longitude at high latitude`() throws {
+        let center = CLLocationCoordinate2D(latitude: 60.0, longitude: 0.0)
+        let stopLonDict: [String: Any] = [
+            "id": "stop_lon_closer_when_scaled",
+            "name": "Stop Lon",
+            "lat": 60.0,
+            "lon": 1.5,
+            "direction": "N",
+            "code": "101",
+            "locationType": 0,
+            "routeIds": ["1_10"],
+            "staticRouteIds": ["1_10"],
+            "wheelchairBoarding": "UNKNOWN"
+        ]
+        let stopLatDict: [String: Any] = [
+            "id": "stop_lat_further_when_scaled",
+            "name": "Stop Lat",
+            "lat": 60.9,
+            "lon": 0.0,
+            "direction": "N",
+            "code": "102",
+            "locationType": 0,
+            "routeIds": ["1_10"],
+            "staticRouteIds": ["1_10"],
+            "wheelchairBoarding": "UNKNOWN"
+        ]
+        let stopLon = try Fixtures.dictionaryToModel(type: Stop.self, dictionary: stopLonDict)
+        let stopLat = try Fixtures.dictionaryToModel(type: Stop.self, dictionary: stopLatDict)
+
+        let ranked = Stop.nearest([stopLat, stopLon], to: center, limit: 2)
+        #expect(ranked.count == 2)
+        #expect(ranked[0].id == "stop_lon_closer_when_scaled")
+        #expect(ranked[1].id == "stop_lat_further_when_scaled")
+    }
 }
