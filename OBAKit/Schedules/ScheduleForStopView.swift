@@ -80,17 +80,18 @@ struct ScheduleForStopView: View {
 
     @ViewBuilder
     private var content: some View {
-        if stopViewModel.isLoading && stopViewModel.scheduleData == nil {
+        switch stopViewModel.contentState {
+        case .loading:
             ProgressView()
-        } else if let error = stopViewModel.error {
+        case .failed(let error):
             ErrorView(headline: StopScheduleStrings.unableToLoad, error: error, regionName: application.currentRegionName) {
                 Task {
                     await stopViewModel.fetchSchedule()
                 }
             }
-        } else if stopViewModel.scheduleData != nil {
+        case .content:
             scheduleContent
-        } else {
+        case .empty:
             Text(StopScheduleStrings.noScheduleData)
                 .foregroundStyle(.secondary)
         }

@@ -235,4 +235,56 @@ final class ScheduleForStopViewModelTests: OBATestCase {
         #expect(viewModel.error == nil)
         #expect(viewModel.scheduleData == nil)
     }
+
+    // MARK: - Content State
+
+    /// Lets one test serve the schedule and then fail the next request for it.
+    /// Written before the second fetch and read by the loader's matchers, never
+    /// concurrently.
+    private final class FailureSwitch: @unchecked Sendable {
+        nonisolated(unsafe) var failing = false
+    }
+
+    @Test @MainActor
+    func `A loaded stop schedule is shown`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForStop(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
+
+        await viewModel.fetchSchedule()
+
+        guard case .content = viewModel.contentState else {
+            Issue.record("Expected the schedule, got \(viewModel.contentState)")
+            return
+        }
+    }
+
+    /// The schedule from the earlier load is still in the view model, but the
+    /// rider is shown why the new one didn't load, with a retry.
+    @Test @MainActor
+    func `A failed reload shows the error instead of the old schedule`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let failure = FailureSwitch()
+        let scheduleData = Fixtures.loadData(file: "schedule-for-stop_1_75403.json")
+        dataLoader.mock(data: Data(), statusCode: 500) { [stopID] request in
+            failure.failing && (request.url?.path.contains("/schedule-for-stop/\(stopID).json") ?? false)
+        }
+        dataLoader.mock(data: scheduleData) { [stopID] request in
+            !failure.failing && (request.url?.path.contains("/schedule-for-stop/\(stopID).json") ?? false)
+        }
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForStopViewModel(stopID: stopID, application: app)
+        await viewModel.fetchSchedule()
+        #expect(viewModel.scheduleData != nil)
+
+        failure.failing = true
+        await viewModel.fetchSchedule()
+
+        #expect(viewModel.scheduleData != nil, "The old schedule should still be loaded")
+        guard case .failed = viewModel.contentState else {
+            Issue.record("Expected the error, got \(viewModel.contentState)")
+            return
+        }
+    }
 }

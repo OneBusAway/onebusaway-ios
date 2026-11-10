@@ -330,7 +330,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     // MARK: - Push Notifications
 
     /// An optional property that contains this app's configured push notifications service.
-    public private(set) var pushService: PushService?
+    public internal(set) var pushService: PushService?
 
     /// Keeps this device's APNs token registered with the current region's OBACloud server so
     /// agencies can send service-alert push notifications to it. See #1204.
