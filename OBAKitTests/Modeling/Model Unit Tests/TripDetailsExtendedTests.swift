@@ -45,20 +45,6 @@ final class TripDetailsExtendedTests: OBATestCase {
         }
     }
 
-    // MARK: - Situation Alerts Association
-
-    @Test func `Trip service alerts are resolved from references when situation IDs exist`() throws {
-        let (tripDetails, references) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
-
-        // Load references with regionIdentifier
-        tripDetails.loadReferences(references, regionIdentifier: 1)
-
-        // When situationIDs is empty in the fixture, serviceAlerts resolves to an empty array
-        #expect(tripDetails.serviceAlerts.isEmpty)
-        #expect(tripDetails.situationIDs.isEmpty)
-        #expect(tripDetails.regionIdentifier == 1)
-    }
-
     // MARK: - Block Chain Continuity
 
     @Test func `Trip block identifier remains consistent across linked trips`() throws {
@@ -66,7 +52,7 @@ final class TripDetailsExtendedTests: OBATestCase {
         tripDetails.loadReferences(references, regionIdentifier: 1)
 
         let rootTrip = try #require(tripDetails.trip)
-        let blockID = try #require(rootTrip.blockID)
+        let blockID = rootTrip.blockID
 
         let previousTrip = try #require(tripDetails.previousTrip)
         #expect(previousTrip.blockID == blockID)

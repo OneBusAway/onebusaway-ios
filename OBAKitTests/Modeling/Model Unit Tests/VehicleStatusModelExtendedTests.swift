@@ -133,6 +133,6 @@ final class VehicleStatusModelExtendedTests: OBATestCase {
         #expect(status.regionIdentifier == 42)
         #expect(status.trip != nil)
         #expect(status.trip?.id == "1_trip_ref")
-        #expect(status.trip?.tripHeadsign == "Downtown")
+        #expect(status.trip?.headsign == "Downtown")
     }
 }
