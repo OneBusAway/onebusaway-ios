@@ -25,6 +25,7 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
         longitude: Double,
         latSpan: Double = 0.5,
         lonSpan: Double = 0.5,
+        baseURL: String? = nil,
         isActive: Bool = true
     ) throws -> Region {
         let dict: [String: Any] = [
@@ -32,7 +33,7 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
             "regionName": name,
             "active": isActive,
             "experimental": false,
-            "obaBaseUrl": "https://api.example.com/\(id)",
+            "obaBaseUrl": baseURL ?? "https://api.example.com/\(id)",
             "contactEmail": "contact@example.com",
             "supportsEmbeddedSocial": false,
             "supportsObaRealtimeApis": true,
@@ -99,17 +100,16 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
     // MARK: - Equatable & Identifiable
 
     @Test func `Region equality matches on identifier`() throws {
-        // reg1a and reg1b share the same identifier and URL, but differ in name
-        let reg1a = try makeRegion(id: 42, name: "Region Alpha", latitude: 40.0, longitude: -70.0)
-        let reg1b = try makeRegion(id: 42, name: "Region Alpha Alt", latitude: 40.0, longitude: -70.0)
-        let reg2 = try makeRegion(id: 99, name: "Region Alpha", latitude: 40.0, longitude: -70.0)
+        let sharedURL = "https://api.example.com/shared"
+        let reg1a = try makeRegion(id: 42, name: "Region Alpha", latitude: 40.0, longitude: -70.0, baseURL: sharedURL)
+        let reg1Identical = try makeRegion(id: 42, name: "Region Alpha", latitude: 40.0, longitude: -70.0, baseURL: sharedURL)
 
-        // Region equality requires all fields to match, so changing name means reg1a != reg1b
-        // Testing that identical models compare equal:
-        let reg1Identical = try makeRegion(id: 42, name: "Region Alpha", latitude: 40.0, longitude: -70.0)
+        // reg2 shares the exact same name, coordinates, and URL as reg1a, differing solely in id
+        let reg2 = try makeRegion(id: 99, name: "Region Alpha", latitude: 40.0, longitude: -70.0, baseURL: sharedURL)
+
         #expect(reg1a == reg1Identical)
         #expect(reg1a != reg2)
-        #expect(reg1a != reg1b)
         #expect(reg1a.id == 42)
+        #expect(reg2.id == 99)
     }
 }
