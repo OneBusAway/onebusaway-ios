@@ -62,10 +62,19 @@ final class ArrivalDepartureStatusExtendedTests: OBATestCase {
     // MARK: - Plausible Arrival Departure Date Bounds
 
     @Test func `Earliest plausible date boundary check correctly validates dates`() throws {
-        let earlySentinel = Date(timeIntervalSinceReferenceDate: 0.5)
-        #expect(earlySentinel < ArrivalDeparture.earliestPlausibleDate)
+        let validFuture = try Fixtures.arrivalDeparture(
+            scheduledArrival: 1_700_000_000,
+            scheduledDeparture: 1_700_000_000,
+            tripID: "trip_valid"
+        )
+        let epochSentinel = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: 0,
+            scheduledDeparture: 0,
+            tripID: "trip_sentinel"
+        )
 
-        let validDate = Date(timeIntervalSinceReferenceDate: 100.0)
-        #expect(validDate >= ArrivalDeparture.earliestPlausibleDate)
+        #expect(validFuture.hasPlausibleArrivalDepartureDate == true)
+        #expect(epochSentinel.hasPlausibleArrivalDepartureDate == false)
     }
 }

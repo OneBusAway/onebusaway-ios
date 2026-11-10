@@ -19,7 +19,22 @@ final class OBAListViewActionExtendedTests {
 
     private struct TestListItem: OBAListViewItem {
         var id: String = "test_item_1"
-        var configuration: OBAListViewItemConfiguration = .custom(contentConfiguration: UIListContentConfiguration.cell())
+        var title: String = "Test Item"
+
+        var configuration: OBAListViewItemConfiguration {
+            var config = UIListContentConfiguration.cell()
+            config.text = title
+            return .list(config, [])
+        }
+
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+            hasher.combine(title)
+        }
+
+        static func == (lhs: TestListItem, rhs: TestListItem) -> Bool {
+            lhs.id == rhs.id && lhs.title == rhs.title
+        }
     }
 
     // MARK: - Normal Style Mapping

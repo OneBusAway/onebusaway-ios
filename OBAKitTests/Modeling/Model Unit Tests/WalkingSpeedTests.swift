@@ -34,9 +34,9 @@ final class WalkingSpeedTests: OBATestCase {
 
     @Test func `WalkingSpeedSource raw integer values remain backward compatible`() {
         #expect(WalkingSpeedSource.manual.rawValue == 0)
-        #expect(WalkingSpeedSource.healthKit.rawValue == 1)
+        #expect(WalkingSpeedSource.synced.rawValue == 1)
         #expect(WalkingSpeedSource(rawValue: 0) == .manual)
-        #expect(WalkingSpeedSource(rawValue: 1) == .healthKit)
+        #expect(WalkingSpeedSource(rawValue: 1) == .synced)
         #expect(WalkingSpeedSource(rawValue: 99) == nil)
     }
 }

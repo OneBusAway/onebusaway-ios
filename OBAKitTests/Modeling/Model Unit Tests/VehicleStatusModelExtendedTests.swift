@@ -46,6 +46,10 @@ final class VehicleStatusModelExtendedTests: OBATestCase {
                 "distanceAlongTrip": 1200.0,
                 "closestStop": "1_9650",
                 "closestStopTimeOffset": 0,
+                "nextStopTimeOffset": 0,
+                "orientation": 0.0,
+                "scheduleDeviation": 0,
+                "situationIds": [] as [String],
                 "lastKnownDistanceAlongTrip": 1200.0,
                 "phase": phase,
                 "status": status,
@@ -97,7 +101,19 @@ final class VehicleStatusModelExtendedTests: OBATestCase {
         let referencesData: [String: Any] = [
             "agencies": [],
             "routes": [],
-            "stops": [],
+            "stops": [
+                [
+                    "id": "1_9650",
+                    "name": "Test Stop",
+                    "code": "9650",
+                    "direction": "N",
+                    "lat": 47.6097,
+                    "lon": -122.3331,
+                    "locationType": 0,
+                    "routeIds": ["1_10"],
+                    "wheelchairBoarding": "UNKNOWN"
+                ]
+            ],
             "trips": [
                 [
                     "id": "1_trip_ref",

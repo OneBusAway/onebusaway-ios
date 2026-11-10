@@ -50,9 +50,12 @@ final class TripDetailsExtendedTests: OBATestCase {
     @Test func `Trip service alerts are resolved from references when situation IDs exist`() throws {
         let (tripDetails, references) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
 
-        // Load references manually to check service alert extraction
+        // Load references with regionIdentifier
         tripDetails.loadReferences(references, regionIdentifier: 1)
 
+        // When situationIDs is empty in the fixture, serviceAlerts resolves to an empty array
+        #expect(tripDetails.serviceAlerts.isEmpty)
+        #expect(tripDetails.situationIDs.isEmpty)
         #expect(tripDetails.regionIdentifier == 1)
     }
 

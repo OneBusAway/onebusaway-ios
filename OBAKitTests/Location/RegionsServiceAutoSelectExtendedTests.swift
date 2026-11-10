@@ -27,17 +27,23 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
         lonSpan: Double = 0.5,
         isActive: Bool = true
     ) throws -> Region {
-        let region = Region(
-            name: name,
-            OBABaseURL: URL(string: "https://api.example.com/\(id)")!,
-            coordinateRegion: MKCoordinateRegion(
-                center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
-                span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
-            ),
-            contactEmail: "contact@example.com",
-            regionIdentifier: id
-        )
-        return region
+        let dict: [String: Any] = [
+            "id": id,
+            "name": name,
+            "active": isActive,
+            "experimental": false,
+            "obaBaseUrl": "https://api.example.com/\(id)",
+            "contactEmail": "contact@example.com",
+            "bounds": [
+                [
+                    "lat": latitude,
+                    "lon": longitude,
+                    "latSpan": latSpan,
+                    "lonSpan": lonSpan
+                ]
+            ]
+        ]
+        return try Fixtures.dictionaryToModel(type: Region.self, dictionary: dict)
     }
 
     // MARK: - Region Proximity Ordering
@@ -48,7 +54,9 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
         let userAtCenter = CLLocation(latitude: 47.6062, longitude: -122.3321)
         let distCenter = seattleRegion.distanceFrom(location: userAtCenter)
 
-        #expect(distCenter < 1.0) // Right at centroid
+        // Region.centerCoordinate is the Mercator midpoint of serviceRect, which sits
+        // ~66 meters north of the geographic center at Puget Sound latitude.
+        #expect(distCenter < 100.0)
 
         let user50kmNorth = CLLocation(latitude: 48.0562, longitude: -122.3321)
         let distNorth = seattleRegion.distanceFrom(location: user50kmNorth)
@@ -76,8 +84,10 @@ final class RegionsServiceAutoSelectExtendedTests: OBATestCase {
 
     @Test func `inactive regions are distinguishable by active flag`() throws {
         let activeRegion = try makeRegion(id: 1, name: "Active Transit", latitude: 47.6, longitude: -122.3, isActive: true)
+        let inactiveRegion = try makeRegion(id: 2, name: "Inactive Transit", latitude: 47.6, longitude: -122.3, isActive: false)
 
         #expect(activeRegion.isActive == true)
+        #expect(inactiveRegion.isActive == false)
     }
 
     // MARK: - Equatable & Identifiable
