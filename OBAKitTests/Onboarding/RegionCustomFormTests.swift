@@ -89,4 +89,25 @@ final class RegionCustomFormTests {
         #expect(self.normalizeGeneral("ftp://example.com") == nil)
         #expect(self.normalizeGeneral("https://") == nil)
     }
+
+    // MARK: - RegionCustomFormError
+
+    /// Checks the message in the host's localization. Every translation keeps the
+    /// URL as `%1$@` and the error as `%2$@`, so the order check holds whichever one
+    /// that is. The key check reads `en.lproj` directly, because `OBALoc` falls back
+    /// to its English literal and would hide a missing key.
+    @Test func `Server validation error names the base URL and then the underlying error`() throws {
+        let baseURL = try #require(URL(string: "https://api.tampa.onebusaway.org"))
+        let underlying = NSError(domain: "RegionCustomFormTests", code: 7, userInfo: [NSLocalizedDescriptionKey: "The server sent back nonsense."])
+
+        let message = try #require(RegionCustomFormError.serverValidationFailed(baseURL: baseURL, underlyingError: underlying).errorDescription)
+
+        let urlRange = try #require(message.range(of: "https://api.tampa.onebusaway.org"))
+        let errorRange = try #require(message.range(of: "The server sent back nonsense."))
+        #expect(urlRange.lowerBound < errorRange.lowerBound)
+
+        let english = try #require(Bundle.obaKit.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:)))
+        let key = "custom_region_builder_controller.server_validation_error_fmt"
+        #expect(english.localizedString(forKey: key, value: "MISSING", table: nil) != "MISSING")
+    }
 }
