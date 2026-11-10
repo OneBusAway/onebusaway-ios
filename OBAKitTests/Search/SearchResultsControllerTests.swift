@@ -56,7 +56,7 @@ final class SearchResultsControllerTests: OBATestCase {
         stubRegions(dataLoader: loader)
         Fixtures.stubAllAgencyAlerts(dataLoader: loader)
         let locationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
-        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: loader)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: loader, onDemandSupport: OnDemandSupport())
         let application = Application(config: config)
         try #require(application.apiService == nil)
         return application

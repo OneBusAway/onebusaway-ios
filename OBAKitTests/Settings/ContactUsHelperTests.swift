@@ -53,7 +53,8 @@ final class ContactUsHelperTests: OBATestCase {
             locationService: LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock()),
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader
+            dataLoader: dataLoader,
+            onDemandSupport: OnDemandSupport()
         )
         return Application(config: config)
     }
