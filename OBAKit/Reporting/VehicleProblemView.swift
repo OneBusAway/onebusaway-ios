@@ -117,6 +117,30 @@ struct VehicleProblemView: View {
     private func submit() async {
         isSending = true
         defer { isSending = false }
+        if let error = await Self.submit(
+            code: code,
+            isOnVehicle: isOnVehicle,
+            vehicleID: vehicleID,
+            comment: comment,
+            shareLocation: shareLocation,
+            send: send,
+            onSent: onSent
+        ) {
+            self.error = error
+        }
+    }
+
+    /// Builds the report from the form's fields, sends it, and calls `onSent`
+    /// once the send succeeds. Returns the error to show when it fails.
+    static func submit(
+        code: TripProblemCode,
+        isOnVehicle: Bool,
+        vehicleID: String,
+        comment: String,
+        shareLocation: Bool,
+        send: (VehicleProblemInput) async throws -> Void,
+        onSent: () -> Void
+    ) async -> Error? {
         let input = VehicleProblemInput(
             code: code,
             isOnVehicle: isOnVehicle,
@@ -127,8 +151,9 @@ struct VehicleProblemView: View {
         do {
             try await send(input)
             onSent()
+            return nil
         } catch {
-            self.error = error
+            return error
         }
     }
 }

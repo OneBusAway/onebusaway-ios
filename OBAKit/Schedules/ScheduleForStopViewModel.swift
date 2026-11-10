@@ -32,6 +32,11 @@ class ScheduleForStopViewModel: ObservableObject {
     /// `isLoading` or set `error` after a newer fetch has begun.
     private var fetchGeneration = 0
 
+    /// What the stop schedule screen shows.
+    var contentState: ScheduleContentState {
+        ScheduleContentState(isLoading: isLoading, hasContent: scheduleData != nil, error: error)
+    }
+
     /// The stop name, if available from schedule data
     var stopName: String {
         return scheduleData?.stop?.name ?? stopID

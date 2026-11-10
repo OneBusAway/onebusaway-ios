@@ -351,4 +351,41 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
         #expect(viewModel.error == nil)
         #expect(viewModel.scheduleData == nil)
     }
+
+    // MARK: - Content State
+
+    @Test @MainActor
+    func `A loaded route schedule shows the timetable`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        // `stubScheduleForRoute` matches one exact URL, without the query a real fetch sends.
+        dataLoader.mock(data: Fixtures.loadData(file: "schedule-for-route_1_100223.json")) { [routeID] request in
+            request.url?.path.contains("/schedule-for-route/\(routeID).json") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
+
+        await viewModel.fetchSchedule()
+
+        guard case .content = viewModel.contentState else {
+            Issue.record("Expected the timetable, got \(viewModel.contentState)")
+            return
+        }
+    }
+
+    @Test @MainActor
+    func `A route schedule that fails to load shows the error`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Data(), statusCode: 500) { [routeID] request in
+            request.url?.path.contains("/schedule-for-route/\(routeID).json") ?? false
+        }
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
+
+        await viewModel.fetchSchedule()
+
+        guard case .failed = viewModel.contentState else {
+            Issue.record("Expected the error, got \(viewModel.contentState)")
+            return
+        }
+    }
 }

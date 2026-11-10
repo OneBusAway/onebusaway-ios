@@ -283,17 +283,47 @@ struct RegionCustomForm: View {
             disableForm = false
         }
 
+        do {
+            try await Self.save(
+                name: regionName,
+                baseURL: baseURL,
+                serviceArea: serviceArea,
+                sidecarURL: normalizedSidecarURL,
+                umamiURL: normalizedUmamiURL,
+                umamiID: umamiIDString,
+                editing: editingRegion,
+                to: regionProvider
+            )
+            self.dismiss()
+        } catch {
+            self.error = error
+        }
+    }
+
+    /// Checks that `baseURL` is a working OneBusAway server, builds the region
+    /// from the form's values, and adds it to `regionProvider`. Throws
+    /// `RegionCustomFormError.serverValidationFailed` when the server check
+    /// fails, without adding anything.
+    static func save(
+        name: String,
+        baseURL: URL,
+        serviceArea: MKMapRect,
+        sidecarURL: URL?,
+        umamiURL: URL?,
+        umamiID: String,
+        editing editingRegion: Region?,
+        to regionProvider: any RegionProvider
+    ) async throws {
         // Confirm that the Base URL points at a working OneBusAway server before
         // saving, and use its agency list to name the region if the user didn't.
         let agencies: [AgencyWithCoverage]
         do {
             agencies = try await regionProvider.fetchAgenciesWithCoverage(baseURL: baseURL)
         } catch {
-            self.error = RegionCustomFormError.serverValidationFailed(baseURL: baseURL, underlyingError: error)
-            return
+            throw RegionCustomFormError.serverValidationFailed(baseURL: baseURL, underlyingError: error)
         }
 
-        var name = regionName.strip()
+        var name = name.strip()
         if name.isEmpty {
             name = agencies.first?.agency?.name ?? Self.defaultRegionName
         }
@@ -307,16 +337,11 @@ struct RegionCustomForm: View {
             contactEmail: editingRegion?.contactEmail ?? Self.placeholderContactEmail,
             regionIdentifier: editingRegion?.regionIdentifier,
             openTripPlannerURL: editingRegion?.openTripPlannerURL,
-            sidecarBaseURL: normalizedSidecarURL,
-            umamiAnalytics: UmamiAnalyticsConfig(url: normalizedUmamiURL, id: umamiIDString)
+            sidecarBaseURL: sidecarURL,
+            umamiAnalytics: UmamiAnalyticsConfig(url: umamiURL, id: umamiID)
         )
 
-        do {
-            try await regionProvider.add(customRegion: region)
-            self.dismiss()
-        } catch {
-            self.error = error
-        }
+        try await regionProvider.add(customRegion: region)
     }
 }
 

@@ -38,6 +38,11 @@ class ScheduleForRouteViewModel: ObservableObject {
     /// `isLoading` or set `error` after a newer fetch has begun.
     private var fetchGeneration = 0
 
+    /// What the route schedule screen shows.
+    var contentState: ScheduleContentState {
+        ScheduleContentState(isLoading: isLoading, hasContent: scheduleData != nil, error: error)
+    }
+
     /// The route name, if available from schedule data
     var routeName: String {
         if let route = scheduleData?.route {

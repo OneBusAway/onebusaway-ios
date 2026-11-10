@@ -53,17 +53,18 @@ struct RouteScheduleContentView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isLoading && viewModel.scheduleData == nil {
+        switch viewModel.contentState {
+        case .loading:
             ProgressView()
-        } else if let error = viewModel.error {
+        case .failed(let error):
             ErrorView(headline: ScheduleStrings.unableToLoad, error: error, regionName: regionName) {
                 Task {
                     await viewModel.fetchSchedule()
                 }
             }
-        } else if viewModel.scheduleData != nil {
+        case .content:
             scheduleContent
-        } else {
+        case .empty:
             Text(ScheduleStrings.noScheduleData)
                 .foregroundStyle(.secondary)
         }

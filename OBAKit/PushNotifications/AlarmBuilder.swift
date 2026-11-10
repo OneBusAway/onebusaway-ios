@@ -99,7 +99,9 @@ class AlarmBuilder: NSObject {
     /// second tap posted a duplicate alarm.
     private var isCreatingAlarm = false
 
-    private func createAlarm(minutes: Int) async {
+    /// Internal, not private, so tests can await it rather than the bulletin's
+    /// fire-and-forget `Task`.
+    func createAlarm(minutes: Int) async {
         guard
             !isCreatingAlarm,
             let modelService = application.obacoService,
