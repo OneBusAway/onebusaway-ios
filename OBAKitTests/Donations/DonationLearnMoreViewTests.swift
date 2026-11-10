@@ -27,6 +27,7 @@ final class DonationLearnMoreViewTests: OBATestCase {
             obacoService: obacoService,
             analytics: analytics,
             appLaunchCount: { 10 },
+            notificationCenter: NotificationCenter(),
             storefrontCountryCode: { "USA" }
         )
         let model = DonationModel(obacoService: obacoService, donationsManager: manager, analytics: analytics, donationPushNotificationID: nil)

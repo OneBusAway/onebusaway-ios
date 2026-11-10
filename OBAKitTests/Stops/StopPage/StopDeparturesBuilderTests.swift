@@ -44,7 +44,7 @@ private final class FakeStopEnvironment: StopViewModelEnvironment {
         self.apiService = apiService
         self.surveyService = SurveyService(apiService: nil, userDataStore: UserDefaultsStore(userDefaults: userDefaults))
         self.reviewPromptPolicy = ReviewPromptPolicy(userDefaults: userDefaults)
-        self.promptCoordinator = PromptCoordinator(userDefaults: userDefaults)
+        self.promptCoordinator = PromptCoordinator(userDefaults: userDefaults, notificationCenter: NotificationCenter())
     }
 
     func addAlarm(_ alarm: Alarm) { userAlarms.append(alarm) }
