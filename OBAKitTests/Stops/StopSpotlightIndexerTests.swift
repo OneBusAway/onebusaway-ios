@@ -46,13 +46,44 @@ final class StopSpotlightIndexerTests: OBATestCase {
         return cache
     }
 
+    // MARK: - Launch helpers
+
+    private let start = Date(timeIntervalSince1970: 1_800_000_000)
+    private let day: TimeInterval = 86_400
+
+    /// Every indexer in a test shares the suite's `userDefaults`, so a new one
+    /// sees what an earlier one remembered, as the next launch would.
+    private func makeIndexer(_ index: FakeStopIndex, store: UserDataStore, cache: StopCacheRepository? = nil, region: Region, now: Date) -> StopSpotlightIndexer {
+        StopSpotlightIndexer(index: index, userDataStore: store, stopCache: cache, userDefaults: userDefaults, currentRegion: { region }, isIndexingAvailable: { true }, now: { now })
+    }
+
+    /// Runs a replace of `region` to the end at `date`, as an earlier launch,
+    /// region change or sync would have.
+    private func finishReplace(of region: Region, store: UserDataStore, at date: Date) async {
+        let indexer = makeIndexer(FakeStopIndex(), store: store, region: region, now: date)
+        indexer.replaceAll()
+        await indexer.currentRun?.value
+        // The run records itself through a weak reference to the indexer.
+        withExtendedLifetime(indexer) {}
+    }
+
+    /// Launches a new indexer at `date` and returns what it did to the index.
+    private func launch(in region: Region, store: UserDataStore, cache: StopCacheRepository? = nil, at date: Date) async -> [FakeStopIndex.Call] {
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: store, cache: cache, region: region, now: date)
+        indexer.indexAtLaunch()
+        await indexer.currentRun?.value
+        withExtendedLifetime(indexer) {}
+        return await index.log
+    }
+
     @Test func `Replace clears, then indexes bookmarked, recent and cached stops, each once`() async throws {
         let stopA = makeStop("1_a", in: puget)
         let stopB = makeStop("1_b", in: puget)
         let stopC = makeStop("1_c", in: puget)
         let store = makeStore(bookmarked: [stopA], recent: [stopB, stopA], region: puget)
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: try makeCache([stopA, stopB, stopC], region: puget), currentRegion: { self.puget }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: try makeCache([stopA, stopB, stopC], region: puget), userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
 
         indexer.replaceAll()
         await indexer.currentRun?.value
@@ -68,7 +99,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
     @Test func `Cached stops are indexed in pages`() async throws {
         let ids = ["1_c1", "1_c2", "1_c3", "1_c4", "1_c5"]
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(region: puget), stopCache: try makeCache(ids.map { makeStop($0, in: puget) }, region: puget), currentRegion: { self.puget }, isIndexingAvailable: { true }, batchSize: 2)
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(region: puget), stopCache: try makeCache(ids.map { makeStop($0, in: puget) }, region: puget), userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true }, batchSize: 2)
 
         indexer.replaceAll()
         await indexer.currentRun?.value
@@ -87,7 +118,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         var region: Region?
         var available = true
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), stopCache: nil, currentRegion: { region }, isIndexingAvailable: { available })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), stopCache: nil, userDefaults: userDefaults, currentRegion: { region }, isIndexingAvailable: { available })
 
         indexer.replaceAll()
         #expect(indexer.currentRun == nil)
@@ -106,7 +137,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
     /// Indexing on top of a failed clear would mix the old entries with the new.
     @Test func `A failed clear indexes nothing`() async {
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), stopCache: nil, currentRegion: { self.puget }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
 
         indexer.replaceAll()
         await indexer.currentRun?.value
@@ -128,7 +159,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let store = makeStore(bookmarked: [pugetStop], recent: [makeStop("1_r", in: puget)], region: puget)
         store.add(Bookmark(name: tampaStop.name, regionIdentifier: tampa.regionIdentifier, stop: tampaStop))
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, currentRegion: { region }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { region }, isIndexingAvailable: { true })
 
         await index.hold(next: .index)
         indexer.replaceAll()
@@ -155,7 +186,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
         store.add(Bookmark(name: tampaStop.name, regionIdentifier: tampa.regionIdentifier, stop: tampaStop))
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, currentRegion: { region }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { region }, isIndexingAvailable: { true })
 
         await index.hold(next: .deleteAll)
         indexer.replaceAll()
@@ -177,7 +208,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
     @Test func `A bookmark change upserts the bookmarked stops without clearing`() async {
         let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, currentRegion: { self.puget }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
 
         let stopB = makeStop("1_b", in: puget)
         store.add(Bookmark(name: stopB.name, regionIdentifier: puget.regionIdentifier, stop: stopB))
@@ -194,7 +225,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let stopC = makeStop("1_c", in: puget)
         let store = makeStore(bookmarked: [stopA, stopB, stopC], recent: [stopB], region: puget)
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, currentRegion: { self.puget }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
         indexer.replaceAll()
         await indexer.currentRun?.value
 
@@ -220,7 +251,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
     @Test(.timeLimit(.minutes(1))) func `A bookmark change during a replace runs after it`() async {
         let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, currentRegion: { self.puget }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
 
         await index.hold(next: .deleteAll)
         indexer.replaceAll()
@@ -238,5 +269,113 @@ final class StopSpotlightIndexerTests: OBATestCase {
             .index([entityID("1_a", in: puget)], priority: 3),
             .index([entityID("1_a", in: puget), entityID("1_b", in: puget)], priority: 3)
         ])
+    }
+
+    // MARK: - Launch
+
+    @Test func `A relaunch in the region last replaced keeps Spotlight full`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let stopC = makeStop("1_c", in: puget)
+        let store = makeStore(bookmarked: [stopA], recent: [stopB, stopA], region: puget)
+        await finishReplace(of: puget, store: store, at: start)
+
+        let log = await launch(in: puget, store: store, cache: try makeCache([stopA, stopB, stopC], region: puget), at: start.addingTimeInterval(day))
+
+        #expect(log == [
+            .index([entityID("1_a", in: puget)], priority: 3),
+            .index([entityID("1_b", in: puget)], priority: 2),
+            .index([entityID("1_c", in: puget)], priority: 1)
+        ])
+    }
+
+    @Test func `A first launch, with no replace remembered, clears first`() async {
+        let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
+
+        let log = await launch(in: puget, store: store, at: start)
+
+        #expect(log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
+    }
+
+    /// The other region's stops are still in Spotlight, so indexing on top
+    /// would mix the two.
+    @Test func `A launch in another region than the last replace clears first`() async {
+        let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
+        await finishReplace(of: tampa, store: store, at: start)
+
+        let log = await launch(in: puget, store: store, at: start.addingTimeInterval(day))
+
+        #expect(log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
+    }
+
+    /// The failed replace comes after one that finished, so only forgetting the
+    /// last replace when a new one starts makes the next launch clear.
+    @Test func `A launch after a failed clear clears again`() async {
+        let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
+        await finishReplace(of: puget, store: store, at: start)
+
+        let failing = FakeStopIndex()
+        await failing.failNextDelete()
+        let indexer = makeIndexer(failing, store: store, region: puget, now: start.addingTimeInterval(3_600))
+        indexer.replaceAll()
+        await indexer.currentRun?.value
+        #expect(await failing.log == [.deleteAllFailed])
+
+        let log = await launch(in: puget, store: store, at: start.addingTimeInterval(2 * 3_600))
+
+        #expect(log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
+    }
+
+    /// The first replace is held at its last batch while a second one, which
+    /// fails, cancels it. Released, the first finishes its work, but it was
+    /// cancelled, so it must not record itself over the second one's start.
+    @Test(.timeLimit(.minutes(1))) func `A replace cancelled at its last batch is redone on the next launch`() async {
+        let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: store, region: puget, now: start)
+
+        await index.hold(next: .index)
+        indexer.replaceAll()
+        await index.waitUntilHolding()
+        await index.failNextDelete()
+        indexer.replaceAll()
+        await index.release()
+        await indexer.currentRun?.value
+        // Released early, the indexer would skip the record through its weak
+        // reference, and this test would pass without the cancellation check.
+        withExtendedLifetime(indexer) {}
+        #expect(await index.log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3), .deleteAllFailed])
+
+        let log = await launch(in: puget, store: store, at: start.addingTimeInterval(day))
+
+        #expect(log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
+    }
+
+    /// Both sides of the boundary, each after its own replace, so the first
+    /// launch can't affect the second.
+    @Test func `A launch a week after the last replace clears first`() async {
+        let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
+
+        await finishReplace(of: puget, store: store, at: start)
+        let justUnderAWeek = await launch(in: puget, store: store, at: start.addingTimeInterval(7 * day - 1))
+        #expect(justUnderAWeek == [.index([entityID("1_a", in: puget)], priority: 3)])
+
+        await finishReplace(of: puget, store: store, at: start)
+        let aWeek = await launch(in: puget, store: store, at: start.addingTimeInterval(7 * day))
+        #expect(aWeek == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
+    }
+
+    /// Only a replace removes stale stops, so a launch that kept the index
+    /// mustn't push the next replace back.
+    @Test func `A launch that keeps the index doesn't restart the week`() async {
+        let store = makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget)
+        await finishReplace(of: puget, store: store, at: start)
+
+        let midweek = await launch(in: puget, store: store, at: start.addingTimeInterval(3 * day))
+        #expect(midweek == [.index([entityID("1_a", in: puget)], priority: 3)])
+
+        let log = await launch(in: puget, store: store, at: start.addingTimeInterval(7 * day))
+
+        #expect(log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
     }
 }
