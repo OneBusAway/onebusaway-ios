@@ -25,6 +25,10 @@ EXPECTED = {
         "NextDeparturesIntent",
         "OpenStopIntent",
         "TrackBookmarkIntent",
+        # The Next Departures card (#1554); not discoverable in Shortcuts.
+        "NextDeparturesCardIntent",
+        "NextDeparturesSnippetIntent",
+        "RefreshNextDeparturesIntent",
         # OBAWidget
         "ConfigurationAppIntent",
         "RefreshWidgetIntent",

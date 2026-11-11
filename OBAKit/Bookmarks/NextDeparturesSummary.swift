@@ -8,19 +8,50 @@
 //
 
 import Foundation
+import OBAKitCore
 
 /// What `NextDeparturesIntent` says. Pure, so the wording is testable without
 /// App Intents, Siri, or the network.
 nonisolated enum NextDeparturesSummary {
     static let maximumDepartures = 3
 
-    nonisolated enum Outcome: Equatable {
+    /// One departure of the bookmarked trip: when, and how that time relates
+    /// to the timetable. Carries what `DepartureStatus` needs, so the
+    /// Next Departures card can show live/scheduled and early/late the way the
+    /// stop page does (#1554).
+    nonisolated struct Departure: Equatable, Sendable {
+        /// The predicted time when `isRealTime`, the timetabled time otherwise.
+        let date: Date
+        /// `true` when `date` is a real-time prediction.
+        let isRealTime: Bool
+        let scheduleStatus: ScheduleStatus
+        /// Rounded minutes off the timetable; positive is late.
+        let deviationMinutes: Int
+
+        init(date: Date, isRealTime: Bool, scheduleStatus: ScheduleStatus, deviationMinutes: Int) {
+            self.date = date
+            self.isRealTime = isRealTime
+            self.scheduleStatus = scheduleStatus
+            self.deviationMinutes = deviationMinutes
+        }
+
+        init(arrivalDeparture: ArrivalDeparture) {
+            self.init(
+                date: arrivalDeparture.arrivalDepartureDate,
+                isRealTime: arrivalDeparture.predicted,
+                scheduleStatus: arrivalDeparture.scheduleStatus,
+                deviationMinutes: arrivalDeparture.deviationFromScheduleInMinutes
+            )
+        }
+    }
+
+    nonisolated enum Outcome: Equatable, Sendable {
         case noBookmarks
         case noRegion
         case bookmarkUnavailable
         case loadFailed(bookmarkName: String)
-        /// `dates` may include departures that already left; `text` drops them.
-        case departures(bookmarkName: String, routeShortName: String, headsign: String, dates: [Date])
+        /// `departures` may include ones that already left; `text` drops them.
+        case departures(bookmarkName: String, routeShortName: String, headsign: String, departures: [Departure])
     }
 
     static func text(for outcome: Outcome, now: Date) -> String {
@@ -34,8 +65,8 @@ nonisolated enum NextDeparturesSummary {
         case .loadFailed(let bookmarkName):
             let fmt = OBALoc("next_departures_intent.load_failed_fmt", value: "Couldn't load departures for %@. Check your connection and try again.", comment: "Siri response when departures could not be fetched. {Bookmark name}")
             return String(format: fmt, bookmarkName)
-        case let .departures(bookmarkName, routeShortName, headsign, dates):
-            if let sentence = departuresSentence(routeShortName: routeShortName, headsign: headsign, dates: dates, now: now) {
+        case let .departures(bookmarkName, routeShortName, headsign, departures):
+            if let sentence = departuresSentence(routeShortName: routeShortName, headsign: headsign, dates: departures.map(\.date), now: now) {
                 return sentence
             }
             let fmt = OBALoc("next_departures_intent.no_departures_fmt", value: "No departures for %@ in the next hour.", comment: "Siri response when a bookmarked trip has no upcoming departures. {Bookmark name}")
