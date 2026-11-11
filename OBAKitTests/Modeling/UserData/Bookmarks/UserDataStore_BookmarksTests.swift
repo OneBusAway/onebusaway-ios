@@ -624,18 +624,19 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     /// Search hands over whatever is in the field, stray spaces and all. The
     /// untrimmed query here can't match: "Campus Pkwy" ends the stop's name,
-    /// so nothing in it is followed by two spaces.
+    /// so nothing in it is followed by two spaces. The bookmark names share
+    /// nothing with the query, so the match comes from the stop's name.
     @Test func `Find bookmarks matching trims the query and ignores case`() {
         let regionID = Fixtures.pugetSoundRegion.regionIdentifier
         #expect(stops[0].name == "15th Ave NE & NE Campus Pkwy")
         #expect(stops[2].name == "Montlake Blvd NE & NE Pacific Pl - Bay 4")
 
-        userDefaultsStore.add(Bookmark(name: "Campus", regionIdentifier: regionID, stop: stops[0]))
-        userDefaultsStore.add(Bookmark(name: "Montlake", regionIdentifier: regionID, stop: stops[2]))
+        userDefaultsStore.add(Bookmark(name: "Home", regionIdentifier: regionID, stop: stops[0]))
+        userDefaultsStore.add(Bookmark(name: "Work", regionIdentifier: regionID, stop: stops[2]))
 
         let found = userDefaultsStore.findBookmarks(matching: " \n CAMPUS PKWY  ")
 
-        #expect(found.map(\.name) == ["Campus"])
+        #expect(found.map(\.name) == ["Home"])
     }
 
     @Test func `Find bookmarks in a region leaves out other regions and nil`() {
