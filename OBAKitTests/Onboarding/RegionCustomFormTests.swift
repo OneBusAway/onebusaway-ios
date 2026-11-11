@@ -218,6 +218,30 @@ final class RegionCustomFormTests {
         #expect(saved.openTripPlannerURL?.absoluteString == "https://otp.example.org/otp/")
     }
 
+    /// The add-region link can set an OTP 2.x server and bikeshare, which the form
+    /// doesn't show. Losing either on save drops the Bikes and Scooters layers.
+    @Test func `Editing keeps the region's OTP 2.x trip planner and bikeshare`() async throws {
+        let provider = try providerWithAgencies()
+        let graphQLURL = try #require(URL(string: "https://otp.example.org/otp/gtfs/v1"))
+        let existing = Region(
+            name: "Tampa",
+            OBABaseURL: baseURL,
+            coordinateRegion: MKCoordinateRegion(serviceArea),
+            contactEmail: "rider@example.org",
+            regionIdentifier: 4242,
+            openTripPlannerGraphQLURL: graphQLURL,
+            supportsOTPGraphQLBikeshare: true
+        )
+        #expect(existing.isBikeshareEnabled)
+
+        try await save(name: "Tampa", editing: existing, to: provider)
+
+        let saved = try #require(provider.added.first)
+        #expect(saved.openTripPlannerGraphQLURL == graphQLURL)
+        #expect(saved.supportsOTPGraphQLBikeshare)
+        #expect(saved.isBikeshareEnabled)
+    }
+
     @Test func `The sidecar and analytics servers are saved with the region`() async throws {
         let provider = try providerWithAgencies()
         let sidecar = try #require(URL(string: "https://obaco.example.org"))
