@@ -156,7 +156,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                     return
                 }
 
-                if self.viewRouter.navigate(to: .tripDetails(TripConvertible(arrivalDeparture: arrDep)), popToRootFirst: false) {
+                if self.viewRouter.navigate(to: .tripDetails(TripConvertible(arrivalDeparture: arrDep), destinationStopID: deepLink.destinationStopID), popToRootFirst: false) {
                     ProgressHUD.dismiss()
                     return
                 }
@@ -759,12 +759,12 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// Opens `destination` now, or stashes it until the root UI and matching
     /// region exist. Does not fetch this stop against a different region's API.
     func queueOrOpenStop(_ destination: AppLinksRouter.StopDestination) {
-        if let current = currentRegion?.regionIdentifier, current != destination.regionID {
+        if let current = currentRegion?.regionIdentifier, let destRegion = destination.regionID, current != destRegion {
             // Dropped on purpose — fetching this stop against another region's API
             // would return the wrong stop or nothing — but say so. This is the end
             // of the line for something the rider actually tapped, and the
             // no-region branch that defers instead already logs its reasoning.
-            Logger.warn("Stop \(destination.stopID) belongs to region \(destination.regionID) but region \(current) is selected; dropping the tap.")
+            Logger.warn("Stop \(destination.stopID) belongs to region \(destRegion) but region \(current) is selected; dropping the tap.")
             Task { @MainActor in
                 await self.displayError(UnstructuredError(OBALoc(
                     "application.stop_in_other_region",
@@ -780,7 +780,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Not while onboarding is the root: there is no API service to load the
         // stop with yet, and the page would be pushed over the region picker. The
         // drain picks the stash up once onboarding finishes.
-        if topViewController != nil, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
+        let isMatchingRegion = destination.regionID == nil || currentRegion?.regionIdentifier == destination.regionID
+        if topViewController != nil, !isOnboardingRoot, isMatchingRegion, currentRegion != nil {
             pushStopFromOutside(destination.stopID)
             return
         }
@@ -835,8 +836,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             // Shares the stash, region check, and onboarding guard every other
             // stop entry point uses, rather than navigating against whichever
             // region happens to be selected.
-            let regionID = stopData.regionID ?? currentRegion?.regionIdentifier ?? 0
-            queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: regionID))
+            queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
             return true
         case .viewRentals(let coordinate):
             pendingRentalsCoordinate = coordinate

@@ -77,9 +77,7 @@ extension Application {
     @discardableResult
     func pushStopFromOutside(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
         if let mapPanel = viewRouter.mapPanelRootController {
-            mapPanel.navigate(to: .stopDetails(stopID: stopID), popToRootFirst: false)
-            afterDismissal?()
-            return false
+            return mapPanel.navigate(to: .stopDetails(stopID: stopID), popToRootFirst: false, afterDismissal: afterDismissal)
         }
         return withPushableTopViewController({ [weak self] from in
             self?.viewRouter.navigateTo(stopID: stopID, from: from)

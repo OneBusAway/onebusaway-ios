@@ -351,7 +351,13 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     ) {
         guard shouldNavigate(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
         if fromController.navigationController == nil, let panel = mapPanelRootController(from: fromController) {
-            panel.navigate(to: .tripDetails(TripConvertible(arrivalDeparture: arrivalDeparture)), popToRootFirst: false)
+            panel.navigate(
+                to: .tripDetails(
+                    TripConvertible(arrivalDeparture: arrivalDeparture),
+                    destinationStopID: destinationStopID
+                ),
+                popToRootFirst: false
+            )
             return
         }
         let tripController = makeTripController(
@@ -438,8 +444,8 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         case .stopDetails(let stopID):
             application.pushStopFromOutside(stopID)
             return true
-        case .tripDetails(let convertible):
-            let tripVC = makeTripController(tripConvertible: convertible)
+        case .tripDetails(let convertible, let destinationStopID):
+            let tripVC = makeTripController(tripConvertible: convertible, destinationStopID: destinationStopID)
             if let target = context, target.navigationController != nil {
                 navigate(to: tripVC, from: target)
                 return true
@@ -471,6 +477,14 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         }
 
         if let destination = AppLinksRouter.stopDestination(fromWebpageURL: url) {
+            if let destRegion = destination.regionID, let current = application.currentRegion?.regionIdentifier, current != destRegion {
+                application.queueOrOpenStop(destination)
+                return true
+            }
+            if application.currentRegion == nil {
+                application.queueOrOpenStop(destination)
+                return true
+            }
             if let mapPanel = mapPanelRootController(from: context) {
                 mapPanel.navigate(to: .stopDetails(stopID: destination.stopID), popToRootFirst: false)
                 return true
@@ -483,6 +497,14 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         if let urlType = router.decodeURLType(from: url) {
             switch urlType {
             case .viewStop(let stopData):
+                if let destRegion = stopData.regionID, let current = application.currentRegion?.regionIdentifier, current != destRegion {
+                    application.queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
+                    return true
+                }
+                if application.currentRegion == nil {
+                    application.queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
+                    return true
+                }
                 if let mapPanel = mapPanelRootController(from: context) {
                     mapPanel.navigate(to: .stopDetails(stopID: stopData.stopID), popToRootFirst: false)
                     return true

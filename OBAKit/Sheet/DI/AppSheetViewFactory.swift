@@ -130,8 +130,8 @@ final class AppSheetViewFactory {
         case .tripPlanner(let request):
             tripPlannerView(request: request)
 
-        case .tripDetails(let tripConvertible):
-            tripDetailsView(tripConvertible: tripConvertible)
+        case .tripDetails(let tripConvertible, let destinationStopID):
+            tripDetailsView(tripConvertible: tripConvertible, destinationStopID: destinationStopID)
 
         case .transitAlert, .settings:
             unimplementedView(for: route)
@@ -242,14 +242,15 @@ final class AppSheetViewFactory {
     /// in the panel. Back pops the route rather than letting the page dismiss
     /// itself from UIKit: the coordinator's stack is what holds the sheet on
     /// screen, so it is closed there, as `StopDetailsSheetView`'s Close is.
-    func tripDetailsView(tripConvertible: TripConvertible) -> TripPageSheetHost {
+    func tripDetailsView(tripConvertible: TripConvertible, destinationStopID: StopID? = nil) -> TripPageSheetHost {
         TripPageSheetHost(
             application: application,
             tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID,
             onMapFocusChanged: { [tripFocusMapDisplayModel, coordinator] focus in
                 // Ending the drawing is the route stack's job, not the page's.
                 guard let focus else { return }
-                let owner = AppSheetRoute.tripDetails(tripConvertible)
+                let owner = AppSheetRoute.tripDetails(tripConvertible, destinationStopID: destinationStopID)
                 // The page reports from `viewWillAppear`, which runs while SwiftUI is
                 // still building this sheet. Publishing the map's state from inside
                 // that update is undefined behaviour, and SwiftUI says so at runtime
@@ -267,7 +268,7 @@ final class AppSheetViewFactory {
             // this trip from that stop's sheet. `open` goes back to it rather than
             // stacking a second copy.
             onSelectStop: { [coordinator] stopID in
-                coordinator.open(.stopDetails(stopID: stopID), from: .tripDetails(tripConvertible))
+                coordinator.open(.stopDetails(stopID: stopID), from: .tripDetails(tripConvertible, destinationStopID: destinationStopID))
             },
             onClose: { [coordinator] in coordinator.pop() }
         )

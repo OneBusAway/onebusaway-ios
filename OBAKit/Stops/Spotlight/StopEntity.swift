@@ -203,18 +203,18 @@ nonisolated enum StopEntityMapping {
     /// stop id. An id that doesn't parse is dropped.
     static func entities(forIdentifiers identifiers: [String], bookmarks: [Bookmark], recentStops: [Stop]) -> [StopEntity] {
         identifiers.compactMap { identifier in
-            guard let destination = destination(fromIdentifier: identifier) else {
+            guard let destination = destination(fromIdentifier: identifier), let regionID = destination.regionID else {
                 Logger.warn("Stop entity id \(identifier) doesn't name a region and stop; dropping it.")
                 return nil
             }
 
-            let stored = bookmarks.first { $0.regionIdentifier == destination.regionID && $0.stopID == destination.stopID }?.stop
-                ?? recentStops.first { $0.regionIdentifier == destination.regionID && $0.id == destination.stopID }
+            let stored = bookmarks.first { $0.regionIdentifier == regionID && $0.stopID == destination.stopID }?.stop
+                ?? recentStops.first { $0.regionIdentifier == regionID && $0.id == destination.stopID }
 
             if let stored {
-                return entity(for: stored, regionID: destination.regionID)
+                return entity(for: stored, regionID: regionID)
             }
-            return StopEntity(regionID: destination.regionID, stopID: destination.stopID, name: nil, code: nil, subtitle: nil, latitude: nil, longitude: nil)
+            return StopEntity(regionID: regionID, stopID: destination.stopID, name: nil, code: nil, subtitle: nil, latitude: nil, longitude: nil)
         }
     }
 

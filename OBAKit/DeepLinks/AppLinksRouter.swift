@@ -123,9 +123,14 @@ public class AppLinksRouter: NSObject {
     // MARK: - Stop user activities
 
     /// The stop a donated `NSUserActivity` (or a stop webpage URL) should open.
-    struct StopDestination: Equatable {
+    nonisolated struct StopDestination: Equatable, Sendable {
         let stopID: StopID
-        let regionID: Int
+        let regionID: Int?
+
+        nonisolated init(stopID: StopID, regionID: Int? = nil) {
+            self.stopID = stopID
+            self.regionID = regionID
+        }
     }
 
     /// Reads the stop out of a Siri/Shortcuts activity.

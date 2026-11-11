@@ -109,30 +109,89 @@ public final class MapPanelRootController: UIViewController {
 
     /// Navigates to the specified route within the sheet coordinator.
     ///
-    /// If modal controllers are currently presented over this controller,
-    /// they are dismissed first so the sheet is uncovered and interactive.
+    /// If separate modal controllers (such as alerts or Safari view controllers)
+    /// are currently presented over this controller or its sheets, they are dismissed
+    /// first so the sheet is uncovered and interactive. Base and stacked sheets
+    /// owned by the coordinator are not dismissed via UIKit; `performNavigation`
+    /// updates them via the coordinator.
     ///
     /// - Parameters:
     ///   - route: The destination sheet route to display.
     ///   - popToRootFirst: When `true`, resets the coordinator to `.home` before pushing `route`.
+    ///   - afterDismissal: Invoked once a modal dismissal completes. Not invoked if no modal was dismissed.
+    /// - Returns: `true` if modal dismissal is pending/in progress; `false` if navigation was performed immediately.
     @MainActor
-    func navigate(to route: AppSheetRoute, popToRootFirst: Bool = false) {
-        let presented = topmostPresentedController
-        if presented !== self {
-            presented.dismiss(animated: true) { [weak self] in
+    @discardableResult
+    func navigate(
+        to route: AppSheetRoute,
+        popToRootFirst: Bool = false,
+        afterDismissal: (@MainActor () -> Void)? = nil
+    ) -> Bool {
+        if let presenter = separateModalPresenter {
+            let presented = presenter.presentedViewController ?? presenter
+            if let transition = presented.transitionCoordinator ?? presenter.transitionCoordinator {
+                transition.animate(alongsideTransition: nil) { [weak self] _ in
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        if !self.navigate(to: route, popToRootFirst: popToRootFirst, afterDismissal: afterDismissal) {
+                            afterDismissal?()
+                        }
+                    }
+                }
+                return true
+            }
+
+            if presented.isBeingDismissed || presenter.isBeingDismissed {
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    if !self.navigate(to: route, popToRootFirst: popToRootFirst, afterDismissal: afterDismissal) {
+                        afterDismissal?()
+                    }
+                }
+                return true
+            }
+
+            presenter.dismiss(animated: true) { [weak self] in
+                defer { afterDismissal?() }
                 self?.performNavigation(to: route, popToRootFirst: popToRootFirst)
             }
-            return
+            return true
         }
+
         performNavigation(to: route, popToRootFirst: popToRootFirst)
+        return false
+    }
+
+    /// Finds any separate modal controller presented on top of the coordinator's sheets,
+    /// or presented directly by this controller. Coordinator sheets (the base sheet and
+    /// stacked sheets) are managed by `coordinator` and are not returned here.
+    private var separateModalPresenter: UIViewController? {
+        if let presented = presentedViewController, presented !== host.presentedViewController {
+            return self
+        }
+        var current: UIViewController? = host.presentedViewController
+        var count = 0
+        let maxCoordinatorSheets = 1 + coordinator.stackedEntries.count
+        while let c = current, count < maxCoordinatorSheets {
+            count += 1
+            if count == maxCoordinatorSheets {
+                if c.presentedViewController != nil {
+                    return c
+                }
+                return nil
+            }
+            current = c.presentedViewController
+        }
+        return nil
     }
 
     private func performNavigation(to route: AppSheetRoute, popToRootFirst: Bool) {
+        if route == .home {
+            coordinator.popToRoot()
+            return
+        }
         if popToRootFirst {
             coordinator.popToRoot()
-        }
-        if route == .home {
-            return
         }
         if let current = coordinator.stackedRoutes.last ?? coordinator.additionalRoutes.last {
             if current == route {
