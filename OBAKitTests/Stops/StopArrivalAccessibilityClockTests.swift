@@ -21,6 +21,8 @@ import Testing
 /// configuration. This suite is a plain struct, so it never runs `OBATestCase`'s
 /// GMT pin, and `formattedClockTime` would otherwise default the device zone to
 /// `.current` and decide the outcome from the machine the tests run on.
+///
+/// The schedule deviation VoiceOver reads beside that clock is checked here too.
 @MainActor
 @Suite(.serialized)
 struct StopArrivalAccessibilityClockTests {
@@ -40,9 +42,13 @@ struct StopArrivalAccessibilityClockTests {
     /// implicitly-unwrapped `Route` that only `loadReferences()` populates — when
     /// the denormalized name is absent. A fixture without it doesn't fail this
     /// test, it traps and takes the whole test runner with it.
-    private func makeConfiguration(formatters: Formatters, deviceTimeZone: TimeZone) throws -> ArrivalDepartureContentConfiguration {
+    ///
+    /// `deviationMinutes` moves the predicted time off the schedule; `predicted`
+    /// false makes it a scheduled-only departure.
+    private func makeArrivalDeparture(predicted: Bool = true, deviationMinutes: Int = 0) throws -> ArrivalDeparture {
         let epoch = 1_700_000_480
-        let arrivalDeparture: ArrivalDeparture = try Fixtures.dictionaryToModel(
+        let predictedTime = epoch + deviationMinutes * 60
+        return try Fixtures.dictionaryToModel(
             type: ArrivalDeparture.self,
             dictionary: [
                 "arrivalEnabled": true,
@@ -51,9 +57,9 @@ struct StopArrivalAccessibilityClockTests {
                 "distanceFromStop": 100.0,
                 "lastUpdateTime": epoch,
                 "numberOfStopsAway": 1,
-                "predicted": true,
-                "predictedArrivalTime": epoch,
-                "predictedDepartureTime": epoch,
+                "predicted": predicted,
+                "predictedArrivalTime": predictedTime,
+                "predictedDepartureTime": predictedTime,
                 "routeId": "40_100479",
                 "routeShortName": "1 Line",
                 "scheduledArrivalTime": epoch,
@@ -69,7 +75,14 @@ struct StopArrivalAccessibilityClockTests {
                 "vehicleId": "vehicle_1"
             ]
         )
-        let item = ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: false)
+    }
+
+    private func makeConfiguration(
+        formatters: Formatters,
+        deviceTimeZone: TimeZone,
+        arrivalDeparture: ArrivalDeparture? = nil
+    ) throws -> ArrivalDepartureContentConfiguration {
+        let item = ArrivalDepartureItem(arrivalDeparture: try arrivalDeparture ?? makeArrivalDeparture(), isAlarmAvailable: false)
         return ArrivalDepartureContentConfiguration(
             viewModel: item,
             formatters: formatters,
@@ -105,5 +118,29 @@ struct StopArrivalAccessibilityClockTests {
         // that stops the fix being "append a badge always".
         #expect(!label.contains("("))
         #expect(label == formatters.timeFormatter.string(from: config.viewModel.arrivalDepartureDate))
+    }
+
+    // MARK: - Schedule deviation
+
+    /// The row hands the formatter its own copy of the departure's status,
+    /// timing and deviation. VoiceOver must hear what the formatter says for the
+    /// departure itself (FormattersTests pins that wording), and each case must
+    /// read differently from the others.
+    @Test func `Accessibility deviation reads early, on time, late and scheduled only like the departure`() throws {
+        let timeZone = try #require(TimeZone(identifier: "GMT"))
+        let formatters = makeFormatters(timeZone: timeZone)
+        let cases: [(predicted: Bool, deviationMinutes: Int)] = [(true, -3), (true, 0), (true, 4), (false, 4)]
+
+        var texts: [String] = []
+        for (predicted, deviationMinutes) in cases {
+            let departure = try makeArrivalDeparture(predicted: predicted, deviationMinutes: deviationMinutes)
+            let config = try makeConfiguration(formatters: formatters, deviceTimeZone: timeZone, arrivalDeparture: departure)
+            let text = try #require(config.accessibilityScheduleDeviationText)
+            #expect(text == formatters.deviationLabel(for: departure))
+            texts.append(text)
+        }
+
+        #expect(Set(texts).count == cases.count, "Each case must read differently: \(texts)")
+        #expect(texts.last == Strings.scheduledNotRealTime)
     }
 }

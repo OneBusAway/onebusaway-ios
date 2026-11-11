@@ -14,7 +14,8 @@ import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-/// Spec 3.7: the one extra line a dropped pin or search result gets.
+/// The place sheet a dropped pin or search result opens. Spec 3.7 is the one
+/// extra line it gets for on-demand coverage.
 @MainActor
 @Suite(.serialized)
 final class MapItemViewModelTests: OBATestCase {
@@ -116,5 +117,31 @@ final class MapItemViewModelTests: OBATestCase {
         #expect(check.source == .point(label: "310 Pleasant Ave"))
         #expect(check.isInside)
         #expect(check.coordinate.latitude == 45.3)
+    }
+
+    // MARK: - Remove pin
+
+    /// `removePin` is the dropped pin's remove handler; search results don't have one.
+    private func makePlaceViewModel(removePin: (() -> Void)? = nil) -> MapItemViewModel {
+        let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6097, longitude: -122.3422)))
+        mapItem.name = "Dropped Pin"
+        return MapItemViewModel(
+            mapItem: mapItem,
+            application: application,
+            actions: MapItemActions(openWebsite: { _ in }, showNearbyStops: { _ in }, dismiss: {}),
+            removePinHandler: removePin,
+            planTripHandler: nil
+        )
+    }
+
+    @Test func `Only a dropped pin offers to remove itself, and removing runs its handler`() {
+        #expect(!makePlaceViewModel().canRemovePin)
+
+        var removed = false
+        let pin = makePlaceViewModel(removePin: { removed = true })
+        #expect(pin.canRemovePin)
+
+        pin.removePin()
+        #expect(removed)
     }
 }
