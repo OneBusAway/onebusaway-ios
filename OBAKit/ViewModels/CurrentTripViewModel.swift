@@ -184,7 +184,7 @@ class CurrentTripViewModel: ObservableObject {
     }
 
     /// Called by a consumer after it has acted on `pendingNavigation` (e.g. pushed
-    /// `TripViewController`). Clears the value so subsequent state changes do not
+    /// the trip). Clears the value so subsequent state changes do not
     /// re-trigger navigation.
     func clearPendingNavigation() {
         pendingNavigation = nil

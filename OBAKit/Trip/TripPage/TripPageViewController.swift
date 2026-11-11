@@ -21,11 +21,9 @@ import OBAKitCore
 /// shares the app-group suite with Settings — without it, compact mode and
 /// reduced colors on the trip page read `UserDefaults.standard` and stay off.
 ///
-/// Deliberately map-free. `TripViewController`, which this replaces, owned a
-/// full-screen `MKMapView` and added its own floating panel as a child; pushed
-/// into the stop sheet that nests a panel inside a panel. Keeping the map out of
-/// here is what lets the same page be pushed into a sheet over the map tab's map
-/// and embedded in `TripMapHostViewController`, which supplies a map of its own.
+/// Deliberately map-free. Keeping the map out of here is what lets the same page
+/// be pushed into a sheet over the map tab's map and embedded in
+/// `TripMapHostViewController`, which supplies a map of its own.
 final class TripPageViewController: UIHostingController<TripPageRootView>,
     AppContext,
     AlarmBuilderDelegate,
@@ -208,10 +206,9 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// `updateUserActivityState(_:)` puts back.
     private var activityUserInfo: [AnyHashable: Any]?
 
-    /// Publishes this trip's `NSUserActivity` for Handoff, as `TripViewController`
-    /// does. The builder leaves it out of Siri predictions, because a trip ID is
-    /// single-use, and builds none for a trip with no `ArrivalDeparture`, such as
-    /// one opened from a vehicle.
+    /// Publishes this trip's `NSUserActivity` for Handoff. The builder leaves it
+    /// out of Siri predictions, because a trip ID is single-use, and builds none
+    /// for a trip with no `ArrivalDeparture`, such as one opened from a vehicle.
     ///
     /// Internal for tests, which can't let the page appear: that starts the trip's loads.
     func beginUserActivity() {

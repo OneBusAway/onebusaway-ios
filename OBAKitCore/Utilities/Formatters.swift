@@ -116,9 +116,9 @@ public class Formatters: NSObject {
     /// because there a region-zone time is indistinguishable from a local one.
     ///
     /// Using this directly is right for a run of times that share one context and
-    /// establish the zone between them: the stop lists in `TripStopListItem`,
-    /// `TripStopListView` and `DestinationStopPickerController` are all times along
-    /// a single trip, where a badge on every row would be noise. Audited for #1438.
+    /// establish the zone between them: the stop lists in `TripStopListView` and
+    /// `DestinationStopPickerController` are all times along a single trip, where a
+    /// badge on every row would be noise. Audited for #1438.
     public lazy var timeFormatter: DateFormatter = {
         let timeFormatter = DateFormatter()
         timeFormatter.dateStyle = .none

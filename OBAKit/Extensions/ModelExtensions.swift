@@ -99,8 +99,6 @@ nonisolated extension TripStatus: MKAnnotation {
 // MARK: - TripStopTime/MKAnnotation
 
 /// Adds conformance to `MKAnnotation` to `TripStopTime`.
-///
-/// - Note: See `MinimalStopAnnotationView`for more details.
 nonisolated extension TripStopTime: MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         stop.location.coordinate

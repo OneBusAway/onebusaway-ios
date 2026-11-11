@@ -100,7 +100,7 @@ class UserActivityBuilder: NSObject {
     ///         contains an `ArrivalDeparture`.
     ///
     /// - Parameters:
-    ///   - trip: This can be sourced from `TripViewController`, for example.
+    ///   - trip: This can be sourced from `TripPageViewController`, for example.
     ///   - region: The region that contains the `trip`.
     public func userActivity(for trip: TripConvertible, region: Region) -> NSUserActivity? {
         guard let arrDep = trip.arrivalDeparture else {

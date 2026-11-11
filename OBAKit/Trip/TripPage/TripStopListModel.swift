@@ -166,10 +166,9 @@ struct TripStopListModel {
 
         let rideIndices = riderStops?.rideIndices
         // Anchored on where the rider boards even when the marker has moved to a
-        // shared destination, as `vehicleStopIndex(in:closestStopID:arrivalDeparture:)`
-        // anchors. The trip arrives as the boarding stop's `ArrivalDeparture`, so
-        // that is the one stop the shared trip's own data is about, and on a loop
-        // the two can't then place the vehicle on different visits.
+        // shared destination. The trip arrives as the boarding stop's
+        // `ArrivalDeparture`, so that is the one stop the shared trip's own data
+        // is about.
         let vehicleIndex = vehicleIndex(
             in: stopTimes,
             closestStopID: closestStopID,
@@ -200,9 +199,9 @@ struct TripStopListModel {
         )
     }
 
-    /// The rider's rows on a trip, as the UIKit trip page needs them. One
-    /// resolution feeds the stop list, the progress header, and the map's stop
-    /// pins, so none of them can disagree about which row is "your stop".
+    /// The rider's rows on a trip. One resolution feeds the stop list and the
+    /// trip's other readers, so none of them can disagree about which row is
+    /// "your stop".
     struct RiderStops {
         /// Where the rider boards: the row the trip's own `ArrivalDeparture` is
         /// for, so its `arrivalDepartureMinutes` count down to this row.
@@ -237,32 +236,9 @@ struct TripStopListModel {
             guard let boardingIndex, let destinationIndex, boardingIndex < destinationIndex else { return nil }
             return boardingIndex...destinationIndex
         }
-
-        /// The progress header's countdown. On a shared trip, the destination's
-        /// own prediction once it has loaded. Until then, and on every other
-        /// trip, the boarding stop's, which `TripProgressViewModel` shows only
-        /// while the boarding stop is also the rider's stop. See #449.
-        ///
-        /// - Parameters:
-        ///   - boardingMinutes: Minutes until the vehicle reaches the boarding stop.
-        ///   - destinationMinutes: Minutes until it reaches the shared
-        ///     destination, or `nil` until that prediction has loaded.
-        func countdown(boardingMinutes: Int?, destinationMinutes: Int?) -> Countdown {
-            if let destinationIndex, let destinationMinutes {
-                return Countdown(stopIndex: destinationIndex, minutes: destinationMinutes)
-            }
-            return Countdown(stopIndex: boardingIndex, minutes: boardingMinutes)
-        }
     }
 
-    /// What the progress header counts down to: a row, and the minutes until
-    /// the vehicle reaches it. Built by `RiderStops.countdown`.
-    struct Countdown {
-        let stopIndex: Int?
-        let minutes: Int?
-    }
-
-    /// Resolves the rider's rows from the trip panel's `ArrivalDeparture`.
+    /// Resolves the rider's rows from the trip's `ArrivalDeparture`.
     /// `sharedDestinationStopID` is set when the trip was opened from a shared
     /// link that named where the sharer steps off. See #449.
     static func riderStops(
@@ -322,35 +298,6 @@ struct TripStopListModel {
         // slice out of bounds.
         let searchStart = min((boardingIndex.map { $0 + 1 }) ?? 0, stopTimes.count)
         return stopTimes[searchStart...].firstIndex { $0.stopID == destinationStopID }
-    }
-
-    /// Vehicle row for UIKit (and any caller that only has IDs), using the same
-    /// loop-aware rules as `make` / `vehicleIndex`. #1425: do not replace this
-    /// with `firstIndex { $0.stopID == closestStopID }`.
-    static func vehicleStopIndex<S: TripStopListEntry>(
-        in stopTimes: [S],
-        closestStopID: StopID?,
-        userStopID: StopID?,
-        userStopSequence: Int?
-    ) -> Int? {
-        let userIndex = userStopID.flatMap {
-            index(in: stopTimes, stopID: $0, stopSequence: userStopSequence)
-        }
-        return vehicleIndex(in: stopTimes, closestStopID: closestStopID, userIndex: userIndex)
-    }
-
-    /// Convenience overload for the trip panel's `ArrivalDeparture`.
-    static func vehicleStopIndex(
-        in stopTimes: [TripStopTime],
-        closestStopID: StopID?,
-        arrivalDeparture: ArrivalDeparture?
-    ) -> Int? {
-        vehicleStopIndex(
-            in: stopTimes,
-            closestStopID: closestStopID,
-            userStopID: arrivalDeparture?.stopID,
-            userStopSequence: arrivalDeparture?.stopSequence
-        )
     }
 
     /// The vehicle's position, resolved from a stop ID that a loop route can
@@ -541,8 +488,7 @@ extension TripStopListModel {
 /// omits the time.
 extension TripStopTime: TripStopListEntry {
     /// Reads through the resolved `stop` reference, which `loadReferences`
-    /// populates before any of this renders — the same access `TripStopListItem`
-    /// uses.
+    /// populates before any of this renders.
     var stopName: String { stop.name }
     var scheduledArrival: Date? { arrivalDate }
     var stopCoordinate: CLLocationCoordinate2D? { stop.location.coordinate }

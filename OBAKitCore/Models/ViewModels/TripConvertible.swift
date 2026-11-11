@@ -12,7 +12,7 @@ import Foundation
 // @unchecked Sendable: the wrapped model properties are immutable `let`s and the
 // wrapped types are themselves Sendable; NSObject prevents a checked conformance.
 /// Wraps `ArrivalDeparture`, `VehicleStatus`, and `TripDetails` to provide a uniform way to populate
-/// user interfaces that display trip information, like the `TripViewController` in `OBAKit`.
+/// user interfaces that display trip information, like the `TripPageViewController` in `OBAKit`.
 public final class TripConvertible: NSObject, @unchecked Sendable {
     public let arrivalDeparture: ArrivalDeparture?
     public let vehicleStatus: VehicleStatus?

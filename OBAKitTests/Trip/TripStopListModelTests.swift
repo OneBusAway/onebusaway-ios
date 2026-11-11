@@ -113,21 +113,6 @@ struct TripStopListModelTests {
         #expect(model.vehicleIndex == 2)
     }
 
-    /// #1425: UIKit's trip panel must call this entry point instead of
-    /// `firstIndex` on `closestStopID`, or loops keep marking the first visit.
-    @Test func `Vehicle stop index API matches make on a loop`() {
-        let stops = line(["A", "B", "A", "C"])
-        let index = TripStopListModel.vehicleStopIndex(
-            in: stops,
-            closestStopID: "A",
-            userStopID: "C",
-            userStopSequence: nil
-        )
-
-        #expect(index == 2)
-        #expect(make(stops, userStopID: "C", closestStopID: "A").vehicleIndex == index)
-    }
-
     /// A shared trip moves the rider's-stop marker to the destination, but the
     /// vehicle stays anchored on the boarding stop. The vehicle's closest stop X
     /// is visited before boarding at B (row 0) and again during the ride (row 3):
@@ -141,7 +126,6 @@ struct TripStopListModelTests {
         #expect(model.userIndex == 5)
         #expect(model.boardingIndex == 2)
         #expect(model.vehicleIndex == 0)
-        #expect(TripStopListModel.vehicleStopIndex(in: stops, closestStopID: "X", userStopID: "B", userStopSequence: nil) == 0)
     }
 
     @Test func `Without a rider's stop, the vehicle resolves to its first visit`() {
@@ -433,40 +417,6 @@ struct TripStopListModelTests {
         let stops = TripStopListModel.RiderStops(boardingIndex: 3, destinationIndex: 1)
 
         #expect(stops.rideIndices == nil)
-    }
-
-    // MARK: - The header's countdown (#449)
-
-    /// A trip that was never shared counts down to the boarding stop. A
-    /// destination prediction, were one to exist, has no row to belong to.
-    @Test func `Without a shared destination the header counts down to the boarding stop`() {
-        let stops = riderStops(line(["A", "B", "C", "D"]), userStopID: "B", userStopSequence: 1)
-
-        let countdown = stops.countdown(boardingMinutes: 8, destinationMinutes: 30)
-
-        #expect(countdown.stopIndex == 1)
-        #expect(countdown.minutes == 8)
-    }
-
-    @Test func `A shared destination's own prediction drives the countdown`() {
-        let stops = riderStops(line(["A", "B", "C", "D"]), userStopID: "B", userStopSequence: 1, sharedDestinationStopID: "D")
-
-        let countdown = stops.countdown(boardingMinutes: 8, destinationMinutes: 30)
-
-        #expect(countdown.stopIndex == 3)
-        #expect(countdown.minutes == 30)
-    }
-
-    /// Until the destination's prediction loads, the countdown stays with the
-    /// boarding stop, whose minutes the header then declines to show beside a
-    /// different row.
-    @Test func `Before the destination's prediction loads the countdown stays on the boarding stop`() {
-        let stops = riderStops(line(["A", "B", "C", "D"]), userStopID: "B", userStopSequence: 1, sharedDestinationStopID: "D")
-
-        let countdown = stops.countdown(boardingMinutes: 8, destinationMinutes: nil)
-
-        #expect(countdown.stopIndex == 1)
-        #expect(countdown.minutes == 8)
     }
 
     // MARK: - Collapsed runs (#1576)
