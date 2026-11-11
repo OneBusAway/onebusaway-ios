@@ -220,8 +220,9 @@ final class FoundationExtensionsTests {
     @Test func `Case insensitive match leaves out groups that took no part`() {
         let pattern = "/stops/(?<stop>[^/]+)(/trips/(?<trip>[^/]+))?$"
 
-        let stopOnly = "/stops/1_75403".caseInsensitiveMatch(pattern: pattern, namedGroups: ["stop", "trip"])
-        let withTrip = "/stops/1_75403/trips/1_604".caseInsensitiveMatch(pattern: pattern, namedGroups: ["stop", "trip"])
+        // `route` isn't in the pattern.
+        let stopOnly = "/stops/1_75403".caseInsensitiveMatch(pattern: pattern, namedGroups: ["stop", "trip", "route"])
+        let withTrip = "/stops/1_75403/trips/1_604".caseInsensitiveMatch(pattern: pattern, namedGroups: ["stop", "trip", "route"])
 
         #expect(stopOnly == ["stop": "1_75403"])
         #expect(withTrip == ["stop": "1_75403", "trip": "1_604"])
