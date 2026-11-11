@@ -71,8 +71,9 @@ final class StopSpotlightIndexer {
     private var indexedBookmarks: [StopEntity] = []
 
     /// Observes `NotificationCenter.default` because that is where
-    /// `UserDefaultsStore` posts `.bookmarksDidChange`. Selector-based observation
-    /// is removed on dealloc.
+    /// `UserDefaultsStore` posts `.bookmarksDidChange` and `StopReindexRequest`
+    /// posts `.stopReindexRequested`. Selector-based observation is removed on
+    /// dealloc.
     ///
     /// `userDefaults` remembers the last finished replace across launches. It has
     /// no default, so a test can't write `UserDefaults.standard` by leaving it out.
@@ -99,6 +100,12 @@ final class StopSpotlightIndexer {
             self,
             selector: #selector(bookmarksDidChange),
             name: .bookmarksDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(reindexRequested(_:)),
+            name: .stopReindexRequested,
             object: nil
         )
     }
@@ -181,7 +188,50 @@ final class StopSpotlightIndexer {
         }
     }
 
+    /// Answers Spotlight asking for stops again, which `StopEntityQuery` passes
+    /// on from iOS 27.
+    ///
+    /// `.all` replaces: Spotlight has likely lost its copy, and a replace also
+    /// restarts `replaceInterval`.
+    ///
+    /// `.stops` indexes only those stops, each at the tier a replace would give
+    /// it, without clearing. A stop from another region, or one the app no
+    /// longer has, is skipped, which leaves it out of Spotlight as a replace
+    /// would. The cache has no lookup by id, so this pages through the region's
+    /// cached stops as a replace does.
+    func reindex(_ scope: StopReindexRequest.Scope) {
+        switch scope {
+        case .all:
+            replaceAll()
+        case .stops(let identifiers):
+            reindexStops(identifiers)
+        }
+    }
+
     // MARK: - Private
+
+    private func reindexStops(_ identifiers: [StopEntity.ID]) {
+        guard let snapshot = makeSnapshot() else { return }
+        let destinations = identifiers.compactMap(StopEntityMapping.destination(fromIdentifier:))
+        let inRegion = destinations.filter { $0.regionID == snapshot.regionID }
+        if inRegion.count < identifiers.count {
+            Logger.info("Spotlight asked to re-index \(identifiers.count) stops; \(identifiers.count - destinations.count) ids don't name a stop and \(destinations.count - inRegion.count) are outside region \(snapshot.regionID). Skipping those.")
+        }
+        guard !inRegion.isEmpty else { return }
+        let wanted = Set(inRegion.map(\.stopID))
+
+        let index = index
+        let stopCache = stopCache
+        let batchSize = batchSize
+
+        enqueue(cancellingPrevious: false) {
+            try await Self.submit(snapshot.bookmarked.filter { wanted.contains($0.stopID) }, priority: 3, to: index)
+            try await Self.submit(snapshot.recent.filter { wanted.contains($0.stopID) }, priority: 2, to: index)
+            if let stopCache {
+                try await Self.indexCachedStops(of: snapshot, from: stopCache, into: index, batchSize: batchSize, only: wanted)
+            }
+        }
+    }
 
     /// The main-actor reads a run needs, taken when it is requested.
     nonisolated private struct Snapshot: Sendable {
@@ -296,12 +346,14 @@ final class StopSpotlightIndexer {
     }
 
     /// Pages through the region's cached stops, skipping any already indexed at
-    /// a higher priority, and checks for cancellation between pages.
+    /// a higher priority, and checks for cancellation between pages. With
+    /// `wanted`, it indexes only those stops.
     nonisolated private static func indexCachedStops(
         of snapshot: Snapshot,
         from stopCache: StopCacheRepository,
         into index: any StopEntityIndexing,
-        batchSize: Int
+        batchSize: Int,
+        only wanted: Set<StopID>? = nil
     ) async throws {
         let indexedIDs = Set((snapshot.bookmarked + snapshot.recent).map(\.stopID))
         var cursor: StopID?
@@ -309,7 +361,7 @@ final class StopSpotlightIndexer {
             try Task.checkCancellation()
             let page = stopCache.stops(regionId: snapshot.regionID, after: cursor, limit: batchSize)
             let entities = page.stops
-                .filter { !indexedIDs.contains($0.id) }
+                .filter { !indexedIDs.contains($0.id) && (wanted?.contains($0.id) ?? true) }
                 .map { StopEntityMapping.entity(for: $0, regionID: snapshot.regionID) }
             try await Self.submit(entities, priority: 1, to: index)
             cursor = page.cursor
@@ -322,5 +374,64 @@ final class StopSpotlightIndexer {
         Task { @MainActor [weak self] in
             self?.indexBookmarks()
         }
+    }
+
+    /// Reads the request before hopping, since a `Notification` isn't `Sendable`.
+    /// One it can't read is ignored rather than taken as `.all`, which clears
+    /// the index.
+    @objc private nonisolated func reindexRequested(_ notification: Notification) {
+        guard let scope = StopReindexRequest.scope(from: notification.userInfo) else {
+            Logger.warn("Ignoring a Spotlight re-index request with no stops or scope in it.")
+            return
+        }
+        Task { @MainActor [weak self] in
+            self?.reindex(scope)
+        }
+    }
+}
+
+extension Notification.Name {
+    /// Posted by `StopReindexRequest.post(_:)`. `StopSpotlightIndexer` answers it.
+    nonisolated static let stopReindexRequested = Notification.Name("OBA.StopReindexRequested")
+}
+
+/// Hands Spotlight's re-index requests from `StopEntityQuery`, which can't reach
+/// the app, to `StopSpotlightIndexer`, as `OpenStopRequest` hands Open Stop to
+/// `Application`.
+///
+/// Unlike `OpenStopRequest`'s observer, which `Application.init` adds, this one
+/// exists only once `Application.startStopSpotlightIndexing()` creates the
+/// indexer in `application(_:didFinishLaunching:)`. A request that arrives
+/// earlier in the launch is dropped; that launch indexes every stop anyway.
+nonisolated enum StopReindexRequest {
+    enum Scope: Equatable, Sendable {
+        case all
+        case stops([StopEntity.ID])
+    }
+
+    private static let allUserInfoKey = "all"
+    private static let identifiersUserInfoKey = "identifiers"
+
+    static func post(_ scope: Scope) {
+        NotificationCenter.default.post(name: .stopReindexRequested, object: nil, userInfo: userInfo(for: scope))
+    }
+
+    /// Spells out `.all`, so a request without a scope can't read as one.
+    static func userInfo(for scope: Scope) -> [AnyHashable: Any] {
+        switch scope {
+        case .all: [allUserInfoKey: true]
+        case .stops(let identifiers): [identifiersUserInfoKey: identifiers]
+        }
+    }
+
+    /// `nil` for a request that names neither.
+    static func scope(from userInfo: [AnyHashable: Any]?) -> Scope? {
+        if let identifiers = userInfo?[identifiersUserInfoKey] as? [StopEntity.ID] {
+            return .stops(identifiers)
+        }
+        if userInfo?[allUserInfoKey] as? Bool == true {
+            return .all
+        }
+        return nil
     }
 }
