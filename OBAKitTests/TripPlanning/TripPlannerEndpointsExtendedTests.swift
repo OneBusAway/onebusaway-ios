@@ -26,7 +26,8 @@ final class TripPlannerEndpointsExtendedTests: OBATestCase {
         mapItem.name = nil
 
         let location = TripPlannerEndpoints.location(from: mapItem)
-        #expect(location.title == "Destination")
+        let fallbackTitle = OBALoc("map_item_controller.destination_fallback_title", value: "Destination", comment: "")
+        #expect(location.title == fallbackTitle)
         #expect(location.latitude == 47.6062)
         #expect(location.longitude == -122.3321)
     }

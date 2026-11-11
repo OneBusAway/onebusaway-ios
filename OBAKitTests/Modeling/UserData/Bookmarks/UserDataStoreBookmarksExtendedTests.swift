@@ -36,9 +36,7 @@ final class UserDataStoreBookmarksExtendedTests: OBATestCase {
 
         let groups = store.bookmarkGroups
         #expect(groups.count == 3)
-        #expect(groups[0].name == "First")
-        #expect(groups[1].name == "Second")
-        #expect(groups[2].name == "Third")
+        #expect(groups.map(\.name) == ["First", "Second", "Third"])
     }
 
     @Test func `Upserting existing group updates name and sortOrder in place`() {

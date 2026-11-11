@@ -74,7 +74,7 @@ final class DepartureTimeBadgeExtendedTests {
             arrivalDepartureStatus: .departing,
             temporalState: .future,
             scheduleStatus: .unknown,
-            scheduleDeviation: nil,
+            scheduleDeviation: 0,
             formatters: formatters
         )
 

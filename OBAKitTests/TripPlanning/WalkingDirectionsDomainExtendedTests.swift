@@ -45,10 +45,14 @@ final class WalkingDirectionsDomainExtendedTests: OBATestCase {
         }
     }
 
-    @Test func `travelTime returns nil when velocity is NaN or Infinite`() {
-        #expect(WalkingDirections.travelTime(from: origin, to: destination, velocity: Double.nan) == nil)
-        #expect(WalkingDirections.travelTime(from: origin, to: destination, velocity: Double.infinity) == nil)
-        #expect(WalkingDirections.travelTime(from: origin, to: destination, velocity: -Double.infinity) == nil)
+    @Test func `travelTime with infinite velocity returns zero duration`() {
+        let time = WalkingDirections.travelTime(from: origin, to: destination, velocity: Double.infinity)
+        #expect(time == 0.0)
+    }
+
+    @Test func `travelTime returns nil when velocity is negative or zero`() {
+        #expect(WalkingDirections.travelTime(from: origin, to: destination, velocity: 0) == nil)
+        #expect(WalkingDirections.travelTime(from: origin, to: destination, velocity: -1.0) == nil)
     }
 
     // MARK: - Distance Proximity

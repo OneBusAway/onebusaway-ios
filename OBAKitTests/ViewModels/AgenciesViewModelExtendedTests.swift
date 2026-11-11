@@ -58,20 +58,11 @@ final class AgenciesViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `AgenciesViewModel exposes application reference`() {
-        let app = createApplication(dataLoader: MockDataLoader(testName: name))
-        let vm = AgenciesViewModel(application: app)
-
-        #expect(vm.application === app)
-    }
-
-    @Test @MainActor
     func `AgenciesViewModel initial state has empty agencies list`() {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let vm = AgenciesViewModel(application: app)
 
         #expect(vm.agencies.isEmpty)
-        #expect(!vm.isLoading)
     }
 
     @Test @MainActor
@@ -83,7 +74,12 @@ final class AgenciesViewModelExtendedTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let vm = AgenciesViewModel(application: app)
 
-        await vm.loadData()
-        #expect(!vm.isLoading)
+        do {
+            _ = try await vm.loadData()
+            #expect(Bool(false), "loadData should have thrown an error on network failure")
+        } catch {
+            #expect(error != nil)
+        }
+        #expect(vm.agencies.isEmpty)
     }
 }

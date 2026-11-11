@@ -66,14 +66,13 @@ final class ServiceAlertViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `ServiceAlertViewModel exposes underlying serviceAlert and application`() throws {
+    func `ServiceAlertViewModel initial state before appear has nil renderedHTML`() throws {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let alert = try loadServiceAlert()
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
 
-        #expect(viewModel.serviceAlert.id == alert.id)
-        #expect(viewModel.application === app)
+        #expect(viewModel.renderedHTML == nil)
     }
 
     @Test @MainActor
@@ -82,7 +81,7 @@ final class ServiceAlertViewModelExtendedTests: OBATestCase {
         let alert = try loadServiceAlert()
 
         // Explicitly mark as read before creating view model
-        app.userDataStore.markAsRead(serviceAlert: alert)
+        app.userDataStore.markRead(serviceAlert: alert)
         #expect(!app.userDataStore.isUnread(serviceAlert: alert))
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)

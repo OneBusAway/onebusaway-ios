@@ -42,7 +42,7 @@ final class NearbyStopsViewModelExtendedTests: OBATestCase {
         let apiService = buildRESTService(dataLoader: dataLoader)
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: apiService)
 
-        await viewModel.reload()
+        await viewModel.loadStops()
 
         #expect(!viewModel.isLoading)
         #expect(viewModel.stops.isEmpty)
@@ -55,7 +55,7 @@ final class NearbyStopsViewModelExtendedTests: OBATestCase {
         let apiService = buildRESTService(dataLoader: dataLoader)
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: apiService)
 
-        await viewModel.reload()
+        await viewModel.loadStops()
 
         #expect(!viewModel.isLoading)
         #expect(!viewModel.stops.isEmpty)
@@ -68,7 +68,7 @@ final class NearbyStopsViewModelExtendedTests: OBATestCase {
         let apiService = buildRESTService(dataLoader: dataLoader)
         let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: apiService)
 
-        await viewModel.reload()
+        await viewModel.loadStops()
         #expect(viewModel.operationError != nil)
 
         // Mock success response
@@ -76,7 +76,7 @@ final class NearbyStopsViewModelExtendedTests: OBATestCase {
             loader.mock(URLString: self.stopsURLString, with: Fixtures.loadData(file: "stops_for_location_seattle.json"))
         }
 
-        await viewModel.reload()
+        await viewModel.loadStops()
         #expect(viewModel.operationError == nil)
         #expect(!viewModel.stops.isEmpty)
     }

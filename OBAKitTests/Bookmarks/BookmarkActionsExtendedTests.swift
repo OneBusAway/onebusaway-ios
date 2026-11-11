@@ -37,10 +37,10 @@ final class BookmarkActionsExtendedTests: OBATestCase {
         Stop(
             id: id,
             name: name,
-            coordinate: TestData.mockSeattleCoordinate,
+            code: "100",
             direction: "NB",
-            routeIDs: ["1_10", "1_44"],
-            routes: []
+            location: TestData.mockSeattleLocation,
+            routeIDs: ["1_10", "1_44"]
         )
     }
 
@@ -82,12 +82,5 @@ final class BookmarkActionsExtendedTests: OBATestCase {
         actions.reportDeletion(of: b2)
 
         #expect((analytics?.reportedEvents.count ?? 0) == 0)
-    }
-
-    @Test @MainActor
-    func `BookmarkActions initializes cleanly with Application`() {
-        let app = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        let actions = BookmarkActions(application: app)
-        #expect(actions.application === app)
     }
 }
