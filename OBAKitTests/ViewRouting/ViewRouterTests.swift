@@ -194,4 +194,123 @@ final class ViewRouterTests: OBATestCase {
         #expect(host.tripPage.viewModel.tripConvertible.tripID == "1_47649081")
         #expect(host.tripPage.viewModel.tripConvertible.vehicleStatus === vehicle)
     }
+
+    // MARK: - MapPanel Deep-Link & Sheet Routing
+
+    /// Verifies that constructing a `MapPanelRootController` registers it with
+    /// `ViewRouter` and resolves dynamically from context or as fallback.
+    @Test func `MapPanelRootController registers and resolves in ViewRouter`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let panel = MapPanelRootController(application: application)
+
+        #expect(application.viewRouter.mapPanelRootController === panel)
+        #expect(application.viewRouter.mapPanelRootController(from: panel) === panel)
+    }
+
+    /// Verifies `rootNavigateTo(page:)` maps tab destinations to their
+    /// corresponding sheet routes in map-panel mode.
+    @Test func `rootNavigateTo maps pages correctly in map panel mode`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let panel = MapPanelRootController(application: application)
+
+        application.viewRouter.rootNavigateTo(page: .recentStops, from: panel)
+        #expect(panel.coordinator.stackedRoutes.last == .recentStopsAll)
+
+        application.viewRouter.rootNavigateTo(page: .bookmarks, from: panel)
+        #expect(panel.coordinator.stackedRoutes.last == .bookmarksAll)
+
+        application.viewRouter.rootNavigateTo(page: .more, from: panel)
+        #expect(panel.coordinator.stackedRoutes.last == .more)
+
+        application.viewRouter.rootNavigateTo(page: .map, from: panel)
+        #expect(panel.coordinator.currentRoute == .home)
+        #expect(panel.coordinator.stackedRoutes.isEmpty)
+    }
+
+    /// Verifies `navigate(to:)` routes directly to the floating sheet coordinator
+    /// when the modern map panel is the active root controller.
+    @Test func `navigate to AppSheetRoute navigates sheet coordinator in map panel mode`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let panel = MapPanelRootController(application: application)
+
+        let handled = application.viewRouter.navigate(to: .stopDetails(stopID: "1_75403"), from: panel)
+        #expect(handled)
+        #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_75403"))
+
+        application.viewRouter.navigate(to: .home, from: panel, popToRootFirst: true)
+        #expect(panel.coordinator.currentRoute == .home)
+        #expect(panel.coordinator.stackedRoutes.isEmpty)
+    }
+
+    /// Verifies external navigation (`pushStopFromOutside`) pushes a stop sheet
+    /// into the map panel without dropping when map-panel mode is active.
+    @Test func `pushStopFromOutside routes into map panel coordinator when map panel is active`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let panel = MapPanelRootController(application: application)
+
+        application.pushStopFromOutside("1_9999")
+        #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_9999"))
+    }
+
+    /// Verifies `navigateTo(stopID:from:)` with a controller lacking a navigation controller
+    /// routes into the map panel sheet coordinator without tripping assertions.
+    @Test func `navigateTo stopID from bare controller in map panel mode routes into sheet coordinator`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let panel = MapPanelRootController(application: application)
+
+        let child = UIViewController()
+        panel.addChild(child)
+        panel.view.addSubview(child.view)
+        child.didMove(toParent: panel)
+
+        application.viewRouter.navigateTo(stopID: "1_4321", from: child)
+        #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_4321"))
+    }
+
+    /// Verifies `navigate(to: url)` with a universal stop URL routes into the stop sheet.
+    @Test func `navigate to universal stop URL opens stop sheet in map panel mode`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let panel = MapPanelRootController(application: application)
+
+        let stopURL = try #require(URL(string: "https://onebusaway.co/regions/1/stops/1_75403"))
+        let handled = application.viewRouter.navigate(to: stopURL, from: panel)
+        #expect(handled)
+        #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_75403"))
+    }
+
+    /// Verifies `navigate(to: url)` with a custom scheme URL (`onebusaway://stop?id=...`) opens the stop sheet.
+    @Test func `navigate to custom scheme stop URL opens stop sheet in map panel mode`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let panel = MapPanelRootController(application: application)
+
+        let customURL = try #require(URL(string: "onebusaway://stop?id=1_75403"))
+        let handled = application.viewRouter.navigate(to: customURL, from: panel)
+        #expect(handled)
+        #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_75403"))
+    }
+
+    /// Verifies `navigate(to: AppSheetRoute)` translates sheet routes into tab switches
+    /// when classic mode (`ClassicApplicationRootController`) is active.
+    @Test func `navigate to AppSheetRoute translates to classic tabs when classic mode is active`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let classicRoot = ClassicApplicationRootController(application: application)
+
+        #expect(application.viewRouter.rootController === classicRoot)
+
+        let handledRecent = application.viewRouter.navigate(to: .recentStopsAll)
+        #expect(handledRecent)
+        #expect(classicRoot.selectedIndex == ClassicApplicationRootController.Page.recentStops.rawValue)
+
+        let handledBookmarks = application.viewRouter.navigate(to: .bookmarksAll)
+        #expect(handledBookmarks)
+        #expect(classicRoot.selectedIndex == ClassicApplicationRootController.Page.bookmarks.rawValue)
+
+        let handledMore = application.viewRouter.navigate(to: .more)
+        #expect(handledMore)
+        #expect(classicRoot.selectedIndex == ClassicApplicationRootController.Page.more.rawValue)
+
+        let handledHome = application.viewRouter.navigate(to: .home)
+        #expect(handledHome)
+        #expect(classicRoot.selectedIndex == ClassicApplicationRootController.Page.map.rawValue)
+    }
 }

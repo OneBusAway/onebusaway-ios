@@ -149,12 +149,19 @@ public class Application: CoreApplication, PushServiceDelegate {
             do {
                 let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
+                // The rider may have switched regions while this loaded.
+                guard self.currentRegion?.regionIdentifier == deepLink.regionID else {
+                    Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
+                    ProgressHUD.dismiss()
+                    return
+                }
+
+                if self.viewRouter.navigate(to: .tripDetails(TripConvertible(arrivalDeparture: arrDep)), popToRootFirst: false) {
+                    ProgressHUD.dismiss()
+                    return
+                }
+
                 self.withPushableTopViewController { from in
-                    // The rider may have switched regions while this loaded.
-                    guard self.currentRegion?.regionIdentifier == deepLink.regionID else {
-                        Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
-                        return
-                    }
                     self.viewRouter.navigateTo(
                         arrivalDeparture: arrDep,
                         from: from,
@@ -828,7 +835,8 @@ public class Application: CoreApplication, PushServiceDelegate {
             // Shares the stash, region check, and onboarding guard every other
             // stop entry point uses, rather than navigating against whichever
             // region happens to be selected.
-            queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
+            let regionID = stopData.regionID ?? currentRegion?.regionIdentifier ?? 0
+            queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: regionID))
             return true
         case .viewRentals(let coordinate):
             pendingRentalsCoordinate = coordinate

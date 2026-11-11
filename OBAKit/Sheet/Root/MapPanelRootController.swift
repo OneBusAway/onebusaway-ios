@@ -20,11 +20,15 @@ import OBAKitCore
 /// The AppDelegates pick between the two via `ApplicationRootControllerFactory`.
 public final class MapPanelRootController: UIViewController {
 
+    public let application: Application
+    let coordinator: SheetCoordinator<AppSheetRoute>
     private let host: UIHostingController<MapPanelRootView>
     private let bridge: TripPresentationBridge
 
     public init(application: Application) {
+        self.application = application
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        self.coordinator = coordinator
         let bridge = TripPresentationBridge(coordinator: coordinator)
         let displayModel = MapSearchDisplayModel()
         // Built here, not inside `MapPanelRootView`, because the factory is
@@ -81,6 +85,7 @@ public final class MapPanelRootController: UIViewController {
         self.bridge = bridge
         super.init(nibName: nil, bundle: nil)
         self.bridge.host = self
+        self.application.viewRouter.register(mapPanelRootController: self)
     }
 
     required init?(coder: NSCoder) {
@@ -100,6 +105,43 @@ public final class MapPanelRootController: UIViewController {
             host.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
         host.didMove(toParent: self)
+    }
+
+    /// Navigates to the specified route within the sheet coordinator.
+    ///
+    /// If modal controllers are currently presented over this controller,
+    /// they are dismissed first so the sheet is uncovered and interactive.
+    ///
+    /// - Parameters:
+    ///   - route: The destination sheet route to display.
+    ///   - popToRootFirst: When `true`, resets the coordinator to `.home` before pushing `route`.
+    @MainActor
+    func navigate(to route: AppSheetRoute, popToRootFirst: Bool = false) {
+        let presented = topmostPresentedController
+        if presented !== self {
+            presented.dismiss(animated: true) { [weak self] in
+                self?.performNavigation(to: route, popToRootFirst: popToRootFirst)
+            }
+            return
+        }
+        performNavigation(to: route, popToRootFirst: popToRootFirst)
+    }
+
+    private func performNavigation(to route: AppSheetRoute, popToRootFirst: Bool) {
+        if popToRootFirst {
+            coordinator.popToRoot()
+        }
+        if route == .home {
+            return
+        }
+        if let current = coordinator.stackedRoutes.last ?? coordinator.additionalRoutes.last {
+            if current == route {
+                return
+            }
+            coordinator.open(route, from: current)
+        } else {
+            coordinator.push(route)
+        }
     }
 
     /// Opens the trips `CurrentTripView` and vehicle search hand over as the
