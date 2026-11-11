@@ -71,7 +71,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
     private func launch(in region: Region, store: UserDataStore, cache: StopCacheRepository? = nil, at date: Date) async -> [FakeStopIndex.Call] {
         let index = FakeStopIndex()
         let indexer = makeIndexer(index, store: store, cache: cache, region: region, now: date)
-        indexer.indexAtLaunch()
+        indexer.indexOrReplace()
         await indexer.currentRun?.value
         withExtendedLifetime(indexer) {}
         return await index.log

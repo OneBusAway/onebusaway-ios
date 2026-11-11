@@ -901,11 +901,14 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     /// The launch and region-change rebuilds read the cache before the region's
-    /// sync writes to it, so the index is rebuilt again once it has. A sync that
-    /// finishes as the rider switches regions is ignored: the switch rebuilt it.
+    /// sync writes to it, so the synced stops are indexed once it has. A partial
+    /// sync is retried hourly, so this indexes on top rather than emptying
+    /// Spotlight each time; the weekly replace removes the stops a sync dropped.
+    /// A sync that finishes as the rider switches regions is ignored: the switch
+    /// rebuilt the index.
     public override func regionStopSyncWroteStops(regionID: Int) {
         guard regionID == currentRegion?.regionIdentifier else { return }
-        stopSpotlightIndexer?.replaceAll()
+        stopSpotlightIndexer?.indexOrReplace()
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {

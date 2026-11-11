@@ -680,7 +680,7 @@ final class ApplicationTests: OBATestCase {
     /// A region change is where the previous region's stops leave Spotlight.
     /// Remove the call from `regionsService(_:updatedRegion:)` and nothing is
     /// cleared. The first replace makes a launch's refresh skip the clear, so
-    /// calling `indexAtLaunch()` there instead would fail this too.
+    /// calling `indexOrReplace()` there instead would fail this too.
     @Test func `A region change replaces the Spotlight index`() async {
         let app = makeApplicationForUserActivity()
         let index = FakeStopIndex()
@@ -696,26 +696,34 @@ final class ApplicationTests: OBATestCase {
     }
 
     /// The launch and region-change rebuilds run before the sync writes the
-    /// region's stops. Another region's sync is ignored; the second call is the
-    /// positive control. Remove the call from `regionStopSyncWroteStops(regionID:)`
-    /// and nothing is cleared. The first replace makes a launch's refresh skip
-    /// the clear, so calling `indexAtLaunch()` there instead would fail this too.
-    @Test func `Only a sync of the current region replaces the Spotlight index`() async {
+    /// region's stops, so the sync indexes them. A partial sync is retried
+    /// hourly, so after a recent replace it adds to Spotlight without emptying
+    /// it. Another region's sync is ignored; the second call is the positive
+    /// control. Call `replaceAll()` there instead and the index is cleared again;
+    /// remove the call and the bookmarked stop isn't indexed a second time.
+    @Test func `A sync of the current region indexes its stops without clearing Spotlight`() async {
         let (app, _) = makeAppAndPushService()
-        app.regionsService.currentRegion = Fixtures.tampaRegion
+        let tampa = Fixtures.tampaRegion
+        app.regionsService.currentRegion = tampa
+        // Added before the indexer exists, which answers `.bookmarksDidChange`.
+        let stop = Stop(id: "1_a", name: "Stop 1_a", code: "1_a", location: CLLocation(latitude: 27.95, longitude: -82.46), regionIdentifier: tampa.regionIdentifier)
+        app.userDataStore.add(Bookmark(name: stop.name, regionIdentifier: tampa.regionIdentifier, stop: stop), to: nil)
+        let indexed = FakeStopIndex.Call.index([StopEntityMapping.identifier(regionID: tampa.regionIdentifier, stopID: "1_a")], priority: 3)
+
         let index = FakeStopIndex()
-        let indexer = StopSpotlightIndexer(index: index, userDataStore: app.userDataStore, stopCache: nil, userDefaults: userDefaults, currentRegion: { Fixtures.tampaRegion }, isIndexingAvailable: { true })
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: app.userDataStore, stopCache: nil, userDefaults: userDefaults, currentRegion: { tampa }, isIndexingAvailable: { true })
         app.stopSpotlightIndexer = indexer
         indexer.replaceAll()
         let replace = indexer.currentRun
         await replace?.value
+        #expect(await index.log == [.deleteAll, indexed])
 
         app.regionStopSyncWroteStops(regionID: Fixtures.pugetSoundRegion.regionIdentifier)
         #expect(indexer.currentRun == replace)
 
-        app.regionStopSyncWroteStops(regionID: Fixtures.tampaRegion.regionIdentifier)
+        app.regionStopSyncWroteStops(regionID: tampa.regionIdentifier)
         await indexer.currentRun?.value
-        #expect(await index.log == [.deleteAll, .deleteAll])
+        #expect(await index.log == [.deleteAll, indexed, indexed])
     }
 
     private func makeApplicationForUserActivity() -> Application {

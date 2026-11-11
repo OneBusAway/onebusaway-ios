@@ -87,7 +87,7 @@ final class RegionStopSyncSchedulerTests {
         #expect(try cachedIDs(region: 1) == ["1_a"])
     }
 
-    /// The app rebuilds its Spotlight index from the cache when told.
+    /// The app indexes the synced stops in Spotlight when told.
     @Test func `A sync that writes stops reports its region`() async {
         let reported = SendableBox<[Int]>([])
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_a")])
