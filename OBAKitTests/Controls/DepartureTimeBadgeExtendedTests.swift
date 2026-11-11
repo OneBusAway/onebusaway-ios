@@ -36,7 +36,7 @@ final class DepartureTimeBadgeExtendedTests {
         )
 
         #expect(config.displayText == "NOW")
-        #expect(config.accessibilityLabel.contains("NOW"))
+        #expect(config.accessibilityLabel.contains("Departing now"))
     }
 
     @Test func `Departure time badge with negative minutes formats past departure`() {

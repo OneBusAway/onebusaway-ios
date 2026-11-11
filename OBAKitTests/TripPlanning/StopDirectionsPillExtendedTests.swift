@@ -34,23 +34,23 @@ struct StopDirectionsPillExtendedTests {
     // MARK: - Text Formatting
 
     @Test func `Walk pill text formats duration accurately`() {
-        let infoZero = WalkTimeInfo(walkDistanceMeters: 0, walkMinutes: 0)
-        let infoOne = WalkTimeInfo(walkDistanceMeters: 80, walkMinutes: 1)
-        let infoTen = WalkTimeInfo(walkDistanceMeters: 800, walkMinutes: 10)
+        let infoZero = WalkTimeInfo(walkMinutes: 0, distance: 0)
+        let infoOne = WalkTimeInfo(walkMinutes: 1, distance: 80)
+        let infoTen = WalkTimeInfo(walkMinutes: 10, distance: 800)
 
-        #expect(StopDirectionsPill.walk.text(for: infoZero).contains("0 min walk"))
-        #expect(StopDirectionsPill.walk.text(for: infoOne).contains("1 min walk"))
-        #expect(StopDirectionsPill.walk.text(for: infoTen).contains("10 min walk"))
+        #expect(StopDirectionsPill.walk.text(for: infoZero) == String(format: OBALoc("stop_page.walk_chip_minutes_fmt", value: "%d min walk", comment: ""), 0))
+        #expect(StopDirectionsPill.walk.text(for: infoOne) == String(format: OBALoc("stop_page.walk_chip_minutes_fmt", value: "%d min walk", comment: ""), 1))
+        #expect(StopDirectionsPill.walk.text(for: infoTen) == String(format: OBALoc("stop_page.walk_chip_minutes_fmt", value: "%d min walk", comment: ""), 10))
     }
 
     @Test func `Bike pill text formats duration accurately`() {
-        let infoZero = WalkTimeInfo(walkDistanceMeters: 0, walkMinutes: 0)
-        let infoFive = WalkTimeInfo(walkDistanceMeters: 1500, walkMinutes: 5)
-        let infoThirty = WalkTimeInfo(walkDistanceMeters: 9000, walkMinutes: 30)
+        let infoZero = WalkTimeInfo(walkMinutes: 0, distance: 0)
+        let infoFive = WalkTimeInfo(walkMinutes: 5, distance: 1500)
+        let infoThirty = WalkTimeInfo(walkMinutes: 30, distance: 9000)
 
-        #expect(StopDirectionsPill.bike.text(for: infoZero).contains("0 min bike"))
-        #expect(StopDirectionsPill.bike.text(for: infoFive).contains("5 min bike"))
-        #expect(StopDirectionsPill.bike.text(for: infoThirty).contains("30 min bike"))
+        #expect(StopDirectionsPill.bike.text(for: infoZero) == String(format: OBALoc("stop_page.bike_chip_minutes_fmt", value: "%d min bike", comment: ""), 0))
+        #expect(StopDirectionsPill.bike.text(for: infoFive) == String(format: OBALoc("stop_page.bike_chip_minutes_fmt", value: "%d min bike", comment: ""), 5))
+        #expect(StopDirectionsPill.bike.text(for: infoThirty) == String(format: OBALoc("stop_page.bike_chip_minutes_fmt", value: "%d min bike", comment: ""), 30))
     }
 
     // MARK: - Behavior and Accessibility Hint Equality

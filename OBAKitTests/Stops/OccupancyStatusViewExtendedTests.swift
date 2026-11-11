@@ -30,11 +30,13 @@ struct OccupancyStatusViewExtendedTests {
 
         view.configure(occupancyStatus: .manySeatsAvailable, realtimeData: true)
         let label1 = try #require(findLabel(in: view))
-        #expect(!label1.text.isNilOrEmpty)
+        let expectedManySeats = OBALoc("occupancy_status.many_seats_available", value: "Many seats available", comment: "")
+        #expect(label1.text == expectedManySeats)
 
         view.configure(occupancyStatus: .standingRoomOnly, realtimeData: true)
         let label2 = try #require(findLabel(in: view))
-        #expect(!label2.text.isNilOrEmpty)
+        let expectedStandingRoom = OBALoc("occupancy_status.standing_room_only", value: "Standing room only", comment: "")
+        #expect(label2.text == expectedStandingRoom)
 
         view.configure(occupancyStatus: .unknown, realtimeData: true)
         #expect(view.isHidden)
