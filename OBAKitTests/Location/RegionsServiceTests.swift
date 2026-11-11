@@ -20,6 +20,7 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     private(set) var updatedRegionsList: DelegateTestingHelper.DidCallDelegateMethod<[Region]> = .didNotCall
     private(set) var newRegionSelected: DelegateTestingHelper.DidCallDelegateMethod<Region> = .didNotCall
     private(set) var regionUpdateCancelled: DelegateTestingHelper.DidCallDelegateMethod<Void> = .didNotCall
+    private(set) var displayedError: DelegateTestingHelper.DidCallDelegateMethod<Error> = .didNotCall
 
     func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         unableToSelectRegion = .called(Void())
@@ -35,6 +36,10 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
 
     func regionsServiceListUpdateCancelled(_ service: RegionsService) {
         regionUpdateCancelled = .called(Void())
+    }
+
+    func regionsService(_ service: RegionsService, displayError error: Error) {
+        displayedError = .called(error)
     }
 }
 
@@ -346,6 +351,85 @@ final class RegionsServiceTests: OBATestCase {
         #expect(regionsService.regions.first?.name == "Puget Sound", "Expected a region to exist in the regionsService")
     }
 
+    /// The list is refreshed once a day. The distance is taken either way, so a
+    /// last update stamped in the future (the clock was set back) also refreshes.
+    @Test(arguments: [(hoursFromNow: -23.0, refreshes: false), (hoursFromNow: -25.0, refreshes: true), (hoursFromNow: 48.0, refreshes: true)])
+    func `Region list refreshes only when its last update is a day or more from now`(hoursFromNow: Double, refreshes: Bool) async {
+        stubRegionsJustPugetSound(dataLoader: dataLoader)
+        userDefaults.set(Date(timeIntervalSinceNow: hoursFromNow * 3600), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        let regionsService = makeRegionsService(delegate: testDelegate)
+
+        await regionsService.updateRegionsList()
+
+        #expect(testDelegate.updatedRegionsList.didCall == refreshes)
+        #expect(testDelegate.regionUpdateCancelled.didCall == !refreshes)
+        #expect(regionsService.regions.count == (refreshes ? 1 : 7))
+    }
+
+    @Test func `A failed region list refresh reports the error and keeps the old list`() async throws {
+        let path = regionsAPIPath
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == path }
+        let regionsService = makeRegionsService(delegate: testDelegate)
+
+        await regionsService.updateRegionsList(forceUpdate: true)
+
+        guard case .called(let error) = testDelegate.displayedError,
+              case .requestFailure(let response)? = error as? APIError else {
+            Issue.record("Expected the 500 to reach delegates as APIError.requestFailure, got \(testDelegate.displayedError)")
+            return
+        }
+        #expect(response.statusCode == 500)
+        #expect(regionsService.regions.count == 7)
+        #expect(!testDelegate.updatedRegionsList.didCall)
+    }
+
+    /// An empty list from the server must not wipe the regions the app already has.
+    @Test func `An empty region list from the server keeps the stored regions`() async {
+        let emptyList = Data(#"{"version": 3, "code": 200, "text": "OK", "data": {"list": []}}"#.utf8)
+        let path = regionsAPIPath
+        dataLoader.mock(data: emptyList) { $0.url?.path == path }
+        let regionsService = makeRegionsService(delegate: testDelegate)
+
+        await regionsService.updateRegionsList(forceUpdate: true)
+
+        #expect(regionsService.regions.count == 7)
+        #expect(!testDelegate.updatedRegionsList.didCall)
+        #expect(testDelegate.displayedError.didCall == false)
+    }
+
+    // MARK: - Custom Regions
+
+    /// A failed read is not cached, so the custom regions come back once the
+    /// file can be read again rather than staying empty for the session.
+    @Test func `A failed custom regions read is retried on the next access`() {
+        stubRegions(dataLoader: dataLoader)
+        let custom = Fixtures.customMinneapolisRegion
+        mockFileStorage.storedCustomRegions = [custom]
+        mockFileStorage.loadCustomRegionsError = CocoaError(.fileReadCorruptFile)
+        let regionsService = makeRegionsService()
+
+        #expect(regionsService.customRegions.isEmpty)
+
+        mockFileStorage.loadCustomRegionsError = nil
+        #expect(regionsService.customRegions == [custom])
+    }
+
+    @Test func `Deleting the selected custom region throws and keeps it`() async {
+        stubRegions(dataLoader: dataLoader)
+        let custom = Fixtures.customMinneapolisRegion
+        mockFileStorage.storedCustomRegions = [custom]
+        let regionsService = makeRegionsService()
+        regionsService.currentRegion = custom
+        #expect(regionsService.currentRegion == custom)
+
+        await #expect(throws: UnstructuredError.self) {
+            try await regionsService.delete(customRegion: custom)
+        }
+
+        #expect(mockFileStorage.storedCustomRegions == [custom])
+        #expect(regionsService.find(id: custom.regionIdentifier) == custom)
+    }
+
     // MARK: - Migration
 
     /// It migrates downloaded regions from UserDefaults to disk storage on first launch.
@@ -495,9 +579,56 @@ final class RegionsServiceTests: OBATestCase {
 
     // MARK: - Location Services
 
-    // It updates the current region when the user's location changes
+    /// Locations arrive through `LocationService`, the way the app gets them.
+    @Test func `Moving into another region makes it the current region`() throws {
+        stubRegions(dataLoader: dataLoader)
+        locationManagerMock.location = TestData.mockSeattleLocation
+        let regionsService = makeRegionsService(delegate: testDelegate)
+        #expect(regionsService.currentRegion?.name == "Puget Sound")
 
-    // It does not update the user's current region or call `regionsServiceUnableToSelectRegion` when the user's location is nil
+        locationManagerMock.location = TestData.mockTampaLocation
 
-    // It calls `regionsServiceUnableToSelectRegion` if the user's current location does not match a known region.
+        let tampa = try #require(regionsService.regions.first { $0.name == "Tampa Bay" })
+        #expect(regionsService.currentRegion == tampa)
+        expectDidCallDelegateMethod(testDelegate.newRegionSelected, tampa)
+    }
+
+    @Test func `With automatic selection off the current region stays until it is turned back on`() {
+        stubRegions(dataLoader: dataLoader)
+        locationManagerMock.location = TestData.mockSeattleLocation
+        let regionsService = makeRegionsService(delegate: testDelegate)
+        regionsService.automaticallySelectRegion = false
+
+        locationManagerMock.location = TestData.mockTampaLocation
+        #expect(regionsService.currentRegion?.name == "Puget Sound")
+
+        regionsService.automaticallySelectRegion = true
+        #expect(regionsService.currentRegion?.name == "Tampa Bay")
+    }
+
+    @Test func `A location outside every region asks delegates to pick one and keeps the current region`() {
+        stubRegions(dataLoader: dataLoader)
+        locationManagerMock.location = TestData.mockSeattleLocation
+        let regionsService = makeRegionsService(delegate: testDelegate)
+        #expect(!testDelegate.unableToSelectRegion.didCall)
+
+        // The Gulf of Guinea, far from every bundled region.
+        locationManagerMock.location = CLLocation(
+            coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            altitude: 0, horizontalAccuracy: 10, verticalAccuracy: 10, timestamp: Date()
+        )
+
+        #expect(testDelegate.unableToSelectRegion.didCall)
+        #expect(regionsService.currentRegion?.name == "Puget Sound")
+    }
+
+    @Test func `Without a location the current region is left alone and delegates are not asked to pick one`() {
+        stubRegions(dataLoader: dataLoader)
+        let regionsService = makeRegionsService(delegate: testDelegate)
+
+        regionsService.updateCurrentRegionFromLocation()
+
+        #expect(!testDelegate.unableToSelectRegion.didCall)
+        #expect(regionsService.currentRegion == nil)
+    }
 }
