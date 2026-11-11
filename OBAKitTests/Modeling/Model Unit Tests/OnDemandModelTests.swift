@@ -259,6 +259,18 @@ final class OnDemandModelTests: OBATestCase {
         #expect(calendar.exceptedDates == [ServiceDate("2026-07-04")!])
     }
 
+    @Test func `Calendar defaults missing dates and exceptedDates`() throws {
+        let json = """
+        {"id":"cal_minimal","days":["sat","sun"]}
+        """
+        let cal = try JSONDecoder().decode(OnDemandCalendar.self, from: Data(json.utf8))
+        #expect(cal.id == "cal_minimal")
+        #expect(cal.days == [.sat, .sun])
+        #expect(cal.startDate == nil)
+        #expect(cal.endDate == nil)
+        #expect(cal.exceptedDates.isEmpty)
+    }
+
     @Test func `Calendar equality and Hashable conformance`() {
         let c1 = OnDemandCalendar(id: "c1", days: [.mon], startDate: nil, endDate: nil, exceptedDates: [])
         let c2 = OnDemandCalendar(id: "c1", days: [.mon], startDate: nil, endDate: nil, exceptedDates: [])

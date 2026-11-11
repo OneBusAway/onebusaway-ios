@@ -77,11 +77,10 @@ final class AgenciesViewModelExtendedTests: OBATestCase {
         do {
             _ = try await vm.loadData()
             #expect(Bool(false), "loadData should have thrown an error on network failure")
-        } catch let caughtError as NSError {
+        } catch {
+            let caughtError = error as NSError
             #expect(caughtError.domain == NSURLErrorDomain)
             #expect(caughtError.code == NSURLErrorTimedOut)
-        } catch {
-            #expect(Bool(false), "Unexpected error type: \(error)")
         }
         #expect(vm.agencies.isEmpty)
     }

@@ -98,16 +98,28 @@ struct TripETADistanceExtendedTests {
 
     // MARK: - Pluralization and Stop Counts
 
-    @Test func `Two or more stops away formats with non-empty distance string`() throws {
-        let line = try #require(make(distance: 1609.34, stops: 2))
-        #expect(!line.text.isEmpty)
-        #expect(!line.accessibilityText.isEmpty)
+    @Test func `Two or more stops away formats with expected stop count and distance string`() throws {
+        let locale = Locale(identifier: "en_US")
+        let distance = defaultFormatter.string(fromDistance: 1609.34)
+        let line = try #require(make(distance: 1609.34, stops: 2, locale: locale))
+
+        let expectedFmt = OBALoc("trip_page.card.distance_stops_fmt", value: "%1$@ away · %2$d stops", comment: "")
+        let expectedA11y = OBALoc("trip_page.card.distance_stops_a11y_fmt", value: "%1$@ away, %2$d stops away", comment: "")
+
+        #expect(line.text == String(format: expectedFmt, locale: locale, distance, 2))
+        #expect(line.accessibilityText == String(format: expectedA11y, locale: locale, distance, 2))
     }
 
-    @Test func `Large stop counts format cleanly`() throws {
-        let line = try #require(make(distance: 8000.0, stops: 24))
-        #expect(!line.text.isEmpty)
-        #expect(!line.accessibilityText.isEmpty)
+    @Test func `Large stop counts format cleanly with expected text`() throws {
+        let locale = Locale(identifier: "en_US")
+        let distance = defaultFormatter.string(fromDistance: 8000.0)
+        let line = try #require(make(distance: 8000.0, stops: 24, locale: locale))
+
+        let expectedFmt = OBALoc("trip_page.card.distance_stops_fmt", value: "%1$@ away · %2$d stops", comment: "")
+        let expectedA11y = OBALoc("trip_page.card.distance_stops_a11y_fmt", value: "%1$@ away, %2$d stops away", comment: "")
+
+        #expect(line.text == String(format: expectedFmt, locale: locale, distance, 24))
+        #expect(line.accessibilityText == String(format: expectedA11y, locale: locale, distance, 24))
     }
 
     // MARK: - Formatter and Metric Locales
