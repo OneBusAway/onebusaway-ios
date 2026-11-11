@@ -14,8 +14,8 @@ import OBAKitCore
 
 /// Shared ViewModel for the trip map/details screen.
 ///
-/// Consumed by `TripViewController` (UIKit, via Combine `sink`) and by
-/// future `TripSheetView` (SwiftUI, via `@StateObject`).
+/// Consumed by `TripPageViewController`, whose SwiftUI `TripPageView` observes
+/// it, and by the deprecated `TripViewController` (UIKit, via Combine `sink`).
 /// Contains no UIKit or MapKit imports.
 @MainActor
 class TripViewModel: ObservableObject {

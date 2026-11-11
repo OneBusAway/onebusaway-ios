@@ -15,7 +15,7 @@ import OBAKitCore
 ///
 /// After the user picks a route in `RoutePickerViewController`, this controller:
 /// 1. Asks `CurrentTripViewModel` to query nearby active vehicles on that route.
-/// 2. If one match → navigates directly to `TripViewController`.
+/// 2. If one match → navigates directly to the trip on `TripMapHostViewController`.
 /// 3. If multiple → shows a disambiguation list.
 /// 4. If none → shows an appropriate error state.
 class CurrentTripViewController: UIViewController,
