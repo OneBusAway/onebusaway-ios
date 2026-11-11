@@ -100,7 +100,7 @@ struct TripETADistanceExtendedTests {
 
     @Test func `Two or more stops away formats with expected stop count and distance string`() throws {
         let locale = Locale(identifier: "en_US")
-        let distance = defaultFormatter.string(fromDistance: 1609.34)
+        let distance = imperialFormatter.string(fromDistance: 1609.34)
         let line = try #require(make(distance: 1609.34, stops: 2, locale: locale))
 
         let expectedFmt = OBALoc("trip_page.card.distance_stops_fmt", value: "%1$@ away · %2$d stops", comment: "")
@@ -112,7 +112,7 @@ struct TripETADistanceExtendedTests {
 
     @Test func `Large stop counts format cleanly with expected text`() throws {
         let locale = Locale(identifier: "en_US")
-        let distance = defaultFormatter.string(fromDistance: 8000.0)
+        let distance = imperialFormatter.string(fromDistance: 8000.0)
         let line = try #require(make(distance: 8000.0, stops: 24, locale: locale))
 
         let expectedFmt = OBALoc("trip_page.card.distance_stops_fmt", value: "%1$@ away · %2$d stops", comment: "")

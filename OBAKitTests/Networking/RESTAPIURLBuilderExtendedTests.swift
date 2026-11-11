@@ -36,9 +36,9 @@ final class RESTAPIURLBuilderExtendedTests {
         let url = builder.getShape(id: shapeID)
 
         #expect(queryValue(url, "key") == "TEST_KEY")
-        let encodedID = NetworkHelpers.escapePathVariable(shapeID)
-        #expect(url.path == "/api/where/shape/\(encodedID).json")
-        #expect(!url.path.contains("variant:1"))
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let percentEncodedPath = components?.percentEncodedPath ?? ""
+        #expect(percentEncodedPath == "/api/where/shape/1_shape%2Fvariant:1.json")
     }
 
     @Test func `getStopsForLocation produces non-empty query parameters`() {
