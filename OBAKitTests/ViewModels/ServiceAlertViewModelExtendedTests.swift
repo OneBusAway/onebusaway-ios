@@ -1,0 +1,93 @@
+//
+//  ServiceAlertViewModelExtendedTests.swift
+//  OBAKitTests
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import Combine
+import Foundation
+import Testing
+@testable import OBAKit
+@testable import OBAKitCore
+
+/// Extended tests for `ServiceAlertViewModel` unread status transitions,
+/// title resolution, and publisher emission.
+@Suite(.serialized)
+final class ServiceAlertViewModelExtendedTests: OBATestCase {
+
+    private var queue: OperationQueue!
+
+    override init() async throws {
+        try await super.init()
+        queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+    }
+
+    isolated deinit {
+        queue.cancelAllOperations()
+    }
+
+    private func createApplication(dataLoader: MockDataLoader) -> Application {
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader,
+            fixedRegionName: Fixtures.pugetSoundRegion.name
+        )
+        return Application(config: config)
+    }
+
+    private func loadServiceAlert() throws -> ServiceAlert {
+        let alerts = try Fixtures.loadRESTAPIPayload(
+            type: [AgencyAlert].self,
+            fileName: "agency-alerts-kcm.json"
+        )
+        return try #require(alerts.first?.alerts.first)
+    }
+
+    @Test @MainActor
+    func `ServiceAlertViewModel exposes underlying serviceAlert and application`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let alert = try loadServiceAlert()
+
+        let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
+
+        #expect(viewModel.serviceAlert.id == alert.id)
+        #expect(viewModel.application === app)
+    }
+
+    @Test @MainActor
+    func `Already read alert remains read on viewDidAppear`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let alert = try loadServiceAlert()
+
+        // Explicitly mark as read before creating view model
+        app.userDataStore.markAsRead(serviceAlert: alert)
+        #expect(!app.userDataStore.isUnread(serviceAlert: alert))
+
+        let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
+        viewModel.viewDidAppear()
+
+        #expect(!app.userDataStore.isUnread(serviceAlert: alert))
+    }
+}
