@@ -1677,21 +1677,6 @@
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "추가 세부 정보가 없습니다.";
 
-/* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
-"trip_details_controller.continues_as_fmt" = "%@(으)로 운행 계속";
-
-/* Last report: <TIME> */
-"trip_details_controller.last_report_fmt" = "마지막 보고: %@";
-
-/* Service alerts header in the trip details controller. */
-"trip_details_controller.service_alerts_footer" = "운행 세부 정보";
-
-/* Button that moves the map to focus on the selected stop */
-"trip_details_controller.show_on_map" = "지도에 표시";
-
-/* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
-"trip_details_controller.starts_as_fmt" = "%@(으)로 운행 시작";
-
 /* Shown beside a Retry button when loading the trip's stop list failed. */
 "trip_page.stops_failed" = "이 운행의 정류장을 불러오지 못했습니다.";
 
@@ -1712,12 +1697,6 @@
 
 /* Voiceover text explaining that this stop is not part of the shared ride */
 "trip_stop.outside_ride.accessibility_label" = "공유 탑승에 포함되지 않음";
-
-/* Voiceover text explaining that this stop is the user's destination */
-"trip_stop.user_destination.accessibility_label" = "내 목적지";
-
-/* Voiceover text explaining that the vehicle is currently at this stop */
-"trip_stop.vehicle_location.accessibility_label" = "차량이 여기에 있습니다";
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "내 버스 보여줘";
@@ -2082,8 +2061,6 @@
 "trip_progress.passed_your_stop" = "내 정류장 지나감";
 /* Shows the current stop position. e.g. Stop 5 of 18 */
 "trip_progress.stop_count_fmt" = "%2$d개 중 %1$d번째 정류장";
-/* Voiceover text explaining that the vehicle has already passed this stop */
-"trip_stop.passed_stop.accessibility_label" = "지나간 정류장";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "음성 검색";

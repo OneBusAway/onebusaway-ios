@@ -96,23 +96,6 @@ nonisolated extension TripStatus: MKAnnotation {
     }
 }
 
-// MARK: - TripStopTime/MKAnnotation
-
-/// Adds conformance to `MKAnnotation` to `TripStopTime`.
-nonisolated extension TripStopTime: MKAnnotation {
-    public var coordinate: CLLocationCoordinate2D {
-        stop.location.coordinate
-    }
-
-    public var title: String? {
-        Formatters.formattedTitle(stop: stop)
-    }
-
-    public var subtitle: String? {
-        nil
-    }
-}
-
 // MARK: - ArrivalDepartureFilter Display Titles
 
 extension ArrivalDepartureFilter {

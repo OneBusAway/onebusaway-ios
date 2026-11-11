@@ -1677,21 +1677,6 @@
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "Дополнительные сведения отсутствуют.";
 
-/* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
-"trip_details_controller.continues_as_fmt" = "Продолжает движение как %@";
-
-/* Last report: <TIME> */
-"trip_details_controller.last_report_fmt" = "Последние данные: %@";
-
-/* Service alerts header in the trip details controller. */
-"trip_details_controller.service_alerts_footer" = "Детали рейса";
-
-/* Button that moves the map to focus on the selected stop */
-"trip_details_controller.show_on_map" = "Показать на карте";
-
-/* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
-"trip_details_controller.starts_as_fmt" = "Начинает движение как %@";
-
 /* Shown beside a Retry button when loading the trip's stop list failed. */
 "trip_page.stops_failed" = "Не удалось загрузить остановки этого рейса.";
 
@@ -1712,12 +1697,6 @@
 
 /* Voiceover text explaining that this stop is not part of the shared ride */
 "trip_stop.outside_ride.accessibility_label" = "Не входит в совместную поездку";
-
-/* Voiceover text explaining that this stop is the user's destination */
-"trip_stop.user_destination.accessibility_label" = "Ваш пункт назначения";
-
-/* Voiceover text explaining that the vehicle is currently at this stop */
-"trip_stop.vehicle_location.accessibility_label" = "Транспорт находится здесь";
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "Покажи мой автобус";
@@ -2082,8 +2061,6 @@
 "trip_progress.passed_your_stop" = "Ваша остановка пройдена";
 /* Shows the current stop position. e.g. Stop 5 of 18 */
 "trip_progress.stop_count_fmt" = "Остановка %1$d из %2$d";
-/* Voiceover text explaining that the vehicle has already passed this stop */
-"trip_stop.passed_stop.accessibility_label" = "Пройденная остановка";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "Голосовой поиск";
