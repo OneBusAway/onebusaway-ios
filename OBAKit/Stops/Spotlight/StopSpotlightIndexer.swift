@@ -51,9 +51,9 @@ final class StopSpotlightIndexer {
     private let now: () -> Date
     private let batchSize: Int
 
-    /// How long a finished replace lets a launch skip the clear. Only a replace
-    /// removes the stops the 30-day cache purge drops, and on a server without
-    /// the region sync only a region change would otherwise trigger one. A week
+    /// How long a finished replace lets a launch or a region sync skip the clear.
+    /// Only a replace removes the stops the 30-day cache purge or a sync drops,
+    /// and otherwise only a region change would trigger one. A week
     /// matches the sync's own full interval (`RegionStopSyncPolicy.fullSyncInterval`).
     private static let replaceInterval: TimeInterval = 7 * 86_400
 
@@ -107,16 +107,17 @@ final class StopSpotlightIndexer {
         currentRun?.cancel()
     }
 
-    /// Indexes the current region's stops at launch. If a replace of this region
-    /// finished within `replaceInterval`, it indexes on top of what Spotlight
-    /// already holds, so the stops stay searchable while it runs. Otherwise it
-    /// replaces: on the first launch, after a replace that failed or was cut
-    /// short, or when the last replace was of another region.
+    /// Indexes the current region's stops at launch and after a region sync
+    /// writes them. If a replace of this region finished within
+    /// `replaceInterval`, it indexes on top of what Spotlight already holds, so
+    /// the stops stay searchable while it runs. Otherwise it replaces: on the
+    /// first launch, after a replace that failed or was cut short, or when the
+    /// last replace was of another region.
     ///
     /// Indexing an entity whose ID is already in the index replaces it, so this
     /// updates every stop it covers. Spotlight can't list what it holds, though,
     /// so a stop that left the cache stays until the next replace.
-    func indexAtLaunch() {
+    func indexOrReplace() {
         guard let snapshot = makeSnapshot() else { return }
         guard hasRecentReplace(of: snapshot.regionID) else {
             Logger.info("No recent Spotlight stop index for region \(snapshot.regionID); rebuilding it.")
@@ -135,10 +136,9 @@ final class StopSpotlightIndexer {
     }
 
     /// Clears the index, then fills it from the current region. Runs on region
-    /// change, which is how the previous region's stops leave Spotlight, after a
-    /// region sync writes stops, which is how synced stops arrive and the ones
-    /// the server dropped leave, and at launch when `indexAtLaunch()` finds no
-    /// recent replace.
+    /// change, which is how the previous region's stops leave Spotlight, and
+    /// when `indexOrReplace()` finds no recent replace, which is how the stops a
+    /// region sync dropped leave.
     ///
     /// The 30-day cache purge (`CoreApplication.purgeStaleStopCache()`) runs at
     /// launch and on region change too, so this can index a stop the purge

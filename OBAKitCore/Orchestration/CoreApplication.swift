@@ -187,7 +187,7 @@ open class CoreApplication: NSObject,
     }
 
     /// Called after a sync of `regionID` wrote stops to the cache. Does nothing
-    /// here; `Application` rebuilds the Spotlight index from the cache.
+    /// here; `Application` indexes the synced stops in Spotlight.
     open func regionStopSyncWroteStops(regionID: Int) {}
 
     /// Asks for a sync of the current region after a short pause. Does nothing
