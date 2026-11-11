@@ -25,7 +25,7 @@ import OBAKitCore
 /// full-screen `MKMapView` and added its own floating panel as a child; pushed
 /// into the stop sheet that nests a panel inside a panel. Keeping the map out of
 /// here is what lets the same page be pushed into a sheet over the map tab's map
-/// and, later, into a standalone host that supplies its own.
+/// and embedded in `TripMapHostViewController`, which supplies a map of its own.
 final class TripPageViewController: UIHostingController<TripPageRootView>,
     AppContext,
     AlarmBuilderDelegate,
@@ -116,7 +116,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             // match `showsSystemNavigationBar` on the way back, and a stale back
             // row would leave the page with two back controls, or none.
             render()
-            guard navigationController?.topViewController === self else { return }
+            guard navigationController?.topViewController === stackEntry else { return }
             hideNavigationBar(animated: true)
         }
 
@@ -155,6 +155,12 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         // pushed on top gave that page the bar back. Animated with the pop, so
         // the bar doesn't vanish from the page above at the start of a back swipe.
         hideNavigationBar(animated: animated)
+        // Embedded in `TripMapHostViewController`, the page can load and render
+        // before the host is on a stack, from a back row with nothing to ask.
+        // By now it is, so the row's glyph and the host's title can be right.
+        if stackEntry !== self {
+            render()
+        }
         disableIdleTimer()
         beginUserActivity()
         viewModel.start()
@@ -271,12 +277,27 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// page covered by a push can report too.
     private func restoreNavigationBar(animated: Bool) {
         guard let wasHidden = navigationBarWasHidden, let navigationController else { return }
-        if !navigationController.viewControllers.contains(self) {
+        if !navigationController.viewControllers.contains(stackEntry) {
             navigationBarWasHidden = nil
             navigationController.setNavigationBarHidden(wasHidden, animated: animated)
-        } else if navigationController.topViewController !== self {
+        } else if navigationController.topViewController !== stackEntry {
             navigationController.setNavigationBarHidden(false, animated: animated)
         }
+    }
+
+    /// The controller that sits on the stack for this page: the
+    /// `TripMapHostViewController` it is embedded in, or the page itself.
+    ///
+    /// Embedded, the page shares the host's `navigationController` but is not one
+    /// of its `viewControllers`. Asked about itself, it would read every push on
+    /// top of the host as the host being popped.
+    private var stackEntry: UIViewController {
+        var ancestor = parent
+        while let candidate = ancestor {
+            if candidate is TripMapHostViewController { return candidate }
+            ancestor = candidate.parent
+        }
+        return self
     }
 
     // MARK: - Map focus
@@ -297,19 +318,33 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// carries only the stop's ID.
     var onSelectStop: ((StopID) -> Void)?
 
+    /// Opens a stop the rider tapped: a row in the list, or a stop's dot on
+    /// `TripMapHostViewController`'s map, which hands over the row the dot was
+    /// drawn from.
+    func openStop(_ row: TripStopListModel.Row) {
+        if let onSelectStop {
+            onSelectStop(row.stopID)
+            return
+        }
+        // The row's own time, not a lookup by stop ID: a loop route calls at
+        // the same stop twice, and the rider tapped one visit in particular.
+        let transferContext = TransferContext.toStop(row.stopID, arrivalDate: row.date, from: departure)
+        application.viewRouter.navigateTo(stopID: row.stopID, from: self, transferContext: transferContext)
+    }
+
     private func publishMapFocus(
         convertible: TripConvertible,
         details: TripDetails?,
         shape: [CLLocationCoordinate2D]?
     ) {
         let status = convertible.tripStatus
-        let departure = convertible.arrivalDeparture
 
+        // The list's own rows, shared destination included, so a shared trip's
+        // map marks the same stop as the rider's that the list does.
         let stops = TripStopListModel.make(
-            stopTimes: details?.stopTimes ?? [],
-            userStopID: departure?.stopID,
-            userStopSequence: departure?.stopSequence,
-            closestStopID: status?.closestStopID
+            convertible: convertible,
+            details: details,
+            sharedDestinationStopID: viewModel.destinationStopID
         ).rows
 
         mapFocus.apply(
@@ -341,8 +376,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// action gates and the two pieces of state this controller owns.
     private func render() {
         existingAlarm = lookUpAlarm()
-        title = pageTitle
-        navigationItem.rightBarButtonItem = showsSystemNavigationBar ? refreshBarButton : nil
+        // On the controller the stack shows: embedded, the host's bar reads the
+        // host's item, and a page pushed over it takes its back title from there.
+        stackEntry.title = pageTitle
+        stackEntry.navigationItem.rightBarButtonItem = showsSystemNavigationBar ? refreshBarButton : nil
         rootView = TripPageRootView(
             viewModel: viewModel,
             userDefaults: application.userDefaults,
@@ -435,17 +472,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         actions.canReportGhostBus = application.features.obaco == .running
 
         actions.onBack = { [weak self] in self?.goBack() }
-        actions.onSelectStop = { [weak self] row in
-            guard let self else { return }
-            if let onSelectStop {
-                onSelectStop(row.stopID)
-                return
-            }
-            // The row's own time, not a lookup by stop ID: a loop route calls at
-            // the same stop twice, and the rider tapped one visit in particular.
-            let transferContext = TransferContext.toStop(row.stopID, arrivalDate: row.date, from: departure)
-            application.viewRouter.navigateTo(stopID: row.stopID, from: self, transferContext: transferContext)
-        }
+        actions.onSelectStop = { [weak self] row in self?.openStop(row) }
         actions.onBookmark = { [weak self] in self?.showBookmarkEditor() }
         actions.onSchedule = { [weak self] in self?.showSchedule() }
         actions.onAlarm = { [weak self] in

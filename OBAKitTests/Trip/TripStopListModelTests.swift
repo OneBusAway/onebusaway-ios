@@ -128,6 +128,22 @@ struct TripStopListModelTests {
         #expect(make(stops, userStopID: "C", closestStopID: "A").vehicleIndex == index)
     }
 
+    /// A shared trip moves the rider's-stop marker to the destination, but the
+    /// vehicle stays anchored on the boarding stop. The vehicle's closest stop X
+    /// is visited before boarding at B (row 0) and again during the ride (row 3):
+    /// anchored on boarding it is row 0, where the vehicle-only lookup puts it
+    /// too. Anchored on the destination D it would be row 3.
+    @Test func `On a loop, a shared trip anchors the vehicle on the boarding stop, not the destination`() {
+        let stops = line(["X", "A", "B", "X", "C", "D"])
+
+        let model = make(stops, userStopID: "B", closestStopID: "X", sharedDestinationStopID: "D")
+
+        #expect(model.userIndex == 5)
+        #expect(model.boardingIndex == 2)
+        #expect(model.vehicleIndex == 0)
+        #expect(TripStopListModel.vehicleStopIndex(in: stops, closestStopID: "X", userStopID: "B", userStopSequence: nil) == 0)
+    }
+
     @Test func `Without a rider's stop, the vehicle resolves to its first visit`() {
         let model = make(line(["A", "B", "A", "C"]), closestStopID: "A")
 
@@ -517,35 +533,26 @@ struct TripStopListModelTests {
         #expect(Set(model.groups.map(\.id)).count == 2)
     }
 
+    /// Long enough for a run to form on each side of the boarding stop: the
+    /// vehicle at row 0 ("A"), boarding at row 6 ("G"), the destination at row 12
+    /// ("M"), five stops between each. Neither run may swallow a rider's stop.
     @Test func `A shared destination and boarding stop are both kept out of collapsed runs`() {
-        // Vehicle at row 0 ("A"), boarding at row 2 ("C"), destination at row 6 ("G")
-        let stops = line(["A", "B", "C", "D", "E", "F", "G", "H", "I"])
+        let stops = line((0..<16).map { String(UnicodeScalar(65 + $0)!) })
         let model = make(
             stops,
-            userStopID: "C",
-            userStopSequence: 2,
+            userStopID: "G",
+            userStopSequence: 6,
             closestStopID: "A",
-            sharedDestinationStopID: "G"
+            sharedDestinationStopID: "M"
         )
 
         #expect(model.vehicleIndex == 0)
-        #expect(model.boardingIndex == 2)
-        #expect(model.userIndex == 6)
+        #expect(model.boardingIndex == 6)
+        #expect(model.userIndex == 12)
 
-        for group in model.groups {
-            #expect(!group.range.contains(2), "Boarding stop at row 2 must not be collapsed into run \(group.id)")
-            #expect(!group.range.contains(6), "Destination stop at row 6 must not be collapsed into run \(group.id)")
-        }
-
-        let items = model.items(expanded: [])
-        let stopIDs = items.compactMap { item -> StopID? in
-            switch item {
-            case .stop(let row): return row.stopID
-            case .group: return nil
-            }
-        }
-        #expect(stopIDs.contains("C"), "Boarding stop must stay listed")
-        #expect(stopIDs.contains("G"), "Destination stop must stay listed")
+        #expect(model.groups.map(\.id) == ["approaching-boarding", "approaching"])
+        #expect(model.groups.map(\.range) == [1..<6, 7..<12])
+        #expect(shape(model) == ["A", "[5]", "G", "[5]", "M", "N", "O", "P"])
     }
 
     @Test func `Passed and approaching runs split around boarding and destination stops`() {

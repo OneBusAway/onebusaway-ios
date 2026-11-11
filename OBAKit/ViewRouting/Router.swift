@@ -237,12 +237,25 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         destinationStopID: StopID? = nil
     ) {
         guard shouldNavigate(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
-        let tripController = TripViewController(
-            application: application,
-            arrivalDeparture: arrivalDeparture,
+        let tripController = makeTripController(
+            tripConvertible: TripConvertible(arrivalDeparture: arrivalDeparture),
             destinationStopID: destinationStopID
         )
         navigate(to: tripController, from: fromController)
+    }
+
+    /// Builds the trip screen for every surface that pushes one full-screen, or
+    /// previews one: the trip page over a map of its own. The map tab's stop
+    /// sheet and the map panel host the page over their own map instead.
+    ///
+    /// - Parameter destinationStopID: Where the sharer said they will step off,
+    ///   when this came from a shared trip link that named one. See #449.
+    func makeTripController(tripConvertible: TripConvertible, destinationStopID: StopID? = nil) -> TripMapHostViewController {
+        TripMapHostViewController(
+            application: application,
+            tripConvertible: tripConvertible,
+            destinationStopID: destinationStopID
+        )
     }
 
     public func rootNavigateTo(page: ClassicApplicationRootController.Page, from context: UIViewController? = nil) {

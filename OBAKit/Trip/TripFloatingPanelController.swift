@@ -96,6 +96,7 @@ nonisolated struct TripProgressViewModel {
 // MARK: -
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
+@available(*, deprecated, message: "Use TripMapHostViewController. See #1641.")
 class TripFloatingPanelController: UIViewController,
     AppContext,
     OBAListViewDataSource,
