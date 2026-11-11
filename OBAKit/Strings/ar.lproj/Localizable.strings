@@ -1677,21 +1677,6 @@
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "لا تتوفر تفاصيل إضافية.";
 
-/* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
-"trip_details_controller.continues_as_fmt" = "تستمر باسم %@";
-
-/* Last report: <TIME> */
-"trip_details_controller.last_report_fmt" = "آخر تحديث: %@";
-
-/* Service alerts header in the trip details controller. */
-"trip_details_controller.service_alerts_footer" = "تفاصيل الرحلة";
-
-/* Button that moves the map to focus on the selected stop */
-"trip_details_controller.show_on_map" = "إظهار على الخريطة";
-
-/* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
-"trip_details_controller.starts_as_fmt" = "تبدأ باسم %@";
-
 /* Shown beside a Retry button when loading the trip's stop list failed. */
 "trip_page.stops_failed" = "تعذّر تحميل مواقف هذه الرحلة.";
 
@@ -1712,12 +1697,6 @@
 
 /* Voiceover text explaining that this stop is not part of the shared ride */
 "trip_stop.outside_ride.accessibility_label" = "ليس جزءًا من الرحلة المشتركة";
-
-/* Voiceover text explaining that this stop is the user's destination */
-"trip_stop.user_destination.accessibility_label" = "وجهتك";
-
-/* Voiceover text explaining that the vehicle is currently at this stop */
-"trip_stop.vehicle_location.accessibility_label" = "المركبة هنا";
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "أرني حافلتي";
@@ -2082,8 +2061,6 @@
 "trip_progress.passed_your_stop" = "تجاوزت موقفك";
 /* Shows the current stop position. e.g. Stop 5 of 18 */
 "trip_progress.stop_count_fmt" = "الموقف %1$d من %2$d";
-/* Voiceover text explaining that the vehicle has already passed this stop */
-"trip_stop.passed_stop.accessibility_label" = "موقف تم تجاوزه";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "البحث الصوتي";

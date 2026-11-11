@@ -20,10 +20,6 @@ protocol TripStopListEntry {
     var scheduledArrival: Date? { get }
     /// Where to draw this stop's dot. Optional so a feed that omits a stop's
     /// location costs one marker rather than the whole trip.
-    ///
-    /// Named `stopCoordinate`, not `coordinate`: `TripStopTime` is already an
-    /// `MKAnnotation` and so already has a non-optional `coordinate`, which
-    /// can neither be redeclared nor witness an optional requirement.
     var stopCoordinate: CLLocationCoordinate2D? { get }
 }
 
