@@ -328,8 +328,8 @@ struct RegionCustomForm: View {
             name = agencies.first?.agency?.name ?? Self.defaultRegionName
         }
 
-        // openTripPlannerURL isn't editable in this form, so editing must carry
-        // the existing value forward rather than silently dropping it.
+        // The trip planner settings aren't editable in this form, so editing must
+        // carry the existing values forward rather than silently dropping them.
         let region = Region(
             name: name,
             OBABaseURL: baseURL,
@@ -337,6 +337,8 @@ struct RegionCustomForm: View {
             contactEmail: editingRegion?.contactEmail ?? Self.placeholderContactEmail,
             regionIdentifier: editingRegion?.regionIdentifier,
             openTripPlannerURL: editingRegion?.openTripPlannerURL,
+            openTripPlannerGraphQLURL: editingRegion?.openTripPlannerGraphQLURL,
+            supportsOTPGraphQLBikeshare: editingRegion?.supportsOTPGraphQLBikeshare ?? false,
             sidecarBaseURL: sidecarURL,
             umamiAnalytics: UmamiAnalyticsConfig(url: umamiURL, id: umamiID)
         )
