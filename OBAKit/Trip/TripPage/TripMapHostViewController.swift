@@ -23,8 +23,8 @@ import OBAKitCore
 /// publishes on this controller's `MKMapView`, as `MapViewController.wireTripFocus`
 /// does on the map tab's.
 ///
-/// The panel is an `OBAFloatingPanelController`, as `TripViewController`'s was,
-/// rather than a `StopSheetPresenter` sheet. That presenter wraps its content in a
+/// The panel is an `OBAFloatingPanelController`, as the map tab's is, rather
+/// than a `StopSheetPresenter` sheet. That presenter wraps its content in a
 /// navigation controller of its own, so a stop tapped on the trip would open
 /// inside the sheet and the page's Back would close the sheet instead of popping
 /// this screen, and it hides the tab bar for a sheet over the map tab.
@@ -104,8 +104,8 @@ final class TripMapHostViewController: UIViewController,
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // As `TripViewController` did: the map is hidden from VoiceOver, so the
-        // panel is the whole screen to a VoiceOver user.
+        // The map is hidden from VoiceOver, so the panel is the whole screen to a
+        // VoiceOver user.
         if UIAccessibility.isVoiceOverRunning, !isBeingPreviewed {
             floatingPanel.move(to: .full, animated: true)
         }
@@ -211,8 +211,7 @@ final class TripMapHostViewController: UIViewController,
         tripLayer.viewportDidChange(mapView.visibleMapRect)
     }
 
-    /// A stop's dot opens the stop, transfer context and all, as tapping its row
-    /// does, and as tapping a stop's pin on `TripViewController` did.
+    /// A stop's dot opens the stop, transfer context and all, as tapping its row does.
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard let stop = view.annotation as? TripStopAnnotation else { return }
 
@@ -246,8 +245,8 @@ final class TripMapHostViewController: UIViewController,
     }()
 
     /// Opens at `.half`, where the map tab's stop sheet opens a trip, rather than
-    /// `TripViewController`'s `.tip`: the page's collapsed form is only its back
-    /// row, with nothing about the trip in it.
+    /// `.tip`: the page's collapsed form is only its back row, with nothing about
+    /// the trip in it.
     func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout {
         switch newCollection.horizontalSizeClass {
         case .regular:
@@ -265,8 +264,8 @@ final class TripMapHostViewController: UIViewController,
     }
 
     /// Keeps the map's own furniture (the legal label, the scale, the compass)
-    /// in the part of the map the panel leaves uncovered, as `TripViewController`
-    /// did. Left alone at `.full`, where nothing of the map shows.
+    /// in the part of the map the panel leaves uncovered. Left alone at `.full`,
+    /// where nothing of the map shows.
     private func updateMapLayoutMargins() {
         guard floatingPanel.state != .full else { return }
         mapView.layoutMargins = Self.mapLayoutMargins(
@@ -299,8 +298,8 @@ final class TripMapHostViewController: UIViewController,
     /// Set before the view loads, by a context menu showing this as a preview.
     private(set) var isBeingPreviewed = false
 
-    /// The map alone, as `TripViewController` previewed: the trip still loads and
-    /// draws, because the page is on screen behind a hidden panel.
+    /// The map alone: the trip still loads and draws, because the page is on
+    /// screen behind a hidden panel.
     func enterPreviewMode() {
         isBeingPreviewed = true
         if isViewLoaded {

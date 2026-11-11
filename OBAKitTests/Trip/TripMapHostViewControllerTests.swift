@@ -123,8 +123,7 @@ final class TripMapHostViewControllerTests: OBATestCase {
         #expect(stopDots().isEmpty)
     }
 
-    /// As tapping a stop's pin on `TripViewController` did: the stop opens with
-    /// the trip's arrival time there, as tapping its row does.
+    /// The stop opens with the trip's arrival time there, as tapping its row does.
     @Test func `Tapping a stop's dot opens the stop with the transfer context`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         let host = TripMapHostViewController(application: application, arrivalDeparture: try makeDeparture())

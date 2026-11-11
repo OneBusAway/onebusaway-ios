@@ -12,8 +12,7 @@ import UIKit
 import OBAKitCore
 @testable import OBAKit
 
-/// `TripViewController` has always published a Handoff activity for its trip.
-/// The trip page that replaced it published none.
+/// The trip page publishes a Handoff activity for its trip.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/1556
 @MainActor
 @Suite(.serialized)

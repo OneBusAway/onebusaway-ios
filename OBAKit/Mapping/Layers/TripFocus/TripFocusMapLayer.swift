@@ -24,8 +24,8 @@ import UIKit
 @MainActor
 final class TripFocusMapLayer: NSObject, MapLayer {
 
-    /// Shared with the map panel's `tripFocusMapContent` and the trip screen's
-    /// `MinimalStopAnnotationView`, so a trip is drawn the same on every map.
+    /// Shared with the map panel's `tripFocusMapContent`, so a trip is drawn the
+    /// same on every map.
     enum Style {
         /// The half still ahead: wide enough to carry its direction chevrons, over a
         /// casing of the route color darkened. See `RouteArrowStyle`.

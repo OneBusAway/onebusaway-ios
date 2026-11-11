@@ -24,5 +24,3 @@ animation. Used by:
 
 - `TripFocusMapLayer.drawVehicle` (removes the pin when the feed omits a coordinate)
 - `StopVehicleAnnotation.update`
-- `TripViewController.currentTripStatus` (legacy trip screen; same remove-when-nil
-  policy as the focus layer — fixed in #1341)

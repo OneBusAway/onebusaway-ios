@@ -81,8 +81,7 @@ struct MarqueeLabelTests {
     /// Upstream measured the text with `UIFont(name:size:)` at 0 pt when
     /// `minimumScaleFactor` was 0 (UILabel's default, meaning "don't shrink"). That
     /// returns 0 pt Helvetica, which measures negative, so a label with
-    /// `adjustsFontSizeToFitWidth` never scrolled. `StackedMarqueeTitleView`
-    /// configures its labels exactly this way.
+    /// `adjustsFontSizeToFitWidth` never scrolled.
     @Test(.reduceMotionOff) func `Auto-shrinking label with a zero scale factor scrolls`() {
         let label = makeLabel()
         label.adjustsFontSizeToFitWidth = true

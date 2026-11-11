@@ -113,7 +113,6 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
     /// *after* assigning the annotation gets the previous route's color on a
     /// recycled view: `isRealTime`'s didSet is the only writer of
     /// `annotationColor`, and it runs when the annotation is assigned.
-    /// `TripViewController.swift:419-423` has exactly that ordering today.
     public var realTimeAnnotationColor: UIColor = ThemeColors.shared.brand {
         didSet {
             guard isRealTime else { return }

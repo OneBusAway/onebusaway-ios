@@ -297,7 +297,6 @@ public class MapRegionManager: NSObject,
     // MARK: - Global Map Helpers
 
     public func registerAnnotationViews(mapView: MKMapView) {
-        mapView.registerAnnotationView(MinimalStopAnnotationView.self)
         mapView.registerAnnotationView(MKMarkerAnnotationView.self)
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.registerAnnotationView(StopClusterAnnotationView.self)
