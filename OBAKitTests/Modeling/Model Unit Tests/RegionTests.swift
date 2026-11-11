@@ -18,6 +18,8 @@ import Testing
 final class RegionTests: OBATestCase {
 
     private func createTestRegion(
+        id: Int = 999,
+        baseURL: String = "https://example.com/api/",
         bounds: [[String: Double]] = [
             ["lat": 47.6097, "lon": -122.3331, "latSpan": 0.5, "lonSpan": 0.5]
         ],
@@ -30,8 +32,8 @@ final class RegionTests: OBATestCase {
     ) throws -> Region {
         var dict: [String: Any] = [
             "regionName": "Test Region",
-            "id": 999,
-            "obaBaseUrl": "https://example.com/api/",
+            "id": id,
+            "obaBaseUrl": baseURL,
             "siriBaseUrl": "",
             "bounds": bounds,
             "language": "en_US",
@@ -197,6 +199,19 @@ final class RegionTests: OBATestCase {
         let offsetLoc = CLLocation(latitude: 47.7, longitude: -122.3331)
         let distanceOffset = region.distanceFrom(location: offsetLoc)
         #expect(distanceOffset > 5000.0) // ~10 km away
+    }
+
+    // MARK: - Region Identification & Equality
+
+    @Test func `Region equality matches on identifier`() throws {
+        let regionA = try createTestRegion(id: 42, baseURL: "https://example.com/api/")
+        let regionAIdentical = try createTestRegion(id: 42, baseURL: "https://example.com/api/")
+        let regionB = try createTestRegion(id: 99, baseURL: "https://example.com/api/")
+
+        #expect(regionA == regionAIdentical)
+        #expect(regionA != regionB)
+        #expect(regionA.id == 42)
+        #expect(regionB.id == 99)
     }
 
     // MARK: - Open311Server

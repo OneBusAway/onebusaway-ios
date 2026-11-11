@@ -259,6 +259,17 @@ final class OnDemandModelTests: OBATestCase {
         #expect(calendar.exceptedDates == [ServiceDate("2026-07-04")!])
     }
 
+    @Test func `Calendar equality and Hashable conformance`() {
+        let c1 = OnDemandCalendar(id: "c1", days: [.mon], startDate: nil, endDate: nil, exceptedDates: [])
+        let c2 = OnDemandCalendar(id: "c1", days: [.mon], startDate: nil, endDate: nil, exceptedDates: [])
+        let c3 = OnDemandCalendar(id: "c2", days: [.mon], startDate: nil, endDate: nil, exceptedDates: [])
+
+        #expect(c1 == c2)
+        #expect(c1.hashValue == c2.hashValue)
+        #expect(c1 != c3)
+        #expect(Set([c1, c2, c3]).count == 2)
+    }
+
     @Test func `Service with a malformed calendar date still decodes`() throws {
         let data = Fixtures.loadData(file: "ondemand_service_alexandria.json")
         let text = try #require(String(data: data, encoding: .utf8))
