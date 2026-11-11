@@ -94,4 +94,78 @@ final class UIKitExtensionsTests {
 
         #expect(child.topmostPresentedController === sheet)
     }
+
+    // MARK: - UIColor.contrastingTextColor
+
+    /// The web view styles its links with this against the accent color, so
+    /// a light accent needs dark text and a dark one needs light text.
+    @Test func `Contrasting text color is dark on light colors and light on dark ones`() {
+        let yellow = UIColor(red: 0.96, green: 0.71, blue: 0.20, alpha: 1.0)
+        let navy = UIColor(red: 0.05, green: 0.15, blue: 0.45, alpha: 1.0)
+
+        #expect(UIColor.white.contrastingTextColor == .darkText)
+        #expect(yellow.contrastingTextColor == .darkText)
+        #expect(UIColor.black.contrastingTextColor == .lightText)
+        #expect(navy.contrastingTextColor == .lightText)
+    }
+
+    /// Perceived brightness weights green far above blue. A plain average of
+    /// the channels would rate pure green (1/3) as dark.
+    @Test func `Contrasting text color weights green above red and blue`() {
+        #expect(UIColor(red: 0, green: 1, blue: 0, alpha: 1).contrastingTextColor == .darkText)
+        #expect(UIColor(red: 1, green: 0, blue: 0, alpha: 1).contrastingTextColor == .lightText)
+        #expect(UIColor(red: 0, green: 0, blue: 1, alpha: 1).contrastingTextColor == .lightText)
+    }
+
+    @Test func `Contrasting text color switches at half brightness`() {
+        #expect(UIColor(white: 0.49, alpha: 1).contrastingTextColor == .lightText)
+        #expect(UIColor(white: 0.51, alpha: 1).contrastingTextColor == .darkText)
+    }
+
+    // MARK: - UIColor.blended(with:amount:)
+
+    private func rgba(_ color: UIColor) -> [CGFloat] {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return [r, g, b, a]
+    }
+
+    private func expectComponents(_ color: UIColor, _ expected: [CGFloat], sourceLocation: SourceLocation = #_sourceLocation) {
+        let actual = rgba(color)
+        let close = zip(actual, expected).allSatisfy { abs($0 - $1) < 0.0001 }
+        #expect(close, "expected \(expected), got \(actual)", sourceLocation: sourceLocation)
+    }
+
+    @Test func `Blended at zero is the original color and at one is the other`() {
+        let red = UIColor(red: 1, green: 0, blue: 0, alpha: 1)
+        let blue = UIColor(red: 0, green: 0, blue: 1, alpha: 1)
+
+        expectComponents(red.blended(with: blue, amount: 0), [1, 0, 0, 1])
+        expectComponents(red.blended(with: blue, amount: 1), [0, 0, 1, 1])
+    }
+
+    /// The stop icon's gradient blends the route color a fixed fraction toward
+    /// white and black; each channel moves that fraction of the way.
+    @Test func `Blended moves each channel the given fraction of the way`() {
+        let base = UIColor(red: 0.2, green: 0.6, blue: 1.0, alpha: 1)
+
+        expectComponents(base.blended(with: .white, amount: 0.25), [0.4, 0.7, 1.0, 1])
+        expectComponents(base.blended(with: .black, amount: 0.25), [0.15, 0.45, 0.75, 1])
+    }
+
+    @Test func `Blended clamps an amount outside zero to one`() {
+        let red = UIColor(red: 1, green: 0, blue: 0, alpha: 1)
+        let blue = UIColor(red: 0, green: 0, blue: 1, alpha: 1)
+
+        expectComponents(red.blended(with: blue, amount: -0.5), [1, 0, 0, 1])
+        expectComponents(red.blended(with: blue, amount: 1.5), [0, 0, 1, 1])
+    }
+
+    /// Only the color mixes. A see-through tint stays see-through after
+    /// blending with an opaque color.
+    @Test func `Blended keeps the original color's alpha`() {
+        let translucentRed = UIColor(red: 1, green: 0, blue: 0, alpha: 0.4)
+
+        expectComponents(translucentRed.blended(with: .black, amount: 1), [0, 0, 0, 0.4])
+    }
 }

@@ -168,6 +168,104 @@ final class FoundationExtensionsTests {
             #expect(!group.isEmpty)
         }
     }
+
+    // MARK: - URLComponents.appendPath
+
+    /// Every combination of a trailing slash on the base and a leading slash on
+    /// the appended part comes out with exactly one slash between them.
+    @Test(arguments: [
+        ("/api", "foo"),
+        ("/api/", "foo"),
+        ("/api", "/foo"),
+        ("/api/", "/foo")
+    ])
+    func `Append path joins with exactly one slash`(base: String, appended: String) throws {
+        var components = try #require(URLComponents(string: "https://example.com"))
+        components.path = base
+
+        components.appendPath(appended)
+
+        #expect(components.path == "/api/foo")
+    }
+
+    /// `ObacoAPIService` appends paths like this to the region's sidecar base
+    /// URL, which may come with or without a trailing slash.
+    @Test func `Append path builds the sidecar URL from a bare or slashed host`() throws {
+        for base in ["https://obaco.example.com", "https://obaco.example.com/"] {
+            var components = try #require(URLComponents(string: base))
+            components.appendPath("/api/v1/regions/1/weather.json")
+            #expect(components.url?.absoluteString == "https://obaco.example.com/api/v1/regions/1/weather.json")
+        }
+    }
+
+    // MARK: - String.caseInsensitiveMatch
+
+    private let stopPagePattern = "/regions/(?<region>[^/]+)/stops/(?<stop>[^/]+)$"
+
+    /// Shared stop links are typed and pasted by people, so the path's case
+    /// can't be trusted; the captured values keep the case they arrived in.
+    @Test func `Case insensitive match extracts named groups whatever the case`() {
+        let matches = "/REGIONS/1/Stops/1_ABC".caseInsensitiveMatch(pattern: stopPagePattern, namedGroups: ["region", "stop"])
+
+        #expect(matches == ["region": "1", "stop": "1_ABC"])
+    }
+
+    @Test func `Case insensitive match is nil when the string does not match`() {
+        #expect("/regions/1/routes/1_100".caseInsensitiveMatch(pattern: stopPagePattern, namedGroups: ["region", "stop"]) == nil)
+        #expect("/regions/1/stops/1_75403/trips".caseInsensitiveMatch(pattern: stopPagePattern, namedGroups: ["region", "stop"]) == nil)
+    }
+
+    /// A group the match didn't use is left out, rather than reported as an
+    /// empty string, and a name the pattern doesn't have is ignored.
+    @Test func `Case insensitive match leaves out groups that took no part`() {
+        let pattern = "/stops/(?<stop>[^/]+)(/trips/(?<trip>[^/]+))?$"
+
+        let stopOnly = "/stops/1_75403".caseInsensitiveMatch(pattern: pattern, namedGroups: ["stop", "trip"])
+        let withTrip = "/stops/1_75403/trips/1_604".caseInsensitiveMatch(pattern: pattern, namedGroups: ["stop", "trip"])
+
+        #expect(stopOnly == ["stop": "1_75403"])
+        #expect(withTrip == ["stop": "1_75403", "trip": "1_604"])
+    }
+
+    // MARK: - HTTPURLResponse.hasJSONContentType
+
+    private func response(contentType: String?) throws -> HTTPURLResponse {
+        let url = try #require(URL(string: "https://api.example.com/where/stop.json"))
+        let headers = contentType.map { ["Content-Type": $0] }
+        return try #require(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers))
+    }
+
+    /// Servers add parameters after the type, and some still send the older
+    /// `text/json`; both carry JSON the decoder can read.
+    @Test func `Has JSON content type accepts JSON with parameters and text json`() throws {
+        #expect(try response(contentType: "application/json").hasJSONContentType)
+        #expect(try response(contentType: "application/json; charset=utf-8").hasJSONContentType)
+        #expect(try response(contentType: "text/json").hasJSONContentType)
+    }
+
+    /// A captive portal answers API requests with an HTML login page. That
+    /// must be refused before the decoder sees it.
+    @Test func `Has JSON content type rejects HTML and a missing header`() throws {
+        #expect(try response(contentType: "text/html; charset=utf-8").hasJSONContentType == false)
+        #expect(try response(contentType: "text/plain").hasJSONContentType == false)
+        #expect(try response(contentType: nil).hasJSONContentType == false)
+    }
+
+    // MARK: - String.isNumeric
+
+    /// Decides whether a stop code is shown as a number. Only the ASCII digits
+    /// count: no sign, no decimal point, no spaces, and no other scripts' digits.
+    @Test func `Is numeric is true only for ASCII digits`() {
+        #expect("0".isNumeric)
+        #expect("10914".isNumeric)
+
+        #expect("".isNumeric == false)
+        #expect("12a".isNumeric == false)
+        #expect(" 12".isNumeric == false)
+        #expect("-1".isNumeric == false)
+        #expect("1.5".isNumeric == false)
+        #expect("١٢".isNumeric == false)
+    }
 }
 
 /// A `Bundle` whose `OBAKitConfig` reports configurable feedback-prompt values,
