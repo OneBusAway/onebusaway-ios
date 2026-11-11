@@ -246,6 +246,33 @@ final class StopSpotlightIndexerTests: OBATestCase {
         ])
     }
 
+    /// Visiting a stop stores a newer copy of it, in the recent stops and in its
+    /// bookmark, without posting `.bookmarksDidChange`. So the indexer still
+    /// holds the copy it indexed, and Spotlight should get the recent one.
+    ///
+    /// Calls `indexBookmarks()` itself rather than waiting for the
+    /// `.bookmarksDidChange` the delete posts. That notification's run comes
+    /// after this one and finds no bookmark left to drop, so it indexes nothing.
+    @Test func `A removed bookmark's stop is indexed from its newer recent copy`() async throws {
+        let indexedCopy = Stop(id: "1_a", name: "Pine St & 3rd Ave", code: "111", location: CLLocation(latitude: 47.6, longitude: -122.3), regionIdentifier: puget.regionIdentifier)
+        let visitedCopy = Stop(id: "1_a", name: "3rd Ave & Pine St", code: "222", location: CLLocation(latitude: 47.6, longitude: -122.3), regionIdentifier: puget.regionIdentifier)
+        let store = makeStore(bookmarked: [indexedCopy], region: puget)
+        let index = FakeStopIndex()
+        let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
+        indexer.replaceAll()
+        await indexer.currentRun?.value
+
+        store.addRecentStop(visitedCopy, region: puget)
+        store.delete(bookmark: try #require(store.bookmarks.first))
+        indexer.indexBookmarks()
+        await indexer.currentRun?.value
+
+        let demoted = try #require(await index.indexed.last { $0.priority == 2 }?.entities)
+        #expect(demoted.map(\.id) == [entityID("1_a", in: puget)])
+        #expect(demoted.first?.name == "3rd Ave & Pine St")
+        #expect(demoted.first?.code == "222")
+    }
+
     /// The replace took its snapshot before B was bookmarked. Run beside it,
     /// the upsert would land before the replace's delete and B would be lost.
     @Test(.timeLimit(.minutes(1))) func `A bookmark change during a replace runs after it`() async {
