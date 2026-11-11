@@ -189,4 +189,78 @@ final class ReferencesTests: OBATestCase {
         #expect(trip.shapeID == "Hillsborough Area Regional Transit_38042")
         #expect(trip.headsign == "Downtown to UATC via 15th St")
     }
+
+    // MARK: - Finders
+
+    /// Decodes just the `references` block of a REST fixture, without the
+    /// entry around it, so a lookup test never depends on the entry decoding.
+    private func decodeReferences(fixture fileName: String) throws -> References {
+        let json = try JSONSerialization.jsonObject(with: Fixtures.loadData(file: fileName)) as? [String: Any]
+        let data = try #require(json?["data"] as? [String: Any])
+        let referencesJSON = try #require(data["references"])
+        let referencesData = try JSONSerialization.data(withJSONObject: referencesJSON)
+        return try JSONDecoder.RESTDecoder().decode(References.self, from: referencesData)
+    }
+
+    /// The fixture lists its agencies as 40, 1, 96. `agencyWithID` binary
+    /// searches, so this only passes if decoding sorted them and the search
+    /// reaches both ends and the middle.
+    @Test func `Agency with ID finds every agency in an unsorted payload`() throws {
+        let references = try decodeReferences(fixture: "arrivals-and-departures_1_1121.json")
+        #expect(references.agencies.count == 3)
+
+        for id in ["40", "1", "96"] {
+            #expect(references.agencyWithID(id)?.id == id)
+        }
+    }
+
+    @Test func `Agency with ID is nil for an unknown or nil ID`() throws {
+        let references = try decodeReferences(fixture: "arrivals-and-departures_1_1121.json")
+
+        #expect(references.agencyWithID("3") == nil)
+        #expect(references.agencyWithID("") == nil)
+        #expect(references.agencyWithID(nil) == nil)
+    }
+
+    /// Sixteen routes give the binary search several levels to get wrong, and
+    /// their IDs sort as strings ("_12" before "_2"), not as numbers.
+    @Test func `Route with ID finds every route`() {
+        #expect(references.routes.count == 16)
+
+        for route in references.routes {
+            #expect(references.routeWithID(route.id) === route)
+        }
+    }
+
+    @Test func `Route with ID is nil for an unknown or nil ID`() {
+        #expect(references.routeWithID("Hillsborough Area Regional Transit_3") == nil)
+        #expect(references.routeWithID("Hillsborough Area Regional Transit_99") == nil)
+        #expect(references.routeWithID(nil) == nil)
+    }
+
+    /// A stop's `routeIDs` can name routes the response left out of its
+    /// references; `Stop.routes` is built from this and must skip them.
+    @Test func `Routes with IDs keeps only the IDs it knows`() {
+        let found = references.routesWithIDs([
+            "Hillsborough Area Regional Transit_9",
+            "Unknown_1",
+            "Hillsborough Area Regional Transit_1"
+        ])
+
+        #expect(Set(found.map(\.id)) == ["Hillsborough Area Regional Transit_1", "Hillsborough Area Regional Transit_9"])
+        #expect(references.routesWithIDs([]).isEmpty)
+        #expect(references.routesWithIDs(["Unknown_1"]).isEmpty)
+    }
+
+    /// Arrivals, trip details and trip status all attach their alerts through
+    /// this. The fixture holds seven alerts, unsorted.
+    @Test func `Service alerts with IDs keeps only the IDs it knows`() throws {
+        let references = try decodeReferences(fixture: "arrivals_and_departures_for_stop_mts_11670_route_alerts.json")
+        #expect(references.serviceAlerts.count == 7)
+
+        let found = references.serviceAlertsWithIDs(["MTS_3", "MTS_99", "MTS_38"])
+
+        #expect(Set(found.map(\.id)) == ["MTS_3", "MTS_38"])
+        #expect(references.serviceAlertsWithIDs(["MTS_99"]).isEmpty)
+    }
 }

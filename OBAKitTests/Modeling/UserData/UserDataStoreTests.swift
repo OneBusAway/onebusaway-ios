@@ -497,4 +497,40 @@ final class UserDefaultsStoreTests: OBATestCase {
         let prefsForOtherRegion = userDefaultsStore.preferences(stopID: stop.id, region: otherRegion)
         #expect(prefsForOtherRegion.hiddenRoutes.isEmpty, "Preferences must be scoped to region")
     }
+
+    /// `preferences(stopID:region:)` hands back defaults for a stop the rider
+    /// never configured, so the stop page asks `hasPreferences` to tell "never
+    /// set" apart from "set to the defaults".
+    @Test func `Has preferences is true only for the stop and region that were saved`() throws {
+        let stops = try Fixtures.loadSomeStops()
+        let stop = stops[0]
+        let otherStop = stops[1]
+        let otherRegion = try #require(Fixtures.loadSomeRegions().first)
+        #expect(otherRegion.regionIdentifier != region.regionIdentifier)
+
+        #expect(userDefaultsStore.hasPreferences(stopID: stop.id, region: region) == false)
+
+        userDefaultsStore.set(stopPreferences: StopPreferences(), stop: stop, region: region)
+
+        #expect(userDefaultsStore.hasPreferences(stopID: stop.id, region: region))
+        #expect(userDefaultsStore.hasPreferences(stopID: otherStop.id, region: region) == false)
+        #expect(userDefaultsStore.hasPreferences(stopID: stop.id, region: otherRegion) == false)
+    }
+
+    // MARK: - Vehicle Feed Agency Filters
+
+    /// The vehicles map hides each agency on its own. Turning one back on must
+    /// leave the others hidden, and the choice has to survive a relaunch.
+    @Test func `Re-enabling one vehicle feed agency keeps the others disabled after a relaunch`() {
+        userDefaultsStore.setAgencyEnabledForVehicleFeed(false, agencyID: "1")
+        userDefaultsStore.setAgencyEnabledForVehicleFeed(false, agencyID: "40")
+        userDefaultsStore.setAgencyEnabledForVehicleFeed(true, agencyID: "1")
+
+        let relaunched = UserDefaultsStore(userDefaults: userDefaults)
+
+        #expect(relaunched.isAgencyEnabledForVehicleFeed(agencyID: "1"))
+        #expect(relaunched.isAgencyEnabledForVehicleFeed(agencyID: "40") == false)
+        #expect(relaunched.isAgencyEnabledForVehicleFeed(agencyID: "96"))
+        #expect(relaunched.disabledVehicleFeedAgencyIDs == ["40"])
+    }
 }

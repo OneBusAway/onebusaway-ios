@@ -568,6 +568,86 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(store.bookmarks.count == 11)
         #expect(store.bookmarks.map(\.sortOrder) == Array(0..<11))
     }
+
+    // MARK: - Duplicate Detection
+
+    /// The edit-bookmark screen warns before saving a bookmark the rider
+    /// already has. A new bookmark always gets a new `id`, so the check has to
+    /// compare content, not identity.
+    @Test func `A new bookmark for the same stop, name and region is a duplicate`() {
+        let regionID = Fixtures.pugetSoundRegion.regionIdentifier
+        userDefaultsStore.add(Bookmark(name: "Home", regionIdentifier: regionID, stop: stops[0]))
+
+        let again = Bookmark(name: "Home", regionIdentifier: regionID, stop: stops[0])
+
+        #expect(userDefaultsStore.bookmarks.first?.id != again.id)
+        #expect(userDefaultsStore.checkForDuplicates(bookmark: again))
+    }
+
+    @Test func `A bookmark differing only in name or region is not a duplicate`() {
+        let puget = Fixtures.pugetSoundRegion.regionIdentifier
+        let tampa = Fixtures.tampaRegion.regionIdentifier
+        userDefaultsStore.add(Bookmark(name: "Home", regionIdentifier: puget, stop: stops[0]))
+
+        let renamed = Bookmark(name: "Work", regionIdentifier: puget, stop: stops[0])
+        let otherRegion = Bookmark(name: "Home", regionIdentifier: tampa, stop: stops[0])
+
+        #expect(userDefaultsStore.checkForDuplicates(bookmark: renamed) == false)
+        #expect(userDefaultsStore.checkForDuplicates(bookmark: otherRegion) == false)
+    }
+
+    // MARK: - Favorites
+
+    /// The widget lists `favoritedBookmarks`, so a bookmark the rider never
+    /// starred must stay off it, whichever group it sits in.
+    @Test func `Favorited bookmarks holds only starred bookmarks across groups`() {
+        let regionID = Fixtures.pugetSoundRegion.regionIdentifier
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+
+        let starredLoose = Bookmark(name: "Starred loose", regionIdentifier: regionID, stop: stops[0])
+        starredLoose.isFavorite = true
+        let plainLoose = Bookmark(name: "Plain loose", regionIdentifier: regionID, stop: stops[1])
+        let starredGrouped = Bookmark(name: "Starred grouped", regionIdentifier: regionID, stop: stops[2])
+        starredGrouped.isFavorite = true
+        let plainGrouped = Bookmark(name: "Plain grouped", regionIdentifier: regionID, stop: stops[3])
+
+        userDefaultsStore.add(starredLoose)
+        userDefaultsStore.add(plainLoose)
+        userDefaultsStore.add(starredGrouped, to: group)
+        userDefaultsStore.add(plainGrouped, to: group)
+
+        #expect(userDefaultsStore.bookmarks.count == 4)
+        #expect(Set(userDefaultsStore.favoritedBookmarks.map(\.name)) == ["Starred loose", "Starred grouped"])
+    }
+
+    // MARK: - Searching
+
+    /// Search hands over whatever is in the field, stray spaces and all. The
+    /// untrimmed query here can't match: "Campus Pkwy" ends the stop's name,
+    /// so nothing in it is followed by two spaces.
+    @Test func `Find bookmarks matching trims the query and ignores case`() {
+        let regionID = Fixtures.pugetSoundRegion.regionIdentifier
+        #expect(stops[0].name == "15th Ave NE & NE Campus Pkwy")
+        #expect(stops[2].name == "Montlake Blvd NE & NE Pacific Pl - Bay 4")
+
+        userDefaultsStore.add(Bookmark(name: "Campus", regionIdentifier: regionID, stop: stops[0]))
+        userDefaultsStore.add(Bookmark(name: "Montlake", regionIdentifier: regionID, stop: stops[2]))
+
+        let found = userDefaultsStore.findBookmarks(matching: " \n CAMPUS PKWY  ")
+
+        #expect(found.map(\.name) == ["Campus"])
+    }
+
+    @Test func `Find bookmarks in a region leaves out other regions and nil`() {
+        let puget = Fixtures.pugetSoundRegion
+        let tampa = Fixtures.tampaRegion
+        userDefaultsStore.add(Bookmark(name: "Seattle stop", regionIdentifier: puget.regionIdentifier, stop: stops[0]))
+        userDefaultsStore.add(Bookmark(name: "Tampa stop", regionIdentifier: tampa.regionIdentifier, stop: stops[1]))
+
+        #expect(userDefaultsStore.findBookmarks(in: puget).map(\.name) == ["Seattle stop"])
+        #expect(userDefaultsStore.findBookmarks(in: tampa).map(\.name) == ["Tampa stop"])
+        #expect(userDefaultsStore.findBookmarks(in: nil).isEmpty)
+    }
 }
 
 /// Counts `UserDataStore.bookmarks` encodes. Subclassing `UserDefaults` is the
