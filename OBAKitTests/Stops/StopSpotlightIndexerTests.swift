@@ -405,4 +405,69 @@ final class StopSpotlightIndexerTests: OBATestCase {
 
         #expect(log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
     }
+
+    // MARK: - Re-index requests (iOS 27)
+
+    /// D is cached but not asked for, and E is bookmarked but not asked for.
+    /// Tampa's 1_d, a stop that left the app, and an id that doesn't parse are
+    /// all skipped.
+    @Test func `Re-indexing some stops indexes each one asked for at its tier, without clearing`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let stopC = makeStop("1_c", in: puget)
+        let stopD = makeStop("1_d", in: puget)
+        let stopE = makeStop("1_e", in: puget)
+        let store = makeStore(bookmarked: [stopA, stopE], recent: [stopB], region: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: store, cache: try makeCache([stopA, stopB, stopC, stopD, stopE], region: puget), region: puget, now: start)
+
+        indexer.reindex(.stops([
+            entityID("1_a", in: puget),
+            entityID("1_b", in: puget),
+            entityID("1_c", in: puget),
+            entityID("1_d", in: tampa),
+            entityID("1_gone", in: puget),
+            "not_a_stop"
+        ]))
+        await indexer.currentRun?.value
+
+        #expect(await index.log == [
+            .index([entityID("1_a", in: puget)], priority: 3),
+            .index([entityID("1_b", in: puget)], priority: 2),
+            .index([entityID("1_c", in: puget)], priority: 1)
+        ])
+    }
+
+    @Test func `Re-indexing every stop replaces`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(bookmarked: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
+
+        indexer.reindex(.all)
+        await indexer.currentRun?.value
+
+        #expect(await index.log == [
+            .deleteAll,
+            .index([entityID("1_a", in: puget)], priority: 3),
+            .index([entityID("1_b", in: puget)], priority: 1)
+        ])
+    }
+
+    /// `StopEntityQuery` posts the request and the indexer reads it back. The
+    /// post itself goes through `NotificationCenter.default`, which tests don't use.
+    @Test func `A re-index request reads back as the stops or the whole index it asked for`() {
+        let identifiers = [entityID("1_a", in: puget), entityID("1_b", in: puget)]
+
+        #expect(StopReindexRequest.scope(from: StopReindexRequest.userInfo(for: .stops(identifiers))) == .stops(identifiers))
+        #expect(StopReindexRequest.scope(from: StopReindexRequest.userInfo(for: .all)) == .all)
+    }
+
+    /// Reading one of these as `.all` would clear the index.
+    @Test func `A re-index request that names neither stops nor the whole index reads as nothing`() {
+        #expect(StopReindexRequest.scope(from: nil) == nil)
+        #expect(StopReindexRequest.scope(from: [:]) == nil)
+        #expect(StopReindexRequest.scope(from: ["identifiers": "region_1_stop_1_a"]) == nil)
+        #expect(StopReindexRequest.scope(from: ["all": false]) == nil)
+    }
 }
