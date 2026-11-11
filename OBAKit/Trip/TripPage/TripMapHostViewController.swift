@@ -40,6 +40,10 @@ final class TripMapHostViewController: UIViewController,
     /// way back; this controller only supplies the map and the panel.
     let tripPage: TripPageViewController
 
+    /// The stop a shared trip link named as the sharer's exit, or `nil` for every
+    /// other way into this screen.
+    var destinationStopID: StopID? { tripPage.destinationStopID }
+
     /// - Parameter destinationStopID: Where the sharer said they will step off,
     ///   when this came from a shared trip link that named one. See #449.
     init(application: Application, tripConvertible: TripConvertible, destinationStopID: StopID? = nil) {

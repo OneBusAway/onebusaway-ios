@@ -37,6 +37,10 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     public let application: Application
     let viewModel: TripViewModel
 
+    /// The stop a shared trip link named as the sharer's exit, or `nil` for every
+    /// other way into this screen.
+    var destinationStopID: StopID? { viewModel.destinationStopID }
+
     /// The name of the screen this was pushed from, shown beside the back button.
     private let originTitle: String?
 
@@ -56,6 +60,13 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// strip behind its grabber to match or it reads as a white bar across the top.
     let sheetSurfaceColor: UIColor? = .systemGroupedBackground
 
+    /// Initializes a trip page controller with a trip convertible model.
+    ///
+    /// - Parameters:
+    ///   - application: The application context.
+    ///   - tripConvertible: The trip model representation.
+    ///   - originTitle: The title of the presenting screen.
+    ///   - destinationStopID: The optional shared-trip destination stop ID.
     init(
         application: Application,
         tripConvertible: TripConvertible,
@@ -80,9 +91,18 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
             actions: TripPageActions()
         ))
 
+        viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }
+
         render()
     }
 
+    /// Initializes a trip page controller with an arrival/departure.
+    ///
+    /// - Parameters:
+    ///   - application: The application context.
+    ///   - arrivalDeparture: The arrival/departure to display.
+    ///   - originTitle: The title of the presenting screen.
+    ///   - destinationStopID: The optional shared-trip destination stop ID.
     convenience init(
         application: Application,
         arrivalDeparture: ArrivalDeparture,
