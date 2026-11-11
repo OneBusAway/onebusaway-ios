@@ -97,8 +97,9 @@ final class UIKitExtensionsTests {
 
     // MARK: - UIColor.contrastingTextColor
 
-    /// The web view styles its links with this against the accent color, so
-    /// a light accent needs dark text and a dark one needs light text.
+    /// The document web view uses this for its action button's text, on an
+    /// accent-colored background, so a light accent needs dark text and a dark
+    /// one needs light text.
     @Test func `Contrasting text color is dark on light colors and light on dark ones`() {
         let yellow = UIColor(red: 0.96, green: 0.71, blue: 0.20, alpha: 1.0)
         let navy = UIColor(red: 0.05, green: 0.15, blue: 0.45, alpha: 1.0)
