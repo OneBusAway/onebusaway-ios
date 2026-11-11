@@ -26,6 +26,8 @@ actor FakeStopIndex: StopEntityIndexing {
     struct DeleteFailed: Error {}
 
     private(set) var log: [Call] = []
+    /// The entities of each `index` call, in order, for checks on more than the id.
+    private(set) var indexed: [(entities: [StopEntity], priority: Int)] = []
     private var isHolding = false
     private var holdNext: Kind?
     private var heldCall: CheckedContinuation<Void, Never>?
@@ -64,6 +66,7 @@ actor FakeStopIndex: StopEntityIndexing {
     func index(_ entities: [StopEntity], priority: Int) async throws {
         await waitIfHeld(.index)
         log.append(.index(entities.map(\.id), priority: priority))
+        indexed.append((entities, priority))
     }
 
     private func waitIfHeld(_ kind: Kind) async {

@@ -157,8 +157,11 @@ final class StopSpotlightIndexer {
     /// upsert.
     ///
     /// A stop that lost its bookmark drops to the tier a replace would give it:
-    /// 2 if it's recent, otherwise 1. One that isn't cached either is indexed at
-    /// 1 and stays there until the next replace drops it.
+    /// 2 if it's recent, otherwise 1. A recent one is indexed from its recent
+    /// copy: a visit refreshes the stop's recent copy and its bookmark's without
+    /// posting `.bookmarksDidChange`, so `indexedBookmarks` can hold an older
+    /// one. Any other is indexed from `indexedBookmarks`, and one that isn't
+    /// cached either stays at 1 until the next replace drops it.
     func indexBookmarks() {
         guard let snapshot = makeSnapshot() else { return }
         let index = index
@@ -166,7 +169,8 @@ final class StopSpotlightIndexer {
         let bookmarkedIDs = Set(snapshot.bookmarked.map(\.stopID))
         let recentIDs = Set(snapshot.recent.map(\.stopID))
         let unbookmarked = indexedBookmarks.filter { !bookmarkedIDs.contains($0.stopID) }
-        let nowRecent = unbookmarked.filter { recentIDs.contains($0.stopID) }
+        let unbookmarkedIDs = Set(unbookmarked.map(\.stopID))
+        let nowRecent = snapshot.recent.filter { unbookmarkedIDs.contains($0.stopID) }
         let nowCached = unbookmarked.filter { !recentIDs.contains($0.stopID) }
         indexedBookmarks = snapshot.bookmarked
 
