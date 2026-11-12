@@ -24,13 +24,12 @@ import OBAKitCore
 /// has no tab to leave it to.
 struct BookmarksSheetView: View {
     let application: Application
-    /// As a tab of the home sheet: no Close button, since there's no sheet of its
-    /// own to close, and nothing at the bottom, where the tab bar is.
-    let isHomeTab: Bool
 
     @StateObject private var viewModel: BookmarksViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isHomeSheetTab) private var isHomeSheetTab
+    @Environment(\.isCoveredBySheet) private var isCoveredBySheet
 
     @State private var editingBookmark: Bookmark?
     @State private var isManaging = false
@@ -51,9 +50,8 @@ struct BookmarksSheetView: View {
     private let actions: BookmarkActions
     private let feedback: DataLoadFeedbackGenerator
 
-    init(application: Application, isHomeTab: Bool = false) {
+    init(application: Application) {
         self.application = application
-        self.isHomeTab = isHomeTab
         self.actions = BookmarkActions(application: application)
         self.feedback = DataLoadFeedbackGenerator(application: application)
         _viewModel = StateObject(wrappedValue: BookmarksViewModel(application: application))
@@ -138,7 +136,7 @@ struct BookmarksSheetView: View {
                 .navigationTitle(Text(Strings.bookmarks))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    if !isHomeTab {
+                    if !isHomeSheetTab {
                         ToolbarItem(placement: .topBarLeading) {
                             SheetDismissButton(.close) { dismiss() }
                         }
@@ -161,6 +159,12 @@ struct BookmarksSheetView: View {
         // Stops the 30 s poll when the sheet goes away. The tab does the same on
         // `viewWillDisappear`.
         .onDisappear { viewModel.deactivate() }
+        // Covered by a stacked sheet it stays in the hierarchy, so `onDisappear`
+        // never runs, and the poll stops here. (As a home sheet tab, `TabView`
+        // runs `onAppear`/`onDisappear` on each switch.)
+        .onChange(of: isCoveredBySheet) { _, isCovered in
+            if isCovered { viewModel.deactivate() } else { viewModel.start() }
+        }
         // Fresh arrivals for running Live Activities, as the tab pushes them. The
         // home sheet only loads the bookmarks it previews, so an activity for any
         // other bookmark gets its content from here.

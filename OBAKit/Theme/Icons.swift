@@ -16,6 +16,12 @@ import OBAKitCore
 nonisolated class Icons: NSObject {
 
     // MARK: - Tab Icons
+
+    // Symbol names shared with the map panel's home tabs (`HomeTab`), so the two
+    // tab bars draw the same icons. Each has a `.fill` variant for the selection.
+    public static let recentTabSymbolName = "clock"
+    public static let bookmarksTabSymbolName = "bookmark"
+    public static let moreTabSymbolName = "ellipsis.circle"
     /// The Map tab icon, for apps using a tab bar UI metaphor.
     public class var mapTabIcon: UIImage {
         configureForTabIcon(systemImage(named: "map"))
@@ -28,32 +34,32 @@ nonisolated class Icons: NSObject {
 
     /// The Recent tab icon, for apps using a tab bar UI metaphor.
     public class var recentTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "clock"))
+        configureForTabIcon(systemImage(named: recentTabSymbolName))
     }
 
     /// The Recent tab selected icon, for apps using a tab bar UI metaphor.
     public class var recentSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "clock.fill"))
+        configureForTabIcon(systemImage(named: recentTabSymbolName + ".fill"))
     }
 
     /// The Bookmarks tab icon, for apps using a tab bar UI metaphor.
     public class var bookmarksTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "bookmark"))
+        configureForTabIcon(systemImage(named: bookmarksTabSymbolName))
     }
 
     /// The Bookmarks tab selected icon, for apps using a tab bar UI metaphor.
     public class var bookmarksSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "bookmark.fill"))
+        configureForTabIcon(systemImage(named: bookmarksTabSymbolName + ".fill"))
     }
 
     /// A More tab icon, for apps using a tab bar UI metaphor.
     public class var moreTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "ellipsis.circle"))
+        configureForTabIcon(systemImage(named: moreTabSymbolName))
     }
 
     /// A More tab selected icon, for apps using a tab bar UI metaphor.
     public class var moreSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "ellipsis.circle.fill"))
+        configureForTabIcon(systemImage(named: moreTabSymbolName + ".fill"))
     }
 
     /// The Vehicles tab icon, for apps using a tab bar UI metaphor.

@@ -26,10 +26,6 @@ struct MoreButton: View {
         }
         .buttonStyle(.plain)
         .regularGlassEffectIfAvailable(in: Circle())
-        .accessibilityLabel(Text(OBALoc(
-            "more_controller.title",
-            value: "More",
-            comment: "Title of the More tab / accessibility label for the map-panel more button."
-        )))
+        .accessibilityLabel(Text(Strings.moreTabTitle))
     }
 }

@@ -120,7 +120,7 @@ struct MapPanelBottomPadding {
         halfScreenHeight: CGFloat,
         totalMapHeight: CGFloat
     ) -> CGFloat {
-        if detent == .height(AppSheetRoute.homeCollapsedHeight) {
+        if detent == AppSheetRoute.homeCollapsedDetent {
             return AppSheetRoute.homeCollapsedHeight
         } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
             return AppSheetRoute.tripPlannerTipHeight
@@ -227,6 +227,10 @@ struct MapPanelRootView: View {
     // collapsed detent so overlays render at their resting position on the
     // first frame — before `.onGeometryChange` reports a value.
     @State private var sheetHeight: CGFloat = AppSheetRoute.homeCollapsedHeight
+    /// The screen's bottom inset, where the home indicator is. Sheet content
+    /// ignores the safe area (see `buildSheetContent`), so it's measured here and
+    /// handed down; see `EnvironmentValues.homeIndicatorInset`.
+    @State private var homeIndicatorInset: CGFloat = 0
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
 
@@ -661,6 +665,7 @@ struct MapPanelRootView: View {
             toolbarsOpacity: toolbarsOpacity,
             toolbarsAnimationDuration: toolbarsAnimationDuration
         ))
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { homeIndicatorInset = $0 }
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
         }
@@ -804,6 +809,7 @@ struct MapPanelRootView: View {
             // to the app's defaults suite; without this, sheet content reading
             // them through `@AppStorage` saw `.standard` and ignored them.
             .defaultAppStorage(application.userDefaults)
+            .environment(\.homeIndicatorInset, homeIndicatorInset)
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(
                     display: mapViewModel.weatherDisplay,

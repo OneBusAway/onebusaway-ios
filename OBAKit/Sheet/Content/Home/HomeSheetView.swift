@@ -20,7 +20,11 @@ struct HomeSheetView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    @Environment(\.homeIndicatorInset) private var homeIndicatorInset
+
     @State private var selectedTab: HomeTab = .home
+    /// Home's page above the tab bar; see `HomeTabs.showsHomeList`.
+    @State private var homePageHeight: CGFloat = 0
 
     /// Used by the bookmark rows to format distances.
     private let application: Application
@@ -47,24 +51,33 @@ struct HomeSheetView: View {
         showsTabs ? selectedTab : .home
     }
 
+    private var isShowingHomePage: Bool {
+        coordinator.stackedRoutes.isEmpty && visibleTab == .home
+    }
+
     var body: some View {
-        tabContent
-            // Under every tab's content, so a list scrolls up out from behind it.
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if showsTabs {
-                    HomeTabBar(selection: $selectedTab, onSelect: didSelect(_:))
-                }
+        // The bar under the tabs rather than in a `safeAreaInset` over them:
+        // `TabView` lays its pages out beneath an inset, which put Home's list
+        // behind the bar.
+        VStack(spacing: 0) {
+            tabs
+            if showsTabs {
+                // The sheet's content reaches into the home indicator's area, but
+                // a `.height` detent is measured above it. Clear of it, the bar
+                // sits where `homeTabBarHeight` says, and the collapsed sheet is
+                // exactly the search row and the bar.
+                HomeTabBar(selection: selectedTab, bottomClearance: homeIndicatorInset, onSelect: select(_:))
             }
-            .task {
+        }
+            .task(id: isShowingHomePage) {
                 // Polls while Home is on screen, so bookmark countdowns don't
-                // freeze. `loadIfNeeded`'s staleness gate keeps it to one fetch
-                // per window however often this fires; skipped while a stacked
-                // sheet covers the home sheet, or another tab is showing, since
-                // nobody can see the countdowns then.
+                // freeze, and refreshes the moment it comes back: from a stacked
+                // sheet, when a recent stop may have been added, or from another
+                // tab. `loadIfNeeded`'s staleness gate keeps it to one fetch per
+                // window however often this fires.
+                guard isShowingHomePage else { return }
                 while !Task.isCancelled {
-                    if isShowingHomePage {
-                        viewModel.activate()
-                    }
+                    viewModel.activate()
                     try? await Task.sleep(for: .seconds(30))
                 }
             }
@@ -75,44 +88,46 @@ struct HomeSheetView: View {
                     viewModel.activate()
                 }
             }
-            .onChange(of: coordinator.stackedRoutes) { previousRoutes, routes in
-                // Re-activate when the stacked layer transitions to empty — the moment the
-                // user returns to the home sheet, and when a recent stop may have been added.
-                // Derived from `onChange`'s previous value rather than tracked in `@State`:
-                // the sheet system can rebuild this view's content while a stacked sheet is
-                // open, which would re-seed a stored flag and silently skip the next refresh.
-                if !previousRoutes.isEmpty && routes.isEmpty && visibleTab == .home {
-                    viewModel.activate()
-                }
-            }
-            .onChange(of: visibleTab) { _, tab in
-                // Back on Home from another tab: its previews may be stale.
-                if tab == .home && coordinator.stackedRoutes.isEmpty {
-                    viewModel.activate()
-                }
-            }
     }
 
-    private var isShowingHomePage: Bool {
-        coordinator.stackedRoutes.isEmpty && visibleTab == .home
-    }
-
+    /// The tabs, in a `TabView` whose own bar is hidden for `HomeTabBar`. It
+    /// builds each tab the first time it's picked and keeps it after, so leaving a
+    /// tab and coming back keeps its scroll position, search text and More's pushed
+    /// screens, and exposes only the visible tab to VoiceOver. Regular width has no
+    /// tabs, so just Home.
     @ViewBuilder
-    private var tabContent: some View {
-        switch visibleTab {
-        case .home:
+    private var tabs: some View {
+        if showsTabs {
+            TabView(selection: $selectedTab) {
+                ForEach(HomeTab.allCases, id: \.self) { tab in
+                    tabContent(tab)
+                        .environment(\.isHomeSheetTab, tab != .home)
+                        .toolbar(.hidden, for: .tabBar)
+                        .tag(tab)
+                }
+            }
+        } else {
             homePage
-        case .recent:
-            RecentStopsSheetView(application: application, isHomeTab: true)
-        case .bookmarks:
-            BookmarksSheetView(application: application, isHomeTab: true)
-        case .more:
-            MoreSheetHost(application: application, onClose: nil)
         }
     }
 
-    private func didSelect(_ tab: HomeTab) {
-        if let detent = HomeTabs.detent(afterSelecting: tab, currentDetent: coordinator.currentDetent) {
+    @ViewBuilder
+    private func tabContent(_ tab: HomeTab) -> some View {
+        switch tab {
+        case .home:
+            homePage
+        case .recent:
+            RecentStopsSheetView(application: application)
+        case .bookmarks:
+            BookmarksSheetView(application: application)
+        case .more:
+            MoreSheetHost(application: application)
+        }
+    }
+
+    private func select(_ tab: HomeTab) {
+        selectedTab = tab
+        if let detent = HomeTabs.detent(afterSelectingFrom: coordinator.currentDetent) {
             coordinator.currentDetent = detent
         }
     }
@@ -121,8 +136,7 @@ struct HomeSheetView: View {
     /// list stacked over the sheet.
     private func showAll(_ route: AppSheetRoute) {
         if showsTabs, let tab = HomeTab(seeAll: route) {
-            selectedTab = tab
-            didSelect(tab)
+            select(tab)
         } else {
             coordinator.push(route)
         }
@@ -136,7 +150,7 @@ struct HomeSheetView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 12)
 
-            if !HomeTabs.showsHomeList(showsTabs: showsTabs, currentDetent: coordinator.currentDetent) {
+            if !HomeTabs.showsHomeList(showsTabs: showsTabs, pageHeight: homePageHeight) {
                 Spacer()
             } else if !viewModel.visibleSections.isEmpty {
                 List {
@@ -160,6 +174,7 @@ struct HomeSheetView: View {
         // empty state showed through the bar on the collapsed sheet. Clipped, as
         // the empty state is taller than the room the collapsed sheet leaves.
         .clipped()
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { homePageHeight = $0 }
         .searchSheetBackground()
         .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
     }
@@ -194,7 +209,11 @@ struct HomeSheetView: View {
         // Passing `nil` when the region has no OTP server withholds the tip
         // instead of spending its one display announcing a feature the rider
         // cannot reach.
-        .popoverTip(viewModel.offersTripPlanning ? TripPlannerTip() : nil)
+        //
+        // Withheld, too, while another tab is showing: the page is still in the
+        // hierarchy, hidden, and the tip would both pop up over that tab and
+        // leave this field reachable by VoiceOver.
+        .popoverTip(viewModel.offersTripPlanning && visibleTab == .home ? TripPlannerTip() : nil)
     }
 
     // MARK: - Sections

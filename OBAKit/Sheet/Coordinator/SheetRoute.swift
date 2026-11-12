@@ -346,7 +346,13 @@ nonisolated extension AppSheetRoute {
     /// collapsed sheet reads as those two controls rather than as a list that got
     /// cut off. A regular-width sheet has no tab bar yet (`HomeTabs.showsTabs`),
     /// so its collapsed sheet shows the top of the list in that space.
-    static let homeCollapsedHeight: CGFloat = homeSearchRowHeight + HomeTabBar.height
+    static let homeCollapsedHeight: CGFloat = homeSearchRowHeight + homeTabBarHeight
+
+    /// The home sheet's smallest detent; see `homeCollapsedHeight`.
+    static var homeCollapsedDetent: PresentationDetent { .height(homeCollapsedHeight) }
+
+    /// `HomeTabBar`'s capsule and the padding under it.
+    static let homeTabBarHeight: CGFloat = 62
 
     /// `HomeSheetView`'s search row: a body-metrics capsule (~48pt: one line of
     /// text plus its 14pt vertical padding, top and bottom) under the row's own
@@ -372,8 +378,8 @@ nonisolated extension AppSheetRoute {
             // background interaction to `.disabled` only when the sheet is
             // parked at `largeDetent` (covers ~the full screen).
             return SheetDetentConfiguration(
-                detents: [.height(AppSheetRoute.homeCollapsedHeight), .medium, AppSheetRoute.largeDetent],
-                initialDetent: .height(AppSheetRoute.homeCollapsedHeight),
+                detents: [AppSheetRoute.homeCollapsedDetent, .medium, AppSheetRoute.largeDetent],
+                initialDetent: AppSheetRoute.homeCollapsedDetent,
                 isDismissDisabled: true,
                 backgroundInteraction: .enabled,
                 fullScreenDetent: AppSheetRoute.largeDetent

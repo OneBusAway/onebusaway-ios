@@ -21,12 +21,15 @@ import OBAKitCore
 struct MoreSheetHost: UIViewControllerRepresentable {
     let application: Application
     /// Closes the sheet. The other index sheets have a Close button; this one
-    /// could only be swiped away. `nil` as the home sheet's More tab, which has
-    /// no sheet of its own to close, and so no Close button.
-    var onClose: (() -> Void)? = {}
+    /// could only be swiped away. Unused as the home sheet's More tab
+    /// (`isHomeSheetTab`), which has no sheet of its own to close.
+    var onClose: () -> Void = {}
 
     func makeUIViewController(context: Context) -> UINavigationController {
-        Self.makeNavigationController(application: application, onClose: onClose)
+        Self.makeNavigationController(
+            application: application,
+            onClose: context.environment.isHomeSheetTab ? nil : onClose
+        )
     }
 
     // `MoreViewController` reads `application` and its stores directly, so

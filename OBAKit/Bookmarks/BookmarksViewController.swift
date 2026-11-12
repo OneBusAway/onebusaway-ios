@@ -48,7 +48,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
 
         rootView.navigation = makeNavigationHandler()
 
-        title = OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
+        title = Strings.bookmarksTabTitle
         tabBarItem.image = Icons.bookmarksTabIcon
         tabBarItem.selectedImage = Icons.bookmarksSelectedTabIcon
 

@@ -29,7 +29,7 @@ public class RecentStopsViewController: UIViewController,
 
         super.init(nibName: nil, bundle: nil)
 
-        title = OBALoc("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
+        title = Strings.recentTabTitle
         tabBarItem.image = Icons.recentTabIcon
         tabBarItem.selectedImage = Icons.recentSelectedTabIcon
 

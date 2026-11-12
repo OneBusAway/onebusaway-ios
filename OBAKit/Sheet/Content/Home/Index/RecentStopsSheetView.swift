@@ -17,22 +17,19 @@ import OBAKitCore
 /// already right behind this sheet.
 struct RecentStopsSheetView: View {
     let application: Application
-    /// As a tab of the home sheet: no Close button, since there's no sheet of its
-    /// own to close, and nothing at the bottom, where the tab bar is.
-    let isHomeTab: Bool
 
     @StateObject private var viewModel: RecentStopsViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isHomeSheetTab) private var isHomeSheetTab
 
     @State private var searchText = ""
     @State private var isConfirmingDeleteAll = false
     /// The alarm whose trip is loading, so a second tap doesn't load it again.
     @State private var openingAlarm: URL?
 
-    init(application: Application, isHomeTab: Bool = false) {
+    init(application: Application) {
         self.application = application
-        self.isHomeTab = isHomeTab
         _viewModel = StateObject(wrappedValue: RecentStopsViewModel(application: application))
     }
 
@@ -82,10 +79,10 @@ struct RecentStopsSheetView: View {
                 // home sheet's tab bar; as a tab it stays at the top.
                 .searchable(
                     text: $searchText,
-                    placement: isHomeTab ? .navigationBarDrawer(displayMode: .always) : .automatic
+                    placement: isHomeSheetTab ? .navigationBarDrawer(displayMode: .always) : .automatic
                 )
                 .toolbar {
-                    if !isHomeTab {
+                    if !isHomeSheetTab {
                         ToolbarItem(placement: .topBarLeading) {
                             SheetDismissButton(.close) { dismiss() }
                         }

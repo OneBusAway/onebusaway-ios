@@ -16,34 +16,30 @@ import OBAKitCore
 /// Home holds the search field and the nearby, recent and bookmarked previews the
 /// sheet had before; it stands in for the classic app's Map tab, since the map is
 /// always behind the sheet. Recent, Bookmarks and More are the classic app's tabs
-/// of the same names.
+/// of the same names, with the same titles and icons.
 enum HomeTab: CaseIterable, Hashable {
     case home
     case recent
     case bookmarks
     case more
 
-    /// Recent, Bookmarks and More reuse the classic tab bar's titles, which are
-    /// already translated.
     var title: String {
         switch self {
         case .home:
             OBALoc("home_sheet.tab.home", value: "Home", comment: "Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet.")
-        case .recent:
-            OBALoc("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
-        case .bookmarks:
-            OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
-        case .more:
-            OBALoc("more_controller.title", value: "More", comment: "Title of the More tab / accessibility label for the map-panel more button.")
+        case .recent: Strings.recentTabTitle
+        case .bookmarks: Strings.bookmarksTabTitle
+        case .more: Strings.moreTabTitle
         }
     }
 
+    /// Each has a `.fill` variant, which the bar draws for the selected tab.
     var systemImage: String {
         switch self {
         case .home: "house"
-        case .recent: "clock"
-        case .bookmarks: "bookmark"
-        case .more: "ellipsis"
+        case .recent: Icons.recentTabSymbolName
+        case .bookmarks: Icons.bookmarksTabSymbolName
+        case .more: Icons.moreTabSymbolName
         }
     }
 
@@ -68,11 +64,18 @@ enum HomeTabs {
         horizontalSizeClass != .regular
     }
 
-    /// Whether Home shows its list under the search field. Not on the collapsed
-    /// sheet with tabs, which is the search field over the bar: whatever room the
+    /// Less room than a row under the search field and Home shows no list there.
+    static let minimumListRoom: CGFloat = 44
+
+    /// Whether Home shows its list under the search field, given the height of its
+    /// page above the tab bar.
+    ///
+    /// Collapsed, the sheet is the search field over the bar. Whatever sliver the
     /// system leaves between them, a list peeking through it reads as cut off.
-    static func showsHomeList(showsTabs: Bool, currentDetent: PresentationDetent) -> Bool {
-        !showsTabs || currentDetent != .height(AppSheetRoute.homeCollapsedHeight)
+    /// Measured rather than read off the detent, so the list follows a drag rather
+    /// than appearing when it settles.
+    static func showsHomeList(showsTabs: Bool, pageHeight: CGFloat) -> Bool {
+        !showsTabs || pageHeight - AppSheetRoute.homeSearchRowHeight >= minimumListRoom
     }
 
     /// Where the sheet goes when a tab is picked, or `nil` to leave it.
@@ -80,29 +83,33 @@ enum HomeTabs {
     /// Collapsed, the sheet shows only the search field and the bar, so a picked
     /// tab would change nothing the rider can see. It rises to `.medium`, as Find
     /// My's does.
-    static func detent(afterSelecting tab: HomeTab, currentDetent: PresentationDetent) -> PresentationDetent? {
-        currentDetent == .height(AppSheetRoute.homeCollapsedHeight) ? .medium : nil
+    static func detent(afterSelectingFrom currentDetent: PresentationDetent) -> PresentationDetent? {
+        currentDetent == AppSheetRoute.homeCollapsedDetent ? .medium : nil
     }
+}
+
+extension EnvironmentValues {
+    /// Whether this view is shown as a tab of the home sheet rather than as a sheet
+    /// of its own. A tab has no sheet to close, so no Close button, and keeps clear
+    /// of the bottom, where the tab bar is.
+    @Entry var isHomeSheetTab = false
+
+    /// The screen's bottom inset, where the home indicator is, for sheet content,
+    /// which ignores the safe area and so can't read it. `MapPanelRootView` sets it.
+    @Entry var homeIndicatorInset: CGFloat = 0
 }
 
 /// The bar of tabs pinned to the bottom of the home sheet: Liquid Glass on iOS 26,
 /// a material capsule before it.
 struct HomeTabBar: View {
-    @Binding var selection: HomeTab
+    let selection: HomeTab
+    /// Room to leave under the bar for the home indicator; see `HomeSheetView`.
+    let bottomClearance: CGFloat
     let onSelect: (HomeTab) -> Void
 
-    /// The bar's capsule and the padding under it. Part of the home sheet's
-    /// collapsed height, so the collapsed sheet is exactly the search row and this.
-    nonisolated static let height: CGFloat = capsuleHeight + bottomPadding
-
-    private nonisolated static let capsuleHeight: CGFloat = 54
-    private nonisolated static let bottomPadding: CGFloat = 8
+    private static let capsuleHeight: CGFloat = 54
 
     @Namespace private var namespace
-
-    private static var homeIndicatorClearance: CGFloat {
-        UIApplication.shared.keyWindowFromScene?.safeAreaInsets.bottom ?? 0
-    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -114,11 +121,8 @@ struct HomeTabBar: View {
         .frame(height: Self.capsuleHeight)
         .regularGlassEffectIfAvailable(in: Capsule())
         .padding(.horizontal, 12)
-        .padding(.bottom, Self.bottomPadding)
-        // The sheet's content reaches into the home indicator's area, but a
-        // `.height` detent is measured above it. Clear of it, the bar sits where
-        // `height` says, and the collapsed sheet is exactly the search row and this.
-        .padding(.bottom, Self.homeIndicatorClearance)
+        .padding(.bottom, AppSheetRoute.homeTabBarHeight - Self.capsuleHeight + bottomClearance)
+        .animation(.smooth(duration: 0.25), value: selection)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isTabBar)
     }
@@ -126,7 +130,6 @@ struct HomeTabBar: View {
     private func tabButton(_ tab: HomeTab) -> some View {
         let isSelected = tab == selection
         return Button {
-            selection = tab
             onSelect(tab)
         } label: {
             VStack(spacing: 2) {
@@ -151,6 +154,5 @@ struct HomeTabBar: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .animation(.smooth(duration: 0.25), value: selection)
     }
 }

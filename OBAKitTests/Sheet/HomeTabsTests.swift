@@ -18,7 +18,7 @@ import Testing
 @Suite(.serialized)
 struct HomeTabsTests {
 
-    private static let collapsed = PresentationDetent.height(AppSheetRoute.homeCollapsedHeight)
+    private static let collapsed = AppSheetRoute.homeCollapsedDetent
 
     // MARK: - Tabs
 
@@ -53,32 +53,32 @@ struct HomeTabsTests {
 
     /// Find My: picking a tab on a collapsed sheet raises it so the tab can be seen.
     @Test func `Picking a tab on the collapsed sheet raises it to medium`() {
-        for tab in HomeTab.allCases {
-            #expect(HomeTabs.detent(afterSelecting: tab, currentDetent: Self.collapsed) == .medium)
-        }
+        #expect(HomeTabs.detent(afterSelectingFrom: Self.collapsed) == .medium)
     }
 
     @Test func `Picking a tab on a raised sheet leaves it where it is`() {
-        #expect(HomeTabs.detent(afterSelecting: .recent, currentDetent: .medium) == nil)
-        #expect(HomeTabs.detent(afterSelecting: .more, currentDetent: AppSheetRoute.largeDetent) == nil)
+        #expect(HomeTabs.detent(afterSelectingFrom: .medium) == nil)
+        #expect(HomeTabs.detent(afterSelectingFrom: AppSheetRoute.largeDetent) == nil)
     }
 
     /// Collapsed, the sheet holds the search field and the tab bar under it, and no
     /// more, so it reads as those two controls rather than a list cut off.
     @Test func `The collapsed sheet is the search row plus the tab bar`() {
-        #expect(AppSheetRoute.homeCollapsedHeight == AppSheetRoute.homeSearchRowHeight + HomeTabBar.height)
+        #expect(AppSheetRoute.homeCollapsedHeight == AppSheetRoute.homeSearchRowHeight + AppSheetRoute.homeTabBarHeight)
     }
 
-    /// Collapsed, Home is the search field over the bar. A list peeking between
-    /// them reads as cut off.
-    @Test func `The collapsed sheet hides Home's list behind the tabs`() {
-        #expect(!HomeTabs.showsHomeList(showsTabs: true, currentDetent: Self.collapsed))
-        #expect(HomeTabs.showsHomeList(showsTabs: true, currentDetent: .medium))
+    /// Collapsed, Home is the search field over the bar. A list peeking through
+    /// the sliver between them reads as cut off.
+    @Test func `Home hides its list with less than a row of room under the search field`() {
+        let search = AppSheetRoute.homeSearchRowHeight
+        #expect(!HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + 30))
+        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + HomeTabs.minimumListRoom))
+        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: 400))
     }
 
     /// Without tabs there's no bar for it to peek against, as before.
-    @Test func `Without tabs the list shows at every detent`() {
-        #expect(HomeTabs.showsHomeList(showsTabs: false, currentDetent: Self.collapsed))
+    @Test func `Without tabs the list shows at any height`() {
+        #expect(HomeTabs.showsHomeList(showsTabs: false, pageHeight: 0))
     }
 
     // MARK: - See all
