@@ -237,6 +237,35 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.tripDetails(first)].map(\.id))
     }
 
+    /// A trip opened from a shared link carries the sharer's destination stop. A
+    /// rider who goes from it to the trip it continues as, and taps "Starts as"
+    /// there, goes back down to that sheet with its destination, rather than
+    /// stacking a second copy of the trip without one.
+    @Test @MainActor
+    func `A trip opened from a trip goes back to it when it's open with a destination`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let shared = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "trip_42"), destinationStopID: "1_10914")
+        let next = try Fixtures.tripConvertible(tripID: "trip_43")
+        coordinator.push(.recentStopsAll)
+        coordinator.push(shared)
+        coordinator.push(.tripDetails(next))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: next)
+        // Fetched again for the tap, and with no destination: "Starts as" names
+        // only the trip.
+        host.onSelectTrip(try Fixtures.tripConvertible(tripID: "trip_42"))
+
+        // By `id`, which carries the destination stop.
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.recentStopsAll, shared].map(\.id))
+        // Gone back to through `open`, so VoiceOver moves to the sheet revealed.
+        // Read first: a failing `#expect` describes `coordinator`, routes and
+        // all, and the routes' departures trap when described here.
+        let focusMovesDown = coordinator.claimUnwindFocus(atDepth: 2)
+        #expect(focusMovesDown)
+    }
+
     @Test @MainActor
     func `Route stops view returns route stops sheet view forwarding the stops for route`() throws {
         let dataLoader = MockDataLoader(testName: name)

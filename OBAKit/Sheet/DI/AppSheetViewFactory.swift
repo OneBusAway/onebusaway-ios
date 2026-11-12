@@ -328,10 +328,19 @@ final class AppSheetViewFactory {
             },
             // What the trip starts as or continues as opens above it, so Back
             // returns here. A rider who went from a trip to the one after it and
-            // taps "Starts as" there goes back down to the first, as `open` does
-            // for a trip already open.
+            // taps "Starts as" there goes back down to the first. That sheet is
+            // looked for by its trip alone: one opened from a shared link also
+            // carries the sharer's destination stop, so `open` wouldn't recognize
+            // it, and it keeps that stop when the rider goes back to it.
             onSelectTrip: { [coordinator] adjacent in
-                coordinator.open(.tripDetails(adjacent), from: .tripDetails(tripConvertible, destinationStopID: destinationStopID))
+                let alreadyOpen = coordinator.stackedRoutes.last(where: { route in
+                    guard case .tripDetails(let openTrip, _) = route else { return false }
+                    return openTrip.tripID == adjacent.tripID
+                })
+                coordinator.open(
+                    alreadyOpen ?? .tripDetails(adjacent),
+                    from: .tripDetails(tripConvertible, destinationStopID: destinationStopID)
+                )
             },
             onClose: { [coordinator] in coordinator.pop() }
         )
