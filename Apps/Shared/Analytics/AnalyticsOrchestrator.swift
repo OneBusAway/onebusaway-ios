@@ -10,11 +10,31 @@
 import OBAKitCore
 import OBAKit
 import FirebaseCrashlytics
+import Synchronization
+
+nonisolated final class AnalyticsReportingState: Sendable {
+    private let state: Mutex<Bool>
+
+    init(_ initialValue: Bool) {
+        state = Mutex(initialValue)
+    }
+
+    var value: Bool {
+        state.withLock { $0 }
+    }
+
+    func set(_ value: Bool) {
+        state.withLock { $0 = value }
+    }
+
+    func toggle() {
+        state.withLock { $0.toggle() }
+    }
+}
 
 @objc(OBAAnalyticsOrchestrator) public class AnalyticsOrchestrator: NSObject, OBAKit.Analytics {
-    /// nonisolated(unsafe): read by the nonisolated `reportingEnabled()`;
-    /// UserDefaults is documented thread-safe.
-    nonisolated(unsafe) private let userDefaults: UserDefaults
+    private let userDefaults: UserDefaults
+    private let reportingState: AnalyticsReportingState
     private var firebaseAnalytics: FirebaseAnalytics?
     private var umami: UmamiAnalytics?
     /// The region Umami was last built for, so turning reporting back on
@@ -23,6 +43,7 @@ import FirebaseCrashlytics
 
     @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
+        self.reportingState = AnalyticsReportingState(userDefaults.bool(forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey))
     }
 
     @objc public func configure(userID: String) {
@@ -106,6 +127,7 @@ import FirebaseCrashlytics
     }
 
     @objc public func setReportingEnabled(_ enabled: Bool) {
+        reportingState.set(enabled)
         userDefaults.set(enabled, forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey)
         firebaseAnalytics?.setReportingEnabled(enabled)
         if enabled, let currentRegion {
@@ -120,10 +142,8 @@ import FirebaseCrashlytics
         }
     }
 
-    // nonisolated: called from the nonisolated DecodingErrorReporter handler;
-    // only touches UserDefaults, which is thread-safe.
     @objc nonisolated public func reportingEnabled() -> Bool {
-        return userDefaults.bool(forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey)
+        reportingState.value
     }
 
     @objc public func setUserProperty(key: String, value: String?) {
