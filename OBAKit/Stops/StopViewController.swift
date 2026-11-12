@@ -219,6 +219,7 @@ public class StopViewController: UIViewController,
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        configureTabBarButtons()
 
         disableIdleTimer()
 
@@ -390,38 +391,18 @@ public class StopViewController: UIViewController,
             self.application.viewRouter.navigate(to: nearbyController, from: self)
         }
 
-        var walkingDirectionActions: [UIMenuElement] = []
-
-        if let stop = self.stop {
-            if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
-                let appleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { [unowned self] _ in
-                    self.application.open(appleMapsURL, options: [:], completionHandler: nil)
-                }
-                walkingDirectionActions.append(appleMaps)
-            }
-
-            #if !targetEnvironment(simulator)
-            // Display Google Maps app link, only if Google Maps is installed.
-            if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
-               self.application.canOpenURL(googleMapsURL) {
-                let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { [unowned self] _ in
-                    self.application.open(googleMapsURL, options: [:], completionHandler: nil)
-                }
-                walkingDirectionActions.append(googleMaps)
-            }
-            #endif
+        var googleMapsAvailable = false
+        #if !targetEnvironment(simulator)
+        if let coordinate = stop?.coordinate,
+           let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate) {
+            googleMapsAvailable = application.canOpenURL(url)
         }
-
-        let walkingDirectionsElement: UIMenuElement
-        let walkingDirectionsTitle = OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop")
-        let walkingDirectionsImage = UIImage(systemName: "figure.walk")
-
-        // Show a disabled walking directions button if there are no Walking Directions apps available.
-        if walkingDirectionActions.isEmpty {
-            walkingDirectionsElement = UIAction(title: walkingDirectionsTitle, image: walkingDirectionsImage, attributes: .disabled) { _ in /* noop */ }
-        } else {
-            walkingDirectionsElement = UIMenu(title: walkingDirectionsTitle, image: walkingDirectionsImage, children: walkingDirectionActions)
-        }
+        #endif
+        let walkingDirectionsElement = WalkingDirectionsProvider.menuElement(
+            coordinate: stop?.coordinate,
+            application: application,
+            googleMapsAvailable: googleMapsAvailable
+        )
 
         var locationChildren: [UIMenuElement] = [nearbyAction, walkingDirectionsElement]
 

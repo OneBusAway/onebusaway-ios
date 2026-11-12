@@ -1227,6 +1227,18 @@
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "问卷";
 
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "苹果地图";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "每次询问";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "谷歌地图";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "步行导航";
+
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "中等（约3英里/小时）";
 

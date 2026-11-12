@@ -76,6 +76,9 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
     private var cachedGoogleMapsAvailable: Bool?
 
     func googleMapsAvailable(coordinate: CLLocationCoordinate2D) -> Bool {
+        #if targetEnvironment(simulator)
+        return false
+        #else
         if let cachedGoogleMapsAvailable { return cachedGoogleMapsAvailable }
 
         guard let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate) else {
@@ -87,6 +90,7 @@ final class StopPageActionPresenter: NSObject, ObservableObject {
         let available = application.canOpenURL(url)
         cachedGoogleMapsAvailable = available
         return available
+        #endif
     }
 
     /// Set by a host that owns a map, so a trip opened from the Stop page can

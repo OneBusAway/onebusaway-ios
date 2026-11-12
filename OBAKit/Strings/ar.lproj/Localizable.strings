@@ -1227,6 +1227,18 @@
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "الاستطلاعات";
 
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "خرائط Apple";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "السؤال في كل مرة";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "خرائط Google";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "اتجاهات المشي";
+
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "متوسطة (~5 كم/س)";
 

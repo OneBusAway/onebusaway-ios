@@ -1227,6 +1227,18 @@
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "설문조사";
 
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "Apple 지도";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "매번 묻기";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "Google 지도";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "도보 경로";
+
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "보통 (시속 약 5km)";
 
