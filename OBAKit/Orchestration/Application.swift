@@ -147,7 +147,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             ProgressHUD.show()
 
             do {
-                let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
+                let arrDep = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink).entry
 
                 // The rider may have switched regions while this loaded.
                 guard self.currentRegion?.regionIdentifier == deepLink.regionID else {

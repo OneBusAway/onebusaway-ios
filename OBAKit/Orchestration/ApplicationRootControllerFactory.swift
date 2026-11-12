@@ -22,7 +22,7 @@ import OBAKitCore
 public final class ApplicationRootControllerFactory: NSObject {
 
     @objc public static func make(application: Application) -> UIViewController {
-        if application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey) {
+        if FeatureFlags.isMapPanelExperienceEnabled(userDefaults: application.userDefaults) {
             return MapPanelRootController(application: application)
         } else {
             return ClassicApplicationRootController(application: application)

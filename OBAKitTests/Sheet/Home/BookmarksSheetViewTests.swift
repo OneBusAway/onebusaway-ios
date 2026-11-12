@@ -152,4 +152,24 @@ final class BookmarksSheetViewTests: OBATestCase {
 
         #expect(failed)
     }
+
+    // MARK: - Manage Bookmarks and Groups
+
+    /// Reordering bookmarks and editing groups had no way in from the panel,
+    /// which has no Bookmarks tab with an Edit button.
+    @Test @MainActor func `Edit opens the tab's bookmark and group manager`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var changes = 0
+        var closes = 0
+        let coordinator = ManageBookmarksHost.Coordinator(onChange: { changes += 1 }, onClose: { closes += 1 })
+
+        let navigation = ManageBookmarksHost.makeNavigationController(application: application, delegate: coordinator)
+        let manager = navigation.viewControllers.first as? ManageBookmarksAndGroupsViewController
+        #expect(manager != nil)
+
+        coordinator.manageBookmarksReloadData(manager!)
+        coordinator.dismissModalController(navigation)
+        #expect(changes == 1)
+        #expect(closes == 1)
+    }
 }

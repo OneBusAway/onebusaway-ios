@@ -64,11 +64,35 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
 
     // MARK: - Map panel
 
-    @Test func `Map panel toggling on persists immediately`() throws {
+    @Test func `Map panel seeds on by default`() throws {
+        application.userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+        #expect(vm.usesMapPanelExperience)
+        #expect(FeatureFlags.isMapPanelExperienceEnabled(userDefaults: self.application.userDefaults))
+    }
+
+    @Test func `Map panel toggling off opts out and persists immediately`() throws {
+        application.userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+        vm.usesMapPanelExperience = false
+
+        #expect(self.application.userDefaults.object(forKey: FeatureFlags.useMapPanelExperienceKey) as? Bool == false)
+        #expect(!FeatureFlags.isMapPanelExperienceEnabled(userDefaults: self.application.userDefaults))
+    }
+
+    /// UI tests opt out with `-OBAUseMapPanelExperience NO`, which the
+    /// argument domain hands over as a string.
+    @Test func `Map panel honours a string NO from a launch argument`() throws {
+        application.userDefaults.set("NO", forKey: FeatureFlags.useMapPanelExperienceKey)
+        #expect(!FeatureFlags.isMapPanelExperienceEnabled(userDefaults: self.application.userDefaults))
+    }
+
+    @Test func `Map panel toggling back on persists immediately`() throws {
+        application.userDefaults.set(false, forKey: FeatureFlags.useMapPanelExperienceKey)
         let vm = makeViewModel()
         vm.usesMapPanelExperience = true
 
-        #expect(self.application.userDefaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey))
+        #expect(FeatureFlags.isMapPanelExperienceEnabled(userDefaults: self.application.userDefaults))
     }
 
     // MARK: - Stop clustering

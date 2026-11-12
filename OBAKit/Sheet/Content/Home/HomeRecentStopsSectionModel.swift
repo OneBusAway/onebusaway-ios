@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import Foundation
 import OBAKitCore
 
@@ -19,13 +20,24 @@ final class HomeRecentStopsSectionModel: ObservableObject {
 
     @Published private(set) var stops: [Stop] = []
 
+    /// Alarms the rider has set. The Recent index lists them, so the section
+    /// stays on home while any are, even with no recent stops.
+    @Published private(set) var alarmCount = 0
+
     private let application: Application
     private let limit: Int
+    private var alarmFiredCancellable: AnyCancellable?
 
     init(application: Application, limit: Int = HomeSheetSection.itemLimit) {
         self.application = application
         self.limit = limit
         reload()
+        // A fired alarm is deleted from the store while home may be on screen,
+        // which no activation follows: without this its row would linger.
+        alarmFiredCancellable = NotificationCenter.default
+            .publisher(for: .alarmFired)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reload() }
     }
 
     /// Re-reads the store. Called on activation and on region change — a
@@ -42,6 +54,16 @@ final class HomeRecentStopsSectionModel: ObservableObject {
                 .recentStops(in: application.currentRegion)
                 .prefix(limit)
         )
+        // Read-only: the Recent index sweeps expired alarms from the store. This
+        // runs on every activation, so it only counts the ones still due, and
+        // only the ones the index can list: it skips an alarm with no deep link.
+        let now = Date()
+        let alarmCount = application.userDataStore.alarms.filter {
+            $0.deepLink != nil && ($0.tripDate ?? .distantPast) > now
+        }.count
+        if alarmCount != self.alarmCount {
+            self.alarmCount = alarmCount
+        }
         guard reloaded != stops else { return }
         stops = reloaded
     }

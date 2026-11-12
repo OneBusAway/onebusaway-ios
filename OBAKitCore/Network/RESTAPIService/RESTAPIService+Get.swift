@@ -175,6 +175,17 @@ extension RESTAPIService {
         )
     }
 
+    /// The arrival a deep link (an alarm, a shared trip) names.
+    public nonisolated func getTripArrivalDepartureAtStop(deepLink: ArrivalDepartureDeepLink) async throws -> RESTAPIResponse<ArrivalDeparture> {
+        try await getTripArrivalDepartureAtStop(
+            stopID: deepLink.stopID,
+            tripID: deepLink.tripID,
+            serviceDate: deepLink.serviceDate,
+            vehicleID: deepLink.vehicleID,
+            stopSequence: deepLink.stopSequence
+        )
+    }
+
     /// Get info about a single arrival and departure for a stop
     ///
     /// - API Endpoint: `/api/where/arrival-and-departure-for-stop/{id}.json`

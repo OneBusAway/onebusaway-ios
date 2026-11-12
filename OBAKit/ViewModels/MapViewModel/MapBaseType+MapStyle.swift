@@ -33,15 +33,17 @@ extension MapBaseType {
 }
 
 extension MapBaseStyleDescriptor {
-    var mapStyle: MapStyle {
+    /// - Parameter showsTraffic: The Show Traffic setting. Satellite imagery
+    ///   has no traffic layer, as on the UIKit map.
+    func mapStyle(showsTraffic: Bool) -> MapStyle {
         switch self {
         case .standard(let showsPOI):
             // `.muted` matches the UIKit map's `MKMapType.mutedStandard`.
-            return .standard(emphasis: .muted, pointsOfInterest: showsPOI ? .all : .excludingAll)
+            return .standard(emphasis: .muted, pointsOfInterest: showsPOI ? .all : .excludingAll, showsTraffic: showsTraffic)
         case .imagery:
             return .imagery
         case .hybrid(let showsPOI):
-            return .hybrid(pointsOfInterest: showsPOI ? .all : .excludingAll)
+            return .hybrid(pointsOfInterest: showsPOI ? .all : .excludingAll, showsTraffic: showsTraffic)
         }
     }
 }

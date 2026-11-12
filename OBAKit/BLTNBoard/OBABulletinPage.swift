@@ -26,14 +26,14 @@ class ThemedBulletinPage: BLTNPageItem {
 extension BLTNItemManager {
     /// Presents the bulletin in the appropriate host for the current experience.
     ///
-    /// Map-panel experience (`OBAUseMapPanelExperience` on): the SwiftUI home
+    /// Map-panel experience (`OBAUseMapPanelExperience` on, the default): the SwiftUI home
     /// sheet's hosting controller is inside a `UISheetPresentationController`
     /// that clamps modal presentations to the current detent — presenting from
     /// there squeezes the bulletin into the collapsed sheet's ~80pt strip. To
     /// dodge the sheet hierarchy, we present into a dedicated `.alert`-level
     /// `UIWindow` via `BulletinOverlayWindow`.
     ///
-    /// Classic experience (flag off, production default): fall back to the
+    /// Classic experience (flag turned off in Settings): fall back to the
     /// pre-#1163 presentation — `keyWindowFromScene?.topViewController`. The
     /// clamping bug doesn't exist there, so the extra window path (and its
     /// singleton lifecycle) is unnecessary.
@@ -52,12 +52,11 @@ extension BLTNItemManager {
         // Settings writes this flag to `application.userDefaults`, which the
         // OBA app initializes as an app-group suite (see `AppDelegate.swift` and
         // `CoreApplicationKey.defaultValue`). `UserDefaults.standard` reads a
-        // different suite and would always see the flag as OFF. Resolve the
-        // same suite here; if it can't be resolved (unlikely outside tests),
-        // treat the flag as OFF — the classic path is the safe production
-        // default anyway.
+        // different suite and would miss a rider's opt-out. Resolve the same
+        // suite here; if it can't be resolved (unlikely outside tests), assume
+        // the default, the map panel, as the root factory would.
         let appGroupDefaults = Bundle.main.appGroup.flatMap { UserDefaults(suiteName: $0) }
-        let useMapPanelExperience = appGroupDefaults?.bool(forKey: FeatureFlags.useMapPanelExperienceKey) ?? false
+        let useMapPanelExperience = appGroupDefaults.map { FeatureFlags.isMapPanelExperienceEnabled(userDefaults: $0) } ?? true
 
         if useMapPanelExperience {
             // No usable scene means the bulletin disappears with no UI trace.

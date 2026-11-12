@@ -58,6 +58,8 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
             "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>",
+            // The slides are composed around the classic tab bar.
+            "-OBAUseMapPanelExperience", "NO",
             // Start on the Map tab whatever tab the simulator was last left on.
             "-UserDataStore.lastSelectedView", "<integer>0</integer>",
             // A popover tip would sit over the screen and swallow the first tap.

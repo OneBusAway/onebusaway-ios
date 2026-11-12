@@ -692,4 +692,17 @@ final class HomeSectionModelTests: OBATestCase {
         #expect(model.selection.isEmpty)
         #expect(model.loadIfNeeded(now: start.addingTimeInterval(2), staleAfter: 30))
     }
+
+    /// Home only fetches the bookmarks it shows. A Live Activity for another
+    /// bookmark must be left alone rather than told it has no departures.
+    @Test @MainActor
+    func `Bookmarks section has no arrivals to give for a bookmark it hasn't loaded`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
+
+        let model = HomeBookmarksSectionModel(application: application)
+
+        #expect(model.loadedArrivals(for: bookmark) == nil)
+    }
 }

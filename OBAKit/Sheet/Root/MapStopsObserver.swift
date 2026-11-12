@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import Foundation
 import MapKit
 import OBAKitCore
@@ -177,7 +178,15 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     @objc
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         reloadBookmarks()
+        regionChanged.send(region)
     }
+
+    /// Fires when the rider changes region, from More > Region, an
+    /// `add-region` link or automatic selection. An event, not state: a new
+    /// subscriber gets no replay. `MapPanelRootView` moves the map on it: the
+    /// UIKit map has `MapRegionManager` move its `MKMapView`, which the panel
+    /// never shows.
+    let regionChanged = PassthroughSubject<Region, Never>()
 
     private func reloadBookmarks() {
         let regionBookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)

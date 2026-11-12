@@ -85,7 +85,7 @@ final class SettingsViewModel {
         showsTransferArrivalBanner = store.showTransferArrivalBanner
         showsRegionTimeZone = store.showRegionTimeZone
 
-        usesMapPanelExperience = defaults.bool(forKey: FeatureFlags.useMapPanelExperienceKey)
+        usesMapPanelExperience = FeatureFlags.isMapPanelExperienceEnabled(userDefaults: defaults)
         usesNewStopPage = FeatureFlags.isNewStopPageEnabled(userDefaults: defaults)
         clustersStops = defaults.bool(forKey: FeatureFlags.clustersStopsKey)
 
