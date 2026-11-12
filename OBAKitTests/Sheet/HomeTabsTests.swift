@@ -97,18 +97,30 @@ struct HomeTabsTests {
     /// into the home indicator's area, and a little more. Learned from the sheet
     /// as drawn, so the collapsed sheet is the search row and the bar, exactly.
     @Test func `The collapsed detent learns how much taller the sheet is drawn`() {
-        // First sight: asked for 136, drawn 166.5.
-        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 166.5, requested: 136, previous: nil) == 30.5)
-        // Settled again after the correction: the same, give or take.
-        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 138, requested: 108.5, previous: 30.5) == 29.5)
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 166.5, requested: 136) == 30.5)
     }
 
     /// Mid-drag, the sheet is taller than the detent because of the finger, not
     /// the system; that isn't learned.
-    @Test func `A drag doesn't teach the collapsed detent`() {
-        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 160, requested: 108.5, previous: 30.5) == nil)
-        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 400, requested: 136, previous: nil) == nil)
-        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 100, requested: 136, previous: nil) == nil)
+    @Test func `A long drag doesn't teach the collapsed detent`() {
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 400, requested: 136) == nil)
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 100, requested: 136) == nil)
+    }
+
+    /// Learned once: later measurements at the collapsed detent may be a slow
+    /// drag's, which would walk the value along with the finger.
+    @Test func `The collapsed detent learns its extra once per screen`() {
+        let saved = HomeCollapsedDetent.measured.withLock { $0 }
+        defer { HomeCollapsedDetent.measured.withLock { $0 = saved } }
+        HomeCollapsedDetent.measured.withLock { $0 = .init(requested: 100) }
+
+        HomeCollapsedDetent.learn(sheetHeight: 130)
+        HomeCollapsedDetent.learn(sheetHeight: 132)
+        #expect(HomeCollapsedDetent.measured.withLock { $0.sheetExtra } == 30)
+
+        HomeCollapsedDetent.forgetSheetExtra()
+        HomeCollapsedDetent.learn(sheetHeight: 121)
+        #expect(HomeCollapsedDetent.measured.withLock { $0.sheetExtra } == 21)
     }
 
     @Test func `The collapsed detent gives back what the sheet is drawn taller`() {

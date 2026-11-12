@@ -671,7 +671,13 @@ struct MapPanelRootView: View {
                 .onGeometryChange(for: ScreenBottom.self) { proxy in
                     let inset = proxy.safeAreaInsets.bottom
                     return ScreenBottom(edge: proxy.frame(in: .global).maxY + inset, inset: inset)
-                } action: { screenBottom = $0 }
+                } action: { old, new in
+                    screenBottom = new
+                    // A new screen, not the first measurement of this one.
+                    if old.edge != nil, old != new {
+                        HomeCollapsedDetent.forgetSheetExtra()
+                    }
+                }
         }
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)

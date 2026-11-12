@@ -78,6 +78,9 @@ struct HomeSheetView: View {
             .onGeometryChange(for: CGFloat.self) { [screenBottom] proxy in
                 HomeTabs.bottomClearance(sheetBottom: proxy.frame(in: .global).maxY, screen: screenBottom)
             } action: { barClearance = $0 }
+            // On the whole sheet, not just the pages: the bar sits on it, and More,
+            // a UIKit host, sets no sheet background of its own.
+            .searchSheetBackground()
             .task(id: isShowingHomePage) {
                 // Polls while Home is on screen, so bookmark countdowns don't
                 // freeze, and refreshes the moment it comes back: from a stacked

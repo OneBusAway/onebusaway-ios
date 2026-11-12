@@ -126,7 +126,7 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
         /// The search row with its padding; see `AppSheetRoute.homeSearchRowHeight`.
         var searchRowHeight = AppSheetRoute.homeSearchRowHeight
         /// How much taller than its detent the system draws the collapsed sheet,
-        /// once seen; see `sheetExtra(sheetHeight:requested:previous:)`.
+        /// once seen; see `sheetExtra(sheetHeight:requested:)`.
         var sheetExtra: CGFloat?
         /// The height last given to the system.
         var requested: CGFloat?
@@ -160,28 +160,33 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     /// More than the home indicator's area and some: the sheet is being dragged.
     private static let maximumSheetExtra: CGFloat = 44
 
-    /// The most a settled sheet's extra moves between measurements; more, and the
-    /// sheet is being dragged or is on its way to a new height.
-    private static let sheetExtraTolerance: CGFloat = 2
-
     /// How much taller than its detent the system drew the collapsed sheet, from
     /// `sheetHeight` as laid out, or `nil` when that height is the finger's
     /// rather than the system's.
-    static func sheetExtra(sheetHeight: CGFloat, requested: CGFloat, previous: CGFloat?) -> CGFloat? {
+    static func sheetExtra(sheetHeight: CGFloat, requested: CGFloat) -> CGFloat? {
         let extra = sheetHeight - requested
         guard extra >= 0, extra <= maximumSheetExtra else { return nil }
-        if let previous, abs(extra - previous) > sheetExtraTolerance { return nil }
         return extra
     }
 
-    /// Learns `sheetExtra` from the collapsed sheet's height as laid out.
+    /// Learns `sheetExtra` from the collapsed sheet's height as laid out, once:
+    /// it's fixed for a screen, and a later measurement may be a drag's, since the
+    /// detent stays collapsed until a drag settles. `forgetSheetExtra()` when the
+    /// screen changes.
     static func learn(sheetHeight: CGFloat) {
         measured.withLock { measurements in
-            guard let requested = measurements.requested,
-                  let extra = sheetExtra(sheetHeight: sheetHeight, requested: requested, previous: measurements.sheetExtra)
+            guard measurements.sheetExtra == nil,
+                  let requested = measurements.requested,
+                  let extra = sheetExtra(sheetHeight: sheetHeight, requested: requested)
             else { return }
             measurements.sheetExtra = extra
         }
+    }
+
+    /// For a new screen geometry, such as a rotation, where the system's extra
+    /// may differ; the next settled collapsed sheet teaches it again.
+    static func forgetSheetExtra() {
+        measured.withLock { $0.sheetExtra = nil }
     }
 }
 
