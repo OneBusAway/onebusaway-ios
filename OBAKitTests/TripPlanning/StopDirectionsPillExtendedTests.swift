@@ -38,9 +38,9 @@ struct StopDirectionsPillExtendedTests {
         let infoOne = WalkTimeInfo(walkMinutes: 1, distance: 80)
         let infoTen = WalkTimeInfo(walkMinutes: 10, distance: 800)
 
-        #expect(StopDirectionsPill.walk.text(for: infoZero) == String(format: OBALoc("stop_page.walk_chip_minutes_fmt", value: "%d min walk", comment: ""), 0))
-        #expect(StopDirectionsPill.walk.text(for: infoOne) == String(format: OBALoc("stop_page.walk_chip_minutes_fmt", value: "%d min walk", comment: ""), 1))
-        #expect(StopDirectionsPill.walk.text(for: infoTen) == String(format: OBALoc("stop_page.walk_chip_minutes_fmt", value: "%d min walk", comment: ""), 10))
+        #expect(StopDirectionsPill.walk.text(for: infoZero) == "0 min walk")
+        #expect(StopDirectionsPill.walk.text(for: infoOne) == "1 min walk")
+        #expect(StopDirectionsPill.walk.text(for: infoTen) == "10 min walk")
     }
 
     @Test func `Bike pill text formats duration accurately`() {
@@ -48,9 +48,9 @@ struct StopDirectionsPillExtendedTests {
         let infoFive = WalkTimeInfo(walkMinutes: 5, distance: 1500)
         let infoThirty = WalkTimeInfo(walkMinutes: 30, distance: 9000)
 
-        #expect(StopDirectionsPill.bike.text(for: infoZero) == String(format: OBALoc("stop_page.bike_chip_minutes_fmt", value: "%d min bike", comment: ""), 0))
-        #expect(StopDirectionsPill.bike.text(for: infoFive) == String(format: OBALoc("stop_page.bike_chip_minutes_fmt", value: "%d min bike", comment: ""), 5))
-        #expect(StopDirectionsPill.bike.text(for: infoThirty) == String(format: OBALoc("stop_page.bike_chip_minutes_fmt", value: "%d min bike", comment: ""), 30))
+        #expect(StopDirectionsPill.bike.text(for: infoZero) == "0 min bike")
+        #expect(StopDirectionsPill.bike.text(for: infoFive) == "5 min bike")
+        #expect(StopDirectionsPill.bike.text(for: infoThirty) == "30 min bike")
     }
 
     // MARK: - Behavior and Accessibility Hint Equality

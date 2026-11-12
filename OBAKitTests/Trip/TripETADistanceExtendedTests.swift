@@ -49,11 +49,7 @@ struct TripETADistanceExtendedTests {
     }
 
     private var expectedArrivingText: String {
-        OBALoc(
-            "trip_page.card.arriving_at_stop",
-            value: "Arriving at your stop",
-            comment: ""
-        )
+        "Arriving at your stop"
     }
 
     // MARK: - Zero and Boundary Thresholds
@@ -103,11 +99,8 @@ struct TripETADistanceExtendedTests {
         let distance = imperialFormatter.string(fromDistance: 1609.34)
         let line = try #require(make(distance: 1609.34, stops: 2, locale: locale))
 
-        let expectedFmt = OBALoc("trip_page.card.distance_stops_fmt", value: "%1$@ away · %2$d stops", comment: "")
-        let expectedA11y = OBALoc("trip_page.card.distance_stops_a11y_fmt", value: "%1$@ away, %2$d stops away", comment: "")
-
-        #expect(line.text == String(format: expectedFmt, locale: locale, distance, 2))
-        #expect(line.accessibilityText == String(format: expectedA11y, locale: locale, distance, 2))
+        #expect(line.text == "\(distance) away · 2 stops")
+        #expect(line.accessibilityText == "\(distance) away, 2 stops away")
     }
 
     @Test func `Large stop counts format cleanly with expected text`() throws {
@@ -115,11 +108,8 @@ struct TripETADistanceExtendedTests {
         let distance = imperialFormatter.string(fromDistance: 8000.0)
         let line = try #require(make(distance: 8000.0, stops: 24, locale: locale))
 
-        let expectedFmt = OBALoc("trip_page.card.distance_stops_fmt", value: "%1$@ away · %2$d stops", comment: "")
-        let expectedA11y = OBALoc("trip_page.card.distance_stops_a11y_fmt", value: "%1$@ away, %2$d stops away", comment: "")
-
-        #expect(line.text == String(format: expectedFmt, locale: locale, distance, 24))
-        #expect(line.accessibilityText == String(format: expectedA11y, locale: locale, distance, 24))
+        #expect(line.text == "\(distance) away · 24 stops")
+        #expect(line.accessibilityText == "\(distance) away, 24 stops away")
     }
 
     // MARK: - Formatter and Metric Locales

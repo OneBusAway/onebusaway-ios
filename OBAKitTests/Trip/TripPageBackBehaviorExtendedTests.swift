@@ -41,8 +41,7 @@ struct TripPageBackBehaviorExtendedTests {
     @Test func `Accessibility label for pop with non-empty origin title formats with destination name`() {
         let destination = "Pine St & 5th Ave"
         let label = TripPageBackBehavior.pop.accessibilityLabel(originTitle: destination)
-        let expected = String(format: OBALoc("trip_page.back_to_fmt", value: "Back to %@", comment: ""), destination)
-        #expect(label == expected)
+        #expect(label == "Back to \(destination)")
     }
 
     @Test func `Accessibility label for dismiss always returns close regardless of originTitle`() {
