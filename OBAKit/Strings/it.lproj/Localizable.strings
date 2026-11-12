@@ -86,7 +86,7 @@
 "bookmarks_controller.context_menu.unpin" = "Rimuovi";
 
 /* The title to display to confirm the user's action to delete a bookmark. */
-"bookmarks_controller.delete_bookmark.actionsheet.title" = "Elimina promemoria";
+"bookmarks_controller.delete_bookmark.actionsheet.title" = "Elimina segnalibro";
 
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Modifica";

@@ -16,7 +16,7 @@ final class RecentStopsViewModel: ObservableObject {
 
     enum BookmarkToggleResult: Equatable {
         case added
-        case removed
+        case requiresConfirmation
         case multipleBookmarksRequireManagement
         case unavailable
     }
@@ -25,6 +25,7 @@ final class RecentStopsViewModel: ObservableObject {
     @Published private(set) var recentStops: [Stop] = []
     @Published private(set) var bookmarkedStopIDs: Set<StopID> = []
     @Published var isShowingMultipleBookmarksAlert = false
+    @Published private(set) var pendingBookmarkDeletion: Bookmark?
 
     private let application: Application
     // `viewWillAppear` calls `loadData()` every time the Recent tab is shown; without
@@ -71,30 +72,41 @@ final class RecentStopsViewModel: ObservableObject {
 
     @discardableResult
     func toggleBookmark(for stop: Stop) -> BookmarkToggleResult {
-        let regionIdentifier = stop.regionIdentifier ?? application.currentRegion?.regionIdentifier
+        guard let regionIdentifier = stop.regionIdentifier ?? application.currentRegion?.regionIdentifier else {
+            return .unavailable
+        }
+
         let matches = application.userDataStore.bookmarks.filter { bookmark in
-            guard !bookmark.isTripBookmark, bookmark.stopID == stop.id else { return false }
-            if let regionIdentifier {
-                return bookmark.regionIdentifier == regionIdentifier
-            }
-            return true
+            !bookmark.isTripBookmark &&
+            bookmark.stopID == stop.id &&
+            bookmark.regionIdentifier == regionIdentifier
         }
 
         switch matches.count {
         case 0:
-            guard let regionIdentifier else { return .unavailable }
             let bookmark = Bookmark(name: stop.name, regionIdentifier: regionIdentifier, stop: stop)
             application.userDataStore.add(bookmark, to: nil)
             refreshBookmarkedStopIDs()
             return .added
         case 1:
-            application.userDataStore.delete(bookmark: matches[0])
-            refreshBookmarkedStopIDs()
-            return .removed
+            pendingBookmarkDeletion = matches[0]
+            return .requiresConfirmation
         default:
             isShowingMultipleBookmarksAlert = true
             return .multipleBookmarksRequireManagement
         }
+    }
+
+    func confirmBookmarkDeletion() {
+        guard let bookmark = pendingBookmarkDeletion else { return }
+        pendingBookmarkDeletion = nil
+        BookmarkActions(application: application).reportDeletion(of: bookmark)
+        application.userDataStore.delete(bookmark: bookmark)
+        refreshBookmarkedStopIDs()
+    }
+
+    func cancelBookmarkDeletion() {
+        pendingBookmarkDeletion = nil
     }
 
     private func refreshBookmarkedStopIDs() {

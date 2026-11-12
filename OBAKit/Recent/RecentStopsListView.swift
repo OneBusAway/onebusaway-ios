@@ -53,7 +53,7 @@ struct RecentStopsListView: View {
                 list
             }
         }
-        .multipleStopBookmarksAlert(viewModel: viewModel)
+        .recentStopBookmarkPrompts(viewModel: viewModel)
     }
 
     // MARK: - List
@@ -220,7 +220,7 @@ extension View {
         let isBookmarked = viewModel.isBookmarked(stop)
 
         return self
-            .swipeActions(edge: .leading) {
+            .swipeActions(edge: .leading, allowsFullSwipe: !isBookmarked) {
                 Button {
                     viewModel.toggleBookmark(for: stop)
                 } label: {
@@ -235,29 +235,50 @@ extension View {
             }
     }
 
-    /// Presents an alert when a stop has multiple whole-stop bookmarks so a quick
-    /// swipe never silently deletes more than one user-managed bookmark.
-    func multipleStopBookmarksAlert(viewModel: RecentStopsViewModel) -> some View {
-        let isPresented = Binding(
+    /// Presents the confirmation dialog when quick-unbookmarking a stop and
+    /// the fallback alert when a stop has multiple whole-stop bookmarks.
+    func recentStopBookmarkPrompts(viewModel: RecentStopsViewModel) -> some View {
+        let isShowingMultipleAlert = Binding(
             get: { viewModel.isShowingMultipleBookmarksAlert },
             set: { viewModel.isShowingMultipleBookmarksAlert = $0 }
         )
+        let isConfirmingDeletion = Binding(
+            get: { viewModel.pendingBookmarkDeletion != nil },
+            set: { if !$0 { viewModel.cancelBookmarkDeletion() } }
+        )
 
-        return alert(
-            OBALoc(
-                "recent_stops.multiple_bookmarks.title",
-                value: "Multiple Bookmarks",
-                comment: "Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark."
-            ),
-            isPresented: isPresented
-        ) {
-            Button(Strings.ok, role: .cancel) { }
-        } message: {
-            Text(OBALoc(
-                "recent_stops.multiple_bookmarks.body",
-                value: "This stop has multiple bookmarks. Use the Bookmarks tab to manage them.",
-                comment: "Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks."
-            ))
-        }
+        return self
+            .alert(
+                OBALoc(
+                    "recent_stops.multiple_bookmarks.title",
+                    value: "Multiple Bookmarks",
+                    comment: "Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark."
+                ),
+                isPresented: isShowingMultipleAlert
+            ) {
+                Button(Strings.ok, role: .cancel) { }
+            } message: {
+                Text(OBALoc(
+                    "recent_stops.multiple_bookmarks.body",
+                    value: "This stop has multiple bookmarks. Use the Bookmarks tab to manage them.",
+                    comment: "Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks."
+                ))
+            }
+            .confirmationDialog(
+                OBALoc(
+                    "bookmarks_controller.delete_bookmark.actionsheet.title",
+                    value: "Delete Bookmark",
+                    comment: "The title to display to confirm the user's action to delete a bookmark."
+                ),
+                isPresented: isConfirmingDeletion,
+                titleVisibility: .visible
+            ) {
+                Button(Strings.delete, role: .destructive) {
+                    viewModel.confirmBookmarkDeletion()
+                }
+                Button(Strings.cancel, role: .cancel) {
+                    viewModel.cancelBookmarkDeletion()
+                }
+            }
     }
 }

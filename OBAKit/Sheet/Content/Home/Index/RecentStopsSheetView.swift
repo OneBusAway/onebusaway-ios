@@ -104,7 +104,7 @@ struct RecentStopsSheetView: View {
                     }
                     Button(Strings.cancel, role: .cancel) { }
                 }
-                .multipleStopBookmarksAlert(viewModel: viewModel)
+                .recentStopBookmarkPrompts(viewModel: viewModel)
         }
         .searchSheetBackground()
         .task { viewModel.loadData() }
