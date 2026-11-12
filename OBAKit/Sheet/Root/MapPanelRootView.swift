@@ -566,11 +566,10 @@ struct MapPanelRootView: View {
             style: mapViewModel.mapType.styleDescriptor(showingPointsOfInterest: layersModel.showsPointsOfInterest),
             userDefaults: application.userDefaults
         ))
+        // Not animated: animating a safe-area change resizes MapKit's view every
+        // frame, which drew blank grid tiles and a white band under the map as
+        // the sheet settled. The camera still recentres in the new safe area.
         .safeAreaPadding(.bottom, mapBottomPadding)
-        .animation(
-            .interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0),
-            value: mapBottomPadding
-        )
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
         } action: { _, newValue in
