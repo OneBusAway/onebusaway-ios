@@ -85,7 +85,7 @@ final class BookmarkGroupModelExtendedTests: OBATestCase {
         let desc = group.debugDescription
 
         #expect(desc.contains("Evening"))
-        #expect(desc.contains("3"))
+        #expect(desc.contains("sortOrder: 3"))
         #expect(desc.contains(id.uuidString))
     }
 }

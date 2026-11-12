@@ -45,7 +45,7 @@ final class RESTAPIURLBuilderExtendedTests {
         let coord = CLLocationCoordinate2D(latitude: 47.6097, longitude: -122.3331)
         let region = MKCoordinateRegion(center: coord, latitudinalMeters: 500, longitudinalMeters: 500)
 
-        let url = builder.getStops(coordinateRegion: region)
+        let url = builder.getStops(region: region)
         #expect(queryValue(url, "key") == "TEST_KEY")
         #expect(queryValue(url, "lat") != nil)
         #expect(queryValue(url, "lon") != nil)
@@ -53,21 +53,24 @@ final class RESTAPIURLBuilderExtendedTests {
         #expect(queryValue(url, "lonSpan") != nil)
     }
 
-    @Test func `getTripDetails includes default key and tripID in path`() {
-        let url = builder.getTripDetails(tripID: "1_4321098")
+    @Test func `getTrip includes default key and tripID in path`() {
+        let url = builder.getTrip(tripID: "1_4321098", vehicleID: nil, serviceDate: nil)
         #expect(url.path == "/api/where/trip-details/1_4321098.json")
         #expect(queryValue(url, "key") == "TEST_KEY")
     }
 
-    @Test func `getArrivalAndDepartureForStop includes stopID and tripID`() {
-        let url = builder.getArrivalAndDepartureForStop(
-            id: "1_10020",
+    @Test func `getTripArrivalDepartureAtStop includes stopID tripID serviceDate and stopSequence`() {
+        let url = builder.getTripArrivalDepartureAtStop(
+            stopID: "1_10020",
             tripID: "1_998877",
-            serviceDate: Date(timeIntervalSince1970: 1_700_000_000)
+            serviceDate: Date(timeIntervalSince1970: 1_700_000_000),
+            vehicleID: nil,
+            stopSequence: 3
         )
         #expect(url.path == "/api/where/arrival-and-departure-for-stop/1_10020.json")
         #expect(queryValue(url, "tripId") == "1_998877")
         #expect(queryValue(url, "serviceDate") == "1700000000000")
+        #expect(queryValue(url, "stopSequence") == "3")
         #expect(queryValue(url, "key") == "TEST_KEY")
     }
 }

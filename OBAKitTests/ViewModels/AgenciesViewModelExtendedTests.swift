@@ -68,10 +68,13 @@ final class AgenciesViewModelExtendedTests: OBATestCase {
     @Test @MainActor
     func `AgenciesViewModel loadData with failing network triggers completion`() async {
         let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+
+        // Register the catch-all error stub last so region/agency stubs registered
+        // by createApplication take precedence for their specific URLs.
         let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
         dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: error) { _ in true })
 
-        let app = createApplication(dataLoader: dataLoader)
         let vm = AgenciesViewModel(application: app)
 
         do {

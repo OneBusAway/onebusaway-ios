@@ -24,7 +24,7 @@ final class WalkingSpeedManagerExtendedTests: OBATestCase {
 
     @Test func `Calling stopSyncing repeatedly remains idempotent and stable on manual`() {
         store.walkingSpeedSource = .synced
-        store.walkingSpeedMetersPerSecond = 1.6
+        store.walkingSpeedMetersPerSecond = 1.7
 
         let manager = WalkingSpeedManager(
             userDataStore: store,
