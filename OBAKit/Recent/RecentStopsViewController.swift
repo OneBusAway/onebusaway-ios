@@ -6,19 +6,17 @@
 //
 
 import UIKit
+import SwiftUI
 import Combine
 import OBAKitCore
 
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
-public class RecentStopsViewController: UIViewController,
-    AppContext,
-    OBAListViewDataSource,
-    OBAListViewContextMenuDelegate {
+public class RecentStopsViewController: UIViewController, AppContext {
 
     let application: Application
 
-    private let viewModel: RecentStopsViewModel
-    private let listView = OBAListView()
+    let viewModel: RecentStopsViewModel
+    private(set) var hostingController: UIHostingController<RecentStopsListView>?
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Init
@@ -32,8 +30,6 @@ public class RecentStopsViewController: UIViewController,
         title = OBALoc("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
         tabBarItem.image = Icons.recentTabIcon
         tabBarItem.selectedImage = Icons.recentSelectedTabIcon
-
-        listView.obaDataSource = self
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -45,30 +41,75 @@ public class RecentStopsViewController: UIViewController,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: OBALoc("recent_stops.delete_all", value: "Delete All", comment: "A button that deletes all of the recent stops in the app."), style: .plain, target: self, action: #selector(deleteAll))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: OBALoc("recent_stops.delete_all", value: "Delete All", comment: "A button that deletes all of the recent stops in the app."),
+            style: .plain,
+            target: self,
+            action: #selector(deleteAll)
+        )
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        view.addSubview(listView)
-        listView.contextMenuDelegate = self
-        listView.pinToSuperview(.edges)
 
+        let listView = RecentStopsListView(
+            viewModel: viewModel,
+            navigation: makeNavigationHandler()
+        )
+        let hostingController = UIHostingController(rootView: listView)
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.pinToSuperview(.edges)
+        hostingController.didMove(toParent: self)
+        self.hostingController = hostingController
+
+        updateDeleteAllButtonState()
         bindViewModel()
     }
 
     private func bindViewModel() {
-        // `@Published` fires from `willSet`, so a synchronous sink would read the *old*
-        // stored values via `items(for:)` (alarms / recentStops). The main-queue hop
-        // defers the closure until after the property writes complete.
-        Publishers.CombineLatest(viewModel.$alarms, viewModel.$recentStops)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.listView.applyData(animated: true) }
+        viewModel.$recentStops
+            .sink { [weak self] stops in
+                self?.navigationItem.rightBarButtonItem?.isEnabled = !stops.isEmpty
+            }
             .store(in: &cancellables)
+    }
+
+    private func updateDeleteAllButtonState() {
+        navigationItem.rightBarButtonItem?.isEnabled = !viewModel.recentStops.isEmpty
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         viewModel.loadData()
+        updateDeleteAllButtonState()
+    }
+
+    // MARK: - Navigation Handler
+
+    func makeNavigationHandler() -> RecentStopsNavigationHandler {
+        RecentStopsNavigationHandler(
+            selectStop: { [weak self] stop in
+                guard let self else { return }
+                self.application.viewRouter.navigateTo(stopID: stop.id, from: self)
+            },
+            selectAlarm: { [weak self] alarmViewModel in
+                self?.onSelectAlarm(alarmViewModel)
+            },
+            deleteAlarm: { [weak self] alarmViewModel in
+                self?.onDeleteAlarm(alarmViewModel)
+            },
+            exploreMap: { [weak self] in
+                guard let self else { return }
+                self.application.viewRouter.rootNavigateTo(page: .map, from: self)
+            },
+            makeStopPreview: { [weak self] stopID in
+                guard let self else { return AnyView(EmptyView()) }
+                return AnyView(
+                    StopViewControllerPreview(stopID: stopID, application: self.application)
+                        .frame(width: 320, height: 400)
+                )
+            }
+        )
     }
 
     // MARK: - Actions
@@ -78,6 +119,7 @@ public class RecentStopsViewController: UIViewController,
 
         let alertController = UIAlertController.deletionAlert(title: title) { [weak self] _ in
             self?.viewModel.deleteAllRecentStops()
+            self?.updateDeleteAllButtonState()
         }
 
         present(alertController, animated: true, completion: nil)
@@ -118,79 +160,5 @@ public class RecentStopsViewController: UIViewController,
 
     func onDeleteAlarm(_ alarmViewModel: AlarmViewModel) {
         viewModel.delete(alarm: alarmViewModel.alarm)
-    }
-
-    // MARK: - Sections
-
-    private var alarmSection: OBAListViewSection? {
-        let alarms = viewModel.alarms
-        guard alarms.count > 0 else { return nil }
-
-        let rows = alarms.compactMap { alarm in
-            return AlarmViewModel(withAlarm: alarm, onSelect: onSelectAlarm, onDelete: onDeleteAlarm)
-        }
-
-        let title = OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller")
-        return OBAListViewSection(id: "alarms", title: title, contents: rows)
-    }
-
-    private var stopsSection: OBAListViewSection? {
-        let stops = viewModel.recentStops
-        guard stops.count > 0 else { return nil }
-
-        let rows = stops.map { stop -> StopRowItem in
-            let onSelect: OBAListViewAction<StopRowItem> = { [unowned self] viewModel in
-                self.application.viewRouter.navigateTo(stopID: viewModel.stopID, from: self)
-            }
-
-            let onDelete: OBAListViewAction<StopRowItem> = { [unowned self] _ in
-                self.viewModel.delete(recentStop: stop)
-            }
-
-            return StopRowItem(withStop: stop, onSelect: onSelect, onDelete: onDelete)
-        }
-
-        let title = viewModel.alarms.count > 0 ? Strings.recentStops : nil
-        return OBAListViewSection(id: "recent_stops", title: title, contents: rows)
-    }
-
-    // MARK: - OBAListView
-
-    public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return [alarmSection, stopsSection].compactMap { $0 }
-    }
-
-    public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
-        let title = OBALoc("recent_stops.empty_set.title", value: "No Recent Stops", comment: "Title for the empty set indicator on the Recent Stops controller.")
-        let subtitle = OBALoc("recent_stops.empty_set.body", value: "Transit stops that you view in the app will appear here.", comment: "Body for the empty set indicator on the Recent Stops controller.")
-        let buttonText = OBALoc("recent_stops.empty_set.button", value: "Find Stops on Maps", comment: "The button title for taking the user to the map view to find stops.")
-        let button = ActivityIndicatedButton.Configuration(
-            text: buttonText,
-            largeContentImage: Icons.mapTabIcon,
-            showsActivityIndicatorOnTap: false) { [weak self] in
-            guard let self = self else { return }
-            self.application.viewRouter.rootNavigateTo(page: .map, from: self)
-        }
-
-        return .standard(.init(title: title, body: subtitle, buttonConfig: button))
-    }
-
-    fileprivate var currentPreviewingViewController: UIViewController?
-    public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
-        guard let stopViewModel = item.as(StopRowItem.self) else { return nil }
-
-        let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
-            let stopVC = self.application.viewRouter.makeStopController(stopID: stopViewModel.stopID)
-            self.currentPreviewingViewController = stopVC
-            return stopVC
-        }
-
-        let commitPreviewAction: VoidBlock = { [unowned self] in
-            guard let vc = self.currentPreviewingViewController else { return }
-            (vc as? Previewable)?.exitPreviewMode()
-            self.application.viewRouter.navigate(to: vc, from: self)
-        }
-
-        return OBAListViewMenuActions(previewProvider: previewProvider, performPreviewAction: commitPreviewAction, contextMenuProvider: nil)
     }
 }

@@ -185,11 +185,7 @@ struct RecentStopsSheetView: View {
                         HomeStopRow(stop: stop) {
                             coordinator.push(.stopDetails(stopID: stop.id))
                         }
-                        .swipeActions(edge: .trailing) {
-                            Button(Strings.delete, role: .destructive) {
-                                viewModel.delete(recentStop: stop)
-                            }
-                        }
+                        .recentStopSwipeActions(for: stop, viewModel: viewModel)
                     }
                 } header: {
                     // Only beside the Alarms section, which needs telling apart.

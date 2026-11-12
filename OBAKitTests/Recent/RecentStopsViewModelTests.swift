@@ -291,4 +291,152 @@ final class RecentStopsViewModelTests: OBATestCase {
         // no accidental nil == nil matches.
         #expect(viewModel.recentStops.isEmpty)
     }
+
+    // MARK: - Quick Bookmarking
+
+    @Test @MainActor
+    func `isBookmarked is false initially and true after toggleBookmark`() {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let stop = try! Fixtures.loadSomeStops().first!
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        #expect(!viewModel.isBookmarked(stop))
+        #expect(app.userDataStore.findBookmark(stopID: stop.id) == nil)
+
+        viewModel.toggleBookmark(for: stop)
+
+        #expect(viewModel.isBookmarked(stop))
+        let saved = app.userDataStore.findBookmark(stopID: stop.id)
+        #expect(saved != nil)
+        #expect(saved?.name == stop.name)
+        #expect(saved?.isTripBookmark == false)
+    }
+
+    @Test @MainActor
+    func `toggleBookmark removes existing whole-stop bookmark on second toggle`() {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let stop = try! Fixtures.loadSomeStops().first!
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+        viewModel.toggleBookmark(for: stop)
+        #expect(viewModel.isBookmarked(stop))
+
+        viewModel.toggleBookmark(for: stop)
+
+        #expect(!viewModel.isBookmarked(stop))
+        #expect(app.userDataStore.findBookmark(stopID: stop.id) == nil)
+    }
+
+    @Test @MainActor
+    func `toggleBookmark preserves trip bookmarks for the same stop`() throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let arrivalDeparture = try Fixtures.loadRESTAPIPayload(
+            type: ArrivalDeparture.self,
+            fileName: "arrival-and-departure-for-stop-1_11420.json"
+        )
+        let stop = try #require(arrivalDeparture.stop)
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+
+        let tripBookmark = Bookmark(
+            name: "My Commute",
+            regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier,
+            arrivalDeparture: arrivalDeparture
+        )
+        app.userDataStore.add(tripBookmark, to: nil)
+        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        // Trip bookmark alone does not count as a whole-stop bookmark.
+        #expect(!viewModel.isBookmarked(stop))
+
+        viewModel.toggleBookmark(for: stop)
+        #expect(viewModel.isBookmarked(stop))
+        #expect(app.userDataStore.bookmarks.contains(where: { $0.id == tripBookmark.id }))
+
+        viewModel.toggleBookmark(for: stop)
+        #expect(!viewModel.isBookmarked(stop))
+        #expect(app.userDataStore.bookmarks.contains(where: { $0.id == tripBookmark.id }))
+    }
+
+    @Test @MainActor
+    func `External bookmark changes sync bookmarkedStopIDs via notification`() async throws {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let stop = try Fixtures.loadSomeStops().first!
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+        #expect(!viewModel.isBookmarked(stop))
+
+        let bookmark = Bookmark(
+            name: stop.name,
+            regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier,
+            stop: stop
+        )
+        app.userDataStore.add(bookmark, to: nil)
+
+        for _ in 0..<20 where !viewModel.isBookmarked(stop) {
+            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(viewModel.isBookmarked(stop))
+
+        app.userDataStore.delete(bookmark: bookmark)
+
+        for _ in 0..<20 where viewModel.isBookmarked(stop) {
+            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(!viewModel.isBookmarked(stop))
+    }
+
+    @Test @MainActor
+    func `toggleBookmark is a no-op when region is unavailable`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let nullIslandLocation = CLLocation(latitude: 0, longitude: 0)
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: nullIslandLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        locationService.startUpdates()
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader
+        )
+        let app = Application(config: config)
+        try #require(app.currentRegion == nil)
+
+        let stop = try Fixtures.loadSomeStops().first!
+        stop.regionIdentifier = nil
+
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.toggleBookmark(for: stop)
+
+        #expect(!viewModel.isBookmarked(stop))
+        #expect(app.userDataStore.bookmarks.isEmpty)
+    }
 }

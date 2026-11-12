@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import Foundation
 import OBAKitCore
 
@@ -15,19 +16,31 @@ final class RecentStopsViewModel: ObservableObject {
 
     @Published private(set) var alarms: [Alarm] = []
     @Published private(set) var recentStops: [Stop] = []
+    @Published private(set) var bookmarkedStopIDs: Set<StopID> = []
 
     private let application: Application
     // `viewWillAppear` calls `loadData()` every time the Recent tab is shown; without
     // this flag a user with no current region would flood the log on every tab switch.
     private var didWarnNilRegion = false
+    private var cancellables = Set<AnyCancellable>()
 
     init(application: Application) {
         self.application = application
+
+        NotificationCenter.default.publisher(for: .bookmarksDidChange, object: application.userDataStore)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshBookmarkedStopIDs()
+            }
+            .store(in: &cancellables)
+
+        refreshBookmarkedStopIDs()
     }
 
     func loadData() {
         application.userDataStore.deleteExpiredAlarms()
         alarms = application.userDataStore.alarms
+        refreshBookmarkedStopIDs()
         guard let currentRegion = application.currentRegion else {
             // No current region (mid-region-change, first launch race, denied location).
             // The user sees a generic empty state — log once per VM so the condition is
@@ -42,6 +55,44 @@ final class RecentStopsViewModel: ObservableObject {
         // Region resolved — re-arm the warn so a *later* region loss is still observable.
         didWarnNilRegion = false
         recentStops = application.userDataStore.recentStops(in: currentRegion)
+    }
+
+    func isBookmarked(_ stop: Stop) -> Bool {
+        bookmarkedStopIDs.contains(stop.id)
+    }
+
+    func toggleBookmark(for stop: Stop) {
+        let regionIdentifier = stop.regionIdentifier ?? application.currentRegion?.regionIdentifier
+        let existing = application.userDataStore.bookmarks.filter { bookmark in
+            guard !bookmark.isTripBookmark, bookmark.stopID == stop.id else { return false }
+            if let regionIdentifier {
+                return bookmark.regionIdentifier == regionIdentifier
+            }
+            return true
+        }
+
+        if !existing.isEmpty {
+            for bookmark in existing {
+                application.userDataStore.delete(bookmark: bookmark)
+            }
+        } else if let regionIdentifier {
+            let bookmark = Bookmark(name: stop.name, regionIdentifier: regionIdentifier, stop: stop)
+            application.userDataStore.add(bookmark, to: nil)
+        }
+
+        refreshBookmarkedStopIDs()
+    }
+
+    private func refreshBookmarkedStopIDs() {
+        guard let currentRegion = application.currentRegion else {
+            bookmarkedStopIDs = []
+            return
+        }
+
+        let stopBookmarks = application.userDataStore
+            .findBookmarks(in: currentRegion)
+            .filter { !$0.isTripBookmark }
+        bookmarkedStopIDs = Set(stopBookmarks.map(\.stopID))
     }
 
     func deleteAllRecentStops() {
