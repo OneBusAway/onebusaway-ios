@@ -229,10 +229,9 @@ final class AppSheetRouteTests {
         #expect(AppSheetRoute.largeDetent == .fraction(0.99))
     }
 
-    @Test func `Home collapsed height matches map bottom inset`() {
-        // Shared with `MapPanelRootView` so the map's bottom safe-area padding
-        // matches the collapsed sheet — keep the constant pinned.
-        // The search row and the tab bar; see `HomeTabsTests`.
+    @Test func `Home collapsed height estimate is the search row and the tab bar`() {
+        // The first-frame estimate, before the search row is measured; see
+        // `HomeTabsTests`.
         #expect(AppSheetRoute.homeCollapsedHeight == 136)
     }
 

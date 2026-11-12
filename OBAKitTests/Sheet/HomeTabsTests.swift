@@ -85,7 +85,7 @@ struct HomeTabsTests {
     /// may cross it, as in Find My, so the bar needs no room under it there; a
     /// sheet reaching the screen's edge does.
     @Test func `The bar clears the home indicator only on a sheet reaching the screen's edge`() {
-        let screen = ScreenBottom(safeArea: 840, edge: 874)
+        let screen = ScreenBottom(edge: 874, inset: 34)
         // Floating: 11 pt short of the edge, overlapping the indicator.
         #expect(HomeTabs.bottomClearance(sheetBottom: 863, screen: screen) == 0)
         #expect(HomeTabs.bottomClearance(sheetBottom: 874, screen: screen) == 34)
@@ -121,11 +121,6 @@ struct HomeTabsTests {
     @Test func `The collapsed detent fits the measured search row`() {
         #expect(HomeCollapsedDetent.height(.init(searchRowHeight: 90)) == 90 + AppSheetRoute.homeTabBarHeight)
         #expect(HomeCollapsedDetent.height(.init(searchRowHeight: 90, sheetExtra: 26)) == 90 + AppSheetRoute.homeTabBarHeight - 26)
-    }
-
-    /// Find My's spacing: the search field sits 8 pt over the tab bar.
-    @Test func `The search field sits 8 pt over the tab bar`() {
-        #expect(HomeTabs.searchToTabBarSpacing == 8)
     }
 
     // MARK: - See all

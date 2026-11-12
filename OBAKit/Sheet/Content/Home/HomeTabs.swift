@@ -106,8 +106,8 @@ enum HomeTabs {
     /// screen's edge, and the home indicator may cross it, as in Find My; a sheet
     /// reaching the edge needs the whole inset.
     static func bottomClearance(sheetBottom: CGFloat, screen: ScreenBottom) -> CGFloat {
-        guard screen.edge.isFinite, sheetBottom >= screen.edge - 1 else { return 0 }
-        return screen.edge - screen.safeArea
+        guard let edge = screen.edge, sheetBottom >= edge - 1 else { return 0 }
+        return screen.inset
     }
 }
 
@@ -122,7 +122,7 @@ enum HomeTabs {
 /// coordinator's selection and the comparisons against
 /// `AppSheetRoute.homeCollapsedDetent` keep matching.
 nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
-    nonisolated struct Measurements: Equatable, Sendable {
+    nonisolated struct Measurements: Sendable {
         /// The search row with its padding; see `AppSheetRoute.homeSearchRowHeight`.
         var searchRowHeight = AppSheetRoute.homeSearchRowHeight
         /// How much taller than its detent the system draws the collapsed sheet,
@@ -146,6 +146,12 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     /// default. The sheet's layout passes ask for the height again, so a
     /// measurement takes effect on the pass after it lands.
     static let measured = Mutex(Measurements())
+
+    /// The collapsed sheet as drawn: the search row as measured over the bar.
+    /// `AppSheetRoute.homeCollapsedHeight` until the row is measured.
+    static var drawnHeight: CGFloat {
+        measured.withLock { $0.searchRowHeight } + AppSheetRoute.homeTabBarHeight
+    }
 
     static func height(_ measurements: Measurements) -> CGFloat {
         measurements.searchRowHeight + AppSheetRoute.homeTabBarHeight - (measurements.sheetExtra ?? 0)
@@ -179,11 +185,12 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     }
 }
 
-/// Where the screen's bottom edge and its safe area's bottom are, in window
-/// coordinates; see `HomeTabs.bottomClearance`.
+/// The screen's bottom edge, in window coordinates, and the safe-area inset over
+/// it; see `HomeTabs.bottomClearance`.
 nonisolated struct ScreenBottom: Equatable, Sendable {
-    var safeArea: CGFloat = .infinity
-    var edge: CGFloat = .infinity
+    /// `nil` until measured.
+    var edge: CGFloat?
+    var inset: CGFloat = 0
 }
 
 extension EnvironmentValues {

@@ -339,8 +339,8 @@ nonisolated extension AppSheetRoute {
         return .fraction(0.99)
     }
 
-    /// Height of the home sheet's smallest detent. Shared by `MapPanelRootView`
-    /// so the map's bottom safe-area padding matches the collapsed sheet.
+    /// The collapsed home sheet's height at the default text size: the estimate
+    /// for the first frame, before `HomeCollapsedDetent` measures the search row.
     ///
     /// The search row and the tab bar under it, and nothing else, so the
     /// collapsed sheet reads as those two controls rather than as a list that got

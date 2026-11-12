@@ -125,13 +125,15 @@ struct MapPanelBottomPaddingTests {
         #expect(height == MapPanelBottomPadding.minimumPaddingFloor)
     }
 
-    @Test func `Estimated height resolves homeCollapsedHeight detent`() {
+    /// The collapsed sheet as drawn, which follows the search row's measured
+    /// height, so the map's padding matches it at any text size.
+    @Test func `Estimated height resolves the collapsed home detent to the sheet as drawn`() {
         let height = MapPanelBottomPadding.estimatedHeight(
             for: AppSheetRoute.homeCollapsedDetent,
             halfScreenHeight: 400,
             totalMapHeight: 800
         )
-        #expect(height == AppSheetRoute.homeCollapsedHeight)
+        #expect(height == HomeCollapsedDetent.drawnHeight)
     }
 
     @Test func `Estimated height resolves tripPlannerTipHeight detent`() {

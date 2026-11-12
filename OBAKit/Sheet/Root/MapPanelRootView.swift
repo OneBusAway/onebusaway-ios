@@ -121,7 +121,7 @@ struct MapPanelBottomPadding {
         totalMapHeight: CGFloat
     ) -> CGFloat {
         if detent == AppSheetRoute.homeCollapsedDetent {
-            return AppSheetRoute.homeCollapsedHeight
+            return HomeCollapsedDetent.drawnHeight
         } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
             return AppSheetRoute.tripPlannerTipHeight
         } else if detent == .medium {
@@ -669,8 +669,8 @@ struct MapPanelRootView: View {
             Color.clear
                 .ignoresSafeArea(.keyboard)
                 .onGeometryChange(for: ScreenBottom.self) { proxy in
-                    let safeArea = proxy.frame(in: .global).maxY
-                    return ScreenBottom(safeArea: safeArea, edge: safeArea + proxy.safeAreaInsets.bottom)
+                    let inset = proxy.safeAreaInsets.bottom
+                    return ScreenBottom(edge: proxy.frame(in: .global).maxY + inset, inset: inset)
                 } action: { screenBottom = $0 }
         }
         .floatingSheet(coordinator: coordinator) { route in
@@ -845,6 +845,13 @@ struct MapPanelRootView: View {
 
                 sheetHeight = newValue
 
+                // Settled at the collapsed detent, the home sheet's height is the
+                // system's doing; see `HomeCollapsedDetent`. Measured here, on the
+                // whole sheet: the home view's own frame falls a few points short.
+                if route == .home, coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent {
+                    HomeCollapsedDetent.learn(sheetHeight: newValue)
+                }
+
                 /// Opacity calculation — fade band sits immediately
                 /// below `halfScreenHeight`.
                 let fadeStart = halfScreenHeight - toolbarFadeRange
@@ -855,14 +862,6 @@ struct MapPanelRootView: View {
                 let diff = abs(newValue - oldValue)
                 let duration = max(min(diff / 100, 0.3), 0)
                 toolbarsAnimationDuration = duration
-            }
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                // Settled at the collapsed detent, the home sheet's height is the
-                // system's doing; see `HomeCollapsedDetent`.
-                guard route == .home,
-                      coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent
-                else { return }
-                HomeCollapsedDetent.learn(sheetHeight: height)
             }
             .ignoresSafeArea()
     }

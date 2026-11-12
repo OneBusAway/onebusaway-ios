@@ -23,12 +23,14 @@ struct HomeSheetView: View {
 
     /// See `HomeTabs.bottomClearance`.
     @Environment(\.screenBottom) private var screenBottom
-    @State private var sheetBottom: CGFloat = 0
+    @State private var barClearance: CGFloat = 0
 
     @State private var selectedTab: HomeTab = .home
     /// Home's page above the tab bar; see `HomeTabs.showsHomeList`.
     @State private var homePageHeight: CGFloat = 0
-    /// See `HomeCollapsedDetent`.
+    /// The search row as measured, for `showsHomeList`. Mirrors
+    /// `HomeCollapsedDetent.measured`, which the detent reads but which, being a
+    /// lock rather than state, doesn't redraw this view.
     @State private var searchRowHeight = AppSheetRoute.homeSearchRowHeight
 
     /// Used by the bookmark rows to format distances.
@@ -65,12 +67,17 @@ struct HomeSheetView: View {
             if showsTabs {
                 HomeTabBar(
                     selection: selectedTab,
-                    bottomClearance: HomeTabs.bottomClearance(sheetBottom: sheetBottom, screen: screenBottom),
+                    bottomClearance: barClearance,
                     onSelect: select(_:)
                 )
             }
         }
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { sheetBottom = $0 }
+            // Reduced to the clearance in the transform, so a drag, which moves
+            // the sheet every frame, redraws this view only when the clearance
+            // changes.
+            .onGeometryChange(for: CGFloat.self) { [screenBottom] proxy in
+                HomeTabs.bottomClearance(sheetBottom: proxy.frame(in: .global).maxY, screen: screenBottom)
+            } action: { barClearance = $0 }
             .task(id: isShowingHomePage) {
                 // Polls while Home is on screen, so bookmark countdowns don't
                 // freeze, and refreshes the moment it comes back: from a stacked
@@ -105,7 +112,7 @@ struct HomeSheetView: View {
                     tabContent(tab)
                         // The sheet's own color, which the bar sits on: the
                         // pages' default white left a seam where the bar began.
-                        .background(Color(.systemGroupedBackground))
+                        .background(Color.searchSheetBackground)
                         .environment(\.isHomeSheetTab, tab != .home)
                         .toolbar(.hidden, for: .tabBar)
                         .tag(tab)
