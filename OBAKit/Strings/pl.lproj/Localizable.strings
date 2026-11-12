@@ -1188,9 +1188,6 @@
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Użyj panelu mapy";
 
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "Uruchom aplikację ponownie, aby zastosować.";
-
 /* Settings > Experimental section > New stop page toggle */
 "settings_controller.experimental_section.new_stop_page" = "Użyj nowej strony przystanku";
 

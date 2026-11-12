@@ -1188,9 +1188,6 @@
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "지도 패널 사용";
 
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "적용하려면 앱을 다시 실행하세요.";
-
 /* Settings > Experimental section > New stop page toggle */
 "settings_controller.experimental_section.new_stop_page" = "새 정류장 페이지 사용";
 

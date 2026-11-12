@@ -1188,9 +1188,6 @@
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Utiliser le panneau de carte";
 
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "Redémarrez l'app pour appliquer.";
-
 /* Settings > Experimental section > New stop page toggle */
 "settings_controller.experimental_section.new_stop_page" = "Utiliser la nouvelle page d'arrêt";
 

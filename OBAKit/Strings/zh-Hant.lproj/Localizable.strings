@@ -1188,9 +1188,6 @@
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "使用地圖面板體驗";
 
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "重新啟動 App 以套用變更。";
-
 /* Settings > Experimental section > New stop page toggle */
 "settings_controller.experimental_section.new_stop_page" = "使用新版站牌頁面";
 
