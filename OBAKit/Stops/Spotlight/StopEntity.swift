@@ -33,6 +33,9 @@ nonisolated public struct StopEntity: IndexedEntity {
     let subtitle: String?
     let latitude: Double?
     let longitude: Double?
+    /// The stop's transport glyph as PNG, which visual intelligence shows beside
+    /// it. Nil everywhere else, so Spotlight and Shortcuts look as they did.
+    var imageData: Data?
 
     public var id: String {
         StopEntityMapping.identifier(regionID: regionID, stopID: stopID)
@@ -51,7 +54,11 @@ nonisolated public struct StopEntity: IndexedEntity {
     }
 
     public var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(title)", subtitle: subtitle.map { "\($0)" })
+        DisplayRepresentation(
+            title: "\(title)",
+            subtitle: subtitle.map { "\($0)" },
+            image: imageData.map { DisplayRepresentation.Image(data: $0) }
+        )
     }
 
     /// Lets Spotlight find the stop by its code and place it on a map. These
@@ -153,7 +160,9 @@ nonisolated enum StopEntityMapping {
         return AppLinksRouter.StopDestination(stopID: String(stopID), regionID: regionID)
     }
 
-    static func entity(for stop: Stop, regionID: Int) -> StopEntity {
+    /// - Parameter includesImage: Draws the stop's transport glyph, for visual
+    ///   intelligence. Spotlight and Shortcuts entities leave it out.
+    static func entity(for stop: Stop, regionID: Int, includesImage: Bool = false) -> StopEntity {
         // `routes` is nil on a stop decoded from the REST API without them.
         let parts = [
             Formatters.adjectiveFormOfCardinalDirection(stop.direction),
@@ -168,8 +177,16 @@ nonisolated enum StopEntityMapping {
             code: stop.code.isEmpty ? nil : stop.code,
             subtitle: parts.isEmpty ? nil : parts.joined(separator: " • "),
             latitude: stop.location.coordinate.latitude,
-            longitude: stop.location.coordinate.longitude
+            longitude: stop.location.coordinate.longitude,
+            imageData: includesImage ? transportGlyph(for: stop) : nil
         )
+    }
+
+    /// The glyph the home sheet's stop rows show. `routes` is nil on a stop
+    /// decoded without them, and its route type would trap on that.
+    private static func transportGlyph(for stop: Stop) -> Data? {
+        let routeType = stop.routes == nil ? Route.RouteType.unknown : stop.prioritizedRouteTypeForDisplay
+        return Icons.squircleTransportIcon(for: routeType).pngData()
     }
 
     /// Bookmarked stops in store order, then recent ones, each stop once, from
