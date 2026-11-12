@@ -122,7 +122,7 @@ struct NextDepartureComplicationView: View {
             case .unavailable(let bookmark):
                 ComplicationRectangularFallbackContent(
                     title: bookmark.displayTitle,
-                    subtitle: WidgetStrings.tapForMoreInformation,
+                    subtitle: WidgetStrings.complicationUnavailable,
                     systemImage: nil
                 )
                 .widgetAccentable()

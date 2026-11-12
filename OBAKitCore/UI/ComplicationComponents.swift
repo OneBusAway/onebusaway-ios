@@ -64,7 +64,7 @@ public enum ComplicationPresentation {
         return Color(uiColor: formatters.colorForScheduleStatus(scheduleStatus))
     }
 
-    /// Combined VoiceOver label pairing route + headsign with a ticking spoken countdown.
+    /// Combined VoiceOver label pairing route, headsign, ticking spoken countdown, clock time, and stop name.
     public static func departureAccessibilityLabel(
         for departure: ComplicationDeparture,
         formatters: Formatters,
@@ -79,7 +79,10 @@ public enum ComplicationPresentation {
             isLuminanceReduced: isLuminanceReduced,
             locale: locale
         )
-        return Text(verbatim: "\(routeLabel), ") + countdown
+        let clockTime = formatters.timeFormatter.string(from: departure.departureDate)
+        return Text(verbatim: "\(routeLabel), ")
+            + countdown
+            + Text(verbatim: ", \(clockTime), \(departure.stopName)")
     }
 }
 
@@ -282,13 +285,20 @@ public struct ComplicationCircularFallbackContent: View {
                     .font(.system(.caption2, design: .rounded, weight: .heavy))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
+                HStack(spacing: 2) {
+                    Image(systemName: systemImage)
+                        .font(.caption2.weight(.semibold))
+                    Text(verbatim: "--")
+                        .font(.system(.headline, design: .rounded, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
             } else {
                 Image(systemName: systemImage)
                     .font(.caption2.weight(.semibold))
+                Text(verbatim: "--")
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .foregroundStyle(.secondary)
             }
-            Text(verbatim: "--")
-                .font(.system(.headline, design: .rounded, weight: .bold))
-                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 4)
         .accessibilityElement(children: .ignore)

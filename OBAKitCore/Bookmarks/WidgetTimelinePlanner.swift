@@ -50,6 +50,13 @@ public struct WidgetTimelinePlanner: Sendable {
         self.maximumEntries = max(1, maximumEntries)
     }
 
+    /// Planner tuned for single-bookmark complication timelines: emits one entry
+    /// at every departure boundary (zero minimum spacing) and raises the entry
+    /// cap so frequent routes do not truncate before the 30-minute reload.
+    public static func singleBookmarkComplication() -> WidgetTimelinePlanner {
+        WidgetTimelinePlanner(minimumEntrySpacing: 0, maximumEntries: 64)
+    }
+
     public func plan(departureDates: [Date], now: Date) -> Plan {
         let upcoming = Set(departureDates.filter { $0 > now }).sorted()
 
@@ -86,5 +93,11 @@ extension WidgetTimelinePlanner {
     /// reload interval.
     public static func departures(_ departures: [ArrivalDeparture], visibleAt entryDate: Date) -> [ArrivalDeparture] {
         departures.filter { $0.arrivalDepartureDate > entryDate }
+    }
+
+    /// Boardable departures strictly after `entryDate` by their departure
+    /// timestamp, used by single-departure complications.
+    public static func boardableDepartures(_ departures: [ArrivalDeparture], visibleAt entryDate: Date) -> [ArrivalDeparture] {
+        departures.filter { $0.departureEnabled && $0.hasPlausibleDepartureDate && $0.departureDate > entryDate }
     }
 }

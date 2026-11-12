@@ -109,17 +109,23 @@ public final class WatchComplicationDataLoader {
         }
 
         let bookmarkStore = WatchBookmarkStore(userDefaults: userDefaults)
+        guard !bookmarkStore.bookmarks.isEmpty else {
+            Logger.info("WatchComplication: no bookmarks to load data for.")
+            return .empty
+        }
+
         let regionStore = ResolvedRegionStore(userDefaults: userDefaults)
         guard let region = regionStore.region(bundledRegionsFilePath: bundledRegionsFilePath) ?? bookmarkStore.syncedRegion else {
             Logger.error("WatchComplication: no region available.")
-            return .empty
+            let fallback = NextDepartureComplication.fallbackBookmark(from: bookmarkStore.bookmarks)
+            return WatchComplicationContent(bookmark: fallback, departures: [:], fetchedAt: nil)
         }
 
         guard let topBookmark = NextDepartureComplication.topBookmark(
             from: bookmarkStore.bookmarks,
             regionIdentifier: region.regionIdentifier
         ) else {
-            Logger.info("WatchComplication: no bookmarks to load data for.")
+            Logger.info("WatchComplication: no bookmarks to load data for in current region.")
             return .empty
         }
 
@@ -156,14 +162,18 @@ public final class WatchComplicationDataLoader {
     /// advance locally without consuming extra complication reload budget.
     public static func buildTimeline(from content: WatchComplicationContent, now: Date = Date()) -> Timeline<WatchComplicationEntry> {
         let bookmarks = content.bookmark.map { [$0] } ?? []
-        let plan = WidgetTimelinePlanner().plan(
-            departureDates: content.departures.values.flatMap { $0.map(\.arrivalDepartureDate) },
+        let boardableDates = content.departures.values
+            .flatMap { $0 }
+            .filter { $0.departureEnabled && $0.hasPlausibleDepartureDate }
+            .map(\.departureDate)
+        let plan = WidgetTimelinePlanner.singleBookmarkComplication().plan(
+            departureDates: boardableDates,
             now: now
         )
 
         let entries = plan.entryDates.map { entryDate in
             let visibleDepartures = content.departures.mapValues { departures in
-                WidgetTimelinePlanner.departures(departures, visibleAt: entryDate)
+                WidgetTimelinePlanner.boardableDepartures(departures, visibleAt: entryDate)
             }
             let state = NextDepartureComplication.resolve(
                 watchBookmarks: bookmarks,

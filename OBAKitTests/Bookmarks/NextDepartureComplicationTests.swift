@@ -61,6 +61,37 @@ struct NextDepartureComplicationTests {
         )
     }
 
+    private func makeArrivalDeparture(
+        scheduledArrivalOffset: TimeInterval,
+        scheduledDepartureOffset: TimeInterval,
+        departureEnabled: Bool = true,
+        stopSequence: Int = 5,
+        tripID: String = "trip_1"
+    ) throws -> ArrivalDeparture {
+        let arrivalSec = seconds(from: scheduledArrivalOffset)
+        let departureSec = seconds(from: scheduledDepartureOffset)
+        let dictionary: [String: Any] = [
+            "arrivalEnabled": true,
+            "blockTripSequence": 1,
+            "departureEnabled": departureEnabled,
+            "distanceFromStop": 100.0,
+            "lastUpdateTime": arrivalSec,
+            "numberOfStopsAway": 1,
+            "predicted": false,
+            "routeId": "route_1",
+            "scheduledArrivalTime": arrivalSec,
+            "scheduledDepartureTime": departureSec,
+            "serviceDate": arrivalSec,
+            "situationIds": [],
+            "status": "SCHEDULED",
+            "stopId": "stop_1",
+            "stopSequence": stopSequence,
+            "tripId": tripID,
+            "vehicleId": "vehicle_1"
+        ]
+        return try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: dictionary)
+    }
+
     // MARK: - Accessory Family Limits
 
     @Test func `Accessory widget families request at most one bookmark`() {
@@ -191,11 +222,12 @@ struct NextDepartureComplicationTests {
             stopName: "Pine St",
             bookmarkName: "10 to Downtown"
         )
+        let expectedNow = Bundle.obaKitCore.localizedString(forKey: "stop_page.countdown.now", value: "NOW", table: nil)
 
         #expect(departure.minutesUntil(at: upcomingNow) == 0)
         #expect(departure.isArrivingNow(at: upcomingNow))
-        #expect(departure.shortCountdownText(at: upcomingNow) == "NOW")
-        #expect(departure.countdownSnapshot(at: upcomingNow, locale: Locale(identifier: "en_US")) == "NOW")
+        #expect(departure.shortCountdownText(at: upcomingNow) == expectedNow)
+        #expect(departure.countdownSnapshot(at: upcomingNow, locale: Locale(identifier: "en_US")) == expectedNow)
     }
 
     @Test func `Countdown multiple minutes out formats compact minute snapshot`() {
@@ -208,10 +240,12 @@ struct NextDepartureComplicationTests {
             stopName: "3rd Ave",
             bookmarkName: "C Line"
         )
+        let shortFmt = Bundle.obaKitCore.localizedString(forKey: "formatters.short_time_fmt", value: "%dm", table: nil)
+        let expectedLocalizedShort = String(format: shortFmt, 8)
 
         #expect(departure.minutesUntil(at: upcomingNow) == 8)
         #expect(!departure.isArrivingNow(at: upcomingNow))
-        #expect(departure.shortCountdownText(at: upcomingNow) == "8m")
+        #expect(departure.shortCountdownText(at: upcomingNow) == expectedLocalizedShort)
         #expect(departure.countdownSnapshot(at: upcomingNow, locale: Locale(identifier: "en_US")) == "8m")
     }
 
@@ -355,9 +389,115 @@ struct NextDepartureComplicationTests {
 
         let entry2State = NextDepartureComplication.resolve(
             bookmarks: [bookmark],
-            departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.departures(departures, visibleAt: plan.entryDates[2])],
+            departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.boardableDepartures(departures, visibleAt: plan.entryDates[2])],
             now: plan.entryDates[2]
         )
         #expect(entry2State == .noDepartures(bookmark: bookmark))
+    }
+
+    // MARK: - Boardable Vehicles, Layovers, Zero Spacing & Accessibility
+
+    @Test func `Arrival-only vehicles are ignored and layover stops use departure timestamp`() throws {
+        let bookmark = makeBookmark(routeShortName: "40", tripHeadsign: "Northgate")
+        let arrivalOnly = try makeArrivalDeparture(
+            scheduledArrivalOffset: 2 * 60,
+            scheduledDepartureOffset: 2 * 60,
+            departureEnabled: false,
+            tripID: "arrival_only"
+        )
+        let layover = try makeArrivalDeparture(
+            scheduledArrivalOffset: -60,
+            scheduledDepartureOffset: 4 * 60,
+            departureEnabled: true,
+            stopSequence: 5,
+            tripID: "layover"
+        )
+
+        let state = NextDepartureComplication.resolve(
+            bookmarks: [bookmark],
+            departuresByBookmark: [bookmark.id: [arrivalOnly, layover]],
+            now: upcomingNow
+        )
+
+        let resolved = try #require(state.departure)
+        #expect(resolved.departureDate == layover.departureDate)
+        #expect(resolved.minutesUntil(at: upcomingNow) == 4)
+
+        let visible = WidgetTimelinePlanner.boardableDepartures([arrivalOnly, layover], visibleAt: upcomingNow)
+        #expect(visible.map(\.tripID) == ["layover"])
+    }
+
+    @Test func `Single-bookmark complication planner emits zero-spaced entries for all departures within 30 minutes`() {
+        // 14 departures spaced 2 minutes apart inside the 30-minute reload window.
+        let departureDates = (1...14).map { upcomingNow.addingTimeInterval(Double($0) * 2 * 60) }
+        let plan = WidgetTimelinePlanner.singleBookmarkComplication().plan(departureDates: departureDates, now: upcomingNow)
+
+        #expect(plan.entryDates == [upcomingNow] + departureDates)
+        #expect(plan.reloadDate == upcomingNow.addingTimeInterval(30 * 60))
+    }
+
+    @Test func `Fallback watch bookmark preserves synced bookmark when region is unavailable`() {
+        let unfavorited = WatchBookmark(
+            id: UUID(),
+            name: "First",
+            regionIdentifier: 1,
+            stopID: "1_1",
+            stopName: "Stop 1",
+            latitude: 0,
+            longitude: 0,
+            isFavorite: false
+        )
+        let favorite = WatchBookmark(
+            id: UUID(),
+            name: "Fav",
+            regionIdentifier: 2,
+            stopID: "2_1",
+            stopName: "Stop 2",
+            latitude: 0,
+            longitude: 0,
+            isFavorite: true
+        )
+
+        #expect(NextDepartureComplication.fallbackBookmark(from: [unfavorited, favorite])?.id == favorite.id)
+        #expect(NextDepartureComplication.fallbackBookmark(from: [unfavorited])?.id == unfavorited.id)
+        #expect(NextDepartureComplication.fallbackBookmark(from: []) == nil)
+
+        // When region lookup fails but a fallback bookmark is preserved with empty departures dict,
+        // the complication state resolves to .unavailable rather than .noBookmarks.
+        let state = NextDepartureComplication.resolve(
+            watchBookmarks: [favorite],
+            departuresByBookmark: [:],
+            now: upcomingNow
+        )
+        #expect(state == .unavailable(bookmark: NextDepartureComplicationBookmark(watchBookmark: favorite)))
+    }
+
+    @Test func `Spoken accessibility label includes stop name and formatted departure clock time`() {
+        let departureDate = upcomingNow.addingTimeInterval(6 * 60)
+        let formatters = Formatters(
+            locale: Locale(identifier: "en_US"),
+            calendar: Calendar(identifier: .gregorian),
+            themeColors: ThemeColors.shared
+        )
+        let departure = ComplicationDeparture(
+            routeShortName: "550",
+            headsign: "Bellevue",
+            departureDate: departureDate,
+            isRealTime: true,
+            scheduleStatus: .onTime,
+            stopName: "4th Ave & Pike St",
+            bookmarkName: "Morning Commute"
+        )
+
+        let label = departure.spokenAccessibilityLabel(
+            at: upcomingNow,
+            formatters: formatters,
+            locale: Locale(identifier: "en_US")
+        )
+        let expectedTime = formatters.timeFormatter.string(from: departureDate)
+        #expect(label.contains("550 Bellevue"))
+        #expect(label.contains("in 6 minutes"))
+        #expect(label.contains(expectedTime))
+        #expect(label.contains("4th Ave & Pike St"))
     }
 }

@@ -284,6 +284,17 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         arrivalDepartureDate >= Self.earliestPlausibleDate
     }
 
+    /// Best available departure timestamp (`predictedDeparture ?? scheduledDeparture`),
+    /// independent of `stopSequence` layover arrival vs. departure heuristics.
+    public var departureDate: Date {
+        predictedDeparture ?? scheduledDeparture
+    }
+
+    /// Whether `departureDate` is after the epoch/null sentinel threshold.
+    public var hasPlausibleDepartureDate: Bool {
+        departureDate >= Self.earliestPlausibleDate
+    }
+
     /// A singluar value that can be displayed in the UI to represent the best date for this trip.
     public var arrivalDepartureDate: Date {
         switch arrivalDepartureStatus {

@@ -41,11 +41,22 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<BookmarkEntry> {
         let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
         let now = Date()
+        let isAccessory = BookmarkEntry.isAccessoryFamily(context.family)
 
-        let plan = WidgetTimelinePlanner().plan(
-            departureDates: content.departures.values.flatMap { $0.map(\.arrivalDepartureDate) },
-            now: now
-        )
+        let planner = isAccessory
+            ? WidgetTimelinePlanner.singleBookmarkComplication()
+            : WidgetTimelinePlanner()
+
+        let departureDates: [Date] = if isAccessory {
+            content.departures.values
+                .flatMap { $0 }
+                .filter { $0.departureEnabled && $0.hasPlausibleDepartureDate }
+                .map(\.departureDate)
+        } else {
+            content.departures.values.flatMap { $0.map(\.arrivalDepartureDate) }
+        }
+
+        let plan = planner.plan(departureDates: departureDates, now: now)
 
         let entries = plan.entryDates.map { date in
             BookmarkEntry(
@@ -54,7 +65,9 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
                 // `mapValues` keeps a fetched-but-now-empty bookmark present
                 // (as `[]`), so it reads "no departures", not "no data".
                 departures: content.departures.mapValues { departures in
-                    WidgetTimelinePlanner.departures(departures, visibleAt: date)
+                    isAccessory
+                        ? WidgetTimelinePlanner.boardableDepartures(departures, visibleAt: date)
+                        : WidgetTimelinePlanner.departures(departures, visibleAt: date)
                 },
                 fetchedAt: content.fetchedAt
             )

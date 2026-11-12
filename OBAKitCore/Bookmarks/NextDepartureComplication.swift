@@ -152,7 +152,7 @@ public struct ComplicationDeparture: Equatable, Sendable {
         self.init(
             routeShortName: resolvedRoute,
             headsign: resolvedHeadsign,
-            departureDate: arrivalDeparture.arrivalDepartureDate,
+            departureDate: arrivalDeparture.departureDate,
             isRealTime: arrivalDeparture.predicted,
             scheduleStatus: arrivalDeparture.scheduleStatus,
             routeColorHex: arrivalDeparture.safeRouteColorHex,
@@ -185,7 +185,7 @@ public struct ComplicationDeparture: Equatable, Sendable {
         return TickingCountdownText.snapshot(departure: departureDate, now: now, locale: locale)
     }
 
-    /// Spoken VoiceOver description combining route, headsign, countdown, and schedule adherence.
+    /// Spoken VoiceOver description combining route, headsign, countdown, clock time, and stop name.
     public func spokenAccessibilityLabel(
         at now: Date,
         formatters: Formatters,
@@ -194,7 +194,8 @@ public struct ComplicationDeparture: Equatable, Sendable {
         let routeAndHeadsign = "\(routeShortName) \(headsign)"
         let routeLabel = formatters.accessibilityLabelForArrivalDeparture(routeAndHeadsign: routeAndHeadsign)
         let countdown = TickingCountdownText.spokenSnapshot(departure: departureDate, now: now, locale: locale)
-        return "\(routeLabel), \(countdown)"
+        let clockTime = formatters.timeFormatter.string(from: departureDate)
+        return "\(routeLabel), \(countdown), \(clockTime), \(stopName)"
     }
 }
 
@@ -236,6 +237,12 @@ public enum NextDepartureComplication {
         return inRegion.first(where: \.isFavorite) ?? inRegion.first
     }
 
+    /// Selects a fallback watch bookmark across all regions when region resolution
+    /// is unavailable, so synced bookmarks render `.unavailable` rather than `.noBookmarks`.
+    public static func fallbackBookmark(from watchBookmarks: [WatchBookmark]) -> WatchBookmark? {
+        watchBookmarks.first(where: \.isFavorite) ?? watchBookmarks.first
+    }
+
     /// Resolves the complication state for the primary bookmark in `bookmarks` at `now`.
     public static func resolve(
         bookmarks: [NextDepartureComplicationBookmark],
@@ -251,8 +258,8 @@ public enum NextDepartureComplication {
         }
 
         let upcoming = departures
-            .filter { $0.hasPlausibleArrivalDepartureDate && $0.arrivalDepartureDate > now }
-            .min { $0.arrivalDepartureDate < $1.arrivalDepartureDate }
+            .filter { $0.departureEnabled && $0.hasPlausibleDepartureDate && $0.departureDate > now }
+            .min { $0.departureDate < $1.departureDate }
 
         guard let upcoming else {
             return .noDepartures(bookmark: bookmark)

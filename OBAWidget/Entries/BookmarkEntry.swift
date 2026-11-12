@@ -57,6 +57,18 @@ struct BookmarkEntry: TimelineEntry {
         }
     }
 
+    /// `true` when `family` is a single-bookmark Lock Screen or Watch complication family.
+    static func isAccessoryFamily(_ family: WidgetFamily) -> Bool {
+        switch family {
+        case .accessoryCircular, .accessoryRectangular, .accessoryInline:
+            return true
+        case .systemSmall, .systemMedium, .systemLarge, .systemExtraLarge, .systemExtraLargePortrait:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
     /// Deep-link URL that opens the bookmark's stop in the host app.
     static func deepLinkURL(stopID: StopID, regionIdentifier: Int) -> URL {
         let router = URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
