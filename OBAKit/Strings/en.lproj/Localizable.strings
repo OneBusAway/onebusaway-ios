@@ -843,6 +843,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Move the map or turn on location services to see stops near you.";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "Which stop?";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "That bookmark isn't available in your current region.";
 
@@ -858,7 +861,7 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "Then %@.";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "Couldn't load departures for %@. Check your connection and try again.";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
@@ -875,6 +878,21 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "%1$@ to %2$@ %3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "%1$@ %2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "Next at %1$@: %2$@.";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "No departures from %@ in the next hour.";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "That stop isn't in your current region.";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Crushed standing room only";

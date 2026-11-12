@@ -52,11 +52,7 @@ open class CoreApplication: NSObject,
     /// valid is saved. The single resolution point for every consumer — the
     /// stop pages and Settings must not re-derive this from `UserDefaults`.
     public var effectiveArrivalDepartureFilter: ArrivalDepartureFilter {
-        if let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey),
-           let filter = ArrivalDepartureFilter(rawValue: saved) {
-            return filter
-        }
-        return defaultArrivalDepartureFilter
+        ArrivalDepartureFilter.effective(in: userDefaults, brandDefault: defaultArrivalDepartureFilter)
     }
 
     /// Persists the rider's arrival/departure filter choice, the write half of

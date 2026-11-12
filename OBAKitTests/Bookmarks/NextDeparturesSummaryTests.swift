@@ -77,7 +77,7 @@ final class NextDeparturesSummaryTests {
             NextDeparturesSummary.text(for: .noBookmarks, now: now),
             NextDeparturesSummary.text(for: .noRegion, now: now),
             NextDeparturesSummary.text(for: .bookmarkUnavailable, now: now),
-            NextDeparturesSummary.text(for: .loadFailed(bookmarkName: "Library"), now: now)
+            NextDeparturesSummary.text(for: .loadFailed(name: "Library"), now: now)
         ]
 
         #expect(Set(messages).count == messages.count)
@@ -172,7 +172,7 @@ final class NextDeparturesLoaderTests: OBATestCase {
 
         let outcome = await loader(dataLoader: dataLoader).outcome(bookmarkID: bookmark.id)
 
-        #expect(outcome == .loadFailed(bookmarkName: "10 to Capitol Hill"))
+        #expect(outcome == .loadFailed(name: "10 to Capitol Hill"))
     }
 
     @Test func `A bookmark from another region is unavailable`() async throws {

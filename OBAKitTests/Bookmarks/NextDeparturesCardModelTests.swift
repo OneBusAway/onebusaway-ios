@@ -80,7 +80,8 @@ struct NextDeparturesCardModelTests {
         (NextDeparturesSummary.Outcome.noBookmarks, false),
         (NextDeparturesSummary.Outcome.noRegion, false),
         (NextDeparturesSummary.Outcome.bookmarkUnavailable, false),
-        (NextDeparturesSummary.Outcome.loadFailed(bookmarkName: "Library"), true)
+        (NextDeparturesSummary.Outcome.stopUnavailable, false),
+        (NextDeparturesSummary.Outcome.loadFailed(name: "Library"), true)
     ])
     func `Other outcomes show the dialog's text and offer Refresh only after a failed load`(outcome: NextDeparturesSummary.Outcome, showsRefresh: Bool) {
         let model = NextDeparturesCardModel(outcome: outcome, now: now)
@@ -112,7 +113,8 @@ struct NextDeparturesCardModelTests {
         .noBookmarks,
         .noRegion,
         .bookmarkUnavailable,
-        .loadFailed(bookmarkName: "Library")
+        .stopUnavailable,
+        .loadFailed(name: "Library")
     ])
     func `Track is hidden without a departure to follow`(outcome: NextDeparturesSummary.Outcome) {
         #expect(!NextDeparturesCardModel(outcome: outcome, now: now, liveActivitiesEnabled: true).showsTrack)

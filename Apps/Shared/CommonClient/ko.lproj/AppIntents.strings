@@ -10,6 +10,15 @@
 /* App Intents: label of the bookmark parameter on the Track Bookmark and Next Departures actions. */
 "bookmark_entity.parameter_title" = "즐겨찾기";
 
+/* App Intents: description of the Next Departures at Stop action in Shortcuts. Siri speaks the answer. */
+"next_departures_at_stop_intent.description" = "정류장의 다음 출발 시간을 들려줍니다.";
+
+/* App Shortcuts: short tile label for Next Departures at Stop in Shortcuts and Spotlight. */
+"next_departures_at_stop_intent.short_title" = "정류장 출발";
+
+/* App Intents: name of the Shortcuts action that answers when buses and trains next leave a stop. */
+"next_departures_at_stop_intent.title" = "정류장 다음 출발";
+
 /* App Intents: name of the Shortcuts action that answers when a bookmarked trip departs next. */
 "next_departures_intent.title" = "다음 출발";
 
@@ -28,7 +37,7 @@
 /* App Intents: type name of a transit stop in Shortcuts, Siri and Spotlight. Singular noun. */
 "stop_entity.type_name" = "정류장";
 
-/* App Intents: label of the stop parameter on the Open Stop action. */
+/* App Intents: label of the stop parameter on the Open Stop and Next Departures at Stop actions. */
 "stop_entity.parameter_title" = "정류장";
 
 /* App Intents: name of the Next Departures card's Refresh button action. Not listed in Shortcuts; shown only where the system names the action. */

@@ -20,6 +20,22 @@ public enum ArrivalDepartureFilter: String, Codable, CaseIterable {
     case scheduledOnly
 }
 
+public extension ArrivalDepartureFilter {
+    /// The filter in effect: the rider's choice saved in `userDefaults` when it
+    /// is valid, or the white-label `brandDefault`. In the app, read
+    /// `CoreApplication.effectiveArrivalDepartureFilter`; this is for code that
+    /// has only the app-group suite, such as an App Intent. Main actor, as
+    /// `CoreAppConfig`, which owns the key, is.
+    @MainActor
+    static func effective(in userDefaults: UserDefaults, brandDefault: ArrivalDepartureFilter) -> ArrivalDepartureFilter {
+        if let saved = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey),
+           let filter = ArrivalDepartureFilter(rawValue: saved) {
+            return filter
+        }
+        return brandDefault
+    }
+}
+
 /// A model that represents the user's preferences for a particular `Stop`. These preferences are for things like sort order and hidden routes.
 public struct StopPreferences: Codable {
     public var sortType: StopSort
