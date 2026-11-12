@@ -203,6 +203,19 @@ final class SearchInteractorTests: OBATestCase {
     }
 
     @Test @MainActor
+    func `Shortening a place query cancels its pending search`() async throws {
+        let (interactor, application) = makeInteractor()
+        application.mapRegionManager.lastVisibleMapRect = MKMapRect.world
+
+        interactor.searchModeObjects(text: "ab", scope: .places)
+        interactor.searchModeObjects(text: "a", scope: .places)
+
+        try await Task.sleep(for: .milliseconds(500))
+
+        #expect(!interactor.sections.contains { $0.id == .placemarks })
+    }
+
+    @Test @MainActor
     func `Routes scope with empty query shows no sections`() {
         let (interactor, application) = makeInteractor()
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
