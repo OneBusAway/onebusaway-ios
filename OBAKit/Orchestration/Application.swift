@@ -156,18 +156,10 @@ public class Application: CoreApplication, PushServiceDelegate {
                     return
                 }
 
-                if self.viewRouter.navigate(to: .tripDetails(TripConvertible(arrivalDeparture: arrDep), destinationStopID: deepLink.destinationStopID), popToRootFirst: false) {
-                    ProgressHUD.dismiss()
-                    return
-                }
-
-                self.withPushableTopViewController { from in
-                    self.viewRouter.navigateTo(
-                        arrivalDeparture: arrDep,
-                        from: from,
-                        destinationStopID: deepLink.destinationStopID
-                    )
-                }
+                self.viewRouter.navigate(
+                    to: .tripDetails(TripConvertible(arrivalDeparture: arrDep), destinationStopID: deepLink.destinationStopID),
+                    popToRootFirst: false
+                )
             } catch {
                 await self.displayError(error)
             }

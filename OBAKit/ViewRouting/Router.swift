@@ -460,64 +460,6 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         }
     }
 
-    /// Navigates to a universal link or custom URL scheme destination.
-    ///
-    /// Supports stop URLs (`/regions/{id}/stops/{stopID}`), trip URLs (`.../stops/{stopID}/trips?...`),
-    /// and custom scheme URLs (`onebusaway://stop?id=...`, `onebusaway://view-stop?stopID=...`, `onebusaway://rentals?...`).
-    ///
-    /// - Parameters:
-    ///   - url: The deep link or universal link URL to navigate to.
-    ///   - context: Optional presenting/caller view controller context.
-    /// - Returns: `true` if the URL was recognized and routed, `false` otherwise.
-    @discardableResult
-    public func navigate(to url: URL, from context: UIViewController? = nil) -> Bool {
-        if let deepLink = application.appLinksRouter?.decode(url: url) {
-            application.queueOrOpenTrip(deepLink)
-            return true
-        }
-
-        if let destination = AppLinksRouter.stopDestination(fromWebpageURL: url) {
-            if let destRegion = destination.regionID, let current = application.currentRegion?.regionIdentifier, current != destRegion {
-                application.queueOrOpenStop(destination)
-                return true
-            }
-            if application.currentRegion == nil {
-                application.queueOrOpenStop(destination)
-                return true
-            }
-            if let mapPanel = mapPanelRootController(from: context) {
-                mapPanel.navigate(to: .stopDetails(stopID: destination.stopID), popToRootFirst: false)
-                return true
-            }
-            application.queueOrOpenStop(destination)
-            return true
-        }
-
-        let router = URLSchemeRouter(scheme: url.scheme ?? Bundle.main.extensionURLScheme ?? "onebusaway")
-        if let urlType = router.decodeURLType(from: url) {
-            switch urlType {
-            case .viewStop(let stopData):
-                if let destRegion = stopData.regionID, let current = application.currentRegion?.regionIdentifier, current != destRegion {
-                    application.queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
-                    return true
-                }
-                if application.currentRegion == nil {
-                    application.queueOrOpenStop(AppLinksRouter.StopDestination(stopID: stopData.stopID, regionID: stopData.regionID))
-                    return true
-                }
-                if let mapPanel = mapPanelRootController(from: context) {
-                    mapPanel.navigate(to: .stopDetails(stopID: stopData.stopID), popToRootFirst: false)
-                    return true
-                }
-                return application.application(UIApplication.shared, open: url, options: [:])
-            case .viewRentals, .addRegion:
-                return application.application(UIApplication.shared, open: url, options: [:])
-            }
-        }
-
-        return false
-    }
-
     public func navigateTo(alert: TransitAlertViewModel, locale: Locale = .current, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .transitAlert(alert)) else { return }
 

@@ -267,24 +267,28 @@ final class ViewRouterTests: OBATestCase {
         #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_4321"))
     }
 
-    /// Verifies `navigate(to: url)` with a universal stop URL routes into the stop sheet.
-    @Test func `navigate to universal stop URL opens stop sheet in map panel mode`() throws {
-        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+    /// Verifies opening a custom scheme URL (`onebusaway://stop?id=...`)
+    /// through `Application.application(_:open:options:)` routes into the sheet coordinator.
+    @Test func `opening custom scheme stop URL routes to stop sheet in map panel mode`() throws {
+        let dataLoader = MockDataLoader(testName: "ViewRouterTests")
+        dataLoader.mock(data: Fixtures.loadData(file: "pugetsound-weather.json")) {
+            $0.url?.path.contains("/weather.json") ?? false
+        }
+
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
         let panel = MapPanelRootController(application: application)
 
-        let stopURL = try #require(URL(string: "https://onebusaway.co/regions/1/stops/1_75403"))
-        let handled = application.viewRouter.navigate(to: stopURL, from: panel)
-        #expect(handled)
-        #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_75403"))
-    }
+        let window = UIWindow(windowScene: try testWindowScene())
+        window.rootViewController = panel
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
 
-    /// Verifies `navigate(to: url)` with a custom scheme URL (`onebusaway://stop?id=...`) opens the stop sheet.
-    @Test func `navigate to custom scheme stop URL opens stop sheet in map panel mode`() throws {
-        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
-        let panel = MapPanelRootController(application: application)
+        let delegate = TestAppDelegate()
+        delegate.uiApplication = .shared
+        application.delegate = delegate
 
         let customURL = try #require(URL(string: "onebusaway://stop?id=1_75403"))
-        let handled = application.viewRouter.navigate(to: customURL, from: panel)
+        let handled = application.application(UIApplication.shared, open: customURL, options: [:])
         #expect(handled)
         #expect(panel.coordinator.stackedRoutes.last == .stopDetails(stopID: "1_75403"))
     }
