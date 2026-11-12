@@ -71,7 +71,7 @@ extension APIService {
             let message = DecodingErrorReporter.message(from: error)
             logger.error("Decoder failed for \(url, privacy: .public): \(message, privacy: .public)")
             DecodingErrorReporter.report(error: error, url: url, httpMethod: method.value)
-            throw error
+            throw error.withRequestURL(url)
         } catch {
             logger.error("Decoder failed for \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
             throw error

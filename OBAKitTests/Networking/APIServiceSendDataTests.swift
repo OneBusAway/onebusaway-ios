@@ -80,6 +80,20 @@ final class APIServiceSendDataTests: OBATestCase {
         #expect(result == responsePayload)
     }
 
+    /// #1589 follow-up: Problem Details names the request whose response didn't decode.
+    @Test func `A POST response that doesn't decode keeps its request URL`() async throws {
+        dataLoader.mock(data: Data(#"{"id":7}"#.utf8)) { $0.url == self.endpointURL }
+
+        do {
+            let _: MockResponsePayload = try await service.postData(url: endpointURL, data: MockRequestPayload(name: "BusPass", amount: 250))
+            Issue.record("Expected the response to fail to decode")
+        } catch {
+            #expect(error is DecodingError)
+            let report = ErrorReport(error: error, regionName: "Puget Sound", systemVersion: "26.1", deviceModel: "iPhone16,1")
+            #expect(report.requestURL == endpointURL)
+        }
+    }
+
     @Test func `updateData sends JSON body with PUT method and decodes response`() async throws {
         let requestPayload = MockRequestPayload(name: "MonthlyPass", amount: 5000)
         let responsePayload = MockResponsePayload(id: "tx_456", success: true)

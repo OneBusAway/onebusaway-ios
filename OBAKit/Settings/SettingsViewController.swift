@@ -21,9 +21,8 @@ class SettingsViewController: UIHostingController<SettingsView> {
         title = Strings.settings
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissModal))
 
-        let toastManager = application.toastManager
-        viewModel.showErrorToast = { [weak self] message in
-            self?.showErrorToast(message, using: toastManager)
+        viewModel.showErrorToast = { [weak application] message in
+            application?.showNotice(message)
         }
         viewModel.share = { [weak self] result in
             self?.share(result)

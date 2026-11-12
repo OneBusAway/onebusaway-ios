@@ -120,6 +120,48 @@ final class ErrorReportTests {
         #expect(report.errorCode == "DecodingError.keyNotFound")
     }
 
+    // MARK: - Follow-ups from #1589
+
+    /// The URL rides along without changing what callers match on.
+    @Test func `A decoding error tagged with its request URL keeps its case and path`() throws {
+        let url = try #require(URL(string: "\(base)/stop/1_20170.json?key=SECRET"))
+        let original = DecodingError.keyNotFound(AnyKey("tripId"), DecodingError.Context(codingPath: [AnyKey("data")], debugDescription: "missing"))
+
+        let tagged = original.withRequestURL(url)
+
+        guard case .keyNotFound(let key, let context) = tagged else {
+            Issue.record("Expected keyNotFound, got \(tagged)")
+            return
+        }
+        #expect(key.stringValue == "tripId")
+        #expect(context.codingPath.map(\.stringValue) == ["data"])
+        #expect(context.debugDescription == "missing")
+        #expect(report(tagged).requestURL?.absoluteString == "\(base)/stop/1_20170.json")
+        #expect(report(tagged).errorCode == "DecodingError.keyNotFound")
+    }
+
+    @Test func `A caller's subject wins over the one the URL gives`() throws {
+        let error = APIError.requestFailure(response("arrivals-and-departures-for-stop/1_20170.json", status: 500))
+        let alertsURL = try #require(URL(string: "https://onebusaway.co/api/v1/regions/1/alerts.pb"))
+        let alertsResponse = try #require(HTTPURLResponse(url: alertsURL, statusCode: 500, httpVersion: nil, headerFields: nil))
+        let alertsTitle = report(APIError.requestFailure(alertsResponse)).title
+
+        let given = ErrorReport(
+            error: error, regionName: "Puget Sound", subject: .serviceAlerts,
+            systemVersion: "26.1", deviceModel: "iPhone16,1"
+        )
+
+        #expect(given.title == alertsTitle)
+        #expect(report(error).title != alertsTitle, "Premise: the URL alone says arrival times")
+    }
+
+    @Test func `Without a caller's subject the URL still gives it`() {
+        let error = APIError.requestFailure(response("trip-details/1_871781411.json", status: 500))
+        let inferred = ErrorReport(error: error, regionName: "Puget Sound", subject: nil, systemVersion: "26.1", deviceModel: "iPhone16,1")
+
+        #expect(inferred.title == ErrorReport.Subject.livePosition.title)
+    }
+
     @Test func `Unknown 418 uses the fallback`() {
         let report = report(APIError.requestFailure(response("arrivals-and-departures-for-stop/1_20170.json", status: 418)))
         #expect(report.cause == .fallback)
