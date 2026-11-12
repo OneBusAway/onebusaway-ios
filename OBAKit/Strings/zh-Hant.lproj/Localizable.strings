@@ -1149,11 +1149,11 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "到站與離站資訊顯示";
 
-/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
-"settings_controller.arrival_display_section.transfer_banner" = "顯示轉乘到達橫幅";
+/* Settings > Arrival & Departure Display > Toggle that highlights the rider's trip in a stop's departures when they open that stop from the trip */
+"settings_controller.arrival_display_section.highlight_trip" = "在車站頁面醒目顯示你的行程";
 
-/* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
-"settings_controller.arrival_display_section.footer" = "轉乘橫幅：從行程開啟車站時，時間會相對你到達該站顯示。區域時區：時鐘時間使用交通區域時區，手機時區不同時會顯示簡短標記。兩者互不影響。";
+/* Settings > Arrival & Departure Display > Footer describing the trip highlight and region time zone toggles */
+"settings_controller.arrival_display_section.footer" = "醒目顯示行程：從行程開啟車站時，該行程的班次會在車站頁面中醒目顯示。區域時區：時鐘時間使用交通區域時區，手機時區不同時會顯示簡短標記。兩者互不影響。";
 
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
 "settings_controller.arrival_display_section.region_time_zone" = "以區域時區顯示時間";
@@ -1190,9 +1190,6 @@
 
 /* Settings > Experimental section > Footer indicating changes apply on relaunch */
 "settings_controller.experimental_section.map_panel.footer" = "重新啟動 App 以套用變更。";
-
-/* Settings > Experimental section > New stop page toggle */
-"settings_controller.experimental_section.new_stop_page" = "使用新版站牌頁面";
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "實驗性功能";
@@ -1263,20 +1260,11 @@
 /* A message that appears when a user's alarm is created. */
 "stop_controller.alarm_created_message" = "已建立提醒";
 
-/* A header for the arrivals and departures section of the stop controller. */
-"stop_controller.arrival_departure_header" = "到站與離站";
-
 /* Title for the menu that filters departures by data type */
 "stop_controller.arrival_filter.menu_title" = "班次類型";
 
-/* Message shown when the Departure Type filter hides every departure at a stop */
-"stop_controller.arrival_filter.no_results" = "沒有符合目前篩選條件的班次。請在 ⋯ 選單中變更班次類型。";
-
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "此書籤可能已失效。您的營運機構是否更改了某些資料？請刪除並重新建立此書籤。";
-
-/* Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop. */
-"stop_controller.bad_bookmark_error_title" = "失效的書籤";
 
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "資料由 %@ 提供";
@@ -1286,24 +1274,6 @@
 
 /* Title shown when an external survey link cannot be opened */
 "stop_controller.external_survey_error.title" = "無法開啟問卷";
-
-/* Load More button */
-"stop_controller.load_more_button" = "載入更多";
-
-/* A header for the past arrivals and departures section of the stop controller. */
-"stop_controller.past_departures_header" = "已離站班次";
-
-/* Header for past departures of a specific route */
-"stop_controller.past_departures_route_header" = "已離站班次 - %@";
-
-/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
-"stop_controller.swipe_spotlight_text.with_alarm" = "在列上滑動以檢視更多選項，包括加入提醒。";
-
-/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
-"stop_controller.swipe_spotlight_text.without_alarm" = "在列上滑動以檢視更多選項。";
-
-/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
-"stop_controller.transfer_show_earlier_departures_fmt" = "顯示 %d 班較早的離站班次";
 
 /* Title of a transit stop in Shortcuts and Siri when the app has no name for it. The parameter is the stop's ID, such as 1_75403. */
 "stop_entity.fallback_title_fmt" = "站牌 %@";
@@ -1533,15 +1503,6 @@
 /* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
 "stop_page.walk_divider_fmt" = "步行 %d 分鐘 — 以下可搭乘";
 
-/* Title of the Sorting section */
-"stop_preferences_controller.sorting_section.header_title" = "排序方式";
-
-/* Sort by route option */
-"stop_preferences_controller.sorting_section.sort_by_route" = "依路線排序";
-
-/* Sort by time option */
-"stop_preferences_controller.sorting_section.sort_by_time" = "依時間排序";
-
 /* Title of the Edit Stop preferences controller */
 "stop_preferences_controller.title" = "篩選路線";
 
@@ -1661,9 +1622,6 @@
 
 /* Primary button on the survey launcher card; opens the survey. */
 "survey_launcher.take_survey_button" = "填寫問卷";
-
-/* Title of the survey launcher card on the stop screen. */
-"survey_launcher.title" = "協助改善大眾運輸";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_vc.external_survey_error.message" = "無法開啟此問卷連結。請稍後再試。";
@@ -1802,24 +1760,6 @@
 
 /* Voiceover text describing no departures in the near-future. */
 "voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt" = "沒有即將離站的班次";
-
-/* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
-"walk_time_view.accessibility_label" = "步行至站牌所需時間";
-
-/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
-"walk_time_view.accessibility_label_bike" = "騎乘至站牌所需時間";
-
-/* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
-"walk_time_view.accessibility_value" = "%1$@。步行需 %2$@，將於 %3$@ 抵達";
-
-/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
-"walk_time_view.accessibility_value_bike" = "%1$@。騎乘需 %2$@，將於 %3$@ 抵達";
-
-/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
-"walk_time_view.distance_time_fmt" = "%1$@，%2$@：%3$@ 抵達";
-
-/* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
-"walk_time_view.transfer_accessibility_label" = "轉乘抵達時間";
 
 /* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
 "weather.button_accessibility_value_format" = "%1$@，%2$@";
@@ -1992,8 +1932,6 @@
 "settings_controller.debug_section.test_device_description.placeholder" = "例如：Aaron 的 iPhone";
 /* Settings > Map section > Show Apple MapKit Points of Interest */
 "settings_controller.map_section.shows_points_of_interest" = "興趣點";
-/* Title of the message shown when the server has no stop at the requested ID. */
-"stop_controller.stop_not_found_title" = "找不到站牌";
 /* VoiceOver announcement posted when the Departure Type filter changes which departures are visible. */
 "stop_page.a11y.filter_changed" = "離站班次篩選條件已變更";
 /* VoiceOver announcement when the Past disclosure is closed. */

@@ -215,7 +215,7 @@ final class AppSheetViewFactory {
     /// header away as the list scrolls so the actions stay reachable.
     ///
     /// The transfer context highlights the rider's trip, unless they've turned the
-    /// transfer banner off: the same check `ViewRouter.makeStopController` makes.
+    /// trip highlight off: the same check `ViewRouter.makeStopController` makes.
     func stopDetailView(stopID: Stop.ID, transferContext: TransferContext? = nil) -> StopDetailsSheetRootView {
         let transferContext = application.userDataStore.displayedTransferContext(transferContext)
         return StopDetailsSheetRootView(
