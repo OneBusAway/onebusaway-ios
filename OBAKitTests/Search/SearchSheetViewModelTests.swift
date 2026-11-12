@@ -603,18 +603,26 @@ final class SearchSheetViewModelTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Submitting under all scope or with blank query does not start a search`() {
-        let (viewModel, _, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+    func `Submitting under all scope or with blank query does not start a search`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader)
+        dataLoader.resetRecordedRequestURLs()
 
         viewModel.scope = .all
         viewModel.updateQuery("10")
         viewModel.submitSearch()
-        #expect(viewModel.isSearching == false)
+        await viewModel.searchTask?.value
+        await Task.yield()
+        #expect(viewModel.searchTask == nil)
+        #expect(dataLoader.recordedRequestURLs.filter { $0.path.contains("/api/where/") }.isEmpty)
 
         viewModel.scope = .routes
         viewModel.updateQuery("   ")
         viewModel.submitSearch()
-        #expect(viewModel.isSearching == false)
+        await viewModel.searchTask?.value
+        await Task.yield()
+        #expect(viewModel.searchTask == nil)
+        #expect(dataLoader.recordedRequestURLs.filter { $0.path.contains("/api/where/") }.isEmpty)
     }
 
     @Test @MainActor
@@ -637,6 +645,31 @@ final class SearchSheetViewModelTests: OBATestCase {
 
         #expect(viewModel.query == "44")
         #expect(viewModel.message?.kind == .noResults)
+        let routeRequestURL = try #require(dataLoader.recordedRequestURLs.last { $0.path.contains("/api/where/routes-for-location.json") })
+        let queryItems = URLComponents(url: routeRequestURL, resolvingAgainstBaseURL: false)?.queryItems
+        #expect(queryItems?.first { $0.name == "query" }?.value == "44")
+    }
+
+    @Test @MainActor
+    func `Voice search under routes scope strips spoken route cue`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader, voiceSearch: voice)
+        viewModel.scope = .routes
+
+        viewModel.startVoiceSearch()
+        voice.emit(.final("Route 44"))
+
+        for _ in 0..<200 where viewModel.message == nil {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        let routeRequestURL = try #require(dataLoader.recordedRequestURLs.last { $0.path.contains("/api/where/routes-for-location.json") })
+        let queryItems = URLComponents(url: routeRequestURL, resolvingAgainstBaseURL: false)?.queryItems
+        #expect(queryItems?.first { $0.name == "query" }?.value == "44")
     }
 
     @Test @MainActor

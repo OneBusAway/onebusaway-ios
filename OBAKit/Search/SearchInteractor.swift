@@ -300,9 +300,9 @@ class SearchInteractor: NSObject {
             searchRequest.region = searchRegion
             let search = MKLocalSearch(request: searchRequest)
             self.localSearch = search
-            search.start { [weak self] response, error in
+            search.start { [weak self, weak search] response, error in
                 DispatchQueue.main.async {
-                    guard let self else { return }
+                    guard let self, let search, self.localSearch === search else { return }
                     if let error {
                         if (error as? URLError)?.code == .cancelled {
                             return

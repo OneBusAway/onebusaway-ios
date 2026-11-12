@@ -51,6 +51,9 @@ nonisolated final class SearchSheetUITests: XCTestCase {
         let searchField = app.searchFields.firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 10), "Native search field missing")
 
+        let closeButton = app.buttons["Close"]
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), "Close toolbar button should stay visible while search is active")
+
         for scopeTitle in ["All", "Stops", "Routes", "Places"] {
             XCTAssertTrue(app.buttons[scopeTitle].waitForExistence(timeout: 5), "Missing scope tag '\(scopeTitle)'")
         }

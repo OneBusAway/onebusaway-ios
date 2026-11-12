@@ -72,6 +72,7 @@ struct SearchSheetView: View {
                     placement: .navigationBarDrawer(displayMode: .always),
                     prompt: Text(placeholder)
                 )
+                .searchPresentationToolbarBehavior(.avoidHidingContent)
                 .searchScopes($viewModel.scope, activation: .onSearchPresentation) {
                     ForEach(SearchScope.allCases) { scope in
                         Text(scope.title).tag(scope)

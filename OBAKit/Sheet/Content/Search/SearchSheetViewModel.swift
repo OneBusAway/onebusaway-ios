@@ -58,7 +58,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     private let coordinator: SheetCoordinator<AppSheetRoute>
     private let router: SearchResultRouter
     private let voiceSearch: VoiceSearchControlling
-    private var searchTask: Task<Void, Never>?
+    private(set) var searchTask: Task<Void, Never>?
     private var voiceTask: Task<Void, Never>?
 
     /// `true` while the mic is open and partial transcripts may rewrite `query`.
@@ -208,7 +208,11 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     private func voiceSearchRequest(from text: String) -> SearchRequest {
         if let scopedType = scope.submitSearchType {
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            return SearchRequest(query: trimmed, type: scopedType)
+            // Route lookup takes a bare short name, so strip any spoken route cue.
+            let query = scopedType == .route
+                ? VoiceSearchQueryClassifier.request(from: trimmed).query
+                : trimmed
+            return SearchRequest(query: query, type: scopedType)
         }
         return VoiceSearchQueryClassifier.request(from: text)
     }
