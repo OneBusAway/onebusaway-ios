@@ -166,6 +166,7 @@ struct MapPanelRootView: View {
     @ObservedObject private var tripFocusDisplay: TripFocusMapDisplayModel
     @ObservedObject private var stopFocusDisplay: StopFocusMapDisplayModel
     @ObservedObject private var probeController: OnDemandProbeController
+    private let tripPlanEmptyFallback: TripPlanEmptyFallback
 
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
@@ -303,6 +304,11 @@ struct MapPanelRootView: View {
         self.application = application
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
+        self.tripPlanEmptyFallback = MapPanelOnDemandPlanner.makeFallback(
+            probeController: probeController,
+            notificationCenter: application.notificationCenter,
+            coordinator: coordinator
+        )
         _prompts = StateObject(wrappedValue: MapPanelPrompts(
             application: application,
             mapViewModel: mapViewModel,
@@ -636,6 +642,13 @@ struct MapPanelRootView: View {
         }
         .onChange(of: isOnDemandPickerShown) { wasShown, _ in
             Self.onDemandPickerStackDidChange(wasShown: wasShown, routes: sheetRoutes, probeController: probeController)
+        }
+        .onChange(of: plannerEntry?.request, initial: true) { _, request in
+            MapPanelOnDemandPlanner.plannerDidChange(
+                to: request,
+                fallback: tripPlanEmptyFallback,
+                currentLocation: application.locationService.currentLocation
+            )
         }
         .onChange(of: sheetHeight) { _, newValue in
             probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
@@ -1182,12 +1195,29 @@ extension MapPanelRootView {
     }
 
     private var controlsDockOffset: CGFloat {
-        dockHeight > 0 ? dockHeight + OnDemandDockPlacement.gap : 0
+        // A planner card rides on the planner sheet, not on the base sheet the
+        // controls float over, so it leaves them where they were.
+        guard dockPlacement.opacity == nil else { return 0 }
+        return dockHeight > 0 ? dockHeight + OnDemandDockPlacement.gap : 0
     }
 
     // MARK: - On-demand dock
 
     private var sheetRoutes: [AppSheetRoute] { coordinator.routeStack + coordinator.stackedRoutes }
+
+    private var plannerEntry: (request: TripPlannerRequest, detent: PresentationDetent)? {
+        MapPanelOnDemandPlanner.plannerEntry(in: coordinator.stackedEntries)
+    }
+
+    private var dockPlacement: (height: CGFloat, opacity: CGFloat?) {
+        MapPanelOnDemandPlanner.dockPlacement(
+            dockState: probeController.dockState,
+            plannerDetent: plannerEntry?.detent,
+            sheetHeight: sheetHeight,
+            halfScreenHeight: halfScreenHeight,
+            totalMapHeight: mapSize.height
+        )
+    }
 
     /// Whether a zone detail page is on the sheet stack (spec 2.3 highlight).
     private var isOnDemandDetailShown: Bool { Self.isOnDemandDetailShown(in: sheetRoutes) }
@@ -1223,6 +1253,7 @@ extension MapPanelRootView {
     /// 360 pt bottom-leading in regular width; its height lifts the controls.
     private var onDemandDock: some View {
         let isRegular = horizontalSizeClass == .regular
+        let placement = dockPlacement
         return OnDemandDockView(
             controller: probeController,
             actions: onDemandDockActions,
@@ -1236,7 +1267,8 @@ extension MapPanelRootView {
         } action: { _, newValue in
             dockHeight = newValue
         }
-        .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
+        .floatingOverSheet(height: placement.height, opacity: placement.opacity ?? toolbarsOpacity, duration: toolbarsAnimationDuration)
+        .allowsHitTesting(placement.opacity != 0)
     }
 
     private var onDemandDockActions: OnDemandDockActions {
