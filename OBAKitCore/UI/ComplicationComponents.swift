@@ -72,6 +72,24 @@ public enum ComplicationPresentation {
             + Text(verbatim: " · \(departure.headsign)")
     }
 
+    /// Snapshot equivalent of `inlineDepartureText`, used to verify the
+    /// route/countdown/headsign content without trying to introspect SwiftUI's
+    /// opaque `Text` value in tests.
+    static func inlineDepartureSnapshot(
+        for departure: ComplicationDeparture,
+        at referenceDate: Date,
+        locale: Locale
+    ) -> String {
+        let countdown = departure.isArrivingNow(at: referenceDate)
+            ? departure.shortCountdownText(at: referenceDate)
+            : TickingCountdownText.snapshot(
+                departure: departure.departureDate,
+                now: referenceDate,
+                locale: locale
+            )
+        return "\(departure.routeShortName) · \(countdown) · \(departure.headsign)"
+    }
+
     /// Foreground color for status/countdown text: schedule-status tint in full
     /// color mode, `.primary` in accented/vibrant complication rendering.
     public static func statusForegroundColor(
@@ -102,6 +120,26 @@ public enum ComplicationPresentation {
         return Text(verbatim: "\(routeLabel), ")
             + countdown
             + Text(verbatim: ", \(clockTime), \(departure.stopName)")
+    }
+
+    /// Snapshot equivalent of `departureAccessibilityLabel`, used to verify
+    /// its localized route, headsign, countdown, clock time, and stop content.
+    static func departureAccessibilitySnapshot(
+        for departure: ComplicationDeparture,
+        formatters: Formatters,
+        at referenceDate: Date,
+        locale: Locale
+    ) -> String {
+        let routeLabel = formatters.accessibilityLabelForArrivalDeparture(
+            routeAndHeadsign: "\(departure.routeShortName) \(departure.headsign)"
+        )
+        let countdown = TickingCountdownText.spokenSnapshot(
+            departure: departure.departureDate,
+            now: referenceDate,
+            locale: locale
+        )
+        let clockTime = formatters.timeFormatter.string(from: departure.departureDate)
+        return "\(routeLabel), \(countdown), \(clockTime), \(departure.stopName)"
     }
 }
 

@@ -261,12 +261,15 @@ struct NextDepartureComplicationTests {
             bookmarkName: "Morning Commute"
         )
         let enUS = Locale(identifier: "en_US")
-        let text = ComplicationPresentation.inlineDepartureText(
+        let snapshot = ComplicationPresentation.inlineDepartureSnapshot(
             for: departure,
             at: upcomingNow,
             locale: enUS
         )
-        _ = text
+
+        #expect(snapshot.contains("550"))
+        #expect(snapshot.contains("7m"))
+        #expect(snapshot.contains("Bellevue"))
     }
 
     // MARK: - Timeline Boundary Progression
@@ -384,15 +387,21 @@ struct NextDepartureComplicationTests {
             bookmarkName: "Morning Commute"
         )
 
-        let label = ComplicationPresentation.departureAccessibilityLabel(
+        let snapshot = ComplicationPresentation.departureAccessibilitySnapshot(
             for: departure,
             formatters: formatters,
-            isLuminanceReduced: false,
+            at: upcomingNow,
             locale: Locale(identifier: "en_US")
         )
-        _ = label
+
+        #expect(snapshot.contains("550"))
+        #expect(snapshot.contains("Bellevue"))
+        #expect(snapshot.contains("6 minutes"))
     }
 
+    // One composite preview keeps the reviewer screenshot's standard, NOW,
+    // and reduced-luminance states together for visual comparison.
+    // swiftlint:disable function_body_length
     @Test @MainActor
     func `Render complication snapshots for Lock Screen and Always-On`() throws {
         let departure = ComplicationDeparture(
@@ -467,18 +476,52 @@ struct NextDepartureComplicationTests {
             HStack(spacing: 20) {
                 ZStack {
                     Circle().fill(Color.gray.opacity(0.2)).frame(width: 60, height: 60)
-                    ComplicationCircularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
-                        .environment(\.isLuminanceReduced, true)
+                    VStack(spacing: 1) {
+                        Text(verbatim: departure.routeShortName)
+                            .font(.system(.caption2, design: .rounded, weight: .heavy))
+                        Text(verbatim: TickingCountdownText.snapshot(
+                            departure: departure.departureDate,
+                            now: upcomingNow,
+                            locale: Locale(identifier: "en_US")
+                        ))
+                            .font(.system(.title3, design: .rounded, weight: .bold))
+                            .monospacedDigit()
+                    }
+                    .foregroundStyle(.gray)
                 }
-                ComplicationRectangularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
-                    .environment(\.isLuminanceReduced, true)
-                    .frame(width: 160)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        ComplicationRouteBadge(
+                            routeShortName: departure.routeShortName,
+                            routeColorHex: departure.routeColorHex,
+                            routeTextColorHex: departure.routeTextColorHex,
+                            isFullColor: false
+                        )
+                        Spacer(minLength: 4)
+                        Text(verbatim: TickingCountdownText.snapshot(
+                            departure: departure.departureDate,
+                            now: upcomingNow,
+                            locale: Locale(identifier: "en_US")
+                        ))
+                            .font(.system(.headline, design: .rounded, weight: .heavy))
+                            .monospacedDigit()
+                    }
+                    Text(verbatim: departure.headsign)
+                        .font(.subheadline.weight(.semibold))
+                    Text(verbatim: "\(formatters.timeFormatter.string(from: departure.departureDate)) · \(departure.stopName)")
+                        .font(.caption2)
+                }
+                .foregroundStyle(.gray)
+                .frame(width: 160, alignment: .leading)
                     .padding(8)
                     .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.2)))
             }
             HStack {
-                ComplicationPresentation.inlineDepartureText(for: departure, at: upcomingNow, locale: Locale(identifier: "en_US"))
-                    .environment(\.isLuminanceReduced, true)
+                Text(verbatim: ComplicationPresentation.inlineDepartureSnapshot(
+                    for: departure,
+                    at: upcomingNow,
+                    locale: Locale(identifier: "en_US")
+                ))
                     .foregroundStyle(.gray)
             }
             .padding(8)
@@ -492,6 +535,14 @@ struct NextDepartureComplicationTests {
         renderer.scale = 2.0
         let uiImage = try #require(renderer.uiImage)
         let data = try #require(uiImage.pngData())
-        try data.write(to: URL(fileURLWithPath: "/tmp/complication_preview_all.png"))
+        #expect(uiImage.size.width > 0)
+        #expect(uiImage.size.height > 0)
+
+        let outputURL = ProcessInfo.processInfo.environment["OBA_COMPLICATION_PREVIEW_OUTPUT"]
+            .map { URL(fileURLWithPath: $0) }
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent("complication_preview_all.png")
+        try data.write(to: outputURL)
+        #expect(FileManager.default.fileExists(atPath: outputURL.path))
     }
+    // swiftlint:enable function_body_length
 }

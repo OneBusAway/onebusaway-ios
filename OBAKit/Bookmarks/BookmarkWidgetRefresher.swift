@@ -41,12 +41,8 @@ final class BookmarkWidgetRefresher {
     /// production leaves it nil and reloads for real.
     private let reloadKind: ((String) -> Void)?
 
-    /// Observes `NotificationCenter.default` because that is where
-    /// `UserDefaultsStore` posts — see its `delete(bookmark:)`, `setPinned(_:for:)`,
-    /// and `add(_:to:index:)`. Selector-based observation is auto-removed on
-    /// dealloc, so no token/deinit is needed.
-    init(reload: (() -> Void)? = nil) {
-        self.reloadKind = reload.map { spy in { _ in spy() } }
+    init() {
+        self.reloadKind = nil
 
         NotificationCenter.default.addObserver(
             self,
@@ -56,6 +52,10 @@ final class BookmarkWidgetRefresher {
         )
     }
 
+    /// Observes `NotificationCenter.default` because that is where
+    /// `UserDefaultsStore` posts — see its `delete(bookmark:)`, `setPinned(_:for:)`,
+    /// and `add(_:to:index:)`. Selector-based observation is auto-removed on
+    /// dealloc, so no token/deinit is needed.
     init(reloadKind: @escaping (String) -> Void) {
         self.reloadKind = reloadKind
 

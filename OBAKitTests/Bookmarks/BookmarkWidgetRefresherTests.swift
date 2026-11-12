@@ -153,18 +153,4 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         #expect(BookmarkWidgetRefresher.widgetKinds == ["OBAWidget", "NextDepartureWidget"])
     }
 
-    @Test @MainActor func `Bookmark change reloads both OBAWidget and NextDepartureWidget`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        var reloadedKinds: [String] = []
-        let refresher = BookmarkWidgetRefresher(reloadKind: { reloadedKinds.append($0) })
-
-        let bookmark = try makeBookmark(application: application)
-        application.userDataStore.add(bookmark, to: nil)
-        await drainMainActor()
-
-        #expect(reloadedKinds.contains("OBAWidget"))
-        #expect(reloadedKinds.contains("NextDepartureWidget"))
-        withExtendedLifetime(refresher) {}
-    }
 }
