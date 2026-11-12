@@ -39,7 +39,7 @@ final class TripPageSheetHostTests: OBATestCase {
             application: application,
             tripConvertible: convertible,
             onMapFocusChanged: { _ in },
-            onSelectStop: { _ in },
+            onSelectStop: { _, _ in },
             onSelectTrip: { _ in },
             onClose: {}
         )
@@ -57,7 +57,7 @@ final class TripPageSheetHostTests: OBATestCase {
             application: application,
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { reported.append($0) },
-            onSelectStop: { _ in },
+            onSelectStop: { _, _ in },
             onSelectTrip: { _ in },
             onClose: {}
         )
@@ -76,7 +76,7 @@ final class TripPageSheetHostTests: OBATestCase {
             application: application,
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { _ in },
-            onSelectStop: { _ in },
+            onSelectStop: { _, _ in },
             onSelectTrip: { _ in },
             onClose: { closeCount += 1 }
         )
@@ -99,7 +99,7 @@ final class TripPageSheetHostTests: OBATestCase {
             application: application,
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { _ in },
-            onSelectStop: { selectedStopIDs.append($0) },
+            onSelectStop: { stopID, _ in selectedStopIDs.append(stopID) },
             onSelectTrip: { _ in },
             onClose: {}
         )
@@ -131,7 +131,7 @@ final class TripPageSheetHostTests: OBATestCase {
             application: application,
             tripConvertible: try Fixtures.tripConvertible(tripID: "trip_42"),
             onMapFocusChanged: { _ in },
-            onSelectStop: { _ in },
+            onSelectStop: { _, _ in },
             onSelectTrip: { opened.append($0) },
             onClose: {}
         )
@@ -140,6 +140,50 @@ final class TripPageSheetHostTests: OBATestCase {
         // By ID: a failing expectation describes its operands, and describing this
         // fixture's departure, which has no references loaded, traps.
         #expect(opened.map(\.tripID) == ["trip_43"])
+    }
+
+    /// The host gets the transfer context the pushed stop would, built from the
+    /// row the rider tapped. The rows make the trip a loop that calls at 1_75403
+    /// twice, so each visit has to carry its own arrival time rather than the
+    /// stop's first. The departure is loaded with its references because the
+    /// context reads its route's short name.
+    @Test @MainActor
+    func `A tapped stop hands the host the transfer context for that visit`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var contexts: [TransferContext?] = []
+        let firstVisit = Date(timeIntervalSince1970: 1_700_000_600)
+        let secondVisit = Date(timeIntervalSince1970: 1_700_003_000)
+
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: TripConvertible(arrivalDeparture: try Fixtures.loadRESTAPIPayload(
+                type: ArrivalDeparture.self,
+                fileName: "arrival-and-departure-for-stop-1_11420.json"
+            )),
+            onMapFocusChanged: { _ in },
+            onSelectStop: { _, context in contexts.append(context) },
+            onSelectTrip: { _ in },
+            onClose: {}
+        )
+        page.rootView.actions.onSelectStop(Self.row(sequence: 8, stopID: "1_75403", date: secondVisit))
+        page.rootView.actions.onSelectStop(Self.row(sequence: 4, stopID: "1_75403", date: firstVisit))
+
+        #expect(contexts.map { $0?.arrivalTime } == [secondVisit, firstVisit])
+        #expect(contexts.map { $0?.fromTripID } == ["1_40989208", "1_40989208"])
+    }
+
+    private static func row(sequence: Int, stopID: StopID, date: Date) -> TripStopListModel.Row {
+        TripStopListModel.Row(
+            id: "\(sequence)-\(stopID)",
+            stopID: stopID,
+            name: "Stop \(sequence)",
+            coordinate: nil,
+            date: date,
+            isPassed: false,
+            isVehicleHere: false,
+            isUserStop: false,
+            isTerminal: false
+        )
     }
 
     /// A shared trip link names where the sharer steps off (#449), and the sheet
@@ -153,7 +197,7 @@ final class TripPageSheetHostTests: OBATestCase {
             tripConvertible: try Fixtures.tripConvertible(),
             destinationStopID: "1_999",
             onMapFocusChanged: { _ in },
-            onSelectStop: { _ in },
+            onSelectStop: { _, _ in },
             onSelectTrip: { _ in },
             onClose: {}
         )
@@ -170,7 +214,7 @@ final class TripPageSheetHostTests: OBATestCase {
             application: application,
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { _ in },
-            onSelectStop: { _ in },
+            onSelectStop: { _, _ in },
             onSelectTrip: { _ in },
             onClose: {}
         )

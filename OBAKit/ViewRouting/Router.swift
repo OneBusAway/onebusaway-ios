@@ -451,7 +451,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         case .more:
             rootNavigateTo(page: .more, from: context)
             return true
-        case .stopDetails(let stopID):
+        case .stopDetails(let stopID, _):
             if let target = pushTarget(from: context) {
                 navigateTo(stopID: stopID, from: target)
                 return true

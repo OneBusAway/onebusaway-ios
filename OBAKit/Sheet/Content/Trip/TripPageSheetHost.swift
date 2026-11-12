@@ -29,7 +29,7 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     let onMapFocusChanged: (TripMapFocus?) -> Void
 
     /// Opens a tapped stop. See `TripPageViewController.onSelectStop`.
-    let onSelectStop: (StopID) -> Void
+    let onSelectStop: (StopID, TransferContext?) -> Void
 
     /// Opens what the trip starts as or continues as. See
     /// `TripPageViewController.onSelectTrip`.
@@ -66,7 +66,7 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
         tripConvertible: TripConvertible,
         destinationStopID: StopID? = nil,
         onMapFocusChanged: @escaping (TripMapFocus?) -> Void,
-        onSelectStop: @escaping (StopID) -> Void,
+        onSelectStop: @escaping (StopID, TransferContext?) -> Void,
         onSelectTrip: @escaping (TripConvertible) -> Void,
         onClose: @escaping () -> Void
     ) -> TripPageViewController {

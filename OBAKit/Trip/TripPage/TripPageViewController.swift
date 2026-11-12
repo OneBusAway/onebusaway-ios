@@ -346,21 +346,21 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// sheet of its own. `nil` pushes the stop through `ViewRouter`, which needs this
     /// page to be on a navigation stack.
     ///
-    /// A stop opened this way gets no transfer context: `SheetRoute.stopDetails`
-    /// carries only the stop's ID.
-    var onSelectStop: ((StopID) -> Void)?
+    /// Called with the same transfer context the pushed stop gets, not yet checked
+    /// against the transfer banner setting: whoever builds the stop page does that.
+    var onSelectStop: ((StopID, TransferContext?) -> Void)?
 
     /// Opens a stop the rider tapped: a row in the list, or a stop's dot on
     /// `TripMapHostViewController`'s map, which hands over the row the dot was
     /// drawn from.
     func openStop(_ row: TripStopListModel.Row) {
-        if let onSelectStop {
-            onSelectStop(row.stopID)
-            return
-        }
         // The row's own time, not a lookup by stop ID: a loop route calls at
         // the same stop twice, and the rider tapped one visit in particular.
         let transferContext = TransferContext.toStop(row.stopID, arrivalDate: row.date, from: departure)
+        if let onSelectStop {
+            onSelectStop(row.stopID, transferContext)
+            return
+        }
         application.viewRouter.navigateTo(stopID: row.stopID, from: self, transferContext: transferContext)
     }
 
