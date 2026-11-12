@@ -33,8 +33,6 @@ extension MapBaseType {
 }
 
 extension MapBaseStyleDescriptor {
-    var mapStyle: MapStyle { mapStyle(showsTraffic: false) }
-
     /// - Parameter showsTraffic: The Show Traffic setting. Satellite imagery
     ///   has no traffic layer, as on the UIKit map.
     func mapStyle(showsTraffic: Bool) -> MapStyle {

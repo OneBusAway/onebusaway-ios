@@ -454,9 +454,7 @@ struct MapPanelRootView: View {
             mismatchCamera.applyLaunch = false
             applyLaunchCamera()
         }
-        // Not the value a new subscription replays: only a change made while
-        // this view is subscribed closes sheets and moves the map.
-        .onReceive(stopsObserver.$changedRegion.dropFirst(), perform: showChangedRegion)
+        .onReceive(stopsObserver.regionChanged, perform: showChangedRegion)
         .onChange(of: mismatchCamera.showSelectedServiceRect) { _, flag in
             guard flag else { return }
             mismatchCamera.showSelectedServiceRect = false
@@ -1012,9 +1010,7 @@ extension MapPanelRootView {
     /// The rider changed region. Stops, trips and searches belong to a region's
     /// server, so the sheets showing the old one close, and the map moves to the
     /// new one, as the UIKit map does in `MapRegionManager`.
-    private func showChangedRegion(_ region: Region?) {
-        // Nil is the signal's value before any change.
-        guard let region else { return }
+    private func showChangedRegion(_ region: Region) {
         closeSheetsOverHome()
         application.mapRegionManager.cancelScheduledStopsRequest()
         stopsObserver.reset()
@@ -1035,8 +1031,10 @@ extension MapPanelRootView {
     /// mid-dismissal, leaves the sheets out of step with it.
     private func closeSheetsOverHome() {
         prompts.appWillCloseSheets(coordinator.stackedRoutes)
-        if let mapPanel = application.viewRouter.mapPanelRootController {
-            mapPanel.navigate(to: .home, popToRootFirst: true)
+        // Looked up from this panel's own controllers, so another window's
+        // panel is left alone.
+        if let mapPanel = application.viewRouter.mapPanelRootController(from: factory.presentingController()) {
+            mapPanel.navigate(to: .home)
         } else {
             coordinator.popToRoot()
         }

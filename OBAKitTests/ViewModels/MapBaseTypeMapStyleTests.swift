@@ -12,7 +12,7 @@ import Testing
 
 /// `MapStyle` is opaque and not `Equatable`, so the decision is modelled as a
 /// descriptor that *is*, and the descriptor is what these tests assert. The
-/// panel's `.mapStyle` modifier then reads `descriptor.mapStyle`.
+/// panel's `MapPanelMapSettings` then reads `descriptor.mapStyle(showsTraffic:)`.
 @Suite(.serialized)
 struct MapBaseTypeMapStyleTests {
 

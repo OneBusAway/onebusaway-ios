@@ -25,9 +25,12 @@ extension BookmarkActions {
         arrivalDepartures: (Bookmark) -> [ArrivalDeparture]?
     ) {
         let activities = Activity<TripAttributes>.activities
+        guard !activities.isEmpty else { return }
+        // Decoded once: each read decodes the whole list from UserDefaults.
+        let bookmarks = application.userDataStore.bookmarks
         for activity in activities {
             let staticData = activity.attributes.staticData
-            let matchingBookmark = application.userDataStore.bookmarks.first(where: { bookmark in
+            let matchingBookmark = bookmarks.first(where: { bookmark in
                 // Bookmark identity is unpinned (`tripID: ""`). Empty tripID is a
                 // wildcard in `tracksSameTrip`, so this still reconciles with a
                 // stop-page activity that carries a concrete trip — same rule the

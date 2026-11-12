@@ -320,6 +320,11 @@ nonisolated extension AppSheetRoute {
             return false
         }
     }
+
+    /// Whether this is a stop page.
+    var isStopDetails: Bool {
+        if case .stopDetails = self { true } else { false }
+    }
 }
 
 nonisolated extension AppSheetRoute {

@@ -111,7 +111,7 @@ final class MapPanelPrompts: ObservableObject {
     /// - Parameter stackedRoutes: The sheets open now. Nothing open, nothing to
     ///   close, and a flag left set would swallow the rider's next real close.
     func appWillCloseSheets(_ stackedRoutes: [AppSheetRoute]) {
-        ignoresNextStopVisitEnd = stackedRoutes.contains { if case .stopDetails = $0 { true } else { false } }
+        ignoresNextStopVisitEnd = stackedRoutes.contains(where: \.isStopDetails)
     }
 
     /// Whether the rider just closed a stop sheet and is back on the map: the
@@ -121,7 +121,7 @@ final class MapPanelPrompts: ObservableObject {
     ///   - previous: The stacked routes before the change.
     ///   - current: The stacked routes after it.
     nonisolated static func endsStopVisit(previous: [AppSheetRoute], current: [AppSheetRoute]) -> Bool {
-        let hadStop = previous.contains { if case .stopDetails = $0 { true } else { false } }
+        let hadStop = previous.contains(where: \.isStopDetails)
         return hadStop && current.isEmpty
     }
 
