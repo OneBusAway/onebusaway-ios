@@ -250,7 +250,6 @@ final class StopClusterTests {
 /// Stop clustering is opt-in (#1600); `MapRegionManager` answers from the Settings flag.
 private final class ClusteringDelegateStub: NSObject, StopAnnotationDelegate {
     let clustersStops: Bool
-    let showsStopAnnotationCallouts = true
     let shouldHideExtraStopAnnotationData = true
     let iconFactory = StopIconFactory(iconSize: 48.0, themeColors: ThemeColors.shared)
 

@@ -31,6 +31,20 @@ struct NextDeparturesCardViewTests {
         ), now: now)
     }
 
+    private func fullStopCard() -> NextDeparturesCardModel {
+        let departures = [("C Line", 4.0), ("E Line", 11), ("RapidRide H Line", 19)].map { route, minutes in
+            NextDeparturesSummary.StopDeparture(
+                routeShortName: route,
+                headsign: "West Seattle Alaska Junction via Downtown and the Viaduct",
+                departure: NextDeparturesSummary.Departure(date: now.addingTimeInterval(minutes * 60), isRealTime: true, scheduleStatus: .delayed, deviationMinutes: 6)
+            )
+        }
+        return NextDeparturesCardModel(outcome: .stopDepartures(
+            stopName: "Westbound 3rd Ave & Pine St, at the far side of the intersection",
+            departures: departures
+        ), now: now)
+    }
+
     /// Two buttons, as the card has with Refresh and Track.
     private func view(_ model: NextDeparturesCardModel) -> some View {
         NextDeparturesCardView(model: model) {
@@ -43,6 +57,14 @@ struct NextDeparturesCardViewTests {
     /// largest non-accessibility text size, on a narrow width, must fit.
     @Test func `A full card fits the snippet height limit at the largest standard text size`() {
         let host = UIHostingController(rootView: view(fullCard()).environment(\.dynamicTypeSize, .xxxLarge))
+
+        let size = host.sizeThatFits(in: CGSize(width: 320, height: CGFloat.greatestFiniteMagnitude))
+
+        #expect(size.height <= 400, "Card is \(size.height) pt tall")
+    }
+
+    @Test func `A full stop card fits the snippet height limit at the largest standard text size`() {
+        let host = UIHostingController(rootView: view(fullStopCard()).environment(\.dynamicTypeSize, .xxxLarge))
 
         let size = host.sizeThatFits(in: CGSize(width: 320, height: CGFloat.greatestFiniteMagnitude))
 

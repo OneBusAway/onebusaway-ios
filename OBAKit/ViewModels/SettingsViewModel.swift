@@ -17,8 +17,8 @@ import OBAKitCore
 /// moment it changes. Seeding in `init` is what keeps opening Settings free of side
 /// effects: `didSet` doesn't run there, so no speed sync starts, no source is
 /// downgraded and no toast appears until the rider actually flips a switch (#1458.2).
-/// Writing on change means nothing is lost when the rider kills the app to make an
-/// Experimental or Debug setting take effect.
+/// Writing on change means nothing is lost when the rider kills the app to make a
+/// Debug setting take effect.
 @MainActor
 @Observable
 final class SettingsViewModel {
@@ -31,6 +31,9 @@ final class SettingsViewModel {
     /// Presents a share sheet for an exported file, or the error that prevented
     /// it. Set by the hosting controller.
     @ObservationIgnored var share: (Result<URL, Error>) -> Void = { _ in }
+
+    /// Dismisses Settings, then calls the closure. Set by the hosting controller.
+    @ObservationIgnored var dismissSettings: (@escaping () -> Void) -> Void = { $0() }
 
     /// Identifies the latest speed sync per switch. Minted on every toggle-on; a
     /// stale completion (off → on while an older sync was still in flight) sees a
@@ -86,7 +89,6 @@ final class SettingsViewModel {
         showsRegionTimeZone = store.showRegionTimeZone
 
         usesMapPanelExperience = FeatureFlags.isMapPanelExperienceEnabled(userDefaults: defaults)
-        usesNewStopPage = FeatureFlags.isNewStopPageEnabled(userDefaults: defaults)
         clustersStops = defaults.bool(forKey: FeatureFlags.clustersStopsKey)
 
         hapticFeedbackOnReload = defaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
@@ -97,6 +99,7 @@ final class SettingsViewModel {
 
         walkingSpeed = WalkingSpeedPreset.nearest(to: store.walkingSpeedMetersPerSecond)
         walkingSpeedIsSynced = store.walkingSpeedSource == .synced
+        walkingDirectionsProvider = WalkingDirectionsProvider(userDefaults: defaults)
 
         bikeModeEnabled = store.bikeModeEnabled
         bikeSpeedIsSynced = store.bikeSpeedSource == .synced
@@ -159,12 +162,16 @@ final class SettingsViewModel {
 
     // MARK: - Experimental
 
+    /// The window's root is built from this flag, so changing it rebuilds the
+    /// root at once. Settings sits inside the root being replaced, so it goes first.
     var usesMapPanelExperience: Bool {
-        didSet { application.userDefaults.set(usesMapPanelExperience, forKey: FeatureFlags.useMapPanelExperienceKey) }
-    }
-
-    var usesNewStopPage: Bool {
-        didSet { application.userDefaults.set(usesNewStopPage, forKey: FeatureFlags.useNewStopPageKey) }
+        didSet {
+            application.userDefaults.set(usesMapPanelExperience, forKey: FeatureFlags.useMapPanelExperienceKey)
+            guard usesMapPanelExperience != oldValue else { return }
+            dismissSettings { [application] in
+                application.reloadRootUserInterface()
+            }
+        }
     }
 
     var clustersStops: Bool {
@@ -194,6 +201,10 @@ final class SettingsViewModel {
     }
 
     // MARK: - Walking Speed
+
+    var walkingDirectionsProvider: WalkingDirectionsProvider {
+        didSet { application.userDefaults.set(walkingDirectionsProvider.rawValue, forKey: WalkingDirectionsProvider.defaultsKey) }
+    }
 
     /// The manual speed. Read-only in the UI while `walkingSpeedIsSynced` is on.
     var walkingSpeed: WalkingSpeedPreset {

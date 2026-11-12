@@ -42,12 +42,16 @@ nonisolated public struct StopEntity: IndexedEntity {
         AppLinksRouter.StopDestination(stopID: stopID, regionID: regionID)
     }
 
-    public var displayRepresentation: DisplayRepresentation {
-        let title = name ?? String(
+    /// The stop's name, or "Stop 1_75403" when the app has none.
+    var title: String {
+        name ?? String(
             format: OBALoc("stop_entity.fallback_title_fmt", value: "Stop %@", comment: "Title of a transit stop in Shortcuts and Siri when the app has no name for it. The parameter is the stop's ID, such as 1_75403."),
             stopID
         )
-        return DisplayRepresentation(title: "\(title)", subtitle: subtitle.map { "\($0)" })
+    }
+
+    public var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(title)", subtitle: subtitle.map { "\($0)" })
     }
 
     /// Lets Spotlight find the stop by its code and place it on a map. These
@@ -105,18 +109,18 @@ nonisolated public struct StopEntityQuery: EntityStringQuery {
 }
 
 /// Lets Spotlight ask for stops again from iOS 27, for instance after it loses
-/// its index. The query can't reach the app, so it hands the request to
-/// `StopSpotlightIndexer` through `StopReindexRequest` and returns without
-/// waiting for the indexing. `indexDescription` names only a protection class,
-/// and the app keeps its stops in one index, so it isn't read.
+/// its index. Each method returns once the app's `StopSpotlightIndexer` has
+/// indexed the stops, because the system keeps the process alive only until
+/// then, and throws if that failed. `indexDescription` names only a protection
+/// class, and the app keeps its stops in one index, so it isn't read.
 @available(iOS 27.0, *)
 nonisolated extension StopEntityQuery: IndexedEntityQuery {
     public func reindexEntities(for identifiers: [StopEntity.ID], indexDescription: CSSearchableIndexDescription) async throws {
-        StopReindexRequest.post(.stops(identifiers))
+        try await StopSpotlightIndexer.reindexCurrent(.stops(identifiers))
     }
 
     public func reindexAllEntities(indexDescription: CSSearchableIndexDescription) async throws {
-        StopReindexRequest.post(.all)
+        try await StopSpotlightIndexer.reindexCurrent(.all)
     }
 }
 

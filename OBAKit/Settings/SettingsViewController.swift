@@ -28,6 +28,13 @@ class SettingsViewController: UIHostingController<SettingsView> {
         viewModel.share = { [weak self] result in
             self?.share(result)
         }
+        viewModel.dismissSettings = { [weak self] completion in
+            guard let self, presentingViewController != nil else {
+                completion()
+                return
+            }
+            dismiss(animated: true, completion: completion)
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {

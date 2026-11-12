@@ -21,7 +21,7 @@ final class WalkTimeInfoTests {
     }
 
     @Test func `Nil when very close`() {
-        // <= 40m: suppress, matching today's WalkTimeView behavior.
+        // <= 40m: suppress.
         let user = CLLocation(latitude: 47.60972, longitude: -122.3331)
         #expect(WalkTimeInfo.compute(from: user, to: stopLocation, speedMetersPerSecond: 1.25) == nil)
     }

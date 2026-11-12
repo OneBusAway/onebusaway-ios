@@ -687,10 +687,10 @@ final class ApplicationTests: OBATestCase {
         let indexer = StopSpotlightIndexer(index: index, userDataStore: app.userDataStore, stopCache: nil, userDefaults: userDefaults, currentRegion: { Fixtures.pugetSoundRegion }, isIndexingAvailable: { true })
         app.stopSpotlightIndexer = indexer
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         app.regionsService(app.regionsService, updatedRegion: Fixtures.pugetSoundRegion)
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         #expect(await index.log == [.deleteAll, .deleteAll])
     }
@@ -715,14 +715,14 @@ final class ApplicationTests: OBATestCase {
         app.stopSpotlightIndexer = indexer
         indexer.replaceAll()
         let replace = indexer.currentRun
-        await replace?.value
+        _ = await replace?.result
         #expect(await index.log == [.deleteAll, indexed])
 
         app.regionStopSyncWroteStops(regionID: Fixtures.pugetSoundRegion.regionIdentifier)
         #expect(indexer.currentRun == replace)
 
         app.regionStopSyncWroteStops(regionID: tampa.regionIdentifier)
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         #expect(await index.log == [.deleteAll, indexed, indexed])
     }
 

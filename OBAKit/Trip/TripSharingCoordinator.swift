@@ -12,9 +12,8 @@ import OBAKitCore
 
 /// Drives the trip-sharing flow: presents the destination stop picker and, once
 /// the user picks a stop (or opts to share without one), swaps it for the system
-/// share sheet with the encoded deep link. Shared by the legacy
-/// `StopViewController` and the redesigned `StopPageViewController` so the flow
-/// exists in exactly one place.
+/// share sheet with the encoded deep link. The stop page's action presenter
+/// owns one.
 @MainActor
 final class TripSharingCoordinator: NSObject, DestinationStopPickerDelegate {
 

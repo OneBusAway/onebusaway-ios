@@ -16,8 +16,9 @@ import OBAKitCore
 ///
 /// Hosted bare, with no navigation controller around it: the page hides its
 /// stack's bar, so a stop pushed onto one inside this sheet would have no way
-/// back. The page's two navigation actions go to the panel instead. A tapped
-/// stop opens the panel's stop sheet, and Back closes this one.
+/// back. The page's navigation actions go to the panel instead. A tapped stop
+/// opens the panel's stop sheet, a trip it starts or continues as opens the
+/// panel's trip sheet, and Back closes this one.
 struct TripPageSheetHost: UIViewControllerRepresentable {
     let application: Application
     let tripConvertible: TripConvertible
@@ -28,7 +29,11 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
     let onMapFocusChanged: (TripMapFocus?) -> Void
 
     /// Opens a tapped stop. See `TripPageViewController.onSelectStop`.
-    let onSelectStop: (StopID) -> Void
+    let onSelectStop: (StopID, TransferContext?) -> Void
+
+    /// Opens what the trip starts as or continues as. See
+    /// `TripPageViewController.onSelectTrip`.
+    let onSelectTrip: (TripConvertible) -> Void
 
     /// Ends the sheet when the page's Back row is tapped. See
     /// `TripPageViewController.onClose`.
@@ -41,6 +46,7 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
             destinationStopID: destinationStopID,
             onMapFocusChanged: onMapFocusChanged,
             onSelectStop: onSelectStop,
+            onSelectTrip: onSelectTrip,
             onClose: onClose
         )
     }
@@ -60,7 +66,8 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
         tripConvertible: TripConvertible,
         destinationStopID: StopID? = nil,
         onMapFocusChanged: @escaping (TripMapFocus?) -> Void,
-        onSelectStop: @escaping (StopID) -> Void,
+        onSelectStop: @escaping (StopID, TransferContext?) -> Void,
+        onSelectTrip: @escaping (TripConvertible) -> Void,
         onClose: @escaping () -> Void
     ) -> TripPageViewController {
         let page = TripPageViewController(
@@ -70,6 +77,7 @@ struct TripPageSheetHost: UIViewControllerRepresentable {
         )
         page.onMapFocusChanged = onMapFocusChanged
         page.onSelectStop = onSelectStop
+        page.onSelectTrip = onSelectTrip
         page.onClose = onClose
         return page
     }

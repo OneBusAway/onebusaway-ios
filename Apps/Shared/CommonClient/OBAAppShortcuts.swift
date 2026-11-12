@@ -18,7 +18,7 @@ import OBAKit
 /// `AppConfig.appShortcutsProvider` so it can refresh the bookmark parameter.
 ///
 /// Phrases are localized by `AppShortcuts.strings`, keyed by the English phrase
-/// with `${applicationName}` / `${bookmark}` tokens, in this directory's
+/// with `${applicationName}`, `${bookmark}` and `${stop}` tokens, in this directory's
 /// `.lproj`s: the strings must sit in the bundle that contains this provider
 /// (and its `Metadata.appintents`). Changing an English phrase changes its key,
 /// so update every locale's `AppShortcuts.strings` in the same commit.
@@ -44,6 +44,15 @@ nonisolated struct OBAAppShortcuts: AppShortcutsProvider {
             ],
             shortTitle: LocalizedStringResource("next_departures_intent.short_title", defaultValue: "Next departures", table: "AppIntents", bundle: #bundle),
             systemImageName: "clock"
+        )
+        AppShortcut(
+            intent: NextDeparturesAtStopIntent(),
+            phrases: [
+                "When is the next bus at \(\.$stop) in \(.applicationName)",
+                "Next departures at \(\.$stop) in \(.applicationName)"
+            ],
+            shortTitle: LocalizedStringResource("next_departures_at_stop_intent.short_title", defaultValue: "Departures at a stop", table: "AppIntents", bundle: #bundle),
+            systemImageName: "signpost.right"
         )
     }
 }

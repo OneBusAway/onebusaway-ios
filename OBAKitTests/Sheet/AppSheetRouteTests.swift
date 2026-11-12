@@ -53,6 +53,25 @@ final class AppSheetRouteTests {
         #expect(a.id != b.id)
     }
 
+    /// A stop opened from a trip carries the rider's transfer context, but it's
+    /// still the same sheet as the stop opened from anywhere else: that is how
+    /// `SheetCoordinator.open` finds a copy already open, and how a sheet's map
+    /// drawing finds its own route rebuilt from the stop ID.
+    @Test func `Stop details identity ignores the transfer context`() {
+        let context = TransferContext(
+            arrivalTime: Date(timeIntervalSince1970: 1_700_000_600),
+            fromRouteShortName: "10",
+            fromTripHeadsign: "Downtown Seattle",
+            fromTripID: "1_40989208"
+        )
+        let withContext = AppSheetRoute.stopDetails(stopID: "1_75403", transferContext: context)
+        let plain = AppSheetRoute.stopDetails(stopID: "1_75403")
+
+        #expect(withContext.id == "stopDetails-1_75403")
+        #expect(withContext == plain)
+        #expect(withContext.hashValue == plain.hashValue)
+    }
+
     /// `CurrentTripView` hands over a freshly fetched arrival on every refresh, and
     /// a rider can reach the same trip from a different stop's row. Both have to
     /// produce the route already on screen, or a repeat push can't be recognized.

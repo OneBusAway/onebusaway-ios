@@ -86,7 +86,7 @@
 "bookmarks_controller.context_menu.unpin" = "Rimuovi";
 
 /* The title to display to confirm the user's action to delete a bookmark. */
-"bookmarks_controller.delete_bookmark.actionsheet.title" = "Elimina promemoria";
+"bookmarks_controller.delete_bookmark.actionsheet.title" = "Elimina segnalibro";
 
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Modifica";
@@ -711,6 +711,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Sposta la mappa o attiva i servizi di localizzazione per vedere le fermate vicine.";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "Quale fermata?";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "Questo segnalibro non è disponibile nella tua regione attuale.";
 
@@ -726,7 +729,7 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "Poi %@.";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "Impossibile caricare le partenze per %@. Controlla la connessione e riprova.";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
@@ -743,6 +746,21 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "%1$@ per %2$@ %3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "%1$@ %2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "Prossime a %1$@: %2$@.";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "Nessuna partenza da %@ nella prossima ora.";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "Questa fermata non è nella tua regione attuale.";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Solo posti in piedi stretti";
@@ -924,6 +942,12 @@
 /* Title for the empty set indicator on the Recent Stops controller. */
 "recent_stops.empty_set.title" = "Nessuna fermata recente";
 
+/* Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks. */
+"recent_stops.multiple_bookmarks.body" = "Questa fermata ha più segnalibri. Usa la scheda Segnalibri per gestirli.";
+
+/* Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark. */
+"recent_stops.multiple_bookmarks.title" = "Più segnalibri";
+
 /* Title of the Alarms section of the Recents controller */
 "recent_stops_controller.alarms_section.title" = "Sveglie";
 
@@ -1095,6 +1119,15 @@
 /* Error shown when a tapped search result cannot be turned into something to display. */
 "search_results_sheet.unresolvable_result" = "Impossibile aprire questo risultato di ricerca.";
 
+/* Search scope tag showing all search result types. */
+"search_scope.all" = "All";
+
+/* Search scope tag filtering results to places and addresses. */
+"search_scope.places" = "Places";
+
+/* Search scope tag filtering results to transit routes. */
+"search_scope.routes" = "Routes";
+
 /* Accessibility label for the button that clears the search query. */
 "search_sheet.clear_query" = "Cancella";
 
@@ -1179,9 +1212,6 @@
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Usa la mappa con pannello";
 
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "Riavvia l'app per applicare le modifiche.";
-
 /* Settings > Experimental section > New stop page toggle */
 "settings_controller.experimental_section.new_stop_page" = "Usa la nuova pagina della fermata";
 
@@ -1223,6 +1253,18 @@
 
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "Sondaggi";
+
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "Apple Maps";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "Chiedi ogni volta";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "Google Maps";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "Indicazioni percorso pedonale";
 
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "Media (~3 mph)";
@@ -2013,6 +2055,8 @@
 "trip_page.card.distance_stops_a11y_fmt" = "a %1$@, a %2$d fermate di distanza";
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "a %1$@ · %2$d fermate";
+/* Row on the trip page naming the trip the same vehicle runs next, which a rider who stays on board rides into. %@ is that trip's route and headsign, e.g. 'Continues as 10 - Downtown Seattle'. */
+"trip_page.continues_as_fmt" = "Proseguirà come: %@";
 /* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
 "trip_page.ghost_bus_report_sent" = "Grazie! La segnalazione è stata inviata.";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
@@ -2029,6 +2073,8 @@
 "trip_page.report_ghost_bus" = "Segnala corsa fantasma";
 /* Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.schedule" = "Orario";
+/* Row on the trip page naming the trip the same vehicle runs just before this one. %@ is that trip's route and headsign, e.g. 'Starts as 10 - Downtown Seattle'. */
+"trip_page.starts_as_fmt" = "Parte come: %@";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "già superata";
 /* VoiceOver label for a collapsed run of stops between the vehicle and the rider's stop, e.g. '5 stops before your stop'. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */

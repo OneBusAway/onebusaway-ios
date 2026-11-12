@@ -64,6 +64,27 @@ extension Color {
     static let searchSheetBackground = Color(.systemGroupedBackground)
 }
 
+// MARK: - SearchListSectionsView
+
+/// Shared section renderer used by both `SearchListView` and `.searchSuggestions`.
+struct SearchListSectionsView: View {
+    let sections: [SearchListSection]
+
+    var body: some View {
+        ForEach(sections) { section in
+            Section {
+                ForEach(section.content) { row in
+                    SearchListRowView(row: row)
+                }
+            } header: {
+                Text(section.title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
+        }
+    }
+}
+
 // MARK: - SearchListContentView
 
 private struct SearchListContentView: View {
@@ -71,17 +92,7 @@ private struct SearchListContentView: View {
 
     var body: some View {
         List {
-            ForEach(sections) { section in
-                Section {
-                    ForEach(section.content) { row in
-                        SearchListRowView(row: row)
-                    }
-                } header: {
-                    Text(section.title)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                }
-            }
+            SearchListSectionsView(sections: sections)
         }
         .searchListChrome()
     }

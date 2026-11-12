@@ -9,6 +9,7 @@
 
 import CoreLocation
 import Foundation
+import SwiftUI
 import Testing
 import UIKit
 @testable import OBAKit
@@ -19,6 +20,7 @@ import UIKit
 final class RecentStopsViewControllerTests: OBATestCase {
 
     var queue: OperationQueue!
+    var dataLoader: MockDataLoader!
     var app: Application!
 
     override init() async throws {
@@ -27,7 +29,7 @@ final class RecentStopsViewControllerTests: OBATestCase {
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
 
-        let dataLoader = MockDataLoader(testName: name)
+        dataLoader = MockDataLoader(testName: name)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         app = buildApplication(queue: queue, dataLoader: dataLoader)
     }
@@ -36,9 +38,32 @@ final class RecentStopsViewControllerTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
+    private func makeValidAlarm(id: String = "alarm_1") throws -> Alarm {
+        let alarm = try Fixtures.loadAlarm(id: id)
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+        alarm.deepLink = ArrivalDepartureDeepLink(
+            title: "Alarm Title",
+            regionID: 1,
+            stopID: "1_75403",
+            tripID: "trip_1",
+            serviceDate: Date(timeIntervalSinceReferenceDate: 0),
+            stopSequence: 1,
+            vehicleID: nil
+        )
+        return alarm
+    }
+
+    private func seedRecentStop() throws -> Stop {
+        let stops = try Fixtures.loadSomeStops()
+        let stop = try #require(stops.first)
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+        return stop
+    }
+
     // MARK: - Controller Initialization & Lifecycle
 
-    @Test func testInitializationAndDefaultProperties() {
+    @Test func testInitializationAndDefaultProperties() throws {
         let controller = RecentStopsViewController(application: app)
 
         let expectedTitle = OBAKit.OBALoc("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
@@ -52,135 +77,199 @@ final class RecentStopsViewControllerTests: OBATestCase {
         #expect(controller.navigationItem.rightBarButtonItem?.title == expectedDeleteAllTitle)
         #expect(controller.navigationItem.rightBarButtonItem?.action == #selector(RecentStopsViewController.deleteAll))
         #expect(controller.view.backgroundColor == ThemeColors.shared.systemBackground)
+
+        let hostingController = try #require(controller.hostingController)
+        #expect(controller.children.contains(hostingController))
+        #expect(hostingController.view.superview === controller.view)
     }
 
-    // MARK: - Empty Data
+    @Test func testDeleteAllButtonEnabledStateReflectsRecentStops() throws {
+        let controller = RecentStopsViewController(application: app)
+        controller.loadViewIfNeeded()
+        #expect(controller.navigationItem.rightBarButtonItem?.isEnabled == false)
 
-    @Test func testEmptyDataConfiguration() {
+        // Alarms alone do not enable Delete All (Delete All only clears recent stops).
+        let alarm = try makeValidAlarm()
+        app.userDataStore.add(alarm: alarm)
+        controller.viewWillAppear(false)
+        #expect(controller.navigationItem.rightBarButtonItem?.isEnabled == false)
+
+        // Adding a recent stop enables Delete All.
+        _ = try seedRecentStop()
+        controller.viewWillAppear(false)
+        #expect(controller.navigationItem.rightBarButtonItem?.isEnabled == true)
+
+        // Deleting all recent stops disables Delete All again.
+        controller.viewModel.deleteAllRecentStops()
+        #expect(controller.navigationItem.rightBarButtonItem?.isEnabled == false)
+    }
+
+    @Test func testDeleteAllPresentsConfirmationAlert() throws {
+        _ = try seedRecentStop()
+        let controller = RecentStopsViewController(application: app)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+
+        controller.viewWillAppear(false)
+        controller.deleteAll()
+
+        let alert = try #require(controller.presentedViewController as? UIAlertController)
+        let expectedTitle = OBAKit.OBALoc(
+            "recent_stops.confirmation_alert.title",
+            value: "Are you sure you want to delete all of your recent stops?",
+            comment: "Title for a confirmation alert displayed before the user deletes all of their recent stops."
+        )
+        #expect(alert.title == expectedTitle)
+        #expect(alert.actions.count == 2)
+        #expect(alert.actions.contains(where: { $0.style == .destructive && $0.title == Strings.delete }))
+        #expect(alert.actions.contains(where: { $0.style == .cancel }))
+    }
+
+    // MARK: - Empty State & Explore Map
+
+    @Test func testExploreMapNavigationSwitchesToMapTab() throws {
         let root = ClassicApplicationRootController(application: app)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = root
 
         let controller = root.recentStopsController
-        let dummyListView = OBAListView()
-        let emptyData = controller.emptyData(for: dummyListView)
-
-        guard case .standard(let viewModel) = emptyData else {
-            Issue.record("Expected standard empty data view model")
-            return
-        }
-
-        let expectedTitle = OBAKit.OBALoc("recent_stops.empty_set.title", value: "No Recent Stops", comment: "Title for the empty set indicator on the Recent Stops controller.")
-        let expectedSubtitle = OBAKit.OBALoc("recent_stops.empty_set.body", value: "Transit stops that you view in the app will appear here.", comment: "Body for the empty set indicator on the Recent Stops controller.")
-        let expectedButtonText = OBAKit.OBALoc("recent_stops.empty_set.button", value: "Find Stops on Maps", comment: "The button title for taking the user to the map view to find stops.")
-
-        #expect(viewModel.title == expectedTitle)
-        #expect(viewModel.body == expectedSubtitle)
-        #expect(viewModel.buttonConfig?.text == expectedButtonText)
-        #expect(viewModel.buttonConfig?.largeContentImage == Icons.mapTabIcon)
-        #expect(viewModel.buttonConfig?.showsActivityIndicatorOnTap == false)
+        controller.loadViewIfNeeded()
 
         root.selectedIndex = ClassicApplicationRootController.Page.recentStops.rawValue
         #expect(root.selectedIndex != ClassicApplicationRootController.Page.map.rawValue)
-        viewModel.buttonConfig?.action()
+
+        let listView = try #require(controller.hostingController?.rootView)
+        #expect(listView.isShowingEmptyState)
+
+        listView.navigation.exploreMap()
         #expect(root.selectedIndex == ClassicApplicationRootController.Page.map.rawValue)
     }
 
-    // MARK: - Section Generation
+    // MARK: - Section & Row State
 
-    @Test func testItemsSectionsWhenEmpty() {
+    @Test func testListViewSectionsWhenEmpty() throws {
         let controller = RecentStopsViewController(application: app)
-        let dummyListView = OBAListView()
-        let sections = controller.items(for: dummyListView)
-
-        #expect(sections.isEmpty)
-    }
-
-    @Test func testItemsSectionsWithStopsOnly() throws {
-        let stops = try Fixtures.loadSomeStops()
-        let stop = stops.first!
-        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
-        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
-
-        let controller = RecentStopsViewController(application: app)
+        controller.loadViewIfNeeded()
         controller.viewWillAppear(false)
 
-        let dummyListView = OBAListView()
-        let sections = controller.items(for: dummyListView)
-
-        #expect(sections.count == 1)
-        #expect(sections[0].id == "recent_stops")
-        // When there are no alarms, the stops section title is nil
-        #expect(sections[0].title == nil)
-        #expect(sections[0].contents.count == 1)
-        let rowItem = try #require(sections[0].contents.first?.as(StopRowItem.self))
-        #expect(rowItem.stopID == stop.id)
-
-        // Verifies row delete action removes stop from data store
-        rowItem.onDeleteAction?(rowItem)
-        let updatedRecentStops = app.userDataStore.recentStops(in: Fixtures.pugetSoundRegion)
-        #expect(!updatedRecentStops.contains(stop))
+        let listView = try #require(controller.hostingController?.rootView)
+        #expect(listView.isShowingEmptyState)
+        #expect(listView.alarmRows.isEmpty)
+        #expect(controller.viewModel.recentStops.isEmpty)
+        #expect(listView.stopsSectionTitle == nil)
     }
 
-    @Test func testItemsSectionsWithAlarmsAndStops() throws {
+    @Test func testListViewSectionsWithStopsOnly() throws {
+        let stop = try seedRecentStop()
+
+        let controller = RecentStopsViewController(application: app)
+        controller.loadViewIfNeeded()
+        controller.viewWillAppear(false)
+
+        let listView = try #require(controller.hostingController?.rootView)
+        #expect(!listView.isShowingEmptyState)
+        #expect(listView.alarmRows.isEmpty)
+        #expect(controller.viewModel.recentStops.map(\.id) == [stop.id])
+        // When there are no alarms, the stops section title is nil.
+        #expect(listView.stopsSectionTitle == nil)
+    }
+
+    @Test func testListViewSectionsWithAlarmsAndStops() throws {
+        let alarm = try makeValidAlarm()
+        app.userDataStore.add(alarm: alarm)
+        let stop = try seedRecentStop()
+
+        let controller = RecentStopsViewController(application: app)
+        controller.loadViewIfNeeded()
+        controller.viewWillAppear(false)
+
+        let listView = try #require(controller.hostingController?.rootView)
+        #expect(!listView.isShowingEmptyState)
+        #expect(listView.alarmRows.count == 1)
+        #expect(listView.alarmRows.first?.id == alarm.url)
+        #expect(controller.viewModel.recentStops.map(\.id) == [stop.id])
+        // Stops section title changes to Strings.recentStops when alarms exist.
+        #expect(listView.stopsSectionTitle == Strings.recentStops)
+    }
+
+    @Test func testListViewOmitsAlarmsWithoutDeepLink() throws {
         let alarm = try Fixtures.loadAlarm()
         alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
-        alarm.deepLink = ArrivalDepartureDeepLink(
-            title: "Alarm Title",
-            regionID: 1,
-            stopID: "1_75403",
-            tripID: "trip_1",
-            serviceDate: Date(timeIntervalSinceReferenceDate: 0),
-            stopSequence: 1,
-            vehicleID: nil
-        )
+        alarm.deepLink = nil
         app.userDataStore.add(alarm: alarm)
 
-        let stops = try Fixtures.loadSomeStops()
-        let stop = stops.first!
-        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
-        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
-
         let controller = RecentStopsViewController(application: app)
+        controller.loadViewIfNeeded()
         controller.viewWillAppear(false)
 
-        let dummyListView = OBAListView()
-        let sections = controller.items(for: dummyListView)
-
-        #expect(sections.count == 2)
-
-        // Alarms section
-        #expect(sections[0].id == "alarms")
-        let expectedAlarmsTitle = OBAKit.OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller")
-        #expect(sections[0].title == expectedAlarmsTitle)
-        #expect(sections[0].contents.count == 1)
-
-        // Stops section title changes to Strings.recentStops when alarms exist
-        #expect(sections[1].id == "recent_stops")
-        #expect(sections[1].title == Strings.recentStops)
-        #expect(sections[1].contents.count == 1)
+        let listView = try #require(controller.hostingController?.rootView)
+        #expect(listView.alarmRows.isEmpty)
+        #expect(listView.isShowingEmptyState)
     }
 
-    // MARK: - Context Menu
+    // MARK: - Actions & Navigation
 
-    @Test func testContextMenuReturnsPreviewProviderForStopRowItem() throws {
+    @Test func testSelectStopNavigatesToStopController() throws {
+        let stop = try seedRecentStop()
         let controller = RecentStopsViewController(application: app)
-        let stop = try Fixtures.loadSomeStops().first!
-        let rowItem = StopRowItem(withStop: stop, onSelect: nil, onDelete: nil)
+        let nav = UINavigationController(rootViewController: controller)
+        controller.loadViewIfNeeded()
+        controller.viewWillAppear(false)
 
-        let menuActions = controller.contextMenu(OBAListView(), for: rowItem.typeErased)
-        let actions = try #require(menuActions)
+        #expect(nav.viewControllers.count == 1)
+        let listView = try #require(controller.hostingController?.rootView)
+        listView.navigation.selectStop(stop)
 
-        let previewController = try #require(actions.previewProvider?())
-        let stopID = (previewController as? StopPageViewController)?.viewModel.stopID ?? (previewController as? StopViewController)?.stopID
-        #expect(stopID == stop.id)
+        #expect(nav.viewControllers.count == 2)
+        let topVC = nav.topViewController
+        let pushedStopID = (topVC as? StopPageViewController)?.viewModel.stopID
+        #expect(pushedStopID == stop.id)
     }
 
-    @Test func testContextMenuReturnsNilForUnrecognizedItem() {
-        let controller = RecentStopsViewController(application: app)
-        let genericItem = OBAListRowView.DefaultViewModel(title: "Generic Item").typeErased
+    @Test func testDeleteAlarmActionRemovesAlarm() throws {
+        dataLoader.mock(data: Data()) { req in
+            req.url?.path.contains("/alarms/") ?? false
+        }
 
-        let menuActions = controller.contextMenu(OBAListView(), for: genericItem)
-        #expect(menuActions == nil)
+        let alarm = try makeValidAlarm()
+        app.userDataStore.add(alarm: alarm)
+
+        let controller = RecentStopsViewController(application: app)
+        controller.loadViewIfNeeded()
+        controller.viewWillAppear(false)
+
+        let listView = try #require(controller.hostingController?.rootView)
+        let alarmRow = try #require(listView.alarmRows.first)
+
+        listView.navigation.deleteAlarm(alarmRow)
+
+        #expect(controller.viewModel.alarms.isEmpty)
+        #expect(!app.userDataStore.alarms.map(\.url).contains(alarm.url))
+    }
+
+    @Test func testShowDeepLinkNavigatesToTrip() async throws {
+        let arrivalData = Fixtures.loadData(file: "arrival-and-departure-for-stop-1_11420.json")
+        dataLoader.mock(data: arrivalData) { request in
+            request.url?.path.contains("/api/where/arrival-and-departure-for-stop/") ?? false
+        }
+
+        let controller = RecentStopsViewController(application: app)
+        let nav = UINavigationController(rootViewController: controller)
+        controller.loadViewIfNeeded()
+
+        let deepLink = ArrivalDepartureDeepLink(
+            title: "Route 10",
+            regionID: Fixtures.pugetSoundRegion.regionIdentifier,
+            stopID: "1_11420",
+            tripID: "1_12345",
+            serviceDate: Date(timeIntervalSince1970: 1558076400),
+            stopSequence: 5,
+            vehicleID: nil
+        )
+
+        await controller.showDeepLink(deepLink: deepLink)
+
+        #expect(nav.viewControllers.count == 2)
     }
 }

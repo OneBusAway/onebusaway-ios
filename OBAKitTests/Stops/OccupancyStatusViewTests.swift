@@ -12,9 +12,8 @@ import UIKit
 import OBAKitCore
 @testable import OBAKit
 
-/// The occupancy row in the UIKit arrival rows (`StopArrivalView`), shown on the classic
-/// stop page and the Report Problem screen. `OccupancyBadgeTests` covers the SwiftUI
-/// badge the new stop page uses.
+/// The occupancy row in the UIKit arrival rows (`StopArrivalView`), shown on the Report
+/// Problem screen. `OccupancyBadgeTests` covers the SwiftUI badge the stop page uses.
 @Suite(.serialized)
 struct OccupancyStatusViewTests {
 

@@ -14,7 +14,7 @@ import OBAKitCore
 /// button back to the home sections.
 struct SearchSheetView: View {
     @StateObject private var viewModel: SearchSheetViewModel
-    @FocusState private var isFieldFocused: Bool
+    @State private var isSearchPresented = false
 
     let placeholder: String
 
@@ -33,15 +33,71 @@ struct SearchSheetView: View {
         )
     }
 
+    private var queryBinding: Binding<String> {
+        Binding(
+            get: { viewModel.query },
+            set: { newValue in
+                guard newValue != viewModel.query else { return }
+                viewModel.updateQuery(newValue)
+            }
+        )
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            searchField
-            SearchListView(searchInteractor: viewModel.searchInteractor)
+        NavigationStack {
+            searchBody
+                .navigationTitle(Text(OBALoc(
+                    "search_controller.empty_set.title",
+                    value: "Search",
+                    comment: "Title for the empty set indicator on the Search controller."
+                )))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        SheetDismissButton(.close) {
+                            isSearchPresented = false
+                            viewModel.close()
+                        }
+                    }
+
+                    if viewModel.isVoiceSearchAvailable {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            voiceSearchButton
+                        }
+                    }
+                }
+                .searchable(
+                    text: queryBinding,
+                    isPresented: $isSearchPresented,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: Text(placeholder)
+                )
+                .searchPresentationToolbarBehavior(.avoidHidingContent)
+                .searchScopes($viewModel.scope, activation: .onSearchPresentation) {
+                    ForEach(SearchScope.allCases) { scope in
+                        Text(scope.title).tag(scope)
+                    }
+                }
+                .searchSuggestions {
+                    if !viewModel.searchInteractor.sections.isEmpty {
+                        SearchListSectionsView(sections: viewModel.searchInteractor.sections)
+                    }
+                }
+                .searchListChrome()
+                .autocorrectionDisabled()
+                .onSubmit(of: .search) {
+                    viewModel.submitSearch()
+                }
+                .onChange(of: isSearchPresented) { wasPresented, isPresented in
+                    if wasPresented && !isPresented {
+                        viewModel.scope = .all
+                    }
+                }
         }
         .searchSheetBackground()
         .onAppear {
             viewModel.reportSearchOpened()
-            isFieldFocused = true
+            isSearchPresented = true
             // `onDisappear` dismisses the HUD, and the sheet system rebuilds a sheet's
             // content view without the user going anywhere — see
             // `MapSearchDisplayModel.owner`. `isSearching` doesn't change across that
@@ -83,78 +139,39 @@ struct SearchSheetView: View {
         }
     }
 
-    private var searchField: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField(placeholder, text: Binding(
-                    get: { viewModel.query },
-                    set: { viewModel.updateQuery($0) }
-                ))
-                .focused($isFieldFocused)
-                .submitLabel(.search)
-                .autocorrectionDisabled()
-                // Matches UIKit, where the search bar's search button is unhandled:
-                // Return just dismisses the keyboard; the quick-search rows are the
-                // way to run a search.
-                .onSubmit { isFieldFocused = false }
-
-                if !viewModel.query.isEmpty {
-                    Button {
-                        viewModel.updateQuery("")
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            // `Color.secondary`, not the `.secondary` shape style:
-                            // inside a `Button` the latter resolves against the
-                            // button's tint, which rendered a washed-out accent
-                            // colour rather than grey. `.plain` keeps the tint off
-                            // the label for good measure.
-                            .foregroundStyle(Color.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(OBALoc(
-                        "search_sheet.clear_query",
-                        value: "Clear",
-                        comment: "Accessibility label for the button that clears the search query."
-                    ))
-                }
-
-                if viewModel.isVoiceSearchAvailable {
-                    Button {
-                        isFieldFocused = false
-                        viewModel.toggleVoiceSearch()
-                    } label: {
-                        Image(systemName: viewModel.isListening ? "mic.fill" : "mic")
-                            .foregroundStyle(viewModel.isListening ? Color.accentColor : Color.secondary)
-                            .symbolEffect(.pulse, isActive: viewModel.isListening)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(viewModel.isListening
-                        ? OBALoc(
-                            "search_sheet.voice_search.stop",
-                            value: "Stop listening",
-                            comment: "Accessibility label for the mic button while voice search is listening."
-                        )
-                        : OBALoc(
-                            "search_sheet.voice_search.start",
-                            value: "Voice search",
-                            comment: "Accessibility label for the mic button that starts voice search."
-                        )
-                    )
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background { Capsule().fill(Color(.tertiarySystemFill)) }
-
-            Button(Strings.close) {
-                isFieldFocused = false
-                viewModel.close()
-            }
+    @ViewBuilder
+    private var searchBody: some View {
+        // `.searchSuggestions` shares the sheet's grouped background via
+        // `.searchListChrome()`. Suppress `SearchListView` while suggestions are
+        // presented so its list doesn't show through the transparent backdrop.
+        if isSearchPresented && !viewModel.searchInteractor.sections.isEmpty {
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+        } else {
+            SearchListView(searchInteractor: viewModel.searchInteractor)
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 16)
+    }
+
+    private var voiceSearchButton: some View {
+        Button {
+            viewModel.toggleVoiceSearch()
+        } label: {
+            Image(systemName: viewModel.isListening ? "mic.fill" : "mic")
+                .foregroundStyle(viewModel.isListening ? Color.accentColor : Color.secondary)
+                .symbolEffect(.pulse, isActive: viewModel.isListening)
+        }
+        .accessibilityLabel(viewModel.isListening
+            ? OBALoc(
+                "search_sheet.voice_search.stop",
+                value: "Stop listening",
+                comment: "Accessibility label for the mic button while voice search is listening."
+            )
+            : OBALoc(
+                "search_sheet.voice_search.start",
+                value: "Voice search",
+                comment: "Accessibility label for the mic button that starts voice search."
+            )
+        )
     }
 
 }

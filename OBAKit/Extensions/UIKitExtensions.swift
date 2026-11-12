@@ -15,13 +15,6 @@ import SwiftUI
 
 public extension UIButton {
 
-    /// A button with a right-pointing arrow. Use this on map annotation view callouts.
-    class var chevronButton: UIButton {
-        let button = UIButton(type: .detailDisclosure)
-        button.setImage(Icons.chevron, for: .normal)
-        return button
-    }
-
     class func buildCloseButton() -> UIButton {
         var configuration = UIButton.Configuration.borderless()
         configuration.image = Icons.closeCircle

@@ -12,11 +12,29 @@ import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
-/// Settings' Show Scale and Show Traffic switches went to `MapRegionManager`'s
-/// `MKMapView` only, which the map panel never shows.
+/// Settings' Show Scale, Show Traffic and Show Heading switches went to
+/// `MapRegionManager`'s `MKMapView` only, which the map panel never shows.
 @MainActor
 @Suite(.serialized)
 final class MapPanelMapSettingsTests: OBATestCase {
+
+    private func makePanelSettings(_ application: Application) -> MapPanelMapSettings {
+        MapPanelMapSettings(style: .standard(pointsOfInterest: true), userDefaults: application.userDefaults)
+    }
+
+    @Test func `Both maps start with every switch on`() {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: name))
+        let manager = application.mapRegionManager
+        let panel = makePanelSettings(application)
+
+        #expect(manager.mapViewShowsScale)
+        #expect(MapDisplaySettings(userDefaults: application.userDefaults).showsTraffic)
+        #expect(manager.mapViewShowsHeading)
+
+        #expect(panel.showsScale)
+        #expect(panel.showsTraffic)
+        #expect(MapPanelUserLocation(userDefaults: application.userDefaults).showsHeading)
+    }
 
     @Test func `The panel map reads the switches Settings writes`() {
         let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: name))
@@ -24,16 +42,34 @@ final class MapPanelMapSettingsTests: OBATestCase {
         application.mapRegionManager.mapViewShowsScale = false
         application.mapRegionManager.mapViewShowsTraffic = false
 
-        #expect(application.userDefaults.object(forKey: MapRegionManager.mapViewShowsScaleKey) as? Bool == false)
-        #expect(application.userDefaults.object(forKey: MapRegionManager.mapViewShowsTrafficKey) as? Bool == false)
+        let panel = makePanelSettings(application)
+        #expect(!panel.showsScale)
+        #expect(!panel.showsTraffic)
+    }
+
+    @Test func `The panel's location reads the Show Heading switch Settings writes`() {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: name))
+        let settings = SettingsViewModel(application: application)
+
+        settings.mapShowsHeading = false
+        #expect(!MapPanelUserLocation(userDefaults: application.userDefaults).showsHeading)
+
+        settings.mapShowsHeading = true
+        #expect(MapPanelUserLocation(userDefaults: application.userDefaults).showsHeading)
+    }
+
+    @Test func `The stored keys keep riders' existing choices`() {
+        #expect(MapDisplaySettings.showsScaleKey == "mapRegionManager.mapViewShowsScale")
+        #expect(MapDisplaySettings.showsTrafficKey == "mapRegionManager.mapViewShowsTraffic")
+        #expect(MapDisplaySettings.showsHeadingKey == "mapRegionManager.mapViewShowsHeadingKey")
     }
 
     @Test func `Traffic stays off in the Simulator`() {
         #if targetEnvironment(simulator)
-        #expect(!MapRegionManager.effectiveShowsTraffic(true))
+        #expect(!MapDisplaySettings.effectiveShowsTraffic(true))
         #else
-        #expect(MapRegionManager.effectiveShowsTraffic(true))
+        #expect(MapDisplaySettings.effectiveShowsTraffic(true))
         #endif
-        #expect(!MapRegionManager.effectiveShowsTraffic(false))
+        #expect(!MapDisplaySettings.effectiveShowsTraffic(false))
     }
 }

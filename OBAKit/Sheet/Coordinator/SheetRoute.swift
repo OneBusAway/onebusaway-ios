@@ -195,7 +195,9 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case bookmarksAll
 
     // Stacked layer
-    case stopDetails(stopID: Stop.ID)
+    // The context is the trip the rider tapped this stop on, when there was one,
+    // and isn't part of the route's identity: see `id`.
+    case stopDetails(stopID: Stop.ID, transferContext: TransferContext? = nil)
     case tripPlanner(TripPlannerRequest)
     // The convertible, not just its trip ID: the trip page's view model fetches
     // with the vehicle and service date as well, which an ID can't supply.
@@ -243,7 +245,11 @@ nonisolated extension AppSheetRoute {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .routePicker, .more, .settings, .mapSettings:
             return caseName
-        case .stopDetails(let stopID):
+        case .stopDetails(let stopID, _):
+            // Not the transfer context. A stop is one sheet however it was
+            // reached, so `SheetCoordinator.open` goes back to a copy already open
+            // rather than stacking a second, and routes rebuilt from the stop ID
+            // alone (a sheet's map drawing, the source of its taps) still match.
             return "\(caseName)-\(stopID)"
         case .tripPlanner(let request):
             // Analytics key based on payload presence. Privacy guard: no

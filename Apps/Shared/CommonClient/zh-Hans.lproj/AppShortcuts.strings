@@ -1,6 +1,6 @@
 /*
  * App Shortcuts phrases (Siri). Keys are the English phrases from OBAAppShortcuts in
- * OBAAppShortcuts.swift, with ${applicationName} and ${bookmark} tokens. Every
+ * OBAAppShortcuts.swift, with ${applicationName}, ${bookmark} and ${stop} tokens. Every
  * value must keep ${applicationName}, or Siri drops the phrase. Hand-maintained.
  */
 
@@ -17,3 +17,7 @@
 "When is my next bus in ${applicationName}" = "${applicationName}里我的下一班公交车什么时候来";
 
 "Do I have time to catch the bus with ${applicationName}" = "用${applicationName}看看我还赶得上公交车吗";
+
+"When is the next bus at ${stop} in ${applicationName}" = "${applicationName}里${stop}的下一班公交车什么时候来";
+
+"Next departures at ${stop} in ${applicationName}" = "${applicationName}里${stop}的下一班发车时间";

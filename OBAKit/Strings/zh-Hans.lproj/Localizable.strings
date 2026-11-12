@@ -711,6 +711,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "移动地图或开启定位服务，即可查看附近的公交车站。";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "哪个车站？";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "该书签在你当前的地区不可用。";
 
@@ -726,7 +729,7 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "之后还有%@的班次。";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "无法加载%@的离站信息。请检查网络连接后重试。";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
@@ -743,6 +746,21 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@%2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "开往%2$@的%1$@路%3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "%1$@路%2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "%1$@的下一班：%2$@。";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "未来一小时内没有从%@发出的班次。";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "该车站不在你当前的地区。";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "站立空间非常拥挤";
@@ -924,6 +942,12 @@
 /* Title for the empty set indicator on the Recent Stops controller. */
 "recent_stops.empty_set.title" = "没有最近浏览过的车站";
 
+/* Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks. */
+"recent_stops.multiple_bookmarks.body" = "此车站有多个书签。请使用“书签”标签页进行管理。";
+
+/* Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark. */
+"recent_stops.multiple_bookmarks.title" = "多个书签";
+
 /* Title of the Alarms section of the Recents controller */
 "recent_stops_controller.alarms_section.title" = "闹钟";
 
@@ -1095,6 +1119,15 @@
 /* Error shown when a tapped search result cannot be turned into something to display. */
 "search_results_sheet.unresolvable_result" = "无法打开此搜索结果。";
 
+/* Search scope tag showing all search result types. */
+"search_scope.all" = "All";
+
+/* Search scope tag filtering results to places and addresses. */
+"search_scope.places" = "Places";
+
+/* Search scope tag filtering results to transit routes. */
+"search_scope.routes" = "Routes";
+
 /* Accessibility label for the button that clears the search query. */
 "search_sheet.clear_query" = "清除";
 
@@ -1179,9 +1212,6 @@
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "使用地图面板体验";
 
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "重新启动App后生效。";
-
 /* Settings > Experimental section > New stop page toggle */
 "settings_controller.experimental_section.new_stop_page" = "使用新版车站页面";
 
@@ -1223,6 +1253,18 @@
 
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "问卷";
+
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "苹果地图";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "每次询问";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "谷歌地图";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "步行导航";
 
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "中等（约3英里/小时）";
@@ -2013,6 +2055,8 @@
 "trip_page.card.distance_stops_a11y_fmt" = "距离%1$@，还有%2$d站";
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "距离%1$@ · %2$d站";
+/* Row on the trip page naming the trip the same vehicle runs next, which a rider who stays on board rides into. %@ is that trip's route and headsign, e.g. 'Continues as 10 - Downtown Seattle'. */
+"trip_page.continues_as_fmt" = "以%@为名继续行驶";
 /* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
 "trip_page.ghost_bus_report_sent" = "谢谢！您的报告已发送。";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
@@ -2029,6 +2073,8 @@
 "trip_page.report_ghost_bus" = "报告未到站车辆";
 /* Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.schedule" = "时刻表";
+/* Row on the trip page naming the trip the same vehicle runs just before this one. %@ is that trip's route and headsign, e.g. 'Starts as 10 - Downtown Seattle'. */
+"trip_page.starts_as_fmt" = "以%@为名启程";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "已过站";
 /* VoiceOver label for a collapsed run of stops between the vehicle and the rider's stop, e.g. '5 stops before your stop'. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */

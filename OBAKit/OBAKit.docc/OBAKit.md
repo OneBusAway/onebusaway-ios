@@ -23,7 +23,6 @@ OBAKit is a higher-level framework that contains the OneBusAway application UI. 
 - ``ClassicApplicationRootController``
 - ``MoreViewController``
 - ``RecentStopsViewController``
-- ``StopViewController``
 
 ### Bookmarks
 

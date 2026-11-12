@@ -19,24 +19,11 @@ extension StopPageActionPresenter {
     /// One available maps app opens directly; more than one presents an action
     /// sheet to disambiguate.
     func showWalkingDirections(coordinate: CLLocationCoordinate2D) {
-        var options: [(title: String, url: URL)] = []
-
-        if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: coordinate) {
-            options.append((
-                OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"),
-                appleMapsURL
-            ))
-        }
-
-        #if !targetEnvironment(simulator)
-        if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
-           googleMapsAvailable(coordinate: coordinate) {
-            options.append((
-                OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"),
-                googleMapsURL
-            ))
-        }
-        #endif
+        let options = WalkingDirectionsProvider.options(
+            coordinate: coordinate,
+            preferred: WalkingDirectionsProvider(userDefaults: application.userDefaults),
+            googleMapsAvailable: googleMapsAvailable(coordinate: coordinate)
+        )
 
         guard let first = options.first else { return }
 
@@ -51,7 +38,7 @@ extension StopPageActionPresenter {
             preferredStyle: .actionSheet
         )
         for option in options {
-            sheet.addAction(UIAlertAction(title: option.title, style: .default) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: option.provider.actionTitle, style: .default) { [weak self] _ in
                 self?.application.open(option.url, options: [:], completionHandler: nil)
             })
         }

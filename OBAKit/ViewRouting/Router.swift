@@ -308,36 +308,23 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: makeStopController(stopID: stopID, transferContext: transferContext), from: fromController)
     }
 
-    /// Builds the Stop screen honoring the new-stop-page feature flag. All stop
-    /// navigation and long-press previews must construct the controller through
-    /// these factories so the flag governs every path.
+    /// Builds the Stop screen. All stop navigation and long-press previews construct the
+    /// controller through these factories, so the transfer context is gated the same way on
+    /// every path.
     ///
     /// - Parameter showToolbarOnBottom: Pass `true` when the caller will present the result as a
-    ///   sheet rather than push it, which swaps the redesigned page's dark map header for a light
-    ///   one and moves its chrome into a bottom toolbar. Ignored when the flag is off and the
-    ///   legacy `StopViewController` is used (pushed layout only). Transfer context is still
-    ///   gated by `displayedTransferContext` — on the new page it drives trip highlighting;
-    ///   on the legacy page it drives the arrival banner.
+    ///   sheet rather than push it, which swaps the page's dark map header for a light one and
+    ///   moves its chrome into a bottom toolbar. The transfer context is gated by
+    ///   `displayedTransferContext`, and drives trip highlighting on the page.
     public func makeStopController(stop: Stop, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil, showToolbarOnBottom: Bool = false) -> UIViewController {
-        let effective = application.userDataStore.displayedTransferContext(transferContext)
-        let stopController: StopContextConfigurable
-        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            stopController = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
-        } else {
-            stopController = StopViewController(application: application, stop: stop)
-        }
+        let stopController = StopPageViewController(application: application, stop: stop, showToolbarOnBottom: showToolbarOnBottom)
         stopController.bookmarkContext = bookmark
-        stopController.transferContext = effective
+        stopController.transferContext = application.userDataStore.displayedTransferContext(transferContext)
         return stopController
     }
 
     public func makeStopController(stopID: StopID, transferContext: TransferContext? = nil, showToolbarOnBottom: Bool = false) -> UIViewController {
-        let stopController: StopContextConfigurable
-        if FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults) {
-            stopController = StopPageViewController(application: application, stopID: stopID, showToolbarOnBottom: showToolbarOnBottom)
-        } else {
-            stopController = StopViewController(application: application, stopID: stopID)
-        }
+        let stopController = StopPageViewController(application: application, stopID: stopID, showToolbarOnBottom: showToolbarOnBottom)
         stopController.transferContext = application.userDataStore.displayedTransferContext(transferContext)
         return stopController
     }
@@ -451,7 +438,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         case .more:
             rootNavigateTo(page: .more, from: context)
             return true
-        case .stopDetails(let stopID):
+        case .stopDetails(let stopID, _):
             if let target = pushTarget(from: context) {
                 navigateTo(stopID: stopID, from: target)
                 return true
@@ -525,15 +512,3 @@ extension ViewRouter: RoutePickerDelegate {
         navigation.pushViewController(currentTripController, animated: true)
     }
 }
-
-// MARK: - Stop controller factory seam
-
-/// The shared context both Stop-screen controllers expose, so `makeStopController`
-/// can set it once regardless of which the feature flag selects.
-protocol StopContextConfigurable: UIViewController {
-    var bookmarkContext: Bookmark? { get set }
-    var transferContext: TransferContext? { get set }
-}
-
-extension StopViewController: StopContextConfigurable {}
-extension StopPageViewController: StopContextConfigurable {}

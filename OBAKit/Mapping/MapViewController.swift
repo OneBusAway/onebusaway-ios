@@ -91,7 +91,13 @@ class MapViewController: UIViewController,
 
     lazy var onDemandProbeController = OnDemandProbeController.make(application: application)
     var onDemandDockHost: OnDemandDockHostController?
-    var tripPlannerFallback = TripPlannerFallbackContext()
+    lazy var tripPlanEmptyFallback: TripPlanEmptyFallback = {
+        let fallback = TripPlanEmptyFallback(probeController: onDemandProbeController, notificationCenter: application.notificationCenter)
+        fallback.onChange = { [weak self] isShowingCard in self?.tripPlanEmptyFallbackDidChange(isShowingCard: isShowingCard) }
+        return fallback
+    }()
+    /// The planner panel's delegate, held here because the panel keeps it weakly.
+    var tripPlannerPanelObserver: TripPlannerPanelObserver?
 
     // MARK: - Init
 
@@ -220,10 +226,6 @@ class MapViewController: UIViewController,
         // unfounded when UIScene gets adopted in the app. TODO.
         application.mapRegionManager.mapViewDelegate = self
         viewModel.reloadBookmarks()
-
-        // Settings is the only thing that can change the callout rule, and getting back here is
-        // the first thing that happens after it closes.
-        application.mapRegionManager.refreshStopAnnotationCallouts()
 
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateControlsPlacement(animated: false)
@@ -725,7 +727,7 @@ class MapViewController: UIViewController,
     /// presentation the router builds is a standard, opaque screen with a nav-bar back button
     /// and contained focus, and it skips the sheet path's map-focus wiring (route highlight,
     /// recentering, tab-bar hiding, `stopSheetStopID`) — map-visual bookkeeping that means
-    /// nothing while a pushed screen covers the map, exactly as the legacy push path skips it.
+    /// nothing while a pushed screen covers the map.
     ///
     /// Read at open time only: a sheet already onscreen when VoiceOver is switched on is left
     /// as-is.
@@ -752,14 +754,9 @@ class MapViewController: UIViewController,
         mapRegionManager.mapView.deselectAnnotation(annotation, animated: false)
     }
 
-    /// Routes a stop screen to the presentation that suits it: the redesigned Stop page comes
-    /// up as a half-detent sheet over the map, the legacy screen still pushes.
-    ///
-    /// The branch keys off the controller `makeStopController` actually returned rather than
-    /// re-reading `FeatureFlags.isNewStopPageEnabled`. That factory has a second reason to fall
-    /// back to the legacy screen — a non-nil transfer context — so a duplicated flag check here
-    /// would eventually disagree with it and drop `StopViewController` into a panel it was
-    /// never built for.
+    /// Brings the Stop page up as a half-detent sheet over the map. `stopController` is a plain
+    /// `UIViewController` because the context-menu commit hands back the preview's controller
+    /// untyped; anything other than the Stop page is pushed rather than dropped.
     private func present(stopController: UIViewController, deselecting annotation: MKAnnotation? = nil) {
         guard let stopPageVC = stopController as? StopPageViewController else {
             application.viewRouter.navigate(to: stopController, from: self)
@@ -884,8 +881,8 @@ class MapViewController: UIViewController,
             stopPageVC?.showTripPage(for: departure)
         }
 
-        // Combine over a @MainActor ObservableObject from UIKit: the exact pattern
-        // `StopViewController.bindArrivalsSink()` already ships under Swift 6
+        // Combine over a @MainActor ObservableObject from UIKit: the same pattern
+        // `StopPageViewController.bindArrivalsFeedback()` uses under Swift 6
         // strict concurrency. `sink(receiveValue:)` takes a plain non-Sendable
         // closure, so it inherits @MainActor and crosses no isolation boundary.
         //
@@ -948,8 +945,8 @@ class MapViewController: UIViewController,
         }
     }
 
-    /// Presents the feedback prompt after a stop sheet is dismissed — a natural
-    /// stopping point, and the only one available in the new stop page flow.
+    /// Presents the feedback prompt after a stop sheet is dismissed, a natural
+    /// stopping point.
     private lazy var feedbackPromptPresenter = FeedbackPromptPresenter(application: application)
 
     // MARK: - Feedback Prompt
@@ -1421,11 +1418,7 @@ extension MapViewController {
             topmostPresentedController.present(alert, animated: true) {
                 mapView.deselectAnnotation(view.annotation, animated: true)
             }
-        } else if !view.canShowCallout, let stop = selectableStop(for: view.annotation) {
-            // No callout means there is no chevron to tap, so selection is the open gesture.
-            // `StopAnnotationView.updateCalloutVisibility()` owns that decision — don't duplicate
-            // its reasoning here, or the two will drift and leave annotations that select but
-            // never open.
+        } else if let stop = selectableStop(for: view.annotation) {
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop, deselecting: view.annotation)
         } else if let annotation = view.annotation as? UserDroppedPin {
@@ -1465,12 +1458,6 @@ extension MapViewController {
             let interaction = UIContextMenuInteraction(delegate: self)
             stopAnnotationView.addInteraction(interaction)
         }
-    }
-
-    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        guard let stop = selectableStop(for: view.annotation) else { return }
-        application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
-        show(stop: stop, deselecting: view.annotation)
     }
 
     /// The stop an annotation opens, for the two annotation types that render as a

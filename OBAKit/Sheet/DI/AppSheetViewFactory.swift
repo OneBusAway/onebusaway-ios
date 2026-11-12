@@ -151,8 +151,8 @@ final class AppSheetViewFactory {
         case .nearbyStops(let coordinate):
             nearbyStopsView(coordinate: coordinate)
 
-        case .stopDetails(let stopID):
-            stopDetailView(stopID: stopID)
+        case .stopDetails(let stopID, let transferContext):
+            stopDetailView(stopID: stopID, transferContext: transferContext)
 
         case .routePicker:
             routePickerView()
@@ -213,10 +213,14 @@ final class AppSheetViewFactory {
     /// `StopDeparturesSections` — but replaces the navigation bar with a pinned
     /// Refresh/Close strip and a row of circular actions, and collapses the map
     /// header away as the list scrolls so the actions stay reachable.
-    func stopDetailView(stopID: Stop.ID) -> StopDetailsSheetRootView {
-        StopDetailsSheetRootView(
+    ///
+    /// The transfer context highlights the rider's trip, unless they've turned the
+    /// transfer banner off: the same check `ViewRouter.makeStopController` makes.
+    func stopDetailView(stopID: Stop.ID, transferContext: TransferContext? = nil) -> StopDetailsSheetRootView {
+        let transferContext = application.userDataStore.displayedTransferContext(transferContext)
+        return StopDetailsSheetRootView(
             stopID: stopID,
-            makeViewModel: { StopViewModel(environment: self.application, stopID: stopID) },
+            makeViewModel: { StopViewModel(environment: self.application, stopID: stopID, transferContext: transferContext) },
             makePresenter: {
                 let presenter = StopPageActionPresenter(
                     application: self.application,
@@ -292,9 +296,10 @@ final class AppSheetViewFactory {
     /// (`TripFocusMapDisplayModel.clearIfOwnerAbsent(from:)`), so the page's own
     /// `nil` is ignored.
     ///
-    /// Both of the page's ways onward go through the coordinator. A tapped stop
-    /// opens the panel's stop sheet above the trip, as a stop does everywhere else
-    /// in the panel. Back pops the route rather than letting the page dismiss
+    /// The page's ways onward go through the coordinator. A tapped stop opens the
+    /// panel's stop sheet above the trip, as a stop does everywhere else in the
+    /// panel, and the trip before or after this one opens a trip sheet the same
+    /// way. Back pops the route rather than letting the page dismiss
     /// itself from UIKit: the coordinator's stack is what holds the sheet on
     /// screen, so it is closed there, as `StopDetailsSheetView`'s Close is.
     func tripDetailsView(tripConvertible: TripConvertible, destinationStopID: StopID? = nil) -> TripPageSheetHost {
@@ -321,9 +326,29 @@ final class AppSheetViewFactory {
             },
             // The stop can already be open further down, when the rider came to
             // this trip from that stop's sheet. `open` goes back to it rather than
-            // stacking a second copy.
-            onSelectStop: { [coordinator] stopID in
-                coordinator.open(.stopDetails(stopID: stopID), from: .tripDetails(tripConvertible, destinationStopID: destinationStopID))
+            // stacking a second copy, and it stays as the rider left it, with the
+            // context it was first opened with.
+            onSelectStop: { [coordinator] stopID, transferContext in
+                coordinator.open(
+                    .stopDetails(stopID: stopID, transferContext: transferContext),
+                    from: .tripDetails(tripConvertible, destinationStopID: destinationStopID)
+                )
+            },
+            // What the trip starts as or continues as opens above it, so Back
+            // returns here. A rider who went from a trip to the one after it and
+            // taps "Starts as" there goes back down to the first. That sheet is
+            // looked for by its trip alone: one opened from a shared link also
+            // carries the sharer's destination stop, so `open` wouldn't recognize
+            // it, and it keeps that stop when the rider goes back to it.
+            onSelectTrip: { [coordinator] adjacent in
+                let alreadyOpen = coordinator.stackedRoutes.last(where: { route in
+                    guard case .tripDetails(let openTrip, _) = route else { return false }
+                    return openTrip.tripID == adjacent.tripID
+                })
+                coordinator.open(
+                    alreadyOpen ?? .tripDetails(adjacent),
+                    from: .tripDetails(tripConvertible, destinationStopID: destinationStopID)
+                )
             },
             onClose: { [coordinator] in coordinator.pop() }
         )

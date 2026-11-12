@@ -57,11 +57,11 @@ final class TripPageStopTapTests: OBATestCase {
     }
 
     /// Taps `row` on a page pushed onto a stack, and returns the stop screen it opened.
-    private func tap(_ row: TripStopListModel.Row, on page: TripPageViewController) throws -> StopContextConfigurable {
+    private func tap(_ row: TripStopListModel.Row, on page: TripPageViewController) throws -> StopPageViewController {
         let navigation = UINavigationController(rootViewController: page)
         page.rootView.actions.onSelectStop(row)
         #expect(navigation.viewControllers.count == 2)
-        return try #require(navigation.viewControllers.last as? StopContextConfigurable)
+        return try #require(navigation.viewControllers.last as? StopPageViewController)
     }
 
     @Test func `A stop after boarding opens with the trip's arrival time there`() throws {

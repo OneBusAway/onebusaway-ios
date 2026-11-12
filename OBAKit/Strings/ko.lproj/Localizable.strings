@@ -711,6 +711,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "지도를 움직이거나 위치 서비스를 켜면 주변 정류장을 볼 수 있습니다.";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "어떤 정류장인가요?";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "해당 즐겨찾기는 현재 지역에서 사용할 수 없습니다.";
 
@@ -726,7 +729,7 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "그다음은 %@입니다.";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "%@의 출발 정보를 불러올 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
@@ -743,6 +746,21 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "%2$@행 %1$@ 노선 %3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "%1$@ 노선 %2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "%1$@ 다음 출발: %2$@.";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "앞으로 1시간 동안 %@에서 출발하는 차량이 없습니다.";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "해당 정류장은 현재 지역에 없습니다.";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "입석만 가능 (매우 혼잡)";
@@ -924,6 +942,12 @@
 /* Title for the empty set indicator on the Recent Stops controller. */
 "recent_stops.empty_set.title" = "최근 정류장 없음";
 
+/* Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks. */
+"recent_stops.multiple_bookmarks.body" = "이 정류장에는 즐겨찾기가 여러 개 있습니다. 즐겨찾기 탭에서 관리하세요.";
+
+/* Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark. */
+"recent_stops.multiple_bookmarks.title" = "여러 개의 즐겨찾기";
+
 /* Title of the Alarms section of the Recents controller */
 "recent_stops_controller.alarms_section.title" = "미리 알림";
 
@@ -1095,6 +1119,15 @@
 /* Error shown when a tapped search result cannot be turned into something to display. */
 "search_results_sheet.unresolvable_result" = "이 검색 결과를 열 수 없습니다.";
 
+/* Search scope tag showing all search result types. */
+"search_scope.all" = "All";
+
+/* Search scope tag filtering results to places and addresses. */
+"search_scope.places" = "Places";
+
+/* Search scope tag filtering results to transit routes. */
+"search_scope.routes" = "Routes";
+
 /* Accessibility label for the button that clears the search query. */
 "search_sheet.clear_query" = "지우기";
 
@@ -1179,9 +1212,6 @@
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "지도 패널 사용";
 
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "적용하려면 앱을 다시 실행하세요.";
-
 /* Settings > Experimental section > New stop page toggle */
 "settings_controller.experimental_section.new_stop_page" = "새 정류장 페이지 사용";
 
@@ -1223,6 +1253,18 @@
 
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "설문조사";
+
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "Apple 지도";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "매번 묻기";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "Google 지도";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "도보 경로";
 
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "보통 (시속 약 5km)";
@@ -2013,6 +2055,8 @@
 "trip_page.card.distance_stops_a11y_fmt" = "%1$@ 거리, 정류장 %2$d개 전";
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "%1$@ 거리 · 정류장 %2$d개";
+/* Row on the trip page naming the trip the same vehicle runs next, which a rider who stays on board rides into. %@ is that trip's route and headsign, e.g. 'Continues as 10 - Downtown Seattle'. */
+"trip_page.continues_as_fmt" = "%@(으)로 운행 계속";
 /* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
 "trip_page.ghost_bus_report_sent" = "감사합니다! 신고를 보냈습니다.";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
@@ -2029,6 +2073,8 @@
 "trip_page.report_ghost_bus" = "유령 버스 신고";
 /* Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.schedule" = "시간표";
+/* Row on the trip page naming the trip the same vehicle runs just before this one. %@ is that trip's route and headsign, e.g. 'Starts as 10 - Downtown Seattle'. */
+"trip_page.starts_as_fmt" = "%@(으)로 운행 시작";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "이미 지나감";
 /* VoiceOver label for a collapsed run of stops between the vehicle and the rider's stop, e.g. '5 stops before your stop'. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */

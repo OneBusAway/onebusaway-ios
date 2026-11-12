@@ -130,8 +130,6 @@ public class Strings: NSObject {
 
     public static let emptyAlertTitle = OBALoc("common.empty_alert_set.title", value: "No Alerts", comment: "Title for the alert empty set indicator.")
 
-    public static let liveArrivals = OBALoc("common.live_arrivals", value: "Live Arrivals", comment: "Fallback title for the stop arrivals screen when the stop name is not yet available.")
-
     public static let externalSurveyPrivacyInfo = OBALoc("common.external_survey_privacy_info.description", value: "This survey will share your stop, route, region, current location", comment: "Description of the privacy policy for sharing data with the external survey service.")
 
     public static let go = OBALoc("common.go", value: "Go", comment: "The verb 'to go'")

@@ -8,6 +8,7 @@
 //
 
 import CoreLocation
+import CoreSpotlight
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -62,7 +63,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
     private func finishReplace(of region: Region, store: UserDataStore, at date: Date) async {
         let indexer = makeIndexer(FakeStopIndex(), store: store, region: region, now: date)
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         // The run records itself through a weak reference to the indexer.
         withExtendedLifetime(indexer) {}
     }
@@ -72,7 +73,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let index = FakeStopIndex()
         let indexer = makeIndexer(index, store: store, cache: cache, region: region, now: date)
         indexer.indexOrReplace()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         withExtendedLifetime(indexer) {}
         return await index.log
     }
@@ -86,7 +87,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: try makeCache([stopA, stopB, stopC], region: puget), userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
 
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         #expect(await index.log == [
             .deleteAll,
@@ -102,7 +103,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(region: puget), stopCache: try makeCache(ids.map { makeStop($0, in: puget) }, region: puget), userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true }, batchSize: 2)
 
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         #expect(await index.log == [
             .deleteAll,
@@ -130,7 +131,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
 
         available = true
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         #expect(await index.log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
     }
 
@@ -140,12 +141,12 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let indexer = StopSpotlightIndexer(index: index, userDataStore: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
 
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         #expect(await index.log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3)])
 
         await index.failNextDelete()
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         #expect(await index.log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3), .deleteAllFailed])
     }
 
@@ -168,7 +169,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         region = tampa
         indexer.replaceAll()
         await index.release()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         #expect(await index.log == [
             .deleteAll,
@@ -196,7 +197,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         indexer.replaceAll()
         indexer.replaceAll()
         await index.release()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         #expect(await index.log == [
             .deleteAll,
@@ -213,7 +214,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let stopB = makeStop("1_b", in: puget)
         store.add(Bookmark(name: stopB.name, regionIdentifier: puget.regionIdentifier, stop: stopB))
         await poll(until: { indexer.currentRun != nil }, timeout: .seconds(30), "The bookmark change never reached the indexer")
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         #expect(await index.log == [.index([entityID("1_a", in: puget), entityID("1_b", in: puget)], priority: 3)])
     }
@@ -227,13 +228,13 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let index = FakeStopIndex()
         let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         for stop in [stopA, stopB] {
             let previousRun = indexer.currentRun
             store.delete(bookmark: try #require(store.bookmarks.first { $0.stop.id == stop.id }))
             await poll(until: { indexer.currentRun != previousRun }, timeout: .seconds(30), "The bookmark change never reached the indexer")
-            await indexer.currentRun?.value
+            _ = await indexer.currentRun?.result
         }
 
         #expect(await index.log == [
@@ -260,12 +261,12 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let index = FakeStopIndex()
         let indexer = StopSpotlightIndexer(index: index, userDataStore: store, stopCache: nil, userDefaults: userDefaults, currentRegion: { self.puget }, isIndexingAvailable: { true })
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         store.addRecentStop(visitedCopy, region: puget)
         store.delete(bookmark: try #require(store.bookmarks.first))
         indexer.indexBookmarks()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         let demoted = try #require(await index.indexed.last { $0.priority == 2 }?.entities)
         #expect(demoted.map(\.id) == [entityID("1_a", in: puget)])
@@ -289,7 +290,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         store.add(Bookmark(name: stopB.name, regionIdentifier: puget.regionIdentifier, stop: stopB))
         await poll(until: { indexer.currentRun != replace }, timeout: .seconds(30), "The bookmark change never reached the indexer")
         await index.release()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
 
         #expect(await index.log == [
             .deleteAll,
@@ -345,7 +346,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         await failing.failNextDelete()
         let indexer = makeIndexer(failing, store: store, region: puget, now: start.addingTimeInterval(3_600))
         indexer.replaceAll()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         #expect(await failing.log == [.deleteAllFailed])
 
         let log = await launch(in: puget, store: store, at: start.addingTimeInterval(2 * 3_600))
@@ -367,7 +368,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         await index.failNextDelete()
         indexer.replaceAll()
         await index.release()
-        await indexer.currentRun?.value
+        _ = await indexer.currentRun?.result
         // Released early, the indexer would skip the record through its weak
         // reference, and this test would pass without the cancellation check.
         withExtendedLifetime(indexer) {}
@@ -421,7 +422,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let index = FakeStopIndex()
         let indexer = makeIndexer(index, store: store, cache: try makeCache([stopA, stopB, stopC, stopD, stopE], region: puget), region: puget, now: start)
 
-        indexer.reindex(.stops([
+        try await indexer.reindex(.stops([
             entityID("1_a", in: puget),
             entityID("1_b", in: puget),
             entityID("1_c", in: puget),
@@ -429,7 +430,6 @@ final class StopSpotlightIndexerTests: OBATestCase {
             entityID("1_gone", in: puget),
             "not_a_stop"
         ]))
-        await indexer.currentRun?.value
 
         #expect(await index.log == [
             .index([entityID("1_a", in: puget)], priority: 3),
@@ -444,8 +444,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let index = FakeStopIndex()
         let indexer = makeIndexer(index, store: makeStore(bookmarked: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
 
-        indexer.reindex(.all)
-        await indexer.currentRun?.value
+        try await indexer.reindex(.all)
 
         #expect(await index.log == [
             .deleteAll,
@@ -454,20 +453,175 @@ final class StopSpotlightIndexerTests: OBATestCase {
         ])
     }
 
-    /// `StopEntityQuery` posts the request and the indexer reads it back. The
-    /// post itself goes through `NotificationCenter.default`, which tests don't use.
-    @Test func `A re-index request reads back as the stops or the whole index it asked for`() {
-        let identifiers = [entityID("1_a", in: puget), entityID("1_b", in: puget)]
+    /// #1684 on a Spotlight launch: the request's replace forgets the last
+    /// one, so the region sync finishing meanwhile replaces again, cancelling
+    /// it. That replace clears the index again, so the request must not return
+    /// until it has refilled it.
+    @Test(.timeLimit(.minutes(1))) func `Re-indexing every stop waits for a sync's replace that cancels it`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let store = makeStore(bookmarked: [stopA], region: puget)
+        await finishReplace(of: puget, store: store, at: start)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: store, cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start.addingTimeInterval(day))
 
-        #expect(StopReindexRequest.scope(from: StopReindexRequest.userInfo(for: .stops(identifiers))) == .stops(identifiers))
-        #expect(StopReindexRequest.scope(from: StopReindexRequest.userInfo(for: .all)) == .all)
+        await index.hold(next: .index)
+        let request = Task {
+            try await indexer.reindex(.all)
+            return await index.log
+        }
+        await index.waitUntilHolding()
+        indexer.indexOrReplace()
+        await index.release()
+        let logWhenRequestReturned = try await request.value
+
+        #expect(logWhenRequestReturned == [
+            .deleteAll,
+            .index([entityID("1_a", in: puget)], priority: 3),
+            .deleteAll,
+            .index([entityID("1_a", in: puget)], priority: 3),
+            .index([entityID("1_b", in: puget)], priority: 1)
+        ])
     }
 
-    /// Reading one of these as `.all` would clear the index.
-    @Test func `A re-index request that names neither stops nor the whole index reads as nothing`() {
-        #expect(StopReindexRequest.scope(from: nil) == nil)
-        #expect(StopReindexRequest.scope(from: [:]) == nil)
-        #expect(StopReindexRequest.scope(from: ["identifiers": "region_1_stop_1_a"]) == nil)
-        #expect(StopReindexRequest.scope(from: ["all": false]) == nil)
+    /// The request's replace is held at its last batch while a second replace
+    /// cancels it. Released, the first finishes its work, but the second
+    /// would clear it again, and here the second fails. Only a request that
+    /// waited for the second can report that.
+    @Test(.timeLimit(.minutes(1))) func `Re-indexing every stop throws when the replace that cancels it fails`() async {
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), region: puget, now: start)
+
+        await index.hold(next: .index)
+        let request = Task { try await indexer.reindex(.all) }
+        await index.waitUntilHolding()
+        await index.failNextDelete()
+        indexer.replaceAll()
+        await index.release()
+
+        await #expect(throws: FakeStopIndex.DeleteFailed.self) { try await request.value }
+        #expect(await index.log == [.deleteAll, .index([entityID("1_a", in: puget)], priority: 3), .deleteAllFailed])
+    }
+
+    /// The second replace is cancelled by a third while it waits to clear,
+    /// so the request follows the third.
+    @Test(.timeLimit(.minutes(1))) func `Re-indexing every stop waits through each replace that cancels the one before`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(bookmarked: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
+
+        await index.hold(next: .index)
+        let request = Task {
+            try await indexer.reindex(.all)
+            return await index.log
+        }
+        await index.waitUntilHolding()
+        indexer.replaceAll()
+        await index.hold(next: .deleteAll)
+        await index.release()
+        await index.waitUntilHolding()
+        indexer.replaceAll()
+        await index.release()
+        let logWhenRequestReturned = try await request.value
+
+        #expect(logWhenRequestReturned == [
+            .deleteAll,
+            .index([entityID("1_a", in: puget)], priority: 3),
+            .deleteAll,
+            .deleteAll,
+            .index([entityID("1_a", in: puget)], priority: 3),
+            .index([entityID("1_b", in: puget)], priority: 1)
+        ])
+    }
+
+    @Test func `Re-indexing every stop throws when the clear fails`() async {
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), region: puget, now: start)
+        await index.failNextDelete()
+
+        await #expect(throws: FakeStopIndex.DeleteFailed.self) { try await indexer.reindex(.all) }
+        #expect(await index.log == [.deleteAllFailed])
+    }
+
+    /// Nothing else re-indexes these stops, so Spotlight has to hear of it.
+    @Test func `Re-indexing some stops throws when indexing them fails`() async {
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(bookmarked: [makeStop("1_a", in: puget)], region: puget), region: puget, now: start)
+        await index.failNextIndex()
+
+        await #expect(throws: FakeStopIndex.IndexFailed.self) { try await indexer.reindex(.stops([entityID("1_a", in: puget)])) }
+        #expect(await index.log == [.indexFailed([entityID("1_a", in: puget)], priority: 3)])
+    }
+
+    /// Installs `indexer` as the one Spotlight's requests reach, for `body` only.
+    private func withCurrentIndexer(_ indexer: StopSpotlightIndexer?, _ body: () async throws -> Void) async rethrows {
+        let previous = StopSpotlightIndexer.current
+        StopSpotlightIndexer.current = indexer
+        defer { StopSpotlightIndexer.current = previous }
+        try await body()
+    }
+
+    /// The system keeps the app alive only until the query returns, so it must
+    /// return after the replace, not when it hands the request over. The delete
+    /// is held until the replace has started, so a query that returned early
+    /// reads an empty log.
+    @available(iOS 27.0, *)
+    @Test func `Spotlight's request to re-index every stop returns once the replace has finished`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(bookmarked: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
+
+        try await withCurrentIndexer(indexer) {
+            await index.hold(next: .deleteAll)
+            let query = Task {
+                try await StopEntityQuery().reindexAllEntities(indexDescription: CSSearchableIndexDescription())
+                return await index.log
+            }
+            await index.waitUntilHolding()
+            await index.release()
+            let logWhenQueryReturned = try await query.value
+
+            #expect(logWhenQueryReturned == [
+                .deleteAll,
+                .index([entityID("1_a", in: puget)], priority: 3),
+                .index([entityID("1_b", in: puget)], priority: 1)
+            ])
+        }
+    }
+
+    @available(iOS 27.0, *)
+    @Test func `Spotlight's request to re-index some stops returns once they are indexed`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(recent: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
+
+        try await withCurrentIndexer(indexer) {
+            await index.hold(next: .index)
+            let query = Task {
+                try await StopEntityQuery().reindexEntities(for: [entityID("1_a", in: puget), entityID("1_b", in: puget)], indexDescription: CSSearchableIndexDescription())
+                return await index.log
+            }
+            await index.waitUntilHolding()
+            await index.release()
+            let logWhenQueryReturned = try await query.value
+
+            #expect(logWhenQueryReturned == [
+                .index([entityID("1_a", in: puget)], priority: 2),
+                .index([entityID("1_b", in: puget)], priority: 1)
+            ])
+        }
+    }
+
+    /// Reporting success would tell Spotlight the stops are indexed when nothing ran.
+    @available(iOS 27.0, *)
+    @Test func `Spotlight's request fails before the app has started indexing stops`() async {
+        await withCurrentIndexer(nil) {
+            await #expect(throws: StopSpotlightIndexer.NotStarted.self) {
+                try await StopEntityQuery().reindexAllEntities(indexDescription: CSSearchableIndexDescription())
+            }
+        }
     }
 }

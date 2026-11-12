@@ -16,24 +16,16 @@ protocol StopAnnotationDelegate: NSObjectProtocol {
     var iconFactory: StopIconFactory { get }
     var shouldHideExtraStopAnnotationData: Bool { get }
 
-    /// Whether tapping a stop annotation should open a callout, or open the stop directly.
-    var showsStopAnnotationCallouts: Bool { get }
-
     /// Whether stop pins that would overlap merge into a cluster.
     var clustersStops: Bool { get }
 }
 
+/// A stop or bookmark pin. It shows no callout: selecting it opens the stop.
 class StopAnnotationView: MKAnnotationView {
 
     // MARK: - Delegate
 
-    /// Setting this recomputes `canShowCallout`, which the delegate has a say in. The delegate is
-    /// assigned after `init`, so the value computed there is provisional until this fires.
-    public weak var delegate: StopAnnotationDelegate? {
-        didSet {
-            updateCalloutVisibility()
-        }
-    }
+    public weak var delegate: StopAnnotationDelegate?
 
     // MARK: - View Config Constants
 
@@ -82,12 +74,7 @@ class StopAnnotationView: MKAnnotationView {
             titleLabel.backgroundColor = .yellow
         }
 
-        rightCalloutAccessoryView = UIButton.chevronButton
-
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
-        updateCalloutVisibility()
-
-        NotificationCenter.default.addObserver(self, selector: #selector(voiceoverStatusDidChange), name: UIAccessibility.voiceOverStatusDidChangeNotification, object: nil)
 
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
             if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
@@ -97,10 +84,6 @@ class StopAnnotationView: MKAnnotationView {
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
 
     // MARK: - Annotation View Overrides
 
@@ -121,7 +104,6 @@ class StopAnnotationView: MKAnnotationView {
     /// Sets the icon before MapKit shows the view. `prepareForDisplay` can run
     /// a frame later; leaving `image` nil for that frame is the default-pin flash.
     func applyPresentation() {
-        updateCalloutVisibility()
         clusteringIdentifier = delegate?.clustersStops == true ? StopCluster.clusteringIdentifier : nil
 
         guard let delegate else { return }
@@ -151,7 +133,6 @@ class StopAnnotationView: MKAnnotationView {
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
         image = delegate.iconFactory.buildIcon(for: bookmark.stop, isBookmarked: true, traits: traitCollection)
         titleLabel.attributedText = strokedText(bookmark.name)
-        detailCalloutAccessoryView = buildDetailLabel(text: bookmark.stop.bookmarkCalloutText)
     }
 
     private func prepareForDisplay(stop: Stop, delegate: StopAnnotationDelegate) {
@@ -163,16 +144,6 @@ class StopAnnotationView: MKAnnotationView {
         else {
             titleLabel.text = ""
         }
-
-        detailCalloutAccessoryView = buildDetailLabel(text: stop.mapCalloutText)
-    }
-
-    private func buildDetailLabel(text: String?) -> UILabel {
-        let detailLabel = UILabel()
-        detailLabel.font = .preferredFont(forTextStyle: .caption1)
-        detailLabel.numberOfLines = 0
-        detailLabel.text = text
-        return detailLabel
     }
 
     // MARK: - Appearance
@@ -210,26 +181,6 @@ class StopAnnotationView: MKAnnotationView {
         default:
             return nil
         }
-    }
-
-    @objc fileprivate func voiceoverStatusDidChange(_ notification: Notification) {
-        updateCalloutVisibility()
-    }
-
-    /// A callout is an intermediate step: tap the annotation to preview the stop, then tap the
-    /// callout's chevron to actually open it. Two situations skip it, and `MapViewController`
-    /// treats selection itself as the open gesture whenever `canShowCallout` is `false`:
-    ///
-    /// - VoiceOver, because `MKMapView` callouts are finicky under it.
-    /// - The redesigned Stop page, which opens as a sheet over the map. The sheet already lands at
-    ///   a half detent showing the same name and routes the callout previewed, so the callout is
-    ///   a tap the user has to spend for information they are about to get anyway.
-    ///
-    /// Both inputs can change while a view sits on the map, so this is re-run on display and
-    /// whenever `MapRegionManager` refreshes the annotations it is already showing.
-    func updateCalloutVisibility() {
-        let delegateAllowsCallouts = delegate?.showsStopAnnotationCallouts ?? true
-        canShowCallout = !UIAccessibility.isVoiceOverRunning && delegateAllowsCallouts
     }
 
     private func rebuildIcon() {

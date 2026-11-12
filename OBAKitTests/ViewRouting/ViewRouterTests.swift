@@ -30,16 +30,36 @@ final class ViewRouterTests: OBATestCase {
         let pushed = try #require(navigation.viewControllers.last)
         #expect(pushed !== root, "Expected a new view controller to be pushed")
 
-        let isStopController = pushed is StopViewController || pushed is StopPageViewController
-        #expect(isStopController, "Expected pushed controller to be a stop controller")
+        #expect(pushed is StopPageViewController, "Expected the stop page to be pushed")
     }
 
-    /// Both stop screens, because each draws the context its own way: the new
-    /// page highlights the trip, the legacy one shows the arrival banner.
-    @Test(arguments: [true, false])
-    func `Navigate to StopID hands the transfer context to the stop screen`(newStopPage: Bool) throws {
+    /// A rider who turned off the old "Use new stop page" Experimental toggle
+    /// still has this key stored as `false`. Every way the router opens a stop
+    /// has to ignore it.
+    @Test func `A stored opt-out of the new stop page still opens the stop page`() throws {
+        let retiredNewStopPageKey = "OBAUseNewStopPage"
         let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
-        application.userDefaults.set(newStopPage, forKey: FeatureFlags.useNewStopPageKey)
+        userDefaults.set(false, forKey: retiredNewStopPageKey)
+        #expect(application.userDefaults.object(forKey: retiredNewStopPageKey) as? Bool == false)
+
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+
+        let byIDRoot = UIViewController()
+        let byIDNavigation = UINavigationController(rootViewController: byIDRoot)
+        application.viewRouter.navigateTo(stopID: stop.id, from: byIDRoot)
+        #expect(byIDNavigation.viewControllers.last is StopPageViewController)
+
+        let byStopRoot = UIViewController()
+        let byStopNavigation = UINavigationController(rootViewController: byStopRoot)
+        application.viewRouter.navigateTo(stop: stop, from: byStopRoot)
+        #expect(byStopNavigation.viewControllers.last is StopPageViewController)
+
+        #expect(application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true) is StopPageViewController)
+        #expect(application.viewRouter.makeStopController(stopID: stop.id, showToolbarOnBottom: true) is StopPageViewController)
+    }
+
+    @Test func `Navigate to StopID hands the transfer context to the stop screen`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
         #expect(application.userDataStore.showTransferArrivalBanner)
 
         let root = UIViewController()
@@ -53,8 +73,7 @@ final class ViewRouterTests: OBATestCase {
 
         application.viewRouter.navigateTo(stopID: "1_123", from: root, transferContext: context)
 
-        let pushed = try #require(navigation.viewControllers.last as? StopContextConfigurable)
-        #expect((pushed is StopPageViewController) == newStopPage)
+        let pushed = try #require(navigation.viewControllers.last as? StopPageViewController)
         #expect(pushed.transferContext == context)
     }
 
@@ -72,7 +91,7 @@ final class ViewRouterTests: OBATestCase {
 
         application.viewRouter.navigateTo(stopID: "1_123", from: root, transferContext: context)
 
-        let pushed = try #require(navigation.viewControllers.last as? StopContextConfigurable)
+        let pushed = try #require(navigation.viewControllers.last as? StopPageViewController)
         #expect(pushed.transferContext == nil)
     }
 

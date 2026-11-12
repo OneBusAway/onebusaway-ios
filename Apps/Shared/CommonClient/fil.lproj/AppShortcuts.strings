@@ -1,6 +1,6 @@
 /*
  * App Shortcuts phrases (Siri). Keys are the English phrases from OBAAppShortcuts in
- * OBAAppShortcuts.swift, with ${applicationName} and ${bookmark} tokens. Every
+ * OBAAppShortcuts.swift, with ${applicationName}, ${bookmark} and ${stop} tokens. Every
  * value must keep ${applicationName}, or Siri drops the phrase. Hand-maintained.
  */
 
@@ -17,3 +17,7 @@
 "When is my next bus in ${applicationName}" = "Kailan ang susunod kong bus sa ${applicationName}";
 
 "Do I have time to catch the bus with ${applicationName}" = "Aabutan ko pa ba ang bus ayon sa ${applicationName}";
+
+"When is the next bus at ${stop} in ${applicationName}" = "Kailan ang susunod na bus sa ${stop} sa ${applicationName}";
+
+"Next departures at ${stop} in ${applicationName}" = "Mga susunod na pag-alis sa ${stop} sa ${applicationName}";

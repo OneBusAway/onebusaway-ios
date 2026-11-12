@@ -30,7 +30,7 @@ struct NextDeparturesStoreTests {
 
         var count: Int { state.withLock { $0.count } }
 
-        func callAsFunction(_ bookmarkID: UUID?) async -> Outcome {
+        func callAsFunction(_ key: NextDeparturesCardKey) async -> Outcome {
             if delay > .zero { try? await Task.sleep(for: delay) }
             return state.withLock { state in
                 state.count += 1
@@ -64,8 +64,8 @@ struct NextDeparturesStoreTests {
         let fetch = FakeFetch([departures(5)])
         let store = store(fetch)
 
-        let loaded = await store.load(bookmarkID: bookmarkID)
-        let shown = await store.outcome(bookmarkID: bookmarkID)
+        let loaded = await store.load(.bookmark(bookmarkID))
+        let shown = await store.outcome(.bookmark(bookmarkID))
 
         #expect(shown == loaded)
         #expect(fetch.count == 1)
@@ -76,9 +76,9 @@ struct NextDeparturesStoreTests {
         let fetch = FakeFetch([departures(5)])
         let store = store(fetch)
 
-        _ = await store.outcome(bookmarkID: bookmarkID)
-        _ = await store.outcome(bookmarkID: bookmarkID)
-        _ = await store.outcome(bookmarkID: bookmarkID)
+        _ = await store.outcome(.bookmark(bookmarkID))
+        _ = await store.outcome(.bookmark(bookmarkID))
+        _ = await store.outcome(.bookmark(bookmarkID))
 
         #expect(fetch.count == 1, "Only the first display, with nothing stored, fetches")
     }
@@ -87,8 +87,8 @@ struct NextDeparturesStoreTests {
         let fetch = FakeFetch([departures(5), departures(4)])
         let store = store(fetch)
 
-        _ = await store.load(bookmarkID: bookmarkID)
-        let second = await store.load(bookmarkID: bookmarkID)
+        _ = await store.load(.bookmark(bookmarkID))
+        let second = await store.load(.bookmark(bookmarkID))
 
         #expect(second == departures(4))
         #expect(fetch.count == 2)
@@ -100,10 +100,10 @@ struct NextDeparturesStoreTests {
         let (first, second) = (departures(5), departures(4))
         let fetch = FakeFetch([first, second])
         let store = store(fetch)
-        _ = await store.load(bookmarkID: bookmarkID)
+        _ = await store.load(.bookmark(bookmarkID))
 
         clock.advance(seconds: 9)
-        let reused = await store.refresh(bookmarkID: bookmarkID)
+        let reused = await store.refresh(.bookmark(bookmarkID))
 
         #expect(reused == first)
         #expect(fetch.count == 1)
@@ -113,25 +113,25 @@ struct NextDeparturesStoreTests {
         let (first, second) = (departures(5), departures(4))
         let fetch = FakeFetch([first, second])
         let store = store(fetch)
-        _ = await store.load(bookmarkID: bookmarkID)
+        _ = await store.load(.bookmark(bookmarkID))
 
         clock.advance(seconds: 10)
-        let refreshed = await store.refresh(bookmarkID: bookmarkID)
+        let refreshed = await store.refresh(.bookmark(bookmarkID))
 
         #expect(refreshed == second)
         #expect(fetch.count == 2)
-        #expect(await store.outcome(bookmarkID: bookmarkID) == second, "The card shows the refreshed departures")
+        #expect(await store.outcome(.bookmark(bookmarkID)) == second, "The card shows the refreshed departures")
     }
 
     /// A failure is never reused: tapping Refresh right after one retries.
     @Test func `Refresh after a failed fetch always fetches`() async {
         let recovered = departures(5)
-        let fetch = FakeFetch([.loadFailed(bookmarkName: "Library"), recovered])
+        let fetch = FakeFetch([.loadFailed(name: "Library"), recovered])
         let store = store(fetch)
-        _ = await store.load(bookmarkID: bookmarkID)
+        _ = await store.load(.bookmark(bookmarkID))
 
         clock.advance(seconds: 1)
-        let refreshed = await store.refresh(bookmarkID: bookmarkID)
+        let refreshed = await store.refresh(.bookmark(bookmarkID))
 
         #expect(refreshed == recovered)
         #expect(fetch.count == 2)
@@ -139,22 +139,22 @@ struct NextDeparturesStoreTests {
 
     /// The card must never present old times as current.
     @Test func `A failed refresh replaces the departures it would have shown`() async {
-        let fetch = FakeFetch([departures(5), .loadFailed(bookmarkName: "Library")])
+        let fetch = FakeFetch([departures(5), .loadFailed(name: "Library")])
         let store = store(fetch)
-        _ = await store.load(bookmarkID: bookmarkID)
+        _ = await store.load(.bookmark(bookmarkID))
 
         clock.advance(seconds: 30)
-        _ = await store.refresh(bookmarkID: bookmarkID)
+        _ = await store.refresh(.bookmark(bookmarkID))
 
-        #expect(await store.outcome(bookmarkID: bookmarkID) == .loadFailed(bookmarkName: "Library"))
+        #expect(await store.outcome(.bookmark(bookmarkID)) == .loadFailed(name: "Library"))
     }
 
     @Test func `Fetches running at the same time for one bookmark are shared`() async {
         let fetch = FakeFetch([departures(5)], delay: .milliseconds(100))
         let store = store(fetch)
 
-        async let first = store.load(bookmarkID: bookmarkID)
-        async let second = store.refresh(bookmarkID: bookmarkID)
+        async let first = store.load(.bookmark(bookmarkID))
+        async let second = store.refresh(.bookmark(bookmarkID))
         let results = await [first, second]
 
         #expect(results == [departures(5), departures(5)])
@@ -166,11 +166,11 @@ struct NextDeparturesStoreTests {
         let store = store(fetch)
         let other = UUID()
 
-        _ = await store.load(bookmarkID: bookmarkID)
-        let otherOutcome = await store.outcome(bookmarkID: other)
+        _ = await store.load(.bookmark(bookmarkID))
+        let otherOutcome = await store.outcome(.bookmark(other))
 
         #expect(otherOutcome == departures(12))
-        #expect(await store.outcome(bookmarkID: bookmarkID) == departures(5))
+        #expect(await store.outcome(.bookmark(bookmarkID)) == departures(5))
     }
 
     /// "No bookmarks" has no bookmark id; the card still shows it.
@@ -178,9 +178,9 @@ struct NextDeparturesStoreTests {
         let fetch = FakeFetch([.noBookmarks])
         let store = store(fetch)
 
-        _ = await store.load(bookmarkID: nil)
+        _ = await store.load(.noBookmark)
 
-        #expect(await store.outcome(bookmarkID: nil) == .noBookmarks)
+        #expect(await store.outcome(.noBookmark) == .noBookmarks)
         #expect(fetch.count == 1)
     }
 }

@@ -134,8 +134,8 @@ struct StopDetailsSheetView: View {
     /// nothing derived from it affects layout.
     @State private var viewportHeight: CGFloat = 0
     @State private var userActivity: NSUserActivity?
-    /// Gates the one-shot success haptic to the first arrivals load, matching
-    /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
+    /// Gates the one-shot success haptic to the first arrivals load; later
+    /// refreshes are silent.
     @State private var firstLoad = true
     /// Drives the top bar's spinner. Distinct from `viewModel.isLoading`, which
     /// also flips for the ~15s background refresh — the rider did not ask for

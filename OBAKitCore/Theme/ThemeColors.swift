@@ -31,9 +31,6 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
     /// A gray text color, used on light backgrounds for de-emphasized text.
     public let secondaryLabel: UIColor
 
-    /// The overlay color drawn on top of a `MapSnapshotter` image.
-    public let mapSnapshotOverlayColor: UIColor
-
     /// Map annotation view stroke color.
     public let stopAnnotationStrokeColor: UIColor
 
@@ -140,8 +137,6 @@ public final class ThemeColors: NSObject, @unchecked Sendable {
         self.brandAccent = brandAccent ?? palette.brandAccent
         onDemandOutside = UIColor(red: 0x63 / 255.0, green: 0x63 / 255.0, blue: 0x66 / 255.0, alpha: 1.0)
         onDemandOpenGreen = UIColor(red: 0x24 / 255.0, green: 0x8a / 255.0, blue: 0x3d / 255.0, alpha: 1.0)
-
-        mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
 
         departureEarly = palette.red
         departureEarlyBackground = palette.red

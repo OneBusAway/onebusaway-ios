@@ -18,8 +18,8 @@ import OBAKitCore
 
 /// Shared ViewModel for the stop arrivals/departures screen.
 ///
-/// Consumed by `StopViewController` (UIKit, via Combine `sink`) and by
-/// future `StopDetailSheet` (SwiftUI, via `@StateObject`).
+/// Consumed by the SwiftUI stop page and the map panel's stop sheet, and by
+/// `StopPageViewController` (UIKit, via Combine `sink`).
 /// Contains no UIKit or SwiftUI imports.
 @MainActor
 class StopViewModel: ObservableObject {
@@ -89,8 +89,8 @@ class StopViewModel: ObservableObject {
 
     /// User-facing copy for `operationError`. Run through `ErrorClassifier` so a
     /// raw decoding/URL error becomes region-named, actionable text instead of a
-    /// developer-facing Foundation string — the same pass `StopViewController`
-    /// applies at display time. `operationError` stays raw for logging.
+    /// developer-facing Foundation string. `operationError` stays raw for
+    /// logging.
     var operationErrorMessage: String? {
         guard let operationError else { return nil }
         return ErrorClassifier.classify(
@@ -422,8 +422,8 @@ class StopViewModel: ObservableObject {
         updateStatus()
         // Guard the @Published re-emit. The same VM is bound to a single stopID for
         // its lifetime, so `stop` only meaningfully changes when the server returns
-        // new routes/wheelchair info — re-emitting on every refresh would re-run
-        // the VC's title/applyData/configureTabBarButtons sink for no reason.
+        // new routes/wheelchair info — re-emitting on every refresh would rebuild
+        // `StopPageViewController`'s bar items and user activity for no reason.
         if self.stop != stop {
             self.stop = stop
         }

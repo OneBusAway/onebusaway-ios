@@ -126,6 +126,86 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(view.userDefaults === application.userDefaults)
     }
 
+    private static let transferContext = TransferContext(
+        arrivalTime: Date(timeIntervalSince1970: 1_700_000_600),
+        fromRouteShortName: "10",
+        fromTripHeadsign: "Downtown Seattle",
+        fromTripID: "1_40989208"
+    )
+
+    private static func transferContext(of route: AppSheetRoute?) -> TransferContext? {
+        guard case .stopDetails(_, let transferContext)? = route else { return nil }
+        return transferContext
+    }
+
+    @Test @MainActor
+    func `Stop detail view hands the transfer context to its view model`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        #expect(application.userDataStore.showTransferArrivalBanner)
+
+        let viewModel = makeFactory(application: application)
+            .stopDetailView(stopID: "1_10914", transferContext: Self.transferContext)
+            .makeViewModel()
+
+        #expect(viewModel.transferContext?.arrivalTime == Date(timeIntervalSince1970: 1_700_000_600))
+        #expect(viewModel.transferContext?.fromTripID == "1_40989208")
+    }
+
+    /// The same check the pushed stop page gets from `ViewRouter.makeStopController`.
+    @Test @MainActor
+    func `Stop detail view drops the transfer context when the transfer banner is off`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        application.userDataStore.showTransferArrivalBanner = false
+
+        let viewModel = makeFactory(application: application)
+            .stopDetailView(stopID: "1_10914", transferContext: Self.transferContext)
+            .makeViewModel()
+
+        #expect(viewModel.transferContext == nil)
+    }
+
+    /// A row tapped on the trip sheet's page, through the page's own stop action,
+    /// opens the stop sheet with the context the pushed stop would get: the
+    /// rider's trip, arriving at that row's time.
+    @Test @MainActor
+    func `A stop tapped on the trip sheet opens with the rider's transfer context`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let departure = try makeDeparture()
+        let trip = AppSheetRoute.tripDetails(TripConvertible(arrivalDeparture: departure))
+        coordinator.push(trip)
+        let arrival = Date(timeIntervalSince1970: 1_700_000_600)
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: TripConvertible(arrivalDeparture: departure))
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: host.tripConvertible,
+            onMapFocusChanged: host.onMapFocusChanged,
+            onSelectStop: host.onSelectStop,
+            onSelectTrip: host.onSelectTrip,
+            onClose: host.onClose
+        )
+        page.rootView.actions.onSelectStop(TripStopListModel.Row(
+            id: "9-1_75403",
+            stopID: "1_75403",
+            name: "Stop 9",
+            coordinate: nil,
+            date: arrival,
+            isPassed: false,
+            isVehicleHere: false,
+            isUserStop: false,
+            isTerminal: false
+        ))
+
+        #expect(coordinator.stackedRoutes.map(\.id) == [trip.id, "stopDetails-1_75403"])
+        let context = try #require(Self.transferContext(of: coordinator.stackedRoutes.last))
+        #expect(context.arrivalTime == arrival)
+        #expect(context.fromTripID == "1_40989208")
+        #expect(context.fromRouteShortName == "10")
+        #expect(context.fromTripHeadsign == "Downtown Seattle")
+    }
+
     private func makeDeparture() throws -> ArrivalDeparture {
         try Fixtures.loadRESTAPIPayload(
             type: ArrivalDeparture.self,
@@ -177,7 +257,9 @@ final class AppSheetViewFactoryTests: OBATestCase {
     }
 
     /// The rider came to the trip from this stop's sheet, so tapping the stop in
-    /// the trip's list goes back to it rather than stacking a second copy.
+    /// the trip's list goes back to it rather than stacking a second copy, even
+    /// though the tap carries a transfer context the open copy doesn't have. The
+    /// copy stays as the rider left it.
     @Test @MainActor
     func `A stop tapped in a trip goes back to that stop when it's already open`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
@@ -189,9 +271,82 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         let host = makeFactory(application: application, coordinator: coordinator)
             .tripDetailsView(tripConvertible: convertible)
-        host.onSelectStop("1_10914")
+        host.onSelectStop("1_10914", Self.transferContext)
 
-        #expect(coordinator.stackedRoutes == [stop])
+        #expect(coordinator.stackedRoutes.map(\.id) == ["stopDetails-1_10914"])
+        #expect(Self.transferContext(of: coordinator.stackedRoutes.first) == nil)
+    }
+
+    /// What a trip starts as or continues as opens as a trip sheet above it, so
+    /// Back returns to the trip the rider came from.
+    @Test @MainActor
+    func `A trip opened from a trip goes on top of it, and Back returns to it`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let current = try Fixtures.tripConvertible(tripID: "trip_42")
+        let next = try Fixtures.tripConvertible(tripID: "trip_43")
+        coordinator.push(.recentStopsAll)
+        coordinator.push(.tripDetails(current))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: current)
+        host.onSelectTrip(next)
+
+        // Routes compare by `id`, and comparing those keeps a failure readable: the
+        // routes themselves describe their departures, which have no references
+        // loaded here and trap.
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.recentStopsAll, .tripDetails(current), .tripDetails(next)].map(\.id))
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.recentStopsAll, .tripDetails(current)].map(\.id))
+    }
+
+    /// A rider who went from a trip to the one it continues as, and taps that
+    /// one's "Starts as", goes back down to the first rather than stacking it twice.
+    @Test @MainActor
+    func `A trip opened from a trip goes back to it when it's already open`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let first = try Fixtures.tripConvertible(tripID: "trip_42")
+        let next = try Fixtures.tripConvertible(tripID: "trip_43")
+        coordinator.push(.tripDetails(first))
+        coordinator.push(.tripDetails(next))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: next)
+        // Fetched again for the tap: a new object for the same trip.
+        host.onSelectTrip(try Fixtures.tripConvertible(tripID: "trip_42"))
+
+        // By `id`, for the reason the test above gives.
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.tripDetails(first)].map(\.id))
+    }
+
+    /// A trip opened from a shared link carries the sharer's destination stop. A
+    /// rider who goes from it to the trip it continues as, and taps "Starts as"
+    /// there, goes back down to that sheet with its destination, rather than
+    /// stacking a second copy of the trip without one.
+    @Test @MainActor
+    func `A trip opened from a trip goes back to it when it's open with a destination`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let shared = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "trip_42"), destinationStopID: "1_10914")
+        let next = try Fixtures.tripConvertible(tripID: "trip_43")
+        coordinator.push(.recentStopsAll)
+        coordinator.push(shared)
+        coordinator.push(.tripDetails(next))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: next)
+        // Fetched again for the tap, and with no destination: "Starts as" names
+        // only the trip.
+        host.onSelectTrip(try Fixtures.tripConvertible(tripID: "trip_42"))
+
+        // By `id`, which carries the destination stop.
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.recentStopsAll, shared].map(\.id))
+        // Gone back to through `open`, so VoiceOver moves to the sheet revealed.
+        // Read first: a failing `#expect` describes `coordinator`, routes and
+        // all, and the routes' departures trap when described here.
+        let focusMovesDown = coordinator.claimUnwindFocus(atDepth: 2)
+        #expect(focusMovesDown)
     }
 
     @Test @MainActor
@@ -265,7 +420,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(host.tripConvertible === convertible)
 
         // A tapped stop opens the panel's stop sheet above the trip.
-        host.onSelectStop("1_75403")
+        host.onSelectStop("1_75403", nil)
         #expect(coordinator.stackedRoutes == [.recentStopsAll, .tripDetails(convertible), .stopDetails(stopID: "1_75403")])
 
         // The rider drags the stop sheet away, then taps Back on the trip. Only

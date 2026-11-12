@@ -9,19 +9,14 @@
 
 import Foundation
 
-/// UserDefaults keys for experimental, opt-in features. Read at app
-/// construction; changes generally require a relaunch to take effect.
+/// UserDefaults keys for experimental, opt-in features, written by
+/// Settings > Experimental.
 public enum FeatureFlags {
     /// Gates the SwiftUI map panel experience (full-screen map + floating
     /// sheet) over the classic UIKit tab bar. Enabled by default; the
     /// Settings > Experimental toggle writes an explicit value, so turning it
-    /// off opts back into the classic UI.
+    /// off opts back into the classic UI, and rebuilds the root at once.
     public static let useMapPanelExperienceKey = "OBAUseMapPanelExperience"
-
-    /// Gates the redesigned SwiftUI Stop page over the classic
-    /// `StopViewController`. Enabled by default; the Settings > Experimental
-    /// toggle writes an explicit value.
-    public static let useNewStopPageKey = "OBAUseNewStopPage"
 
     /// Gates MapKit clustering of stop pins (#515). Off by default while the
     /// feature is refined (#1600).
@@ -33,11 +28,5 @@ public enum FeatureFlags {
     public static func isMapPanelExperienceEnabled(userDefaults: UserDefaults) -> Bool {
         guard userDefaults.object(forKey: useMapPanelExperienceKey) != nil else { return true }
         return userDefaults.bool(forKey: useMapPanelExperienceKey)
-    }
-
-    /// Resolves the new-stop-page flag, defaulting to enabled when the user
-    /// has never touched the toggle.
-    public static func isNewStopPageEnabled(userDefaults: UserDefaults) -> Bool {
-        userDefaults.object(forKey: useNewStopPageKey) as? Bool ?? true
     }
 }
