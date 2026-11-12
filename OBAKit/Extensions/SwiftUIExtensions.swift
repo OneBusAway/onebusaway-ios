@@ -115,10 +115,14 @@ public extension View {
     /// Applies the iOS 26+ Liquid Glass effect when available, falling back to
     /// `.regularMaterial` on older systems. Handles the surface fill itself —
     /// call sites do not need to add a background.
+    ///
+    /// - Parameter interactive: Whether the glass scales and shimmers under a
+    ///   finger, as the system's controls do; for custom controls such as a tab
+    ///   bar. No effect on the fallback.
     @ViewBuilder
-    func regularGlassEffectIfAvailable(in shape: some Shape = Capsule()) -> some View {
+    func regularGlassEffectIfAvailable(in shape: some Shape = Capsule(), interactive: Bool = false) -> some View {
         if #available(iOS 26.0, *) {
-            self.glassEffect(.regular, in: shape)
+            self.glassEffect(.regular.interactive(interactive), in: shape)
         } else {
             self.background(.regularMaterial, in: shape)
         }

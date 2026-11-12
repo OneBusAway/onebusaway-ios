@@ -8,7 +8,6 @@
 //
 
 import SwiftUI
-import UIKit
 import Synchronization
 import OBAKitCore
 
@@ -236,7 +235,7 @@ struct HomeTabBar: View {
         }
         .padding(4)
         .frame(height: Self.capsuleHeight)
-        .tabBarGlass()
+        .regularGlassEffectIfAvailable(in: Capsule(), interactive: true)
         .padding(.horizontal, 12)
         .padding(.bottom, AppSheetRoute.homeTabBarHeight - Self.capsuleHeight + bottomClearance)
         .animation(.smooth(duration: 0.25), value: selection)
@@ -280,36 +279,36 @@ struct HomeTabBar: View {
     }
 }
 
-private extension View {
-    /// Interactive, so the bar scales and shimmers under a finger as the system
-    /// tab bar does; `regularGlassEffectIfAvailable` gives static glass.
+extension View {
+    /// A home sheet tab page's background: the sheet's own, so the tab bar sits
+    /// on one surface. `TabView` gives each page an opaque white. On iOS 26 and
+    /// later that hides the sheet's Liquid Glass, so it's cleared; before, it's
+    /// painted over with the sheet's gray.
     @ViewBuilder
-    func tabBarGlass() -> some View {
+    func tabPageBackground() -> some View {
         if #available(iOS 26.0, *) {
-            glassEffect(.regular.interactive(), in: .capsule)
+            background(TabPageBackgroundClearer())
         } else {
-            background(.regularMaterial, in: Capsule())
+            background(Color.searchSheetBackground)
         }
     }
 }
 
-/// Clears the opaque background the home sheet's `TabView` gives each page, so
-/// the sheet's Liquid Glass shows through on iOS 26 and later, as it does
-/// behind the sheets without tabs.
+/// Clears the opaque background the home sheet's `TabView` gives a page; see
+/// `tabPageBackground()`.
 ///
 /// SwiftUI has no way to: `.background` draws over the page's white, and
 /// `containerBackground(_:for: .tabView)` is unavailable on iOS. The page is a
 /// hosting controller's view in a tab bar controller, so this clears every view
-/// from itself up to that page. Earlier systems keep the white, which
-/// `Color.searchSheetBackground` paints over.
-struct TabPageBackgroundClearer: UIViewRepresentable {
+/// from itself up to that page.
+private struct TabPageBackgroundClearer: UIViewRepresentable {
     func makeUIView(context: Context) -> ClearingView { ClearingView() }
     func updateUIView(_ uiView: ClearingView, context: Context) {}
 
     final class ClearingView: UIView {
         override func didMoveToWindow() {
             super.didMoveToWindow()
-            guard #available(iOS 26.0, *), window != nil else { return }
+            guard window != nil else { return }
             var path: [UIView] = []
             var view = superview
             while let current = view {

@@ -115,10 +115,8 @@ struct HomeSheetView: View {
                     tabContent(tab)
                         // The sheet's own background, which the bar sits on:
                         // the pages' default white left a seam where the bar
-                        // began. On iOS 26 that's the sheet's glass, which
-                        // the white hides, so the page clears it.
-                        .background(Color.searchSheetBackground)
-                        .background(TabPageBackgroundClearer())
+                        // began.
+                        .tabPageBackground()
                         .environment(\.isHomeSheetTab, tab != .home)
                         .toolbar(.hidden, for: .tabBar)
                         .tag(tab)

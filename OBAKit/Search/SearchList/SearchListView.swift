@@ -68,16 +68,10 @@ extension View {
 }
 
 extension Color {
-    /// The search and index sheets' background; see `searchSheetBackground()`.
-    /// Shared with views that paint over the sheet and must match it: clear on
-    /// iOS 26 and later, so they don't cover the sheet's glass.
-    static var searchSheetBackground: Color {
-        if #available(iOS 26.0, *) {
-            .clear
-        } else {
-            Color(.systemGroupedBackground)
-        }
-    }
+    /// The search and index sheets' background before iOS 26; see
+    /// `searchSheetBackground()`. Shared with views that paint over the sheet
+    /// and must match it.
+    static let searchSheetBackground = Color(.systemGroupedBackground)
 }
 
 // MARK: - SearchListSectionsView
