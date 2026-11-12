@@ -66,7 +66,7 @@ final class NearbyStopsListAccessibilityTests {
         dataSource.userLocation = rider
 
         let row = try cells()[1]
-        let distance = NearbyStopsListViewController.distanceFormatter.string(fromDistance: stop.location.distance(from: rider))
+        let distance = Formatters.spokenDistanceFormatter.string(fromDistance: stop.location.distance(from: rider))
         #expect(row.accessibilityLabel?.contains(distance) == true)
     }
 

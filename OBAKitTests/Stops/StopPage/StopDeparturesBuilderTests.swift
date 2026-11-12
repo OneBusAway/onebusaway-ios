@@ -68,6 +68,7 @@ private final class FakeStopEnvironment: StopViewModelEnvironment {
     var currentRegion: Region? { nil }
     var currentRegionName: String? { "Puget Sound" }
     var isCellularDataRestricted: Bool { false }
+    let notificationCenter = NotificationCenter()
 }
 
 /// Records which `StopPageNavigationHandler` closure ran, and for which trip or alert.

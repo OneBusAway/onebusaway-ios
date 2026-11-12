@@ -227,7 +227,7 @@ final class RecentStopsViewControllerTests: OBATestCase {
         #expect(pushedStopID == stop.id)
     }
 
-    @Test func testDeleteAlarmActionRemovesAlarm() throws {
+    @Test func testDeleteAlarmActionRemovesAlarm() async throws {
         dataLoader.mock(data: Data()) { req in
             req.url?.path.contains("/alarms/") ?? false
         }
@@ -242,7 +242,8 @@ final class RecentStopsViewControllerTests: OBATestCase {
         let listView = try #require(controller.hostingController?.rootView)
         let alarmRow = try #require(listView.alarmRows.first)
 
-        listView.navigation.deleteAlarm(alarmRow)
+        // The server delete goes first, so the row goes once it answers.
+        await controller.onDeleteAlarm(alarmRow).value
 
         #expect(controller.viewModel.alarms.isEmpty)
         #expect(!app.userDataStore.alarms.map(\.url).contains(alarm.url))

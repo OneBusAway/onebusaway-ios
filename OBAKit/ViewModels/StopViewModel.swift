@@ -190,6 +190,7 @@ class StopViewModel: ObservableObject {
     /// Cache for trip-panel approach timelines, invalidated on each refresh.
 
     private var alarmFiredCancellable: AnyCancellable?
+    private var alarmRemovedCancellable: AnyCancellable?
     private var userDefaultsCancellable: AnyCancellable?
     private var formattersTimeZoneCancellable: AnyCancellable?
     private var proximityAlertsCancellable: AnyCancellable?
@@ -267,6 +268,15 @@ class StopViewModel: ObservableObject {
             .publisher(for: .alarmFired)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.rebuildAlarmIndex() }
+
+        // Another screen, such as the trip page, removed an alarm. Posted on the
+        // main actor, so the bell goes at once.
+        alarmRemovedCancellable = environment.notificationCenter
+            .publisher(for: .alarmRemoved)
+            .sink { [weak self] notification in
+                guard let url = notification.userInfo?[AlarmRemover.alarmURLKey] as? URL else { return }
+                self?.dropAlarm(url: url)
+            }
 
         // Settings is presented modally from More, so this VM can outlive a
         // filter change. Re-read the persisted value; skip the write path so
@@ -903,25 +913,15 @@ class StopViewModel: ObservableObject {
         // Optimistic removal; restore on failure.
         alarmsByDepartureID[arrivalDeparture.id] = nil
         do {
-            guard let obacoService = environment.obacoService else {
-                // The alarm lives on the server and will still fire. Deleting only
-                // the local copy would leave the rider with a notification they can
-                // no longer see or cancel, so fail loudly instead.
-                throw AlarmCancellationError.serviceUnavailable
-            }
-            try await obacoService.deleteAlarm(url: alarm.url)
-            environment.deleteAlarm(alarm)
+            // Without an Obaco service this throws rather than delete only the
+            // local copy: the server alarm would still fire, and the rider could
+            // no longer see or cancel it. One that already fired counts as deleted,
+            // with no error banner.
+            try await alarmRemover.remove(alarm)
             // A refresh that landed mid-await could have re-inserted this entry
             // (rebuildAlarmIndex ran while the persisted alarm was still present);
             // re-assert the removal now that the alarm is actually deleted.
             alarmsByDepartureID[arrivalDeparture.id] = nil
-            alarmError = nil
-            return true
-        } catch APIError.requestNotFound {
-            // The alarm already fired and was deleted server-side. The optimistic
-            // removal already cleared the UI — just clean up the local store and
-            // stay silent (no error banner).
-            environment.deleteAlarm(alarm)
             alarmError = nil
             return true
         } catch {
@@ -930,6 +930,21 @@ class StopViewModel: ObservableObject {
             alarmError = error
             return false
         }
+    }
+
+    private var alarmRemover: AlarmRemover {
+        AlarmRemover(
+            obacoService: environment.obacoService,
+            deleteLocalCopy: { [environment] in environment.deleteAlarm($0) },
+            notificationCenter: environment.notificationCenter
+        )
+    }
+
+    /// Drops the bell for an alarm another screen removed.
+    private func dropAlarm(url: URL) {
+        let remaining = alarmsByDepartureID.filter { $0.value.url != url }
+        guard remaining.count != alarmsByDepartureID.count else { return }
+        alarmsByDepartureID = remaining
     }
 
     /// Why an alarm couldn't be cancelled. Surfaced through `alarmError`, which the
