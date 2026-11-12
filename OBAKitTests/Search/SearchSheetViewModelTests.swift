@@ -533,4 +533,154 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(viewModel.message?.kind == .error)
         #expect(viewModel.message?.text == "no mic")
     }
+
+    // MARK: - Scoping tags
+
+    @Test @MainActor
+    func `Changing scope rebuilds interactor sections and clears a pending message`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader)
+
+        viewModel.updateQuery("10")
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route))
+        #expect(viewModel.message != nil)
+
+        viewModel.scope = .routes
+
+        #expect(viewModel.message == nil)
+        let quickSearch = try #require(viewModel.searchInteractor.sections.first { $0.id == .quickSearch })
+        #expect(quickSearch.content.map(\.kind.stableIdentifier) == ["quickSearch-\(SearchType.route.rawValue)"])
+    }
+
+    @Test @MainActor
+    func `Submitting under routes scope dispatches a route search`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes-for-location-10.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        dataLoader.mock(data: Fixtures.loadData(file: "stops-for-route-1_100002.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader)
+        coordinator.push(.search)
+
+        viewModel.scope = .routes
+        viewModel.updateQuery(" 10 ")
+        viewModel.submitSearch()
+
+        for _ in 0..<200 where coordinator.currentRoute == .search {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(coordinator.currentRoute == .home)
+        #expect(coordinator.stackedRoutes.contains { if case .routeStops = $0 { return true } else { return false } })
+    }
+
+    @Test @MainActor
+    func `Submitting under stops scope dispatches a stop number search`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
+            request.url?.path.contains("/api/where/stops-for-location.json") ?? false
+        }
+        let (viewModel, _, coordinator, _) = makeViewModel(dataLoader: dataLoader)
+        coordinator.push(.search)
+
+        viewModel.scope = .stops
+        viewModel.updateQuery("1000")
+        viewModel.submitSearch()
+
+        for _ in 0..<200 where coordinator.stackedRoutes.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        #expect(coordinator.stackedRoutes.contains {
+            if case .searchResults(let response) = $0 {
+                return response.request.searchType == .stopNumber && response.request.query == "1000"
+            }
+            return false
+        })
+    }
+
+    @Test @MainActor
+    func `Submitting under all scope or with blank query does not start a search`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader)
+        dataLoader.resetRecordedRequestURLs()
+
+        viewModel.scope = .all
+        viewModel.updateQuery("10")
+        viewModel.submitSearch()
+        await viewModel.searchTask?.value
+        await Task.yield()
+        #expect(viewModel.searchTask == nil)
+        #expect(dataLoader.recordedRequestURLs.filter { $0.path.contains("/api/where/") }.isEmpty)
+
+        viewModel.scope = .routes
+        viewModel.updateQuery("   ")
+        viewModel.submitSearch()
+        await viewModel.searchTask?.value
+        await Task.yield()
+        #expect(viewModel.searchTask == nil)
+        #expect(dataLoader.recordedRequestURLs.filter { $0.path.contains("/api/where/") }.isEmpty)
+    }
+
+    @Test @MainActor
+    func `Voice search honors active non-all scope`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader, voiceSearch: voice)
+        viewModel.scope = .routes
+
+        viewModel.startVoiceSearch()
+        // Without scoping, "44" classifies as a stop number; under .routes it must query routes.
+        voice.emit(.final("44"))
+
+        for _ in 0..<200 where viewModel.message == nil {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        #expect(viewModel.query == "44")
+        #expect(viewModel.message?.kind == .noResults)
+        let routeRequestURL = try #require(dataLoader.recordedRequestURLs.last { $0.path.contains("/api/where/routes-for-location.json") })
+        let queryItems = URLComponents(url: routeRequestURL, resolvingAgainstBaseURL: false)?.queryItems
+        #expect(queryItems?.first { $0.name == "query" }?.value == "44")
+    }
+
+    @Test @MainActor
+    func `Voice search under routes scope strips spoken route cue`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let voice = MockVoiceSearchController()
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader, voiceSearch: voice)
+        viewModel.scope = .routes
+
+        viewModel.startVoiceSearch()
+        voice.emit(.final("Route 44"))
+
+        for _ in 0..<200 where viewModel.message == nil {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        let routeRequestURL = try #require(dataLoader.recordedRequestURLs.last { $0.path.contains("/api/where/routes-for-location.json") })
+        let queryItems = URLComponents(url: routeRequestURL, resolvingAgainstBaseURL: false)?.queryItems
+        #expect(queryItems?.first { $0.name == "query" }?.value == "44")
+    }
+
+    @Test @MainActor
+    func `Reporting search opened populates initial interactor sections`() {
+        let (viewModel, application, _, _) = makeViewModel(dataLoader: MockDataLoader(testName: name))
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))
+        item.name = "Pike Place Market"
+        application.userDataStore.addRecentMapItem(item)
+
+        viewModel.reportSearchOpened()
+
+        #expect(viewModel.searchInteractor.sections.map(\.id) == [.recentMapItems])
+    }
 }

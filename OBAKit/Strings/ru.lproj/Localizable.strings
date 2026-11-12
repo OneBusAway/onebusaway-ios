@@ -1089,6 +1089,15 @@
 /* Error shown when a tapped search result cannot be turned into something to display. */
 "search_results_sheet.unresolvable_result" = "Не удалось открыть этот результат поиска.";
 
+/* Search scope tag showing all search result types. */
+"search_scope.all" = "All";
+
+/* Search scope tag filtering results to places and addresses. */
+"search_scope.places" = "Places";
+
+/* Search scope tag filtering results to transit routes. */
+"search_scope.routes" = "Routes";
+
 /* Accessibility label for the button that clears the search query. */
 "search_sheet.clear_query" = "Очистить";
 
