@@ -40,6 +40,14 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
     @Published var query: String = ""
 
+    @Published var scope: SearchScope = .all {
+        didSet {
+            guard scope != oldValue else { return }
+            message = nil
+            searchInteractor.searchModeObjects(text: query, scope: scope)
+        }
+    }
+
     @Published private(set) var message: SearchSheetMessage?
 
     @Published private(set) var isSearching = false
@@ -95,6 +103,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     func reportSearchOpened() {
         guard !hasReportedOpen else { return }
         hasReportedOpen = true
+        searchInteractor.searchModeObjects(text: query, scope: scope)
 
         application.analytics?.reportEvent(
             pageURL: "app://localhost/map",
@@ -106,12 +115,22 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
     func updateQuery(_ text: String) {
         query = text
         message = nil
-        searchInteractor.searchModeObjects(text: text)
+        searchInteractor.searchModeObjects(text: text, scope: scope)
         // Any UI edit (clear or type) stops the mic — otherwise the next partial
         // overwrites what the rider just typed.
         if isListening {
             stopVoiceSearch()
         }
+    }
+
+    /// Runs a direct search on keyboard submit when a single-type scope
+    /// (`Stops`, `Routes`, or `Places`) is active.
+    func submitSearch() {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let searchType = scope.submitSearchType else {
+            return
+        }
+        performSearch(request: SearchRequest(query: trimmed, type: searchType))
     }
 
     /// Called when the view dismisses the alert, so a repeat of the same failing
@@ -162,7 +181,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
                 case .final(let text):
                     self.isListening = false
                     self.updateQueryPreservingListen(text)
-                    let request = VoiceSearchQueryClassifier.request(from: text)
+                    let request = self.voiceSearchRequest(from: text)
                     guard !request.query.isEmpty else { return }
                     // Go through `performSearch` so an in-flight keyboard `searchTask`
                     // is cancelled instead of presenting stale results over voice.
@@ -185,12 +204,21 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         isListening = false
     }
 
+    /// Maps a spoken utterance to a search request, honoring any active non-`all` scope.
+    private func voiceSearchRequest(from text: String) -> SearchRequest {
+        if let scopedType = scope.submitSearchType {
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return SearchRequest(query: trimmed, type: scopedType)
+        }
+        return VoiceSearchQueryClassifier.request(from: text)
+    }
+
     /// Same as `updateQuery` without cancelling an in-flight listen (partials rewrite
     /// the field while the mic is still open).
     private func updateQueryPreservingListen(_ text: String) {
         query = text
         message = nil
-        searchInteractor.searchModeObjects(text: text)
+        searchInteractor.searchModeObjects(text: text, scope: scope)
     }
 
     // MARK: - SearchDelegate
@@ -355,7 +383,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
 
     func confirmClearRecentSearches() {
         application.userDataStore.deleteAllRecentMapItems()
-        searchInteractor.searchModeObjects(text: query)
+        searchInteractor.searchModeObjects(text: query, scope: scope)
     }
 
     var isVehicleSearchAvailable: Bool {

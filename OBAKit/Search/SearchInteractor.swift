@@ -12,6 +12,66 @@ import OBAKitCore
 import MapKit
 import Observation
 
+/// Scoping tags for filtering search suggestions and results.
+enum SearchScope: String, CaseIterable, Identifiable, Hashable {
+    case all
+    case stops
+    case routes
+    case places
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .all:
+            return OBALoc("search_scope.all", value: "All", comment: "Search scope tag showing all search result types.")
+        case .stops:
+            return Strings.stops
+        case .routes:
+            return OBALoc("search_scope.routes", value: "Routes", comment: "Search scope tag filtering results to transit routes.")
+        case .places:
+            return OBALoc("search_scope.places", value: "Places", comment: "Search scope tag filtering results to places and addresses.")
+        }
+    }
+
+    /// Quick-search rows offered under this scope, in display order.
+    func quickSearchTypes(includeVehicle: Bool) -> [SearchType] {
+        switch self {
+        case .all:
+            var types: [SearchType] = [.route, .address, .stopNumber]
+            if includeVehicle {
+                types.append(.vehicleID)
+            }
+            return types
+        case .stops:
+            return [.stopNumber]
+        case .routes:
+            return [.route]
+        case .places:
+            return [.address]
+        }
+    }
+
+    /// Direct search type executed on keyboard submission, or `nil` when
+    /// multiple types apply and the rider picks from quick-search suggestions.
+    var submitSearchType: SearchType? {
+        switch self {
+        case .all: nil
+        case .stops: .stopNumber
+        case .routes: .route
+        case .places: .address
+        }
+    }
+
+    var includesStops: Bool {
+        self == .all || self == .stops
+    }
+
+    var includesPlaces: Bool {
+        self == .all || self == .places
+    }
+}
+
 protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
     func showMapItem(_ mapItem: MKMapItem)
@@ -47,11 +107,12 @@ class SearchInteractor: NSObject {
     private var placemarkSearchState: PlacemarkSearchState = .idle {
         didSet {
             guard !isUpdatingSections else { return }
-            searchModeObjects(text: lastQuery)
+            searchModeObjects(text: lastQuery, scope: lastScope)
         }
     }
 
     private var lastQuery: String = ""
+    private var lastScope: SearchScope = .all
 
     private var lastSearchText: String = ""
     private var localSearch: MKLocalSearch?
@@ -78,26 +139,32 @@ class SearchInteractor: NSObject {
         localSearch?.cancel()
     }
 
-    func searchModeObjects(text: String?) {
+    func searchModeObjects(text: String?, scope: SearchScope = .all) {
         isUpdatingSections = true
         defer { isUpdatingSections = false }
 
         lastQuery = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        lastScope = scope
 
-        // Show recent map items when search is empty
+        if !scope.includesPlaces || lastQuery.isEmpty {
+            cancelPendingPlacemarkSearch()
+        }
+
         if lastQuery.isEmpty {
-            lastSearchText = ""
-            self.sections = [buildRecentMapItemsSection()].compactMap { $0 }
+            self.sections = emptyQuerySections(for: scope)
             return
         }
 
         var newSections: [SearchListSection?] = [
-            quickSearchSection(searchText: lastQuery),
-            buildRecentStopsSection(searchText: lastQuery),
-            buildBookmarksSection(searchText: lastQuery)
+            quickSearchSection(searchText: lastQuery, scope: scope)
         ]
 
-        if let mapRect = application.mapRegionManager.lastVisibleMapRect {
+        if scope.includesStops {
+            newSections.append(buildRecentStopsSection(searchText: lastQuery))
+            newSections.append(buildBookmarksSection(searchText: lastQuery))
+        }
+
+        if scope.includesPlaces, let mapRect = application.mapRegionManager.lastVisibleMapRect {
             placemarkSearch(searchText: lastQuery, mapRect: mapRect)
             newSections.append(buildPlacemarksSection())
         }
@@ -105,9 +172,35 @@ class SearchInteractor: NSObject {
         self.sections = newSections.compactMap { $0 }
     }
 
+    private func emptyQuerySections(for scope: SearchScope) -> [SearchListSection] {
+        switch scope {
+        case .all, .places:
+            return [buildRecentMapItemsSection()].compactMap { $0 }
+        case .stops:
+            return [
+                buildRecentStopsSection(searchText: ""),
+                buildBookmarksSection(searchText: "")
+            ].compactMap { $0 }
+        case .routes:
+            return []
+        }
+    }
+
+    private func cancelPendingPlacemarkSearch() {
+        debounceTimer?.invalidate()
+        debounceTimer = nil
+        localSearch?.cancel()
+        localSearch = nil
+        lastSearchText = ""
+        placemarkSearchState = .idle
+    }
+
     // MARK: - Recent Stops
     private func buildRecentStopsSection(searchText: String) -> SearchListSection? {
-        let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
+        let matchingStops = searchText.isEmpty
+            ? userDataStore.recentStops
+            : userDataStore.findRecentStops(matching: searchText)
+        let recentStops = matchingStops.map { stop in
             SearchListRow(kind: .recentStop(id: stop.id), title: stop.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: stop)
@@ -123,7 +216,10 @@ class SearchInteractor: NSObject {
 
     // MARK: - Bookmarks
     private func buildBookmarksSection(searchText: String) -> SearchListSection? {
-        let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
+        let matchingBookmarks = searchText.isEmpty
+            ? userDataStore.bookmarks
+            : userDataStore.findBookmarks(matching: searchText)
+        let bookmarks = matchingBookmarks.map { bookmark in
             SearchListRow(kind: .bookmark(id: bookmark.id.uuidString), title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: bookmark.stop)
@@ -289,7 +385,7 @@ class SearchInteractor: NSObject {
 
     private func retryPlacemarkSearch() {
         lastSearchText = ""
-        searchModeObjects(text: lastQuery)
+        searchModeObjects(text: lastQuery, scope: lastScope)
     }
 
     private func systemImageForError(_ error: Error) -> String {
@@ -319,24 +415,24 @@ class SearchInteractor: NSObject {
         return string
     }
 
-    private func quickSearchSection(searchText: String) -> SearchListSection {
-
-        // swiftlint:disable large_tuple
-
-        var quickSearchTypes: [(SearchType, String, UIImage)] = [
-            (.route, OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route."), Icons.route),
-            (.address, OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address."), Icons.place),
-            (.stopNumber, OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop."), Icons.stop)
-        ]
-
-        // swiftlint:enable large_tuple
-
-        if let delegate = delegate, delegate.isVehicleSearchAvailable {
-            quickSearchTypes.append((.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."), Icons.busTransport))
+    private func quickSearchPresentation(for searchType: SearchType) -> (prefix: String, icon: UIImage) {
+        switch searchType {
+        case .route:
+            return (OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route."), Icons.route)
+        case .address:
+            return (OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address."), Icons.place)
+        case .stopNumber:
+            return (OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop."), Icons.stop)
+        case .vehicleID:
+            return (OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."), Icons.busTransport)
         }
+    }
 
-        let items = quickSearchTypes.map { (searchType, prefix, icon) in
-            SearchListRow(
+    private func quickSearchSection(searchText: String, scope: SearchScope) -> SearchListSection? {
+        let includeVehicle = delegate?.isVehicleSearchAvailable ?? false
+        let items = scope.quickSearchTypes(includeVehicle: includeVehicle).map { searchType in
+            let (prefix, icon) = quickSearchPresentation(for: searchType)
+            return SearchListRow(
                 kind: .quickSearch(searchType),
                 attributedTitle: quickSearchLabel(prefix: prefix, searchText: searchText),
                 icon: .uiImage(icon),
@@ -346,6 +442,10 @@ class SearchInteractor: NSObject {
                     self?.delegate?.performSearch(request: request)
                 }
             )
+        }
+
+        guard !items.isEmpty else {
+            return nil
         }
 
         return .init(
