@@ -490,8 +490,8 @@ struct NextDepartureComplicationTests {
 
         let renderer = ImageRenderer(content: previewView)
         renderer.scale = 2.0
-        if let uiImage = renderer.uiImage, let data = uiImage.pngData() {
-            try data.write(to: URL(fileURLWithPath: "/tmp/complication_preview_all.png"))
-        }
+        let uiImage = try #require(renderer.uiImage)
+        let data = try #require(uiImage.pngData())
+        try data.write(to: URL(fileURLWithPath: "/tmp/complication_preview_all.png"))
     }
 }
