@@ -86,6 +86,23 @@ final class SettingsViewModelTests: OBATestCase {
 
     // MARK: - Write-through
 
+    @Test func `Walking directions asks by default and ignores an unknown saved provider`() {
+        #expect(makeViewModel().walkingDirectionsProvider == .askEveryTime)
+        #expect(self.defaults.object(forKey: WalkingDirectionsProvider.defaultsKey) == nil)
+
+        defaults.set("unknown-provider", forKey: WalkingDirectionsProvider.defaultsKey)
+        #expect(makeViewModel().walkingDirectionsProvider == .askEveryTime)
+    }
+
+    @Test(arguments: WalkingDirectionsProvider.allCases)
+    func `Walking directions provider is saved and restored when settings reopens`(provider: WalkingDirectionsProvider) {
+        let vm = makeViewModel()
+        vm.walkingDirectionsProvider = provider
+
+        #expect(self.defaults.string(forKey: WalkingDirectionsProvider.defaultsKey) == provider.rawValue)
+        #expect(makeViewModel().walkingDirectionsProvider == provider)
+    }
+
     @Test func `Opening settings writes nothing`() {
         application.userDataStore.walkingSpeedMetersPerSecond = 1.55
         application.userDataStore.walkingSpeedSource = .manual

@@ -1227,6 +1227,18 @@
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "問卷";
 
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "Apple 地圖";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "每次詢問";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "Google 地圖";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "步行路線";
+
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "一般（約 5 公里/小時）";
 

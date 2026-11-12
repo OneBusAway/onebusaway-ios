@@ -97,6 +97,7 @@ final class SettingsViewModel {
 
         walkingSpeed = WalkingSpeedPreset.nearest(to: store.walkingSpeedMetersPerSecond)
         walkingSpeedIsSynced = store.walkingSpeedSource == .synced
+        walkingDirectionsProvider = WalkingDirectionsProvider(userDefaults: defaults)
 
         bikeModeEnabled = store.bikeModeEnabled
         bikeSpeedIsSynced = store.bikeSpeedSource == .synced
@@ -194,6 +195,10 @@ final class SettingsViewModel {
     }
 
     // MARK: - Walking Speed
+
+    var walkingDirectionsProvider: WalkingDirectionsProvider {
+        didSet { application.userDefaults.set(walkingDirectionsProvider.rawValue, forKey: WalkingDirectionsProvider.defaultsKey) }
+    }
 
     /// The manual speed. Read-only in the UI while `walkingSpeedIsSynced` is on.
     var walkingSpeed: WalkingSpeedPreset {

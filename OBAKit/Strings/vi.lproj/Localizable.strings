@@ -1227,6 +1227,18 @@
 /* Settings > Surveys section title */
 "settings_controller.survey_section.title" = "Khảo sát";
 
+/* Apple Maps walking directions provider option */
+"settings_controller.walking_directions.apple" = "Apple Maps";
+
+/* Walking directions provider option that keeps the maps app chooser */
+"settings_controller.walking_directions.ask" = "Hỏi mỗi lần";
+
+/* Google Maps walking directions provider option */
+"settings_controller.walking_directions.google" = "Google Maps";
+
+/* Settings picker for the default external walking directions provider */
+"settings_controller.walking_directions.title" = "Chỉ đường đi bộ";
+
 /* Settings > Walking Speed > Average preset label */
 "settings_controller.walking_speed.avg" = "Trung bình (~5 km/h)";
 
