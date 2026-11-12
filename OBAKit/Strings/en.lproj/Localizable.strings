@@ -1958,6 +1958,9 @@
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "%1$@ away · %2$d stops";
 
+/* Row on the trip page naming the trip the same vehicle runs next, which a rider who stays on board rides into. %@ is that trip's route and headsign, e.g. 'Continues as 10 - Downtown Seattle'. */
+"trip_page.continues_as_fmt" = "Continues as %@";
+
 /* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
 "trip_page.ghost_bus_report_sent" = "Thanks! Your report was sent.";
 
@@ -1981,6 +1984,9 @@
 
 /* Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.schedule" = "Schedule";
+
+/* Row on the trip page naming the trip the same vehicle runs just before this one. %@ is that trip's route and headsign, e.g. 'Starts as 10 - Downtown Seattle'. */
+"trip_page.starts_as_fmt" = "Starts as %@";
 
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "already passed";

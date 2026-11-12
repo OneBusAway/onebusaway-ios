@@ -277,6 +277,21 @@ final class TripMapHostViewControllerTests: OBATestCase {
         #expect(navigation.viewControllers == [root])
     }
 
+    /// What the trip starts as or continues as opens full screen too, over a map
+    /// of its own, and Back returns to this trip.
+    @Test func `A trip the page opens is pushed in a host of its own`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let host = TripMapHostViewController(application: application, arrivalDeparture: try makeDeparture())
+        let navigation = UINavigationController(rootViewController: host)
+        host.tripPage.openTrip(try Fixtures.tripConvertible(tripID: "trip_43"))
+
+        #expect(navigation.viewControllers.count == 2)
+        let pushed = try #require(navigation.viewControllers.last as? TripMapHostViewController)
+        // By ID: a failing expectation describes its operands, and describing this
+        // fixture's departure, which has no references loaded, traps.
+        #expect(pushed.tripPage.viewModel.tripConvertible.tripID == "trip_43")
+    }
+
     /// Embedded, the page's title and its iPhone Duo refresh button belong on
     /// the host: the bar shows the host's item, and a screen pushed over the
     /// host takes its back title from the host.

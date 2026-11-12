@@ -23,6 +23,8 @@ struct TripPageActions {
     /// The whole row, not just its stop: the time on it is when this trip
     /// reaches the stop, which the stop it opens needs for transfers.
     var onSelectStop: (TripStopListModel.Row) -> Void = { _ in }
+    /// The "Starts as" or "Continues as" row, by which side of the trip it's on.
+    var onSelectAdjacentTrip: (TripAdjacentTrips.Order) -> Void = { _ in }
     var onLiveActivity: () -> Void = {}
     var onBookmark: () -> Void = {}
     var onSchedule: () -> Void = {}
@@ -161,9 +163,12 @@ struct TripPageView: View {
 
                         TripStopListView(
                             model: list,
+                            adjacentTrips: viewModel.adjacentTrips,
+                            loadingAdjacentTrip: viewModel.loadingAdjacentTrip,
                             routeColor: routeColor,
                             routeType: route?.routeType ?? .unknown,
-                            onSelect: { actions.onSelectStop($0) }
+                            onSelect: { actions.onSelectStop($0) },
+                            onSelectAdjacentTrip: { actions.onSelectAdjacentTrip($0) }
                         )
                     } else {
                         // Never render the absence as blank space. The stop list is

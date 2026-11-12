@@ -52,6 +52,10 @@ class TripViewModel: ObservableObject {
     /// load starts, so a retry reads as loading again.
     @Published private(set) var stopListLoadFailed = false
 
+    /// The trip on either side of this one that `openAdjacentTrip(_:then:)` is
+    /// fetching, for its row's spinner. `nil` when none is.
+    @Published private(set) var loadingAdjacentTrip: TripAdjacentTrips.Order?
+
     /// What the trip page can say about the stop list.
     enum StopListState {
         case loaded
@@ -90,6 +94,12 @@ class TripViewModel: ObservableObject {
         )
     }
 
+    /// What this trip starts as and continues as, from the same details as
+    /// `stopList`, so the rows appear with the stops.
+    var adjacentTrips: TripAdjacentTrips {
+        TripAdjacentTrips(details: tripDetails)
+    }
+
     /// Set by the UI layer to gate programmatic auto-refreshes.
     /// e.g. `viewModel.shouldSkipProgrammaticRefresh = { UIAccessibility.isVoiceOverRunning }`
     var shouldSkipProgrammaticRefresh: (() -> Bool)?
@@ -106,6 +116,10 @@ class TripViewModel: ObservableObject {
     /// completion to await instead of polling for its side effects.
     private(set) var loadDataTask: Task<Void, Never>?
 
+    /// The fetch started by `openAdjacentTrip(_:then:)`. Held so `deactivate()`
+    /// can cancel it, and so tests have a completion to await.
+    private(set) var adjacentTripTask: Task<Void, Never>?
+
     // MARK: - Init
 
     /// - Parameter destinationStopID: Where the sharer said they will step off,
@@ -119,6 +133,7 @@ class TripViewModel: ObservableObject {
     isolated deinit {
         refreshTimer?.invalidate()
         loadDataTask?.cancel()
+        adjacentTripTask?.cancel()
     }
 
     // MARK: - Lifecycle
@@ -130,12 +145,18 @@ class TripViewModel: ObservableObject {
     }
 
     /// Call from `viewWillDisappear`.
+    ///
+    /// Also drops a trip `openAdjacentTrip(_:then:)` is still fetching. Opened
+    /// after the page has gone, it would cover whatever the rider went to instead.
     func deactivate() {
         refreshTimer?.invalidate()
         refreshTimer = nil
         loadDataTask?.cancel()
         loadDataTask = nil
         isLoading = false
+        adjacentTripTask?.cancel()
+        adjacentTripTask = nil
+        loadingAdjacentTrip = nil
     }
 
     // MARK: - Refresh
@@ -326,6 +347,58 @@ class TripViewModel: ObservableObject {
             if Task.isCancelled || error.isCancellation { return }
             Logger.error("Failed to load the arrival at shared destination \(destinationStopID) on trip \(arrivalDeparture.tripID): \(error)")
             destinationArrivalDeparture = nil
+        }
+    }
+
+    // MARK: - Adjacent Trips
+
+    /// Fetches the trip the vehicle runs before or after this one, and hands it
+    /// to `open`.
+    ///
+    /// With this trip's vehicle and service date, as `fetchTripDetails()` uses:
+    /// the trips in a vehicle's block share both, and the vehicle lets OBA report
+    /// where it is on the trip that opens.
+    ///
+    /// Ignored while a fetch is running, so a second tap can't open a second
+    /// trip over the first. A failure goes to the app's error toast and leaves
+    /// the row ready for another try.
+    func openAdjacentTrip(_ order: TripAdjacentTrips.Order, then open: @escaping (TripConvertible) -> Void) {
+        guard loadingAdjacentTrip == nil else { return }
+        guard let row = adjacentTrips.row(order) else {
+            Logger.warn("Trip \(tripConvertible.tripID) has no \(order) trip to open.")
+            return
+        }
+        // Can't happen: the rows come from details this service loaded, and a
+        // region change replaces the service rather than clearing it.
+        guard let apiService = application.apiService else {
+            Logger.error("Can't open the \(order) trip of \(tripConvertible.tripID): no API service.")
+            assertionFailure("Trip \(tripConvertible.tripID) shows an adjacent trip with no API service to fetch it.")
+            return
+        }
+
+        let tripID = row.trip.id
+        let vehicleID = tripConvertible.vehicleID
+        let serviceDate = tripConvertible.serviceDate
+        loadingAdjacentTrip = order
+
+        // `deactivate()` clears `loadingAdjacentTrip` as it cancels this task, so
+        // the cancelled paths leave it alone.
+        adjacentTripTask = Task { [weak self] in
+            do {
+                let details = try await apiService.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate).entry
+                // Cancellation is cooperative: the response can arrive after the
+                // page has gone.
+                guard let self, !Task.isCancelled else { return }
+                loadingAdjacentTrip = nil
+                open(TripConvertible(tripDetails: details))
+            } catch {
+                guard let self, !Task.isCancelled else { return }
+                loadingAdjacentTrip = nil
+                // A lower layer can cancel the request without cancelling this task.
+                // Nothing the rider did, so nothing to tell them.
+                guard !error.isCancellation else { return }
+                await application.displayError(error)
+            }
         }
     }
 

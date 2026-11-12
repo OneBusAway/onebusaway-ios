@@ -364,6 +364,34 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         application.viewRouter.navigateTo(stopID: row.stopID, from: self, transferContext: transferContext)
     }
 
+    /// Set by a host that opens trips itself: the map panel, which shows a trip as
+    /// a sheet of its own, and `TripMapHostViewController`, which pushes another
+    /// host. `nil` pushes a bare page onto this page's stack, as the map tab's stop
+    /// sheet hosts this one.
+    var onSelectTrip: ((TripConvertible) -> Void)?
+
+    /// Opens a trip the rider reached from this one: what it starts as, or what
+    /// it continues as. See `onSelectTrip`.
+    func openTrip(_ convertible: TripConvertible) {
+        if let onSelectTrip {
+            onSelectTrip(convertible)
+            return
+        }
+        // Can't happen: every host that shows this page without a stack sets the hook.
+        guard navigationController != nil else {
+            Logger.error("Can't open trip \(convertible.tripID): the trip page isn't on a navigation stack.")
+            assertionFailure("A trip page with no stack has no onSelectTrip to open trip \(convertible.tripID).")
+            return
+        }
+        let page = TripPageViewController(application: application, tripConvertible: convertible, originTitle: pageTitle)
+        // The map behind this page, if there is one, draws that trip instead.
+        // Each page gives the map up in `viewWillDisappear` as it leaves the
+        // stack and takes it again in `viewWillAppear`, so Back returns the map
+        // to this trip.
+        page.onMapFocusChanged = onMapFocusChanged
+        application.viewRouter.navigate(to: page, from: self)
+    }
+
     private func publishMapFocus(
         convertible: TripConvertible,
         details: TripDetails?,
@@ -505,6 +533,11 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
 
         actions.onBack = { [weak self] in self?.goBack() }
         actions.onSelectStop = { [weak self] row in self?.openStop(row) }
+        actions.onSelectAdjacentTrip = { [weak self] order in
+            self?.viewModel.openAdjacentTrip(order) { [weak self] convertible in
+                self?.openTrip(convertible)
+            }
+        }
         actions.onBookmark = { [weak self] in self?.showBookmarkEditor() }
         actions.onSchedule = { [weak self] in self?.showSchedule() }
         actions.onAlarm = { [weak self] in
