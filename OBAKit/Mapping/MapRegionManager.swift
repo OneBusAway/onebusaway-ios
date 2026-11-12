@@ -123,52 +123,40 @@ public class MapRegionManager: NSObject,
     /// `true` by default.
     public var mapViewShowsTraffic: Bool {
         get {
-            Self.effectiveShowsTraffic(application.userDefaults.bool(forKey: Self.mapViewShowsTrafficKey))
+            MapDisplaySettings.effectiveShowsTraffic(displaySettings.showsTraffic)
         }
         set {
-            application.userDefaults.set(newValue, forKey: Self.mapViewShowsTrafficKey)
+            displaySettings.showsTraffic = newValue
             mapView.showsTraffic = newValue
         }
     }
-    /// Read by the map panel's SwiftUI map, which has no `MKMapView` to set.
-    static let mapViewShowsTrafficKey = "mapRegionManager.mapViewShowsTraffic"
 
-    /// The Show Traffic setting, except in the Simulator, where traffic is off
-    /// to work around a bug in Xcode 11 and 12 where the console spews hundreds
-    /// of "Compiler error: Invalid library file" messages.
-    /// https://stackoverflow.com/a/63176707
-    static func effectiveShowsTraffic(_ setting: Bool) -> Bool {
-        #if targetEnvironment(simulator)
-        false
-        #else
-        setting
-        #endif
+    /// Show Scale, Show Traffic and Show Heading, shared with the map panel.
+    private var displaySettings: MapDisplaySettings {
+        MapDisplaySettings(userDefaults: application.userDefaults)
     }
 
     /// Whether the map view displays a scale indicator while zooming.
     ///
     /// `true` by default.
     public var mapViewShowsScale: Bool {
-        get { application.userDefaults.bool(forKey: Self.mapViewShowsScaleKey) }
+        get { displaySettings.showsScale }
         set {
-            application.userDefaults.set(newValue, forKey: Self.mapViewShowsScaleKey)
+            displaySettings.showsScale = newValue
             mapView.showsScale = newValue
         }
     }
-    /// Read by the map panel's SwiftUI map, which has no `MKMapView` to set.
-    static let mapViewShowsScaleKey = "mapRegionManager.mapViewShowsScale"
 
     /// Whether the map view shows the direction the user is currently facing in.
     ///
     /// Defaults to `true`.
     public var mapViewShowsHeading: Bool {
-        get { application.userDefaults.bool(forKey: mapViewShowsHeadingKey) }
+        get { displaySettings.showsHeading }
         set {
-            application.userDefaults.set(newValue, forKey: mapViewShowsHeadingKey)
+            displaySettings.showsHeading = newValue
             userLocationAnnotationView?.headingImageView.isHidden = !newValue
         }
     }
-    private let mapViewShowsHeadingKey = "mapRegionManager.mapViewShowsHeadingKey"
 
     /// Whether Apple MapKit Points of Interest (restaurants, shops, etc.) appear
     /// on the browse map. Riders complained about clutter; this is the Map sheet
@@ -252,9 +240,6 @@ public class MapRegionManager: NSObject,
         self.application = application
 
         application.userDefaults.register(defaults: [
-            Self.mapViewShowsTrafficKey: true,
-            Self.mapViewShowsScaleKey: true,
-            mapViewShowsHeadingKey: true,
             mapViewMapTypeKey: MKMapType.mutedStandard.rawValue,
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: true,
             MapRegionManager.mapViewShowsPointsOfInterestKey: true,

@@ -10,11 +10,12 @@
 @testable import OBAKit
 @testable import OBAKitCore
 import Foundation
+import UIKit
 import Testing
 
-/// The Experimental toggles are the only writers of their feature-flag defaults, and the section's
-/// footer invites you to relaunch the app the moment you flip one. So the flag has to be on disk
-/// *before* the screen goes away: these tests flip the switch and read UserDefaults back without
+/// The Experimental toggles are the only writers of their feature-flag defaults, and the map panel
+/// toggle rebuilds the window's root from its flag the moment you flip it. So the flag has to be on
+/// disk *before* the screen goes away: these tests flip the switch and read UserDefaults back without
 /// dismissing anything.
 @MainActor
 @Suite(.serialized)
@@ -22,12 +23,15 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
 
     private var queue: OperationQueue!
     private var application: Application!
+    private var appDelegate: RootReloadRecorder!
 
     override init() async throws {
         try await super.init()
 
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        appDelegate = RootReloadRecorder()
+        application.delegate = appDelegate
     }
 
     isolated deinit {
@@ -71,6 +75,58 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         #expect(FeatureFlags.isMapPanelExperienceEnabled(userDefaults: self.application.userDefaults))
     }
 
+    // MARK: - Map panel root swap
+
+    @Test func `Turning the map panel off swaps in the classic root at once`() throws {
+        application.userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+        var dismissals = 0
+        vm.dismissSettings = { completion in
+            dismissals += 1
+            completion()
+        }
+
+        vm.usesMapPanelExperience = false
+
+        #expect(dismissals == 1)
+        #expect(appDelegate.reloads == 1)
+        #expect(appDelegate.root is ClassicApplicationRootController)
+    }
+
+    @Test func `Turning the map panel back on swaps in the panel root at once`() throws {
+        application.userDefaults.set(false, forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+
+        vm.usesMapPanelExperience = true
+
+        #expect(appDelegate.reloads == 1)
+        #expect(appDelegate.root is MapPanelRootController)
+    }
+
+    /// Settings is presented inside the root being replaced.
+    @Test func `The root is swapped only after Settings is dismissed`() throws {
+        application.userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+        var finishDismissal: (() -> Void)?
+        vm.dismissSettings = { finishDismissal = $0 }
+
+        vm.usesMapPanelExperience = false
+        #expect(appDelegate.reloads == 0)
+
+        let finish = try #require(finishDismissal)
+        finish()
+        #expect(appDelegate.reloads == 1)
+    }
+
+    @Test func `Setting the map panel to its current value leaves the root alone`() throws {
+        application.userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+
+        vm.usesMapPanelExperience = true
+
+        #expect(appDelegate.reloads == 0)
+    }
+
     // MARK: - Stop clustering
 
     @Test func `Stop clustering seeds off by default`() throws {
@@ -98,4 +154,25 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
 
         #expect(!self.application.userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey))
     }
+}
+
+/// Stands in for the app delegate: counts root reloads, and builds the root
+/// from the flag the way the apps' `RootInterfaceLauncher` does.
+@MainActor
+private final class RootReloadRecorder: NSObject, ApplicationDelegate {
+    var uiApplication: UIApplication?
+    var isIdleTimerDisabled = false
+    var isRegisteredForRemoteNotifications = false
+
+    private(set) var reloads = 0
+    private(set) var root: UIViewController?
+
+    func applicationReloadRootInterface(_ app: Application) {
+        reloads += 1
+        root = ApplicationRootControllerFactory.make(application: app)
+    }
+
+    func canOpenURL(_ url: URL) -> Bool { false }
+
+    func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler completion: ((Bool) -> Void)?) {}
 }

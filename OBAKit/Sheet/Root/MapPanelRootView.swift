@@ -342,7 +342,7 @@ struct MapPanelRootView: View {
     var body: some View {
         MapReader { proxy in
         Map(position: $cameraPosition, selection: $mapSelection) {
-            UserAnnotation()
+            MapPanelUserLocation(userDefaults: application.userDefaults)
             onDemandZoneContent
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in
