@@ -162,6 +162,17 @@ final class SearchListRowTests: OBATestCase {
     }
 
     @Test
+    func `Quick search rows keep the search presentation open`() {
+        let row = SearchListRow(
+            kind: .quickSearch(.route),
+            title: "Route: 10",
+            action: {}
+        )
+
+        #expect(!row.dismissesSearchPresentation)
+    }
+
+    @Test
     func `Retry rows keep the search presentation open`() {
         let row = SearchListRow(
             kind: .error("Network unavailable", systemImage: "wifi.slash"),

@@ -107,8 +107,10 @@ struct SearchListRow: Identifiable {
     var dismissesSearchPresentation: Bool {
         guard action != nil else { return false }
         switch kind {
-        case .quickSearch, .recentStop, .bookmark, .placemark, .searchResult:
+        case .recentStop, .bookmark, .placemark, .searchResult:
             return true
+        case .quickSearch:
+            return false
         case .clearRecents, .loading, .noResults, .error:
             return false
         }
