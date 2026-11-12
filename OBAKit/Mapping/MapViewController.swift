@@ -91,7 +91,13 @@ class MapViewController: UIViewController,
 
     lazy var onDemandProbeController = OnDemandProbeController.make(application: application)
     var onDemandDockHost: OnDemandDockHostController?
-    var tripPlannerFallback = TripPlannerFallbackContext()
+    lazy var tripPlanEmptyFallback: TripPlanEmptyFallback = {
+        let fallback = TripPlanEmptyFallback(probeController: onDemandProbeController, notificationCenter: application.notificationCenter)
+        fallback.onChange = { [weak self] isShowingCard in self?.tripPlanEmptyFallbackDidChange(isShowingCard: isShowingCard) }
+        return fallback
+    }()
+    /// The planner panel's delegate, held here because the panel keeps it weakly.
+    var tripPlannerPanelObserver: TripPlannerPanelObserver?
 
     // MARK: - Init
 
