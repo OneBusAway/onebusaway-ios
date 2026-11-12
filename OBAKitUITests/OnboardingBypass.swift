@@ -44,5 +44,8 @@ nonisolated enum OnboardingBypass {
         "-AppleLanguages", "(en)",
         "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>",
         "-OBAOnboardingSeenStepVersions", seenStepVersions
-    ]
+    ] + classicUIArguments
+
+    /// The map panel is the default; these tests drive the classic tab bar.
+    static let classicUIArguments: [String] = ["-OBAUseMapPanelExperience", "NO"]
 }

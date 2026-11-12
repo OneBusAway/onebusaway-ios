@@ -26,7 +26,7 @@ nonisolated final class OnboardingUITests: XCTestCase {
     @MainActor func test_onboarding_fromLocationPageToMainUI() throws {
         let app = XCUIApplication()
         app.launchEnvironment["TEST_ONBOARDING"] = "1"
-        app.launchArguments += ["-AppleLanguages", "(en)"]
+        app.launchArguments += ["-AppleLanguages", "(en)"] + OnboardingBypass.classicUIArguments
         app.launch()
 
         // Page 1: location authorization.
