@@ -28,6 +28,19 @@ import ActivityKit
 /// It deliberately does NOT observe `StopViewModel` — `StopDetailsSheetView`
 /// remains the sole observer, and owns the `@StateObject`/`@State` that give the
 /// view model and the presenter their lifetimes.
+/// How a stop sheet reaches the map it sits over: it hands over its route chips'
+/// focus when it appears, and every arrivals emission after that.
+///
+/// Closures rather than the display model itself, so the factory decides which
+/// sheet route owns the drawing and the sheet doesn't need to know.
+struct StopSheetMapLink {
+    let show: (StopMapFocus) -> Void
+    let apply: (_ arrivals: StopArrivals?, _ isListFiltered: Bool, _ preferences: StopPreferences) -> Void
+
+    /// For a sheet over no map. Its chips render plain; see `StopMapFocus`.
+    static let none = StopSheetMapLink(show: { _ in }, apply: { _, _, _ in })
+}
+
 struct StopDetailsSheetRootView: View {
     /// Forwarded so the route this view was built for stays readable without
     /// instantiating the sheet, both in debug output and to the factory's tests.
@@ -38,6 +51,7 @@ struct StopDetailsSheetRootView: View {
     let feedback: DataLoadFeedbackGenerator
     let formatters: Formatters
     let userDefaults: UserDefaults
+    var mapLink: StopSheetMapLink = .none
 
     var body: some View {
         StopDetailsSheetView(
@@ -46,7 +60,8 @@ struct StopDetailsSheetRootView: View {
             presenter: makePresenter(),
             feedback: feedback,
             formatters: formatters,
-            userDefaults: userDefaults
+            userDefaults: userDefaults,
+            mapLink: mapLink
         )
         .defaultAppStorage(userDefaults)
     }
@@ -90,16 +105,16 @@ struct StopDetailsSheetView: View {
     @StateObject private var presenter: StopPageActionPresenter
 
     /// The header's route chips decorate themselves from map focus — route
-    /// colour, live-vehicle dot, tap-to-highlight. That channel is wired only
-    /// through the UIKit `MapViewController`; this sheet sits over the SwiftUI
-    /// map panel, which has none. An unwired instance is a supported mode: every
-    /// route reports unfocusable, so the chips render plain, carry no button
-    /// trait, and their tap gesture is a no-op. See `StopMapFocus`.
+    /// colour, live-vehicle dot, tap-to-highlight. `mapLink` hands it to the
+    /// panel's `StopFocusMapDisplayModel`, which fills it in as it draws the
+    /// stop's routes. Unwired (`StopSheetMapLink.none`) is a supported mode:
+    /// every route reports unfocusable, so the chips render plain, carry no
+    /// button trait, and their tap gesture is a no-op. See `StopMapFocus`.
     ///
     /// `@StateObject` so it is one instance for the life of the sheet rather
-    /// than a fresh object per body pass. It never publishes, so observing it
-    /// costs nothing.
+    /// than a fresh object per body pass. The map model holds it weakly.
     @StateObject private var mapFocus = StopMapFocus()
+    private let mapLink: StopSheetMapLink
 
     private let feedback: DataLoadFeedbackGenerator
     private let formatters: Formatters
@@ -135,9 +150,11 @@ struct StopDetailsSheetView: View {
         presenter: @autoclosure @escaping () -> StopPageActionPresenter,
         feedback: DataLoadFeedbackGenerator,
         formatters: Formatters,
-        userDefaults: UserDefaults
+        userDefaults: UserDefaults,
+        mapLink: StopSheetMapLink = .none
     ) {
         self.stopID = stopID
+        self.mapLink = mapLink
         _viewModel = StateObject(wrappedValue: viewModel())
         _presenter = StateObject(wrappedValue: presenter())
         self.feedback = feedback
@@ -226,6 +243,14 @@ struct StopDetailsSheetView: View {
             )
             .onReceive(viewModel.$stop.compactMap { $0 }, perform: publishUserActivity(for:))
             .onReceive(viewModel.$stopArrivals.compactMap { $0 }) { _ in signalFirstLoad() }
+            .onAppear { mapLink.show(mapFocus) }
+            // The emitted values, never `viewModel`'s properties read back:
+            // `@Published` emits in `willSet`, so those still hold the old ones.
+            .onReceive(
+                viewModel.$stopArrivals.combineLatest(viewModel.$isListFiltered, viewModel.$stopPreferences)
+            ) { arrivals, isListFiltered, preferences in
+                mapLink.apply(arrivals, isListFiltered, preferences)
+            }
             .onReceive(viewModel.$operationError.compactMap { $0 }) { _ in feedback.dataLoad(.failed) }
             .onReceive(viewModel.presentFullSurvey, perform: showFullSurvey(_:))
             .onReceive(viewModel.surveySubmissionError, perform: presenter.showError)

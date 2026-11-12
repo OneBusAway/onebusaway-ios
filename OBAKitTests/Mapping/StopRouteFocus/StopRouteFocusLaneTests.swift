@@ -85,7 +85,7 @@ final class StopRouteFocusLaneTests {
         layer.update(model: model(routeIDs: ["H", "62"]))
         await layer.awaitPendingShapeWork()
 
-        #expect(abs(try gap(between: "H", and: "62", on: mapView) - StopRouteFocusMapLayer.laneWidth) < 1.5)
+        #expect(abs(try gap(between: "H", and: "62", on: mapView) - RouteLanes.laneWidth) < 1.5)
     }
 
     @Test func `A route on its own street draws exactly its shape`() async throws {
@@ -114,7 +114,7 @@ final class StopRouteFocusLaneTests {
         frame(mapView, span: 0.005)
         layer.viewportDidChange(mapView.visibleMapRect)
 
-        #expect(abs(try gap(between: "H", and: "62", on: mapView) - StopRouteFocusMapLayer.laneWidth) < 1.5)
+        #expect(abs(try gap(between: "H", and: "62", on: mapView) - RouteLanes.laneWidth) < 1.5)
         // Redrawn, not stacked on top of the old lines.
         #expect(mapView.overlays.compactMap { $0 as? RouteShapeOverlay }.count == 6)
     }
@@ -137,6 +137,6 @@ final class StopRouteFocusLaneTests {
         layer.viewportDidChange(mapView.visibleMapRect)
 
         #expect(try coreOverlay(for: "8", on: mapView) === alone)
-        #expect(abs(try gap(between: "H", and: "62", on: mapView) - StopRouteFocusMapLayer.laneWidth) < 1.5)
+        #expect(abs(try gap(between: "H", and: "62", on: mapView) - RouteLanes.laneWidth) < 1.5)
     }
 }

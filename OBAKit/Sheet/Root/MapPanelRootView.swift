@@ -164,6 +164,7 @@ struct MapPanelRootView: View {
     @ObservedObject private var stopsObserver: MapStopsObserver
     @ObservedObject private var tripPlannerDisplay: TripPlannerMapDisplayModel
     @ObservedObject private var tripFocusDisplay: TripFocusMapDisplayModel
+    @ObservedObject private var stopFocusDisplay: StopFocusMapDisplayModel
     @ObservedObject private var probeController: OnDemandProbeController
 
     /// Presentation state only. The popup reads its data from
@@ -287,6 +288,7 @@ struct MapPanelRootView: View {
         stopsObserver: MapStopsObserver,
         tripPlannerMapDisplayModel: TripPlannerMapDisplayModel,
         tripFocusMapDisplayModel: TripFocusMapDisplayModel,
+        stopFocusMapDisplayModel: StopFocusMapDisplayModel,
         probeController: OnDemandProbeController
     ) {
         _coordinator = StateObject(wrappedValue: coordinator)
@@ -294,6 +296,7 @@ struct MapPanelRootView: View {
         _stopsObserver = ObservedObject(wrappedValue: stopsObserver)
         _tripPlannerDisplay = ObservedObject(wrappedValue: tripPlannerMapDisplayModel)
         _tripFocusDisplay = ObservedObject(wrappedValue: tripFocusMapDisplayModel)
+        _stopFocusDisplay = ObservedObject(wrappedValue: stopFocusMapDisplayModel)
         _probeController = ObservedObject(wrappedValue: probeController)
         _mapViewModel = StateObject(wrappedValue: mapViewModel)
         _layersModel = StateObject(wrappedValue: layersModel)
@@ -382,7 +385,11 @@ struct MapPanelRootView: View {
                 )
             }
             tripPlannerMapContent(for: tripPlannerDisplay)
-            tripFocusMapContent(for: tripFocusDisplay.display)
+            if stopTakesMap {
+                stopFocusMapContent(for: stopFocusDisplay.display, onSelectVehicle: followStopVehicle)
+            } else {
+                tripFocusMapContent(for: tripFocusDisplay.display)
+            }
         }
         // Long-press drops a pin, as on the UIKit map: a place to plan a trip
         // to, or find stops near. Simultaneous, so panning still works.
@@ -400,6 +407,9 @@ struct MapPanelRootView: View {
             tripPlannerDisplay.updateVisibleRegion(context.region)
             layersModel.viewportDidChange(context.rect)
             layersModel.updateViewport(mapRect: context.rect, mapSize: mapSize)
+            if context.rect.width > 0 {
+                stopFocusDisplay.updateScreenScale(mapSize.width / context.rect.width)
+            }
             probeController.mapDidSettle(
                 center: context.region.center,
                 zoomLevel: OnDemandZoomLevel.level(forVisibleHeight: context.rect.height)
@@ -518,6 +528,7 @@ struct MapPanelRootView: View {
                 tripPlannerDisplay.clear()
             }
             tripFocusDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
+            stopFocusDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
         }
         .onChange(of: searchDisplay.cameraTarget) { _, target in
             guard let target else { return }
@@ -916,6 +927,23 @@ extension MapPanelRootView {
         }
     }
 
+    /// Whether the open stop's routes draw rather than the open trip; see
+    /// `StopFocusMapDisplayModel.stopTakesMap(stopOwner:tripOwner:routes:)`.
+    private var stopTakesMap: Bool {
+        StopFocusMapDisplayModel.stopTakesMap(
+            stopOwner: stopFocusDisplay.owner,
+            tripOwner: tripFocusDisplay.isShowingTrip ? tripFocusDisplay.owner : nil,
+            routes: coordinator.allRoutes
+        )
+    }
+
+    /// A tapped vehicle opens its trip over the stop, as tapping its departure in
+    /// the sheet does, and the trip then takes the map.
+    private func followStopVehicle(_ vehicle: StopFocusMapDisplayModel.Vehicle) {
+        guard let owner = stopFocusDisplay.owner else { return }
+        coordinator.open(.tripDetails(TripConvertible(arrivalDeparture: vehicle.departure)), from: owner)
+    }
+
     /// Frames an open trip in the part of the map its sheet leaves visible.
     ///
     /// The trip sheet opens at `.medium`, which covers about half the map, so the
@@ -1012,6 +1040,7 @@ extension MapPanelRootView {
     /// new one, as the UIKit map does in `MapRegionManager`.
     private func showChangedRegion(_ region: Region) {
         closeSheetsOverHome()
+        stopFocusDisplay.invalidateShapeCache()
         application.mapRegionManager.cancelScheduledStopsRequest()
         stopsObserver.reset()
         if let rect = LaunchMapCamera.regionChangeTarget(
