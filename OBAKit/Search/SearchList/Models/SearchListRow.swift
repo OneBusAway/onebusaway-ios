@@ -82,6 +82,38 @@ struct SearchListRow: Identifiable {
     let accessory: Accessory
     let action: (() -> Void)?
 
+    var accessibilityLabel: String {
+        let title = attributedTitle?.string ?? title ?? ""
+        guard let subtitle, !subtitle.isEmpty else { return title }
+        return [title, subtitle].filter { !$0.isEmpty }.joined(separator: ", ")
+    }
+
+    var accessibilityHint: String? {
+        guard action != nil else { return nil }
+        switch kind {
+        case .error:
+            return Strings.retry
+        case .quickSearch, .recentStop, .bookmark, .placemark, .searchResult:
+            return OBALoc(
+                "search_controller.accessibility.open_result",
+                value: "Opens this result.",
+                comment: "VoiceOver hint for an actionable search result row."
+            )
+        case .clearRecents, .loading, .noResults:
+            return nil
+        }
+    }
+
+    var dismissesSearchPresentation: Bool {
+        guard action != nil else { return false }
+        switch kind {
+        case .quickSearch, .recentStop, .bookmark, .placemark, .searchResult:
+            return true
+        case .clearRecents, .loading, .noResults, .error:
+            return false
+        }
+    }
+
     init(
         kind: Kind,
         title: String? = nil,

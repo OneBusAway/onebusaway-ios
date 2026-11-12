@@ -10,12 +10,18 @@ import OBAKitCore
 
 struct SearchListRowView: View {
     let row: SearchListRow
+    var onActivate: (() -> Void)?
 
     private let brandColor = Color(uiColor: ThemeColors.shared.brandTint)
 
     /// Icon sizes below are design points at the default text size; this scales
     /// them with Dynamic Type so the glyphs keep pace with the row's text.
     @ScaledMetric(relativeTo: .body) private var iconScale: CGFloat = 1
+
+    init(row: SearchListRow, onActivate: (() -> Void)? = nil) {
+        self.row = row
+        self.onActivate = onActivate
+    }
 
     var body: some View {
         switch row.kind {
@@ -37,6 +43,9 @@ struct SearchListRowView: View {
     /// Standard tappable row — stops, bookmarks, placemarks, quick search.
     private var actionRow: some View {
         Button {
+            if row.dismissesSearchPresentation {
+                onActivate?()
+            }
             row.action?()
         } label: {
             HStack(spacing: 12) {
@@ -54,6 +63,9 @@ struct SearchListRowView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(row.accessibilityLabel))
+        .accessibilityHint(row.accessibilityHint.map { Text($0) } ?? Text(""))
     }
 
     /// Non-interactive status row — no results.
@@ -91,6 +103,9 @@ struct SearchListRowView: View {
         }
         .buttonStyle(.plain)
         .disabled(row.action == nil)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(row.accessibilityLabel))
+        .accessibilityHint(row.accessibilityHint.map { Text($0) } ?? Text(""))
     }
 
     private var retryBadge: some View {
@@ -130,6 +145,8 @@ struct SearchListRowView: View {
                 }
             }
             .contentShape(.rect)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(row.accessibilityLabel))
         }
     }
 
