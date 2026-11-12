@@ -116,8 +116,8 @@ final class AppSheetRouteTests {
 
     @Test func `Home detent starts at small and offers all three`() {
         let config = AppSheetRoute.home.detentConfiguration
-        #expect(config.detents == [.height(AppSheetRoute.homeCollapsedHeight), .medium, AppSheetRoute.largeDetent])
-        #expect(config.initialDetent == .height(AppSheetRoute.homeCollapsedHeight))
+        #expect(config.detents == [.custom(HomeCollapsedDetent.self), .medium, AppSheetRoute.largeDetent])
+        #expect(config.initialDetent == .custom(HomeCollapsedDetent.self))
         #expect(config.showDragIndicator == true)
         #expect(config.isDismissDisabled == true)
     }
@@ -263,7 +263,7 @@ final class AppSheetRouteTests {
     @Test func `Should disable background for full screen home below large detent is false`() {
         let config = AppSheetRoute.home.detentConfiguration
         #expect(config.shouldDisableBackgroundForFullScreen(at: .medium) == false)
-        #expect(config.shouldDisableBackgroundForFullScreen(at: .height(AppSheetRoute.homeCollapsedHeight)) == false)
+        #expect(config.shouldDisableBackgroundForFullScreen(at: AppSheetRoute.homeCollapsedDetent) == false)
     }
 
     @Test func `Should disable background for full screen is false when full screen detent not configured`() {

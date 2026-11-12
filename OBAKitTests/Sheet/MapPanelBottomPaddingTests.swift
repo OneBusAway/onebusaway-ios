@@ -70,7 +70,7 @@ struct MapPanelBottomPaddingTests {
         let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
             visibleRoutes: visibleRoutes,
             detentForRoute: { route in
-                route == baseRoute ? .medium : .height(AppSheetRoute.homeCollapsedHeight)
+                route == baseRoute ? .medium : AppSheetRoute.homeCollapsedDetent
             },
             halfScreenHeight: 350,
             totalMapHeight: 800
@@ -105,7 +105,7 @@ struct MapPanelBottomPaddingTests {
         let height = MapPanelBottomPadding.tallestVisibleSheetHeight(
             visibleRoutes: visibleRoutes,
             detentForRoute: { route in
-                route == baseRoute ? .height(AppSheetRoute.homeCollapsedHeight) : .medium
+                route == baseRoute ? AppSheetRoute.homeCollapsedDetent : .medium
             },
             halfScreenHeight: 350,
             totalMapHeight: 800
@@ -127,7 +127,7 @@ struct MapPanelBottomPaddingTests {
 
     @Test func `Estimated height resolves homeCollapsedHeight detent`() {
         let height = MapPanelBottomPadding.estimatedHeight(
-            for: .height(AppSheetRoute.homeCollapsedHeight),
+            for: AppSheetRoute.homeCollapsedDetent,
             halfScreenHeight: 400,
             totalMapHeight: 800
         )

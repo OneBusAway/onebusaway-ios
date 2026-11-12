@@ -21,7 +21,9 @@ struct HomeSheetView: View {
     /// See `EnvironmentValues.showsHomeTabs`.
     @Environment(\.showsHomeTabs) private var showsTabs
 
-    @Environment(\.homeIndicatorInset) private var homeIndicatorInset
+    /// See `HomeTabs.bottomClearance`.
+    @Environment(\.screenBottom) private var screenBottom
+    @State private var sheetBottom: CGFloat = 0
 
     @State private var selectedTab: HomeTab = .home
     /// Home's page above the tab bar; see `HomeTabs.showsHomeList`.
@@ -59,13 +61,14 @@ struct HomeSheetView: View {
         VStack(spacing: 0) {
             tabs
             if showsTabs {
-                // The sheet's content reaches into the home indicator's area, but
-                // a `.height` detent is measured above it. Clear of it, the bar
-                // sits where `homeTabBarHeight` says, and the collapsed sheet is
-                // exactly the search row and the bar.
-                HomeTabBar(selection: selectedTab, bottomClearance: homeIndicatorInset, onSelect: select(_:))
+                HomeTabBar(
+                    selection: selectedTab,
+                    bottomClearance: HomeTabs.bottomClearance(sheetBottom: sheetBottom, screen: screenBottom),
+                    onSelect: select(_:)
+                )
             }
         }
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { sheetBottom = $0 }
             .task(id: isShowingHomePage) {
                 // Polls while Home is on screen, so bookmark countdowns don't
                 // freeze, and refreshes the moment it comes back: from a stacked
@@ -98,6 +101,9 @@ struct HomeSheetView: View {
             TabView(selection: $selectedTab) {
                 ForEach(HomeTab.allCases, id: \.self) { tab in
                     tabContent(tab)
+                        // The sheet's own color, which the bar sits on: the
+                        // pages' default white left a seam where the bar began.
+                        .background(Color(.systemGroupedBackground))
                         .environment(\.isHomeSheetTab, tab != .home)
                         .toolbar(.hidden, for: .tabBar)
                         .tag(tab)

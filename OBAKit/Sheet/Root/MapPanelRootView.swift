@@ -227,10 +227,9 @@ struct MapPanelRootView: View {
     // collapsed detent so overlays render at their resting position on the
     // first frame — before `.onGeometryChange` reports a value.
     @State private var sheetHeight: CGFloat = AppSheetRoute.homeCollapsedHeight
-    /// The screen's bottom inset, where the home indicator is. Sheet content
-    /// ignores the safe area (see `buildSheetContent`), so it's measured here and
-    /// handed down; see `EnvironmentValues.homeIndicatorInset`.
-    @State private var homeIndicatorInset: CGFloat = 0
+    /// Sheet content ignores the safe area (see `buildSheetContent`), so it's
+    /// measured here and handed down; see `EnvironmentValues.screenBottom`.
+    @State private var screenBottom = ScreenBottom()
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
 
@@ -670,7 +669,10 @@ struct MapPanelRootView: View {
         .background {
             Color.clear
                 .ignoresSafeArea(.keyboard)
-                .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { homeIndicatorInset = $0 }
+                .onGeometryChange(for: ScreenBottom.self) { proxy in
+                    let safeArea = proxy.frame(in: .global).maxY
+                    return ScreenBottom(safeArea: safeArea, edge: safeArea + proxy.safeAreaInsets.bottom)
+                } action: { screenBottom = $0 }
         }
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
@@ -815,7 +817,7 @@ struct MapPanelRootView: View {
             // to the app's defaults suite; without this, sheet content reading
             // them through `@AppStorage` saw `.standard` and ignored them.
             .defaultAppStorage(application.userDefaults)
-            .environment(\.homeIndicatorInset, homeIndicatorInset)
+            .environment(\.screenBottom, screenBottom)
             .environment(\.showsHomeTabs, HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass))
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(
@@ -854,6 +856,12 @@ struct MapPanelRootView: View {
                 let diff = abs(newValue - oldValue)
                 let duration = max(min(diff / 100, 0.3), 0)
                 toolbarsAnimationDuration = duration
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { sheetBottom in
+                guard !route.prefersStacking,
+                      let overlap = HomeTabs.floatingOverlap(sheetBottom: sheetBottom, screen: screenBottom)
+                else { return }
+                HomeCollapsedDetent.floatingOverlap.withLock { $0 = overlap }
             }
             .ignoresSafeArea()
     }

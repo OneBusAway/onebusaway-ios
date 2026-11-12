@@ -348,8 +348,8 @@ nonisolated extension AppSheetRoute {
     /// so its collapsed sheet shows the top of the list in that space.
     static let homeCollapsedHeight: CGFloat = homeSearchRowHeight + homeTabBarHeight
 
-    /// The home sheet's smallest detent; see `homeCollapsedHeight`.
-    static var homeCollapsedDetent: PresentationDetent { .height(homeCollapsedHeight) }
+    /// The home sheet's smallest detent; see `HomeCollapsedDetent`.
+    static var homeCollapsedDetent: PresentationDetent { .custom(HomeCollapsedDetent.self) }
 
     /// `HomeTabBar`'s capsule and the padding under it.
     static let homeTabBarHeight: CGFloat = 62

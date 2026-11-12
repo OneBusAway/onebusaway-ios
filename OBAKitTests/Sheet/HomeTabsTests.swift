@@ -81,6 +81,35 @@ struct HomeTabsTests {
         #expect(HomeTabs.showsHomeList(showsTabs: false, pageHeight: 0))
     }
 
+    /// A floating sheet stops short of the screen's edge and the home indicator
+    /// may cross it, as in Find My, so the bar needs no room under it there; a
+    /// sheet reaching the screen's edge does.
+    @Test func `The bar clears the home indicator only on a sheet reaching the screen's edge`() {
+        let screen = ScreenBottom(safeArea: 840, edge: 874)
+        // Floating: 11 pt short of the edge, overlapping the indicator.
+        #expect(HomeTabs.bottomClearance(sheetBottom: 863, screen: screen) == 0)
+        #expect(HomeTabs.bottomClearance(sheetBottom: 874, screen: screen) == 34)
+        // Not yet measured.
+        #expect(HomeTabs.bottomClearance(sheetBottom: 874, screen: ScreenBottom()) == 0)
+    }
+
+    /// A floating sheet runs past its detent into the home indicator's area; the
+    /// collapsed detent gives that back, so search and the bar fill it exactly.
+    @Test func `A floating sheet reports how far it runs past the safe area`() {
+        let screen = ScreenBottom(safeArea: 840, edge: 874)
+        #expect(HomeTabs.floatingOverlap(sheetBottom: 863, screen: screen) == 23)
+        // Ends above the safe area (a home-button phone, or a raised keyboard).
+        #expect(HomeTabs.floatingOverlap(sheetBottom: 820, screen: screen) == 0)
+        // Not floating, or not measured: nothing to learn.
+        #expect(HomeTabs.floatingOverlap(sheetBottom: 874, screen: screen) == nil)
+        #expect(HomeTabs.floatingOverlap(sheetBottom: 863, screen: ScreenBottom()) == nil)
+    }
+
+    @Test func `The collapsed detent gives back the floating overlap`() {
+        #expect(HomeCollapsedDetent.height(floatingOverlap: 0) == AppSheetRoute.homeCollapsedHeight)
+        #expect(HomeCollapsedDetent.height(floatingOverlap: 23) == AppSheetRoute.homeCollapsedHeight - 23)
+    }
+
     // MARK: - See all
 
     /// With the tabs on screen, a section's header goes to its tab rather than

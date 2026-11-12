@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import Synchronization
 import OBAKitCore
 
 /// A tab of the home sheet on iPhone, where the panel lays its sheet out as Find
@@ -86,6 +87,60 @@ enum HomeTabs {
     static func detent(afterSelectingFrom currentDetent: PresentationDetent) -> PresentationDetent? {
         currentDetent == AppSheetRoute.homeCollapsedDetent ? .medium : nil
     }
+
+    /// Room the bar leaves under itself for the home indicator.
+    ///
+    /// Sheet content ignores the safe area, so it can't read this itself. A
+    /// floating sheet, collapsed or at `.medium` on iOS 26, stops short of the
+    /// screen's edge, and the home indicator may cross it, as in Find My; a sheet
+    /// reaching the edge needs the whole inset.
+    static func bottomClearance(sheetBottom: CGFloat, screen: ScreenBottom) -> CGFloat {
+        guard screen.edge.isFinite, sheetBottom >= screen.edge - 1 else { return 0 }
+        return screen.edge - screen.safeArea
+    }
+
+    /// How far a floating sheet runs past the screen's safe area into the home
+    /// indicator's, or `nil` for a sheet that isn't floating or isn't measured.
+    ///
+    /// A detent's height is measured above that area, so the sheet is this much
+    /// taller than its detent says; see `HomeCollapsedDetent`. It's the same at
+    /// every floating detent, so it's learned from whichever is showing.
+    static func floatingOverlap(sheetBottom: CGFloat, screen: ScreenBottom) -> CGFloat? {
+        guard screen.edge.isFinite, sheetBottom < screen.edge - 1 else { return nil }
+        return max(0, sheetBottom - screen.safeArea)
+    }
+}
+
+/// The home sheet's smallest detent: the search row over the tab bar, and no more.
+///
+/// A `.height` detent is measured above the home indicator, but a floating sheet
+/// runs past it, so a fixed height left an empty band the depth of that overlap.
+/// This one subtracts it, as measured by `MapPanelRootView`. Being a type, it
+/// stays the same detent as the measurement arrives, so the coordinator's
+/// selection and the comparisons against `AppSheetRoute.homeCollapsedDetent`
+/// keep matching.
+nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
+    static func height(in context: Context) -> CGFloat? {
+        height(floatingOverlap: floatingOverlap.withLock { $0 })
+    }
+
+    /// Set by `MapPanelRootView` as it measures the sheet. Stored here rather than
+    /// in the environment: the `Context` a custom detent gets doesn't carry the
+    /// app's own environment values, only the system's, so one set around or in
+    /// the sheet read as its default. The sheet's layout passes ask for the height
+    /// again, so the measurement takes effect on the pass after it lands.
+    static let floatingOverlap = Mutex<CGFloat>(0)
+
+    static func height(floatingOverlap: CGFloat) -> CGFloat {
+        AppSheetRoute.homeCollapsedHeight - floatingOverlap
+    }
+}
+
+/// Where the screen's bottom edge and its safe area's bottom are, in window
+/// coordinates; see `HomeTabs.bottomClearance`.
+nonisolated struct ScreenBottom: Equatable, Sendable {
+    var safeArea: CGFloat = .infinity
+    var edge: CGFloat = .infinity
 }
 
 extension EnvironmentValues {
@@ -99,16 +154,17 @@ extension EnvironmentValues {
     /// disagree: the sheet's trait environment need not match the screen's.
     @Entry var showsHomeTabs = true
 
-    /// The screen's bottom inset, where the home indicator is, for sheet content,
-    /// which ignores the safe area and so can't read it. `MapPanelRootView` sets it.
-    @Entry var homeIndicatorInset: CGFloat = 0
+    /// The screen's bottom, for sheet content, which ignores the safe area and so
+    /// can't read it. `MapPanelRootView` sets it; see `HomeTabs.bottomClearance`.
+    @Entry var screenBottom = ScreenBottom()
 }
 
 /// The bar of tabs pinned to the bottom of the home sheet: Liquid Glass on iOS 26,
 /// a material capsule before it.
 struct HomeTabBar: View {
     let selection: HomeTab
-    /// Room to leave under the bar for the home indicator; see `HomeSheetView`.
+    /// Room to leave under the bar for the home indicator; see
+    /// `HomeTabs.bottomClearance`.
     let bottomClearance: CGFloat
     let onSelect: (HomeTab) -> Void
 
