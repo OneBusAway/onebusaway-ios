@@ -21,11 +21,15 @@ import OBAKitCore
 struct MoreSheetHost: UIViewControllerRepresentable {
     let application: Application
     /// Closes the sheet. The other index sheets have a Close button; this one
-    /// could only be swiped away.
+    /// could only be swiped away. Unused as the home sheet's More tab
+    /// (`isHomeSheetTab`), which has no sheet of its own to close.
     var onClose: () -> Void = {}
 
     func makeUIViewController(context: Context) -> UINavigationController {
-        Self.makeNavigationController(application: application, onClose: onClose)
+        Self.makeNavigationController(
+            application: application,
+            onClose: context.environment.isHomeSheetTab ? nil : onClose
+        )
     }
 
     // `MoreViewController` reads `application` and its stores directly, so
@@ -38,13 +42,15 @@ struct MoreSheetHost: UIViewControllerRepresentable {
     /// representable's `makeUIViewController` synchronously in a unit-test
     /// process). Kept `internal` deliberately — production code must go
     /// through `makeUIViewController`.
-    static func makeNavigationController(application: Application, onClose: @escaping () -> Void = {}) -> UINavigationController {
+    static func makeNavigationController(application: Application, onClose: (() -> Void)? = {}) -> UINavigationController {
         let more = MoreViewController(application: application)
         // Beside Settings, at the trailing edge: Contact Us holds the leading
         // slot. Closed through the sheet stack, which owns the sheet, rather
         // than by UIKit dismissing it out from under SwiftUI.
-        let close = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { _ in onClose() })
-        more.navigationItem.rightBarButtonItems = [close] + (more.navigationItem.rightBarButtonItems ?? [])
+        if let onClose {
+            let close = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { _ in onClose() })
+            more.navigationItem.rightBarButtonItems = [close] + (more.navigationItem.rightBarButtonItems ?? [])
+        }
         return UINavigationController(rootViewController: more)
     }
 }

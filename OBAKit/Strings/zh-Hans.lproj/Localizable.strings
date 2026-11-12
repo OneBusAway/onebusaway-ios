@@ -417,6 +417,9 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "显示此部分的所有项目。";
 
+/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
+"home_sheet.tab.home" = "首页";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "请在“设置”中检查“实时活动”的相关设置。";
 
@@ -581,6 +584,9 @@
 
 /* Accessibility label for website button */
 "map_item_controller.website_accessibility" = "打开网站";
+
+/* VoiceOver hint on a vehicle marker drawn for an open stop on the map panel. Tapping it opens the vehicle's trip. */
+"map_panel.stop_vehicle.hint" = "显示此车程。";
 
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "无法获取位置";

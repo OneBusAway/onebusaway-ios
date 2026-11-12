@@ -120,8 +120,8 @@ struct MapPanelBottomPadding {
         halfScreenHeight: CGFloat,
         totalMapHeight: CGFloat
     ) -> CGFloat {
-        if detent == .height(AppSheetRoute.homeCollapsedHeight) {
-            return AppSheetRoute.homeCollapsedHeight
+        if detent == AppSheetRoute.homeCollapsedDetent {
+            return HomeCollapsedDetent.drawnHeight
         } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
             return AppSheetRoute.tripPlannerTipHeight
         } else if detent == .medium {
@@ -228,6 +228,9 @@ struct MapPanelRootView: View {
     // collapsed detent so overlays render at their resting position on the
     // first frame — before `.onGeometryChange` reports a value.
     @State private var sheetHeight: CGFloat = AppSheetRoute.homeCollapsedHeight
+    /// Sheet content ignores the safe area (see `buildSheetContent`), so it's
+    /// measured here and handed down; see `EnvironmentValues.screenBottom`.
+    @State private var screenBottom = ScreenBottom()
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
 
@@ -569,11 +572,10 @@ struct MapPanelRootView: View {
             style: mapViewModel.mapType.styleDescriptor(showingPointsOfInterest: layersModel.showsPointsOfInterest),
             userDefaults: application.userDefaults
         ))
+        // Not animated: animating a safe-area change resizes MapKit's view every
+        // frame, which drew blank grid tiles and a white band under the map as
+        // the sheet settled. The camera still recentres in the new safe area.
         .safeAreaPadding(.bottom, mapBottomPadding)
-        .animation(
-            .interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0),
-            value: mapBottomPadding
-        )
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
         } action: { _, newValue in
@@ -619,7 +621,10 @@ struct MapPanelRootView: View {
             mapControlsCluster
         }
         .overlay(alignment: .topTrailing) {
-            moreButton
+            // On iPhone, More is a tab of the home sheet instead.
+            if !HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass) {
+                moreButton
+            }
         }
         .overlay(alignment: .bottomLeading) {
             myTripButton
@@ -671,6 +676,22 @@ struct MapPanelRootView: View {
             toolbarsOpacity: toolbarsOpacity,
             toolbarsAnimationDuration: toolbarsAnimationDuration
         ))
+        // Measured on a view that ignores the keyboard, so a keyboard raised from
+        // a sheet's search field doesn't read as a home indicator 300 pt tall.
+        .background {
+            Color.clear
+                .ignoresSafeArea(.keyboard)
+                .onGeometryChange(for: ScreenBottom.self) { proxy in
+                    let inset = proxy.safeAreaInsets.bottom
+                    return ScreenBottom(edge: proxy.frame(in: .global).maxY + inset, inset: inset)
+                } action: { old, new in
+                    screenBottom = new
+                    // A new screen, not the first measurement of this one.
+                    if old.edge != nil, old != new {
+                        HomeCollapsedDetent.forgetSheetExtra()
+                    }
+                }
+        }
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
         }
@@ -814,6 +835,8 @@ struct MapPanelRootView: View {
             // to the app's defaults suite; without this, sheet content reading
             // them through `@AppStorage` saw `.standard` and ignored them.
             .defaultAppStorage(application.userDefaults)
+            .environment(\.screenBottom, screenBottom)
+            .environment(\.showsHomeTabs, HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass))
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(
                     display: mapViewModel.weatherDisplay,
@@ -840,6 +863,13 @@ struct MapPanelRootView: View {
                 guard !route.prefersStacking else { return }
 
                 sheetHeight = newValue
+
+                // Settled at the collapsed detent, the home sheet's height is the
+                // system's doing; see `HomeCollapsedDetent`. Measured here, on the
+                // whole sheet: the home view's own frame falls a few points short.
+                if route == .home, coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent {
+                    HomeCollapsedDetent.learn(sheetHeight: newValue)
+                }
 
                 /// Opacity calculation — fade band sits immediately
                 /// below `halfScreenHeight`.

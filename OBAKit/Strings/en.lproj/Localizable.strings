@@ -477,6 +477,9 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Shows all items in this section.";
 
+/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
+"home_sheet.tab.home" = "Home";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Please check your Live Activities settings in Settings.";
 
@@ -659,6 +662,9 @@
 
 /* Map sheet row for the layer drawing the trip the rider is following. */
 "map_layers.trip_focus" = "Followed trip";
+
+/* VoiceOver hint on a vehicle marker drawn for an open stop on the map panel. Tapping it opens the vehicle's trip. */
+"map_panel.stop_vehicle.hint" = "Shows this trip.";
 
 /* Basemap style: satellite imagery with labels */
 "map_sheet.basemap_hybrid" = "Hybrid";

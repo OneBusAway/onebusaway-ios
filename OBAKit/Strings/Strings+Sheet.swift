@@ -138,4 +138,27 @@ public extension Strings {
         value: "Bookmarks",
         comment: "Title of the Bookmarks search header"
     )
+
+    // MARK: - Tabs
+
+    // The classic tab bar's titles, shared with the map panel's home tabs
+    // (`HomeTab`) so each key has one definition.
+
+    static let recentTabTitle = OBALoc(
+        "recent_stops_controller.title",
+        value: "Recent",
+        comment: "The title of the Recent Stops controller."
+    )
+
+    static let bookmarksTabTitle = OBALoc(
+        "bookmarks_controller.title",
+        value: "Bookmarks",
+        comment: "Title of the Bookmarks tab"
+    )
+
+    static let moreTabTitle = OBALoc(
+        "more_controller.title",
+        value: "More",
+        comment: "Title of the More tab / accessibility label for the map-panel more button."
+    )
 }

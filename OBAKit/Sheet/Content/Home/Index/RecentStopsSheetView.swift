@@ -21,6 +21,7 @@ struct RecentStopsSheetView: View {
     @StateObject private var viewModel: RecentStopsViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isHomeSheetTab) private var isHomeSheetTab
 
     @State private var searchText = ""
     @State private var isConfirmingDeleteAll = false
@@ -74,10 +75,17 @@ struct RecentStopsSheetView: View {
             content
                 .navigationTitle(Text(Strings.recentStops))
                 .navigationBarTitleDisplayMode(.inline)
-                .searchable(text: $searchText)
+                // iOS 26 puts a sheet's search field at the bottom, under the
+                // home sheet's tab bar; as a tab it stays at the top.
+                .searchable(
+                    text: $searchText,
+                    placement: isHomeSheetTab ? .navigationBarDrawer(displayMode: .always) : .automatic
+                )
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        SheetDismissButton(.close) { dismiss() }
+                    if !isHomeSheetTab {
+                        ToolbarItem(placement: .topBarLeading) {
+                            SheetDismissButton(.close) { dismiss() }
+                        }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(OBALoc(

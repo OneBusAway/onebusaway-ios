@@ -54,8 +54,14 @@ extension View {
     /// the colour runs edge to edge, instead of starting below the search field and
     /// leaving the header two-tone.
     func searchSheetBackground() -> some View {
-        presentationBackground(Color(.systemGroupedBackground))
+        presentationBackground(Color.searchSheetBackground)
     }
+}
+
+extension Color {
+    /// The search and index sheets' background; see `searchSheetBackground()`.
+    /// Shared with views that paint over the sheet and must match it.
+    static let searchSheetBackground = Color(.systemGroupedBackground)
 }
 
 // MARK: - SearchListSectionsView

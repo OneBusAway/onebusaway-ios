@@ -417,6 +417,9 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Hiển thị tất cả mục trong phần này.";
 
+/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
+"home_sheet.tab.home" = "Trang chủ";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Vui lòng kiểm tra cài đặt Hoạt động Trực tiếp trong Cài đặt.";
 
@@ -581,6 +584,9 @@
 
 /* Accessibility label for website button */
 "map_item_controller.website_accessibility" = "Mở trang web";
+
+/* VoiceOver hint on a vehicle marker drawn for an open stop on the map panel. Tapping it opens the vehicle's trip. */
+"map_panel.stop_vehicle.hint" = "Hiển thị chuyến đi này.";
 
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "Dịch vụ định vị không khả dụng";
