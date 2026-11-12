@@ -317,4 +317,16 @@ final class ViewRouterTests: OBATestCase {
         #expect(handledHome)
         #expect(classicRoot.selectedIndex == ClassicApplicationRootController.Page.map.rawValue)
     }
+
+    /// Verifies `navigate(to: .stopDetails)` uses the supplied navigation controller context
+    /// in classic mode to push the stop controller.
+    @Test func `navigate to stopDetails pushes onto supplied navigation controller in classic mode`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let root = UIViewController()
+        let nav = UINavigationController(rootViewController: root)
+
+        let handled = application.viewRouter.navigate(to: .stopDetails(stopID: "1_4321"), from: root)
+        #expect(handled)
+        #expect(nav.viewControllers.count == 2)
+    }
 }

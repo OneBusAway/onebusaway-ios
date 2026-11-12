@@ -409,6 +409,16 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         rootController.navigate(to: page)
     }
 
+    private func pushTarget(from context: UIViewController?) -> UIViewController? {
+        if let target = context, target.navigationController != nil {
+            return target
+        }
+        if let nav = context as? UINavigationController, let visible = nav.visibleViewController ?? nav.topViewController, visible.navigationController != nil {
+            return visible
+        }
+        return nil
+    }
+
     /// Navigates to the specified `AppSheetRoute` in the modern map-panel experience,
     /// or translates the route to its classic navigation counterpart when classic mode is active.
     ///
@@ -442,11 +452,15 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
             rootNavigateTo(page: .more, from: context)
             return true
         case .stopDetails(let stopID):
+            if let target = pushTarget(from: context) {
+                navigateTo(stopID: stopID, from: target)
+                return true
+            }
             application.pushStopFromOutside(stopID)
             return true
         case .tripDetails(let convertible, let destinationStopID):
             let tripVC = makeTripController(tripConvertible: convertible, destinationStopID: destinationStopID)
-            if let target = context, target.navigationController != nil {
+            if let target = pushTarget(from: context) {
                 navigate(to: tripVC, from: target)
                 return true
             }
