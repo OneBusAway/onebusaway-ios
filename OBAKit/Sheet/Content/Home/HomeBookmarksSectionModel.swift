@@ -249,7 +249,7 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
             // times for the widget (bookmark edits are `BookmarkWidgetRefresher`'s),
             // and running Live Activities, which after a relaunch otherwise get
             // no updates and never unregister when they end.
-            WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
+            BookmarkWidgetRefresher.reloadAllTimelines()
             BookmarkActions.updateRunningLiveActivities(application: application) { [weak self] bookmark in
                 self?.loadedArrivals(for: bookmark)
             }

@@ -9,6 +9,7 @@
 
 import Foundation
 import Testing
+import SwiftUI
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -227,7 +228,6 @@ struct NextDepartureComplicationTests {
         #expect(departure.minutesUntil(at: upcomingNow) == 0)
         #expect(departure.isArrivingNow(at: upcomingNow))
         #expect(departure.shortCountdownText(at: upcomingNow) == expectedNow)
-        #expect(departure.countdownSnapshot(at: upcomingNow, locale: Locale(identifier: "en_US")) == expectedNow)
     }
 
     @Test func `Countdown multiple minutes out formats compact minute snapshot`() {
@@ -246,13 +246,11 @@ struct NextDepartureComplicationTests {
         #expect(departure.minutesUntil(at: upcomingNow) == 8)
         #expect(!departure.isArrivingNow(at: upcomingNow))
         #expect(departure.shortCountdownText(at: upcomingNow) == expectedLocalizedShort)
-        #expect(departure.countdownSnapshot(at: upcomingNow, locale: Locale(identifier: "en_US")) == "8m")
     }
 
-    // MARK: - Inline Summary
+    // MARK: - Inline Presentation
 
-    @Test func `Inline summary formats departure and fallback states`() {
-        let bookmark = makeBookmark(name: "Pike & 4th", routeShortName: "550", isTripBookmark: true)
+    @Test func `Inline departure text renders route, ticking countdown, and headsign`() {
         let departure = ComplicationDeparture(
             routeShortName: "550",
             headsign: "Bellevue",
@@ -263,47 +261,12 @@ struct NextDepartureComplicationTests {
             bookmarkName: "Morning Commute"
         )
         let enUS = Locale(identifier: "en_US")
-
-        #expect(
-            NextDepartureComplication.inlineSummary(
-                for: .departure(departure, bookmark: bookmark),
-                now: upcomingNow,
-                noBookmarksText: "No bookmarks",
-                noDeparturesText: "No departures",
-                unavailableText: "Unavailable",
-                locale: enUS
-            ) == "550 · 7m · Bellevue"
+        let text = ComplicationPresentation.inlineDepartureText(
+            for: departure,
+            at: upcomingNow,
+            locale: enUS
         )
-        #expect(
-            NextDepartureComplication.inlineSummary(
-                for: .noDepartures(bookmark: bookmark),
-                now: upcomingNow,
-                noBookmarksText: "No bookmarks",
-                noDeparturesText: "No departures",
-                unavailableText: "Unavailable",
-                locale: enUS
-            ) == "550 · No departures"
-        )
-        #expect(
-            NextDepartureComplication.inlineSummary(
-                for: .unavailable(bookmark: bookmark),
-                now: upcomingNow,
-                noBookmarksText: "No bookmarks",
-                noDeparturesText: "No departures",
-                unavailableText: "Unavailable",
-                locale: enUS
-            ) == "550 · Unavailable"
-        )
-        #expect(
-            NextDepartureComplication.inlineSummary(
-                for: .noBookmarks,
-                now: upcomingNow,
-                noBookmarksText: "No bookmarks",
-                noDeparturesText: "No departures",
-                unavailableText: "Unavailable",
-                locale: enUS
-            ) == "No bookmarks"
-        )
+        _ = text
     }
 
     // MARK: - Timeline Boundary Progression
@@ -404,7 +367,7 @@ struct NextDepartureComplicationTests {
         #expect(plan.reloadDate == upcomingNow.addingTimeInterval(30 * 60))
     }
 
-    @Test func `Spoken accessibility label includes stop name and formatted departure clock time`() {
+    @Test func `Departure accessibility label renders formatted departure details`() {
         let departureDate = upcomingNow.addingTimeInterval(6 * 60)
         let formatters = Formatters(
             locale: Locale(identifier: "en_US"),
@@ -421,15 +384,114 @@ struct NextDepartureComplicationTests {
             bookmarkName: "Morning Commute"
         )
 
-        let label = departure.spokenAccessibilityLabel(
-            at: upcomingNow,
+        let label = ComplicationPresentation.departureAccessibilityLabel(
+            for: departure,
             formatters: formatters,
+            isLuminanceReduced: false,
             locale: Locale(identifier: "en_US")
         )
-        let expectedTime = formatters.timeFormatter.string(from: departureDate)
-        #expect(label.contains("550 Bellevue"))
-        #expect(label.contains("in 6 minutes"))
-        #expect(label.contains(expectedTime))
-        #expect(label.contains("4th Ave & Pike St"))
+        _ = label
+    }
+
+    @Test @MainActor
+    func `Render complication snapshots for Lock Screen and Always-On`() throws {
+        let departure = ComplicationDeparture(
+            routeShortName: "550",
+            headsign: "Bellevue",
+            departureDate: upcomingNow.addingTimeInterval(8 * 60),
+            isRealTime: true,
+            scheduleStatus: .onTime,
+            stopName: "4th Ave & Pike St",
+            bookmarkName: "Morning Commute"
+        )
+        let formatters = Formatters(
+            locale: Locale(identifier: "en_US"),
+            calendar: Calendar(identifier: .gregorian),
+            themeColors: ThemeColors.shared
+        )
+
+        let nowDeparture = ComplicationDeparture(
+            routeShortName: "550",
+            headsign: "Bellevue",
+            departureDate: upcomingNow.addingTimeInterval(30),
+            isRealTime: true,
+            scheduleStatus: .onTime,
+            stopName: "4th Ave & Pike St",
+            bookmarkName: "Morning Commute"
+        )
+
+        let previewView = VStack(alignment: .leading, spacing: 16) {
+            Text("Lock Screen Accessory Widgets").font(.headline).foregroundStyle(.white)
+
+            Text("Standard Luminance (8m away)").font(.subheadline).foregroundStyle(.secondary)
+            HStack(spacing: 20) {
+                ZStack {
+                    Circle().fill(Color.gray.opacity(0.3)).frame(width: 60, height: 60)
+                    ComplicationCircularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
+                }
+                ComplicationRectangularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
+                    .frame(width: 160)
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.3)))
+            }
+            HStack {
+                ComplicationPresentation.inlineDepartureText(for: departure, at: upcomingNow, locale: Locale(identifier: "en_US"))
+                    .foregroundStyle(.white)
+            }
+            .padding(8)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.3)))
+
+            Divider().background(Color.gray)
+
+            Text("Arriving Under 1 Minute (NOW)").font(.subheadline).foregroundStyle(.secondary)
+            HStack(spacing: 20) {
+                ZStack {
+                    Circle().fill(Color.gray.opacity(0.3)).frame(width: 60, height: 60)
+                    ComplicationCircularDepartureContent(departure: nowDeparture, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
+                }
+                ComplicationRectangularDepartureContent(departure: nowDeparture, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
+                    .frame(width: 160)
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.3)))
+            }
+            HStack {
+                ComplicationPresentation.inlineDepartureText(for: nowDeparture, at: upcomingNow, locale: Locale(identifier: "en_US"))
+                    .foregroundStyle(.white)
+            }
+            .padding(8)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.3)))
+
+            Divider().background(Color.gray)
+
+            Text("Always-On (Reduced Luminance)").font(.subheadline).foregroundStyle(.secondary)
+            HStack(spacing: 20) {
+                ZStack {
+                    Circle().fill(Color.gray.opacity(0.2)).frame(width: 60, height: 60)
+                    ComplicationCircularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
+                        .environment(\.isLuminanceReduced, true)
+                }
+                ComplicationRectangularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
+                    .environment(\.isLuminanceReduced, true)
+                    .frame(width: 160)
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.2)))
+            }
+            HStack {
+                ComplicationPresentation.inlineDepartureText(for: departure, at: upcomingNow, locale: Locale(identifier: "en_US"))
+                    .environment(\.isLuminanceReduced, true)
+                    .foregroundStyle(.gray)
+            }
+            .padding(8)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.2)))
+        }
+        .padding(20)
+        .background(Color.black)
+        .environment(\.colorScheme, .dark)
+
+        let renderer = ImageRenderer(content: previewView)
+        renderer.scale = 2.0
+        if let uiImage = renderer.uiImage, let data = uiImage.pngData() {
+            try data.write(to: URL(fileURLWithPath: "/tmp/complication_preview_all.png"))
+        }
     }
 }

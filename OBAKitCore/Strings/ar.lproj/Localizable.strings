@@ -593,22 +593,22 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "عاصف";
 
-/* Short fallback text on a Lock Screen or watch complication when no bookmarks are configured. */
+/* Short fallback text on a Lock Screen accessory widget when no bookmarks are configured. */
 "widget.complication.no_bookmarks" = "لا توجد إشارات مرجعية";
 
-/* Hint shown in a rectangular Lock Screen or watch complication when no bookmarks are shown in the widget. */
+/* Hint shown in a rectangular Lock Screen accessory widget when no bookmarks are shown in the widget. */
 "widget.complication.no_bookmarks_hint" = "فعّل إشارة مرجعية للأداة في التطبيق.";
 
-/* Short fallback text on a Lock Screen or watch complication when a bookmark has no upcoming departures. */
+/* Short fallback text on a Lock Screen accessory widget when a bookmark has no upcoming departures. */
 "widget.complication.no_departures" = "لا توجد رحلات";
 
-/* Short fallback text on a Lock Screen or watch complication when departure data could not be loaded. */
+/* Short fallback text on a Lock Screen accessory widget when departure data could not be loaded. */
 "widget.complication.unavailable" = "غير متوفر";
 
-/* Description of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+/* Description of the next-departure Lock Screen accessory widget in the Add Widget gallery. */
 "widget.next_departure.gallery.description" = "اعرض المغادرة القادمة التالية لأهم إشارة مرجعية لديك.";
 
-/* Name of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+/* Name of the next-departure Lock Screen accessory widget in the Add Widget gallery. */
 "widget.next_departure.gallery.display_name" = "المغادرة التالية";
 
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */

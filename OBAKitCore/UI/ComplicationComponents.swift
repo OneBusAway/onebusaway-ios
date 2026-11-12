@@ -29,6 +29,32 @@ public enum ComplicationPresentation {
         return Text(.dateRange(endingAt: departure.departureDate), format: TickingCountdownText.visibleFormat(locale: locale))
     }
 
+    /// Sizes the countdown slot using a hidden snapshot so out-of-process
+    /// ticking text does not stretch to its format's widest bound or shift
+    /// digits off-center.
+    @ViewBuilder
+    public static func countdownSlot(
+        for departure: ComplicationDeparture,
+        at referenceDate: Date,
+        locale: Locale,
+        alignment: Alignment
+    ) -> some View {
+        let snapshotText = departure.isArrivingNow(at: referenceDate)
+            ? departure.shortCountdownText(at: referenceDate)
+            : TickingCountdownText.snapshot(departure: departure.departureDate, now: referenceDate, locale: locale)
+        Text(verbatim: snapshotText)
+            .hidden()
+            .overlay(alignment: alignment) {
+                countdownText(
+                    for: departure,
+                    at: referenceDate,
+                    locale: locale
+                )
+                .multilineTextAlignment(alignment == .trailing ? .trailing : (alignment == .leading ? .leading : .center))
+                .lineLimit(1)
+            }
+    }
+
     /// Concatenated inline `Text` (`"<route> · <countdown> · <headsign>"`) so
     /// route and ticking countdown sit at the leading edge and never truncate
     /// when a headsign is long.
@@ -159,10 +185,11 @@ public struct ComplicationCircularDepartureContent: View {
                 .font(.system(.caption2, design: .rounded, weight: .heavy))
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            ComplicationPresentation.countdownText(
+            ComplicationPresentation.countdownSlot(
                 for: departure,
                 at: referenceDate,
-                locale: locale
+                locale: locale,
+                alignment: .center
             )
             .font(.system(.title3, design: .rounded, weight: .bold))
             .monospacedDigit()
@@ -223,10 +250,11 @@ public struct ComplicationRectangularDepartureContent: View {
                 HStack(spacing: 2) {
                     Image(systemName: departure.isRealTime ? "dot.radiowaves.up.forward" : "clock")
                         .font(.caption2.weight(.semibold))
-                    ComplicationPresentation.countdownText(
+                    ComplicationPresentation.countdownSlot(
                         for: departure,
                         at: referenceDate,
-                        locale: locale
+                        locale: locale,
+                        alignment: .trailing
                     )
                     .font(.system(.headline, design: .rounded, weight: .heavy))
                     .monospacedDigit()

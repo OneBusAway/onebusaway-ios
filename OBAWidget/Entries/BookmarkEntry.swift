@@ -57,7 +57,7 @@ struct BookmarkEntry: TimelineEntry {
         }
     }
 
-    /// `true` when `family` is a single-bookmark Lock Screen or Watch complication family.
+    /// `true` when `family` is a single-bookmark Lock Screen accessory widget family.
     static func isAccessoryFamily(_ family: WidgetFamily) -> Bool {
         switch family {
         case .accessoryCircular, .accessoryRectangular, .accessoryInline:

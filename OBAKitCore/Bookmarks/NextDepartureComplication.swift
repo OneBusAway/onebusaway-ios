@@ -10,7 +10,7 @@
 import Foundation
 
 /// Widget family abstraction used to share per-family bookmark limits across
-/// iOS widgets, watchOS complications, and unit tests without importing WidgetKit
+/// Home Screen widgets, Lock Screen accessory widgets, and unit tests without importing WidgetKit
 /// into `OBAKitCore`.
 public enum WidgetBookmarkFamily: Equatable, Sendable {
     case systemMedium
@@ -162,27 +162,6 @@ public struct ComplicationDeparture: Equatable, Sendable {
     public func shortCountdownText(at now: Date) -> String {
         TripCountdownFormatStyle(departure: departureDate).format(now)
     }
-
-    /// Static snapshot matching the complication's live countdown display (`"NOW"` when < 1 min, else `"8m"`).
-    public func countdownSnapshot(at now: Date, locale: Locale = .autoupdatingCurrent) -> String {
-        if isArrivingNow(at: now) {
-            return shortCountdownText(at: now)
-        }
-        return TickingCountdownText.snapshot(departure: departureDate, now: now, locale: locale)
-    }
-
-    /// Spoken VoiceOver description combining route, headsign, countdown, clock time, and stop name.
-    public func spokenAccessibilityLabel(
-        at now: Date,
-        formatters: Formatters,
-        locale: Locale = .autoupdatingCurrent
-    ) -> String {
-        let routeAndHeadsign = "\(routeShortName) \(headsign)"
-        let routeLabel = formatters.accessibilityLabelForArrivalDeparture(routeAndHeadsign: routeAndHeadsign)
-        let countdown = TickingCountdownText.spokenSnapshot(departure: departureDate, now: now, locale: locale)
-        let clockTime = formatters.timeFormatter.string(from: departureDate)
-        return "\(routeLabel), \(countdown), \(clockTime), \(stopName)"
-    }
 }
 
 /// Exhaustive presentation state for a next-departure complication.
@@ -249,27 +228,5 @@ public enum NextDepartureComplication {
             departuresByBookmark: departuresByBookmark,
             now: now
         )
-    }
-
-    /// Single-line text snapshot for `.accessoryInline` complications and unit tests.
-    public static func inlineSummary(
-        for state: NextDepartureComplicationState,
-        now: Date,
-        noBookmarksText: String,
-        noDeparturesText: String,
-        unavailableText: String,
-        locale: Locale = .autoupdatingCurrent
-    ) -> String {
-        switch state {
-        case .noBookmarks:
-            return noBookmarksText
-        case .unavailable(let bookmark):
-            return "\(bookmark.displayTitle) · \(unavailableText)"
-        case .noDepartures(let bookmark):
-            return "\(bookmark.displayTitle) · \(noDeparturesText)"
-        case .departure(let departure, _):
-            let countdown = departure.countdownSnapshot(at: now, locale: locale)
-            return "\(departure.routeShortName) · \(countdown) · \(departure.headsign)"
-        }
     }
 }

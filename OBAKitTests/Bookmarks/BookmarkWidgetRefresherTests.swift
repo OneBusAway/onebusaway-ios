@@ -46,12 +46,17 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         )
     }
 
-    /// A counting spy standing in for `WidgetCenter`, which can't be observed
-    /// from a test.
+    /// A spy recording reloaded widget kinds standing in for `WidgetCenter`,
+    /// which can't be observed from a test.
     @MainActor
-    private final class ReloadCounter {
-        private(set) var count = 0
-        func increment() { count += 1 }
+    private final class ReloadRecorder {
+        private(set) var reloadedKinds: [String] = []
+        func record(kind: String) { reloadedKinds.append(kind) }
+        func reset() { reloadedKinds.removeAll() }
+        var containsBothKinds: Bool {
+            reloadedKinds.contains(BookmarkWidgetRefresher.widgetKind) &&
+            reloadedKinds.contains(BookmarkWidgetRefresher.complicationWidgetKind)
+        }
     }
 
     /// Waits for the refresher's `Task { @MainActor in … }` hop to land. The
@@ -65,57 +70,57 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
 
     /// Deleting from anywhere — the tab, the index sheet, Manage Bookmarks —
     /// posts `.bookmarksDidChange`, so one observer covers all of them.
-    @Test @MainActor func `Deleting a bookmark reloads the widget`() async throws {
+    @Test @MainActor func `Deleting a bookmark reloads both OBAWidget and NextDepartureWidget`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let counter = ReloadCounter()
-        let refresher = BookmarkWidgetRefresher { counter.increment() }
+        let recorder = ReloadRecorder()
+        let refresher = BookmarkWidgetRefresher(reloadKind: { recorder.record(kind: $0) })
 
         let bookmark = try makeBookmark(application: application)
         application.userDataStore.add(bookmark, to: nil)
         await drainMainActor()
-        let afterAdd = counter.count
+        recorder.reset()
 
         application.userDataStore.delete(bookmark: bookmark)
         await drainMainActor()
 
-        #expect(counter.count > afterAdd)
+        #expect(recorder.containsBothKinds)
         withExtendedLifetime(refresher) {}
     }
 
     /// Pinning is the mutation the home sheet's bookmarks section performs, and
     /// it changes what the widget shows, so it must reload too.
-    @Test @MainActor func `Pinning a bookmark reloads the widget`() async throws {
+    @Test @MainActor func `Pinning a bookmark reloads both OBAWidget and NextDepartureWidget`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let counter = ReloadCounter()
-        let refresher = BookmarkWidgetRefresher { counter.increment() }
+        let recorder = ReloadRecorder()
+        let refresher = BookmarkWidgetRefresher(reloadKind: { recorder.record(kind: $0) })
 
         let bookmark = try makeBookmark(application: application)
         application.userDataStore.add(bookmark, to: nil)
         await drainMainActor()
-        let afterAdd = counter.count
+        recorder.reset()
 
         application.userDataStore.setPinned(true, for: bookmark)
         await drainMainActor()
 
-        #expect(counter.count > afterAdd)
+        #expect(recorder.containsBothKinds)
         withExtendedLifetime(refresher) {}
     }
 
     /// Adding is what the stop page's bookmark flow does. Same store, same
     /// notification, same reload.
-    @Test @MainActor func `Adding a bookmark reloads the widget`() async throws {
+    @Test @MainActor func `Adding a bookmark reloads both OBAWidget and NextDepartureWidget`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let counter = ReloadCounter()
-        let refresher = BookmarkWidgetRefresher { counter.increment() }
+        let recorder = ReloadRecorder()
+        let refresher = BookmarkWidgetRefresher(reloadKind: { recorder.record(kind: $0) })
 
         let bookmark = try makeBookmark(application: application)
         application.userDataStore.add(bookmark, to: nil)
         await drainMainActor()
 
-        #expect(counter.count > 0)
+        #expect(recorder.containsBothKinds)
         withExtendedLifetime(refresher) {}
     }
 
@@ -124,19 +129,19 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
     @Test @MainActor func `Re-pinning an already-pinned bookmark does not reload`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let counter = ReloadCounter()
-        let refresher = BookmarkWidgetRefresher { counter.increment() }
+        let recorder = ReloadRecorder()
+        let refresher = BookmarkWidgetRefresher(reloadKind: { recorder.record(kind: $0) })
 
         let bookmark = try makeBookmark(application: application)
         application.userDataStore.add(bookmark, to: nil)
         application.userDataStore.setPinned(true, for: bookmark)
         await drainMainActor()
-        let settled = counter.count
+        recorder.reset()
 
         application.userDataStore.setPinned(true, for: bookmark)
         await drainMainActor()
 
-        #expect(counter.count == settled)
+        #expect(recorder.reloadedKinds.isEmpty)
         withExtendedLifetime(refresher) {}
     }
 
