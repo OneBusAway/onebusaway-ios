@@ -54,8 +54,8 @@ final class StopEntityMappingTests: OBATestCase {
         let destination = StopEntityMapping.destination(fromIdentifier: identifier)
         #expect(destination == expected)
 
-        if let destination {
-            #expect(StopEntityMapping.identifier(regionID: destination.regionID, stopID: destination.stopID) == identifier)
+        if let destination, let regionID = destination.regionID {
+            #expect(StopEntityMapping.identifier(regionID: regionID, stopID: destination.stopID) == identifier)
         }
     }
 

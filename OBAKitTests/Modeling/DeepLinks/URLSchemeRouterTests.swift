@@ -65,6 +65,28 @@ final class URLSchemeRouterTests {
             Issue.record("Expected viewStop URLType")
         }
     }
+
+    @Test func `Decode URL type stop host decodes stop ID with optional region`() throws {
+        let stopOnlyURL = try #require(URL(string: "onebusaway://stop?id=12345"))
+        let stopOnlyResult = router.decodeURLType(from: stopOnlyURL)
+        switch stopOnlyResult {
+        case .viewStop(let data):
+            #expect(data.stopID == "12345")
+            #expect(data.regionID == nil)
+        default:
+            Issue.record("Expected viewStop URLType for stop host")
+        }
+
+        let stopWithRegionURL = try #require(URL(string: "onebusaway://stop?id=67890&region=2"))
+        let stopWithRegionResult = router.decodeURLType(from: stopWithRegionURL)
+        switch stopWithRegionResult {
+        case .viewStop(let data):
+            #expect(data.stopID == "67890")
+            #expect(data.regionID == 2)
+        default:
+            Issue.record("Expected viewStop URLType for stop host with region")
+        }
+    }
     
     @Test func `Decode URL type view stop returns nil for missing stop ID`() {
         var components = URLComponents()

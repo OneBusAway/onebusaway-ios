@@ -21,9 +21,8 @@ extension Application {
     /// release. The rider asked for this page from outside the app, so close
     /// the whole presentation stack and push onto the tab underneath.
     ///
-    /// Map-panel mode has no classic root, and its sheets are presented
-    /// controllers that must not be torn down, so there it logs and drops; see
-    /// the deep-link TODO on `ViewRouter.rootNavigateTo(page:)`.
+    /// In map-panel mode, `pushStopFromOutside` routes directly to the floating sheet
+    /// coordinator, while classic mode unwinds modals and pushes onto the tab navigation stack.
     ///
     /// UIKit ignores a `dismiss` issued while a presentation or dismissal is still
     /// animating, and never calls its completion, so a call that lands mid-transition
@@ -46,7 +45,8 @@ extension Application {
             return false
         }
 
-        guard viewRouter.rootController != nil, let presenter = Self.basePresenter(of: top) else {
+        let hasActiveRoot = viewRouter.rootController != nil || viewRouter.mapPanelRootController != nil
+        guard hasActiveRoot, let presenter = Self.basePresenter(of: top) else {
             Logger.error("Dropping navigation: \(type(of: top)) has no navigation controller to push from.")
             return false
         }
@@ -72,11 +72,14 @@ extension Application {
         return true
     }
 
-    /// Pushes the stop page for `stopID` by way of `withPushableTopViewController`.
+    /// Pushes the stop page for `stopID` by way of `withPushableTopViewController` or via MapPanel sheet navigation.
     @MainActor
     @discardableResult
     func pushStopFromOutside(_ stopID: StopID, afterDismissal: (@MainActor () -> Void)? = nil) -> Bool {
-        withPushableTopViewController({ [weak self] from in
+        if let mapPanel = viewRouter.mapPanelRootController {
+            return mapPanel.navigate(to: .stopDetails(stopID: stopID), popToRootFirst: false, afterDismissal: afterDismissal)
+        }
+        return withPushableTopViewController({ [weak self] from in
             self?.viewRouter.navigateTo(stopID: stopID, from: from)
         }, afterDismissal: afterDismissal)
     }

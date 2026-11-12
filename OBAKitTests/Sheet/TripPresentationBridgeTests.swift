@@ -53,7 +53,7 @@ final class TripPresentationBridgeTests {
 
         #expect(coordinator.routeStack == [.home])
         #expect(coordinator.stackedRoutes.map(\.id) == ["tripDetails-trip_42"])
-        guard case .tripDetails(let convertible) = coordinator.stackedRoutes.first else {
+        guard case .tripDetails(let convertible, _) = coordinator.stackedRoutes.first else {
             Issue.record("Expected a trip sheet, got \(coordinator.stackedRoutes)")
             return
         }

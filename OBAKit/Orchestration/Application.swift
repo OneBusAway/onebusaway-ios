@@ -149,18 +149,17 @@ public class Application: CoreApplication, PushServiceDelegate {
             do {
                 let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
-                self.withPushableTopViewController { from in
-                    // The rider may have switched regions while this loaded.
-                    guard self.currentRegion?.regionIdentifier == deepLink.regionID else {
-                        Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
-                        return
-                    }
-                    self.viewRouter.navigateTo(
-                        arrivalDeparture: arrDep,
-                        from: from,
-                        destinationStopID: deepLink.destinationStopID
-                    )
+                // The rider may have switched regions while this loaded.
+                guard self.currentRegion?.regionIdentifier == deepLink.regionID else {
+                    Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
+                    ProgressHUD.dismiss()
+                    return
                 }
+
+                self.viewRouter.navigate(
+                    to: .tripDetails(TripConvertible(arrivalDeparture: arrDep), destinationStopID: deepLink.destinationStopID),
+                    popToRootFirst: false
+                )
             } catch {
                 await self.displayError(error)
             }
@@ -752,12 +751,12 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// Opens `destination` now, or stashes it until the root UI and matching
     /// region exist. Does not fetch this stop against a different region's API.
     func queueOrOpenStop(_ destination: AppLinksRouter.StopDestination) {
-        if let current = currentRegion?.regionIdentifier, current != destination.regionID {
+        if let current = currentRegion?.regionIdentifier, let destRegion = destination.regionID, current != destRegion {
             // Dropped on purpose — fetching this stop against another region's API
             // would return the wrong stop or nothing — but say so. This is the end
             // of the line for something the rider actually tapped, and the
             // no-region branch that defers instead already logs its reasoning.
-            Logger.warn("Stop \(destination.stopID) belongs to region \(destination.regionID) but region \(current) is selected; dropping the tap.")
+            Logger.warn("Stop \(destination.stopID) belongs to region \(destRegion) but region \(current) is selected; dropping the tap.")
             Task { @MainActor in
                 await self.displayError(UnstructuredError(OBALoc(
                     "application.stop_in_other_region",
@@ -773,7 +772,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         // Not while onboarding is the root: there is no API service to load the
         // stop with yet, and the page would be pushed over the region picker. The
         // drain picks the stash up once onboarding finishes.
-        if topViewController != nil, !isOnboardingRoot, currentRegion?.regionIdentifier == destination.regionID {
+        let isMatchingRegion = destination.regionID == nil || currentRegion?.regionIdentifier == destination.regionID
+        if topViewController != nil, !isOnboardingRoot, isMatchingRegion, currentRegion != nil {
             pushStopFromOutside(destination.stopID)
             return
         }

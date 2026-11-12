@@ -199,7 +199,7 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case tripPlanner(TripPlannerRequest)
     // The convertible, not just its trip ID: the trip page's view model fetches
     // with the vehicle and service date as well, which an ID can't supply.
-    case tripDetails(TripConvertible)
+    case tripDetails(TripConvertible, destinationStopID: StopID? = nil)
     case routePicker
     case currentTrip(route: Route)
     case transitAlert(alertID: String)
@@ -265,10 +265,11 @@ nonisolated extension AppSheetRoute {
             }
             let suffix = parts.isEmpty ? "blank" : parts.joined(separator: "_")
             return "\(caseName)_\(suffix)"
-        case .tripDetails(let convertible):
-            // Keyed on the trip alone, not on which model carried it, so a trip
-            // reached from an arrival and from a vehicle has one identity.
-            return "\(caseName)-\(convertible.tripID)"
+        case .tripDetails(let convertible, let destinationStopID):
+            // Keyed on the trip and optional destination stop so a shared trip
+            // with a destination is distinguished from a bare trip.
+            let destSuffix = destinationStopID.map { "-\($0)" } ?? ""
+            return "\(caseName)-\(convertible.tripID)\(destSuffix)"
         case .currentTrip(let route):
             return "\(caseName)-\(route.id)"
         case .transitAlert(let alertID):
