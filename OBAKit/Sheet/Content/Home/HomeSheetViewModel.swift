@@ -127,6 +127,9 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// published when they differ, and the bookmark fetch is gated on staleness,
     /// region, and selection.
     func activate() {
+        // The store's high-severity list is windowed on the clock (eight hours),
+        // so an alert can age out between the store's own fetches.
+        alerts.reload()
         recent.reload()
         bookmarks.loadIfNeeded()
     }

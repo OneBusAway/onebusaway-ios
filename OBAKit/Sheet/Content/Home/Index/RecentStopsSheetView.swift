@@ -128,10 +128,14 @@ struct RecentStopsSheetView: View {
     private func open(_ deepLink: ArrivalDepartureDeepLink, of alarm: Alarm) {
         guard openingAlarm == nil, let apiService = application.apiService else { return }
         openingAlarm = alarm.url
+        let regionID = application.currentRegion?.regionIdentifier
         Task {
             defer { openingAlarm = nil }
             do {
                 let arrival = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink).entry
+                // The rider may have switched regions while this loaded, which
+                // closes the sheets: a trip from the old server mustn't reopen.
+                guard application.currentRegion?.regionIdentifier == regionID else { return }
                 coordinator.push(.tripDetails(
                     TripConvertible(arrivalDeparture: arrival),
                     destinationStopID: deepLink.destinationStopID

@@ -242,19 +242,19 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
     func dataLoader(_ dataLoader: BookmarkDataLoader, isLoadingChanged isLoading: Bool) {
         guard !isLoading else { return }
         defer { batchDeliveredArrivals = false }
-        guard dataLoader.lastBatchHadError else {
-            guard batchDeliveredArrivals else { return }
-            // Once per batch that brought arrivals, rather than per stop fetched.
-            // The panel has no Bookmarks tab to do either: fresh arrival times
-            // for the widget (bookmark edits are `BookmarkWidgetRefresher`'s),
+        if batchDeliveredArrivals {
+            // Once per batch that brought arrivals, rather than per stop fetched,
+            // and even when another stop in it failed: the ones that loaded are
+            // fresh. The panel has no Bookmarks tab to do either: fresh arrival
+            // times for the widget (bookmark edits are `BookmarkWidgetRefresher`'s),
             // and running Live Activities, which after a relaunch otherwise get
             // no updates and never unregister when they end.
             WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
             BookmarkActions.updateRunningLiveActivities(application: application) { [weak self] bookmark in
                 self?.loadedArrivals(for: bookmark)
             }
-            return
         }
+        guard dataLoader.lastBatchHadError else { return }
         lastFetchDate = nil
     }
 }

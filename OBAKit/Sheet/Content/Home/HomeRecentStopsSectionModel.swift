@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Combine
 import Foundation
 import OBAKitCore
 
@@ -25,11 +26,18 @@ final class HomeRecentStopsSectionModel: ObservableObject {
 
     private let application: Application
     private let limit: Int
+    private var alarmFiredCancellable: AnyCancellable?
 
     init(application: Application, limit: Int = HomeSheetSection.itemLimit) {
         self.application = application
         self.limit = limit
         reload()
+        // A fired alarm is deleted from the store while home may be on screen,
+        // which no activation follows: without this its row would linger.
+        alarmFiredCancellable = NotificationCenter.default
+            .publisher(for: .alarmFired)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reload() }
     }
 
     /// Re-reads the store. Called on activation and on region change — a

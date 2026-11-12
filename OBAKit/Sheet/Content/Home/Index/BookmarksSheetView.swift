@@ -155,6 +155,14 @@ struct BookmarksSheetView: View {
         // Stops the 30 s poll when the sheet goes away. The tab does the same on
         // `viewWillDisappear`.
         .onDisappear { viewModel.deactivate() }
+        // Fresh arrivals for running Live Activities, as the tab pushes them. The
+        // home sheet only loads the bookmarks it previews, so an activity for any
+        // other bookmark gets its content from here.
+        .onReceive(viewModel.didUpdate) { _ in
+            BookmarkActions.updateRunningLiveActivities(application: application) { [viewModel] bookmark in
+                viewModel.arrivalDepartures(for: bookmark)
+            }
+        }
         .onChange(of: coordinator.stackedRoutes.count) { previousCount, count in
             // Rebuild when a sheet stacked above this one closes: the stop page it
             // pushes can add or remove a bookmark, and this view is never removed

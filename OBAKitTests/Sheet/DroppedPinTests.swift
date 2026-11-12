@@ -24,4 +24,10 @@ struct DroppedPinTests {
         #expect(mapItem.placemark.coordinate.longitude == coordinate.longitude)
         #expect(mapItem.name == UserDroppedPin.defaultTitle)
     }
+
+    @Test func `Holding and then panning the map drops no pin`() {
+        #expect(DroppedPin.isStationary(translation: .zero))
+        #expect(DroppedPin.isStationary(translation: CGSize(width: 6, height: 6)))
+        #expect(!DroppedPin.isStationary(translation: CGSize(width: 40, height: 0)))
+    }
 }
