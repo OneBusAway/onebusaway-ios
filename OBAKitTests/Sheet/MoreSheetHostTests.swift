@@ -44,6 +44,23 @@ final class MoreSheetHostTests: OBATestCase {
         #expect(nav.topViewController is MoreViewController)
     }
 
+    /// On iOS 26 the sheet's Liquid Glass shows through the screen, as it does
+    /// behind the SwiftUI sheets; earlier systems keep its opaque backgrounds.
+    @Test @MainActor
+    func `The More screen lets the sheet's glass show through on iOS 26`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+
+        let nav = MoreSheetHost.makeNavigationController(application: application)
+        let more = try #require(nav.topViewController as? MoreViewController)
+
+        if #available(iOS 26.0, *) {
+            #expect(more.view.backgroundColor == .clear)
+            #expect(more.listView.backgroundColor == .clear)
+        } else {
+            #expect(more.view.backgroundColor != .clear)
+        }
+    }
+
     /// The More sheet could only be swiped away; the other index sheets close
     /// from a button.
     @Test @MainActor

@@ -51,6 +51,19 @@ struct MoreSheetHost: UIViewControllerRepresentable {
             let close = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { _ in onClose() })
             more.navigationItem.rightBarButtonItems = [close] + (more.navigationItem.rightBarButtonItems ?? [])
         }
-        return UINavigationController(rootViewController: more)
+        let navigation = UINavigationController(rootViewController: more)
+        showSheetGlass(through: more)
+        return navigation
+    }
+
+    /// On iOS 26 and later, clears the screen's opaque backgrounds so the sheet's
+    /// Liquid Glass shows through, as it does behind the SwiftUI sheets; see
+    /// `searchSheetBackground()`. The list's cells keep their own fills, which
+    /// read against the glass. Earlier systems keep the screen as it was.
+    static func showSheetGlass(through more: MoreViewController) {
+        guard #available(iOS 26.0, *) else { return }
+        more.loadViewIfNeeded()
+        more.view.backgroundColor = .clear
+        more.listView.backgroundColor = .clear
     }
 }

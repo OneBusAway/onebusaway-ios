@@ -145,7 +145,7 @@ struct SearchSheetView: View {
         // `.searchListChrome()`. Suppress `SearchListView` while suggestions are
         // presented so its list doesn't show through the transparent backdrop.
         if isSearchPresented && !viewModel.searchInteractor.sections.isEmpty {
-            Color(.systemGroupedBackground)
+            Color.searchSheetBackground
                 .ignoresSafeArea()
         } else {
             SearchListView(searchInteractor: viewModel.searchInteractor)
