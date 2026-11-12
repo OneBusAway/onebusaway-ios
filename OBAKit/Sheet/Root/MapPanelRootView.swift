@@ -698,6 +698,9 @@ struct MapPanelRootView: View {
         .onAppear {
             mapViewModel.start()
             applyPendingRentalsFocus()
+            #if DEBUG
+            coordinator.showScreenshotStopIfNeeded(application: application)
+            #endif
         }
         .onReceive(application.notificationCenter.publisher(for: .rentalsDeepLinkPending)) { _ in
             applyPendingRentalsFocus()
@@ -1096,6 +1099,10 @@ extension MapPanelRootView {
             centerOnUser()
         }
         Task { await mapViewModel.loadWeather() }
+        // A first launch has no region when the map appears.
+        #if DEBUG
+        coordinator.showScreenshotStopIfNeeded(application: application)
+        #endif
     }
 
     /// Back to home, closing any UIKit modal over the sheets first (the region
