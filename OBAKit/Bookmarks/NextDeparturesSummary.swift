@@ -100,18 +100,16 @@ nonisolated enum NextDeparturesSummary {
             if let sentence = departuresSentence(routeShortName: routeShortName, headsign: headsign, dates: departures.map(\.date), now: now) {
                 return sentence
             }
-            return noDeparturesText(name: bookmarkName)
+            let fmt = OBALoc("next_departures_intent.no_departures_fmt", value: "No departures for %@ in the next hour.", comment: "Siri response when a bookmarked trip has no upcoming departures. {Bookmark name}")
+            return String(format: fmt, bookmarkName)
         case let .stopDepartures(stopName, departures):
             if let sentence = stopDeparturesSentence(stopName: stopName, departures: departures, now: now) {
                 return sentence
             }
-            return noDeparturesText(name: stopName)
+            // Not the bookmark's sentence: "for" a stop reads as "to" it in some languages.
+            let fmt = OBALoc("next_departures_intent.stop_no_departures_fmt", value: "No departures from %@ in the next hour.", comment: "Siri response when nothing leaves a stop in the next hour. {Stop name}")
+            return String(format: fmt, stopName)
         }
-    }
-
-    private static func noDeparturesText(name: String) -> String {
-        let fmt = OBALoc("next_departures_intent.no_departures_fmt", value: "No departures for %@ in the next hour.", comment: "Siri response when a bookmarked trip or a stop has no upcoming departures. {Bookmark or stop name}")
-        return String(format: fmt, name)
     }
 
     /// The stop's departures still to come, soonest first, at most

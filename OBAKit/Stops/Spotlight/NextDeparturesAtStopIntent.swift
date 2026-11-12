@@ -109,15 +109,17 @@ extension NextDeparturesLoader {
     /// What a rider at the stop could board, as the stop page would list it:
     /// the rider's departure filter and hidden routes apply, unless every
     /// route the stop serves is hidden, where the stop page drops the hiding
-    /// too. Unlike the stop page, a trip that ends here is left out: it
-    /// arrives, but nobody can board it.
+    /// too. Unlike the stop page, a vehicle riders can't board here is left
+    /// out: a trip that ends here, or a drop-off-only stop. The server says so
+    /// in `departureEnabled`, which, unlike `isLastStopOnTrip`, doesn't need
+    /// the feed to send `totalStopsInTrip`.
     static func boardable(_ arrivals: [ArrivalDeparture], filter: ArrivalDepartureFilter, preferences: StopPreferences, stopRouteIDs: [RouteID]) -> [ArrivalDeparture] {
         // As `StopViewModel` does, an empty route list counts as all hidden,
         // so a stop the server sent without routes hides nothing.
         let hidesRoutes = !stopRouteIDs.allSatisfy(preferences.isRouteIDHidden)
         return arrivals
             .filter(by: filter)
-            .filter { $0.isLastStopOnTrip != true }
+            .filter(\.departureEnabled)
             .filter { !hidesRoutes || !preferences.isRouteIDHidden($0.routeID) }
     }
 }

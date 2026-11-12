@@ -867,7 +867,7 @@
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
 "next_departures_intent.no_bookmarks" = "You don't have any bookmarked trips. Bookmark a route at a stop first.";
 
-/* Siri response when a bookmarked trip or a stop has no upcoming departures. {Bookmark or stop name} */
+/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
 "next_departures_intent.no_departures_fmt" = "No departures for %@ in the next hour.";
 
 /* Siri response when the user asks for their next departures before the app knows their region. */
@@ -887,6 +887,9 @@
 
 /* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
 "next_departures_intent.stop_departures_fmt" = "Next at %1$@: %2$@.";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "No departures from %@ in the next hour.";
 
 /* Siri response when the requested stop belongs to a different region than the one the app is using. */
 "next_departures_intent.stop_unavailable" = "That stop isn't in your current region.";

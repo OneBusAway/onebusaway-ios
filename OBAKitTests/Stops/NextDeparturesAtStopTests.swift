@@ -37,12 +37,20 @@ final class NextDeparturesAtStopLoaderTests: OBATestCase {
         NextDeparturesLoader(userDefaults: userDefaults, bundledRegionsFilePath: nil, apiKey: apiKey, appVersion: appVersion, dataLoader: dataLoader)
     }
 
-    /// Answers only a request for `stopID`'s arrivals; any other URL hits
+    /// Answers only a request for `stopID`'s arrivals over the next hour, the
+    /// window "in the next hour" promises; any other URL hits
     /// `MockDataLoader`'s `fatalError`.
     private func mockArrivals(_ dataLoader: MockDataLoader, stopID: String, file: String, statusCode: Int = 200) {
-        let data = statusCode == 200 ? Fixtures.loadData(file: file) : Data("{}".utf8)
+        mockArrivals(dataLoader, stopID: stopID, data: statusCode == 200 ? Fixtures.loadData(file: file) : Data("{}".utf8), statusCode: statusCode)
+    }
+
+    private func mockArrivals(_ dataLoader: MockDataLoader, stopID: String, data: Data, statusCode: Int = 200) {
         dataLoader.mock(data: data, statusCode: statusCode) { request in
-            request.url?.path.hasSuffix("/api/where/arrivals-and-departures-for-stop/\(stopID).json") ?? false
+            guard let url = request.url,
+                  url.path.hasSuffix("/api/where/arrivals-and-departures-for-stop/\(stopID).json"),
+                  let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems else { return false }
+            return query.contains(URLQueryItem(name: "minutesBefore", value: "0"))
+                && query.contains(URLQueryItem(name: "minutesAfter", value: "60"))
         }
     }
 
@@ -59,6 +67,33 @@ final class NextDeparturesAtStopLoaderTests: OBATestCase {
         )
     }
 
+    /// Some feeds leave out `totalStopsInTrip`, so only `departureEnabled`
+    /// can say a trip ends here.
+    @Test func `A trip that ends here is left out even without a stop count`() async throws {
+        let data = Fixtures.loadData(file: galerFixture)
+        var json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var dataNode = try #require(json["data"] as? [String: Any])
+        var entry = try #require(dataNode["entry"] as? [String: Any])
+        let arrivals = try #require(entry["arrivalsAndDepartures"] as? [[String: Any]])
+        entry["arrivalsAndDepartures"] = arrivals.map { arrival in
+            var arrival = arrival
+            arrival.removeValue(forKey: "totalStopsInTrip")
+            return arrival
+        }
+        dataNode["entry"] = entry
+        json["data"] = dataNode
+        let dataLoader = MockDataLoader(testName: name)
+        mockArrivals(dataLoader, stopID: galerStopID, data: try JSONSerialization.data(withJSONObject: json))
+
+        let outcome = await loader(dataLoader: dataLoader).outcome(stopEntityID: galerEntityID)
+
+        guard case let .stopDepartures(_, departures) = outcome else {
+            Issue.record("Expected departures, got \(outcome)")
+            return
+        }
+        #expect(departures.map(\.headsign) == ["Downtown Seattle", "Downtown Seattle"])
+    }
+
     @Test func `A stop with nothing coming says so by name`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         mockArrivals(dataLoader, stopID: "1_TEST", file: "arrivals_and_departures_empty.json")
@@ -67,7 +102,7 @@ final class NextDeparturesAtStopLoaderTests: OBATestCase {
         let outcome = await loader(dataLoader: dataLoader).outcome(stopEntityID: entityID)
 
         #expect(outcome == .stopDepartures(stopName: "Test Stop", departures: []))
-        #expect(NextDeparturesSummary.text(for: outcome, now: fixtureNow) == "No departures for Test Stop in the next hour.")
+        #expect(NextDeparturesSummary.text(for: outcome, now: fixtureNow) == "No departures from Test Stop in the next hour.")
     }
 
     @Test func `A server error is a load failure, not an empty schedule`() async throws {
@@ -235,7 +270,7 @@ struct NextDeparturesAtStopTests {
         let model = NextDeparturesCardModel(outcome: .stopDepartures(stopName: "3rd Ave & Pine St", departures: [departure("8", "Downtown", -3)]), now: now)
 
         #expect(model.rows.isEmpty)
-        #expect(model.message == "No departures for 3rd Ave & Pine St in the next hour.")
+        #expect(model.message == "No departures from 3rd Ave & Pine St in the next hour.")
         #expect(model.showsRefresh)
     }
 

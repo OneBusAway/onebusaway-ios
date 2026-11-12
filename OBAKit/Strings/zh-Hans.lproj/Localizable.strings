@@ -729,7 +729,7 @@
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
 "next_departures_intent.no_bookmarks" = "你还没有收藏任何行程。请先在站点将线路添加为书签。";
 
-/* Siri response when a bookmarked trip or a stop has no upcoming departures. {Bookmark or stop name} */
+/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
 "next_departures_intent.no_departures_fmt" = "未来一小时内%@没有离站班次。";
 
 /* Siri response when the user asks for their next departures before the app knows their region. */
@@ -749,6 +749,9 @@
 
 /* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
 "next_departures_intent.stop_departures_fmt" = "%1$@的下一班：%2$@。";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "未来一小时内没有从%@发出的班次。";
 
 /* Siri response when the requested stop belongs to a different region than the one the app is using. */
 "next_departures_intent.stop_unavailable" = "该车站不在你当前的地区。";
