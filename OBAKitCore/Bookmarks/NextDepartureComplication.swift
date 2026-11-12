@@ -35,7 +35,7 @@ public enum WidgetBookmarkFamily: Equatable, Sendable {
 }
 
 /// Platform-neutral bookmark metadata needed to render a next-departure
-/// complication from either an iOS `Bookmark` or a watchOS `WatchBookmark`.
+/// complication from a `Bookmark`.
 public struct NextDepartureComplicationBookmark: Equatable, Sendable {
     public let id: UUID
     public let name: String
@@ -80,20 +80,6 @@ public struct NextDepartureComplicationBookmark: Equatable, Sendable {
             tripHeadsign: bookmark.tripHeadsign,
             isTripBookmark: bookmark.isTripBookmark,
             isFavorite: bookmark.isFavorite
-        )
-    }
-
-    public init(watchBookmark: WatchBookmark) {
-        self.init(
-            id: watchBookmark.id,
-            name: watchBookmark.name,
-            stopID: watchBookmark.stopID,
-            stopName: watchBookmark.stopName,
-            regionIdentifier: Int(watchBookmark.regionIdentifier),
-            routeShortName: watchBookmark.routeShortName,
-            tripHeadsign: watchBookmark.tripHeadsign,
-            isTripBookmark: watchBookmark.isTripBookmark,
-            isFavorite: watchBookmark.isFavorite
         )
     }
 
@@ -227,22 +213,6 @@ public enum NextDepartureComplicationState: Equatable, Sendable {
 
 /// Pure selection and formatting logic for the Next Departure complication.
 public enum NextDepartureComplication {
-    /// Selects the top favorited watch bookmark in `regionIdentifier`, or the first
-    /// watch bookmark in that region if none are marked favorite.
-    public static func topBookmark(
-        from watchBookmarks: [WatchBookmark],
-        regionIdentifier: Int
-    ) -> WatchBookmark? {
-        let inRegion = watchBookmarks.filter { Int($0.regionIdentifier) == regionIdentifier }
-        return inRegion.first(where: \.isFavorite) ?? inRegion.first
-    }
-
-    /// Selects a fallback watch bookmark across all regions when region resolution
-    /// is unavailable, so synced bookmarks render `.unavailable` rather than `.noBookmarks`.
-    public static func fallbackBookmark(from watchBookmarks: [WatchBookmark]) -> WatchBookmark? {
-        watchBookmarks.first(where: \.isFavorite) ?? watchBookmarks.first
-    }
-
     /// Resolves the complication state for the primary bookmark in `bookmarks` at `now`.
     public static func resolve(
         bookmarks: [NextDepartureComplicationBookmark],
@@ -276,19 +246,6 @@ public enum NextDepartureComplication {
     ) -> NextDepartureComplicationState {
         resolve(
             bookmarks: bookmarks.map(NextDepartureComplicationBookmark.init(bookmark:)),
-            departuresByBookmark: departuresByBookmark,
-            now: now
-        )
-    }
-
-    /// Convenience overload for watchOS `WatchBookmark` entries.
-    public static func resolve(
-        watchBookmarks: [WatchBookmark],
-        departuresByBookmark: [UUID: [ArrivalDeparture]],
-        now: Date
-    ) -> NextDepartureComplicationState {
-        resolve(
-            bookmarks: watchBookmarks.map(NextDepartureComplicationBookmark.init(watchBookmark:)),
             departuresByBookmark: departuresByBookmark,
             now: now
         )

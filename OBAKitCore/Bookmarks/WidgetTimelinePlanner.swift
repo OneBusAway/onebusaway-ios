@@ -41,26 +41,48 @@ public struct WidgetTimelinePlanner: Sendable {
 
     private let minimumEntrySpacing: TimeInterval
     private let maximumEntries: Int
+    private let preDepartureLeadTime: TimeInterval
 
-    /// - Parameter minimumEntrySpacing: Apple recommends entries "at least
-    ///   about 5 minutes apart". A multi-bookmark widget has dense boundaries
-    ///   and keeps the default; pass 0 for one entry per departure.
-    public init(minimumEntrySpacing: TimeInterval = 5 * 60, maximumEntries: Int = 12) {
+    /// - Parameters:
+    ///   - minimumEntrySpacing: Apple recommends entries "at least about 5
+    ///     minutes apart". A multi-bookmark widget has dense boundaries and keeps
+    ///     the default; pass 0 for one entry per departure.
+    ///   - maximumEntries: Upper bound on emitted timeline entries.
+    ///   - preDepartureLeadTime: Optional seconds before each departure at
+    ///     which an additional entry is emitted (e.g. `59` to transition a
+    ///     single-departure complication to `"NOW"` in its final minute).
+    public init(
+        minimumEntrySpacing: TimeInterval = 5 * 60,
+        maximumEntries: Int = 12,
+        preDepartureLeadTime: TimeInterval = 0
+    ) {
         self.minimumEntrySpacing = minimumEntrySpacing
         self.maximumEntries = max(1, maximumEntries)
+        self.preDepartureLeadTime = max(0, preDepartureLeadTime)
     }
 
-    /// Planner tuned for single-bookmark complication timelines: emits one entry
-    /// at every departure boundary (zero minimum spacing) and raises the entry
-    /// cap so frequent routes do not truncate before the 30-minute reload.
+    /// Planner tuned for single-bookmark complication timelines: emits an entry
+    /// 59 seconds before each departure (so the final minute renders `"NOW"`)
+    /// and at every departure boundary (zero minimum spacing), with a raised
+    /// entry cap so frequent routes do not truncate before the 30-minute reload.
     public static func singleBookmarkComplication() -> WidgetTimelinePlanner {
-        WidgetTimelinePlanner(minimumEntrySpacing: 0, maximumEntries: 64)
+        WidgetTimelinePlanner(minimumEntrySpacing: 0, maximumEntries: 64, preDepartureLeadTime: 59)
     }
 
     public func plan(departureDates: [Date], now: Date) -> Plan {
-        let upcoming = Set(departureDates.filter { $0 > now }).sorted()
+        let futureDepartures = departureDates.filter { $0 > now }
+        var boundarySet = Set(futureDepartures)
+        if preDepartureLeadTime > 0 {
+            for departureDate in futureDepartures {
+                let leadBoundary = departureDate.addingTimeInterval(-preDepartureLeadTime)
+                if leadBoundary > now {
+                    boundarySet.insert(leadBoundary)
+                }
+            }
+        }
+        let upcoming = boundarySet.sorted()
 
-        let interval = upcoming.isEmpty ? Self.reloadIntervalWithoutDepartures : Self.reloadIntervalWithDepartures
+        let interval = futureDepartures.isEmpty ? Self.reloadIntervalWithoutDepartures : Self.reloadIntervalWithDepartures
         let reloadDate = now.addingTimeInterval(interval)
 
         var entryDates = [now]

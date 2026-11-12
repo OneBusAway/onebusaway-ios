@@ -63,21 +63,3 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Wczytywanie zakładek…";
-
-/* Description for the next-departure Apple Watch complication */
-"complications.gallery.description" = "Zobacz najbliższy odjazd dla głównej zakładki.";
-
-/* Display name for the next-departure Apple Watch complication */
-"complications.gallery.display_name" = "Najbliższy odjazd";
-
-/* Hint on rectangular watch complication when no favorite bookmarks are synced */
-"complications.no_bookmarks_hint" = "Dodaj ulubioną zakładkę na iPhonie.";
-
-/* Short complication fallback when no upcoming departures exist */
-"complications.no_departures" = "Brak odjazdów";
-
-/* Rectangular complication fallback when no departures are expected soon. %d is minutes. */
-"complications.no_departures_in_next_minutes_fmt" = "Brak odjazdów w ciągu %d min";
-
-/* Short complication fallback when departure data could not be loaded */
-"complications.unavailable" = "Niedostępne";

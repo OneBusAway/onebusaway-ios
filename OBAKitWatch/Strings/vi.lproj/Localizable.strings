@@ -63,21 +63,3 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Đang tải dấu trang…";
-
-/* Description for the next-departure Apple Watch complication */
-"complications.gallery.description" = "Xem chuyến khởi hành tiếp theo cho dấu trang hàng đầu của bạn.";
-
-/* Display name for the next-departure Apple Watch complication */
-"complications.gallery.display_name" = "Chuyến tiếp theo";
-
-/* Hint on rectangular watch complication when no favorite bookmarks are synced */
-"complications.no_bookmarks_hint" = "Chọn dấu trang yêu thích trên iPhone.";
-
-/* Short complication fallback when no upcoming departures exist */
-"complications.no_departures" = "Không có chuyến đi";
-
-/* Rectangular complication fallback when no departures are expected soon. %d is minutes. */
-"complications.no_departures_in_next_minutes_fmt" = "Không có chuyến nào trong %d phút tới";
-
-/* Short complication fallback when departure data could not be loaded */
-"complications.unavailable" = "Không khả dụng";

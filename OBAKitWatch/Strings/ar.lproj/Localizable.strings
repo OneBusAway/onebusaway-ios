@@ -63,21 +63,3 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "جارٍ تحميل الإشارات المرجعية…";
-
-/* Description for the next-departure Apple Watch complication */
-"complications.gallery.description" = "اعرض المغادرة القادمة التالية لأهم إشارة مرجعية لديك.";
-
-/* Display name for the next-departure Apple Watch complication */
-"complications.gallery.display_name" = "المغادرة التالية";
-
-/* Hint on rectangular watch complication when no favorite bookmarks are synced */
-"complications.no_bookmarks_hint" = "ميّز إشارة مرجعية على iPhone.";
-
-/* Short complication fallback when no upcoming departures exist */
-"complications.no_departures" = "لا توجد رحلات";
-
-/* Rectangular complication fallback when no departures are expected soon. %d is minutes. */
-"complications.no_departures_in_next_minutes_fmt" = "لا توجد رحلات خلال %d دقيقة";
-
-/* Short complication fallback when departure data could not be loaded */
-"complications.unavailable" = "غير متوفر";

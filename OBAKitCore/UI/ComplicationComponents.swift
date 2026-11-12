@@ -9,27 +9,22 @@
 
 import SwiftUI
 
-/// Shared SwiftUI building blocks for iOS Lock Screen and watchOS accessory
-/// complications. Kept WidgetKit-free so `OBAKitCore` stays independent of
-/// `WidgetKit` while `OBAWidget` and `OBAKitWatch` share identical layout,
-/// badge contrast, ticking countdown, and VoiceOver formatting.
+/// Shared SwiftUI building blocks for Lock Screen accessory complications. Kept
+/// WidgetKit-free so `OBAKitCore` stays independent of `WidgetKit`.
 @MainActor
 public enum ComplicationPresentation {
     /// Live-updating `Text` for a complication countdown: `"NOW"` when under a
-    /// minute remains at `referenceDate`, a static snapshot under reduced
-    /// luminance, and Apple's narrow minute `Date.ComponentsFormatStyle`
-    /// otherwise so out-of-process widgets tick down without timeline reloads.
+    /// minute remains at `referenceDate`, and Apple's narrow minute
+    /// `Date.ComponentsFormatStyle` otherwise so out-of-process widgets tick
+    /// down automatically (including at low cadence in Always-On mode) without
+    /// timeline reloads.
     public static func countdownText(
         for departure: ComplicationDeparture,
         at referenceDate: Date,
-        isLuminanceReduced: Bool,
         locale: Locale
     ) -> Text {
         if departure.isArrivingNow(at: referenceDate) {
             return Text(verbatim: departure.shortCountdownText(at: referenceDate))
-        }
-        if isLuminanceReduced {
-            return Text(verbatim: TickingCountdownText.snapshot(departure: departure.departureDate, now: referenceDate, locale: locale))
         }
         return Text(.dateRange(endingAt: departure.departureDate), format: TickingCountdownText.visibleFormat(locale: locale))
     }
@@ -40,14 +35,12 @@ public enum ComplicationPresentation {
     public static func inlineDepartureText(
         for departure: ComplicationDeparture,
         at referenceDate: Date,
-        isLuminanceReduced: Bool,
         locale: Locale
     ) -> Text {
         Text(verbatim: "\(departure.routeShortName) · ")
             + countdownText(
                 for: departure,
                 at: referenceDate,
-                isLuminanceReduced: isLuminanceReduced,
                 locale: locale
             )
             + Text(verbatim: " · \(departure.headsign)")
@@ -169,7 +162,6 @@ public struct ComplicationCircularDepartureContent: View {
             ComplicationPresentation.countdownText(
                 for: departure,
                 at: referenceDate,
-                isLuminanceReduced: isLuminanceReduced,
                 locale: locale
             )
             .font(.system(.title3, design: .rounded, weight: .bold))
@@ -234,7 +226,6 @@ public struct ComplicationRectangularDepartureContent: View {
                     ComplicationPresentation.countdownText(
                         for: departure,
                         at: referenceDate,
-                        isLuminanceReduced: isLuminanceReduced,
                         locale: locale
                     )
                     .font(.system(.headline, design: .rounded, weight: .heavy))

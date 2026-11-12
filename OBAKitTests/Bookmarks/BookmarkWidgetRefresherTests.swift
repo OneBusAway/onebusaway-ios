@@ -140,9 +140,26 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         withExtendedLifetime(refresher) {}
     }
 
-    /// The tab's own arrival-batch reload targets the same widget kind, so the
-    /// two paths can't drift apart on the identifier.
+    /// The tab's own arrival-batch reload targets the same widget kinds, so the
+    /// two paths can't drift apart on the identifiers.
     @Test @MainActor func `Widget kind matches the registered extension kind`() {
         #expect(BookmarkWidgetRefresher.widgetKind == "OBAWidget")
+        #expect(BookmarkWidgetRefresher.complicationWidgetKind == "NextDepartureWidget")
+        #expect(BookmarkWidgetRefresher.widgetKinds == ["OBAWidget", "NextDepartureWidget"])
+    }
+
+    @Test @MainActor func `Bookmark change reloads both OBAWidget and NextDepartureWidget`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        var reloadedKinds: [String] = []
+        let refresher = BookmarkWidgetRefresher(reloadKind: { reloadedKinds.append($0) })
+
+        let bookmark = try makeBookmark(application: application)
+        application.userDataStore.add(bookmark, to: nil)
+        await drainMainActor()
+
+        #expect(reloadedKinds.contains("OBAWidget"))
+        #expect(reloadedKinds.contains("NextDepartureWidget"))
+        withExtendedLifetime(refresher) {}
     }
 }

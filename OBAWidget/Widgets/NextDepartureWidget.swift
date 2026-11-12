@@ -11,8 +11,8 @@ import OBAKitCore
 import SwiftUI
 import WidgetKit
 
-/// Lock Screen and Apple Watch complication widget showing the next upcoming
-/// departure for the user's top favorited bookmark.
+/// Lock Screen complication widget showing the next upcoming departure for the
+/// user's top favorited bookmark.
 struct NextDepartureWidget: Widget {
     let kind: String = "NextDepartureWidget"
 

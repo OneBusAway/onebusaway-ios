@@ -32,19 +32,32 @@ import OBAKitCore
 @MainActor
 final class BookmarkWidgetRefresher {
 
-    /// Matches the `kind` the widget extension registers under.
+    /// Matches the `kind` values the widget extension registers under.
     static let widgetKind = "OBAWidget"
+    static let complicationWidgetKind = "NextDepartureWidget"
+    static let widgetKinds = [widgetKind, complicationWidgetKind]
 
     /// Invoked instead of `WidgetCenter` when set. Tests inject a spy here;
     /// production leaves it nil and reloads for real.
-    private let reload: (() -> Void)?
+    private let reloadKind: ((String) -> Void)?
 
     /// Observes `NotificationCenter.default` because that is where
     /// `UserDefaultsStore` posts — see its `delete(bookmark:)`, `setPinned(_:for:)`,
     /// and `add(_:to:index:)`. Selector-based observation is auto-removed on
     /// dealloc, so no token/deinit is needed.
     init(reload: (() -> Void)? = nil) {
-        self.reload = reload
+        self.reloadKind = reload.map { spy in { _ in spy() } }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bookmarksDidChange),
+            name: .bookmarksDidChange,
+            object: nil
+        )
+    }
+
+    init(reloadKind: @escaping (String) -> Void) {
+        self.reloadKind = reloadKind
 
         NotificationCenter.default.addObserver(
             self,
@@ -64,10 +77,18 @@ final class BookmarkWidgetRefresher {
     }
 
     func reloadTimelines() {
-        if let reload {
-            reload()
+        if let reloadKind {
+            Self.reloadAllTimelines(using: reloadKind)
             return
         }
-        WidgetCenter.shared.reloadTimelines(ofKind: Self.widgetKind)
+        Self.reloadAllTimelines()
+    }
+
+    static func reloadAllTimelines(
+        using reloadKind: (String) -> Void = { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
+    ) {
+        for kind in widgetKinds {
+            reloadKind(kind)
+        }
     }
 }

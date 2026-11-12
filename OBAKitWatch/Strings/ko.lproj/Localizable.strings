@@ -63,21 +63,3 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "즐겨찾기를 불러오는 중…";
-
-/* Description for the next-departure Apple Watch complication */
-"complications.gallery.description" = "대표 즐겨찾기의 다음 출발 정보를 확인하세요.";
-
-/* Display name for the next-departure Apple Watch complication */
-"complications.gallery.display_name" = "다음 출발";
-
-/* Hint on rectangular watch complication when no favorite bookmarks are synced */
-"complications.no_bookmarks_hint" = "iPhone에서 즐겨찾기를 지정하세요.";
-
-/* Short complication fallback when no upcoming departures exist */
-"complications.no_departures" = "출발 정보 없음";
-
-/* Rectangular complication fallback when no departures are expected soon. %d is minutes. */
-"complications.no_departures_in_next_minutes_fmt" = "다음 %d분 내 출발 없음";
-
-/* Short complication fallback when departure data could not be loaded */
-"complications.unavailable" = "사용할 수 없음";

@@ -306,93 +306,60 @@ struct NextDepartureComplicationTests {
         )
     }
 
-    // MARK: - Watch Bookmark Selection
-
-    @Test func `Top watch bookmark prefers first favorited bookmark in current region`() {
-        let otherRegion = WatchBookmark(
-            id: UUID(),
-            name: "Other Region",
-            regionIdentifier: 2,
-            stopID: "2_100",
-            stopName: "Other Stop",
-            latitude: 0,
-            longitude: 0,
-            isFavorite: true
-        )
-        let unfavorited = WatchBookmark(
-            id: UUID(),
-            name: "Unfavorited",
-            regionIdentifier: 1,
-            stopID: "1_100",
-            stopName: "First Stop",
-            latitude: 0,
-            longitude: 0,
-            isFavorite: false
-        )
-        let favorite = WatchBookmark(
-            id: UUID(),
-            name: "Favorite",
-            regionIdentifier: 1,
-            stopID: "1_200",
-            stopName: "Second Stop",
-            latitude: 0,
-            longitude: 0,
-            isFavorite: true,
-            routeID: "1_10",
-            routeShortName: "10",
-            tripHeadsign: "Capitol Hill"
-        )
-
-        let chosen = NextDepartureComplication.topBookmark(
-            from: [otherRegion, unfavorited, favorite],
-            regionIdentifier: 1
-        )
-        #expect(chosen?.id == favorite.id)
-
-        let fallback = NextDepartureComplication.topBookmark(
-            from: [otherRegion, unfavorited],
-            regionIdentifier: 1
-        )
-        #expect(fallback?.id == unfavorited.id)
-
-        #expect(NextDepartureComplication.topBookmark(from: [otherRegion], regionIdentifier: 1) == nil)
-    }
-
     // MARK: - Timeline Boundary Progression
 
-    @Test func `Complication advances cleanly across WidgetTimelinePlanner boundaries`() throws {
+    @Test func `Complication advances cleanly across single-bookmark planner boundaries including NOW`() throws {
         let bookmark = makeBookmark(routeShortName: "8", tripHeadsign: "Seattle Center")
         let first = try makeDeparture(inSeconds: 8 * 60, tripID: "trip_8")
         let second = try makeDeparture(inSeconds: 20 * 60, tripID: "trip_20")
         let departures = [first, second]
+        let expectedNow = Bundle.obaKitCore.localizedString(forKey: "stop_page.countdown.now", value: "NOW", table: nil)
 
-        let plan = WidgetTimelinePlanner().plan(
-            departureDates: departures.map(\.arrivalDepartureDate),
+        let plan = WidgetTimelinePlanner.singleBookmarkComplication().plan(
+            departureDates: departures.map(\.departureDate),
             now: upcomingNow
         )
 
-        #expect(plan.entryDates == [upcomingNow, first.arrivalDepartureDate, second.arrivalDepartureDate])
+        #expect(plan.entryDates == [
+            upcomingNow,
+            first.departureDate.addingTimeInterval(-59),
+            first.departureDate,
+            second.departureDate.addingTimeInterval(-59),
+            second.departureDate
+        ])
 
         let entry0State = NextDepartureComplication.resolve(
             bookmarks: [bookmark],
-            departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.departures(departures, visibleAt: plan.entryDates[0])],
+            departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.boardableDepartures(departures, visibleAt: plan.entryDates[0])],
             now: plan.entryDates[0]
         )
-        #expect(entry0State.departure?.departureDate == first.arrivalDepartureDate)
+        let entry0Departure = try #require(entry0State.departure)
+        #expect(entry0Departure.departureDate == first.departureDate)
+        #expect(!entry0Departure.isArrivingNow(at: plan.entryDates[0]))
 
-        let entry1State = NextDepartureComplication.resolve(
+        let nowEntryState = NextDepartureComplication.resolve(
             bookmarks: [bookmark],
-            departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.departures(departures, visibleAt: plan.entryDates[1])],
+            departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.boardableDepartures(departures, visibleAt: plan.entryDates[1])],
             now: plan.entryDates[1]
         )
-        #expect(entry1State.departure?.departureDate == second.arrivalDepartureDate)
+        let nowDeparture = try #require(nowEntryState.departure)
+        #expect(nowDeparture.departureDate == first.departureDate)
+        #expect(nowDeparture.isArrivingNow(at: plan.entryDates[1]))
+        #expect(nowDeparture.shortCountdownText(at: plan.entryDates[1]) == expectedNow)
 
         let entry2State = NextDepartureComplication.resolve(
             bookmarks: [bookmark],
             departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.boardableDepartures(departures, visibleAt: plan.entryDates[2])],
             now: plan.entryDates[2]
         )
-        #expect(entry2State == .noDepartures(bookmark: bookmark))
+        #expect(entry2State.departure?.departureDate == second.departureDate)
+
+        let finalState = NextDepartureComplication.resolve(
+            bookmarks: [bookmark],
+            departuresByBookmark: [bookmark.id: WidgetTimelinePlanner.boardableDepartures(departures, visibleAt: plan.entryDates[4])],
+            now: plan.entryDates[4]
+        )
+        #expect(finalState == .noDepartures(bookmark: bookmark))
     }
 
     // MARK: - Boardable Vehicles, Layovers, Zero Spacing & Accessibility
@@ -432,44 +399,9 @@ struct NextDepartureComplicationTests {
         let departureDates = (1...14).map { upcomingNow.addingTimeInterval(Double($0) * 2 * 60) }
         let plan = WidgetTimelinePlanner.singleBookmarkComplication().plan(departureDates: departureDates, now: upcomingNow)
 
-        #expect(plan.entryDates == [upcomingNow] + departureDates)
+        let expectedBoundaries = departureDates.flatMap { [$0.addingTimeInterval(-59), $0] }
+        #expect(plan.entryDates == [upcomingNow] + expectedBoundaries)
         #expect(plan.reloadDate == upcomingNow.addingTimeInterval(30 * 60))
-    }
-
-    @Test func `Fallback watch bookmark preserves synced bookmark when region is unavailable`() {
-        let unfavorited = WatchBookmark(
-            id: UUID(),
-            name: "First",
-            regionIdentifier: 1,
-            stopID: "1_1",
-            stopName: "Stop 1",
-            latitude: 0,
-            longitude: 0,
-            isFavorite: false
-        )
-        let favorite = WatchBookmark(
-            id: UUID(),
-            name: "Fav",
-            regionIdentifier: 2,
-            stopID: "2_1",
-            stopName: "Stop 2",
-            latitude: 0,
-            longitude: 0,
-            isFavorite: true
-        )
-
-        #expect(NextDepartureComplication.fallbackBookmark(from: [unfavorited, favorite])?.id == favorite.id)
-        #expect(NextDepartureComplication.fallbackBookmark(from: [unfavorited])?.id == unfavorited.id)
-        #expect(NextDepartureComplication.fallbackBookmark(from: []) == nil)
-
-        // When region lookup fails but a fallback bookmark is preserved with empty departures dict,
-        // the complication state resolves to .unavailable rather than .noBookmarks.
-        let state = NextDepartureComplication.resolve(
-            watchBookmarks: [favorite],
-            departuresByBookmark: [:],
-            now: upcomingNow
-        )
-        #expect(state == .unavailable(bookmark: NextDepartureComplicationBookmark(watchBookmark: favorite)))
     }
 
     @Test func `Spoken accessibility label includes stop name and formatted departure clock time`() {

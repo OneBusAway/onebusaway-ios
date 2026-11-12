@@ -11,9 +11,9 @@ import OBAKitCore
 import SwiftUI
 import WidgetKit
 
-/// Renders the next bookmarked departure for Lock Screen and Apple Watch
-/// accessory complication families (`.accessoryCircular`,
-/// `.accessoryRectangular`, and `.accessoryInline`).
+/// Renders the next bookmarked departure for Lock Screen accessory
+/// complication families (`.accessoryCircular`, `.accessoryRectangular`, and
+/// `.accessoryInline`).
 struct NextDepartureComplicationView: View {
     let entry: BookmarkEntry
     let formatters: Formatters
@@ -145,7 +145,6 @@ struct NextDepartureComplicationView: View {
                 ComplicationPresentation.inlineDepartureText(
                     for: departure,
                     at: entry.date,
-                    isLuminanceReduced: isLuminanceReduced,
                     locale: locale
                 )
                 .accessibilityLabel(ComplicationPresentation.departureAccessibilityLabel(
