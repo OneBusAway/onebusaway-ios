@@ -2034,6 +2034,8 @@
 "trip_page.card.distance_stops_a11y_fmt" = "距離 %1$@，還有 %2$d 站";
 /* Trip card line: how far the vehicle is from the rider's stop. %1$@ is a distance like '1.2 mi', %2$d the number of stops in between. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "trip_page.card.distance_stops_fmt" = "距離 %1$@ · %2$d 站";
+/* Row on the trip page naming the trip the same vehicle runs next, which a rider who stays on board rides into. %@ is that trip's route and headsign, e.g. 'Continues as 10 - Downtown Seattle'. */
+"trip_page.continues_as_fmt" = "接續行駛 %@";
 /* Confirmation shown after a ghost bus report (a scheduled bus that never came) is submitted. */
 "trip_page.ghost_bus_report_sent" = "謝謝！您的回報已送出。";
 /* Error shown when a ghost bus report can't be submitted because the region's Obaco service is unreachable. */
@@ -2050,6 +2052,8 @@
 "trip_page.report_ghost_bus" = "回報幽靈公車";
 /* Short caption on the trip page button opening the route's schedule. Keep it to one short word: it shares a row with three other buttons. */
 "trip_page.schedule" = "時刻表";
+/* Row on the trip page naming the trip the same vehicle runs just before this one. %@ is that trip's route and headsign, e.g. 'Starts as 10 - Downtown Seattle'. */
+"trip_page.starts_as_fmt" = "先前行駛 %@";
 /* VoiceOver clause on a stop the vehicle has already served. */
 "trip_page.stop_list.a11y_passed" = "已通過";
 /* VoiceOver label for a collapsed run of stops between the vehicle and the rider's stop, e.g. '5 stops before your stop'. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */

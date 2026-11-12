@@ -292,9 +292,10 @@ final class AppSheetViewFactory {
     /// (`TripFocusMapDisplayModel.clearIfOwnerAbsent(from:)`), so the page's own
     /// `nil` is ignored.
     ///
-    /// Both of the page's ways onward go through the coordinator. A tapped stop
-    /// opens the panel's stop sheet above the trip, as a stop does everywhere else
-    /// in the panel. Back pops the route rather than letting the page dismiss
+    /// The page's ways onward go through the coordinator. A tapped stop opens the
+    /// panel's stop sheet above the trip, as a stop does everywhere else in the
+    /// panel, and the trip before or after this one opens a trip sheet the same
+    /// way. Back pops the route rather than letting the page dismiss
     /// itself from UIKit: the coordinator's stack is what holds the sheet on
     /// screen, so it is closed there, as `StopDetailsSheetView`'s Close is.
     func tripDetailsView(tripConvertible: TripConvertible, destinationStopID: StopID? = nil) -> TripPageSheetHost {
@@ -324,6 +325,13 @@ final class AppSheetViewFactory {
             // stacking a second copy.
             onSelectStop: { [coordinator] stopID in
                 coordinator.open(.stopDetails(stopID: stopID), from: .tripDetails(tripConvertible, destinationStopID: destinationStopID))
+            },
+            // What the trip starts as or continues as opens above it, so Back
+            // returns here. A rider who went from a trip to the one after it and
+            // taps "Starts as" there goes back down to the first, as `open` does
+            // for a trip already open.
+            onSelectTrip: { [coordinator] adjacent in
+                coordinator.open(.tripDetails(adjacent), from: .tripDetails(tripConvertible, destinationStopID: destinationStopID))
             },
             onClose: { [coordinator] in coordinator.pop() }
         )

@@ -59,6 +59,13 @@ final class TripMapHostViewController: UIViewController,
         tripPage.onMapFocusChanged = { [weak self] focus in
             self?.showOnMap(focus)
         }
+
+        // What the trip starts as or continues as opens full screen too, over a
+        // map of its own. A bare page pushed over this one would cover the map.
+        tripPage.onSelectTrip = { [weak self] convertible in
+            guard let self else { return }
+            application.viewRouter.navigate(to: application.viewRouter.makeTripController(tripConvertible: convertible), from: self)
+        }
     }
 
     convenience init(application: Application, arrivalDeparture: ArrivalDeparture, destinationStopID: StopID? = nil) {

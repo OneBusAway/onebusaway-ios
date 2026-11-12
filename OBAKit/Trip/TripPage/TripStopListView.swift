@@ -17,11 +17,18 @@ import OBAKitCore
 /// vehicle's position — but not its code: that view windows to five stops,
 /// where this one keeps every stop reachable and folds the passed stops and a
 /// long approach into rows the rider can expand (`TripStopRunRow`, #1576).
+///
+/// When the vehicle runs another trip before or after this one, a row for it
+/// sits above the first stop or below the last, and the line runs on into it.
 struct TripStopListView: View {
     let model: TripStopListModel
+    let adjacentTrips: TripAdjacentTrips
+    /// Which of `adjacentTrips` is loading, for its row's spinner.
+    let loadingAdjacentTrip: TripAdjacentTrips.Order?
     let routeColor: Color
     let routeType: Route.RouteType
     let onSelect: (TripStopListModel.Row) -> Void
+    let onSelectAdjacentTrip: (TripAdjacentTrips.Order) -> Void
 
     @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
@@ -30,19 +37,34 @@ struct TripStopListView: View {
 
     var body: some View {
         let items = model.items(expanded: expandedGroups)
+        // The line from the trip before into the first stop is behind the vehicle
+        // once the vehicle is anywhere on this trip.
+        let previousTripIsSpent = model.vehicleIndex != nil
 
         // Lazy because a long trip runs to sixty-odd stops and only a handful
         // are ever on screen.
         LazyVStack(spacing: 0) {
+            if let previous = adjacentTrips.previous {
+                TripAdjacentTripRow(
+                    row: previous,
+                    isLoading: loadingAdjacentTrip == .previous,
+                    lineIsSpent: previousTripIsSpent,
+                    routeColor: routeColor,
+                    compactMode: compactMode,
+                    onSelect: { onSelectAdjacentTrip(.previous) }
+                )
+            }
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                 // The connector into a line takes its color from the line above.
-                let segmentAboveIsSpent = index > 0 && items[index - 1].isPassed
+                let segmentAboveIsSpent = index > 0 ? items[index - 1].isPassed : previousTripIsSpent
+                let isFirst = index == 0 && adjacentTrips.previous == nil
+                let isLast = index == items.count - 1 && adjacentTrips.next == nil
                 switch item {
                 case .stop(let row):
                     TripStopRow(
                         row: row,
-                        isFirst: index == 0,
-                        isLast: index == items.count - 1,
+                        isFirst: isFirst,
+                        isLast: isLast,
                         segmentAboveIsSpent: segmentAboveIsSpent,
                         routeColor: routeColor,
                         routeType: routeType,
@@ -53,13 +75,24 @@ struct TripStopListView: View {
                     TripStopRunRow(
                         group: group,
                         isExpanded: isExpanded,
-                        isFirst: index == 0,
+                        isFirst: isFirst,
                         segmentAboveIsSpent: segmentAboveIsSpent,
                         routeColor: routeColor,
                         compactMode: compactMode,
                         onToggle: { toggle(group) }
                     )
                 }
+            }
+            if let next = adjacentTrips.next {
+                TripAdjacentTripRow(
+                    row: next,
+                    isLoading: loadingAdjacentTrip == .next,
+                    // Like every segment, the color of the stop above it: the last.
+                    lineIsSpent: items.last?.isPassed ?? false,
+                    routeColor: routeColor,
+                    compactMode: compactMode,
+                    onSelect: { onSelectAdjacentTrip(.next) }
+                )
             }
         }
         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
@@ -233,6 +266,97 @@ private struct TripStopRow: View {
         }
 
         return clauses.joined(separator: ", ")
+    }
+}
+
+/// "Starts as …" above the first stop, or "Continues as …" below the last: the
+/// trip the vehicle runs before or after this one, which a tap opens.
+///
+/// The line runs solid between this row and the stop beside it, and dotted on
+/// the far side, where the vehicle's run goes on past this trip.
+private struct TripAdjacentTripRow: View {
+    let row: TripAdjacentTrips.Row
+    let isLoading: Bool
+    /// Whether the solid line, between this row and its stop, is behind the vehicle.
+    let lineIsSpent: Bool
+    let routeColor: Color
+    let compactMode: Bool
+    let onSelect: () -> Void
+
+    @ScaledMetric(relativeTo: .body) private var lineWidth = TripStopRailMetrics.lineWidth
+
+    var body: some View {
+        HStack(spacing: 12) {
+            TripStopRail(
+                isFirst: row.order == .previous,
+                isLast: row.order == .next,
+                aboveIsSpent: lineIsSpent,
+                belowIsSpent: lineIsSpent,
+                routeColor: routeColor
+            ) {
+                continuation
+            }
+            VStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    Text(row.title)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    accessory
+                }
+                .padding(.vertical, StopTripSpacing.stopRowVertical(compactMode))
+                // Stop rows draw the rule below themselves, so the row above the
+                // first stop needs one of its own.
+                if row.order == .previous {
+                    Divider()
+                }
+            }
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 14)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSelect)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(row.title)
+        .accessibilityValue(isLoading ? Strings.loading : "")
+        .accessibilityAddTraits(.isButton)
+        // `.onTapGesture` is invisible to assistive tech; see `TripStopRow`.
+        .accessibilityAction { onSelect() }
+    }
+
+    /// The dotted half of the rail, in the half `TripStopRail` leaves empty.
+    private var continuation: some View {
+        VStack(spacing: 0) {
+            if row.order == .next {
+                Color.clear
+            }
+            VerticalLine()
+                .stroke(Color(uiColor: .systemGray3), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, dash: [0, lineWidth * 2]))
+            if row.order == .previous {
+                Color.clear
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var accessory: some View {
+        if isLoading {
+            ProgressView()
+        } else {
+            Image(systemName: "chevron.forward")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+    }
+}
+
+/// A vertical line through the middle of its frame, for a dashed stroke.
+nonisolated private struct VerticalLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        return path
     }
 }
 

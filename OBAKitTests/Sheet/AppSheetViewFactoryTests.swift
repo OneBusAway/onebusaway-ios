@@ -194,6 +194,49 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(coordinator.stackedRoutes == [stop])
     }
 
+    /// What a trip starts as or continues as opens as a trip sheet above it, so
+    /// Back returns to the trip the rider came from.
+    @Test @MainActor
+    func `A trip opened from a trip goes on top of it, and Back returns to it`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let current = try Fixtures.tripConvertible(tripID: "trip_42")
+        let next = try Fixtures.tripConvertible(tripID: "trip_43")
+        coordinator.push(.recentStopsAll)
+        coordinator.push(.tripDetails(current))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: current)
+        host.onSelectTrip(next)
+
+        // Routes compare by `id`, and comparing those keeps a failure readable: the
+        // routes themselves describe their departures, which have no references
+        // loaded here and trap.
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.recentStopsAll, .tripDetails(current), .tripDetails(next)].map(\.id))
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.recentStopsAll, .tripDetails(current)].map(\.id))
+    }
+
+    /// A rider who went from a trip to the one it continues as, and taps that
+    /// one's "Starts as", goes back down to the first rather than stacking it twice.
+    @Test @MainActor
+    func `A trip opened from a trip goes back to it when it's already open`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let first = try Fixtures.tripConvertible(tripID: "trip_42")
+        let next = try Fixtures.tripConvertible(tripID: "trip_43")
+        coordinator.push(.tripDetails(first))
+        coordinator.push(.tripDetails(next))
+
+        let host = makeFactory(application: application, coordinator: coordinator)
+            .tripDetailsView(tripConvertible: next)
+        // Fetched again for the tap: a new object for the same trip.
+        host.onSelectTrip(try Fixtures.tripConvertible(tripID: "trip_42"))
+
+        // By `id`, for the reason the test above gives.
+        #expect(coordinator.stackedRoutes.map(\.id) == [AppSheetRoute.tripDetails(first)].map(\.id))
+    }
+
     @Test @MainActor
     func `Route stops view returns route stops sheet view forwarding the stops for route`() throws {
         let dataLoader = MockDataLoader(testName: name)

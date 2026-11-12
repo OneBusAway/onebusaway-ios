@@ -40,6 +40,7 @@ final class TripPageSheetHostTests: OBATestCase {
             tripConvertible: convertible,
             onMapFocusChanged: { _ in },
             onSelectStop: { _ in },
+            onSelectTrip: { _ in },
             onClose: {}
         )
 
@@ -57,6 +58,7 @@ final class TripPageSheetHostTests: OBATestCase {
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { reported.append($0) },
             onSelectStop: { _ in },
+            onSelectTrip: { _ in },
             onClose: {}
         )
         page.onMapFocusChanged?(page.mapFocus)
@@ -75,6 +77,7 @@ final class TripPageSheetHostTests: OBATestCase {
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { _ in },
             onSelectStop: { _ in },
+            onSelectTrip: { _ in },
             onClose: { closeCount += 1 }
         )
         page.onClose?()
@@ -97,6 +100,7 @@ final class TripPageSheetHostTests: OBATestCase {
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { _ in },
             onSelectStop: { selectedStopIDs.append($0) },
+            onSelectTrip: { _ in },
             onClose: {}
         )
         page.rootView.actions.onSelectStop(TripStopListModel.Row(
@@ -114,6 +118,30 @@ final class TripPageSheetHostTests: OBATestCase {
         #expect(selectedStopIDs == ["1_75403"])
     }
 
+    /// What the trip starts or continues as. Driven through the page's
+    /// `openTrip`, so it also covers the page consulting the hook. Without it the
+    /// page would look for a navigation stack this sheet doesn't have and assert,
+    /// which, like the stop test above, crashes the run rather than failing a test.
+    @Test @MainActor
+    func `A trip the page opens goes to the host`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var opened: [TripConvertible] = []
+
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: try Fixtures.tripConvertible(tripID: "trip_42"),
+            onMapFocusChanged: { _ in },
+            onSelectStop: { _ in },
+            onSelectTrip: { opened.append($0) },
+            onClose: {}
+        )
+        page.openTrip(try Fixtures.tripConvertible(tripID: "trip_43"))
+
+        // By ID: a failing expectation describes its operands, and describing this
+        // fixture's departure, which has no references loaded, traps.
+        #expect(opened.map(\.tripID) == ["trip_43"])
+    }
+
     /// A shared trip link names where the sharer steps off (#449), and the sheet
     /// has to hand it to the page as `TripViewController` gets it in classic.
     @Test @MainActor
@@ -126,6 +154,7 @@ final class TripPageSheetHostTests: OBATestCase {
             destinationStopID: "1_999",
             onMapFocusChanged: { _ in },
             onSelectStop: { _ in },
+            onSelectTrip: { _ in },
             onClose: {}
         )
 
@@ -142,6 +171,7 @@ final class TripPageSheetHostTests: OBATestCase {
             tripConvertible: try Fixtures.tripConvertible(),
             onMapFocusChanged: { _ in },
             onSelectStop: { _ in },
+            onSelectTrip: { _ in },
             onClose: {}
         )
 
