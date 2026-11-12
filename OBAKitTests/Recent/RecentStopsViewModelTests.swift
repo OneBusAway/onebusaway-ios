@@ -307,9 +307,11 @@ final class RecentStopsViewModelTests: OBATestCase {
         #expect(!viewModel.isBookmarked(stop))
         #expect(app.userDataStore.findBookmark(stopID: stop.id) == nil)
 
-        viewModel.toggleBookmark(for: stop)
+        let addResult = viewModel.toggleBookmark(for: stop)
 
+        #expect(addResult == .added)
         #expect(viewModel.isBookmarked(stop))
+        #expect(!viewModel.isShowingMultipleBookmarksAlert)
         let saved = app.userDataStore.findBookmark(stopID: stop.id)
         #expect(saved != nil)
         #expect(saved?.name == stop.name)
@@ -325,13 +327,50 @@ final class RecentStopsViewModelTests: OBATestCase {
 
         let viewModel = RecentStopsViewModel(application: app)
         viewModel.loadData()
-        viewModel.toggleBookmark(for: stop)
+        #expect(viewModel.toggleBookmark(for: stop) == .added)
         #expect(viewModel.isBookmarked(stop))
 
-        viewModel.toggleBookmark(for: stop)
+        let removeResult = viewModel.toggleBookmark(for: stop)
 
+        #expect(removeResult == .removed)
         #expect(!viewModel.isBookmarked(stop))
+        #expect(!viewModel.isShowingMultipleBookmarksAlert)
         #expect(app.userDataStore.findBookmark(stopID: stop.id) == nil)
+    }
+
+    @Test @MainActor
+    func `toggleBookmark preserves all bookmarks when multiple whole-stop bookmarks exist`() {
+        let app = createApplication(dataLoader: MockDataLoader(testName: name))
+        let stop = try! Fixtures.loadSomeStops().first!
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        app.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+
+        let bookmarkA = Bookmark(
+            name: "Morning Stop",
+            regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier,
+            stop: stop
+        )
+        let bookmarkB = Bookmark(
+            name: "Evening Stop",
+            regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier,
+            stop: stop
+        )
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+        app.userDataStore.add(bookmarkA, to: nil)
+        app.userDataStore.add(bookmarkB, to: group)
+
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+        #expect(viewModel.isBookmarked(stop))
+        #expect(!viewModel.isShowingMultipleBookmarksAlert)
+
+        let result = viewModel.toggleBookmark(for: stop)
+
+        #expect(result == .multipleBookmarksRequireManagement)
+        #expect(viewModel.isShowingMultipleBookmarksAlert)
+        #expect(viewModel.isBookmarked(stop))
+        let remainingIDs = Set(app.userDataStore.bookmarks.map(\.id))
+        #expect(remainingIDs == [bookmarkA.id, bookmarkB.id])
     }
 
     @Test @MainActor
@@ -434,8 +473,9 @@ final class RecentStopsViewModelTests: OBATestCase {
         stop.regionIdentifier = nil
 
         let viewModel = RecentStopsViewModel(application: app)
-        viewModel.toggleBookmark(for: stop)
+        let result = viewModel.toggleBookmark(for: stop)
 
+        #expect(result == .unavailable)
         #expect(!viewModel.isBookmarked(stop))
         #expect(app.userDataStore.bookmarks.isEmpty)
     }

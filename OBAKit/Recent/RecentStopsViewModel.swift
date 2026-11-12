@@ -14,9 +14,17 @@ import OBAKitCore
 @MainActor
 final class RecentStopsViewModel: ObservableObject {
 
+    enum BookmarkToggleResult: Equatable {
+        case added
+        case removed
+        case multipleBookmarksRequireManagement
+        case unavailable
+    }
+
     @Published private(set) var alarms: [Alarm] = []
     @Published private(set) var recentStops: [Stop] = []
     @Published private(set) var bookmarkedStopIDs: Set<StopID> = []
+    @Published var isShowingMultipleBookmarksAlert = false
 
     private let application: Application
     // `viewWillAppear` calls `loadData()` every time the Recent tab is shown; without
@@ -61,9 +69,10 @@ final class RecentStopsViewModel: ObservableObject {
         bookmarkedStopIDs.contains(stop.id)
     }
 
-    func toggleBookmark(for stop: Stop) {
+    @discardableResult
+    func toggleBookmark(for stop: Stop) -> BookmarkToggleResult {
         let regionIdentifier = stop.regionIdentifier ?? application.currentRegion?.regionIdentifier
-        let existing = application.userDataStore.bookmarks.filter { bookmark in
+        let matches = application.userDataStore.bookmarks.filter { bookmark in
             guard !bookmark.isTripBookmark, bookmark.stopID == stop.id else { return false }
             if let regionIdentifier {
                 return bookmark.regionIdentifier == regionIdentifier
@@ -71,16 +80,21 @@ final class RecentStopsViewModel: ObservableObject {
             return true
         }
 
-        if !existing.isEmpty {
-            for bookmark in existing {
-                application.userDataStore.delete(bookmark: bookmark)
-            }
-        } else if let regionIdentifier {
+        switch matches.count {
+        case 0:
+            guard let regionIdentifier else { return .unavailable }
             let bookmark = Bookmark(name: stop.name, regionIdentifier: regionIdentifier, stop: stop)
             application.userDataStore.add(bookmark, to: nil)
+            refreshBookmarkedStopIDs()
+            return .added
+        case 1:
+            application.userDataStore.delete(bookmark: matches[0])
+            refreshBookmarkedStopIDs()
+            return .removed
+        default:
+            isShowingMultipleBookmarksAlert = true
+            return .multipleBookmarksRequireManagement
         }
-
-        refreshBookmarkedStopIDs()
     }
 
     private func refreshBookmarkedStopIDs() {

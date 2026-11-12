@@ -46,11 +46,14 @@ struct RecentStopsListView: View {
     }
 
     var body: some View {
-        if isShowingEmptyState {
-            emptyStateView
-        } else {
-            list
+        Group {
+            if isShowingEmptyState {
+                emptyStateView
+            } else {
+                list
+            }
         }
+        .multipleStopBookmarksAlert(viewModel: viewModel)
     }
 
     // MARK: - List
@@ -230,5 +233,31 @@ extension View {
                     viewModel.delete(recentStop: stop)
                 }
             }
+    }
+
+    /// Presents an alert when a stop has multiple whole-stop bookmarks so a quick
+    /// swipe never silently deletes more than one user-managed bookmark.
+    func multipleStopBookmarksAlert(viewModel: RecentStopsViewModel) -> some View {
+        let isPresented = Binding(
+            get: { viewModel.isShowingMultipleBookmarksAlert },
+            set: { viewModel.isShowingMultipleBookmarksAlert = $0 }
+        )
+
+        return alert(
+            OBALoc(
+                "recent_stops.multiple_bookmarks.title",
+                value: "Multiple Bookmarks",
+                comment: "Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark."
+            ),
+            isPresented: isPresented
+        ) {
+            Button(Strings.ok, role: .cancel) { }
+        } message: {
+            Text(OBALoc(
+                "recent_stops.multiple_bookmarks.body",
+                value: "This stop has multiple bookmarks. Use the Bookmarks tab to manage them.",
+                comment: "Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks."
+            ))
+        }
     }
 }

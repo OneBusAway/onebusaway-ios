@@ -918,6 +918,12 @@
 /* Title for the empty set indicator on the Recent Stops controller. */
 "recent_stops.empty_set.title" = "최근 정류장 없음";
 
+/* Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks. */
+"recent_stops.multiple_bookmarks.body" = "이 정류장에는 즐겨찾기가 여러 개 있습니다. 즐겨찾기 탭에서 관리하세요.";
+
+/* Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark. */
+"recent_stops.multiple_bookmarks.title" = "여러 개의 즐겨찾기";
+
 /* Title of the Alarms section of the Recents controller */
 "recent_stops_controller.alarms_section.title" = "미리 알림";
 

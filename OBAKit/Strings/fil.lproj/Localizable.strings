@@ -918,6 +918,12 @@
 /* Title for the empty set indicator on the Recent Stops controller. */
 "recent_stops.empty_set.title" = "Walang Kamakailang Hintuan";
 
+/* Alert message directing the user to the Bookmarks tab when a stop has multiple bookmarks. */
+"recent_stops.multiple_bookmarks.body" = "May maraming bookmark ang hintuang ito. Gamitin ang tab na Mga Bookmark para pamahalaan ang mga ito.";
+
+/* Alert title shown when quick-unbookmarking a stop that has more than one stop bookmark. */
+"recent_stops.multiple_bookmarks.title" = "Maraming Bookmark";
+
 /* Title of the Alarms section of the Recents controller */
 "recent_stops_controller.alarms_section.title" = "Mga Paalala";
 
