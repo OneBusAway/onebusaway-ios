@@ -18,7 +18,8 @@ struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// See `EnvironmentValues.showsHomeTabs`.
+    @Environment(\.showsHomeTabs) private var showsTabs
 
     @Environment(\.homeIndicatorInset) private var homeIndicatorInset
 
@@ -40,10 +41,6 @@ struct HomeSheetView: View {
         self.application = application
         self.onSelectAlert = onSelectAlert
         _viewModel = StateObject(wrappedValue: viewModel())
-    }
-
-    private var showsTabs: Bool {
-        HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass)
     }
 
     /// What's on screen. Regular width has no tabs, so always Home.

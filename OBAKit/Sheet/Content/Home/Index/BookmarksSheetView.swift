@@ -34,6 +34,10 @@ struct BookmarksSheetView: View {
     @State private var editingBookmark: Bookmark?
     @State private var isManaging = false
     @State private var isShowingTrackError = false
+    /// Between `onAppear` and `onDisappear`. A home sheet tab that isn't selected
+    /// is still in the hierarchy and still sees `isCoveredBySheet` change, but
+    /// mustn't start polling when it does.
+    @State private var isOnScreen = false
 
     /// A refresh the user asked for, as opposed to the 30 s poll `start()`
     /// installs. Deliberately not `viewModel.isLoading`, which the background
@@ -155,14 +159,21 @@ struct BookmarksSheetView: View {
                 }
         }
         .searchSheetBackground()
-        .onAppear { viewModel.start() }
+        .onAppear {
+            isOnScreen = true
+            viewModel.start()
+        }
         // Stops the 30 s poll when the sheet goes away. The tab does the same on
         // `viewWillDisappear`.
-        .onDisappear { viewModel.deactivate() }
+        .onDisappear {
+            isOnScreen = false
+            viewModel.deactivate()
+        }
         // Covered by a stacked sheet it stays in the hierarchy, so `onDisappear`
         // never runs, and the poll stops here. (As a home sheet tab, `TabView`
         // runs `onAppear`/`onDisappear` on each switch.)
         .onChange(of: isCoveredBySheet) { _, isCovered in
+            guard isOnScreen else { return }
             if isCovered { viewModel.deactivate() } else { viewModel.start() }
         }
         // Fresh arrivals for running Live Activities, as the tab pushes them. The

@@ -665,7 +665,13 @@ struct MapPanelRootView: View {
             toolbarsOpacity: toolbarsOpacity,
             toolbarsAnimationDuration: toolbarsAnimationDuration
         ))
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { homeIndicatorInset = $0 }
+        // Measured on a view that ignores the keyboard, so a keyboard raised from
+        // a sheet's search field doesn't read as a home indicator 300 pt tall.
+        .background {
+            Color.clear
+                .ignoresSafeArea(.keyboard)
+                .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.bottom } action: { homeIndicatorInset = $0 }
+        }
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
         }
@@ -810,6 +816,7 @@ struct MapPanelRootView: View {
             // them through `@AppStorage` saw `.standard` and ignored them.
             .defaultAppStorage(application.userDefaults)
             .environment(\.homeIndicatorInset, homeIndicatorInset)
+            .environment(\.showsHomeTabs, HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass))
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(
                     display: mapViewModel.weatherDisplay,

@@ -94,6 +94,11 @@ extension EnvironmentValues {
     /// of the bottom, where the tab bar is.
     @Entry var isHomeSheetTab = false
 
+    /// Whether the home sheet lays out as tabs. Decided once, by `MapPanelRootView`
+    /// from its own size class, so the sheet's tabs and the map's More button can't
+    /// disagree: the sheet's trait environment need not match the screen's.
+    @Entry var showsHomeTabs = true
+
     /// The screen's bottom inset, where the home indicator is, for sheet content,
     /// which ignores the safe area and so can't read it. `MapPanelRootView` sets it.
     @Entry var homeIndicatorInset: CGFloat = 0
@@ -125,6 +130,9 @@ struct HomeTabBar: View {
         .animation(.smooth(duration: 0.25), value: selection)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isTabBar)
+        // Capped, as the system tab bar is, so the fixed-height capsule doesn't
+        // clip its titles at accessibility sizes; a long press shows them large.
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
     }
 
     private func tabButton(_ tab: HomeTab) -> some View {
@@ -153,6 +161,9 @@ struct HomeTabBar: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityShowsLargeContentViewer {
+            Label(tab.title, systemImage: tab.systemImage)
+        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
