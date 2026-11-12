@@ -174,6 +174,13 @@ public final class SurveyService: ObservableObject {
         updateVisibleSurveys()
     }
 
+    /// The launcher card's "Not now": shows `survey` again later, and holds off
+    /// every survey until the next reminder date. Both maps' cards use it.
+    public func postpone(_ survey: Survey) {
+        markSurveyForLater(survey)
+        setNextReminderDate()
+    }
+
     /// Dismisses a survey (same as completing it for display purposes).
     public func dismissSurvey(_ survey: Survey) {
         markSurveyCompleted(survey)

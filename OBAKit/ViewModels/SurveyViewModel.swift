@@ -131,8 +131,7 @@ final class SurveyViewModel: ObservableObject {
 
     /// User cancelled — reschedule the survey for later.
     func cancel() {
-        surveyService.markSurveyForLater(survey)
-        surveyService.setNextReminderDate()
+        surveyService.postpone(survey)
     }
 
     /// Builds the external-survey URL and attempts to open it. The launcher marks the

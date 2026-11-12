@@ -175,6 +175,16 @@ extension Survey {
         return heroQuestion?.content.type == .externalSurvey
     }
 
+    /// The title on the map's survey launcher card, on both maps: an external
+    /// survey's hero question, which is what the rider is asked, otherwise
+    /// the survey's name.
+    public var launcherTitle: String {
+        if isExternalSurvey, let hero = heroQuestion {
+            return hero.content.labelText
+        }
+        return name
+    }
+
 }
 
 public struct Study: Codable, Hashable {
