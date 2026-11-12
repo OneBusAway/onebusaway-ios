@@ -443,8 +443,8 @@ final class StopViewModelTests: OBATestCase {
         #expect(viewModel.arrivalDepartureFilter == .scheduledOnly)
     }
 
-    /// Updating through the view model persists app-wide, so the legacy page,
-    /// the SwiftUI page, and Settings all observe the change.
+    /// Updating through the view model persists app-wide, so the stop page and
+    /// Settings both observe the change.
     @Test @MainActor
     func `Updating the arrival departure filter persists it`() {
         let dataLoader = MockDataLoader(testName: name)
@@ -483,8 +483,8 @@ final class StopViewModelTests: OBATestCase {
     // MARK: - $stop re-emit guard
 
     /// `$stop` must not re-emit across refreshes when the underlying value is unchanged.
-    /// Re-emission would re-run the VC's `applyData` + `configureTabBarButtons` + title
-    /// assignment for no reason on every 30 s refresh cycle.
+    /// Re-emission would rebuild `StopPageViewController`'s bar items and user activity
+    /// for no reason on every 30 s refresh cycle.
     @Test @MainActor
     func `Stop does not re emit when unchanged across refreshes`() async {
         let dataLoader = MockDataLoader(testName: name)
@@ -924,16 +924,12 @@ final class StopViewModelTests: OBATestCase {
 
     // MARK: - Router transfer routing (#1277)
 
-    /// With the new-stop-page flag ON, a transfer opens the new stop page and
-    /// keeps the effective context (highlight UX). The legacy banner screen is
-    /// only for when the flag is off.
+    /// A transfer opens the stop page and keeps the effective context
+    /// (highlight UX).
     @Test @MainActor
-    func `Make stop controller transfer context uses new stop page when flag on`() throws {
+    func `Make stop controller transfer context uses the stop page`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
-
-        // The new-stop-page flag defaults to ON when unset.
-        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults))
 
         let stop = try #require(try Fixtures.loadSomeStops().first)
 
@@ -958,7 +954,6 @@ final class StopViewModelTests: OBATestCase {
     func `Make stop controller ignores transfer context when the banner toggle is off`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
-        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: app.userDefaults))
 
         app.userDataStore.showTransferArrivalBanner = false
 

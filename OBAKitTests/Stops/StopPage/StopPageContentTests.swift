@@ -87,8 +87,7 @@ final class StopPageContentTests: OBATestCase {
 
     /// The API emits a separate arrival and departure row for one vehicle visit
     /// at a terminal or loop stop. `StopPageContent` collapses them, and without
-    /// that the rider sees the same bus twice with two different countdowns —
-    /// the parity `StopViewController` established.
+    /// that the rider sees the same bus twice with two different countdowns.
     @Test func `A terminal's arrival and departure pair collapses to one row`() throws {
         let arrival = try Fixtures.arrivalDeparture(
             scheduledArrival: Self.timestamp(minutesFromNow: 10),

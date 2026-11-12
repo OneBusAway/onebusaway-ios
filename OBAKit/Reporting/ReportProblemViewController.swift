@@ -107,7 +107,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
             return nil
         }
 
-        let rows = arrivalsAndDepartures.map { ArrivalDepartureItem(arrivalDeparture: $0, isAlarmAvailable: false, onSelectAction: onSelectArrivalDeparture) }
+        let rows = arrivalsAndDepartures.map { ArrivalDepartureItem(arrivalDeparture: $0, onSelectAction: onSelectArrivalDeparture) }
 
         return OBAListViewSection(id: "vehicle_problem_section", title: ReportProblemCopy.vehicleProblemHeader, contents: rows)
     }

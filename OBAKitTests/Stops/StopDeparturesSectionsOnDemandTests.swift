@@ -10,29 +10,16 @@
 import Foundation
 import SwiftUI
 import Testing
-import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
-/// The stop page's on-demand card, on both surfaces: the SwiftUI section and its
-/// navigation plumbing, and the legacy `StopViewController`'s list section.
+/// The stop page's on-demand card: the SwiftUI section and its navigation
+/// plumbing.
 @MainActor
 @Suite(.serialized)
 final class StopDeparturesSectionsOnDemandTests: OBATestCase {
 
     nonisolated private static let alexandriaServiceID = "5088_77652"
-
-    private var queue: OperationQueue!
-
-    override init() async throws {
-        try await super.init()
-        queue = OperationQueue()
-        queue.maxConcurrentOperationCount = 1
-    }
-
-    isolated deinit {
-        queue.cancelAllOperations()
-    }
 
     private func alexandria() throws -> OnDemandService {
         try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<OnDemandService>.self, from: Fixtures.loadData(file: "ondemand_service_alexandria.json")).entry
@@ -66,59 +53,5 @@ final class StopDeparturesSectionsOnDemandTests: OBATestCase {
         let service = try alexandria()
         handler.showOnDemandService(service)
         #expect(shown?.id == Self.alexandriaServiceID)
-    }
-
-    // MARK: - Legacy StopViewController
-
-    /// `MockDataLoader` fatal-errors on an unstubbed URL, so the service behind
-    /// every pointer is stubbed alongside arrivals, surveys and agency alerts.
-    /// The arrivals fixture is empty: a flex-only stop has pointers and nothing
-    /// scheduled, and the card must still show.
-    private func loadedController(onDemandServiceIDs: [String]) async throws -> StopViewController {
-        let dataLoader = MockDataLoader(testName: name)
-        let arrivals = try Fixtures.loadData(file: "arrivals_and_departures_empty.json", stampingOnDemandServiceIDs: onDemandServiceIDs)
-        dataLoader.mock(data: arrivals) { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
-        dataLoader.mock(data: Fixtures.loadData(file: "ondemand_service_alexandria.json")) {
-            $0.url?.path.contains("/api/ondemand/service/\(Self.alexandriaServiceID)") ?? false
-        }
-        let emptySurveys = Data(#"{"surveys":[],"region":{"id":1,"name":"Puget Sound"}}"#.utf8)
-        dataLoader.mock(data: emptySurveys) { $0.url?.path.contains("/surveys.json") ?? false }
-        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
-
-        let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        let controller = StopViewController(application: application, stopID: "1_TEST")
-        controller.loadViewIfNeeded()
-        await controller.viewModel.refresh()
-        await controller.viewModel.onDemandLoader.task?.value
-        return controller
-    }
-
-    private func onDemandSection(of controller: StopViewController) -> OBAListViewSection? {
-        controller.items(for: OBAListView()).first { $0.id == StopViewController.ListSections.onDemandServices.sectionID }
-    }
-
-    @Test func `Legacy page lists a flex-only stop's services under the on-demand title`() async throws {
-        let controller = try await loadedController(onDemandServiceIDs: [Self.alexandriaServiceID])
-
-        let section = try #require(onDemandSection(of: controller))
-        #expect(section.title == Strings.onDemandSectionTitle)
-        let row = try #require(section.contents.first?.as(OBAListRowView.DefaultViewModel.self))
-        #expect(section.contents.count == 1)
-        #expect(row.title == .string("DOT Paratransit"))
-    }
-
-    @Test func `Legacy page has no on-demand section for a stop without pointers`() async throws {
-        let controller = try await loadedController(onDemandServiceIDs: [])
-        #expect(onDemandSection(of: controller) == nil)
-    }
-
-    @Test func `Selecting a legacy row pushes the service page`() async throws {
-        let controller = try await loadedController(onDemandServiceIDs: [Self.alexandriaServiceID])
-        let navigation = UINavigationController(rootViewController: controller)
-
-        let row = try #require(onDemandSection(of: controller)?.contents.first)
-        row.onSelectAction?(row)
-
-        #expect(navigation.topViewController is OnDemandServiceViewController)
     }
 }

@@ -40,7 +40,6 @@ public protocol MapRegionDelegate {
 protocol MapRegionMapViewDelegate: NSObjectProtocol {
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
     func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView)
-    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
     func mapRegionManager(_ manager: MapRegionManager, customize stopAnnotationView: StopAnnotationView)
 }
 
@@ -960,28 +959,8 @@ public class MapRegionManager: NSObject,
         application.stopIconFactory
     }
 
-    /// The redesigned Stop page opens as a sheet directly over the map, so the callout's
-    /// preview-then-chevron detour costs a tap and buys nothing. The legacy Stop page pushes onto
-    /// the navigation stack, replacing the map wholesale, and keeps the callout as its preview.
-    var showsStopAnnotationCallouts: Bool {
-        !FeatureFlags.isNewStopPageEnabled(userDefaults: application.userDefaults)
-    }
-
     var clustersStops: Bool {
         application.userDefaults.bool(forKey: FeatureFlags.clustersStopsKey)
-    }
-
-    /// Re-asks every stop annotation currently on the map whether it should show a callout.
-    ///
-    /// `canShowCallout` is computed once, when `viewFor` attaches the delegate, but
-    /// `showsStopAnnotationCallouts` reads a feature flag the user can flip from Settings without
-    /// relaunching. Everything else that opens a stop reads that flag live, so without this the
-    /// annotations already on screen keep answering with the rule from launch: the legacy Stop
-    /// page opens on the first tap with no callout in between.
-    public func refreshStopAnnotationCallouts() {
-        for annotation in mapView.annotations {
-            (mapView.view(for: annotation) as? StopAnnotationView)?.updateCalloutVisibility()
-        }
     }
 
     /// Above this visible-map-rect height (map points), stop pins are too
@@ -1166,10 +1145,6 @@ public class MapRegionManager: NSObject,
 
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
         mapViewDelegate?.mapView(mapView, didDeselect: view)
-    }
-
-    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        mapViewDelegate?.mapView(mapView, annotationView: view, calloutAccessoryControlTapped: control)
     }
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {

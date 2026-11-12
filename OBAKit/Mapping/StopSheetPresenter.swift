@@ -46,8 +46,7 @@ extension StopSheetSelfChromedContent {
     var sheetSurfaceColor: UIColor? { nil }
 }
 
-/// Presents the redesigned Stop page as a half-detent sheet over the map, replacing the
-/// push that the legacy `StopViewController` still uses.
+/// Presents the Stop page as a half-detent sheet over the map.
 ///
 /// The content controller is wrapped in a `UINavigationController` so that outbound navigation,
 /// which runs through `ViewRouter.navigate(to:from:)` and asserts on a nil `navigationController`,

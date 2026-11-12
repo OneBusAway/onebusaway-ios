@@ -29,7 +29,6 @@ final class DepartureFilterMenuTests: OBATestCase {
 
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
     }
 
     isolated deinit {

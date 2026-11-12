@@ -309,11 +309,6 @@ nonisolated class Icons: NSObject {
         imageNamed("trainTransport")
     }
 
-    /// A transport icon depicting a person walking.
-    public class var walkTransport: UIImage {
-        imageNamed("walkTransport")
-    }
-
     // MARK: - Squircle icon
 
     /// nonisolated(unsafe): NSCache is documented thread-safe (it just lacks a

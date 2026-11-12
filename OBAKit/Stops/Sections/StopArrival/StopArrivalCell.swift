@@ -11,12 +11,7 @@ import UIKit
 import OBAKitCore
 
 final class StopArrivalCell: OBAListViewCell {
-    // MARK: - Properties for showing swipe actions nudge
-    var canCreateAlarmForArrivalDeparture: Bool = false
-    var isShowingPastArrivalDeparture: Bool = false
-
     // MARK: - View properties
-    private var highlightTimeOnDisplay: Bool = false
     private var stopArrivalView: StopArrivalView!
 
     override var accessibilityElements: [Any]? {
@@ -43,28 +38,6 @@ final class StopArrivalCell: OBAListViewCell {
     // MARK: - UI
     override func apply(_ config: OBAContentConfiguration) {
         guard let config = config as? ArrivalDepartureContentConfiguration else { return }
-        canCreateAlarmForArrivalDeparture = config.viewModel.isAlarmAvailable
-        isShowingPastArrivalDeparture = config.viewModel.temporalState == .past
-        highlightTimeOnDisplay = config.viewModel.highlightTimeOnDisplay
         stopArrivalView.configureView(for: config)
-    }
-
-    override func willDisplayCell(in listView: OBAListView) {
-        if highlightTimeOnDisplay {
-            stopArrivalView.minutesLabel.highlightBackground()
-            highlightTimeOnDisplay = false
-        }
-    }
-
-    func highlightMinutes() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self else { return }
-            self.stopArrivalView.minutesLabel.highlightBackground()
-        }
-    }
-
-    func showNudge() {
-        // TODO: me!
-//        showSwipe(orientation: .right)
     }
 }

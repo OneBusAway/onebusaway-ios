@@ -10,16 +10,14 @@
 import SwiftUI
 import OBAKitCore
 
-/// Bridges the existing UIKit `DonationCell` into the SwiftUI Stop page so the
-/// inline donation request renders and behaves identically to the legacy screen,
-/// reusing the cell rather than reimplementing the donation card.
+/// Bridges the existing UIKit `DonationCell` into the SwiftUI Stop page, reusing
+/// the cell rather than reimplementing the donation card.
 ///
 /// All three affordances present VC-owned modals (the learn-more/donate flow and
 /// the dismiss action sheet), so their handlers are supplied by the hosting VC and
 /// routed through the `StopPageNavigationHandler`.
 struct DonationCardRepresentable: UIViewRepresentable {
-    /// "Donate Now" and "Learn More" both open the same donation modal, matching
-    /// `StopViewController.showDonationUI()`.
+    /// "Donate Now" and "Learn More" both open the same donation modal.
     let onDonate: () -> Void
     let onLearnMore: () -> Void
     /// The close (×) button; presents the dismiss action sheet from the VC.

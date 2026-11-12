@@ -19,12 +19,6 @@ final class UIKitExtensionsTests {
 
     private var window: UIWindow!
     
-    @Test func `UI button chevron button`() {
-        let button = UIButton.chevronButton
-        #expect(button.buttonType == .detailDisclosure)
-        #expect(button.image(for: .normal) != nil)
-    }
-    
     @Test func `UI button build close button`() {
         let button = UIButton.buildCloseButton()
         #expect(button.translatesAutoresizingMaskIntoConstraints == false)

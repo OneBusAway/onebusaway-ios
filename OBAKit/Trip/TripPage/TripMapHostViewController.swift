@@ -13,8 +13,8 @@ import UIKit
 import OBAKitCore
 
 /// The trip page over a map of its own, for every screen that pushes a trip
-/// full-screen with nothing behind it: shared trip links, alarms, My Trip,
-/// vehicle search and the legacy stop page.
+/// full-screen with nothing behind it: shared trip links, alarms, My Trip and
+/// vehicle search.
 ///
 /// The second host the trip page design names (`docs/superpowers/specs/2026-07-31-trip-page-rethink-design.md`):
 /// one page, two hosts, one map layer. The map tab's stop sheet and the map

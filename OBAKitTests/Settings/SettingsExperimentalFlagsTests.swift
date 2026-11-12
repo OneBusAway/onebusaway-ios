@@ -38,30 +38,6 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         SettingsViewModel(application: application)
     }
 
-    // MARK: - New stop page
-
-    @Test func `New stop page seeds on by default`() throws {
-        let vm = makeViewModel()
-        #expect(vm.usesNewStopPage)
-    }
-
-    /// The failing case before this was fixed: toggle off, then kill the app to "restart to apply"
-    /// without ever dismissing Settings. `viewWillDisappear` never runs, so nothing was written.
-    @Test func `New stop page toggling off persists immediately`() throws {
-        let vm = makeViewModel()
-        vm.usesNewStopPage = false
-
-        #expect(!FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
-    }
-
-    @Test func `New stop page toggling back on persists immediately`() throws {
-        application.userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
-        let vm = makeViewModel()
-        vm.usesNewStopPage = true
-
-        #expect(FeatureFlags.isNewStopPageEnabled(userDefaults: self.application.userDefaults))
-    }
-
     // MARK: - Map panel
 
     @Test func `Map panel seeds on by default`() throws {

@@ -39,40 +39,6 @@ final class FormattersTests: OBATestCase {
         #expect(NSPredicate(format: "SELF MATCHES %@", "Arrived \\d+ min ago").evaluate(with: str))
     }
 
-    // MARK: - Transfer-Relative Time
-
-    @Test func `Short formatted transfer time positive minutes`() {
-        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let result = formatters.shortFormattedTransferTime(minutes: 4)
-        #expect(result == "4m")
-    }
-
-    @Test func `Short formatted transfer time negative minutes`() {
-        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let result = formatters.shortFormattedTransferTime(minutes: -3)
-        #expect(result == "-3m")
-    }
-
-    @Test func `Short formatted transfer time zero`() {
-        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let result = formatters.shortFormattedTransferTime(minutes: 0)
-        #expect(result == "NOW")
-    }
-
-    @Test func `Transfer arrival banner text`() {
-        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-
-        let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
-        // Get the expected time string from the same formatter that the banner uses,
-        // so the test is timezone-agnostic and passes on any machine (local or CI).
-        let expectedTime = formatters.timeFormatter.string(from: arrivalTime)
-
-        let result = formatters.transferArrivalBannerText(arrivalTime: arrivalTime, routeDisplay: "10 - Capitol Hill")
-
-        #expect(result.contains("10 - Capitol Hill"), "Banner should contain route display: \(result)")
-        #expect(result.contains(expectedTime), "Banner should contain formatted time '\(expectedTime)': \(result)")
-    }
-
     // MARK: - Stop accessibility label
 
     @Test func `Formatted accessibility label omits the bookmark name by default`() throws {
@@ -254,34 +220,17 @@ final class FormattersTests: OBATestCase {
         #expect(!label.hasPrefix("Routes:"))
     }
 
-    /// The pin label and the callout must agree. Home/Recent still use
-    /// `Stop.subtitle` (`"Routes: …"` with every route) — that is not a map
-    /// surface, so it is left alone.
-    @Test func `Map callout uses the overflowing map route list, not plus-more`() throws {
+    /// Home/Recent use `Stop.subtitle` (`"Routes: …"` with every route), not
+    /// the map's truncated route list.
+    @Test func `Stop subtitle lists every route without truncating`() throws {
         let stop = try #require(Fixtures.loadSomeStops().first)
         stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
-
-        let callout = stop.mapCalloutText
-        #expect(callout == "#\(stop.code)\n10, 20, 30…")
-        #expect(!callout.contains("Routes:"))
 
         let subtitle = try #require(stop.subtitle)
         #expect(subtitle.hasPrefix("#\(stop.code)"))
         #expect(subtitle.contains("Routes:"))
         #expect(subtitle.contains("62"))
         #expect(!subtitle.contains("\u{2026}"))
-    }
-
-    /// Bookmark pins title with `bookmark.name`, so the callout is the only
-    /// place routes appear — keep every route (#1342).
-    @Test func `Bookmark callout lists every route without truncating`() throws {
-        let stop = try #require(Fixtures.loadSomeStops().first)
-        stop.routes = try makeRoutes(shortNames: ["10", "20", "30", "40", "62"])
-
-        let callout = stop.bookmarkCalloutText
-        #expect(callout == "#\(stop.code)\n10, 20, 30, 40, 62")
-        #expect(!callout.contains("\u{2026}"))
-        #expect(!callout.hasPrefix("Routes:"))
     }
 
     private func makeRoutes(shortNames: [String]) throws -> [Route] {

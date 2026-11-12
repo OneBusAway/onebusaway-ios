@@ -19,10 +19,6 @@ nonisolated struct ArrivalDepartureItem: OBAListViewItem {
 
     var onSelectAction: OBAListViewAction<ArrivalDepartureItem>?
 
-    var alarmAction: OBAListViewAction<ArrivalDepartureItem>?
-    var bookmarkAction: OBAListViewAction<ArrivalDepartureItem>?
-    var scheduleAction: OBAListViewAction<ArrivalDepartureItem>?
-
     let id: UUID = UUID()
     let arrivalDepartureID: String
     let routeID: RouteID
@@ -38,74 +34,13 @@ nonisolated struct ArrivalDepartureItem: OBAListViewItem {
     let arrivalDepartureStatus: ArrivalDepartureStatus
     let arrivalDepartureMinutes: Int
 
-    let isAlarmAvailable: Bool
-
     /// Real-time occupancy status information.
     let occupancyStatus: ArrivalDeparture.OccupancyStatus?
 
     /// Historical occupancy status information.
     let historicalOccupancyStatus: ArrivalDeparture.OccupancyStatus?
 
-    /// Whether to highlight the time (to indicate a change) when this item is displayed on the list.
-    let highlightTimeOnDisplay: Bool
-
-    /// When set, minutes are computed relative to the transfer arrival time instead of now.
-    let transferContext: TransferContext?
-
-    var trailingContextualActions: [OBAListViewContextualAction<ArrivalDepartureItem>]? {
-        var actions: [OBAListViewContextualAction<ArrivalDepartureItem>] = []
-
-        if let bookmarkAction = self.bookmarkAction {
-            let bookmarkAction = OBAListViewContextualAction(
-                style: .normal,
-                title: Strings.bookmark,
-                image: Icons.addBookmark,
-                backgroundColor: ThemeColors.shared.brand,
-                hidesWhenSelected: true,
-                item: self,
-                handler: bookmarkAction)
-
-            actions.append(bookmarkAction)
-        }
-
-        if isAlarmAvailable, let alarmAction = self.alarmAction {
-            let alarmAction = OBAListViewContextualAction(
-                style: .normal,
-                title: Strings.alarm,
-                image: Icons.addAlarm,
-                backgroundColor: ThemeColors.shared.blue,
-                hidesWhenSelected: true,
-                item: self,
-                handler: alarmAction)
-
-            actions.append(alarmAction)
-        }
-
-        if let scheduleAction = self.scheduleAction {
-            let scheduleAction = OBAListViewContextualAction(
-                style: .normal,
-                title: Strings.schedule,
-                image: UIImage(systemName: "calendar"),
-                backgroundColor: UIColor.systemTeal,
-                hidesWhenSelected: true,
-                item: self,
-                handler: scheduleAction)
-
-            actions.append(scheduleAction)
-        }
-
-        return actions
-    }
-
-    init(arrivalDeparture: ArrivalDeparture,
-         isAlarmAvailable: Bool,
-         highlightTimeOnDisplay: Bool = false,
-         transferContext: TransferContext? = nil,
-         onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
-         alarmAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
-         bookmarkAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
-         scheduleAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
-
+    init(arrivalDeparture: ArrivalDeparture, onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
         self.arrivalDepartureID = arrivalDeparture.id
         self.routeID = arrivalDeparture.routeID
         self.stopID = arrivalDeparture.stopID
@@ -114,29 +49,16 @@ nonisolated struct ArrivalDepartureItem: OBAListViewItem {
         self.scheduledDate = arrivalDeparture.scheduledDate
         self.scheduleStatus = arrivalDeparture.scheduleStatus
         self.deviationFromScheduleInMinutes = arrivalDeparture.deviationFromScheduleInMinutes
-        self.transferContext = transferContext
-
-        if let transferContext = transferContext {
-            self.temporalState = transferContext.temporalState(for: arrivalDeparture.arrivalDepartureDate)
-            self.arrivalDepartureMinutes = transferContext.minutesUntilDeparture(from: arrivalDeparture.arrivalDepartureDate)
-        } else {
-            self.temporalState = arrivalDeparture.temporalState
-            self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
-        }
+        self.temporalState = arrivalDeparture.temporalState
 
         self.arrivalDepartureDate = arrivalDeparture.arrivalDepartureDate
         self.arrivalDepartureStatus = arrivalDeparture.arrivalDepartureStatus
+        self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
 
         self.occupancyStatus = arrivalDeparture.occupancyStatus
         self.historicalOccupancyStatus = arrivalDeparture.historicalOccupancyStatus
 
-        self.isAlarmAvailable = isAlarmAvailable
-        self.highlightTimeOnDisplay = highlightTimeOnDisplay
-
         self.onSelectAction = onSelectAction
-        self.alarmAction = alarmAction
-        self.bookmarkAction = bookmarkAction
-        self.scheduleAction = scheduleAction
     }
 
     func hash(into hasher: inout Hasher) {
@@ -148,7 +70,6 @@ nonisolated struct ArrivalDepartureItem: OBAListViewItem {
         hasher.combine(scheduledDate)
         hasher.combine(scheduleStatus)
         hasher.combine(temporalState)
-        hasher.combine(transferContext)
     }
 
     static func == (lhs: ArrivalDepartureItem, rhs: ArrivalDepartureItem) -> Bool {
@@ -159,8 +80,7 @@ nonisolated struct ArrivalDepartureItem: OBAListViewItem {
             lhs.name == rhs.name &&
             lhs.scheduledDate == rhs.scheduledDate &&
             lhs.scheduleStatus == rhs.scheduleStatus &&
-            lhs.temporalState == rhs.temporalState &&
-            lhs.transferContext == rhs.transferContext
+            lhs.temporalState == rhs.temporalState
     }
 }
 
@@ -189,9 +109,6 @@ nonisolated struct ArrivalDepartureContentConfiguration: OBAContentConfiguration
     }
 
     var untilMinutesText: String? {
-        if viewModel.transferContext != nil {
-            return formatters?.shortFormattedTransferTime(minutes: viewModel.arrivalDepartureMinutes)
-        }
         return formatters?.shortFormattedTime(untilMinutes: viewModel.arrivalDepartureMinutes, temporalState: viewModel.temporalState)
     }
 

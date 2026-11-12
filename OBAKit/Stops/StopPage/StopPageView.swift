@@ -20,8 +20,8 @@ struct StopPageNavigationHandler {
     /// Presents the whole-stop schedule (nav-bar Schedules button).
     let showScheduleForStop: () -> Void
     /// Presents the schedule for a specific departure's route (row swipe/menu and
-    /// trip panel). Mirrors the legacy row `Schedule` action, falling back to a stop
-    /// schedule when route schedules are unsupported.
+    /// trip panel), falling back to a stop schedule when route schedules are
+    /// unsupported.
     let showScheduleForRoute: (ArrivalDeparture) -> Void
     /// Opens walking directions to the stop in an external maps app. Presents a
     /// choice sheet when more than one app is available.
@@ -45,8 +45,7 @@ struct StopPageNavigationHandler {
     /// destination stop picker, then the system share sheet.
     let shareTrip: (ArrivalDeparture) -> Void
     /// Presents the alarm lead-time picker bulletin for a departure (the trip
-    /// panel's Set-an-alarm button), reusing `AlarmBuilder` from the legacy
-    /// stop screen.
+    /// panel's Set-an-alarm button), using `AlarmBuilder`.
     let showAlarmPicker: (ArrivalDeparture) -> Void
     /// Starts a Live Activity for a departure (the trip panel's Track button).
     let startLiveActivity: (ArrivalDeparture) -> Void
@@ -84,7 +83,7 @@ struct StopPageNavigationHandler {
 
 /// Thin hosting wrapper for `StopPageView`. Its only job is to apply
 /// `.defaultAppStorage` so the page's `@AppStorage` reads and writes the
-/// app-group suite (matching the legacy screen + view model) rather than
+/// app-group suite (matching the view model) rather than
 /// `UserDefaults.standard`. It deliberately does NOT observe `StopViewModel` —
 /// `StopPageView` remains the sole observer.
 struct StopPageRootView: View {
@@ -131,7 +130,7 @@ struct StopPageView: View {
 
     /// The app-group suite (injected from the hosting VC). Used for the
     /// "last used sort" seed/write so the SwiftUI page shares the same store as
-    /// the legacy screen; `@AppStorage` picks up the same suite via
+    /// the view model; `@AppStorage` picks up the same suite via
     /// `.defaultAppStorage` applied by `StopPageRootView`.
     let userDefaults: UserDefaults
 
@@ -544,8 +543,7 @@ struct StopPageLoadingRow: View {
 struct StopPageEmptyStateRow: View {
     /// The stop behind a bookmark no longer resolves — almost always an agency
     /// stop-ID realignment. Tells the user to recreate the bookmark rather than
-    /// leaving them to conclude the bus simply isn't running (parity with
-    /// `StopViewController.emptyData(for:)`).
+    /// leaving them to conclude the bus simply isn't running.
     var isBrokenBookmark: Bool = false
     /// The server has no stop at this ID and there is no bookmark to repair —
     /// a deep link, a search result or a map pin pointing at a stop the agency

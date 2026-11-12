@@ -16,18 +16,16 @@ import OBAKitCore
 /// card when expanded. Each alert row pushes the existing alert-detail screen
 /// via the hosting VC's `onSelect` callback.
 ///
-/// Honors the legacy `stopViewShowsServiceAlerts` preference (same UserDefaults
-/// key, default collapsed): tapping the header toggles and persists it, matching
-/// the legacy screen's collapsible section. When expanded and there are more
+/// Honors the `stopViewShowsServiceAlerts` preference (default collapsed):
+/// tapping the header toggles and persists it. When expanded and there are more
 /// than two alerts, it shows the first two plus a "Show all N" row.
 struct ServiceAlertsSection: View {
     let alerts: [ServiceAlert]
     let onSelect: (ServiceAlert) -> Void
 
-    /// Legacy persisted preference; read/written through the app-group suite that
-    /// `StopPageRootView` installs via `.defaultAppStorage`. Default `false`
-    /// (collapsed) mirrors `StopViewController`, which registers no default for
-    /// this key.
+    /// A stored rider preference, so the key keeps its older name. Read and
+    /// written through the app-group suite that `StopPageRootView` installs via
+    /// `.defaultAppStorage`. Default `false` (collapsed).
     @AppStorage("stopViewShowsServiceAlerts") private var showsServiceAlerts = false
 
     /// Per-visit "show all" expansion for the >2 case (not persisted).

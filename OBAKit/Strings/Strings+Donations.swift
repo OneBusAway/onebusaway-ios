@@ -10,8 +10,8 @@
 import Foundation
 import OBAKitCore
 
-/// Strings for the donation-dismiss action sheet, which `StopViewController` and
-/// `StopPageViewController` both present. Other donation strings live with their
+/// Strings for the donation-dismiss action sheet, which `StopPageViewController`
+/// presents. Other donation strings live with their
 /// own views (`DonationCell`, `DonationLearnMoreView`, `Strings.donationThankYou*`).
 public extension Strings {
 

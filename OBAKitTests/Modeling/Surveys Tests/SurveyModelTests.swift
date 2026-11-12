@@ -111,7 +111,6 @@ final class SurveyModelTests: OBATestCase {
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [q1, q2, q3])
         #expect(survey.heroQuestion?.id == 20)
-        #expect(survey.heroQuestionTitle == "Q1 Hero")
         #expect(survey.remainingQuestions.map(\.id) == [10, 30])
     }
 
@@ -121,7 +120,6 @@ final class SurveyModelTests: OBATestCase {
 
         let survey = SurveysTestHelpers.makeSurvey(questions: [q1, q2])
         #expect(survey.heroQuestion == nil)
-        #expect(survey.heroQuestionTitle == nil)
         #expect(survey.remainingQuestions.map(\.id) == [10, 30])
     }
 

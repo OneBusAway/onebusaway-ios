@@ -10,9 +10,8 @@
 import SwiftUI
 import OBAKitCore
 
-/// Bridges the existing UIKit `SurveyCell` into the SwiftUI Stop page so the
-/// inline hero survey renders and behaves identically to the legacy screen,
-/// reusing the cell rather than reimplementing survey interaction.
+/// Bridges the existing UIKit `SurveyCell` into the SwiftUI Stop page, reusing
+/// the cell rather than reimplementing survey interaction.
 ///
 /// Full-survey presentation (multi-question surveys) and submission-error alerts
 /// are driven by the view model's Combine publishers and presented by
