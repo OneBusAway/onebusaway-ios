@@ -232,7 +232,8 @@ final class AppSheetRouteTests {
     @Test func `Home collapsed height matches map bottom inset`() {
         // Shared with `MapPanelRootView` so the map's bottom safe-area padding
         // matches the collapsed sheet — keep the constant pinned.
-        #expect(AppSheetRoute.homeCollapsedHeight == 75)
+        // The search row and the tab bar; see `HomeTabsTests`.
+        #expect(AppSheetRoute.homeCollapsedHeight == 137)
     }
 
     // MARK: - SheetDetentConfiguration defaults

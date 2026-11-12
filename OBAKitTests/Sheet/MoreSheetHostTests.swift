@@ -58,4 +58,17 @@ final class MoreSheetHostTests: OBATestCase {
         #expect(items.last?.title == Strings.settings)
         #expect(items.first?.primaryAction != nil)
     }
+
+    /// As the home sheet's More tab there's no sheet of its own to close: the tab
+    /// bar is the way out.
+    @Test @MainActor
+    func `The More tab has no Close button`() {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+
+        let nav = MoreSheetHost.makeNavigationController(application: application, onClose: nil)
+        let items = nav.topViewController?.navigationItem.rightBarButtonItems ?? []
+
+        #expect(items.count == 1)
+        #expect(items.first?.title == Strings.settings)
+    }
 }

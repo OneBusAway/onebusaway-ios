@@ -613,7 +613,10 @@ struct MapPanelRootView: View {
             mapControlsCluster
         }
         .overlay(alignment: .topTrailing) {
-            moreButton
+            // On iPhone, More is a tab of the home sheet instead.
+            if !HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass) {
+                moreButton
+            }
         }
         .overlay(alignment: .bottomLeading) {
             myTripButton

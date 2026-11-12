@@ -11,10 +11,16 @@ import SwiftUI
 import TipKit
 import OBAKitCore
 
+/// The panel's base sheet. On iPhone it carries tabs, Find My style: Home (search
+/// and the nearby, recent and bookmarked previews), Recent, Bookmarks and More, in
+/// a bar pinned to its bottom. See `HomeTab`.
 struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    @State private var selectedTab: HomeTab = .home
 
     /// Used by the bookmark rows to format distances.
     private let application: Application
@@ -32,13 +38,107 @@ struct HomeSheetView: View {
         _viewModel = StateObject(wrappedValue: viewModel())
     }
 
+    private var showsTabs: Bool {
+        HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass)
+    }
+
+    /// What's on screen. Regular width has no tabs, so always Home.
+    private var visibleTab: HomeTab {
+        showsTabs ? selectedTab : .home
+    }
+
     var body: some View {
+        tabContent
+            // Under every tab's content, so a list scrolls up out from behind it.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if showsTabs {
+                    HomeTabBar(selection: $selectedTab, onSelect: didSelect(_:))
+                }
+            }
+            .task {
+                // Polls while Home is on screen, so bookmark countdowns don't
+                // freeze. `loadIfNeeded`'s staleness gate keeps it to one fetch
+                // per window however often this fires; skipped while a stacked
+                // sheet covers the home sheet, or another tab is showing, since
+                // nobody can see the countdowns then.
+                while !Task.isCancelled {
+                    if isShowingHomePage {
+                        viewModel.activate()
+                    }
+                    try? await Task.sleep(for: .seconds(30))
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                // A phone unlocked after twenty minutes would otherwise show the
+                // countdowns it had when it locked — "NOW" for a bus long gone.
+                if phase == .active && isShowingHomePage {
+                    viewModel.activate()
+                }
+            }
+            .onChange(of: coordinator.stackedRoutes) { previousRoutes, routes in
+                // Re-activate when the stacked layer transitions to empty — the moment the
+                // user returns to the home sheet, and when a recent stop may have been added.
+                // Derived from `onChange`'s previous value rather than tracked in `@State`:
+                // the sheet system can rebuild this view's content while a stacked sheet is
+                // open, which would re-seed a stored flag and silently skip the next refresh.
+                if !previousRoutes.isEmpty && routes.isEmpty && visibleTab == .home {
+                    viewModel.activate()
+                }
+            }
+            .onChange(of: visibleTab) { _, tab in
+                // Back on Home from another tab: its previews may be stale.
+                if tab == .home && coordinator.stackedRoutes.isEmpty {
+                    viewModel.activate()
+                }
+            }
+    }
+
+    private var isShowingHomePage: Bool {
+        coordinator.stackedRoutes.isEmpty && visibleTab == .home
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch visibleTab {
+        case .home:
+            homePage
+        case .recent:
+            RecentStopsSheetView(application: application, isHomeTab: true)
+        case .bookmarks:
+            BookmarksSheetView(application: application, isHomeTab: true)
+        case .more:
+            MoreSheetHost(application: application, onClose: nil)
+        }
+    }
+
+    private func didSelect(_ tab: HomeTab) {
+        if let detent = HomeTabs.detent(afterSelecting: tab, currentDetent: coordinator.currentDetent) {
+            coordinator.currentDetent = detent
+        }
+    }
+
+    /// A section header's index: its tab where there is one, otherwise the full
+    /// list stacked over the sheet.
+    private func showAll(_ route: AppSheetRoute) {
+        if showsTabs, let tab = HomeTab(seeAll: route) {
+            selectedTab = tab
+            didSelect(tab)
+        } else {
+            coordinator.push(route)
+        }
+    }
+
+    // MARK: - Home
+
+    private var homePage: some View {
         VStack(spacing: 0) {
             searchBarRow
                 .padding(.top, 16)
                 .padding(.bottom, 12)
 
-            if !viewModel.visibleSections.isEmpty {
+            if !HomeTabs.showsHomeList(showsTabs: showsTabs, currentDetent: coordinator.currentDetent) {
+                Spacer()
+            } else if !viewModel.visibleSections.isEmpty {
                 List {
                     ForEach(viewModel.visibleSections, id: \.self) { section in
                         sectionContent(for: section)
@@ -56,37 +156,12 @@ struct HomeSheetView: View {
                 Spacer()
             }
         }
+        // With the tab bar, stops at it: drawn under the glass, the list and the
+        // empty state showed through the bar on the collapsed sheet. Clipped, as
+        // the empty state is taller than the room the collapsed sheet leaves.
+        .clipped()
         .searchSheetBackground()
-        .ignoresSafeArea(.container, edges: .bottom)
-        .task {
-            // Polls while the home sheet is on screen, so bookmark countdowns
-            // don't freeze. `loadIfNeeded`'s staleness gate keeps it to one fetch
-            // per window however often this fires; skipped while a stacked sheet
-            // covers the home sheet, since nobody can see the countdowns then.
-            while !Task.isCancelled {
-                if coordinator.stackedRoutes.isEmpty {
-                    viewModel.activate()
-                }
-                try? await Task.sleep(for: .seconds(30))
-            }
-        }
-        .onChange(of: scenePhase) { _, phase in
-            // A phone unlocked after twenty minutes would otherwise show the
-            // countdowns it had when it locked — "NOW" for a bus long gone.
-            if phase == .active && coordinator.stackedRoutes.isEmpty {
-                viewModel.activate()
-            }
-        }
-        .onChange(of: coordinator.stackedRoutes) { previousRoutes, routes in
-            // Re-activate when the stacked layer transitions to empty — the moment the
-            // user returns to the home sheet, and when a recent stop may have been added.
-            // Derived from `onChange`'s previous value rather than tracked in `@State`:
-            // the sheet system can rebuild this view's content while a stacked sheet is
-            // open, which would re-seed a stored flag and silently skip the next refresh.
-            if !previousRoutes.isEmpty && routes.isEmpty {
-                viewModel.activate()
-            }
-        }
+        .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
     }
 
     // MARK: - Search Bar
@@ -163,7 +238,7 @@ struct HomeSheetView: View {
             // the way to them, and is all the section has with no recent stops.
             if alarmCount > 0 {
                 Button {
-                    coordinator.push(seeAll)
+                    showAll(seeAll)
                 } label: {
                     LabeledContent {
                         Text(alarmCount, format: .number)
@@ -180,7 +255,7 @@ struct HomeSheetView: View {
             }
         } header: {
             HomeSectionHeader(title: title) {
-                coordinator.push(seeAll)
+                showAll(seeAll)
             }
         }
         .textCase(nil)
@@ -245,7 +320,7 @@ struct HomeSheetView: View {
             }
         } header: {
             HomeSectionHeader(title: Strings.bookmarks) {
-                coordinator.push(.bookmarksAll)
+                showAll(.bookmarksAll)
             }
         }
         .textCase(nil)

@@ -24,6 +24,9 @@ import OBAKitCore
 /// has no tab to leave it to.
 struct BookmarksSheetView: View {
     let application: Application
+    /// As a tab of the home sheet: no Close button, since there's no sheet of its
+    /// own to close, and nothing at the bottom, where the tab bar is.
+    let isHomeTab: Bool
 
     @StateObject private var viewModel: BookmarksViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
@@ -48,8 +51,9 @@ struct BookmarksSheetView: View {
     private let actions: BookmarkActions
     private let feedback: DataLoadFeedbackGenerator
 
-    init(application: Application) {
+    init(application: Application, isHomeTab: Bool = false) {
         self.application = application
+        self.isHomeTab = isHomeTab
         self.actions = BookmarkActions(application: application)
         self.feedback = DataLoadFeedbackGenerator(application: application)
         _viewModel = StateObject(wrappedValue: BookmarksViewModel(application: application))
@@ -134,8 +138,10 @@ struct BookmarksSheetView: View {
                 .navigationTitle(Text(Strings.bookmarks))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        SheetDismissButton(.close) { dismiss() }
+                    if !isHomeTab {
+                        ToolbarItem(placement: .topBarLeading) {
+                            SheetDismissButton(.close) { dismiss() }
+                        }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller")) {

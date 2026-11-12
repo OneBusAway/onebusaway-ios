@@ -417,6 +417,9 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "이 섹션의 모든 항목을 표시합니다.";
 
+/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
+"home_sheet.tab.home" = "홈";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "설정에서 실시간 액티비티 설정을 확인해 주세요.";
 
@@ -581,6 +584,9 @@
 
 /* Accessibility label for website button */
 "map_item_controller.website_accessibility" = "웹 사이트 열기";
+
+/* VoiceOver hint on a vehicle marker drawn for an open stop on the map panel. Tapping it opens the vehicle's trip. */
+"map_panel.stop_vehicle.hint" = "이 운행을 표시합니다.";
 
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "위치 서비스를 사용할 수 없음";
