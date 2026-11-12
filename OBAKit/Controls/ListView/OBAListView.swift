@@ -43,9 +43,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     /// The source of truth for this list view.
     weak public var obaDataSource: OBAListViewDataSource?
 
-    /// The delegate of this list view.
-    weak public var obaDelegate: OBAListViewDelegate?
-
     /// Optional. Implement `OBAListViewCollapsibleSectionsDelegate` to add support for collapsible sections for this list view.
     weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
 
@@ -347,8 +344,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
             diffableDataSource.apply(sectionSnapshot, to: section, animatingDifferences: false)
         }
-
-        self.obaDelegate?.didApplyData(self)
     }
 
     fileprivate func emptyDataConfiguration(isEmpty: Bool) {

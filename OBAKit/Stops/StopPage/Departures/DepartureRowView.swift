@@ -231,8 +231,8 @@ struct DepartureRowView: View {
     }
 }
 
-/// Long-press context-menu parity with today's `ArrivalDepartureItem`
-/// menu actions (Alarm / Schedule / Save).
+/// Long-press context-menu actions for a departure row (Alarm / Schedule /
+/// Save).
 struct DepartureRowActions {
     let canAlarm: Bool
     let hasAlarm: Bool

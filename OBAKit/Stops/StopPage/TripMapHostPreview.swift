@@ -16,8 +16,7 @@ struct TripMapHostPreview: UIViewControllerRepresentable {
     let departure: ArrivalDeparture
     let application: Application
 
-    /// The map alone, as the legacy stop page's preview shows it: a 320 by 400
-    /// glance has no room for the panel as well.
+    /// The map alone: a 320 by 400 glance has no room for the panel as well.
     func makeUIViewController(context: Context) -> TripMapHostViewController {
         let host = application.viewRouter.makeTripController(tripConvertible: TripConvertible(arrivalDeparture: departure))
         host.enterPreviewMode()

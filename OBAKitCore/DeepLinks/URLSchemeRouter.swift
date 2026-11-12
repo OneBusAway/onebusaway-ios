@@ -166,7 +166,7 @@ public class URLSchemeRouter: NSObject {
         return components.url!
     }
 
-    /// Decodes a `StopURLData` struct from `url`, which can be used to display a `StopViewController`.
+    /// Decodes a `StopURLData` struct from `url`, which can be used to display a stop.
     /// - Parameter url: An URL created from calling `URLSchemeRouter.encode()`
     private func decodeViewStop(from components: URLComponents) -> URLType? {
         guard

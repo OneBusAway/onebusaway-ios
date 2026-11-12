@@ -77,12 +77,12 @@ struct StopPageContent {
         // Terminal dedup deliberately runs downstream, after the Departure Type
         // filter: dedup prefers the predicted half of an arrival/departure pair,
         // so filtering afterward could drop a scheduled row whose predicted twin
-        // had already been consumed (same ordering as `StopViewController`).
+        // had already been consumed.
         let routeVisible = visible.filteringImplausibleDates()
         // `filteringTerminalDuplicates()` collapses the arrival/departure pair
         // the API emits for a single vehicle visit at a terminal or loop stop —
         // without it the rider sees the same bus twice, with two different
-        // countdowns (parity with `StopViewController`).
+        // countdowns.
         let departures = routeVisible
             .filter(by: arrivalDepartureFilter)
             .filteringTerminalDuplicates()

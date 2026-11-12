@@ -648,4 +648,20 @@ final class MapRegionManagerTests: OBATestCase {
         #expect(mgr.mapView.annotations.contains { $0 === bookmark })
         #expect(mgr.mapView.annotations.contains { ($0 as? Stop)?.id == stop.id })
     }
+
+    // MARK: - Stop clustering
+
+    /// Stop clustering is an experimental opt-in (#1600): pins stay separate until the user
+    /// turns it on, and pick the setting up the next time MapKit displays them.
+    @Test @MainActor
+    func `Stop pins cluster only when the experimental flag is on`() throws {
+        let manager = MapRegionManager(application: buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name)))
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let view = try #require(manager.mapView(manager.mapView, viewFor: stop) as? StopAnnotationView)
+        #expect(view.clusteringIdentifier == nil)
+
+        userDefaults.set(true, forKey: FeatureFlags.clustersStopsKey)
+        view.prepareForDisplay()
+        #expect(view.clusteringIdentifier == StopCluster.clusteringIdentifier)
+    }
 }

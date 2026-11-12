@@ -14,8 +14,7 @@ import OBAKitCore
 
 /// This view displays the route, headsign, and predicted arrival/departure time for an `ArrivalDeparture`.
 ///
-/// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
-/// else that we show information from an `ArrivalDeparture`.
+/// The Report a Problem screen shows a stop's departures with this view.
 /// # Layout
 /// This view will adapt to accessibility settings.
 ///

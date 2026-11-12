@@ -65,8 +65,8 @@ private final class RecordingPresenter: MockPresentingViewController {
     }
 }
 
-/// Covers `TripSharingCoordinator` — the piece both the legacy
-/// `StopViewController` and the redesigned stop page depend on for trip sharing.
+/// Covers `TripSharingCoordinator`, which the stop page depends on for trip
+/// sharing.
 ///
 /// `AppLinksRouterDeepLinkFormatTests` builds its `URLComponents` by hand and
 /// never calls `AppLinksRouter.encode`, so the `destination_stop_id` encoding is

@@ -86,7 +86,6 @@ final class SettingsViewModel {
         showsRegionTimeZone = store.showRegionTimeZone
 
         usesMapPanelExperience = FeatureFlags.isMapPanelExperienceEnabled(userDefaults: defaults)
-        usesNewStopPage = FeatureFlags.isNewStopPageEnabled(userDefaults: defaults)
         clustersStops = defaults.bool(forKey: FeatureFlags.clustersStopsKey)
 
         hapticFeedbackOnReload = defaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
@@ -162,10 +161,6 @@ final class SettingsViewModel {
 
     var usesMapPanelExperience: Bool {
         didSet { application.userDefaults.set(usesMapPanelExperience, forKey: FeatureFlags.useMapPanelExperienceKey) }
-    }
-
-    var usesNewStopPage: Bool {
-        didSet { application.userDefaults.set(usesNewStopPage, forKey: FeatureFlags.useNewStopPageKey) }
     }
 
     var clustersStops: Bool {

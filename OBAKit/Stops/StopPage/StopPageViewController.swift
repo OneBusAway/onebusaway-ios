@@ -13,14 +13,13 @@ import Combine
 import ActivityKit
 import OBAKitCore
 
-/// Hosting shell for the redesigned SwiftUI Stop page. Owns UIKit-side chrome
-/// (nav bar items, menus) and keeps parity entry points (`Previewable`,
-/// navigation-out modals) working while `FeatureFlags.useNewStopPageKey` is
-/// enabled.
+/// Hosting shell for the SwiftUI Stop page. Owns UIKit-side chrome (nav bar
+/// items, menus) and the UIKit entry points (`Previewable`, navigation-out
+/// modals).
 ///
 /// The root view is `StopPageRootView`, a thin wrapper that applies
 /// `.defaultAppStorage(application.userDefaults)` so the page's `@AppStorage`
-/// shares the app-group suite with the legacy screen. Everything that leaves the
+/// shares the app-group suite with `StopViewModel`. Everything that leaves the
 /// page — trip/schedule/alert/bookmark navigation, the donation and survey
 /// modals — is routed here through `StopPageNavigationHandler`, so the SwiftUI
 /// layer stays router-free and holds no `Application` reference.
@@ -64,8 +63,8 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
-    /// Gates the one-shot success haptic to the first arrivals load, matching
-    /// `StopViewController.bindArrivalsSink()`; later refreshes are silent.
+    /// Gates the one-shot success haptic to the first arrivals load; later
+    /// refreshes are silent.
     private var firstLoad = true
 
     var bookmarkContext: Bookmark? {
@@ -206,8 +205,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     private var activityUserInfo: [AnyHashable: Any]?
 
     /// Publishes this stop's `NSUserActivity` for Handoff, Siri and Spotlight.
-    /// Ports `StopViewController.beginUserActivity()`; called on appearance and
-    /// whenever the stop resolves.
+    /// Called on appearance and whenever the stop resolves.
     private func beginUserActivity() {
         guard let stop = viewModel.stop else { return }
         let activity = actionPresenter.makeUserActivity(stop: stop)
@@ -269,8 +267,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     // MARK: - Combine Bindings
 
     /// Rebuilds the nav-bar chrome (right bar items) whenever the state the
-    /// menus read changes. Mirrors `StopViewController.bindViewModel()`'s
-    /// `configureTabBarButtons()` calls. No nav-bar title: the header card
+    /// menus read changes. No nav-bar title: the header card
     /// carries the stop identity. The stop's name goes on the back button of
     /// the page pushed next instead, which otherwise said only "Back".
     private func bindChrome() {
@@ -319,9 +316,9 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
             .store(in: &cancellables)
     }
 
-    /// Haptic feedback for data loads, ported from `StopViewController`: a
-    /// success tap on the first arrivals load and an error buzz whenever a fetch
-    /// fails. The SwiftUI layer owns no `Application`, so this stays here.
+    /// Haptic feedback for data loads: a success tap on the first arrivals load
+    /// and an error buzz whenever a fetch fails. The SwiftUI layer owns no
+    /// `Application`, so this stays here.
     private func bindArrivalsFeedback() {
         viewModel.$stopArrivals
             .compactMap { $0 }
@@ -343,8 +340,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     }
 
     /// Presents the multi-question survey screen and the hero-submission error
-    /// alert, driven by the view model's publishers (ported from
-    /// `StopViewController.bindSurveysSink()`).
+    /// alert, driven by the view model's publishers.
     private func bindSurveyPresentation() {
         viewModel.presentFullSurvey
             .receive(on: DispatchQueue.main)
@@ -444,8 +440,7 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
 // MARK: - Nav Bar Items & Menus
 
 private extension StopPageViewController {
-    /// Ported from `StopViewController.configureTabBarButtons()`, minus the Sort
-    /// menu — the SwiftUI mode toggle supersedes it (spec decision).
+    /// There is no Sort menu: the page's SwiftUI mode toggle sorts the list.
     func configureBarButtons() {
         guard !inPreviewMode else {
             navigationItem.rightBarButtonItems = nil
@@ -529,8 +524,7 @@ private extension StopPageViewController {
     }
 
     /// The Departure Type submenu: everything, real-time only, or scheduled
-    /// only. The same choices as the legacy page's `arrivalDepartureFilterMenu()`,
-    /// persisted app-wide through the shared view model.
+    /// only, persisted app-wide through the shared view model.
     func departureFilterMenu() -> UIMenu {
         let currentFilter = viewModel.arrivalDepartureFilter
         let actions = ArrivalDepartureFilter.allCases.map { filter -> UIAction in
@@ -625,8 +619,8 @@ private extension StopPageViewController {
     }
 }
 
-/// Section headings in the stop screen's More menu, shared with the legacy
-/// `StopViewController`. Inline menus show their titles as section headers, and
+/// Section headings in the stop screen's More menu. Inline menus show their
+/// titles as section headers, and
 /// VoiceOver reads them, so they can't stay English.
 enum StopMenuTitles {
     static var file: String {

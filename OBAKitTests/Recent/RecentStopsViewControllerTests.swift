@@ -223,7 +223,7 @@ final class RecentStopsViewControllerTests: OBATestCase {
 
         #expect(nav.viewControllers.count == 2)
         let topVC = nav.topViewController
-        let pushedStopID = (topVC as? StopPageViewController)?.viewModel.stopID ?? (topVC as? StopViewController)?.stopID
+        let pushedStopID = (topVC as? StopPageViewController)?.viewModel.stopID
         #expect(pushedStopID == stop.id)
     }
 

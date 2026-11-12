@@ -138,7 +138,7 @@ final class TripMapHostViewControllerTests: OBATestCase {
         host.mapView(host.mapView, didSelect: MKAnnotationView(annotation: dot, reuseIdentifier: nil))
 
         #expect(navigation.viewControllers.count == 2)
-        let stop = try #require(navigation.viewControllers.last as? StopContextConfigurable)
+        let stop = try #require(navigation.viewControllers.last as? StopPageViewController)
         let context = try #require(stop.transferContext)
         #expect(context.arrivalTime == Date(timeIntervalSince1970: 1_541_142_600))
         #expect(context.fromTripID == "1_40984902")

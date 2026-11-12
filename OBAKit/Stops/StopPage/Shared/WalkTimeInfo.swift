@@ -23,7 +23,7 @@ struct WalkTimeInfo: Equatable {
 
     /// Straight-line walk estimate, matching `WalkingDirections.travelTime`.
     /// Returns nil with no user location, an invalid speed, or when the user
-    /// is effectively at the stop (<= 40 m, matching `WalkTimeView`).
+    /// is effectively at the stop (<= 40 m).
     static func compute(from userLocation: CLLocation?, to stopLocation: CLLocation?, speedMetersPerSecond: Double) -> WalkTimeInfo? {
         guard let userLocation, let stopLocation else { return nil }
         let distance = userLocation.distance(from: stopLocation)

@@ -82,7 +82,7 @@ struct StopArrivalAccessibilityClockTests {
         deviceTimeZone: TimeZone,
         arrivalDeparture: ArrivalDeparture? = nil
     ) throws -> ArrivalDepartureContentConfiguration {
-        let item = ArrivalDepartureItem(arrivalDeparture: try arrivalDeparture ?? makeArrivalDeparture(), isAlarmAvailable: false)
+        let item = ArrivalDepartureItem(arrivalDeparture: try arrivalDeparture ?? makeArrivalDeparture())
         return ArrivalDepartureContentConfiguration(
             viewModel: item,
             formatters: formatters,

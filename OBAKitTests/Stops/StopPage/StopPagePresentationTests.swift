@@ -31,7 +31,6 @@ final class StopPagePresentationTests: OBATestCase {
 
         queue = OperationQueue()
         application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        userDefaults.set(true, forKey: FeatureFlags.useNewStopPageKey)
     }
 
     isolated deinit {
@@ -65,17 +64,6 @@ final class StopPagePresentationTests: OBATestCase {
 
         #expect(byStop?.showsBottomToolbar == true)
         #expect(byID?.showsBottomToolbar == true)
-    }
-
-    /// The legacy screen has only the pushed layout, so the flag must be inert there rather than
-    /// producing a `StopViewController` that someone later assumes has a toolbar.
-    @Test func `Legacy screen ignores the sheet flag`() throws {
-        userDefaults.set(false, forKey: FeatureFlags.useNewStopPageKey)
-        let stop = try makeStop()
-
-        let controller = application.viewRouter.makeStopController(stop: stop, showToolbarOnBottom: true)
-
-        #expect(controller is StopViewController)
     }
 
     // MARK: - Navigation bar chrome

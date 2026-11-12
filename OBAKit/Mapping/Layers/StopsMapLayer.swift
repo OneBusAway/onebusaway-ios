@@ -59,7 +59,7 @@ import OBAKitCore
     }
 
     func detailViewController(for annotation: MKAnnotation) -> UIViewController? {
-        // Stop taps route through the existing StopViewController flow.
+        // Stop taps open the Stop page directly; this layer has no detail view of its own.
         nil
     }
 
