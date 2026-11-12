@@ -601,6 +601,24 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "Windy";
 
+/* Short fallback text on a Lock Screen or watch complication when no bookmarks are configured. */
+"widget.complication.no_bookmarks" = "No bookmarks";
+
+/* Hint shown in a rectangular Lock Screen or watch complication when no bookmarks are shown in the widget. */
+"widget.complication.no_bookmarks_hint" = "Enable a widget bookmark in the app.";
+
+/* Short fallback text on a Lock Screen or watch complication when a bookmark has no upcoming departures. */
+"widget.complication.no_departures" = "No departures";
+
+/* Short fallback text on a Lock Screen or watch complication when departure data could not be loaded. */
+"widget.complication.unavailable" = "Unavailable";
+
+/* Description of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+"widget.next_departure.gallery.description" = "See the next upcoming departure for your top bookmark.";
+
+/* Name of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+"widget.next_departure.gallery.display_name" = "Next Departure";
+
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
 "widget.empty_state" = "Turn on “Show in Today View widget” for a bookmark to see it here.";
 

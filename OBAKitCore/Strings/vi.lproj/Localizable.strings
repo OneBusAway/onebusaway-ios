@@ -593,6 +593,24 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "Nhiều gió";
 
+/* Short fallback text on a Lock Screen or watch complication when no bookmarks are configured. */
+"widget.complication.no_bookmarks" = "Không có dấu trang";
+
+/* Hint shown in a rectangular Lock Screen or watch complication when no bookmarks are shown in the widget. */
+"widget.complication.no_bookmarks_hint" = "Bật dấu trang tiện ích trong ứng dụng.";
+
+/* Short fallback text on a Lock Screen or watch complication when a bookmark has no upcoming departures. */
+"widget.complication.no_departures" = "Không có chuyến đi";
+
+/* Short fallback text on a Lock Screen or watch complication when departure data could not be loaded. */
+"widget.complication.unavailable" = "Không khả dụng";
+
+/* Description of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+"widget.next_departure.gallery.description" = "Xem chuyến khởi hành tiếp theo cho dấu trang hàng đầu của bạn.";
+
+/* Name of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+"widget.next_departure.gallery.display_name" = "Chuyến tiếp theo";
+
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
 "widget.empty_state" = "Bật “Hiển thị trong tiện ích Chế độ xem Hôm nay” cho một dấu trang để xem dấu trang đó tại đây.";
 

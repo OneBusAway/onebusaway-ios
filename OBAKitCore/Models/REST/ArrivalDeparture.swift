@@ -233,6 +233,31 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
             .joined(separator: " - ")
     }
 
+    /// Reference-safe accessors for callers that may receive partial fixtures without loaded references.
+    var safeRouteShortName: String? {
+        if let short = String.nilifyBlankValue(_routeShortName) { return short }
+        let loadedRoute: Route? = route
+        return String.nilifyBlankValue(loadedRoute?.shortName)
+            ?? String.nilifyBlankValue(_routeLongName)
+            ?? String.nilifyBlankValue(loadedRoute?.longName)
+    }
+
+    var safeTripHeadsign: String? {
+        if let headsign = String.nilifyBlankValue(_tripHeadsign) { return headsign }
+        let loadedTrip: Trip? = trip
+        return String.nilifyBlankValue(loadedTrip?.headsign)
+    }
+
+    var safeRouteColorHex: String? {
+        let loadedRoute: Route? = route
+        return loadedRoute?.color?.toHex
+    }
+
+    var safeRouteTextColorHex: String? {
+        let loadedRoute: Route? = route
+        return loadedRoute?.textColor?.toHex
+    }
+
     // MARK: - Helpers/Statuses+Times
 
     /// Whether this trip represents an arrival at or departure from this stop.

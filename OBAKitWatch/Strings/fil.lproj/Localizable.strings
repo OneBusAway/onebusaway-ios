@@ -63,3 +63,21 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Naglo-load ng mga bookmark…";
+
+/* Description for the next-departure Apple Watch complication */
+"complications.gallery.description" = "Tingnan ang susunod na pag-alis para sa pangunahing bookmark mo.";
+
+/* Display name for the next-departure Apple Watch complication */
+"complications.gallery.display_name" = "Susunod na Pag-alis";
+
+/* Hint on rectangular watch complication when no favorite bookmarks are synced */
+"complications.no_bookmarks_hint" = "Magdagdag ng paborito sa iPhone.";
+
+/* Short complication fallback when no upcoming departures exist */
+"complications.no_departures" = "Walang pag-alis";
+
+/* Rectangular complication fallback when no departures are expected soon. %d is minutes. */
+"complications.no_departures_in_next_minutes_fmt" = "Walang pag-alis sa susunod na %d min";
+
+/* Short complication fallback when departure data could not be loaded */
+"complications.unavailable" = "Hindi available";

@@ -63,3 +63,21 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Загрузка закладок…";
+
+/* Description for the next-departure Apple Watch complication */
+"complications.gallery.description" = "Следующее отправление для вашей основной закладки.";
+
+/* Display name for the next-departure Apple Watch complication */
+"complications.gallery.display_name" = "Ближайшее отправление";
+
+/* Hint on rectangular watch complication when no favorite bookmarks are synced */
+"complications.no_bookmarks_hint" = "Добавьте закладку в избранное на iPhone.";
+
+/* Short complication fallback when no upcoming departures exist */
+"complications.no_departures" = "Нет отправлений";
+
+/* Rectangular complication fallback when no departures are expected soon. %d is minutes. */
+"complications.no_departures_in_next_minutes_fmt" = "Нет отправлений в ближайшие %d мин";
+
+/* Short complication fallback when departure data could not be loaded */
+"complications.unavailable" = "Недоступно";

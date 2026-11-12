@@ -39,7 +39,28 @@ struct BookmarkEntry: TimelineEntry {
     /// arrivals for exactly this many bookmarks, so a reload never pays for a
     /// stop nobody will see.
     static func maximumBookmarks(for family: WidgetFamily) -> Int {
-        family == .systemLarge ? 7 : 2
+        switch family {
+        case .systemLarge:
+            return WidgetBookmarkFamily.systemLarge.maximumBookmarks
+        case .systemMedium:
+            return WidgetBookmarkFamily.systemMedium.maximumBookmarks
+        case .accessoryCircular:
+            return WidgetBookmarkFamily.accessoryCircular.maximumBookmarks
+        case .accessoryRectangular:
+            return WidgetBookmarkFamily.accessoryRectangular.maximumBookmarks
+        case .accessoryInline:
+            return WidgetBookmarkFamily.accessoryInline.maximumBookmarks
+        case .systemSmall, .systemExtraLarge, .systemExtraLargePortrait:
+            return WidgetBookmarkFamily.other.maximumBookmarks
+        @unknown default:
+            return WidgetBookmarkFamily.other.maximumBookmarks
+        }
+    }
+
+    /// Deep-link URL that opens the bookmark's stop in the host app.
+    static func deepLinkURL(stopID: StopID, regionIdentifier: Int) -> URL {
+        let router = URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
+        return router.encodeViewStop(stopID: stopID, regionID: regionIdentifier)
     }
 
     /// Returns a formatted string representing the last updated time.

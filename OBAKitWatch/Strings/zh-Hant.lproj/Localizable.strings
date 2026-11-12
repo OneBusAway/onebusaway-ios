@@ -63,3 +63,21 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "正在載入書籤…";
+
+/* Description for the next-departure Apple Watch complication */
+"complications.gallery.description" = "查看置頂書籤的下一班發車時間。";
+
+/* Display name for the next-departure Apple Watch complication */
+"complications.gallery.display_name" = "下一班車";
+
+/* Hint on rectangular watch complication when no favorite bookmarks are synced */
+"complications.no_bookmarks_hint" = "請在 iPhone 上將書籤設為最愛。";
+
+/* Short complication fallback when no upcoming departures exist */
+"complications.no_departures" = "暫無發車";
+
+/* Rectangular complication fallback when no departures are expected soon. %d is minutes. */
+"complications.no_departures_in_next_minutes_fmt" = "未來 %d 分鐘內暫無發車";
+
+/* Short complication fallback when departure data could not be loaded */
+"complications.unavailable" = "無法使用";

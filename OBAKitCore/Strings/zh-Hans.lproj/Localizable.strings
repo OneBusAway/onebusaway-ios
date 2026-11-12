@@ -593,6 +593,24 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "大风";
 
+/* Short fallback text on a Lock Screen or watch complication when no bookmarks are configured. */
+"widget.complication.no_bookmarks" = "没有书签";
+
+/* Hint shown in a rectangular Lock Screen or watch complication when no bookmarks are shown in the widget. */
+"widget.complication.no_bookmarks_hint" = "请在应用中开启小组件书签。";
+
+/* Short fallback text on a Lock Screen or watch complication when a bookmark has no upcoming departures. */
+"widget.complication.no_departures" = "暂无发车";
+
+/* Short fallback text on a Lock Screen or watch complication when departure data could not be loaded. */
+"widget.complication.unavailable" = "不可用";
+
+/* Description of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+"widget.next_departure.gallery.description" = "查看置顶书签的下一班发车时间。";
+
+/* Name of the next-departure Lock Screen and watch complication widget in the Add Widget gallery. */
+"widget.next_departure.gallery.display_name" = "下一班车";
+
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
 "widget.empty_state" = "为书签打开“在‘今天’视图小组件中显示”，即可在此处看到它。";
 
