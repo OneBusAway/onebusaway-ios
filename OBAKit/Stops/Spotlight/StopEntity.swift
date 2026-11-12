@@ -105,18 +105,18 @@ nonisolated public struct StopEntityQuery: EntityStringQuery {
 }
 
 /// Lets Spotlight ask for stops again from iOS 27, for instance after it loses
-/// its index. The query can't reach the app, so it hands the request to
-/// `StopSpotlightIndexer` through `StopReindexRequest` and returns without
-/// waiting for the indexing. `indexDescription` names only a protection class,
-/// and the app keeps its stops in one index, so it isn't read.
+/// its index. Each method returns once the app's `StopSpotlightIndexer` has
+/// finished the run, because the system keeps the process alive only until
+/// then. `indexDescription` names only a protection class, and the app keeps
+/// its stops in one index, so it isn't read.
 @available(iOS 27.0, *)
 nonisolated extension StopEntityQuery: IndexedEntityQuery {
     public func reindexEntities(for identifiers: [StopEntity.ID], indexDescription: CSSearchableIndexDescription) async throws {
-        StopReindexRequest.post(.stops(identifiers))
+        try await StopSpotlightIndexer.reindexCurrent(.stops(identifiers))
     }
 
     public func reindexAllEntities(indexDescription: CSSearchableIndexDescription) async throws {
-        StopReindexRequest.post(.all)
+        try await StopSpotlightIndexer.reindexCurrent(.all)
     }
 }
 

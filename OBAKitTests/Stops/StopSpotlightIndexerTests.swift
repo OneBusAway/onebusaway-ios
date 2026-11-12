@@ -8,6 +8,7 @@
 //
 
 import CoreLocation
+import CoreSpotlight
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -421,15 +422,14 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let index = FakeStopIndex()
         let indexer = makeIndexer(index, store: store, cache: try makeCache([stopA, stopB, stopC, stopD, stopE], region: puget), region: puget, now: start)
 
-        indexer.reindex(.stops([
+        await indexer.reindex(.stops([
             entityID("1_a", in: puget),
             entityID("1_b", in: puget),
             entityID("1_c", in: puget),
             entityID("1_d", in: tampa),
             entityID("1_gone", in: puget),
             "not_a_stop"
-        ]))
-        await indexer.currentRun?.value
+        ]))?.value
 
         #expect(await index.log == [
             .index([entityID("1_a", in: puget)], priority: 3),
@@ -444,8 +444,7 @@ final class StopSpotlightIndexerTests: OBATestCase {
         let index = FakeStopIndex()
         let indexer = makeIndexer(index, store: makeStore(bookmarked: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
 
-        indexer.reindex(.all)
-        await indexer.currentRun?.value
+        await indexer.reindex(.all)?.value
 
         #expect(await index.log == [
             .deleteAll,
@@ -454,20 +453,74 @@ final class StopSpotlightIndexerTests: OBATestCase {
         ])
     }
 
-    /// `StopEntityQuery` posts the request and the indexer reads it back. The
-    /// post itself goes through `NotificationCenter.default`, which tests don't use.
-    @Test func `A re-index request reads back as the stops or the whole index it asked for`() {
-        let identifiers = [entityID("1_a", in: puget), entityID("1_b", in: puget)]
-
-        #expect(StopReindexRequest.scope(from: StopReindexRequest.userInfo(for: .stops(identifiers))) == .stops(identifiers))
-        #expect(StopReindexRequest.scope(from: StopReindexRequest.userInfo(for: .all)) == .all)
+    /// Installs `indexer` as the one Spotlight's requests reach, for `body` only.
+    private func withCurrentIndexer(_ indexer: StopSpotlightIndexer?, _ body: () async throws -> Void) async rethrows {
+        let previous = StopSpotlightIndexer.current
+        StopSpotlightIndexer.current = indexer
+        defer { StopSpotlightIndexer.current = previous }
+        try await body()
     }
 
-    /// Reading one of these as `.all` would clear the index.
-    @Test func `A re-index request that names neither stops nor the whole index reads as nothing`() {
-        #expect(StopReindexRequest.scope(from: nil) == nil)
-        #expect(StopReindexRequest.scope(from: [:]) == nil)
-        #expect(StopReindexRequest.scope(from: ["identifiers": "region_1_stop_1_a"]) == nil)
-        #expect(StopReindexRequest.scope(from: ["all": false]) == nil)
+    /// The system keeps the app alive only until the query returns, so it must
+    /// return after the replace, not when it hands the request over. The delete
+    /// is held until the replace has started, so a query that returned early
+    /// reads an empty log.
+    @available(iOS 27.0, *)
+    @Test func `Spotlight's request to re-index every stop returns once the replace has finished`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(bookmarked: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
+
+        try await withCurrentIndexer(indexer) {
+            await index.hold(next: .deleteAll)
+            let query = Task {
+                try await StopEntityQuery().reindexAllEntities(indexDescription: CSSearchableIndexDescription())
+                return await index.log
+            }
+            await index.waitUntilHolding()
+            await index.release()
+            let logWhenQueryReturned = try await query.value
+
+            #expect(logWhenQueryReturned == [
+                .deleteAll,
+                .index([entityID("1_a", in: puget)], priority: 3),
+                .index([entityID("1_b", in: puget)], priority: 1)
+            ])
+        }
+    }
+
+    @available(iOS 27.0, *)
+    @Test func `Spotlight's request to re-index some stops returns once they are indexed`() async throws {
+        let stopA = makeStop("1_a", in: puget)
+        let stopB = makeStop("1_b", in: puget)
+        let index = FakeStopIndex()
+        let indexer = makeIndexer(index, store: makeStore(recent: [stopA], region: puget), cache: try makeCache([stopA, stopB], region: puget), region: puget, now: start)
+
+        try await withCurrentIndexer(indexer) {
+            await index.hold(next: .index)
+            let query = Task {
+                try await StopEntityQuery().reindexEntities(for: [entityID("1_a", in: puget), entityID("1_b", in: puget)], indexDescription: CSSearchableIndexDescription())
+                return await index.log
+            }
+            await index.waitUntilHolding()
+            await index.release()
+            let logWhenQueryReturned = try await query.value
+
+            #expect(logWhenQueryReturned == [
+                .index([entityID("1_a", in: puget)], priority: 2),
+                .index([entityID("1_b", in: puget)], priority: 1)
+            ])
+        }
+    }
+
+    /// Reporting success would tell Spotlight the stops are indexed when nothing ran.
+    @available(iOS 27.0, *)
+    @Test func `Spotlight's request fails before the app has started indexing stops`() async {
+        await withCurrentIndexer(nil) {
+            await #expect(throws: StopSpotlightIndexer.NotStarted.self) {
+                try await StopEntityQuery().reindexAllEntities(indexDescription: CSSearchableIndexDescription())
+            }
+        }
     }
 }
