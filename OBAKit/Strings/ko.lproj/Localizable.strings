@@ -705,6 +705,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "지도를 움직이거나 위치 서비스를 켜면 주변 정류장을 볼 수 있습니다.";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "어떤 정류장인가요?";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "해당 즐겨찾기는 현재 지역에서 사용할 수 없습니다.";
 
@@ -720,13 +723,13 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "그다음은 %@입니다.";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "%@의 출발 정보를 불러올 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
 "next_departures_intent.no_bookmarks" = "즐겨찾기한 노선이 없습니다. 먼저 정류장에서 노선을 즐겨찾기에 추가하세요.";
 
-/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
+/* Siri response when a bookmarked trip or a stop has no upcoming departures. {Bookmark or stop name} */
 "next_departures_intent.no_departures_fmt" = "앞으로 1시간 동안 %@의 출발 정보가 없습니다.";
 
 /* Siri response when the user asks for their next departures before the app knows their region. */
@@ -737,6 +740,18 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "%2$@행 %1$@ 노선 %3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "%1$@ 노선 %2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "%1$@ 다음 출발: %2$@.";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "해당 정류장은 현재 지역에 없습니다.";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "입석만 가능 (매우 혼잡)";

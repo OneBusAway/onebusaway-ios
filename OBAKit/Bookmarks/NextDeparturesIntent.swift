@@ -40,7 +40,7 @@ public struct NextDeparturesIntent: AppIntent {
     public func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
         let bookmarkID = try await resolveBookmarkID()
         // Through the store, so the card can show this outcome without fetching it again.
-        let outcome = await NextDeparturesStore.shared.load(bookmarkID: bookmarkID)
+        let outcome = await NextDeparturesStore.shared.load(NextDeparturesCardKey(bookmarkID: bookmarkID))
         let text = NextDeparturesSummary.text(for: outcome, now: Date())
 
         // Both branches return `IntentResultContainer<String, Never, Never,
@@ -101,13 +101,17 @@ struct NextDeparturesLoader {
     let bundledRegionsFilePath: String?
     let apiKey: String?
     let appVersion: String
+    /// The brand's departure filter, which the rider's own choice in the
+    /// app-group suite overrides. Only the stop-level answer applies it.
+    let defaultArrivalDepartureFilter: ArrivalDepartureFilter
     let dataLoader: URLDataLoader
 
-    init(userDefaults: UserDefaults, bundledRegionsFilePath: String?, apiKey: String?, appVersion: String, dataLoader: URLDataLoader = NextDeparturesLoader.defaultDataLoader) {
+    init(userDefaults: UserDefaults, bundledRegionsFilePath: String?, apiKey: String?, appVersion: String, defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all, dataLoader: URLDataLoader = NextDeparturesLoader.defaultDataLoader) {
         self.userDefaults = userDefaults
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.apiKey = apiKey
         self.appVersion = appVersion
+        self.defaultArrivalDepartureFilter = defaultArrivalDepartureFilter
         self.dataLoader = dataLoader
     }
 
@@ -118,7 +122,8 @@ struct NextDeparturesLoader {
             userDefaults: defaults,
             bundledRegionsFilePath: bundle.bundledRegionsFilePath,
             apiKey: bundle.restServerAPIKey,
-            appVersion: bundle.appVersion
+            appVersion: bundle.appVersion,
+            defaultArrivalDepartureFilter: bundle.defaultArrivalDepartureFilter
         )
     }
 
@@ -137,22 +142,13 @@ struct NextDeparturesLoader {
             return .bookmarkUnavailable
         }
 
-        guard let apiKey else {
-            Logger.error("Next Departures Shortcut: no REST API key in Info.plist.")
-            return .loadFailed(bookmarkName: bookmark.name)
+        guard let service = service(region: region) else {
+            return .loadFailed(name: bookmark.name)
         }
-
-        let service = RESTAPIService.standalone(
-            region: region,
-            apiKey: apiKey,
-            appVersion: appVersion,
-            uuid: UserUUID.value(in: userDefaults),
-            dataLoader: dataLoader
-        )
 
         // No entry means the fetch failed; an empty array means nothing is coming.
         guard let departures = await BookmarkArrivalsLoader().departuresByBookmark(for: [bookmark], using: service)[bookmark.id] else {
-            return .loadFailed(bookmarkName: bookmark.name)
+            return .loadFailed(name: bookmark.name)
         }
 
         return .departures(
@@ -160,6 +156,21 @@ struct NextDeparturesLoader {
             routeShortName: routeShortName,
             headsign: headsign,
             departures: departures.map(NextDeparturesSummary.Departure.init(arrivalDeparture:))
+        )
+    }
+
+    /// `nil`, logged, without an API key.
+    func service(region: Region) -> RESTAPIService? {
+        guard let apiKey else {
+            Logger.error("Next Departures Shortcut: no REST API key in Info.plist.")
+            return nil
+        }
+        return RESTAPIService.standalone(
+            region: region,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            uuid: UserUUID.value(in: userDefaults),
+            dataLoader: dataLoader
         )
     }
 }

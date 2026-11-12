@@ -10,8 +10,8 @@
 import Foundation
 import OBAKitCore
 
-/// What `NextDeparturesIntent` says. Pure, so the wording is testable without
-/// App Intents, Siri, or the network.
+/// What `NextDeparturesIntent` and `NextDeparturesAtStopIntent` say. Pure, so
+/// the wording is testable without App Intents, Siri, or the network.
 nonisolated enum NextDeparturesSummary {
     static let maximumDepartures = 3
 
@@ -45,13 +45,42 @@ nonisolated enum NextDeparturesSummary {
         }
     }
 
+    /// One departure from a stop, for the stop-level answer: unlike a trip
+    /// bookmark's, each can be a different route and headsign.
+    nonisolated struct StopDeparture: Equatable, Sendable {
+        let routeShortName: String
+        /// `nil` when the feed names none.
+        let headsign: String?
+        let departure: Departure
+
+        init(routeShortName: String, headsign: String?, departure: Departure) {
+            self.routeShortName = routeShortName
+            self.headsign = headsign
+            self.departure = departure
+        }
+
+        init(arrivalDeparture: ArrivalDeparture) {
+            self.init(
+                routeShortName: arrivalDeparture.routeShortName,
+                headsign: String.nilifyBlankValue(arrivalDeparture.tripHeadsign),
+                departure: Departure(arrivalDeparture: arrivalDeparture)
+            )
+        }
+    }
+
     nonisolated enum Outcome: Equatable, Sendable {
         case noBookmarks
         case noRegion
         case bookmarkUnavailable
-        case loadFailed(bookmarkName: String)
+        /// The stop belongs to another region, or its id doesn't name one.
+        case stopUnavailable
+        /// The fetch failed. `name` is the bookmark's or the stop's.
+        case loadFailed(name: String)
         /// `departures` may include ones that already left; `text` drops them.
         case departures(bookmarkName: String, routeShortName: String, headsign: String, departures: [Departure])
+        /// A stop's departures across all its routes. `departures` may include
+        /// ones that already left; `text` drops them.
+        case stopDepartures(stopName: String, departures: [StopDeparture])
     }
 
     static func text(for outcome: Outcome, now: Date) -> String {
@@ -62,16 +91,48 @@ nonisolated enum NextDeparturesSummary {
             return OBALoc("next_departures_intent.no_region", value: "Choose a transit region in the app first.", comment: "Siri response when the user asks for their next departures before the app knows their region.")
         case .bookmarkUnavailable:
             return OBALoc("next_departures_intent.bookmark_unavailable", value: "That bookmark isn't available in your current region.", comment: "Siri response when the requested bookmark was deleted or belongs to a different region.")
-        case .loadFailed(let bookmarkName):
-            let fmt = OBALoc("next_departures_intent.load_failed_fmt", value: "Couldn't load departures for %@. Check your connection and try again.", comment: "Siri response when departures could not be fetched. {Bookmark name}")
-            return String(format: fmt, bookmarkName)
+        case .stopUnavailable:
+            return OBALoc("next_departures_intent.stop_unavailable", value: "That stop isn't in your current region.", comment: "Siri response when the requested stop belongs to a different region than the one the app is using.")
+        case .loadFailed(let name):
+            let fmt = OBALoc("next_departures_intent.load_failed_fmt", value: "Couldn't load departures for %@. Check your connection and try again.", comment: "Siri response when departures could not be fetched. {Bookmark or stop name}")
+            return String(format: fmt, name)
         case let .departures(bookmarkName, routeShortName, headsign, departures):
             if let sentence = departuresSentence(routeShortName: routeShortName, headsign: headsign, dates: departures.map(\.date), now: now) {
                 return sentence
             }
-            let fmt = OBALoc("next_departures_intent.no_departures_fmt", value: "No departures for %@ in the next hour.", comment: "Siri response when a bookmarked trip has no upcoming departures. {Bookmark name}")
-            return String(format: fmt, bookmarkName)
+            return noDeparturesText(name: bookmarkName)
+        case let .stopDepartures(stopName, departures):
+            if let sentence = stopDeparturesSentence(stopName: stopName, departures: departures, now: now) {
+                return sentence
+            }
+            return noDeparturesText(name: stopName)
         }
+    }
+
+    private static func noDeparturesText(name: String) -> String {
+        let fmt = OBALoc("next_departures_intent.no_departures_fmt", value: "No departures for %@ in the next hour.", comment: "Siri response when a bookmarked trip or a stop has no upcoming departures. {Bookmark or stop name}")
+        return String(format: fmt, name)
+    }
+
+    /// The stop's departures still to come, soonest first, at most
+    /// `maximumDepartures`, each with its whole minutes from `now`. Shared
+    /// with the card, so the card and the dialog agree on which three.
+    static func upcoming(_ departures: [StopDeparture], now: Date) -> [(departure: StopDeparture, minutes: Int)] {
+        Array(departures
+            .sorted { $0.departure.date < $1.departure.date }
+            .map { (departure: $0, minutes: Int($0.departure.date.timeIntervalSince(now) / 60)) }
+            .filter { $0.minutes >= 0 }
+            .prefix(maximumDepartures))
+    }
+
+    /// "Next at 15th Ave E & E Galer St: 10 to Downtown Seattle in 6 minutes
+    /// and 49 to Capitol Hill in 12 minutes." `nil` when nothing is still to come.
+    static func stopDeparturesSentence(stopName: String, departures: [StopDeparture], now: Date) -> String? {
+        let items = upcoming(departures, now: now).map { stopDepartureText($0.departure, minutes: $0.minutes) }
+        guard !items.isEmpty else { return nil }
+
+        let fmt = OBALoc("next_departures_intent.stop_departures_fmt", value: "Next at %1$@: %2$@.", comment: "Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}.")
+        return String(format: fmt, stopName, ListFormatter.localizedString(byJoining: items))
     }
 
     /// "550 to Seattle departs in 5 minutes. Then in 17 minutes and in 32 minutes."
@@ -97,6 +158,17 @@ nonisolated enum NextDeparturesSummary {
         // Not `sentence + " " + …`: Chinese runs sentences together after "。".
         let joinFmt = OBALoc("next_departures_intent.sentences_join_fmt", value: "%1$@ %2$@", comment: "Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none.")
         return String(format: joinFmt, sentence, laterSentence)
+    }
+
+    /// "8 to Downtown in 4 minutes", or "8 in 4 minutes" without a headsign.
+    static func stopDepartureText(_ departure: StopDeparture, minutes: Int) -> String {
+        let time = relativeTime(minutes: minutes)
+        guard let headsign = departure.headsign else {
+            let fmt = OBALoc("next_departures_intent.stop_departure_no_headsign_fmt", value: "%1$@ %2$@", comment: "Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'.")
+            return String(format: fmt, departure.routeShortName, time)
+        }
+        let fmt = OBALoc("next_departures_intent.stop_departure_fmt", value: "%1$@ to %2$@ %3$@", comment: "Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'.")
+        return String(format: fmt, departure.routeShortName, headsign, time)
     }
 
     static func relativeTime(minutes: Int) -> String {

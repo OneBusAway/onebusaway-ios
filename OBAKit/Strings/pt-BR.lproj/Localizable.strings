@@ -705,6 +705,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Mova o mapa ou ative os serviços de localização para ver as paradas próximas.";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "Qual parada?";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "Esse favorito não está disponível na sua região atual.";
 
@@ -720,13 +723,13 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "Depois %@.";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "Não foi possível carregar as partidas de %@. Verifique sua conexão e tente novamente.";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
 "next_departures_intent.no_bookmarks" = "Você não tem viagens nos favoritos. Primeiro adicione aos favoritos uma linha em uma parada.";
 
-/* Siri response when a bookmarked trip has no upcoming departures. {Bookmark name} */
+/* Siri response when a bookmarked trip or a stop has no upcoming departures. {Bookmark or stop name} */
 "next_departures_intent.no_departures_fmt" = "Nenhuma partida para %@ na próxima hora.";
 
 /* Siri response when the user asks for their next departures before the app knows their region. */
@@ -737,6 +740,18 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "%1$@ para %2$@ %3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "%1$@ %2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "Próximas em %1$@: %2$@.";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "Essa parada não está na sua região atual.";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Superlotado, somente em pé";

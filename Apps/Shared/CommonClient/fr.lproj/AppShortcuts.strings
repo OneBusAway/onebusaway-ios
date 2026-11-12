@@ -1,6 +1,6 @@
 /*
  * App Shortcuts phrases (Siri). Keys are the English phrases from OBAAppShortcuts in
- * OBAAppShortcuts.swift, with ${applicationName} and ${bookmark} tokens. Every
+ * OBAAppShortcuts.swift, with ${applicationName}, ${bookmark} and ${stop} tokens. Every
  * value must keep ${applicationName}, or Siri drops the phrase. Hand-maintained.
  */
 
@@ -17,3 +17,7 @@
 "When is my next bus in ${applicationName}" = "Quand passe mon prochain bus dans ${applicationName}";
 
 "Do I have time to catch the bus with ${applicationName}" = "Est-ce que j'ai le temps de prendre le bus avec ${applicationName}";
+
+"When is the next bus at ${stop} in ${applicationName}" = "Quand passe le prochain bus à ${stop} dans ${applicationName}";
+
+"Next departures at ${stop} in ${applicationName}" = "Prochains départs à ${stop} dans ${applicationName}";
