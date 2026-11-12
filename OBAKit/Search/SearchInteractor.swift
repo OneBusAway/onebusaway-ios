@@ -146,7 +146,7 @@ class SearchInteractor: NSObject {
         lastQuery = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         lastScope = scope
 
-        if !scope.includesPlaces || lastQuery.isEmpty {
+        if !scope.includesPlaces || lastQuery.isEmpty || lastQuery.count < 2 {
             cancelPendingPlacemarkSearch()
         }
 
