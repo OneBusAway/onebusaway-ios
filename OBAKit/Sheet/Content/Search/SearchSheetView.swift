@@ -45,7 +45,7 @@ struct SearchSheetView: View {
 
     var body: some View {
         NavigationStack {
-            SearchListView(searchInteractor: viewModel.searchInteractor)
+            searchBody
                 .navigationTitle(Text(OBALoc(
                     "search_controller.empty_set.title",
                     value: "Search",
@@ -83,9 +83,15 @@ struct SearchSheetView: View {
                         SearchListSectionsView(sections: viewModel.searchInteractor.sections)
                     }
                 }
+                .searchListChrome()
                 .autocorrectionDisabled()
                 .onSubmit(of: .search) {
                     viewModel.submitSearch()
+                }
+                .onChange(of: isSearchPresented) { wasPresented, isPresented in
+                    if wasPresented && !isPresented {
+                        viewModel.scope = .all
+                    }
                 }
         }
         .searchSheetBackground()
@@ -130,6 +136,19 @@ struct SearchSheetView: View {
             Button(Strings.delete, role: .destructive) {
                 viewModel.confirmClearRecentSearches()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var searchBody: some View {
+        // `.searchSuggestions` shares the sheet's grouped background via
+        // `.searchListChrome()`. Suppress `SearchListView` while suggestions are
+        // presented so its list doesn't show through the transparent backdrop.
+        if isSearchPresented && !viewModel.searchInteractor.sections.isEmpty {
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+        } else {
+            SearchListView(searchInteractor: viewModel.searchInteractor)
         }
     }
 
