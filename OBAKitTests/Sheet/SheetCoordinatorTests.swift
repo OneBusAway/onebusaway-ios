@@ -162,7 +162,7 @@ final class SheetCoordinatorTests {
         coordinator.open(trip, from: stop)
 
         #expect(coordinator.stackedRoutes == [stop, trip])
-        #expect(coordinator.stackedDetents == [.large, .large])
+        #expect(coordinator.stackedDetents == [.medium, .large])
     }
 
     // MARK: - claimUnwindFocus(atDepth:)
@@ -378,7 +378,7 @@ final class SheetCoordinatorTests {
 
         #expect(applied)
         // Depth 2, not depth 0: the topmost planner is the one on screen.
-        #expect(coordinator.stackedDetents == [.medium, .large, .large])
+        #expect(coordinator.stackedDetents == [.medium, .medium, .large])
     }
 
     @Test func `Set stacked detent by predicate is a no op when nothing matches`() {
@@ -399,11 +399,11 @@ final class SheetCoordinatorTests {
     /// storing one would leave the coordinator disagreeing with the screen.
     @Test func `Set stacked detent by predicate refuses a detent the route does not declare`() {
         let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        coordinator.push(.stopDetails(stopID: "1"))
+        // Declares `.large` alone.
+        coordinator.push(.nearbyAll)
 
         let applied = coordinator.setStackedDetent(.medium) { route in
-            if case .stopDetails = route { return true }
-            return false
+            route == .nearbyAll
         }
 
         #expect(applied == false)

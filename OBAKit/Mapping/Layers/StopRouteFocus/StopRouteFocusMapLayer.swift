@@ -24,7 +24,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     // MARK: - Styling
 
-    private enum Style {
+    enum Style {
         /// At least `RouteArrowStyle.minimumLineWidth`, so every route's line keeps
         /// its direction chevrons, not just the focused one's.
         static let coreWidth: CGFloat = 6
@@ -32,10 +32,6 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         static let dimmedAlpha: CGFloat = 0.32
         static let normalAlpha: CGFloat = 1.0
     }
-
-    /// How far apart, in screen points, routes sharing a street draw: an unfocused
-    /// line and its casing, so neighbors touch without covering each other.
-    static let laneWidth: CGFloat = Style.coreWidth + RouteArrowStyle.casingExtraWidth
 
     // MARK: - MapLayer
 
@@ -87,7 +83,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// Each drawn route's shape as fetched, before it moves over for a shared street.
     private var shapes: [RouteID: [CLLocationCoordinate2D]] = [:]
     /// Where each drawn route sits across the streets it shares.
-    private var lanes: [RouteID: RouteLaneLayout.Line] = [:]
+    private var lanes = RouteLanes.empty
     /// The screen points per map point the lines were last moved over for.
     private var laneScale: CGFloat?
     /// The routes drawn moved over for a shared street.
@@ -429,10 +425,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private func drawShapes() {
         // In a fixed order, not the model's: that follows the soonest arrival, which
         // rolls over as buses depart, and would swap the lines' sides on a redraw.
-        let routeIDs = model.routes.map(\.routeID).sorted()
-        lanes = RouteLaneLayout.lines(for: routeIDs.compactMap { routeID in
-            shapes[routeID].map { (routeID, $0) }
-        })
+        let routeIDs = Set(model.routes.map(\.routeID))
+        lanes = RouteLanes(shapes: shapes.filter { routeIDs.contains($0.key) })
         redrawLanes()
     }
 
@@ -447,16 +441,15 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private func redrawLanes() {
         let scale = screenScale
         laneScale = scale
-        let laneWidth = scale.map { Double(Self.laneWidth / $0) } ?? 0
 
         let drawn = Dictionary(grouping: overlays, by: \.routeID)
         var added: [RouteShapeOverlay] = []
         overlays = model.routes.flatMap { route -> [RouteShapeOverlay] in
-            guard let line = lanes[route.routeID], let shape = shapes[route.routeID] else { return [] }
-            if !line.isShared, !offsetRouteIDs.contains(route.routeID), let lines = drawn[route.routeID] {
+            let isShared = lanes.sharedRouteIDs.contains(route.routeID)
+            if !isShared, !offsetRouteIDs.contains(route.routeID), let lines = drawn[route.routeID] {
                 return lines
             }
-            let coordinates = line.isShared ? line.offsetCoordinates(laneWidth: laneWidth) : shape
+            guard let coordinates = lanes.coordinates(for: route.routeID, screenScale: scale) else { return [] }
             // Bottom to top: casing, the colored core above it, then its chevrons.
             let parts = [RouteLinePart.casing, .core, .arrows].map {
                 RouteShapeOverlay.make(coordinates: coordinates, routeID: route.routeID, part: $0)
@@ -464,7 +457,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
             added += parts
             return parts
         }
-        offsetRouteIDs = Set(lanes.filter { $0.value.isShared }.keys)
+        offsetRouteIDs = lanes.sharedRouteIDs
 
         let kept = Set(overlays.map(ObjectIdentifier.init))
         let replaced = drawn.values.joined().filter { !kept.contains(ObjectIdentifier($0)) }
@@ -480,8 +473,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     ///
     /// - Returns: Whether they were drawn again.
     private func redrawLanesIfZoomMoved() -> Bool {
-        guard !offsetRouteIDs.isEmpty, let scale = screenScale else { return false }
-        if let laneScale, abs(log2(scale / laneScale)) < 0.25 { return false }
+        guard !offsetRouteIDs.isEmpty, let scale = screenScale,
+              RouteLanes.needsRedraw(drawnAt: laneScale, now: scale) else { return false }
         redrawLanes()
         return true
     }
@@ -549,7 +542,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         overlays.removeAll()
         annotations.removeAll()
         shapes.removeAll()
-        lanes.removeAll()
+        lanes = .empty
         laneScale = nil
         offsetRouteIDs.removeAll()
     }

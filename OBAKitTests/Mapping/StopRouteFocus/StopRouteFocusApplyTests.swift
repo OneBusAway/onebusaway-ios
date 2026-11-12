@@ -44,47 +44,6 @@ final class StopRouteFocusApplyTests {
         mapView.annotations.compactMap { $0 as? StopVehicleAnnotation }
     }
 
-    private static let fixtureName = "arrivals_and_departures_for_stop_1_10020.json"
-
-    private func loadArrivals() throws -> StopArrivals {
-        try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: Self.fixtureName)
-    }
-
-    /// The same fixture with its arrival and departure times moved into the near
-    /// future.
-    ///
-    /// Necessary because `StopRouteFocusModel.make` drops anything whose
-    /// `temporalState` is `.past`, and the fixture's timestamps are fixed at 2019.
-    /// Loaded as-is it yields zero routes and zero vehicles, so a test built on it
-    /// would assert an empty map and pass no matter what the layer did.
-    ///
-    /// The four time keys are rewritten in place and the payload re-decoded through
-    /// the same `RESTAPIResponse` path `Fixtures.loadRESTAPIPayload` uses, so
-    /// `references` — and therefore each `TripStatus.activeTrip` — still resolve.
-    private func upcomingArrivals() throws -> StopArrivals {
-        var payload = try #require(
-            try JSONSerialization.jsonObject(with: Fixtures.loadData(file: Self.fixtureName)) as? [String: Any]
-        )
-        var data = try #require(payload["data"] as? [String: Any])
-        var entry = try #require(data["entry"] as? [String: Any])
-        var departures = try #require(entry["arrivalsAndDepartures"] as? [[String: Any]])
-
-        for index in departures.indices {
-            // Minutes apart so `make`'s soonest-per-route ordering stays meaningful.
-            let millis = Int((Date().timeIntervalSince1970 + Double((index + 2) * 60)) * 1000)
-            for key in ["predictedArrivalTime", "scheduledArrivalTime", "predictedDepartureTime", "scheduledDepartureTime"] {
-                departures[index][key] = millis
-            }
-        }
-
-        entry["arrivalsAndDepartures"] = departures
-        data["entry"] = entry
-        payload["data"] = data
-
-        let rewritten = try JSONSerialization.data(withJSONObject: payload)
-        return try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<StopArrivals>.self, from: rewritten).list
-    }
-
     // MARK: - The symptom
 
     /// The bug as the rider saw it: route lines, no buses. One emission — the
@@ -95,7 +54,7 @@ final class StopRouteFocusApplyTests {
         let layer = makeLayer(mapView: mapView)
         layer.begin(focus: StopMapFocus())
 
-        layer.apply(arrivals: try upcomingArrivals(), isListFiltered: false, preferences: StopPreferences())
+        layer.apply(arrivals: try StopArrivalsFixture.upcoming(), isListFiltered: false, preferences: StopPreferences())
 
         // The fixture carries four departures, each with a distinct vehicle ID and
         // a `tripStatus.position`.
@@ -111,14 +70,14 @@ final class StopRouteFocusApplyTests {
         let layer = makeLayer(mapView: mapView)
         layer.begin(focus: StopMapFocus())
 
-        layer.apply(arrivals: try upcomingArrivals(), isListFiltered: false, preferences: StopPreferences())
+        layer.apply(arrivals: try StopArrivalsFixture.upcoming(), isListFiltered: false, preferences: StopPreferences())
         #expect(vehicles(on: mapView).count == 4)
 
         // Re-apply the same arrivals, but with the resolver knocked out the way a
         // stale read knocked it out.
         layer.departureProvider = { _ in nil }
         layer.update(model: StopRouteFocusModel.make(
-            departures: try upcomingArrivals().arrivalsAndDepartures,
+            departures: try StopArrivalsFixture.upcoming().arrivalsAndDepartures,
             routeCap: StopRouteFocusMapLayer.routeCap
         ))
 
@@ -132,7 +91,7 @@ final class StopRouteFocusApplyTests {
     /// anywhere the layer could read them from.
     @Test func `Applying an emission installs a resolver for that emission's departures`() throws {
         let layer = makeLayer()
-        let arrivals = try loadArrivals()
+        let arrivals = try StopArrivalsFixture.load()
         let departure = try #require(arrivals.arrivalsAndDepartures.first)
 
         layer.apply(arrivals: arrivals, isListFiltered: false, preferences: StopPreferences())
@@ -144,7 +103,7 @@ final class StopRouteFocusApplyTests {
     /// layer asks it once per vehicle.
     @Test func `The resolver answers for every departure in the emission`() throws {
         let layer = makeLayer()
-        let arrivals = try loadArrivals()
+        let arrivals = try StopArrivalsFixture.load()
 
         layer.apply(arrivals: arrivals, isListFiltered: false, preferences: StopPreferences())
 
@@ -159,7 +118,7 @@ final class StopRouteFocusApplyTests {
     @Test func `The resolver refuses an ID that is not in the emission`() throws {
         let layer = makeLayer()
 
-        layer.apply(arrivals: try loadArrivals(), isListFiltered: false, preferences: StopPreferences())
+        layer.apply(arrivals: try StopArrivalsFixture.load(), isListFiltered: false, preferences: StopPreferences())
 
         #expect(layer.departureProvider?("stop=nope,trip=nope,route=nope") == nil)
     }
@@ -169,7 +128,7 @@ final class StopRouteFocusApplyTests {
     /// time a sheet opens.
     @Test func `A nil emission installs a resolver that answers nothing`() throws {
         let layer = makeLayer()
-        let departure = try #require(try loadArrivals().arrivalsAndDepartures.first)
+        let departure = try #require(try StopArrivalsFixture.load().arrivalsAndDepartures.first)
 
         layer.apply(arrivals: nil, isListFiltered: false, preferences: StopPreferences())
 

@@ -9,6 +9,7 @@
 
 import Testing
 import MapKit
+import SwiftUI
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -150,14 +151,21 @@ final class AppSheetRouteTests {
         }
     }
 
-    @Test func `Stop details detent is pinned full height and interactively dismissible`() {
-        // The stop detail sheet is pinned to full height (`.large`) and carries
-        // its own close button, but the OS drag-down gesture stays enabled.
+    /// Opens at `.medium`, not `.large`: the panel's map draws the stop's routes and
+    /// the vehicles arriving on them behind the sheet, which a full-height sheet would
+    /// cover. The map stays interactive up through `.medium`, as it does under a trip.
+    @Test func `Stop details opens at medium over the panel's map`() {
         let config = AppSheetRoute.stopDetails(stopID: "1").detentConfiguration
-        #expect(config.detents == [.large])
-        #expect(config.initialDetent == .large)
+        #expect(config.detents == [.medium, .large])
+        #expect(config.initialDetent == .medium)
         #expect(config.isDismissDisabled == false)
         #expect(config.fullScreenDetent == nil)
+        // Not `Equatable`; the descriptions differ for `.disabled`, which is what
+        // left the map untouchable behind this sheet before.
+        #expect(String(describing: config.backgroundInteraction)
+            == String(describing: PresentationBackgroundInteraction.enabled(upThrough: .medium)))
+        #expect(String(describing: config.backgroundInteraction)
+            != String(describing: PresentationBackgroundInteraction.disabled))
     }
 
     /// Opens at `.medium`, not `.large`: the planner draws its route on the map behind

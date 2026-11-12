@@ -47,6 +47,9 @@ public final class MapPanelRootController: UIViewController {
                   locationService.isLocationUseAuthorized else { return nil }
             return locationService.currentLocation?.coordinate
         })
+        // Built here for the same reason: the stop sheet hands its arrivals to this
+        // instance, and the map draws from it.
+        let stopFocusMapDisplayModel = Self.makeStopFocusMapDisplayModel(application: application)
         // Same reasoning for the map models: `AppSheetViewFactory` needs the
         // very instances the map renders from — `MapSheetModel` reads and
         // writes the map type through `MapViewModel`, so a second copy would
@@ -67,6 +70,7 @@ public final class MapPanelRootController: UIViewController {
             stopsObserver: stopsObserver,
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel,
             tripFocusMapDisplayModel: tripFocusMapDisplayModel,
+            stopFocusMapDisplayModel: stopFocusMapDisplayModel,
             onDemandProbeController: probeController
         )
         let rootView = MapPanelRootView(
@@ -79,6 +83,7 @@ public final class MapPanelRootController: UIViewController {
             stopsObserver: stopsObserver,
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel,
             tripFocusMapDisplayModel: tripFocusMapDisplayModel,
+            stopFocusMapDisplayModel: stopFocusMapDisplayModel,
             probeController: probeController
         )
         self.host = UIHostingController(rootView: rootView)
@@ -86,6 +91,18 @@ public final class MapPanelRootController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         self.bridge.host = self
         self.application.viewRouter.register(mapPanelRootController: self)
+    }
+
+    /// The API service is read per fetch because it changes with the region; the
+    /// panel empties the shape cache then too.
+    private static func makeStopFocusMapDisplayModel(application: Application) -> StopFocusMapDisplayModel {
+        StopFocusMapDisplayModel(
+            shapeCache: ShapeCache { [weak application] shapeID in
+                guard let apiService = await application?.apiService else { throw CancellationError() }
+                return try await apiService.getShape(id: shapeID).entry.points
+            },
+            formatters: application.formatters
+        )
     }
 
     required init?(coder: NSCoder) {

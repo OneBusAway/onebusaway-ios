@@ -43,6 +43,7 @@ final class AppSheetViewFactory {
     let stopsObserver: MapStopsObserver
     let tripPlannerMapDisplayModel: TripPlannerMapDisplayModel
     let tripFocusMapDisplayModel: TripFocusMapDisplayModel
+    let stopFocusMapDisplayModel: StopFocusMapDisplayModel
     /// The dock's probe controller: the picker writes its highlight, which the
     /// panel mirrors onto the zone layer, so bar pages and picker rows share
     /// one source of truth.
@@ -56,9 +57,9 @@ final class AppSheetViewFactory {
     /// renders correctly and then silently ignores every button on it.
     ///
     /// `coordinator`, `searchDisplayModel`, `stopsObserver`,
-    /// `tripPlannerMapDisplayModel`, `tripFocusMapDisplayModel`, and
-    /// `onDemandProbeController`: they must be the same instances the hosting
-    /// `MapPanelRootView` observes. A factory built with its own private copies
+    /// `tripPlannerMapDisplayModel`, `tripFocusMapDisplayModel`,
+    /// `stopFocusMapDisplayModel`, and `onDemandProbeController`: they must be the
+    /// same instances the hosting `MapPanelRootView` observes. A factory built with its own private copies
     /// would push routes onto a coordinator nobody is watching, draw into a
     /// display model nobody renders, observe a different stop set than the map
     /// is showing, push trip state into a model nobody renders, or highlight a
@@ -76,6 +77,7 @@ final class AppSheetViewFactory {
         stopsObserver: MapStopsObserver,
         tripPlannerMapDisplayModel: TripPlannerMapDisplayModel,
         tripFocusMapDisplayModel: TripFocusMapDisplayModel,
+        stopFocusMapDisplayModel: StopFocusMapDisplayModel,
         onDemandProbeController: OnDemandProbeController
     ) {
         self.application = application
@@ -89,6 +91,7 @@ final class AppSheetViewFactory {
         self.stopsObserver = stopsObserver
         self.tripPlannerMapDisplayModel = tripPlannerMapDisplayModel
         self.tripFocusMapDisplayModel = tripFocusMapDisplayModel
+        self.stopFocusMapDisplayModel = stopFocusMapDisplayModel
         self.onDemandProbeController = onDemandProbeController
     }
 
@@ -242,7 +245,39 @@ final class AppSheetViewFactory {
             },
             feedback: DataLoadFeedbackGenerator(application: self.application),
             formatters: self.application.formatters,
-            userDefaults: self.application.userDefaults
+            userDefaults: self.application.userDefaults,
+            mapLink: stopMapLink(stopID: stopID)
+        )
+    }
+
+    /// Draws the stop's routes and vehicles on the panel's map while its sheet is
+    /// on the stack. The drawing ends when the route leaves the stack
+    /// (`StopFocusMapDisplayModel.clearIfOwnerAbsent(from:)`).
+    private func stopMapLink(stopID: StopID) -> StopSheetMapLink {
+        let owner = AppSheetRoute.stopDetails(stopID: stopID)
+        return StopSheetMapLink(
+            show: { [stopFocusMapDisplayModel, coordinator] focus in
+                // Same wait, and the same check after it, as the trip page's focus
+                // in `tripDetailsView`: publishing the map's state from inside a
+                // view update is undefined behaviour, and the sheet can close
+                // during the wait.
+                Task { @MainActor in
+                    guard coordinator.allRoutes.contains(owner) else { return }
+                    stopFocusMapDisplayModel.show(focus: focus, owner: owner)
+                }
+            },
+            apply: { [stopFocusMapDisplayModel] arrivals, isListFiltered, preferences in
+                // Behind `show`'s wait, so the first emission isn't dropped for
+                // arriving before its sheet is known.
+                Task { @MainActor in
+                    stopFocusMapDisplayModel.apply(
+                        arrivals: arrivals,
+                        isListFiltered: isListFiltered,
+                        preferences: preferences,
+                        owner: owner
+                    )
+                }
+            }
         )
     }
 

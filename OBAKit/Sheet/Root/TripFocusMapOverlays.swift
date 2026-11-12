@@ -56,19 +56,28 @@ func tripFocusMapContent(for display: TripFocusMapDisplayModel.Display?) -> some
 
         if let vehicle = display.vehicle {
             Annotation("", coordinate: vehicle.coordinate, anchor: .center) {
-                TripVehicleMarker(vehicle: vehicle, routeColor: display.routeColor)
+                PanelVehicleMarker(
+                    routeType: vehicle.routeType,
+                    isRealTime: vehicle.isRealTime,
+                    orientation: vehicle.orientation,
+                    routeColor: display.routeColor
+                )
+                // The page's stop list already marks the stop the bus is at, and
+                // the map tab's marker isn't interactive either.
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
             }
         }
     }
 }
 
-private func tripShapeStroke(width: CGFloat) -> StrokeStyle {
+func tripShapeStroke(width: CGFloat) -> StrokeStyle {
     StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round)
 }
 
-/// A chevron pointing the way the trip runs, as `RouteArrowRenderer` draws it on the
-/// map tab.
-private struct TripDirectionArrow: View {
+/// A chevron pointing the way a route runs, as `RouteArrowRenderer` draws it on the
+/// map tab. Shared with `stopFocusMapContent(for:onSelectVehicle:)`.
+struct TripDirectionArrow: View {
     let headingDegrees: CLLocationDirection
     let color: Color
 
@@ -113,20 +122,26 @@ private struct TripStopDot: View {
     }
 }
 
-/// The open trip's vehicle, laid out as `PulsingVehicleAnnotationView` draws it on
-/// the map tab: a route-colored dot with the mode's icon, gray when the position is
-/// scheduled rather than live, and a heading ring behind it when it's live.
-private struct TripVehicleMarker: View {
-    let vehicle: TripFocusMapDisplayModel.TripVehicle
+/// A vehicle on the panel's map, laid out as `PulsingVehicleAnnotationView` draws it
+/// on the map tab: a route-colored dot with the mode's icon, gray when the position
+/// is scheduled rather than live, and a heading ring behind it when it's live.
+///
+/// Shared by the open trip's vehicle and an open stop's arriving vehicles. Callers
+/// decide its accessibility and hit testing.
+struct PanelVehicleMarker: View {
+    let routeType: Route.RouteType
+    let isRealTime: Bool
+    /// In degrees, as OBA reports it.
+    let orientation: CLLocationDirection
     let routeColor: Color
 
     private static let diameter = TripFocusMapLayer.Style.vehicleDiameter
 
     var body: some View {
-        let color = vehicle.isRealTime ? routeColor : Color(uiColor: ThemeColors.shared.gray)
+        let color = isRealTime ? routeColor : Color(uiColor: ThemeColors.shared.gray)
 
         ZStack {
-            if vehicle.isRealTime {
+            if isRealTime {
                 // Negated because OBA's orientation turns the other way from a
                 // screen rotation; see `PulsingVehicleAnnotationView.updateHeading`.
                 Image(uiImage: Icons.templateHeading)
@@ -134,21 +149,17 @@ private struct TripVehicleMarker: View {
                     .resizable()
                     .frame(width: Self.diameter * 3, height: Self.diameter * 3)
                     .foregroundStyle(color)
-                    .rotationEffect(.radians(-vehicle.orientation.radians))
+                    .rotationEffect(.radians(-orientation.radians))
             }
             Circle()
                 .fill(color)
                 .frame(width: Self.diameter, height: Self.diameter)
-            Image(uiImage: Icons.transportIcon(from: vehicle.routeType))
+            Image(uiImage: Icons.transportIcon(from: routeType))
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
                 .frame(width: Self.diameter / 2, height: Self.diameter / 2)
                 .foregroundStyle(.white)
         }
-        // The page's stop list already marks the stop the bus is at, and the map
-        // tab's marker isn't interactive either.
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
     }
 }
