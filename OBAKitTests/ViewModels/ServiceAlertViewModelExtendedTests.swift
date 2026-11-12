@@ -58,11 +58,12 @@ final class ServiceAlertViewModelExtendedTests: OBATestCase {
     }
 
     private func loadServiceAlert() throws -> ServiceAlert {
-        let alerts = try Fixtures.loadRESTAPIPayload(
-            type: [AgencyAlert].self,
-            fileName: "agency-alerts-kcm.json"
-        )
-        return try #require(alerts.first?.alerts.first)
+        // Load a ServiceAlert from an arrivals-and-departures fixture whose
+        // references section contains situations (ServiceAlert is Decodable;
+        // AgencyAlert is a protobuf-backed NSObject and is not).
+        let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
+        let response = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
+        return try #require(response.references?.serviceAlerts.first)
     }
 
     @Test @MainActor

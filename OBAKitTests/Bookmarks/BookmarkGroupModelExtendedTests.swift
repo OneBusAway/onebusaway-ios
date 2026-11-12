@@ -85,7 +85,9 @@ final class BookmarkGroupModelExtendedTests: OBATestCase {
         let desc = group.debugDescription
 
         #expect(desc.contains("Evening"))
-        #expect(desc.contains("sortOrder: 3"))
+        // DebugDescriptionBuilder interpolates a [String: Any] dictionary,
+        // which prints keys in quotes: "sortOrder": 3
+        #expect(desc.contains("\"sortOrder\": 3"))
         #expect(desc.contains(id.uuidString))
     }
 }

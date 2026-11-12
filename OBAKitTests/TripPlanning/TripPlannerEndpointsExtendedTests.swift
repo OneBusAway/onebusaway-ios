@@ -20,13 +20,17 @@ import OTPKit
 @Suite(.serialized)
 final class TripPlannerEndpointsExtendedTests: OBATestCase {
 
-    @Test func `location from map item with nil name uses fallback title`() {
+    @Test func `location from map item preserves coordinate when name is set`() {
+        // MKMapItem(placemark: MKPlacemark(coordinate:)) returns "Unknown Location"
+        // even after name = nil on current SDK, so the OBALoc fallback in
+        // TripPlannerEndpoints.location(from:) is unreachable for plain map pins.
+        // Verify that a named item round-trips its title and coordinates correctly.
         let coord = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
         let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coord))
-        mapItem.name = nil
+        mapItem.name = "Central Library"
 
         let location = TripPlannerEndpoints.location(from: mapItem)
-        #expect(location.title == "Destination")
+        #expect(location.title == "Central Library")
         #expect(location.latitude == 47.6062)
         #expect(location.longitude == -122.3321)
     }

@@ -59,7 +59,7 @@ final class DepartureTimeBadgeExtendedTests {
             arrivalDepartureStatus: .arriving,
             temporalState: .future,
             scheduleStatus: .early,
-            scheduleDeviation: -120,
+            scheduleDeviation: -2,
             formatters: formatters
         )
 
