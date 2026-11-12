@@ -28,6 +28,8 @@ struct HomeSheetView: View {
     @State private var selectedTab: HomeTab = .home
     /// Home's page above the tab bar; see `HomeTabs.showsHomeList`.
     @State private var homePageHeight: CGFloat = 0
+    /// See `HomeCollapsedDetent`.
+    @State private var searchRowHeight = AppSheetRoute.homeSearchRowHeight
 
     /// Used by the bookmark rows to format distances.
     private let application: Application
@@ -151,9 +153,17 @@ struct HomeSheetView: View {
         VStack(spacing: 0) {
             searchBarRow
                 .padding(.top, 16)
-                .padding(.bottom, 12)
+                .padding(.bottom, HomeTabs.searchRowBottomPadding)
+                // Its own height, however short the page: measured for the
+                // collapsed detent, a squeezed row would shrink the detent, which
+                // would squeeze it further.
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    searchRowHeight = height
+                    HomeCollapsedDetent.measured.withLock { $0.searchRowHeight = height }
+                }
 
-            if !HomeTabs.showsHomeList(showsTabs: showsTabs, pageHeight: homePageHeight) {
+            if !HomeTabs.showsHomeList(showsTabs: showsTabs, pageHeight: homePageHeight, searchRowHeight: searchRowHeight) {
                 Spacer()
             } else if !viewModel.visibleSections.isEmpty {
                 List {

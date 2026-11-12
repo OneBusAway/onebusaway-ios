@@ -70,15 +70,15 @@ struct HomeTabsTests {
     /// Collapsed, Home is the search field over the bar. A list peeking through
     /// the sliver between them reads as cut off.
     @Test func `Home hides its list with less than a row of room under the search field`() {
-        let search = AppSheetRoute.homeSearchRowHeight
-        #expect(!HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + 30))
-        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + HomeTabs.minimumListRoom))
-        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: 400))
+        let search: CGFloat = 80
+        #expect(!HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + 30, searchRowHeight: search))
+        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + HomeTabs.minimumListRoom, searchRowHeight: search))
+        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: 400, searchRowHeight: search))
     }
 
     /// Without tabs there's no bar for it to peek against, as before.
     @Test func `Without tabs the list shows at any height`() {
-        #expect(HomeTabs.showsHomeList(showsTabs: false, pageHeight: 0))
+        #expect(HomeTabs.showsHomeList(showsTabs: false, pageHeight: 0, searchRowHeight: 80))
     }
 
     /// A floating sheet stops short of the screen's edge and the home indicator
@@ -93,21 +93,39 @@ struct HomeTabsTests {
         #expect(HomeTabs.bottomClearance(sheetBottom: 874, screen: ScreenBottom()) == 0)
     }
 
-    /// A floating sheet runs past its detent into the home indicator's area; the
-    /// collapsed detent gives that back, so search and the bar fill it exactly.
-    @Test func `A floating sheet reports how far it runs past the safe area`() {
-        let screen = ScreenBottom(safeArea: 840, edge: 874)
-        #expect(HomeTabs.floatingOverlap(sheetBottom: 863, screen: screen) == 23)
-        // Ends above the safe area (a home-button phone, or a raised keyboard).
-        #expect(HomeTabs.floatingOverlap(sheetBottom: 820, screen: screen) == 0)
-        // Not floating, or not measured: nothing to learn.
-        #expect(HomeTabs.floatingOverlap(sheetBottom: 874, screen: screen) == nil)
-        #expect(HomeTabs.floatingOverlap(sheetBottom: 863, screen: ScreenBottom()) == nil)
+    /// The system draws the sheet taller than its detent: a floating sheet runs
+    /// into the home indicator's area, and a little more. Learned from the sheet
+    /// as drawn, so the collapsed sheet is the search row and the bar, exactly.
+    @Test func `The collapsed detent learns how much taller the sheet is drawn`() {
+        // First sight: asked for 136, drawn 166.5.
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 166.5, requested: 136, previous: nil) == 30.5)
+        // Settled again after the correction: the same, give or take.
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 138, requested: 108.5, previous: 30.5) == 29.5)
     }
 
-    @Test func `The collapsed detent gives back the floating overlap`() {
-        #expect(HomeCollapsedDetent.height(floatingOverlap: 0) == AppSheetRoute.homeCollapsedHeight)
-        #expect(HomeCollapsedDetent.height(floatingOverlap: 23) == AppSheetRoute.homeCollapsedHeight - 23)
+    /// Mid-drag, the sheet is taller than the detent because of the finger, not
+    /// the system; that isn't learned.
+    @Test func `A drag doesn't teach the collapsed detent`() {
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 160, requested: 108.5, previous: 30.5) == nil)
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 400, requested: 136, previous: nil) == nil)
+        #expect(HomeCollapsedDetent.sheetExtra(sheetHeight: 100, requested: 136, previous: nil) == nil)
+    }
+
+    @Test func `The collapsed detent gives back what the sheet is drawn taller`() {
+        #expect(HomeCollapsedDetent.height(.init()) == AppSheetRoute.homeCollapsedHeight)
+        #expect(HomeCollapsedDetent.height(.init(sheetExtra: 29.5)) == AppSheetRoute.homeCollapsedHeight - 29.5)
+    }
+
+    /// Fitted to the search row as laid out, so the gap over the bar is the row's
+    /// own bottom padding at any text size, not that plus a fixed estimate's slack.
+    @Test func `The collapsed detent fits the measured search row`() {
+        #expect(HomeCollapsedDetent.height(.init(searchRowHeight: 90)) == 90 + AppSheetRoute.homeTabBarHeight)
+        #expect(HomeCollapsedDetent.height(.init(searchRowHeight: 90, sheetExtra: 26)) == 90 + AppSheetRoute.homeTabBarHeight - 26)
+    }
+
+    /// Find My's spacing: the search field sits 8 pt over the tab bar.
+    @Test func `The search field sits 8 pt over the tab bar`() {
+        #expect(HomeTabs.searchToTabBarSpacing == 8)
     }
 
     // MARK: - See all

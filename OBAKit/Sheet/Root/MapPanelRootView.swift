@@ -857,11 +857,13 @@ struct MapPanelRootView: View {
                 let duration = max(min(diff / 100, 0.3), 0)
                 toolbarsAnimationDuration = duration
             }
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { sheetBottom in
-                guard !route.prefersStacking,
-                      let overlap = HomeTabs.floatingOverlap(sheetBottom: sheetBottom, screen: screenBottom)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                // Settled at the collapsed detent, the home sheet's height is the
+                // system's doing; see `HomeCollapsedDetent`.
+                guard route == .home,
+                      coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent
                 else { return }
-                HomeCollapsedDetent.floatingOverlap.withLock { $0 = overlap }
+                HomeCollapsedDetent.learn(sheetHeight: height)
             }
             .ignoresSafeArea()
     }

@@ -75,9 +75,20 @@ enum HomeTabs {
     /// system leaves between them, a list peeking through it reads as cut off.
     /// Measured rather than read off the detent, so the list follows a drag rather
     /// than appearing when it settles.
-    static func showsHomeList(showsTabs: Bool, pageHeight: CGFloat) -> Bool {
-        !showsTabs || pageHeight - AppSheetRoute.homeSearchRowHeight >= minimumListRoom
+    static func showsHomeList(showsTabs: Bool, pageHeight: CGFloat, searchRowHeight: CGFloat) -> Bool {
+        !showsTabs || pageHeight - searchRowHeight >= minimumListRoom
     }
+
+    /// The gap between the search field and the tab bar on the collapsed sheet,
+    /// as it reads on screen.
+    static let searchToTabBarSpacing: CGFloat = 8
+
+    /// The search row's bottom padding, which the collapsed detent fits exactly.
+    /// Less than `searchToTabBarSpacing`: the bar's glass capsule draws inside the
+    /// top of its frame, and the search field's fill inside the bottom of its row,
+    /// together about 3 pt (measured on iOS 26), so 5 pt between the frames reads
+    /// as 8 between the shapes.
+    static let searchRowBottomPadding: CGFloat = searchToTabBarSpacing - 3
 
     /// Where the sheet goes when a tab is picked, or `nil` to leave it.
     ///
@@ -98,41 +109,73 @@ enum HomeTabs {
         guard screen.edge.isFinite, sheetBottom >= screen.edge - 1 else { return 0 }
         return screen.edge - screen.safeArea
     }
-
-    /// How far a floating sheet runs past the screen's safe area into the home
-    /// indicator's, or `nil` for a sheet that isn't floating or isn't measured.
-    ///
-    /// A detent's height is measured above that area, so the sheet is this much
-    /// taller than its detent says; see `HomeCollapsedDetent`. It's the same at
-    /// every floating detent, so it's learned from whichever is showing.
-    static func floatingOverlap(sheetBottom: CGFloat, screen: ScreenBottom) -> CGFloat? {
-        guard screen.edge.isFinite, sheetBottom < screen.edge - 1 else { return nil }
-        return max(0, sheetBottom - screen.safeArea)
-    }
 }
 
 /// The home sheet's smallest detent: the search row over the tab bar, and no more.
 ///
-/// A `.height` detent is measured above the home indicator, but a floating sheet
-/// runs past it, so a fixed height left an empty band the depth of that overlap.
-/// This one subtracts it, as measured by `MapPanelRootView`. Being a type, it
-/// stays the same detent as the measurement arrives, so the coordinator's
-/// selection and the comparisons against `AppSheetRoute.homeCollapsedDetent`
-/// keep matching.
+/// Fitted to the search row as laid out, measured by `HomeSheetView`, so the gap
+/// over the bar is `HomeTabs.searchToTabBarSpacing` at any text size. The system
+/// draws a sheet taller than its detent: a floating sheet runs into the home
+/// indicator's area, and a few points more besides. Rather than model that, the
+/// detent learns the difference from the sheet as drawn (`sheetExtra`) and gives
+/// it back. Being a type, it stays the same detent as its height changes, so the
+/// coordinator's selection and the comparisons against
+/// `AppSheetRoute.homeCollapsedDetent` keep matching.
 nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
-    static func height(in context: Context) -> CGFloat? {
-        height(floatingOverlap: floatingOverlap.withLock { $0 })
+    nonisolated struct Measurements: Equatable, Sendable {
+        /// The search row with its padding; see `AppSheetRoute.homeSearchRowHeight`.
+        var searchRowHeight = AppSheetRoute.homeSearchRowHeight
+        /// How much taller than its detent the system draws the collapsed sheet,
+        /// once seen; see `sheetExtra(sheetHeight:requested:previous:)`.
+        var sheetExtra: CGFloat?
+        /// The height last given to the system.
+        var requested: CGFloat?
     }
 
-    /// Set by `MapPanelRootView` as it measures the sheet. Stored here rather than
-    /// in the environment: the `Context` a custom detent gets doesn't carry the
-    /// app's own environment values, only the system's, so one set around or in
-    /// the sheet read as its default. The sheet's layout passes ask for the height
-    /// again, so the measurement takes effect on the pass after it lands.
-    static let floatingOverlap = Mutex<CGFloat>(0)
+    static func height(in context: Context) -> CGFloat? {
+        measured.withLock { measurements in
+            let height = height(measurements)
+            measurements.requested = height
+            return height
+        }
+    }
 
-    static func height(floatingOverlap: CGFloat) -> CGFloat {
-        AppSheetRoute.homeCollapsedHeight - floatingOverlap
+    /// Set as the sheet is laid out. Stored here rather than in the environment:
+    /// the `Context` a custom detent gets doesn't carry the app's own environment
+    /// values, only the system's, so one set around or in the sheet read as its
+    /// default. The sheet's layout passes ask for the height again, so a
+    /// measurement takes effect on the pass after it lands.
+    static let measured = Mutex(Measurements())
+
+    static func height(_ measurements: Measurements) -> CGFloat {
+        measurements.searchRowHeight + AppSheetRoute.homeTabBarHeight - (measurements.sheetExtra ?? 0)
+    }
+
+    /// More than the home indicator's area and some: the sheet is being dragged.
+    private static let maximumSheetExtra: CGFloat = 44
+
+    /// The most a settled sheet's extra moves between measurements; more, and the
+    /// sheet is being dragged or is on its way to a new height.
+    private static let sheetExtraTolerance: CGFloat = 2
+
+    /// How much taller than its detent the system drew the collapsed sheet, from
+    /// `sheetHeight` as laid out, or `nil` when that height is the finger's
+    /// rather than the system's.
+    static func sheetExtra(sheetHeight: CGFloat, requested: CGFloat, previous: CGFloat?) -> CGFloat? {
+        let extra = sheetHeight - requested
+        guard extra >= 0, extra <= maximumSheetExtra else { return nil }
+        if let previous, abs(extra - previous) > sheetExtraTolerance { return nil }
+        return extra
+    }
+
+    /// Learns `sheetExtra` from the collapsed sheet's height as laid out.
+    static func learn(sheetHeight: CGFloat) {
+        measured.withLock { measurements in
+            guard let requested = measurements.requested,
+                  let extra = sheetExtra(sheetHeight: sheetHeight, requested: requested, previous: measurements.sheetExtra)
+            else { return }
+            measurements.sheetExtra = extra
+        }
     }
 }
 
