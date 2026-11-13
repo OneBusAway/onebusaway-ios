@@ -38,12 +38,3 @@ private struct DepartureRowBackground: ViewModifier {
         }
     }
 }
-
-extension EnvironmentValues {
-    /// Whether these views sit directly on a sheet's Liquid Glass (iOS 26+), so
-    /// surfaces that would otherwise paint an opaque background stay clear.
-    ///
-    /// Set by the map panel's stop sheet. The pushed Stop page shares its
-    /// departure rows and leaves this off, keeping them opaque.
-    @Entry var drawsOnSheetGlass = false
-}

@@ -113,7 +113,10 @@ final class AppSheetViewFactory {
             homeView()
 
         case .more:
+            // MoreViewController clears its backgrounds for the sheet's, which
+            // only HomeSheetView sets when More is its tab.
             moreView()
+                .searchSheetBackground()
 
         case .search:
             searchView()

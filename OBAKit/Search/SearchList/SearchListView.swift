@@ -42,33 +42,25 @@ extension View {
             .background(.clear)
     }
 
-    /// Background for a sheet hosting a search list.
-    ///
-    /// On iOS 26 and later, nothing: a partial-height sheet's own background is
-    /// Liquid Glass, which turns opaque by itself as the sheet reaches full
-    /// height, and a `presentationBackground` would replace it. The cards read
-    /// against the glass, as Maps' and Find My's do.
+    /// Background for a sheet hosting a search list: its glass where it shows
+    /// (see `ColorScheme.showsSheetGlass`), whose cards read against it as
+    /// Maps' and Find My's do; otherwise `systemGroupedBackground`.
     ///
     /// Before iOS 26, sheets default to `systemBackground`, and `insetGrouped`
-    /// rows are filled with `secondarySystemGroupedBackground` — the same colour in
-    /// light mode. The cards are drawn, but they're white on white, so the rows
-    /// read as plain text with no list edges at all. Painting the sheet with
-    /// `systemGroupedBackground` is what a grouped list normally sits on and gives
-    /// the cards their contrast back. Applied to the whole sheet rather than left
-    /// to the `List`'s own background so the colour runs edge to edge, instead of
-    /// starting below the search field and leaving the header two-tone.
-    @ViewBuilder
+    /// rows are filled with `secondarySystemGroupedBackground` — the same colour
+    /// in light mode, so the cards are white on white and the rows read as
+    /// plain text with no list edges at all. `systemGroupedBackground` is what a
+    /// grouped list normally sits on and gives the cards their contrast back.
+    /// Applied to the whole sheet rather than left to the `List`'s own
+    /// background so the colour runs edge to edge, instead of starting below the
+    /// search field and leaving the header two-tone.
     func searchSheetBackground() -> some View {
-        if #available(iOS 26.0, *) {
-            self
-        } else {
-            presentationBackground(Color.searchSheetBackground)
-        }
+        sheetGlassBackground(opaque: .searchSheetBackground)
     }
 }
 
 extension Color {
-    /// The search and index sheets' background before iOS 26; see
+    /// The search and index sheets' background when they don't show glass; see
     /// `searchSheetBackground()`. Shared with views that paint over the sheet
     /// and must match it.
     static let searchSheetBackground = Color(.systemGroupedBackground)

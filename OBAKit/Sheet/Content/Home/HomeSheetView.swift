@@ -79,8 +79,8 @@ struct HomeSheetView: View {
                 HomeTabs.bottomClearance(sheetBottom: proxy.frame(in: .global).maxY, screen: screenBottom)
             } action: { barClearance = $0 }
             // On the whole sheet, not just the pages: the bar sits on it, and More,
-            // a UIKit host, sets no sheet background of its own. A no-op on iOS 26,
-            // where the sheet's Liquid Glass is the background.
+            // a UIKit host, sets no sheet background of its own. A no-op where the
+            // sheet's Liquid Glass is the background (iOS 26, light mode).
             .searchSheetBackground()
             .task(id: isShowingHomePage) {
                 // Polls while Home is on screen, so bookmark countdowns don't

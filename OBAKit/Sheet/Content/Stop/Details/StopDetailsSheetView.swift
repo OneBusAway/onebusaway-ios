@@ -506,10 +506,11 @@ private extension View {
     ///
     /// On iOS 26 the bars are `safeAreaBar`s, which reserve the same fixed room
     /// a `safeAreaInset` does and also give the list the system's soft scroll
-    /// edge beneath them. The sheet itself is Liquid Glass while it's partway
-    /// up the screen and turns opaque by itself at full height; clearing the
-    /// list, and the top bar and departure rows through `drawsOnSheetGlass`, lets that glass
-    /// show through the whole sheet.
+    /// edge beneath them. Where the sheet shows its glass (`showsSheetGlass`:
+    /// light mode), clearing the list, and the top bar and departure rows
+    /// through `drawsOnSheetGlass`, lets that glass show through the whole sheet
+    /// while it's partway up the screen; the system turns it opaque by itself
+    /// at full height. In dark mode they stay opaque.
     @ViewBuilder
     func stopSheetChrome(
         @ViewBuilder top: () -> some View,
@@ -518,8 +519,11 @@ private extension View {
         if #available(iOS 26.0, *) {
             safeAreaBar(edge: .top, spacing: 0, content: top)
                 .safeAreaBar(edge: .bottom, spacing: 0, content: bottom)
+                // A no-op where the sheet is opaque: a List's own background
+                // is already transparent in an iOS 26 sheet, which is why the
+                // opaque case needs the sheet painted.
                 .scrollContentBackground(.hidden)
-                .environment(\.drawsOnSheetGlass, true)
+                .sheetGlassBackground(opaque: Color(uiColor: .systemBackground))
         } else {
             safeAreaInset(edge: .top, spacing: 0, content: top)
                 .safeAreaInset(edge: .bottom, spacing: 0, content: bottom)
