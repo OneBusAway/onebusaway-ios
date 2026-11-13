@@ -207,6 +207,8 @@ struct MapPanelRootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
+    /// To keep the map still when a sheet settles; see `MapPanelCameraCompensation`.
+    @State private var cameraSettle: MapPanelCameraCompensation.Settle?
     @State private var mapSize: CGSize = .zero
     @State private var visibleRegion: MKCoordinateRegion?
 
@@ -258,6 +260,33 @@ struct MapPanelRootView: View {
             sheetHeight: rawSheetHeight,
             totalMapHeight: mapSize.height
         )
+    }
+
+    /// A sheet settled at another detent and changed the map's padding: unless the
+    /// app framed something since the camera settled, keep the map where it is
+    /// rather than let MapKit fit the old position into the new visible area.
+    private func keepMapStill(paddingDelta: CGFloat) {
+        guard let cameraSettle,
+              let position = MapPanelCameraCompensation.compensatedPosition(
+                for: cameraPosition, settle: cameraSettle, paddingDelta: paddingDelta
+              )
+        else { return }
+
+        // Never animated: the padding it answers isn't, and a glide would be the
+        // jump this prevents, only slower.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            cameraPosition = position
+        }
+        // Ours, not a framing: a later settle may compensate again.
+        if let shifted = position.camera {
+            self.cameraSettle = MapPanelCameraCompensation.Settle(
+                camera: shifted,
+                mapPointsPerScreenPoint: cameraSettle.mapPointsPerScreenPoint,
+                position: position
+            )
+        }
     }
 
     private func detent(for route: AppSheetRoute) -> PresentationDetent {
@@ -408,6 +437,13 @@ struct MapPanelRootView: View {
         })
         }
         .onMapCameraChange(frequency: .onEnd) { context in
+            // Without a size there's no scale, and nothing to compensate with
+            // until the next settle.
+            cameraSettle = mapSize.width > 0 ? MapPanelCameraCompensation.Settle(
+                camera: context.camera,
+                mapPointsPerScreenPoint: context.rect.width / mapSize.width,
+                position: cameraPosition
+            ) : nil
             viewportRecorder.record(context.rect)
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
@@ -574,8 +610,12 @@ struct MapPanelRootView: View {
         ))
         // Not animated: animating a safe-area change resizes MapKit's view every
         // frame, which drew blank grid tiles and a white band under the map as
-        // the sheet settled. The camera still recentres in the new safe area.
+        // the sheet settled. A sheet settling on its own leaves the map where it
+        // was; see `keepMapStill(paddingDelta:)`.
         .safeAreaPadding(.bottom, mapBottomPadding)
+        .onChange(of: mapBottomPadding) { oldValue, newValue in
+            keepMapStill(paddingDelta: newValue - oldValue)
+        }
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
         } action: { _, newValue in
