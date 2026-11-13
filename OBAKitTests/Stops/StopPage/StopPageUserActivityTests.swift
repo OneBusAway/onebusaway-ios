@@ -193,7 +193,7 @@ final class StopPageUserActivityTests: OBATestCase {
     @Test func `A Bookmarks peek doesn't donate`() async throws {
         let donor = FakeIntentDonor()
         let application = applicationLoadingStops(intentDonor: donor)
-        let preview = StopViewControllerPreview(stopID: "1_10020", application: application)
+        let preview = StopPagePreview(stopID: "1_10020", application: application)
         let page = try #require(preview.makeController() as? StopPageViewController)
 
         page.loadViewIfNeeded()
