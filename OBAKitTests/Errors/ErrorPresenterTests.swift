@@ -46,6 +46,32 @@ final class ErrorPresenterTests {
         #expect(!ErrorPresenter.shouldPresent(silent, current: nil, isShowingDetails: false))
     }
 
+    // MARK: - Notices (Settings' toasts, formerly `ToastManager`)
+
+    @Test func `A notice is one line with no button and the rider's style`() {
+        let toast = ErrorToast(notice: "Couldn't turn on speed sync")
+        #expect(toast.title == "Couldn't turn on speed sync")
+        #expect(toast.message == nil)
+        #expect(toast.actionTitle == nil)
+        #expect(toast.style == .riderAction)
+    }
+
+    @Test func `A notice shows unless it is already up or details are open`() {
+        let notice = ErrorToast(notice: "Couldn't turn on speed sync")
+        #expect(ErrorPresenter.shouldPresent(notice: notice, current: nil, isShowingDetails: false))
+        #expect(ErrorPresenter.shouldPresent(notice: notice, current: ErrorToast(report: report(status: 500)), isShowingDetails: false))
+        #expect(!ErrorPresenter.shouldPresent(notice: notice, current: notice, isShowingDetails: false))
+        #expect(!ErrorPresenter.shouldPresent(notice: notice, current: nil, isShowingDetails: true))
+    }
+
+    /// Under VoiceOver the message is spoken queued behind current speech, so a
+    /// short toast could vanish before it was ever read.
+    @Test func `Under VoiceOver a toast stays up long enough to be heard`() {
+        #expect(ErrorPresenter.dwell(for: 3, isVoiceOverRunning: true) == ErrorPresenter.minimumVoiceOverDwell)
+        #expect(ErrorPresenter.dwell(for: 3, isVoiceOverRunning: false) == 3)
+        #expect(ErrorPresenter.dwell(for: 12, isVoiceOverRunning: true) == 12)
+    }
+
     @Test func `Toast style follows whose fix it is`() {
         #expect(ErrorToast(report: report(status: 500)).style == .problem)
         #expect(ErrorToast(report: report(status: 500)).actionTitle == ErrorStrings.details)

@@ -12,7 +12,7 @@ import OBAKitCore
 
 /// What an ``ErrorToastView`` shows. Independent of `ErrorReport` so any
 /// surface can raise a toast of its own.
-struct ErrorToast {
+struct ErrorToast: Equatable {
     enum Style {
         /// Orange "!": the problem is on our side or the agency's.
         case problem
@@ -21,9 +21,11 @@ struct ErrorToast {
     }
 
     let title: String
-    let message: String
+    /// A second line under the title; a notice has none.
+    let message: String?
     let style: Style
-    let actionTitle: String
+    /// The button's title; a notice has no button.
+    let actionTitle: String?
 }
 
 extension ErrorToast {
@@ -35,6 +37,15 @@ extension ErrorToast {
         case .details: self.actionTitle = ErrorStrings.details
         case .openSettings: self.actionTitle = Strings.settings
         }
+    }
+
+    /// A one-line notice with nothing behind it, such as Settings' "couldn't
+    /// turn on speed sync". The fix is the rider's, so it gets the grey "i".
+    init(notice: String) {
+        self.title = notice
+        self.message = nil
+        self.style = .riderAction
+        self.actionTitle = nil
     }
 }
 
@@ -53,19 +64,23 @@ struct ErrorToastView: View {
                 Text(toast.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
-                Text(toast.message)
-                    .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.8))
+                if let message = toast.message {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
 
-            Button(toast.actionTitle, action: onAction)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color(uiColor: ThemeColors.shared.brand))
-                .buttonStyle(.plain)
-                .padding(.vertical, 8)
-                .contentShape(Rectangle())
+            if let actionTitle = toast.actionTitle {
+                Button(actionTitle, action: onAction)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color(uiColor: ThemeColors.shared.brand))
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 8)
+                    .contentShape(Rectangle())
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
