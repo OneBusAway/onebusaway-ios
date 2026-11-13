@@ -216,14 +216,15 @@ struct StopDetailsSheetView: View {
             }
             // Fixed height — it holds only the top bar, so nothing here resizes
             // as the list scrolls.
-            .safeAreaInset(edge: .top, spacing: 0) { topBar }
+            .stopSheetBar(edge: .top) { topBar }
             // Fixed height, like the top bar above it. An inset whose height
             // tracked scroll position is what pegged the main thread here once;
             // a constant one has no such loop, and it means the list reserves
             // the capsule's room itself — so the last departure cannot hide
             // underneath it and no hand-tuned bottom margin has to be kept in
             // sync with the capsule's height.
-            .safeAreaInset(edge: .bottom, spacing: 0) { actionRow(navigation: navigation) }
+            .stopSheetBar(edge: .bottom) { actionRow(navigation: navigation) }
+            .drawsOnSheetGlassIfAvailable()
             // Bottom-trailing overlay, for the same reason the action row is an
             // overlay: it takes no part in the list's layout, so it cannot feed
             // back into scroll geometry.
@@ -493,5 +494,36 @@ struct StopDetailsSheetView: View {
             .padding(.trailing, 16)
             .padding(.bottom, Self.scrollToTopClearance)
             .animation(.snappy(duration: 0.2), value: showsScrollToTop)
+    }
+}
+
+// MARK: - Liquid Glass
+
+private extension View {
+    /// The sheet's pinned chrome. On iOS 26 a `safeAreaBar`, which reserves the
+    /// same fixed room a `safeAreaInset` does and also gives the list the
+    /// system's soft scroll edge beneath it — the bars have no background of
+    /// their own there, and rows would otherwise scroll visibly under them.
+    @ViewBuilder
+    func stopSheetBar(edge: VerticalEdge, @ViewBuilder content: () -> some View) -> some View {
+        if #available(iOS 26.0, *) {
+            safeAreaBar(edge: edge, spacing: 0, content: content)
+        } else {
+            safeAreaInset(edge: edge, spacing: 0, content: content)
+        }
+    }
+
+    /// On iOS 26 the sheet is Liquid Glass while it's partway up the screen,
+    /// and turns opaque by itself at full height. Clearing the list and the
+    /// surfaces that paint `systemBackground` lets that glass show through the
+    /// whole sheet, as it already did through the gaps between them.
+    @ViewBuilder
+    func drawsOnSheetGlassIfAvailable() -> some View {
+        if #available(iOS 26.0, *) {
+            scrollContentBackground(.hidden)
+                .environment(\.drawsOnSheetGlass, true)
+        } else {
+            self
+        }
     }
 }

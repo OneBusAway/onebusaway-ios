@@ -72,7 +72,7 @@ struct ChronologicalListView: View {
                 onTap: { onSelectDeparture(departure) }
             )
             .departureRowActions(actions)
-            .listRowBackground(DepartureTransferHighlight.rowBackground(isHighlighted: isTransferTrip))
+            .departureRowBackground(isHighlighted: isTransferTrip)
         }
     }
 }

@@ -191,7 +191,7 @@ struct StopPageSheetHeaderView: View {
             // no nav bar hairline to do this job — the chrome moved to the bottom toolbar.
             Divider()
         }
-        .background(Color(uiColor: .systemBackground))
+        .opaqueUnlessOnSheetGlass()
     }
 
     /// The hairline between the walk pill and the route chips. Sized off the same metric the
@@ -437,7 +437,7 @@ struct StopPageSheetHeaderPlaceholderView: View {
         .padding(.top, StopSheetHeaderMetrics.topPadding)
         .padding(.bottom, isCollapsed ? StopSheetHeaderMetrics.collapsedBottomPadding : 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(uiColor: .systemBackground))
+        .opaqueUnlessOnSheetGlass()
         .overlay(alignment: .bottom) { Divider() }
         .onAppear {
             guard !reduceMotion else { return }
