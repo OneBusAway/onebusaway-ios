@@ -22,7 +22,7 @@ enum RegionStopSyncPolicy {
     }
 
     /// How long a complete sync stays fresh.
-    static let fullSyncInterval: TimeInterval = 7 * 86_400
+    static let fullSyncInterval: TimeInterval = StopCacheFreshnessPolicy.freshInterval
 
     /// How often maglev's feed fingerprint is checked between full syncs.
     static let conditionalCheckInterval: TimeInterval = 86_400

@@ -23,13 +23,13 @@ public final class StopCacheRepository: Sendable {
 
     // MARK: - Freshness
 
-    /// Classifies the newest persisted stop data for a region. Empty and
-    /// unreadable caches are expired so callers have one deterministic answer
-    /// before deciding whether offline data may be used.
+    /// Classifies a region from its last successful sync. Empty and unsynced
+    /// caches are expired so callers have one deterministic answer before
+    /// deciding whether offline data may be used.
     public func cacheFreshness(regionId: Int, now: Date = Date()) -> StopCacheFreshness {
         do {
             return StopCacheFreshnessPolicy.classify(
-                lastUpdatedAt: try database.latestCachedStopDate(regionId: regionId),
+                lastSuccessfulSyncAt: try syncState(regionId: regionId)?.lastSuccessAt,
                 now: now
             )
         } catch {

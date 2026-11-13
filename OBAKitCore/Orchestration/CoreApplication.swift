@@ -204,7 +204,7 @@ open class CoreApplication: NSObject,
             return
         }
         Task.detached(priority: .utility) {
-            let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 60 * 60)
+            let thirtyDaysAgo = Date().addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval)
             repository.deleteStopsOlderThan(thirtyDaysAgo, regionId: regionId)
         }
     }

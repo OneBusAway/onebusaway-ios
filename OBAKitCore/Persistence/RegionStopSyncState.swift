@@ -10,38 +10,6 @@
 import Foundation
 import GRDB
 
-/// Usability of the newest stop data for a region at a particular point in time.
-public enum StopCacheFreshness: String, Equatable, Sendable {
-    case fresh
-    case stale
-    case expired
-}
-
-/// Centralizes cache-age policy so callers do not need to know how the cache is
-/// persisted or how UIKit consumes it.
-public enum StopCacheFreshnessPolicy {
-    /// A cache newer than this can be used without a refresh.
-    public static let freshInterval: TimeInterval = 7 * 86_400
-
-    /// A cache older than this is no longer usable offline.
-    public static let expirationInterval: TimeInterval = 30 * 86_400
-
-    /// Classifies a cache from its newest persisted stop timestamp.
-    /// Exactly seven days is stale; exactly thirty days is still stale.
-    public static func classify(lastUpdatedAt: Date?, now: Date) -> StopCacheFreshness {
-        guard let lastUpdatedAt else { return .expired }
-
-        let age = max(0, now.timeIntervalSince(lastUpdatedAt))
-        if age < freshInterval {
-            return .fresh
-        }
-        if age <= expirationInterval {
-            return .stale
-        }
-        return .expired
-    }
-}
-
 /// What happened the last time a region's stops were synced from
 /// `stops-for-agency` (#1555). One row per region.
 struct RegionStopSyncState: Codable, Equatable, Sendable, FetchableRecord, PersistableRecord {
