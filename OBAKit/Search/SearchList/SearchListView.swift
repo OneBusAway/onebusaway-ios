@@ -54,8 +54,14 @@ extension View {
     /// the colour runs edge to edge, instead of starting below the search field and
     /// leaving the header two-tone.
     func searchSheetBackground() -> some View {
-        presentationBackground(Color(.systemGroupedBackground))
+        presentationBackground(Color.searchSheetBackground)
     }
+}
+
+extension Color {
+    /// The search and index sheets' background; see `searchSheetBackground()`.
+    /// Shared with views that paint over the sheet and must match it.
+    static let searchSheetBackground = Color(.systemGroupedBackground)
 }
 
 // MARK: - SearchListSectionsView
@@ -63,12 +69,18 @@ extension View {
 /// Shared section renderer used by both `SearchListView` and `.searchSuggestions`.
 struct SearchListSectionsView: View {
     let sections: [SearchListSection]
+    var onRowActivated: (() -> Void)?
+
+    init(sections: [SearchListSection], onRowActivated: (() -> Void)? = nil) {
+        self.sections = sections
+        self.onRowActivated = onRowActivated
+    }
 
     var body: some View {
         ForEach(sections) { section in
             Section {
                 ForEach(section.content) { row in
-                    SearchListRowView(row: row)
+                    SearchListRowView(row: row, onActivate: onRowActivated)
                 }
             } header: {
                 Text(section.title)

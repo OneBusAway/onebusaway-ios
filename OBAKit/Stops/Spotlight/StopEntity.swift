@@ -42,12 +42,16 @@ nonisolated public struct StopEntity: IndexedEntity {
         AppLinksRouter.StopDestination(stopID: stopID, regionID: regionID)
     }
 
-    public var displayRepresentation: DisplayRepresentation {
-        let title = name ?? String(
+    /// The stop's name, or "Stop 1_75403" when the app has none.
+    var title: String {
+        name ?? String(
             format: OBALoc("stop_entity.fallback_title_fmt", value: "Stop %@", comment: "Title of a transit stop in Shortcuts and Siri when the app has no name for it. The parameter is the stop's ID, such as 1_75403."),
             stopID
         )
-        return DisplayRepresentation(title: "\(title)", subtitle: subtitle.map { "\($0)" })
+    }
+
+    public var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(title)", subtitle: subtitle.map { "\($0)" })
     }
 
     /// Lets Spotlight find the stop by its code and place it on a map. These

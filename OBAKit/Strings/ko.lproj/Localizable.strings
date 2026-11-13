@@ -417,6 +417,9 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "이 섹션의 모든 항목을 표시합니다.";
 
+/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
+"home_sheet.tab.home" = "홈";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "설정에서 실시간 액티비티 설정을 확인해 주세요.";
 
@@ -582,6 +585,9 @@
 /* Accessibility label for website button */
 "map_item_controller.website_accessibility" = "웹 사이트 열기";
 
+/* VoiceOver hint on a vehicle marker drawn for an open stop on the map panel. Tapping it opens the vehicle's trip. */
+"map_panel.stop_vehicle.hint" = "이 운행을 표시합니다.";
+
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "위치 서비스를 사용할 수 없음";
 
@@ -705,6 +711,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "지도를 움직이거나 위치 서비스를 켜면 주변 정류장을 볼 수 있습니다.";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "어떤 정류장인가요?";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "해당 즐겨찾기는 현재 지역에서 사용할 수 없습니다.";
 
@@ -720,7 +729,7 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "그다음은 %@입니다.";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "%@의 출발 정보를 불러올 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
@@ -737,6 +746,21 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "%2$@행 %1$@ 노선 %3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "%1$@ 노선 %2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "%1$@ 다음 출발: %2$@.";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "앞으로 1시간 동안 %@에서 출발하는 차량이 없습니다.";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "해당 정류장은 현재 지역에 없습니다.";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "입석만 가능 (매우 혼잡)";
@@ -1187,9 +1211,6 @@
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "지도 패널 사용";
-
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "적용하려면 앱을 다시 실행하세요.";
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "실험적 기능";
@@ -2349,3 +2370,6 @@
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "문제 세부 정보";
+
+/* VoiceOver hint for an actionable search result row. */
+"search_controller.accessibility.open_result" = "이 결과를 엽니다.";

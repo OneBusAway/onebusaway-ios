@@ -26,7 +26,7 @@ enum MapPanelVoiceOver {
         currentDetent: PresentationDetent
     ) -> PresentationDetent? {
         guard isVoiceOverRunning, expandsSheet,
-              currentDetent == .height(AppSheetRoute.homeCollapsedHeight) else { return nil }
+              currentDetent == AppSheetRoute.homeCollapsedDetent else { return nil }
         return .medium
     }
 }

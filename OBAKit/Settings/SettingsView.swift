@@ -103,8 +103,6 @@ struct SettingsView: View {
             Toggle(OBALoc("settings_controller.experimental_section.cluster_stops", value: "Group nearby stops on the map", comment: "Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin"), isOn: $viewModel.clustersStops)
         } header: {
             Text(OBALoc("settings_controller.experimental_section.title", value: "Experimental", comment: "Settings > Experimental section title"))
-        } footer: {
-            Text(OBALoc("settings_controller.experimental_section.map_panel.footer", value: "Restart the app to apply.", comment: "Settings > Experimental section > Footer indicating changes apply on relaunch"))
         }
     }
 

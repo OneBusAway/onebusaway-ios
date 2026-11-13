@@ -10,6 +10,15 @@
 /* App Intents: label of the bookmark parameter on the Track Bookmark and Next Departures actions. */
 "bookmark_entity.parameter_title" = "書籤";
 
+/* App Intents: description of the Next Departures at Stop action in Shortcuts. Siri speaks the answer. */
+"next_departures_at_stop_intent.description" = "收聽站牌的下一班發車時間。";
+
+/* App Shortcuts: short tile label for Next Departures at Stop in Shortcuts and Spotlight. */
+"next_departures_at_stop_intent.short_title" = "站牌發車";
+
+/* App Intents: name of the Shortcuts action that answers when buses and trains next leave a stop. */
+"next_departures_at_stop_intent.title" = "站牌下一班發車";
+
 /* App Intents: name of the Shortcuts action that answers when a bookmarked trip departs next. */
 "next_departures_intent.title" = "下一班發車";
 
@@ -28,7 +37,7 @@
 /* App Intents: type name of a transit stop in Shortcuts, Siri and Spotlight. Singular noun. */
 "stop_entity.type_name" = "站牌";
 
-/* App Intents: label of the stop parameter on the Open Stop action. */
+/* App Intents: label of the stop parameter on the Open Stop and Next Departures at Stop actions. */
 "stop_entity.parameter_title" = "站牌";
 
 /* App Intents: name of the Next Departures card's Refresh button action. Not listed in Shortcuts; shown only where the system names the action. */

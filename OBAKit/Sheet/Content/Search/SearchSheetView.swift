@@ -80,7 +80,10 @@ struct SearchSheetView: View {
                 }
                 .searchSuggestions {
                     if !viewModel.searchInteractor.sections.isEmpty {
-                        SearchListSectionsView(sections: viewModel.searchInteractor.sections)
+                        SearchListSectionsView(
+                            sections: viewModel.searchInteractor.sections,
+                            onRowActivated: { isSearchPresented = false }
+                        )
                     }
                 }
                 .searchListChrome()

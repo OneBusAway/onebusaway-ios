@@ -15,7 +15,7 @@ import Testing
 @Suite
 struct MapPanelVoiceOverTests {
 
-    private let collapsed = PresentationDetent.height(AppSheetRoute.homeCollapsedHeight)
+    private let collapsed = AppSheetRoute.homeCollapsedDetent
 
     @Test func `VoiceOver raises the collapsed home sheet`() {
         #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: true, currentDetent: collapsed) == .medium)

@@ -417,6 +417,9 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Pokazuje wszystkie elementy w tej sekcji.";
 
+/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
+"home_sheet.tab.home" = "Start";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Sprawdź ustawienia Aktywności na żywo w aplikacji Ustawienia.";
 
@@ -582,6 +585,9 @@
 /* Accessibility label for website button */
 "map_item_controller.website_accessibility" = "Otwórz stronę internetową";
 
+/* VoiceOver hint on a vehicle marker drawn for an open stop on the map panel. Tapping it opens the vehicle's trip. */
+"map_panel.stop_vehicle.hint" = "Pokazuje ten kurs.";
+
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "Usługi lokalizacyjne niedostępne";
 
@@ -705,6 +711,9 @@
 /* Body shown on the Nearby Stops index sheet when no map viewport, device location, or region is available to search around. */
 "nearby_stops_sheet.no_location.body" = "Przesuń mapę lub włącz usługi lokalizacji, aby zobaczyć przystanki w pobliżu.";
 
+/* Siri asks which stop to report departures for when the user didn't name one. */
+"next_departures_at_stop_intent.choose_stop" = "Który przystanek?";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "Ta zakładka nie jest dostępna w Twoim obecnym regionie.";
 
@@ -720,7 +729,7 @@
 /* Siri response listing the departures after the next one. {List of 'in X minutes'} */
 "next_departures_intent.later_departures_fmt" = "Następnie %@.";
 
-/* Siri response when departures could not be fetched. {Bookmark name} */
+/* Siri response when departures could not be fetched. {Bookmark or stop name} */
 "next_departures_intent.load_failed_fmt" = "Nie udało się wczytać odjazdów dla %@. Sprawdź połączenie i spróbuj ponownie.";
 
 /* Siri response when the user asks for their next departures but has no trip bookmarks in the current region. */
@@ -737,6 +746,21 @@
 
 /* Joins two complete Siri sentences: {first departure sentence} {later departures sentence}. Use the language's separator between sentences; Chinese uses none. */
 "next_departures_intent.sentences_join_fmt" = "%1$@ %2$@";
+
+/* Siri response: one departure from a stop. {Route short name} to {Headsign} {'now' or 'in X minutes'}, for example '8 to Downtown in 4 minutes'. */
+"next_departures_intent.stop_departure_fmt" = "linia %1$@ (%2$@) %3$@";
+
+/* Siri response: one departure from a stop whose trip has no destination name. {Route short name} {'now' or 'in X minutes'}, for example '8 in 4 minutes'. */
+"next_departures_intent.stop_departure_no_headsign_fmt" = "linia %1$@ %2$@";
+
+/* Siri response listing the next departures from a stop. {Stop name}: {list of departures, such as '8 to Downtown in 4 minutes and 49 to Capitol Hill in 12 minutes'}. */
+"next_departures_intent.stop_departures_fmt" = "Najbliższe odjazdy z przystanku %1$@: %2$@.";
+
+/* Siri response when nothing leaves a stop in the next hour. {Stop name} */
+"next_departures_intent.stop_no_departures_fmt" = "Brak odjazdów z przystanku %@ w ciągu najbliższej godziny.";
+
+/* Siri response when the requested stop belongs to a different region than the one the app is using. */
+"next_departures_intent.stop_unavailable" = "Ten przystanek nie znajduje się w Twoim obecnym regionie.";
 
 /* Vehicle occupancy is very high */
 "occupancy_status.crushed_standing_room_only" = "Tylko zatłoczone miejsca stojące";
@@ -1187,9 +1211,6 @@
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Użyj panelu mapy";
-
-/* Settings > Experimental section > Footer indicating changes apply on relaunch */
-"settings_controller.experimental_section.map_panel.footer" = "Uruchom aplikację ponownie, aby zastosować.";
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Eksperymentalne";
@@ -2349,3 +2370,6 @@
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Szczegóły problemu";
+
+/* VoiceOver hint for an actionable search result row. */
+"search_controller.accessibility.open_result" = "Otwiera ten wynik.";

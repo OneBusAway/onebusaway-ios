@@ -607,13 +607,13 @@ final class LocalizationTests {
     }
 
     /// Siri drops an App Shortcut phrase that lacks `${applicationName}`, and a
-    /// phrase that loses `${bookmark}` can no longer pick a bookmark by name.
+    /// phrase that loses `${bookmark}` or `${stop}` can no longer pick one by name.
     /// Keys are the English phrases, so a renamed English phrase orphans every
     /// translation; the key check catches that.
     @Test func `Every locale has every App Shortcut phrase with its tokens`() throws {
         let bundle = Bundle.main
         let english = try #require(table("AppShortcuts", in: bundle, localization: "en"))
-        #expect(english.count == 7)
+        #expect(english.count == 9)
 
         for localization in bundle.localizations where localization != "Base" {
             let phrases = try #require(table("AppShortcuts", in: bundle, localization: localization), "\(localization) has no AppShortcuts.strings")
@@ -621,8 +621,10 @@ final class LocalizationTests {
             for (key, phrase) in phrases {
                 #expect(phrase.components(separatedBy: "${applicationName}").count == 2,
                         "\(localization): \"\(phrase)\" must name ${applicationName} exactly once")
-                #expect(phrase.contains("${bookmark}") == key.contains("${bookmark}"),
-                        "\(localization): \"\(phrase)\" must keep ${bookmark} only where English has it")
+                for token in ["${bookmark}", "${stop}"] {
+                    #expect(phrase.contains(token) == key.contains(token),
+                            "\(localization): \"\(phrase)\" must keep \(token) only where English has it")
+                }
             }
         }
     }

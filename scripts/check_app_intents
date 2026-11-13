@@ -23,6 +23,7 @@ import sys
 EXPECTED = {
     "actions": {
         "NextDeparturesIntent",
+        "NextDeparturesAtStopIntent",
         "OpenStopIntent",
         "TrackBookmarkIntent",
         # The Next Departures card (#1554); not discoverable in Shortcuts.
@@ -35,7 +36,7 @@ EXPECTED = {
     },
     "entities": {"BookmarkEntity", "StopEntity"},
     "queries": {"BookmarkEntityQuery", "StopEntityQuery"},
-    "autoShortcuts": {"NextDeparturesIntent", "TrackBookmarkIntent"},
+    "autoShortcuts": {"NextDeparturesIntent", "NextDeparturesAtStopIntent", "TrackBookmarkIntent"},
 }
 
 

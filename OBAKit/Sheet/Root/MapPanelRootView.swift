@@ -120,8 +120,8 @@ struct MapPanelBottomPadding {
         halfScreenHeight: CGFloat,
         totalMapHeight: CGFloat
     ) -> CGFloat {
-        if detent == .height(AppSheetRoute.homeCollapsedHeight) {
-            return AppSheetRoute.homeCollapsedHeight
+        if detent == AppSheetRoute.homeCollapsedDetent {
+            return HomeCollapsedDetent.drawnHeight
         } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
             return AppSheetRoute.tripPlannerTipHeight
         } else if detent == .medium {
@@ -166,6 +166,7 @@ struct MapPanelRootView: View {
     @ObservedObject private var tripFocusDisplay: TripFocusMapDisplayModel
     @ObservedObject private var stopFocusDisplay: StopFocusMapDisplayModel
     @ObservedObject private var probeController: OnDemandProbeController
+    private let tripPlanEmptyFallback: TripPlanEmptyFallback
 
     /// Presentation state only. The popup reads its data from
     /// `mapViewModel.weatherDisplay` so a refresh that finishes while the card
@@ -227,6 +228,9 @@ struct MapPanelRootView: View {
     // collapsed detent so overlays render at their resting position on the
     // first frame — before `.onGeometryChange` reports a value.
     @State private var sheetHeight: CGFloat = AppSheetRoute.homeCollapsedHeight
+    /// Sheet content ignores the safe area (see `buildSheetContent`), so it's
+    /// measured here and handed down; see `EnvironmentValues.screenBottom`.
+    @State private var screenBottom = ScreenBottom()
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
 
@@ -303,6 +307,11 @@ struct MapPanelRootView: View {
         self.application = application
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
+        self.tripPlanEmptyFallback = MapPanelOnDemandPlanner.makeFallback(
+            probeController: probeController,
+            notificationCenter: application.notificationCenter,
+            coordinator: coordinator
+        )
         _prompts = StateObject(wrappedValue: MapPanelPrompts(
             application: application,
             mapViewModel: mapViewModel,
@@ -342,7 +351,7 @@ struct MapPanelRootView: View {
     var body: some View {
         MapReader { proxy in
         Map(position: $cameraPosition, selection: $mapSelection) {
-            UserAnnotation()
+            MapPanelUserLocation(userDefaults: application.userDefaults)
             onDemandZoneContent
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in
@@ -563,11 +572,10 @@ struct MapPanelRootView: View {
             style: mapViewModel.mapType.styleDescriptor(showingPointsOfInterest: layersModel.showsPointsOfInterest),
             userDefaults: application.userDefaults
         ))
+        // Not animated: animating a safe-area change resizes MapKit's view every
+        // frame, which drew blank grid tiles and a white band under the map as
+        // the sheet settled. The camera still recentres in the new safe area.
         .safeAreaPadding(.bottom, mapBottomPadding)
-        .animation(
-            .interpolatingSpring(duration: 0.25, bounce: 0, initialVelocity: 0),
-            value: mapBottomPadding
-        )
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.height / 2
         } action: { _, newValue in
@@ -613,7 +621,10 @@ struct MapPanelRootView: View {
             mapControlsCluster
         }
         .overlay(alignment: .topTrailing) {
-            moreButton
+            // On iPhone, More is a tab of the home sheet instead.
+            if !HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass) {
+                moreButton
+            }
         }
         .overlay(alignment: .bottomLeading) {
             myTripButton
@@ -637,6 +648,13 @@ struct MapPanelRootView: View {
         .onChange(of: isOnDemandPickerShown) { wasShown, _ in
             Self.onDemandPickerStackDidChange(wasShown: wasShown, routes: sheetRoutes, probeController: probeController)
         }
+        .onChange(of: plannerEntry?.request, initial: true) { _, request in
+            MapPanelOnDemandPlanner.plannerDidChange(
+                to: request,
+                fallback: tripPlanEmptyFallback,
+                currentLocation: application.locationService.currentLocation
+            )
+        }
         .onChange(of: sheetHeight) { _, newValue in
             probeController.setMapMostlyCovered(newValue >= halfScreenHeight)
         }
@@ -658,6 +676,22 @@ struct MapPanelRootView: View {
             toolbarsOpacity: toolbarsOpacity,
             toolbarsAnimationDuration: toolbarsAnimationDuration
         ))
+        // Measured on a view that ignores the keyboard, so a keyboard raised from
+        // a sheet's search field doesn't read as a home indicator 300 pt tall.
+        .background {
+            Color.clear
+                .ignoresSafeArea(.keyboard)
+                .onGeometryChange(for: ScreenBottom.self) { proxy in
+                    let inset = proxy.safeAreaInsets.bottom
+                    return ScreenBottom(edge: proxy.frame(in: .global).maxY + inset, inset: inset)
+                } action: { old, new in
+                    screenBottom = new
+                    // A new screen, not the first measurement of this one.
+                    if old.edge != nil, old != new {
+                        HomeCollapsedDetent.forgetSheetExtra()
+                    }
+                }
+        }
         .floatingSheet(coordinator: coordinator) { route in
             buildSheetContent(for: route)
         }
@@ -801,6 +835,8 @@ struct MapPanelRootView: View {
             // to the app's defaults suite; without this, sheet content reading
             // them through `@AppStorage` saw `.standard` and ignored them.
             .defaultAppStorage(application.userDefaults)
+            .environment(\.screenBottom, screenBottom)
+            .environment(\.showsHomeTabs, HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass))
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(
                     display: mapViewModel.weatherDisplay,
@@ -827,6 +863,13 @@ struct MapPanelRootView: View {
                 guard !route.prefersStacking else { return }
 
                 sheetHeight = newValue
+
+                // Settled at the collapsed detent, the home sheet's height is the
+                // system's doing; see `HomeCollapsedDetent`. Measured here, on the
+                // whole sheet: the home view's own frame falls a few points short.
+                if route == .home, coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent {
+                    HomeCollapsedDetent.learn(sheetHeight: newValue)
+                }
 
                 /// Opacity calculation — fade band sits immediately
                 /// below `halfScreenHeight`.
@@ -1182,12 +1225,29 @@ extension MapPanelRootView {
     }
 
     private var controlsDockOffset: CGFloat {
-        dockHeight > 0 ? dockHeight + OnDemandDockPlacement.gap : 0
+        // A planner card rides on the planner sheet, not on the base sheet the
+        // controls float over, so it leaves them where they were.
+        guard dockPlacement.opacity == nil else { return 0 }
+        return dockHeight > 0 ? dockHeight + OnDemandDockPlacement.gap : 0
     }
 
     // MARK: - On-demand dock
 
     private var sheetRoutes: [AppSheetRoute] { coordinator.routeStack + coordinator.stackedRoutes }
+
+    private var plannerEntry: (request: TripPlannerRequest, detent: PresentationDetent)? {
+        MapPanelOnDemandPlanner.plannerEntry(in: coordinator.stackedEntries)
+    }
+
+    private var dockPlacement: (height: CGFloat, opacity: CGFloat?) {
+        MapPanelOnDemandPlanner.dockPlacement(
+            dockState: probeController.dockState,
+            plannerDetent: plannerEntry?.detent,
+            sheetHeight: sheetHeight,
+            halfScreenHeight: halfScreenHeight,
+            totalMapHeight: mapSize.height
+        )
+    }
 
     /// Whether a zone detail page is on the sheet stack (spec 2.3 highlight).
     private var isOnDemandDetailShown: Bool { Self.isOnDemandDetailShown(in: sheetRoutes) }
@@ -1223,6 +1283,7 @@ extension MapPanelRootView {
     /// 360 pt bottom-leading in regular width; its height lifts the controls.
     private var onDemandDock: some View {
         let isRegular = horizontalSizeClass == .regular
+        let placement = dockPlacement
         return OnDemandDockView(
             controller: probeController,
             actions: onDemandDockActions,
@@ -1236,7 +1297,8 @@ extension MapPanelRootView {
         } action: { _, newValue in
             dockHeight = newValue
         }
-        .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
+        .floatingOverSheet(height: placement.height, opacity: placement.opacity ?? toolbarsOpacity, duration: toolbarsAnimationDuration)
+        .allowsHitTesting(placement.opacity != 0)
     }
 
     private var onDemandDockActions: OnDemandDockActions {

@@ -9,6 +9,7 @@
 
 import UIKit
 import OBAKitCore
+import os
 
 /// Static accessors for icons available in the framework.
 /// nonisolated: only constructs `UIImage`/`UIColor` values, which is thread-safe;
@@ -16,6 +17,12 @@ import OBAKitCore
 nonisolated class Icons: NSObject {
 
     // MARK: - Tab Icons
+
+    // Symbol names shared with the map panel's home tabs (`HomeTab`), so the two
+    // tab bars draw the same icons. Each has a `.fill` variant for the selection.
+    public static let recentTabSymbolName = "clock"
+    public static let bookmarksTabSymbolName = "bookmark"
+    public static let moreTabSymbolName = "ellipsis.circle"
     /// The Map tab icon, for apps using a tab bar UI metaphor.
     public class var mapTabIcon: UIImage {
         configureForTabIcon(systemImage(named: "map"))
@@ -28,32 +35,32 @@ nonisolated class Icons: NSObject {
 
     /// The Recent tab icon, for apps using a tab bar UI metaphor.
     public class var recentTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "clock"))
+        configureForTabIcon(systemImage(named: recentTabSymbolName))
     }
 
     /// The Recent tab selected icon, for apps using a tab bar UI metaphor.
     public class var recentSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "clock.fill"))
+        configureForTabIcon(systemImage(named: recentTabSymbolName + ".fill"))
     }
 
     /// The Bookmarks tab icon, for apps using a tab bar UI metaphor.
     public class var bookmarksTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "bookmark"))
+        configureForTabIcon(systemImage(named: bookmarksTabSymbolName))
     }
 
     /// The Bookmarks tab selected icon, for apps using a tab bar UI metaphor.
     public class var bookmarksSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "bookmark.fill"))
+        configureForTabIcon(systemImage(named: bookmarksTabSymbolName + ".fill"))
     }
 
     /// A More tab icon, for apps using a tab bar UI metaphor.
     public class var moreTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "ellipsis.circle"))
+        configureForTabIcon(systemImage(named: moreTabSymbolName))
     }
 
     /// A More tab selected icon, for apps using a tab bar UI metaphor.
     public class var moreSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "ellipsis.circle.fill"))
+        configureForTabIcon(systemImage(named: moreTabSymbolName + ".fill"))
     }
 
     /// The Vehicles tab icon, for apps using a tab bar UI metaphor.
@@ -311,10 +318,7 @@ nonisolated class Icons: NSObject {
 
     // MARK: - Squircle icon
 
-    /// nonisolated(unsafe): NSCache is documented thread-safe (it just lacks a
-    /// Sendable annotation), so the nonisolated `Icons` can touch it from any
-    /// isolation.
-    nonisolated(unsafe) private static let iconCache = NSCache<NSNumber, UIImage>()
+    private static let iconCache = OSAllocatedUnfairLock<NSCache<NSNumber, UIImage>>(uncheckedState: NSCache())
     public static let squircleIconSize: CGFloat = 40
 
     /// Shared squircle appearance constants, so this icon and `StopIconFactory`'s
@@ -327,42 +331,50 @@ nonisolated class Icons: NSObject {
     /// echoing the stop page's `RouteBadgeView` treatment.
     public static func squircleTransportIcon(for routeType: Route.RouteType) -> UIImage {
         let cacheKey = NSNumber(value: routeType.rawValue)
-        if let cached = iconCache.object(forKey: cacheKey) { return cached }
+        return iconCache.withLockUnchecked { cache in
+            if let cached = cache.object(forKey: cacheKey) { return cached }
 
-        let rect = CGRect(x: 0, y: 0, width: squircleIconSize, height: squircleIconSize)
-        let image = UIGraphicsImageRenderer(bounds: rect).image { context in
-            let brand = ThemeColors.shared.brand
-            UIBezierPath(roundedRect: rect, cornerRadius: squircleIconSize * squircleCornerRadiusRatio).addClip()
+            let rect = CGRect(x: 0, y: 0, width: squircleIconSize, height: squircleIconSize)
+            let image = UIGraphicsImageRenderer(bounds: rect).image { context in
+                let brand = ThemeColors.shared.brand
+                UIBezierPath(roundedRect: rect, cornerRadius: squircleIconSize * squircleCornerRadiusRatio).addClip()
 
-            let colors = [
-                brand.blended(with: .white, amount: squircleGradientTopBlend).cgColor,
-                brand.blended(with: .black, amount: squircleGradientBottomBlend).cgColor
-            ]
-            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
-                context.cgContext.drawLinearGradient(
-                    gradient,
-                    start: CGPoint(x: rect.midX, y: rect.minY),
-                    end: CGPoint(x: rect.midX, y: rect.maxY),
-                    options: [])
-            } else {
-                brand.setFill()
-                context.fill(rect)
-            }
+                let colors = [
+                    brand.blended(with: .white, amount: squircleGradientTopBlend).cgColor,
+                    brand.blended(with: .black, amount: squircleGradientBottomBlend).cgColor
+                ]
+                if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
+                    context.cgContext.drawLinearGradient(
+                        gradient,
+                        start: CGPoint(x: rect.midX, y: rect.minY),
+                        end: CGPoint(x: rect.midX, y: rect.maxY),
+                        options: [])
+                } else {
+                    brand.setFill()
+                    context.fill(rect)
+                }
 
-            let glyph = Icons.transportIcon(from: routeType).withTintColor(.white, renderingMode: .alwaysOriginal)
-            let maxGlyphExtent = squircleIconSize * 0.55
-            let scale = min(maxGlyphExtent / glyph.size.width, maxGlyphExtent / glyph.size.height)
-            let glyphSize = CGSize(width: glyph.size.width * scale, height: glyph.size.height * scale)
-            glyph.draw(in: CGRect(
-                x: rect.midX - glyphSize.width / 2.0,
-                y: rect.midY - glyphSize.height / 2.0,
-                width: glyphSize.width,
-                height: glyphSize.height))
-        }.withRenderingMode(.alwaysOriginal)
+                let glyph = Icons.transportIcon(from: routeType).withTintColor(.white, renderingMode: .alwaysOriginal)
+                let maxGlyphExtent = squircleIconSize * 0.55
+                let scale = min(maxGlyphExtent / glyph.size.width, maxGlyphExtent / glyph.size.height)
+                let glyphSize = CGSize(width: glyph.size.width * scale, height: glyph.size.height * scale)
+                glyph.draw(in: CGRect(
+                    x: rect.midX - glyphSize.width / 2.0,
+                    y: rect.midY - glyphSize.height / 2.0,
+                    width: glyphSize.width,
+                    height: glyphSize.height))
+            }.withRenderingMode(.alwaysOriginal)
 
-        iconCache.setObject(image, forKey: cacheKey)
-        return image
+            cache.setObject(image, forKey: cacheKey)
+            return image
+        }
     }
+
+    #if DEBUG
+    static func clearSquircleTransportIconCacheForTesting() {
+        iconCache.withLockUnchecked { $0.removeAllObjects() }
+    }
+    #endif
 
     // MARK: - Private Helpers
 

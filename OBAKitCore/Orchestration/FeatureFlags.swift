@@ -9,13 +9,13 @@
 
 import Foundation
 
-/// UserDefaults keys for experimental, opt-in features. Read at app
-/// construction; changes generally require a relaunch to take effect.
+/// UserDefaults keys for experimental, opt-in features, written by
+/// Settings > Experimental.
 public enum FeatureFlags {
     /// Gates the SwiftUI map panel experience (full-screen map + floating
     /// sheet) over the classic UIKit tab bar. Enabled by default; the
     /// Settings > Experimental toggle writes an explicit value, so turning it
-    /// off opts back into the classic UI.
+    /// off opts back into the classic UI, and rebuilds the root at once.
     public static let useMapPanelExperienceKey = "OBAUseMapPanelExperience"
 
     /// Gates MapKit clustering of stop pins (#515). Off by default while the

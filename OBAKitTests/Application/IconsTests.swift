@@ -47,4 +47,33 @@ struct IconsTests {
         #expect(Icons.proximityAlert(isActive: false).size != .zero)
         #expect(Icons.proximityAlert(isActive: true).size != .zero)
     }
+
+    @Test func `Squircle transport icons share cached instances`() async {
+        Icons.clearSquircleTransportIconCacheForTesting()
+
+        let images = await withTaskGroup(of: UIImage.self, returning: [UIImage].self) { group in
+            for _ in 0..<100 {
+                group.addTask { Icons.squircleTransportIcon(for: .bus) }
+            }
+
+            var images = [UIImage]()
+            for await image in group {
+                images.append(image)
+            }
+            return images
+        }
+
+        #expect(images.count == 100)
+        #expect(images.allSatisfy { $0 === images[0] })
+        #expect(images[0].size == CGSize(width: Icons.squircleIconSize, height: Icons.squircleIconSize))
+    }
+
+    @Test func `Squircle transport icon cache can be reset`() {
+        Icons.clearSquircleTransportIconCacheForTesting()
+        let first = Icons.squircleTransportIcon(for: .bus)
+        Icons.clearSquircleTransportIconCacheForTesting()
+        let second = Icons.squircleTransportIcon(for: .bus)
+
+        #expect(first !== second)
+    }
 }

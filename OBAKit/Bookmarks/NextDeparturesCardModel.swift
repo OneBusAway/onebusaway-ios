@@ -15,8 +15,10 @@ import OBAKitCore
 ///
 /// The card repeats nothing the dialog doesn't say. With departures it shows
 /// the bookmark, its route and headsign, and up to
-/// `NextDeparturesSummary.maximumDepartures` departures; for every other
-/// outcome it shows the same localized sentence the dialog speaks.
+/// `NextDeparturesSummary.maximumDepartures` departures; for a stop, the stop's
+/// name and up to as many departures, each with its own route and headsign.
+/// For every other outcome it shows the same localized sentence the dialog
+/// speaks.
 struct NextDeparturesCardModel: Equatable {
     struct Row: Equatable, Identifiable {
         let id: Int
@@ -28,14 +30,22 @@ struct NextDeparturesCardModel: Equatable {
         let status: DepartureStatus
         /// "in 5 minutes, live tracking, on time", for VoiceOver.
         let accessibilityLabel: String
+        /// Set on a stop's rows only; a bookmark's card names its route once,
+        /// in the header.
+        let routeShortName: String?
+        let headsign: String?
 
         static func == (lhs: Row, rhs: Row) -> Bool {
             lhs.id == rhs.id && lhs.timeText == rhs.timeText && lhs.statusText == rhs.statusText && lhs.accessibilityLabel == rhs.accessibilityLabel
+                && lhs.routeShortName == rhs.routeShortName && lhs.headsign == rhs.headsign
         }
     }
 
-    /// The bookmark the card is about; `nil` for an answer about no bookmark.
+    /// The bookmark the card is about; `nil` for an answer about no bookmark,
+    /// and for a stop.
     let bookmarkName: String?
+    /// The stop the card is about; `nil` for a bookmark.
+    let stopName: String?
     let routeShortName: String?
     let headsign: String?
     let rows: [Row]
@@ -52,6 +62,21 @@ struct NextDeparturesCardModel: Equatable {
 
     /// - Parameter liveActivitiesEnabled: `ActivityAuthorizationInfo().areActivitiesEnabled`.
     init(outcome: NextDeparturesSummary.Outcome, now: Date, liveActivitiesEnabled: Bool = false) {
+        if case let .stopDepartures(stopName, departures) = outcome {
+            // A stop has no bookmark to Track.
+            let rows = Self.rows(for: departures, now: now)
+            self.bookmarkName = nil
+            self.stopName = stopName
+            self.routeShortName = nil
+            self.headsign = nil
+            self.rows = rows
+            self.message = rows.isEmpty ? NextDeparturesSummary.text(for: outcome, now: now) : nil
+            self.showsRefresh = true
+            self.showsTrack = false
+            return
+        }
+
+        self.stopName = nil
         guard case let .departures(bookmarkName, routeShortName, headsign, departures) = outcome else {
             self.bookmarkName = nil
             self.routeShortName = nil
@@ -94,18 +119,40 @@ struct NextDeparturesCardModel: Equatable {
             .prefix(NextDeparturesSummary.maximumDepartures)
             .enumerated()
             .map { index, item in
-                let status = DepartureStatus(isRealTime: item.departure.isRealTime, scheduleStatus: item.departure.scheduleStatus, deviationMinutes: item.departure.deviationMinutes)
-                let timeText = item.minutes == 0
-                    ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
-                    : Formatters.shortMinutesText(item.minutes)
-                let spokenTime = NextDeparturesSummary.relativeTime(minutes: item.minutes)
-                return Row(
+                row(id: index, departure: item.departure, minutes: item.minutes, spokenTime: NextDeparturesSummary.relativeTime(minutes: item.minutes), routeShortName: nil, headsign: nil)
+            }
+    }
+
+    /// A stop's next departures, the same ones `NextDeparturesSummary` speaks.
+    private static func rows(for departures: [NextDeparturesSummary.StopDeparture], now: Date) -> [Row] {
+        NextDeparturesSummary.upcoming(departures, now: now)
+            .enumerated()
+            .map { index, item in
+                row(
                     id: index,
-                    timeText: timeText,
-                    statusText: status.label,
-                    status: status,
-                    accessibilityLabel: "\(spokenTime), \(status.accessibilityStatusDescription)"
+                    departure: item.departure.departure,
+                    minutes: item.minutes,
+                    // "8 to Downtown in 5 minutes": VoiceOver hears the route, which the row shows as a badge.
+                    spokenTime: NextDeparturesSummary.stopDepartureText(item.departure, minutes: item.minutes),
+                    routeShortName: item.departure.routeShortName,
+                    headsign: item.departure.headsign
                 )
             }
+    }
+
+    private static func row(id: Int, departure: NextDeparturesSummary.Departure, minutes: Int, spokenTime: String, routeShortName: String?, headsign: String?) -> Row {
+        let status = DepartureStatus(isRealTime: departure.isRealTime, scheduleStatus: departure.scheduleStatus, deviationMinutes: departure.deviationMinutes)
+        let timeText = minutes == 0
+            ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
+            : Formatters.shortMinutesText(minutes)
+        return Row(
+            id: id,
+            timeText: timeText,
+            statusText: status.label,
+            status: status,
+            accessibilityLabel: "\(spokenTime), \(status.accessibilityStatusDescription)",
+            routeShortName: routeShortName,
+            headsign: headsign
+        )
     }
 }
