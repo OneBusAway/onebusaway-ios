@@ -9,10 +9,20 @@ import Foundation
 import os
 
 extension APIService {
+    private static func isIdempotent(request: URLRequest) -> Bool {
+        guard let method = request.httpMethod?.uppercased() else {
+            return true
+        }
+        return method == "GET" || method == "HEAD"
+    }
+
     nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let policy = retryPolicy
         let loader = dataLoader
         let requestLogger = logger
+        guard Self.isIdempotent(request: request) else {
+            return try await Self.performData(for: request, dataLoader: loader, logger: requestLogger)
+        }
+        let policy = retryPolicy
         return try await policy.execute { _ in
             try await Self.performData(for: request, dataLoader: loader, logger: requestLogger)
         }
@@ -116,6 +126,10 @@ extension APIService {
     /// Convenience.
     nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type, using decoder: DataDecoder) async throws -> RESTAPIResponse<T> {
         return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder)
+    }
+
+    nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
+        Self.errorLooksLikeCaptivePortal(error)
     }
 
     nonisolated static func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {

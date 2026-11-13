@@ -24,6 +24,9 @@ public struct RetryPolicy: Sendable, Equatable {
     /// Whether `error` is transient and another attempt remains.
     public func shouldRetry(_ error: Error, attempt: Int) -> Bool {
         guard attempt < maxAttempts else { return false }
+        if case APIError.captivePortal = error {
+            return false
+        }
         switch ErrorClassifier.category(for: error) {
         case .timeout, .offline, .server:
             return true

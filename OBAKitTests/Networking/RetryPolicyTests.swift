@@ -40,15 +40,38 @@ final class RetryPolicyTests {
 
     @Test func `Cancellation stops before next attempt`() async {
         let policy = RetryPolicy(maxAttempts: 3, initialDelay: 1, maxDelay: 1)
+        let sleeping = SendableBox(false)
+
         let task = Task {
             try await policy.execute(operation: { _ in
                 throw URLError(.timedOut)
             }, sleep: { _ in
+                sleeping.value = true
                 try await Task.sleep(for: .seconds(60))
             })
         }
 
+        while !sleeping.value {
+            await Task.yield()
+        }
+
         task.cancel()
         await #expect(throws: CancellationError.self) { try await task.value }
+    }
+
+    @Test func `Captive portal error is not retried`() async {
+        let policy = RetryPolicy(maxAttempts: 3, initialDelay: 0.25, maxDelay: 1)
+        let attempts = SendableBox(0)
+        let sleepCalled = SendableBox(false)
+
+        await #expect(throws: APIError.self) {
+            try await policy.execute(operation: { _ in
+                attempts.value += 1
+                throw APIError.captivePortal
+            }, sleep: { _ in sleepCalled.value = true })
+        }
+
+        #expect(attempts.value == 1)
+        #expect(!sleepCalled.value)
     }
 }
