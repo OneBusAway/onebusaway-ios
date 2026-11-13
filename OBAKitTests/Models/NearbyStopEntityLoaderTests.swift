@@ -255,6 +255,25 @@ struct TransitSignGateTests {
         #expect(!TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: ["Route 99"]))
     }
 
+    /// The ways signs put a code after "Stop".
+    @Test func `A number right after Stop is a stop code`() {
+        for line in ["STOP #75403", "Stop ID 1121", "Stop No. 99610", "stop 994"] {
+            #expect(TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: [line]), "\(line)")
+        }
+    }
+
+    /// A number on its own is on nearly anything with text.
+    @Test func `A number without Stop before it does not pass`() {
+        // A formatted phone number splits into 206, 555 and 1234.
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: ["Call (206) 555-1234"]))
+        // A dated receipt.
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: ["receipt"], recognizedText: ["11/13/2026", "Order 4512", "Total $12.50"]))
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: ["1234 Main St"]))
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: ["Burger 450 cal"]))
+        // "Stop" and a code on different lines aren't a stop code.
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: ["STOP", "2026"]))
+    }
+
     /// Prices and route numbers are too short for a stop code; a phone number is too long.
     @Test func `Only three to eight digit numbers look like stop codes`() {
         #expect(!TransitSignGate.isPlausibleStopCode("72"))

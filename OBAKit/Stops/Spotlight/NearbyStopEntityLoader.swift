@@ -126,22 +126,35 @@ nonisolated enum TransitSignGate {
     /// shortest `NearbyStopRanking` matches) to about seven.
     static let stopCodeDigits = NearbyStopRanking.minimumCodeLength...8
 
+    /// Words a sign puts between "Stop" and its code: "Stop #75403", "Stop ID 1121",
+    /// "Stop No. 99610". ("#" and "." are dropped when the line is split.)
+    static let stopCodeLeadIns: Set<String> = ["id", "no", "number"]
+
     static func looksLikeTransitSign(labels: [String], recognizedText: [String]) -> Bool {
-        let labelWords = words(in: labels)
+        let labelWords = Set(labels.flatMap(words(in:)))
         if !labelWords.isDisjoint(with: transitWords) { return true }
 
-        let textWords = words(in: recognizedText)
-        return !textWords.isDisjoint(with: transitWords) || textWords.contains(where: isPlausibleStopCode)
+        let lines = recognizedText.map(words(in:))
+        return lines.contains { !Set($0).isDisjoint(with: transitWords) } || lines.contains(where: hasStopCode)
+    }
+
+    /// A number alone is on nearly anything with text (phone numbers, years,
+    /// prices, street numbers), so it counts only right after "Stop".
+    static func hasStopCode(_ line: [String]) -> Bool {
+        for (index, word) in line.enumerated() where word == "stop" {
+            let following = line.dropFirst(index + 1).drop { stopCodeLeadIns.contains($0) }
+            if let code = following.first, isPlausibleStopCode(code) { return true }
+        }
+        return false
     }
 
     static func isPlausibleStopCode(_ word: String) -> Bool {
         stopCodeDigits.contains(word.count) && word.allSatisfy(\.isNumber)
     }
 
-    private static func words(in lines: [String]) -> Set<String> {
-        Set(lines.flatMap { line in
-            line.split { !$0.isLetter && !$0.isNumber }.map { $0.lowercased() }
-        })
+    /// One line's words, lowercased, in order.
+    static func words(in line: String) -> [String] {
+        line.split { !$0.isLetter && !$0.isNumber }.map { $0.lowercased() }
     }
 }
 
