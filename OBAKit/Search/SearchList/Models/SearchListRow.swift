@@ -91,14 +91,22 @@ struct SearchListRow: Identifiable {
     var accessibilityHint: String? {
         guard action != nil else { return nil }
         switch kind {
-        case .error:
-            return Strings.retry
-        case .quickSearch, .recentStop, .bookmark, .placemark, .searchResult:
+        case .quickSearch:
+            return OBALoc(
+                "search_controller.accessibility.quick_search",
+                value: "Searches for this.",
+                comment: "VoiceOver hint for a quick search row, which runs a search and keeps the search field open."
+            )
+        case .recentStop, .bookmark, .placemark, .searchResult:
             return OBALoc(
                 "search_controller.accessibility.open_result",
                 value: "Opens this result.",
                 comment: "VoiceOver hint for an actionable search result row."
             )
+        case .error:
+            // The label carries the retry cue only through the subtitle.
+            if let subtitle, !subtitle.isEmpty { return nil }
+            return Strings.retry
         case .clearRecents, .loading, .noResults:
             return nil
         }
