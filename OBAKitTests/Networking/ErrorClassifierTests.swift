@@ -15,6 +15,22 @@ import Testing
 @Suite(.serialized)
 final class ErrorClassifierTests {
 
+    @Test func `Stable categories cover timeout offline server decoding auth and unknown`() {
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com")!,
+            statusCode: 401,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+
+        #expect(ErrorClassifier.category(for: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)) == .timeout)
+        #expect(ErrorClassifier.category(for: NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)) == .offline)
+        #expect(ErrorClassifier.category(for: APIError.requestFailure(response)) == .authentication)
+        #expect(ErrorClassifier.category(for: APIError.serverUnavailable(regionName: "Test", statusCode: 503)) == .server)
+        #expect(ErrorClassifier.category(for: DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "bad"))) == .decoding)
+        #expect(ErrorClassifier.category(for: NSError(domain: "test", code: 1)) == .unknown)
+    }
+
     // MARK: - APIError Pass-Through
 
     @Test func `Classify captive portal passes through`() {
