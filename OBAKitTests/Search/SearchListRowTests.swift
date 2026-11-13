@@ -169,6 +169,7 @@ final class SearchListRowTests: OBATestCase {
             action: {}
         )
 
+        #expect(row.accessibilityHint == "Searches for this.")
         #expect(!row.dismissesSearchPresentation)
     }
 
@@ -182,7 +183,7 @@ final class SearchListRowTests: OBATestCase {
         )
 
         #expect(row.accessibilityLabel == "Network unavailable, Retry")
-        #expect(row.accessibilityHint == "Retry")
+        #expect(row.accessibilityHint == nil)
         #expect(!row.dismissesSearchPresentation)
     }
 

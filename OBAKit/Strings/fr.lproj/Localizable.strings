@@ -2435,3 +2435,6 @@
 
 /* VoiceOver hint for an actionable search result row. */
 "search_controller.accessibility.open_result" = "Ouvre ce résultat.";
+
+/* VoiceOver hint for a quick search row, which runs a search and keeps the search field open. */
+"search_controller.accessibility.quick_search" = "Lance cette recherche.";
