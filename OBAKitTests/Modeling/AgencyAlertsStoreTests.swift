@@ -204,6 +204,36 @@ final class AgencyAlertsStoreTests: OBATestCase {
         expectServerError(await checkForUpdates())
     }
 
+    @Test func `A failed refresh can be retried and recover`() async throws {
+        failRequests(endingWith: "/api/where/agencies-with-coverage.json")
+        expectServerError(await checkForUpdates())
+
+        dataLoader.removeMappedResponses()
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        try stubAlertFeeds()
+
+        let outcome = await checkForUpdates()
+        guard case .updated = outcome else {
+            Issue.record("Expected the retry to update, got \(outcome)")
+            return
+        }
+        #expect(Set(store.agencyAlerts.map(\.id)) == ["regional-alert", "obaco-alert"])
+    }
+
+    @Test func `An empty alert response completes without storing alerts`() async throws {
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        let emptyFeed = try feed(alertIDs: [])
+        dataLoader.mock(data: emptyFeed) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        store.obacoService = nil
+
+        let outcome = await checkForUpdates()
+        guard case .updated = outcome else {
+            Issue.record("Expected an empty response to complete, got \(outcome)")
+            return
+        }
+        #expect(store.agencyAlerts.isEmpty)
+    }
+
     @Test func `A late cancelled refresh cannot overwrite the latest refresh`() async throws {
         let firstGate = ReleaseGate()
         let firstLoader = try makeAgencyAlertsDataLoader(alertID: "old-alert", gate: firstGate)
