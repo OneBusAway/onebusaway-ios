@@ -9,6 +9,7 @@
 
 import Foundation
 import MapKit
+import SwiftUI
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -25,6 +26,21 @@ enum ModelDecodingError: Error {
 final class FormattersTests: OBATestCase {
     let usLocale = Locale(identifier: "en_US")
     let calendar = Calendar(identifier: .gregorian)
+
+    @Test func `SwiftUI formatter environment has a usable default`() {
+        let formatters = EnvironmentValues().obaFormatters
+
+        #expect(formatters.formattedClockTime(Date(timeIntervalSince1970: 0)).isEmpty == false)
+    }
+
+    @Test func `SwiftUI formatter environment preserves injected formatter`() {
+        var environment = EnvironmentValues()
+        let injected = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        environment.obaFormatters = injected
+
+        #expect(environment.obaFormatters === injected)
+    }
 
     @Test func example() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
