@@ -256,7 +256,7 @@ final class RegionStopSyncServiceTests {
 
     @Test func `A later staged batch failure preserves the previous snapshot`() async throws {
         try repository.writeSyncedStops([stop("old")], regionId: 1, syncedAt: earlier)
-        try database.dbQueue.write { db in
+        try await database.dbQueue.write { db in
             try db.execute(sql: """
                 CREATE TRIGGER fail_staged_stop_insert
                 BEFORE INSERT ON cachedStopSync
@@ -266,14 +266,11 @@ final class RegionStopSyncServiceTests {
                 END
                 """)
         }
-        defer {
-            try? database.dbQueue.write { db in
-                try db.execute(sql: "DROP TRIGGER fail_staged_stop_insert")
-            }
-        }
-
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_good", "1_fail")])
         let wroteStops = await makeService(batchSize: 1).sync(regionID: 1, using: fetcher)
+        try await database.dbQueue.write { db in
+            try db.execute(sql: "DROP TRIGGER fail_staged_stop_insert")
+        }
 
         #expect(!wroteStops)
         #expect(try cachedIDs() == ["old"])
