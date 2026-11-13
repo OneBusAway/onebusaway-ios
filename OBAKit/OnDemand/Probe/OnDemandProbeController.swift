@@ -179,14 +179,16 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     }
 
     /// Stops probing for good: no probe starts after this, from the app coming to the
-    /// foreground or anything else, and none of the work in flight finishes. For a controller that outlives its surface; see
-    /// `detach(from:)`.
+    /// foreground or anything else, and the work in flight is cancelled, including a probe
+    /// request already on the wire, so its result never reaches the cache. For a controller
+    /// that outlives its surface; see `detach(from:)`.
     func stopObserving() {
         isStopped = true
         notificationCenter.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
         refreshTask?.cancel()
         geometryTask?.cancel()
         boundaryTask?.cancel()
+        cancelInFlight()
     }
 
     var deployment: String? { apiService()?.baseURL.absoluteString }

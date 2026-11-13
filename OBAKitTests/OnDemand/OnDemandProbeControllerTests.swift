@@ -100,6 +100,24 @@ final class OnDemandProbeControllerTests: OBATestCase {
         #expect(authorizationChecks == 3)
     }
 
+    /// The surface is gone, so a probe already on the wire must not land in the cache.
+    @Test func `Stopping cancels an in-flight probe and caches nothing`() async throws {
+        mockProbe(file: "ondemand_services_for_location_point.json")
+        let gate = GatedDataLoader(dataLoader, gating: Self.isProbe, holdsAfterResponse: true)
+        application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader, transport: gate)
+        let controller = makeController()
+
+        let probe = Task { try await controller.probe(at: alexandriaPoint) }
+        await gate.waitForRequest()
+
+        controller.stopObserving()
+        gate.releaseRequest()
+
+        await #expect(throws: (any Error).self) { _ = try await probe.value }
+        _ = try await controller.probe(at: alexandriaPoint)
+        #expect(probeRequests.count == 2, "the cancelled result was not cached")
+    }
+
     /// A settle loads full geometry for every match (spec 2.7), and the mock
     /// loader traps on an unmatched request. First match wins, so this 500
     /// only answers services the test did not mock itself.
