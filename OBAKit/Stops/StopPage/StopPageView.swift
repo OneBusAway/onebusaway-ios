@@ -447,6 +447,7 @@ struct StopPageView: View {
     .listStyle(.plain)
     .safeAreaInset(edge: .top, spacing: 0) {
         StopPageSheetHeaderPlaceholderView(onClose: {})
+            .background(Color(uiColor: .systemBackground))
     }
     .safeAreaInset(edge: .bottom, spacing: 0) {
         StopPageToolbar(

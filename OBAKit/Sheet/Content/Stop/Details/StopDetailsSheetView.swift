@@ -508,7 +508,7 @@ private extension View {
     /// a `safeAreaInset` does and also give the list the system's soft scroll
     /// edge beneath them. The sheet itself is Liquid Glass while it's partway
     /// up the screen and turns opaque by itself at full height; clearing the
-    /// list, and the departure rows through `drawsOnSheetGlass`, lets that glass
+    /// list, and the top bar and departure rows through `drawsOnSheetGlass`, lets that glass
     /// show through the whole sheet.
     @ViewBuilder
     func stopSheetChrome(
