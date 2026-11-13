@@ -16,7 +16,12 @@ public extension Notification.Name {
     static let formattersTimeZoneDidChange = Notification.Name("OBAFormattersTimeZoneDidChange")
 }
 
-public class Formatters: NSObject {
+/// Formatter configuration is immutable after initialization except for the
+/// explicitly supported time-zone update. The Foundation formatter objects are
+/// safe for concurrent formatting once initialized; `@unchecked Sendable`
+/// allows the SwiftUI environment's process-wide default to be stored without
+/// unsafe global-state annotations.
+public class Formatters: NSObject, @unchecked Sendable {
     private let locale: Locale
     private let themeColors: ThemeColors
     private let calendar: Calendar

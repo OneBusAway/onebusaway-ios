@@ -8,9 +8,7 @@
 import SwiftUI
 
 private struct OBAFormattersKey: EnvironmentKey {
-    // nonisolated(unsafe): initialized once (static let) and only ever read by
-    // SwiftUI environment lookups on the main thread.
-    nonisolated(unsafe) static let defaultValue: Formatters = Formatters(locale: .current, calendar: .current, themeColors: .shared)
+    static let defaultValue = Formatters(locale: .current, calendar: .current, themeColors: .shared)
 }
 
 extension EnvironmentValues {

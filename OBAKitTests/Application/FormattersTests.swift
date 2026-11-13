@@ -9,6 +9,7 @@
 
 import Foundation
 import MapKit
+import SwiftUI
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -25,6 +26,40 @@ enum ModelDecodingError: Error {
 final class FormattersTests: OBATestCase {
     let usLocale = Locale(identifier: "en_US")
     let calendar = Calendar(identifier: .gregorian)
+
+    @Test func `SwiftUI formatter environment has a usable default`() {
+        let formatters = EnvironmentValues().obaFormatters
+
+        #expect(formatters.formattedClockTime(Date(timeIntervalSince1970: 0)).isEmpty == false)
+    }
+
+    @Test func `SwiftUI formatter environment preserves injected formatter`() {
+        var environment = EnvironmentValues()
+        let injected = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        environment.obaFormatters = injected
+
+        #expect(environment.obaFormatters === injected)
+    }
+
+    @Test func `Formatters can format concurrently from a shared instance`() async {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let results = await withTaskGroup(of: String.self, returning: [String].self) { group in
+            for _ in 0..<32 {
+                group.addTask {
+                    formatters.shortFormattedTransferTime(minutes: 4)
+                }
+            }
+
+            var results: [String] = []
+            for await result in group {
+                results.append(result)
+            }
+            return results
+        }
+
+        #expect(results == Array(repeating: "4m", count: 32))
+    }
 
     @Test func example() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
