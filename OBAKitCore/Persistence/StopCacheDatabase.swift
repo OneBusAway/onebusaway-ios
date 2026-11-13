@@ -64,6 +64,20 @@ public final class StopCacheDatabase: Sendable {
         try Self.makeMigrator().migrate(dbQueue, upTo: lastMigration)
     }
 
+    /// Returns the newest stop timestamp for a region, or nil when no stops
+    /// are cached. Keeping this query here makes freshness independent of any
+    /// UI-side stop collection or map viewport.
+    func latestCachedStopDate(regionId: Int) throws -> Date? {
+        let timestamp: Double? = try dbQueue.read { db in
+            try Double.fetchOne(
+                db,
+                sql: "SELECT MAX(lastUpdated) FROM cachedStop WHERE regionId = ?",
+                arguments: [regionId]
+            )
+        }
+        return timestamp.map { Date(timeIntervalSince1970: $0) }
+    }
+
     // MARK: - Migrations
 
     // swiftlint:disable:next function_body_length

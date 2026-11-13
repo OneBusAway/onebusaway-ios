@@ -21,6 +21,23 @@ public final class StopCacheRepository: Sendable {
         self.database = database
     }
 
+    // MARK: - Freshness
+
+    /// Classifies the newest persisted stop data for a region. Empty and
+    /// unreadable caches are expired so callers have one deterministic answer
+    /// before deciding whether offline data may be used.
+    public func cacheFreshness(regionId: Int, now: Date = Date()) -> StopCacheFreshness {
+        do {
+            return StopCacheFreshnessPolicy.classify(
+                lastUpdatedAt: try database.latestCachedStopDate(regionId: regionId),
+                now: now
+            )
+        } catch {
+            Logger.error("Failed to read cache freshness for region \(regionId): \(error)")
+            return .expired
+        }
+    }
+
     // MARK: - Read
 
     /// Fetches cached stops within the given coordinate bounds for a specific region.

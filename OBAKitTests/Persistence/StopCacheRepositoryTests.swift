@@ -100,6 +100,34 @@ final class StopCacheRepositoryTests {
         #expect(results[0].name == "Updated Name")
     }
 
+    @Test func `Empty cache is expired`() {
+        #expect(repository.cacheFreshness(regionId: 1, now: Date(timeIntervalSince1970: 2_000_000_000)) == .expired)
+    }
+
+    @Test func `Cache is fresh before seven days`() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        try repository.writeSyncedStops([makeStop(id: "fresh")], regionId: 1, syncedAt: now.addingTimeInterval(-7 * 86_400 + 1))
+
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .fresh)
+    }
+
+    @Test func `Cache is stale at seven days and remains stale at thirty days`() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        try repository.writeSyncedStops([makeStop(id: "stale")], regionId: 1, syncedAt: now.addingTimeInterval(-7 * 86_400))
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .stale)
+
+        repository.clearCache(regionId: 1)
+        try repository.writeSyncedStops([makeStop(id: "stale-at-expiry")], regionId: 1, syncedAt: now.addingTimeInterval(-30 * 86_400))
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .stale)
+    }
+
+    @Test func `Cache is expired after thirty days`() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        try repository.writeSyncedStops([makeStop(id: "expired")], regionId: 1, syncedAt: now.addingTimeInterval(-30 * 86_400 - 1))
+
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .expired)
+    }
+
     @Test func `Same stop id different regions stored separately`() {
         let stop = makeStop(id: "1_100", name: "Seattle Stop", lat: 47.6, lon: -122.3)
         repository.saveStops([stop], regionId: 1)
