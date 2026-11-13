@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os
 
 extension APIService {
     nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
