@@ -21,7 +21,9 @@ enum ReturnRecenter {
     ///   - absence: How long the app was away.
     ///   - region: The selected region. A rider outside it isn't pulled onto GPS,
     ///     the same rule as launch (#615).
-    ///   - location: The rider's location.
+    ///   - location: The rider's location, from `LocationService` on both maps.
+    ///     The panel's SwiftUI map has no `MKMapView` to ask, and the service's
+    ///     fix is the one the rest of the app uses, so both maps agree.
     ///   - isShowingSheet: Whether a sheet over home is open. A trip or stop the
     ///     rider left open stays framed.
     static func shouldRecenter(

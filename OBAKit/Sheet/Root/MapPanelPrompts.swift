@@ -26,8 +26,6 @@ final class MapPanelPrompts: ObservableObject {
     private let presentingController: () -> UIViewController?
     private lazy var feedbackPromptPresenter = FeedbackPromptPresenter(application: application)
     private var feedbackPromptTask: Task<Void, Never>?
-    /// Set when the app, not the rider, is about to close the sheets.
-    private var ignoresNextStopVisitEnd = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -53,7 +51,8 @@ final class MapPanelPrompts: ObservableObject {
 
     // MARK: - Survey
 
-    private func present(_ survey: Survey) {
+    /// Internal so a test can put a card up without a survey fetch.
+    func present(_ survey: Survey) {
         // A stray double emit while a card is up: report it unshown, so the view
         // model rolls its session flag back and a later check can emit again.
         guard self.survey == nil else {
@@ -64,13 +63,9 @@ final class MapPanelPrompts: ObservableObject {
         mapViewModel.didPresentSurveyPrompt(survey, presented: true)
     }
 
-    /// The card's title: an external survey's hero question, as on the UIKit map.
+    /// The card's title; `Survey.launcherTitle` holds the rule both maps share.
     var surveyTitle: String? {
-        guard let survey else { return nil }
-        if survey.isExternalSurvey, let hero = survey.heroQuestion {
-            return hero.content.labelText
-        }
-        return survey.name
+        survey?.launcherTitle
     }
 
     func takeSurvey() {
@@ -86,16 +81,21 @@ final class MapPanelPrompts: ObservableObject {
                 }
             )
         } else {
+            // With nothing to present from, the card stays, so the rider can try
+            // again rather than lose the survey.
+            guard let host = presentingController() else {
+                Logger.error("Map survey not opened: no controller to present it from.")
+                return
+            }
             let controller = SurveyViewController(survey: survey, surveyService: application.surveyService)
-            presentingController()?.present(UINavigationController(rootViewController: controller), animated: true)
+            host.present(UINavigationController(rootViewController: controller), animated: true)
             self.survey = nil
         }
     }
 
     func dismissSurvey() {
         guard let survey else { return }
-        application.surveyService.markSurveyForLater(survey)
-        application.surveyService.setNextReminderDate()
+        application.surveyService.postpone(survey)
         self.survey = nil
     }
 
@@ -105,37 +105,26 @@ final class MapPanelPrompts: ObservableObject {
 
     // MARK: - Feedback prompt
 
-    /// The app is closing the sheets itself (a region change, a rentals link),
-    /// so a stop sheet closing isn't the rider finishing with it.
-    ///
-    /// - Parameter stackedRoutes: The sheets open now. Nothing open, nothing to
-    ///   close, and a flag left set would swallow the rider's next real close.
-    func appWillCloseSheets(_ stackedRoutes: [AppSheetRoute]) {
-        ignoresNextStopVisitEnd = stackedRoutes.contains(where: \.isStopDetails)
-    }
-
     /// Whether the rider just closed a stop sheet and is back on the map: the
     /// natural stopping point the UIKit map asks for feedback at.
     ///
     /// - Parameters:
     ///   - previous: The stacked routes before the change.
     ///   - current: The stacked routes after it.
-    nonisolated static func endsStopVisit(previous: [AppSheetRoute], current: [AppSheetRoute]) -> Bool {
+    ///   - closedByApp: The app closed the sheets itself (a region change, a
+    ///     rentals link), so the rider didn't finish with the stop.
+    nonisolated static func endsStopVisit(previous: [AppSheetRoute], current: [AppSheetRoute], closedByApp: Bool) -> Bool {
         let hadStop = previous.contains(where: \.isStopDetails)
-        return hadStop && current.isEmpty
+        return hadStop && current.isEmpty && !closedByApp
     }
 
-    /// Arms the feedback prompt a second after a stop sheet closes, and cancels
-    /// it when anything opens in the meantime. The delay keeps the alert from
+    /// Arms the feedback prompt a second after the rider closes a stop sheet (not
+    /// when the app closed it), and cancels it when anything opens in the meantime. The delay keeps the alert from
     /// racing the sheet's dismissal, as on the UIKit map.
-    func stackedRoutesChanged(from previous: [AppSheetRoute], to current: [AppSheetRoute]) {
+    func stackedRoutesChanged(from previous: [AppSheetRoute], to current: [AppSheetRoute], closedByApp: Bool) {
         feedbackPromptTask?.cancel()
         feedbackPromptTask = nil
-        guard Self.endsStopVisit(previous: previous, current: current) else { return }
-        guard !ignoresNextStopVisitEnd else {
-            ignoresNextStopVisitEnd = false
-            return
-        }
+        guard Self.endsStopVisit(previous: previous, current: current, closedByApp: closedByApp) else { return }
 
         feedbackPromptTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(1))
@@ -178,16 +167,26 @@ struct MapSurveyCard: View {
 /// long modifier chain stays within what the type checker handles.
 struct MapPanelPromptsModifier: ViewModifier {
     @ObservedObject var prompts: MapPanelPrompts
+    /// A reference, so it stays the same input from frame to frame.
+    let coordinator: SheetCoordinator<AppSheetRoute>
     let stackedRoutes: [AppSheetRoute]
+    /// Zero while no card is up; see `cardPlacement(sheetHeight:toolbarsOpacity:showsCard:)`.
     let sheetHeight: CGFloat
     let toolbarsOpacity: CGFloat
     let toolbarsAnimationDuration: CGFloat
+
+    /// What the card's position reads. Only the card follows the sheet, so with no
+    /// card up these stay fixed, and a sheet drag, which moves the real values on
+    /// every frame, doesn't change this modifier's inputs.
+    static func cardPlacement(sheetHeight: CGFloat, toolbarsOpacity: CGFloat, showsCard: Bool) -> (sheetHeight: CGFloat, toolbarsOpacity: CGFloat) {
+        showsCard ? (sheetHeight, toolbarsOpacity) : (0, 1)
+    }
 
     func body(content: Content) -> some View {
         content
             .onAppear { prompts.checkForSurvey() }
             .onChange(of: stackedRoutes) { previous, current in
-                prompts.stackedRoutesChanged(from: previous, to: current)
+                prompts.stackedRoutesChanged(from: previous, to: current, closedByApp: coordinator.lastChangeWasPopToRoot)
             }
             .overlay(alignment: .bottom) {
                 if let title = prompts.surveyTitle, stackedRoutes.isEmpty {

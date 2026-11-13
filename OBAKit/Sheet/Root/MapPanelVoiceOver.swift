@@ -19,13 +19,16 @@ import OBAKitCore
 /// over a map whose pins VoiceOver reads one by one.
 enum MapPanelVoiceOver {
     /// Where the home sheet goes, or nil to leave it. Only off its collapsed
-    /// detent, so a sheet the rider moved stays where they put it.
+    /// detent, so a sheet the rider moved stays where they put it, and not
+    /// while a stacked sheet covers it: resizing a sheet the rider can't see
+    /// only moves it under the one they're reading.
     static func homeDetent(
         isVoiceOverRunning: Bool,
         expandsSheet: Bool,
-        currentDetent: PresentationDetent
+        currentDetent: PresentationDetent,
+        isCovered: Bool
     ) -> PresentationDetent? {
-        guard isVoiceOverRunning, expandsSheet,
+        guard isVoiceOverRunning, expandsSheet, !isCovered,
               currentDetent == AppSheetRoute.homeCollapsedDetent else { return nil }
         return .medium
     }
@@ -58,7 +61,8 @@ struct MapPanelVoiceOverModifier: ViewModifier {
               let detent = MapPanelVoiceOver.homeDetent(
                 isVoiceOverRunning: isRunning,
                 expandsSheet: defaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey),
-                currentDetent: coordinator.currentDetent
+                currentDetent: coordinator.currentDetent,
+                isCovered: !coordinator.stackedRoutes.isEmpty
               ) else { return }
         coordinator.currentDetent = detent
 
