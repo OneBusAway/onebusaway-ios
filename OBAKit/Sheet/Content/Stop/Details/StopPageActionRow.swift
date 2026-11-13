@@ -102,7 +102,7 @@ struct StopPageActionRow: View {
     private static let verticalPadding: CGFloat = 8
 
     /// Gap between the capsule and the bottom of the sheet. Rides on top of the
-    /// device's own bottom safe area, which the enclosing `safeAreaInset`
+    /// device's own bottom safe area, which the enclosing safe-area bar
     /// already accounts for — this is breathing room above the home indicator,
     /// not clearance of it.
     private static let bottomInset: CGFloat = 20
@@ -112,7 +112,7 @@ struct StopPageActionRow: View {
     ///
     /// Published because the scroll-to-top button has to clear it and cannot
     /// discover it: that button is an `.overlay(alignment: .bottomTrailing)`
-    /// applied *after* the `safeAreaInset` this view is mounted in, so it aligns
+    /// applied *after* the safe-area bar this view is mounted in, so it aligns
     /// to the sheet's full frame and would otherwise land directly on top of the
     /// capsule. A constant rather than a measured height on purpose — nothing
     /// here depends on scroll position, and measuring it back into a position is

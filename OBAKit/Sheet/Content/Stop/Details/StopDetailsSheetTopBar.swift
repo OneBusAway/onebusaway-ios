@@ -47,8 +47,15 @@ struct StopDetailsSheetTopBar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .opaqueUnlessOnSheetGlass()
+        .background(Self.background)
         .overlay(alignment: .bottom) { Divider() }
+    }
+
+    /// None on iOS 26, where the bar is a `safeAreaBar` on the sheet's Liquid
+    /// Glass and the system's scroll edge effect keeps rows legible beneath it.
+    /// Before that the rows scroll under an opaque strip.
+    private static var background: Color {
+        if #available(iOS 26.0, *) { .clear } else { Color(uiColor: .systemBackground) }
     }
 
     // MARK: - Subviews
