@@ -9,6 +9,12 @@ import Foundation
 
 extension APIService {
     nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        try await retryPolicy.execute { _ in
+            try await performData(for: request)
+        }
+    }
+
+    private nonisolated func performData(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let (data, response): (Data, URLResponse)
         do {
             // Per-request begin/finish is high-volume trace detail (the unit-test
