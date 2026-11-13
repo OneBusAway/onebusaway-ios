@@ -168,15 +168,22 @@ public final class StopCacheRepository: Sendable {
         }
     }
 
-    /// Writes one batch of a region sync in a single transaction, stamping every
-    /// row with `syncedAt`, the time the sync started;
+    /// Writes all batches of a region sync in one transaction, stamping every
+    /// row with `syncedAt`, the time the sync started. Keeping all batches in one
+    /// transaction prevents readers from observing an interrupted sync.
     /// `deleteStops(regionId:notWrittenSince:)` relies on that stamp.
     ///
     /// Unlike `saveStops`, this throws: a sync that recorded itself complete
     /// after a failed write would then delete stops it never replaced.
     func writeSyncedStops(_ stops: [Stop], regionId: Int, syncedAt: Date) throws {
+        try writeSyncedStops([stops], regionId: regionId, syncedAt: syncedAt)
+    }
+
+    func writeSyncedStops(_ batches: [[Stop]], regionId: Int, syncedAt: Date) throws {
         try database.dbQueue.write { db in
-            try write(stops, regionId: regionId, at: syncedAt, in: db)
+            for stops in batches {
+                try write(stops, regionId: regionId, at: syncedAt, in: db)
+            }
         }
     }
 

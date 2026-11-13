@@ -51,8 +51,8 @@ final class RegionStopSyncService: Sendable {
     /// Returns whether a complete or partial sync wrote stops, so the caller can
     /// rebuild what it derives from the cache.
     ///
-    /// Cancelling the calling task stops it before its next request or batch, so
-    /// after a region switch nothing more is written for the old region. A
+    /// Cancelling the calling task stops it before its next request or commit, so
+    /// after a region switch nothing from the old sync becomes visible. A
     /// cancelled sync records nothing and returns false; the next one starts over.
     @discardableResult
     func sync(regionID: Int, using fetcher: any StopsForAgencyFetching) async -> Bool {
@@ -153,6 +153,7 @@ final class RegionStopSyncService: Sendable {
         var failedAgencies = 0
         var newETag: String?
         var wroteAny = false
+        var batches = [[Stop]]()
         for (index, agencyID) in agencyIDs.enumerated() {
             try Task.checkCancellation()
             let result: StopsForAgencyResult
@@ -189,24 +190,24 @@ final class RegionStopSyncService: Sendable {
                 if index == 0 && isMaglev {
                     newETag = responseETag
                 }
-                try write(stops, regionID: regionID, syncedAt: start)
+                var batchStart = 0
+                while batchStart < stops.count {
+                    let batchEnd = min(batchStart + batchSize, stops.count)
+                    batches.append(Array(stops[batchStart..<batchEnd]))
+                    batchStart = batchEnd
+                }
                 wroteAny = wroteAny || !stops.isEmpty
             }
         }
 
-        return .finished(failedAgencies: failedAgencies, newETag: newETag, wroteAny: wroteAny)
-    }
-
-    /// Writes in batches, so each hold on the database is short and a cancelled
-    /// sync stops between batches.
-    private func write(_ stops: [Stop], regionID: Int, syncedAt: Date) throws {
-        var index = 0
-        while index < stops.count {
-            try Task.checkCancellation()
-            let end = min(index + batchSize, stops.count)
-            try repository.writeSyncedStops(Array(stops[index..<end]), regionId: regionID, syncedAt: syncedAt)
-            index = end
+        // Fetching is cancellable; the one transaction below is the visibility
+        // boundary for the whole sync. GRDB rolls it back if any write fails.
+        try Task.checkCancellation()
+        if wroteAny {
+            try repository.writeSyncedStops(batches, regionId: regionID, syncedAt: start)
         }
+
+        return .finished(failedAgencies: failedAgencies, newETag: newETag, wroteAny: wroteAny)
     }
 
     private func record(_ outcome: RegionStopSyncState.Outcome, regionID: Int, at attempt: Date, lastSuccessAt: Date?, etag: String?) {

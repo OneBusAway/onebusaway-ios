@@ -214,7 +214,8 @@ final class RegionStopSyncServiceTests {
     }
 
     /// The second agency's answer arrives after the sync was cancelled, as after
-    /// a region switch: none of it is written, and nothing is recorded.
+    /// a region switch: the fetched first agency is not visible because the
+    /// complete sync has not committed yet.
     @Test(.timeLimit(.minutes(1))) func `A cancelled sync writes nothing more and records nothing`() async throws {
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops("1_a"), "2": stops("2_late")])
         await fetcher.hold(agency: "2")
@@ -226,8 +227,31 @@ final class RegionStopSyncServiceTests {
         await fetcher.release()
 
         #expect(await !sync.value)
-        #expect(try cachedIDs() == ["1_a"])
+        #expect(try cachedIDs().isEmpty)
         #expect(try repository.syncState(regionId: 1) == nil)
+    }
+
+    @Test func `A retry after cancellation commits each duplicate stop once`() async throws {
+        let firstFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_a", "1_duplicate"),
+            "2": stops("1_duplicate", "2_b")
+        ])
+        await firstFetcher.hold(agency: "2")
+        let service = makeService(batchSize: 1)
+        let cancelledSync = Task { await service.sync(regionID: 1, using: firstFetcher) }
+
+        await firstFetcher.waitUntilHolding()
+        cancelledSync.cancel()
+        await firstFetcher.release()
+        #expect(await !cancelledSync.value)
+        #expect(try cachedIDs().isEmpty)
+
+        let retryFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_a", "1_duplicate"),
+            "2": stops("1_duplicate", "2_b")
+        ])
+        #expect(await service.sync(regionID: 1, using: retryFetcher))
+        #expect(try cachedIDs() == ["1_a", "1_duplicate", "2_b"])
     }
 
     /// URLSession fails a cancelled request with URLError.cancelled rather than
@@ -243,7 +267,7 @@ final class RegionStopSyncServiceTests {
         await fetcher.release()
         await sync.value
 
-        #expect(try cachedIDs() == ["1_a"])
+        #expect(try cachedIDs().isEmpty)
         #expect(try repository.syncState(regionId: 1) == nil)
     }
 
