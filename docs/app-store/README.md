@@ -140,11 +140,11 @@ time, not 9:41.
 ## How it works
 
 1. **Capture.** `OBAKitUITests/AppStoreScreenshotUITests` has one test per
-   slide. Each walks to its screen and attaches a full-screen capture named
-   after the slide (`01-stop-arrivals`, …). The script runs them on the newest
-   "iPhone NN Pro" simulator (override with `SCREENSHOT_UDID`), after pinning
-   the status bar to 9:41 and granting location. The test sets the simulated
-   location to Capitol Hill, Seattle.
+   slide. Each walks to its screen on the map panel, the app's default, and
+   attaches a full-screen capture named after the slide (`01-stop-arrivals`,
+   …). The script runs them on the newest "iPhone NN Pro" simulator (override
+   with `SCREENSHOT_UDID`), after pinning the status bar to 9:41 and granting
+   location. The test sets the simulated location to Capitol Hill, Seattle.
 2. **Export.** `scripts/app_store/export_screenshots.py` pulls the named
    attachments out of the `.xcresult` bundle into `raw/`.
 3. **Frame.** [frames-cli](https://github.com/viticci/frames-cli) adds the
@@ -165,7 +165,7 @@ put the app in the right state:
 
 | Environment variable | Effect |
 |---|---|
-| `TEST_SCREENSHOT_STOP_ID` | Opens the stop's sheet over the map, as a tap on its pin does. Classic map only; the experimental map panel ignores it |
+| `TEST_SCREENSHOT_STOP_ID` | Opens the stop's sheet over the map, as a tap on its pin does, on the map panel and on the classic map |
 | `TEST_SCREENSHOT_BOOKMARKS` | Replaces all bookmarks with trip bookmarks built from live arrivals (JSON: `group`, `name`, `stopID`, `routeID`) |
 | `TEST_SCREENSHOT_LIVE_ACTIVITY_MINUTES` | Gives a Live Activity started from the trip page stub departures, that many minutes from now (`4,12,21`). The Lock Screen slide uses it: the real trip has usually left by the time the Lock Screen is captured, and the card would show no times |
 | `TEST_SCREENSHOT_END_LIVE_ACTIVITIES` | Ends every Live Activity. Every test sets it, so slide 2's is gone from the Dynamic Island over Safari and retakes of slide 2 don't stack activities |
@@ -173,14 +173,15 @@ put the app in the right state:
 The tests also pass these launch arguments, which override UserDefaults for
 the run without changing what's stored:
 
-- `-UserDataStore.lastSelectedView 0` starts on the Map tab, whichever tab the
-  simulator was left on.
 - `-com.apple.TipKit.HideAllTips 1` hides tips; a popover tip swallows the
   first tap.
 - a `donationRequestDismissedDateKey` date hides the donation card on the stop
   page.
 
-They also set the existing `TEST_SUPPRESS_ALERT_BULLETINS`.
+They also set the existing `TEST_SUPPRESS_ALERT_BULLETINS`, and
+`TEST_SKIP_STATE_RESTORATION` (DEBUG only, read in `SceneDelegate`), which
+stops a launch from reopening the sheet a backgrounded run left open: the Lock
+Screen slide leaves its trip sheet open.
 
 ## Slides
 
@@ -188,10 +189,10 @@ They also set the existing `TEST_SUPPRESS_ALERT_BULLETINS`.
 |---|---|---|
 | 1 | `01-stop-arrivals` | Map with the Capitol Hill station sheet |
 | 2 | `02-lock-screen` | Live Activity on the Lock Screen |
-| 3 | `03-trip-vehicle` | Trip page with the train on the map |
+| 3 | `03-trip-vehicle` | Trip sheet with the train on the map |
 | 4 | `04-trip-planner` | Trip planner results to UW's Allen Center |
 | 5 | `05-alarm` | Add Reminder sheet |
-| 6 | `06-bookmarks` | Bookmarks tab, Work and Home groups |
+| 6 | `06-bookmarks` | Home sheet Bookmarks tab, Work and Home groups |
 | 7 | `07-open-source` | opentransitsoftwarefoundation.org in Safari |
 
 The Lock Screen slide presses the lock button through a private

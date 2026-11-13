@@ -19,10 +19,11 @@ import XCTest
 /// `scripts/app_store_screenshots`, which also pins the status bar, then exports,
 /// frames and composes the slides; see `docs/app-store/README.md`.
 ///
-/// The data is live Puget Sound data (region 1), seen from Capitol Hill. The
-/// app's DEBUG launch hooks (`Application+ScreenshotSupport.swift`) open the
-/// stop sheet and seed the bookmarks. Tests assert only what they need to know
-/// the screen has drawn.
+/// The slides show the map panel, the app's default experience. The data is
+/// live Puget Sound data (region 1), seen from Capitol Hill. The app's DEBUG
+/// launch hooks (`Application+ScreenshotSupport.swift`) open the stop sheet and
+/// seed the bookmarks. Tests assert only what they need to know the screen has
+/// drawn.
 nonisolated final class AppStoreScreenshotUITests: XCTestCase {
 
     /// Capitol Hill light rail station, southbound platform.
@@ -58,16 +59,15 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
             "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>",
-            // The slides are composed around the classic tab bar.
-            "-OBAUseMapPanelExperience", "NO",
-            // Start on the Map tab whatever tab the simulator was last left on.
-            "-UserDataStore.lastSelectedView", "<integer>0</integer>",
             // A popover tip would sit over the screen and swallow the first tap.
             "-com.apple.TipKit.HideAllTips", "1",
             // The inline "needs your help" donation card would cover arrivals.
             "-donationRequestDismissedDateKey", "<date>2026-01-01T00:00:00Z</date>"
         ]
         app.launchEnvironment["TEST_SUPPRESS_ALERT_BULLETINS"] = "1"
+        // Slide 2 leaves the app in the background with a trip sheet open,
+        // which the next launch would otherwise restore over the map.
+        app.launchEnvironment["TEST_SKIP_STATE_RESTORATION"] = "1"
         // Every launch starts with no Live Activities: slide 2's would otherwise
         // show in the Dynamic Island over Safari, and repeated `--only` runs of
         // slide 2 would stack activities on the Lock Screen.
@@ -198,7 +198,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         capture("02-lock-screen", settle: 6)
     }
 
-    /// 03 — The trip page: the vehicle on the map, the departure card below.
+    /// 03 — The trip sheet: the vehicle on the map, the departure card below.
     @MainActor func test03TripVehicle() {
         let app = launchOnStopSheet()
         openTripPage(in: app)
@@ -209,13 +209,25 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     @MainActor func test04TripPlanner() {
         let app = launch()
         let search = app.searchFields["Where are you going?"]
-        tap(search, timeout: 30, "Map search field missing")
+        // The home sheet's search bar is a button that opens the search sheet,
+        // whose field has the same label. A first tap can only raise the sheet.
+        let searchBar = app.buttons["Where are you going?"]
+        tap(searchBar, timeout: 30, "Map search bar missing")
+        if !search.waitForExistence(timeout: 5) {
+            searchBar.tap()
+        }
+        tap(search, "Search field never appeared")
         search.typeText("Paul G. Allen Center")
 
         let place = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'The Paul G. Allen Center'")).firstMatch
         tap(place, timeout: 20, "Search found no Allen Center")
         tap(app.buttons["Plan trip to this location"])
-        tap(app.buttons["Find Routes"])
+        // Disabled until the planner has the rider's location as the start,
+        // and a tap on a disabled button does nothing.
+        let findRoutes = app.buttons["Find Routes"]
+        XCTAssertTrue(findRoutes.waitForExistence(timeout: 15), "Trip planner never opened")
+        wait(for: [expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: findRoutes)], timeout: 30)
+        findRoutes.tap()
 
         let itinerary = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Depart:'")).firstMatch
         XCTAssertTrue(itinerary.waitForExistence(timeout: 45), "Trip planner returned no itineraries")
@@ -236,26 +248,32 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         capture("05-alarm")
     }
 
-    /// 06 — The Bookmarks tab, seeded with two groups of trip bookmarks.
+    /// 06 — The home sheet's Bookmarks tab, seeded with two groups of trip bookmarks.
     @MainActor func test06Bookmarks() {
         let app = launch(environment: ["TEST_SCREENSHOT_BOOKMARKS": Self.bookmarks])
-        // Not `app.tabBars`: iPhone Duo shows its tabs in a vertical bar.
         let tab = app.buttons["Bookmarks"].firstMatch
-        XCTAssertTrue(tab.waitForExistence(timeout: 30))
+        XCTAssertTrue(tab.waitForExistence(timeout: 30), "Home sheet has no Bookmarks tab")
 
         // The seed fetches live arrivals for each bookmark, so it lands a few
-        // seconds after launch; re-selecting the tab picks it up.
-        let lastBookmark = app.staticTexts["10 back home"]
-        for _ in 0..<6 where !lastBookmark.exists {
+        // seconds after launch; re-selecting the tab picks it up. Each row is
+        // one button ("Route Bookmark, 10 to Downtown"), so match its label.
+        let firstBookmark = app.buttons.matching(NSPredicate(format: "label CONTAINS '10 to Downtown'")).firstMatch
+        for _ in 0..<6 where !firstBookmark.exists {
             tab.tap()
-            _ = lastBookmark.waitForExistence(timeout: 5)
+            _ = firstBookmark.waitForExistence(timeout: 5)
         }
-        XCTAssertTrue(lastBookmark.exists, "Seeded bookmarks never appeared")
+        XCTAssertTrue(firstBookmark.exists, "Seeded bookmarks never appeared")
+
+        // The tab opens at the sheet's middle height, with the Home group
+        // below the fold; raise the sheet so both groups show.
+        firstBookmark.swipeUp()
+        let lastBookmark = app.buttons.matching(NSPredicate(format: "label CONTAINS '10 back home'")).firstMatch
+        XCTAssertTrue(lastBookmark.waitForExistence(timeout: 10), "The Home group never came into view")
 
         // A row whose arrivals fetch failed (the server sometimes answers
         // `null` under load) says so until the next refresh; pull to refresh
         // rather than ship it.
-        let failedRow = app.staticTexts["No upcoming departures"].firstMatch
+        let failedRow = app.buttons.matching(NSPredicate(format: "value CONTAINS 'No upcoming departures'")).firstMatch
         for _ in 0..<6 where failedRow.waitForExistence(timeout: 3) {
             let row = lastBookmark.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             row.press(forDuration: 0.1, thenDragTo: row.withOffset(CGVector(dx: 0, dy: 300)))
@@ -269,7 +287,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         // Launch once so the app ends slide 2's Live Activity, or it shows in
         // the Dynamic Island over Safari.
         let app = launch()
-        XCTAssertTrue(app.buttons["Bookmarks"].firstMatch.waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["Where are you going?"].waitForExistence(timeout: 30))
         sleep(2)
         app.terminate()
 

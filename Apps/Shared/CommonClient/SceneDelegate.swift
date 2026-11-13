@@ -61,7 +61,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         // Restore state from a preserved session user activity if no connection activities were passed.
-        if connectionOptions.userActivities.isEmpty, let activity = session.stateRestorationActivity {
+        if connectionOptions.userActivities.isEmpty, !Self.skipsStateRestoration, let activity = session.stateRestorationActivity {
             _ = app.application(UIApplication.shared, continue: activity) { _ in }
         }
     }
@@ -116,6 +116,17 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     // MARK: - State restoration
+
+    /// UI tests that need a known first screen set `TEST_SKIP_STATE_RESTORATION`:
+    /// a test that backgrounds the app, as the App Store Lock Screen slide does,
+    /// otherwise reopens its sheet in the next test's launch.
+    private static var skipsStateRestoration: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.environment["TEST_SKIP_STATE_RESTORATION"] == "1"
+        #else
+        false
+        #endif
+    }
 
     /// The activity to save for this scene: the frontmost one published under
     /// `viewController`.
