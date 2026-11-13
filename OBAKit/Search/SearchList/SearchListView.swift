@@ -42,37 +42,20 @@ extension View {
             .background(.clear)
     }
 
-    /// Background for a sheet hosting a search list.
+    /// Background for a sheet hosting a search list: its glass where it shows
+    /// (see `ColorScheme.showsSheetGlass`), whose cards read against it as
+    /// Maps' and Find My's do; otherwise `systemGroupedBackground`.
     ///
-    /// Nothing where the sheet shows its Liquid Glass (`showsSheetGlass`: iOS 26,
-    /// light mode): a partial-height sheet's own background is glass, which
-    /// turns opaque by itself as the sheet reaches full height, and a
-    /// `presentationBackground` would replace it. The cards read against the
-    /// glass, as Maps' and Find My's do.
-    ///
-    /// Otherwise `systemGroupedBackground`. Before iOS 26, sheets default to
-    /// `systemBackground`, and `insetGrouped` rows are filled with
-    /// `secondarySystemGroupedBackground` — the same colour in light mode. The
-    /// cards are drawn, but they're white on white, so the rows read as plain
-    /// text with no list edges at all. Painting the sheet with
-    /// `systemGroupedBackground` is what a grouped list normally sits on and gives
-    /// the cards their contrast back. Applied to the whole sheet rather than left
-    /// to the `List`'s own background so the colour runs edge to edge, instead of
-    /// starting below the search field and leaving the header two-tone.
+    /// Before iOS 26, sheets default to `systemBackground`, and `insetGrouped`
+    /// rows are filled with `secondarySystemGroupedBackground` — the same colour
+    /// in light mode, so the cards are white on white and the rows read as
+    /// plain text with no list edges at all. `systemGroupedBackground` is what a
+    /// grouped list normally sits on and gives the cards their contrast back.
+    /// Applied to the whole sheet rather than left to the `List`'s own
+    /// background so the colour runs edge to edge, instead of starting below the
+    /// search field and leaving the header two-tone.
     func searchSheetBackground() -> some View {
-        modifier(SearchSheetBackground())
-    }
-}
-
-private struct SearchSheetBackground: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-
-    func body(content: Content) -> some View {
-        if colorScheme.showsSheetGlass {
-            content
-        } else {
-            content.presentationBackground(Color.searchSheetBackground)
-        }
+        sheetGlassBackground(opaque: .searchSheetBackground)
     }
 }
 

@@ -519,29 +519,14 @@ private extension View {
         if #available(iOS 26.0, *) {
             safeAreaBar(edge: .top, spacing: 0, content: top)
                 .safeAreaBar(edge: .bottom, spacing: 0, content: bottom)
-                .modifier(StopSheetGlass())
+                // A no-op where the sheet is opaque: a List's own background
+                // is already transparent in an iOS 26 sheet, which is why the
+                // opaque case needs the sheet painted.
+                .scrollContentBackground(.hidden)
+                .sheetGlassBackground(opaque: Color(uiColor: .systemBackground))
         } else {
             safeAreaInset(edge: .top, spacing: 0, content: top)
                 .safeAreaInset(edge: .bottom, spacing: 0, content: bottom)
-        }
-    }
-}
-
-/// Where the sheet shows its glass, clears the list and, through
-/// `drawsOnSheetGlass`, the top bar and rows. Otherwise paints the sheet
-/// itself opaque: the header has no background of its own, and the list's
-/// leaves the glass showing around it. A modifier because it reads the colour
-/// scheme, which can change while the sheet is up.
-private struct StopSheetGlass: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-
-    func body(content: Content) -> some View {
-        if colorScheme.showsSheetGlass {
-            content
-                .scrollContentBackground(.hidden)
-                .environment(\.drawsOnSheetGlass, true)
-        } else {
-            content.presentationBackground(Color(uiColor: .systemBackground))
         }
     }
 }

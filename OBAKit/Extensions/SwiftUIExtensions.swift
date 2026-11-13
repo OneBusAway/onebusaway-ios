@@ -124,6 +124,51 @@ extension ColorScheme {
     }
 }
 
+extension View {
+    /// A map panel sheet's background: its own Liquid Glass where
+    /// `showsSheetGlass`, otherwise `opaque`. Reads the colour scheme, which
+    /// can change while the sheet is up.
+    ///
+    /// A partial-height sheet's background is glass by default, which the
+    /// system turns opaque at full height; `presentationBackground` replaces it
+    /// at every height, so it's only applied where the glass doesn't show.
+    /// Also sets `drawsOnSheetGlass` either way, so a sheet never inherits the
+    /// value from the one that presented it.
+    func sheetGlassBackground(opaque: Color) -> some View {
+        modifier(SheetGlassBackground(opaque: opaque))
+    }
+}
+
+private struct SheetGlassBackground: ViewModifier {
+    let opaque: Color
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// The branch is on a zero-size background, not on `content`: an `if`
+    /// around `content` would give the whole sheet a new identity whenever the
+    /// appearance changed, resetting its state (scroll position, pushed
+    /// screens, view models). The presentation background still reaches the
+    /// sheet from there, as presentation modifiers do from any descendant.
+    func body(content: Content) -> some View {
+        let showsGlass = colorScheme.showsSheetGlass
+        content
+            .environment(\.drawsOnSheetGlass, showsGlass)
+            .background {
+                if !showsGlass {
+                    Color.clear.presentationBackground(opaque)
+                }
+            }
+    }
+}
+
+extension EnvironmentValues {
+    /// Whether these views sit directly on a sheet's Liquid Glass (iOS 26+), so
+    /// surfaces that would otherwise paint an opaque background stay clear.
+    /// Set by `sheetGlassBackground(opaque:)`; read by the stop sheet's top bar
+    /// and departure rows. The pushed Stop page shares those rows and leaves
+    /// this off, keeping them opaque.
+    @Entry var drawsOnSheetGlass = false
+}
+
 // MARK: - glassEffectIfAvailable
 
 public extension View {
