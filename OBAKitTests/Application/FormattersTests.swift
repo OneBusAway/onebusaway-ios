@@ -42,25 +42,6 @@ final class FormattersTests: OBATestCase {
         #expect(environment.obaFormatters === injected)
     }
 
-    @Test func `Formatters can format concurrently from a shared instance`() async {
-        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let results = await withTaskGroup(of: String.self, returning: [String].self) { group in
-            for _ in 0..<32 {
-                group.addTask {
-                    formatters.shortFormattedTransferTime(minutes: 4)
-                }
-            }
-
-            var results: [String] = []
-            for await result in group {
-                results.append(result)
-            }
-            return results
-        }
-
-        #expect(results == Array(repeating: "4m", count: 32))
-    }
-
     @Test func example() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let stopArrivals = try! Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures-for-stop-1_75414.json")

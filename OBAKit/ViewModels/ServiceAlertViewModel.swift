@@ -62,8 +62,8 @@ final class ServiceAlertViewModel: ObservableObject {
         let alert = serviceAlert
         let formatter = application.formatters.shortDateTimeFormatter
 
-        // Resolve formatter-dependent strings here on the main actor; the
-        // background builder only receives Foundation values and strings.
+        // Formatters is not Sendable (lazy formatter caches), so resolve the
+        // formatter-dependent strings here on the main actor instead of sending it.
         let formatters = application.formatters
         let activeWindows: [String] = alert.activeWindows
             .map { $0.interval }
