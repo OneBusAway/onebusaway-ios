@@ -41,6 +41,29 @@ private final class AlertsOutcomeDelegate: NSObject, AgencyAlertsDelegate {
     }
 }
 
+private actor UpdateFinishWaiter {
+    private var finishedGenerations = Set<Int>()
+    private var waiters: [Int: [CheckedContinuation<Void, Never>]] = [:]
+
+    func recordFinished(_ generation: Int) {
+        finishedGenerations.insert(generation)
+        if let continuations = waiters.removeValue(forKey: generation) {
+            for continuation in continuations {
+                continuation.resume()
+            }
+        }
+    }
+
+    func wait(for generation: Int) async {
+        if finishedGenerations.contains(generation) {
+            return
+        }
+        await withCheckedContinuation { continuation in
+            waiters[generation, default: []].append(continuation)
+        }
+    }
+}
+
 private actor ReleaseGate {
     private var isReleased = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
@@ -171,7 +194,7 @@ final class AgencyAlertsStoreTests: OBATestCase {
         let object = try JSONSerialization.jsonObject(with: agenciesData) as? [String: Any]
         let data = object?["data"] as? [String: Any]
         let agencyCount = (data?["list"] as? [[String: Any]])?.count ?? 0
-        AgencyAlertsDataLoader(
+        return AgencyAlertsDataLoader(
             agenciesData: agenciesData,
             alertsData: try feed(alertIDs: [alertID]),
             expectedRequestCount: agencyCount + 1,
@@ -267,6 +290,11 @@ final class AgencyAlertsStoreTests: OBATestCase {
         store.apiService = firstService
         store.obacoService = nil
 
+        let finishWaiter = UpdateFinishWaiter()
+        store.onUpdateFinishedForTesting = { gen in
+            Task { await finishWaiter.recordFinished(gen) }
+        }
+
         store.checkForUpdates()
         await firstGate.waitUntilBlocked()
 
@@ -278,7 +306,7 @@ final class AgencyAlertsStoreTests: OBATestCase {
         }
 
         await firstGate.release()
-        await poll(until: { firstLoader.completedExpectedRequests }, "the cancelled refresh never finished")
+        await finishWaiter.wait(for: 1)
 
         #expect(store.agencyAlerts.map(\.id) == ["new-alert"])
     }

@@ -120,7 +120,11 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
         // child tasks read `self.agencies` while another context mutates it.
         if stateLock.withLock({ self.agencies.isEmpty }) {
             let fetched = try await apiService.getAgenciesWithCoverage().list
-            stateLock.withLock { self.agencies = fetched }
+            try Task.checkCancellation()
+            stateLock.withLock {
+                guard updateGeneration == generation else { return }
+                self.agencies = fetched
+            }
         }
         let agenciesSnapshot = stateLock.withLock { self.agencies }
 
@@ -197,12 +201,20 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
         }
     }
 
+    #if DEBUG
+    /// Notified whenever an update finishes (including when cancelled, failed, or superseded).
+    var onUpdateFinishedForTesting: ((Int) -> Void)?
+    #endif
+
     private func finishUpdate(_ generation: Int) {
         stateLock.withLock {
             if updateGeneration == generation {
                 updateTask = nil
             }
         }
+        #if DEBUG
+        onUpdateFinishedForTesting?(generation)
+        #endif
     }
 
     private func isCurrentUpdate(_ generation: Int) -> Bool {
