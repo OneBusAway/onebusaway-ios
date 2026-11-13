@@ -37,11 +37,13 @@ public enum ErrorClassifier {
             case .requestFailure(let response):
                 switch response.statusCode {
                 case 401, 403: return .authentication
+                case 429, 500...599: return .server
                 case 408: return .timeout
-                case 500...599: return .server
                 default: return .unknown
                 }
-            case .serverError, .serverUnavailable, .rateLimited:
+            case .serverUnavailable(_, let statusCode):
+                return statusCode == 408 ? .timeout : .server
+            case .serverError, .rateLimited:
                 return .server
             case .invalidResponseData, .invalidContentType, .noResponseBody:
                 return .decoding
@@ -167,8 +169,14 @@ public enum ErrorClassifier {
             }
             return APIError.networkFailure(nsError)
 
-        case NSURLErrorTimedOut,
-             NSURLErrorCannotConnectToHost,
+        case NSURLErrorTimedOut:
+            guard let regionName else {
+                logger.warning("Server unreachable (URL error \(nsError.code)) but no region name available for user message.")
+                return APIError.networkFailure(nsError)
+            }
+            return APIError.serverUnavailable(regionName: regionName, statusCode: 408)
+
+        case NSURLErrorCannotConnectToHost,
              NSURLErrorCannotFindHost:
             guard let regionName else {
                 logger.warning("Server unreachable (URL error \(nsError.code)) but no region name available for user message.")

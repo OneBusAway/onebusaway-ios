@@ -31,6 +31,25 @@ final class ErrorClassifierTests {
         #expect(ErrorClassifier.category(for: NSError(domain: "test", code: 1)) == .unknown)
     }
 
+    @Test func `Classification preserves retry categories for timeout and rate limit`() {
+        let timeout = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        let rateLimitedResponse = HTTPURLResponse(
+            url: URL(string: "https://example.com")!,
+            statusCode: 429,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+
+        let classifiedTimeout = ErrorClassifier.classify(timeout, regionName: "Test")
+        let rawRateLimit = APIError.requestFailure(rateLimitedResponse)
+        let classifiedRateLimit = ErrorClassifier.classify(rawRateLimit, regionName: "Test")
+
+        #expect(ErrorClassifier.category(for: timeout) == .timeout)
+        #expect(ErrorClassifier.category(for: classifiedTimeout) == .timeout)
+        #expect(ErrorClassifier.category(for: rawRateLimit) == .server)
+        #expect(ErrorClassifier.category(for: classifiedRateLimit) == .server)
+    }
+
     // MARK: - APIError Pass-Through
 
     @Test func `Classify captive portal passes through`() {
