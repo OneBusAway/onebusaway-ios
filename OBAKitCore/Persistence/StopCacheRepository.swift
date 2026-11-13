@@ -154,7 +154,16 @@ public final class StopCacheRepository: Sendable {
             .filter(CachedStop.Columns.latitude <= maxLat)
             .filter(CachedStop.Columns.longitude >= minLon)
             .filter(CachedStop.Columns.longitude <= maxLon)
-        var staged: [StagedCachedStop] = []
+        let staged = try stagedStops(
+            regionId: regionId,
+            syncID: publishedSyncID,
+            minLat: minLat,
+            maxLat: maxLat,
+            minLon: minLon,
+            maxLon: maxLon,
+            limit: limit,
+            in: db
+        )
         if let limit {
             let centerLat = (minLat + maxLat) / 2
             let centerLon = (minLon + maxLon) / 2
@@ -162,29 +171,6 @@ public final class StopCacheRepository: Sendable {
             let dLat = CachedStop.Columns.latitude - centerLat
             let dLon = (CachedStop.Columns.longitude - centerLon) * scale
             main = main.order(dLat * dLat + dLon * dLon).limit(limit)
-            if let publishedSyncID {
-                let stagedDLat = StagedCachedStop.Columns.latitude - centerLat
-                let stagedDLon = (StagedCachedStop.Columns.longitude - centerLon) * scale
-                staged = try StagedCachedStop
-                    .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
-                    .filter(StagedCachedStop.Columns.regionId == regionId)
-                    .filter(StagedCachedStop.Columns.latitude >= minLat)
-                    .filter(StagedCachedStop.Columns.latitude <= maxLat)
-                    .filter(StagedCachedStop.Columns.longitude >= minLon)
-                    .filter(StagedCachedStop.Columns.longitude <= maxLon)
-                    .order(stagedDLat * stagedDLat + stagedDLon * stagedDLon)
-                    .limit(limit)
-                    .fetchAll(db)
-            }
-        } else if let publishedSyncID {
-            staged = try StagedCachedStop
-                .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
-                .filter(StagedCachedStop.Columns.regionId == regionId)
-                .filter(StagedCachedStop.Columns.latitude >= minLat)
-                .filter(StagedCachedStop.Columns.latitude <= maxLat)
-                .filter(StagedCachedStop.Columns.longitude >= minLon)
-                .filter(StagedCachedStop.Columns.longitude <= maxLon)
-                .fetchAll(db)
         }
 
         let mainRows = try main.fetchAll(db)
@@ -199,6 +185,26 @@ public final class StopCacheRepository: Sendable {
             return lhs < rhs
         }
         return limit.map { Array(sorted.prefix($0)) } ?? sorted
+    }
+
+    private func stagedStops(regionId: Int, syncID: String?, minLat: Double, maxLat: Double, minLon: Double, maxLon: Double, limit: Int?, in db: Database) throws -> [StagedCachedStop] {
+        guard let syncID else { return [] }
+        var request = StagedCachedStop
+            .filter(StagedCachedStop.Columns.syncID == syncID)
+            .filter(StagedCachedStop.Columns.regionId == regionId)
+            .filter(StagedCachedStop.Columns.latitude >= minLat)
+            .filter(StagedCachedStop.Columns.latitude <= maxLat)
+            .filter(StagedCachedStop.Columns.longitude >= minLon)
+            .filter(StagedCachedStop.Columns.longitude <= maxLon)
+        if let limit {
+            let centerLat = (minLat + maxLat) / 2
+            let centerLon = (minLon + maxLon) / 2
+            let scale = cos(centerLat * .pi / 180)
+            let dLat = StagedCachedStop.Columns.latitude - centerLat
+            let dLon = (StagedCachedStop.Columns.longitude - centerLon) * scale
+            request = request.order(dLat * dLat + dLon * dLon).limit(limit)
+        }
+        return try request.fetchAll(db)
     }
 
     private func visibleStops(regionId: Int, after cursor: StopID?, limit: Int, in db: Database) throws -> [CachedStop] {
