@@ -84,11 +84,20 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     @Published private(set) var hasSettledOnce = false
 
     private let application: Application
+    private var bookmarksChangeTask: Task<Void, Never>?
 
-    init(application: Application, pruneSpanFactor: Double = 4.0, renderCap: Int = 400) {
+    init(
+        application: Application,
+        pruneSpanFactor: Double = 4.0,
+        renderCap: Int = 400,
+        notificationCenter: NotificationCenter = .default
+    ) {
         self.application = application
         self.pruneSpanFactor = pruneSpanFactor
         self.renderCap = renderCap
+        // Creating the sequence registers with NotificationCenter synchronously;
+        // only iteration is deferred to the owned task below.
+        let bookmarkChanges = notificationCenter.notifications(named: .bookmarksDidChange)
         super.init()
 
         // Seed the accumulator (and published set) so a re-created observer
@@ -103,19 +112,23 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         stops = orderedStops()
         application.mapRegionManager.addDelegate(self)
 
-        // Re-decode on bookmark changes so a visible pin restyles. Selector-based
-        // observation is auto-removed on dealloc, so no token/deinit needed.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(bookmarksDidChange),
-            name: .bookmarksDidChange,
-            object: nil
-        )
+        // Re-decode on bookmark changes so a visible pin restyles. The task owns
+        // the bounded AsyncSequence subscription and is cancelled in deinit.
+        bookmarksChangeTask = Task { [weak self] in
+            for await _ in bookmarkChanges {
+                guard !Task.isCancelled, let self else { return }
+                self.reloadBookmarks()
+            }
+        }
         // A region switch changes which bookmarks are "current", but doesn't
         // repost `.bookmarksDidChange` — observe the region directly so the pins
         // don't stay filtered to the old region until an unrelated bookmark
         // edit. The delegate table is weak, so no explicit removal is needed.
         application.regionsService.addDelegate(self)
+    }
+
+    deinit {
+        bookmarksChangeTask?.cancel()
     }
 
     /// Clears the render set and prune reference on zoom-out. Bookmarks stay
@@ -158,17 +171,6 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         }
         if pruneAccumulated() {
             publish()
-        }
-    }
-
-    // MARK: - Bookmarks
-
-    /// `.bookmarksDidChange` may be posted off the main actor, so hop rather
-    /// than assume isolation.
-    @objc
-    private nonisolated func bookmarksDidChange() {
-        Task { @MainActor [weak self] in
-            self?.reloadBookmarks()
         }
     }
 

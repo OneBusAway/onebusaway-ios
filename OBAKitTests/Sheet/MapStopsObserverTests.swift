@@ -281,6 +281,38 @@ final class MapStopsObserverTests: OBATestCase {
         #expect(observer.bookmarkedStopIDs == [stops[0].id])
     }
 
+    @Test func `Observer delivers each notification once through its stream`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let center = NotificationCenter()
+        let observer = MapStopsObserver(application: application, notificationCenter: center)
+        var reloadCount = 0
+        let cancellable = observer.$bookmarks.dropFirst().sink { _ in reloadCount += 1 }
+        defer { cancellable.cancel() }
+
+        center.post(name: .bookmarksDidChange, object: nil)
+        await poll(until: { reloadCount == 1 }, "the first bookmark notification was not delivered")
+
+        center.post(name: .bookmarksDidChange, object: nil)
+        await poll(until: { reloadCount == 2 }, "the second bookmark notification was not delivered")
+
+        #expect(reloadCount == 2)
+    }
+
+    @Test func `Observer task does not retain observer after deallocation`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let center = NotificationCenter()
+        weak var weakObserver: MapStopsObserver?
+
+        do {
+            let observer = MapStopsObserver(application: application, notificationCenter: center)
+            weakObserver = observer
+        }
+
+        #expect(weakObserver == nil)
+    }
+
     @Test func `Observer dedupes bookmarks by stop`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
