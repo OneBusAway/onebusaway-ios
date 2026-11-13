@@ -75,7 +75,6 @@ struct RouteStopsSheetView: View {
                     }
                 }
         }
-        .searchSheetBackground()
     }
 
     @ViewBuilder

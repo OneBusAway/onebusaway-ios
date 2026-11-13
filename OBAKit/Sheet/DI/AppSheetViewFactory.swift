@@ -114,9 +114,8 @@ final class AppSheetViewFactory {
 
         case .more:
             // MoreViewController clears its backgrounds for the sheet's, which
-            // only HomeSheetView sets when More is its tab.
+            // `FloatingSheetContainer` sets from `AppSheetRoute.sheetBackground`.
             moreView()
-                .searchSheetBackground()
 
         case .search:
             searchView()

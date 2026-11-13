@@ -97,7 +97,6 @@ struct SearchSheetView: View {
                     }
                 }
         }
-        .searchSheetBackground()
         .onAppear {
             viewModel.reportSearchOpened()
             isSearchPresented = true
@@ -145,7 +144,7 @@ struct SearchSheetView: View {
     @ViewBuilder
     private var searchBody: some View {
         // `.searchSuggestions` draws on the sheet's own background (its glass,
-        // or grouped gray; see `searchSheetBackground()`) via
+        // or grouped gray; see `AppSheetRoute.sheetBackground`) via
         // `.searchListChrome()`. Suppress
         // `SearchListView` while suggestions are presented so its list doesn't
         // show through behind them.

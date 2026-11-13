@@ -44,7 +44,6 @@ struct NearbyStopsSheetView: View {
                     }
                 }
         }
-        .searchSheetBackground()
     }
 
     @ViewBuilder

@@ -109,7 +109,6 @@ struct TripPlannerSheetView: View {
                     }
                 }
         }
-        .searchSheetBackground()
     }
 
     @ViewBuilder
