@@ -26,12 +26,17 @@ struct HomeSheetView: View {
     @State private var barClearance: CGFloat = 0
 
     @State private var selectedTab: HomeTab = .home
-    /// Home's page above the tab bar; see `HomeTabs.showsHomeList`.
-    @State private var homePageHeight: CGFloat = 0
-    /// The search row as measured, for `showsHomeList`. Mirrors
+    /// Whether the tabs' pages show above the bar; see `HomeTabs.showsTabPages`.
+    /// Kept as the Bool rather than the measured height, so a drag, which changes
+    /// the height every frame, redraws this view only when it flips.
+    @State private var showsPages = true
+    /// The search row as measured, for `showsTabPages`. Mirrors
     /// `HomeCollapsedDetent.measured`, which the detent reads but which, being a
     /// lock rather than state, doesn't redraw this view.
     @State private var searchRowHeight = AppSheetRoute.homeSearchRowHeight
+    /// The map reads the search row's height from here; see `HomeSheetMetrics`.
+    /// `nil` outside the map panel.
+    @Environment(HomeSheetMetrics.self) private var metrics: HomeSheetMetrics?
 
     /// Used by the bookmark rows to format distances.
     private let application: Application
@@ -54,8 +59,14 @@ struct HomeSheetView: View {
         showsTabs ? selectedTab : .home
     }
 
-    private var isShowingHomePage: Bool {
-        coordinator.stackedRoutes.isEmpty && visibleTab == .home
+    /// Home's poll runs while its list can be seen: Home picked, nothing stacked
+    /// over it, and the sheet not collapsed down to the search field.
+    private var isPollingHome: Bool {
+        HomeTabs.shouldPoll(
+            isOnScreen: visibleTab == .home,
+            isCovered: !coordinator.stackedRoutes.isEmpty,
+            isCollapsed: !showsPages
+        )
     }
 
     var body: some View {
@@ -64,6 +75,13 @@ struct HomeSheetView: View {
         // behind the bar.
         VStack(spacing: 0) {
             tabs
+                // Reduced to the Bool in the transform, like the clearance below.
+                // The captured search row height is the one from the last body
+                // evaluation; a new one comes with a text size change, which
+                // resizes the sheet and so runs the transform again.
+                .onGeometryChange(for: Bool.self) { [showsTabs, searchRowHeight] proxy in
+                    HomeTabs.showsTabPages(showsTabs: showsTabs, pageHeight: proxy.size.height, searchRowHeight: searchRowHeight)
+                } action: { showsPages = $0 }
             if showsTabs {
                 HomeTabBar(
                     selection: selectedTab,
@@ -82,13 +100,14 @@ struct HomeSheetView: View {
             // a UIKit host, sets no sheet background of its own. A no-op where the
             // sheet's Liquid Glass is the background (iOS 26, light mode).
             .searchSheetBackground()
-            .task(id: isShowingHomePage) {
-                // Polls while Home is on screen, so bookmark countdowns don't
-                // freeze, and refreshes the moment it comes back: from a stacked
-                // sheet, when a recent stop may have been added, or from another
-                // tab. `loadIfNeeded`'s staleness gate keeps it to one fetch per
-                // window however often this fires.
-                guard isShowingHomePage else { return }
+            .task(id: isPollingHome) {
+                // Polls while Home's list is on screen, so bookmark countdowns
+                // don't freeze, and refreshes the moment it comes back: from a
+                // stacked sheet, when a recent stop may have been added, from
+                // another tab, or from the collapsed sheet. `loadIfNeeded`'s
+                // staleness gate keeps it to one fetch per window however often
+                // this fires.
+                guard isPollingHome else { return }
                 while !Task.isCancelled {
                     viewModel.activate()
                     try? await Task.sleep(for: .seconds(30))
@@ -97,7 +116,7 @@ struct HomeSheetView: View {
             .onChange(of: scenePhase) { _, phase in
                 // A phone unlocked after twenty minutes would otherwise show the
                 // countdowns it had when it locked — "NOW" for a bus long gone.
-                if phase == .active && isShowingHomePage {
+                if phase == .active && isPollingHome {
                     viewModel.activate()
                 }
             }
@@ -119,6 +138,7 @@ struct HomeSheetView: View {
                         // began.
                         .tabPageBackground()
                         .environment(\.isHomeSheetTab, tab != .home)
+                        .environment(\.isHomeSheetCollapsed, !showsPages)
                         .toolbar(.hidden, for: .tabBar)
                         .tag(tab)
                 }
@@ -134,12 +154,22 @@ struct HomeSheetView: View {
         case .home:
             homePage
         case .recent:
-            RecentStopsSheetView(application: application)
+            hiddenWhenCollapsed(RecentStopsSheetView(application: application))
         case .bookmarks:
-            BookmarksSheetView(application: application)
+            hiddenWhenCollapsed(BookmarksSheetView(application: application))
         case .more:
-            MoreSheetHost(application: application)
+            hiddenWhenCollapsed(MoreSheetHost(application: application))
         }
+    }
+
+    /// Recent, Bookmarks and More on the collapsed sheet: hidden rather than
+    /// removed, so each keeps its state (scroll position, More's pushed screens)
+    /// for when the sheet rises. Home hides only its list; see `homePage`.
+    private func hiddenWhenCollapsed(_ page: some View) -> some View {
+        page
+            .opacity(showsPages ? 1 : 0)
+            .allowsHitTesting(showsPages)
+            .accessibilityHidden(!showsPages)
     }
 
     private func select(_ tab: HomeTab) {
@@ -172,10 +202,12 @@ struct HomeSheetView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                     searchRowHeight = height
+                    // The map's copy, and the detent's, which can't read the map's.
+                    metrics?.searchRowHeight = height
                     HomeCollapsedDetent.measured.withLock { $0.searchRowHeight = height }
                 }
 
-            if !HomeTabs.showsHomeList(showsTabs: showsTabs, pageHeight: homePageHeight, searchRowHeight: searchRowHeight) {
+            if !showsPages {
                 Spacer()
             } else if !viewModel.visibleSections.isEmpty {
                 List {
@@ -199,7 +231,6 @@ struct HomeSheetView: View {
         // empty state showed through the bar on the collapsed sheet. Clipped, as
         // the empty state is taller than the room the collapsed sheet leaves.
         .clipped()
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { homePageHeight = $0 }
         .searchSheetBackground()
         .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
     }

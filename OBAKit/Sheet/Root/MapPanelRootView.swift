@@ -99,6 +99,7 @@ struct MapPanelBottomPadding {
         detentForRoute: (Route) -> PresentationDetent,
         halfScreenHeight: CGFloat,
         totalMapHeight: CGFloat,
+        homeCollapsedHeight: CGFloat,
         defaultHeight: CGFloat = minimumPaddingFloor
     ) -> CGFloat {
         guard !visibleRoutes.isEmpty else {
@@ -108,20 +109,26 @@ struct MapPanelBottomPadding {
             estimatedHeight(
                 for: detentForRoute(route),
                 halfScreenHeight: halfScreenHeight,
-                totalMapHeight: totalMapHeight
+                totalMapHeight: totalMapHeight,
+                homeCollapsedHeight: homeCollapsedHeight
             )
         }
         return heights.max() ?? defaultHeight
     }
 
     /// Resolves the height in points for a given `PresentationDetent`.
+    ///
+    /// - Parameter homeCollapsedHeight: The collapsed home sheet as drawn, from
+    ///   `HomeSheetMetrics`, which redraws the map when the search row's measured
+    ///   height changes.
     static func estimatedHeight(
         for detent: PresentationDetent,
         halfScreenHeight: CGFloat,
-        totalMapHeight: CGFloat
+        totalMapHeight: CGFloat,
+        homeCollapsedHeight: CGFloat
     ) -> CGFloat {
         if detent == AppSheetRoute.homeCollapsedDetent {
-            return HomeCollapsedDetent.drawnHeight
+            return homeCollapsedHeight
         } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
             return AppSheetRoute.tripPlannerTipHeight
         } else if detent == .medium {
@@ -231,6 +238,8 @@ struct MapPanelRootView: View {
     /// Sheet content ignores the safe area (see `buildSheetContent`), so it's
     /// measured here and handed down; see `EnvironmentValues.screenBottom`.
     @State private var screenBottom = ScreenBottom()
+    /// Written by the home sheet; see `HomeSheetMetrics`.
+    @State private var homeSheetMetrics = HomeSheetMetrics()
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
 
@@ -247,7 +256,8 @@ struct MapPanelRootView: View {
                 detent(for: route)
             },
             halfScreenHeight: halfScreenHeight,
-            totalMapHeight: mapSize.height
+            totalMapHeight: mapSize.height,
+            homeCollapsedHeight: homeSheetMetrics.collapsedHeight
         )
     }
 
@@ -833,6 +843,7 @@ struct MapPanelRootView: View {
             // them through `@AppStorage` saw `.standard` and ignored them.
             .defaultAppStorage(application.userDefaults)
             .environment(\.screenBottom, screenBottom)
+            .environment(homeSheetMetrics)
             .environment(\.showsHomeTabs, HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass))
             .fullScreenCover(isPresented: $isWeatherPopupPresented) {
                 WeatherDetailPopup(

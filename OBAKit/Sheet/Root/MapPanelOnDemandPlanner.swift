@@ -88,10 +88,12 @@ enum MapPanelOnDemandPlanner {
         if plannerDetent == .large {
             return (sheetHeight, 0)
         }
+        // The planner is never at the home sheet's collapsed detent.
         let plannerHeight = MapPanelBottomPadding.estimatedHeight(
             for: plannerDetent,
             halfScreenHeight: halfScreenHeight,
-            totalMapHeight: totalMapHeight
+            totalMapHeight: totalMapHeight,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
         return (max(sheetHeight, plannerHeight), 1)
     }

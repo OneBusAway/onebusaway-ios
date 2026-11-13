@@ -7,6 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Observation
+import os
 import Testing
 import SwiftUI
 @testable import OBAKit
@@ -73,7 +75,8 @@ struct MapPanelBottomPaddingTests {
                 route == baseRoute ? .medium : AppSheetRoute.homeCollapsedDetent
             },
             halfScreenHeight: 350,
-            totalMapHeight: 800
+            totalMapHeight: 800,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
 
         #expect(height == 350)
@@ -90,7 +93,8 @@ struct MapPanelBottomPaddingTests {
                 route == baseRoute ? .medium : .height(AppSheetRoute.tripPlannerTipHeight)
             },
             halfScreenHeight: 350,
-            totalMapHeight: 800
+            totalMapHeight: 800,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
 
         // Base sheet at .medium (350pt) must be selected over the 80pt tip detent
@@ -108,7 +112,8 @@ struct MapPanelBottomPaddingTests {
                 route == baseRoute ? AppSheetRoute.homeCollapsedDetent : .medium
             },
             halfScreenHeight: 350,
-            totalMapHeight: 800
+            totalMapHeight: 800,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
 
         // Stacked sheet at .medium (350pt) must be selected over 75pt collapsed
@@ -120,7 +125,8 @@ struct MapPanelBottomPaddingTests {
             visibleRoutes: [AppSheetRoute](),
             detentForRoute: { _ in .medium },
             halfScreenHeight: 350,
-            totalMapHeight: 800
+            totalMapHeight: 800,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
         #expect(height == MapPanelBottomPadding.minimumPaddingFloor)
     }
@@ -131,16 +137,54 @@ struct MapPanelBottomPaddingTests {
         let height = MapPanelBottomPadding.estimatedHeight(
             for: AppSheetRoute.homeCollapsedDetent,
             halfScreenHeight: 400,
-            totalMapHeight: 800
+            totalMapHeight: 800,
+            homeCollapsedHeight: 152
         )
-        #expect(height == HomeCollapsedDetent.drawnHeight)
+        #expect(height == 152)
+    }
+
+    /// A larger text size makes the search row, and so the collapsed sheet, taller.
+    /// The padding has to follow the new measurement, not wait for another redraw.
+    @Test func `The padding follows a new collapsed height`() {
+        func padding(collapsedHeight: CGFloat) -> CGFloat {
+            let sheetHeight = MapPanelBottomPadding.tallestVisibleSheetHeight(
+                visibleRoutes: [AppSheetRoute.home],
+                detentForRoute: { _ in AppSheetRoute.homeCollapsedDetent },
+                halfScreenHeight: 400,
+                totalMapHeight: 800,
+                homeCollapsedHeight: collapsedHeight
+            )
+            return MapPanelBottomPadding.effectivePadding(sheetHeight: sheetHeight, totalMapHeight: 800)
+        }
+
+        // Over the 180 pt floor, as at the largest text sizes.
+        #expect(padding(collapsedHeight: 200) == 200)
+        #expect(padding(collapsedHeight: 240) == 240)
+    }
+
+    /// `MapPanelRootView` reads the height from `HomeSheetMetrics`; a change to the
+    /// measured search row has to redraw it.
+    @Test func `A new search row height in the home sheet metrics redraws the map`() {
+        let metrics = HomeSheetMetrics()
+        let redraws = OSAllocatedUnfairLock(initialState: 0)
+        withObservationTracking {
+            _ = metrics.collapsedHeight
+        } onChange: {
+            redraws.withLock { $0 += 1 }
+        }
+
+        metrics.searchRowHeight = 120
+
+        #expect(redraws.withLock { $0 } == 1)
+        #expect(metrics.collapsedHeight == 120 + AppSheetRoute.homeTabBarHeight)
     }
 
     @Test func `Estimated height resolves tripPlannerTipHeight detent`() {
         let height = MapPanelBottomPadding.estimatedHeight(
             for: .height(AppSheetRoute.tripPlannerTipHeight),
             halfScreenHeight: 400,
-            totalMapHeight: 800
+            totalMapHeight: 800,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
         #expect(height == AppSheetRoute.tripPlannerTipHeight)
     }
@@ -150,7 +194,8 @@ struct MapPanelBottomPaddingTests {
         let height = MapPanelBottomPadding.estimatedHeight(
             for: .medium,
             halfScreenHeight: halfHeight,
-            totalMapHeight: 824
+            totalMapHeight: 824,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
         #expect(height == halfHeight)
     }
@@ -160,14 +205,16 @@ struct MapPanelBottomPaddingTests {
         let heightFromLarge = MapPanelBottomPadding.estimatedHeight(
             for: .large,
             halfScreenHeight: 400,
-            totalMapHeight: totalHeight
+            totalMapHeight: totalHeight,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
         #expect(heightFromLarge == totalHeight * 0.99)
 
         let heightFromLargeDetent = MapPanelBottomPadding.estimatedHeight(
             for: AppSheetRoute.largeDetent,
             halfScreenHeight: 400,
-            totalMapHeight: totalHeight
+            totalMapHeight: totalHeight,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
         )
         #expect(heightFromLargeDetent == totalHeight * 0.99)
     }
