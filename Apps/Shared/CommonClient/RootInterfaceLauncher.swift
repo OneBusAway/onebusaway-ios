@@ -35,14 +35,17 @@ enum RootInterfaceLauncher {
     }
 
     static func reloadRootInterface(application: Application, window: UIWindow) {
-        let showRootController = {
-            window.rootViewController = ApplicationRootControllerFactory.make(application: application)
+        let makeRootController = {
+            ApplicationRootControllerFactory.make(application: application)
         }
 
         OnboardingFlowController.evaluate(application: application) { onboarding in
             guard let onboarding else {
-                showRootController()
-                application.rootUserInterfaceDidLoad()
+                // Mid-session (the map experience toggle) the old root may still be presenting
+                // sheets; they have to go before the new root goes in.
+                RootInterfaceSwap.replaceRoot(of: window, with: makeRootController) {
+                    application.rootUserInterfaceDidLoad()
+                }
                 return
             }
 
@@ -50,7 +53,7 @@ enum RootInterfaceLauncher {
                 // The hierarchy change belongs inside the animations block so the
                 // transition captures the correct before/after snapshots.
                 UIView.transition(with: window, duration: 0.5, options: .transitionFlipFromLeft) {
-                    showRootController()
+                    window.rootViewController = makeRootController()
                 } completion: { _ in
                     application.rootUserInterfaceDidLoad()
                 }

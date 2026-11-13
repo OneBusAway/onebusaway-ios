@@ -113,7 +113,8 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         application.mapRegionManager.addDelegate(self)
 
         // Re-decode on bookmark changes so a visible pin restyles. The task owns
-        // the bounded AsyncSequence subscription and is cancelled in deinit.
+        // the bounded AsyncSequence subscription and is cancelled in deinit or
+        // `stopObserving()`.
         bookmarksChangeTask = Task { [weak self] in
             for await _ in bookmarkChanges {
                 guard !Task.isCancelled, let self else { return }
@@ -123,7 +124,8 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         // A region switch changes which bookmarks are "current", but doesn't
         // repost `.bookmarksDidChange` — observe the region directly so the pins
         // don't stay filtered to the old region until an unrelated bookmark
-        // edit. The delegate table is weak, so no explicit removal is needed.
+        // edit. The delegate table is weak; `stopObserving()` removes it early when the
+        // observer outlives its panel.
         application.regionsService.addDelegate(self)
     }
 
@@ -172,6 +174,21 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         if pruneAccumulated() {
             publish()
         }
+    }
+
+    // MARK: - Teardown
+
+    /// Unhooks the observer from the shared services it registered with and
+    /// cancels its bookmark task.
+    ///
+    /// The delegate tables are weak, but the observer can outlive its panel (see
+    /// `MapPanelRootController`'s `deinit`), which calls this so a leftover observer no longer
+    /// reacts to map, region or bookmark changes.
+    func stopObserving() {
+        application.mapRegionManager.removeDelegate(self)
+        application.regionsService.removeDelegate(self)
+        bookmarksChangeTask?.cancel()
+        bookmarksChangeTask = nil
     }
 
     // MARK: - RegionsServiceDelegate

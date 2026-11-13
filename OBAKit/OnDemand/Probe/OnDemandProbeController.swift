@@ -123,6 +123,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     private var isMapMostlyCovered = false
     /// Shown until `clearPlanner()`; routine reprobes never replace it.
     private var activePlannerResult: OnDemandPlannerResult?
+    private let notificationCenter: NotificationCenter
 
     private enum RefreshReason {
         case mapSettled, locationUpdate, authorization, foreground, boundary
@@ -152,6 +153,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         configuration: Configuration = Configuration(),
         isLocationAuthorized: @escaping () -> Bool = { false },
         currentLocation: @escaping () -> CLLocation? = { nil },
+        notificationCenter: NotificationCenter = .default,
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
     ) {
         self.apiService = apiService
@@ -161,13 +163,24 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         self.isLocationAuthorized = isLocationAuthorized
         self.currentLocation = currentLocation
         self.sleep = sleep
+        self.notificationCenter = notificationCenter
         super.init()
         currentDeployment = deployment
         isUnsupported = Self.isKnownUnsupported(apiService())
-        NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+        notificationCenter.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
     isolated deinit {
+        refreshTask?.cancel()
+        geometryTask?.cancel()
+        boundaryTask?.cancel()
+    }
+
+    /// Stops probing on its own: no refresh when the app comes to the foreground, and none of
+    /// the work in flight finishes. For a controller that outlives its surface; see
+    /// `detach(from:)`.
+    func stopObserving() {
+        notificationCenter.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
         refreshTask?.cancel()
         geometryTask?.cancel()
         boundaryTask?.cancel()
