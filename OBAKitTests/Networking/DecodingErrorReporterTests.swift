@@ -339,7 +339,7 @@ final class DecodingErrorReporterTests {
         #expect(true, "Should handle nil handler gracefully")
     }
 
-    @Test func `Report handler captures URL correctly`() {
+    @Test func `Report handler captures URL without its query`() {
         let capturedURL = SendableBox<URL?>(nil)
         let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST")!
 
@@ -350,7 +350,7 @@ final class DecodingErrorReporterTests {
         let error = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Test"))
         DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
 
-        #expect(capturedURL.value == testURL)
+        #expect(capturedURL.value?.absoluteString == "https://api.onebusaway.org/api/where/stops")
     }
 
     @Test func `Report handler captures message correctly`() {

@@ -56,8 +56,11 @@ public enum DecodingErrorReporter {
         }
     }
 
+    /// The handler gets `url` without its query, which holds the API key and
+    /// sometimes the rider's coordinates (#1710).
     public static func report(error: DecodingError, url: URL, httpMethod: String) {
         let errorMessage = message(from: error)
+        let url = ErrorReport.stripQuery(url)
 
         guard let handler = reportHandler else {
             Logger.warn("Handler not configured. DecodingError not reported: \(url.absoluteString)")
