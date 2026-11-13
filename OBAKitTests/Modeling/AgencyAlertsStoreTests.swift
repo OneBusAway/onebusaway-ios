@@ -161,10 +161,22 @@ final class AgencyAlertsStoreTests: OBATestCase {
 
     private func makeAgencyAlertsDataLoader(alertID: String, gate: ReleaseGate? = nil) throws -> AgencyAlertsDataLoader {
         AgencyAlertsDataLoader(
-            agenciesData: try Fixtures.loadData(file: "agencies_with_coverage.json"),
+            agenciesData: Fixtures.loadData(file: "agencies_with_coverage.json"),
             alertsData: try feed(alertIDs: [alertID]),
             gate: gate
         )
+    }
+
+    private func makeRESTService(dataLoader: URLDataLoader) -> RESTAPIService {
+        let configuration = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            surveyBaseURL: surveyBaseURL
+        )
+        return RESTAPIService(configuration, dataLoader: dataLoader)
     }
 
     private func expectServerError(_ outcome: AlertsOutcomeDelegate.Outcome, sourceLocation: SourceLocation = #_sourceLocation) {
@@ -238,8 +250,8 @@ final class AgencyAlertsStoreTests: OBATestCase {
         let firstGate = ReleaseGate()
         let firstLoader = try makeAgencyAlertsDataLoader(alertID: "old-alert", gate: firstGate)
         let latestLoader = try makeAgencyAlertsDataLoader(alertID: "new-alert")
-        let firstService = buildRESTService(dataLoader: firstLoader)
-        let latestService = buildRESTService(dataLoader: latestLoader)
+        let firstService = makeRESTService(dataLoader: firstLoader)
+        let latestService = makeRESTService(dataLoader: latestLoader)
         store.apiService = firstService
         store.obacoService = nil
 
