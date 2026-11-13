@@ -30,9 +30,7 @@ public enum StopCacheFreshnessPolicy {
     public static func classify(lastSuccessfulSyncAt: Date?, now: Date) -> StopCacheFreshness {
         guard let lastSuccessfulSyncAt else { return .expired }
 
-        // Deliberately clamp future timestamps: a device clock moving backward
-        // should not make a valid cache appear older than it is.
-        let age = max(0, now.timeIntervalSince(lastSuccessfulSyncAt))
+        let age = now.timeIntervalSince(lastSuccessfulSyncAt)
         if age < freshInterval {
             return .fresh
         }

@@ -23,7 +23,7 @@ public final class StopCacheRepository: Sendable {
 
     // MARK: - Freshness
 
-    /// Classifies a region from its last successful sync. Empty and unsynced
+    /// Classifies a region from its last successful sync. Unsynced
     /// caches are expired so callers have one deterministic answer before
     /// deciding whether offline data may be used.
     public func cacheFreshness(regionId: Int, now: Date = Date()) -> StopCacheFreshness {

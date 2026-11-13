@@ -148,7 +148,7 @@ final class StopCacheRepositoryTests {
     }
 
     @Test func `A later map write does not refresh an old region sync`() throws {
-        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let now = Date()
         let syncedAt = now.addingTimeInterval(-10 * 86_400)
         try repository.writeSyncedStops([makeStop(id: "synced")], regionId: 1, syncedAt: syncedAt)
         try saveSuccessfulSync(at: syncedAt)
