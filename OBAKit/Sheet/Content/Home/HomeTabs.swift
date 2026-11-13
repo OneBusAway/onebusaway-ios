@@ -66,17 +66,28 @@ enum HomeTabs {
     }
 
     /// Less room than a row under the search field and Home shows no list there.
-    static let minimumListRoom: CGFloat = 44
+    /// `nonisolated`, like `showsTabPages`, for `onGeometryChange`'s transform,
+    /// which runs off the main actor.
+    nonisolated static let minimumListRoom: CGFloat = 44
 
-    /// Whether Home shows its list under the search field, given the height of its
-    /// page above the tab bar.
+    /// Whether the tabs' pages show above the tab bar, given the height of the
+    /// pages' area.
     ///
-    /// Collapsed, the sheet is the search field over the bar. Whatever sliver the
-    /// system leaves between them, a list peeking through it reads as cut off.
-    /// Measured rather than read off the detent, so the list follows a drag rather
-    /// than appearing when it settles.
-    static func showsHomeList(showsTabs: Bool, pageHeight: CGFloat, searchRowHeight: CGFloat) -> Bool {
+    /// Collapsed, the sheet is the search field over the bar, whichever tab is
+    /// picked: the detent fits Home's search row and no more. Home keeps the search
+    /// field and hides its list; Recent, Bookmarks and More hide their whole page.
+    /// Whatever sliver the system leaves, a page peeking through it reads as cut
+    /// off. Measured rather than read off the detent, so the pages follow a drag
+    /// rather than appearing when it settles.
+    nonisolated static func showsTabPages(showsTabs: Bool, pageHeight: CGFloat, searchRowHeight: CGFloat) -> Bool {
         !showsTabs || pageHeight - searchRowHeight >= minimumListRoom
+    }
+
+    /// Whether a page's 30-second poll runs: only while the rider can see the page.
+    /// Not when a stacked sheet covers it, and not when the home sheet is collapsed
+    /// and the page is hidden (see `showsTabPages`).
+    static func shouldPoll(isOnScreen: Bool, isCovered: Bool, isCollapsed: Bool) -> Bool {
+        isOnScreen && !isCovered && !isCollapsed
     }
 
     /// The gap between the search field and the tab bar on the collapsed sheet,
@@ -147,12 +158,6 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     /// measurement takes effect on the pass after it lands.
     static let measured = Mutex(Measurements())
 
-    /// The collapsed sheet as drawn: the search row as measured over the bar.
-    /// `AppSheetRoute.homeCollapsedHeight` until the row is measured.
-    static var drawnHeight: CGFloat {
-        measured.withLock { $0.searchRowHeight } + AppSheetRoute.homeTabBarHeight
-    }
-
     static func height(_ measurements: Measurements) -> CGFloat {
         measurements.searchRowHeight + AppSheetRoute.homeTabBarHeight - (measurements.sheetExtra ?? 0)
     }
@@ -212,6 +217,27 @@ extension EnvironmentValues {
     /// The screen's bottom, for sheet content, which ignores the safe area and so
     /// can't read it. `MapPanelRootView` sets it; see `HomeTabs.bottomClearance`.
     @Entry var screenBottom = ScreenBottom()
+
+    /// Whether the home sheet is collapsed so far that this tab's page is hidden;
+    /// see `HomeTabs.showsTabPages`. A tab stops its polling while it is.
+    @Entry var isHomeSheetCollapsed = false
+}
+
+/// The home sheet's measurements that the map has to redraw for.
+///
+/// Observable, so a new search row height, after a text size change, moves the
+/// map's padding at once. `HomeCollapsedDetent.measured` holds the same height
+/// for the detent, which can't read this (see there). The home sheet writes
+/// both; `MapPanelRootView` owns this one and reads it.
+@Observable
+final class HomeSheetMetrics {
+    /// The search row with its padding; see `AppSheetRoute.homeSearchRowHeight`.
+    var searchRowHeight = AppSheetRoute.homeSearchRowHeight
+
+    /// The collapsed sheet as drawn: the search row over the bar.
+    var collapsedHeight: CGFloat {
+        searchRowHeight + AppSheetRoute.homeTabBarHeight
+    }
 }
 
 /// The bar of tabs pinned to the bottom of the home sheet: interactive Liquid

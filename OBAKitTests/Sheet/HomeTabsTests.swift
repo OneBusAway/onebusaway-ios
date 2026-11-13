@@ -67,18 +67,34 @@ struct HomeTabsTests {
         #expect(AppSheetRoute.homeCollapsedHeight == AppSheetRoute.homeSearchRowHeight + AppSheetRoute.homeTabBarHeight)
     }
 
-    /// Collapsed, Home is the search field over the bar. A list peeking through
-    /// the sliver between them reads as cut off.
-    @Test func `Home hides its list with less than a row of room under the search field`() {
+    /// Collapsed, the sheet is the search field over the bar, whichever tab is
+    /// picked: Home hides its list, Recent, Bookmarks and More their whole page. A
+    /// page peeking through the sliver over the bar reads as cut off.
+    @Test func `The pages hide with less than a row of room over the search row`() {
         let search: CGFloat = 80
-        #expect(!HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + 30, searchRowHeight: search))
-        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: search + HomeTabs.minimumListRoom, searchRowHeight: search))
-        #expect(HomeTabs.showsHomeList(showsTabs: true, pageHeight: 400, searchRowHeight: search))
+        // Collapsed: the pages' area is the search row's height.
+        #expect(!HomeTabs.showsTabPages(showsTabs: true, pageHeight: search, searchRowHeight: search))
+        #expect(!HomeTabs.showsTabPages(showsTabs: true, pageHeight: search + 30, searchRowHeight: search))
+        #expect(HomeTabs.showsTabPages(showsTabs: true, pageHeight: search + HomeTabs.minimumListRoom, searchRowHeight: search))
+        #expect(HomeTabs.showsTabPages(showsTabs: true, pageHeight: 400, searchRowHeight: search))
     }
 
-    /// Without tabs there's no bar for it to peek against, as before.
-    @Test func `Without tabs the list shows at any height`() {
-        #expect(HomeTabs.showsHomeList(showsTabs: false, pageHeight: 0, searchRowHeight: 80))
+    /// Without tabs there's no bar for a page to peek against.
+    @Test func `Without tabs the page shows at any height`() {
+        #expect(HomeTabs.showsTabPages(showsTabs: false, pageHeight: 0, searchRowHeight: 80))
+    }
+
+    // MARK: - Polling
+
+    /// A page's 30-second poll runs only while the rider can see the page.
+    @Test func `A page polls only while it can be seen`() {
+        #expect(HomeTabs.shouldPoll(isOnScreen: true, isCovered: false, isCollapsed: false))
+        // Collapsed: the page is hidden behind the search row's room.
+        #expect(!HomeTabs.shouldPoll(isOnScreen: true, isCovered: false, isCollapsed: true))
+        // A stacked sheet covers it.
+        #expect(!HomeTabs.shouldPoll(isOnScreen: true, isCovered: true, isCollapsed: false))
+        // Another tab, or the sheet gone.
+        #expect(!HomeTabs.shouldPoll(isOnScreen: false, isCovered: false, isCollapsed: false))
     }
 
     /// A floating sheet stops short of the screen's edge and the home indicator

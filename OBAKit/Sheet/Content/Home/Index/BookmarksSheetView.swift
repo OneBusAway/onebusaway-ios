@@ -30,6 +30,7 @@ struct BookmarksSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.isHomeSheetTab) private var isHomeSheetTab
     @Environment(\.isCoveredBySheet) private var isCoveredBySheet
+    @Environment(\.isHomeSheetCollapsed) private var isHomeSheetCollapsed
 
     @State private var editingBookmark: Bookmark?
     @State private var isManaging = false
@@ -38,6 +39,17 @@ struct BookmarksSheetView: View {
     /// is still in the hierarchy and still sees `isCoveredBySheet` change, but
     /// mustn't start polling when it does.
     @State private var isOnScreen = false
+
+    /// The one rule `onAppear` and both `onChange` handlers start and stop the
+    /// poll by; see `HomeTabs.shouldPoll`.
+    private var shouldPoll: Bool {
+        HomeTabs.shouldPoll(isOnScreen: isOnScreen, isCovered: isCoveredBySheet, isCollapsed: isHomeSheetCollapsed)
+    }
+
+    private func updatePolling() {
+        guard isOnScreen else { return }
+        if shouldPoll { viewModel.start() } else { viewModel.deactivate() }
+    }
 
     /// A refresh the user asked for, as opposed to the 30 s poll `start()`
     /// installs. Deliberately not `viewModel.isLoading`, which the background
@@ -160,7 +172,7 @@ struct BookmarksSheetView: View {
         }
         .onAppear {
             isOnScreen = true
-            viewModel.start()
+            if shouldPoll { viewModel.start() }
         }
         // Stops the 30 s poll when the sheet goes away. The tab does the same on
         // `viewWillDisappear`.
@@ -171,10 +183,10 @@ struct BookmarksSheetView: View {
         // Covered by a stacked sheet it stays in the hierarchy, so `onDisappear`
         // never runs, and the poll stops here. (As a home sheet tab, `TabView`
         // runs `onAppear`/`onDisappear` on each switch.)
-        .onChange(of: isCoveredBySheet) { _, isCovered in
-            guard isOnScreen else { return }
-            if isCovered { viewModel.deactivate() } else { viewModel.start() }
-        }
+        .onChange(of: isCoveredBySheet) { updatePolling() }
+        // As a home sheet tab it stays on screen when the sheet collapses, hidden
+        // under the search field's room, so the poll stops here too.
+        .onChange(of: isHomeSheetCollapsed) { updatePolling() }
         // Fresh arrivals for running Live Activities, as the tab pushes them. The
         // home sheet only loads the bookmarks it previews, so an activity for any
         // other bookmark gets its content from here.
