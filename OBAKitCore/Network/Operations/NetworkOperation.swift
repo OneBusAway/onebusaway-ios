@@ -96,7 +96,7 @@ public enum APIError: Error, LocalizedError {
                 value: "404 Not found (%@)",
                 comment: "An error that is produced in response to HTTP status code 404"
             )
-            return String(format: fmt, response.url?.absoluteString ?? "(nil)")
+            return String(format: fmt, response.url.map { ErrorReport.stripQuery($0).absoluteString } ?? "(nil)")
         case .cellularDataRestricted:
             let fmt = OBALoc(
                 "api_error.cellular_data_restricted_fmt",

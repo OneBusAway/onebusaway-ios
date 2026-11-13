@@ -54,7 +54,7 @@ extension APIService {
         do {
             (data, response) = try await dataLoader.data(for: request)
         } catch let error as NSError {
-            logger.error("Failed network request for \(request.description, privacy: .public): \(error, privacy: .public)")
+            logger.error("Failed network request for \(request.loggableURL, privacy: .public): \(ErrorReport.sanitizedForReporting(error) as NSError, privacy: .public)")
 
             if errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal
@@ -69,18 +69,18 @@ extension APIService {
             return try JSONDecoder().decode(Response.self, from: data)
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
-            logger.error("Decoder failed for \(url, privacy: .public): \(message, privacy: .public)")
+            logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): \(message, privacy: .public)")
             DecodingErrorReporter.report(error: error, url: url, httpMethod: method.value)
             throw error.withRequestURL(url)
         } catch {
-            logger.error("Decoder failed for \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): \(error.localizedDescription, privacy: .public)")
             throw error
         }
     }
 
     private func handleSendDataHttpResponse(_ response: URLResponse, _ url: URL, _ method: HTTPMethod) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.error("Network error: missing response for \(method.value) \(response.url ?? URL(string: "")!, privacy: .public)")
+            logger.error("Network error: missing response for \(method.value) \(ErrorReport.stripQuery(response.url ?? url), privacy: .public)")
             throw APIError.networkFailure(nil)
         }
 
