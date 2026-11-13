@@ -67,8 +67,8 @@ struct StopDirectionsPillExtendedTests {
         #expect(bikeBehavior != mapsBehavior)
     }
 
-    @Test func `StopDirectionsPill promptTitle is non-empty localized text`() {
-        #expect(!StopDirectionsPill.promptTitle.isEmpty)
+    @Test func `StopDirectionsPill promptTitle matches expected English text`() {
+        #expect(StopDirectionsPill.promptTitle == "Get directions to this stop in the app?")
     }
 
     @Test func `StopPillDirections none placeholder sets tripPlannerAvailable false`() {

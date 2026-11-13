@@ -32,7 +32,7 @@ final class SearchViewModelDomainExtendedTests: OBATestCase {
         let vm = SearchViewModel(searchResponse: response, apiService: nil)
 
         #expect(vm.results.count == 2)
-        #expect(!vm.subtitle.isEmpty)
+        #expect(vm.subtitle == "Route RapidRide")
         #expect(vm.loadingVehicleID == nil)
         #expect(vm.failedVehicleID == nil)
     }

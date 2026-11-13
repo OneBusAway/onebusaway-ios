@@ -136,7 +136,7 @@ final class OnDemandDomainModelTests {
         #expect(OnDemandGeometryDetail.simplified.rawValue == "simplified")
         #expect(OnDemandGeometryDetail.full.rawValue == "full")
 
-        #expect(OnDemandGeometryDetail(rawValue: "none") == .none)
+        #expect(OnDemandGeometryDetail(rawValue: "none") == OnDemandGeometryDetail.none)
         #expect(OnDemandGeometryDetail(rawValue: "simplified") == .simplified)
         #expect(OnDemandGeometryDetail(rawValue: "full") == .full)
         #expect(OnDemandGeometryDetail(rawValue: "unknown") == nil)

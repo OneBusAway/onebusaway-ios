@@ -77,17 +77,17 @@ final class ServiceAlertViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor
-    func `Already read alert remains read on viewDidAppear`() throws {
+    func `Unread alert is marked read on viewDidAppear`() throws {
         let app = createApplication(dataLoader: MockDataLoader(testName: name))
         let alert = try loadServiceAlert()
 
-        // Explicitly mark as read before creating view model
-        app.userDataStore.markRead(serviceAlert: alert)
-        #expect(!app.userDataStore.isUnread(serviceAlert: alert))
+        // Alert starts unread
+        #expect(app.userDataStore.isUnread(serviceAlert: alert))
 
         let viewModel = ServiceAlertViewModel(serviceAlert: alert, application: app)
         viewModel.viewDidAppear()
 
+        // viewDidAppear should mark it read
         #expect(!app.userDataStore.isUnread(serviceAlert: alert))
     }
 }
