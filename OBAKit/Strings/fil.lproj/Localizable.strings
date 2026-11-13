@@ -2432,3 +2432,6 @@
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Mga Detalye ng Problema";
+
+/* VoiceOver hint for an actionable search result row. */
+"search_controller.accessibility.open_result" = "Binubuksan ang resultang ito.";

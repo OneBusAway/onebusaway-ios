@@ -2432,3 +2432,6 @@
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Detalles del problema";
+
+/* VoiceOver hint for an actionable search result row. */
+"search_controller.accessibility.open_result" = "Abre este resultado.";

@@ -69,12 +69,18 @@ extension Color {
 /// Shared section renderer used by both `SearchListView` and `.searchSuggestions`.
 struct SearchListSectionsView: View {
     let sections: [SearchListSection]
+    var onRowActivated: (() -> Void)?
+
+    init(sections: [SearchListSection], onRowActivated: (() -> Void)? = nil) {
+        self.sections = sections
+        self.onRowActivated = onRowActivated
+    }
 
     var body: some View {
         ForEach(sections) { section in
             Section {
                 ForEach(section.content) { row in
-                    SearchListRowView(row: row)
+                    SearchListRowView(row: row, onActivate: onRowActivated)
                 }
             } header: {
                 Text(section.title)

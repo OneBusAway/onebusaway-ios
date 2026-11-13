@@ -147,6 +147,45 @@ final class SearchListRowTests: OBATestCase {
         #expect(!SearchListRow.Kind.loading.isPlacemark)
     }
 
+    @Test
+    func `An actionable row exposes its title and subtitle to VoiceOver`() {
+        let row = SearchListRow(
+            kind: .recentStop(id: "1_75403"),
+            title: "Broadway & E Pike St",
+            subtitle: "0.7 miles • Northbound",
+            action: {}
+        )
+
+        #expect(row.accessibilityLabel == "Broadway & E Pike St, 0.7 miles • Northbound")
+        #expect(row.accessibilityHint == "Opens this result.")
+        #expect(row.dismissesSearchPresentation)
+    }
+
+    @Test
+    func `Quick search rows keep the search presentation open`() {
+        let row = SearchListRow(
+            kind: .quickSearch(.route),
+            title: "Route: 10",
+            action: {}
+        )
+
+        #expect(!row.dismissesSearchPresentation)
+    }
+
+    @Test
+    func `Retry rows keep the search presentation open`() {
+        let row = SearchListRow(
+            kind: .error("Network unavailable", systemImage: "wifi.slash"),
+            title: "Network unavailable",
+            subtitle: Strings.retry,
+            action: {}
+        )
+
+        #expect(row.accessibilityLabel == "Network unavailable, Retry")
+        #expect(row.accessibilityHint == "Retry")
+        #expect(!row.dismissesSearchPresentation)
+    }
+
     // MARK: - Stop subtitle
 
     @Test
