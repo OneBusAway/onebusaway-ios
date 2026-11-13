@@ -347,7 +347,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// page to be on a navigation stack.
     ///
     /// Called with the same transfer context the pushed stop gets, not yet checked
-    /// against the transfer banner setting: whoever builds the stop page does that.
+    /// against the trip highlight setting: whoever builds the stop page does that.
     var onSelectStop: ((StopID, TransferContext?) -> Void)?
 
     /// Opens a stop the rider tapped: a row in the list, or a stop's dot on
@@ -765,8 +765,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         return AlarmVisitIdentity.alarm(for: departure, regionID: regionID, in: store.alarms)
     }
 
-    /// Mirrors `StopViewModel.cancelAlarm(for:)`: the server copy goes first, so
-    /// a failure leaves the rider an alarm they can still see and cancel.
+    /// Goes through `AlarmRemover`, as the stop page does, which also tells the
+    /// stop page underneath to drop its bell.
     private func removeAlarm(_ alarm: Alarm) {
         // A second activation while the delete is in flight would delete and
         // announce twice.
@@ -775,17 +775,11 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         Task { @MainActor in
             defer { isRemovingAlarm = false }
             do {
-                guard let obacoService = application.obacoService else {
-                    throw StopViewModel.AlarmCancellationError.serviceUnavailable
-                }
-                try await obacoService.deleteAlarm(url: alarm.url)
-            } catch APIError.requestNotFound {
-                // It already fired, and the server deleted it.
+                try await AlarmRemover(application: application).remove(alarm)
             } catch {
                 await AlertPresenter.show(error: error, presentingController: self)
                 return
             }
-            application.userDataStore.delete(alarm: alarm)
             render()
             AccessibilityNotification.Announcement(AlarmVisitIdentity.removedAnnouncement).post()
         }

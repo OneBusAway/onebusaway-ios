@@ -281,12 +281,8 @@ class MapViewController: UIViewController,
     /// card is the single entry point for every map survey: tapping `Take survey`
     /// opens an external survey, or presents the full in-app survey for others.
     private func presentMapSurveyCard(for survey: Survey) {
-        var title = survey.name
-        if survey.isExternalSurvey, let hero = survey.heroQuestion {
-            title = hero.content.labelText
-        }
         let card = SurveyLauncherCardView(style: .floating)
-        card.configure(title: title, subtitle: nil)
+        card.configure(title: survey.launcherTitle, subtitle: nil)
         card.onTakeSurvey = { [weak self] in self?.handleMapSurveyTakeSurvey(survey) }
         card.onDismiss = { [weak self] in self?.handleMapSurveyDismiss(survey) }
 
@@ -330,8 +326,7 @@ class MapViewController: UIViewController,
     }
 
     private func handleMapSurveyDismiss(_ survey: Survey) {
-        application.surveyService.markSurveyForLater(survey)
-        application.surveyService.setNextReminderDate()
+        application.surveyService.postpone(survey)
         dismissMapSurveyCard()
     }
 

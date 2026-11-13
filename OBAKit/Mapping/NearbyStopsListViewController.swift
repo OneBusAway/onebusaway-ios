@@ -286,18 +286,12 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
 
     // MARK: - Accessibility
 
-    static let distanceFormatter: MKDistanceFormatter = {
-        let formatter = MKDistanceFormatter()
-        formatter.unitStyle = .full
-        return formatter
-    }()
-
     /// The map pin's label (name, direction, routes, stop ID), then how far away the stop is.
     static func accessibilityLabel(for stop: Stop, from userLocation: CLLocation?) -> String {
         let label = Formatters.formattedAccessibilityLabel(stop: stop)
         guard let userLocation else { return label }
 
-        let distance = distanceFormatter.string(fromDistance: stop.location.distance(from: userLocation))
+        let distance = Formatters.spokenDistanceFormatter.string(fromDistance: stop.location.distance(from: userLocation))
         let fmt = OBALoc("nearby_stops.accessibility_distance_fmt", value: "%@ away", comment: "How far a nearby stop is from the rider, read by VoiceOver after the stop's name. e.g. '500 feet away'")
         return [label, String(format: fmt, distance)].joined(separator: "; ")
     }

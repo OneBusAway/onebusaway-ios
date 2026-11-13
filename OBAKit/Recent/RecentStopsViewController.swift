@@ -105,7 +105,7 @@ public class RecentStopsViewController: UIViewController, AppContext {
             makeStopPreview: { [weak self] stopID in
                 guard let self else { return AnyView(EmptyView()) }
                 return AnyView(
-                    StopViewControllerPreview(stopID: stopID, application: self.application)
+                    StopPagePreview(stopID: stopID, application: self.application)
                         .frame(width: 320, height: 400)
                 )
             }
@@ -158,7 +158,9 @@ public class RecentStopsViewController: UIViewController, AppContext {
         }
     }
 
-    func onDeleteAlarm(_ alarmViewModel: AlarmViewModel) {
+    /// The delete runs on the server first; tests await the returned task.
+    @discardableResult
+    func onDeleteAlarm(_ alarmViewModel: AlarmViewModel) -> Task<Void, Never> {
         viewModel.delete(alarm: alarmViewModel.alarm)
     }
 }

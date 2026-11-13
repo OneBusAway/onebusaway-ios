@@ -60,7 +60,7 @@ final class ViewRouterTests: OBATestCase {
 
     @Test func `Navigate to StopID hands the transfer context to the stop screen`() throws {
         let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
-        #expect(application.userDataStore.showTransferArrivalBanner)
+        #expect(application.userDataStore.highlightTransferTrip)
 
         let root = UIViewController()
         let navigation = UINavigationController(rootViewController: root)
@@ -77,9 +77,9 @@ final class ViewRouterTests: OBATestCase {
         #expect(pushed.transferContext == context)
     }
 
-    @Test func `Navigate to StopID drops the transfer context when the transfer banner is off`() throws {
+    @Test func `Navigate to StopID drops the transfer context when the trip highlight is off`() throws {
         let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
-        application.userDataStore.showTransferArrivalBanner = false
+        application.userDataStore.highlightTransferTrip = false
 
         let root = UIViewController()
         let navigation = UINavigationController(rootViewController: root)

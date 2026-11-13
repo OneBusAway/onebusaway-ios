@@ -25,16 +25,30 @@ import OBAKitCore
 final class ErrorPresenter: NSObject {
 
     /// How long a toast stays up. VoiceOver users get longer; see
-    /// `ToastManager.dwell(for:isVoiceOverRunning:)`.
+    /// `dwell(for:isVoiceOverRunning:)`.
     static let toastDuration: TimeInterval = 4
+
+    /// The minimum time a toast stays up under VoiceOver.
+    static let minimumVoiceOverDwell: TimeInterval = 8
+
+    /// How long a toast stays on screen. A VoiceOver user hears the message
+    /// queued behind whatever is already being spoken, and may then want to swipe
+    /// to it, so the toast stays at least `minimumVoiceOverDwell` seconds rather
+    /// than vanishing mid-sentence.
+    static func dwell(for requested: TimeInterval, isVoiceOverRunning: Bool) -> TimeInterval {
+        isVoiceOverRunning ? max(requested, minimumVoiceOverDwell) : requested
+    }
 
     private var window: PassthroughWindow?
     private var toastHost: UIHostingController<ErrorToastView>?
     private var dismissTask: Task<Void, Never>?
     private weak var previousKeyWindow: UIWindow?
 
-    /// The report on screen, as a toast or a details page.
+    /// The report on screen, as a toast or a details page. Nil for a notice.
     private var currentReport: ErrorReport?
+
+    /// The toast on screen, report or notice.
+    private(set) var currentToast: ErrorToast?
 
     /// `true` while the details page is up.
     private var isShowingDetails = false
@@ -64,9 +78,33 @@ final class ErrorPresenter: NSObject {
         scheduleDismissal()
     }
 
+    /// Whether a notice should replace what's on screen: never over an open
+    /// details page, and not when the same notice is already up.
+    static func shouldPresent(notice: ErrorToast, current: ErrorToast?, isShowingDetails: Bool) -> Bool {
+        !isShowingDetails && notice != current
+    }
+
+    /// Shows a one-line notice with no Problem Details behind it. Settings'
+    /// toasts come through here; they used to have a toast system of their own.
+    func present(notice: String, in scene: UIWindowScene) {
+        let toast = ErrorToast(notice: notice)
+        let current = window?.windowScene === scene ? currentToast : nil
+        guard Self.shouldPresent(notice: toast, current: current, isShowingDetails: isShowingDetails) else {
+            Logger.info("Notice not shown: \(isShowingDetails ? "Problem Details is open" : "the same notice is already up").")
+            return
+        }
+
+        currentReport = nil
+        let window = installWindowIfNeeded(in: scene)
+        showToast(toast, in: window)
+        AccessibilityAnnouncement.post(notice)
+        scheduleDismissal()
+    }
+
     // MARK: - Toast
 
     private func showToast(_ toast: ErrorToast, in window: PassthroughWindow) {
+        currentToast = toast
         let view = ErrorToastView(
             toast: toast,
             onAction: { [weak self] in self?.performAction() },
@@ -105,7 +143,7 @@ final class ErrorPresenter: NSObject {
 
     private func scheduleDismissal() {
         dismissTask?.cancel()
-        let dwell = ToastManager.dwell(for: Self.toastDuration, isVoiceOverRunning: UIAccessibility.isVoiceOverRunning)
+        let dwell = Self.dwell(for: Self.toastDuration, isVoiceOverRunning: UIAccessibility.isVoiceOverRunning)
         dismissTask = Task { [weak self] in
             // Hold the toast while its scene is inactive (launch, Control
             // Center pulled down), so the dwell starts when the rider can see it.
@@ -123,6 +161,7 @@ final class ErrorPresenter: NSObject {
         dismissTask?.cancel()
         guard let host = toastHost else { return }
         toastHost = nil
+        currentToast = nil
         UIView.animate(withDuration: 0.25, animations: {
             host.view.alpha = 0
             host.view.transform = CGAffineTransform(translationX: 0, y: 40)

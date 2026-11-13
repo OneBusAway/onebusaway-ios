@@ -17,9 +17,9 @@ import UIKit
 /// environment; `docs/app-store/README.md` lists them.
 ///
 /// `init` only reads them. The work waits for the app's own readiness points,
-/// the same way `pendingRentalsCoordinate` does: the map claims the stop when it
-/// appears or the region loads, and the bookmarks are seeded once the root UI
-/// or the region is in place.
+/// the same way `pendingRentalsCoordinate` does: the map, classic or panel,
+/// claims the stop when it appears or the region loads, and the bookmarks are
+/// seeded once the root UI or the region is in place.
 extension Application {
 
     func applyScreenshotLaunchHooks() {
@@ -96,6 +96,15 @@ extension MapViewController {
     func showScreenshotStopIfNeeded() {
         guard viewIfLoaded?.window != nil, let stopID = application.claimScreenshotStop() else { return }
         show(stopID: stopID)
+    }
+}
+
+extension SheetCoordinator where Route == AppSheetRoute {
+    /// Opens the screenshot stop on the map panel the way a tap on its pin
+    /// does: as the stop sheet, at its medium detent, with the map above it.
+    func showScreenshotStopIfNeeded(application: Application) {
+        guard let stopID = application.claimScreenshotStop() else { return }
+        push(.stopDetails(stopID: stopID))
     }
 }
 #endif // DEBUG

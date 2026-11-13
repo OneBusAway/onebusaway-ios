@@ -124,16 +124,8 @@ enum RentalFormat {
         OBALoc("rental_detail.battery", value: "Battery", comment: "Label for a rental vehicle's battery charge")
     }
 
-    /// Spells the unit out ("3.4 miles", never "3.4 mi"): VoiceOver reads an
-    /// abbreviation letter by letter, or not at all.
-    private static let spokenDistanceFormatter: MKDistanceFormatter = {
-        let formatter = MKDistanceFormatter()
-        formatter.unitStyle = .full
-        return formatter
-    }()
-
     static func spokenRangeText(_ meters: Int) -> String {
-        spokenDistanceFormatter.string(fromDistance: CLLocationDistance(meters))
+        OBAKitCore.Formatters.spokenDistanceFormatter.string(fromDistance: CLLocationDistance(meters))
     }
 
     /// The percent sign is the unit word: VoiceOver reads "80%" as "80 percent".

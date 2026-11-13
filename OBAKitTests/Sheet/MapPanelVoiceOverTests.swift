@@ -18,12 +18,18 @@ struct MapPanelVoiceOverTests {
     private let collapsed = AppSheetRoute.homeCollapsedDetent
 
     @Test func `VoiceOver raises the collapsed home sheet`() {
-        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: true, currentDetent: collapsed) == .medium)
+        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: true, currentDetent: collapsed, isCovered: false) == .medium)
     }
 
     @Test func `The setting, VoiceOver off, or a sheet already moved leaves it alone`() {
-        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: false, currentDetent: collapsed) == nil)
-        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: false, expandsSheet: true, currentDetent: collapsed) == nil)
-        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: true, currentDetent: AppSheetRoute.largeDetent) == nil)
+        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: false, currentDetent: collapsed, isCovered: false) == nil)
+        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: false, expandsSheet: true, currentDetent: collapsed, isCovered: false) == nil)
+        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: true, currentDetent: AppSheetRoute.largeDetent, isCovered: false) == nil)
+    }
+
+    /// #1623 follow-up: turning VoiceOver on with a stop open resized the home
+    /// sheet hidden underneath it.
+    @Test func `A home sheet under a stacked sheet stays where it is`() {
+        #expect(MapPanelVoiceOver.homeDetent(isVoiceOverRunning: true, expandsSheet: true, currentDetent: collapsed, isCovered: true) == nil)
     }
 }

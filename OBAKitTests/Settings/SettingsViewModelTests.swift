@@ -124,15 +124,15 @@ final class SettingsViewModelTests: OBATestCase {
     }
 
     @Test func `Settings seed from and save to the store`() {
-        application.userDataStore.showTransferArrivalBanner = true
+        application.userDataStore.highlightTransferTrip = true
         let vm = makeViewModel()
-        #expect(vm.showsTransferArrivalBanner)
+        #expect(vm.highlightsTransferTrip)
 
-        vm.showsTransferArrivalBanner = false
+        vm.highlightsTransferTrip = false
         vm.reducesStopColors = true
         vm.mapShowsScale = true
 
-        #expect(!self.application.userDataStore.showTransferArrivalBanner)
+        #expect(!self.application.userDataStore.highlightTransferTrip)
         #expect(self.application.userDataStore.stopUIReducedColors)
         #expect(self.application.mapRegionManager.mapViewShowsScale)
     }

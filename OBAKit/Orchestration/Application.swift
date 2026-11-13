@@ -100,8 +100,6 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     lazy var searchManager = SearchManager(application: self)
 
-    lazy var toastManager = ToastManager()
-
     @MainActor
     lazy var walkingSpeedManager = WalkingSpeedManager(userDataStore: userDataStore, provider: config.speedSync?.walkingProvider)
 
@@ -945,10 +943,17 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// `ErrorPresenter.shouldPresent(_:current:isShowingDetails:)`.
     @MainActor
     public override func displayError(_ error: Error) async {
+        await displayError(error, subject: nil)
+    }
+
+    /// - Parameter subject: What failed, when the caller knows it better than
+    ///   the failed request's URL does. Nil works it out from the URL.
+    public func displayError(_ error: Error, subject: ErrorReport.Subject?) async {
         let report = ErrorReport(
             error: error,
             regionName: currentRegionName,
             isCellularDataRestricted: isCellularDataRestricted,
+            subject: subject,
             systemVersion: Self.systemVersion,
             deviceModel: Self.deviceModel
         )
@@ -963,6 +968,16 @@ public class Application: CoreApplication, PushServiceDelegate {
             return
         }
         errorPresenter.present(report, in: scene)
+    }
+
+    /// A one-line toast with no Problem Details behind it, through the same
+    /// presenter as `displayError(_:)`.
+    func showNotice(_ message: String) {
+        guard let scene = delegate?.uiApplication?.errorToastTargetScene else {
+            Logger.error("Notice not shown: no foreground window scene.")
+            return
+        }
+        errorPresenter.present(notice: message, in: scene)
     }
 
     private let errorPresenter = ErrorPresenter()

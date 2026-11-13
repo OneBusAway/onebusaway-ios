@@ -25,6 +25,12 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Routes pushed on top of `root`. Empty when the base sheet is showing root.
     @Published private(set) var additionalRoutes: [Route] = []
 
+    /// Whether the latest change to the routes was `popToRoot()`, which only the
+    /// app does (a region change, a deep link), rather than the rider closing a
+    /// sheet with its close button or a drag. The map's feedback prompt asks only
+    /// after the rider's own close.
+    private(set) var lastChangeWasPopToRoot = false
+
     @Published var currentDetent: PresentationDetent
 
     var currentRoute: Route { additionalRoutes.last ?? root }
@@ -86,6 +92,7 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// to that gesture — locking dismissal would let `stackedEntries` point
     /// at a sheet that's no longer on screen.
     func push(_ route: Route) {
+        lastChangeWasPopToRoot = false
         if route.prefersStacking {
             precondition(
                 !route.detentConfiguration.isDismissDisabled,
@@ -104,6 +111,7 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Pops the top of whichever layer is on top: frontmost stacked sheet if
     /// any, otherwise the content-stack top. No-op at root.
     func pop() {
+        lastChangeWasPopToRoot = false
         if !stackedEntries.isEmpty {
             stackedEntries.removeLast()
             return
@@ -122,6 +130,7 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Back returns to `source`. A `source` that is no longer in the pile changes
     /// nothing below, and `route` is pushed on top.
     func open(_ route: Route, from source: Route) {
+        lastChangeWasPopToRoot = false
         if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
             let closingDepth = existing + 1
             // Already on top: nothing closes, so there is no dismissal to claim this.
@@ -141,6 +150,7 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// container when the OS dismisses a sheet (drag-down) so storage stays in
     /// sync with what's actually on screen.
     func truncateStacked(toDepth depth: Int) {
+        lastChangeWasPopToRoot = false
         guard depth >= 0, depth < stackedEntries.count else { return }
         stackedEntries.removeSubrange(depth...)
     }
@@ -212,6 +222,7 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
 
     /// Clears the stacked layer and unwinds the content stack to its root.
     func popToRoot() {
+        lastChangeWasPopToRoot = true
         unwindFocusDepth = nil
         stackedEntries.removeAll()
         additionalRoutes.removeAll()

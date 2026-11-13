@@ -82,6 +82,48 @@ struct SearchListRow: Identifiable {
     let accessory: Accessory
     let action: (() -> Void)?
 
+    var accessibilityLabel: String {
+        let title = attributedTitle?.string ?? title ?? ""
+        guard let subtitle, !subtitle.isEmpty else { return title }
+        return [title, subtitle].filter { !$0.isEmpty }.joined(separator: ", ")
+    }
+
+    var accessibilityHint: String? {
+        guard action != nil else { return nil }
+        switch kind {
+        case .quickSearch:
+            return OBALoc(
+                "search_controller.accessibility.quick_search",
+                value: "Searches for this.",
+                comment: "VoiceOver hint for a quick search row, which runs a search and keeps the search field open."
+            )
+        case .recentStop, .bookmark, .placemark, .searchResult:
+            return OBALoc(
+                "search_controller.accessibility.open_result",
+                value: "Opens this result.",
+                comment: "VoiceOver hint for an actionable search result row."
+            )
+        case .error:
+            // The label carries the retry cue only through the subtitle.
+            if let subtitle, !subtitle.isEmpty { return nil }
+            return Strings.retry
+        case .clearRecents, .loading, .noResults:
+            return nil
+        }
+    }
+
+    var dismissesSearchPresentation: Bool {
+        guard action != nil else { return false }
+        switch kind {
+        case .recentStop, .bookmark, .placemark, .searchResult:
+            return true
+        case .quickSearch:
+            return false
+        case .clearRecents, .loading, .noResults, .error:
+            return false
+        }
+    }
+
     init(
         kind: Kind,
         title: String? = nil,

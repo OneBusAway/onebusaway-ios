@@ -54,6 +54,15 @@ public class Formatters: NSObject {
         return formatter
     }()
 
+    /// Spells the unit out ("3.4 miles", never "3.4 mi") for VoiceOver, which
+    /// reads an abbreviation letter by letter, or not at all. The nearby list
+    /// and the rental sheets share it. `distanceFormatter` is for the screen.
+    @MainActor public static let spokenDistanceFormatter: MKDistanceFormatter = {
+        let formatter = MKDistanceFormatter()
+        formatter.unitStyle = .full
+        return formatter
+    }()
+
     // MARK: - Formatted Times
 
     /// Returns a representation of `date` that varies depending on whether `date` happens to be from today or another day.

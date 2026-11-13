@@ -232,14 +232,20 @@ struct StopPageView: View {
         // toolbar. The push presentation is unaffected; it still uses its map-snapshot list row.
         .safeAreaInset(edge: .top, spacing: 0) {
             if showToolbarOnBottom {
-                if let stop = viewModel.stop {
-                    StopPageSheetHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, pillDirections: navigation.pillDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
-                } else {
-                    // Unconditional, unlike the pushed presentation's header: with no navigation
-                    // bar behind the sheet, this strip carries the only close button, so a stop
-                    // whose first fetch failed must still render it.
-                    StopPageSheetHeaderPlaceholderView(showsSkeleton: content.showsLoadingState, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
+                Group {
+                    if let stop = viewModel.stop {
+                        StopPageSheetHeaderView(stop: stop, walkTime: viewModel.headerWalkTime, bikeTime: viewModel.headerBikeTime, pillDirections: navigation.pillDirections, onClose: navigation.closeSheet, isCollapsed: isCollapsed, mapFocus: mapFocus)
+                    } else {
+                        // Unconditional, unlike the pushed presentation's header: with no navigation
+                        // bar behind the sheet, this strip carries the only close button, so a stop
+                        // whose first fetch failed must still render it.
+                        StopPageSheetHeaderPlaceholderView(showsSkeleton: content.showsLoadingState, onClose: navigation.closeSheet, isCollapsed: isCollapsed)
+                    }
                 }
+                // Opaque because the departures scroll beneath this pinned strip. The
+                // header views draw no background of their own: the map panel's stop
+                // sheet puts them in a list row over the sheet's glass.
+                .background(Color(uiColor: .systemBackground))
             }
         }
         // `safeAreaInset` rather than an overlay: the list needs the bar's height added to its
@@ -441,6 +447,7 @@ struct StopPageView: View {
     .listStyle(.plain)
     .safeAreaInset(edge: .top, spacing: 0) {
         StopPageSheetHeaderPlaceholderView(onClose: {})
+            .background(Color(uiColor: .systemBackground))
     }
     .safeAreaInset(edge: .bottom, spacing: 0) {
         StopPageToolbar(

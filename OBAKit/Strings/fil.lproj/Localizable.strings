@@ -1173,11 +1173,11 @@
 /* Settings section title for controlling which arrivals/departures are shown */
 "settings_controller.arrival_display_section.title" = "Display ng Pagdating at Pag-alis";
 
-/* Settings > Arrival Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip */
-"settings_controller.arrival_display_section.transfer_banner" = "Ipakita ang banner ng pagdating sa transfer";
+/* Settings > Arrival & Departure Display > Toggle that highlights the rider's trip in a stop's departures when they open that stop from the trip */
+"settings_controller.arrival_display_section.highlight_trip" = "I-highlight ang biyahe mo sa mga page ng hintuan";
 
-/* Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles */
-"settings_controller.arrival_display_section.footer" = "Banner ng transfer: kapag magbubukas ng hintuan mula sa biyahe, ang oras ay relative sa pagdating mo. Time zone ng rehiyon: gumagamit ang orasan ng time zone ng rehiyon ng transit, na may maikling badge kapag naiiba ang telepono mo. Parehong independyente.";
+/* Settings > Arrival & Departure Display > Footer describing the trip highlight and region time zone toggles */
+"settings_controller.arrival_display_section.footer" = "Highlight ng biyahe: kapag binuksan mo ang hintuan mula sa biyahe, naka-highlight ang pag-alis ng biyaheng iyon sa page ng hintuan. Time zone ng rehiyon: gumagamit ang orasan ng time zone ng rehiyon ng transit, na may maikling badge kapag naiiba ang telepono mo. Parehong independyente.";
 
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
 "settings_controller.arrival_display_section.region_time_zone" = "Ipakita ang oras sa time zone ng rehiyon";
@@ -1211,9 +1211,6 @@
 
 /* Settings > Experimental section > Map panel toggle */
 "settings_controller.experimental_section.map_panel" = "Gamitin ang map panel";
-
-/* Settings > Experimental section > New stop page toggle */
-"settings_controller.experimental_section.new_stop_page" = "Gamitin ang bagong pahina ng hintuan";
 
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Eksperimental";
@@ -1284,20 +1281,11 @@
 /* A message that appears when a user's alarm is created. */
 "stop_controller.alarm_created_message" = "Nagawa ang paalala";
 
-/* A header for the arrivals and departures section of the stop controller. */
-"stop_controller.arrival_departure_header" = "Mga Pagdating at Pag-alis";
-
 /* Title for the menu that filters departures by data type */
 "stop_controller.arrival_filter.menu_title" = "Uri ng Pag-alis";
 
-/* Message shown when the Departure Type filter hides every departure at a stop */
-"stop_controller.arrival_filter.no_results" = "Walang pag-alis na tumutugma sa kasalukuyang filter. Baguhin ang Uri ng Pag-alis sa ⋯ na menu.";
-
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "Maaaring hindi na gumagana ang bookmark na ito. May binago ba ang iyong ahensya ng transit? Paki-delete at gawin muli ang bookmark.";
-
-/* Title of the error shown when a stop is opened from a bookmark that no longer points to a valid stop. */
-"stop_controller.bad_bookmark_error_title" = "Sirang Bookmark";
 
 /* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
 "stop_controller.data_attribution_format" = "Data mula sa %@";
@@ -1307,24 +1295,6 @@
 
 /* Title shown when an external survey link cannot be opened */
 "stop_controller.external_survey_error.title" = "Hindi Mabuksan ang Survey";
-
-/* Load More button */
-"stop_controller.load_more_button" = "Mag-load Pa";
-
-/* A header for the past arrivals and departures section of the stop controller. */
-"stop_controller.past_departures_header" = "Mga Nakaraang Pag-alis";
-
-/* Header for past departures of a specific route */
-"stop_controller.past_departures_route_header" = "Mga Nakaraang Pag-alis - %@";
-
-/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms. */
-"stop_controller.swipe_spotlight_text.with_alarm" = "Mag-swipe sa isang row para makita ang higit pang opsyon, kasama ang pagdaragdag ng mga paalala.";
-
-/* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
-"stop_controller.swipe_spotlight_text.without_alarm" = "Mag-swipe sa isang row para makita ang higit pang opsyon.";
-
-/* Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
-"stop_controller.transfer_show_earlier_departures_fmt" = "Ipakita ang %d mas maagang pag-alis";
 
 /* Title of a transit stop in Shortcuts and Siri when the app has no name for it. The parameter is the stop's ID, such as 1_75403. */
 "stop_entity.fallback_title_fmt" = "Hintuan %@";
@@ -1554,15 +1524,6 @@
 /* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
 "stop_page.walk_divider_fmt" = "%d MIN LAKAD — ABUTAN SA IBABA";
 
-/* Title of the Sorting section */
-"stop_preferences_controller.sorting_section.header_title" = "I-sort Ayon Sa";
-
-/* Sort by route option */
-"stop_preferences_controller.sorting_section.sort_by_route" = "I-sort ayon sa ruta";
-
-/* Sort by time option */
-"stop_preferences_controller.sorting_section.sort_by_time" = "I-sort ayon sa oras";
-
 /* Title of the Edit Stop preferences controller */
 "stop_preferences_controller.title" = "I-filter ang Mga Ruta";
 
@@ -1682,9 +1643,6 @@
 
 /* Primary button on the survey launcher card; opens the survey. */
 "survey_launcher.take_survey_button" = "Sagutan ang survey";
-
-/* Title of the survey launcher card on the stop screen. */
-"survey_launcher.title" = "Tumulong na mapahusay ang transit";
 
 /* Message shown when an external survey link cannot be opened */
 "survey_vc.external_survey_error.message" = "Hindi mabuksan ang link ng survey na ito. Pakisubukang muli mamaya.";
@@ -1823,24 +1781,6 @@
 
 /* Voiceover text describing no departures in the near-future. */
 "voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt" = "Walang paparating na pag-alis";
-
-/* A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop. */
-"walk_time_view.accessibility_label" = "Oras ng paglalakad papunta sa hintuan";
-
-/* A label for blind or low-vision users on the UI element that describes how long it takes to bike to the stop. */
-"walk_time_view.accessibility_label_bike" = "Oras ng pagbibisikleta papunta sa hintuan";
-
-/* Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am */
-"walk_time_view.accessibility_value" = "%1$@. Aabutin ng %2$@ ang paglalakad, darating sa %3$@";
-
-/* Accessibility string with placeholders for distance from stop, biking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 6 minutes to bike, arriving at 9:41 am */
-"walk_time_view.accessibility_value_bike" = "%1$@. Aabutin ng %2$@ ang pagbibisikleta, darating sa %3$@";
-
-/* Format string with placeholders for distance from stop, travel time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
-"walk_time_view.distance_time_fmt" = "%1$@, %2$@: darating sa %3$@";
-
-/* Accessibility label for the transfer arrival banner shown when navigating to a connecting stop. */
-"walk_time_view.transfer_accessibility_label" = "Oras ng pagdating ng transfer";
 
 /* Spoken value for the map weather control. First %@ is the temperature, second is the weather condition. */
 "weather.button_accessibility_value_format" = "%1$@, %2$@";
@@ -2013,8 +1953,6 @@
 "settings_controller.debug_section.test_device_description.placeholder" = "hal. iPhone ni Aaron";
 /* Settings > Map section > Show Apple MapKit Points of Interest */
 "settings_controller.map_section.shows_points_of_interest" = "Mga Points of Interest";
-/* Title of the message shown when the server has no stop at the requested ID. */
-"stop_controller.stop_not_found_title" = "Hindi Nahanap ang Hintuan";
 /* VoiceOver announcement posted when the Departure Type filter changes which departures are visible. */
 "stop_page.a11y.filter_changed" = "Nabago ang filter ng pag-alis";
 /* VoiceOver announcement when the Past disclosure is closed. */
@@ -2432,3 +2370,9 @@
 
 /* Title of the page that explains an error in detail. */
 "problem_details.title" = "Mga Detalye ng Problema";
+
+/* VoiceOver hint for an actionable search result row. */
+"search_controller.accessibility.open_result" = "Binubuksan ang resultang ito.";
+
+/* VoiceOver hint for a quick search row, which runs a search and keeps the search field open. */
+"search_controller.accessibility.quick_search" = "Hinahanap ito.";

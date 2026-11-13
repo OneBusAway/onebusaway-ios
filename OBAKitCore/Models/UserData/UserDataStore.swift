@@ -48,10 +48,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// off by default (#1278). Surfaced in Settings > Accessibility.
     var stopTripCompactMode: Bool { get set }
 
-    /// Whether opening a stop from a trip applies transfer-relative times
-    /// and the "Arriving at XX:XX via ###" banner. Default `true` so existing
-    /// riders keep current behavior; Settings > Arrival & Departure Display can turn it off.
-    var showTransferArrivalBanner: Bool { get set }
+    /// Whether opening a stop from a trip highlights that trip's departure on
+    /// the stop page. Default `true` so existing riders keep current behavior;
+    /// Settings > Arrival & Departure Display can turn it off.
+    var highlightTransferTrip: Bool { get set }
 
     /// Whether arrival/departure clock times use the transit region's time
     /// zone (with a short offset badge when the phone differs). Default
@@ -377,12 +377,12 @@ public protocol UserDataStore: NSObjectProtocol {
 }
 
 extension UserDataStore {
-    /// Drops `context` when the rider has turned the transfer banner off, so
-    /// the stop page shows ordinary clock times and the full departure list.
+    /// Drops `context` when the rider has turned the trip highlight off, so
+    /// the stop page highlights no departure.
     /// Lives on the protocol extension rather than the `@objc` protocol:
     /// `TransferContext` is a Swift struct and cannot appear in an ObjC requirement.
     public func displayedTransferContext(_ context: TransferContext?) -> TransferContext? {
-        showTransferArrivalBanner ? context : nil
+        highlightTransferTrip ? context : nil
     }
 }
 
@@ -494,7 +494,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let defaultAlarmLeadTimeMinutes = "UserDataStore.defaultAlarmLeadTimeMinutes"
         static let stopUIReducedColors = UserDefaultsStore.stopUIReducedColorsKey
         static let stopTripCompactMode = UserDefaultsStore.stopTripCompactModeKey
-        static let showTransferArrivalBanner = UserDefaultsStore.showTransferArrivalBannerKey
+        static let highlightTransferTrip = UserDefaultsStore.highlightTransferTripKey
         static let showRegionTimeZone = UserDefaultsStore.showRegionTimeZoneKey
     }
 
@@ -510,9 +510,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// on the stop and trip pages can observe it; see `stopUIReducedColorsKey`.
     public static let stopTripCompactModeKey = "stopTripCompactMode"
 
-    /// Defaults key for `showTransferArrivalBanner`. Dot-free so a future
+    /// Defaults key for `highlightTransferTrip`. It keeps the old banner name so
+    /// riders who turned the setting off keep their choice. Dot-free so a future
     /// `@AppStorage` reader can observe it; see `stopUIReducedColorsKey`.
-    public static let showTransferArrivalBannerKey = "showTransferArrivalBanner"
+    public static let highlightTransferTripKey = "showTransferArrivalBanner"
 
     /// Defaults key for `showRegionTimeZone`. Dot-free; see `stopUIReducedColorsKey`.
     public static let showRegionTimeZoneKey = "showRegionTimeZone"
@@ -524,7 +525,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             UserDefaultsKeys.debugMode: false,
             UserDefaultsKeys.stopUIReducedColors: false,
             UserDefaultsKeys.stopTripCompactMode: false,
-            UserDefaultsKeys.showTransferArrivalBanner: true,
+            UserDefaultsKeys.highlightTransferTrip: true,
             UserDefaultsKeys.showRegionTimeZone: false,
             UserDefaultsKeys.walkingSpeedMetersPerSecond: WalkingSpeed.defaultMetersPerSecond,
             UserDefaultsKeys.walkingSpeedSource: WalkingSpeedSource.manual.rawValue,
@@ -571,14 +572,14 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
     }
 
-    // MARK: - Transfer Arrival Banner
+    // MARK: - Transfer Trip Highlight
 
-    public var showTransferArrivalBanner: Bool {
+    public var highlightTransferTrip: Bool {
         get {
-            return userDefaults.bool(forKey: UserDefaultsKeys.showTransferArrivalBanner)
+            return userDefaults.bool(forKey: UserDefaultsKeys.highlightTransferTrip)
         }
         set {
-            userDefaults.set(newValue, forKey: UserDefaultsKeys.showTransferArrivalBanner)
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.highlightTransferTrip)
         }
     }
 

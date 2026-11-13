@@ -669,13 +669,7 @@ struct MapPanelRootView: View {
             coordinator: coordinator,
             presentingController: factory.presentingController
         ))
-        .modifier(MapPanelPromptsModifier(
-            prompts: prompts,
-            stackedRoutes: coordinator.stackedRoutes,
-            sheetHeight: sheetHeight,
-            toolbarsOpacity: toolbarsOpacity,
-            toolbarsAnimationDuration: toolbarsAnimationDuration
-        ))
+        .modifier(promptsModifier)
         // Measured on a view that ignores the keyboard, so a keyboard raised from
         // a sheet's search field doesn't read as a home indicator 300 pt tall.
         .background {
@@ -698,6 +692,9 @@ struct MapPanelRootView: View {
         .onAppear {
             mapViewModel.start()
             applyPendingRentalsFocus()
+            #if DEBUG
+            coordinator.showScreenshotStopIfNeeded(application: application)
+            #endif
         }
         .onReceive(application.notificationCenter.publisher(for: .rentalsDeepLinkPending)) { _ in
             applyPendingRentalsFocus()
@@ -1096,13 +1093,33 @@ extension MapPanelRootView {
             centerOnUser()
         }
         Task { await mapViewModel.loadWeather() }
+        // A first launch has no region when the map appears.
+        #if DEBUG
+        coordinator.showScreenshotStopIfNeeded(application: application)
+        #endif
+    }
+
+    private var promptsModifier: MapPanelPromptsModifier {
+        let stackedRoutes = coordinator.stackedRoutes
+        let placement = MapPanelPromptsModifier.cardPlacement(
+            sheetHeight: sheetHeight,
+            toolbarsOpacity: toolbarsOpacity,
+            showsCard: prompts.surveyTitle != nil && stackedRoutes.isEmpty
+        )
+        return MapPanelPromptsModifier(
+            prompts: prompts,
+            coordinator: coordinator,
+            stackedRoutes: stackedRoutes,
+            sheetHeight: placement.sheetHeight,
+            toolbarsOpacity: placement.toolbarsOpacity,
+            toolbarsAnimationDuration: toolbarsAnimationDuration
+        )
     }
 
     /// Back to home, closing any UIKit modal over the sheets first (the region
     /// picker More presents, Settings): popping the stack under a modal, or
     /// mid-dismissal, leaves the sheets out of step with it.
     private func closeSheetsOverHome() {
-        prompts.appWillCloseSheets(coordinator.stackedRoutes)
         // Looked up from this panel's own controllers, so another window's
         // panel is left alone.
         if let mapPanel = application.viewRouter.mapPanelRootController(from: factory.presentingController()) {

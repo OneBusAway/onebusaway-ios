@@ -103,7 +103,7 @@ struct BookmarksSheetView: View {
             },
             makeStopPreview: { stopID in
                 AnyView(
-                    StopViewControllerPreview(stopID: stopID, application: application)
+                    StopPagePreview(stopID: stopID, application: application)
                         .frame(width: 320, height: 400)
                 )
             }

@@ -30,6 +30,13 @@ public class MoreViewController: UIViewController,
     // MARK: - UI elements
     var listView = OBAListView()
 
+    /// Leaves the screen's backgrounds clear on iOS 26 and later, so the
+    /// hosting sheet's own background shows through: its Liquid Glass in light
+    /// mode, its opaque fill in dark (`ColorScheme.showsSheetGlass`); see
+    /// `MoreSheetHost`. The cells keep their own fills, which read against
+    /// either. Set before the view loads; earlier systems ignore it.
+    var clearsBackgrounds = false
+
     // MARK: - Init
     public init(application: Application) {
         self.application = application
@@ -66,7 +73,12 @@ public class MoreViewController: UIViewController,
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
-        view.backgroundColor = ThemeColors.shared.systemBackground
+        if #available(iOS 26.0, *), clearsBackgrounds {
+            view.backgroundColor = .clear
+            listView.backgroundColor = .clear
+        } else {
+            view.backgroundColor = ThemeColors.shared.systemBackground
+        }
 
         self.listView.register(listViewItem: MoreHeaderItem.self)
         self.listView.applyData(animated: false)

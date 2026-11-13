@@ -188,10 +188,14 @@ public struct ErrorReport: Sendable {
     ///     status code that support needs.
     ///   - regionName: The current region's name.
     ///   - isCellularDataRestricted: Whether cellular data is off for this app.
+    ///   - subject: What failed, when the caller knows. Without it the subject
+    ///     is worked out from the failed request's URL, which can't name a
+    ///     subject for an error that carries no URL.
     public init(
         error: Error,
         regionName: String?,
         isCellularDataRestricted: Bool = false,
+        subject: Subject? = nil,
         date: Date = Date(),
         appVersion: String = Bundle.main.appVersion,
         systemVersion: String,
@@ -200,7 +204,7 @@ public struct ErrorReport: Sendable {
     ) {
         let classified = ErrorClassifier.classify(error, regionName: regionName, isCellularDataRestricted: isCellularDataRestricted)
         let requestURL = Self.requestURL(from: error)
-        let subject = Subject(url: requestURL)
+        let subject = subject ?? Subject(url: requestURL)
 
         // Checked on the raw error: classification turns a cancellation into
         // `networkFailure` ("You're offline"), and an unreadable payload with no
@@ -522,6 +526,9 @@ public struct ErrorReport: Sendable {
     }
 
     private static func requestURL(from error: Error) -> URL? {
+        if let decodingError = error as? DecodingError {
+            return decodingError.requestURL
+        }
         if let apiError = error as? APIError {
             switch apiError {
             case .requestFailure(let response), .requestNotFound(let response):

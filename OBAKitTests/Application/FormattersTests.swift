@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import MapKit
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -40,6 +41,19 @@ final class FormattersTests: OBATestCase {
     }
 
     // MARK: - Stop accessibility label
+
+    /// VoiceOver reads "mi" letter by letter; the spoken formatter says "miles".
+    @Test @MainActor func `The spoken distance formatter spells the unit out`() {
+        let spoken = Formatters.spokenDistanceFormatter
+        let abbreviated = MKDistanceFormatter()
+        abbreviated.unitStyle = .abbreviated
+        abbreviated.locale = spoken.locale
+        abbreviated.units = spoken.units
+
+        #expect(spoken.unitStyle == .full)
+        #expect(spoken.string(fromDistance: 5470) != abbreviated.string(fromDistance: 5470))
+        #expect(spoken.string(fromDistance: 5470).count > abbreviated.string(fromDistance: 5470).count)
+    }
 
     @Test func `Formatted accessibility label omits the bookmark name by default`() throws {
         let stop = try #require(Fixtures.loadSomeStops().first)
