@@ -103,8 +103,11 @@ struct SearchListRow: Identifiable {
                 value: "Opens this result.",
                 comment: "VoiceOver hint for an actionable search result row."
             )
-        // An error row's label already ends with its "Retry" subtitle.
-        case .error, .clearRecents, .loading, .noResults:
+        case .error:
+            // The label carries the retry cue only through the subtitle.
+            if let subtitle, !subtitle.isEmpty { return nil }
+            return Strings.retry
+        case .clearRecents, .loading, .noResults:
             return nil
         }
     }

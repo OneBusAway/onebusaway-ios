@@ -187,6 +187,18 @@ final class SearchListRowTests: OBATestCase {
         #expect(!row.dismissesSearchPresentation)
     }
 
+    @Test
+    func `A retry row without a subtitle keeps the Retry hint`() {
+        let row = SearchListRow(
+            kind: .error("Network unavailable", systemImage: "wifi.slash"),
+            title: "Network unavailable",
+            action: {}
+        )
+
+        #expect(row.accessibilityLabel == "Network unavailable")
+        #expect(row.accessibilityHint == "Retry")
+    }
+
     // MARK: - Stop subtitle
 
     @Test
