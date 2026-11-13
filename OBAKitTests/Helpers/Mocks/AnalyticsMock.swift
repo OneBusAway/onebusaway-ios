@@ -54,6 +54,13 @@ class AnalyticsMock: NSObject, Analytics {
         return isReportingEnabled
     }
 
+    /// What `Application.displayError(_:)` reported.
+    public private(set) var reportedErrors = [Error]()
+
+    func reportError(_ error: Error) {
+        reportedErrors.append(error)
+    }
+
     public private(set) var reportedEvents = [ReportedEvent]()
 
     func reportEvent(pageURL: String, label: String, value: Any?) {

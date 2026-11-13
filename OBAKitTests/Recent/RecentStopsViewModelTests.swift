@@ -244,6 +244,103 @@ final class RecentStopsViewModelTests: OBATestCase {
         #expect(app.userDataStore.alarms.map(\.url).contains(alarm.url))
     }
 
+    /// The swipe's delete animation removes the row at once, so the list has to
+    /// match it before the server answers, and a reload meanwhile mustn't bring it
+    /// back: the local copy is still there until then.
+    @Test @MainActor
+    func `A deleted alarm leaves the list before the server answers`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        dataLoader.mock(data: Data()) { $0.url?.path.contains("/alarms/") ?? false }
+        let alarm = try Fixtures.loadAlarm()
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+        app.userDataStore.add(alarm: alarm)
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        let deletion = viewModel.delete(alarm: alarm)
+
+        // `delete` returns before its task runs (both on the main actor), so
+        // nothing has reached the server yet.
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
+        #expect(app.userDataStore.alarms.map(\.url).contains(alarm.url))
+        viewModel.loadData()
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
+
+        await deletion.value
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
+    }
+
+    /// A second swipe while the first delete is on its way sends nothing more.
+    @Test @MainActor
+    func `Deleting an alarm twice sends one request`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        dataLoader.mock(data: Data()) { $0.url?.path.contains("/alarms/") ?? false }
+        let alarm = try Fixtures.loadAlarm()
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+        app.userDataStore.add(alarm: alarm)
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        let first = viewModel.delete(alarm: alarm)
+        let second = viewModel.delete(alarm: alarm)
+        await first.value
+        await second.value
+
+        #expect(dataLoader.recordedRequestURLs.filter { $0.path.contains("/alarms/") }.count == 1)
+    }
+
+    /// A delete the server refuses puts the row back where it was, and says so.
+    @Test @MainActor
+    func `A failed delete puts the alarm back in its place and reports the error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        let first = try Fixtures.loadAlarm(id: "1")
+        let second = try Fixtures.loadAlarm(id: "2")
+        let third = try Fixtures.loadAlarm(id: "3")
+        let refusedURL = second.url
+        dataLoader.mock(response: MockDataResponse(
+            data: nil, urlResponse: nil, error: NSError(domain: "RecentStopsViewModelTests", code: 503),
+            matcher: { $0.url?.path == refusedURL.path }
+        ))
+        for alarm in [first, second, third] {
+            alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+            app.userDataStore.add(alarm: alarm)
+        }
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+        let order = viewModel.alarms.map(\.url)
+        try #require(order.count == 3)
+        let analytics = try #require(app.analytics as? AnalyticsMock)
+
+        let deletion = viewModel.delete(alarm: second)
+        #expect(!viewModel.alarms.map(\.url).contains(second.url))
+        await deletion.value
+
+        #expect(viewModel.alarms.map(\.url) == order)
+        #expect(analytics.reportedErrors.count == 1)
+    }
+
+    /// An alarm the server no longer has has already fired: the delete counts. A
+    /// guard on `AlarmRemover`'s rule, now that the row leaves before the answer.
+    @Test @MainActor
+    func `A delete the server answers with not found stays deleted`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader)
+        dataLoader.mock(data: Data(), statusCode: 404) { $0.url?.path.contains("/alarms/") ?? false }
+        let alarm = try! Fixtures.loadAlarm()
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+        app.userDataStore.add(alarm: alarm)
+        let viewModel = RecentStopsViewModel(application: app)
+        viewModel.loadData()
+
+        await viewModel.delete(alarm: alarm).value
+
+        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
+        #expect(!app.userDataStore.alarms.map(\.url).contains(alarm.url))
+    }
+
     // MARK: - loadData / nil currentRegion
 
     @Test @MainActor
