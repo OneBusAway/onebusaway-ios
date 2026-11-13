@@ -103,7 +103,7 @@ struct GroupedListView: View {
                     .padding(.vertical, 4)
             }
         }
-        .listRowBackground(DepartureTransferHighlight.rowBackground(isHighlighted: isTransferTrip(next)))
+        .departureRowBackground(isHighlighted: isTransferTrip(next))
         .contentShape(Rectangle())
         .onTapGesture { onToggleRoute(group.routeID) }
         .accessibilityElement(children: .ignore)
@@ -331,7 +331,7 @@ struct GroupedListView: View {
                         .padding(.vertical, 4)
                 }
             }
-            .listRowBackground(DepartureTransferHighlight.rowBackground(isHighlighted: isTransferTrip(departure)))
+            .departureRowBackground(isHighlighted: isTransferTrip(departure))
             // Make the whole expanded row a single VoiceOver activation target
             // that opens the trip screen, mirroring the card
             // header (`children: .ignore` + explicit label + `.isButton`). The

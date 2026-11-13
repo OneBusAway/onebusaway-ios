@@ -79,7 +79,8 @@ struct HomeSheetView: View {
                 HomeTabs.bottomClearance(sheetBottom: proxy.frame(in: .global).maxY, screen: screenBottom)
             } action: { barClearance = $0 }
             // On the whole sheet, not just the pages: the bar sits on it, and More,
-            // a UIKit host, sets no sheet background of its own.
+            // a UIKit host, sets no sheet background of its own. A no-op on iOS 26,
+            // where the sheet's Liquid Glass is the background.
             .searchSheetBackground()
             .task(id: isShowingHomePage) {
                 // Polls while Home is on screen, so bookmark countdowns don't
@@ -113,9 +114,10 @@ struct HomeSheetView: View {
             TabView(selection: $selectedTab) {
                 ForEach(HomeTab.allCases, id: \.self) { tab in
                     tabContent(tab)
-                        // The sheet's own color, which the bar sits on: the
-                        // pages' default white left a seam where the bar began.
-                        .background(Color.searchSheetBackground)
+                        // The sheet's own background, which the bar sits on:
+                        // the pages' default white left a seam where the bar
+                        // began.
+                        .tabPageBackground()
                         .environment(\.isHomeSheetTab, tab != .home)
                         .toolbar(.hidden, for: .tabBar)
                         .tag(tab)

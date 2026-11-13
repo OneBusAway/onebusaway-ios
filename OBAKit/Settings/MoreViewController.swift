@@ -30,6 +30,12 @@ public class MoreViewController: UIViewController,
     // MARK: - UI elements
     var listView = OBAListView()
 
+    /// Leaves the screen's backgrounds clear, so the Liquid Glass of the sheet
+    /// hosting it shows through on iOS 26 and later; see `MoreSheetHost`. The
+    /// cells keep their own fills, which read against the glass. Set before
+    /// the view loads; earlier systems ignore it.
+    var showsSheetGlass = false
+
     // MARK: - Init
     public init(application: Application) {
         self.application = application
@@ -66,7 +72,12 @@ public class MoreViewController: UIViewController,
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
-        view.backgroundColor = ThemeColors.shared.systemBackground
+        if #available(iOS 26.0, *), showsSheetGlass {
+            view.backgroundColor = .clear
+            listView.backgroundColor = .clear
+        } else {
+            view.backgroundColor = ThemeColors.shared.systemBackground
+        }
 
         self.listView.register(listViewItem: MoreHeaderItem.self)
         self.listView.applyData(animated: false)

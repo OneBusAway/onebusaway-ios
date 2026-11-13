@@ -144,12 +144,12 @@ struct SearchSheetView: View {
 
     @ViewBuilder
     private var searchBody: some View {
-        // `.searchSuggestions` shares the sheet's grouped background via
-        // `.searchListChrome()`. Suppress `SearchListView` while suggestions are
-        // presented so its list doesn't show through the transparent backdrop.
+        // `.searchSuggestions` draws on the sheet's own background (its glass on
+        // iOS 26, grouped gray before) via `.searchListChrome()`. Suppress
+        // `SearchListView` while suggestions are presented so its list doesn't
+        // show through behind them.
         if isSearchPresented && !viewModel.searchInteractor.sections.isEmpty {
-            Color(.systemGroupedBackground)
-                .ignoresSafeArea()
+            Color.clear
         } else {
             SearchListView(searchInteractor: viewModel.searchInteractor)
         }

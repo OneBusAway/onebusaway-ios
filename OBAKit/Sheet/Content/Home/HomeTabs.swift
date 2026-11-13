@@ -214,8 +214,8 @@ extension EnvironmentValues {
     @Entry var screenBottom = ScreenBottom()
 }
 
-/// The bar of tabs pinned to the bottom of the home sheet: Liquid Glass on iOS 26,
-/// a material capsule before it.
+/// The bar of tabs pinned to the bottom of the home sheet: interactive Liquid
+/// Glass on iOS 26, as the system tab bar is, and a material capsule before it.
 struct HomeTabBar: View {
     let selection: HomeTab
     /// Room to leave under the bar for the home indicator; see
@@ -235,7 +235,7 @@ struct HomeTabBar: View {
         }
         .padding(4)
         .frame(height: Self.capsuleHeight)
-        .regularGlassEffectIfAvailable(in: Capsule())
+        .regularGlassEffectIfAvailable(in: Capsule(), interactive: true)
         .padding(.horizontal, 12)
         .padding(.bottom, AppSheetRoute.homeTabBarHeight - Self.capsuleHeight + bottomClearance)
         .animation(.smooth(duration: 0.25), value: selection)
@@ -276,5 +276,53 @@ struct HomeTabBar: View {
             Label(tab.title, systemImage: tab.systemImage)
         }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+extension View {
+    /// A home sheet tab page's background: the sheet's own, so the tab bar sits
+    /// on one surface. `TabView` gives each page an opaque white. On iOS 26 and
+    /// later that hides the sheet's Liquid Glass, so it's cleared; before, it's
+    /// painted over with the sheet's gray.
+    @ViewBuilder
+    func tabPageBackground() -> some View {
+        if #available(iOS 26.0, *) {
+            background(TabPageBackgroundClearer())
+        } else {
+            background(Color.searchSheetBackground)
+        }
+    }
+}
+
+/// Clears the opaque background the home sheet's `TabView` gives a page; see
+/// `tabPageBackground()`.
+///
+/// SwiftUI has no way to: `.background` draws over the page's white, and
+/// `containerBackground(_:for: .tabView)` is unavailable on iOS. The page is a
+/// hosting controller's view in a tab bar controller, so this clears every view
+/// from itself up to that page.
+private struct TabPageBackgroundClearer: UIViewRepresentable {
+    func makeUIView(context: Context) -> ClearingView { ClearingView() }
+    func updateUIView(_ uiView: ClearingView, context: Context) {}
+
+    final class ClearingView: UIView {
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            guard window != nil else { return }
+            var path: [UIView] = []
+            var view = superview
+            while let current = view {
+                path.append(current)
+                // The page: its controller's parent is the tab bar controller.
+                // Nothing is cleared unless it's found, so a change in how
+                // `TabView` is built can't clear the sheet itself.
+                if let controller = current.next as? UIViewController,
+                   controller.parent is UITabBarController {
+                    path.forEach { $0.backgroundColor = .clear }
+                    return
+                }
+                view = current.superview
+            }
+        }
     }
 }

@@ -38,6 +38,9 @@ struct StopDetailsSheetTopBar: View {
     /// read as one system without either being hard to hit.
     private static let buttonSize: CGFloat = 32
 
+    /// Set by `stopSheetChrome` on iOS 26, where this bar is a `safeAreaBar`.
+    @Environment(\.drawsOnSheetGlass) private var onSheetGlass
+
     // MARK: - Body
 
     var body: some View {
@@ -47,8 +50,15 @@ struct StopDetailsSheetTopBar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color(uiColor: .systemBackground))
+        .background(background)
         .overlay(alignment: .bottom) { Divider() }
+    }
+
+    /// None on sheet glass (iOS 26), where the bar is a `safeAreaBar` and the
+    /// system's scroll edge effect keeps rows legible beneath it. Before that
+    /// the rows scroll under an opaque strip.
+    private var background: Color {
+        onSheetGlass ? .clear : Color(uiColor: .systemBackground)
     }
 
     // MARK: - Subviews
