@@ -282,8 +282,9 @@ struct HomeTabBar: View {
 extension View {
     /// A home sheet tab page's background: the sheet's own, so the tab bar sits
     /// on one surface. `TabView` gives each page an opaque white. On iOS 26 and
-    /// later that hides the sheet's Liquid Glass, so it's cleared; before, it's
-    /// painted over with the sheet's gray.
+    /// later it's cleared, showing the sheet's Liquid Glass or, in dark mode, its
+    /// opaque gray (see `searchSheetBackground()`); before, it's painted over
+    /// with the sheet's gray.
     @ViewBuilder
     func tabPageBackground() -> some View {
         if #available(iOS 26.0, *) {

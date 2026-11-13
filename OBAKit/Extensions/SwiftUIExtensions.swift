@@ -109,6 +109,21 @@ public extension View {
     }
 }
 
+// MARK: - Sheet glass
+
+extension ColorScheme {
+    /// Whether the map panel's sheets let their Liquid Glass show (iOS 26+), or
+    /// keep the opaque backgrounds they have on earlier systems.
+    ///
+    /// Light mode only. Over the dark map, a partial-height sheet's glass
+    /// washes out to a pale blue-grey that white text can't be read against —
+    /// the same problem `MapSheetView.mapSheetBackground` works around — so in
+    /// dark mode the sheets stay opaque.
+    var showsSheetGlass: Bool {
+        if #available(iOS 26.0, *) { self == .light } else { false }
+    }
+}
+
 // MARK: - glassEffectIfAvailable
 
 public extension View {
