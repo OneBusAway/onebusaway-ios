@@ -108,6 +108,11 @@ import OTPKit
         refresh()
     }
 
+    /// See `MapLayerRegistrar.stopObserving()`.
+    func stopObserving() {
+        registrar.stopObserving()
+    }
+
     private var mapRegionManager: MapRegionManager { application.mapRegionManager }
 
     private func refresh() {

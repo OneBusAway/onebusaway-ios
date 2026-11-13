@@ -67,10 +67,10 @@ final class OnDemandProbeControllerTests: OBATestCase {
 
     // MARK: - Detach
 
-    /// A foreground and a location update each ask whether location may be used, the first
-    /// step of a probe. Once detached the controller is no longer asked: the map panel detaches
+    /// A foreground, a location update and a settled map each ask whether location may be
+    /// used, the first step of a probe. Once detached the controller is no longer asked: the map panel detaches
     /// it as it goes away, because UIKit can keep the panel's models alive after a switch.
-    @Test func `A detached controller stops probing on foreground and location changes`() {
+    @Test func `A detached controller stops probing on foreground, location and map changes`() {
         // The app's other location observers may fetch; none of that matters here.
         dataLoader.mock(data: Data(), statusCode: 404) { _ in true }
         let notificationCenter = NotificationCenter()
@@ -89,12 +89,15 @@ final class OnDemandProbeControllerTests: OBATestCase {
 
         notificationCenter.post(name: UIApplication.willEnterForegroundNotification, object: nil)
         application.locationService.locationManager(CLLocationManager(), didUpdateLocations: [TestData.mockSeattleLocation])
-        #expect(authorizationChecks == 2)
+        controller.mapDidSettle(center: alexandriaPoint, zoomLevel: .region)
+        #expect(authorizationChecks == 3)
 
         controller.detach(from: application)
         notificationCenter.post(name: UIApplication.willEnterForegroundNotification, object: nil)
         application.locationService.locationManager(CLLocationManager(), didUpdateLocations: [TestData.mockSeattleLocation])
-        #expect(authorizationChecks == 2)
+        // A graph UIKit keeps alive can still report its map settling.
+        controller.mapDidSettle(center: alexandriaPoint, zoomLevel: .region)
+        #expect(authorizationChecks == 3)
     }
 
     /// A settle loads full geometry for every match (spec 2.7), and the mock

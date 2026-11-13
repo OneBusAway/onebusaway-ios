@@ -124,6 +124,8 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     /// Shown until `clearPlanner()`; routine reprobes never replace it.
     private var activePlannerResult: OnDemandPlannerResult?
     private let notificationCenter: NotificationCenter
+    /// Set by `stopObserving()`: no probe starts after it, whatever still calls in.
+    private var isStopped = false
 
     private enum RefreshReason {
         case mapSettled, locationUpdate, authorization, foreground, boundary
@@ -176,10 +178,11 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         boundaryTask?.cancel()
     }
 
-    /// Stops probing on its own: no refresh when the app comes to the foreground, and none of
-    /// the work in flight finishes. For a controller that outlives its surface; see
+    /// Stops probing for good: no probe starts after this, from the app coming to the
+    /// foreground or anything else, and none of the work in flight finishes. For a controller that outlives its surface; see
     /// `detach(from:)`.
     func stopObserving() {
+        isStopped = true
         notificationCenter.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
         refreshTask?.cancel()
         geometryTask?.cancel()
@@ -314,6 +317,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     }
 
     private func refresh(reason: RefreshReason) {
+        guard !isStopped else { return }
         guard !isUnsupported, let point = resolvedProbePoint() else {
             deriveDockState()
             return

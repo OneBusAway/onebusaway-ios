@@ -150,6 +150,7 @@ final class RootInterfaceSwapTests: OBATestCase {
         let application = try makeObserverTestApplication()
         let panel = MapPanelRootController(application: application)
         let recorder = ObserverRecorder(panel.stopsObserver)
+        let onDemandLayer = panel.layersModel.registrar.onDemandLayer
 
         await sendSharedServiceChanges(application)
 
@@ -158,6 +159,8 @@ final class RootInterfaceSwapTests: OBATestCase {
         // One for the bookmarks notification, one for the region change.
         #expect(recorder.bookmarkReloads == 2)
         #expect(application.locationService.delegates.contains(panel.probeController))
+        // A region change rebuilds the shared map layers.
+        #expect(panel.layersModel.registrar.onDemandLayer !== onDemandLayer)
     }
 
     /// After the switch UIKit can keep the last panel's SwiftUI graph, and its models, alive.
@@ -169,6 +172,7 @@ final class RootInterfaceSwapTests: OBATestCase {
         let kept = makePanelKeepingModels(application: application)
         let (observer, probe) = (kept.observer, kept.probe)
         let recorder = ObserverRecorder(observer)
+        let onDemandLayer = kept.layers.registrar.onDemandLayer
 
         await kept.panelFreed.wait()
         await sendSharedServiceChanges(application)
@@ -177,6 +181,7 @@ final class RootInterfaceSwapTests: OBATestCase {
         #expect(observer.stops.isEmpty)
         #expect(recorder.bookmarkReloads == 0)
         #expect(!application.locationService.delegates.contains(probe))
+        #expect(kept.layers.registrar.onDemandLayer === onDemandLayer)
     }
 
     // MARK: - Helpers
@@ -237,7 +242,12 @@ final class RootInterfaceSwapTests: OBATestCase {
 
     private func makePanelKeepingModels(application: Application) -> KeptPanelModels {
         let panel = MapPanelRootController(application: application)
-        return KeptPanelModels(observer: panel.stopsObserver, probe: panel.probeController, panelFreed: Deallocation(of: panel))
+        return KeptPanelModels(
+            observer: panel.stopsObserver,
+            probe: panel.probeController,
+            layers: panel.layersModel,
+            panelFreed: Deallocation(of: panel)
+        )
     }
 
     /// A live root, or a region change, loads whatever the app shows; none of it matters here, so
@@ -261,12 +271,6 @@ final class RootInterfaceSwapTests: OBATestCase {
         await withCheckedContinuation { continuation in
             RootInterfaceSwap.replaceRoot(of: window, with: makeRoot) { continuation.resume() }
         }
-    }
-
-    private func topmost(_ controller: UIViewController) -> UIViewController {
-        var top = controller
-        while let presented = top.presentedViewController { top = presented }
-        return top
     }
 
     /// Lets UIKit finish the current run loop turn.
@@ -293,6 +297,7 @@ private final class ObserverRecorder {
 private struct KeptPanelModels {
     let observer: MapStopsObserver
     let probe: OnDemandProbeController
+    let layers: MapPanelLayersModel
     let panelFreed: Deallocation
 }
 

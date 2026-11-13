@@ -24,10 +24,11 @@ public final class MapPanelRootController: UIViewController {
     let coordinator: SheetCoordinator<AppSheetRoute>
     private let host: UIHostingController<MapPanelRootView>
     private let bridge: TripPresentationBridge
-    /// Kept, with `probeController`, so the panel can unhook them from the shared services when
-    /// it goes away.
+    /// Kept, with `probeController` and `layersModel`, so the panel can unhook them from the
+    /// shared services when it goes away.
     let stopsObserver: MapStopsObserver
     let probeController: OnDemandProbeController
+    let layersModel: MapPanelLayersModel
 
     public init(application: Application) {
         self.application = application
@@ -89,6 +90,7 @@ public final class MapPanelRootController: UIViewController {
         self.bridge = bridge
         self.stopsObserver = stopsObserver
         self.probeController = probeController
+        self.layersModel = layersModel
         super.init(nibName: nil, bundle: nil)
         self.bridge.host = self
         self.application.viewRouter.register(mapPanelRootController: self)
@@ -120,11 +122,12 @@ public final class MapPanelRootController: UIViewController {
     }
 
     /// The SwiftUI graph this panel hosts can outlive it: after the map experience switches,
-    /// UIKit can keep the last panel's environment, and the models in it, alive. The two that
+    /// UIKit can keep the last panel's environment, and the models in it, alive. The three that
     /// act on shared services stop here rather than when they are freed.
     isolated deinit {
         stopsObserver.stopObserving()
         probeController.detach(from: application)
+        layersModel.stopObserving()
     }
 
     public override func viewDidLoad() {
