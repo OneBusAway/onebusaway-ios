@@ -37,7 +37,7 @@ extension APIService {
                 logger.error("Failed network request for \(request.loggableURL, privacy: .public): 404 not found.")
                 throw APIError.requestNotFound(httpResponse)
             } else {
-                logger.error("Failed network request for \(request.loggableURL, privacy: .public): \(httpResponse).")
+                logger.error("Failed network request for \(request.loggableURL, privacy: .public): HTTP \(httpResponse.statusCode, privacy: .public).")
                 throw APIError.requestFailure(httpResponse)
             }
         }

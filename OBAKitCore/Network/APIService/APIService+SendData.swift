@@ -80,7 +80,7 @@ extension APIService {
 
     private func handleSendDataHttpResponse(_ response: URLResponse, _ url: URL, _ method: HTTPMethod) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.error("Network error: missing response for \(method.value) \(ErrorReport.stripQuery(response.url ?? URL(string: "")!), privacy: .public)")
+            logger.error("Network error: missing response for \(method.value) \(ErrorReport.stripQuery(response.url ?? url), privacy: .public)")
             throw APIError.networkFailure(nil)
         }
 
