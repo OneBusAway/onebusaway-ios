@@ -141,7 +141,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
     @Test @MainActor
     func `Stop detail view hands the transfer context to its view model`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        #expect(application.userDataStore.showTransferArrivalBanner)
+        #expect(application.userDataStore.highlightTransferTrip)
 
         let viewModel = makeFactory(application: application)
             .stopDetailView(stopID: "1_10914", transferContext: Self.transferContext)
@@ -153,9 +153,9 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
     /// The same check the pushed stop page gets from `ViewRouter.makeStopController`.
     @Test @MainActor
-    func `Stop detail view drops the transfer context when the transfer banner is off`() {
+    func `Stop detail view drops the transfer context when the trip highlight is off`() {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        application.userDataStore.showTransferArrivalBanner = false
+        application.userDataStore.highlightTransferTrip = false
 
         let viewModel = makeFactory(application: application)
             .stopDetailView(stopID: "1_10914", transferContext: Self.transferContext)

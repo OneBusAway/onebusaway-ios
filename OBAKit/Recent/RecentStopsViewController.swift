@@ -105,7 +105,7 @@ public class RecentStopsViewController: UIViewController, AppContext {
             makeStopPreview: { [weak self] stopID in
                 guard let self else { return AnyView(EmptyView()) }
                 return AnyView(
-                    StopViewControllerPreview(stopID: stopID, application: self.application)
+                    StopPagePreview(stopID: stopID, application: self.application)
                         .frame(width: 320, height: 400)
                 )
             }

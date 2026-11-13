@@ -202,26 +202,6 @@
 			<string>%d результата</string>
 		</dict>
 	</dict>
-	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>few</key>
-			<string>Показать %d более ранних отправления</string>
-			<key>many</key>
-			<string>Показать %d более ранних отправлений</string>
-			<key>one</key>
-			<string>Показать %d более раннее отправление</string>
-			<key>other</key>
-			<string>Показать %d более раннего отправления</string>
-		</dict>
-	</dict>
 	<key>stop_page.a11y.past_shown_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

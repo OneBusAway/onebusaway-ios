@@ -35,7 +35,6 @@ final class LocalizationTests {
         "stop_page.timeline.skipped_stops_fmt",
         "stop_page.past_toggle_show_a11y_fmt",
         "stop_page.a11y.past_shown_fmt",
-        "stop_controller.transfer_show_earlier_departures_fmt",
         "stop_page.empty.no_departures_fmt",
         "data_migration_bulletin.report_summary_number_of_failures",
         "data_migration_bulletin.report_summary_number_of_successes",
@@ -241,15 +240,13 @@ final class LocalizationTests {
         }
     }
 
-    /// Three keys name the same rider-facing concept — changing from one vehicle to another —
-    /// and Arabic had drifted into two words for it: التبديل on the two accessibility labels,
-    /// التحويلة in Settings. التحويلة is a detour or a railway switch, i.e. the *vehicle* being
-    /// rerouted, not the rider changing services. One term, all three keys.
+    /// Arabic had drifted into two words for a transfer — changing from one vehicle to
+    /// another: التبديل and التحويلة. التحويلة is a detour or a railway switch, i.e. the
+    /// *vehicle* being rerouted, not the rider changing services. The stop page's transfer
+    /// row must use التبديل.
     @Test func `Arabic uses one word for a transfer`() throws {
         let arabic = try #require(strings(in: Bundle.obaKit, localization: "ar"))
         let transferKeys = [
-            "settings_controller.arrival_display_section.transfer_banner",
-            "walk_time_view.transfer_accessibility_label",
             "stop_page.row.a11y_transfer_trip"
         ]
 
@@ -361,8 +358,7 @@ final class LocalizationTests {
         let bundle = Bundle.obaKit
         let expectedSingulars = [
             "stop_page.timeline.skipped_stops_fmt": "1 stop",
-            "stop_page.service_alerts.summary_fmt": "1 service alert",
-            "stop_controller.transfer_show_earlier_departures_fmt": "Show 1 earlier departure"
+            "stop_page.service_alerts.summary_fmt": "1 service alert"
         ]
 
         for (key, expected) in expectedSingulars {
@@ -463,7 +459,6 @@ final class LocalizationTests {
             ("stop_page.service_alerts.show_all_fmt", "Show all %d alerts", "Pokaż wszystkie 5 alertów"),
             ("stop_page.service_alerts.summary_fmt", "%d service alerts", "5 alertów funkcjonowania komunikacji"),
             ("stop_page.empty.no_departures_fmt", "No departures in the next %d minutes", "Brak odjazdów w ciągu najbliższych 5 minut"),
-            ("stop_controller.transfer_show_earlier_departures_fmt", "Show %d earlier departures", "Pokaż 5 wcześniejszych odjazdów"),
             ("data_migration_bulletin.report_summary_number_of_failures", "%d failures", "5 nieudanych zadań"),
             ("data_migration_bulletin.report_summary_number_of_successes", "%d successful", "5 udanych zadań")
         ]

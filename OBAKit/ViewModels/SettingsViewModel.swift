@@ -85,7 +85,7 @@ final class SettingsViewModel {
         mapLayerEnabled = Dictionary(uniqueKeysWithValues: layers.map { ($0.id, mapRegionManager.isMapLayerEnabled(id: $0.id)) })
 
         arrivalDepartureFilter = application.effectiveArrivalDepartureFilter
-        showsTransferArrivalBanner = store.showTransferArrivalBanner
+        highlightsTransferTrip = store.highlightTransferTrip
         showsRegionTimeZone = store.showRegionTimeZone
 
         usesMapPanelExperience = FeatureFlags.isMapPanelExperienceEnabled(userDefaults: defaults)
@@ -149,8 +149,8 @@ final class SettingsViewModel {
         didSet { application.setArrivalDepartureFilter(arrivalDepartureFilter) }
     }
 
-    var showsTransferArrivalBanner: Bool {
-        didSet { application.userDataStore.showTransferArrivalBanner = showsTransferArrivalBanner }
+    var highlightsTransferTrip: Bool {
+        didSet { application.userDataStore.highlightTransferTrip = highlightsTransferTrip }
     }
 
     var showsRegionTimeZone: Bool {

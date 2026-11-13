@@ -150,7 +150,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             makeStopPreview: { [weak self] stopID in
                 guard let self else { return AnyView(EmptyView()) }
                 return AnyView(
-                    StopViewControllerPreview(stopID: stopID, application: self.application)
+                    StopPagePreview(stopID: stopID, application: self.application)
                         .frame(width: 320, height: 400)
                 )
             }
@@ -281,7 +281,7 @@ private extension BookmarksViewController {
 
 /// Lazily-built UIKit preview for row long-presses; the stop controller is
 /// constructed only when SwiftUI actually presents the context-menu preview.
-struct StopViewControllerPreview: UIViewControllerRepresentable {
+struct StopPagePreview: UIViewControllerRepresentable {
     let stopID: StopID
     let application: Application
 

@@ -947,15 +947,15 @@ final class StopViewModelTests: OBATestCase {
         #expect(plainController is StopPageViewController)
     }
 
-    /// The banner/highlight toggle drops the effective transfer context. Routing
+    /// The trip highlight toggle drops the effective transfer context. Routing
     /// must use that same helper so a raw non-nil context with the toggle off
     /// lands as an ordinary stop (no highlight).
     @Test @MainActor
-    func `Make stop controller ignores transfer context when the banner toggle is off`() throws {
+    func `Make stop controller ignores transfer context when the trip highlight is off`() throws {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock())
 
-        app.userDataStore.showTransferArrivalBanner = false
+        app.userDataStore.highlightTransferTrip = false
 
         let stop = try #require(try Fixtures.loadSomeStops().first)
         let transfer = TransferContext(

@@ -120,9 +120,6 @@
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
 "common.learn_more" = "Tìm hiểu thêm";
 
-/* Fallback title for the stop arrivals screen when the stop name is not yet available. */
-"common.live_arrivals" = "Chuyến đến trực tiếp";
-
 /* Used to indicate that content is loading. */
 "common.loading" = "Đang tải…";
 
@@ -381,12 +378,6 @@
 
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d phút";
-
-/* Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill' */
-"formatters.transfer.arrival_banner_fmt" = "Đến lúc %1$@ bằng %2$@";
-
-/* Short text shown when a departure occurs at the same time as the rider's transfer arrival. */
-"formatters.transfer.on_arrival" = "NGAY";
 
 /* The body of the tip pointing at the map toolbar's basemap button, which opens the Map sheet where the rental layers are turned on and off */
 "map_layers_tip.message" = "Nhấn vào đây để hiển thị xe đạp và xe scooter trên bản đồ.";

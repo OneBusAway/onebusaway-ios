@@ -77,8 +77,8 @@ struct SettingsView: View {
                 }
             }
             Toggle(
-                OBALoc("settings_controller.arrival_display_section.transfer_banner", value: "Show transfer arrival banner", comment: "Settings > Arrival & Departure Display > Toggle that shows the Arriving at XX:XX via route banner when opening a stop from a trip"),
-                isOn: $viewModel.showsTransferArrivalBanner
+                OBALoc("settings_controller.arrival_display_section.highlight_trip", value: "Highlight your trip on stop pages", comment: "Settings > Arrival & Departure Display > Toggle that highlights the rider's trip in a stop's departures when they open that stop from the trip"),
+                isOn: $viewModel.highlightsTransferTrip
             )
             Toggle(
                 OBALoc("settings_controller.arrival_display_section.region_time_zone", value: "Show times in region time zone", comment: "Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone"),
@@ -89,8 +89,8 @@ struct SettingsView: View {
         } footer: {
             Text(OBALoc(
                 "settings_controller.arrival_display_section.footer",
-                value: "Transfer banner: opening a stop from a trip shows times relative to when you arrive. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.",
-                comment: "Settings > Arrival & Departure Display > Footer describing the transfer banner and region time zone toggles"
+                value: "Trip highlight: when you open a stop from a trip, that trip's departure is highlighted on the stop page. Region time zone: clock times use the transit region's zone, with a short badge when your phone differs. Both are independent.",
+                comment: "Settings > Arrival & Departure Display > Footer describing the trip highlight and region time zone toggles"
             ))
         }
     }

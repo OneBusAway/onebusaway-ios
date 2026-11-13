@@ -347,7 +347,7 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
     /// page to be on a navigation stack.
     ///
     /// Called with the same transfer context the pushed stop gets, not yet checked
-    /// against the transfer banner setting: whoever builds the stop page does that.
+    /// against the trip highlight setting: whoever builds the stop page does that.
     var onSelectStop: ((StopID, TransferContext?) -> Void)?
 
     /// Opens a stop the rider tapped: a row in the list, or a stop's dot on

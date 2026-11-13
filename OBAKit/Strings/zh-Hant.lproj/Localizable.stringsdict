@@ -142,20 +142,6 @@
 			<string>%d 個結果</string>
 		</dict>
 	</dict>
-	<key>stop_controller.transfer_show_earlier_departures_fmt</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>顯示 %d 班較早的離站班次</string>
-		</dict>
-	</dict>
 	<key>stop_page.a11y.past_shown_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
