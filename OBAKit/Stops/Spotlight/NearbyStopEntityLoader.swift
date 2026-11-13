@@ -65,9 +65,17 @@ nonisolated struct NearbyStopEntityLoader {
     }
 
     /// The nearest stops, closest first, with the one whose code `recognizedText`
-    /// shows moved to the top. Empty, never an error, without a region, a
-    /// location or an answer from the server: the camera would show an error.
-    func entities(recognizedText: [String]) async -> [StopEntity] {
+    /// shows moved to the top. Empty, never an error, when the camera isn't on a
+    /// transit sign (see `TransitSignGate`), or without a region, a location or an
+    /// answer from the server: the camera would show an error.
+    ///
+    /// The sign check comes first, so an unrelated search never asks for the
+    /// rider's location or calls the server.
+    func entities(labels: [String], recognizedText: [String]) async -> [StopEntity] {
+        guard TransitSignGate.looksLikeTransitSign(labels: labels, recognizedText: recognizedText) else {
+            Logger.info("Visual intelligence stops: not a transit sign; offering no stops.")
+            return []
+        }
         guard let region = ResolvedRegionStore(userDefaults: userDefaults).region(bundledRegionsFilePath: bundledRegionsFilePath) else {
             Logger.warn("Visual intelligence stops: no region selected; offering no stops.")
             return []
@@ -99,6 +107,41 @@ nonisolated struct NearbyStopEntityLoader {
 
         return NearbyStopRanking.rank(stops, from: location, recognizedText: recognizedText)
             .map { StopEntityMapping.entity(for: $0, regionID: region.regionIdentifier, includesImage: true) }
+    }
+}
+
+/// Whether a visual intelligence search is of a transit sign, from what the
+/// system labelled the image and the text read off it. Anything else gets no
+/// stops, and no location or network request is made for it.
+nonisolated enum TransitSignGate {
+    /// Words on, or labels for, a stop sign or a station. Matched as whole
+    /// words, ignoring case. Not "stop" or "route" alone: a traffic stop sign
+    /// or a highway sign would match.
+    static let transitWords: Set<String> = [
+        "bus", "buses", "busstop", "station", "transit", "tram", "streetcar", "trolley",
+        "train", "rail", "railway", "metro", "subway", "ferry"
+    ]
+
+    /// Stop codes are numbers, and stops' codes run from three digits (the
+    /// shortest `NearbyStopRanking` matches) to about seven.
+    static let stopCodeDigits = NearbyStopRanking.minimumCodeLength...8
+
+    static func looksLikeTransitSign(labels: [String], recognizedText: [String]) -> Bool {
+        let labelWords = words(in: labels)
+        if !labelWords.isDisjoint(with: transitWords) { return true }
+
+        let textWords = words(in: recognizedText)
+        return !textWords.isDisjoint(with: transitWords) || textWords.contains(where: isPlausibleStopCode)
+    }
+
+    static func isPlausibleStopCode(_ word: String) -> Bool {
+        stopCodeDigits.contains(word.count) && word.allSatisfy(\.isNumber)
+    }
+
+    private static func words(in lines: [String]) -> Set<String> {
+        Set(lines.flatMap { line in
+            line.split { !$0.isLetter && !$0.isNumber }.map { $0.lowercased() }
+        })
     }
 }
 

@@ -20,7 +20,8 @@ import VisualIntelligence
 /// `OpenStopIntent`, whose target is a `StopEntity`.
 ///
 /// The camera image is read on the device for a stop code and then dropped:
-/// it is never stored or sent anywhere.
+/// it is never stored or sent anywhere. A search that doesn't look like a transit
+/// sign (`TransitSignGate`) gets no stops, and no location or server request.
 @available(iOS 26.0, *)
 nonisolated public struct StopVisualIntelligenceQuery: IntentValueQuery {
     public init() {}
@@ -31,7 +32,7 @@ nonisolated public struct StopVisualIntelligenceQuery: IntentValueQuery {
             return []
         }
         let text = input.pixelBuffer.map(StopSignReader.text(in:)) ?? []
-        return await loader.entities(recognizedText: text)
+        return await loader.entities(labels: input.labels, recognizedText: text)
     }
 }
 

@@ -9,6 +9,7 @@
 
 import CoreLocation
 import Foundation
+import os
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -83,6 +84,9 @@ final class NearbyStopEntityLoaderTests: OBATestCase {
     /// Next to `1_10914` in `stops_for_location_seattle.json`.
     private let rider = CLLocation(latitude: 47.6564, longitude: -122.3121)
 
+    /// What the system might label a photo of a bus stop; any transit label passes the gate.
+    static let busStopLabels = ["bus stop"]
+
     override init() async throws {
         try await super.init()
         ResolvedRegionStore(userDefaults: userDefaults).write(Fixtures.pugetSoundRegion)
@@ -110,7 +114,7 @@ final class NearbyStopEntityLoaderTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         mockStops(dataLoader)
 
-        let entities = await loader(dataLoader: dataLoader, location: rider).entities(recognizedText: [])
+        let entities = await loader(dataLoader: dataLoader, location: rider).entities(labels: Self.busStopLabels, recognizedText: [])
 
         #expect(entities.count == NearbyStopRanking.resultLimit)
         #expect(entities.first?.stopID == "1_10914")
@@ -128,7 +132,7 @@ final class NearbyStopEntityLoaderTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         mockStops(dataLoader)
 
-        let entities = await loader(dataLoader: dataLoader, location: rider).entities(recognizedText: [])
+        let entities = await loader(dataLoader: dataLoader, location: rider).entities(labels: Self.busStopLabels, recognizedText: [])
         let first = try #require(entities.first)
 
         #expect(first.imageData != nil)
@@ -158,7 +162,7 @@ final class NearbyStopEntityLoaderTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         mockStops(dataLoader)
 
-        let entities = await loader(dataLoader: dataLoader, location: rider).entities(recognizedText: [])
+        let entities = await loader(dataLoader: dataLoader, location: rider).entities(labels: Self.busStopLabels, recognizedText: [])
         let first = try #require(entities.first)
 
         let destination = try #require(StopEntityMapping.destination(fromIdentifier: first.id))
@@ -171,7 +175,7 @@ final class NearbyStopEntityLoaderTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         mockStops(dataLoader)
 
-        let entities = await loader(dataLoader: dataLoader, location: rider).entities(recognizedText: ["Stop # 10917"])
+        let entities = await loader(dataLoader: dataLoader, location: rider).entities(labels: Self.busStopLabels, recognizedText: ["Stop # 10917"])
 
         #expect(entities.first?.stopID == "1_10917")
     }
@@ -180,16 +184,37 @@ final class NearbyStopEntityLoaderTests: OBATestCase {
     @Test func `No region gives no stops and no request`() async {
         ResolvedRegionStore(userDefaults: userDefaults).write(nil)
 
-        let entities = await loader(dataLoader: MockDataLoader(testName: name), location: rider).entities(recognizedText: [])
+        let entities = await loader(dataLoader: MockDataLoader(testName: name), location: rider).entities(labels: Self.busStopLabels, recognizedText: [])
 
         #expect(entities.isEmpty)
     }
 
     /// No stub: a request would end the test in `MockDataLoader`.
     @Test func `No location gives no stops and no request`() async {
-        let entities = await loader(dataLoader: MockDataLoader(testName: name), location: nil).entities(recognizedText: [])
+        let entities = await loader(dataLoader: MockDataLoader(testName: name), location: nil).entities(labels: Self.busStopLabels, recognizedText: [])
 
         #expect(entities.isEmpty)
+    }
+
+    /// No stub: a request would end the test in `MockDataLoader`.
+    @Test func `An unrelated search asks for no location and makes no request`() async {
+        let locationRequests = OSAllocatedUnfairLock(initialState: 0)
+        let loader = NearbyStopEntityLoader(
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: nil,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            dataLoader: MockDataLoader(testName: name),
+            currentLocation: { [rider] in
+                locationRequests.withLock { $0 += 1 }
+                return rider
+            }
+        )
+
+        let entities = await loader.entities(labels: ["dog", "pet"], recognizedText: ["Good boy"])
+
+        #expect(entities.isEmpty)
+        #expect(locationRequests.withLock { $0 } == 0)
     }
 
     /// The camera would show an error; an empty list shows nothing.
@@ -197,8 +222,45 @@ final class NearbyStopEntityLoaderTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         mockStops(dataLoader, statusCode: 500)
 
-        let entities = await loader(dataLoader: dataLoader, location: rider).entities(recognizedText: [])
+        let entities = await loader(dataLoader: dataLoader, location: rider).entities(labels: Self.busStopLabels, recognizedText: [])
 
         #expect(entities.isEmpty)
+    }
+}
+
+/// Visual intelligence asks for every search; only a transit sign gets stops.
+@Suite(.serialized)
+struct TransitSignGateTests {
+    @Test func `A transit label passes, whatever the text`() {
+        #expect(TransitSignGate.looksLikeTransitSign(labels: ["Bus Stop"], recognizedText: []))
+        #expect(TransitSignGate.looksLikeTransitSign(labels: ["train station"], recognizedText: []))
+    }
+
+    @Test func `A stop code on the sign passes`() {
+        #expect(TransitSignGate.looksLikeTransitSign(labels: ["sign"], recognizedText: ["Stop #75403"]))
+    }
+
+    @Test func `A transit word on the sign passes`() {
+        #expect(TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: ["King County METRO"]))
+    }
+
+    @Test func `An unrelated search does not pass`() {
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: ["dog", "pet"], recognizedText: ["Good boy"]))
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: []))
+    }
+
+    /// A traffic stop sign and a highway's route number are not transit signs.
+    @Test func `Stop and route alone do not pass`() {
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: ["sign"], recognizedText: ["STOP"]))
+        #expect(!TransitSignGate.looksLikeTransitSign(labels: [], recognizedText: ["Route 99"]))
+    }
+
+    /// Prices and route numbers are too short for a stop code; a phone number is too long.
+    @Test func `Only three to eight digit numbers look like stop codes`() {
+        #expect(!TransitSignGate.isPlausibleStopCode("72"))
+        #expect(TransitSignGate.isPlausibleStopCode("994"))
+        #expect(TransitSignGate.isPlausibleStopCode("75403"))
+        #expect(!TransitSignGate.isPlausibleStopCode("2065551234"))
+        #expect(!TransitSignGate.isPlausibleStopCode("E3A"))
     }
 }
