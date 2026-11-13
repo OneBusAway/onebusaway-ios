@@ -944,6 +944,38 @@ final class ApplicationTests: OBATestCase {
         // Should not crash when delegate is nil
     }
 
+    private func appReportingErrors(enabled: Bool) -> (Application, AnalyticsMock) {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        let analytics = AnalyticsMock()
+        analytics.setReportingEnabled(enabled)
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        return (Application(config: config), analytics)
+    }
+
+    private let failingURL = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops-for-location.json?key=SECRET&lat=47.6&lon=-122.3")!
+
+    @Test func `Display error reports the error without the request query`() async throws {
+        let (app, analytics) = appReportingErrors(enabled: true)
+
+        await app.displayError(URLError(.notConnectedToInternet, userInfo: [NSURLErrorFailingURLErrorKey: failingURL]))
+
+        #expect(analytics.reportedErrors.count == 1)
+        let reported = try #require(analytics.reportedErrors.first) as NSError
+        #expect(reported.domain == NSURLErrorDomain)
+        #expect(reported.code == NSURLErrorNotConnectedToInternet)
+        #expect((reported.userInfo[NSURLErrorFailingURLErrorKey] as? URL)?.absoluteString == "https://api.pugetsound.onebusaway.org/api/where/stops-for-location.json")
+    }
+
+    @Test func `Display error reports nothing when the rider turned reporting off`() async {
+        let (app, analytics) = appReportingErrors(enabled: false)
+
+        await app.displayError(URLError(.notConnectedToInternet, userInfo: [NSURLErrorFailingURLErrorKey: failingURL]))
+
+        #expect(analytics.reportedErrors.isEmpty)
+    }
+
     // MARK: - Agency Alerts Tests
 
     @Test func `Agency alerts store display error`() {
