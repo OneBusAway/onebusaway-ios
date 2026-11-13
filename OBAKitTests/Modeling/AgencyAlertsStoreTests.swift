@@ -41,6 +41,60 @@ private final class AlertsOutcomeDelegate: NSObject, AgencyAlertsDelegate {
     }
 }
 
+private actor ReleaseGate {
+    private var isReleased = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        if isReleased { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func release() {
+        isReleased = true
+        waiters.forEach { $0.resume() }
+        waiters.removeAll()
+    }
+
+    func waitUntilBlocked() async {
+        while waiters.isEmpty && !isReleased {
+            await Task.yield()
+        }
+    }
+}
+
+private final class AgencyAlertsDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
+    let agenciesData: Data
+    let alertsData: Data
+    let gate: ReleaseGate?
+    private let requestCountLock = NSLock()
+    private var _requestCount = 0
+
+    var requestCount: Int {
+        requestCountLock.withLock { _requestCount }
+    }
+
+    init(agenciesData: Data, alertsData: Data, gate: ReleaseGate? = nil) {
+        self.agenciesData = agenciesData
+        self.alertsData = alertsData
+        self.gate = gate
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        await gate?.wait()
+        requestCountLock.withLock { _requestCount += 1 }
+
+        let data = request.url?.path.contains("agencies-with-coverage") == true ? agenciesData : alertsData
+        let response = HTTPURLResponse(
+            url: request.url!,
+            statusCode: 200,
+            httpVersion: "2",
+            headerFields: ["Content-Type": "application/x-protobuf"]
+        )!
+        return (data, response)
+    }
+}
+
 @Suite(.serialized, .timeLimit(.minutes(1)))
 final class AgencyAlertsStoreTests: OBATestCase {
     private var dataLoader: MockDataLoader!
@@ -105,6 +159,14 @@ final class AgencyAlertsStoreTests: OBATestCase {
         dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path.hasSuffix(suffix) ?? false }
     }
 
+    private func makeAgencyAlertsDataLoader(alertID: String, gate: ReleaseGate? = nil) throws -> AgencyAlertsDataLoader {
+        AgencyAlertsDataLoader(
+            agenciesData: try Fixtures.loadData(file: "agencies_with_coverage.json"),
+            alertsData: try feed(alertIDs: [alertID]),
+            gate: gate
+        )
+    }
+
     private func expectServerError(_ outcome: AlertsOutcomeDelegate.Outcome, sourceLocation: SourceLocation = #_sourceLocation) {
         guard case .failed(let error) = outcome, case .requestFailure(let response)? = error as? APIError else {
             Issue.record("Expected the 500 to reach delegates as APIError.requestFailure, got \(outcome)", sourceLocation: sourceLocation)
@@ -140,5 +202,30 @@ final class AgencyAlertsStoreTests: OBATestCase {
         try stubAlertFeeds()
 
         expectServerError(await checkForUpdates())
+    }
+
+    @Test func `A late cancelled refresh cannot overwrite the latest refresh`() async throws {
+        let firstGate = ReleaseGate()
+        let firstLoader = try makeAgencyAlertsDataLoader(alertID: "old-alert", gate: firstGate)
+        let latestLoader = try makeAgencyAlertsDataLoader(alertID: "new-alert")
+        let firstService = buildRESTService(dataLoader: firstLoader)
+        let latestService = buildRESTService(dataLoader: latestLoader)
+        store.apiService = firstService
+        store.obacoService = nil
+
+        store.checkForUpdates()
+        await firstGate.waitUntilBlocked()
+
+        store.apiService = latestService
+        let latestOutcome = await outcomeDelegate.wait { store.checkForUpdates() }
+        guard case .updated = latestOutcome else {
+            Issue.record("Expected the latest refresh to update, got \(latestOutcome)")
+            return
+        }
+
+        await firstGate.release()
+        await poll(until: { firstLoader.requestCount == 6 }, "the cancelled refresh never finished")
+
+        #expect(store.agencyAlerts.map(\.id) == ["new-alert"])
     }
 }

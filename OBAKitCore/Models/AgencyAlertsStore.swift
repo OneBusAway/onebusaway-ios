@@ -83,6 +83,11 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
 
     /// Cancels all pending data operations.
     private func cancelAllOperations() {
+        stateLock.withLock {
+            updateTask?.cancel()
+            updateTask = nil
+            updateGeneration += 1
+        }
         queue.cancelAllOperations()
     }
 
@@ -95,8 +100,19 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     /// `@MainActor` storage methods / UI reads run on the main thread.
     /// Never hold this lock across an `await`.
     private let stateLock = NSLock()
+    /// Monotonically identifies the refresh whose result may update `alerts`.
+    /// Guarded by `stateLock`; a cancelled transport may still deliver a late
+    /// response, so cancellation alone cannot establish ownership.
+    private var updateGeneration = 0
+    private var updateTask: Task<Void, Never>?
 
     public func update() async throws {
+        let generation = beginUpdate()
+        defer { finishUpdate(generation) }
+        try await performUpdate(generation: generation)
+    }
+
+    private func performUpdate(generation: Int) async throws {
         guard let apiService else { return }
 
         // Touch `agencies` only under the lock (never across the network `await`), then
@@ -126,6 +142,8 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
             return alerts
         }
 
+        try Task.checkCancellation()
+        guard isCurrentUpdate(generation) else { return }
         await storeAgencyAlerts(agencyAlerts)
     }
 
@@ -140,20 +158,55 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
         }
         #endif
 
-        Task {
+        let generation = beginUpdate()
+        let task = Task { [weak self] in
+            guard let self else { return }
+            defer { self.finishUpdate(generation) }
             do {
-                try await update()
+                try await performUpdate(generation: generation)
+            } catch is CancellationError {
+                return
             } catch {
-                await MainActor.run {
-                    self.notifyDelegates(error: error)
-                }
+                guard self.isCurrentUpdate(generation), !Task.isCancelled else { return }
+                self.notifyDelegates(error: error)
             }
         }
+        installUpdateTask(task, generation: generation)
     }
 
     // MARK: - REST API
     private func fetchRegionalAlerts(service: RESTAPIService, agencies: [AgencyWithCoverage]) async -> [AgencyAlert] {
         return await service.getAlerts(agencies: agencies)
+    }
+
+    private func beginUpdate() -> Int {
+        stateLock.withLock {
+            updateGeneration += 1
+            updateTask?.cancel()
+            return updateGeneration
+        }
+    }
+
+    private func installUpdateTask(_ task: Task<Void, Never>, generation: Int) {
+        stateLock.withLock {
+            guard updateGeneration == generation else {
+                task.cancel()
+                return
+            }
+            updateTask = task
+        }
+    }
+
+    private func finishUpdate(_ generation: Int) {
+        stateLock.withLock {
+            if updateGeneration == generation {
+                updateTask = nil
+            }
+        }
+    }
+
+    private func isCurrentUpdate(_ generation: Int) -> Bool {
+        stateLock.withLock { updateGeneration == generation }
     }
 
     // MARK: - Obaco
