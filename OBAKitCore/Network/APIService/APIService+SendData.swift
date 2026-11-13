@@ -56,7 +56,7 @@ extension APIService {
         } catch let error as NSError {
             logger.error("Failed network request for \(request.loggableURL, privacy: .public): \(ErrorReport.sanitizedForReporting(error) as NSError, privacy: .public)")
 
-            if errorLooksLikeCaptivePortal(error) {
+            if Self.errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal
             } else {
                 throw error

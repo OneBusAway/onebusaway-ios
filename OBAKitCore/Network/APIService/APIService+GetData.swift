@@ -9,12 +9,15 @@ import Foundation
 
 extension APIService {
     nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        try await retryPolicy.execute { _ in
-            try await performData(for: request)
+        let policy = retryPolicy
+        let loader = dataLoader
+        let requestLogger = logger
+        return try await policy.execute { _ in
+            try await Self.performData(for: request, dataLoader: loader, logger: requestLogger)
         }
     }
 
-    private nonisolated func performData(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+    private static func performData(for request: URLRequest, dataLoader: URLDataLoader, logger: os.Logger) async throws -> (Data, HTTPURLResponse) {
         let (data, response): (Data, URLResponse)
         do {
             // Per-request begin/finish is high-volume trace detail (the unit-test
@@ -26,7 +29,7 @@ extension APIService {
             logger.debug("Finish network request for \(request.loggableURL, privacy: .public)")
         } catch let error as NSError {
             logger.error("Failed network request for \(request.loggableURL, privacy: .public): \(ErrorReport.sanitizedForReporting(error) as NSError, privacy: .public)")
-            if errorLooksLikeCaptivePortal(error) {
+            if Self.errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal
             } else {
                 throw error
@@ -114,7 +117,7 @@ extension APIService {
         return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder)
     }
 
-    nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
+    nonisolated static func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
         if error.domain == NSCocoaErrorDomain && error.code == 3840 {
             return true
         }
