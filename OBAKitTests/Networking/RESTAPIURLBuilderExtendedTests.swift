@@ -47,10 +47,10 @@ final class RESTAPIURLBuilderExtendedTests {
 
         let url = builder.getStops(region: region)
         #expect(queryValue(url, "key") == "TEST_KEY")
-        #expect(queryValue(url, "lat") != nil)
-        #expect(queryValue(url, "lon") != nil)
-        #expect(queryValue(url, "latSpan") != nil)
-        #expect(queryValue(url, "lonSpan") != nil)
+        #expect(queryValue(url, "lat") == "47.6097")
+        #expect(queryValue(url, "lon") == "-122.3331")
+        #expect(queryValue(url, "latSpan") == "\(region.span.latitudeDelta)")
+        #expect(queryValue(url, "lonSpan") == "\(region.span.longitudeDelta)")
     }
 
     @Test func `getTrip includes default key and tripID in path`() {
