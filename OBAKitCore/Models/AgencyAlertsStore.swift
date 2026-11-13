@@ -144,7 +144,7 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
 
         try Task.checkCancellation()
         guard isCurrentUpdate(generation) else { return }
-        await storeAgencyAlerts(agencyAlerts)
+        await storeAgencyAlerts(agencyAlerts, generation: generation)
     }
 
     /// Convenience wrapper for ``update()``. Errors are reported via ``AgencyAlertsDelegate``.
@@ -269,14 +269,20 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     private var alerts: Set<AgencyAlert> = []
 
     @MainActor
-    private func storeAgencyAlerts(_ agencyAlerts: [AgencyAlert]) {
-        stateLock.withLock {
+    private func storeAgencyAlerts(_ agencyAlerts: [AgencyAlert], generation: Int) {
+        let didStoreAlerts = stateLock.withLock {
+            guard updateGeneration == generation else { return false }
+
             for alert in agencyAlerts {
                 self.alerts.insert(alert)
             }
+
+            return true
         }
 
-        self.notifyDelegatesAlertsUpdated()
+        if didStoreAlerts {
+            self.notifyDelegatesAlertsUpdated()
+        }
     }
 
     /// Injects alerts directly without the network fetch cycle.
