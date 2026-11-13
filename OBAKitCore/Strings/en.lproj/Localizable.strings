@@ -635,6 +635,9 @@
 /* Explanation of an error where the server's response couldn't be read. */
 "error_report.explanation.invalid_response_data" = "The server answered, but the data was incomplete or in a format we can't read. That's usually a problem with the agency's feed, not your phone.";
 
+/* Explanation of an authentication or authorization failure that the rider cannot fix in the app. */
+"error_report.explanation.authentication" = "The server didn't accept this app's request. Please contact support if this continues.";
+
 /* Explanation of an error where no transit region is selected. The substituted value is the app name. */
 "error_report.explanation.no_region_selected_fmt" = "%@ needs to know which transit region you're in.";
 
@@ -670,6 +673,9 @@
 
 /* One-line toast text: the server answered with data the app can't read. */
 "error_report.summary.invalid_response_data" = "The server sent data we can't read.";
+
+/* One-line toast text for an authentication or authorization failure that the rider cannot fix in the app. */
+"error_report.summary.authentication" = "The server didn't accept this app's request.";
 
 /* One-line toast text: no transit region has been selected. */
 "error_report.summary.no_region_selected" = "Choose your region to see transit info.";

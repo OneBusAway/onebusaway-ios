@@ -13,12 +13,68 @@ import os.log
 /// Classifies raw network errors into user-friendly `APIError` cases.
 public enum ErrorClassifier {
 
+    /// Stable buckets for telemetry, retry policy, and support tooling.
+    public enum Category: String, Sendable, Equatable {
+        case timeout
+        case offline
+        case server
+        case decoding
+        case authentication
+        case unknown
+    }
+
     private static let logger = os.Logger(
         subsystem: "org.onebusaway.iphone",
         category: "ErrorClassifier"
     )
 
     // MARK: - Public API
+
+    /// Returns the stable category for a raw or already-classified error.
+    public static func category(for error: Error) -> Category {
+        if let apiError = error as? APIError {
+            switch apiError {
+            case .requestFailure(let response):
+                switch response.statusCode {
+                case 401, 403: return .authentication
+                case 429, 500...599: return .server
+                case 408: return .timeout
+                default: return .unknown
+                }
+            case .serverUnavailable(_, let statusCode):
+                return statusCode == 408 ? .timeout : .server
+            case .serverError, .rateLimited:
+                return .server
+            case .invalidResponseData, .invalidContentType, .noResponseBody:
+                return .decoding
+            case .networkFailure(let inner):
+                return inner.map { category(for: $0) } ?? .offline
+            case .captivePortal, .cellularDataRestricted:
+                return .offline
+            default:
+                return .unknown
+            }
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain {
+            switch nsError.code {
+            case NSURLErrorTimedOut:
+                return .timeout
+            case NSURLErrorNotConnectedToInternet,
+                 NSURLErrorNetworkConnectionLost,
+                 NSURLErrorDataNotAllowed:
+                return .offline
+            case NSURLErrorCannotConnectToHost,
+                 NSURLErrorCannotFindHost:
+                return .server
+            default:
+                return .unknown
+            }
+        }
+
+        return error is DecodingError ? .decoding : .unknown
+    }
 
     /// Classifies a raw `Error` into a more specific, user-friendly `APIError`.
     ///
@@ -113,8 +169,14 @@ public enum ErrorClassifier {
             }
             return APIError.networkFailure(nsError)
 
-        case NSURLErrorTimedOut,
-             NSURLErrorCannotConnectToHost,
+        case NSURLErrorTimedOut:
+            guard let regionName else {
+                logger.warning("Server unreachable (URL error \(nsError.code)) but no region name available for user message.")
+                return APIError.networkFailure(nsError)
+            }
+            return APIError.serverUnavailable(regionName: regionName, statusCode: 408)
+
+        case NSURLErrorCannotConnectToHost,
              NSURLErrorCannotFindHost:
             guard let regionName else {
                 logger.warning("Server unreachable (URL error \(nsError.code)) but no region name available for user message.")

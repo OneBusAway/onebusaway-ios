@@ -87,6 +87,14 @@ final class ErrorReportTests {
         #expect(report.summary == "The Puget Sound server hit a problem.")
     }
 
+    @Test func `401 is reported as authentication`() {
+        let report = report(APIError.requestFailure(response("stops-for-location.json", status: 401)))
+        #expect(report.cause == .authentication)
+        #expect(!report.cause.isRiderActionable)
+        #expect(report.summary == "The server didn't accept this app's request.")
+        #expect(report.explanation.contains("contact support"))
+    }
+
     /// A failed ghost bus report is something the rider sent, not something the
     /// app loaded (#1596).
     @Test func `Ghost bus report failure says the report didn't send`() {

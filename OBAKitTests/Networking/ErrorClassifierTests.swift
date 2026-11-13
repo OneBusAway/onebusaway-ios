@@ -15,6 +15,41 @@ import Testing
 @Suite(.serialized)
 final class ErrorClassifierTests {
 
+    @Test func `Stable categories cover timeout offline server decoding auth and unknown`() {
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com")!,
+            statusCode: 401,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+
+        #expect(ErrorClassifier.category(for: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)) == .timeout)
+        #expect(ErrorClassifier.category(for: NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)) == .offline)
+        #expect(ErrorClassifier.category(for: APIError.requestFailure(response)) == .authentication)
+        #expect(ErrorClassifier.category(for: APIError.serverUnavailable(regionName: "Test", statusCode: 503)) == .server)
+        #expect(ErrorClassifier.category(for: DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "bad"))) == .decoding)
+        #expect(ErrorClassifier.category(for: NSError(domain: "test", code: 1)) == .unknown)
+    }
+
+    @Test func `Classification preserves retry categories for timeout and rate limit`() {
+        let timeout = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        let rateLimitedResponse = HTTPURLResponse(
+            url: URL(string: "https://example.com")!,
+            statusCode: 429,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+
+        let classifiedTimeout = ErrorClassifier.classify(timeout, regionName: "Test")
+        let rawRateLimit = APIError.requestFailure(rateLimitedResponse)
+        let classifiedRateLimit = ErrorClassifier.classify(rawRateLimit, regionName: "Test")
+
+        #expect(ErrorClassifier.category(for: timeout) == .timeout)
+        #expect(ErrorClassifier.category(for: classifiedTimeout) == .timeout)
+        #expect(ErrorClassifier.category(for: rawRateLimit) == .server)
+        #expect(ErrorClassifier.category(for: classifiedRateLimit) == .server)
+    }
+
     // MARK: - APIError Pass-Through
 
     @Test func `Classify captive portal passes through`() {

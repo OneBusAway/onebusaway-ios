@@ -113,6 +113,7 @@ public struct ErrorReport: Sendable {
         case cellularDataRestricted
         case captivePortal
         case noRegionSelected
+        case authentication
         /// Not worth telling the rider about; see ``ErrorReport/isSilent``.
         case silent
         /// Not a failed request: an error that carries its own message, like
@@ -322,6 +323,7 @@ public struct ErrorReport: Sendable {
         }
 
         switch apiError {
+        case .requestFailure(let response) where [401, 403].contains(response.statusCode): return .authentication
         case .rateLimited: return .rateLimited
         case .serverError: return .serverError
         case .serverUnavailable: return .serverUnavailable
@@ -392,6 +394,8 @@ public struct ErrorReport: Sendable {
             return OBALoc("error_report.summary.captive_portal", value: "Open the network's login page to continue.", comment: "One-line toast text under a title saying the Wi-Fi network needs the rider to sign in.")
         case .noRegionSelected:
             return OBALoc("error_report.summary.no_region_selected", value: "Choose your region to see transit info.", comment: "One-line toast text: no transit region has been selected.")
+        case .authentication:
+            return OBALoc("error_report.summary.authentication", value: "The server didn't accept this app's request.", comment: "One-line toast text for an authentication or authorization failure that the rider cannot fix in the app.")
         case .silent, .message, .fallback:
             return fallbackSummary
         }
@@ -432,6 +436,8 @@ public struct ErrorReport: Sendable {
         case .noRegionSelected:
             let fmt = OBALoc("error_report.explanation.no_region_selected_fmt", value: "%@ needs to know which transit region you're in.", comment: "Explanation of an error where no transit region is selected. The substituted value is the app name.")
             return String(format: fmt, Bundle.main.appName)
+        case .authentication:
+            return OBALoc("error_report.explanation.authentication", value: "The server didn't accept this app's request. Please contact support if this continues.", comment: "Explanation of an authentication or authorization failure that the rider cannot fix in the app.")
         case .silent, .message, .fallback:
             return fallbackExplanation
         }
