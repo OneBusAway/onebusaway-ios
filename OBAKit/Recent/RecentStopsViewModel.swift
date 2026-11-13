@@ -131,22 +131,24 @@ final class RecentStopsViewModel: ObservableObject {
         loadData()
     }
 
+    /// Deletes through `AlarmRemover`: on the server first, so an alarm the server
+    /// still has stays listed, where the rider can see it and try again.
     @discardableResult
     func delete(alarm: Alarm) -> Task<Void, Never> {
-        application.userDataStore.delete(alarm: alarm)
-        loadData()
-        // Capture the service directly: if the VM is deallocated mid-delete (common when
+        // Capture the remover directly: if the VM is deallocated mid-delete (common when
         // the user pops the view right after tapping delete), [weak self] would abort
         // the DELETE before it ran, leaving the alarm live on the Obaco server.
         // The returned Task is `@discardableResult` for the call site, but tests can
         // await it to assert on remote-side behaviour.
-        let service = application.obacoService
-        let url = alarm.url
-        return Task {
+        let remover = AlarmRemover(application: application)
+        let application = application
+        return Task { [weak self] in
             do {
-                try await service?.deleteAlarm(url: url)
+                try await remover.remove(alarm)
+                self?.loadData()
             } catch {
-                Logger.error("Failed to delete alarm remotely: \(error.localizedDescription)")
+                Logger.error("Failed to delete alarm: \(error.localizedDescription)")
+                await application.displayError(error)
             }
         }
     }

@@ -98,6 +98,8 @@ protocol StopViewModelEnvironment: AnyObject {
     var currentRegion: Region? { get }
     var currentRegionName: String? { get }
     var isCellularDataRestricted: Bool { get }
+    /// Where `AlarmRemover` says an alarm is gone, so the page drops its bell.
+    var notificationCenter: NotificationCenter { get }
 }
 
 // MARK: - Application conformance
@@ -210,5 +212,6 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     var currentRegion: Region? { nil }
     var currentRegionName: String? { nil }
     var isCellularDataRestricted: Bool { false }
+    var notificationCenter: NotificationCenter { .default }
 }
 #endif

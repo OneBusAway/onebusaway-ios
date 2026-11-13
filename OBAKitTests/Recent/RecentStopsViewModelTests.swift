@@ -217,14 +217,16 @@ final class RecentStopsViewModelTests: OBATestCase {
         #expect(didHitRemote.value)
     }
 
+    /// The server copy goes first (`AlarmRemover`), so a failure leaves the alarm
+    /// listed, where the rider can see it and delete it again.
     @Test @MainActor
-    func `Delete alarm remote failure keeps local removal`() async {
+    func `Delete alarm remote failure keeps the alarm`() async {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader)
         let alarm = try! Fixtures.loadAlarm()
 
-        // Stub the obaco DELETE to fail. Local removal should still hold and the Task
-        // should swallow the error via Logger.error (so awaiting it doesn't throw).
+        // Stub the obaco DELETE to fail. The Task reports the error rather than
+        // throwing, so awaiting it doesn't throw.
         let remoteError = NSError(domain: "RecentStopsViewModelTests", code: 503, userInfo: nil)
         dataLoader.mock(response: MockDataResponse(
             data: nil, urlResponse: nil, error: remoteError,
@@ -238,8 +240,8 @@ final class RecentStopsViewModelTests: OBATestCase {
 
         await viewModel.delete(alarm: alarm).value
 
-        // Remote failure does not undo the local removal — that's the contract.
-        #expect(!viewModel.alarms.map(\.url).contains(alarm.url))
+        #expect(viewModel.alarms.map(\.url).contains(alarm.url))
+        #expect(app.userDataStore.alarms.map(\.url).contains(alarm.url))
     }
 
     // MARK: - loadData / nil currentRegion

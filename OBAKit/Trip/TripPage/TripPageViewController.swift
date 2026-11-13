@@ -765,8 +765,8 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         return AlarmVisitIdentity.alarm(for: departure, regionID: regionID, in: store.alarms)
     }
 
-    /// Mirrors `StopViewModel.cancelAlarm(for:)`: the server copy goes first, so
-    /// a failure leaves the rider an alarm they can still see and cancel.
+    /// Goes through `AlarmRemover`, as the stop page does, which also tells the
+    /// stop page underneath to drop its bell.
     private func removeAlarm(_ alarm: Alarm) {
         // A second activation while the delete is in flight would delete and
         // announce twice.
@@ -775,17 +775,11 @@ final class TripPageViewController: UIHostingController<TripPageRootView>,
         Task { @MainActor in
             defer { isRemovingAlarm = false }
             do {
-                guard let obacoService = application.obacoService else {
-                    throw StopViewModel.AlarmCancellationError.serviceUnavailable
-                }
-                try await obacoService.deleteAlarm(url: alarm.url)
-            } catch APIError.requestNotFound {
-                // It already fired, and the server deleted it.
+                try await AlarmRemover(application: application).remove(alarm)
             } catch {
                 await AlertPresenter.show(error: error, presentingController: self)
                 return
             }
-            application.userDataStore.delete(alarm: alarm)
             render()
             AccessibilityNotification.Announcement(AlarmVisitIdentity.removedAnnouncement).post()
         }
