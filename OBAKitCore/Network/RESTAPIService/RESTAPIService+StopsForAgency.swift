@@ -64,13 +64,13 @@ extension RESTAPIService {
         }
 
         guard response.hasJSONContentType else {
-            logger.error("Failed network request for \(url, privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
+            logger.error("Failed network request for \(ErrorReport.stripQuery(url), privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
             throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: response.contentType)
         }
 
         // The Java server answers an unknown agency with a 200 whose body is `null`.
         if data.count < 10 && String(data: data, encoding: .utf8) == "null" {
-            logger.error("Decoder failed for \(url, privacy: .public): endpoint returned the string 'null' instead of a real value.")
+            logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): endpoint returned the string 'null' instead of a real value.")
             throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: "nothing")
         }
 
@@ -78,7 +78,7 @@ extension RESTAPIService {
             let stops = try decoder.decode(RESTAPIResponse<[Stop]>.self, from: data).list
             return .stops(stops, etag: response.value(forHTTPHeaderField: "ETag"))
         } catch let error as DecodingError {
-            logger.error("Decoder failed for \(url, privacy: .public): \(DecodingErrorReporter.message(from: error), privacy: .public)")
+            logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): \(DecodingErrorReporter.message(from: error), privacy: .public)")
             DecodingErrorReporter.report(error: error, url: url, httpMethod: "GET")
             throw error
         }

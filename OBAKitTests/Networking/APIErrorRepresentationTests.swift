@@ -124,6 +124,42 @@ final class APIErrorRepresentationTests {
         #expect(description?.contains(url.absoluteString) == true)
     }
 
+    @Test func `Request not found description strips query params`() {
+        let urlWithQuery = URL(string: "https://api.example.com/api/where/stop/1_1.json?key=TEST&lat=47.6")!
+        let error = APIError.requestNotFound(makeHTTPResponse(statusCode: 404, url: urlWithQuery))
+
+        let description = error.errorDescription
+        #expect(description?.contains("https://api.example.com/api/where/stop/1_1.json") == true)
+        #expect(description?.contains("key=TEST") == false)
+        #expect(description?.contains("lat=47.6") == false)
+    }
+
+    // MARK: - Logged URLs (#1723)
+
+    @Test func `Logged request URL drops the query`() {
+        let request = URLRequest(url: URL(string: "https://api.example.com/api/where/stops-for-location.json?key=TEST&lat=47.6&lon=-122.3")!)
+        #expect(request.loggableURL == "https://api.example.com/api/where/stops-for-location.json")
+    }
+
+    @Test func `Logged request URL without a query is unchanged`() {
+        let request = URLRequest(url: URL(string: "https://api.example.com/api/where/config.json")!)
+        #expect(request.loggableURL == "https://api.example.com/api/where/config.json")
+    }
+
+    @Test func `Logged network error description drops the failing URL's query`() {
+        let failingURL = URL(string: "https://api.example.com/api/where/stops-for-location.json?key=TEST&lat=47.6")!
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [
+            NSURLErrorFailingURLErrorKey: failingURL,
+            NSURLErrorFailingURLStringErrorKey: failingURL.absoluteString
+        ])
+        #expect(error.description.contains("key=TEST"), "Precondition: NSError's description includes the failing URL")
+
+        let logged = (ErrorReport.sanitizedForReporting(error) as NSError).description
+        #expect(logged.contains("stops-for-location.json"))
+        #expect(!logged.contains("key=TEST"))
+        #expect(!logged.contains("lat=47.6"))
+    }
+
     @Test func `Regional errors contain region name`() {
         let region = "Puget Sound"
 

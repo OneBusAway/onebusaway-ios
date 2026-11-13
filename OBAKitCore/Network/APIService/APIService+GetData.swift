@@ -15,11 +15,11 @@ extension APIService {
             // suite alone fires ~1,600 mocked requests), so log it at `.debug` to
             // keep it out of the default os_log / CI capture. Failures below stay
             // at `.error`.
-            logger.debug("Begin network request for \(request.description, privacy: .public)")
+            logger.debug("Begin network request for \(request.loggableURL, privacy: .public)")
             (data, response) = try await dataLoader.data(for: request)
-            logger.debug("Finish network request for \(request.description, privacy: .public)")
+            logger.debug("Finish network request for \(request.loggableURL, privacy: .public)")
         } catch let error as NSError {
-            logger.error("Failed network request for \(request.description, privacy: .public): \(error, privacy: .public)")
+            logger.error("Failed network request for \(request.loggableURL, privacy: .public): \(ErrorReport.sanitizedForReporting(error) as NSError, privacy: .public)")
             if errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal
             } else {
@@ -28,16 +28,16 @@ extension APIService {
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.error("Failed network request for \(request.description, privacy: .public): missing response.")
+            logger.error("Failed network request for \(request.loggableURL, privacy: .public): missing response.")
             throw APIError.networkFailure(nil)
         }
 
         guard 200...299 ~= httpResponse.statusCode else {
             if httpResponse.statusCode == 404 {
-                logger.error("Failed network request for \(request.description, privacy: .public): 404 not found.")
+                logger.error("Failed network request for \(request.loggableURL, privacy: .public): 404 not found.")
                 throw APIError.requestNotFound(httpResponse)
             } else {
-                logger.error("Failed network request for \(request.description, privacy: .public): \(httpResponse).")
+                logger.error("Failed network request for \(request.loggableURL, privacy: .public): \(httpResponse).")
                 throw APIError.requestFailure(httpResponse)
             }
         }
@@ -52,12 +52,12 @@ extension APIService {
         // with a bare 204, and older deployments with a bare 200), so applying the
         // heuristic there reported every successful delete as a missing resource.
         if request.httpMethod == "GET" && httpResponse.expectedContentLength == 0 && httpResponse.statusCode == 200 {
-            logger.error("Failed network request for \(request.description, privacy: .public): 404 not found.")
+            logger.error("Failed network request for \(request.loggableURL, privacy: .public): 404 not found.")
             throw APIError.requestNotFound(httpResponse)
         }
 
         if request.httpMethod == "GET" && data.isEmpty {
-            logger.error("Failed network request for \(request.description, privacy: .public): missing response body.")
+            logger.error("Failed network request for \(request.loggableURL, privacy: .public): missing response body.")
             throw APIError.noResponseBody
         }
 
@@ -79,14 +79,14 @@ extension APIService {
         let (data, response) = try await self.getData(for: url)
 
         guard response.hasJSONContentType else {
-            logger.error("Failed network request for \(url, privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
+            logger.error("Failed network request for \(ErrorReport.stripQuery(url), privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
             throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: response.contentType)
         }
 
         if data.count < 10 && String(data: data, encoding: .utf8) == "null" {
             // 10 ^^^ is arbitrary. This could really be 8 or maybe even 4, but this is a
             // belt and suspenders check.
-            logger.error("Decoder failed for \(url, privacy: .public): endpoint returned the string 'null' instead of a real value.")
+            logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): endpoint returned the string 'null' instead of a real value.")
             throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: "nothing")
         }
 
@@ -94,11 +94,11 @@ extension APIService {
             return try decoder.decode(T.self, from: data)
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
-            logger.error("Decoder failed for \(url, privacy: .public): \(message, privacy: .public)")
+            logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): \(message, privacy: .public)")
             DecodingErrorReporter.report(error: error, url: url, httpMethod: "GET")
             throw error.withRequestURL(url)
         } catch {
-            logger.error("Decoder failed for \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): \(error.localizedDescription, privacy: .public)")
             throw error
         }
     }
@@ -121,5 +121,14 @@ extension APIService {
         }
 
         return false
+    }
+}
+
+extension URLRequest {
+    /// The request URL without its query, for log lines marked `.public` (#1723).
+    /// The query holds the region's API key and, for calls like
+    /// stops-for-location, the rider's coordinates.
+    var loggableURL: String {
+        url.map { ErrorReport.stripQuery($0).absoluteString } ?? "(nil)"
     }
 }
