@@ -162,6 +162,23 @@ nonisolated protocol SheetRouteable: Identifiable, Hashable {
     /// When `true`, `SheetCoordinator.push(_:)` routes this case to the stacked
     /// layer (a second sheet over the base sheet); otherwise content-swap.
     var prefersStacking: Bool { get }
+    /// What the sheet shows behind its content where its glass doesn't; see
+    /// `SheetBackground`. `FloatingSheetContainer` applies it to every sheet.
+    var sheetBackground: SheetBackground { get }
+}
+
+/// A panel sheet's background where its Liquid Glass doesn't show (dark mode, and
+/// before iOS 26; see `ColorScheme.showsSheetGlass`). Over the dark map a sheet's
+/// glass washes out, so every sheet gets one of these unless it draws its own.
+nonisolated enum SheetBackground: Hashable {
+    /// `systemGroupedBackground`, for the list and index sheets; see
+    /// `searchSheetBackground()`.
+    case grouped
+    /// `systemBackground`: a sheet's own default before iOS 26, for the stop
+    /// sheet and the detail pages that don't sit on a grouped list.
+    case plain
+    /// The sheet's view sets its own background.
+    case custom
 }
 
 // MARK: - OnDemandPickerPayload
@@ -311,6 +328,25 @@ nonisolated extension AppSheetRoute {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+    }
+}
+
+nonisolated extension AppSheetRoute {
+    /// Grouped for the sheets built on grouped lists; plain for the stop sheet and
+    /// the detail pages, whose look before iOS 26 is a sheet's default; the map
+    /// settings sheet draws its own. A new route has to pick one here.
+    var sheetBackground: SheetBackground {
+        switch self {
+        case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll, .tripPlanner,
+             .searchResults, .routeStops, .nearbyStops, .more:
+            .grouped
+        case .stopDetails, .tripDetails, .routePicker, .currentTrip, .transitAlert, .rentalDetail,
+             .rentalCluster, .onDemandService, .onDemandPicker, .mapItem, .settings:
+            .plain
+        // `MapSheetView.mapSheetBackground()`.
+        case .mapSettings:
+            .custom
+        }
     }
 }
 

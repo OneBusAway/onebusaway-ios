@@ -228,6 +228,41 @@ final class AppSheetRouteTests {
         }
     }
 
+    // MARK: - Sheet background
+
+    /// Detail pages get a sheet's default background before iOS 26, `systemBackground`,
+    /// so nothing changes there or in light mode; in dark mode on iOS 26 it is what
+    /// keeps the map's glass from washing them out.
+    @Test func `Detail pages get the plain background`() throws {
+        let routes: [AppSheetRoute] = [
+            .stopDetails(stopID: "1"), try tripRoute(), .routePicker, .currentTrip(route: try Fixtures.createRoute(id: "r")),
+            .transitAlert(alertID: "a"), .rentalDetail(rentalID: "bike_7"), .rentalCluster(memberIDs: ["bike_7", "bike_8"]),
+            .mapItem(MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))),
+            .settings
+        ]
+        for route in routes {
+            #expect(route.sheetBackground == .plain, "\(route.id)")
+        }
+    }
+
+    /// The sheets built on grouped lists.
+    @Test func `List and index sheets get the grouped background`() {
+        for route: AppSheetRoute in [.home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll, .tripPlanner(TripPlannerRequest()), .more] {
+            #expect(route.sheetBackground == .grouped, "\(route.id)")
+        }
+    }
+
+    /// `MapSheetView.mapSheetBackground()` draws its own.
+    @Test func `Map settings draws its own background`() {
+        #expect(AppSheetRoute.mapSettings.sheetBackground == .custom)
+    }
+
+    @Test func `Each background has its colour`() {
+        #expect(SheetBackground.grouped.opaqueColor == .searchSheetBackground)
+        #expect(SheetBackground.plain.opaqueColor == Color(uiColor: .systemBackground))
+        #expect(SheetBackground.custom.opaqueColor == nil)
+    }
+
     @Test func `All routes show drag indicator`() throws {
         // No route currently opts out of the drag indicator; this guards against
         // an accidental flip when adding a new case.

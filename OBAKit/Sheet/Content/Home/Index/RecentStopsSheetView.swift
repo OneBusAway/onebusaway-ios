@@ -114,7 +114,6 @@ struct RecentStopsSheetView: View {
                 }
                 .recentStopBookmarkPrompts(viewModel: viewModel)
         }
-        .searchSheetBackground()
         .task { viewModel.loadData() }
         .onChange(of: coordinator.stackedRoutes.count) { previousCount, count in
             // Reload when a sheet stacked *above* this one goes away. Tapping a row

@@ -158,7 +158,6 @@ struct BookmarksSheetView: View {
                     }
                 }
         }
-        .searchSheetBackground()
         .onAppear {
             isOnScreen = true
             viewModel.start()

@@ -25,6 +25,7 @@ struct FloatingSheetContainer<Route: SheetRouteable, SheetContent: View>: ViewMo
         content
             .sheet(isPresented: .constant(true)) {
                 sheetContent(coordinator.currentRoute)
+                    .sheetBackground(coordinator.currentRoute.sheetBackground)
                     .applyDetentConfig(
                         coordinator.currentRoute.detentConfiguration,
                         selection: $coordinator.currentDetent,
@@ -88,6 +89,7 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
     func body(content: Content) -> some View {
         content.sheet(item: routeBinding, onDismiss: moveFocusAfterUnwind) { route in
             sheetContent(route)
+                .sheetBackground(route.sheetBackground)
                 .applyDetentConfig(
                     route.detentConfiguration,
                     selection: detentBinding(for: route),
@@ -102,6 +104,43 @@ private struct StackedSheetLayer<Route: SheetRouteable, SheetContent: View>: Vie
                     depth: depth + 1,
                     sheetContent: sheetContent
                 ))
+        }
+    }
+}
+
+// MARK: - Sheet background
+
+extension SheetBackground {
+    /// The colour behind the sheet where its glass doesn't show, or `nil` for a
+    /// sheet that sets its own.
+    var opaqueColor: Color? {
+        switch self {
+        case .grouped: .searchSheetBackground
+        case .plain: Color(uiColor: .systemBackground)
+        case .custom: nil
+        }
+    }
+}
+
+extension View {
+    /// Every sheet in the pile gets its route's background here, so a route can't
+    /// miss it; see `SheetBackground`.
+    func sheetBackground(_ background: SheetBackground) -> some View {
+        modifier(SheetBackgroundModifier(background: background))
+    }
+}
+
+private struct SheetBackgroundModifier: ViewModifier {
+    let background: SheetBackground
+
+    /// A route's background never changes while its sheet is up, so branching
+    /// here doesn't reset the sheet's state.
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let opaque = background.opaqueColor {
+            content.sheetGlassBackground(opaque: opaque)
+        } else {
+            content
         }
     }
 }

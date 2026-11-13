@@ -44,7 +44,6 @@ struct SearchResultsSheetView: View {
                     }
                 }
         }
-        .searchSheetBackground()
         .onChange(of: viewModel.vehicleSearchResponse) { _, response in
             guard let result = response?.results.first else { return }
             Task { await select(result) }
