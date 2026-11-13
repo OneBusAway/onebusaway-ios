@@ -67,6 +67,7 @@ private final class AgencyAlertsDataLoader: NSObject, URLDataLoader, @unchecked 
     let agenciesData: Data
     let alertsData: Data
     let gate: ReleaseGate?
+    let expectedRequestCount: Int
     private let requestCountLock = NSLock()
     private var _requestCount = 0
 
@@ -74,10 +75,15 @@ private final class AgencyAlertsDataLoader: NSObject, URLDataLoader, @unchecked 
         requestCountLock.withLock { _requestCount }
     }
 
-    init(agenciesData: Data, alertsData: Data, gate: ReleaseGate? = nil) {
+    init(agenciesData: Data, alertsData: Data, expectedRequestCount: Int, gate: ReleaseGate? = nil) {
         self.agenciesData = agenciesData
         self.alertsData = alertsData
+        self.expectedRequestCount = expectedRequestCount
         self.gate = gate
+    }
+
+    var completedExpectedRequests: Bool {
+        requestCount >= expectedRequestCount
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
@@ -161,9 +167,14 @@ final class AgencyAlertsStoreTests: OBATestCase {
     }
 
     private func makeAgencyAlertsDataLoader(alertID: String, gate: ReleaseGate? = nil) throws -> AgencyAlertsDataLoader {
+        let agenciesData = Fixtures.loadData(file: "agencies_with_coverage.json")
+        let object = try JSONSerialization.jsonObject(with: agenciesData) as? [String: Any]
+        let data = object?["data"] as? [String: Any]
+        let agencyCount = (data?["list"] as? [[String: Any]])?.count ?? 0
         AgencyAlertsDataLoader(
-            agenciesData: Fixtures.loadData(file: "agencies_with_coverage.json"),
+            agenciesData: agenciesData,
             alertsData: try feed(alertIDs: [alertID]),
+            expectedRequestCount: agencyCount + 1,
             gate: gate
         )
     }
@@ -267,7 +278,7 @@ final class AgencyAlertsStoreTests: OBATestCase {
         }
 
         await firstGate.release()
-        await poll(until: { firstLoader.requestCount == 6 }, "the cancelled refresh never finished")
+        await poll(until: { firstLoader.completedExpectedRequests }, "the cancelled refresh never finished")
 
         #expect(store.agencyAlerts.map(\.id) == ["new-alert"])
     }
