@@ -17,7 +17,9 @@ import OBAKitCore
 /// carries over unchanged.
 struct BookmarkListSection: Identifiable, Equatable {
     let id: String
-    let title: String
+    /// The header text, or `nil` for no header: the ungrouped bucket when it is
+    /// the only section, where "Bookmarks" would repeat the sheet's title.
+    let title: String?
     let rows: [BookmarkRowViewModel]
 }
 

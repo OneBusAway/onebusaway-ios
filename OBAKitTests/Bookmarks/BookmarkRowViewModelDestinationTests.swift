@@ -139,23 +139,25 @@ final class BookmarkRowViewModelDestinationTests: OBATestCase {
         let name = try #require(bookmark.destinationStopName)
         let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar.current, themeColors: ThemeColors.shared)
 
-        func text(_ lookup: DestinationArrivalLookup) throws -> String? {
+        func text(_ lookup: DestinationArrivalLookup, spoken: Bool = false) throws -> String? {
             let row = BookmarkRowViewModel(
                 bookmark: bookmark,
                 arrivalDepartures: [try departure("a")],
                 highlightedTripIDs: [],
                 destinationLookup: { _ in lookup }
             )
-            return formatters.destinationText(for: row)
+            return formatters.destinationText(for: row, spoken: spoken)
         }
 
         let time = formatters.timeFormatter.string(from: arrival.arrivalDate)
-        #expect(try text(.arrives(arrival)) == "Arrives \(name) at \(time)")
+        #expect(try text(.arrives(arrival)) == "Arrives \(time) · \(name)")
+        // VoiceOver gets a sentence; the "·" layout only helps on-screen truncation.
+        #expect(try text(.arrives(arrival), spoken: true) == "Arrives \(name) at \(time)")
         #expect(try text(.pending) == "Loading arrival at \(name)…")
         #expect(try text(.notServed) == "Upcoming trips don't stop at \(name)")
 
         let scheduled = DestinationArrival(arrivalDate: arrival.scheduledArrivalDate, scheduledArrivalDate: arrival.scheduledArrivalDate, isRealTime: false)
         let scheduledTime = formatters.timeFormatter.string(from: scheduled.arrivalDate)
-        #expect(try text(.arrives(scheduled)) == "Arrives \(name) at \(scheduledTime) (scheduled)")
+        #expect(try text(.arrives(scheduled)) == "Arrives \(scheduledTime) (scheduled) · \(name)")
     }
 }
