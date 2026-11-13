@@ -84,12 +84,13 @@ private final class AgencyAlertsDataLoader: NSObject, URLDataLoader, @unchecked 
         await gate?.wait()
         requestCountLock.withLock { _requestCount += 1 }
 
-        let data = request.url?.path.contains("agencies-with-coverage") == true ? agenciesData : alertsData
+        let isAgencyList = request.url?.path.contains("agencies-with-coverage") == true
+        let data = isAgencyList ? agenciesData : alertsData
         let response = HTTPURLResponse(
             url: request.url!,
             statusCode: 200,
             httpVersion: "2",
-            headerFields: ["Content-Type": "application/x-protobuf"]
+            headerFields: ["Content-Type": isAgencyList ? "application/json" : "application/x-protobuf"]
         )!
         return (data, response)
     }
