@@ -64,14 +64,14 @@ final class OnDemandDomainModelTests {
     }
 
     // MARK: - ServiceKind Enum Decoding
-    // Note: Unknown fallback is tested in OnDemandModelTests.swift
 
     @Test func `ServiceKind enum decoding known cases`() throws {
         let kinds: [String: ServiceKind] = [
             "zone": .zone,
             "zoneToZone": .zoneToZone,
             "stopGroup": .stopGroup,
-            "deviatedRoute": .deviatedRoute
+            "deviatedRoute": .deviatedRoute,
+            "unknown": .unknown
         ]
 
         for (raw, expected) in kinds {
@@ -81,8 +81,22 @@ final class OnDemandDomainModelTests {
         }
     }
 
+    @Test func `ServiceKind falls back to unknown for unrecognized server strings`() throws {
+        let forwardCompatibleStrings = [
+            "\"pointToPoint\"",
+            "\"autonomousShuttle\"",
+            "\"futureMode\"",
+            "\"\""
+        ]
+
+        for jsonString in forwardCompatibleStrings {
+            let data = Data(jsonString.utf8)
+            let decoded = try JSONDecoder().decode(ServiceKind.self, from: data)
+            #expect(decoded == .unknown)
+        }
+    }
+
     // MARK: - MatchReason Enum Decoding
-    // Note: Unknown fallback is tested in OnDemandModelTests.swift
 
     @Test func `MatchReason enum decoding known cases`() throws {
         let reasons: [String: MatchReason] = [
@@ -90,7 +104,8 @@ final class OnDemandDomainModelTests {
             "stopWithinRadius": .stopWithinRadius,
             "areaNearby": .areaNearby,
             "areaIntersectsViewport": .areaIntersectsViewport,
-            "stopWithinViewport": .stopWithinViewport
+            "stopWithinViewport": .stopWithinViewport,
+            "unknown": .unknown
         ]
 
         for (raw, expected) in reasons {
@@ -100,11 +115,31 @@ final class OnDemandDomainModelTests {
         }
     }
 
+    @Test func `MatchReason falls back to unknown for unexpected reasons`() throws {
+        let unexpected = [
+            "\"corridorBuffer\"",
+            "\"routeProjection\"",
+            "\"randomNewReason\""
+        ]
+
+        for jsonString in unexpected {
+            let data = Data(jsonString.utf8)
+            let decoded = try JSONDecoder().decode(MatchReason.self, from: data)
+            #expect(decoded == .unknown)
+        }
+    }
+
     // MARK: - OnDemandGeometryDetail
 
-    @Test func `OnDemandGeometryDetail string raw values`() {
+    @Test func `OnDemandGeometryDetail string raw values and initialization`() {
         #expect(OnDemandGeometryDetail.none.rawValue == "none")
         #expect(OnDemandGeometryDetail.simplified.rawValue == "simplified")
         #expect(OnDemandGeometryDetail.full.rawValue == "full")
+
+        #expect(OnDemandGeometryDetail(rawValue: "none") == OnDemandGeometryDetail.none)
+        #expect(OnDemandGeometryDetail(rawValue: "simplified") == .simplified)
+        #expect(OnDemandGeometryDetail(rawValue: "full") == .full)
+        #expect(OnDemandGeometryDetail(rawValue: "unknown") == nil)
+        #expect(OnDemandGeometryDetail(rawValue: "") == nil)
     }
 }

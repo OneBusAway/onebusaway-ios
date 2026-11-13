@@ -1,0 +1,78 @@
+//
+//  StopDirectionsPillExtendedTests.swift
+//  OBAKitTests
+//
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
+//
+
+import Testing
+import OTPKit
+@testable import OBAKit
+@testable import OBAKitCore
+
+/// Extended tests for `StopDirectionsPill` icon representations,
+/// transportation mode mapping, formatting edge cases, and behavior equality.
+@Suite(.serialized)
+struct StopDirectionsPillExtendedTests {
+
+    // MARK: - Transportation Mode Mapping
+
+    @Test func `Pill maps to corresponding transport mode`() {
+        #expect(StopDirectionsPill.walk.mode == .walk)
+        #expect(StopDirectionsPill.bike.mode == .bike)
+    }
+
+    // MARK: - System Icons
+
+    @Test func `Pill system images match platform convention`() {
+        #expect(StopDirectionsPill.walk.systemImage == "figure.walk")
+        #expect(StopDirectionsPill.bike.systemImage == "bicycle")
+    }
+
+    // MARK: - Text Formatting
+
+    @Test func `Walk pill text formats duration accurately`() {
+        let infoZero = WalkTimeInfo(walkMinutes: 0, distance: 0)
+        let infoOne = WalkTimeInfo(walkMinutes: 1, distance: 80)
+        let infoTen = WalkTimeInfo(walkMinutes: 10, distance: 800)
+
+        #expect(StopDirectionsPill.walk.text(for: infoZero) == "0 min walk")
+        #expect(StopDirectionsPill.walk.text(for: infoOne) == "1 min walk")
+        #expect(StopDirectionsPill.walk.text(for: infoTen) == "10 min walk")
+    }
+
+    @Test func `Bike pill text formats duration accurately`() {
+        let infoZero = WalkTimeInfo(walkMinutes: 0, distance: 0)
+        let infoFive = WalkTimeInfo(walkMinutes: 5, distance: 1500)
+        let infoThirty = WalkTimeInfo(walkMinutes: 30, distance: 9000)
+
+        #expect(StopDirectionsPill.bike.text(for: infoZero) == "0 min bike")
+        #expect(StopDirectionsPill.bike.text(for: infoFive) == "5 min bike")
+        #expect(StopDirectionsPill.bike.text(for: infoThirty) == "30 min bike")
+    }
+
+    // MARK: - Behavior and Accessibility Hint Equality
+
+    @Test func `Behavior equality matches on underlying variant`() {
+        let walkBehavior1 = StopDirectionsPill.Behavior.askThenPlanTrip(.walk)
+        let walkBehavior2 = StopDirectionsPill.Behavior.askThenPlanTrip(.walk)
+        let bikeBehavior = StopDirectionsPill.Behavior.askThenPlanTrip(.bike)
+        let mapsBehavior = StopDirectionsPill.Behavior.openMapsWalkingDirections
+
+        #expect(walkBehavior1 == walkBehavior2)
+        #expect(walkBehavior1 != bikeBehavior)
+        #expect(walkBehavior1 != mapsBehavior)
+        #expect(bikeBehavior != mapsBehavior)
+    }
+
+    @Test func `StopDirectionsPill promptTitle matches expected English text`() {
+        #expect(StopDirectionsPill.promptTitle == "Get directions to this stop in the app?")
+    }
+
+    @Test func `StopPillDirections none placeholder sets tripPlannerAvailable false`() {
+        let none = StopPillDirections.none
+        #expect(!none.tripPlannerAvailable)
+    }
+}
