@@ -28,6 +28,15 @@ extension OnDemandProbeController {
         application.regionsService.addDelegate(controller)
         return controller
     }
+
+    /// Undoes `make(application:)`: no more probes from location, region or foreground
+    /// changes. The map panel calls it as it goes away, since UIKit can keep the panel's
+    /// SwiftUI graph, and this controller with it, alive after the map experience switches.
+    func detach(from application: Application) {
+        application.locationService.removeDelegate(self)
+        application.regionsService.removeDelegate(self)
+        stopObserving()
+    }
 }
 
 // MARK: - RegionsServiceDelegate

@@ -55,6 +55,14 @@ import OTPKit
 
     private var mapRegionManager: MapRegionManager { application.mapRegionManager }
 
+    /// Stops rebuilding the shared layers on region changes, for a host that
+    /// outlives its map; see `MapPanelRootController`'s `deinit`. A leftover
+    /// registrar would otherwise re-register the rental and on-demand layers in
+    /// `MapRegionManager` after the live map's registrar did.
+    func stopObserving() {
+        application.regionsService.removeDelegate(self)
+    }
+
     /// Registers the stops layer once, then tears down and rebuilds the
     /// region-scoped rental layers. Safe to call repeatedly.
     func configure() {

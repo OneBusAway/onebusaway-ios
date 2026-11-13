@@ -123,6 +123,9 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     private var isMapMostlyCovered = false
     /// Shown until `clearPlanner()`; routine reprobes never replace it.
     private var activePlannerResult: OnDemandPlannerResult?
+    private let notificationCenter: NotificationCenter
+    /// Set by `stopObserving()`: no probe starts after it, whatever still calls in.
+    private var isStopped = false
 
     private enum RefreshReason {
         case mapSettled, locationUpdate, authorization, foreground, boundary
@@ -152,6 +155,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         configuration: Configuration = Configuration(),
         isLocationAuthorized: @escaping () -> Bool = { false },
         currentLocation: @escaping () -> CLLocation? = { nil },
+        notificationCenter: NotificationCenter = .default,
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
     ) {
         self.apiService = apiService
@@ -161,13 +165,25 @@ final class OnDemandProbeController: NSObject, ObservableObject {
         self.isLocationAuthorized = isLocationAuthorized
         self.currentLocation = currentLocation
         self.sleep = sleep
+        self.notificationCenter = notificationCenter
         super.init()
         currentDeployment = deployment
         isUnsupported = Self.isKnownUnsupported(apiService())
-        NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+        notificationCenter.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
     isolated deinit {
+        refreshTask?.cancel()
+        geometryTask?.cancel()
+        boundaryTask?.cancel()
+    }
+
+    /// Stops probing for good: no probe starts after this, from the app coming to the
+    /// foreground or anything else, and none of the work in flight finishes. For a controller that outlives its surface; see
+    /// `detach(from:)`.
+    func stopObserving() {
+        isStopped = true
+        notificationCenter.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
         refreshTask?.cancel()
         geometryTask?.cancel()
         boundaryTask?.cancel()
@@ -301,6 +317,7 @@ final class OnDemandProbeController: NSObject, ObservableObject {
     }
 
     private func refresh(reason: RefreshReason) {
+        guard !isStopped else { return }
         guard !isUnsupported, let point = resolvedProbePoint() else {
             deriveDockState()
             return
