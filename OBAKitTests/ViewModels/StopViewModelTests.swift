@@ -1076,6 +1076,10 @@ final class StopViewModelTests: OBATestCase {
     }
 
     /// The stop page deletes through `AlarmRemover`, which tells the other screens.
+    ///
+    /// `app.notificationCenter` is `NotificationCenter.default`, shared with suites
+    /// running at the same time, some posting the fixture alarm's removal. So this
+    /// alarm has an id of its own, and only its posts count.
     @Test @MainActor
     func `Cancelling an alarm on the stop page tells the other screens`() async throws {
         let dataLoader = MockDataLoader(testName: name)
@@ -1090,18 +1094,22 @@ final class StopViewModelTests: OBATestCase {
         await viewModel.refresh()
         let departure = try #require(viewModel.stopArrivals?.arrivalsAndDepartures.first)
         let region = try #require(app.currentRegion)
-        let alarm = try Fixtures.loadAlarm()
+        let alarm = try Fixtures.loadAlarm(id: "stop-page-cancel-\(UUID().uuidString)")
         alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: departure, regionID: region.regionIdentifier)
         alarm.set(tripDate: Date(timeIntervalSinceNow: 900), alarmOffset: 5)
         app.userDataStore.add(alarm: alarm)
         await viewModel.refresh()
 
         let posted = SendableBox<[URL]>([])
+        let alarmURL = alarm.url
         let observer = app.notificationCenter.addObserver(forName: .alarmRemoved, object: nil, queue: nil) { note in
-            if let url = note.userInfo?[AlarmRemover.alarmURLKey] as? URL { posted.value.append(url) }
+            if let url = note.userInfo?[AlarmRemover.alarmURLKey] as? URL, url == alarmURL { posted.value.append(url) }
         }
         defer { app.notificationCenter.removeObserver(observer) }
 
+        // Another suite's removal, on the same shared center, while this test listens.
+        let otherSuitesAlarmURL = try Fixtures.loadAlarm().url
+        app.notificationCenter.post(name: .alarmRemoved, object: nil, userInfo: [AlarmRemover.alarmURLKey: otherSuitesAlarmURL])
         #expect(await viewModel.cancelAlarm(for: departure))
 
         #expect(posted.value == [alarm.url])

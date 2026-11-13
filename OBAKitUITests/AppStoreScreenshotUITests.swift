@@ -59,6 +59,8 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
             "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>",
+            // The slides show the map panel, even on a simulator switched to the classic UI.
+            "-OBAUseMapPanelExperience", "YES",
             // A popover tip would sit over the screen and swallow the first tap.
             "-com.apple.TipKit.HideAllTips", "1",
             // The inline "needs your help" donation card would cover arrivals.
