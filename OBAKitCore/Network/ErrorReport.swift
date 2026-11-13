@@ -550,10 +550,46 @@ public struct ErrorReport: Sendable {
         return nil
     }
 
-    private static func stripQuery(_ url: URL) -> URL {
+    static func stripQuery(_ url: URL) -> URL {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
         components.query = nil
         components.fragment = nil
         return components.url ?? url
+    }
+
+    // MARK: - Crash Reporting
+
+    /// `error` with the query stripped from every failing request URL in its
+    /// userInfo, its underlying error's, and so on down (#1710).
+    ///
+    /// Crashlytics writes each userInfo value's `description`, and a nested
+    /// error's description includes its own userInfo. The query holds the
+    /// region's API key and, for calls like stops-for-location, the rider's
+    /// coordinates. Same domain and code, so reports still group together.
+    /// Returned as is when there is nothing to strip.
+    public static func sanitizedForReporting(_ error: Error) -> Error {
+        sanitized(error as NSError) ?? error
+    }
+
+    /// Nil when `error` has no URL with a query to strip.
+    private static func sanitized(_ error: NSError) -> NSError? {
+        var userInfo = error.userInfo
+        var changed = false
+
+        if let url = userInfo[NSURLErrorFailingURLErrorKey] as? URL, stripQuery(url) != url {
+            userInfo[NSURLErrorFailingURLErrorKey] = stripQuery(url)
+            changed = true
+        }
+        if let string = userInfo[NSURLErrorFailingURLStringErrorKey] as? String,
+           let url = URL(string: string), stripQuery(url) != url {
+            userInfo[NSURLErrorFailingURLStringErrorKey] = stripQuery(url).absoluteString
+            changed = true
+        }
+        if let underlying = userInfo[NSUnderlyingErrorKey] as? NSError, let clean = sanitized(underlying) {
+            userInfo[NSUnderlyingErrorKey] = clean
+            changed = true
+        }
+
+        return changed ? NSError(domain: error.domain, code: error.code, userInfo: userInfo) : nil
     }
 }

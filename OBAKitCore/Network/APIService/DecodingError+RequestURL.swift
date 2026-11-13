@@ -21,7 +21,11 @@ extension DecodingError {
     ///
     /// Done where the response is decoded rather than in `APIService.data(for:)`:
     /// that returns before decoding, so it never sees a `DecodingError`.
+    ///
+    /// The URL is attached without its query, which holds the API key and
+    /// sometimes the rider's coordinates (#1710).
     func withRequestURL(_ url: URL) -> DecodingError {
+        let url = ErrorReport.stripQuery(url)
         func tagged(_ context: Context) -> Context {
             let tag: NSError
             if let underlying = context.underlyingError as NSError? {

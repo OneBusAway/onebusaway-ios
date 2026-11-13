@@ -351,7 +351,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         },
         currentRegionIdentifierProvider: { [weak self] in self?.currentRegionIdentifier },
         errorReporter: { [weak self] error in
-            self?.analytics?.reportError?(error)
+            self?.reportError(error)
         }
     )
 
@@ -951,7 +951,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         // description carries the full request URL, API key included.
         Logger.error("Error [\(report.reference)]: \(report.errorCode) \(report.requestURL?.absoluteString ?? "") \(report.summary)")
 
-        analytics?.reportError?(error)
+        reportError(error)
 
         guard let scene = delegate?.uiApplication?.errorToastTargetScene else {
             Logger.error("Error [\(report.reference)] not shown: no foreground window scene.")
@@ -971,6 +971,15 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private let errorPresenter = ErrorPresenter()
+
+    /// Sends `error` to analytics (Crashlytics), unless the rider turned error
+    /// reporting off: the same preference `DecodingErrorReporter`'s handler
+    /// checks. Failing request URLs go without their query, which holds the API
+    /// key and sometimes the rider's coordinates (#1710).
+    func reportError(_ error: Error) {
+        guard let analytics, analytics.reportingEnabled() else { return }
+        analytics.reportError?(ErrorReport.sanitizedForReporting(error))
+    }
 
     // Fixed for the life of the process; `modelName` reflects over `uname`.
     private static let systemVersion = UIDevice.current.systemVersion

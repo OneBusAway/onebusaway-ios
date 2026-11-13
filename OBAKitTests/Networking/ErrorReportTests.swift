@@ -262,6 +262,77 @@ final class ErrorReportTests {
     @Test func `Stop prefix doesn't swallow other stop endpoints`() {
         #expect(ErrorReport.Subject(url: URL(string: "\(base)/stops-for-agency/1.json")) == .unknown)
     }
+
+    // MARK: - Crash Reporting
+
+    private var failingURL: URL { URL(string: "\(base)/stops-for-location.json?key=SECRET&lat=47.6&lon=-122.3")! }
+    private var strippedURL: String { "\(base)/stops-for-location.json" }
+
+    @Test func `Crash reports lose the query from a failing URL`() {
+        let error = URLError(.notConnectedToInternet, userInfo: [
+            NSURLErrorFailingURLErrorKey: failingURL,
+            NSURLErrorFailingURLStringErrorKey: failingURL.absoluteString,
+            NSLocalizedDescriptionKey: "The Internet connection appears to be offline."
+        ])
+
+        let sanitized = ErrorReport.sanitizedForReporting(error) as NSError
+
+        #expect(sanitized.domain == NSURLErrorDomain)
+        #expect(sanitized.code == NSURLErrorNotConnectedToInternet)
+        #expect((sanitized.userInfo[NSURLErrorFailingURLErrorKey] as? URL)?.absoluteString == strippedURL)
+        #expect(sanitized.userInfo[NSURLErrorFailingURLStringErrorKey] as? String == strippedURL)
+        #expect(sanitized.localizedDescription == "The Internet connection appears to be offline.")
+        #expect(!String(describing: sanitized.userInfo).contains("SECRET"))
+    }
+
+    @Test func `Crash reports lose the query from nested underlying errors`() {
+        let inner = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSURLErrorFailingURLErrorKey: failingURL])
+        let middle = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: [NSUnderlyingErrorKey: inner])
+        let outer = NSError(domain: "org.onebusaway.test", code: 7, userInfo: [NSUnderlyingErrorKey: middle])
+
+        let sanitized = ErrorReport.sanitizedForReporting(outer) as NSError
+
+        #expect(sanitized.domain == "org.onebusaway.test")
+        #expect(sanitized.code == 7)
+        let sanitizedMiddle = sanitized.userInfo[NSUnderlyingErrorKey] as? NSError
+        #expect(sanitizedMiddle?.code == 3840)
+        let sanitizedInner = sanitizedMiddle?.userInfo[NSUnderlyingErrorKey] as? NSError
+        #expect(sanitizedInner?.code == NSURLErrorTimedOut)
+        #expect((sanitizedInner?.userInfo[NSURLErrorFailingURLErrorKey] as? URL)?.absoluteString == strippedURL)
+        #expect(!sanitized.description.contains("SECRET"))
+    }
+
+    @Test func `A decoding error keeps its domain and code for grouping`() {
+        let raw = DecodingError.dataCorrupted(DecodingError.Context(
+            codingPath: [],
+            debugDescription: "not JSON",
+            underlyingError: NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: [NSURLErrorFailingURLErrorKey: failingURL])
+        ))
+        let bridged = raw as NSError
+
+        let sanitized = ErrorReport.sanitizedForReporting(raw) as NSError
+
+        #expect(sanitized.domain == bridged.domain)
+        #expect(sanitized.code == bridged.code)
+        #expect(sanitized.userInfo[NSDebugDescriptionErrorKey] as? String == "not JSON")
+        #expect(!sanitized.description.contains("SECRET"))
+    }
+
+    @Test func `An error with nothing to strip is passed through`() {
+        let error = APIError.rateLimited
+        #expect(ErrorReport.sanitizedForReporting(error) is APIError)
+
+        let noQuery = URLError(.timedOut, userInfo: [NSURLErrorFailingURLErrorKey: URL(string: strippedURL)!])
+        #expect(ErrorReport.sanitizedForReporting(noQuery) is URLError)
+    }
+
+    @Test func `A decoding error carries its request URL without the query`() {
+        let tagged = DecodingError.keyNotFound(AnyKey("tripId"), DecodingError.Context(codingPath: [], debugDescription: "missing"))
+            .withRequestURL(failingURL)
+
+        #expect(tagged.requestURL?.absoluteString == strippedURL)
+        #expect(!(tagged as NSError).description.contains("SECRET"))
+    }
 }
 
 private struct AnyKey: CodingKey {
