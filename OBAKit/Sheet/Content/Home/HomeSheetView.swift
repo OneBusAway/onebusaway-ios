@@ -59,13 +59,15 @@ struct HomeSheetView: View {
         showsTabs ? selectedTab : .home
     }
 
-    /// Home's poll runs while its list can be seen: Home picked, nothing stacked
-    /// over it, and the sheet not collapsed down to the search field.
+    /// Home's poll runs while Home is picked and nothing is stacked over it, even
+    /// collapsed, where its list is hidden: the poll is what refreshes the
+    /// bookmark widget and running Live Activities (`HomeBookmarksSectionModel`),
+    /// and collapsed is the home sheet's resting state.
     private var isPollingHome: Bool {
         HomeTabs.shouldPoll(
             isOnScreen: visibleTab == .home,
             isCovered: !coordinator.stackedRoutes.isEmpty,
-            isCollapsed: !showsPages
+            isCollapsed: false
         )
     }
 
@@ -101,12 +103,11 @@ struct HomeSheetView: View {
             // sheet's Liquid Glass is the background (iOS 26, light mode).
             .searchSheetBackground()
             .task(id: isPollingHome) {
-                // Polls while Home's list is on screen, so bookmark countdowns
+                // Polls while Home is the tab on screen, so bookmark countdowns
                 // don't freeze, and refreshes the moment it comes back: from a
-                // stacked sheet, when a recent stop may have been added, from
-                // another tab, or from the collapsed sheet. `loadIfNeeded`'s
-                // staleness gate keeps it to one fetch per window however often
-                // this fires.
+                // stacked sheet, when a recent stop may have been added, or from
+                // another tab. `loadIfNeeded`'s staleness gate keeps it to one
+                // fetch per window however often this fires.
                 guard isPollingHome else { return }
                 while !Task.isCancelled {
                     viewModel.activate()
