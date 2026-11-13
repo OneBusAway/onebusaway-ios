@@ -53,6 +53,20 @@ struct RegionStopSyncState: Codable, Equatable, Sendable, FetchableRecord, Persi
     /// recorded as unsupported.
     let appVersion: String
 
+    /// Identifier of the staged stop snapshot readers should use. Staged rows
+    /// become visible when this marker is published, not while they are written.
+    let publishedSyncID: String?
+
+    init(regionId: Int, outcome: Outcome, lastAttemptAt: Date, lastSuccessAt: Date?, etag: String?, appVersion: String, publishedSyncID: String? = nil) {
+        self.regionId = regionId
+        self.outcome = outcome
+        self.lastAttemptAt = lastAttemptAt
+        self.lastSuccessAt = lastSuccessAt
+        self.etag = etag
+        self.appVersion = appVersion
+        self.publishedSyncID = publishedSyncID
+    }
+
     // Seconds since 1970, like `cachedStop.lastUpdated`, rather than GRDB's
     // millisecond date strings.
     static func databaseDateEncodingStrategy(for column: String) -> DatabaseDateEncodingStrategy {

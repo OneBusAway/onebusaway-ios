@@ -51,9 +51,9 @@ final class RegionStopSyncService: Sendable {
     /// Returns whether a complete or partial sync wrote stops, so the caller can
     /// rebuild what it derives from the cache.
     ///
-    /// Cancelling the calling task stops it before its next request or commit, so
-    /// after a region switch nothing from the old sync becomes visible. A
-    /// cancelled sync records nothing and returns false; the next one starts over.
+    /// Cancelling the calling task stops it before its next request or publication,
+    /// so staged rows from an interrupted region switch remain invisible. Once the
+    /// publication marker is committed, the sync completes and reports its result.
     @discardableResult
     func sync(regionID: Int, using fetcher: any StopsForAgencyFetching) async -> Bool {
         let previous: RegionStopSyncState?
@@ -75,22 +75,25 @@ final class RegionStopSyncService: Sendable {
         }
 
         let start = now()
+        let syncID = UUID().uuidString
         do {
-            return try await run(regionID: regionID, fetcher: fetcher, start: start, etag: etag, previous: previous)
+            return try await run(regionID: regionID, fetcher: fetcher, start: start, etag: etag, previous: previous, syncID: syncID)
         } catch is CancellationError {
+            try? repository.discardStagedStops(regionId: regionID, syncID: syncID)
             return false
         } catch {
+            try? repository.discardStagedStops(regionId: regionID, syncID: syncID)
             // URLSession reports a cancelled request as URLError.cancelled, not
             // CancellationError; either way a cancelled sync records nothing.
             if Task.isCancelled { return false }
             Logger.error("Region stop sync of region \(regionID) failed: \(error)")
-            record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
+            record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
             return false
         }
     }
 
     /// Returns whether it wrote stops.
-    private func run(regionID: Int, fetcher: any StopsForAgencyFetching, start: Date, etag: String?, previous: RegionStopSyncState?) async throws -> Bool {
+    private func run(regionID: Int, fetcher: any StopsForAgencyFetching, start: Date, etag: String?, previous: RegionStopSyncState?, syncID: String) async throws -> Bool {
         let agencyIDs = try await fetcher.getAgencyIDs()
         try Task.checkCancellation()
         guard !agencyIDs.isEmpty else {
@@ -106,28 +109,38 @@ final class RegionStopSyncService: Sendable {
             // different ID, and the map would show both. The issue's interim answer
             // is to skip such regions; every live multi-agency region runs Java.
             Logger.info("Region stop sync: skipping region \(regionID), a maglev server with \(agencyIDs.count) agencies.")
-            record(.skippedMultiAgency, regionID: regionID, at: start, lastSuccessAt: nil, etag: nil)
+            record(.skippedMultiAgency, regionID: regionID, at: start, lastSuccessAt: nil, etag: nil, publishedSyncID: previous?.publishedSyncID)
             return false
         }
 
         guard case let .finished(failedAgencies, newETag, wroteAny) = try await fetchAgencies(
-            agencyIDs, regionID: regionID, fetcher: fetcher, start: start, etag: etag, isMaglev: isMaglev, previous: previous
+            agencyIDs, regionID: regionID, fetcher: fetcher, start: start, etag: etag, isMaglev: isMaglev, previous: previous, syncID: syncID
         ) else { return false }
 
-        // Cancelled after the last agency's answer: record nothing.
+        // Cancellation is checked before publication. Once the marker is saved,
+        // the snapshot is committed and cancellation must not turn it into a
+        // reported failure.
         try Task.checkCancellation()
 
         if failedAgencies == agencyIDs.count {
-            record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
+            record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
         } else if failedAgencies > 0 {
-            record(.partial, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
+            guard wroteAny else {
+                record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
+                return false
+            }
+            guard record(.partial, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: syncID) else { return false }
         } else {
             // Every agency empty is more likely a server problem than a region with
             // no stops, so it doesn't empty the stops the map already cached.
             if wroteAny {
+                // Publish first, so readers never see the old snapshot deleted
+                // before the staged snapshot becomes current.
+                guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: syncID) else { return false }
                 try repository.deleteStops(regionId: regionID, notWrittenSince: start)
+            } else {
+                guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: previous?.publishedSyncID) else { return false }
             }
-            record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag)
         }
         return wroteAny
     }
@@ -148,12 +161,12 @@ final class RegionStopSyncService: Sendable {
         start: Date,
         etag: String?,
         isMaglev: Bool,
-        previous: RegionStopSyncState?
+        previous: RegionStopSyncState?,
+        syncID: String
     ) async throws -> AgencyPass {
         var failedAgencies = 0
         var newETag: String?
         var wroteAny = false
-        var batches = [[Stop]]()
         for (index, agencyID) in agencyIDs.enumerated() {
             try Task.checkCancellation()
             let result: StopsForAgencyResult
@@ -161,7 +174,7 @@ final class RegionStopSyncService: Sendable {
                 result = try await fetcher.getStopsForAgency(id: agencyID, ifNoneMatch: index == 0 ? etag : nil)
             } catch let error as APIError where index == 0 && error.meansStopsForAgencyUnsupported {
                 Logger.info("Region stop sync: region \(regionID)'s server has no stops-for-agency.")
-                record(.unsupported, regionID: regionID, at: start, lastSuccessAt: nil, etag: nil)
+                record(.unsupported, regionID: regionID, at: start, lastSuccessAt: nil, etag: nil, publishedSyncID: previous?.publishedSyncID)
                 return .recorded
             } catch is CancellationError {
                 throw CancellationError()
@@ -171,7 +184,7 @@ final class RegionStopSyncService: Sendable {
                 if (error as? URLError)?.networkUnavailableReason == .constrained {
                     // Low Data Mode refuses every agency alike; the retry comes later.
                     Logger.info("Region stop sync: Low Data Mode is on, so region \(regionID) waits.")
-                    record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
+                    record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
                     return .recorded
                 }
                 Logger.warn("Region stop sync: agency \(agencyID) of region \(regionID) failed: \(error)")
@@ -184,7 +197,7 @@ final class RegionStopSyncService: Sendable {
                 // maglev's ETag fingerprints the whole feed: nothing in the region changed.
                 // The rows keep the last full sync's stamp, so `lastSuccessAt` keeps it
                 // too, and the weekly full sync restamps them before the 30-day purge.
-                record(.complete, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: etag)
+                record(.complete, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: etag, publishedSyncID: previous?.publishedSyncID)
                 return .recorded
             case .stops(let stops, let responseETag):
                 if index == 0 && isMaglev {
@@ -193,29 +206,30 @@ final class RegionStopSyncService: Sendable {
                 var batchStart = 0
                 while batchStart < stops.count {
                     let batchEnd = min(batchStart + batchSize, stops.count)
-                    batches.append(Array(stops[batchStart..<batchEnd]))
+                    try Task.checkCancellation()
+                    try repository.stageSyncedStops(Array(stops[batchStart..<batchEnd]), regionId: regionID, syncID: syncID, syncedAt: start)
                     batchStart = batchEnd
                 }
                 wroteAny = wroteAny || !stops.isEmpty
             }
         }
 
-        // Fetching is cancellable; the one transaction below is the visibility
-        // boundary for the whole sync. GRDB rolls it back if any write fails.
+        // Fetching is cancellable; the publication marker below is the visibility
+        // boundary for the whole sync. Staged batches remain invisible until it.
         try Task.checkCancellation()
-        if wroteAny {
-            try repository.writeSyncedStops(batches, regionId: regionID, syncedAt: start)
-        }
 
         return .finished(failedAgencies: failedAgencies, newETag: newETag, wroteAny: wroteAny)
     }
 
-    private func record(_ outcome: RegionStopSyncState.Outcome, regionID: Int, at attempt: Date, lastSuccessAt: Date?, etag: String?) {
-        let state = RegionStopSyncState(regionId: regionID, outcome: outcome, lastAttemptAt: attempt, lastSuccessAt: lastSuccessAt, etag: etag, appVersion: appVersion)
+    @discardableResult
+    private func record(_ outcome: RegionStopSyncState.Outcome, regionID: Int, at attempt: Date, lastSuccessAt: Date?, etag: String?, publishedSyncID: String? = nil) -> Bool {
+        let state = RegionStopSyncState(regionId: regionID, outcome: outcome, lastAttemptAt: attempt, lastSuccessAt: lastSuccessAt, etag: etag, appVersion: appVersion, publishedSyncID: publishedSyncID)
         do {
             try repository.saveSyncState(state)
+            return true
         } catch {
             Logger.error("Region stop sync: couldn't record \(outcome) for region \(regionID): \(error)")
+            return false
         }
     }
 }

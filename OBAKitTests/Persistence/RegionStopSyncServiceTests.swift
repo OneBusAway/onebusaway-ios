@@ -40,7 +40,7 @@ final class RegionStopSyncServiceTests {
     }
 
     private func cachedIDs(region: Int = 1) throws -> [String] {
-        try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop WHERE regionId = ? ORDER BY id", arguments: [region]) }
+        repository.stops(regionId: region, after: nil, limit: 10_000).stops.map(\.id)
     }
 
     @Test func `A complete sync writes every agency, deletes what the server dropped, and records it`() async throws {
@@ -252,6 +252,32 @@ final class RegionStopSyncServiceTests {
         ])
         #expect(await service.sync(regionID: 1, using: retryFetcher))
         #expect(try cachedIDs() == ["1_a", "1_duplicate", "2_b"])
+    }
+
+    @Test func `A later staged batch failure preserves the previous snapshot`() async throws {
+        try repository.writeSyncedStops([stop("old")], regionId: 1, syncedAt: earlier)
+        try database.dbQueue.write { db in
+            try db.execute(sql: """
+                CREATE TRIGGER fail_staged_stop_insert
+                BEFORE INSERT ON cachedStopSync
+                WHEN NEW.id = '1_fail'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced staged write failure');
+                END
+                """)
+        }
+        defer {
+            try? database.dbQueue.write { db in
+                try db.execute(sql: "DROP TRIGGER fail_staged_stop_insert")
+            }
+        }
+
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_good", "1_fail")])
+        let wroteStops = await makeService(batchSize: 1).sync(regionID: 1, using: fetcher)
+
+        #expect(!wroteStops)
+        #expect(try cachedIDs() == ["old"])
+        #expect(try repository.syncState(regionId: 1)?.outcome == .failed)
     }
 
     /// URLSession fails a cancelled request with URLError.cancelled rather than

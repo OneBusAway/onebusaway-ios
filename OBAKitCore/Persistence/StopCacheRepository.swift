@@ -56,23 +56,15 @@ public final class StopCacheRepository: Sendable {
     ) -> [Stop] {
         do {
             let cachedStops = try database.dbQueue.read { db in
-                var request = CachedStop
-                    .filter(CachedStop.Columns.regionId == regionId)
-                    .filter(CachedStop.Columns.latitude >= minLat)
-                    .filter(CachedStop.Columns.latitude <= maxLat)
-                    .filter(CachedStop.Columns.longitude >= minLon)
-                    .filter(CachedStop.Columns.longitude <= maxLon)
-                if let limit {
-                    // Squared distance in degrees, with longitude scaled to a degree
-                    // of latitude at the centre: plenty to rank stops a few km apart.
-                    let centerLat = (minLat + maxLat) / 2
-                    let centerLon = (minLon + maxLon) / 2
-                    let scale = cos(centerLat * .pi / 180)
-                    let dLat = CachedStop.Columns.latitude - centerLat
-                    let dLon = (CachedStop.Columns.longitude - centerLon) * scale
-                    request = request.order(dLat * dLat + dLon * dLon).limit(limit)
-                }
-                return try request.fetchAll(db)
+                try visibleStops(
+                    regionId: regionId,
+                    minLat: minLat,
+                    maxLat: maxLat,
+                    minLon: minLon,
+                    maxLon: maxLon,
+                    limit: limit,
+                    in: db
+                )
             }
             return try stops(from: cachedStops, regionId: regionId)
         } catch {
@@ -99,11 +91,7 @@ public final class StopCacheRepository: Sendable {
     public func stops(regionId: Int, after cursor: StopID?, limit: Int) -> Page {
         do {
             let cachedStops = try database.dbQueue.read { db in
-                var request = CachedStop.filter(CachedStop.Columns.regionId == regionId)
-                if let cursor {
-                    request = request.filter(CachedStop.Columns.id > cursor)
-                }
-                return try request.order(CachedStop.Columns.id).limit(limit).fetchAll(db)
+                try visibleStops(regionId: regionId, after: cursor, limit: limit, in: db)
             }
             let nextCursor = cachedStops.count == limit ? cachedStops.last?.id : nil
             return Page(stops: try stops(from: cachedStops, regionId: regionId), cursor: nextCursor)
@@ -132,10 +120,7 @@ public final class StopCacheRepository: Sendable {
         }
 
         let cachedRoutes = try database.dbQueue.read { db in
-            try CachedRoute
-                .filter(CachedRoute.Columns.regionId == regionId)
-                .filter(routeIDs.contains(CachedRoute.Columns.id))
-                .fetchAll(db)
+            try visibleRoutes(routeIDs: routeIDs, regionId: regionId, in: db)
         }
         var routesByID = [RouteID: Route]()
         for cachedRoute in cachedRoutes {
@@ -153,6 +138,106 @@ public final class StopCacheRepository: Sendable {
         return stops
     }
 
+    private func visibleStops(
+        regionId: Int,
+        minLat: Double,
+        maxLat: Double,
+        minLon: Double,
+        maxLon: Double,
+        limit: Int?,
+        in db: Database
+    ) throws -> [CachedStop] {
+        let publishedSyncID = try RegionStopSyncState.fetchOne(db, key: regionId)?.publishedSyncID
+        var main = CachedStop
+            .filter(CachedStop.Columns.regionId == regionId)
+            .filter(CachedStop.Columns.latitude >= minLat)
+            .filter(CachedStop.Columns.latitude <= maxLat)
+            .filter(CachedStop.Columns.longitude >= minLon)
+            .filter(CachedStop.Columns.longitude <= maxLon)
+        var staged: [StagedCachedStop] = []
+        if let limit {
+            let centerLat = (minLat + maxLat) / 2
+            let centerLon = (minLon + maxLon) / 2
+            let scale = cos(centerLat * .pi / 180)
+            let dLat = CachedStop.Columns.latitude - centerLat
+            let dLon = (CachedStop.Columns.longitude - centerLon) * scale
+            main = main.order(dLat * dLat + dLon * dLon).limit(limit)
+            if let publishedSyncID {
+                let stagedDLat = StagedCachedStop.Columns.latitude - centerLat
+                let stagedDLon = (StagedCachedStop.Columns.longitude - centerLon) * scale
+                staged = try StagedCachedStop
+                    .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
+                    .filter(StagedCachedStop.Columns.regionId == regionId)
+                    .filter(StagedCachedStop.Columns.latitude >= minLat)
+                    .filter(StagedCachedStop.Columns.latitude <= maxLat)
+                    .filter(StagedCachedStop.Columns.longitude >= minLon)
+                    .filter(StagedCachedStop.Columns.longitude <= maxLon)
+                    .order(stagedDLat * stagedDLat + stagedDLon * stagedDLon)
+                    .limit(limit)
+                    .fetchAll(db)
+            }
+        } else if let publishedSyncID {
+            staged = try StagedCachedStop
+                .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
+                .filter(StagedCachedStop.Columns.regionId == regionId)
+                .filter(StagedCachedStop.Columns.latitude >= minLat)
+                .filter(StagedCachedStop.Columns.latitude <= maxLat)
+                .filter(StagedCachedStop.Columns.longitude >= minLon)
+                .filter(StagedCachedStop.Columns.longitude <= maxLon)
+                .fetchAll(db)
+        }
+
+        let mainRows = try main.fetchAll(db)
+        var byID = Dictionary(uniqueKeysWithValues: mainRows.map { ($0.id, $0) })
+        for row in staged { byID[row.id] = row.cachedStop }
+        let centerLat = (minLat + maxLat) / 2
+        let centerLon = (minLon + maxLon) / 2
+        let scale = cos(centerLat * .pi / 180)
+        let sorted = byID.values.sorted {
+            let lhs = ($0.latitude - centerLat) * ($0.latitude - centerLat) + (($0.longitude - centerLon) * scale) * (($0.longitude - centerLon) * scale)
+            let rhs = ($1.latitude - centerLat) * ($1.latitude - centerLat) + (($1.longitude - centerLon) * scale) * (($1.longitude - centerLon) * scale)
+            return lhs < rhs
+        }
+        return limit.map { Array(sorted.prefix($0)) } ?? sorted
+    }
+
+    private func visibleStops(regionId: Int, after cursor: StopID?, limit: Int, in db: Database) throws -> [CachedStop] {
+        let publishedSyncID = try RegionStopSyncState.fetchOne(db, key: regionId)?.publishedSyncID
+        var main = CachedStop.filter(CachedStop.Columns.regionId == regionId)
+        if let cursor { main = main.filter(CachedStop.Columns.id > cursor) }
+        let mainRows = try main.order(CachedStop.Columns.id).limit(limit).fetchAll(db)
+        var byID = Dictionary(uniqueKeysWithValues: mainRows.map { ($0.id, $0) })
+        if let publishedSyncID {
+            var staged = StagedCachedStop
+                .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
+                .filter(StagedCachedStop.Columns.regionId == regionId)
+            if let cursor { staged = staged.filter(StagedCachedStop.Columns.id > cursor) }
+            for row in try staged.order(StagedCachedStop.Columns.id).limit(limit).fetchAll(db) {
+                byID[row.id] = row.cachedStop
+            }
+        }
+        return Array(byID.values.sorted { $0.id < $1.id }.prefix(limit))
+    }
+
+    private func visibleRoutes(routeIDs: [RouteID], regionId: Int, in db: Database) throws -> [CachedRoute] {
+        let publishedSyncID = try RegionStopSyncState.fetchOne(db, key: regionId)?.publishedSyncID
+        var byID = Dictionary(uniqueKeysWithValues: try CachedRoute
+            .filter(CachedRoute.Columns.regionId == regionId)
+            .filter(routeIDs.contains(CachedRoute.Columns.id))
+            .fetchAll(db)
+            .map { ($0.id, $0) })
+        if let publishedSyncID {
+            for row in try StagedCachedRoute
+                .filter(StagedCachedRoute.Columns.syncID == publishedSyncID)
+                .filter(StagedCachedRoute.Columns.regionId == regionId)
+                .filter(routeIDs.contains(StagedCachedRoute.Columns.id))
+                .fetchAll(db) {
+                byID[row.id] = row.cachedRoute
+            }
+        }
+        return Array(byID.values)
+    }
+
     // MARK: - Write
 
     /// Saves an array of stops into the cache, upserting on the composite key (regionId, id).
@@ -168,10 +253,9 @@ public final class StopCacheRepository: Sendable {
         }
     }
 
-    /// Writes all batches of a region sync in one transaction, stamping every
-    /// row with `syncedAt`, the time the sync started. Keeping all batches in one
-    /// transaction prevents readers from observing an interrupted sync.
-    /// `deleteStops(regionId:notWrittenSince:)` relies on that stamp.
+    /// Writes all batches in one transaction for callers that already own the
+    /// complete payload. Region syncs use `stageSyncedStops` instead, so each
+    /// database hold stays short and publication remains atomic.
     ///
     /// Unlike `saveStops`, this throws: a sync that recorded itself complete
     /// after a failed write would then delete stops it never replaced.
@@ -184,6 +268,38 @@ public final class StopCacheRepository: Sendable {
             for stops in batches {
                 try write(stops, regionId: regionId, at: syncedAt, in: db)
             }
+        }
+    }
+
+    /// Writes one sync batch to its private snapshot. Each call owns only one
+    /// short transaction; the snapshot is invisible until its ID is published
+    /// in `RegionStopSyncState`.
+    func stageSyncedStops(_ stops: [Stop], regionId: Int, syncID: String, syncedAt: Date) throws {
+        try database.dbQueue.write { db in
+            var routes = [RouteID: Route]()
+            for stop in stops {
+                guard let record = CachedStop(stop: stop, regionId: regionId, lastUpdated: syncedAt) else { continue }
+                try StagedCachedStop(record: record, syncID: syncID).save(db)
+                for route in stop.routes ?? [] { routes[route.id] = route }
+            }
+            for route in routes.values {
+                guard let record = CachedRoute(route: route, regionId: regionId, lastUpdated: syncedAt) else { continue }
+                try StagedCachedRoute(record: record, syncID: syncID).save(db)
+            }
+        }
+    }
+
+    /// Removes a snapshot that never reached the publication marker.
+    func discardStagedStops(regionId: Int, syncID: String) throws {
+        try database.dbQueue.write { db in
+            _ = try StagedCachedStop
+                .filter(StagedCachedStop.Columns.regionId == regionId)
+                .filter(StagedCachedStop.Columns.syncID == syncID)
+                .deleteAll(db)
+            _ = try StagedCachedRoute
+                .filter(StagedCachedRoute.Columns.regionId == regionId)
+                .filter(StagedCachedRoute.Columns.syncID == syncID)
+                .deleteAll(db)
         }
     }
 
@@ -260,6 +376,12 @@ public final class StopCacheRepository: Sendable {
                 _ = try CachedRoute
                     .filter(CachedRoute.Columns.regionId == regionId)
                     .deleteAll(db)
+                _ = try StagedCachedStop
+                    .filter(StagedCachedStop.Columns.regionId == regionId)
+                    .deleteAll(db)
+                _ = try StagedCachedRoute
+                    .filter(StagedCachedRoute.Columns.regionId == regionId)
+                    .deleteAll(db)
                 _ = try RegionStopSyncState.deleteOne(db, key: regionId)
             }
         } catch {
@@ -300,5 +422,71 @@ extension CachedRoute {
         static let id = Column("id")
         static let regionId = Column("regionId")
         static let lastUpdated = Column("lastUpdated")
+    }
+}
+
+private struct StagedCachedStop: Codable, FetchableRecord, PersistableRecord {
+    static let databaseTableName = "cachedStopSync"
+
+    let syncID: String
+    let id: String
+    let regionId: Int
+    let latitude: Double
+    let longitude: Double
+    let lastUpdated: Double
+    let stopData: Data
+    let name: String?
+    let code: String?
+
+    init(record: CachedStop, syncID: String) {
+        self.syncID = syncID
+        id = record.id
+        regionId = record.regionId
+        latitude = record.latitude
+        longitude = record.longitude
+        lastUpdated = record.lastUpdated
+        stopData = record.stopData
+        name = record.name
+        code = record.code
+    }
+
+    var cachedStop: CachedStop {
+        CachedStop(id: id, regionId: regionId, latitude: latitude, longitude: longitude, lastUpdated: lastUpdated, stopData: stopData, name: name, code: code)
+    }
+
+    enum Columns {
+        static let syncID = Column("syncID")
+        static let id = Column("id")
+        static let regionId = Column("regionId")
+        static let latitude = Column("latitude")
+        static let longitude = Column("longitude")
+    }
+}
+
+private struct StagedCachedRoute: Codable, FetchableRecord, PersistableRecord {
+    static let databaseTableName = "cachedRouteSync"
+
+    let syncID: String
+    let id: String
+    let regionId: Int
+    let lastUpdated: Double
+    let routeData: Data
+
+    init(record: CachedRoute, syncID: String) {
+        self.syncID = syncID
+        id = record.id
+        regionId = record.regionId
+        lastUpdated = record.lastUpdated
+        routeData = record.routeData
+    }
+
+    var cachedRoute: CachedRoute {
+        CachedRoute(id: id, regionId: regionId, lastUpdated: lastUpdated, routeData: routeData)
+    }
+
+    enum Columns {
+        static let syncID = Column("syncID")
+        static let id = Column("id")
+        static let regionId = Column("regionId")
     }
 }
