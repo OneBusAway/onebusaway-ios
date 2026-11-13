@@ -95,6 +95,9 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         self.application = application
         self.pruneSpanFactor = pruneSpanFactor
         self.renderCap = renderCap
+        // Creating the sequence registers with NotificationCenter synchronously;
+        // only iteration is deferred to the owned task below.
+        let bookmarkChanges = notificationCenter.notifications(named: .bookmarksDidChange)
         super.init()
 
         // Seed the accumulator (and published set) so a re-created observer
@@ -111,8 +114,8 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
 
         // Re-decode on bookmark changes so a visible pin restyles. The task owns
         // the bounded AsyncSequence subscription and is cancelled in deinit.
-        bookmarksChangeTask = Task { [weak self, notificationCenter] in
-            for await _ in notificationCenter.notifications(named: .bookmarksDidChange) {
+        bookmarksChangeTask = Task { [weak self] in
+            for await _ in bookmarkChanges {
                 guard !Task.isCancelled, let self else { return }
                 self.reloadBookmarks()
             }
@@ -170,8 +173,6 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
             publish()
         }
     }
-
-    // MARK: - Bookmarks
 
     // MARK: - RegionsServiceDelegate
 

@@ -299,7 +299,7 @@ final class MapStopsObserverTests: OBATestCase {
         #expect(reloadCount == 2)
     }
 
-    @Test func `Observer deallocation cancels its notification stream`() async throws {
+    @Test func `Observer task does not retain observer after deallocation`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let center = NotificationCenter()
@@ -310,9 +310,6 @@ final class MapStopsObserverTests: OBATestCase {
             weakObserver = observer
         }
 
-        #expect(weakObserver == nil)
-        center.post(name: .bookmarksDidChange, object: nil)
-        await Task.yield()
         #expect(weakObserver == nil)
     }
 
