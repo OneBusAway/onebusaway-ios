@@ -42,24 +42,29 @@ private final class AlertsOutcomeDelegate: NSObject, AgencyAlertsDelegate {
 }
 
 private actor UpdateFinishWaiter {
-    private var finishedGenerations = Set<Int>()
-    private var waiters: [Int: [CheckedContinuation<Void, Never>]] = [:]
+    private var finishedGenerations: [Int] = []
+    private var waiters: [CheckedContinuation<Int, Never>] = []
 
     func recordFinished(_ generation: Int) {
-        finishedGenerations.insert(generation)
-        if let continuations = waiters.removeValue(forKey: generation) {
-            for continuation in continuations {
-                continuation.resume()
-            }
+        finishedGenerations.append(generation)
+        let pending = waiters
+        waiters.removeAll()
+        for waiter in pending {
+            waiter.resume(returning: generation)
         }
     }
 
-    func wait(for generation: Int) async {
-        if finishedGenerations.contains(generation) {
-            return
+    func waitForFinish(otherThan excludedGeneration: Int? = nil) async -> Int {
+        if let generation = finishedGenerations.first(where: { $0 != excludedGeneration }) {
+            return generation
         }
-        await withCheckedContinuation { continuation in
-            waiters[generation, default: []].append(continuation)
+        while true {
+            let generation = await withCheckedContinuation { continuation in
+                waiters.append(continuation)
+            }
+            if generation != excludedGeneration {
+                return generation
+            }
         }
     }
 }
@@ -90,28 +95,15 @@ private final class AgencyAlertsDataLoader: NSObject, URLDataLoader, @unchecked 
     let agenciesData: Data
     let alertsData: Data
     let gate: ReleaseGate?
-    let expectedRequestCount: Int
-    private let requestCountLock = NSLock()
-    private var _requestCount = 0
 
-    var requestCount: Int {
-        requestCountLock.withLock { _requestCount }
-    }
-
-    init(agenciesData: Data, alertsData: Data, expectedRequestCount: Int, gate: ReleaseGate? = nil) {
+    init(agenciesData: Data, alertsData: Data, gate: ReleaseGate? = nil) {
         self.agenciesData = agenciesData
         self.alertsData = alertsData
-        self.expectedRequestCount = expectedRequestCount
         self.gate = gate
-    }
-
-    var completedExpectedRequests: Bool {
-        requestCount >= expectedRequestCount
     }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         await gate?.wait()
-        requestCountLock.withLock { _requestCount += 1 }
 
         let isAgencyList = request.url?.path.contains("agencies-with-coverage") == true
         let data = isAgencyList ? agenciesData : alertsData
@@ -191,13 +183,9 @@ final class AgencyAlertsStoreTests: OBATestCase {
 
     private func makeAgencyAlertsDataLoader(alertID: String, gate: ReleaseGate? = nil) throws -> AgencyAlertsDataLoader {
         let agenciesData = Fixtures.loadData(file: "agencies_with_coverage.json")
-        let object = try JSONSerialization.jsonObject(with: agenciesData) as? [String: Any]
-        let data = object?["data"] as? [String: Any]
-        let agencyCount = (data?["list"] as? [[String: Any]])?.count ?? 0
         return AgencyAlertsDataLoader(
             agenciesData: agenciesData,
             alertsData: try feed(alertIDs: [alertID]),
-            expectedRequestCount: agencyCount + 1,
             gate: gate
         )
     }
@@ -295,7 +283,7 @@ final class AgencyAlertsStoreTests: OBATestCase {
             Task { await finishWaiter.recordFinished(gen) }
         }
 
-        store.checkForUpdates()
+        let staleTask = Task { try await store.update() }
         await firstGate.waitUntilBlocked()
 
         store.apiService = latestService
@@ -305,8 +293,10 @@ final class AgencyAlertsStoreTests: OBATestCase {
             return
         }
 
+        let latestGeneration = await finishWaiter.waitForFinish()
         await firstGate.release()
-        await finishWaiter.wait(for: 1)
+        _ = await finishWaiter.waitForFinish(otherThan: latestGeneration)
+        _ = try await staleTask.value
 
         #expect(store.agencyAlerts.map(\.id) == ["new-alert"])
     }
