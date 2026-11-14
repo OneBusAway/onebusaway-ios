@@ -174,29 +174,23 @@ final class RegionStopSyncService: Sendable {
                 publishedSyncID: syncID
             )
             do {
-                try repository.publishCompleteSync(state, regionId: regionID, currentSyncID: syncID, staleStopsOlderThan: start)
+                try repository.publishCompleteSync(state)
             } catch {
                 Logger.error("Region stop sync: couldn't publish complete snapshot for region \(regionID): \(error)")
                 return false
             }
+            cleanupAfterPublish(regionID: regionID, currentSyncID: syncID)
         } else {
             guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: previous?.publishedSyncID) else { return false }
         }
         return wroteAny
     }
 
-    private func cleanupAfterPublish(regionID: Int, currentSyncID: String, staleStopsOlderThan: Date? = nil) {
+    private func cleanupAfterPublish(regionID: Int, currentSyncID: String) {
         do {
             try repository.purgeSupersededStagedStops(regionId: regionID, currentSyncID: currentSyncID)
         } catch {
             Logger.error("Failed to purge superseded staged stops for region \(regionID): \(error)")
-        }
-        if let staleStopsOlderThan {
-            do {
-                try repository.deleteStops(regionId: regionID, notWrittenSince: staleStopsOlderThan)
-            } catch {
-                Logger.error("Failed to delete stale stops after sync for region \(regionID): \(error)")
-            }
         }
     }
 

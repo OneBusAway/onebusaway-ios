@@ -343,28 +343,6 @@ final class RegionStopSyncServiceTests {
         #expect(oldStagedCount == 0)
     }
 
-    @Test func `If deleteStops fails after publication, complete sync publication remains intact`() async throws {
-        try await database.dbQueue.write { db in
-            try db.execute(sql: """
-                CREATE TRIGGER fail_delete_cached_stops
-                BEFORE DELETE ON cachedStop
-                BEGIN
-                    SELECT RAISE(ABORT, 'forced delete failure');
-                END
-                """)
-        }
-        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_published")])
-        let wroteStops = await makeService().sync(regionID: 1, using: fetcher)
-        try await database.dbQueue.write { db in
-            try db.execute(sql: "DROP TRIGGER fail_delete_cached_stops")
-        }
-
-        #expect(wroteStops)
-        let state = try #require(try repository.syncState(regionId: 1))
-        #expect(state.outcome == .complete)
-        #expect(try cachedIDs() == ["1_published"])
-    }
-
     @Test func `A server listing no agencies preserves existing published syncID`() async throws {
         let initialFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_kept")])
         let service = makeService()

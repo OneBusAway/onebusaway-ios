@@ -592,6 +592,30 @@ final class StopCacheRepositoryTests {
         #expect(stops == ["1_recent"])
     }
 
+    @Test func `The 30-day purge unpublishes and purges synced stops older than expiration interval`() throws {
+        let now = Date()
+        let expiredDate = now.addingTimeInterval(-31 * 86_400)
+        let state = RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: expiredDate,
+            lastSuccessAt: expiredDate,
+            etag: nil,
+            appVersion: "1.0",
+            publishedSyncID: "sync_old"
+        )
+        try repository.saveSyncState(state)
+        try repository.stageSyncedStops([makeStop(id: "1_expired", routes: [])], regionId: 1, syncID: "sync_old", syncedAt: expiredDate)
+
+        #expect(repository.findStop(id: "1_expired", regionId: 1) != nil)
+
+        repository.deleteStopsOlderThan(now.addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval), regionId: 1)
+
+        #expect(repository.findStop(id: "1_expired", regionId: 1) == nil)
+        let updatedState = try repository.syncState(regionId: 1)
+        #expect(updatedState?.publishedSyncID == nil)
+    }
+
     @Test func `Sync state round-trips, and clearing the cache forgets it`() throws {
         let state = RegionStopSyncState(
             regionId: 1,
