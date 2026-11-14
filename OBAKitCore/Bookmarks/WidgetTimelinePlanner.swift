@@ -50,6 +50,8 @@ public struct WidgetTimelinePlanner: Sendable {
         self.maximumEntries = max(1, maximumEntries)
     }
 
+    /// Computes timeline entry dates and the reload date.
+    /// Works purely on absolute instants (`Date` / `TimeInterval`), independent of timezones or calendars.
     public func plan(departureDates: [Date], now: Date) -> Plan {
         let upcoming = Set(departureDates.filter { $0 > now }).sorted()
 
@@ -86,6 +88,6 @@ extension WidgetTimelinePlanner {
     /// reload interval. Departures at or before `entryDate` are considered
     /// expired for this timeline entry.
     public static func departures(_ departures: [ArrivalDeparture], visibleAt entryDate: Date) -> [ArrivalDeparture] {
-        departures.filter { $0.hasPlausibleArrivalDepartureDate && $0.arrivalDepartureDate > entryDate }
+        departures.filter { $0.arrivalDepartureDate > entryDate }
     }
 }

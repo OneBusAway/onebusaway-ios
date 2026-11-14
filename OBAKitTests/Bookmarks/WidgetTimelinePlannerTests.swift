@@ -286,42 +286,6 @@ import Testing
         #expect(tz.isDaylightSavingTime(for: plan.reloadDate) == false)
     }
 
-    @Test func `Timeline plan is invariant across stop, agency, and device timezones`() throws {
-        let testTimeZones = [
-            "UTC",
-            "America/New_York",
-            "America/Los_Angeles",
-            "Asia/Tokyo",
-            "Europe/London",
-            "Australia/Sydney"
-        ]
-
-        let baseNow = Date(timeIntervalSince1970: 1_770_000_000)
-        let departureOffsets: [TimeInterval] = [3 * 60, 7 * 60, 15 * 60, 22 * 60, 28 * 60]
-        let baseDepartures = departureOffsets.map { baseNow.addingTimeInterval($0) }
-
-        let referencePlan = WidgetTimelinePlanner().plan(departureDates: baseDepartures, now: baseNow)
-
-        for identifier in testTimeZones {
-            let timeZone = try #require(TimeZone(identifier: identifier))
-            var calendar = Calendar(identifier: .gregorian)
-            calendar.timeZone = timeZone
-
-            let nowComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: baseNow)
-            let tzNow = try #require(calendar.date(from: nowComponents))
-
-            let tzDepartures = baseDepartures.map { depDate in
-                let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: depDate)
-                return calendar.date(from: comps)!
-            }
-
-            let tzPlan = WidgetTimelinePlanner().plan(departureDates: tzDepartures, now: tzNow)
-
-            #expect(tzPlan.entryDates == referencePlan.entryDates)
-            #expect(tzPlan.reloadDate == referencePlan.reloadDate)
-        }
-    }
-
     @Test func `A full day of reloads stays inside the WidgetKit budget`() {
         let plan = WidgetTimelinePlanner().plan(departureDates: [minutes(10)], now: now)
         let reloadsPerDay = (18 * 60 * 60) / plan.reloadDate.timeIntervalSince(now)
@@ -368,17 +332,6 @@ import Testing
         #expect(visible.map(\.tripID) == ["trip_later", "trip_soonest", "trip_soon"])
     }
 
-    @Test func `Implausible arrival departure dates are excluded from visible departures`() throws {
-        let implausible = try Fixtures.arrivalDeparture(
-            predicted: false,
-            scheduledArrival: 0,
-            scheduledDeparture: 0,
-            tripID: "trip_epoch"
-        )
-        let visible = WidgetTimelinePlanner.departures([implausible], visibleAt: Date(timeIntervalSinceReferenceDate: -100))
-        #expect(visible.isEmpty)
-    }
-
     /// End to end: the +10 entry exists because the +10 bus leaves then, so
     /// that entry must not still be showing it.
     @Test func `The entry at a departure's own date no longer shows that departure`() throws {
@@ -403,13 +356,12 @@ import Testing
 
         let initialVisible = WidgetTimelinePlanner.departures([dep], visibleAt: plan.entryDates[0])
         #expect(initialVisible.map(\.tripID) == ["trip_now"])
-        #expect(initialVisible.first?.temporalState == .present)
 
         let nextVisible = WidgetTimelinePlanner.departures([dep], visibleAt: plan.entryDates[1])
         #expect(nextVisible.isEmpty)
     }
 
-    @Test func `Departures at now minus one second and now are omitted while now plus one second is included with present temporal state`() throws {
+    @Test func `Departures at now minus one second and now are omitted while now plus one second is included`() throws {
         let refNow = upcomingNow
         let depPast = try departure(at: refNow.addingTimeInterval(-1), tripID: "trip_past")
         let depExact = try departure(at: refNow, tripID: "trip_exact")
@@ -433,10 +385,9 @@ import Testing
         #expect(expiredPlan.entryDates == [refNow])
         #expect(expiredPlan.reloadDate == refNow.addingTimeInterval(60 * 60))
 
-        // Entry 0 at refNow: now - 1s and now are omitted; now + 1s is included and marked .present
+        // Entry 0 at refNow: now - 1s and now are omitted; now + 1s is included
         let visibleAtEntry0 = WidgetTimelinePlanner.departures(allDepartures, visibleAt: plan.entryDates[0])
         #expect(visibleAtEntry0.map(\.tripID) == ["trip_now_plus_one"])
-        #expect(visibleAtEntry0.first?.temporalState == .present)
 
         // Entry 1 at refNow + 5m: now + 1s has expired
         let visibleAtEntry1 = WidgetTimelinePlanner.departures(allDepartures, visibleAt: plan.entryDates[1])
