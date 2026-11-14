@@ -35,10 +35,13 @@ import ActivityKit
 /// sheet route owns the drawing and the sheet doesn't need to know.
 struct StopSheetMapLink {
     let show: (StopMapFocus) -> Void
-    let apply: (_ arrivals: StopArrivals?, _ isListFiltered: Bool, _ preferences: StopPreferences) -> Void
+    /// `serverClock` is the arrivals response's, for estimating where its vehicles are now.
+    let apply: (
+        _ arrivals: StopArrivals?, _ isListFiltered: Bool, _ preferences: StopPreferences, _ serverClock: ServerClockSample?
+    ) -> Void
 
     /// For a sheet over no map. Its chips render plain; see `StopMapFocus`.
-    static let none = StopSheetMapLink(show: { _ in }, apply: { _, _, _ in })
+    static let none = StopSheetMapLink(show: { _ in }, apply: { _, _, _, _ in })
 }
 
 struct StopDetailsSheetRootView: View {
@@ -247,7 +250,8 @@ struct StopDetailsSheetView: View {
             .onReceive(
                 viewModel.$stopArrivals.combineLatest(viewModel.$isListFiltered, viewModel.$stopPreferences)
             ) { arrivals, isListFiltered, preferences in
-                mapLink.apply(arrivals, isListFiltered, preferences)
+                // Read back, unlike `stopArrivals`: the view model sets it before them.
+                mapLink.apply(arrivals, isListFiltered, preferences, viewModel.arrivalsServerClock)
             }
             .onReceive(viewModel.$operationError.compactMap { $0 }) { _ in feedback.dataLoad(.failed) }
             .onReceive(viewModel.presentFullSurvey, perform: showFullSurvey(_:))

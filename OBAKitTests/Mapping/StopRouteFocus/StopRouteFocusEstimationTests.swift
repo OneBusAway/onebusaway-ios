@@ -22,63 +22,27 @@ import UIKit
 final class StopRouteFocusEstimationTests {
     typealias F = EstimationFixtures
 
-    private actor Counter {
-        private(set) var count = 0
-        func increment() { count += 1 }
-    }
-
-    private final class DeviceClock {
-        var now = EstimationFixtures.t0
-    }
-
     private let mapView = MKMapView(frame: CGRect(x: 0, y: 0, width: 390, height: 700))
-    private let device = DeviceClock()
-    private let clock = TestClock()
-    private let scheduleFetches = Counter()
-    private var isEnabled = true
+    private let harness = StopEstimationHarness()
+    private var clock: TestClock { harness.clock }
     private var layer: StopRouteFocusMapLayer!
-
-    private static let formatters = Formatters(
-        locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared
-    )
 
     /// The fixture's first arrival, moved onto `F.straightLine()` 200 m along and
     /// given a fix time of `F.t0`.
-    private static func departure() throws -> ArrivalDeparture {
-        let data = Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020.json")
-        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
-        let entry = try #require((json["data"] as? [String: Any])?["entry"] as? [String: Any])
-        var arrival = try #require((entry["arrivalsAndDepartures"] as? [[String: Any]])?.first)
-        var status = try #require(arrival["tripStatus"] as? [String: Any])
-        let onShape = F.point(north: 200)
-        status["lastKnownLocation"] = ["lat": onShape.latitude, "lon": onShape.longitude]
-        status["lastLocationUpdateTime"] = Int64(F.t0.timeIntervalSince1970 * 1000)
-        status["totalDistanceAlongTrip"] = 1000.0
-        arrival["tripStatus"] = status
-        return try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: arrival)
+    private let departure: ArrivalDeparture
+
+    init() throws {
+        departure = try #require(
+            StopArrivalsFixture.upcoming(rewritingStatus: StopEstimationHarness.onShape).arrivalsAndDepartures.first
+        )
     }
 
-    private lazy var departure: ArrivalDeparture = try! Self.departure()
-
     private func makeLayer() -> StopRouteFocusMapLayer {
-        let encoded = Polyline(coordinates: F.straightLine().coordinates).encodedPolyline
-        let driver = VehicleEstimationDriver(
-            isEnabled: { [unowned self] in isEnabled },
-            reduceMotion: { false },
-            clock: clock,
-            now: { [unowned self] in device.now },
-            notificationCenter: NotificationCenter()
-        )
-        let counter = scheduleFetches
         let layer = StopRouteFocusMapLayer(
             mapView: mapView,
-            shapeCache: ShapeCache { _ in encoded },
-            formatters: Self.formatters,
-            vehicleEstimation: driver,
-            tripSchedules: TripScheduleCache { _ in
-                await counter.increment()
-                return TripScheduleCache.Schedule(stopTimes: [F.stop(0, at: 0), F.stop(1000, at: 100)], serverTripLength: 1000)
-            }
+            shapeCache: harness.shapeCache,
+            formatters: StopEstimationHarness.formatters,
+            vehicleEstimation: harness.estimation
         )
         let departure = departure
         layer.departureProvider = { _ in departure }
@@ -106,7 +70,7 @@ final class StopRouteFocusEstimationTests {
     @Test func `An arriving bus is drawn at its estimate on its own trip's shape`() async throws {
         let layer = makeLayer()
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
 
         let marker = try #require(marker)
         expectClose(marker.coordinate.latitude, F.point(north: 200).latitude, within: 1e-5)
@@ -116,10 +80,10 @@ final class StopRouteFocusEstimationTests {
     @Test func `The bus moves along between polls`() async throws {
         let layer = makeLayer()
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
         await poll(until: { self.clock.sleeperCount == 1 })
 
-        device.now += 10
+        harness.now += 10
         clock.advance(by: .seconds(1))
         await poll(until: { (self.marker?.coordinate.latitude ?? 0) > F.point(north: 250).latitude })
 
@@ -129,7 +93,7 @@ final class StopRouteFocusEstimationTests {
     @Test func `A poll does not drag an estimated bus back to the reported fix`() async throws {
         let layer = makeLayer()
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
 
         layer.update(model: model())
 
@@ -137,23 +101,23 @@ final class StopRouteFocusEstimationTests {
     }
 
     @Test func `With estimation off no schedule is fetched and the bus is where the feed says`() async throws {
-        isEnabled = false
+        harness.isEnabled = false
         let layer = makeLayer()
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
 
-        #expect(await scheduleFetches.count == 0)
+        #expect(await harness.scheduleFetches.count == 0)
         #expect(marker?.coordinate.latitude == 47.65)
     }
 
     @Test func `Each trip's schedule is fetched once across polls`() async throws {
         let layer = makeLayer()
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
 
-        #expect(await scheduleFetches.count == 1)
+        #expect(await harness.scheduleFetches.count == 1)
     }
 
     @Test func `A poll's server clock survives a refresh that cancels its gathering`() async throws {
@@ -165,7 +129,7 @@ final class StopRouteFocusEstimationTests {
         let departure = departure
         layer.departureProvider = { _ in departure }
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
 
         expectClose(marker?.coordinate.latitude, F.point(north: 300).latitude, within: 1e-5)
     }
@@ -173,7 +137,7 @@ final class StopRouteFocusEstimationTests {
     @Test func `Ending the presentation stops estimating`() async throws {
         let layer = makeLayer()
         layer.update(model: model())
-        await layer.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
         await poll(until: { self.clock.sleeperCount == 1 })
 
         layer.end()

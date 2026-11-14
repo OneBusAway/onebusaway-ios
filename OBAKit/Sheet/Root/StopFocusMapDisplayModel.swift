@@ -17,7 +17,8 @@ import OBAKitCore
 ///
 /// The panel's counterpart of `StopRouteFocusMapLayer`, which draws on an
 /// `MKMapView` the panel doesn't have. Both derive what to draw with
-/// `StopRouteFocusModel`, fetch shapes through a `ShapeCache`, and tell the sheet's
+/// `StopRouteFocusModel`, fetch shapes through a `ShapeCache`, estimate where
+/// their vehicles are now with a `StopVehicleEstimation`, and tell the sheet's
 /// route chips what is drawn through its `StopMapFocus`.
 ///
 /// It doesn't move the camera. The panel already frames the stop when its sheet
@@ -57,17 +58,33 @@ final class StopFocusMapDisplayModel: ObservableObject {
         /// `vehicleID` when the agency reports one, `tripID` otherwise.
         let id: String
         let routeID: RouteID
-        let coordinate: CLLocationCoordinate2D
+        /// Where its estimate puts it, or the feed without one.
+        private(set) var coordinate: CLLocationCoordinate2D
         /// In degrees, as OBA reports it.
-        let orientation: CLLocationDirection
+        private(set) var orientation: CLLocationDirection
         let routeType: Route.RouteType
         let isRealTime: Bool
+        /// How old the fix behind an estimated position is; `.live` without one.
+        private(set) var staleness: VehicleMarkerStaleness = .live
         let color: Color
         let emphasis: Emphasis
         let accessibilityLabel: String
         let accessibilityValue: String
         /// What a tap on the marker follows.
         let departure: ArrivalDeparture
+
+        /// The feed's position, for when there's no estimate.
+        fileprivate let reported: (coordinate: CLLocationCoordinate2D, orientation: CLLocationDirection)
+
+        /// This vehicle where `estimate` puts it, or where the feed does without one.
+        /// Only the position changes, so an estimate tick rebuilds nothing else.
+        fileprivate func placed(at estimate: VehicleEstimate?) -> Vehicle {
+            var placed = self
+            placed.coordinate = estimate?.coordinate ?? reported.coordinate
+            placed.orientation = estimate?.obaOrientation ?? reported.orientation
+            placed.staleness = VehicleMarkerStaleness(estimate: estimate)
+            return placed
+        }
     }
 
     /// Resolved once per change rather than in `body`, which re-runs on every
@@ -103,6 +120,8 @@ final class StopFocusMapDisplayModel: ObservableObject {
     private struct Arrivals {
         let model: StopRouteFocusModel
         let departures: [String: ArrivalDeparture]
+        /// The response's, for estimating where its vehicles are now.
+        let serverClock: ServerClockSample?
     }
 
     private let shapeCache: ShapeCache
@@ -126,9 +145,19 @@ final class StopFocusMapDisplayModel: ObservableObject {
     private var focusedRouteID: RouteID?
     private var focusCancellable: AnyCancellable?
 
-    init(shapeCache: ShapeCache, formatters: Formatters) {
+    /// `nil` leaves every vehicle where the feed says.
+    private let vehicleEstimation: StopVehicleEstimation?
+    /// Whether an open trip has the map; see `setSuppressed(_:)`.
+    private var isSuppressed = false
+    /// The drawn stop's vehicles where the feed puts them, built once per
+    /// arrivals refresh; an estimate tick only moves them.
+    private var reportedVehicles: [Vehicle] = []
+
+    init(shapeCache: ShapeCache, formatters: Formatters, vehicleEstimation: StopVehicleEstimation? = nil) {
         self.shapeCache = shapeCache
         self.formatters = formatters
+        self.vehicleEstimation = vehicleEstimation
+        vehicleEstimation?.onEstimates = { [weak self] in self?.moveVehicles(to: $0, previous: $1) }
     }
 
     // MARK: - Sharing the map
@@ -166,7 +195,13 @@ final class StopFocusMapDisplayModel: ObservableObject {
     /// Takes the emitted values rather than reading the view model back, for the
     /// reason `StopRouteFocusMapLayer.apply(arrivals:isListFiltered:preferences:)`
     /// gives: `@Published` emits in `willSet`.
-    func apply(arrivals: StopArrivals?, isListFiltered: Bool, preferences: StopPreferences, owner: AppSheetRoute) {
+    func apply(
+        arrivals: StopArrivals?,
+        isListFiltered: Bool,
+        preferences: StopPreferences,
+        serverClock: ServerClockSample? = nil,
+        owner: AppSheetRoute
+    ) {
         guard let index = entries.firstIndex(where: { $0.owner == owner }) else { return }
 
         let all = arrivals?.arrivalsAndDepartures ?? []
@@ -174,7 +209,8 @@ final class StopFocusMapDisplayModel: ObservableObject {
         let model = StopRouteFocusModel.make(departures: visible, routeCap: StopRouteFocusMapLayer.routeCap)
         entries[index].arrivals = Arrivals(
             model: model,
-            departures: Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            departures: Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }),
+            serverClock: serverClock
         )
         // A covered sheet's chips still decorate from it.
         entries[index].focus?.apply(routes: model.routes)
@@ -182,6 +218,16 @@ final class StopFocusMapDisplayModel: ObservableObject {
         guard index == entries.indices.last else { return }
         loadShapes()
         render()
+        refreshEstimation()
+    }
+
+    /// Stands the stop's estimation down while an open trip has the map (see
+    /// `stopTakesMap(stopOwner:tripOwner:routes:)`): the trip page estimates its
+    /// own vehicle, and the stop's would tick for markers nobody sees.
+    func setSuppressed(_ suppressed: Bool) {
+        guard isSuppressed != suppressed else { return }
+        isSuppressed = suppressed
+        refreshEstimation()
     }
 
     /// Drops every stop whose sheet is no longer on the stack and goes back to
@@ -197,8 +243,12 @@ final class StopFocusMapDisplayModel: ObservableObject {
     /// Forgets every shape, so a shape ID from the old region can't resolve to the
     /// wrong line in a new one.
     func invalidateShapeCache() {
-        let shapeCache = shapeCache
-        Task { await shapeCache.removeAll() }
+        let shapeCache = shapeCache, vehicleEstimation = vehicleEstimation
+        Task {
+            await shapeCache.removeAll()
+            // Trip IDs are region-scoped too.
+            await vehicleEstimation?.removeAllSchedules()
+        }
     }
 
     /// The panel's camera settled at a new zoom. Lanes are sized in screen points,
@@ -231,9 +281,12 @@ final class StopFocusMapDisplayModel: ObservableObject {
         laneShapeIDs.removeAll()
         focusedRouteID = nil
         focusCancellable = nil
+        // The last stop's vehicles; the new one's start on its next refresh.
+        vehicleEstimation?.stop()
 
         guard let focus = entries.last?.focus else {
             display = nil
+            reportedVehicles = []
             return
         }
 
@@ -247,6 +300,18 @@ final class StopFocusMapDisplayModel: ObservableObject {
             }
         loadShapes()
         render()
+        refreshEstimation()
+    }
+
+    private func refreshEstimation() {
+        guard let vehicleEstimation else { return }
+        guard !isSuppressed, let arrivals = entries.last?.arrivals else {
+            vehicleEstimation.stop()
+            return
+        }
+        vehicleEstimation.refresh(vehicles: arrivals.model.vehicles, serverClock: arrivals.serverClock) {
+            arrivals.departures[$0]
+        }
     }
 
     private func loadShapes() {
@@ -273,11 +338,11 @@ final class StopFocusMapDisplayModel: ObservableObject {
     private func render() {
         guard let arrivals = entries.last?.arrivals else {
             display = nil
+            reportedVehicles = []
             return
         }
 
         let model = arrivals.model
-        let colors = Dictionary(model.routes.map { ($0.routeID, $0.color) }, uniquingKeysWith: { first, _ in first })
         layOutLanes(for: model)
         drawnScreenScale = screenScale
 
@@ -297,7 +362,35 @@ final class StopFocusMapDisplayModel: ObservableObject {
             )
         }
 
-        let vehicles = model.vehicles.compactMap { vehicle -> Vehicle? in
+        reportedVehicles = reportedVehicles(arrivals)
+        let estimates = vehicleEstimation?.estimates ?? [:]
+        let vehicles = reportedVehicles.map { $0.placed(at: estimates[$0.id]) }
+
+        // Nothing to draw yet, or nothing running: no point counting it as drawn.
+        display = routes.isEmpty && vehicles.isEmpty ? nil : Display(routes: routes, vehicles: vehicles)
+    }
+
+    /// Moves the drawn vehicles to `estimates`, gliding until the next tick, and
+    /// leaves the routes as they are: rebuilding their polylines every second
+    /// would be most of the work for none of the change.
+    private func moveVehicles(to estimates: [String: VehicleEstimate], previous: [String: VehicleEstimate]) {
+        guard let display else { return }
+        let moved = Display(routes: display.routes, vehicles: reportedVehicles.map { $0.placed(at: estimates[$0.id]) })
+        // One animation covers every marker, so a tick in which any of them must
+        // jump — a snapping estimate, or one gone back to the feed — moves them
+        // all without one. Those ticks are rare: a new vehicle, a big correction.
+        let jumps = estimates.values.contains { $0.shouldSnap } || previous.keys.contains { estimates[$0] == nil }
+        // While any vehicle rewinds the driver ticks at its frame rate, so a
+        // rewinding estimate sets the glide; a second-long one would lag every frame.
+        let glide = jumps ? nil : estimates.values.first { $0.isRewinding } ?? estimates.values.first
+        VehicleEstimationDriver.withGlide(to: glide) { self.display = moved }
+    }
+
+    /// Each vehicle where the feed puts it, with everything that doesn't change
+    /// between estimate ticks: its colour, and what VoiceOver reads.
+    private func reportedVehicles(_ arrivals: Arrivals) -> [Vehicle] {
+        let colors = Dictionary(arrivals.model.routes.map { ($0.routeID, $0.color) }, uniquingKeysWith: { first, _ in first })
+        return arrivals.model.vehicles.compactMap { vehicle -> Vehicle? in
             // As on the map tab, a marker needs the departure behind it: the tap
             // follows it, and VoiceOver reads from it.
             guard let departure = arrivals.departures[vehicle.departureID] else { return nil }
@@ -318,12 +411,10 @@ final class StopFocusMapDisplayModel: ObservableObject {
                     formatters: formatters
                 ),
                 accessibilityValue: formatters.accessibilityValue(for: departure),
-                departure: departure
+                departure: departure,
+                reported: (vehicle.coordinate, vehicle.orientation)
             )
         }
-
-        // Nothing to draw yet, or nothing running: no point counting it as drawn.
-        display = routes.isEmpty && vehicles.isEmpty ? nil : Display(routes: routes, vehicles: vehicles)
     }
 
     private func layOutLanes(for model: StopRouteFocusModel) {

@@ -103,31 +103,24 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     // MARK: - Estimated positions
 
     /// `nil` leaves every vehicle where the feed says.
-    private let vehicleEstimation: VehicleEstimationDriver?
-    private let tripSchedules: TripScheduleCache?
+    private let vehicleEstimation: StopVehicleEstimation?
     /// Vehicles whose marker follows an estimate, by `DrawnVehicle.id`.
-    private var estimates: [String: VehicleEstimate] = [:]
-    private var estimationTask: Task<Void, Never>?
-    /// The latest arrivals' server clock, and the last one handed to the driver:
-    /// each is recorded once per response, not once per filter change, or one
-    /// sample would fill the skew median.
-    private var latestServerClock: ServerClockSample?
-    private var recordedServerClock: ServerClockSample?
+    private var estimates: [String: VehicleEstimate] { vehicleEstimation?.estimates ?? [:] }
+    /// The latest arrivals' server clock; see `StopVehicleEstimation.refresh`.
+    private var serverClock: ServerClockSample?
 
     init(
         mapView: MKMapView,
         shapeCache: ShapeCache,
         formatters: Formatters,
-        vehicleEstimation: VehicleEstimationDriver? = nil,
-        tripSchedules: TripScheduleCache? = nil
+        vehicleEstimation: StopVehicleEstimation? = nil
     ) {
         self.mapView = mapView
         self.shapeCache = shapeCache
         self.formatters = formatters
         self.vehicleEstimation = vehicleEstimation
-        self.tripSchedules = tripSchedules
         super.init()
-        vehicleEstimation?.onEstimates = { [weak self] in self?.apply(estimates: $0) }
+        vehicleEstimation?.onEstimates = { [weak self] in self?.apply(estimates: $0, previous: $1) }
     }
 
     /// Cancels and drops every cached shape. Called by `MapViewController` when
@@ -138,11 +131,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// callers fire-and-forget.
     @discardableResult
     func invalidateShapeCache() -> Task<Void, Never> {
-        let shapeCache = shapeCache, tripSchedules = tripSchedules
+        let shapeCache = shapeCache, vehicleEstimation = vehicleEstimation
         return Task {
             await shapeCache.removeAll()
             // Trip IDs are region-scoped too.
-            await tripSchedules?.removeAll()
+            await vehicleEstimation?.removeAllSchedules()
         }
     }
 
@@ -187,7 +180,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         presentationToken = UUID()
         for task in shapeTasks { task.cancel() }
         shapeTasks.removeAll()
-        stopEstimating()
+        vehicleEstimation?.stop()
         cancellables.removeAll()
         focus = nil
         focusedVehicleID = nil
@@ -212,7 +205,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// `syncVehicleAnnotations` skipped every one — and left every refresh after
     /// resolving a generation stale.
     func apply(arrivals: StopArrivals?, isListFiltered: Bool, preferences: StopPreferences, serverClock: ServerClockSample? = nil) {
-        latestServerClock = serverClock
+        self.serverClock = serverClock
         let all = arrivals?.arrivalsAndDepartures ?? []
         // Assigned before `update`, which consults it for every vehicle.
         // Asked once per vehicle, twice a poll: a lookup, not a scan.
@@ -261,7 +254,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         isSuppressed = suppressed
 
         guard !suppressed else {
-            stopEstimating()
+            vehicleEstimation?.stop()
             removeAllContent()
             // Shapes are pinned by route so a refresh doesn't redraw an unchanged
             // line. Clearing the pins is what lets them be drawn again on the way
@@ -397,105 +390,11 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     // MARK: - Estimation
 
-    /// Gathers each drawn vehicle's shape and schedule, from their caches or the
-    /// network, then hands the lot to the driver. Asynchronous, so a vehicle whose
-    /// shape or schedule hasn't arrived stays where the feed says until it has.
     private func refreshEstimationInputs() {
-        guard let vehicleEstimation, let tripSchedules else { return }
-        guard vehicleEstimation.isEnabledNow else {
-            // Also stops the tick and any gathering still in flight, which would
-            // otherwise resume the driver.
-            stopEstimating()
-            return
-        }
-
-        let pending: [EstimationPending] = model.vehicles.compactMap { vehicle in
-            guard let tripID = vehicle.tripID, let shapeID = vehicle.shapeID, !shapeID.isEmpty,
-                  let departure = departureProvider?(vehicle.departureID),
-                  let status = departure.tripStatus else { return nil }
-            return EstimationPending(
-                vehicleKey: vehicle.id,
-                tripID: tripID,
-                shapeID: shapeID,
-                request: .init(tripID: tripID, vehicleID: departure.vehicleID, serviceDate: departure.serviceDate),
-                serverTripLength: status.totalDistanceAlongTrip,
-                fix: VehicleFix(tripStatus: status, tripID: tripID)
-            )
-        }
-        let serverClocks = [latestServerClock].compactMap { $0 }.filter { $0 != recordedServerClock }
-        let token = presentationToken
-
-        estimationTask?.cancel()
-        estimationTask = Task { [weak self, shapeCache] in
-            let inputs = await Self.estimationInputs(for: pending, shapeCache: shapeCache, tripSchedules: tripSchedules)
-            guard !Task.isCancelled, let self, self.presentationToken == token, !self.isSuppressed else { return }
-            vehicleEstimation.update(inputs, serverClocks: serverClocks)
-            // Only once the driver has it: a gathering cancelled first leaves the
-            // sample for the next refresh to deliver.
-            recordedServerClock = serverClocks.last ?? recordedServerClock
-            vehicleEstimation.resume()
-        }
+        vehicleEstimation?.refresh(vehicles: model.vehicles, serverClock: serverClock) { departureProvider?($0) }
     }
 
-    /// What `refreshEstimationInputs` knows about a vehicle before its shape and
-    /// schedule arrive.
-    private struct EstimationPending: Sendable {
-        let vehicleKey: String
-        let tripID: String
-        let shapeID: String
-        let request: TripScheduleCache.Request
-        let serverTripLength: Double
-        let fix: VehicleFix?
-    }
-
-    /// Every vehicle at once: on a cold cache each is a round trip or two.
-    private static func estimationInputs(
-        for pending: [EstimationPending],
-        shapeCache: ShapeCache,
-        tripSchedules: TripScheduleCache
-    ) async -> [VehicleEstimationDriver.Input] {
-        await withTaskGroup(of: VehicleEstimationDriver.Input?.self) { group in
-            for vehicle in pending {
-                group.addTask {
-                    async let shape = try? shapeCache.coordinates(forShapeID: vehicle.shapeID)
-                    // Without its schedule a vehicle can still move at its observed speed.
-                    async let schedule = try? tripSchedules.schedule(for: vehicle.request)
-                    guard let shape = await shape, shape.count > 1 else { return nil }
-                    let fetched = await schedule
-                    return VehicleEstimationDriver.Input(
-                        vehicleKey: vehicle.vehicleKey,
-                        tripID: vehicle.tripID,
-                        shape: shape,
-                        stopTimes: fetched?.stopTimes ?? [],
-                        serverTripLength: vehicle.serverTripLength > 0 ? vehicle.serverTripLength : fetched?.serverTripLength,
-                        fixes: [vehicle.fix].compactMap { $0 }
-                    )
-                }
-            }
-            var inputs: [VehicleEstimationDriver.Input] = []
-            for await input in group {
-                if let input { inputs.append(input) }
-            }
-            return inputs
-        }
-    }
-
-    /// Test seam: waits for the gathering `refreshEstimationInputs` started.
-    func estimationInputsSettled() async {
-        await estimationTask?.value
-    }
-
-    private func stopEstimating() {
-        estimationTask?.cancel()
-        estimationTask = nil
-        vehicleEstimation?.pause()
-        vehicleEstimation?.update([])
-        estimates.removeAll()
-    }
-
-    private func apply(estimates: [String: VehicleEstimate]) {
-        let previous = self.estimates
-        self.estimates = estimates
+    private func apply(estimates: [String: VehicleEstimate], previous: [String: VehicleEstimate]) {
         for annotation in annotations {
             let view = mapView.view(for: annotation) as? PulsingVehicleAnnotationView
             if let estimate = estimates[annotation.id] {

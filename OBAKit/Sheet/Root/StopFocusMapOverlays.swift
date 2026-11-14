@@ -82,7 +82,8 @@ private struct StopVehicleButton: View {
                 routeType: vehicle.routeType,
                 isRealTime: vehicle.isRealTime,
                 orientation: vehicle.orientation,
-                routeColor: vehicle.color
+                routeColor: vehicle.color,
+                staleness: vehicle.staleness
             )
             .opacity(vehicle.emphasis.opacity)
         }

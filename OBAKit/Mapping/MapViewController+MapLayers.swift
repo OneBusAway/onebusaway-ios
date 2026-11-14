@@ -65,24 +65,16 @@ extension MapViewController {
             guard let apiService else { throw CancellationError() }
             return try await apiService.getShape(id: shapeID).entry.points
         }
-        let userDefaults = application.userDefaults
-        let tripSchedules = TripScheduleCache { [weak apiService] request in
-            guard let apiService else { throw CancellationError() }
-            let details = try await apiService.getTrip(tripID: request.tripID, vehicleID: request.vehicleID, serviceDate: request.serviceDate).entry
-            return TripScheduleCache.Schedule(
-                stopTimes: details.stopTimes.compactMap(TripGeometry.StopTime.init),
-                serverTripLength: details.status?.totalDistanceAlongTrip
-            )
-        }
         mapRegionManager.registerMapLayer(
             StopRouteFocusMapLayer(
                 mapView: mapRegionManager.mapView,
                 shapeCache: shapeCache,
                 formatters: application.formatters,
-                vehicleEstimation: VehicleEstimationDriver(isEnabled: {
-                    FeatureFlags.isVehicleEstimationEnabled(userDefaults: userDefaults)
-                }),
-                tripSchedules: tripSchedules
+                vehicleEstimation: StopVehicleEstimation(
+                    userDefaults: application.userDefaults,
+                    shapeCache: shapeCache,
+                    apiService: { [weak apiService] in apiService }
+                )
             )
         )
 
