@@ -70,15 +70,19 @@ final class StopRouteFocusEstimationTests {
             notificationCenter: NotificationCenter()
         )
         let counter = scheduleFetches
+        let shapeCache = ShapeCache { _ in encoded }
         let layer = StopRouteFocusMapLayer(
             mapView: mapView,
-            shapeCache: ShapeCache { _ in encoded },
+            shapeCache: shapeCache,
             formatters: Self.formatters,
-            vehicleEstimation: driver,
-            tripSchedules: TripScheduleCache { _ in
-                await counter.increment()
-                return TripScheduleCache.Schedule(stopTimes: [F.stop(0, at: 0), F.stop(1000, at: 100)], serverTripLength: 1000)
-            }
+            vehicleEstimation: StopVehicleEstimation(
+                driver: driver,
+                shapeCache: shapeCache,
+                tripSchedules: TripScheduleCache { _ in
+                    await counter.increment()
+                    return TripScheduleCache.Schedule(stopTimes: [F.stop(0, at: 0), F.stop(1000, at: 100)], serverTripLength: 1000)
+                }
+            )
         )
         let departure = departure
         layer.departureProvider = { _ in departure }

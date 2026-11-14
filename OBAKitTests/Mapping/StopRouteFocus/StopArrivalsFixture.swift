@@ -38,6 +38,12 @@ enum StopArrivalsFixture {
     /// the same `RESTAPIResponse` path `Fixtures.loadRESTAPIPayload` uses, so
     /// `references`, and therefore each `TripStatus.activeTrip`, still resolve.
     static func upcoming() throws -> StopArrivals {
+        try upcoming(rewritingStatus: { $0 })
+    }
+
+    /// `upcoming()`, with every departure's `tripStatus` passed through `rewrite`:
+    /// to put each vehicle somewhere an estimate can be checked against.
+    static func upcoming(rewritingStatus rewrite: ([String: Any]) -> [String: Any]) throws -> StopArrivals {
         var payload = try #require(
             try JSONSerialization.jsonObject(with: Fixtures.loadData(file: fileName)) as? [String: Any]
         )
@@ -50,6 +56,9 @@ enum StopArrivalsFixture {
             let millis = Int((Date().timeIntervalSince1970 + Double((index + 2) * 60)) * 1000)
             for key in ["predictedArrivalTime", "scheduledArrivalTime", "predictedDepartureTime", "scheduledDepartureTime"] {
                 departures[index][key] = millis
+            }
+            if let status = departures[index]["tripStatus"] as? [String: Any] {
+                departures[index]["tripStatus"] = rewrite(status)
             }
         }
 

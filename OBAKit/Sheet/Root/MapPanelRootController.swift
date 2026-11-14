@@ -106,14 +106,20 @@ public final class MapPanelRootController: UIViewController {
     }
 
     /// The API service is read per fetch because it changes with the region; the
-    /// panel empties the shape cache then too.
+    /// panel empties the shape and schedule caches then too.
     private static func makeStopFocusMapDisplayModel(application: Application) -> StopFocusMapDisplayModel {
-        StopFocusMapDisplayModel(
-            shapeCache: ShapeCache { [weak application] shapeID in
-                guard let apiService = await application?.apiService else { throw CancellationError() }
-                return try await apiService.getShape(id: shapeID).entry.points
-            },
-            formatters: application.formatters
+        let shapeCache = ShapeCache { [weak application] shapeID in
+            guard let apiService = await application?.apiService else { throw CancellationError() }
+            return try await apiService.getShape(id: shapeID).entry.points
+        }
+        return StopFocusMapDisplayModel(
+            shapeCache: shapeCache,
+            formatters: application.formatters,
+            vehicleEstimation: StopVehicleEstimation(
+                userDefaults: application.userDefaults,
+                shapeCache: shapeCache,
+                apiService: { [weak application] in await application?.apiService }
+            )
         )
     }
 

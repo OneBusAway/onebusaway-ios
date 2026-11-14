@@ -17,7 +17,8 @@ import OBAKitCore
 ///
 /// The panel's counterpart of `StopRouteFocusMapLayer`, which draws on an
 /// `MKMapView` the panel doesn't have. Both derive what to draw with
-/// `StopRouteFocusModel`, fetch shapes through a `ShapeCache`, and tell the sheet's
+/// `StopRouteFocusModel`, fetch shapes through a `ShapeCache`, estimate where
+/// their vehicles are now with a `StopVehicleEstimation`, and tell the sheet's
 /// route chips what is drawn through its `StopMapFocus`.
 ///
 /// It doesn't move the camera. The panel already frames the stop when its sheet
@@ -62,6 +63,8 @@ final class StopFocusMapDisplayModel: ObservableObject {
         let orientation: CLLocationDirection
         let routeType: Route.RouteType
         let isRealTime: Bool
+        /// How old the fix behind an estimated position is; `.live` without one.
+        let staleness: VehicleMarkerStaleness
         let color: Color
         let emphasis: Emphasis
         let accessibilityLabel: String
@@ -126,9 +129,16 @@ final class StopFocusMapDisplayModel: ObservableObject {
     private var focusedRouteID: RouteID?
     private var focusCancellable: AnyCancellable?
 
-    init(shapeCache: ShapeCache, formatters: Formatters) {
+    /// `nil` leaves every vehicle where the feed says.
+    private let vehicleEstimation: StopVehicleEstimation?
+    /// Whether an open trip has the map; see `setSuppressed(_:)`.
+    private var isSuppressed = false
+
+    init(shapeCache: ShapeCache, formatters: Formatters, vehicleEstimation: StopVehicleEstimation? = nil) {
         self.shapeCache = shapeCache
         self.formatters = formatters
+        self.vehicleEstimation = vehicleEstimation
+        vehicleEstimation?.onEstimates = { [weak self] estimates, _ in self?.moveVehicles(to: estimates) }
     }
 
     // MARK: - Sharing the map
@@ -166,7 +176,13 @@ final class StopFocusMapDisplayModel: ObservableObject {
     /// Takes the emitted values rather than reading the view model back, for the
     /// reason `StopRouteFocusMapLayer.apply(arrivals:isListFiltered:preferences:)`
     /// gives: `@Published` emits in `willSet`.
-    func apply(arrivals: StopArrivals?, isListFiltered: Bool, preferences: StopPreferences, owner: AppSheetRoute) {
+    func apply(
+        arrivals: StopArrivals?,
+        isListFiltered: Bool,
+        preferences: StopPreferences,
+        serverClock: ServerClockSample? = nil,
+        owner: AppSheetRoute
+    ) {
         guard let index = entries.firstIndex(where: { $0.owner == owner }) else { return }
 
         let all = arrivals?.arrivalsAndDepartures ?? []
@@ -180,8 +196,19 @@ final class StopFocusMapDisplayModel: ObservableObject {
         entries[index].focus?.apply(routes: model.routes)
 
         guard index == entries.indices.last else { return }
+        vehicleEstimation?.record(serverClock: serverClock)
         loadShapes()
         render()
+        refreshEstimation()
+    }
+
+    /// Stands the stop's estimation down while an open trip has the map (see
+    /// `stopTakesMap(stopOwner:tripOwner:routes:)`): the trip page estimates its
+    /// own vehicle, and the stop's would tick for markers nobody sees.
+    func setSuppressed(_ suppressed: Bool) {
+        guard isSuppressed != suppressed else { return }
+        isSuppressed = suppressed
+        refreshEstimation()
     }
 
     /// Drops every stop whose sheet is no longer on the stack and goes back to
@@ -197,8 +224,12 @@ final class StopFocusMapDisplayModel: ObservableObject {
     /// Forgets every shape, so a shape ID from the old region can't resolve to the
     /// wrong line in a new one.
     func invalidateShapeCache() {
-        let shapeCache = shapeCache
-        Task { await shapeCache.removeAll() }
+        let shapeCache = shapeCache, vehicleEstimation = vehicleEstimation
+        Task {
+            await shapeCache.removeAll()
+            // Trip IDs are region-scoped too.
+            await vehicleEstimation?.removeAllSchedules()
+        }
     }
 
     /// The panel's camera settled at a new zoom. Lanes are sized in screen points,
@@ -221,6 +252,11 @@ final class StopFocusMapDisplayModel: ObservableObject {
         }
     }
 
+    /// Lets tests wait for the shapes and schedules estimation is gathering.
+    func estimationInputsSettled() async {
+        await vehicleEstimation?.inputsSettled()
+    }
+
     // MARK: - Drawing
 
     private func beginDrawingTop() {
@@ -231,6 +267,8 @@ final class StopFocusMapDisplayModel: ObservableObject {
         laneShapeIDs.removeAll()
         focusedRouteID = nil
         focusCancellable = nil
+        // The last stop's vehicles; the new one's start on its next refresh.
+        vehicleEstimation?.stop()
 
         guard let focus = entries.last?.focus else {
             display = nil
@@ -247,6 +285,16 @@ final class StopFocusMapDisplayModel: ObservableObject {
             }
         loadShapes()
         render()
+        refreshEstimation()
+    }
+
+    private func refreshEstimation() {
+        guard let vehicleEstimation else { return }
+        guard !isSuppressed, let arrivals = entries.last?.arrivals else {
+            vehicleEstimation.stop()
+            return
+        }
+        vehicleEstimation.refresh(vehicles: arrivals.model.vehicles) { arrivals.departures[$0] }
     }
 
     private func loadShapes() {
@@ -277,7 +325,6 @@ final class StopFocusMapDisplayModel: ObservableObject {
         }
 
         let model = arrivals.model
-        let colors = Dictionary(model.routes.map { ($0.routeID, $0.color) }, uniquingKeysWith: { first, _ in first })
         layOutLanes(for: model)
         drawnScreenScale = screenScale
 
@@ -297,18 +344,43 @@ final class StopFocusMapDisplayModel: ObservableObject {
             )
         }
 
-        let vehicles = model.vehicles.compactMap { vehicle -> Vehicle? in
+        let vehicles = vehicles(arrivals, estimates: vehicleEstimation?.estimates ?? [:])
+
+        // Nothing to draw yet, or nothing running: no point counting it as drawn.
+        display = routes.isEmpty && vehicles.isEmpty ? nil : Display(routes: routes, vehicles: vehicles)
+    }
+
+    /// Moves the drawn vehicles to `estimates`, gliding until the next tick, and
+    /// leaves the routes as they are: rebuilding their polylines every second
+    /// would be most of the work for none of the change.
+    private func moveVehicles(to estimates: [String: VehicleEstimate]) {
+        guard let display, let arrivals = entries.last?.arrivals else { return }
+        let moved = Display(routes: display.routes, vehicles: vehicles(arrivals, estimates: estimates))
+        let glide = estimates.values.first { !$0.shouldSnap }.map(VehicleEstimationDriver.glideDuration(for:))
+        if let glide, !UIAccessibility.isReduceMotionEnabled {
+            withAnimation(.linear(duration: glide)) { self.display = moved }
+        } else {
+            self.display = moved
+        }
+    }
+
+    /// Each vehicle where its estimate puts it, or where the feed does without one.
+    private func vehicles(_ arrivals: Arrivals, estimates: [String: VehicleEstimate]) -> [Vehicle] {
+        let colors = Dictionary(arrivals.model.routes.map { ($0.routeID, $0.color) }, uniquingKeysWith: { first, _ in first })
+        return arrivals.model.vehicles.compactMap { vehicle -> Vehicle? in
             // As on the map tab, a marker needs the departure behind it: the tap
             // follows it, and VoiceOver reads from it.
             guard let departure = arrivals.departures[vehicle.departureID] else { return nil }
             let color = colors[vehicle.routeID] ?? ThemeColors.shared.brand
+            let estimate = estimates[vehicle.id]
             return Vehicle(
                 id: vehicle.id,
                 routeID: vehicle.routeID,
-                coordinate: vehicle.coordinate,
-                orientation: vehicle.orientation,
+                coordinate: estimate?.coordinate ?? vehicle.coordinate,
+                orientation: estimate?.obaOrientation ?? vehicle.orientation,
                 routeType: departure.route?.routeType ?? .bus,
                 isRealTime: departure.tripStatus?.isRealTime ?? false,
+                staleness: VehicleMarkerStaleness(estimate: estimate),
                 color: Color(uiColor: color),
                 emphasis: emphasis(for: vehicle.routeID),
                 accessibilityLabel: StopRouteFocusMapLayer.accessibilityLabel(
@@ -321,9 +393,6 @@ final class StopFocusMapDisplayModel: ObservableObject {
                 departure: departure
             )
         }
-
-        // Nothing to draw yet, or nothing running: no point counting it as drawn.
-        display = routes.isEmpty && vehicles.isEmpty ? nil : Display(routes: routes, vehicles: vehicles)
     }
 
     private func layOutLanes(for model: StopRouteFocusModel) {

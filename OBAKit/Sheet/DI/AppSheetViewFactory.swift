@@ -272,7 +272,7 @@ final class AppSheetViewFactory {
                     stopFocusMapDisplayModel.show(focus: focus, owner: owner)
                 }
             },
-            apply: { [stopFocusMapDisplayModel] arrivals, isListFiltered, preferences in
+            apply: { [stopFocusMapDisplayModel] arrivals, isListFiltered, preferences, serverClock in
                 // Behind `show`'s wait, so the first emission isn't dropped for
                 // arriving before its sheet is known.
                 Task { @MainActor in
@@ -280,6 +280,7 @@ final class AppSheetViewFactory {
                         arrivals: arrivals,
                         isListFiltered: isListFiltered,
                         preferences: preferences,
+                        serverClock: serverClock,
                         owner: owner
                     )
                 }

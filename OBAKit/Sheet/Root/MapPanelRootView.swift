@@ -589,6 +589,10 @@ struct MapPanelRootView: View {
             tripFocusDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
             stopFocusDisplay.clearIfOwnerAbsent(from: coordinator.allRoutes)
         }
+        // A trip over the stop draws instead, and estimates its own vehicle.
+        .onChange(of: stopTakesMap, initial: true) { _, takesMap in
+            stopFocusDisplay.setSuppressed(!takesMap)
+        }
         .onChange(of: searchDisplay.cameraTarget) { _, target in
             guard let target else { return }
             switch target {
