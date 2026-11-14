@@ -42,7 +42,7 @@ extension RESTAPIService {
                     }
                 }
         } catch {
-            logger.error("getAlerts() failed for \(agency.agency.name, privacy: .public): \(error, privacy: .public)")
+            logger.error("getAlerts() failed for \(agency.agency.name, privacy: .public): \(Logger.redactingURLQueries(in: String(describing: error)), privacy: .public)")
             return []
         }
     }

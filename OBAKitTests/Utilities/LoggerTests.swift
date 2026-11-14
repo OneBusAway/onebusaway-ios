@@ -38,4 +38,72 @@ final class LoggerTests {
         
         #expect(logsFound == true, "Log message was not found in OSLogStore after polling")
     }
+
+    // MARK: - URL query redaction (#1732)
+
+    private static let url = URL(string: "https://api.example.com/api/where/stops-for-location.json?key=SECRETKEY&lat=47.6&lon=-122.3")!
+    private static let bareURL = "https://api.example.com/api/where/stops-for-location.json"
+
+    @Test func `A URLError description loses the query from both failing URL keys`() {
+        let error = URLError(.timedOut, userInfo: [
+            NSURLErrorFailingURLErrorKey: Self.url,
+            NSURLErrorFailingURLStringErrorKey: Self.url.absoluteString
+        ])
+
+        let redacted = Logger.redactingURLQueries(in: "API stop request failed: \(error)")
+
+        #expect(!redacted.contains("SECRETKEY"))
+        #expect(!redacted.contains("47.6"))
+        #expect(redacted.contains("NSErrorFailingURLKey=\(Self.bareURL)"))
+        #expect(redacted.contains("NSErrorFailingURLStringKey=\(Self.bareURL)"))
+        #expect(redacted.contains("Code=-1001"))
+    }
+
+    @Test func `An APIError carrying an HTTPURLResponse loses the query and keeps the status code`() throws {
+        let response = try #require(HTTPURLResponse(url: Self.url, statusCode: 500, httpVersion: nil, headerFields: nil))
+
+        let redacted = Logger.redactingURLQueries(in: "getAlerts() failed: \(APIError.requestFailure(response))")
+
+        #expect(!redacted.contains("SECRETKEY"))
+        #expect(redacted.contains("URL: \(Self.bareURL) }"))
+        #expect(redacted.contains("Status Code: 500"))
+    }
+
+    @Test func `Messages without a URL query are left alone`() {
+        let messages = [
+            "Plain message",
+            "Is this a question?",
+            "Loaded \(Self.bareURL)",
+            "Map item at https://example.com/path#fragment"
+        ]
+        for message in messages {
+            #expect(Logger.redactingURLQueries(in: message) == message)
+        }
+    }
+
+    @Test func `Every URL in a message loses its query and the text around it stays`() {
+        let message = "Retry (https://a.example.com/x?key=1) after \"https://b.example.com/y?lat=2&lon=3\"."
+
+        #expect(Logger.redactingURLQueries(in: message) == "Retry (https://a.example.com/x) after \"https://b.example.com/y\".")
+    }
+
+    @Test func `Logged messages reach the log store without the query`() async throws {
+        let marker = UUID().uuidString
+        let startDate = Date()
+
+        Logger.error("Redaction \(marker): \(URLError(.notConnectedToInternet, userInfo: [NSURLErrorFailingURLErrorKey: Self.url]))")
+
+        var message: String?
+        for _ in 0..<20 {
+            message = try? Logger.getLogEntries(since: startDate)
+                .first(where: { $0.composedMessage.contains(marker) })?
+                .composedMessage
+            if message != nil { break }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        let logged = try #require(message, "Log message was not found in OSLogStore after polling")
+        #expect(!logged.contains("SECRETKEY"))
+        #expect(logged.contains(Self.bareURL))
+    }
 }
