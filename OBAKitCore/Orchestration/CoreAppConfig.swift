@@ -44,14 +44,19 @@ open class CoreAppConfig: NSObject {
     /// Injectable so tests never share the process-wide cache.
     public let onDemandSupport: OnDemandSupport
 
+    /// The network retry policy for transient errors on idempotent REST requests.
+    public let retryPolicy: RetryPolicy
+
     /// Convenience initializer that pulls from the host application's main `Bundle`.
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
-    @objc public convenience init(
+    /// - Parameter retryPolicy: The retry policy for network requests.
+    public convenience init(
         appBundle: Bundle,
         userDefaults: UserDefaults,
-        bundledRegionsFilePath: String
+        bundledRegionsFilePath: String,
+        retryPolicy: RetryPolicy = .standard
     ) {
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress!,
@@ -65,7 +70,8 @@ open class CoreAppConfig: NSObject {
             dataLoader: URLSession.shared,
             fixedRegionName: appBundle.fixedRegionName,
             fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
-            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter
+            defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter,
+            retryPolicy: retryPolicy
         )
     }
 
@@ -79,6 +85,7 @@ open class CoreAppConfig: NSObject {
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
+    /// - Parameter retryPolicy: The retry policy for network requests.
     public init(
         regionsBaseURL: URL?,
         apiKey: String,
@@ -92,7 +99,8 @@ open class CoreAppConfig: NSObject {
         fixedRegionName: String? = nil,
         fixedRegionOBABaseURL: URL? = nil,
         defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
-        onDemandSupport: OnDemandSupport = .shared
+        onDemandSupport: OnDemandSupport = .shared,
+        retryPolicy: RetryPolicy = .standard
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
@@ -107,5 +115,6 @@ open class CoreAppConfig: NSObject {
         self.fixedRegionOBABaseURL = fixedRegionOBABaseURL
         self.defaultArrivalDepartureFilter = defaultArrivalDepartureFilter
         self.onDemandSupport = onDemandSupport
+        self.retryPolicy = retryPolicy
     }
 }

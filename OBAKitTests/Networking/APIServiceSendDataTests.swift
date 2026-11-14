@@ -26,6 +26,7 @@ private nonisolated struct MockResponsePayload: Codable, Equatable, Sendable {
 private nonisolated final class TestAPIService: APIService {
     let configuration: APIServiceConfiguration
     let dataLoader: URLDataLoader
+    let retryPolicy: RetryPolicy = .standard
     let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "TestAPIService")
 
     init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
