@@ -567,7 +567,7 @@
 
 
 /* Authentication error summary. */
-"error_report.summary.authentication" = "Kailangang mag-autenticate";
+"error_report.summary.authentication" = "Kailangang mag-authenticate";
 
 /* Authentication error explanation. */
-"error_report.explanation.authentication" = "Kailangang pumautentica para lumipat";
+"error_report.explanation.authentication" = "Kailangang magpatuloy";
