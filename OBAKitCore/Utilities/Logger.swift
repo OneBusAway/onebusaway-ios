@@ -73,6 +73,28 @@ import OSLog
         }
     }
 
+    // MARK: - Redaction
+
+    /// Matches the query of an http(s) URL, up to whitespace, trailing
+    /// punctuation, or a character `.urlQueryAllowed` always percent-encodes
+    /// (`"`, `<`, `>`, `{`, `}`, `[`, `]`). `'`, `(` and `)` stay raw in a query,
+    /// as in a search for "Lincoln's", so they don't end it.
+    private static let urlQueryPattern = try! NSRegularExpression( // swiftlint:disable:this force_try
+        pattern: #"(https?://[^\s?#"<>{}\[\]]+)\?[^\s"<>{}\[\]]*?(?=[,.;]?(?:[\s"<>{}\[\]]|$))"#
+    )
+
+    /// `message` with the query removed from every http(s) URL in it (#1732).
+    ///
+    /// Every message is logged `.public`, and callers often interpolate a raw
+    /// error, whose description includes the failing URL. The query holds the
+    /// region's API key, the install's `app_uid` and, for calls like
+    /// stops-for-location, the rider's coordinates.
+    static func redactingURLQueries(in message: String) -> String {
+        guard message.contains("?") else { return message }
+        let range = NSRange(message.startIndex..., in: message)
+        return urlQueryPattern.stringByReplacingMatches(in: message, range: range, withTemplate: "$1")
+    }
+
     // MARK: - Info
 
     @objc public static func info(_ message: String) {
@@ -80,7 +102,7 @@ import OSLog
     }
 
     func info(_ message: String) {
-        logger.info("\(message, privacy: .public)")
+        logger.info("\(Self.redactingURLQueries(in: message), privacy: .public)")
     }
 
     // MARK: - Warn
@@ -90,7 +112,7 @@ import OSLog
     }
 
     func warn(_ message: String) {
-        logger.warning("\(message, privacy: .public)")
+        logger.warning("\(Self.redactingURLQueries(in: message), privacy: .public)")
     }
 
     // MARK: - Error
@@ -100,6 +122,6 @@ import OSLog
     }
 
     func error(_ message: String) {
-        logger.error("\(message, privacy: .public)")
+        logger.error("\(Self.redactingURLQueries(in: message), privacy: .public)")
     }
 }
