@@ -46,6 +46,8 @@ nonisolated struct RouteArrowLayout {
         /// Which candidate this is, counting from the start of the line.
         let index: Int
         let point: CGPoint
+        /// How far along the line it sits, in the line's units.
+        let along: CGFloat
         /// Radians from +x toward +y: y runs down, as on screen and in MapKit's map
         /// points, so a positive angle turns clockwise.
         let angle: CGFloat
@@ -54,6 +56,9 @@ nonisolated struct RouteArrowLayout {
     private let points: [CGPoint]
     /// The distance along the line to each point, in the line's own units.
     private let distances: [CGFloat]
+
+    /// The whole line's length, in its own units.
+    var length: CGFloat { distances.last ?? 0 }
 
     init(points: [CGPoint]) {
         self.points = points
@@ -153,7 +158,7 @@ nonisolated struct RouteArrowLayout {
         let clearance = Rules.markerClearance / scale
         guard markers.allSatisfy({ Self.distance($0, point) >= clearance }) else { return nil }
 
-        return Arrow(index: index, point: point, angle: atan2(end.y - start.y, end.x - start.x))
+        return Arrow(index: index, point: point, along: along, angle: atan2(end.y - start.y, end.x - start.x))
     }
 
     /// The last segment starting at or before `along`. A zero-length segment never
@@ -332,7 +337,15 @@ nonisolated final class RouteArrowRenderer: MKPolylineRenderer {
     /// Test seam: the arrows placed over the whole line when `scale` screen points
     /// span one map point.
     func arrows(scale: CGFloat) -> [RouteArrowLayout.Arrow] {
-        layout.arrows(scale: scale, avoiding: context.snapshot.markers)
+        stroked(layout.arrows(scale: scale, avoiding: context.snapshot.markers))
+    }
+
+    /// Only the chevrons on the part of the line `strokeStart` leaves drawn. They
+    /// keep their places as it moves, rather than sliding along with it.
+    private func stroked(_ arrows: [RouteArrowLayout.Arrow]) -> [RouteArrowLayout.Arrow] {
+        guard strokeStart > 0 else { return arrows }
+        let cut = strokeStart * layout.length
+        return arrows.filter { $0.along >= cut }
     }
 
     /// The screen points per map point a tile lays its chevrons out at.
@@ -358,7 +371,7 @@ nonisolated final class RouteArrowRenderer: MKPolylineRenderer {
         // draws its part inside it.
         let reach = RouteArrowStyle.extent / scale
         let tile = CGRect(x: mapRect.origin.x, y: mapRect.origin.y, width: mapRect.size.width, height: mapRect.size.height)
-        let arrows = layout.arrows(scale: scale, avoiding: snapshot.markers, in: tile.insetBy(dx: -reach, dy: -reach))
+        let arrows = stroked(layout.arrows(scale: scale, avoiding: snapshot.markers, in: tile.insetBy(dx: -reach, dy: -reach)))
         guard !arrows.isEmpty else { return }
 
         let chevrons = CGMutablePath()

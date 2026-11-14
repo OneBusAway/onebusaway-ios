@@ -43,21 +43,26 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     /// short-circuited by cached/preloaded data). Reads/writes go through
     /// `recordedRequestURLsLock` because real callers fan out across multiple
     /// concurrent tasks (e.g. `AgencyAlertsStore.update()`'s alerts task group).
-    private var _recordedRequestURLs = [URL]()
+    private var _recordedRequests = [URLRequest]()
     private let recordedRequestURLsLock = NSLock()
     var recordedRequestURLs: [URL] {
-        recordedRequestURLsLock.withLock { _recordedRequestURLs }
+        recordedRequestURLsLock.withLock { _recordedRequests.compactMap(\.url) }
     }
-    private func recordRequest(_ url: URL?) {
-        guard let url else { return }
-        recordedRequestURLsLock.withLock { _recordedRequestURLs.append(url) }
+    /// Every request seen by `data(for:)`, for tests that assert on more than the URL
+    /// (a cache policy, a header).
+    var recordedRequests: [URLRequest] {
+        recordedRequestURLsLock.withLock { _recordedRequests }
+    }
+    private func recordRequest(_ request: URLRequest) {
+        guard request.url != nil else { return }
+        recordedRequestURLsLock.withLock { _recordedRequests.append(request) }
     }
 
     /// Clears recorded request URLs. Useful in tests that need to ignore the
     /// requests made during `Application` startup and only assert about calls
     /// that happen after a specific action.
     func resetRecordedRequestURLs() {
-        recordedRequestURLsLock.withLock { _recordedRequestURLs.removeAll() }
+        recordedRequestURLsLock.withLock { _recordedRequests.removeAll() }
     }
 
     let testName: String
@@ -86,7 +91,7 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
             throw URLError(.cancelled)
         }
 
-        recordRequest(request.url)
+        recordRequest(request)
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
@@ -129,8 +134,8 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
         mock(url: URL(string: URLString)!, with: data)
     }
 
-    func mock(url: URL, with data: Data) {
-        let urlResponse = buildURLResponse(URL: url, statusCode: 200, contentLength: data.count)
+    func mock(url: URL, with data: Data, headers: [String: String] = [:]) {
+        let urlResponse = buildURLResponse(URL: url, statusCode: 200, contentLength: data.count, headers: headers)
         let mockResponse = MockDataResponse(data: data, urlResponse: urlResponse, error: nil) {
             let requestURL = $0.url!
             return requestURL.host == url.host && requestURL.path == url.path
@@ -166,8 +171,8 @@ nonisolated class MockDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
     /// `expectedContentLength` at `NSURLResponseUnknownLength`, which no real server does —
     /// pass the mocked body's `count` so response-length checks in `APIService` see what
     /// they'd see in production.
-    func buildURLResponse(URL: URL, statusCode: Int, contentLength: Int? = nil, contentType: String = "application/json") -> HTTPURLResponse {
-        var headerFields = ["Content-Type": contentType]
+    func buildURLResponse(URL: URL, statusCode: Int, contentLength: Int? = nil, contentType: String = "application/json", headers: [String: String] = [:]) -> HTTPURLResponse {
+        var headerFields = headers.merging(["Content-Type": contentType]) { _, new in new }
 
         if let contentLength {
             headerFields["Content-Length"] = String(contentLength)

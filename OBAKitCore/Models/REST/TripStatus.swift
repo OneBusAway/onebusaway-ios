@@ -47,8 +47,13 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
     /// information about frequency based scheduling, if applicable to the trip
     public let frequency: Frequency?
 
-    /// The last known distance along trip value received in real-time from the transit vehicle.
-    public let lastKnownDistanceAlongTrip: Int?
+    /// The last known distance along trip value received in real-time from the transit vehicle,
+    /// in meters. `nil` when the server has none: Java never sets it, and maglev sends `0`
+    /// when it could not project the vehicle onto the shape, so `0` decodes as `nil`.
+    ///
+    /// `Double`, not `Int`: maglev sends the projection fractional, and decoding that
+    /// as `Int` throws, losing the whole status.
+    public let lastKnownDistanceAlongTrip: Double?
 
     /// Last known location of the transit vehicle. This differs from the existing position field,
     /// in that the position field is potential extrapolated forward from the last known position and other data.
@@ -167,7 +172,7 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
         closestStopTimeOffset = try container.decode(Int.self, forKey: .closestStopTimeOffset)
         distanceAlongTrip = try container.decode(Double.self, forKey: .distanceAlongTrip)
         frequency = try container.decodeIfPresent(Frequency.self, forKey: .frequency)
-        lastKnownDistanceAlongTrip = try container.decodeIfPresent(Int.self, forKey: .lastKnownDistanceAlongTrip)
+        lastKnownDistanceAlongTrip = try container.decodeIfPresent(Double.self, forKey: .lastKnownDistanceAlongTrip).flatMap { $0 == 0 ? nil : $0 }
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
         lastKnownOrientation = try container.decodeIfPresent(CLLocationDirection.self, forKey: .lastKnownOrientation)
         lastLocationUpdateTime = try container.decode(Int64.self, forKey: .lastLocationUpdateTime)

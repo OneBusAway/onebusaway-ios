@@ -41,16 +41,37 @@ final class TripMapFocus: ObservableObject {
         /// the list can never disagree about which stops are behind the bus.
         let stops: [TripStopListModel.Row]
         let vehicle: TripStatus?
+        /// Debug: beside an estimated marker, also draw where the feed put the
+        /// vehicle. See `FeatureFlags.showsRawVehicleFixKey`.
+        var showsReportedPositions = false
     }
 
     @Published private(set) var content: Content?
+
+    /// Where the vehicle is estimated to be now, once a second; `nil` when it isn't
+    /// estimated, and the map draws `content`'s reported position instead. Separate
+    /// from `content` so a tick moves the marker without redrawing the trip.
+    @Published private(set) var vehicleEstimate: VehicleEstimate?
+
+    /// Where to cut the line while an estimate runs, so its gray-to-colored join
+    /// stays at the marker on every tick; `nil` cuts it at `content.progress`.
+    /// Both maps read it.
+    @Published private(set) var estimatedSplitProgress: Double?
 
     func apply(_ content: Content?) {
         self.content = content
     }
 
+    func applyVehicleEstimate(_ estimate: VehicleEstimate?) {
+        vehicleEstimate = estimate
+        let progress = estimate?.progress
+        if progress != estimatedSplitProgress { estimatedSplitProgress = progress }
+    }
+
     func clear() {
         content = nil
+        vehicleEstimate = nil
+        estimatedSplitProgress = nil
     }
 }
 
@@ -62,10 +83,25 @@ extension TripMapFocus.Content {
     /// The shape cut at the vehicle. No reported progress means nothing is known to
     /// have been travelled, so the whole shape counts as ahead rather than guessing
     /// at a split.
-    var shapeSplit: TripShapeSplit.Result {
-        progress.map {
+    ///
+    /// - Parameter estimatedProgress: `TripMapFocus.estimatedSplitProgress`, which
+    ///   overrides the reported progress while an estimate runs.
+    func shapeSplit(estimatedProgress: Double? = nil) -> TripShapeSplit.Result {
+        (estimatedProgress ?? progress).map {
             TripShapeSplit.split(coordinates: shape, atFraction: $0)
         } ?? TripShapeSplit.Result(spent: [], ahead: shape)
+    }
+
+    /// Debug: where the feed put the vehicle, for drawing beside an estimate.
+    /// Empty unless `showsReportedPositions` and an estimate is running.
+    func reportedPositions(isEstimating: Bool) -> [ReportedPosition] {
+        guard isEstimating, showsReportedPositions, let vehicle else { return [] }
+        return [
+            vehicle.lastKnownLocation.map { ReportedPosition(kind: .lastKnownLocation, coordinate: $0.coordinate) },
+            vehicle.position.map { ReportedPosition(kind: .serverPosition, coordinate: $0.coordinate) }
+        ]
+        .compactMap { $0 }
+        .filter { !$0.coordinate.isNullIsland }
     }
 
     /// The vehicle's position, or `nil` when it has reported none it can be drawn at.
