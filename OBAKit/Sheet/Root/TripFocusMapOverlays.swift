@@ -59,15 +59,7 @@ func tripFocusMapContent(
         }
 
         // Debug, under the marker so the estimate stays on top.
-        ForEach(reportedPositions) { position in
-            Annotation("", coordinate: position.coordinate, anchor: .center) {
-                Circle()
-                    .stroke(Color(uiColor: position.kind.color), lineWidth: 2.5)
-                    .frame(width: ReportedPositionAnnotationView.diameter, height: ReportedPositionAnnotationView.diameter)
-                    .accessibilityHidden(true)
-                    .allowsHitTesting(false)
-            }
-        }
+        reportedPositionsMapContent(reportedPositions)
 
         if let vehicle {
             Annotation("", coordinate: vehicle.coordinate, anchor: .center) {
@@ -83,6 +75,21 @@ func tripFocusMapContent(
                 .accessibilityHidden(true)
                 .allowsHitTesting(false)
             }
+        }
+    }
+}
+
+/// Debug rings for the reported fix and the server's position beside an estimate;
+/// see `FeatureFlags.showsRawVehicleFixKey`.
+@MapContentBuilder
+private func reportedPositionsMapContent(_ reportedPositions: [ReportedPosition]) -> some MapContent {
+    ForEach(reportedPositions) { position in
+        Annotation("", coordinate: position.coordinate, anchor: .center) {
+            Circle()
+                .stroke(Color(uiColor: position.kind.color), lineWidth: 2.5)
+                .frame(width: ReportedPositionAnnotationView.diameter, height: ReportedPositionAnnotationView.diameter)
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
         }
     }
 }

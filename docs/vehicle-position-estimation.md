@@ -112,7 +112,7 @@ the plan:
 
 1. **Where markers are drawn.**
    - **Map tab (`MKMapView`):** `TripFocusMapLayer.drawVehicle` (`OBAKit/Mapping/Layers/TripFocus/TripFocusMapLayer.swift:185`) draws a `VehicleAnnotation` (`OBAKit/Trip/VehicleAnnotation.swift`) with a `PulsingVehicleAnnotationView`.
-   - **Map panel experience (SwiftUI `Map`, behind `FeatureFlags.useMapPanelExperienceKey`):** `TripFocusMapDisplayModel.vehicle(_:)` (`OBAKit/Sheet/Root/TripFocusMapDisplayModel.swift:235`) feeds `TripVehicleMarker` in `tripFocusMapContent` (`TripFocusMapOverlays.swift`).
+   - **Map panel experience (SwiftUI `Map`, behind `FeatureFlags.useMapPanelExperienceKey`):** `TripFocusMapDisplayModel.vehicle(_:)` (`OBAKit/Sheet/Root/TripFocusMapDisplayModel.swift:235`) feeds `PanelVehicleMarker` in `tripFocusMapContent` (`TripFocusMapOverlays.swift`).
    - **One source for both:** each reads `TripMapFocus.Content` (`OBAKit/Mapping/Layers/TripFocus/TripMapFocus.swift`), published by `TripPageViewController.publishMapFocus` (`OBAKit/Trip/TripPage/TripPageViewController.swift:243`).
    - **Other vehicle surfaces:**
      - The stop-route-focus layer: `StopVehicleAnnotation` / `StopRouteFocusMapLayer.syncVehicleAnnotations`, line 309.
