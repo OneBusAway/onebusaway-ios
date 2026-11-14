@@ -75,10 +75,12 @@ import OSLog
 
     // MARK: - Redaction
 
-    /// Matches the query of an http(s) URL, up to whitespace, a quote, a bracket
-    /// or trailing punctuation.
+    /// Matches the query of an http(s) URL, up to whitespace, trailing
+    /// punctuation, or a character `.urlQueryAllowed` always percent-encodes
+    /// (`"`, `<`, `>`, `{`, `}`, `[`, `]`). `'`, `(` and `)` stay raw in a query,
+    /// as in a search for "Lincoln's", so they don't end it.
     private static let urlQueryPattern = try! NSRegularExpression( // swiftlint:disable:this force_try
-        pattern: #"(https?://[^\s?#"'<>{}()\[\]]+)\?[^\s"'<>{}()\[\]]*?(?=[,.;]?(?:[\s"'<>{}()\[\]]|$))"#
+        pattern: #"(https?://[^\s?#"<>{}\[\]]+)\?[^\s"<>{}\[\]]*?(?=[,.;]?(?:[\s"<>{}\[\]]|$))"#
     )
 
     /// `message` with the query removed from every http(s) URL in it (#1732).

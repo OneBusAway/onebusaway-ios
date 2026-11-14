@@ -82,9 +82,30 @@ final class LoggerTests {
     }
 
     @Test func `Every URL in a message loses its query and the text around it stays`() {
-        let message = "Retry (https://a.example.com/x?key=1) after \"https://b.example.com/y?lat=2&lon=3\"."
+        let message = "Retry https://a.example.com/x?key=1, then \"https://b.example.com/y?lat=2&lon=3\"."
 
-        #expect(Logger.redactingURLQueries(in: message) == "Retry (https://a.example.com/x) after \"https://b.example.com/y\".")
+        #expect(Logger.redactingURLQueries(in: message) == "Retry https://a.example.com/x, then \"https://b.example.com/y\".")
+    }
+
+    /// `.urlQueryAllowed` leaves `'`, `(` and `)` raw, so a search for
+    /// "Lincoln's" must not end the redaction before `key`.
+    @Test func `Apostrophes and parentheses in a query don't end the redaction`() {
+        let messages = [
+            "Failed: https://api.example.com/search/stop.json?query=Lincoln's&key=KEY&app_uid=UID",
+            "Failed: https://api.example.com/search/stop.json?query=Route%20(A)&key=KEY&app_uid=UID",
+            "Failed: https://api.example.com/x(v1)?key=KEY&app_uid=UID"
+        ]
+        for message in messages {
+            let redacted = Logger.redactingURLQueries(in: message)
+            #expect(!redacted.contains("KEY"), "\(message)")
+            #expect(!redacted.contains("UID"), "\(message)")
+        }
+    }
+
+    @Test func `A URL query ending a userInfo dictionary keeps the closing brace`() {
+        let message = "UserInfo={NSErrorFailingURLStringKey=https://api.example.com/x.json?key=KEY}"
+
+        #expect(Logger.redactingURLQueries(in: message) == "UserInfo={NSErrorFailingURLStringKey=https://api.example.com/x.json}")
     }
 
     @Test func `Logged messages reach the log store without the query`() async throws {
