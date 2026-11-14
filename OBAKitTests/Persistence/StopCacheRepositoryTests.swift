@@ -64,6 +64,17 @@ final class StopCacheRepositoryTests {
         return try! JSONDecoder().decode(Stop.self, from: data)
     }
 
+    private func saveSuccessfulSync(at date: Date) throws {
+        try repository.saveSyncState(RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: date,
+            lastSuccessAt: date,
+            etag: nil,
+            appVersion: "test"
+        ))
+    }
+
     // MARK: - Save and Retrieve
 
     @Test func `Save and retrieve stops round trips correctly`() {
@@ -98,6 +109,55 @@ final class StopCacheRepositoryTests {
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
         #expect(results.count == 1)
         #expect(results[0].name == "Updated Name")
+    }
+
+    @Test func `Empty cache is expired`() {
+        #expect(repository.cacheFreshness(regionId: 1, now: Date(timeIntervalSince1970: 2_000_000_000)) == .expired)
+    }
+
+    @Test func `Cache is fresh before seven days`() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let syncedAt = now.addingTimeInterval(-7 * 86_400 + 1)
+        try repository.writeSyncedStops([makeStop(id: "fresh")], regionId: 1, syncedAt: syncedAt)
+        try saveSuccessfulSync(at: syncedAt)
+
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .fresh)
+    }
+
+    @Test func `Cache is stale at seven days and remains stale at thirty days`() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let sevenDaysAgo = now.addingTimeInterval(-7 * 86_400)
+        try repository.writeSyncedStops([makeStop(id: "stale")], regionId: 1, syncedAt: sevenDaysAgo)
+        try saveSuccessfulSync(at: sevenDaysAgo)
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .stale)
+
+        repository.clearCache(regionId: 1)
+        let thirtyDaysAgo = now.addingTimeInterval(-30 * 86_400)
+        try repository.writeSyncedStops([makeStop(id: "stale-at-expiry")], regionId: 1, syncedAt: thirtyDaysAgo)
+        try saveSuccessfulSync(at: thirtyDaysAgo)
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .stale)
+    }
+
+    @Test func `Cache is expired after thirty days`() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let syncedAt = now.addingTimeInterval(-30 * 86_400 - 1)
+        try repository.writeSyncedStops([makeStop(id: "expired")], regionId: 1, syncedAt: syncedAt)
+        try saveSuccessfulSync(at: syncedAt)
+
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .expired)
+    }
+
+    @Test func `A later map write does not refresh an old region sync`() throws {
+        let now = Date()
+        let syncedAt = now.addingTimeInterval(-10 * 86_400)
+        try repository.writeSyncedStops([makeStop(id: "synced")], regionId: 1, syncedAt: syncedAt)
+        try saveSuccessfulSync(at: syncedAt)
+
+        // MapRegionManager uses this path while panning. Its fresh row must not
+        // make the region-wide sync look fresh.
+        repository.saveStops([makeStop(id: "map-row")], regionId: 1)
+
+        #expect(repository.cacheFreshness(regionId: 1, now: now) == .stale)
     }
 
     @Test func `Same stop id different regions stored separately`() {
@@ -526,7 +586,7 @@ final class StopCacheRepositoryTests {
         try repository.writeSyncedStops([makeStop(id: "1_recent", routes: [])], regionId: 1, syncedAt: now.addingTimeInterval(-1 * 86_400))
         try repository.writeSyncedStops([makeStop(id: "1_stale", routes: [])], regionId: 1, syncedAt: now.addingTimeInterval(-31 * 86_400))
 
-        repository.deleteStopsOlderThan(now.addingTimeInterval(-30 * 86_400), regionId: 1)
+        repository.deleteStopsOlderThan(now.addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval), regionId: 1)
 
         let stops = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop") }
         #expect(stops == ["1_recent"])
