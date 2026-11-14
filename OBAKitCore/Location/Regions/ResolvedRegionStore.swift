@@ -20,7 +20,7 @@ import Foundation
 public struct ResolvedRegionStore {
     public static let defaultsKey = "OBAResolvedCurrentRegion"
 
-    private let userDefaults: UserDefaults
+    public let userDefaults: UserDefaults
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
@@ -40,28 +40,49 @@ public struct ResolvedRegionStore {
         }
     }
 
+    /// Directly decodes the cached resolved region from `UserDefaults`, without falling back to bundled regions.
+    public var storedRegion: Region? {
+        guard let data = userDefaults.data(forKey: Self.defaultsKey) else { return nil }
+        return try? PropertyListDecoder().decode(Region.self, from: data)
+    }
+
     /// The stored region. When nothing usable is stored — the app has not
     /// launched since this shipped, or the value is corrupt — falls back to
     /// looking the stored *identifier* up in the bundled regions file, which
     /// covers every region except a custom one.
-    public func region(bundledRegionsFilePath: String?) -> Region? {
+    public func region(bundledRegionsFilePath: String? = nil) -> Region? {
+        let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
+
         if let data = userDefaults.data(forKey: Self.defaultsKey) {
             do {
-                return try PropertyListDecoder().decode(Region.self, from: data)
+                let decoded = try PropertyListDecoder().decode(Region.self, from: data)
+                if let storedIdentifier {
+                    if decoded.regionIdentifier == storedIdentifier {
+                        return decoded
+                    }
+                    Logger.error("ResolvedRegionStore: stored region \(decoded.regionIdentifier) does not match selected identifier \(storedIdentifier), falling back")
+                } else {
+                    return decoded
+                }
             } catch {
                 Logger.error("ResolvedRegionStore: stored region is unreadable, falling back: \(error)")
             }
         }
 
         guard
-            let identifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int,
+            let identifier = storedIdentifier,
             let path = bundledRegionsFilePath,
-            let data = FileManager.default.contents(atPath: path),
-            let response = try? JSONDecoder.RESTDecoder().decode(RESTAPIResponse<[Region]>.self, from: data)
+            let data = FileManager.default.contents(atPath: path)
         else {
             return nil
         }
 
-        return response.list.first { $0.regionIdentifier == identifier }
+        if let response = try? JSONDecoder.RESTDecoder().decode(RESTAPIResponse<[Region]>.self, from: data) {
+            return response.list.first { $0.regionIdentifier == identifier }
+        } else if let list = try? JSONDecoder.RESTDecoder().decode([Region].self, from: data) {
+            return list.first { $0.regionIdentifier == identifier }
+        } else {
+            return nil
+        }
     }
 }

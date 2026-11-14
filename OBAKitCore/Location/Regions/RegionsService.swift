@@ -95,7 +95,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             addDelegate(delegate)
         }
 
-        let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey) || currentRegion == nil
+        let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
 
         if autoSelectRegion, let location = locationService.currentLocation {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
@@ -187,6 +187,18 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Regions Data
 
+    /// Tracks whether a successful network refresh of the regions list has occurred in this session.
+    private var hasCompletedSuccessfulRefresh: Bool = false
+
+    /// Whether the last network refresh of the regions list failed.
+    public private(set) var lastRefreshFailed: Bool = false
+
+    /// Whether the current regions list is trusted. The list is untrusted before the first
+    /// successful refresh of the session, or while `lastRefreshFailed` is true.
+    var canTrustRegionsList: Bool {
+        hasCompletedSuccessfulRefresh && !lastRefreshFailed
+    }
+
     public private(set) var regions: [Region] {
         didSet {
             if regions.count > 0 {
@@ -200,18 +212,36 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// The app's currently-selected `Region`.
     ///
     /// The region identifier is persisted in `UserDefaults`. On read, the full `Region` is
-    /// looked up by identifier so that stale object data is never stored on disk.
+    /// looked up by identifier in the known regions list. If the identifier cannot be found in the
+    /// current regions list and the list cannot yet be trusted (before the first successful refresh
+    /// of the session, or while `lastRefreshFailed` is true), the getter falls back to the cached copy
+    /// in `ResolvedRegionStore` to preserve the user's selection offline or during network outages.
+    /// Once a network refresh succeeds, the regions list is trusted: if the stored identifier is not
+    /// in the updated regions list (e.g. after a region is retired or deleted from the server), the
+    /// getter returns `nil` and the cached copy is cleared.
     ///
-    /// - Note: The getter can return `nil` when no region has been selected yet, or when the
-    ///   stored identifier no longer matches any known region (e.g. after a region is deleted).
-    ///   The setter silently ignores `nil` — assigning `nil` has no effect and does not clear
-    ///   the stored identifier.
+    /// - Note: The getter returns `nil` when no region has been selected yet, when the stored
+    ///   identifier cannot be resolved and no valid fallback exists, or after a trusted refresh shows
+    ///   the region no longer exists. The setter silently ignores `nil` — assigning `nil` has no
+    ///   effect and does not clear the stored identifier.
     public var currentRegion: Region? {
         get {
             guard let identifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int else {
                 return nil
             }
-            return find(id: identifier)
+            if let region = find(id: identifier) {
+                return region
+            }
+
+            if !canTrustRegionsList {
+                let fallbackStore = ResolvedRegionStore(userDefaults: userDefaults)
+                if let fallbackRegion = fallbackStore.region(bundledRegionsFilePath: bundledRegionsFilePath),
+                   fallbackRegion.regionIdentifier == identifier {
+                    return fallbackRegion
+                }
+            }
+
+            return nil
         }
         set {
             guard let newValue else { return }
@@ -515,12 +545,24 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             return
         }
 
-        let regions = try await apiService.getRegions(apiPath: apiPath).list
-        guard !regions.isEmpty else {
-            return
-        }
+        do {
+            let regions = try await apiService.getRegions(apiPath: apiPath).list
+            guard !regions.isEmpty else {
+                return
+            }
 
-        self.regions = regions
+            hasCompletedSuccessfulRefresh = true
+            lastRefreshFailed = false
+            self.regions = regions
+
+            let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
+            if let storedIdentifier, find(id: storedIdentifier) == nil {
+                ResolvedRegionStore(userDefaults: userDefaults).write(nil)
+            }
+        } catch {
+            lastRefreshFailed = true
+            throw error
+        }
     }
 
     /// Fetches the current list of `Region`s from the network.
