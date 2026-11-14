@@ -29,6 +29,12 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         OBALoc("bookmarks_controller.ungrouped_bookmarks_section.title", value: "Bookmarks", comment: "The title for the bookmarks controller section that shows bookmarks that aren't in a group.")
     }
 
+    /// Header of the ungrouped bucket in the Bookmarks list when groups sit above
+    /// it. Alone, the bucket has no header (a `nil` `BookmarkListSection.title`).
+    static var otherSectionTitle: String {
+        OBALoc("bookmarks_controller.other_bookmarks_section.title", value: "Other", comment: "Header of the Bookmarks list section holding bookmarks that aren't in a group, shown below the user's bookmark groups.")
+    }
+
     // MARK: - Published State
 
     /// Fires each time arrival data is refreshed, after `sections` has been
@@ -149,6 +155,12 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
 
     // MARK: - Section Collapse
 
+    /// Whether `section`'s rows are hidden. A section without a header can't be
+    /// expanded again, so collapse state persisted while it had one is ignored.
+    func isCollapsed(_ section: BookmarkListSection) -> Bool {
+        section.title != nil && collapsedSectionIDs.contains(section.id)
+    }
+
     func toggleSectionCollapsed(_ sectionID: String) {
         if collapsedSectionIDs.contains(sectionID) {
             collapsedSectionIDs.remove(sectionID)
@@ -197,22 +209,21 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
     }
 
     private func sectionsSortedByGroup() -> [BookmarkListSection] {
-        var sections = application.userDataStore.bookmarkGroups.compactMap { buildSection(group: $0) }
+        var sections = application.userDataStore.bookmarkGroups.compactMap { group in
+            buildSection(bookmarks: application.userDataStore.bookmarksInGroup(group), id: group.id.uuidString, title: group.name)
+        }
 
-        // Add ungrouped bookmarks
-        if let ungrouped = buildSection(group: nil) {
+        // Ungrouped bookmarks go last. Below groups they're "Other"; alone, the
+        // section has no header — "Bookmarks" would repeat the sheet's title.
+        if let ungrouped = buildSection(
+            bookmarks: application.userDataStore.bookmarksInGroup(nil),
+            id: "unknown_group",
+            title: sections.isEmpty ? nil : Self.otherSectionTitle
+        ) {
             sections.append(ungrouped)
         }
 
         return sections
-    }
-
-    private func buildSection(group: BookmarkGroup?) -> BookmarkListSection? {
-        buildSection(
-            bookmarks: application.userDataStore.bookmarksInGroup(group),
-            id: group?.id.uuidString ?? "unknown_group",
-            title: group?.name ?? Self.ungroupedSectionTitle
-        )
     }
 
     /// Builds a single section containing all bookmarks in the current region,
@@ -235,7 +246,7 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
         )].compactMap { $0 }
     }
 
-    private func buildSection(bookmarks: [Bookmark], id: String, title: String) -> BookmarkListSection? {
+    private func buildSection(bookmarks: [Bookmark], id: String, title: String?) -> BookmarkListSection? {
         let currentRegionID = application.regionsService.currentRegion?.id
         let activeBookmarks = bookmarks.filter { $0.regionIdentifier == currentRegionID }
 

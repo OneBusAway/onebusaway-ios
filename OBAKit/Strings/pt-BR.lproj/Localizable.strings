@@ -64,11 +64,17 @@
 /* Filter option to show only departures with scheduled data and no real-time information */
 "arrival_departure_filter.scheduled_only" = "Apenas Programadas";
 
-/* Shown on a trip bookmark card with the estimated arrival time at the bookmark's destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives Pine St at 5:41 PM'. */
-"bookmark_card.destination.arrives_fmt" = "Arrives %1$@ at %2$@";
+/* Shown on a trip bookmark card with the estimated arrival time at the bookmark's destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives 5:41 PM · Pine St'. */
+"bookmark_card.destination.arrives_fmt" = "Arrives %2$@ · %1$@";
 
 /* Shown on a trip bookmark card with the scheduled arrival time at the bookmark's destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time. */
-"bookmark_card.destination.arrives_scheduled_fmt" = "Arrives %1$@ at %2$@ (scheduled)";
+"bookmark_card.destination.arrives_scheduled_fmt" = "Arrives %2$@ (scheduled) · %1$@";
+
+/* VoiceOver sentence for a trip bookmark's scheduled arrival time at its destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time. */
+"bookmark_card.destination.arrives_scheduled_spoken_fmt" = "Arrives %1$@ at %2$@ (scheduled)";
+
+/* VoiceOver sentence for a trip bookmark's estimated arrival time at its destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives Pine St at 5:41 PM'. */
+"bookmark_card.destination.arrives_spoken_fmt" = "Arrives %1$@ at %2$@";
 
 /* Shown on a trip bookmark card while the arrival time at the bookmark's destination stop is loading. The placeholder is the destination stop's name. */
 "bookmark_card.destination.loading_fmt" = "Loading arrival at %@…";
@@ -108,6 +114,9 @@
 
 /* Title of the Bookmarks tab */
 "bookmarks_controller.title" = "Favoritos";
+
+/* Header of the Bookmarks list section holding bookmarks that aren't in a group, shown below the user's bookmark groups. */
+"bookmarks_controller.other_bookmarks_section.title" = "Outros";
 
 /* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
 "bookmarks_controller.ungrouped_bookmarks_section.title" = "Favoritos";

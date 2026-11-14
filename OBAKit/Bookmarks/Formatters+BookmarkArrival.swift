@@ -38,7 +38,7 @@ extension Formatters {
 
         // Spoken as its own sentence after the departures, matching the card,
         // where the arrival line sits below the departure line (#1080).
-        if let destinationText = destinationText(for: bookmarkArrivalData) {
+        if let destinationText = destinationText(for: bookmarkArrivalData, spoken: true) {
             value += " " + destinationText + "."
         }
 
@@ -46,9 +46,12 @@ extension Formatters {
     }
 
     /// The line a destination bookmark's card shows about arriving at its
-    /// destination, e.g. "Arrives Home at 5:41 PM". `nil` for bookmarks
+    /// destination, e.g. "Arrives 5:41 PM · Pine St". The time leads so that a
+    /// long stop name truncates instead of the time. `spoken` swaps that layout,
+    /// whose "·" is meaningless to VoiceOver, for a sentence: "Arrives Pine St
+    /// at 5:41 PM". `nil` for bookmarks
     /// without a destination, or while there are no departures to describe.
-    func destinationText(for row: BookmarkRowViewModel) -> String? {
+    func destinationText(for row: BookmarkRowViewModel, spoken: Bool = false) -> String? {
         guard let name = row.destinationStopName, let status = row.destinationStatus else { return nil }
 
         switch status {
@@ -57,9 +60,17 @@ extension Formatters {
             return String(format: format, name)
         case .arrives(let arrival):
             let time = timeFormatter.string(from: arrival.arrivalDate)
-            let format = arrival.isRealTime
-                ? OBALoc("bookmark_card.destination.arrives_fmt", value: "Arrives %1$@ at %2$@", comment: "Shown on a trip bookmark card with the estimated arrival time at the bookmark's destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives Pine St at 5:41 PM'.")
-                : OBALoc("bookmark_card.destination.arrives_scheduled_fmt", value: "Arrives %1$@ at %2$@ (scheduled)", comment: "Shown on a trip bookmark card with the scheduled arrival time at the bookmark's destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time.")
+            let format: String
+            switch (arrival.isRealTime, spoken) {
+            case (true, false):
+                format = OBALoc("bookmark_card.destination.arrives_fmt", value: "Arrives %2$@ · %1$@", comment: "Shown on a trip bookmark card with the estimated arrival time at the bookmark's destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives 5:41 PM · Pine St'.")
+            case (false, false):
+                format = OBALoc("bookmark_card.destination.arrives_scheduled_fmt", value: "Arrives %2$@ (scheduled) · %1$@", comment: "Shown on a trip bookmark card with the scheduled arrival time at the bookmark's destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time.")
+            case (true, true):
+                format = OBALoc("bookmark_card.destination.arrives_spoken_fmt", value: "Arrives %1$@ at %2$@", comment: "VoiceOver sentence for a trip bookmark's estimated arrival time at its destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives Pine St at 5:41 PM'.")
+            case (false, true):
+                format = OBALoc("bookmark_card.destination.arrives_scheduled_spoken_fmt", value: "Arrives %1$@ at %2$@ (scheduled)", comment: "VoiceOver sentence for a trip bookmark's scheduled arrival time at its destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time.")
+            }
             return String(format: format, name, time)
         case .notServed:
             let format = OBALoc("bookmark_card.destination.not_served_fmt", value: "Upcoming trips don't stop at %@", comment: "Shown on a trip bookmark card when none of the upcoming trips on the route stop at the bookmark's destination stop. The placeholder is the destination stop's name.")

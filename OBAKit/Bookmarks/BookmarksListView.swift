@@ -115,13 +115,15 @@ struct BookmarksListView: View {
         List {
             ForEach(viewModel.sections) { section in
                 Section {
-                    if !viewModel.collapsedSectionIDs.contains(section.id) {
+                    if !viewModel.isCollapsed(section) {
                         ForEach(section.rows) { row in
                             bookmarkRow(row)
                         }
                     }
                 } header: {
-                    sectionHeader(section)
+                    if let title = section.title {
+                        sectionHeader(section, title: title)
+                    }
                 }
             }
         }
@@ -130,15 +132,15 @@ struct BookmarksListView: View {
 
     // MARK: - Section Header
 
-    private func sectionHeader(_ section: BookmarkListSection) -> some View {
-        let collapsed = viewModel.collapsedSectionIDs.contains(section.id)
+    private func sectionHeader(_ section: BookmarkListSection, title: String) -> some View {
+        let collapsed = viewModel.isCollapsed(section)
         return Button {
             withAnimation {
                 viewModel.toggleSectionCollapsed(section.id)
             }
         } label: {
             HStack {
-                Text(section.title)
+                Text(title)
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
@@ -150,7 +152,7 @@ struct BookmarksListView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(section.title)
+        .accessibilityLabel(title)
         .accessibilityValue(collapsed
             ? OBALoc("stop_page.grouped.a11y_collapsed", value: "collapsed", comment: "VoiceOver value of a collapsible header or grouped route card whose contents are hidden.")
             : OBALoc("stop_page.grouped.a11y_expanded", value: "expanded", comment: "VoiceOver value of a collapsible header or grouped route card whose contents are showing."))
