@@ -115,11 +115,14 @@ final class ErrorReportTests {
     /// A timeout that was classified before it got here must not report an
     /// HTTP 408 the server never sent (#1733).
     @Test func `Already-classified timeout reports the URL error, not a 408`() {
-        let timeout = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        let url = URL(string: "\(base)/stops-for-route/1_100275.json?key=SECRET")!
+        let timeout = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSURLErrorFailingURLErrorKey: url])
         let classified = ErrorClassifier.classify(timeout, regionName: "Puget Sound")
         let report = report(classified)
         #expect(report.cause == .serverUnavailable)
         #expect(report.errorCode == "NSURLErrorDomain -1001 (serverUnavailable)")
+        #expect(report.requestURL == URL(string: "\(base)/stops-for-route/1_100275.json"))
+        #expect(report.title == "Couldn't load the route map")
     }
 
     /// With no region name the classifier leaves a timeout as a network
