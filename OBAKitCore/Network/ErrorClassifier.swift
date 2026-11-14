@@ -41,12 +41,16 @@ public enum ErrorClassifier {
                 case 408: return .timeout
                 default: return .unknown
                 }
-            case .serverUnavailable(_, let statusCode):
-                return statusCode == 408 ? .timeout : .server
+            case .serverUnavailable(_, _, let inner):
+                return inner.map { category(for: $0) } ?? .server
             case .serverError, .rateLimited:
                 return .server
             case .invalidResponseData, .invalidContentType, .noResponseBody:
                 return .decoding
+            case .requestNotFound(let response):
+                // A blank 200 arrives as `requestNotFound` too, and classifies
+                // to `invalidResponseData`.
+                return response.statusCode == 404 ? .unknown : .decoding
             case .networkFailure(let inner):
                 return inner.map { category(for: $0) } ?? .offline
             case .captivePortal, .cellularDataRestricted:
@@ -73,7 +77,7 @@ public enum ErrorClassifier {
             }
         }
 
-        return error is DecodingError ? .decoding : .unknown
+        return error is DecodingError || error is UnreadableResponseError ? .decoding : .unknown
     }
 
     /// Classifies a raw `Error` into a more specific, user-friendly `APIError`.
@@ -169,20 +173,14 @@ public enum ErrorClassifier {
             }
             return APIError.networkFailure(nsError)
 
-        case NSURLErrorTimedOut:
-            guard let regionName else {
-                logger.warning("Server unreachable (URL error \(nsError.code)) but no region name available for user message.")
-                return APIError.networkFailure(nsError)
-            }
-            return APIError.serverUnavailable(regionName: regionName, statusCode: 408)
-
-        case NSURLErrorCannotConnectToHost,
+        case NSURLErrorTimedOut,
+             NSURLErrorCannotConnectToHost,
              NSURLErrorCannotFindHost:
             guard let regionName else {
                 logger.warning("Server unreachable (URL error \(nsError.code)) but no region name available for user message.")
                 return APIError.networkFailure(nsError)
             }
-            return APIError.serverUnavailable(regionName: regionName, statusCode: nil)
+            return APIError.serverUnavailable(regionName: regionName, statusCode: nil, underlyingError: nsError)
 
         default:
             return APIError.networkFailure(nsError)
@@ -205,7 +203,14 @@ public enum ErrorClassifier {
             value: "The server returned data this app can't read. That's usually a problem with the stop or agency feed. Please try again shortly.",
             comment: "An error shown when the server returns a body the app cannot decode and no region name is available to specialize the copy."
         )
-        return UnstructuredError(message)
+        return UnreadableResponseError(errorDescription: message)
+    }
+
+    /// The region-less unusable-payload error. Its own type rather than an
+    /// `UnstructuredError`, so `category(for:)` still sees a decoding failure
+    /// after classification (#1733).
+    struct UnreadableResponseError: LocalizedError {
+        let errorDescription: String?
     }
 
     // MARK: - Helpers

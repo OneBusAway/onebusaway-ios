@@ -209,7 +209,7 @@ public struct ErrorReport: Sendable {
 
         // Checked on the raw error: classification turns a cancellation into
         // `networkFailure` ("You're offline"), and an unreadable payload with no
-        // region name into an `UnstructuredError` that would read as its own message.
+        // region name into an error that would read as its own message.
         let ownMessage = Self.ownMessage(of: classified)
         if !Self.isCancellation(error), !Self.isUnreadablePayload(error), let message = ownMessage {
             self.cause = .message
@@ -517,7 +517,7 @@ public struct ErrorReport: Sendable {
             return 429
         case .serverError:
             return 500
-        case .serverUnavailable(_, let statusCode):
+        case .serverUnavailable(_, let statusCode, _):
             return statusCode
         default:
             return nil
@@ -525,10 +525,12 @@ public struct ErrorReport: Sendable {
     }
 
     private static func innermostError(_ error: Error) -> Error {
-        if case .networkFailure(let inner?) = error as? APIError {
+        switch error as? APIError {
+        case .networkFailure(let inner?), .serverUnavailable(_, _, let inner?):
             return inner
+        default:
+            return error
         }
-        return error
     }
 
     private static func requestURL(from error: Error) -> URL? {
