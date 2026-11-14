@@ -38,6 +38,9 @@ final class StopVehicleEstimation {
     /// Bumped by every refresh and stop, so a gathering that finishes late can't
     /// restart estimation the owner has since moved past.
     private var generation = 0
+    /// Whether `stop()` has run since the last `refresh`, so stopping again (every
+    /// arrivals refresh while the panel's stop is suppressed) publishes nothing.
+    private var isStopped = true
 
     /// The last server clock handed to the driver: each is recorded once per
     /// response, not once per filter change, or one sample would fill the skew
@@ -121,6 +124,7 @@ final class StopVehicleEstimation {
         }
         let serverClocks = [serverClock].compactMap { $0 }.filter { $0 != recordedServerClock }
 
+        isStopped = false
         generation += 1
         let generation = generation
         gatheringTask?.cancel()
@@ -137,6 +141,8 @@ final class StopVehicleEstimation {
 
     /// Stops ticking and forgets every vehicle; each goes back to the feed.
     func stop() {
+        guard !isStopped else { return }
+        isStopped = true
         generation += 1
         gatheringTask?.cancel()
         gatheringTask = nil

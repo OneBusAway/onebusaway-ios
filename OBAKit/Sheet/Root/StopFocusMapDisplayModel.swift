@@ -157,7 +157,7 @@ final class StopFocusMapDisplayModel: ObservableObject {
         self.shapeCache = shapeCache
         self.formatters = formatters
         self.vehicleEstimation = vehicleEstimation
-        vehicleEstimation?.onEstimates = { [weak self] estimates, _ in self?.moveVehicles(to: estimates) }
+        vehicleEstimation?.onEstimates = { [weak self] in self?.moveVehicles(to: $0, previous: $1) }
     }
 
     // MARK: - Sharing the map
@@ -373,11 +373,17 @@ final class StopFocusMapDisplayModel: ObservableObject {
     /// Moves the drawn vehicles to `estimates`, gliding until the next tick, and
     /// leaves the routes as they are: rebuilding their polylines every second
     /// would be most of the work for none of the change.
-    private func moveVehicles(to estimates: [String: VehicleEstimate]) {
+    private func moveVehicles(to estimates: [String: VehicleEstimate], previous: [String: VehicleEstimate]) {
         guard let display else { return }
         let moved = Display(routes: display.routes, vehicles: reportedVehicles.map { $0.placed(at: estimates[$0.id]) })
-        // One glide for all of them: every estimate comes from the same tick.
-        VehicleEstimationDriver.withGlide(to: estimates.values.first { !$0.shouldSnap }) { self.display = moved }
+        // One animation covers every marker, so a tick in which any of them must
+        // jump — a snapping estimate, or one gone back to the feed — moves them
+        // all without one. Those ticks are rare: a new vehicle, a big correction.
+        let jumps = estimates.values.contains { $0.shouldSnap } || previous.keys.contains { estimates[$0] == nil }
+        // While any vehicle rewinds the driver ticks at its frame rate, so a
+        // rewinding estimate sets the glide; a second-long one would lag every frame.
+        let glide = jumps ? nil : estimates.values.first { $0.isRewinding } ?? estimates.values.first
+        VehicleEstimationDriver.withGlide(to: glide) { self.display = moved }
     }
 
     /// Each vehicle where the feed puts it, with everything that doesn't change
