@@ -261,15 +261,73 @@ struct NextDepartureComplicationTests {
             bookmarkName: "Morning Commute"
         )
         let enUS = Locale(identifier: "en_US")
-        let snapshot = ComplicationPresentation.inlineDepartureSnapshot(
+        let parts = ComplicationPresentation.inlineDepartureParts(
             for: departure,
             at: upcomingNow,
             locale: enUS
         )
 
-        #expect(snapshot.contains("550"))
-        #expect(snapshot.contains("7m"))
-        #expect(snapshot.contains("Bellevue"))
+        #expect(parts.routeShortName == "550")
+        #expect(parts.countdown == "7m")
+        #expect(parts.headsign == "Bellevue")
+        #expect(parts.combinedText == "550 · 7m · Bellevue")
+
+        let snapshot = ComplicationPresentation.inlineDepartureSnapshot(
+            for: departure,
+            at: upcomingNow,
+            locale: enUS
+        )
+        #expect(snapshot == parts.combinedText)
+    }
+
+    @Test func `Reduced luminance and arriving now use static snapshot without ticking format`() {
+        let enUS = Locale(identifier: "en_US")
+        let departure = ComplicationDeparture(
+            routeShortName: "550",
+            headsign: "Bellevue",
+            departureDate: upcomingNow.addingTimeInterval(8 * 60),
+            isRealTime: true,
+            scheduleStatus: .onTime,
+            stopName: "4th Ave & Pike St",
+            bookmarkName: "Morning Commute"
+        )
+
+        // Under reduced luminance, countdownText produces a static snapshot (preventing "–m" dash placeholder)
+        let reducedLuminanceText = ComplicationPresentation.countdownText(
+            for: departure,
+            at: upcomingNow,
+            locale: enUS,
+            isLuminanceReduced: true
+        )
+        #expect(reducedLuminanceText == Text(verbatim: "8m"))
+
+        // When arriving now, countdownText returns NOW snapshot regardless of luminance
+        let nowDeparture = ComplicationDeparture(
+            routeShortName: "550",
+            headsign: "Bellevue",
+            departureDate: upcomingNow.addingTimeInterval(30),
+            isRealTime: true,
+            scheduleStatus: .onTime,
+            stopName: "4th Ave & Pike St",
+            bookmarkName: "Morning Commute"
+        )
+        let arrivingNowText = ComplicationPresentation.countdownText(
+            for: nowDeparture,
+            at: upcomingNow,
+            locale: enUS,
+            isLuminanceReduced: false
+        )
+        let expectedNow = Bundle.obaKitCore.localizedString(forKey: "stop_page.countdown.now", value: "NOW", table: nil)
+        #expect(arrivingNowText == Text(verbatim: expectedNow))
+
+        // When reduced luminance is enabled on inlineDepartureText, it returns static snapshot
+        let reducedInline = ComplicationPresentation.inlineDepartureText(
+            for: departure,
+            at: upcomingNow,
+            locale: enUS,
+            isLuminanceReduced: true
+        )
+        #expect(reducedInline == Text(verbatim: "550 · 8m · Bellevue"))
     }
 
     // MARK: - Timeline Boundary Progression
@@ -387,6 +445,20 @@ struct NextDepartureComplicationTests {
             bookmarkName: "Morning Commute"
         )
 
+        let parts = ComplicationPresentation.departureAccessibilityParts(
+            for: departure,
+            formatters: formatters,
+            at: upcomingNow,
+            locale: Locale(identifier: "en_US")
+        )
+
+        #expect(parts.routeLabel.contains("550"))
+        #expect(parts.routeLabel.contains("Bellevue"))
+        #expect(parts.countdown.contains("6 minutes"))
+        #expect(parts.stopName == "4th Ave & Pike St")
+        #expect(parts.combinedText.contains("550"))
+        #expect(parts.combinedText.contains("6 minutes"))
+
         let snapshot = ComplicationPresentation.departureAccessibilitySnapshot(
             for: departure,
             formatters: formatters,
@@ -394,9 +466,7 @@ struct NextDepartureComplicationTests {
             locale: Locale(identifier: "en_US")
         )
 
-        #expect(snapshot.contains("550"))
-        #expect(snapshot.contains("Bellevue"))
-        #expect(snapshot.contains("6 minutes"))
+        #expect(snapshot == parts.combinedText)
     }
 
     // One composite preview keeps the reviewer screenshot's standard, NOW,
@@ -429,7 +499,7 @@ struct NextDepartureComplicationTests {
             bookmarkName: "Morning Commute"
         )
 
-        let previewView = VStack(alignment: .leading, spacing: 16) {
+        let standardSection = VStack(alignment: .leading, spacing: 16) {
             Text("Lock Screen Accessory Widgets").font(.headline).foregroundStyle(.white)
 
             Text("Standard Luminance (8m away)").font(.subheadline).foregroundStyle(.secondary)
@@ -469,80 +539,83 @@ struct NextDepartureComplicationTests {
             }
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.3)))
+        }
 
-            Divider().background(Color.gray)
-
+        let dimSection = VStack(alignment: .leading, spacing: 16) {
             Text("Always-On (Reduced Luminance)").font(.subheadline).foregroundStyle(.secondary)
             HStack(spacing: 20) {
                 ZStack {
                     Circle().fill(Color.gray.opacity(0.2)).frame(width: 60, height: 60)
-                    VStack(spacing: 1) {
-                        Text(verbatim: departure.routeShortName)
-                            .font(.system(.caption2, design: .rounded, weight: .heavy))
-                        Text(verbatim: TickingCountdownText.snapshot(
-                            departure: departure.departureDate,
-                            now: upcomingNow,
-                            locale: Locale(identifier: "en_US")
-                        ))
-                            .font(.system(.title3, design: .rounded, weight: .bold))
-                            .monospacedDigit()
-                    }
-                    .foregroundStyle(.gray)
+                    ComplicationCircularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        ComplicationRouteBadge(
-                            routeShortName: departure.routeShortName,
-                            routeColorHex: departure.routeColorHex,
-                            routeTextColorHex: departure.routeTextColorHex,
-                            isFullColor: false
-                        )
-                        Spacer(minLength: 4)
-                        Text(verbatim: TickingCountdownText.snapshot(
-                            departure: departure.departureDate,
-                            now: upcomingNow,
-                            locale: Locale(identifier: "en_US")
-                        ))
-                            .font(.system(.headline, design: .rounded, weight: .heavy))
-                            .monospacedDigit()
-                    }
-                    Text(verbatim: departure.headsign)
-                        .font(.subheadline.weight(.semibold))
-                    Text(verbatim: "\(formatters.timeFormatter.string(from: departure.departureDate)) · \(departure.stopName)")
-                        .font(.caption2)
-                }
-                .foregroundStyle(.gray)
-                .frame(width: 160, alignment: .leading)
+                ComplicationRectangularDepartureContent(departure: departure, referenceDate: upcomingNow, formatters: formatters, isFullColor: false)
+                    .frame(width: 160)
                     .padding(8)
                     .background(RoundedRectangle(cornerRadius: 8).fill(Color.gray.opacity(0.2)))
             }
+            .foregroundStyle(.gray)
+            .environment(\.isLuminanceReduced, true)
+
             HStack {
-                Text(verbatim: ComplicationPresentation.inlineDepartureSnapshot(
+                ComplicationPresentation.inlineDepartureText(
                     for: departure,
                     at: upcomingNow,
-                    locale: Locale(identifier: "en_US")
-                ))
-                    .foregroundStyle(.gray)
+                    locale: Locale(identifier: "en_US"),
+                    isLuminanceReduced: true
+                )
+                .foregroundStyle(.gray)
             }
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.gray.opacity(0.2)))
+        }
+
+        let previewView = VStack(alignment: .leading, spacing: 16) {
+            standardSection
+            Divider().background(Color.gray)
+            dimSection
         }
         .padding(20)
         .background(Color.black)
         .environment(\.colorScheme, .dark)
 
-        let renderer = ImageRenderer(content: previewView)
-        renderer.scale = 2.0
-        let uiImage = try #require(renderer.uiImage)
-        let data = try #require(uiImage.pngData())
-        #expect(uiImage.size.width > 0)
-        #expect(uiImage.size.height > 0)
+        let standardView = standardSection
+            .padding(20)
+            .background(Color.black)
+            .environment(\.colorScheme, .dark)
 
+        let dimView = dimSection
+            .padding(20)
+            .background(Color.black)
+            .environment(\.colorScheme, .dark)
+
+        let renderView = { (view: AnyView) throws -> Data in
+            let renderer = ImageRenderer(content: view)
+            renderer.scale = 2.0
+            let uiImage = try #require(renderer.uiImage)
+            let data = try #require(uiImage.pngData())
+            #expect(uiImage.size.width > 0)
+            #expect(uiImage.size.height > 0)
+            return data
+        }
+
+        let allData = try renderView(AnyView(previewView))
+        let standardData = try renderView(AnyView(standardView))
+        let dimData = try renderView(AnyView(dimView))
+
+        let tempDir = FileManager.default.temporaryDirectory
         let outputURL = ProcessInfo.processInfo.environment["OBA_COMPLICATION_PREVIEW_OUTPUT"]
             .map { URL(fileURLWithPath: $0) }
-            ?? FileManager.default.temporaryDirectory.appendingPathComponent("complication_preview_all.png")
-        try data.write(to: outputURL)
+            ?? tempDir.appendingPathComponent("complication_preview_all.png")
+        try allData.write(to: outputURL)
         #expect(FileManager.default.fileExists(atPath: outputURL.path))
+
+        let standardURL = tempDir.appendingPathComponent("lockscreen_complications_standard.png")
+        try standardData.write(to: standardURL)
+        #expect(FileManager.default.fileExists(atPath: standardURL.path))
+
+        let dimURL = tempDir.appendingPathComponent("lockscreen_complications_dim.png")
+        try dimData.write(to: dimURL)
+        #expect(FileManager.default.fileExists(atPath: dimURL.path))
     }
     // swiftlint:enable function_body_length
 }

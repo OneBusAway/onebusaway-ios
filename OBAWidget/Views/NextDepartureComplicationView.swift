@@ -145,11 +145,13 @@ struct NextDepartureComplicationView: View {
                 ComplicationPresentation.inlineDepartureText(
                     for: departure,
                     at: entry.date,
-                    locale: locale
+                    locale: locale,
+                    isLuminanceReduced: isLuminanceReduced
                 )
                 .accessibilityLabel(ComplicationPresentation.departureAccessibilityLabel(
                     for: departure,
                     formatters: formatters,
+                    at: entry.date,
                     isLuminanceReduced: isLuminanceReduced,
                     locale: locale
                 ))

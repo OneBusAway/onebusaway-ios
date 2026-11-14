@@ -13,81 +13,129 @@ import SwiftUI
 /// WidgetKit-free so `OBAKitCore` stays independent of `WidgetKit`.
 @MainActor
 public enum ComplicationPresentation {
-    /// Live-updating `Text` for a complication countdown: `"NOW"` when under a
-    /// minute remains at `referenceDate`, and Apple's narrow minute
-    /// `Date.ComponentsFormatStyle` otherwise so out-of-process widgets tick
-    /// down automatically (including at low cadence in Always-On mode) without
-    /// timeline reloads.
+    /// Countdown `Text` for an accessory complication: `"NOW"` when under a
+    /// minute remains at `referenceDate`, a static snapshot string when
+    /// `isLuminanceReduced` is true (preventing SwiftUI from drawing a dash
+    /// placeholder under reduced luminance / Always-On mode), and Apple's
+    /// narrow minute `Date.ComponentsFormatStyle` otherwise so out-of-process
+    /// widgets tick down automatically at full brightness without timeline reloads.
     public static func countdownText(
         for departure: ComplicationDeparture,
         at referenceDate: Date,
-        locale: Locale
+        locale: Locale,
+        isLuminanceReduced: Bool = false
     ) -> Text {
-        if departure.isArrivingNow(at: referenceDate) {
-            return Text(verbatim: departure.shortCountdownText(at: referenceDate))
+        if isLuminanceReduced || departure.isArrivingNow(at: referenceDate) {
+            let snapshot = departure.isArrivingNow(at: referenceDate)
+                ? departure.shortCountdownText(at: referenceDate)
+                : TickingCountdownText.snapshot(departure: departure.departureDate, now: referenceDate, locale: locale)
+            return Text(verbatim: snapshot)
         }
         return Text(.dateRange(endingAt: departure.departureDate), format: TickingCountdownText.visibleFormat(locale: locale))
     }
 
     /// Sizes the countdown slot using a hidden snapshot so out-of-process
     /// ticking text does not stretch to its format's widest bound or shift
-    /// digits off-center.
+    /// digits off-center. When `isLuminanceReduced` is true, renders the static
+    /// snapshot directly without the hidden/ticking overlay.
     @ViewBuilder
     public static func countdownSlot(
         for departure: ComplicationDeparture,
         at referenceDate: Date,
         locale: Locale,
-        alignment: Alignment
+        alignment: Alignment,
+        isLuminanceReduced: Bool = false
     ) -> some View {
         let snapshotText = departure.isArrivingNow(at: referenceDate)
             ? departure.shortCountdownText(at: referenceDate)
             : TickingCountdownText.snapshot(departure: departure.departureDate, now: referenceDate, locale: locale)
-        Text(verbatim: snapshotText)
-            .hidden()
-            .overlay(alignment: alignment) {
-                countdownText(
-                    for: departure,
-                    at: referenceDate,
-                    locale: locale
-                )
+        if isLuminanceReduced {
+            Text(verbatim: snapshotText)
                 .multilineTextAlignment(alignment == .trailing ? .trailing : (alignment == .leading ? .leading : .center))
                 .lineLimit(1)
-            }
+        } else {
+            Text(verbatim: snapshotText)
+                .hidden()
+                .overlay(alignment: alignment) {
+                    countdownText(
+                        for: departure,
+                        at: referenceDate,
+                        locale: locale,
+                        isLuminanceReduced: false
+                    )
+                    .multilineTextAlignment(alignment == .trailing ? .trailing : (alignment == .leading ? .leading : .center))
+                    .lineLimit(1)
+                }
+        }
+    }
+
+    /// Deconstructed components for an accessory inline complication, shared
+    /// between the live `Text` view and unit test snapshot string to prevent drift.
+    public struct InlineDepartureParts: Equatable, Sendable {
+        public let routeShortName: String
+        public let countdown: String
+        public let headsign: String
+
+        public init(routeShortName: String, countdown: String, headsign: String) {
+            self.routeShortName = routeShortName
+            self.countdown = countdown
+            self.headsign = headsign
+        }
+
+        public var combinedText: String {
+            "\(routeShortName) · \(countdown) · \(headsign)"
+        }
+    }
+
+    public static func inlineDepartureParts(
+        for departure: ComplicationDeparture,
+        at referenceDate: Date,
+        locale: Locale
+    ) -> InlineDepartureParts {
+        let countdown = departure.isArrivingNow(at: referenceDate)
+            ? departure.shortCountdownText(at: referenceDate)
+            : TickingCountdownText.snapshot(departure: departure.departureDate, now: referenceDate, locale: locale)
+        return InlineDepartureParts(
+            routeShortName: departure.routeShortName,
+            countdown: countdown,
+            headsign: departure.headsign
+        )
     }
 
     /// Concatenated inline `Text` (`"<route> · <countdown> · <headsign>"`) so
     /// route and ticking countdown sit at the leading edge and never truncate
-    /// when a headsign is long.
+    /// when a headsign is long. When `isLuminanceReduced` is true, returns the
+    /// static snapshot text to avoid dash placeholder rendering in Always-On.
     public static func inlineDepartureText(
         for departure: ComplicationDeparture,
         at referenceDate: Date,
-        locale: Locale
+        locale: Locale,
+        isLuminanceReduced: Bool = false
     ) -> Text {
-        Text(verbatim: "\(departure.routeShortName) · ")
-            + countdownText(
-                for: departure,
-                at: referenceDate,
-                locale: locale
-            )
-            + Text(verbatim: " · \(departure.headsign)")
+        let parts = inlineDepartureParts(for: departure, at: referenceDate, locale: locale)
+        if isLuminanceReduced {
+            return Text(verbatim: parts.combinedText)
+        } else {
+            return Text(verbatim: "\(parts.routeShortName) · ")
+                + countdownText(
+                    for: departure,
+                    at: referenceDate,
+                    locale: locale,
+                    isLuminanceReduced: false
+                )
+                + Text(verbatim: " · \(parts.headsign)")
+        }
     }
 
     /// Snapshot equivalent of `inlineDepartureText`, used to verify the
     /// route/countdown/headsign content without trying to introspect SwiftUI's
     /// opaque `Text` value in tests.
-    static func inlineDepartureSnapshot(
+    public static func inlineDepartureSnapshot(
         for departure: ComplicationDeparture,
         at referenceDate: Date,
         locale: Locale
     ) -> String {
-        let countdown = departure.isArrivingNow(at: referenceDate)
-            ? departure.shortCountdownText(at: referenceDate)
-            : TickingCountdownText.snapshot(
-                departure: departure.departureDate,
-                now: referenceDate,
-                locale: locale
-            )
-        return "\(departure.routeShortName) · \(countdown) · \(departure.headsign)"
+        inlineDepartureParts(for: departure, at: referenceDate, locale: locale).combinedText
     }
 
     /// Foreground color for status/countdown text: schedule-status tint in full
@@ -101,35 +149,32 @@ public enum ComplicationPresentation {
         return Color(uiColor: formatters.colorForScheduleStatus(scheduleStatus))
     }
 
-    /// Combined VoiceOver label pairing route, headsign, ticking spoken countdown, clock time, and stop name.
-    public static func departureAccessibilityLabel(
-        for departure: ComplicationDeparture,
-        formatters: Formatters,
-        isLuminanceReduced: Bool,
-        locale: Locale
-    ) -> Text {
-        let routeLabel = formatters.accessibilityLabelForArrivalDeparture(
-            routeAndHeadsign: "\(departure.routeShortName) \(departure.headsign)"
-        )
-        let countdown = TickingCountdownText.spokenText(
-            departure: departure.departureDate,
-            isLuminanceReduced: isLuminanceReduced,
-            locale: locale
-        )
-        let clockTime = formatters.timeFormatter.string(from: departure.departureDate)
-        return Text(verbatim: "\(routeLabel), ")
-            + countdown
-            + Text(verbatim: ", \(clockTime), \(departure.stopName)")
+    /// Deconstructed components for departure VoiceOver / accessibility label,
+    /// shared between the live `Text` view and unit test snapshot string to prevent drift.
+    public struct DepartureAccessibilityParts: Equatable, Sendable {
+        public let routeLabel: String
+        public let countdown: String
+        public let clockTime: String
+        public let stopName: String
+
+        public init(routeLabel: String, countdown: String, clockTime: String, stopName: String) {
+            self.routeLabel = routeLabel
+            self.countdown = countdown
+            self.clockTime = clockTime
+            self.stopName = stopName
+        }
+
+        public var combinedText: String {
+            "\(routeLabel), \(countdown), \(clockTime), \(stopName)"
+        }
     }
 
-    /// Snapshot equivalent of `departureAccessibilityLabel`, used to verify
-    /// its localized route, headsign, countdown, clock time, and stop content.
-    static func departureAccessibilitySnapshot(
+    public static func departureAccessibilityParts(
         for departure: ComplicationDeparture,
         formatters: Formatters,
-        at referenceDate: Date,
+        at referenceDate: Date = Date(),
         locale: Locale
-    ) -> String {
+    ) -> DepartureAccessibilityParts {
         let routeLabel = formatters.accessibilityLabelForArrivalDeparture(
             routeAndHeadsign: "\(departure.routeShortName) \(departure.headsign)"
         )
@@ -139,7 +184,57 @@ public enum ComplicationPresentation {
             locale: locale
         )
         let clockTime = formatters.timeFormatter.string(from: departure.departureDate)
-        return "\(routeLabel), \(countdown), \(clockTime), \(departure.stopName)"
+        return DepartureAccessibilityParts(
+            routeLabel: routeLabel,
+            countdown: countdown,
+            clockTime: clockTime,
+            stopName: departure.stopName
+        )
+    }
+
+    /// Combined VoiceOver label pairing route, headsign, ticking spoken countdown, clock time, and stop name.
+    public static func departureAccessibilityLabel(
+        for departure: ComplicationDeparture,
+        formatters: Formatters,
+        at referenceDate: Date = Date(),
+        isLuminanceReduced: Bool,
+        locale: Locale
+    ) -> Text {
+        let parts = departureAccessibilityParts(
+            for: departure,
+            formatters: formatters,
+            at: referenceDate,
+            locale: locale
+        )
+        let countdown: Text
+        if isLuminanceReduced {
+            countdown = Text(verbatim: parts.countdown)
+        } else {
+            countdown = TickingCountdownText.spokenText(
+                departure: departure.departureDate,
+                isLuminanceReduced: false,
+                locale: locale
+            )
+        }
+        return Text(verbatim: "\(parts.routeLabel), ")
+            + countdown
+            + Text(verbatim: ", \(parts.clockTime), \(parts.stopName)")
+    }
+
+    /// Snapshot equivalent of `departureAccessibilityLabel`, used to verify
+    /// its localized route, headsign, countdown, clock time, and stop content.
+    public static func departureAccessibilitySnapshot(
+        for departure: ComplicationDeparture,
+        formatters: Formatters,
+        at referenceDate: Date,
+        locale: Locale
+    ) -> String {
+        departureAccessibilityParts(
+            for: departure,
+            formatters: formatters,
+            at: referenceDate,
+            locale: locale
+        ).combinedText
     }
 }
 
@@ -227,7 +322,8 @@ public struct ComplicationCircularDepartureContent: View {
                 for: departure,
                 at: referenceDate,
                 locale: locale,
-                alignment: .center
+                alignment: .center,
+                isLuminanceReduced: isLuminanceReduced
             )
             .font(.system(.title3, design: .rounded, weight: .bold))
             .monospacedDigit()
@@ -244,6 +340,7 @@ public struct ComplicationCircularDepartureContent: View {
         .accessibilityLabel(ComplicationPresentation.departureAccessibilityLabel(
             for: departure,
             formatters: formatters,
+            at: referenceDate,
             isLuminanceReduced: isLuminanceReduced,
             locale: locale
         ))
@@ -292,7 +389,8 @@ public struct ComplicationRectangularDepartureContent: View {
                         for: departure,
                         at: referenceDate,
                         locale: locale,
-                        alignment: .trailing
+                        alignment: .trailing,
+                        isLuminanceReduced: isLuminanceReduced
                     )
                     .font(.system(.headline, design: .rounded, weight: .heavy))
                     .monospacedDigit()
@@ -316,6 +414,7 @@ public struct ComplicationRectangularDepartureContent: View {
         .accessibilityLabel(ComplicationPresentation.departureAccessibilityLabel(
             for: departure,
             formatters: formatters,
+            at: referenceDate,
             isLuminanceReduced: isLuminanceReduced,
             locale: locale
         ))
