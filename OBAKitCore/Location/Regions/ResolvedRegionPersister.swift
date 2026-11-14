@@ -37,15 +37,15 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
         persist()
     }
 
-    /// Writes the current region, or clears the store when there is no user selection.
+    /// Writes the current region, or clears the store when there is no current selection.
     ///
-    /// If `currentRegion` evaluates to `nil`, we check whether the user has a stored selection identifier.
-    /// If an identifier is stored (e.g. during offline launch with stale bundle, or failed refresh),
-    /// we do not wipe the stored resolved region cache. We only clear the store if there is no stored selection.
+    /// If `currentRegion` evaluates to `nil`, we preserve the store's cached region only while
+    /// the regions list cannot yet be trusted (e.g. offline launch or failed refresh) and a selection
+    /// identifier is stored. Once the regions list is trusted or if no identifier is stored, we clear the store.
     public func persist() {
         if let currentRegion = regionsService?.currentRegion {
             store.write(currentRegion)
-        } else if userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil {
+        } else if regionsService?.canTrustRegionsList == true || userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil {
             store.write(nil)
         }
     }
