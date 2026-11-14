@@ -83,6 +83,11 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
 
     /// Cancels all pending data operations.
     private func cancelAllOperations() {
+        stateLock.withLock {
+            updateTask?.cancel()
+            updateTask = nil
+            updateGeneration += 1
+        }
         queue.cancelAllOperations()
     }
 
@@ -95,8 +100,19 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     /// `@MainActor` storage methods / UI reads run on the main thread.
     /// Never hold this lock across an `await`.
     private let stateLock = NSLock()
+    /// Monotonically identifies the refresh whose result may update `alerts`.
+    /// Guarded by `stateLock`; a cancelled transport may still deliver a late
+    /// response, so cancellation alone cannot establish ownership.
+    private var updateGeneration = 0
+    private var updateTask: Task<Void, Never>?
 
     public func update() async throws {
+        let generation = beginUpdate()
+        defer { finishUpdate(generation) }
+        try await performUpdate(generation: generation)
+    }
+
+    private func performUpdate(generation: Int) async throws {
         guard let apiService else { return }
 
         // Touch `agencies` only under the lock (never across the network `await`), then
@@ -104,7 +120,11 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
         // child tasks read `self.agencies` while another context mutates it.
         if stateLock.withLock({ self.agencies.isEmpty }) {
             let fetched = try await apiService.getAgenciesWithCoverage().list
-            stateLock.withLock { self.agencies = fetched }
+            try Task.checkCancellation()
+            stateLock.withLock {
+                guard updateGeneration == generation else { return }
+                self.agencies = fetched
+            }
         }
         let agenciesSnapshot = stateLock.withLock { self.agencies }
 
@@ -126,7 +146,9 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
             return alerts
         }
 
-        await storeAgencyAlerts(agencyAlerts)
+        try Task.checkCancellation()
+        guard isCurrentUpdate(generation) else { return }
+        await storeAgencyAlerts(agencyAlerts, generation: generation)
     }
 
     /// Convenience wrapper for ``update()``. Errors are reported via ``AgencyAlertsDelegate``.
@@ -140,20 +162,63 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
         }
         #endif
 
-        Task {
+        let generation = beginUpdate()
+        let task = Task { [weak self] in
+            guard let self else { return }
+            defer { self.finishUpdate(generation) }
             do {
-                try await update()
+                try await performUpdate(generation: generation)
+            } catch is CancellationError {
+                return
             } catch {
-                await MainActor.run {
-                    self.notifyDelegates(error: error)
-                }
+                guard self.isCurrentUpdate(generation), !Task.isCancelled else { return }
+                self.notifyDelegates(error: error)
             }
         }
+        installUpdateTask(task, generation: generation)
     }
 
     // MARK: - REST API
     private func fetchRegionalAlerts(service: RESTAPIService, agencies: [AgencyWithCoverage]) async -> [AgencyAlert] {
         return await service.getAlerts(agencies: agencies)
+    }
+
+    private func beginUpdate() -> Int {
+        stateLock.withLock {
+            updateGeneration += 1
+            updateTask?.cancel()
+            return updateGeneration
+        }
+    }
+
+    private func installUpdateTask(_ task: Task<Void, Never>, generation: Int) {
+        stateLock.withLock {
+            guard updateGeneration == generation else {
+                task.cancel()
+                return
+            }
+            updateTask = task
+        }
+    }
+
+    #if DEBUG
+    /// Notified whenever an update finishes (including when cancelled, failed, or superseded).
+    var onUpdateFinishedForTesting: ((Int) -> Void)?
+    #endif
+
+    private func finishUpdate(_ generation: Int) {
+        stateLock.withLock {
+            if updateGeneration == generation {
+                updateTask = nil
+            }
+        }
+        #if DEBUG
+        onUpdateFinishedForTesting?(generation)
+        #endif
+    }
+
+    private func isCurrentUpdate(_ generation: Int) -> Bool {
+        stateLock.withLock { updateGeneration == generation }
     }
 
     // MARK: - Obaco
@@ -216,14 +281,20 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     private var alerts: Set<AgencyAlert> = []
 
     @MainActor
-    private func storeAgencyAlerts(_ agencyAlerts: [AgencyAlert]) {
-        stateLock.withLock {
+    private func storeAgencyAlerts(_ agencyAlerts: [AgencyAlert], generation: Int) {
+        let didStoreAlerts = stateLock.withLock {
+            guard updateGeneration == generation else { return false }
+
             for alert in agencyAlerts {
                 self.alerts.insert(alert)
             }
+
+            return true
         }
 
-        self.notifyDelegatesAlertsUpdated()
+        if didStoreAlerts {
+            self.notifyDelegatesAlertsUpdated()
+        }
     }
 
     /// Injects alerts directly without the network fetch cycle.

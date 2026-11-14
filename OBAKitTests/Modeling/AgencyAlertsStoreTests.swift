@@ -41,6 +41,82 @@ private final class AlertsOutcomeDelegate: NSObject, AgencyAlertsDelegate {
     }
 }
 
+private actor UpdateFinishWaiter {
+    private var finishedGenerations: [Int] = []
+    private var waiters: [CheckedContinuation<Int, Never>] = []
+
+    func recordFinished(_ generation: Int) {
+        finishedGenerations.append(generation)
+        let pending = waiters
+        waiters.removeAll()
+        for waiter in pending {
+            waiter.resume(returning: generation)
+        }
+    }
+
+    func waitForFinish(otherThan excludedGeneration: Int? = nil) async -> Int {
+        if let generation = finishedGenerations.first(where: { $0 != excludedGeneration }) {
+            return generation
+        }
+        while true {
+            let generation = await withCheckedContinuation { continuation in
+                waiters.append(continuation)
+            }
+            if generation != excludedGeneration {
+                return generation
+            }
+        }
+    }
+}
+
+private actor ReleaseGate {
+    private var isReleased = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        if isReleased { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func release() {
+        isReleased = true
+        waiters.forEach { $0.resume() }
+        waiters.removeAll()
+    }
+
+    func waitUntilBlocked() async {
+        while waiters.isEmpty && !isReleased {
+            await Task.yield()
+        }
+    }
+}
+
+private final class AgencyAlertsDataLoader: NSObject, URLDataLoader, @unchecked Sendable {
+    let agenciesData: Data
+    let alertsData: Data
+    let gate: ReleaseGate?
+
+    init(agenciesData: Data, alertsData: Data, gate: ReleaseGate? = nil) {
+        self.agenciesData = agenciesData
+        self.alertsData = alertsData
+        self.gate = gate
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        await gate?.wait()
+
+        let isAgencyList = request.url?.path.contains("agencies-with-coverage") == true
+        let data = isAgencyList ? agenciesData : alertsData
+        let response = HTTPURLResponse(
+            url: request.url!,
+            statusCode: 200,
+            httpVersion: "2",
+            headerFields: ["Content-Type": isAgencyList ? "application/json" : "application/x-protobuf"]
+        )!
+        return (data, response)
+    }
+}
+
 @Suite(.serialized, .timeLimit(.minutes(1)))
 final class AgencyAlertsStoreTests: OBATestCase {
     private var dataLoader: MockDataLoader!
@@ -105,6 +181,27 @@ final class AgencyAlertsStoreTests: OBATestCase {
         dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path.hasSuffix(suffix) ?? false }
     }
 
+    private func makeAgencyAlertsDataLoader(alertID: String, gate: ReleaseGate? = nil) throws -> AgencyAlertsDataLoader {
+        let agenciesData = Fixtures.loadData(file: "agencies_with_coverage.json")
+        return AgencyAlertsDataLoader(
+            agenciesData: agenciesData,
+            alertsData: try feed(alertIDs: [alertID]),
+            gate: gate
+        )
+    }
+
+    private func makeRESTService(dataLoader: URLDataLoader) -> RESTAPIService {
+        let configuration = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            surveyBaseURL: surveyBaseURL
+        )
+        return RESTAPIService(configuration, dataLoader: dataLoader)
+    }
+
     private func expectServerError(_ outcome: AlertsOutcomeDelegate.Outcome, sourceLocation: SourceLocation = #_sourceLocation) {
         guard case .failed(let error) = outcome, case .requestFailure(let response)? = error as? APIError else {
             Issue.record("Expected the 500 to reach delegates as APIError.requestFailure, got \(outcome)", sourceLocation: sourceLocation)
@@ -140,5 +237,67 @@ final class AgencyAlertsStoreTests: OBATestCase {
         try stubAlertFeeds()
 
         expectServerError(await checkForUpdates())
+    }
+
+    @Test func `A failed refresh can be retried and recover`() async throws {
+        failRequests(endingWith: "/api/where/agencies-with-coverage.json")
+        expectServerError(await checkForUpdates())
+
+        dataLoader.removeMappedResponses()
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        try stubAlertFeeds()
+
+        let outcome = await checkForUpdates()
+        guard case .updated = outcome else {
+            Issue.record("Expected the retry to update, got \(outcome)")
+            return
+        }
+        #expect(Set(store.agencyAlerts.map(\.id)) == ["regional-alert", "obaco-alert"])
+    }
+
+    @Test func `An empty alert response completes without storing alerts`() async throws {
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        let emptyFeed = try feed(alertIDs: [])
+        dataLoader.mock(data: emptyFeed) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        store.obacoService = nil
+
+        let outcome = await checkForUpdates()
+        guard case .updated = outcome else {
+            Issue.record("Expected an empty response to complete, got \(outcome)")
+            return
+        }
+        #expect(store.agencyAlerts.isEmpty)
+    }
+
+    @Test func `A late cancelled refresh cannot overwrite the latest refresh`() async throws {
+        let firstGate = ReleaseGate()
+        let firstLoader = try makeAgencyAlertsDataLoader(alertID: "old-alert", gate: firstGate)
+        let latestLoader = try makeAgencyAlertsDataLoader(alertID: "new-alert")
+        let firstService = makeRESTService(dataLoader: firstLoader)
+        let latestService = makeRESTService(dataLoader: latestLoader)
+        store.apiService = firstService
+        store.obacoService = nil
+
+        let finishWaiter = UpdateFinishWaiter()
+        store.onUpdateFinishedForTesting = { gen in
+            Task { await finishWaiter.recordFinished(gen) }
+        }
+
+        let staleTask = Task { try await store.update() }
+        await firstGate.waitUntilBlocked()
+
+        store.apiService = latestService
+        let latestOutcome = await outcomeDelegate.wait { store.checkForUpdates() }
+        guard case .updated = latestOutcome else {
+            Issue.record("Expected the latest refresh to update, got \(latestOutcome)")
+            return
+        }
+
+        let latestGeneration = await finishWaiter.waitForFinish()
+        await firstGate.release()
+        _ = await finishWaiter.waitForFinish(otherThan: latestGeneration)
+        _ = try await staleTask.value
+
+        #expect(store.agencyAlerts.map(\.id) == ["new-alert"])
     }
 }
