@@ -164,8 +164,21 @@ final class RegionStopSyncService: Sendable {
         // Every agency empty is more likely a server problem than a region with
         // no stops, so it doesn't empty the stops the map already cached.
         if wroteAny {
-            guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: syncID) else { return false }
-            cleanupAfterPublish(regionID: regionID, currentSyncID: syncID, staleStopsOlderThan: start)
+            let state = RegionStopSyncState(
+                regionId: regionID,
+                outcome: .complete,
+                lastAttemptAt: start,
+                lastSuccessAt: start,
+                etag: newETag,
+                appVersion: appVersion,
+                publishedSyncID: syncID
+            )
+            do {
+                try repository.publishCompleteSync(state, regionId: regionID, currentSyncID: syncID, staleStopsOlderThan: start)
+            } catch {
+                Logger.error("Region stop sync: couldn't publish complete snapshot for region \(regionID): \(error)")
+                return false
+            }
         } else {
             guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: previous?.publishedSyncID) else { return false }
         }

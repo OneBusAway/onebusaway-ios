@@ -483,6 +483,32 @@ public final class StopCacheRepository: Sendable {
             try state.save(db)
         }
     }
+
+    /// Publishes a complete staged snapshot and removes rows absent from it in
+    /// one short transaction. Readers therefore observe either the previous
+    /// snapshot or the fully published snapshot, never the marker without its
+    /// stale-row sweep.
+    func publishCompleteSync(_ state: RegionStopSyncState, regionId: Int, currentSyncID: String, staleStopsOlderThan date: Date) throws {
+        try database.dbQueue.write { db in
+            try state.save(db)
+            _ = try CachedStop
+                .filter(CachedStop.Columns.regionId == regionId)
+                .filter(CachedStop.Columns.lastUpdated < date.timeIntervalSince1970)
+                .deleteAll(db)
+            _ = try CachedRoute
+                .filter(CachedRoute.Columns.regionId == regionId)
+                .filter(CachedRoute.Columns.lastUpdated < date.timeIntervalSince1970)
+                .deleteAll(db)
+            _ = try StagedCachedStop
+                .filter(StagedCachedStop.Columns.regionId == regionId)
+                .filter(StagedCachedStop.Columns.syncID != currentSyncID)
+                .deleteAll(db)
+            _ = try StagedCachedRoute
+                .filter(StagedCachedRoute.Columns.regionId == regionId)
+                .filter(StagedCachedRoute.Columns.syncID != currentSyncID)
+                .deleteAll(db)
+        }
+    }
 }
 
 // MARK: - Column Definitions
