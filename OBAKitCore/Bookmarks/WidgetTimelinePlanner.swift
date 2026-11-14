@@ -46,7 +46,7 @@ public struct WidgetTimelinePlanner: Sendable {
     ///   about 5 minutes apart". A multi-bookmark widget has dense boundaries
     ///   and keeps the default; pass 0 for one entry per departure.
     public init(minimumEntrySpacing: TimeInterval = 5 * 60, maximumEntries: Int = 12) {
-        self.minimumEntrySpacing = minimumEntrySpacing
+        self.minimumEntrySpacing = max(0, minimumEntrySpacing)
         self.maximumEntries = max(1, maximumEntries)
     }
 
@@ -78,13 +78,14 @@ public struct WidgetTimelinePlanner: Sendable {
 
 extension WidgetTimelinePlanner {
     /// The departures a timeline entry dated `entryDate` should show: those
-    /// strictly after it.
+    /// strictly after it and having a plausible date.
     ///
     /// Strictly, because an undeferred entry is dated exactly at a departure —
     /// that entry exists to take that bus off the screen. `>=` would keep it
     /// there until the next boundary, which on a sparse route is the whole
-    /// reload interval.
+    /// reload interval. Departures at or before `entryDate` are considered
+    /// expired for this timeline entry.
     public static func departures(_ departures: [ArrivalDeparture], visibleAt entryDate: Date) -> [ArrivalDeparture] {
-        departures.filter { $0.arrivalDepartureDate > entryDate }
+        departures.filter { $0.hasPlausibleArrivalDepartureDate && $0.arrivalDepartureDate > entryDate }
     }
 }
