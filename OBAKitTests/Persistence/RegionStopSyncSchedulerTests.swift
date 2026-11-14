@@ -28,7 +28,7 @@ final class RegionStopSyncSchedulerTests {
     }
 
     private func cachedIDs(region: Int) throws -> [String] {
-        try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop WHERE regionId = ? ORDER BY id", arguments: [region]) }
+        try repository.stops(regionId: region, after: nil, limit: 10_000).stops.map(\.id)
     }
 
     /// Launch, the first activation and a region change arrive within moments

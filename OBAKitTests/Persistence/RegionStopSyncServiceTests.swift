@@ -40,7 +40,7 @@ final class RegionStopSyncServiceTests {
     }
 
     private func cachedIDs(region: Int = 1) throws -> [String] {
-        try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop WHERE regionId = ? ORDER BY id", arguments: [region]) }
+        repository.stops(regionId: region, after: nil, limit: 10_000).stops.map(\.id)
     }
 
     @Test func `A complete sync writes every agency, deletes what the server dropped, and records it`() async throws {
@@ -214,7 +214,8 @@ final class RegionStopSyncServiceTests {
     }
 
     /// The second agency's answer arrives after the sync was cancelled, as after
-    /// a region switch: none of it is written, and nothing is recorded.
+    /// a region switch: the fetched first agency is not visible because the
+    /// complete sync has not committed yet.
     @Test(.timeLimit(.minutes(1))) func `A cancelled sync writes nothing more and records nothing`() async throws {
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: ["1": stops("1_a"), "2": stops("2_late")])
         await fetcher.hold(agency: "2")
@@ -226,8 +227,138 @@ final class RegionStopSyncServiceTests {
         await fetcher.release()
 
         #expect(await !sync.value)
-        #expect(try cachedIDs() == ["1_a"])
+        #expect(try cachedIDs().isEmpty)
         #expect(try repository.syncState(regionId: 1) == nil)
+    }
+
+    @Test func `A retry after cancellation commits each duplicate stop once`() async throws {
+        let firstFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_a", "1_duplicate"),
+            "2": stops("1_duplicate", "2_b")
+        ])
+        await firstFetcher.hold(agency: "2")
+        let service = makeService(batchSize: 1)
+        let cancelledSync = Task { await service.sync(regionID: 1, using: firstFetcher) }
+
+        await firstFetcher.waitUntilHolding()
+        cancelledSync.cancel()
+        await firstFetcher.release()
+        #expect(await !cancelledSync.value)
+        #expect(try cachedIDs().isEmpty)
+
+        let retryFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_a", "1_duplicate"),
+            "2": stops("1_duplicate", "2_b")
+        ])
+        #expect(await service.sync(regionID: 1, using: retryFetcher))
+        #expect(try cachedIDs() == ["1_a", "1_duplicate", "2_b"])
+    }
+
+    @Test func `A database error during a later batch cleans up earlier staged batches and preserves original rows`() async throws {
+        try repository.writeSyncedStops([stop("original")], regionId: 1, syncedAt: earlier)
+        #expect(try cachedIDs() == ["original"])
+
+        try await database.dbQueue.write { db in
+            try db.execute(sql: """
+                CREATE TRIGGER fail_staged_stop_batch
+                BEFORE INSERT ON cachedStopSync
+                WHEN NEW.id = '1_error'
+                BEGIN
+                    SELECT RAISE(ABORT, 'database error during later batch');
+                END
+                """)
+        }
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_first", "1_error")])
+        let wroteStops = await makeService(batchSize: 1).sync(regionID: 1, using: fetcher)
+        try await database.dbQueue.write { db in
+            try db.execute(sql: "DROP TRIGGER fail_staged_stop_batch")
+        }
+
+        #expect(!wroteStops)
+        #expect(try cachedIDs() == ["original"])
+        let stagedCount = try await database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE regionId = 1")
+        }
+        #expect(stagedCount == 0)
+        #expect(try repository.syncState(regionId: 1)?.outcome == .failed)
+    }
+
+    @Test func `A later staged batch failure preserves the previous snapshot`() async throws {
+        let initialFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("old")])
+        let service = makeService(batchSize: 1)
+        #expect(await service.sync(regionID: 1, using: initialFetcher))
+        let initialSyncID = try #require(try repository.syncState(regionId: 1)?.publishedSyncID)
+        #expect(try cachedIDs() == ["old"])
+
+        clock.value = clock.value.addingTimeInterval(86_400 * 7)
+
+        try await database.dbQueue.write { db in
+            try db.execute(sql: """
+                CREATE TRIGGER fail_staged_stop_insert
+                BEFORE INSERT ON cachedStopSync
+                WHEN NEW.id = '1_fail'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced staged write failure');
+                END
+                """)
+        }
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_good", "1_fail")])
+        let wroteStops = await service.sync(regionID: 1, using: fetcher)
+        try await database.dbQueue.write { db in
+            try db.execute(sql: "DROP TRIGGER fail_staged_stop_insert")
+        }
+
+        #expect(!wroteStops)
+        #expect(try cachedIDs() == ["old"])
+        let state = try #require(try repository.syncState(regionId: 1))
+        #expect(state.outcome == .failed)
+        #expect(state.publishedSyncID == initialSyncID)
+    }
+
+    @Test func `A partial sync carries over staged stops from the previous published snapshot`() async throws {
+        let initialFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_a"),
+            "2": stops("2_b")
+        ])
+        let service = makeService()
+        #expect(await service.sync(regionID: 1, using: initialFetcher))
+        let initialSyncID = try #require(try repository.syncState(regionId: 1)?.publishedSyncID)
+        #expect(try cachedIDs() == ["1_a", "2_b"])
+
+        clock.value = clock.value.addingTimeInterval(86_400 * 7)
+
+        let partialFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_updated"),
+            "2": error(429, "application/json")
+        ])
+        #expect(await service.sync(regionID: 1, using: partialFetcher))
+        let partialState = try #require(try repository.syncState(regionId: 1))
+        #expect(partialState.outcome == .partial)
+        #expect(partialState.publishedSyncID != initialSyncID)
+        #expect(try cachedIDs() == ["1_a", "1_updated", "2_b"])
+
+        let oldStagedCount = try await database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [initialSyncID])
+        }
+        #expect(oldStagedCount == 0)
+    }
+
+    @Test func `A server listing no agencies preserves existing published syncID`() async throws {
+        let initialFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("1_kept")])
+        let service = makeService()
+        #expect(await service.sync(regionID: 1, using: initialFetcher))
+        let initialSyncID = try #require(try repository.syncState(regionId: 1)?.publishedSyncID)
+
+        clock.value = clock.value.addingTimeInterval(86_400 * 7)
+
+        let emptyFetcher = FakeStopsForAgencyFetcher(agencyIDs: [], answers: [:])
+        let wroteStops = await service.sync(regionID: 1, using: emptyFetcher)
+
+        #expect(!wroteStops)
+        #expect(try cachedIDs() == ["1_kept"])
+        let state = try #require(try repository.syncState(regionId: 1))
+        #expect(state.outcome == .failed)
+        #expect(state.publishedSyncID == initialSyncID)
     }
 
     /// URLSession fails a cancelled request with URLError.cancelled rather than
@@ -243,7 +374,7 @@ final class RegionStopSyncServiceTests {
         await fetcher.release()
         await sync.value
 
-        #expect(try cachedIDs() == ["1_a"])
+        #expect(try cachedIDs().isEmpty)
         #expect(try repository.syncState(regionId: 1) == nil)
     }
 

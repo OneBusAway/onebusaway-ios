@@ -90,7 +90,7 @@ final class StopCacheDatabaseTests {
 
     // MARK: - Stepwise Migration Verification
 
-    @Test func `Stepwise migration through v1, v2, and v3`() throws {
+    @Test func `Stepwise migration through v1, v2, v3, and v4`() throws {
         let path = makeTemporaryDatabasePath()
         defer { cleanupDatabase(at: path) }
 
@@ -120,5 +120,15 @@ final class StopCacheDatabaseTests {
         #expect(v3Columns.contains("stopData"))
         #expect(v3Columns.contains("name"))
         #expect(v3Columns.contains("code"))
+
+        let tables = try v3Db.dbQueue.read { db in
+            try String.fetchAll(db, sql: "SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+        #expect(tables.contains("cachedStopSync"))
+        #expect(tables.contains("cachedRouteSync"))
+        let syncColumns = try v3Db.dbQueue.read { db in
+            try db.columns(in: "regionStopSync").map(\.name)
+        }
+        #expect(syncColumns.contains("publishedSyncID"))
     }
 }
