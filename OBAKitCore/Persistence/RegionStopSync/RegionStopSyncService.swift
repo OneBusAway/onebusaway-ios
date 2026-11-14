@@ -98,7 +98,7 @@ final class RegionStopSyncService: Sendable {
         try Task.checkCancellation()
         guard !agencyIDs.isEmpty else {
             Logger.warn("Region stop sync: region \(regionID)'s server lists no agencies.")
-            record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag)
+            record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
             return false
         }
 
@@ -122,27 +122,69 @@ final class RegionStopSyncService: Sendable {
         // reported failure.
         try Task.checkCancellation()
 
-        if failedAgencies == agencyIDs.count {
+        return try publish(
+            regionID: regionID,
+            start: start,
+            newETag: newETag,
+            previous: previous,
+            syncID: syncID,
+            failedAgencies: failedAgencies,
+            totalAgencies: agencyIDs.count,
+            wroteAny: wroteAny
+        )
+    }
+
+    private func publish(
+        regionID: Int,
+        start: Date,
+        newETag: String?,
+        previous: RegionStopSyncState?,
+        syncID: String,
+        failedAgencies: Int,
+        totalAgencies: Int,
+        wroteAny: Bool
+    ) throws -> Bool {
+        if failedAgencies == totalAgencies {
             record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
-        } else if failedAgencies > 0 {
+            return wroteAny
+        }
+        if failedAgencies > 0 {
             guard wroteAny else {
                 record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
                 return false
             }
-            guard record(.partial, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: syncID) else { return false }
-        } else {
-            // Every agency empty is more likely a server problem than a region with
-            // no stops, so it doesn't empty the stops the map already cached.
-            if wroteAny {
-                // Publish first, so readers never see the old snapshot deleted
-                // before the staged snapshot becomes current.
-                guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: syncID) else { return false }
-                try repository.deleteStops(regionId: regionID, notWrittenSince: start)
-            } else {
-                guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: previous?.publishedSyncID) else { return false }
+            if let previousSyncID = previous?.publishedSyncID {
+                try repository.carryOverStagedStops(regionId: regionID, fromSyncID: previousSyncID, toSyncID: syncID)
             }
+            guard record(.partial, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: syncID) else { return false }
+            cleanupAfterPublish(regionID: regionID, currentSyncID: syncID)
+            return wroteAny
+        }
+
+        // Every agency empty is more likely a server problem than a region with
+        // no stops, so it doesn't empty the stops the map already cached.
+        if wroteAny {
+            guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: syncID) else { return false }
+            cleanupAfterPublish(regionID: regionID, currentSyncID: syncID, staleStopsOlderThan: start)
+        } else {
+            guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: previous?.publishedSyncID) else { return false }
         }
         return wroteAny
+    }
+
+    private func cleanupAfterPublish(regionID: Int, currentSyncID: String, staleStopsOlderThan: Date? = nil) {
+        do {
+            try repository.purgeSupersededStagedStops(regionId: regionID, currentSyncID: currentSyncID)
+        } catch {
+            Logger.error("Failed to purge superseded staged stops for region \(regionID): \(error)")
+        }
+        if let staleStopsOlderThan {
+            do {
+                try repository.deleteStops(regionId: regionID, notWrittenSince: staleStopsOlderThan)
+            } catch {
+                Logger.error("Failed to delete stale stops after sync for region \(regionID): \(error)")
+            }
+        }
     }
 
     /// How fetching every agency ended: with an outcome already recorded (no

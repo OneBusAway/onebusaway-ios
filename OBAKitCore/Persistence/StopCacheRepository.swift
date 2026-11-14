@@ -154,6 +154,12 @@ public final class StopCacheRepository: Sendable {
             .filter(CachedStop.Columns.latitude <= maxLat)
             .filter(CachedStop.Columns.longitude >= minLon)
             .filter(CachedStop.Columns.longitude <= maxLon)
+        if let publishedSyncID {
+            main = main.filter(
+                sql: "NOT EXISTS (SELECT 1 FROM cachedStopSync WHERE syncID = ? AND regionId = cachedStop.regionId AND id = cachedStop.id AND lastUpdated >= cachedStop.lastUpdated)",
+                arguments: [publishedSyncID]
+            )
+        }
         let staged = try stagedStops(
             regionId: regionId,
             syncID: publishedSyncID,
@@ -164,10 +170,10 @@ public final class StopCacheRepository: Sendable {
             limit: limit,
             in: db
         )
+        let centerLat = (minLat + maxLat) / 2
+        let centerLon = (minLon + maxLon) / 2
+        let scale = cos(centerLat * .pi / 180)
         if let limit {
-            let centerLat = (minLat + maxLat) / 2
-            let centerLon = (minLon + maxLon) / 2
-            let scale = cos(centerLat * .pi / 180)
             let dLat = CachedStop.Columns.latitude - centerLat
             let dLon = (CachedStop.Columns.longitude - centerLon) * scale
             main = main.order(dLat * dLat + dLon * dLon).limit(limit)
@@ -175,11 +181,20 @@ public final class StopCacheRepository: Sendable {
 
         let mainRows = try main.fetchAll(db)
         var byID = Dictionary(uniqueKeysWithValues: mainRows.map { ($0.id, $0) })
-        for row in staged { byID[row.id] = row.cachedStop }
-        let centerLat = (minLat + maxLat) / 2
-        let centerLon = (minLon + maxLon) / 2
-        let scale = cos(centerLat * .pi / 180)
-        let sorted = byID.values.sorted {
+        for row in staged {
+            if let existing = byID[row.id] {
+                if row.lastUpdated >= existing.lastUpdated {
+                    byID[row.id] = row.cachedStop
+                }
+            } else {
+                byID[row.id] = row.cachedStop
+            }
+        }
+        return rankByDistance(Array(byID.values), centerLat: centerLat, centerLon: centerLon, scale: scale, limit: limit)
+    }
+
+    private func rankByDistance(_ stops: [CachedStop], centerLat: Double, centerLon: Double, scale: Double, limit: Int?) -> [CachedStop] {
+        let sorted = stops.sorted {
             let lhs = ($0.latitude - centerLat) * ($0.latitude - centerLat) + (($0.longitude - centerLon) * scale) * (($0.longitude - centerLon) * scale)
             let rhs = ($1.latitude - centerLat) * ($1.latitude - centerLat) + (($1.longitude - centerLon) * scale) * (($1.longitude - centerLon) * scale)
             return lhs < rhs
@@ -211,6 +226,12 @@ public final class StopCacheRepository: Sendable {
         let publishedSyncID = try RegionStopSyncState.fetchOne(db, key: regionId)?.publishedSyncID
         var main = CachedStop.filter(CachedStop.Columns.regionId == regionId)
         if let cursor { main = main.filter(CachedStop.Columns.id > cursor) }
+        if let publishedSyncID {
+            main = main.filter(
+                sql: "NOT EXISTS (SELECT 1 FROM cachedStopSync WHERE syncID = ? AND regionId = cachedStop.regionId AND id = cachedStop.id AND lastUpdated >= cachedStop.lastUpdated)",
+                arguments: [publishedSyncID]
+            )
+        }
         let mainRows = try main.order(CachedStop.Columns.id).limit(limit).fetchAll(db)
         var byID = Dictionary(uniqueKeysWithValues: mainRows.map { ($0.id, $0) })
         if let publishedSyncID {
@@ -219,7 +240,13 @@ public final class StopCacheRepository: Sendable {
                 .filter(StagedCachedStop.Columns.regionId == regionId)
             if let cursor { staged = staged.filter(StagedCachedStop.Columns.id > cursor) }
             for row in try staged.order(StagedCachedStop.Columns.id).limit(limit).fetchAll(db) {
-                byID[row.id] = row.cachedStop
+                if let existing = byID[row.id] {
+                    if row.lastUpdated >= existing.lastUpdated {
+                        byID[row.id] = row.cachedStop
+                    }
+                } else {
+                    byID[row.id] = row.cachedStop
+                }
             }
         }
         return Array(byID.values.sorted { $0.id < $1.id }.prefix(limit))
@@ -238,7 +265,13 @@ public final class StopCacheRepository: Sendable {
                 .filter(StagedCachedRoute.Columns.regionId == regionId)
                 .filter(routeIDs.contains(StagedCachedRoute.Columns.id))
                 .fetchAll(db) {
-                byID[row.id] = row.cachedRoute
+                if let existing = byID[row.id] {
+                    if row.lastUpdated >= existing.lastUpdated {
+                        byID[row.id] = row.cachedRoute
+                    }
+                } else {
+                    byID[row.id] = row.cachedRoute
+                }
             }
         }
         return Array(byID.values)
@@ -305,6 +338,47 @@ public final class StopCacheRepository: Sendable {
             _ = try StagedCachedRoute
                 .filter(StagedCachedRoute.Columns.regionId == regionId)
                 .filter(StagedCachedRoute.Columns.syncID == syncID)
+                .deleteAll(db)
+        }
+    }
+
+    /// Copies staged stops and routes from a previous snapshot into the current snapshot
+    /// for any stops and routes not already staged in `toSyncID`.
+    func carryOverStagedStops(regionId: Int, fromSyncID: String, toSyncID: String) throws {
+        guard fromSyncID != toSyncID else { return }
+        try database.dbQueue.write { db in
+            try db.execute(
+                sql: """
+                INSERT OR IGNORE INTO cachedStopSync (syncID, id, regionId, latitude, longitude, lastUpdated, stopData, name, code)
+                SELECT ?, id, regionId, latitude, longitude, lastUpdated, stopData, name, code
+                FROM cachedStopSync
+                WHERE syncID = ? AND regionId = ?
+                """,
+                arguments: [toSyncID, fromSyncID, regionId]
+            )
+
+            try db.execute(
+                sql: """
+                INSERT OR IGNORE INTO cachedRouteSync (syncID, id, regionId, lastUpdated, routeData)
+                SELECT ?, id, regionId, lastUpdated, routeData
+                FROM cachedRouteSync
+                WHERE syncID = ? AND regionId = ?
+                """,
+                arguments: [toSyncID, fromSyncID, regionId]
+            )
+        }
+    }
+
+    /// Purges staged stops and routes for a region that belong to older superseded sync snapshots.
+    func purgeSupersededStagedStops(regionId: Int, currentSyncID: String) throws {
+        try database.dbQueue.write { db in
+            _ = try StagedCachedStop
+                .filter(StagedCachedStop.Columns.regionId == regionId)
+                .filter(StagedCachedStop.Columns.syncID != currentSyncID)
+                .deleteAll(db)
+            _ = try StagedCachedRoute
+                .filter(StagedCachedRoute.Columns.regionId == regionId)
+                .filter(StagedCachedRoute.Columns.syncID != currentSyncID)
                 .deleteAll(db)
         }
     }
