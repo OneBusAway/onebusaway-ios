@@ -13,11 +13,11 @@ import Testing
 @testable import OBAKitCore
 import CoreLocation
 
-// swiftlint:disable weak_delegate
-
+// swiftlint:disable:next weak_delegate
 private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     private(set) var unableToSelectRegion: DelegateTestingHelper.DidCallDelegateMethod<Void> = .didNotCall
     private(set) var updatedRegionsList: DelegateTestingHelper.DidCallDelegateMethod<[Region]> = .didNotCall
+    private(set) var willUpdateToRegion: DelegateTestingHelper.DidCallDelegateMethod<Region> = .didNotCall
     private(set) var newRegionSelected: DelegateTestingHelper.DidCallDelegateMethod<Region> = .didNotCall
     private(set) var regionUpdateCancelled: DelegateTestingHelper.DidCallDelegateMethod<Void> = .didNotCall
     private(set) var displayedError: DelegateTestingHelper.DidCallDelegateMethod<Error> = .didNotCall
@@ -28,6 +28,10 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
 
     func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
         updatedRegionsList = .called(regions)
+    }
+
+    func regionsService(_ service: RegionsService, willUpdateToRegion region: Region) {
+        willUpdateToRegion = .called(region)
     }
 
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
@@ -59,7 +63,10 @@ final class RegionsServiceTests: OBATestCase {
         testDelegate = RegionsServiceTestDelegate()
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
-        dataLoader = (regionsAPIService.dataLoader as! MockDataLoader)
+        guard let mockDataLoader = regionsAPIService.dataLoader as? MockDataLoader else {
+            fatalError("Expected MockDataLoader")
+        }
+        dataLoader = mockDataLoader
         mockFileStorage = MockRegionsFileStorage()
     }
 
@@ -323,7 +330,6 @@ final class RegionsServiceTests: OBATestCase {
         #expect(mockFileStorage.storedCustomRegions.contains(where: { $0.regionIdentifier == newRegion.regionIdentifier }))
     }
 
-
     // MARK: - Network Data
 
     // It updates the 'last updated at' date in user defaults when the regions list is downloaded.
@@ -366,10 +372,12 @@ final class RegionsServiceTests: OBATestCase {
         #expect(regionsService.regions.count == (refreshes ? 1 : 7))
     }
 
-    @Test func `A failed region list refresh reports the error and keeps the old list`() async throws {
+    @Test func `A failed region list refresh reports the error and keeps the old list and currentRegion`() async throws {
         let path = regionsAPIPath
         dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == path }
         let regionsService = makeRegionsService(delegate: testDelegate)
+        let initialRegion = try #require(regionsService.regions.first)
+        regionsService.currentRegion = initialRegion
 
         await regionsService.updateRegionsList(forceUpdate: true)
 
@@ -380,7 +388,31 @@ final class RegionsServiceTests: OBATestCase {
         }
         #expect(response.statusCode == 500)
         #expect(regionsService.regions.count == 7)
+        #expect(regionsService.currentRegion?.regionIdentifier == initialRegion.regionIdentifier)
         #expect(!testDelegate.updatedRegionsList.didCall)
+        #expect(regionsService.lastRefreshFailed)
+    }
+
+    @Test func `Network connection failure sets lastRefreshFailed and preserves existing regions and currentRegion`() async throws {
+        let path = regionsAPIPath
+        let mockResponse = MockDataResponse(
+            data: nil,
+            urlResponse: nil,
+            error: URLError(.notConnectedToInternet),
+            matcher: { $0.url?.path == path }
+        )
+        dataLoader.mock(response: mockResponse)
+        let regionsService = makeRegionsService(delegate: testDelegate)
+        let initialRegion = try #require(regionsService.regions.first)
+        regionsService.currentRegion = initialRegion
+
+        await regionsService.updateRegionsList(forceUpdate: true)
+
+        #expect(regionsService.lastRefreshFailed)
+        #expect(regionsService.regions.count == 7)
+        #expect(regionsService.currentRegion?.regionIdentifier == initialRegion.regionIdentifier)
+        #expect(!testDelegate.updatedRegionsList.didCall)
+        #expect(testDelegate.displayedError.didCall)
     }
 
     /// An empty list from the server must not wipe the regions the app already has.
@@ -395,6 +427,233 @@ final class RegionsServiceTests: OBATestCase {
         #expect(regionsService.regions.count == 7)
         #expect(!testDelegate.updatedRegionsList.didCall)
         #expect(testDelegate.displayedError.didCall == false)
+    }
+
+    @Test func `Successful refresh resets lastRefreshFailed`() async {
+        let path = regionsAPIPath
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == path }
+        let regionsService = makeRegionsService(delegate: testDelegate)
+        #expect(!regionsService.lastRefreshFailed)
+
+        await regionsService.updateRegionsList(forceUpdate: true)
+        #expect(regionsService.lastRefreshFailed)
+
+        // Then succeed
+        dataLoader.removeMappedResponses()
+        stubRegionsJustPugetSound(dataLoader: dataLoader)
+        await regionsService.updateRegionsList(forceUpdate: true)
+        #expect(!regionsService.lastRefreshFailed)
+    }
+
+    @Test func `Recovery after failed refresh syncs regions list, resolves pending region, clears failure flag, and notifies delegates`() async throws {
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        // User has Puget Sound stored, but default regions in storage is empty and bundle doesn't have it
+        userDefaults.set(pugetSound.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        // Stub empty bundle by using a temp file
+        let emptyJSON = Data(#"{"version": 3, "code": 200, "text": "OK", "data": {"list": []}}"#.utf8)
+        let tempBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try emptyJSON.write(to: tempBundle, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tempBundle) }
+
+        // Initial refresh fails with server 500
+        let path = regionsAPIPath
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == path }
+
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: tempBundle.path,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
+
+        #expect(regionsService.currentRegion == nil)
+        #expect(!regionsService.lastRefreshFailed)
+        #expect(!testDelegate.newRegionSelected.didCall)
+        #expect(!testDelegate.willUpdateToRegion.didCall)
+
+        await regionsService.updateRegionsList(forceUpdate: true)
+
+        #expect(regionsService.lastRefreshFailed)
+        #expect(regionsService.currentRegion == nil)
+        #expect(!testDelegate.newRegionSelected.didCall)
+        #expect(!testDelegate.willUpdateToRegion.didCall)
+
+        // Recovery: subsequent sync succeeds with Puget Sound
+        dataLoader.removeMappedResponses()
+        stubRegionsJustPugetSound(dataLoader: dataLoader)
+
+        await regionsService.updateRegionsList(forceUpdate: true)
+
+        #expect(!regionsService.lastRefreshFailed)
+        #expect(regionsService.regions.count == 1)
+        #expect(regionsService.currentRegion?.regionIdentifier == pugetSound.regionIdentifier)
+        #expect(testDelegate.updatedRegionsList.didCall)
+        #expect(testDelegate.newRegionSelected.didCall)
+        #expect(testDelegate.willUpdateToRegion.didCall)
+        if case .called(let notifiedRegion) = testDelegate.newRegionSelected {
+            #expect(notifiedRegion.regionIdentifier == pugetSound.regionIdentifier)
+        }
+        if case .called(let willRegion) = testDelegate.willUpdateToRegion {
+            #expect(willRegion.regionIdentifier == pugetSound.regionIdentifier)
+        }
+    }
+
+    @Test func `Fallback resolution recovers currentRegion from ResolvedRegionStore when unresolved in regions`() throws {
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        userDefaults.set(pugetSound.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+
+        // Empty bundle
+        let emptyJSON = Data(#"{"version": 3, "code": 200, "text": "OK", "data": {"list": []}}"#.utf8)
+        let tempBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try emptyJSON.write(to: tempBundle, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tempBundle) }
+
+        // Store Puget Sound in ResolvedRegionStore
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(pugetSound)
+
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: tempBundle.path,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage
+        )
+
+        // Puget Sound is NOT in regions or customRegions
+        #expect(regionsService.find(id: pugetSound.regionIdentifier) == nil)
+        // But currentRegion resolves via ResolvedRegionStore fallback
+        #expect(regionsService.currentRegion?.regionIdentifier == pugetSound.regionIdentifier)
+    }
+
+    @Test func `Stale bundle missing stored region preserves user intent via ResolvedRegionStore and ignores location auto-select`() throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(tampa)
+
+        // Stale bundle contains only Puget Sound (Tampa is missing from bundle)
+        let staleBundlePath = Fixtures.path(to: "regions-just-puget-sound.json")
+
+        // GPS location is physically in Puget Sound
+        let seattleLocation = CLLocation(latitude: 47.632445, longitude: -122.312607)
+        locationManagerMock.location = seattleLocation
+
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: staleBundlePath,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
+
+        // Stale bundle does not have Tampa in regions list
+        #expect(regionsService.find(id: tampa.regionIdentifier) == nil)
+        #expect(regionsService.regions.contains(where: { $0.regionIdentifier == pugetSound.regionIdentifier }))
+
+        // Preserved via ResolvedRegionStore fallback
+        #expect(regionsService.currentRegion?.regionIdentifier == tampa.regionIdentifier)
+        #expect(userDefaults.integer(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == tampa.regionIdentifier)
+
+        // Auto-select by location does not overwrite user intent
+        regionsService.locationService(locationService, locationChanged: seattleLocation)
+        #expect(regionsService.currentRegion?.regionIdentifier == tampa.regionIdentifier)
+        #expect(userDefaults.integer(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == tampa.regionIdentifier)
+    }
+
+    @Test func `Offline launch with stored selection does not clobber intent on location or fixed region`() throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        // Location points to Puget Sound
+        locationManagerMock.location = CLLocation(latitude: 47.632445, longitude: -122.312607)
+
+        // Empty bundle so regions does not have Tampa
+        let emptyJSON = Data(#"{"version": 3, "code": 200, "text": "OK", "data": {"list": []}}"#.utf8)
+        let tempBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try emptyJSON.write(to: tempBundle, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tempBundle) }
+
+        // Seed file storage with single active region (Puget Sound)
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        mockFileStorage.storedDefaultRegions = [pugetSound]
+
+        _ = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: tempBundle.path,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            fixedRegionName: "Puget Sound"
+        )
+
+        // Stored identifier must remain Tampa
+        #expect(userDefaults.integer(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == tampa.regionIdentifier)
+    }
+
+    @Test func `Offline launch preserves currentRegion, GPS fix does not clobber selection, and cached bookmarks remain accessible`() throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(tampa)
+
+        let userStore = UserDefaultsStore(userDefaults: userDefaults)
+        let stops = try Fixtures.loadSomeStops()
+        let tampaBookmark = Bookmark(name: "Tampa Work", regionIdentifier: tampa.regionIdentifier, stop: stops[0])
+        let psBookmark = Bookmark(name: "Seattle Home", regionIdentifier: pugetSound.regionIdentifier, stop: stops[1])
+        userStore.add(tampaBookmark, to: nil)
+        userStore.add(psBookmark, to: nil)
+
+        let emptyJSON = Data(#"{"version": 3, "code": 200, "text": "OK", "data": {"list": []}}"#.utf8)
+        let tempBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try emptyJSON.write(to: tempBundle, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tempBundle) }
+
+        let seattleLocation = CLLocation(latitude: 47.632445, longitude: -122.312607)
+        locationManagerMock.location = seattleLocation
+
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: tempBundle.path,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
+
+        // 1. currentRegion is preserved via ResolvedRegionStore fallback
+        #expect(regionsService.currentRegion?.regionIdentifier == tampa.regionIdentifier)
+        #expect(userDefaults.integer(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == tampa.regionIdentifier)
+
+        // 2. GPS location fix does NOT clobber user's stored selection
+        regionsService.locationService(locationService, locationChanged: seattleLocation)
+        #expect(regionsService.currentRegion?.regionIdentifier == tampa.regionIdentifier)
+        #expect(userDefaults.integer(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == tampa.regionIdentifier)
+
+        // 3. Cached bookmarks for currentRegion remain accessible
+        let accessibleBookmarks = userStore.findBookmarks(in: regionsService.currentRegion)
+        #expect(accessibleBookmarks.count == 1)
+        #expect(accessibleBookmarks.first?.name == "Tampa Work")
+        #expect(accessibleBookmarks.first?.regionIdentifier == tampa.regionIdentifier)
     }
 
     // MARK: - Custom Regions
@@ -487,7 +746,7 @@ final class RegionsServiceTests: OBATestCase {
     @Test func `Migration default regions corrupt data discards key`() {
         stubRegions(dataLoader: dataLoader)
 
-        let data = "corrupted data".data(using: .utf8)
+        let data = Data("corrupted data".utf8)
         userDefaults.set(data, forKey: RegionsService.legacyStoredRegionsUserDefaultsKey)
 
         _ = makeRegionsService()
@@ -513,7 +772,7 @@ final class RegionsServiceTests: OBATestCase {
     @Test func `Migration custom regions corrupt data discards key`() {
         stubRegions(dataLoader: dataLoader)
 
-        let data = "corrupted data".data(using: .utf8)
+        let data = Data("corrupted data".utf8)
         userDefaults.set(data, forKey: RegionsService.legacyStoredCustomRegionsUserDefaultsKey)
 
         _ = makeRegionsService()
@@ -544,8 +803,8 @@ final class RegionsServiceTests: OBATestCase {
     /// write any identifier — unlike the default/custom cases this path does not retry on next launch.
     @Test func `Migration current region corrupt data clears key without writing identifier`() {
         stubRegions(dataLoader: dataLoader)
-        
-        let data = "corrupted data".data(using: .utf8)
+
+        let data = Data("corrupted data".utf8)
         userDefaults.set(data, forKey: RegionsService.legacyCurrentRegionUserDefaultsKey)
 
         _ = makeRegionsService()

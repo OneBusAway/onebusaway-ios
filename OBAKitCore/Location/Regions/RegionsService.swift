@@ -95,7 +95,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             addDelegate(delegate)
         }
 
-        let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey) || currentRegion == nil
+        let hasStoredSelection = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) != nil
+
+        let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
 
         if autoSelectRegion, let location = locationService.currentLocation {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
@@ -103,7 +105,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         // Fixed region from OBAKitConfig: match by name, then fall back to URL.
         // See: https://github.com/OneBusAway/onebusaway-ios/issues/608
-        if currentRegion == nil, let fixedName = fixedRegionName {
+        if !hasStoredSelection, currentRegion == nil, let fixedName = fixedRegionName {
             let match = self.regions.first(where: { $0.name == fixedName })
                 ?? self.regions.first(where: { fixedRegionOBABaseURL != nil && $0.OBABaseURL == fixedRegionOBABaseURL })
 
@@ -116,7 +118,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         // Auto-select when only one active region is available.
-        if currentRegion == nil {
+        if !hasStoredSelection, currentRegion == nil {
             let activeRegions = self.regions.filter { $0.isActive }
             if activeRegions.count == 1, let onlyRegion = activeRegions.first {
                 currentRegion = onlyRegion
@@ -187,6 +189,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Regions Data
 
+    /// Whether the last network refresh of the regions list failed.
+    @MainActor public private(set) var lastRefreshFailed: Bool = false
+
     public private(set) var regions: [Region] {
         didSet {
             if regions.count > 0 {
@@ -211,7 +216,17 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             guard let identifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int else {
                 return nil
             }
-            return find(id: identifier)
+            if let region = find(id: identifier) {
+                return region
+            }
+
+            let fallbackStore = ResolvedRegionStore(userDefaults: userDefaults)
+            if let fallbackRegion = fallbackStore.region(bundledRegionsFilePath: bundledRegionsFilePath),
+               fallbackRegion.regionIdentifier == identifier {
+                return fallbackRegion
+            }
+
+            return nil
         }
         set {
             guard let newValue else { return }
@@ -521,6 +536,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         self.regions = regions
+        lastRefreshFailed = false
     }
 
     /// Fetches the current list of `Region`s from the network.
@@ -532,10 +548,18 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             return
         }
 
+        let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
+        let wasUnresolved = storedIdentifier != nil && find(id: storedIdentifier!) == nil
+
         do {
             try await refreshRegions()
+            lastRefreshFailed = false
+            if wasUnresolved, let storedIdentifier, let resolved = find(id: storedIdentifier) {
+                notifyDelegatesRegionChanged(resolved)
+            }
             updateCurrentRegionFromLocation()
         } catch {
+            lastRefreshFailed = true
             notifyDelegatesDisplayError(error)
         }
     }

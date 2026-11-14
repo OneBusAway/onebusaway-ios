@@ -24,10 +24,12 @@ import Foundation
 public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     private weak var regionsService: RegionsService?
     private let store: ResolvedRegionStore
+    private let userDefaults: UserDefaults
 
-    public init(regionsService: RegionsService, store: ResolvedRegionStore) {
+    public init(regionsService: RegionsService, store: ResolvedRegionStore, userDefaults: UserDefaults? = nil) {
         self.regionsService = regionsService
         self.store = store
+        self.userDefaults = userDefaults ?? store.userDefaults
         super.init()
 
         // `RegionsService` holds its delegates weakly; the owner retains us.
@@ -35,9 +37,17 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
         persist()
     }
 
-    /// Writes the current region, or clears the store when there is none.
+    /// Writes the current region, or clears the store when there is no user selection.
+    ///
+    /// If `currentRegion` evaluates to `nil`, we check whether the user has a stored selection identifier.
+    /// If an identifier is stored (e.g. during offline launch with stale bundle, or failed refresh),
+    /// we do not wipe the stored resolved region cache. We only clear the store if there is no stored selection.
     public func persist() {
-        store.write(regionsService?.currentRegion)
+        if let currentRegion = regionsService?.currentRegion {
+            store.write(currentRegion)
+        } else if userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil {
+            store.write(nil)
+        }
     }
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
