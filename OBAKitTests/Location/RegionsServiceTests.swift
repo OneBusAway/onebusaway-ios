@@ -13,12 +13,14 @@ import Testing
 @testable import OBAKitCore
 import CoreLocation
 
+// swiftlint:disable file_length
 // swiftlint:disable:next weak_delegate
 private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     private(set) var unableToSelectRegion: DelegateTestingHelper.DidCallDelegateMethod<Void> = .didNotCall
     private(set) var updatedRegionsList: DelegateTestingHelper.DidCallDelegateMethod<[Region]> = .didNotCall
     private(set) var willUpdateToRegion: DelegateTestingHelper.DidCallDelegateMethod<Region> = .didNotCall
     private(set) var newRegionSelected: DelegateTestingHelper.DidCallDelegateMethod<Region> = .didNotCall
+    private(set) var allUpdatedRegions: [Region] = []
     private(set) var regionUpdateCancelled: DelegateTestingHelper.DidCallDelegateMethod<Void> = .didNotCall
     private(set) var displayedError: DelegateTestingHelper.DidCallDelegateMethod<Error> = .didNotCall
 
@@ -36,6 +38,7 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
 
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         newRegionSelected = .called(region)
+        allUpdatedRegions.append(region)
     }
 
     func regionsServiceListUpdateCancelled(_ service: RegionsService) {
@@ -500,6 +503,51 @@ final class RegionsServiceTests: OBATestCase {
         }
         if case .called(let willRegion) = testDelegate.willUpdateToRegion {
             #expect(willRegion.regionIdentifier == pugetSound.regionIdentifier)
+        }
+    }
+
+    @Test func `Recovery does not notify stale captured region if current identifier changed during refresh`() async throws {
+        let allRegions = try Fixtures.loadSomeRegions()
+        let pugetSound = try #require(allRegions.first(where: { $0.name == "Puget Sound" }))
+        let tampa = try #require(allRegions.first(where: { $0.name == "Tampa Bay" }))
+
+        // User initially has Puget Sound stored, but default regions in storage is empty and bundle doesn't have it.
+        userDefaults.set(pugetSound.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(true, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        // User is physically located in Tampa Bay.
+        locationManagerMock.location = TestData.mockTampaLocation
+
+        // Stub empty bundle by using a temp file so Puget Sound is initially unresolved.
+        let emptyJSON = Data(#"{"version": 3, "code": 200, "text": "OK", "data": {"list": []}}"#.utf8)
+        let tempBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try emptyJSON.write(to: tempBundle, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tempBundle) }
+
+        stubRegions(dataLoader: dataLoader)
+
+        let regionsService = RegionsService(
+            apiService: regionsAPIService,
+            locationService: locationService,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: tempBundle.path,
+            apiPath: regionsAPIPath,
+            fileStorage: mockFileStorage,
+            delegate: testDelegate
+        )
+
+        #expect(regionsService.currentRegion == nil)
+        #expect(testDelegate.allUpdatedRegions.isEmpty)
+
+        await regionsService.updateRegionsList(forceUpdate: true)
+
+        // Tampa should be selected from location via regions.didSet,
+        // and recovery branch must NOT notify delegates for the stale Puget Sound identifier.
+        #expect(regionsService.currentRegion?.regionIdentifier == tampa.regionIdentifier)
+        #expect(testDelegate.allUpdatedRegions.count == 1)
+        #expect(testDelegate.allUpdatedRegions.first?.regionIdentifier == tampa.regionIdentifier)
+        if case .called(let notifiedRegion) = testDelegate.newRegionSelected {
+            #expect(notifiedRegion.regionIdentifier == tampa.regionIdentifier)
         }
     }
 

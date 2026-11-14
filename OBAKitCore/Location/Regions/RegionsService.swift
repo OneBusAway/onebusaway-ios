@@ -554,7 +554,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         do {
             try await refreshRegions()
             lastRefreshFailed = false
-            if wasUnresolved, let storedIdentifier, let resolved = find(id: storedIdentifier) {
+            let currentIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
+            if wasUnresolved, let storedIdentifier, storedIdentifier == currentIdentifier, let resolved = find(id: storedIdentifier) {
                 notifyDelegatesRegionChanged(resolved)
             }
             updateCurrentRegionFromLocation()
