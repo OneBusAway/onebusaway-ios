@@ -112,6 +112,16 @@ final class ErrorReportTests {
         #expect(report.errorCode == "NSURLErrorDomain -1001 (serverUnavailable)")
     }
 
+    /// A timeout that was classified before it got here must not report an
+    /// HTTP 408 the server never sent (#1733).
+    @Test func `Already-classified timeout reports the URL error, not a 408`() {
+        let timeout = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        let classified = ErrorClassifier.classify(timeout, regionName: "Puget Sound")
+        let report = report(classified)
+        #expect(report.cause == .serverUnavailable)
+        #expect(report.errorCode == "NSURLErrorDomain -1001 (serverUnavailable)")
+    }
+
     /// With no region name the classifier leaves a timeout as a network
     /// failure. The phone is online, so it mustn't read "You're offline".
     @Test func `Timeout without a region is not offline`() {

@@ -26,7 +26,10 @@ public enum APIError: Error, LocalizedError {
     case serverError(regionName: String)
 
     /// The regional server is down or unreachable (502, 503, 504, or timeout).
-    case serverUnavailable(regionName: String, statusCode: Int?)
+    /// `statusCode` is the one the server sent, if it answered at all.
+    /// `underlyingError` is the URL error when it didn't, so a timeout stays a
+    /// timeout without a made-up status code (#1733).
+    case serverUnavailable(regionName: String, statusCode: Int?, underlyingError: Error? = nil)
 
     /// The regional server returned a body this app cannot decode. Distinct from
     /// `.serverUnavailable`: the host responded, the payload is unusable (#1276).
@@ -111,7 +114,7 @@ public enum APIError: Error, LocalizedError {
                 comment: "An error shown when the server returns a 500 Internal Server Error. The substituted value is the region name, e.g. 'Puget Sound'."
             )
             return String(format: fmt, regionName)
-        case .serverUnavailable(let regionName, _):
+        case .serverUnavailable(let regionName, _, _):
             let fmt = OBALoc(
                 "api_error.server_unavailable_fmt",
                 value: "Unable to reach the server for %@. %@ can't show transit information for this region right now. The server may be down, or a VPN or firewall may be blocking it.",

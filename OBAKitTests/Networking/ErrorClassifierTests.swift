@@ -50,6 +50,72 @@ final class ErrorClassifierTests {
         #expect(ErrorClassifier.category(for: classifiedRateLimit) == .server)
     }
 
+    /// `category(for:)` promises the same category for a raw error and for
+    /// what `classify` turns it into, with or without a region (#1733).
+    @Test func `Raw and classified errors share a category`() {
+        func response(_ status: Int) -> HTTPURLResponse {
+            HTTPURLResponse(url: URL(string: "https://example.com/stop.json")!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        }
+        let errors: [(String, Error)] = [
+            ("timeout", NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)),
+            ("cannot connect", NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotConnectToHost)),
+            ("offline", NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)),
+            ("cancelled", NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)),
+            ("decoding", DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "bad"))),
+            ("blank 200", APIError.requestNotFound(response(200))),
+            ("404", APIError.requestNotFound(response(404))),
+            ("401", APIError.requestFailure(response(401))),
+            ("403", APIError.requestFailure(response(403))),
+            ("429", APIError.requestFailure(response(429))),
+            ("500", APIError.requestFailure(response(500))),
+            ("503", APIError.requestFailure(response(503)))
+        ]
+        for (name, error) in errors {
+            for region in ["Puget Sound", nil] {
+                let classified = ErrorClassifier.classify(error, regionName: region)
+                #expect(
+                    ErrorClassifier.category(for: classified) == ErrorClassifier.category(for: error),
+                    "\(name), region \(region ?? "nil")"
+                )
+            }
+        }
+    }
+
+    @Test func `A blank 200 is a decoding failure and a 404 is not`() {
+        func response(_ status: Int) -> HTTPURLResponse {
+            HTTPURLResponse(url: URL(string: "https://example.com/stop.json")!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        }
+        #expect(ErrorClassifier.category(for: APIError.requestNotFound(response(200))) == .decoding)
+        #expect(ErrorClassifier.category(for: APIError.requestNotFound(response(404))) == .unknown)
+    }
+
+    @Test func `403 is an authentication failure`() {
+        let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 403, httpVersion: nil, headerFields: nil)!
+        #expect(ErrorClassifier.category(for: APIError.requestFailure(response)) == .authentication)
+    }
+
+    /// A cancelled request is `.unknown`, which retry logic must not retry: the
+    /// caller called it off on purpose.
+    @Test func `Cancellation is unknown`() {
+        let cancelled = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
+        #expect(ErrorClassifier.category(for: cancelled) == .unknown)
+        #expect(ErrorClassifier.category(for: APIError.networkFailure(cancelled)) == .unknown)
+        #expect(ErrorClassifier.category(for: CancellationError()) == .unknown)
+    }
+
+    @Test func `A classified timeout keeps the URL error instead of a made-up status code`() {
+        let timeout = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+        let result = ErrorClassifier.classify(timeout, regionName: "Puget Sound")
+
+        guard case .serverUnavailable(let regionName, let statusCode, let inner) = result as? APIError else {
+            Issue.record("Expected .serverUnavailable, got \(result)")
+            return
+        }
+        #expect(regionName == "Puget Sound")
+        #expect(statusCode == nil)
+        #expect((inner as NSError?)?.code == NSURLErrorTimedOut)
+    }
+
     // MARK: - APIError Pass-Through
 
     @Test func `Classify captive portal passes through`() {
@@ -169,7 +235,7 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .serverUnavailable(let regionName, let statusCode):
+        case .serverUnavailable(let regionName, let statusCode, _):
             #expect(regionName == "Puget Sound")
             #expect(statusCode == 502)
         default:
@@ -189,7 +255,7 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .serverUnavailable(let regionName, let statusCode):
+        case .serverUnavailable(let regionName, let statusCode, _):
             #expect(regionName == "Tampa")
             #expect(statusCode == 503)
         default:
@@ -413,7 +479,7 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .serverUnavailable(let regionName, _):
+        case .serverUnavailable(let regionName, _, _):
             #expect(regionName == "York Region")
         default:
             Issue.record("Expected .serverUnavailable for timeout, got \(apiError)")
@@ -430,7 +496,7 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .serverUnavailable(let regionName, _):
+        case .serverUnavailable(let regionName, _, _):
             #expect(regionName == "Tampa")
         default:
             Issue.record("Expected .serverUnavailable, got \(apiError)")
@@ -447,7 +513,7 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .serverUnavailable(let regionName, _):
+        case .serverUnavailable(let regionName, _, _):
             #expect(regionName == "San Diego")
         default:
             Issue.record("Expected .serverUnavailable, got \(apiError)")
@@ -517,7 +583,7 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .serverUnavailable(let regionName, let statusCode):
+        case .serverUnavailable(let regionName, let statusCode, _):
             #expect(regionName == "Puget Sound")
             #expect(statusCode == 503)
         default:
