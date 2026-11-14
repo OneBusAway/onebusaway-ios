@@ -564,3 +564,9 @@
 
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "عاصف";
+
+/* Authentication error summary. */
+"error_report.summary.authentication" = "مطلوب المصادقة";
+
+/* Authentication error explanation. */
+"error_report.explanation.authentication" = "يجب المصادقة للاستمرار";

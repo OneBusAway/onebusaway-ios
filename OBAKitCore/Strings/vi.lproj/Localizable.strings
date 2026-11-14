@@ -564,3 +564,9 @@
 
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "Nhiều gió";
+
+
+/* Authentication error summary. */
+"error_report.summary.authentication" = "Cần xác thực";
+/* Authentication error explanation. */
+"error_report.explanation.authentication" = "Bạn cần xác thực để tiếp tục";

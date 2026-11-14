@@ -564,3 +564,10 @@
 
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "Mahangin";
+
+
+/* Authentication error summary. */
+"error_report.summary.authentication" = "Kailangang mag-autenticate";
+
+/* Authentication error explanation. */
+"error_report.explanation.authentication" = "Kailangang pumautentica para lumipat";

@@ -564,3 +564,8 @@
 
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "바람";
+
+/* Authentication error summary. */
+"error_report.summary.authentication" = "인증이 필요합니다";
+/* Authentication error explanation. */
+"error_report.explanation.authentication" = "인증을 진행해야 합니다";

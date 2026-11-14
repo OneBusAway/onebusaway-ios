@@ -564,3 +564,8 @@
 
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "Ветрено";
+
+/* Authentication error summary. */
+"error_report.summary.authentication" = "Требуется аутентификация";
+/* Authentication error explanation. */
+"error_report.explanation.authentication" = "Необходима аутентификация для продолжения";
