@@ -191,7 +191,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
     /// bookmarks, so it must not be the only thing that refreshes the widget.
     func reloadWidget() {
         Logger.info("Reloading the widget")
-        WidgetCenter.shared.reloadTimelines(ofKind: BookmarkWidgetRefresher.widgetKind)
+        BookmarkWidgetRefresher.reloadAllTimelines()
     }
 
     // MARK: - Live Activity Management

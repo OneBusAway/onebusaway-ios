@@ -233,6 +233,31 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
             .joined(separator: " - ")
     }
 
+    /// Reference-safe accessors for callers that may receive partial fixtures without loaded references.
+    var safeRouteShortName: String? {
+        if let short = String.nilifyBlankValue(_routeShortName) { return short }
+        let loadedRoute: Route? = route
+        return String.nilifyBlankValue(loadedRoute?.shortName)
+            ?? String.nilifyBlankValue(_routeLongName)
+            ?? String.nilifyBlankValue(loadedRoute?.longName)
+    }
+
+    var safeTripHeadsign: String? {
+        if let headsign = String.nilifyBlankValue(_tripHeadsign) { return headsign }
+        let loadedTrip: Trip? = trip
+        return String.nilifyBlankValue(loadedTrip?.headsign)
+    }
+
+    var safeRouteColorHex: String? {
+        let loadedRoute: Route? = route
+        return loadedRoute?.color?.toHex
+    }
+
+    var safeRouteTextColorHex: String? {
+        let loadedRoute: Route? = route
+        return loadedRoute?.textColor?.toHex
+    }
+
     // MARK: - Helpers/Statuses+Times
 
     /// Whether this trip represents an arrival at or departure from this stop.
@@ -257,6 +282,17 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     /// Whether `arrivalDepartureDate` is after the epoch/null sentinel threshold.
     public var hasPlausibleArrivalDepartureDate: Bool {
         arrivalDepartureDate >= Self.earliestPlausibleDate
+    }
+
+    /// Best available departure timestamp (`predictedDeparture ?? scheduledDeparture`),
+    /// independent of `stopSequence` layover arrival vs. departure heuristics.
+    public var departureDate: Date {
+        predictedDeparture ?? scheduledDeparture
+    }
+
+    /// Whether `departureDate` is after the epoch/null sentinel threshold.
+    public var hasPlausibleDepartureDate: Bool {
+        departureDate >= Self.earliestPlausibleDate
     }
 
     /// A singluar value that can be displayed in the UI to represent the best date for this trip.

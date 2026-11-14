@@ -593,6 +593,24 @@
 /* Weather condition label for windy conditions. */
 "weather.condition.wind" = "바람";
 
+/* Short fallback text on a Lock Screen accessory widget when no bookmarks are configured. */
+"widget.complication.no_bookmarks" = "즐겨찾기 없음";
+
+/* Hint shown in a rectangular Lock Screen accessory widget when no bookmarks are shown in the widget. */
+"widget.complication.no_bookmarks_hint" = "앱에서 위젯 즐겨찾기를 켜세요.";
+
+/* Short fallback text on a Lock Screen accessory widget when a bookmark has no upcoming departures. */
+"widget.complication.no_departures" = "출발 정보 없음";
+
+/* Short fallback text on a Lock Screen accessory widget when departure data could not be loaded. */
+"widget.complication.unavailable" = "사용할 수 없음";
+
+/* Description of the next-departure Lock Screen accessory widget in the Add Widget gallery. */
+"widget.next_departure.gallery.description" = "대표 즐겨찾기의 다음 출발 정보를 확인하세요.";
+
+/* Name of the next-departure Lock Screen accessory widget in the Add Widget gallery. */
+"widget.next_departure.gallery.display_name" = "다음 출발";
+
 /* Widget empty state. Quotes the bookmark editor's switch title (edit_bookmark_controller.show_in_today_view_switch_title); keep the two identical. */
 "widget.empty_state" = "즐겨찾기에서 ‘투데이 보기 위젯에 표시’를 켜면 여기에 표시됩니다.";
 
