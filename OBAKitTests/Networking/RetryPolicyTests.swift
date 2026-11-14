@@ -51,12 +51,34 @@ final class RetryPolicyTests {
             })
         }
 
+        var yields = 0
         while !sleeping.value {
+            yields += 1
+            if yields > 10_000 {
+                Issue.record("Timed out waiting for task to begin sleeping")
+                break
+            }
             await Task.yield()
         }
 
         task.cancel()
         await #expect(throws: CancellationError.self) { try await task.value }
+    }
+
+    @Test func `Cellular data restricted error is not retried`() async {
+        let policy = RetryPolicy(maxAttempts: 3, initialDelay: 0.25, maxDelay: 1)
+        let attempts = SendableBox(0)
+        let sleepCalled = SendableBox(false)
+
+        await #expect(throws: Error.self) {
+            try await policy.execute(operation: { _ in
+                attempts.value += 1
+                throw URLError(.dataNotAllowed)
+            }, sleep: { _ in sleepCalled.value = true })
+        }
+
+        #expect(attempts.value == 1)
+        #expect(!sleepCalled.value)
     }
 
     @Test func `Captive portal error is not retried`() async {

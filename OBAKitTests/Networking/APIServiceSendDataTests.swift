@@ -176,7 +176,6 @@ final class APIServiceSendDataTests: OBATestCase {
     }
 
     @Test func `Failing POST request is not retried`() async throws {
-        let requestPayload = MockRequestPayload(name: "BusPass", amount: 250)
         let countingLoader = CountingDataLoader(dataLoader)
         let config = APIServiceConfiguration(
             baseURL: baseURL,
@@ -192,8 +191,11 @@ final class APIServiceSendDataTests: OBATestCase {
         let mockResponse = MockDataResponse(data: Data("Server Error".utf8), urlResponse: response, error: nil) { $0.url == self.endpointURL }
         dataLoader.mock(response: mockResponse)
 
+        var postRequest = URLRequest(url: endpointURL)
+        postRequest.httpMethod = "POST"
+
         do {
-            let _: MockResponsePayload = try await serviceWithCounter.postData(url: endpointURL, data: requestPayload)
+            _ = try await serviceWithCounter.data(for: postRequest)
             Issue.record("Expected APIError.requestFailure to be thrown")
         } catch is APIError {
             // Expected

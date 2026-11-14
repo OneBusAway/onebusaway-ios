@@ -27,6 +27,13 @@ public struct RetryPolicy: Sendable, Equatable {
         if case APIError.captivePortal = error {
             return false
         }
+        if case APIError.cellularDataRestricted = error {
+            return false
+        }
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorDataNotAllowed {
+            return false
+        }
         switch ErrorClassifier.category(for: error) {
         case .timeout, .offline, .server:
             return true
