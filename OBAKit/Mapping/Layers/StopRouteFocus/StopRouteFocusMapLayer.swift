@@ -106,6 +106,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     private let vehicleEstimation: StopVehicleEstimation?
     /// Vehicles whose marker follows an estimate, by `DrawnVehicle.id`.
     private var estimates: [String: VehicleEstimate] { vehicleEstimation?.estimates ?? [:] }
+    /// The latest arrivals' server clock; see `StopVehicleEstimation.refresh`.
+    private var serverClock: ServerClockSample?
 
     init(
         mapView: MKMapView,
@@ -178,7 +180,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         presentationToken = UUID()
         for task in shapeTasks { task.cancel() }
         shapeTasks.removeAll()
-        stopEstimating()
+        vehicleEstimation?.stop()
         cancellables.removeAll()
         focus = nil
         focusedVehicleID = nil
@@ -203,7 +205,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
     /// `syncVehicleAnnotations` skipped every one — and left every refresh after
     /// resolving a generation stale.
     func apply(arrivals: StopArrivals?, isListFiltered: Bool, preferences: StopPreferences, serverClock: ServerClockSample? = nil) {
-        vehicleEstimation?.record(serverClock: serverClock)
+        self.serverClock = serverClock
         let all = arrivals?.arrivalsAndDepartures ?? []
         // Assigned before `update`, which consults it for every vehicle.
         // Asked once per vehicle, twice a poll: a lookup, not a scan.
@@ -252,7 +254,7 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
         isSuppressed = suppressed
 
         guard !suppressed else {
-            stopEstimating()
+            vehicleEstimation?.stop()
             removeAllContent()
             // Shapes are pinned by route so a refresh doesn't redraw an unchanged
             // line. Clearing the pins is what lets them be drawn again on the way
@@ -388,19 +390,8 @@ final class StopRouteFocusMapLayer: NSObject, MapLayer {
 
     // MARK: - Estimation
 
-    /// Hands the drawn vehicles to the estimator; see `StopVehicleEstimation.refresh`.
     private func refreshEstimationInputs() {
-        let departureProvider = departureProvider
-        vehicleEstimation?.refresh(vehicles: model.vehicles) { departureProvider?($0) }
-    }
-
-    /// Test seam: waits for the gathering `refreshEstimationInputs` started.
-    func estimationInputsSettled() async {
-        await vehicleEstimation?.inputsSettled()
-    }
-
-    private func stopEstimating() {
-        vehicleEstimation?.stop()
+        vehicleEstimation?.refresh(vehicles: model.vehicles, serverClock: serverClock) { departureProvider?($0) }
     }
 
     private func apply(estimates: [String: VehicleEstimate], previous: [String: VehicleEstimate]) {

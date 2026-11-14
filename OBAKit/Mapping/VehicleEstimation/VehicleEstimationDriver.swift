@@ -10,6 +10,7 @@
 import CoreLocation
 import Foundation
 import OBAKitCore
+import SwiftUI
 import UIKit
 
 /// Runs a `VehicleTrack` per vehicle on a 1 Hz tick and hands the estimates to
@@ -216,6 +217,17 @@ final class VehicleEstimationDriver {
     /// How long a marker takes to glide to `estimate`: until the next one arrives.
     static func glideDuration(for estimate: VehicleEstimate) -> TimeInterval {
         (estimate.isRewinding ? rewindFrameInterval : tickInterval).timeInterval
+    }
+
+    /// Publishes a SwiftUI marker's move to `estimate`, as `VehicleCoordinateUpdate`
+    /// moves a map tab's: gliding until the next estimate, or straight there when
+    /// it snaps, there is none, or Reduce Motion is on.
+    static func withGlide(to estimate: VehicleEstimate?, _ move: () -> Void) {
+        guard let estimate, !estimate.shouldSnap, !UIAccessibility.isReduceMotionEnabled else {
+            move()
+            return
+        }
+        withAnimation(.linear(duration: glideDuration(for: estimate)), move)
     }
 
     /// What, when it changes, means the shape or schedule did: a new trip, or the

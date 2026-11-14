@@ -58,19 +58,33 @@ final class StopFocusMapDisplayModel: ObservableObject {
         /// `vehicleID` when the agency reports one, `tripID` otherwise.
         let id: String
         let routeID: RouteID
-        let coordinate: CLLocationCoordinate2D
+        /// Where its estimate puts it, or the feed without one.
+        private(set) var coordinate: CLLocationCoordinate2D
         /// In degrees, as OBA reports it.
-        let orientation: CLLocationDirection
+        private(set) var orientation: CLLocationDirection
         let routeType: Route.RouteType
         let isRealTime: Bool
         /// How old the fix behind an estimated position is; `.live` without one.
-        let staleness: VehicleMarkerStaleness
+        private(set) var staleness: VehicleMarkerStaleness = .live
         let color: Color
         let emphasis: Emphasis
         let accessibilityLabel: String
         let accessibilityValue: String
         /// What a tap on the marker follows.
         let departure: ArrivalDeparture
+
+        /// The feed's position, for when there's no estimate.
+        fileprivate let reported: (coordinate: CLLocationCoordinate2D, orientation: CLLocationDirection)
+
+        /// This vehicle where `estimate` puts it, or where the feed does without one.
+        /// Only the position changes, so an estimate tick rebuilds nothing else.
+        fileprivate func placed(at estimate: VehicleEstimate?) -> Vehicle {
+            var placed = self
+            placed.coordinate = estimate?.coordinate ?? reported.coordinate
+            placed.orientation = estimate?.obaOrientation ?? reported.orientation
+            placed.staleness = VehicleMarkerStaleness(estimate: estimate)
+            return placed
+        }
     }
 
     /// Resolved once per change rather than in `body`, which re-runs on every
@@ -106,6 +120,8 @@ final class StopFocusMapDisplayModel: ObservableObject {
     private struct Arrivals {
         let model: StopRouteFocusModel
         let departures: [String: ArrivalDeparture]
+        /// The response's, for estimating where its vehicles are now.
+        let serverClock: ServerClockSample?
     }
 
     private let shapeCache: ShapeCache
@@ -133,6 +149,9 @@ final class StopFocusMapDisplayModel: ObservableObject {
     private let vehicleEstimation: StopVehicleEstimation?
     /// Whether an open trip has the map; see `setSuppressed(_:)`.
     private var isSuppressed = false
+    /// The drawn stop's vehicles where the feed puts them, built once per
+    /// arrivals refresh; an estimate tick only moves them.
+    private var reportedVehicles: [Vehicle] = []
 
     init(shapeCache: ShapeCache, formatters: Formatters, vehicleEstimation: StopVehicleEstimation? = nil) {
         self.shapeCache = shapeCache
@@ -190,13 +209,13 @@ final class StopFocusMapDisplayModel: ObservableObject {
         let model = StopRouteFocusModel.make(departures: visible, routeCap: StopRouteFocusMapLayer.routeCap)
         entries[index].arrivals = Arrivals(
             model: model,
-            departures: Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            departures: Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }),
+            serverClock: serverClock
         )
         // A covered sheet's chips still decorate from it.
         entries[index].focus?.apply(routes: model.routes)
 
         guard index == entries.indices.last else { return }
-        vehicleEstimation?.record(serverClock: serverClock)
         loadShapes()
         render()
         refreshEstimation()
@@ -252,11 +271,6 @@ final class StopFocusMapDisplayModel: ObservableObject {
         }
     }
 
-    /// Lets tests wait for the shapes and schedules estimation is gathering.
-    func estimationInputsSettled() async {
-        await vehicleEstimation?.inputsSettled()
-    }
-
     // MARK: - Drawing
 
     private func beginDrawingTop() {
@@ -272,6 +286,7 @@ final class StopFocusMapDisplayModel: ObservableObject {
 
         guard let focus = entries.last?.focus else {
             display = nil
+            reportedVehicles = []
             return
         }
 
@@ -294,7 +309,9 @@ final class StopFocusMapDisplayModel: ObservableObject {
             vehicleEstimation.stop()
             return
         }
-        vehicleEstimation.refresh(vehicles: arrivals.model.vehicles) { arrivals.departures[$0] }
+        vehicleEstimation.refresh(vehicles: arrivals.model.vehicles, serverClock: arrivals.serverClock) {
+            arrivals.departures[$0]
+        }
     }
 
     private func loadShapes() {
@@ -321,6 +338,7 @@ final class StopFocusMapDisplayModel: ObservableObject {
     private func render() {
         guard let arrivals = entries.last?.arrivals else {
             display = nil
+            reportedVehicles = []
             return
         }
 
@@ -344,7 +362,9 @@ final class StopFocusMapDisplayModel: ObservableObject {
             )
         }
 
-        let vehicles = vehicles(arrivals, estimates: vehicleEstimation?.estimates ?? [:])
+        reportedVehicles = reportedVehicles(arrivals)
+        let estimates = vehicleEstimation?.estimates ?? [:]
+        let vehicles = reportedVehicles.map { $0.placed(at: estimates[$0.id]) }
 
         // Nothing to draw yet, or nothing running: no point counting it as drawn.
         display = routes.isEmpty && vehicles.isEmpty ? nil : Display(routes: routes, vehicles: vehicles)
@@ -354,33 +374,28 @@ final class StopFocusMapDisplayModel: ObservableObject {
     /// leaves the routes as they are: rebuilding their polylines every second
     /// would be most of the work for none of the change.
     private func moveVehicles(to estimates: [String: VehicleEstimate]) {
-        guard let display, let arrivals = entries.last?.arrivals else { return }
-        let moved = Display(routes: display.routes, vehicles: vehicles(arrivals, estimates: estimates))
-        let glide = estimates.values.first { !$0.shouldSnap }.map(VehicleEstimationDriver.glideDuration(for:))
-        if let glide, !UIAccessibility.isReduceMotionEnabled {
-            withAnimation(.linear(duration: glide)) { self.display = moved }
-        } else {
-            self.display = moved
-        }
+        guard let display else { return }
+        let moved = Display(routes: display.routes, vehicles: reportedVehicles.map { $0.placed(at: estimates[$0.id]) })
+        // One glide for all of them: every estimate comes from the same tick.
+        VehicleEstimationDriver.withGlide(to: estimates.values.first { !$0.shouldSnap }) { self.display = moved }
     }
 
-    /// Each vehicle where its estimate puts it, or where the feed does without one.
-    private func vehicles(_ arrivals: Arrivals, estimates: [String: VehicleEstimate]) -> [Vehicle] {
+    /// Each vehicle where the feed puts it, with everything that doesn't change
+    /// between estimate ticks: its colour, and what VoiceOver reads.
+    private func reportedVehicles(_ arrivals: Arrivals) -> [Vehicle] {
         let colors = Dictionary(arrivals.model.routes.map { ($0.routeID, $0.color) }, uniquingKeysWith: { first, _ in first })
         return arrivals.model.vehicles.compactMap { vehicle -> Vehicle? in
             // As on the map tab, a marker needs the departure behind it: the tap
             // follows it, and VoiceOver reads from it.
             guard let departure = arrivals.departures[vehicle.departureID] else { return nil }
             let color = colors[vehicle.routeID] ?? ThemeColors.shared.brand
-            let estimate = estimates[vehicle.id]
             return Vehicle(
                 id: vehicle.id,
                 routeID: vehicle.routeID,
-                coordinate: estimate?.coordinate ?? vehicle.coordinate,
-                orientation: estimate?.obaOrientation ?? vehicle.orientation,
+                coordinate: vehicle.coordinate,
+                orientation: vehicle.orientation,
                 routeType: departure.route?.routeType ?? .bus,
                 isRealTime: departure.tripStatus?.isRealTime ?? false,
-                staleness: VehicleMarkerStaleness(estimate: estimate),
                 color: Color(uiColor: color),
                 emphasis: emphasis(for: vehicle.routeID),
                 accessibilityLabel: StopRouteFocusMapLayer.accessibilityLabel(
@@ -390,7 +405,8 @@ final class StopFocusMapDisplayModel: ObservableObject {
                     formatters: formatters
                 ),
                 accessibilityValue: formatters.accessibilityValue(for: departure),
-                departure: departure
+                departure: departure,
+                reported: (vehicle.coordinate, vehicle.orientation)
             )
         }
     }

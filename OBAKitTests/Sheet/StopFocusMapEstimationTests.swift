@@ -21,62 +21,24 @@ import Testing
 final class StopFocusMapEstimationTests {
     typealias F = EstimationFixtures
 
-    private actor Counter {
-        private(set) var count = 0
-        func increment() { count += 1 }
-    }
-
-    private final class DeviceClock {
-        var now = EstimationFixtures.t0
-    }
-
-    private static let formatters = Formatters(
-        locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared
-    )
     private static let stop = AppSheetRoute.stopDetails(stopID: "1_10020")
 
-    private let device = DeviceClock()
-    private let clock = TestClock()
-    private let scheduleFetches = Counter()
-    private var isEnabled = true
+    private let harness = StopEstimationHarness()
+    private var clock: TestClock { harness.clock }
     /// Held here because the model holds it weakly, as the sheet owns it.
     private let focus = StopMapFocus()
 
     private func makeModel() -> StopFocusMapDisplayModel {
-        let encoded = Polyline(coordinates: F.straightLine().coordinates).encodedPolyline
-        let shapeCache = ShapeCache { _ in encoded }
-        let counter = scheduleFetches
-        let driver = VehicleEstimationDriver(
-            isEnabled: { [unowned self] in isEnabled },
-            reduceMotion: { false },
-            clock: clock,
-            now: { [unowned self] in device.now },
-            notificationCenter: NotificationCenter()
-        )
-        return StopFocusMapDisplayModel(
-            shapeCache: shapeCache,
-            formatters: Self.formatters,
-            vehicleEstimation: StopVehicleEstimation(
-                driver: driver,
-                shapeCache: shapeCache,
-                tripSchedules: TripScheduleCache { _ in
-                    await counter.increment()
-                    return TripScheduleCache.Schedule(stopTimes: [F.stop(0, at: 0), F.stop(1000, at: 100)], serverTripLength: 1000)
-                }
-            )
+        StopFocusMapDisplayModel(
+            shapeCache: harness.shapeCache,
+            formatters: StopEstimationHarness.formatters,
+            vehicleEstimation: harness.estimation
         )
     }
 
     /// Every vehicle 200 m along `F.straightLine()`, with a fix time of `F.t0`.
     private static func arrivals() throws -> StopArrivals {
-        try StopArrivalsFixture.upcoming { status in
-            var status = status
-            let onShape = F.point(north: 200)
-            status["lastKnownLocation"] = ["lat": onShape.latitude, "lon": onShape.longitude]
-            status["lastLocationUpdateTime"] = Int64(F.t0.timeIntervalSince1970 * 1000)
-            status["totalDistanceAlongTrip"] = 1000.0
-            return status
-        }
+        try StopArrivalsFixture.upcoming(rewritingStatus: StopEstimationHarness.onShape)
     }
 
     private func show(_ model: StopFocusMapDisplayModel, serverClock: ServerClockSample? = nil) async throws {
@@ -86,7 +48,7 @@ final class StopFocusMapEstimationTests {
             serverClock: serverClock, owner: Self.stop
         )
         await model.awaitPendingShapeWork()
-        await model.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
     }
 
     /// The vehicles running the trip they're arriving on. The fixture's others are
@@ -129,7 +91,7 @@ final class StopFocusMapEstimationTests {
         try await show(model)
         await poll(until: { self.clock.sleeperCount == 1 })
 
-        device.now += 10
+        harness.now += 10
         clock.advance(by: .seconds(1))
         await poll(until: { self.latitudes(model).allSatisfy { $0 > F.point(north: 250).latitude } })
 
@@ -142,7 +104,7 @@ final class StopFocusMapEstimationTests {
         let model = makeModel()
         try await show(model)
         await poll(until: { self.clock.sleeperCount == 1 })
-        device.now += 10
+        harness.now += 10
         clock.advance(by: .seconds(1))
         await poll(until: { self.latitudes(model).allSatisfy { $0 > F.point(north: 250).latitude } })
 
@@ -164,11 +126,11 @@ final class StopFocusMapEstimationTests {
     }
 
     @Test func `With estimation off no schedule is fetched and the buses are where the feed says`() async throws {
-        isEnabled = false
+        harness.isEnabled = false
         let model = makeModel()
         try await show(model)
 
-        #expect(await scheduleFetches.count == 0)
+        #expect(await harness.scheduleFetches.count == 0)
         #expect(clock.sleeperCount == 0)
         let vehicles = try #require(model.display?.vehicles)
         #expect(vehicles.allSatisfy { $0.staleness == .live })
@@ -183,7 +145,7 @@ final class StopFocusMapEstimationTests {
         await poll(until: { self.clock.sleeperCount == 0 }, "the tick should stop while the trip has the map")
 
         model.setSuppressed(false)
-        await model.estimationInputsSettled()
+        await harness.estimation.inputsSettled()
         await poll(until: { self.clock.sleeperCount == 1 }, "the tick should come back with the map")
     }
 

@@ -39,10 +39,9 @@ final class StopVehicleEstimation {
     /// restart estimation the owner has since moved past.
     private var generation = 0
 
-    /// The latest arrivals' server clock, and the last one handed to the driver:
-    /// each is recorded once per response, not once per filter change, or one
-    /// sample would fill the skew median.
-    private var latestServerClock: ServerClockSample?
+    /// The last server clock handed to the driver: each is recorded once per
+    /// response, not once per filter change, or one sample would fill the skew
+    /// median.
     private var recordedServerClock: ServerClockSample?
 
     init(driver: VehicleEstimationDriver, shapeCache: ShapeCache, tripSchedules: TripScheduleCache) {
@@ -86,18 +85,20 @@ final class StopVehicleEstimation {
 
     // MARK: - Input
 
-    /// One arrivals response's clock. Kept until the driver has it, so a refresh
-    /// that cancels the gathering doesn't lose it.
-    func record(serverClock: ServerClockSample?) {
-        latestServerClock = serverClock
-    }
-
     /// Gathers each vehicle's shape and schedule, from their caches or the network,
     /// then estimates the lot. Asynchronous, so a vehicle whose shape or schedule
     /// hasn't arrived stays where the feed says until it has.
     ///
-    /// - Parameter departure: The departure behind a `DrawnVehicle.departureID`.
-    func refresh(vehicles: [StopRouteFocusModel.DrawnVehicle], departure: (String) -> ArrivalDeparture?) {
+    /// - Parameters:
+    ///   - serverClock: The latest arrivals response's. Pass it on every refresh,
+    ///     not just the first after the response: one that cancels the gathering
+    ///     before the driver had it would lose it otherwise. Recorded once.
+    ///   - departure: The departure behind a `DrawnVehicle.departureID`.
+    func refresh(
+        vehicles: [StopRouteFocusModel.DrawnVehicle],
+        serverClock: ServerClockSample?,
+        departure: (String) -> ArrivalDeparture?
+    ) {
         guard driver.isEnabledNow else {
             // Also stops the tick and any gathering still in flight, which would
             // otherwise resume the driver.
@@ -118,7 +119,7 @@ final class StopVehicleEstimation {
                 fix: VehicleFix(tripStatus: status, tripID: tripID)
             )
         }
-        let serverClocks = [latestServerClock].compactMap { $0 }.filter { $0 != recordedServerClock }
+        let serverClocks = [serverClock].compactMap { $0 }.filter { $0 != recordedServerClock }
 
         generation += 1
         let generation = generation
@@ -149,7 +150,7 @@ final class StopVehicleEstimation {
         await tripSchedules.removeAll()
     }
 
-    /// Test seam: waits for the gathering `refresh` started.
+    /// Lets tests wait for the gathering `refresh` started.
     func inputsSettled() async {
         await gatheringTask?.value
     }
