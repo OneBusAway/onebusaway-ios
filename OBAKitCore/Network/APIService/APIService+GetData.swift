@@ -6,9 +6,29 @@
 //
 
 import Foundation
+import os
 
 extension APIService {
+    private static func isIdempotent(request: URLRequest) -> Bool {
+        guard let method = request.httpMethod?.uppercased() else {
+            return true
+        }
+        return method == "GET" || method == "HEAD"
+    }
+
     nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let loader = dataLoader
+        let requestLogger = logger
+        guard Self.isIdempotent(request: request) else {
+            return try await Self.performData(for: request, dataLoader: loader, logger: requestLogger)
+        }
+        let policy = retryPolicy
+        return try await policy.execute { _ in
+            try await Self.performData(for: request, dataLoader: loader, logger: requestLogger)
+        }
+    }
+
+    private static func performData(for request: URLRequest, dataLoader: URLDataLoader, logger: os.Logger) async throws -> (Data, HTTPURLResponse) {
         let (data, response): (Data, URLResponse)
         do {
             // Per-request begin/finish is high-volume trace detail (the unit-test
@@ -20,7 +40,7 @@ extension APIService {
             logger.debug("Finish network request for \(request.loggableURL, privacy: .public)")
         } catch let error as NSError {
             logger.error("Failed network request for \(request.loggableURL, privacy: .public): \(ErrorReport.sanitizedForReporting(error) as NSError, privacy: .public)")
-            if errorLooksLikeCaptivePortal(error) {
+            if Self.errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal
             } else {
                 throw error
@@ -129,6 +149,10 @@ extension APIService {
     }
 
     nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
+        Self.errorLooksLikeCaptivePortal(error)
+    }
+
+    nonisolated static func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
         if error.domain == NSCocoaErrorDomain && error.code == 3840 {
             return true
         }

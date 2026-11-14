@@ -26,6 +26,7 @@ private nonisolated struct MockResponsePayload: Codable, Equatable, Sendable {
 private nonisolated final class TestAPIService: APIService {
     let configuration: APIServiceConfiguration
     let dataLoader: URLDataLoader
+    let retryPolicy: RetryPolicy = .standard
     let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "TestAPIService")
 
     init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
@@ -172,5 +173,34 @@ final class APIServiceSendDataTests: OBATestCase {
         } catch {
             Issue.record("Unexpected error type: \(error)")
         }
+    }
+
+    @Test func `Failing POST request is not retried`() async throws {
+        let countingLoader = CountingDataLoader(dataLoader)
+        let config = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            surveyBaseURL: surveyBaseURL
+        )
+        let serviceWithCounter = TestAPIService(config, dataLoader: countingLoader)
+
+        let response = HTTPURLResponse(url: endpointURL, statusCode: 500, httpVersion: "2.0", headerFields: nil)!
+        let mockResponse = MockDataResponse(data: Data("Server Error".utf8), urlResponse: response, error: nil) { $0.url == self.endpointURL }
+        dataLoader.mock(response: mockResponse)
+
+        var postRequest = URLRequest(url: endpointURL)
+        postRequest.httpMethod = "POST"
+
+        do {
+            _ = try await serviceWithCounter.data(for: postRequest)
+            Issue.record("Expected APIError.requestFailure to be thrown")
+        } catch is APIError {
+            // Expected
+        }
+
+        #expect(countingLoader.callCount == 1)
     }
 }

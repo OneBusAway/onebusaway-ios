@@ -127,7 +127,8 @@ final class TripPageAdjacentTripTests: OBATestCase {
             regionsAPIPath: regionsAPIPath,
             dataLoader: transport ?? dataLoader,
             fixedRegionName: Fixtures.pugetSoundRegion.name,
-            onDemandSupport: OnDemandSupport()
+            onDemandSupport: OnDemandSupport(),
+            retryPolicy: .disabled
         )
         return DisplayErrorSpyApplication(config: config)
     }

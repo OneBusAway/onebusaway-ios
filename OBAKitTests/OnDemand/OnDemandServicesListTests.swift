@@ -36,9 +36,9 @@ final class OnDemandServicesListTests: OBATestCase {
         loader.mock(URLString: Self.charlevoixURL, with: Fixtures.loadData(file: "ondemand_services_for_agency_charlevoix.json"))
     }
 
-    private func gatedService(_ gate: GatedDataLoader) -> RESTAPIService {
+    private func gatedService(_ gate: GatedDataLoader, retryPolicy: RetryPolicy = .disabled) -> RESTAPIService {
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier)
-        return RESTAPIService(config, dataLoader: gate, onDemandSupport: OnDemandSupport())
+        return RESTAPIService(config, dataLoader: gate, onDemandSupport: OnDemandSupport(), retryPolicy: retryPolicy)
     }
 
     /// Holds only the `number`th request (1-based), passing the rest through.

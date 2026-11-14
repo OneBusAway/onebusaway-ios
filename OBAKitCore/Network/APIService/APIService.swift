@@ -14,9 +14,14 @@ public protocol APIService {
     var configuration: APIServiceConfiguration { get }
     var dataLoader: URLDataLoader { get }
     var logger: os.Logger { get }
+    var retryPolicy: RetryPolicy { get }
 
     /// - parameter dataLoader: For mocking network requests. Use `URLSession.shared` for production cases.
     init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader)
+}
+
+extension APIService {
+    public var retryPolicy: RetryPolicy { .disabled }
 }
 
 public struct APIServiceConfiguration: Sendable {
