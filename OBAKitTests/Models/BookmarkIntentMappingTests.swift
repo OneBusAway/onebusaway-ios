@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import Foundation
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -92,5 +93,79 @@ final class BookmarkIntentMappingTests: OBATestCase {
             BookmarkIntentMapping.regionIdentifierUserDefaultsKey
                 == RegionsService.currentRegionIdentifierUserDefaultsKey
         )
+    }
+
+    @Test func `Resolving entities by identifier filters by region, trip bookmark, and requested ids`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let stop = try #require(arrivalDep.stop)
+
+        let trip1 = Bookmark(name: "49 to Downtown", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
+        let trip2 = Bookmark(name: "8 to Seattle Center", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDep)
+        let tripOtherRegion = Bookmark(name: "Other Region", regionIdentifier: pugetSoundRegionIdentifier + 1, arrivalDeparture: arrivalDep)
+        let wholeStop = Bookmark(name: "Stop only", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+
+        let allBookmarks = [trip1, trip2, tripOtherRegion, wholeStop]
+
+        // Exact match
+        let resolved = BookmarkIntentMapping.entities(
+            for: [trip1.id],
+            from: allBookmarks,
+            regionIdentifier: pugetSoundRegionIdentifier
+        )
+        #expect(resolved.map(\.id) == [trip1.id])
+        #expect(resolved.map(\.name) == ["49 to Downtown"])
+
+        // Multiple identifiers preserving order
+        let multiple = BookmarkIntentMapping.entities(
+            for: [trip2.id, trip1.id],
+            from: allBookmarks,
+            regionIdentifier: pugetSoundRegionIdentifier
+        )
+        #expect(multiple.map(\.id) == [trip2.id, trip1.id])
+
+        // Deleted or non-existent UUID is omitted
+        let withNonExistent = BookmarkIntentMapping.entities(
+            for: [UUID(), trip1.id],
+            from: allBookmarks,
+            regionIdentifier: pugetSoundRegionIdentifier
+        )
+        #expect(withNonExistent.map(\.id) == [trip1.id])
+
+        // Other region or whole-stop bookmarks requested are omitted
+        let invalidTargets = BookmarkIntentMapping.entities(
+            for: [tripOtherRegion.id, wholeStop.id],
+            from: allBookmarks,
+            regionIdentifier: pugetSoundRegionIdentifier
+        )
+        #expect(invalidTargets.isEmpty)
+
+        // Nil region returns empty
+        let nilRegion = BookmarkIntentMapping.entities(
+            for: [trip1.id],
+            from: allBookmarks,
+            regionIdentifier: nil
+        )
+        #expect(nilRegion.isEmpty)
+    }
+
+    @Test func `Bookmark search matches name ignoring case and diacritics, capped at 20`() {
+        let b1 = BookmarkEntity(id: UUID(), name: "Kraków Express")
+        let b2 = BookmarkEntity(id: UUID(), name: "Downtown Line 49")
+        let entities = [b1, b2]
+
+        #expect(BookmarkIntentMapping.matching("krakow", in: entities).map(\.id) == [b1.id])
+        #expect(BookmarkIntentMapping.matching("LINE 49", in: entities).map(\.id) == [b2.id])
+        #expect(BookmarkIntentMapping.matching("nonexistent", in: entities).isEmpty)
+
+        let many = (1...25).map {
+            BookmarkEntity(id: UUID(), name: "Route \($0) to Downtown")
+        }
+        let capped = BookmarkIntentMapping.matching("Downtown", in: many)
+        #expect(capped.count == 20)
+        #expect(capped.map(\.id) == Array(many.prefix(20)).map(\.id))
     }
 }

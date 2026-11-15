@@ -176,6 +176,27 @@ nonisolated enum NextDeparturesCardKey: Hashable, Sendable {
         self = bookmarkID.map(Self.bookmark) ?? .noBookmark
     }
 
+    /// A stop, by its `StopEntity` id.
+    init(stopEntityID: String) {
+        if StopEntityMapping.destination(fromIdentifier: stopEntityID) != nil {
+            self = .stop(stopEntityID)
+        } else {
+            self = .invalid
+        }
+    }
+
+    /// The string representation of this card key.
+    var cardKey: String {
+        switch self {
+        case .bookmark(let id):
+            return id.uuidString
+        case .stop(let stopID):
+            return stopID
+        case .noBookmark, .invalid:
+            return ""
+        }
+    }
+
     /// Whether Refresh fetches for this card: a bookmark's or a stop's. The
     /// answer about no bookmark only changes in the app, and an invalid key
     /// has nothing to fetch.

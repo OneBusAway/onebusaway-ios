@@ -33,6 +33,10 @@ public struct NextDeparturesIntent: AppIntent {
 
     public init() {}
 
+    public init(bookmark: BookmarkEntity?) {
+        self.bookmark = bookmark
+    }
+
     @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents"))
     public var bookmark: BookmarkEntity?
 
@@ -67,6 +71,16 @@ public struct NextDeparturesIntent: AppIntent {
         }
 
         let candidates = try await BookmarkEntityQuery().suggestedEntities()
+        return try resolveBookmarkID(candidates: candidates)
+    }
+
+    /// Resolves which bookmark to answer for from candidate entities when no
+    /// bookmark was passed as a parameter. Accessible for deterministic testing.
+    func resolveBookmarkID(candidates: [BookmarkEntity]) throws -> UUID? {
+        if let bookmark {
+            return bookmark.id
+        }
+
         switch candidates.count {
         case 0:
             return nil
