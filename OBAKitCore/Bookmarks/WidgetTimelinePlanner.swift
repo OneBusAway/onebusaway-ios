@@ -80,7 +80,7 @@ public struct WidgetTimelinePlanner: Sendable {
 
 extension WidgetTimelinePlanner {
     /// The departures a timeline entry dated `entryDate` should show: those
-    /// strictly after it and having a plausible date.
+    /// strictly after it.
     ///
     /// Strictly, because an undeferred entry is dated exactly at a departure —
     /// that entry exists to take that bus off the screen. `>=` would keep it
