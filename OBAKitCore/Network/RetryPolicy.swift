@@ -30,8 +30,14 @@ public struct RetryPolicy: Sendable, Equatable {
         if case APIError.cellularDataRestricted = error {
             return false
         }
+        if case APIError.rateLimited = error {
+            return false
+        }
+        if case APIError.requestFailure(let response) = error, response.statusCode == 429 {
+            return false
+        }
         let nsError = error as NSError
-        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorDataNotAllowed {
+        if nsError.domain == NSURLErrorDomain && (nsError.code == NSURLErrorDataNotAllowed || nsError.code == NSURLErrorCannotFindHost) {
             return false
         }
         switch ErrorClassifier.category(for: error) {

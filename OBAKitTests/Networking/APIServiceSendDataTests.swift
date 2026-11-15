@@ -203,4 +203,33 @@ final class APIServiceSendDataTests: OBATestCase {
 
         #expect(countingLoader.callCount == 1)
     }
+
+    @Test func `Rate limited GET request is not retried`() async throws {
+        let countingLoader = CountingDataLoader(dataLoader)
+        let config = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            surveyBaseURL: surveyBaseURL
+        )
+        let serviceWithCounter = TestAPIService(config, dataLoader: countingLoader)
+
+        let response = HTTPURLResponse(url: endpointURL, statusCode: 429, httpVersion: "2.0", headerFields: nil)!
+        let mockResponse = MockDataResponse(data: Data("Rate Limited".utf8), urlResponse: response, error: nil) { $0.url == self.endpointURL }
+        dataLoader.mock(response: mockResponse)
+
+        var getRequest = URLRequest(url: endpointURL)
+        getRequest.httpMethod = "GET"
+
+        do {
+            _ = try await serviceWithCounter.data(for: getRequest)
+            Issue.record("Expected APIError.requestFailure to be thrown")
+        } catch is APIError {
+            // Expected
+        }
+
+        #expect(countingLoader.callCount == 1)
+    }
 }

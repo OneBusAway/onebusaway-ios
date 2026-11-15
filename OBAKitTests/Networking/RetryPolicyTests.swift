@@ -96,4 +96,53 @@ final class RetryPolicyTests {
         #expect(attempts.value == 1)
         #expect(!sleepCalled.value)
     }
+
+    @Test func `Rate limited error is not retried`() async {
+        let policy = RetryPolicy(maxAttempts: 3, initialDelay: 0.25, maxDelay: 1)
+        let attempts = SendableBox(0)
+        let sleepCalled = SendableBox(false)
+
+        await #expect(throws: APIError.self) {
+            try await policy.execute(operation: { _ in
+                attempts.value += 1
+                throw APIError.rateLimited
+            }, sleep: { _ in sleepCalled.value = true })
+        }
+
+        #expect(attempts.value == 1)
+        #expect(!sleepCalled.value)
+    }
+
+    @Test func `Rate limited request failure is not retried`() async {
+        let policy = RetryPolicy(maxAttempts: 3, initialDelay: 0.25, maxDelay: 1)
+        let attempts = SendableBox(0)
+        let sleepCalled = SendableBox(false)
+        let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 429, httpVersion: nil, headerFields: nil)!
+
+        await #expect(throws: APIError.self) {
+            try await policy.execute(operation: { _ in
+                attempts.value += 1
+                throw APIError.requestFailure(response)
+            }, sleep: { _ in sleepCalled.value = true })
+        }
+
+        #expect(attempts.value == 1)
+        #expect(!sleepCalled.value)
+    }
+
+    @Test func `Cannot find host error is not retried`() async {
+        let policy = RetryPolicy(maxAttempts: 3, initialDelay: 0.25, maxDelay: 1)
+        let attempts = SendableBox(0)
+        let sleepCalled = SendableBox(false)
+
+        await #expect(throws: Error.self) {
+            try await policy.execute(operation: { _ in
+                attempts.value += 1
+                throw URLError(.cannotFindHost)
+            }, sleep: { _ in sleepCalled.value = true })
+        }
+
+        #expect(attempts.value == 1)
+        #expect(!sleepCalled.value)
+    }
 }
