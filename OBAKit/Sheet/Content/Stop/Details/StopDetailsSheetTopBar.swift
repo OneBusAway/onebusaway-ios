@@ -10,33 +10,32 @@
 import SwiftUI
 import OBAKitCore
 
-/// The stop sheet's pinned top strip: Refresh, the stop name, and Close.
+/// The stop sheet's pinned top strip: the stop name, the sheet's actions
+/// (`StopPageActionRow`) and Close.
 ///
 /// It replaces the navigation bar the pushed presentation uses. The sheet has
 /// no bar of its own, and this strip is the one piece of chrome that never
-/// scrolls away — so Close remains reachable in every state, including a first
-/// fetch that failed and left no header at all.
+/// scrolls away — so its actions and Close remain reachable in every state,
+/// including a first fetch that failed and left no header at all. It is the
+/// sheet's only chrome: the departures run from under it to the sheet's
+/// bottom edge.
 ///
-/// The title fades in as the map header collapses, so the sheet always names
+/// The title fades in as the header scrolls away, so the sheet always names
 /// the stop the rider is looking at without repeating it while the header is
 /// on screen.
-struct StopDetailsSheetTopBar: View {
+struct StopDetailsSheetTopBar<Actions: View>: View {
     let title: String
     /// 0 while the header is expanded, 1 once it has collapsed.
     let titleOpacity: Double
-    /// "Updated: Just Now" — the refresh button's VoiceOver value only. A
-    /// visible label that rewrites itself every few seconds makes the bar feel
-    /// restless, which is why `StopPageToolbar` hides it the same way.
-    let statusText: String
+    /// Shows a spinner beside the actions while a refresh the rider asked for
+    /// runs; Refresh itself is in the actions' More menu.
     let isRefreshing: Bool
-    let onRefresh: () -> Void
     let onClose: () -> Void
+    @ViewBuilder let actions: Actions
 
-    /// Deliberately smaller than the action row's 34pt circles: this bar is
-    /// chrome, not a row of primary actions. The two share everything else —
-    /// glass surface, neutral palette and a 44pt hit region — so they still
-    /// read as one system without either being hard to hit.
-    private static let buttonSize: CGFloat = 32
+    /// Deliberately small: this bar is chrome, not a row of primary actions.
+    /// Each circle still has a 44pt hit region.
+    static var buttonSize: CGFloat { 32 }
 
     /// Set by `stopSheetChrome` (via `sheetGlassBackground`) on iOS 26 in light
     /// mode, where this bar is a `safeAreaBar` over the sheet's glass.
@@ -76,41 +75,21 @@ struct StopDetailsSheetTopBar: View {
             .accessibilityHidden(titleOpacity < 0.5)
     }
 
-    /// Both controls sit together on the trailing edge.
+    /// All on the trailing edge, Close last.
     ///
     /// The spacing is the gap the 44pt hit regions need, not a visual choice:
     /// each 32pt circle claims 6pt beyond its own edge, so anything under 12
-    /// would have Close quietly eating the right-hand side of Refresh.
+    /// would have one quietly eating the side of the next.
     private var controls: some View {
         HStack(spacing: 12) {
-            refreshButton
+            if isRefreshing {
+                ProgressView()
+                    .controlSize(.regular)
+                    .accessibilityLabel(Strings.refresh)
+            }
+            actions
             closeButton
         }
-    }
-
-    private var refreshButton: some View {
-        Button(action: onRefresh) {
-            ZStack {
-                if isRefreshing {
-                    // `.regular` is `ControlSize`'s medium step — there is no
-                    // `.medium` case. Matches the glyph it replaces more closely
-                    // than `.small`, so the button does not appear to shrink
-                    // while refreshing.
-                    ProgressView().controlSize(.regular)
-                } else {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.body.weight(.semibold))
-                }
-            }
-            .foregroundStyle(.primary)
-            .glassCircleLabel(diameter: Self.buttonSize)
-        }
-        // The same interactive Liquid Glass surface the action row's circles
-        // use, via the shared extension.
-        .glassCircleSurface()
-        .disabled(isRefreshing)
-        .accessibilityLabel(Strings.refresh)
-        .accessibilityValue(statusText)
     }
 
     private var closeButton: some View {
@@ -126,9 +105,13 @@ struct StopDetailsSheetTopBar: View {
 }
 
 #Preview("Expanded") {
-    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 0, statusText: "Updated: Just Now", isRefreshing: false, onRefresh: {}, onClose: {})
+    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 0, isRefreshing: false, onClose: {}) {
+        Image(systemName: "bookmark")
+    }
 }
 
 #Preview("Collapsed") {
-    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 1, statusText: "Updated: Just Now", isRefreshing: true, onRefresh: {}, onClose: {})
+    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 1, isRefreshing: true, onClose: {}) {
+        Image(systemName: "bookmark")
+    }
 }

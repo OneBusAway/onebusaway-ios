@@ -314,6 +314,62 @@ final class SheetCoordinatorTests {
         #expect(coordinator.currentDetent == .large)
     }
 
+    // MARK: - One sheet at a time
+
+    /// A stop opened from an expanded home sheet sits over the collapsed search
+    /// field, not over a second sheet of lists.
+    @Test func `A stacked sheet rests the base sheet at its initial detent`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.currentDetent = AppSheetRoute.largeDetent
+
+        coordinator.push(.stopDetails(stopID: "1_1"))
+
+        #expect(coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent)
+    }
+
+    @Test func `Closing the last stacked sheet puts the base sheet back`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.currentDetent = .medium
+        coordinator.push(.stopDetails(stopID: "1_1"))
+        coordinator.push(.tripDetails(try Fixtures.tripConvertible(tripID: "t1")))
+
+        coordinator.pop()
+        #expect(coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent, "Still covered")
+
+        coordinator.pop()
+        #expect(coordinator.currentDetent == .medium)
+    }
+
+    @Test func `A drag dismissal of the stacked layer puts the base sheet back`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.currentDetent = AppSheetRoute.largeDetent
+        coordinator.push(.stopDetails(stopID: "1_1"))
+
+        coordinator.truncateStacked(toDepth: 0)
+
+        #expect(coordinator.currentDetent == AppSheetRoute.largeDetent)
+    }
+
+    @Test func `A collapsed base sheet stays collapsed through a stacked sheet`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.stopDetails(stopID: "1_1"))
+        coordinator.pop()
+
+        #expect(coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent)
+        #expect(coordinator.baseDetentBeforeStacking == nil)
+    }
+
+    @Test func `Going back to root forgets the base sheet's old detent`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.currentDetent = .medium
+        coordinator.push(.stopDetails(stopID: "1_1"))
+
+        coordinator.popToRoot()
+
+        #expect(coordinator.currentDetent == AppSheetRoute.homeCollapsedDetent)
+        #expect(coordinator.baseDetentBeforeStacking == nil)
+    }
+
     // MARK: - truncateStacked (OS-driven dismiss)
 
     @Test func `Truncate stacked removes everything at and above depth`() throws {

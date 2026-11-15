@@ -74,8 +74,7 @@ struct StopDetailsSheetRootView: View {
 ///
 /// It renders the same departures as the pushed screen — through the shared
 /// `StopDeparturesSections` — but replaces the navigation bar with a pinned
-/// Refresh/Close strip and a row of circular actions, and collapses the map
-/// header away as the list scrolls so the actions stay reachable.
+/// strip holding the stop's actions and Close, the sheet's only chrome.
 ///
 /// This is the only view here that observes `StopViewModel`; the header, the
 /// action row and the sections all take plain values, so the view model's
@@ -193,8 +192,9 @@ struct StopDetailsSheetView: View {
 
         return list(content: content, navigation: navigation)
             .listStyle(.plain)
-            // No `.refreshable`: this presentation refreshes from the top bar's
-            // button only, which is why that button stays pinned.
+            // No `.refreshable`: a pull at the top of a sheet resizes it. This
+            // presentation refreshes from Refresh in the top bar's More menu, and
+            // by itself every few seconds.
             //
             // Scroll position drives the title's OPACITY and the action row's
             // overlay position — never the height of the top bar's inset below.
@@ -217,17 +217,12 @@ struct StopDetailsSheetView: View {
             } action: { _, height in
                 viewportHeight = height
             }
-            // Both bars are fixed height — the top holds only the bar, the bottom
-            // only the action capsule — so nothing here resizes as the list
+            // The bar is fixed height, so nothing here resizes as the list
             // scrolls. An inset whose height tracked scroll position is what
-            // pegged the main thread here once; a constant one has no such loop,
-            // and it means the list reserves the capsule's room itself — so the
-            // last departure cannot hide underneath it and no hand-tuned bottom
-            // margin has to be kept in sync with the capsule's height.
-            .stopSheetChrome(top: { topBar }, bottom: { actionRow(navigation: navigation) })
-            // Bottom-trailing overlay, for the same reason the action row is an
-            // overlay: it takes no part in the list's layout, so it cannot feed
-            // back into scroll geometry.
+            // pegged the main thread here once; a constant one has no such loop.
+            .stopSheetChrome { topBar(navigation: navigation) }
+            // An overlay: it takes no part in the list's layout, so it cannot
+            // feed back into scroll geometry.
             .overlay(alignment: .bottomTrailing) { scrollToTopOverlay(proxy: proxy) }
             .stopPageLifecycle(
                 viewModel: viewModel,
@@ -377,15 +372,15 @@ struct StopDetailsSheetView: View {
 
     // MARK: - Chrome
 
-    private var topBar: some View {
+    private func topBar(navigation: StopPageNavigationHandler) -> some View {
         StopDetailsSheetTopBar(
             title: viewModel.stop?.name ?? "",
             titleOpacity: Double(titleProgress),
-            statusText: viewModel.statusText,
             isRefreshing: isManuallyRefreshing,
-            onRefresh: refresh,
             onClose: { coordinator.pop() }
-        )
+        ) {
+            actionRow(navigation: navigation)
+        }
     }
 
     /// Distance scrolled, in points, over which the stop name fades into the
@@ -464,7 +459,10 @@ struct StopDetailsSheetView: View {
             onDirectionsFromHere: navigation.showDirectionsFromHere,
             onReportProblem: navigation.showReportProblem,
             isProximityAlertActive: viewModel.proximityAlert != nil,
-            onToggleProximityAlert: navigation.toggleProximityAlert
+            onToggleProximityAlert: navigation.toggleProximityAlert,
+            onRefresh: refresh,
+            refreshStatus: viewModel.statusText,
+            glyphSize: StopDetailsSheetTopBar<EmptyView>.buttonSize
         )
     }
 
@@ -475,25 +473,11 @@ struct StopDetailsSheetView: View {
         ScrollToTopVisibility.shouldShow(scrollOffset: scrollOffset, viewportHeight: viewportHeight)
     }
 
-    /// The floating "back to top" control, above the action capsule.
-    ///
-    /// The capsule is a bottom safe-area bar (`stopSheetChrome`), so this overlay's bottom edge
-    /// already sits above it and the padding below is clearance from the
-    /// capsule, not from the sheet's edge.
-    /// Clearance above the action capsule.
-    ///
-    /// The button is an `.overlay(alignment: .bottomTrailing)` applied *after*
-    /// the `stopSheetChrome` bar the capsule is mounted in, so it aligns to the
-    /// sheet's whole frame — the inset does not push it up, and without this it
-    /// sits directly on the capsule. Derived from the capsule's own metric
-    /// rather than measured, so the two cannot drift apart and no geometry
-    /// feeds back into layout.
-    private static let scrollToTopClearance: CGFloat = StopPageActionRow.occupiedHeight + 24
-
+    /// The floating "back to top" control, clear of the sheet's bottom edge.
     private func scrollToTopOverlay(proxy: ScrollViewProxy) -> some View {
         ScrollToTopButton(isVisible: showsScrollToTop) { scrollToTop(proxy: proxy) }
             .padding(.trailing, 16)
-            .padding(.bottom, Self.scrollToTopClearance)
+            .padding(.bottom, 24)
             .animation(.snappy(duration: 0.2), value: showsScrollToTop)
     }
 }
@@ -501,28 +485,24 @@ struct StopDetailsSheetView: View {
 // MARK: - Liquid Glass
 
 private extension View {
-    /// The pinned top bar and action row, and on iOS 26 the sheet's glass
-    /// showing through everything between them.
+    /// The pinned top bar, and on iOS 26 the sheet's glass showing through
+    /// everything under it.
     ///
     /// One `#available` for all of it: each such branch in a `@ViewBuilder` is
     /// type-erased, and this wraps the whole list on a body that re-runs on
     /// the view model's per-second status timer.
     ///
-    /// On iOS 26 the bars are `safeAreaBar`s, which reserve the same fixed room
-    /// a `safeAreaInset` does and also give the list the system's soft scroll
-    /// edge beneath them. Where the sheet shows its glass (`showsSheetGlass`:
+    /// On iOS 26 the bar is a `safeAreaBar`, which reserves the same fixed room
+    /// a `safeAreaInset` does and also gives the list the system's soft scroll
+    /// edge beneath it. Where the sheet shows its glass (`showsSheetGlass`:
     /// light mode), clearing the list, and the top bar and departure rows
     /// through `drawsOnSheetGlass`, lets that glass show through the whole sheet
     /// while it's partway up the screen; the system turns it opaque by itself
     /// at full height. In dark mode they stay opaque.
     @ViewBuilder
-    func stopSheetChrome(
-        @ViewBuilder top: () -> some View,
-        @ViewBuilder bottom: () -> some View
-    ) -> some View {
+    func stopSheetChrome(@ViewBuilder top: () -> some View) -> some View {
         if #available(iOS 26.0, *) {
             safeAreaBar(edge: .top, spacing: 0, content: top)
-                .safeAreaBar(edge: .bottom, spacing: 0, content: bottom)
                 // A no-op where the sheet is opaque: a List's own background
                 // is already transparent in an iOS 26 sheet, which is why the
                 // opaque case needs the sheet painted.
@@ -530,7 +510,6 @@ private extension View {
                 .sheetGlassBackground(opaque: Color(uiColor: .systemBackground))
         } else {
             safeAreaInset(edge: .top, spacing: 0, content: top)
-                .safeAreaInset(edge: .bottom, spacing: 0, content: bottom)
         }
     }
 }
