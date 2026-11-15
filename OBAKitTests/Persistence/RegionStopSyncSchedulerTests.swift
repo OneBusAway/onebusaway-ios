@@ -97,6 +97,42 @@ final class RegionStopSyncSchedulerTests {
         #expect(try cachedIDs(region: 2) == ["2_b"])
     }
 
+    /// When A is running, B is scheduled with a delay, and C replaces B during B's delay,
+    /// C still waits for A to finish before starting.
+    @Test(.timeLimit(.minutes(1))) func `A replacement sync preserves predecessor chain when intermediate delay is cancelled`() async throws {
+        let regionA = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_late")])
+        let regionB = FakeStopsForAgencyFetcher(agencyIDs: ["2"], answers: ["2": answer("2_b")])
+        let regionC = FakeStopsForAgencyFetcher(agencyIDs: ["3"], answers: ["3": answer("3_c")])
+        await regionA.hold(agency: "1")
+        let scheduler = makeScheduler(delay: .milliseconds(100))
+
+        scheduler.schedule(regionID: 1, using: regionA)
+        let syncA = scheduler.pendingSync
+        await regionA.waitUntilHolding()
+
+        scheduler.schedule(regionID: 2, using: regionB)
+        let syncB = scheduler.pendingSync
+
+        scheduler.schedule(regionID: 3, using: regionC)
+        let syncC = scheduler.pendingSync
+
+        // Give Region C's delay time to elapse; it must still await B awaiting A
+        try? await Task.sleep(for: .milliseconds(150))
+        #expect(await regionB.calls.isEmpty)
+        #expect(await regionC.calls.isEmpty)
+
+        await regionA.release()
+        await syncA?.value
+        await syncB?.value
+        await syncC?.value
+
+        #expect(await regionB.calls.isEmpty)
+        #expect(await regionC.calls == ["agencies", "config", "stops 3"])
+        #expect(try cachedIDs(region: 1).isEmpty)
+        #expect(try cachedIDs(region: 2).isEmpty)
+        #expect(try cachedIDs(region: 3) == ["3_c"])
+    }
+
     /// Activation fires whenever a system alert or Control Center is dismissed.
     /// Restarting a slow sync each time could keep it from ever finishing.
     @Test(.timeLimit(.minutes(1))) func `A request for the region already syncing leaves it alone`() async throws {

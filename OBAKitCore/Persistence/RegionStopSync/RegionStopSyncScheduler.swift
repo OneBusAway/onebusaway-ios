@@ -70,11 +70,7 @@ final class RegionStopSyncScheduler: Sendable {
             state.nextID += 1
             let task = Task.detached(priority: .utility) { [weak self] in
                 defer { self?.finish(id) }
-                do {
-                    try await Task.sleep(for: delay)
-                } catch {
-                    return
-                }
+                _ = try? await Task.sleep(for: delay)
                 await predecessor?.value
                 guard !Task.isCancelled else { return }
                 if await service.sync(regionID: regionID, using: fetcher) {
