@@ -32,11 +32,7 @@ struct RefreshWidgetIntent: AppIntent {
     static let isDiscoverable = false
 
     func perform() async throws -> some IntentResult {
-        do {
-            _ = await WidgetTimelineReloader.shared.reload()
-        } catch {
-            // Guarantee perform never traps even on unexpected exceptions.
-        }
+        WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
 }
