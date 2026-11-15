@@ -22,6 +22,7 @@ final class RegionsFileStorageTests {
     init() {
         fileManager = .default
         temporaryDirectory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        // swiftlint:disable:next force_try
         try! fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
 
         // Use a custom subclass to redirect standard system directories to the temp directory.
@@ -67,6 +68,32 @@ final class RegionsFileStorageTests {
         #expect(throws: Never.self) { try storage.saveDefaultRegions(regions) }
         let loaded = try storage.loadDefaultRegions()
         #expect(loaded != nil)
+    }
+
+    @Test func `Load default regions returns nil when file is empty`() throws {
+        let regions = [Fixtures.customMinneapolisRegion]
+        try storage.saveDefaultRegions(regions)
+
+        let fileURL = try defaultRegionsFileURL()
+        try Data().write(to: fileURL, options: .atomic)
+
+        let loaded = try storage.loadDefaultRegions()
+        #expect(loaded == nil)
+    }
+
+    @Test func `Load default regions decodes wrapped RESTAPIResponse format`() throws {
+        let regions = [Fixtures.customMinneapolisRegion]
+        try storage.saveDefaultRegions(regions)
+
+        let regionsPath = Fixtures.path(to: "regions-v3.json")
+        let rawResponse = try Data(contentsOf: URL(fileURLWithPath: regionsPath))
+
+        let fileURL = try defaultRegionsFileURL()
+        try rawResponse.write(to: fileURL, options: .atomic)
+
+        let loaded = try storage.loadDefaultRegions()
+        #expect(loaded?.count ?? 0 > 0)
+        #expect(loaded?.first?.name == "Tampa Bay")
     }
 
     // MARK: - Custom Regions
@@ -127,6 +154,10 @@ final class RegionsFileStorageTests {
 
     // MARK: - Helpers
 
+    private func defaultRegionsFileURL() throws -> URL {
+        temporaryDirectory.appendingPathComponent("ApplicationSupport/Regions/default-regions.json")
+    }
+
     private func customRegionsDirectoryURL() throws -> URL {
         temporaryDirectory.appendingPathComponent("Documents/custom-regions")
     }
@@ -134,10 +165,10 @@ final class RegionsFileStorageTests {
 
 // MARK: - TemporaryDirectoryFileManager
 
-/// A `FileManager` subclass that redirects Application Support and Documents
-/// directory lookups to a temporary directory so tests never touch the real file system.
 // `nonisolated`: overrides nonisolated FileManager members, which the target's
 // main-actor default isolation would conflict with.
+/// A `FileManager` subclass that redirects Application Support and Documents
+/// directory lookups to a temporary directory so tests never touch the real file system.
 private nonisolated class TemporaryDirectoryFileManager: FileManager {
 
     private let baseURL: URL

@@ -81,7 +81,20 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
         }
 
         let data = try Data(contentsOf: url)
-        return try JSONDecoder.RESTDecoder().decode([Region].self, from: data)
+        guard !data.isEmpty else {
+            Logger.error("RegionsFileStorage: default-regions.json is empty")
+            return nil
+        }
+
+        do {
+            return try JSONDecoder.RESTDecoder().decode([Region].self, from: data)
+        } catch {
+            if let response = try? JSONDecoder.RESTDecoder().decode(RESTAPIResponse<[Region]>.self, from: data) {
+                return response.list
+            }
+            Logger.error("RegionsFileStorage: Failed to decode default-regions.json: \(error)")
+            throw error
+        }
     }
 
     public func saveDefaultRegions(_ regions: [Region]) throws {
@@ -110,6 +123,10 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
             guard fileURL.pathExtension == "json" else { return nil }
             do {
                 let data = try Data(contentsOf: fileURL)
+                guard !data.isEmpty else {
+                    Logger.error("RegionsFileStorage: Custom region file '\(fileURL.lastPathComponent)' is empty")
+                    return nil
+                }
                 return try JSONDecoder.RESTDecoder().decode(Region.self, from: data)
             } catch {
                 Logger.error("RegionsFileStorage: Skipping corrupted custom region file '\(fileURL.lastPathComponent)': \(error)")
@@ -132,13 +149,18 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
             return
         }
 
-        try fileManager.removeItem(at: url)
+        do {
+            try fileManager.removeItem(at: url)
+        } catch let error as CocoaError where error.code == .fileNoSuchFile {
+            return
+        }
     }
 
     // MARK: - Private Helpers
 
     private func createDirectoryIfNeeded(for fileURL: URL) throws {
         let directoryURL = fileURL.deletingLastPathComponent()
+        guard !fileManager.fileExists(atPath: directoryURL.path) else { return }
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
     }
 }

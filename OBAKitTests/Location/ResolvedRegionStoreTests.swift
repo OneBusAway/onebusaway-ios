@@ -78,6 +78,33 @@ final class ResolvedRegionStoreTests: OBATestCase {
         #expect(region.regionIdentifier == pugetSoundRegionIdentifier)
     }
 
+    @Test func `Stored region is rejected and falls back when it mismatches stored identifier`() throws {
+        // User selected Puget Sound (identifier 1)
+        userDefaults.set(pugetSoundRegionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+
+        // But store contains Tampa (identifier 0)
+        store.write(Fixtures.tampaRegion)
+
+        // region() must detect the mismatch and fall back to bundled regions for Puget Sound
+        let region = try #require(store.region(bundledRegionsFilePath: bundledRegionsPath))
+        #expect(region.regionIdentifier == pugetSoundRegionIdentifier)
+    }
+
+    @Test func `Falls back to bundle formatted as plain Region array`() throws {
+        let customRegion = Fixtures.customMinneapolisRegion
+        userDefaults.set(customRegion.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+
+        let plainArrayJSON = try JSONEncoder.RESTEncoder().encode([customRegion])
+        let tempFileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try plainArrayJSON.write(to: tempFileURL, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tempFileURL) }
+
+        let region = store.region(bundledRegionsFilePath: tempFileURL.path)
+        #expect(region?.regionIdentifier == customRegion.regionIdentifier)
+    }
+
     // MARK: - Persister: the four triggers
 
     @Test @MainActor func `Trigger 1, launch: writes the current region on init`() throws {
@@ -146,6 +173,21 @@ final class ResolvedRegionStoreTests: OBATestCase {
         let persister = ResolvedRegionPersister(regionsService: service, store: store)
 
         #expect(userDefaults.object(forKey: ResolvedRegionStore.defaultsKey) == nil)
+        withExtendedLifetime(persister) {}
+    }
+
+    @Test @MainActor func `Does not clear the key when currentRegion is temporarily nil but identifier is stored`() {
+        let service = makeRegionsService(fileStorage: MockRegionsFileStorage())
+        userDefaults.set(999_999, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(Fixtures.pugetSoundRegion)
+
+        #expect(service.currentRegion == nil)
+
+        let persister = ResolvedRegionPersister(regionsService: service, store: store)
+
+        #expect(userDefaults.object(forKey: ResolvedRegionStore.defaultsKey) != nil)
+        #expect(store.storedRegion?.regionIdentifier == pugetSoundRegionIdentifier)
         withExtendedLifetime(persister) {}
     }
 }
