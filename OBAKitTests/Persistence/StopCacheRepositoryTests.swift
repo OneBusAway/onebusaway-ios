@@ -762,6 +762,74 @@ final class StopCacheRepositoryTests {
         #expect(remainingLegacy == ["legacy_new"])
     }
 
+    @Test func `Spatial query excludes staged rows superseded by newer main rows before limit`() throws {
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+        let syncID = "sync_1"
+
+        // Staged has two stops: stop_superseded is closest to query center, stop_valid is farther
+        let supersededStaged = makeStop(id: "stop_superseded", name: "Staged Old", lat: 47.601, lon: -122.3)
+        let validStaged = makeStop(id: "stop_valid", name: "Staged Valid", lat: 47.605, lon: -122.3)
+        try repository.stageSyncedStops([supersededStaged, validStaged], regionId: 1, syncID: syncID, syncedAt: syncDate)
+
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: syncDate, lastSuccessAt: syncDate, etag: nil, appVersion: "26.5", publishedSyncID: syncID)
+        try repository.saveSyncState(syncState)
+
+        // Main cache has a newer version of stop_superseded, but moved outside the spatial query box
+        let newerMain = makeStop(id: "stop_superseded", name: "Main Newer", lat: 50.0, lon: -122.3)
+        try repository.writeSyncedStops([newerMain], regionId: 1, syncedAt: newDate)
+
+        // Query with limit: 1. Because stop_superseded in staged is superseded by newer main row,
+        // it must be excluded before spatial filtering / limit. stop_valid must be returned.
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1, limit: 1)
+        #expect(results.count == 1)
+        #expect(results.first?.id == "stop_valid")
+        #expect(results.first?.name == "Staged Valid")
+    }
+
+    @Test func `Paged query excludes staged rows superseded by newer main rows before limit`() throws {
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+        let syncID = "sync_1"
+
+        let staged1 = makeStop(id: "stop_1", name: "Staged 1")
+        let staged2 = makeStop(id: "stop_2", name: "Staged 2")
+        try repository.stageSyncedStops([staged1, staged2], regionId: 1, syncID: syncID, syncedAt: syncDate)
+
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: syncDate, lastSuccessAt: syncDate, etag: nil, appVersion: "26.5", publishedSyncID: syncID)
+        try repository.saveSyncState(syncState)
+
+        // Main has newer version of stop_1
+        let newerMain1 = makeStop(id: "stop_1", name: "Newer Main 1")
+        try repository.writeSyncedStops([newerMain1], regionId: 1, syncedAt: newDate)
+
+        // Query page with limit 2: stop_1 is excluded from staged, main provides newer stop_1,
+        // and staged provides stop_2 without being crowded out by superseded row.
+        let page = repository.stops(regionId: 1, after: nil, limit: 2)
+        #expect(page.stops.count == 2)
+        #expect(page.stops[0].id == "stop_1")
+        #expect(page.stops[0].name == "Newer Main 1")
+        #expect(page.stops[1].id == "stop_2")
+        #expect(page.stops[1].name == "Staged 2")
+    }
+
+    @Test func `Stops and their routes decode together in single database read`() throws {
+        let route = makeRoute(id: "route_99", shortName: "99")
+        let stop = makeStop(id: "stop_single_read", routes: [route])
+        repository.saveStops([stop], regionId: 1)
+
+        // Both stopsInRegion and paged stops decode routes via active DB connection
+        let inRegion = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        #expect(inRegion.count == 1)
+        #expect(inRegion.first?.routes?.first?.id == "route_99")
+        #expect(inRegion.first?.routes?.first?.shortName == "99")
+
+        let paged = repository.stops(regionId: 1, after: nil, limit: 5)
+        #expect(paged.stops.count == 1)
+        #expect(paged.stops.first?.routes?.first?.id == "route_99")
+        #expect(paged.stops.first?.routes?.first?.shortName == "99")
+    }
+
     // MARK: - Multiple Stops
 
     @Test func `Save multiple stops all persisted`() {

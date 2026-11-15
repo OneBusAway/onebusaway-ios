@@ -156,7 +156,10 @@ final class RegionStopSyncService: Sendable {
             if let previousSyncID = previous?.publishedSyncID {
                 try repository.carryOverStagedStops(regionId: regionID, fromSyncID: previousSyncID, toSyncID: syncID)
             }
-            guard record(.partial, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: syncID) else { return false }
+            guard record(.partial, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: syncID) else {
+                try? repository.discardStagedStops(regionId: regionID, syncID: syncID)
+                return false
+            }
             cleanupAfterPublish(regionID: regionID, currentSyncID: syncID)
             return wroteAny
         }
@@ -177,6 +180,7 @@ final class RegionStopSyncService: Sendable {
                 try repository.publishCompleteSync(state)
             } catch {
                 Logger.error("Region stop sync: couldn't publish complete snapshot for region \(regionID): \(error)")
+                try? repository.discardStagedStops(regionId: regionID, syncID: syncID)
                 return false
             }
             cleanupAfterPublish(regionID: regionID, currentSyncID: syncID, purgeLegacyOlderThan: start)

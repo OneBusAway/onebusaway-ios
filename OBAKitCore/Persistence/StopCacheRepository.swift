@@ -55,8 +55,8 @@ public final class StopCacheRepository: Sendable {
         limit: Int? = nil
     ) -> [Stop] {
         do {
-            let cachedStops = try database.dbQueue.read { db in
-                try visibleStops(
+            return try database.dbQueue.read { db in
+                let cachedStops = try visibleStops(
                     regionId: regionId,
                     minLat: minLat,
                     maxLat: maxLat,
@@ -65,8 +65,8 @@ public final class StopCacheRepository: Sendable {
                     limit: limit,
                     in: db
                 )
+                return try stops(from: cachedStops, regionId: regionId, in: db)
             }
-            return try stops(from: cachedStops, regionId: regionId)
         } catch {
             Logger.error("Failed to fetch cached stops in region \(regionId): \(error)")
             return []
@@ -90,21 +90,22 @@ public final class StopCacheRepository: Sendable {
     /// map's reads aren't stuck behind a scan of the whole region.
     public func stops(regionId: Int, after cursor: StopID?, limit: Int) -> Page {
         do {
-            let cachedStops = try database.dbQueue.read { db in
-                try visibleStops(regionId: regionId, after: cursor, limit: limit, in: db)
+            let (cachedStops, decodedStops) = try database.dbQueue.read { db in
+                let rows = try visibleStops(regionId: regionId, after: cursor, limit: limit, in: db)
+                return (rows, try stops(from: rows, regionId: regionId, in: db))
             }
             let nextCursor = cachedStops.count == limit ? cachedStops.last?.id : nil
-            return Page(stops: try stops(from: cachedStops, regionId: regionId), cursor: nextCursor)
+            return Page(stops: decodedStops, cursor: nextCursor)
         } catch {
             Logger.error("Failed to fetch a page of cached stops in region \(regionId): \(error)")
             return Page(stops: [], cursor: nil)
         }
     }
 
-    /// Decodes `cachedStops` and gives each stop its routes from `cachedRoute`,
-    /// in a second short read so neither holds the shared queue for long.
+    /// Decodes `cachedStops` and gives each stop its routes from `cachedRoute`
+    /// in a single read using the active database connection.
     /// Every returned stop has non-nil `routes`.
-    private func stops(from cachedStops: [CachedStop], regionId: Int) throws -> [Stop] {
+    private func stops(from cachedStops: [CachedStop], regionId: Int, in db: Database) throws -> [Stop] {
         let stops = cachedStops.compactMap { $0.toStop() }
         let failedCount = cachedStops.count - stops.count
         if failedCount > 0 {
@@ -119,9 +120,7 @@ public final class StopCacheRepository: Sendable {
             return stops
         }
 
-        let cachedRoutes = try database.dbQueue.read { db in
-            try visibleRoutes(routeIDs: routeIDs, regionId: regionId, in: db)
-        }
+        let cachedRoutes = try visibleRoutes(routeIDs: routeIDs, regionId: regionId, in: db)
         var routesByID = [RouteID: Route]()
         for cachedRoute in cachedRoutes {
             routesByID[cachedRoute.id] = cachedRoute.toRoute()
@@ -207,6 +206,7 @@ public final class StopCacheRepository: Sendable {
         var request = StagedCachedStop
             .filter(StagedCachedStop.Columns.syncID == syncID)
             .filter(StagedCachedStop.Columns.regionId == regionId)
+            .filter(sql: "NOT EXISTS (SELECT 1 FROM cachedStop WHERE regionId = cachedStopSync.regionId AND id = cachedStopSync.id AND lastUpdated > cachedStopSync.lastUpdated)")
             .filter(StagedCachedStop.Columns.latitude >= minLat)
             .filter(StagedCachedStop.Columns.latitude <= maxLat)
             .filter(StagedCachedStop.Columns.longitude >= minLon)
@@ -238,6 +238,7 @@ public final class StopCacheRepository: Sendable {
             var staged = StagedCachedStop
                 .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
                 .filter(StagedCachedStop.Columns.regionId == regionId)
+                .filter(sql: "NOT EXISTS (SELECT 1 FROM cachedStop WHERE regionId = cachedStopSync.regionId AND id = cachedStopSync.id AND lastUpdated > cachedStopSync.lastUpdated)")
             if let cursor { staged = staged.filter(StagedCachedStop.Columns.id > cursor) }
             for row in try staged.order(StagedCachedStop.Columns.id).limit(limit).fetchAll(db) {
                 if let existing = byID[row.id] {

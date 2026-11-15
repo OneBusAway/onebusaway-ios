@@ -411,6 +411,112 @@ final class RegionStopSyncServiceTests {
         #expect(state.publishedSyncID != nil)
         #expect(try cachedIDs() == ["1_a", "2_legacy"])
     }
+
+    @Test func `A complete sync publication failure discards staged stops and preserves previous snapshot`() async throws {
+        let initialFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("old")])
+        let service = makeService()
+        #expect(await service.sync(regionID: 1, using: initialFetcher))
+        let initialSyncID = try #require(try repository.syncState(regionId: 1)?.publishedSyncID)
+        #expect(try cachedIDs() == ["old"])
+
+        clock.value = clock.value.addingTimeInterval(86_400 * 7)
+
+        try await database.dbQueue.write { db in
+            try db.execute(sql: """
+                CREATE TRIGGER fail_complete_publish_insert
+                BEFORE INSERT ON regionStopSync
+                WHEN NEW.outcome = 'complete'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced complete publication failure');
+                END;
+                CREATE TRIGGER fail_complete_publish_update
+                BEFORE UPDATE ON regionStopSync
+                WHEN NEW.outcome = 'complete'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced complete publication failure');
+                END;
+                """)
+        }
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": stops("new_1", "new_2")])
+        let wroteStops = await service.sync(regionID: 1, using: fetcher)
+        try await database.dbQueue.write { db in
+            try db.execute(sql: """
+                DROP TRIGGER fail_complete_publish_insert;
+                DROP TRIGGER fail_complete_publish_update;
+                """)
+        }
+
+        #expect(!wroteStops)
+        #expect(try cachedIDs() == ["old"])
+        let state = try #require(try repository.syncState(regionId: 1))
+        #expect(state.publishedSyncID == initialSyncID)
+
+        let stagedStopsFailedCount = try await database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE regionId = 1 AND syncID != ?", arguments: [initialSyncID])
+        }
+        #expect(stagedStopsFailedCount == 0)
+
+        let stagedRoutesFailedCount = try await database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedRouteSync WHERE regionId = 1 AND syncID != ?", arguments: [initialSyncID])
+        }
+        #expect(stagedRoutesFailedCount == 0)
+    }
+
+    @Test func `A partial sync publication failure discards staged stops and preserves previous snapshot`() async throws {
+        let initialFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_a"),
+            "2": stops("2_b")
+        ])
+        let service = makeService()
+        #expect(await service.sync(regionID: 1, using: initialFetcher))
+        let initialSyncID = try #require(try repository.syncState(regionId: 1)?.publishedSyncID)
+        #expect(try cachedIDs() == ["1_a", "2_b"])
+
+        clock.value = clock.value.addingTimeInterval(86_400 * 7)
+
+        try await database.dbQueue.write { db in
+            try db.execute(sql: """
+                CREATE TRIGGER fail_partial_publish_insert
+                BEFORE INSERT ON regionStopSync
+                WHEN NEW.outcome = 'partial'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced partial publication failure');
+                END;
+                CREATE TRIGGER fail_partial_publish_update
+                BEFORE UPDATE ON regionStopSync
+                WHEN NEW.outcome = 'partial'
+                BEGIN
+                    SELECT RAISE(ABORT, 'forced partial publication failure');
+                END;
+                """)
+        }
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_updated"),
+            "2": error(429, "application/json")
+        ])
+        let wroteStops = await service.sync(regionID: 1, using: fetcher)
+        try await database.dbQueue.write { db in
+            try db.execute(sql: """
+                DROP TRIGGER fail_partial_publish_insert;
+                DROP TRIGGER fail_partial_publish_update;
+                """)
+        }
+
+        #expect(!wroteStops)
+        #expect(try cachedIDs() == ["1_a", "2_b"])
+        let state = try #require(try repository.syncState(regionId: 1))
+        #expect(state.publishedSyncID == initialSyncID)
+
+        let stagedStopsFailedCount = try await database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE regionId = 1 AND syncID != ?", arguments: [initialSyncID])
+        }
+        #expect(stagedStopsFailedCount == 0)
+
+        let stagedRoutesFailedCount = try await database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM cachedRouteSync WHERE regionId = 1 AND syncID != ?", arguments: [initialSyncID])
+        }
+        #expect(stagedRoutesFailedCount == 0)
+    }
 }
 
 // swiftlint:enable force_try

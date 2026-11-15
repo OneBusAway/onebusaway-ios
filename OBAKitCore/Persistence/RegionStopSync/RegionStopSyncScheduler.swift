@@ -63,6 +63,7 @@ final class RegionStopSyncScheduler: Sendable {
             if state.pending?.regionID == regionID {
                 return
             }
+            let predecessor = state.pending?.task
             state.pending?.task.cancel()
 
             let id = state.nextID
@@ -74,6 +75,8 @@ final class RegionStopSyncScheduler: Sendable {
                 } catch {
                     return
                 }
+                await predecessor?.value
+                guard !Task.isCancelled else { return }
                 if await service.sync(regionID: regionID, using: fetcher) {
                     await onStopsWritten(regionID)
                 }

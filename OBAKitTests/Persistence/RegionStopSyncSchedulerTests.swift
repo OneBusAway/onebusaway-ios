@@ -59,10 +59,40 @@ final class RegionStopSyncSchedulerTests {
         await regionA.waitUntilHolding()
 
         scheduler.schedule(regionID: 2, using: regionB)
+        let syncB = scheduler.pendingSync
+        #expect(await regionB.calls.isEmpty)
         await regionA.release()
         await syncA?.value
-        await scheduler.pendingSync?.value
+        await syncB?.value
 
+        #expect(try cachedIDs(region: 1).isEmpty)
+        #expect(try cachedIDs(region: 2) == ["2_b"])
+    }
+
+    /// A replacement sync waits for the cancelled predecessor to finish before
+    /// starting its own sync.
+    @Test(.timeLimit(.minutes(1))) func `A replacement sync waits for predecessor completion`() async throws {
+        let regionA = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_late")])
+        let regionB = FakeStopsForAgencyFetcher(agencyIDs: ["2"], answers: ["2": answer("2_b")])
+        await regionA.hold(agency: "1")
+        let scheduler = makeScheduler(delay: .zero)
+
+        scheduler.schedule(regionID: 1, using: regionA)
+        let syncA = scheduler.pendingSync
+        await regionA.waitUntilHolding()
+
+        scheduler.schedule(regionID: 2, using: regionB)
+        let syncB = scheduler.pendingSync
+
+        // Give Region B's detached task time to run if it were not awaiting predecessor
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(await regionB.calls.isEmpty)
+
+        await regionA.release()
+        await syncA?.value
+        await syncB?.value
+
+        #expect(await regionB.calls == ["agencies", "config", "stops 2"])
         #expect(try cachedIDs(region: 1).isEmpty)
         #expect(try cachedIDs(region: 2) == ["2_b"])
     }
