@@ -403,74 +403,53 @@ public final class StopCacheRepository: Sendable {
         }
     }
 
-    /// Purges staged stops and routes for a region that belong to older superseded sync snapshots in bounded batches.
-    func purgeSupersededStagedStops(regionId: Int, currentSyncID: String, batchSize: Int = 500) throws {
-        var hasMoreStops = true
-        while hasMoreStops {
-            hasMoreStops = try database.dbQueue.write { db in
-                let rowids = try Int64.fetchAll(
-                    db,
-                    sql: "SELECT rowid FROM cachedStopSync WHERE regionId = ? AND syncID != ? LIMIT ?",
-                    arguments: [regionId, currentSyncID, batchSize]
-                )
-                guard !rowids.isEmpty else { return false }
-                let placeholders = rowids.map { _ in "?" }.joined(separator: ",")
-                try db.execute(
-                    sql: "DELETE FROM cachedStopSync WHERE rowid IN (\(placeholders))",
-                    arguments: StatementArguments(rowids.map { DatabaseValue(value: $0) })
-                )
-                return rowids.count == batchSize
-            }
-        }
+    /// Purges staged stops and routes for a region that belong to older superseded sync snapshots in bounded batches,
+    /// and optionally purges legacy cachedStop/cachedRoute rows older than `purgeLegacyOlderThan` once a complete sync has published.
+    func purgeSupersededStagedStops(regionId: Int, currentSyncID: String, purgeLegacyOlderThan: Date? = nil, batchSize: Int = 500) throws {
+        try deleteRowidsInBatches(
+            table: "cachedStopSync",
+            where: "regionId = ? AND syncID != ?",
+            arguments: [regionId, currentSyncID],
+            batchSize: batchSize
+        )
+        try deleteRowidsInBatches(
+            table: "cachedRouteSync",
+            where: "regionId = ? AND syncID != ?",
+            arguments: [regionId, currentSyncID],
+            batchSize: batchSize
+        )
 
-        var hasMoreRoutes = true
-        while hasMoreRoutes {
-            hasMoreRoutes = try database.dbQueue.write { db in
-                let rowids = try Int64.fetchAll(
-                    db,
-                    sql: "SELECT rowid FROM cachedRouteSync WHERE regionId = ? AND syncID != ? LIMIT ?",
-                    arguments: [regionId, currentSyncID, batchSize]
-                )
-                guard !rowids.isEmpty else { return false }
-                let placeholders = rowids.map { _ in "?" }.joined(separator: ",")
-                try db.execute(
-                    sql: "DELETE FROM cachedRouteSync WHERE rowid IN (\(placeholders))",
-                    arguments: StatementArguments(rowids.map { DatabaseValue(value: $0) })
-                )
-                return rowids.count == batchSize
-            }
+        if let purgeLegacyOlderThan {
+            let timestamp = purgeLegacyOlderThan.timeIntervalSince1970
+            try deleteRowidsInBatches(
+                table: "cachedStop",
+                where: "regionId = ? AND lastUpdated < ?",
+                arguments: [regionId, timestamp],
+                batchSize: batchSize
+            )
+            try deleteRowidsInBatches(
+                table: "cachedRoute",
+                where: "regionId = ? AND lastUpdated < ?",
+                arguments: [regionId, timestamp],
+                batchSize: batchSize
+            )
         }
+    }
 
-        var hasMoreLegacyStops = true
-        while hasMoreLegacyStops {
-            hasMoreLegacyStops = try database.dbQueue.write { db in
+    private func deleteRowidsInBatches(table: String, where sqlCondition: String, arguments: [DatabaseValueConvertible], batchSize: Int = 500) throws {
+        var hasMore = true
+        while hasMore {
+            hasMore = try database.dbQueue.write { db in
+                let selectArgs = StatementArguments(arguments.map { DatabaseValue(value: $0) } + [DatabaseValue(value: batchSize)])
                 let rowids = try Int64.fetchAll(
                     db,
-                    sql: "SELECT rowid FROM cachedStop WHERE regionId = ? LIMIT ?",
-                    arguments: [regionId, batchSize]
+                    sql: "SELECT rowid FROM \(table) WHERE \(sqlCondition) LIMIT ?",
+                    arguments: selectArgs
                 )
                 guard !rowids.isEmpty else { return false }
                 let placeholders = rowids.map { _ in "?" }.joined(separator: ",")
                 try db.execute(
-                    sql: "DELETE FROM cachedStop WHERE rowid IN (\(placeholders))",
-                    arguments: StatementArguments(rowids.map { DatabaseValue(value: $0) })
-                )
-                return rowids.count == batchSize
-            }
-        }
-
-        var hasMoreLegacyRoutes = true
-        while hasMoreLegacyRoutes {
-            hasMoreLegacyRoutes = try database.dbQueue.write { db in
-                let rowids = try Int64.fetchAll(
-                    db,
-                    sql: "SELECT rowid FROM cachedRoute WHERE regionId = ? LIMIT ?",
-                    arguments: [regionId, batchSize]
-                )
-                guard !rowids.isEmpty else { return false }
-                let placeholders = rowids.map { _ in "?" }.joined(separator: ",")
-                try db.execute(
-                    sql: "DELETE FROM cachedRoute WHERE rowid IN (\(placeholders))",
+                    sql: "DELETE FROM \(table) WHERE rowid IN (\(placeholders))",
                     arguments: StatementArguments(rowids.map { DatabaseValue(value: $0) })
                 )
                 return rowids.count == batchSize
@@ -547,18 +526,23 @@ public final class StopCacheRepository: Sendable {
                 .deleteAll(db)
 
             if let syncState = try RegionStopSyncState.fetchOne(db, key: regionId),
-               syncState.lastSuccessAt < date,
-               syncState.publishedSyncID != nil {
-                let unpState = RegionStopSyncState(
-                    regionId: syncState.regionId,
-                    outcome: syncState.outcome,
-                    lastAttemptAt: syncState.lastAttemptAt,
-                    lastSuccessAt: syncState.lastSuccessAt,
-                    etag: syncState.etag,
-                    appVersion: syncState.appVersion,
-                    publishedSyncID: nil
-                )
-                try unpState.save(db)
+               let publishedSyncID = syncState.publishedSyncID {
+                let hasRemainingStagedStops = try StagedCachedStop
+                    .filter(StagedCachedStop.Columns.regionId == regionId)
+                    .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
+                    .fetchCount(db) > 0
+                if !hasRemainingStagedStops {
+                    let unpState = RegionStopSyncState(
+                        regionId: syncState.regionId,
+                        outcome: syncState.outcome,
+                        lastAttemptAt: syncState.lastAttemptAt,
+                        lastSuccessAt: syncState.lastSuccessAt,
+                        etag: syncState.etag,
+                        appVersion: syncState.appVersion,
+                        publishedSyncID: nil
+                    )
+                    try unpState.save(db)
+                }
             }
         }
     }
@@ -666,6 +650,7 @@ private struct StagedCachedStop: Codable, FetchableRecord, PersistableRecord {
         static let regionId = Column("regionId")
         static let latitude = Column("latitude")
         static let longitude = Column("longitude")
+        static let lastUpdated = Column("lastUpdated")
     }
 }
 
@@ -694,5 +679,6 @@ private struct StagedCachedRoute: Codable, FetchableRecord, PersistableRecord {
         static let syncID = Column("syncID")
         static let id = Column("id")
         static let regionId = Column("regionId")
+        static let lastUpdated = Column("lastUpdated")
     }
 }

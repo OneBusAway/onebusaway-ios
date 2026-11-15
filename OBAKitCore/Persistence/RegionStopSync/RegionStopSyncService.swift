@@ -179,16 +179,16 @@ final class RegionStopSyncService: Sendable {
                 Logger.error("Region stop sync: couldn't publish complete snapshot for region \(regionID): \(error)")
                 return false
             }
-            cleanupAfterPublish(regionID: regionID, currentSyncID: syncID)
+            cleanupAfterPublish(regionID: regionID, currentSyncID: syncID, purgeLegacyOlderThan: start)
         } else {
             guard record(.complete, regionID: regionID, at: start, lastSuccessAt: start, etag: newETag, publishedSyncID: previous?.publishedSyncID) else { return false }
         }
         return wroteAny
     }
 
-    private func cleanupAfterPublish(regionID: Int, currentSyncID: String) {
+    private func cleanupAfterPublish(regionID: Int, currentSyncID: String, purgeLegacyOlderThan date: Date? = nil) {
         do {
-            try repository.purgeSupersededStagedStops(regionId: regionID, currentSyncID: currentSyncID)
+            try repository.purgeSupersededStagedStops(regionId: regionID, currentSyncID: currentSyncID, purgeLegacyOlderThan: date)
         } catch {
             Logger.error("Failed to purge superseded staged stops for region \(regionID): \(error)")
         }

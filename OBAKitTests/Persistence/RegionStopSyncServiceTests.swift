@@ -395,6 +395,22 @@ final class RegionStopSyncServiceTests {
         #expect(try cachedIDs() == ["1_a", "1_map", "2_c"])
         #expect(try repository.syncState(regionId: 1)?.outcome == .complete)
     }
+
+    @Test func `A partial first sync after upgrade preserves the failed agency's legacy stops`() async throws {
+        try repository.writeSyncedStops([stop("1_a"), stop("2_legacy")], regionId: 1, syncedAt: earlier)
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1", "2"], answers: [
+            "1": stops("1_a"),
+            "2": error(429, "application/json")
+        ])
+
+        let wroteStops = await makeService().sync(regionID: 1, using: fetcher)
+
+        #expect(wroteStops)
+        let state = try #require(try repository.syncState(regionId: 1))
+        #expect(state.outcome == .partial)
+        #expect(state.publishedSyncID != nil)
+        #expect(try cachedIDs() == ["1_a", "2_legacy"])
+    }
 }
 
 // swiftlint:enable force_try

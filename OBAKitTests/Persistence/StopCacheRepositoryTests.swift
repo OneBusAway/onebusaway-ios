@@ -607,11 +607,11 @@ final class StopCacheRepositoryTests {
         try repository.saveSyncState(state)
         try repository.stageSyncedStops([makeStop(id: "1_expired", routes: [])], regionId: 1, syncID: "sync_old", syncedAt: expiredDate)
 
-        #expect(repository.findStop(id: "1_expired", regionId: 1) != nil)
+        #expect(repository.stops(regionId: 1, after: nil, limit: 10).stops.contains { $0.id == "1_expired" })
 
         repository.deleteStopsOlderThan(now.addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval), regionId: 1)
 
-        #expect(repository.findStop(id: "1_expired", regionId: 1) == nil)
+        #expect(!repository.stops(regionId: 1, after: nil, limit: 10).stops.contains { $0.id == "1_expired" })
         let updatedState = try repository.syncState(regionId: 1)
         #expect(updatedState?.publishedSyncID == nil)
     }
@@ -748,6 +748,18 @@ final class StopCacheRepositoryTests {
         try repository.purgeSupersededStagedStops(regionId: 1, currentSyncID: "sync_new")
         let oldCount = try database.dbQueue.read { try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = 'sync_old'") }
         #expect(oldCount == 0)
+    }
+
+    @Test func `Purge superseded staged stops with purgeLegacyOlderThan purges older legacy rows`() throws {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let newDate = Date(timeIntervalSince1970: 2_000)
+        try repository.writeSyncedStops([makeStop(id: "legacy_old", routes: [])], regionId: 1, syncedAt: oldDate)
+        try repository.writeSyncedStops([makeStop(id: "legacy_new", routes: [])], regionId: 1, syncedAt: newDate)
+
+        try repository.purgeSupersededStagedStops(regionId: 1, currentSyncID: "sync_active", purgeLegacyOlderThan: newDate)
+
+        let remainingLegacy = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop WHERE regionId = 1 ORDER BY id") }
+        #expect(remainingLegacy == ["legacy_new"])
     }
 
     // MARK: - Multiple Stops
