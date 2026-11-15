@@ -66,7 +66,7 @@ struct StopPageHeaderView: View {
                     HeaderStatusLine(statusText: statusText)
                 }
                 Text(stop.name)
-                    .font(.title2.weight(.heavy))
+                    .font(.stopPageTitle)
                     .foregroundStyle(.white)
                     // Accessibility sizes get more lines so the full name still
                     // reads instead of clipping at the larger glyph sizes.

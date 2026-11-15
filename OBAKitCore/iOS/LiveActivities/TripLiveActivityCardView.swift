@@ -139,7 +139,7 @@ public struct TripLiveActivityCardView: View {
             )
             VStack(alignment: .leading, spacing: 3) {
                 Text(staticData.routeHeadsign)
-                    .font(.headline.weight(.heavy))
+                    .font(.stopRowTitle)
                     .lineLimit(2)
                 if let primary {
                     timeStatusLine(for: primary, now: now)

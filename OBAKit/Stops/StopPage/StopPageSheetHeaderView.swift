@@ -126,7 +126,7 @@ struct StopPageSheetHeaderView: View {
                     // separate focus stops.
                     VStack(alignment: .leading, spacing: 4) {
                         Text(stop.name)
-                            .font(.title2.weight(.bold))
+                            .font(.stopPageTitle)
                             .foregroundStyle(.primary)
                             .lineLimit(nameLineLimit)
                             .fixedSize(horizontal: false, vertical: true)

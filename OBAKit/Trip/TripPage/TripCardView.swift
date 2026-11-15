@@ -165,7 +165,7 @@ struct TripCardView: View {
 
     private var headsignText: some View {
         Text(headsign)
-            .font(.title3.weight(.bold))
+            .font(.stopCardTitle)
             .fixedSize(horizontal: false, vertical: true)
     }
 
