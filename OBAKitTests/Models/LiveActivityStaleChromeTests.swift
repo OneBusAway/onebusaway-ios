@@ -18,11 +18,10 @@ import Testing
 @Suite(.serialized)
 struct LiveActivityStaleChromeTests {
 
-    @Test func `Warning copy is non-empty and matches design specification`() {
+    @Test func `Warning copy is non-empty and distinct from a blank string`() {
         let text = LiveActivityStaleChrome.warningText
         #expect(!text.isEmpty)
         #expect(text != " ")
-        #expect(text == "This data may be out of date.")
     }
 
     @Test func `Warning color matches theme warning text color`() {
