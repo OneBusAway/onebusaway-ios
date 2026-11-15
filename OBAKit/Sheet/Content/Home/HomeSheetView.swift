@@ -95,7 +95,10 @@ struct HomeSheetView: View {
                 // fitted to it; the pages take what's left, down to nothing.
                 .layoutPriority(1)
             tabs
-                .frame(minHeight: 0)
+                // Clipped: a page hidden on the collapsed sheet may still be
+                // taller than the room it leaves.
+                .frame(minHeight: 0, alignment: .top)
+                .clipped()
                 // Reduced to the Bool in the transform, like the clearance below.
                 .onGeometryChange(for: Bool.self) { [showsTabs] proxy in
                     HomeTabs.showsTabPages(showsTabs: showsTabs, pageHeight: proxy.size.height)
@@ -104,10 +107,12 @@ struct HomeSheetView: View {
                 // can't read the safe area there; see `HomeTabs.bottomClearance`.
                 .contentMargins(.bottom, bottomClearance, for: .scrollContent)
         }
-            // From the top, and clipped: a page hidden on the collapsed sheet may
-            // still be taller than the room it leaves.
-            .frame(maxHeight: .infinity, alignment: .top)
-            .clipped()
+            // From the top, at whatever height the sheet offers. The collapsed
+            // sheet offers less than the header, which it draws past its detent
+            // (`HomeCollapsedDetent`); without the minimum this frame would grow
+            // to the header and be centred, lifting the search field over the
+            // grabber. Not clipped, so the chips show in that extra.
+            .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
             // Reduced to the clearance in the transform, so a drag, which moves
             // the sheet every frame, redraws this view only when the clearance
             // changes.
