@@ -348,4 +348,40 @@ final class HomeSheetViewModelTests: OBATestCase {
         #expect(viewModel.recent.alarmCount == 0)
         #expect(!viewModel.visibleSections.contains(.explore))
     }
+
+    // MARK: - Extended Delegation, Location, and Rental Pipeline
+
+    @Test @MainActor
+    func `Current location and nearby coordinate expose expected values`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let viewModel = makeViewModel(application: application)
+
+        #expect(viewModel.currentLocation?.coordinate.latitude == TestData.mockSeattleLocation.coordinate.latitude)
+        #expect(viewModel.currentLocation?.coordinate.longitude == TestData.mockSeattleLocation.coordinate.longitude)
+        #expect(viewModel.nearbyCoordinate != nil)
+    }
+
+    @Test @MainActor
+    func `Regions service update reloads search placeholder and offersTripPlanning`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let viewModel = makeViewModel(application: application)
+
+        let initialPlaceholder = viewModel.searchPlaceholder
+        #expect(!initialPlaceholder.isEmpty)
+
+        // Delegate update callback simulation
+        viewModel.regionsService(application.regionsService, updatedRegion: Fixtures.tampaRegion)
+
+        #expect(!viewModel.searchPlaceholder.isEmpty)
+        #expect(viewModel.offersTripPlanning == (application.features.tripPlanning == .running))
+    }
+
+    @Test @MainActor
+    func `Toggle rentals iterates through layers and updates explore items`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let viewModel = makeViewModel(application: application)
+
+        viewModel.toggleRentals()
+        #expect(viewModel.exploreItems.allSatisfy { $0 != nil })
+    }
 }

@@ -183,4 +183,44 @@ struct NextDeparturesStoreTests {
         #expect(await store.outcome(.noBookmark) == .noBookmarks)
         #expect(fetch.count == 1)
     }
+
+    // MARK: - Extended Key Equality & Cache Clearing Invariants
+
+    @Test func `NextDeparturesCardKey equality and hash invariants`() {
+        let id1 = UUID()
+        let id2 = UUID()
+
+        let keyBookmark1 = NextDeparturesCardKey.bookmark(id1)
+        let keyBookmark2 = NextDeparturesCardKey.bookmark(id1)
+        let keyBookmarkOther = NextDeparturesCardKey.bookmark(id2)
+        let keyNone = NextDeparturesCardKey.noBookmark
+
+        #expect(keyBookmark1 == keyBookmark2)
+        #expect(keyBookmark1 != keyBookmarkOther)
+        #expect(keyBookmark1 != keyNone)
+        #expect(keyNone == NextDeparturesCardKey.noBookmark)
+
+        var hasher1 = Hasher()
+        keyBookmark1.hash(into: &hasher1)
+        var hasher2 = Hasher()
+        keyBookmark2.hash(into: &hasher2)
+        #expect(hasher1.finalize() == hasher2.finalize())
+    }
+
+    @Test func `Multiple sequential refreshes advance fetch count on demand`() async {
+        let fetch = FakeFetch([departures(3), departures(8), departures(15)])
+        let store = store(fetch)
+
+        let initial = await store.load(.bookmark(bookmarkID))
+        #expect(initial == departures(3))
+        #expect(fetch.count == 1)
+
+        let refreshed1 = await store.refresh(.bookmark(bookmarkID))
+        #expect(refreshed1 == departures(8))
+        #expect(fetch.count == 2)
+
+        let refreshed2 = await store.refresh(.bookmark(bookmarkID))
+        #expect(refreshed2 == departures(15))
+        #expect(fetch.count == 3)
+    }
 }

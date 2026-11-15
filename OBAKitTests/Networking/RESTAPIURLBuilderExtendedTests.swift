@@ -73,4 +73,20 @@ final class RESTAPIURLBuilderExtendedTests {
         #expect(queryValue(url, "stopSequence") == "3")
         #expect(queryValue(url, "key") == "TEST_KEY")
     }
+
+    // MARK: - Extended Endpoint Query Escaping
+
+    @Test func `getArrivalsAndDeparturesForStop handles zero before and after intervals`() {
+        let url = builder.getArrivalsAndDeparturesForStop(id: "1_5544", minutesBefore: 0, minutesAfter: 60)
+        #expect(url.path == "/api/where/arrivals-and-departures-for-stop/1_5544.json")
+        #expect(queryValue(url, "minutesBefore") == "0")
+        #expect(queryValue(url, "minutesAfter") == "60")
+        #expect(queryValue(url, "key") == "TEST_KEY")
+    }
+
+    @Test func `getAgenciesWithCoverage query parameters and path verification`() {
+        let url = builder.getAgenciesWithCoverage()
+        #expect(url.path == "/api/where/agencies-with-coverage.json")
+        #expect(queryValue(url, "key") == "TEST_KEY")
+    }
 }

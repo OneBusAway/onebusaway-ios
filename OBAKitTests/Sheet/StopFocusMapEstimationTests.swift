@@ -159,4 +159,51 @@ final class StopFocusMapEstimationTests {
         await poll(until: { self.clock.sleeperCount == 0 }, "the tick should stop with the sheet")
         #expect(model.display == nil)
     }
+
+    // MARK: - Extended Lifecycle & Suppression Edge Cases
+
+    @Test func `Calling stop multiple times is idempotent and publishes nothing`() async throws {
+        let model = makeModel()
+        try await show(model)
+        await poll(until: { self.clock.sleeperCount == 1 })
+
+        harness.estimation.stop()
+        harness.estimation.stop()
+        #expect(harness.estimation.estimates.isEmpty)
+        #expect(self.clock.sleeperCount == 0)
+    }
+
+    @Test func `Suppression preserves display model while pausing active driver ticks`() async throws {
+        let model = makeModel()
+        try await show(model)
+        await poll(until: { self.clock.sleeperCount == 1 })
+
+        #expect(model.display != nil)
+        model.setSuppressed(true)
+        await poll(until: { self.clock.sleeperCount == 0 })
+        #expect(model.display != nil)
+
+        model.setSuppressed(false)
+        await harness.estimation.inputsSettled()
+        await poll(until: { self.clock.sleeperCount == 1 })
+    }
+
+    @Test func `Apply with empty arrivals clears existing vehicle estimates`() async throws {
+        let model = makeModel()
+        try await show(model)
+        await poll(until: { self.clock.sleeperCount == 1 })
+
+        let emptyArrivals = StopArrivals(
+            arrivalsAndDepartures: [],
+            id: "1_10020",
+            nearbyStopIDs: [],
+            situationIDs: [],
+            stopID: "1_10020"
+        )
+        model.apply(arrivals: emptyArrivals, isListFiltered: false, preferences: StopPreferences(), owner: Self.stop)
+        await harness.estimation.inputsSettled()
+
+        let vehicles = model.display?.vehicles ?? []
+        #expect(vehicles.isEmpty)
+    }
 }
