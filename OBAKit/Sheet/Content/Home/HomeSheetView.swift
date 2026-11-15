@@ -308,7 +308,6 @@ struct HomeSheetView: View {
                 // nothing else.
                 if viewModel.showsEmptyState {
                     emptyState
-                        .padding(.top, -24)
                         .frame(maxWidth: .infinity)
                         .listRowBackground(Color.clear)
                 }

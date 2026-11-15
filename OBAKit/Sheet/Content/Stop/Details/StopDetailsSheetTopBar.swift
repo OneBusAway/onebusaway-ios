@@ -33,10 +33,6 @@ struct StopDetailsSheetTopBar<Actions: View>: View {
     let onClose: () -> Void
     @ViewBuilder let actions: Actions
 
-    /// Deliberately small: this bar is chrome, not a row of primary actions.
-    /// Each circle still has a 44pt hit region.
-    static var buttonSize: CGFloat { 32 }
-
     /// Set by `stopSheetChrome` (via `sheetGlassBackground`) on iOS 26 in light
     /// mode, where this bar is a `safeAreaBar` over the sheet's glass.
     @Environment(\.drawsOnSheetGlass) private var onSheetGlass
@@ -97,7 +93,7 @@ struct StopDetailsSheetTopBar<Actions: View>: View {
             Image(systemName: "xmark")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.primary)
-                .glassCircleLabel(diameter: Self.buttonSize)
+                .glassCircleLabel(diameter: GlassCircleMetrics.chromeCircleSize)
         }
         .glassCircleSurface()
         .accessibilityLabel(Strings.close)
@@ -105,13 +101,13 @@ struct StopDetailsSheetTopBar<Actions: View>: View {
 }
 
 #Preview("Expanded") {
-    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 0, isRefreshing: false, onClose: {}) {
+    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 0, isRefreshing: false, onClose: {}, actions: {
         Image(systemName: "bookmark")
-    }
+    })
 }
 
 #Preview("Collapsed") {
-    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 1, isRefreshing: true, onClose: {}) {
+    StopDetailsSheetTopBar(title: "3rd Ave & Pike St", titleOpacity: 1, isRefreshing: true, onClose: {}, actions: {
         Image(systemName: "bookmark")
-    }
+    })
 }

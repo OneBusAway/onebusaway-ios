@@ -158,9 +158,8 @@ struct StopPageSheetHeaderView: View {
                     // three lines of a half-height sheet, pushing the departures, which are
                     // what the rider opened the stop for, down out of view.
                     //
-                    // Nothing in this row is a `Button`, from when it was a `FlowLayout`,
-                    // which sizes subviews with an unspecified proposal that a `Button`
-                    // answers with a greedy height. See `chipView(_:)`.
+                    // The pills and chips are tappable `Text`-shaped views rather than
+                    // `Button`s; see `chipView(_:)`.
                     ScrollView(.horizontal) {
                         HStack(spacing: 6) {
                             if let walkTime {

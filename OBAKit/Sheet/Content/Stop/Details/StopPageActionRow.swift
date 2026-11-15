@@ -61,12 +61,9 @@ nonisolated struct StopPageActionRowState {
 /// Bookmark, and More, a menu holding everything else (Schedule, Refresh,
 /// Filter, Service Alerts, directions, Report a Problem).
 ///
-/// They were four circles in a glass capsule pinned to the sheet's bottom,
-/// over the departures: at `.medium` that capsule, a second row of buttons up
-/// top and the header left little of the sheet for what the rider opened it
-/// for. The HIG's toolbar guidance is to keep the few most important actions
-/// in view and put the rest in a More menu; Bookmark is the one a rider looks
-/// for on a stop. Filter comes out of the menu while it's on, so a filtered
+/// The HIG's toolbar guidance is to keep the few most important actions in
+/// view and put the rest in a More menu; Bookmark is the one a rider looks for
+/// on a stop, and the departures below keep the rest of the sheet. Filter comes out of the menu while it's on, so a filtered
 /// list always says so and can be undone in one tap.
 ///
 /// A plain-value view: every action is a closure supplied by
@@ -88,13 +85,9 @@ struct StopPageActionRow: View {
     let onReportProblem: () -> Void
     var isProximityAlertActive = false
     var onToggleProximityAlert: (() -> Void)?
-    /// Refreshes the departures; `nil` leaves Refresh out of the menu.
-    var onRefresh: (() -> Void)?
+    let onRefresh: () -> Void
     /// "Updated: Just Now", under Refresh in the menu.
-    var refreshStatus = ""
-
-    /// The size of the top bar's circles, which these sit among.
-    var glyphSize: CGFloat = 32
+    let refreshStatus: String
 
     var body: some View {
         // The 12 pt the 44 pt hit regions need around 32 pt circles; see
@@ -132,13 +125,9 @@ struct StopPageActionRow: View {
                 Button(action: onSchedule) {
                     Label(Strings.schedules, systemImage: "calendar")
                 }
-                if let onRefresh {
-                    Button(action: onRefresh) {
-                        Label(Strings.refresh, systemImage: "arrow.clockwise")
-                        if !refreshStatus.isEmpty {
-                            Text(refreshStatus)
-                        }
-                    }
+                Button(action: onRefresh) {
+                    Label(Strings.refresh, systemImage: "arrow.clockwise")
+                    Text(refreshStatus)
                 }
             }
             if !state.isFilterOn {
@@ -318,12 +307,12 @@ struct StopPageActionRow: View {
     /// `foregroundStyle`: SwiftUI greys disabled content *through* the
     /// foreground style, so hard-coding `.primary` anywhere above the control
     /// would leave a disabled button looking identical to an enabled one while
-    /// still refusing taps. With the captions gone this dimming is the only
+    /// still refusing taps. This dimming is the only
     /// signal that an action is unavailable, so it must not be defeated.
     private func glyph(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
             .font(.body.weight(.semibold))
-            .glassCircleLabel(diameter: glyphSize)
+            .glassCircleLabel(diameter: GlassCircleMetrics.chromeCircleSize)
             .accessibilityHidden(true)
     }
 }
@@ -344,18 +333,18 @@ private extension View {
         onSchedule: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in }, onBookmark: {},
         onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
         onDirectionsToHere: nil, onDirectionsFromHere: nil,
-        onReportProblem: {}
+        onReportProblem: {}, onRefresh: {}, refreshStatus: "Updated: Just Now"
     )
 }
 
-/// The first fetch failed: everything that needs the `Stop` dims, Schedule and
-/// More stay live.
+/// The first fetch failed: Bookmark dims, and More stays live for Schedule
+/// and Refresh.
 #Preview("Action row — stop not loaded") {
     StopPageActionRow(
         state: StopPageActionRowState(hasStop: false, routeCount: 0, hasHiddenRoutes: false, isListFiltered: false, departureFilter: .all, hasServiceAlerts: false),
         onSchedule: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in }, onBookmark: {},
         onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
         onDirectionsToHere: nil, onDirectionsFromHere: nil,
-        onReportProblem: {}
+        onReportProblem: {}, onRefresh: {}, refreshStatus: "Updated: Just Now"
     )
 }

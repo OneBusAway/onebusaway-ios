@@ -77,7 +77,7 @@ struct StopDetailsSheetRootView: View {
 /// strip holding the stop's actions and Close, the sheet's only chrome.
 ///
 /// This is the only view here that observes `StopViewModel`; the header, the
-/// action row and the sections all take plain values, so the view model's
+/// actions and the sections all take plain values, so the view model's
 /// refresh and status-timer churn re-evaluates one shallow body.
 struct StopDetailsSheetView: View {
     /// The stop this sheet was built for. Stored rather than read off the view
@@ -196,7 +196,7 @@ struct StopDetailsSheetView: View {
             // presentation refreshes from Refresh in the top bar's More menu, and
             // by itself every few seconds.
             //
-            // Scroll position drives the title's OPACITY and the action row's
+            // Scroll position drives the title's OPACITY and the scroll-to-top
             // overlay position — never the height of the top bar's inset below.
             // An inset whose height depends on scroll position feeds back on
             // itself: measured on device, collapsing a 170pt header shifted
@@ -377,10 +377,9 @@ struct StopDetailsSheetView: View {
             title: viewModel.stop?.name ?? "",
             titleOpacity: Double(titleProgress),
             isRefreshing: isManuallyRefreshing,
-            onClose: { coordinator.pop() }
-        ) {
-            actionRow(navigation: navigation)
-        }
+            onClose: { coordinator.pop() },
+            actions: { actionRow(navigation: navigation) }
+        )
     }
 
     /// Distance scrolled, in points, over which the stop name fades into the
@@ -461,8 +460,7 @@ struct StopDetailsSheetView: View {
             isProximityAlertActive: viewModel.proximityAlert != nil,
             onToggleProximityAlert: navigation.toggleProximityAlert,
             onRefresh: refresh,
-            refreshStatus: viewModel.statusText,
-            glyphSize: StopDetailsSheetTopBar<EmptyView>.buttonSize
+            refreshStatus: viewModel.statusText
         )
     }
 

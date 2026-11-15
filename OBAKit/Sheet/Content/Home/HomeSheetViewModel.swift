@@ -204,8 +204,9 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         if hasBookmarks { sections.append(.bookmarks) }
         if hasNearby { sections.append(.nearby) }
         if hasRecent { sections.append(.recent) }
-        let hasAlarms = explore.contains { if case .alarms = $0 { true } else { false } }
-        if !explore.isEmpty, hasAlarms || explore.contains(.more) || !sections.isEmpty { sections.append(.explore) }
+        if explore.contains(where: \.isAlarms) || explore.contains(.more) || (!explore.isEmpty && !sections.isEmpty) {
+            sections.append(.explore)
+        }
         guard sections != visibleSections else { return }
         visibleSections = sections
     }
@@ -215,7 +216,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// are the rider's own, so Explore holding them isn't empty.
     var showsEmptyState: Bool {
         guard hasLoadedInitialContent, visibleSections.allSatisfy({ $0 == .explore }) else { return false }
-        return !exploreItems.contains { if case .alarms = $0 { true } else { false } }
+        return !exploreItems.contains(where: \.isAlarms)
     }
 
     // MARK: - Explore

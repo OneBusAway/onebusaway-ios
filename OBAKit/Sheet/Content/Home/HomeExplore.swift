@@ -28,7 +28,7 @@ enum HomeExploreItem: Hashable, Identifiable {
     /// - Parameter rentalsEnabled: Whether the bike and scooter layers are on,
     ///   or `nil` in a region with none.
     /// - Parameter offersMore: Whether More belongs here; see `more`.
-    static func items(offersTripPlanning: Bool, rentalsEnabled: Bool?, alarmCount: Int, offersMore: Bool = false) -> [HomeExploreItem] {
+    static func items(offersTripPlanning: Bool, rentalsEnabled: Bool?, alarmCount: Int, offersMore: Bool) -> [HomeExploreItem] {
         var items: [HomeExploreItem] = []
         if offersTripPlanning { items.append(.planTrip) }
         if let rentalsEnabled { items.append(.rentals(isOn: rentalsEnabled)) }
@@ -77,6 +77,12 @@ enum HomeExploreItem: Hashable, Identifiable {
         case .rentals(let isOn): isOn ? Strings.mapLayersStateOn : Strings.mapLayersStateOff
         case .alarms(let count): count.formatted()
         }
+    }
+
+    /// Whether this is the rider's alarms: their own, unlike the other
+    /// shortcuts, so enough to make the sheet not empty.
+    var isAlarms: Bool {
+        if case .alarms = self { true } else { false }
     }
 
     /// Whether the tile draws filled, as a control that is on.
