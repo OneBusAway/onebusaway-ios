@@ -261,8 +261,11 @@ struct HomeSheetView: View {
             // Removed on the collapsed sheet, not just hidden as the other tabs
             // are: rows built while hidden stayed out of the accessibility tree
             // after the sheet rose, leaving VoiceOver the section's cells with
-            // nothing in them.
-            if showsPages {
+            // nothing in them. Kept while a stacked sheet covers it, though,
+            // which collapses the sheet (`SheetCoordinator.baseDetentBeforeStacking`):
+            // its rows were built while visible, and closing a stop should find
+            // the list where the rider left it.
+            if showsPages || !coordinator.stackedRoutes.isEmpty {
                 homeList
             } else {
                 Color.clear

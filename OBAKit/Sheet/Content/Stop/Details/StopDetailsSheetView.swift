@@ -297,9 +297,9 @@ struct StopDetailsSheetView: View {
         // Set before the `Task`, not inside it. The guard reads synchronously
         // but the task body resumes after a hop, so two taps landing in the
         // same runloop turn would both clear a guard neither had set yet —
-        // two refreshes, two spinner floors, racing to reset one flag.
-        // `.disabled(isRefreshing)` narrows that window but does not close it:
-        // SwiftUI has not re-rendered the button yet.
+        // two refreshes, two spinner floors, racing to reset one flag. Refresh
+        // lives in the top bar's More menu and is never disabled, so this guard
+        // is the only thing stopping a second tap mid-refresh.
         isManuallyRefreshing = true
 
         Task {

@@ -27,7 +27,7 @@ struct StopDetailsSheetTopBar<Actions: View>: View {
     let title: String
     /// 0 while the header is expanded, 1 once it has collapsed.
     let titleOpacity: Double
-    /// Shows a spinner beside the actions while a refresh the rider asked for
+    /// Shows a spinner after the title while a refresh the rider asked for
     /// runs; Refresh itself is in the actions' More menu.
     let isRefreshing: Bool
     let onClose: () -> Void
@@ -59,16 +59,24 @@ struct StopDetailsSheetTopBar<Actions: View>: View {
 
     // MARK: - Subviews
 
+    /// The title, and the refresh spinner after it: in the flexible space, so
+    /// the controls don't shift as a refresh starts and ends.
     private var titleLabel: some View {
-        Text(title)
-            .font(.headline)
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .opacity(titleOpacity)
-            // Hidden from VoiceOver while invisible; the header below names the
-            // stop in that state.
-            .accessibilityHidden(titleOpacity < 0.5)
+        HStack(spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .opacity(titleOpacity)
+                // Hidden from VoiceOver while invisible; the header below names
+                // the stop in that state.
+                .accessibilityHidden(titleOpacity < 0.5)
+            if isRefreshing {
+                ProgressView()
+                    .accessibilityLabel(Strings.refresh)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// All on the trailing edge, Close last.
@@ -78,14 +86,13 @@ struct StopDetailsSheetTopBar<Actions: View>: View {
     /// would have one quietly eating the side of the next.
     private var controls: some View {
         HStack(spacing: 12) {
-            if isRefreshing {
-                ProgressView()
-                    .controlSize(.regular)
-                    .accessibilityLabel(Strings.refresh)
-            }
             actions
             closeButton
         }
+        // The circles are a fixed 32pt; a `.body` glyph past this size would
+        // spill out of them. The actions carry the large content viewer for
+        // the sizes beyond.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     private var closeButton: some View {
