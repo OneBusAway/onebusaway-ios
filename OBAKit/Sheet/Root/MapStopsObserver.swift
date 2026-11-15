@@ -29,7 +29,8 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
     /// localized-string lookups off every frame.
     struct RenderStop: Identifiable {
         let stop: Stop
-        let title: String
+        /// The route pill under the pin, or `nil` when the stop has no route names.
+        let routeLabel: MapRouteLabel?
         let accessibilityLabel: String
         var id: StopID { stop.id }
     }
@@ -280,7 +281,7 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
         accumulated.values.sorted { $0.id < $1.id }
     }
 
-    /// Rebuilds `renderStops` so the filter, title, and accessibility-label
+    /// Rebuilds `renderStops` so the filter, route label, and accessibility-label
     /// formatting run once per change, not per body eval.
     private func rebuildRenderStops() {
         renderStops = stops
@@ -288,7 +289,7 @@ final class MapStopsObserver: NSObject, ObservableObject, MapRegionDelegate, Reg
             .map {
                 RenderStop(
                     stop: $0,
-                    title: Formatters.formattedTitle(stop: $0),
+                    routeLabel: Formatters.mapRouteLabel($0.routes),
                     accessibilityLabel: Formatters.formattedAccessibilityLabel(stop: $0)
                 )
             }

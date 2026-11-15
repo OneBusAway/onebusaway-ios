@@ -715,22 +715,37 @@ public class Formatters: NSObject {
     /// - Parameter limit: The number of route names shown before appending "…".
     /// - Returns: A comma-separated list of route short names, or `nil` when none are available.
     public class func formattedMapRoutes(_ routes: [Route], limit: Int = 3) -> String? {
-        let routeNames = sortedRouteDisplayNames(from: routes)
-        guard !routeNames.isEmpty else {
+        guard let label = mapRouteLabel(routes, limit: limit) else {
             return nil
         }
 
-        if routeNames.count > limit {
-            let fmt = OBALoc(
-                "formatters.map_routes_overflow_fmt",
-                value: "%@…",
-                comment: "Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…'"
-            )
-            return String(format: fmt, routeNames.prefix(limit).joined(separator: ", "))
+        let names = label.routeNames.joined(separator: ", ")
+        guard label.overflowCount > 0 else {
+            return names
         }
-        else {
-            return routeNames.joined(separator: ", ")
-        }
+        let fmt = OBALoc(
+            "formatters.map_routes_overflow_fmt",
+            value: "%@…",
+            comment: "Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…'"
+        )
+        return String(format: fmt, names)
+    }
+
+    /// The route pill for a stop pin on the panel map, e.g. `65 | 75 | 372 | +2`.
+    ///
+    /// The panel's counterpart to `formattedMapRoutes(_:limit:)`, which the
+    /// classic map still uses. The two overflow styles ("…" there, "+N" here)
+    /// are deliberate: each map keeps its own look.
+    ///
+    /// - Parameters:
+    ///   - routes: The stop's routes.
+    ///   - limit: How many route names to show before counting the rest.
+    /// - Returns: The label, or `nil` when the stop has no displayable route names.
+    public class func mapRouteLabel(_ routes: [Route], limit: Int = 3) -> MapRouteLabel? {
+        let names = sortedRouteDisplayNames(from: routes)
+        guard !names.isEmpty, limit > 0 else { return nil }
+        let shown = Array(names.prefix(limit))
+        return MapRouteLabel(routeNames: shown, overflowCount: names.count - shown.count)
     }
 
     /// Generates a formatted, human readable list of routes.
