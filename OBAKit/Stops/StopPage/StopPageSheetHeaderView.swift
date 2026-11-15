@@ -41,7 +41,7 @@ nonisolated enum StopSheetHeaderMetrics {
 /// sheet's scarce vertical space showing the rider something they can see by looking up.
 ///
 /// Two other things move out of here relative to the dark card: there is no "Updated: …" status
-/// line (the sheet's bottom toolbar carries freshness on its refresh item), and the walk pill is
+/// line (Refresh in the sheet's More menu carries freshness), and the walk pill is
 /// tinted rather than solid, since it no longer has to hold up against a photographic backdrop.
 ///
 /// A plain-value view except for `mapFocus` — it never touches `StopViewModel`.
@@ -126,7 +126,7 @@ struct StopPageSheetHeaderView: View {
                     // separate focus stops.
                     VStack(alignment: .leading, spacing: 4) {
                         Text(stop.name)
-                            .font(.title2.weight(.bold))
+                            .font(.stopPageTitle)
                             .foregroundStyle(.primary)
                             .lineLimit(nameLineLimit)
                             .fixedSize(horizontal: false, vertical: true)
@@ -152,29 +152,36 @@ struct StopPageSheetHeaderView: View {
                 }
 
                 if !isCollapsed, walkTime != nil || bikeTime != nil || !chips.isEmpty {
-                    // Walk pill, bike pill, and chips share one flowing row, per the design —
-                    // the pills lead, a hairline separates them from the routes, and everything
-                    // wraps together.
+                    // Walk pill, bike pill, and chips share one row — the pills lead, a
+                    // hairline separates them from the routes — on one line that scrolls
+                    // sideways. It wrapped once, and a busy downtown stop's dozen routes took
+                    // three lines of a half-height sheet, pushing the departures, which are
+                    // what the rider opened the stop for, down out of view.
                     //
-                    // `FlowLayout` sizes subviews with an unspecified proposal, which a
-                    // `Button` answers with a greedy height — that is what once stretched the
-                    // walk pill down the whole sheet. So nothing in this row is a `Button`;
-                    // the pills and the chips are `Text`-shaped tappable views instead. See
-                    // `chipView(_:)`.
-                    FlowLayout(hSpacing: 6, vSpacing: 6) {
-                        if let walkTime {
-                            travelPill(.walk, walkTime, color: ThemeColors.shared.departureOnTime)
-                        }
-                        if let bikeTime {
-                            travelPill(.bike, bikeTime, color: ThemeColors.shared.blue)
-                        }
-                        if (walkTime != nil || bikeTime != nil) && !chips.isEmpty {
-                            rowSeparator
-                        }
-                        ForEach(chips) { chip in
-                            chipView(chip)
+                    // The pills and chips are tappable `Text`-shaped views rather than
+                    // `Button`s; see `chipView(_:)`.
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 6) {
+                            if let walkTime {
+                                travelPill(.walk, walkTime, color: ThemeColors.shared.departureOnTime)
+                            }
+                            if let bikeTime {
+                                travelPill(.bike, bikeTime, color: ThemeColors.shared.blue)
+                            }
+                            if (walkTime != nil || bikeTime != nil) && !chips.isEmpty {
+                                rowSeparator
+                            }
+                            ForEach(chips) { chip in
+                                chipView(chip)
+                            }
                         }
                     }
+                    .scrollIndicators(.hidden)
+                    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                    // Edge to edge, so chips scroll out under the sheet's edge rather than
+                    // stopping at the header's margin, which reads as cut off.
+                    .contentMargins(.horizontal, 16, for: .scrollContent)
+                    .padding(.horizontal, -16)
                     // `.contain`, not `.ignore`: each chip carries its own trait and label (and
                     // needs to be individually reachable for `.onTapGesture` to work under
                     // VoiceOver), so the row can no longer collapse to one summary element. The
@@ -188,7 +195,7 @@ struct StopPageSheetHeaderView: View {
             .padding(.bottom, isCollapsed ? StopSheetHeaderMetrics.collapsedBottomPadding : 14)
 
             // Separates the identity block from the scrolling departures below it. The sheet has
-            // no nav bar hairline to do this job — the chrome moved to the bottom toolbar.
+            // no nav bar hairline to do this job — its one bar is pinned above.
             Divider()
         }
     }

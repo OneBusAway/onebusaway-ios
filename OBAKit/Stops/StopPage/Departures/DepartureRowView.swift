@@ -144,7 +144,7 @@ struct DepartureRowView: View {
     /// the row opens the trip panel with the full name.
     private var headsignText: some View {
         Text(departure.tripHeadsign ?? departure.routeShortName)
-            .font(.system(.body, weight: .bold))
+            .font(.stopRowTitle)
             .lineLimit(2)
     }
 

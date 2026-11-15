@@ -12,7 +12,7 @@ import OBAKitCore
 
 /// A stop row for the home sheet's nearby and recent sections.
 ///
-/// Uses headline heavy for stop name and footnote secondary for subtitle,
+/// Uses `Font.stopRowTitle` for the stop name and footnote secondary for subtitle,
 /// matching the bookmark card rows. Includes an untinted squircle transport icon
 /// and a trailing chevron.
 struct HomeStopRow: View {
@@ -40,7 +40,7 @@ struct HomeStopRow: View {
                 // Title and subtitle stack
                 VStack(alignment: .leading, spacing: 0) {
                     Text(stop.name)
-                        .font(.headline.weight(.heavy))
+                        .font(.stopRowTitle)
                         .foregroundStyle(.primary)
                         .lineLimit(2)
 

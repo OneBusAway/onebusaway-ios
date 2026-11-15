@@ -182,4 +182,41 @@ struct HomeTabsTests {
         #expect(HomeTab(seeAll: .home) == nil)
         #expect(HomeTab(seeAll: .more) == nil)
     }
+
+    // MARK: - Collapsed header
+
+    /// The detent is fitted to the field and its standard padding, never to
+    /// the centering padding, which is itself derived from the detent.
+    @Test func `The header measured for the detent is the field with its standard padding`() {
+        #expect(HomeTabs.headerHeight(fieldHeight: 50) == 70)
+    }
+
+    /// Collapsed, the field sits in the middle of the sheet rather than over a
+    /// band of nothing.
+    @Test func `Collapsed, the search field is centered in the sheet`() {
+        let collapsed = AppSheetRoute.homeCollapsedHeight
+        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: collapsed) == (collapsed - 50) / 2)
+        // A few points short, as the home view's frame can be.
+        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: collapsed - 4) == (collapsed - 50) / 2)
+    }
+
+    /// Point for point, so the field follows a drag up, down to the standard.
+    @Test func `As the sheet rises the field moves up to the standard padding`() {
+        let collapsed = AppSheetRoute.homeCollapsedHeight
+        let centered = (collapsed - 50) / 2
+        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: collapsed + 10) == centered - 10)
+        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: 400) == HomeTabs.searchRowStandardTopPadding)
+    }
+
+    /// At the largest text sizes the field outgrows the floor, and there's no
+    /// extra to center it in.
+    @Test func `A field taller than the floor keeps the standard padding`() {
+        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 140, sheetHeight: 160) == HomeTabs.searchRowStandardTopPadding)
+    }
+
+    @Test func `The chips show only with room for all of them`() {
+        #expect(HomeTabs.showsChips(room: 52, chipsHeight: 52))
+        #expect(!HomeTabs.showsChips(room: 30, chipsHeight: 52))
+        #expect(!HomeTabs.showsChips(room: 0, chipsHeight: 0))
+    }
 }

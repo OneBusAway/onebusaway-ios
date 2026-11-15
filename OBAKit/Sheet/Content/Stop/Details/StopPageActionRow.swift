@@ -57,12 +57,17 @@ nonisolated struct StopPageActionRowState {
     var canShowServiceAlerts: Bool { hasServiceAlerts }
 }
 
-/// Schedule, Filter, Bookmark and More, as circular buttons in a glass capsule
-/// fixed at the bottom of the stop sheet.
+/// The stop sheet's actions, as controls on its pinned top bar beside Close:
+/// Bookmark, and More, a menu holding everything else (Schedule, Refresh,
+/// Filter, Service Alerts, directions, Report a Problem).
 ///
-/// Filter is promoted out of the More menu into its own button, so More carries
-/// only the four remaining actions. A plain-value view: every action is a
-/// closure supplied by `StopDetailsSheetView`.
+/// The HIG's toolbar guidance is to keep the few most important actions in
+/// view and put the rest in a More menu; Bookmark is the one a rider looks for
+/// on a stop, and the departures below keep the rest of the sheet. Filter comes out of the menu while it's on, so a filtered
+/// list always says so and can be undone in one tap.
+///
+/// A plain-value view: every action is a closure supplied by
+/// `StopDetailsSheetView`.
 struct StopPageActionRow: View {
     let state: StopPageActionRowState
 
@@ -78,112 +83,71 @@ struct StopPageActionRow: View {
     let onDirectionsToHere: (() -> Void)?
     let onDirectionsFromHere: (() -> Void)?
     let onReportProblem: () -> Void
-    /// Whether a nearby alert is set for this stop, which decides the title.
     var isProximityAlertActive = false
-    /// Sets or cancels the stop's nearby alert. Nil hides the item.
     var onToggleProximityAlert: (() -> Void)?
+    let onRefresh: () -> Void
+    /// "Updated: Just Now", under Refresh in the menu.
+    let refreshStatus: String
 
-    /// No horizontal scrolling accommodation, unlike `StopPageToolbar`: that
-    /// exists because captions grow with Dynamic Type until four of them stop
-    /// fitting on one line. These glyphs are a fixed 34pt on a fixed 44pt hit
-    /// region and do not scale, so four always fit on the narrowest device.
     var body: some View {
-        HStack(spacing: 0) { items }
-            .padding(.vertical, Self.verticalPadding)
-            .regularGlassEffectIfAvailable(in: Capsule())
-            // Outside the surface, so this is the gap between the capsule and
-            // the sheet's edges rather than internal padding.
-            .padding(.horizontal, 12)
-            .padding(.bottom, Self.bottomInset)
-    }
-
-    // MARK: - Metrics
-
-    private static let verticalPadding: CGFloat = 8
-
-    /// Gap between the capsule and the bottom of the sheet. Rides on top of the
-    /// device's own bottom safe area, which the enclosing safe-area bar
-    /// already accounts for — this is breathing room above the home indicator,
-    /// not clearance of it.
-    private static let bottomInset: CGFloat = 20
-
-    /// Everything this view occupies at the bottom of the sheet, including the
-    /// gap beneath it.
-    ///
-    /// Published because the scroll-to-top button has to clear it and cannot
-    /// discover it: that button is an `.overlay(alignment: .bottomTrailing)`
-    /// applied *after* the safe-area bar this view is mounted in, so it aligns
-    /// to the sheet's full frame and would otherwise land directly on top of the
-    /// capsule. A constant rather than a measured height on purpose — nothing
-    /// here depends on scroll position, and measuring it back into a position is
-    /// how this screen once fed geometry into itself and pegged the main thread.
-    static var occupiedHeight: CGFloat { glyphSize + verticalPadding * 2 + bottomInset }
-
-    /// Four circular glass controls, evenly spread.
-    ///
-    /// Uncaptioned by design: the capsule floats over the departures it acts on,
-    /// so every point of height it takes is a departure the rider cannot see.
-    /// Each control names itself to VoiceOver through `.accessibilityLabel`, so
-    /// dropping the visible text costs nothing to a screen reader.
-    @ViewBuilder
-    private var items: some View {
-        scheduleItem
-        filterItem
-        bookmarkItem
-        moreItem
+        // The 12 pt the 44 pt hit regions need around 32 pt circles; see
+        // `StopDetailsSheetTopBar.controls`.
+        HStack(spacing: 12) {
+            if state.isFilterOn {
+                filterButton
+            }
+            bookmarkButton
+            moreButton
+        }
     }
 
     // MARK: - Items
 
-    private var scheduleItem: some View {
-        item {
-            Button(action: onSchedule) { glyph("calendar") }
-                .glassCircleSurface()
-                .accessibilityLabel(Strings.schedules)
-                .largeContentViewer(Strings.schedules, systemImage: "calendar")
-        }
+    private var filterButton: some View {
+        Menu { filterMenu } label: { glyph(state.filterSystemImage) }
+            .glassCircleSurface()
+            .accessibilityLabel(Strings.filter)
+            .accessibilityValue(OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active."))
+            .largeContentViewer(Strings.filter, systemImage: state.filterSystemImage)
     }
 
-    private var filterItem: some View {
-        item {
-            Menu { filterMenu } label: { glyph(state.filterSystemImage) }
-                .glassCircleSurface()
-                .accessibilityLabel(Strings.filter)
-                .accessibilityValue(state.isFilterOn
-                    ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
-                    : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive."))
-                .largeContentViewer(Strings.filter, systemImage: state.filterSystemImage)
-        }
+    private var bookmarkButton: some View {
+        Button(action: onBookmark) { glyph("bookmark") }
+            .glassCircleSurface()
+            .disabled(!state.canActOnStop)
+            .accessibilityLabel(Self.bookmarkTitle)
+            .largeContentViewer(Self.bookmarkTitle, systemImage: "bookmark")
     }
 
-    private var bookmarkItem: some View {
-        item {
-            Button(action: onBookmark) { glyph("bookmark") }
-                .glassCircleSurface()
-                .disabled(!state.canActOnStop)
-                .accessibilityLabel(Self.bookmarkTitle)
-                .largeContentViewer(Self.bookmarkTitle, systemImage: "bookmark")
+    private var moreButton: some View {
+        Menu {
+            Section {
+                Button(action: onSchedule) {
+                    Label(Strings.schedules, systemImage: "calendar")
+                }
+                Button(action: onRefresh) {
+                    Label(Strings.refresh, systemImage: "arrow.clockwise")
+                    Text(refreshStatus)
+                }
+            }
+            if !state.isFilterOn {
+                Menu {
+                    filterMenu
+                } label: {
+                    Label(Strings.filter, systemImage: state.filterSystemImage)
+                }
+            }
+            moreMenu
+        } label: {
+            glyph("ellipsis")
         }
+        .glassCircleSurface()
+        .accessibilityLabel(Strings.more)
+        .largeContentViewer(Strings.more, systemImage: "ellipsis")
     }
 
-    /// More stays tappable even before the stop loads: Service Alerts already
-    /// carries its own gate, and a menu whose every item is disabled still tells
-    /// the rider more than a button that refuses to open.
-    private var moreItem: some View {
-        item {
-            Menu { moreMenu } label: { glyph("ellipsis") }
-                .glassCircleSurface()
-                .accessibilityLabel(Strings.more)
-                .largeContentViewer(Strings.more, systemImage: "ellipsis")
-        }
-    }
+    // MARK: - Menus
 
-    // MARK: - Menu contents
-
-    /// The route choices and the Departure Type submenu, the same two sections
-    /// the pushed page's `filterMenu()` carries. The route section is dropped on
-    /// a stop with nothing to filter, rather than the whole menu being disabled:
-    /// Departure Type still applies there.
     @ViewBuilder
     private var filterMenu: some View {
         if state.canFilter {
@@ -337,29 +301,20 @@ struct StopPageActionRow: View {
         }
     }
 
-    /// One slot: the caller's glass control, given an equal share of the width.
+    /// A control's glyph in its glass circle.
     ///
     /// A disabled control dims itself, but only because nothing here pins its
     /// `foregroundStyle`: SwiftUI greys disabled content *through* the
     /// foreground style, so hard-coding `.primary` anywhere above the control
     /// would leave a disabled button looking identical to an enabled one while
-    /// still refusing taps. With the captions gone this dimming is the only
+    /// still refusing taps. This dimming is the only
     /// signal that an action is unavailable, so it must not be defeated.
-    private func item(@ViewBuilder control: () -> some View) -> some View {
-        control()
-            .frame(maxWidth: .infinity)
-    }
-
-    /// The glyph a glass control wraps. `glassCircleLabel` draws it at
-    /// `glyphSize` while claiming a 44pt hit region.
     private func glyph(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
-            .font(.system(size: 18, weight: .semibold))
-            .glassCircleLabel(diameter: Self.glyphSize)
+            .font(.body.weight(.semibold))
+            .glassCircleLabel(diameter: GlassCircleMetrics.chromeCircleSize)
             .accessibilityHidden(true)
     }
-
-    private static let glyphSize: CGFloat = 34
 }
 
 private extension View {
@@ -378,18 +333,18 @@ private extension View {
         onSchedule: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in }, onBookmark: {},
         onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
         onDirectionsToHere: nil, onDirectionsFromHere: nil,
-        onReportProblem: {}
+        onReportProblem: {}, onRefresh: {}, refreshStatus: "Updated: Just Now"
     )
 }
 
-/// The first fetch failed: everything that needs the `Stop` dims, Schedule and
-/// More stay live.
+/// The first fetch failed: Bookmark dims, and More stays live for Schedule
+/// and Refresh.
 #Preview("Action row — stop not loaded") {
     StopPageActionRow(
         state: StopPageActionRowState(hasStop: false, routeCount: 0, hasHiddenRoutes: false, isListFiltered: false, departureFilter: .all, hasServiceAlerts: false),
         onSchedule: {}, onSetListFiltered: { _ in }, onSetDepartureFilter: { _ in }, onBookmark: {},
         onServiceAlerts: {}, onNearbyStops: {}, onWalkingDirections: {},
         onDirectionsToHere: nil, onDirectionsFromHere: nil,
-        onReportProblem: {}
+        onReportProblem: {}, onRefresh: {}, refreshStatus: "Updated: Just Now"
     )
 }

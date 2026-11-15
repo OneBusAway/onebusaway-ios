@@ -61,14 +61,15 @@ public extension View {
 
 // MARK: - Glass circle chrome
 
-private enum GlassCircleMetrics {
+enum GlassCircleMetrics {
     /// The HIG's minimum comfortable tap target.
     static let minimumTouchTarget: CGFloat = 44
+    /// The stop sheet's top-bar circles: its actions and Close.
+    static let chromeCircleSize: CGFloat = 32
 }
 
-/// The stop sheet's chrome circles — the action row's four controls, the top
-/// bar's Refresh and Close, and the floating scroll-to-top button — are one
-/// visual system rendered at three sizes.
+/// The stop sheet's chrome circles — the top bar's actions and Close, and the
+/// floating scroll-to-top button — are one visual system rendered at two sizes.
 ///
 /// Two modifiers rather than one because the pieces attach to different views.
 /// The surface goes on the control, which is a `Menu` as often as a `Button`,

@@ -12,10 +12,11 @@ import CoreLocation
 import TipKit
 import OBAKitCore
 
-/// The panel's base sheet: the search field, with More beside it, over a row of
-/// filter chips that are its tabs on iPhone. For You, the first, is the mixed
-/// view: bookmark cards, what leaves from nearby stops, recent stops and a row
-/// of shortcuts. See `HomeTab`.
+/// The panel's base sheet: the search field, over a row of filter chips that are
+/// its tabs on iPhone. Collapsed, it's the search field alone; the chips come
+/// up with the sheet. For You, the first tab, is the mixed view: bookmark cards,
+/// what leaves from nearby stops, recent stops and a row of shortcuts, More
+/// among them. See `HomeTab`.
 struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
@@ -39,9 +40,16 @@ struct HomeSheetView: View {
     /// list there; otherwise the tab keeps its scroll position and search text
     /// as the others do.
     @State private var nearbyAnchor: CLLocationCoordinate2D?
-    @ScaledMetric(relativeTo: .body) private var scaledMoreButtonSize: CGFloat = 50
-    /// See `moreButton`.
-    private var moreButtonSize: CGFloat { min(scaledMoreButtonSize, 64) }
+    /// Whether the chips have room to show; see `HomeTabs.showsChips`.
+    @State private var showsChips = true
+    /// The chips' row as laid out, with its padding.
+    @State private var chipsHeight: CGFloat = 0
+    /// The search field's height, without its padding; see
+    /// `HomeTabs.searchRowTopPadding`.
+    @State private var searchFieldHeight: CGFloat = 0
+    /// Above the search field: centered in the collapsed sheet, and back to
+    /// the standard 16 pt as the sheet rises. See `HomeTabs.searchRowTopPadding`.
+    @State private var searchRowTopPadding = HomeTabs.searchRowStandardTopPadding
     /// The map reads the header's height from here; see `HomeSheetMetrics`.
     /// `nil` outside the map panel.
     @Environment(HomeSheetMetrics.self) private var metrics: HomeSheetMetrics?
@@ -92,20 +100,34 @@ struct HomeSheetView: View {
         VStack(spacing: 0) {
             header
                 // The header keeps its height on the collapsed sheet, which is
-                // fitted to it; the pages take what's left, down to nothing.
+                // fitted to it; the chips and pages take what's left, down to
+                // nothing.
                 .layoutPriority(1)
-            tabs
-                // Clipped: a page hidden on the collapsed sheet may still be
-                // taller than the room it leaves.
-                .frame(minHeight: 0, alignment: .top)
-                .clipped()
-                // Reduced to the Bool in the transform, like the clearance below.
-                .onGeometryChange(for: Bool.self) { [showsTabs] proxy in
-                    HomeTabs.showsTabPages(showsTabs: showsTabs, pageHeight: proxy.size.height)
-                } action: { showsPages = $0 }
-                // The pages reach the sheet's bottom edge, and sheet content
-                // can't read the safe area there; see `HomeTabs.bottomClearance`.
-                .contentMargins(.bottom, bottomClearance, for: .scrollContent)
+            VStack(spacing: 0) {
+                if showsTabs {
+                    chips
+                }
+                tabs
+                    // Clipped: a page hidden on the collapsed sheet may still be
+                    // taller than the room it leaves.
+                    .frame(minHeight: 0, alignment: .top)
+                    .clipped()
+                    // Reduced to the Bool in the transform, like the clearance below.
+                    .onGeometryChange(for: Bool.self) { [showsTabs] proxy in
+                        HomeTabs.showsTabPages(showsTabs: showsTabs, pageHeight: proxy.size.height)
+                    } action: { showsPages = $0 }
+                    // The pages reach the sheet's bottom edge, and sheet content
+                    // can't read the safe area there; see `HomeTabs.bottomClearance`.
+                    .contentMargins(.bottom, bottomClearance, for: .scrollContent)
+            }
+            // Clipped: on the collapsed sheet the chips have less room than
+            // their height, and come into view from under the search field as
+            // the sheet is dragged up.
+            .frame(minHeight: 0, alignment: .top)
+            .clipped()
+            .onGeometryChange(for: Bool.self) { [chipsHeight] proxy in
+                HomeTabs.showsChips(room: proxy.size.height, chipsHeight: chipsHeight)
+            } action: { showsChips = $0 }
         }
             // From the top, at whatever height the sheet offers. The collapsed
             // sheet offers less than the header, which it draws past its detent
@@ -119,10 +141,19 @@ struct HomeSheetView: View {
             .onGeometryChange(for: CGFloat.self) { [screenBottom] proxy in
                 HomeTabs.bottomClearance(sheetBottom: proxy.frame(in: .global).maxY, screen: screenBottom)
             } action: { bottomClearance = $0 }
+            // Reduced to the padding in the transform; it stops changing a few
+            // points into a drag up, where it reaches the standard padding.
+            .onGeometryChange(for: CGFloat.self) { [showsTabs, searchFieldHeight] proxy in
+                guard showsTabs else { return HomeTabs.searchRowStandardTopPadding }
+                return HomeTabs.searchRowTopPadding(fieldHeight: searchFieldHeight, sheetHeight: proxy.size.height)
+            } action: { searchRowTopPadding = $0 }
             // On the whole sheet, not just the pages: the chips sit on it. A no-op
             // where the sheet's Liquid Glass is the background (iOS 26, light mode).
             .searchSheetBackground()
             .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
+            .onChange(of: showsTabs, initial: true) { _, showsTabs in
+                viewModel.offersMore = showsTabs
+            }
             .onChange(of: isHomeListVisible, initial: true) { _, isVisible in
                 viewModel.nearbyDepartures.isVisible = isVisible
             }
@@ -147,26 +178,42 @@ struct HomeSheetView: View {
             }
     }
 
-    /// The search row over the chips, measured for the collapsed detent, which
-    /// is fitted to it.
+    /// The search row, which the collapsed detent is fitted to.
     private var header: some View {
-        VStack(spacing: 0) {
-            searchBarRow
-                .padding(.top, 16)
-                .padding(.bottom, HomeTabs.searchRowBottomPadding)
-            if showsTabs {
-                HomeTabBar(selection: selectedTab, onSelect: select(_:))
+        searchField
+            .padding(.horizontal, 12)
+            // Its own height, however short the sheet: a squeezed field would
+            // shrink the detent measured from it, which would squeeze it further.
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                searchFieldHeight = height
+                // Measured without the top padding, which is centering it in
+                // the detent and so can't decide the detent.
+                let headerHeight = HomeTabs.headerHeight(fieldHeight: height)
+                // The map's copy, and the detent's, which can't read the map's.
+                metrics?.headerHeight = headerHeight
+                HomeCollapsedDetent.measured.withLock { $0.headerHeight = headerHeight }
             }
-        }
-        // Its own height, however short the sheet: a squeezed header would
-        // shrink the detent measured from it, which would squeeze it further.
-        .fixedSize(horizontal: false, vertical: true)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-            // The map's copy, and the detent's, which can't read the map's.
-            metrics?.headerHeight = height
-            HomeCollapsedDetent.measured.withLock { $0.headerHeight = height }
-        }
-        .background(pageBackground)
+            .padding(.top, searchRowTopPadding)
+            .padding(.bottom, HomeTabs.searchRowBottomPadding)
+            .frame(maxWidth: .infinity)
+            .background(pageBackground)
+    }
+
+    /// The tabs' chips, under the search row once the sheet rises past
+    /// collapsed: there, a picked tab would change nothing the rider can see.
+    private var chips: some View {
+        HomeTabBar(selection: selectedTab, onSelect: select(_:))
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { chipsHeight = $0 }
+            // Hidden, not just clipped, until they fit: the collapsed sheet
+            // leaves a sliver under the field, and a row of half chips there
+            // reads as cut off.
+            .opacity(showsChips ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: showsChips)
+            .allowsHitTesting(showsChips)
+            .accessibilityHidden(!showsChips)
+            .background(pageBackground)
     }
 
     /// Behind the header and each tab's page where the sheet shows its glass.
@@ -214,8 +261,11 @@ struct HomeSheetView: View {
             // Removed on the collapsed sheet, not just hidden as the other tabs
             // are: rows built while hidden stayed out of the accessibility tree
             // after the sheet rose, leaving VoiceOver the section's cells with
-            // nothing in them.
-            if showsPages {
+            // nothing in them. Kept while a stacked sheet covers it, though,
+            // which collapses the sheet (`SheetCoordinator.baseDetentBeforeStacking`):
+            // its rows were built while visible, and closing a stop should find
+            // the list where the rider left it.
+            if showsPages || !coordinator.stackedRoutes.isEmpty {
                 homeList
             } else {
                 Color.clear
@@ -257,6 +307,13 @@ struct HomeSheetView: View {
     private var homeList: some View {
         if !viewModel.visibleSections.isEmpty {
             List {
+                // Over Explore, which holds More and so shows even when there's
+                // nothing else.
+                if viewModel.showsEmptyState {
+                    emptyState
+                        .frame(maxWidth: .infinity)
+                        .listRowBackground(Color.clear)
+                }
                 ForEach(viewModel.visibleSections, id: \.self) { section in
                     sectionContent(for: section)
                 }
@@ -276,39 +333,6 @@ struct HomeSheetView: View {
     }
 
     // MARK: - Search Bar
-
-    private var searchBarRow: some View {
-        HStack(spacing: 8) {
-            searchField
-            // On iPhone, where the classic app's More tab went. Regular width
-            // keeps its More button on the map.
-            if showsTabs {
-                moreButton
-            }
-        }
-        .padding(.horizontal, 12)
-    }
-
-    /// As tall as the search field beside it, which is a line of body text and
-    /// its padding, so it scales as that does: up to a point, past which it
-    /// would take the width the placeholder needs.
-    private var moreButton: some View {
-        Button {
-            coordinator.push(.more)
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color(uiColor: .label))
-                .frame(width: moreButtonSize, height: moreButtonSize)
-                .background { Circle().fill(Color(.tertiarySystemFill)) }
-                .contentShape(.circle)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Strings.moreTabTitle)
-        .accessibilityShowsLargeContentViewer {
-            Label(Strings.moreTabTitle, systemImage: "ellipsis")
-        }
-    }
 
     private var searchField: some View {
         Button {
@@ -447,6 +471,8 @@ struct HomeSheetView: View {
             }
         case .alarms:
             showAll(.recentStopsAll)
+        case .more:
+            coordinator.push(.more)
         }
     }
 
