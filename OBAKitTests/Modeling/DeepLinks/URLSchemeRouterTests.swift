@@ -453,7 +453,7 @@ final class URLSchemeRouterTests {
     // MARK: - Edge Cases
     
     @Test func `Encode view stop handles special characters in stop ID`() {
-        let stopID = "stop+with/special&chars=123"
+        let stopID = "stop+with/special&chars=123#gate:2"
         let regionID = 1
         
         let url = router.encodeViewStop(stopID: stopID, regionID: regionID)
@@ -860,6 +860,18 @@ final class URLSchemeRouterTests {
         // The unencoded `&` ends the sidecar-url value; `b=2` parses as a separate
         // (ignored) query item. This is documented behavior, not a bug.
         #expect(data?.sidecarURL?.absoluteString == "https://obaco.example.com/api?a=1")
+    }
+
+    // MARK: - Edge Cases & Robustness
+
+    @Test func `Decode URL type dispatches on host regardless of URL scheme`() throws {
+        let url = try #require(URL(string: "different-scheme://view-stop?stopID=123&regionID=1"))
+        guard case .viewStop(let data)? = router.decodeURLType(from: url) else {
+            Issue.record("Expected viewStop URLType from host dispatch")
+            return
+        }
+        #expect(data.stopID == "123")
+        #expect(data.regionID == 1)
     }
 }
 
