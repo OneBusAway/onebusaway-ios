@@ -18,12 +18,18 @@ final class TripActivityPresenterTests {
     private let formatters = TripActivityPresenterTests.formatters
     private let presenter = TripActivityPresenter(formatters: TripActivityPresenterTests.formatters)
 
-    private func arrival(offsetSeconds: Int, status: TripAttributes.ContentState.ScheduleStatusValue = .onTime, deviation: Int = 0, now: Date) -> TripAttributes.ContentState.ArrivalInfo {
+    private func arrival(
+        offsetSeconds: Int,
+        status: TripAttributes.ContentState.ScheduleStatusValue = .onTime,
+        deviation: Int = 0,
+        isArrival: Bool = false,
+        now: Date
+    ) -> TripAttributes.ContentState.ArrivalInfo {
         TripAttributes.ContentState.ArrivalInfo(
             departureTime: Int(now.timeIntervalSince1970) + offsetSeconds,
             scheduleStatus: status,
             scheduleDeviation: deviation,
-            isArrival: false
+            isArrival: isArrival
         )
     }
 
@@ -58,6 +64,22 @@ final class TripActivityPresenterTests {
     @Test func `Primary color for empty arrivals is unknown status color`() {
         let state = TripAttributes.ContentState(arrivals: [])
         #expect(presenter.primaryColor(for: state) == formatters.colorForScheduleStatus(.unknown))
+    }
+
+    // MARK: - deviationLabel
+
+    @Test func `Deviation label formats arriving, departing, and past departed variants`() {
+        let arrivingLate = arrival(offsetSeconds: 480, status: .delayed, deviation: 180, isArrival: true, now: now)
+        #expect(presenter.deviationLabel(for: arrivingLate, now: now) == "arrives 3 min late")
+
+        let departingLate = arrival(offsetSeconds: 480, status: .delayed, deviation: 180, isArrival: false, now: now)
+        #expect(presenter.deviationLabel(for: departingLate, now: now) == "departs 3 min late")
+
+        let departedOnTime = arrival(offsetSeconds: -120, status: .onTime, deviation: 0, isArrival: false, now: now)
+        #expect(presenter.deviationLabel(for: departedOnTime, now: now) == "departed on time")
+
+        let departedLate = arrival(offsetSeconds: -180, status: .delayed, deviation: 120, isArrival: false, now: now)
+        #expect(presenter.deviationLabel(for: departedLate, now: now) == "departed 2 min late")
     }
 
     // MARK: - timeDisplay
@@ -164,6 +186,25 @@ final class TripActivityPresenterTests {
     @Test func `Card label ends with the stale warning when stale`() {
         let label = spokenLabel(arrivals: [arrival(offsetSeconds: 300, now: now)], isStale: true)
         #expect(label.hasSuffix(LiveActivityStaleChrome.warningText))
+    }
+
+    @Test func `Accessibility segments append stale warning preserving preceding order`() {
+        let state = TripAttributes.ContentState(arrivals: [arrival(offsetSeconds: 300, now: now)])
+        let freshSegments = presenter.accessibilitySegments(
+            staticData: staticData,
+            contentState: state,
+            isStale: false,
+            now: now
+        )
+        let staleSegments = presenter.accessibilitySegments(
+            staticData: staticData,
+            contentState: state,
+            isStale: true,
+            now: now
+        )
+
+        #expect(freshSegments.last != .text(LiveActivityStaleChrome.warningText))
+        #expect(staleSegments == freshSegments + [.text(LiveActivityStaleChrome.warningText)])
     }
 
     /// Every arrival has left: the card still names the trip rather than going silent.
