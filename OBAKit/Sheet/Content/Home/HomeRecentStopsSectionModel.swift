@@ -20,8 +20,8 @@ final class HomeRecentStopsSectionModel: ObservableObject {
 
     @Published private(set) var stops: [Stop] = []
 
-    /// Alarms the rider has set. The Recent index lists them, so the section
-    /// stays on home while any are, even with no recent stops.
+    /// Alarms the rider has set. The Recent index lists them, and For You's
+    /// Explore row has the shortcut to it while there are any.
     @Published private(set) var alarmCount = 0
 
     private let application: Application

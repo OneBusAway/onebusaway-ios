@@ -679,7 +679,7 @@ struct MapPanelRootView: View {
             mapControlsCluster
         }
         .overlay(alignment: .topTrailing) {
-            // On iPhone, More is a tab of the home sheet instead.
+            // On iPhone, More is a button beside the home sheet's search field.
             if !HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass) {
                 moreButton
             }

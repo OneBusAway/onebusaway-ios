@@ -26,6 +26,10 @@ final class HomeNearbyStopsSectionModel: ObservableObject {
 
     private let observer: MapStopsObserver
     private let limit: Int
+
+    /// The map's center, which `stops` are nearest to. `nil` before the map
+    /// first settles.
+    var viewportCenter: CLLocationCoordinate2D? { observer.viewportCenter }
     private var cancellables = Set<AnyCancellable>()
 
     init(observer: MapStopsObserver, limit: Int = HomeSheetSection.itemLimit) {

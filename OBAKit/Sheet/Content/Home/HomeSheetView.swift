@@ -8,33 +8,41 @@
 //
 
 import SwiftUI
+import CoreLocation
 import TipKit
 import OBAKitCore
 
-/// The panel's base sheet. On iPhone it carries tabs, Find My style: Home (search
-/// and the nearby, recent and bookmarked previews), Recent, Bookmarks and More, in
-/// a bar pinned to its bottom. See `HomeTab`.
+/// The panel's base sheet: the search field, with More beside it, over a row of
+/// filter chips that are its tabs on iPhone. For You, the first, is the mixed
+/// view: bookmark cards, what leaves from nearby stops, recent stops and a row
+/// of shortcuts. See `HomeTab`.
 struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
     /// See `EnvironmentValues.showsHomeTabs`.
     @Environment(\.showsHomeTabs) private var showsTabs
 
     /// See `HomeTabs.bottomClearance`.
     @Environment(\.screenBottom) private var screenBottom
-    @State private var barClearance: CGFloat = 0
+    /// Room the pages leave at their bottom for the home indicator.
+    @State private var bottomClearance: CGFloat = 0
 
     @State private var selectedTab: HomeTab = .home
-    /// Whether the tabs' pages show above the bar; see `HomeTabs.showsTabPages`.
+    /// Whether the tabs' pages show under the chips; see `HomeTabs.showsTabPages`.
     /// Kept as the Bool rather than the measured height, so a drag, which changes
     /// the height every frame, redraws this view only when it flips.
     @State private var showsPages = true
-    /// The search row as measured, for `showsTabPages`. Mirrors
-    /// `HomeCollapsedDetent.measured`, which the detent reads but which, being a
-    /// lock rather than state, doesn't redraw this view.
-    @State private var searchRowHeight = AppSheetRoute.homeSearchRowHeight
-    /// The map reads the search row's height from here; see `HomeSheetMetrics`.
+    /// Where the Nearby tab's list is centered. Moved when the tab is picked
+    /// and the map has gone far enough to change what's near, which rebuilds the
+    /// list there; otherwise the tab keeps its scroll position and search text
+    /// as the others do.
+    @State private var nearbyAnchor: CLLocationCoordinate2D?
+    @ScaledMetric(relativeTo: .body) private var scaledMoreButtonSize: CGFloat = 50
+    /// See `moreButton`.
+    private var moreButtonSize: CGFloat { min(scaledMoreButtonSize, 64) }
+    /// The map reads the header's height from here; see `HomeSheetMetrics`.
     /// `nil` outside the map panel.
     @Environment(HomeSheetMetrics.self) private var metrics: HomeSheetMetrics?
 
@@ -71,37 +79,53 @@ struct HomeSheetView: View {
         )
     }
 
+    /// Whether For You's list is on screen, which is when its Nearby section
+    /// may fetch arrivals: unlike the bookmarks' poll, nothing off screen needs
+    /// them.
+    private var isHomeListVisible: Bool {
+        isPollingHome && showsPages
+    }
+
     var body: some View {
-        // The bar under the tabs rather than in a `safeAreaInset` over them:
-        // `TabView` lays its pages out beneath an inset, which put Home's list
-        // behind the bar.
+        // The search row and chips over the tabs rather than in a
+        // `safeAreaInset`: `TabView` lays its pages out beneath an inset.
         VStack(spacing: 0) {
+            header
+                // The header keeps its height on the collapsed sheet, which is
+                // fitted to it; the pages take what's left, down to nothing.
+                .layoutPriority(1)
             tabs
+                // Clipped: a page hidden on the collapsed sheet may still be
+                // taller than the room it leaves.
+                .frame(minHeight: 0, alignment: .top)
+                .clipped()
                 // Reduced to the Bool in the transform, like the clearance below.
-                // The captured search row height is the one from the last body
-                // evaluation; a new one comes with a text size change, which
-                // resizes the sheet and so runs the transform again.
-                .onGeometryChange(for: Bool.self) { [showsTabs, searchRowHeight] proxy in
-                    HomeTabs.showsTabPages(showsTabs: showsTabs, pageHeight: proxy.size.height, searchRowHeight: searchRowHeight)
+                .onGeometryChange(for: Bool.self) { [showsTabs] proxy in
+                    HomeTabs.showsTabPages(showsTabs: showsTabs, pageHeight: proxy.size.height)
                 } action: { showsPages = $0 }
-            if showsTabs {
-                HomeTabBar(
-                    selection: selectedTab,
-                    bottomClearance: barClearance,
-                    onSelect: select(_:)
-                )
-            }
+                // The pages reach the sheet's bottom edge, and sheet content
+                // can't read the safe area there; see `HomeTabs.bottomClearance`.
+                .contentMargins(.bottom, bottomClearance, for: .scrollContent)
         }
+            // From the top, at whatever height the sheet offers. The collapsed
+            // sheet offers less than the header, which it draws past its detent
+            // (`HomeCollapsedDetent`); without the minimum this frame would grow
+            // to the header and be centred, lifting the search field over the
+            // grabber. Not clipped, so the chips show in that extra.
+            .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
             // Reduced to the clearance in the transform, so a drag, which moves
             // the sheet every frame, redraws this view only when the clearance
             // changes.
             .onGeometryChange(for: CGFloat.self) { [screenBottom] proxy in
                 HomeTabs.bottomClearance(sheetBottom: proxy.frame(in: .global).maxY, screen: screenBottom)
-            } action: { barClearance = $0 }
-            // On the whole sheet, not just the pages: the bar sits on it, and More,
-            // a UIKit host, sets no sheet background of its own. A no-op where the
-            // sheet's Liquid Glass is the background (iOS 26, light mode).
+            } action: { bottomClearance = $0 }
+            // On the whole sheet, not just the pages: the chips sit on it. A no-op
+            // where the sheet's Liquid Glass is the background (iOS 26, light mode).
             .searchSheetBackground()
+            .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
+            .onChange(of: isHomeListVisible, initial: true) { _, isVisible in
+                viewModel.nearbyDepartures.isVisible = isVisible
+            }
             .task(id: isPollingHome) {
                 // Polls while Home is the tab on screen, so bookmark countdowns
                 // don't freeze, and refreshes the moment it comes back: from a
@@ -123,20 +147,54 @@ struct HomeSheetView: View {
             }
     }
 
+    /// The search row over the chips, measured for the collapsed detent, which
+    /// is fitted to it.
+    private var header: some View {
+        VStack(spacing: 0) {
+            searchBarRow
+                .padding(.top, 16)
+                .padding(.bottom, HomeTabs.searchRowBottomPadding)
+            if showsTabs {
+                HomeTabBar(selection: selectedTab, onSelect: select(_:))
+            }
+        }
+        // Its own height, however short the sheet: a squeezed header would
+        // shrink the detent measured from it, which would squeeze it further.
+        .fixedSize(horizontal: false, vertical: true)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+            // The map's copy, and the detent's, which can't read the map's.
+            metrics?.headerHeight = height
+            HomeCollapsedDetent.measured.withLock { $0.headerHeight = height }
+        }
+        .background(pageBackground)
+    }
+
+    /// Behind the header and each tab's page where the sheet shows its glass.
+    /// `TabView` gives a page an opaque background there that
+    /// `tabPageBackground()` doesn't always clear, which left a seam under the
+    /// chips: glass over them, white under. Painted, the two can't differ.
+    private var pageBackground: Color {
+        showsTabs && colorScheme.showsSheetGlass ? Color(.systemBackground) : .clear
+    }
+
     /// The tabs, in a `TabView` whose own bar is hidden for `HomeTabBar`. It
     /// builds each tab the first time it's picked and keeps it after, so leaving a
-    /// tab and coming back keeps its scroll position, search text and More's pushed
-    /// screens, and exposes only the visible tab to VoiceOver. Regular width has no
-    /// tabs, so just Home.
+    /// tab and coming back keeps its scroll position and search text, and exposes
+    /// only the visible tab to VoiceOver. Regular width has no tabs, so just For
+    /// You.
     @ViewBuilder
     private var tabs: some View {
         if showsTabs {
             TabView(selection: $selectedTab) {
                 ForEach(HomeTab.allCases, id: \.self) { tab in
+                    // Hidden on the collapsed sheet rather than removed, so each
+                    // keeps its state for when the sheet rises.
                     tabContent(tab)
-                        // The sheet's own background, which the bar sits on:
-                        // the pages' default white left a seam where the bar
-                        // began.
+                        .opacity(showsPages ? 1 : 0)
+                        .allowsHitTesting(showsPages)
+                        .accessibilityHidden(!showsPages)
+                        .background(pageBackground)
+                        // The sheet's own background where it's opaque.
                         .tabPageBackground()
                         .environment(\.isHomeSheetTab, tab != .home)
                         .environment(\.isHomeSheetCollapsed, !showsPages)
@@ -145,7 +203,7 @@ struct HomeSheetView: View {
                 }
             }
         } else {
-            homePage
+            homeList
         }
     }
 
@@ -153,27 +211,29 @@ struct HomeSheetView: View {
     private func tabContent(_ tab: HomeTab) -> some View {
         switch tab {
         case .home:
-            homePage
-        case .recent:
-            hiddenWhenCollapsed(RecentStopsSheetView(application: application))
+            // Removed on the collapsed sheet, not just hidden as the other tabs
+            // are: rows built while hidden stayed out of the accessibility tree
+            // after the sheet rose, leaving VoiceOver the section's cells with
+            // nothing in them.
+            if showsPages {
+                homeList
+            } else {
+                Color.clear
+            }
         case .bookmarks:
-            hiddenWhenCollapsed(BookmarksSheetView(application: application))
-        case .more:
-            hiddenWhenCollapsed(MoreSheetHost(application: application))
+            BookmarksSheetView(application: application)
+        case .nearby:
+            NearbyStopsSheetView(application: application, coordinate: nearbyAnchor)
+                .id(nearbyAnchor.map { "\($0.latitude),\($0.longitude)" })
+        case .recent:
+            RecentStopsSheetView(application: application)
         }
     }
 
-    /// Recent, Bookmarks and More on the collapsed sheet: hidden rather than
-    /// removed, so each keeps its state (scroll position, More's pushed screens)
-    /// for when the sheet rises. Home hides only its list; see `homePage`.
-    private func hiddenWhenCollapsed(_ page: some View) -> some View {
-        page
-            .opacity(showsPages ? 1 : 0)
-            .allowsHitTesting(showsPages)
-            .accessibilityHidden(!showsPages)
-    }
-
     private func select(_ tab: HomeTab) {
+        if tab == .nearby {
+            nearbyAnchor = HomeTabs.nearbyAnchor(current: nearbyAnchor, mapCenter: viewModel.nearbyCoordinate)
+        }
         selectedTab = tab
         if let detent = HomeTabs.detent(afterSelectingFrom: coordinator.currentDetent) {
             coordinator.currentDetent = detent
@@ -192,53 +252,65 @@ struct HomeSheetView: View {
 
     // MARK: - Home
 
-    private var homePage: some View {
-        VStack(spacing: 0) {
-            searchBarRow
-                .padding(.top, 16)
-                .padding(.bottom, HomeTabs.searchRowBottomPadding)
-                // Its own height, however short the page: measured for the
-                // collapsed detent, a squeezed row would shrink the detent, which
-                // would squeeze it further.
-                .fixedSize(horizontal: false, vertical: true)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                    searchRowHeight = height
-                    // The map's copy, and the detent's, which can't read the map's.
-                    metrics?.searchRowHeight = height
-                    HomeCollapsedDetent.measured.withLock { $0.searchRowHeight = height }
+    /// For You's content, under the search row and chips.
+    @ViewBuilder
+    private var homeList: some View {
+        if !viewModel.visibleSections.isEmpty {
+            List {
+                ForEach(viewModel.visibleSections, id: \.self) { section in
+                    sectionContent(for: section)
                 }
-
-            if !showsPages {
-                Spacer()
-            } else if !viewModel.visibleSections.isEmpty {
-                List {
-                    ForEach(viewModel.visibleSections, id: \.self) { section in
-                        sectionContent(for: section)
-                    }
-                }
-                // Applied to the `List`, matching `BookmarksListView`, rather than
-                // to the bookmarks `Section` alone.
-                .environment(\.obaFormatters, application.formatters)
-                .searchListChrome()
-            } else if viewModel.hasLoadedInitialContent {
-                emptyState
-            } else {
-                // Pre-first-settle: nearby hasn't had its chance yet, so "empty"
-                // isn't a fact. Hold the space rather than flash a wrong answer.
-                Spacer()
             }
+            // Applied to the `List`, matching `BookmarksListView`, rather than
+            // to the bookmarks `Section` alone.
+            .environment(\.obaFormatters, application.formatters)
+            .searchListChrome()
+        } else if viewModel.hasLoadedInitialContent {
+            emptyState
+                .frame(maxHeight: .infinity, alignment: .top)
+        } else {
+            // Pre-first-settle: nearby hasn't had its chance yet, so "empty"
+            // isn't a fact. Hold the space rather than flash a wrong answer.
+            Color.clear
         }
-        // With the tab bar, stops at it: drawn under the glass, the list and the
-        // empty state showed through the bar on the collapsed sheet. Clipped, as
-        // the empty state is taller than the room the collapsed sheet leaves.
-        .clipped()
-        .searchSheetBackground()
-        .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
     }
 
     // MARK: - Search Bar
 
     private var searchBarRow: some View {
+        HStack(spacing: 8) {
+            searchField
+            // On iPhone, where the classic app's More tab went. Regular width
+            // keeps its More button on the map.
+            if showsTabs {
+                moreButton
+            }
+        }
+        .padding(.horizontal, 12)
+    }
+
+    /// As tall as the search field beside it, which is a line of body text and
+    /// its padding, so it scales as that does: up to a point, past which it
+    /// would take the width the placeholder needs.
+    private var moreButton: some View {
+        Button {
+            coordinator.push(.more)
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color(uiColor: .label))
+                .frame(width: moreButtonSize, height: moreButtonSize)
+                .background { Circle().fill(Color(.tertiarySystemFill)) }
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Strings.moreTabTitle)
+        .accessibilityShowsLargeContentViewer {
+            Label(Strings.moreTabTitle, systemImage: "ellipsis")
+        }
+    }
+
+    private var searchField: some View {
         Button {
             coordinator.push(.search)
         } label: {
@@ -255,7 +327,6 @@ struct HomeSheetView: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 12)
         // The map panel's home for `TripPlannerTip`, which on the UIKit surface
         // points at `MapFloatingPanelController`'s search bar — this row is that
         // bar's counterpart, and the tip's copy ("tap here to search for places")
@@ -280,61 +351,103 @@ struct HomeSheetView: View {
         switch section {
         case .alerts:
             alertsSection
-
-        case .nearby:
-            stopSection(
-                stops: viewModel.nearby.stops,
-                title: Strings.nearbyStops,
-                seeAll: .nearbyAll
-            )
-
-        case .recent:
-            stopSection(
-                stops: viewModel.recent.stops,
-                title: Strings.recentStops,
-                seeAll: .recentStopsAll,
-                alarmCount: viewModel.recent.alarmCount
-            )
-
         case .bookmarks:
             bookmarksSection
+        case .nearby:
+            nearbySection
+        case .recent:
+            recentSection
+        case .explore:
+            exploreSection
         }
     }
 
-    /// The nearby and recent sections: same row and header shape, different
-    /// source and destination.
-    private func stopSection(
-        stops: [Stop],
-        title: String,
-        seeAll: AppSheetRoute,
-        alarmCount: Int = 0
-    ) -> some View {
+    /// What leaves from the stops nearest the map's center; see
+    /// `HomeNearbyDepartures`. A stop with nothing to list shows as a stop.
+    private var nearbySection: some View {
         Section {
-            // The Recent index lists alarms, as the Recent tab does. This row is
-            // the way to them, and is all the section has with no recent stops.
-            if alarmCount > 0 {
-                Button {
-                    showAll(seeAll)
-                } label: {
-                    LabeledContent {
-                        Text(alarmCount, format: .number)
-                    } label: {
-                        Label(RecentStopsSheetView.alarmsTitle, systemImage: "alarm")
+            ForEach(viewModel.nearbyDepartures.rows) { row in
+                switch row {
+                case .departure(let departure):
+                    HomeNearbyDepartureRow(departure: departure, userLocation: viewModel.currentLocation) {
+                        coordinator.push(.stopDetails(stopID: departure.stop.id))
+                    }
+                case .stop(let stop):
+                    HomeStopRow(stop: stop) {
+                        coordinator.push(.stopDetails(stopID: stop.id))
                     }
                 }
-                .foregroundStyle(Color(uiColor: .label))
             }
-            ForEach(stops, id: \.id) { stop in
+            // The header leads to the same list; this says so where the rows end,
+            // which is where a rider who didn't find their stop is looking.
+            Button {
+                showAll(.nearbyAll)
+            } label: {
+                // Label-colored text with the brand's chevron, as the section
+                // headers are: neither brand green passes 4.5:1 as text in both
+                // appearances.
+                HStack(spacing: 8) {
+                    Text(Strings.allNearbyStops)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color(uiColor: .label))
+                    Spacer()
+                    Image(systemName: "chevron.forward")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Color(uiColor: ThemeColors.shared.brand))
+                        .accessibilityHidden(true)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        } header: {
+            HomeSectionHeader(title: Strings.nearbyStops) {
+                showAll(.nearbyAll)
+            }
+        }
+        .textCase(nil)
+    }
+
+    /// The last few stops viewed. Alarms, which the Recent tab also lists, have
+    /// their shortcut in Explore.
+    private var recentSection: some View {
+        Section {
+            ForEach(viewModel.recent.stops.prefix(HomeSheetSection.recentPreviewLimit), id: \.id) { stop in
                 HomeStopRow(stop: stop) {
                     coordinator.push(.stopDetails(stopID: stop.id))
                 }
             }
         } header: {
-            HomeSectionHeader(title: title) {
-                showAll(seeAll)
+            HomeSectionHeader(title: Strings.recentStops) {
+                showAll(.recentStopsAll)
             }
         }
         .textCase(nil)
+    }
+
+    private var exploreSection: some View {
+        Section {
+            HomeExploreRow(items: viewModel.exploreItems, onSelect: open(_:))
+                .padding(.vertical, 4)
+        } header: {
+            HomeSectionTitle(title: Strings.explore)
+        }
+        .textCase(nil)
+    }
+
+    private func open(_ item: HomeExploreItem) {
+        switch item {
+        case .planTrip:
+            coordinator.push(.tripPlanner(TripPlannerRequest()))
+        case .rentals(let isOn):
+            viewModel.toggleRentals()
+            // Switched on behind a sheet that covers the map, the layer would
+            // change nothing the rider can see.
+            if !isOn, coordinator.currentDetent == AppSheetRoute.largeDetent {
+                coordinator.currentDetent = .medium
+            }
+        case .alarms:
+            showAll(.recentStopsAll)
+        }
     }
 
     /// No index to open, so the header is a plain title rather than a
@@ -356,44 +469,22 @@ struct HomeSheetView: View {
                 }
             }
         } header: {
-            Text(Strings.serviceAlerts)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(Color(uiColor: .label))
-                .accessibilityAddTraits(.isHeader)
+            HomeSectionTitle(title: Strings.serviceAlerts)
         }
         .textCase(nil)
     }
 
-    /// Bookmark rows reuse the Bookmarks tab's cells as-is, so the two surfaces
-    /// can't drift apart visually.
+    /// The bookmarks as cards in a row that scrolls sideways, edge to edge: the
+    /// row has no card of its own, each bookmark does.
     private var bookmarksSection: some View {
         Section {
-            ForEach(viewModel.bookmarks.rows) { row in
-                Group {
-                    if row.isTripBookmark {
-                        BookmarkCardView(row: row)
-                    } else {
-                        StopBookmarkRow(row: row)
-                    }
-                }
-                .contentShape(.rect)
-                .onTapGesture {
-                    coordinator.push(.stopDetails(stopID: row.stopID))
-                }
-                // The cells announce `.isButton`; `.onTapGesture` is invisible to
-                // assistive tech, so the default action carries the same tap.
-                .accessibilityAction {
-                    coordinator.push(.stopDetails(stopID: row.stopID))
-                }
-                .contextMenu {
-                    // Pinning is reachable from the row it affects, not only from
-                    // the Bookmarks tab — this section is where the result shows.
-                    BookmarkPinButton(isPinned: row.isPinned) {
-                        viewModel.bookmarks.togglePin(row.bookmark)
-                    }
-                }
-            }
+            HomeBookmarkCards(
+                rows: viewModel.bookmarks.rows,
+                onSelect: { coordinator.push(.stopDetails(stopID: $0.stopID)) },
+                onTogglePin: { viewModel.bookmarks.togglePin($0.bookmark) }
+            )
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
         } header: {
             HomeSectionHeader(title: Strings.bookmarks) {
                 showAll(.bookmarksAll)
@@ -402,7 +493,7 @@ struct HomeSheetView: View {
         .textCase(nil)
     }
 
-    /// Shown only when all three sections are empty at once — a first launch, or
+    /// Shown only when every section is empty at once — a first launch, or
     /// a map parked at region-level zoom with nothing saved.
     ///
     /// Has its own copy rather than reusing the nearby controller's: two of the

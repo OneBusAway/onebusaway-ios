@@ -211,10 +211,15 @@ struct BookmarkCardView: View {
         }
     }
 
-    private var noDeparturesText: some View {
-        Text(row.hasLoadedArrivalData
+    /// Shared with the home sheet's bookmark cards, so the two say the same thing.
+    static func noDeparturesMessage(hasLoadedArrivalData: Bool) -> String {
+        hasLoadedArrivalData
             ? OBALoc("bookmarks_controller.no_upcoming_departures", value: "No upcoming departures", comment: "Shown on a bookmark card when arrival data has loaded but there are no departures in the near future")
-            : OBALoc("loading", value: "Loading...", comment: "Loading state text"))
+            : OBALoc("loading", value: "Loading...", comment: "Loading state text")
+    }
+
+    private var noDeparturesText: some View {
+        Text(Self.noDeparturesMessage(hasLoadedArrivalData: row.hasLoadedArrivalData))
             .font(.footnote)
             .foregroundStyle(.secondary)
     }

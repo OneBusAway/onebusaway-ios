@@ -382,31 +382,23 @@ nonisolated extension AppSheetRoute {
     }
 
     /// The collapsed home sheet's height at the default text size: the estimate
-    /// for the first frame, before `HomeCollapsedDetent` measures the search row.
+    /// for the first frame, before `HomeCollapsedDetent` measures the header,
+    /// and the least the detent asks for.
     ///
-    /// The search row and the tab bar under it, and nothing else, so the
-    /// collapsed sheet reads as those two controls rather than as a list that got
-    /// cut off. A regular-width sheet has no tab bar yet (`HomeTabs.showsTabs`),
-    /// so its collapsed sheet shows the top of the list in that space.
-    static let homeCollapsedHeight: CGFloat = homeSearchRowHeight + homeTabBarHeight
+    /// The search row (its ~50pt capsule under 16pt, with
+    /// `HomeTabs.searchRowBottomPadding` below) and `HomeTabBar`'s chips under
+    /// it, and nothing else, so the collapsed sheet reads as those two controls
+    /// rather than as a list that got cut off. A regular-width sheet has no tabs
+    /// yet (`HomeTabs.showsTabs`), so its collapsed sheet shows the top of the
+    /// list in that space.
+    ///
+    /// Not less: this is about as short as iOS 26 will draw a floating sheet.
+    /// Once the system's own extra is given back, a detent under ~100pt (on an
+    /// iPhone 17 Pro) draws the sheet narrower and lifted off the bottom.
+    static let homeCollapsedHeight: CGFloat = 135
 
     /// The home sheet's smallest detent; see `HomeCollapsedDetent`.
     static var homeCollapsedDetent: PresentationDetent { .custom(HomeCollapsedDetent.self) }
-
-    /// `HomeTabBar`'s 54pt capsule and the padding under it: 11pt, about its side
-    /// margin, so it sits evenly in the sheet's rounded bottom.
-    ///
-    /// Not less: with it, the collapsed sheet is as short as iOS 26 will draw a
-    /// floating sheet. A few points shorter (a detent under ~100pt on an iPhone 17
-    /// Pro) and it draws the sheet narrower and lifted off the bottom instead.
-    static let homeTabBarHeight: CGFloat = 65
-
-    /// `HomeSheetView`'s search row at the default text size: a body-metrics
-    /// capsule (~50pt: one line of text plus its 14pt vertical padding, top and
-    /// bottom) under the row's own 16pt top padding and
-    /// `HomeTabs.searchRowBottomPadding` under it. An estimate for the first
-    /// frame: `HomeCollapsedDetent` fits the row as measured.
-    static let homeSearchRowHeight: CGFloat = 71
 
     /// Height of the trip planner's tip detent — a "peek" rung that leaves the
     /// map dominant when the panel is minimized. OTPKit's

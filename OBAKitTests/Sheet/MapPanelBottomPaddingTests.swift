@@ -163,8 +163,8 @@ struct MapPanelBottomPaddingTests {
     }
 
     /// `MapPanelRootView` reads the height from `HomeSheetMetrics`; a change to the
-    /// measured search row has to redraw it.
-    @Test func `A new search row height in the home sheet metrics redraws the map`() {
+    /// measured header has to redraw it.
+    @Test func `A new header height in the home sheet metrics redraws the map`() {
         let metrics = HomeSheetMetrics()
         let redraws = OSAllocatedUnfairLock(initialState: 0)
         withObservationTracking {
@@ -173,10 +173,10 @@ struct MapPanelBottomPaddingTests {
             redraws.withLock { $0 += 1 }
         }
 
-        metrics.searchRowHeight = 120
+        metrics.headerHeight = 180
 
         #expect(redraws.withLock { $0 } == 1)
-        #expect(metrics.collapsedHeight == 120 + AppSheetRoute.homeTabBarHeight)
+        #expect(metrics.collapsedHeight == 180)
     }
 
     @Test func `Estimated height resolves tripPlannerTipHeight detent`() {

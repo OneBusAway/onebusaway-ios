@@ -423,11 +423,26 @@
 /* Title for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
 "home_sheet.empty_set.title" = "Aún no hay nada aquí";
 
+/* Title of a shortcut on the map panel's home sheet that opens the trip planner. Short: it sits under a small round icon. */
+"home_sheet.explore.plan_trip" = "Planificar Viaje";
+
+/* Title of a shortcut on the map panel's home sheet that shows or hides rental bikes and scooters on the map. Short: it sits under a small round icon. */
+"home_sheet.explore.rentals" = "Bicicletas y Patinetes";
+
+/* Header of a section on the map panel's home sheet that holds shortcuts to other features: the trip planner, bikes and scooters on the map, and alarms. */
+"home_sheet.explore.title" = "Explorar";
+
+/* A row at the end of the Nearby Stops section on the map panel's home sheet. It opens the full list of stops near the center of the map. */
+"home_sheet.nearby.all_stops" = "Todas las Paradas Cercanas";
+
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Muestra todos los elementos de esta sección.";
 
-/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
-"home_sheet.tab.home" = "Inicio";
+/* Title of the first filter on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is a chip in a row of four. */
+"home_sheet.tab.for_you" = "Para Ti";
+
+/* Title of a filter on the map panel's home sheet that lists the stops near the center of the map. Short: it is a chip in a row of four. */
+"home_sheet.tab.nearby" = "Cerca";
 
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Revise los ajustes de Actividades en Vivo en Configuración.";

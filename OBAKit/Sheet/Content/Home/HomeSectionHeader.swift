@@ -24,11 +24,7 @@ struct HomeSectionHeader: View {
     var body: some View {
         Button(action: onSeeAll) {
             HStack(spacing: 8) {
-                Text(title)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    // Use explicit .label color instead of .primary, which would be remapped to secondary by the List's muted treatment
-                    .foregroundStyle(Color(uiColor: .label))
+                HomeSectionTitle(title: title)
                 Spacer()
                 Image(systemName: "chevron.forward")
                     .font(.footnote)
@@ -48,6 +44,21 @@ struct HomeSectionHeader: View {
             value: "Shows all items in this section.",
             comment: "VoiceOver hint for a home sheet section header, which opens that section's full list."
         ))
+    }
+}
+
+/// A home sheet section's title. On its own where there is no index to open;
+/// `HomeSectionHeader` wraps it in the button where there is.
+struct HomeSectionTitle: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.title2)
+            .fontWeight(.bold)
+            // Use explicit .label color instead of .primary, which would be remapped to secondary by the List's muted treatment
+            .foregroundStyle(Color(uiColor: .label))
+            .accessibilityAddTraits(.isHeader)
     }
 }
 

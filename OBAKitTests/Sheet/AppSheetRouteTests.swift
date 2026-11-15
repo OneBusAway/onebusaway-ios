@@ -283,10 +283,10 @@ final class AppSheetRouteTests {
         #expect(AppSheetRoute.largeDetent == .fraction(0.99))
     }
 
-    @Test func `Home collapsed height estimate is the search row and the tab bar`() {
-        // The first-frame estimate, before the search row is measured; see
+    @Test func `Home collapsed height estimate is the search row and the chips`() {
+        // The first-frame estimate, before the header is measured; see
         // `HomeTabsTests`.
-        #expect(AppSheetRoute.homeCollapsedHeight == 136)
+        #expect(AppSheetRoute.homeCollapsedHeight == 135)
     }
 
     // MARK: - SheetDetentConfiguration defaults

@@ -9,6 +9,7 @@
 
 import SwiftUI
 import Testing
+import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -22,22 +23,39 @@ struct HomeTabsTests {
 
     // MARK: - Tabs
 
-    @Test func `The tabs run Home, Recent, Bookmarks, More`() {
-        #expect(HomeTab.allCases == [.home, .recent, .bookmarks, .more])
+    /// The filters under the search field, in the order they read: the mixed
+    /// view first, then one per section of it.
+    @Test func `The tabs run For You, Bookmarks, Nearby, Recent`() {
+        #expect(HomeTab.allCases == [.home, .bookmarks, .nearby, .recent])
     }
 
     /// The classic tab bar's titles, so the panel's tabs arrive translated.
-    @Test func `Recent, Bookmarks and More reuse the classic tabs' titles`() {
+    @Test func `Recent and Bookmarks reuse the classic tabs' titles`() {
         #expect(HomeTab.recent.title == OBAKit.OBALoc("recent_stops_controller.title", value: "Recent", comment: ""))
         #expect(HomeTab.bookmarks.title == OBAKit.OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: ""))
-        #expect(HomeTab.more.title == OBAKit.OBALoc("more_controller.title", value: "More", comment: ""))
-        #expect(HomeTab.home.title == OBAKit.OBALoc("home_sheet.tab.home", value: "Home", comment: ""))
     }
 
-    @Test func `Every tab has a distinct symbol`() {
-        let symbols = HomeTab.allCases.map(\.systemImage)
-        #expect(Set(symbols).count == symbols.count)
-        #expect(symbols.allSatisfy { UIImage(systemName: $0) != nil })
+    @Test func `For You and Nearby have titles of their own`() {
+        #expect(HomeTab.home.title == OBAKit.OBALoc("home_sheet.tab.for_you", value: "For You", comment: ""))
+        #expect(HomeTab.nearby.title == OBAKit.OBALoc("home_sheet.tab.nearby", value: "Nearby", comment: ""))
+    }
+
+    // MARK: - Nearby
+
+    /// The Nearby tab keeps its list, scroll position and search text between
+    /// visits, unless the map has moved to where other stops are near.
+    @Test func `Nearby recenters only once the map has moved away`() {
+        let here = CLLocationCoordinate2D(latitude: 47.6097, longitude: -122.3331)
+        // About 50 m and 550 m north.
+        let aStepAway = CLLocationCoordinate2D(latitude: 47.60975 + 0.0004, longitude: -122.3331)
+        let blocksAway = CLLocationCoordinate2D(latitude: 47.6147, longitude: -122.3331)
+
+        #expect(HomeTabs.nearbyAnchor(current: nil, mapCenter: here)?.latitude == here.latitude)
+        #expect(HomeTabs.nearbyAnchor(current: here, mapCenter: aStepAway)?.latitude == here.latitude)
+        #expect(HomeTabs.nearbyAnchor(current: here, mapCenter: blocksAway)?.latitude == blocksAway.latitude)
+        // The map's center lost, as before its first settle: stay put.
+        #expect(HomeTabs.nearbyAnchor(current: here, mapCenter: nil)?.latitude == here.latitude)
+        #expect(HomeTabs.nearbyAnchor(current: nil, mapCenter: nil) == nil)
     }
 
     // MARK: - Where they show
@@ -61,27 +79,19 @@ struct HomeTabsTests {
         #expect(HomeTabs.detent(afterSelectingFrom: AppSheetRoute.largeDetent) == nil)
     }
 
-    /// Collapsed, the sheet holds the search field and the tab bar under it, and no
-    /// more, so it reads as those two controls rather than a list cut off.
-    @Test func `The collapsed sheet is the search row plus the tab bar`() {
-        #expect(AppSheetRoute.homeCollapsedHeight == AppSheetRoute.homeSearchRowHeight + AppSheetRoute.homeTabBarHeight)
+    /// Collapsed, the sheet is the search field over the chips, whichever tab is
+    /// picked, and every tab hides its page: one peeking through a sliver under
+    /// the chips reads as cut off.
+    @Test func `The pages hide with less than a row of room under the header`() {
+        #expect(!HomeTabs.showsTabPages(showsTabs: true, pageHeight: 0))
+        #expect(!HomeTabs.showsTabPages(showsTabs: true, pageHeight: 30))
+        #expect(HomeTabs.showsTabPages(showsTabs: true, pageHeight: HomeTabs.minimumListRoom))
+        #expect(HomeTabs.showsTabPages(showsTabs: true, pageHeight: 400))
     }
 
-    /// Collapsed, the sheet is the search field over the bar, whichever tab is
-    /// picked: Home hides its list, Recent, Bookmarks and More their whole page. A
-    /// page peeking through the sliver over the bar reads as cut off.
-    @Test func `The pages hide with less than a row of room over the search row`() {
-        let search: CGFloat = 80
-        // Collapsed: the pages' area is the search row's height.
-        #expect(!HomeTabs.showsTabPages(showsTabs: true, pageHeight: search, searchRowHeight: search))
-        #expect(!HomeTabs.showsTabPages(showsTabs: true, pageHeight: search + 30, searchRowHeight: search))
-        #expect(HomeTabs.showsTabPages(showsTabs: true, pageHeight: search + HomeTabs.minimumListRoom, searchRowHeight: search))
-        #expect(HomeTabs.showsTabPages(showsTabs: true, pageHeight: 400, searchRowHeight: search))
-    }
-
-    /// Without tabs there's no bar for a page to peek against.
+    /// Without tabs there are no chips for a page to peek against.
     @Test func `Without tabs the page shows at any height`() {
-        #expect(HomeTabs.showsTabPages(showsTabs: false, pageHeight: 0, searchRowHeight: 80))
+        #expect(HomeTabs.showsTabPages(showsTabs: false, pageHeight: 0))
     }
 
     // MARK: - Polling
@@ -100,7 +110,7 @@ struct HomeTabsTests {
     /// A floating sheet stops short of the screen's edge and the home indicator
     /// may cross it, as in Find My, so the bar needs no room under it there; a
     /// sheet reaching the screen's edge does.
-    @Test func `The bar clears the home indicator only on a sheet reaching the screen's edge`() {
+    @Test func `A page clears the home indicator only on a sheet reaching the screen's edge`() {
         let screen = ScreenBottom(edge: 874, inset: 34)
         // Floating: 11 pt short of the edge, overlapping the indicator.
         #expect(HomeTabs.bottomClearance(sheetBottom: 863, screen: screen) == 0)
@@ -144,25 +154,32 @@ struct HomeTabsTests {
         #expect(HomeCollapsedDetent.height(.init(sheetExtra: 29.5)) == AppSheetRoute.homeCollapsedHeight - 29.5)
     }
 
-    /// Fitted to the search row as laid out, so the gap over the bar is the row's
-    /// own bottom padding at any text size, not that plus a fixed estimate's slack.
-    @Test func `The collapsed detent fits the measured search row`() {
-        #expect(HomeCollapsedDetent.height(.init(searchRowHeight: 90)) == 90 + AppSheetRoute.homeTabBarHeight)
-        #expect(HomeCollapsedDetent.height(.init(searchRowHeight: 90, sheetExtra: 26)) == 90 + AppSheetRoute.homeTabBarHeight - 26)
+    /// Fitted to the header as laid out, search field and chips, so both can
+    /// grow with the text size rather than be held to an estimate.
+    @Test func `The collapsed detent fits the measured header`() {
+        #expect(HomeCollapsedDetent.height(.init(headerHeight: 190)) == 190)
+        #expect(HomeCollapsedDetent.height(.init(headerHeight: 190, sheetExtra: 26)) == 164)
+    }
+
+    /// A shorter header, as on regular width, which has no chips: the system
+    /// draws a floating sheet much under this narrower and lifted off the bottom.
+    @Test func `The collapsed detent is never shorter than its estimate`() {
+        #expect(HomeCollapsedDetent.height(.init(headerHeight: 70)) == AppSheetRoute.homeCollapsedHeight)
+        #expect(HomeCollapsedDetent.height(.init(headerHeight: 70, sheetExtra: 26)) == AppSheetRoute.homeCollapsedHeight - 26)
     }
 
     // MARK: - See all
 
     /// With the tabs on screen, a section's header goes to its tab rather than
     /// stacking a second copy of it over the home sheet.
-    @Test func `Recent and Bookmarks headers go to their tabs`() {
+    @Test func `Bookmarks, Nearby and Recent headers go to their tabs`() {
         #expect(HomeTab(seeAll: .recentStopsAll) == .recent)
         #expect(HomeTab(seeAll: .bookmarksAll) == .bookmarks)
+        #expect(HomeTab(seeAll: .nearbyAll) == .nearby)
     }
 
-    /// Nearby has no tab: its header still opens the full list.
-    @Test func `Nearby has no tab`() {
-        #expect(HomeTab(seeAll: .nearbyAll) == nil)
+    @Test func `Other routes have no tab`() {
         #expect(HomeTab(seeAll: .home) == nil)
+        #expect(HomeTab(seeAll: .more) == nil)
     }
 }

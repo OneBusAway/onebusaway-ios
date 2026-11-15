@@ -30,6 +30,13 @@ final class HomeSheetViewModelTests: OBATestCase {
         queue.cancelAllOperations()
     }
 
+    /// The sections of the rider's own content. Explore follows any of them
+    /// wherever the region has a feature to offer, which the test region may.
+    @MainActor
+    private func contentSections(_ viewModel: HomeSheetViewModel) -> [HomeSheetSection] {
+        viewModel.visibleSections.filter { $0 != .explore }
+    }
+
     @MainActor
     private func makeViewModel(application: Application) -> HomeSheetViewModel {
         HomeSheetViewModel(
@@ -68,7 +75,7 @@ final class HomeSheetViewModelTests: OBATestCase {
         let viewModel = makeViewModel(application: application)
         viewModel.activate()
 
-        #expect(viewModel.visibleSections == [.recent])
+        #expect(contentSections(viewModel) == [.recent])
     }
 
     /// Both populated sections appear, nearby-before-recent order intact.
@@ -101,7 +108,7 @@ final class HomeSheetViewModelTests: OBATestCase {
         let viewModel = HomeSheetViewModel(application: application, stopsObserver: observer)
         viewModel.activate()
 
-        #expect(viewModel.visibleSections == [.nearby, .recent])
+        #expect(contentSections(viewModel) == [.nearby, .recent])
     }
 
     /// Nearby and recent both cap at the shared limit when composed through the
@@ -169,7 +176,7 @@ final class HomeSheetViewModelTests: OBATestCase {
 
         let viewModel = makeViewModel(application: application)
         viewModel.activate()
-        try #require(viewModel.visibleSections == [.recent])
+        try #require(contentSections(viewModel) == [.recent])
 
         let counter = ChangeCounter()
         let cancellable = viewModel.objectWillChange.sink { _ in counter.increment() }
@@ -184,7 +191,7 @@ final class HomeSheetViewModelTests: OBATestCase {
 
         // The model saw it...
         #expect(viewModel.recent.stops.first?.id == second.id)
-        #expect(viewModel.visibleSections == [.recent], "Precondition: visibility must not have changed")
+        #expect(contentSections(viewModel) == [.recent], "Precondition: visibility must not have changed")
         // ...so the view must have been given a reason to re-read it.
         #expect(counter.count > 0, "A section content change did not invalidate the view model")
     }
@@ -271,14 +278,15 @@ final class HomeSheetViewModelTests: OBATestCase {
     /// the way into it. A rider with an alarm and no recent stops still needs
     /// that way in.
     @Test @MainActor
-    func `An alarm keeps the Recent section on home without recent stops`() throws {
+    func `An alarm puts an Alarms shortcut in Explore, without recent stops`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         _ = try RecentStopsSheetViewTests.seedAlarm(id: "1", application: application)
 
         let viewModel = makeViewModel(application: application)
 
         #expect(viewModel.recent.alarmCount == 1)
-        #expect(viewModel.visibleSections == [.recent])
+        #expect(viewModel.exploreItems.last == .alarms(count: 1))
+        #expect(viewModel.visibleSections == [.explore])
     }
 
     /// The UIKit map lists recent high-severity agency alerts above nearby
@@ -305,6 +313,39 @@ final class HomeSheetViewModelTests: OBATestCase {
         let viewModel = makeViewModel(application: application)
 
         #expect(viewModel.alerts.alerts.map(\.id) == ["test-recent-high-severity"])
-        #expect(viewModel.visibleSections == [.alerts, .recent])
+        #expect(viewModel.visibleSections == [.alerts, .explore])
+    }
+
+    /// Bookmarks lead: they are the one section the rider chose, and the only
+    /// one that answers "when is my bus" without a tap.
+    @Test @MainActor
+    func `Bookmarks come before recent stops, and Explore last`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
+        application.userDataStore.addRecentStop(stop, region: Fixtures.pugetSoundRegion)
+        application.userDataStore.add(
+            Bookmark(name: "Home stop", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop),
+            to: nil
+        )
+        _ = try RecentStopsSheetViewTests.seedAlarm(id: "1", application: application)
+
+        let viewModel = makeViewModel(application: application)
+        viewModel.activate()
+
+        #expect(viewModel.visibleSections == [.bookmarks, .recent, .explore])
+    }
+
+    /// Shortcuts to features aren't content: alone, they'd keep a first launch
+    /// from ever saying "Nothing Here Yet".
+    @Test @MainActor
+    func `Explore does not show on its own without alarms`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+
+        let viewModel = makeViewModel(application: application)
+        viewModel.activate()
+
+        #expect(viewModel.recent.alarmCount == 0)
+        #expect(!viewModel.visibleSections.contains(.explore))
     }
 }

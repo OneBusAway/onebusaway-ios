@@ -23,6 +23,8 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
 
     let alerts: HomeAlertsSectionModel
     let nearby: HomeNearbyStopsSectionModel
+    /// What leaves from the stops `nearby` holds; see `HomeNearbyDepartures`.
+    let nearbyDepartures: HomeNearbyDeparturesSectionModel
     let recent: HomeRecentStopsSectionModel
     let bookmarks: HomeBookmarksSectionModel
 
@@ -43,7 +45,10 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// sections are dropped entirely — header included.
     @Published private(set) var visibleSections: [HomeSheetSection] = []
 
-    /// Whether the sheet knows enough to say the three sections are genuinely
+    /// The Explore row's shortcuts; see `HomeExploreItem`.
+    @Published private(set) var exploreItems: [HomeExploreItem] = []
+
+    /// Whether the sheet knows enough to say its sections are genuinely
     /// empty. False until the map's first camera settle.
     ///
     /// Recents and bookmarks are read from the store synchronously in the
@@ -63,7 +68,11 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         self.alerts = HomeAlertsSectionModel(alertsStore: application.alertsStore)
         self.nearby = HomeNearbyStopsSectionModel(observer: stopsObserver)
         self.recent = HomeRecentStopsSectionModel(application: application)
-        self.bookmarks = HomeBookmarksSectionModel(application: application)
+        let bookmarks = HomeBookmarksSectionModel(application: application)
+        self.bookmarks = bookmarks
+        self.nearbyDepartures = HomeNearbyDeparturesSectionModel(application: application) { [weak bookmarks] in
+            Set((bookmarks?.selection ?? []).compactMap(TripBookmarkKey.init(bookmark:)))
+        }
         super.init()
 
         // `RegionsService` holds delegates weakly, so there's nothing to unregister.
@@ -86,6 +95,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         Publishers.MergeMany(
             alerts.objectWillChange,
             nearby.objectWillChange,
+            nearbyDepartures.objectWillChange,
             recent.objectWillChange,
             bookmarks.objectWillChange
         )
@@ -102,21 +112,51 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
             }
             .store(in: &cancellables)
 
+        // The departures model works from the same stops the nearby model picks.
+        nearby.$stops
+            .sink { [weak self] stops in self?.nearbyDepartures.stops = stops }
+            .store(in: &cancellables)
+
+        // A bookmark added or removed changes which departures Nearby leaves to
+        // the cards above it.
+        bookmarks.$rows
+            .map { $0.map(\.id) }
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] _ in self?.nearbyDepartures.rebuildRows() }
+            .store(in: &cancellables)
+
+        // The map's layers come and go with the region, and are switched from
+        // the Map sheet as well as from Explore.
+        Publishers.Merge(
+            NotificationCenter.default.publisher(for: .mapLayerAvailabilityDidChange),
+            NotificationCenter.default.publisher(for: .mapLayerEnabledStateDidChange)
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in self?.updateExploreItems() }
+        .store(in: &cancellables)
+
         // Recompute the visible set whenever any child's content changes. The
         // children publish values, not the section list, so this is the single
         // place the order and the omission rule live.
         nearby.$stops
-            .combineLatest(recent.$stops, recent.$alarmCount, bookmarks.$rows)
-            .combineLatest(alerts.$alerts)
-            .sink { [weak self] content, alerts in
-                let (nearbyStops, recentStops, alarmCount, bookmarkRows) = content
+            .combineLatest(recent.$stops, bookmarks.$rows)
+            .combineLatest(alerts.$alerts, $exploreItems)
+            .sink { [weak self] content, alerts, exploreItems in
+                let (nearbyStops, recentStops, bookmarkRows) = content
                 self?.updateVisibleSections(
                     hasAlerts: !alerts.isEmpty,
+                    hasBookmarks: !bookmarkRows.isEmpty,
                     hasNearby: !nearbyStops.isEmpty,
-                    hasRecent: !recentStops.isEmpty || alarmCount > 0,
-                    hasBookmarks: !bookmarkRows.isEmpty
+                    hasRecent: !recentStops.isEmpty,
+                    explore: exploreItems
                 )
             }
+            .store(in: &cancellables)
+
+        recent.$alarmCount
+            .removeDuplicates()
+            .sink { [weak self] count in self?.updateExploreItems(alarmCount: count) }
             .store(in: &cancellables)
     }
 
@@ -132,16 +172,83 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         alerts.reload()
         recent.reload()
         bookmarks.loadIfNeeded()
+        // A countdown moves without a fetch, so the rows are rebuilt each poll.
+        nearbyDepartures.loadIfNeeded()
+        nearbyDepartures.rebuildRows()
     }
 
-    private func updateVisibleSections(hasAlerts: Bool, hasNearby: Bool, hasRecent: Bool, hasBookmarks: Bool) {
+    /// Explore's shortcuts to features don't make the sheet non-empty: alone,
+    /// they would replace "Nothing Here Yet" with a row of buttons on a first
+    /// launch. So Explore shows beside another section, or when it has something
+    /// of the rider's own, their alarms.
+    private func updateVisibleSections(
+        hasAlerts: Bool,
+        hasBookmarks: Bool,
+        hasNearby: Bool,
+        hasRecent: Bool,
+        explore: [HomeExploreItem]
+    ) {
         var sections: [HomeSheetSection] = []
         if hasAlerts { sections.append(.alerts) }
+        if hasBookmarks { sections.append(.bookmarks) }
         if hasNearby { sections.append(.nearby) }
         if hasRecent { sections.append(.recent) }
-        if hasBookmarks { sections.append(.bookmarks) }
+        let hasAlarms = explore.contains { if case .alarms = $0 { true } else { false } }
+        if !explore.isEmpty, hasAlarms || !sections.isEmpty { sections.append(.explore) }
         guard sections != visibleSections else { return }
         visibleSections = sections
+    }
+
+    // MARK: - Explore
+
+    /// The map's bike and scooter layers that this region can show.
+    private var rentalLayers: [MapLayer] {
+        application.mapRegionManager.mapLayers.filter { $0.group == .otherModes && $0.availability != .unsupported }
+    }
+
+    /// Whether the bike and scooter layers are on, or `nil` in a region with
+    /// none. On when any is: the tile then switches them all off.
+    private var rentalsEnabled: Bool? {
+        let layers = rentalLayers
+        guard !layers.isEmpty else { return nil }
+        return layers.contains { application.mapRegionManager.isMapLayerEnabled(id: $0.id) }
+    }
+
+    /// - Parameter alarmCount: The count being published, when called from its
+    ///   own `willSet`, where the model still holds the old one.
+    private func updateExploreItems(alarmCount: Int? = nil) {
+        let items = HomeExploreItem.items(
+            offersTripPlanning: offersTripPlanning,
+            rentalsEnabled: rentalsEnabled,
+            alarmCount: alarmCount ?? recent.alarmCount
+        )
+        guard items != exploreItems else { return }
+        exploreItems = items
+    }
+
+    /// Shows the map's bikes and scooters, or hides them if any are showing.
+    /// The layers post their change, which is what redraws the tile.
+    func toggleRentals() {
+        let turnOn = rentalsEnabled == false
+        for layer in rentalLayers {
+            application.mapRegionManager.setMapLayerEnabled(turnOn, id: layer.id)
+        }
+        updateExploreItems()
+    }
+
+    /// Where the Nearby tab's list is centered: the map's, as the section's
+    /// stops are.
+    var nearbyCoordinate: CLLocationCoordinate2D? {
+        NearbyCoordinateResolver.coordinate(
+            viewportCenter: nearby.viewportCenter,
+            currentLocation: application.locationService.currentLocation,
+            region: application.currentRegion
+        )
+    }
+
+    /// The rider's location, for the Nearby rows' walk times.
+    var currentLocation: CLLocation? {
+        application.locationService.currentLocation
     }
 
     // MARK: - RegionsServiceDelegate
@@ -150,6 +257,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         alerts.reload()
         searchPlaceholder = SearchPlaceholder.text(for: application)
         offersTripPlanning = application.features.tripPlanning == .running
+        updateExploreItems()
         // Which recents and bookmarks are "current" changed, and neither store
         // posts a notification for it.
         recent.reload()
