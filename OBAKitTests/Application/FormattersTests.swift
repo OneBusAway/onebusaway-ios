@@ -250,6 +250,32 @@ final class FormattersTests: OBATestCase {
         #expect(!label.hasPrefix("Routes:"))
     }
 
+    // MARK: - Map route pill (panel map)
+
+    @Test func `Map route label sorts numerically like the stop page`() throws {
+        let routes = try makeRoutes(shortNames: ["372", "75", "65"])
+        let label = try #require(Formatters.mapRouteLabel(routes))
+        #expect(label.routeNames == ["65", "75", "372"])
+        #expect(label.overflowCount == 0)
+        #expect(label.overflowText == nil)
+        #expect(label.segments == ["65", "75", "372"])
+    }
+
+    @Test func `Map route label counts the routes past the limit`() throws {
+        let routes = try makeRoutes(shortNames: ["372", "65", "75", "10", "20"])
+        let label = try #require(Formatters.mapRouteLabel(routes, limit: 3))
+        #expect(label.routeNames == ["10", "20", "65"])
+        #expect(label.overflowCount == 2)
+        #expect(label.overflowText == "+2")
+        #expect(label.segments == ["10", "20", "65", "+2"])
+    }
+
+    @Test func `Map route label is nil without routes`() throws {
+        #expect(Formatters.mapRouteLabel([]) == nil)
+        let routes = try makeRoutes(shortNames: ["10"])
+        #expect(Formatters.mapRouteLabel(routes, limit: 0) == nil)
+    }
+
     /// Home/Recent use `Stop.subtitle` (`"Routes: …"` with every route), not
     /// the map's truncated route list.
     @Test func `Stop subtitle lists every route without truncating`() throws {

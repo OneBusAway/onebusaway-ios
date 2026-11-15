@@ -340,6 +340,9 @@
 /* Describes an on-time departure. e.g. departed on time. */
 "formatters.deviation.departure_past_on_time" = "정시에 출발함";
 
+/* Last segment of a stop's route label on the map, counting the routes that didn't fit. The argument is the number of hidden routes. e.g. '+2' after '65 | 75 | 372' */
+"formatters.map_route_pill_overflow_fmt" = "+%d";
+
 /* Overflowing map-pin route list. The argument is the visible names; U+2026 marks that more routes exist. e.g. '10, 12, 49…' */
 "formatters.map_routes_overflow_fmt" = "%@…";
 

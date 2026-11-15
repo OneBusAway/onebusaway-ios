@@ -193,6 +193,14 @@ struct MapPanelRootView: View {
     /// `shouldHideExtraStopAnnotationData` gate).
     @State private var showStopLabels = false
 
+    /// Where each stop's label sits, from `MapStopLabelLayout`. Recomputed when
+    /// the camera settles or the stops, selection or text size change; a stop
+    /// missing here keeps its label below the pin.
+    @State private var stopLabelPlacements: [StopID: MapStopLabelPlacement] = [:]
+
+    /// The settled camera heading, so curbside labels follow a rotated map.
+    @State private var cameraHeading: Double = 0
+
     /// Set when the first location fix arrives; cleared once the map has
     /// actually been recentered. Needed because the fix can precede the Map's
     /// first reported (non-zero) size, in which case the recenter must be
@@ -211,6 +219,8 @@ struct MapPanelRootView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var cameraPosition: MapCameraPosition = .userLocation(fallback: .automatic)
@@ -397,7 +407,7 @@ struct MapPanelRootView: View {
                 stopAnnotation(
                     for: bookmark.stop,
                     isBookmarked: true,
-                    label: bookmark.name,
+                    label: .name(bookmark.name),
                     accessibilityLabel: Formatters.formattedAccessibilityLabel(
                         stop: bookmark.stop,
                         bookmarkName: bookmark.name
@@ -408,16 +418,12 @@ struct MapPanelRootView: View {
             // bookmarked stops and precomputes labels. Suppress them if a search
             // result, a planned trip or an open trip is drawn, as those take over
             // the map.
-            if isZoomedInForStops,
-               layersModel.isStopsLayerEnabled,
-               !searchDisplay.suppressesAmbientStops,
-               !tripPlannerDisplay.isShowingTrip,
-               !tripFocusDisplay.isShowingTrip {
+            if showsAmbientStops {
                 ForEach(stopsObserver.renderStops) { renderStop in
                     stopAnnotation(
                         for: renderStop.stop,
                         isBookmarked: false,
-                        label: renderStop.title,
+                        label: .routes(renderStop.routeLabel),
                         accessibilityLabel: renderStop.accessibilityLabel
                     )
                 }
@@ -449,7 +455,8 @@ struct MapPanelRootView: View {
             guard let coordinate = proxy.convert(point, from: .local) else { return }
             dropPin(at: coordinate)
         })
-        }
+        // Inside the `MapReader`, unlike the modifiers after it, because label
+        // placement needs `proxy` to find each stop on screen.
         .onMapCameraChange(frequency: .onEnd) { context in
             // Without a size there's no scale, and nothing to compensate with
             // until the next settle.
@@ -461,6 +468,7 @@ struct MapPanelRootView: View {
             viewportRecorder.record(context.rect)
             visibleRegion = context.region
             visibleMapRectHeight = context.rect.height
+            cameraHeading = context.camera.heading
             // Feed the visible region to the trip planner display model so it can
             // frame results and answer region queries.
             tripPlannerDisplay.updateVisibleRegion(context.region)
@@ -493,6 +501,7 @@ struct MapPanelRootView: View {
                 return
             }
             recomputeStopLabels()
+            layoutStopLabels(using: proxy)
             // Both keep running with the stops layer off, like the UIKit map:
             // its `isStopsLayerEnabled` guard still arms the request timer,
             // because the nearby stops list reads `mapRegionManager.stops`
@@ -504,13 +513,19 @@ struct MapPanelRootView: View {
                   !tripFocusDisplay.isShowingTrip else { return }
             application.mapRegionManager.scheduleStopsRequest(in: context.region)
         }
-        // The map-type toggle changes the label gate (labels only show on the
-        // standard map), but doesn't move the camera — re-evaluate here so labels
-        // don't stay stale until the user next pans. The UIKit path has no
-        // equivalent hook: it only re-applies `isHidingExtraStopAnnotationData`
-        // from `reloadStopAnnotations`, i.e. on a region change.
-        .onChange(of: mapViewModel.mapType) { _, _ in
-            recomputeStopLabels()
+        // Stops arrive after the camera settles, and selection and text size
+        // change without it moving: lay labels out again for each.
+        .modifier(StopLabelLayoutTriggers(inputs: .init(
+            stopIDs: stopsObserver.renderStops.map(\.id),
+            routeLabels: stopsObserver.renderStops.map(\.routeLabel),
+            bookmarkIDs: stopsObserver.bookmarks.map(\.stop.id),
+            selection: mapSelection,
+            showsLabels: showStopLabels,
+            showsAmbientStops: showsAmbientStops,
+            dynamicTypeSize: dynamicTypeSize
+        )) {
+            layoutStopLabels(using: proxy)
+        })
         }
         // Switching Bikes on while zoomed out must raise the rental hint now, not
         // at the next camera settle. Every layer toggle moves the badge count.
@@ -777,30 +792,153 @@ struct MapPanelRootView: View {
         }
     }
 
-    /// A stop pin with an optional under-pin `label`. The empty `Annotation`
-    /// title suppresses MapKit's callout (a11y is on the icon); the visible
-    /// label is our own view below.
+    /// What a stop pin shows next to it.
+    enum StopPinLabel {
+        /// A bookmark's name, in outlined text below the pin.
+        case name(String?)
+        /// A stop's routes, in a fused pill placed by `MapStopLabelLayout`.
+        case routes(MapRouteLabel?)
+    }
+
+    /// A stop pin with an optional label. The empty `Annotation` title
+    /// suppresses MapKit's callout; VoiceOver reads `accessibilityLabel` on the
+    /// icon, which already includes the stop's full route list, so the visible
+    /// labels are hidden from it.
     @MapContentBuilder
     private func stopAnnotation(
         for stop: Stop,
         isBookmarked: Bool,
-        label: String?,
+        label: StopPinLabel,
         accessibilityLabel: String
     ) -> some MapContent {
         Annotation("", coordinate: stop.coordinate) {
-            Image(uiImage: application.stopIconFactory.buildSquircleIcon(
+            let pin = Image(uiImage: application.stopIconFactory.buildSquircleIcon(
                 for: stop,
                 isBookmarked: isBookmarked,
                 traits: UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
             ))
-            .accessibilityLabel(accessibilityLabel)
-            // Offset past the 48pt icon so the label sits below the pin.
-            .overlay(alignment: .top) {
-                stopLabel(label)
-                    .offset(y: ThemeMetrics.defaultMapAnnotationSize + 2)
+
+            pin.mapPinLabel(
+                placement: stopLabelPlacements[stop.id] ?? .below,
+                contentLayoutDirection: layoutDirection
+            ) {
+                switch label {
+                case .name(let name):
+                    stopLabel(name)
+                case .routes(let routeLabel):
+                    if showStopLabels, let routeLabel {
+                        MapRoutePill(label: routeLabel)
+                            .allowsHitTesting(false)
+                    }
+                }
             }
+            // One element per stop: inside a map annotation the labels' own
+            // `accessibilityHidden` didn't keep their text out of VoiceOver.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel)
         }
         .tag(MapPinSelection.stop(stop.id))
+    }
+
+    /// Whether ambient (non-bookmarked) stops draw. Hidden while a search
+    /// result, a planned trip or an open trip takes over the map.
+    private var showsAmbientStops: Bool {
+        isZoomedInForStops
+            && layersModel.isStopsLayerEnabled
+            && !searchDisplay.suppressesAmbientStops
+            && !tripPlannerDisplay.isShowingTrip
+            && !tripFocusDisplay.isShowingTrip
+    }
+
+    /// Finds each on-screen stop with `proxy` and decides where its label goes,
+    /// so labels stay below their pins unless that would overlap something.
+    private func layoutStopLabels(using proxy: MapProxy) {
+        guard showStopLabels, mapSize.width > 0, mapSize.height > 0 else {
+            if !stopLabelPlacements.isEmpty { stopLabelPlacements = [:] }
+            return
+        }
+        // A margin as wide as the widest label (3.5 pins, the spec's cap), so a
+        // label reaching in from a pin just off screen still blocks one on it.
+        let margin = -MapStopLabelLayout().pinSize * 3.5
+        let bounds = CGRect(origin: .zero, size: mapSize).insetBy(dx: margin, dy: margin)
+
+        var selectedStopID: StopID?
+        if case .stop(let id) = mapSelection { selectedStopID = id }
+
+        // Bookmarks always keep their name below the pin (no direction, so no
+        // curbside move); they take part so route pills avoid them. The
+        // selected stop's pill is required too.
+        var pins: [LabeledPin] = stopsObserver.bookmarks.map { bookmark in
+            LabeledPin(
+                stop: bookmark.stop,
+                labelSize: bookmark.name.isEmpty ? nil : Self.bookmarkLabelSize(bookmark.name),
+                direction: .unknown,
+                isRequired: true
+            )
+        }
+        if showsAmbientStops {
+            pins += stopsObserver.renderStops.map { renderStop in
+                let size = renderStop.routeLabel.map {
+                    MapRoutePill.estimatedSize(for: $0, dynamicTypeSize: dynamicTypeSize)
+                }
+                return LabeledPin(
+                    stop: renderStop.stop,
+                    labelSize: size,
+                    direction: renderStop.stop.direction,
+                    isRequired: renderStop.id == selectedStopID
+                )
+            }
+        }
+
+        var candidates: [MapStopLabelLayout.Candidate] = []
+        var unlabeledPins: [CGPoint] = []
+        for pin in pins {
+            guard let point = proxy.convert(pin.stop.coordinate, to: .local), bounds.contains(point) else { continue }
+            guard let labelSize = pin.labelSize else {
+                unlabeledPins.append(point)
+                continue
+            }
+            candidates.append(.init(
+                id: pin.stop.id,
+                center: point,
+                labelSize: labelSize,
+                direction: pin.direction,
+                isRequired: pin.isRequired
+            ))
+        }
+
+        let placements = MapStopLabelLayout().layout(
+            candidates,
+            obstaclePins: unlabeledPins,
+            viewportCenter: CGPoint(x: mapSize.width / 2, y: mapSize.height / 2),
+            heading: cameraHeading,
+            previous: stopLabelPlacements
+        )
+        if placements != stopLabelPlacements {
+            stopLabelPlacements = placements
+        }
+    }
+
+    /// A pin on screen and its label, before projection: the input to
+    /// `layoutStopLabels`. `labelSize` is `nil` for a pin with no label.
+    private struct LabeledPin {
+        let stop: Stop
+        let labelSize: CGSize?
+        let direction: Direction
+        let isRequired: Bool
+    }
+
+    /// The bookmark name label's font and outline, shared by `stopLabel` and
+    /// `bookmarkLabelSize` so drawing and measuring can't drift apart.
+    private static let bookmarkLabelFont = UIFont.systemFont(ofSize: 11, weight: .bold)
+    private static let bookmarkLabelOutlineWidth: CGFloat = 1
+
+    /// The size of a bookmark's name label (`stopLabel`). Measured on one line:
+    /// `fixedSize()` gives the label its ideal, unwrapped width.
+    private static func bookmarkLabelSize(_ name: String) -> CGSize {
+        let size = (name as NSString).size(withAttributes: [.font: bookmarkLabelFont])
+        let ring = bookmarkLabelOutlineWidth * 2
+        return CGSize(width: ceil(size.width) + ring, height: ceil(bookmarkLabelFont.lineHeight) + ring)
     }
 
     private func tag(for item: RentalMapItem) -> MapPinSelection {
@@ -844,20 +982,20 @@ struct MapPanelRootView: View {
     }
 
     /// Re-evaluates `showStopLabels` from the last settled viewport height and
-    /// the current map type / labels default. Called both from the camera-change
-    /// handler and whenever the map type flips, so a toggle updates labels
-    /// immediately rather than on the next pan. Zoomed-out viewports keep labels
-    /// off (bookmark pins shouldn't carry labels over the whole-region map).
+    /// the labels default. Called from the camera-change handler. Zoomed-out
+    /// viewports keep labels off (bookmark pins shouldn't carry labels over the
+    /// whole-region map).
     private func recomputeStopLabels() {
         guard isZoomedInForStops, let rectHeight = visibleMapRectHeight else {
             showStopLabels = false
             return
         }
-        showStopLabels = MapRegionManager.shouldShowStopAnnotationLabels(
-            forVisibleMapRectHeight: rectHeight,
-            isStandardMapType: mapViewModel.mapType == .standard,
-            showLabelsDefault: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
-        )
+        // Same zoom threshold and Settings toggle as the classic map, but no
+        // standard-map-type check: the opaque route pill (and the outlined
+        // bookmark names) stay legible on satellite imagery, where the classic
+        // map's stroked text doesn't.
+        showStopLabels = MapRegionManager.shouldShowExtraStopData(forVisibleMapRectHeight: rectHeight)
+            && application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
     }
 
     /// The under-pin label, bold with a `systemBackground` outline so it reads
@@ -867,9 +1005,9 @@ struct MapPanelRootView: View {
         if showStopLabels, let label, !label.isEmpty {
             // `Text` can't render a glyph stroke, so approximate the UIKit map's
             // stroked label with a `systemBackground` outline ring.
-            MapLabelOutline(color: Color(uiColor: .systemBackground)) {
+            MapLabelOutline(color: Color(uiColor: .systemBackground), width: Self.bookmarkLabelOutlineWidth) {
                 Text(label)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(Font(Self.bookmarkLabelFont))
                     .foregroundStyle(Color(uiColor: .label))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -1413,4 +1551,29 @@ extension MapPanelRootView {
 private final class RegionMismatchCameraActions: ObservableObject {
     @Published var applyLaunch = false
     @Published var showSelectedServiceRect = false
+}
+
+// MARK: - Stop label layout triggers
+
+/// Calls `relayout` when anything other than the camera changes where stop
+/// labels go. Its own modifier so `MapPanelRootView.body` stays inside the
+/// type checker's budget.
+private struct StopLabelLayoutTriggers: ViewModifier {
+    struct Inputs: Equatable {
+        let stopIDs: [StopID]
+        /// A stop can keep its ID but gain a route, which widens its pill.
+        let routeLabels: [MapRouteLabel?]
+        let bookmarkIDs: [StopID]
+        let selection: MapPinSelection?
+        let showsLabels: Bool
+        let showsAmbientStops: Bool
+        let dynamicTypeSize: DynamicTypeSize
+    }
+
+    let inputs: Inputs
+    let relayout: () -> Void
+
+    func body(content: Content) -> some View {
+        content.onChange(of: inputs) { _, _ in relayout() }
+    }
 }
