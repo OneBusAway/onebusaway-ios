@@ -24,17 +24,24 @@ import Foundation
 public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     private weak var regionsService: RegionsService?
     private let store: ResolvedRegionStore
-    private let userDefaults: UserDefaults
+    private var userDefaults: UserDefaults
 
-    public init(regionsService: RegionsService, store: ResolvedRegionStore, userDefaults: UserDefaults? = nil) {
+    public init(regionsService: RegionsService, store: ResolvedRegionStore) {
         self.regionsService = regionsService
         self.store = store
-        self.userDefaults = userDefaults ?? store.userDefaults
+        self.userDefaults = store.userDefaults
         super.init()
 
         // `RegionsService` holds its delegates weakly; the owner retains us.
         regionsService.addDelegate(self)
         persist()
+    }
+
+    public convenience init(regionsService: RegionsService, store: ResolvedRegionStore, userDefaults: UserDefaults?) {
+        self.init(regionsService: regionsService, store: store)
+        if let userDefaults {
+            self.userDefaults = userDefaults
+        }
     }
 
     /// Writes the current region, or clears the store when there is no current selection.

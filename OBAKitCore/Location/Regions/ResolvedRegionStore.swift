@@ -71,6 +71,7 @@ public struct ResolvedRegionStore {
 
         guard
             let identifier = storedIdentifier,
+            !RegionsService.isDroppedRegionIdentifier(identifier, userDefaults: userDefaults),
             let path = bundledRegionsFilePath,
             let data = FileManager.default.contents(atPath: path)
         else {

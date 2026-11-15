@@ -48,6 +48,20 @@ private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     }
 }
 
+private struct TestRegionsRESTResponse: Encodable {
+    struct DataPayload: Encodable {
+        let list: [Region]
+    }
+    var code: Int = 200
+    var text: String = "OK"
+    var version: Int = 3
+    let data: DataPayload
+
+    init(regions: [Region]) {
+        self.data = DataPayload(list: regions)
+    }
+}
+
 // MARK: - Test Case
 
 @Suite(.serialized)
@@ -73,12 +87,16 @@ final class RegionsServiceTests: OBATestCase {
 
     // MARK: - Convenience builder
 
-    private func makeRegionsService(delegate: RegionsServiceTestDelegate? = nil) -> RegionsService {
+    private func makeRegionsService(
+        delegate: RegionsServiceTestDelegate? = nil,
+        bundledRegionsPath: String? = nil,
+        locationService: LocationService? = nil
+    ) -> RegionsService {
         RegionsService(
             apiService: regionsAPIService,
-            locationService: locationService,
+            locationService: locationService ?? self.locationService,
             userDefaults: userDefaults,
-            bundledRegionsFilePath: bundledRegionsPath,
+            bundledRegionsFilePath: bundledRegionsPath ?? self.bundledRegionsPath,
             apiPath: regionsPath,
             fileStorage: mockFileStorage,
             delegate: delegate
@@ -521,43 +539,42 @@ final class RegionsServiceTests: OBATestCase {
     @Test func `Successful refresh missing stored region returns nil and clears cached copy`() async throws {
         let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
         let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        let mtaNewYork = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "MTA New York" }))
 
         userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
 
+        let noLocationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         store.write(tampa)
 
         // Seed bundle with only Tampa
         let tampaBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
-        let tampaData = try JSONEncoder.RESTEncoder().encode(RESTAPIResponse(code: 200, text: "OK", version: 3, data: [tampa]))
+        let tampaData = try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [tampa]))
         try tampaData.write(to: tampaBundle, options: .atomic)
         defer { try? FileManager.default.removeItem(at: tampaBundle) }
 
-        stubRegionsJustPugetSound(dataLoader: dataLoader)
+        let path = regionsAPIPath
+        let multiRegionData = try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [pugetSound, mtaNewYork]))
+        dataLoader.mock(data: multiRegionData, statusCode: 200) { $0.url?.path == path }
 
-        let regionsService = RegionsService(
-            apiService: regionsAPIService,
-            locationService: locationService,
-            userDefaults: userDefaults,
-            bundledRegionsFilePath: tampaBundle.path,
-            apiPath: regionsAPIPath,
-            fileStorage: mockFileStorage,
-            delegate: testDelegate
+        let regionsService = makeRegionsService(
+            delegate: testDelegate,
+            bundledRegionsPath: tampaBundle.path,
+            locationService: noLocationService
         )
-
         let persister = ResolvedRegionPersister(regionsService: regionsService, store: store)
 
         // Before refresh, currentRegion is Tampa
         #expect(regionsService.currentRegion?.regionIdentifier == tampa.regionIdentifier)
         #expect(store.storedRegion?.regionIdentifier == tampa.regionIdentifier)
 
-        // Perform successful refresh which only contains Puget Sound (Tampa is retired)
+        // Perform successful refresh which contains Puget Sound and MTA New York (Tampa is retired)
         await regionsService.updateRegionsList(forceUpdate: true)
 
         #expect(!regionsService.lastRefreshFailed)
-        #expect(regionsService.regions.count == 1)
-        #expect(regionsService.regions.first?.regionIdentifier == pugetSound.regionIdentifier)
+        #expect(regionsService.regions.count == 2)
+        #expect(!regionsService.regions.contains(where: { $0.regionIdentifier == tampa.regionIdentifier }))
 
         // After successful refresh, currentRegion must be nil and cached copy cleared
         #expect(regionsService.currentRegion == nil)
@@ -565,11 +582,65 @@ final class RegionsServiceTests: OBATestCase {
         withExtendedLifetime(persister) {}
     }
 
+    @Test func `Retired region stays gone after relaunch without network refresh`() async throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        let mtaNewYork = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "MTA New York" }))
+
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        let noLocationService = LocationService(userDefaults: userDefaults, locationManager: LocationManagerMock())
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(tampa)
+
+        let tampaBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        let tampaData = try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [tampa]))
+        try tampaData.write(to: tampaBundle, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: tampaBundle) }
+
+        let path = regionsAPIPath
+        let multiRegionData = try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [pugetSound, mtaNewYork]))
+        dataLoader.mock(data: multiRegionData, statusCode: 200) { $0.url?.path == path }
+
+        let regionsService = makeRegionsService(
+            delegate: testDelegate,
+            bundledRegionsPath: tampaBundle.path,
+            locationService: noLocationService
+        )
+        let persister = ResolvedRegionPersister(regionsService: regionsService, store: store)
+        await regionsService.updateRegionsList(forceUpdate: true)
+        withExtendedLifetime(persister) {}
+
+        // Second RegionsService against same UserDefaults/fileStorage with no network refresh
+        let secondRegionsService = makeRegionsService(
+            delegate: testDelegate,
+            bundledRegionsPath: tampaBundle.path,
+            locationService: noLocationService
+        )
+        let secondPersister = ResolvedRegionPersister(regionsService: secondRegionsService, store: store)
+
+        // Retired region stays gone after relaunch without network refresh
+        #expect(secondRegionsService.currentRegion == nil)
+        #expect(store.storedRegion == nil)
+
+        // Even after a failed refresh later in the session, retired region stays gone
+        dataLoader.removeMappedResponses()
+        let failurePath = regionsAPIPath
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == failurePath }
+        await secondRegionsService.updateRegionsList(forceUpdate: true)
+        #expect(secondRegionsService.lastRefreshFailed)
+        #expect(secondRegionsService.currentRegion == nil)
+        #expect(store.storedRegion == nil)
+        withExtendedLifetime(secondPersister) {}
+    }
+
     @Test func `Failed refresh preserves cached region fallback`() async throws {
         let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
 
         userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
 
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         store.write(tampa)
@@ -639,6 +710,7 @@ final class RegionsServiceTests: OBATestCase {
 
         userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
 
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         store.write(tampa)
@@ -673,6 +745,7 @@ final class RegionsServiceTests: OBATestCase {
         let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
         userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
 
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         store.write(tampa)
@@ -752,6 +825,7 @@ final class RegionsServiceTests: OBATestCase {
 
         userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
 
         let store = ResolvedRegionStore(userDefaults: userDefaults)
         store.write(tampa)

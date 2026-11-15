@@ -82,11 +82,15 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         // One-time migration from UserDefaults to disk-based storage.
         RegionsService.migrateFromUserDefaultsIfNeeded(userDefaults: userDefaults, fileStorage: fileStorage)
 
-        if let regions = RegionsService.loadStoredRegions(from: fileStorage), regions.count > 0 {
-            self.regions = regions
+        let loadedStoredRegions = RegionsService.loadStoredRegions(from: fileStorage)
+        if let loadedStoredRegions, !loadedStoredRegions.isEmpty {
+            self.regions = loadedStoredRegions
+            self.hasCompletedSuccessfulRefresh = userDefaults.bool(forKey: RegionsService.hasCompletedSuccessfulRefreshUserDefaultsKey)
+                || userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) != nil
         }
         else {
             self.regions = RegionsService.bundledRegions(path: bundledRegionsFilePath)
+            self.hasCompletedSuccessfulRefresh = false
         }
 
         super.init()
@@ -95,7 +99,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             addDelegate(delegate)
         }
 
-        let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey) || currentRegion == nil
 
         if autoSelectRegion, let location = locationService.currentLocation {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
@@ -234,6 +238,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             }
 
             if !canTrustRegionsList {
+                if RegionsService.isDroppedRegionIdentifier(identifier, userDefaults: userDefaults) {
+                    return nil
+                }
                 let fallbackStore = ResolvedRegionStore(userDefaults: userDefaults)
                 if let fallbackRegion = fallbackStore.region(bundledRegionsFilePath: bundledRegionsFilePath),
                    fallbackRegion.regionIdentifier == identifier {
@@ -248,6 +255,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
             let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
             guard newValue.regionIdentifier != storedIdentifier else { return }
+
+            RegionsService.removeDroppedRegionIdentifier(newValue.regionIdentifier, userDefaults: userDefaults)
 
             userDefaults.set(newValue.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
             notifyDelegatesRegionChanged(newValue)
@@ -378,7 +387,29 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// Readable off the main actor: App Intent entity queries are `nonisolated`
     /// and must look up the same key the service writes.
     public nonisolated static let currentRegionIdentifierUserDefaultsKey = "OBACurrentRegionIdentifierUserDefaultsKey"
+    public nonisolated static let hasCompletedSuccessfulRefreshUserDefaultsKey = "OBAHasCompletedSuccessfulRefreshUserDefaultsKey"
+    public nonisolated static let droppedRegionIdentifiersUserDefaultsKey = "OBADroppedRegionIdentifiersUserDefaultsKey"
     static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
+
+    public nonisolated static func recordDroppedRegionIdentifier(_ identifier: Int, userDefaults: UserDefaults) {
+        var dropped = userDefaults.array(forKey: droppedRegionIdentifiersUserDefaultsKey) as? [Int] ?? []
+        if !dropped.contains(identifier) {
+            dropped.append(identifier)
+            userDefaults.set(dropped, forKey: droppedRegionIdentifiersUserDefaultsKey)
+        }
+    }
+
+    public nonisolated static func isDroppedRegionIdentifier(_ identifier: Int, userDefaults: UserDefaults) -> Bool {
+        let dropped = userDefaults.array(forKey: droppedRegionIdentifiersUserDefaultsKey) as? [Int] ?? []
+        return dropped.contains(identifier)
+    }
+
+    public nonisolated static func removeDroppedRegionIdentifier(_ identifier: Int, userDefaults: UserDefaults) {
+        guard var dropped = userDefaults.array(forKey: droppedRegionIdentifiersUserDefaultsKey) as? [Int],
+              let index = dropped.firstIndex(of: identifier) else { return }
+        dropped.remove(at: index)
+        userDefaults.set(dropped, forKey: droppedRegionIdentifiersUserDefaultsKey)
+    }
 
     // Legacy keys — kept only for the one-time migration read; not written after migration.
     static let legacyStoredRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
@@ -552,12 +583,23 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             }
 
             hasCompletedSuccessfulRefresh = true
+            userDefaults.set(true, forKey: RegionsService.hasCompletedSuccessfulRefreshUserDefaultsKey)
             lastRefreshFailed = false
             self.regions = regions
 
             let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
-            if let storedIdentifier, find(id: storedIdentifier) == nil {
-                ResolvedRegionStore(userDefaults: userDefaults).write(nil)
+            if let storedIdentifier {
+                let customRegionsLoadFailed: Bool
+                do {
+                    _ = try fileStorage.loadCustomRegions()
+                    customRegionsLoadFailed = false
+                } catch {
+                    customRegionsLoadFailed = true
+                }
+                if !customRegionsLoadFailed, find(id: storedIdentifier) == nil {
+                    ResolvedRegionStore(userDefaults: userDefaults).write(nil)
+                    RegionsService.recordDroppedRegionIdentifier(storedIdentifier, userDefaults: userDefaults)
+                }
             }
         } catch {
             lastRefreshFailed = true
