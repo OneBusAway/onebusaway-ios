@@ -48,6 +48,15 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// The Explore row's shortcuts; see `HomeExploreItem`.
     @Published private(set) var exploreItems: [HomeExploreItem] = []
 
+    /// Whether Explore holds More, which it does where the sheet has tabs; set
+    /// by the sheet, which knows. See `HomeExploreItem.more`.
+    var offersMore = false {
+        didSet {
+            guard offersMore != oldValue else { return }
+            updateExploreItems()
+        }
+    }
+
     /// Whether the sheet knows enough to say its sections are genuinely
     /// empty. False until the map's first camera settle.
     ///
@@ -179,8 +188,10 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
 
     /// Explore's shortcuts to features don't make the sheet non-empty: alone,
     /// they would replace "Nothing Here Yet" with a row of buttons on a first
-    /// launch. So Explore shows beside another section, or when it has something
-    /// of the rider's own, their alarms.
+    /// launch. So Explore shows beside another section, when it has something
+    /// of the rider's own, their alarms, or when it holds More, which has to be
+    /// reachable always; the sheet then draws the empty state over it
+    /// (`showsEmptyState`).
     private func updateVisibleSections(
         hasAlerts: Bool,
         hasBookmarks: Bool,
@@ -194,9 +205,17 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         if hasNearby { sections.append(.nearby) }
         if hasRecent { sections.append(.recent) }
         let hasAlarms = explore.contains { if case .alarms = $0 { true } else { false } }
-        if !explore.isEmpty, hasAlarms || !sections.isEmpty { sections.append(.explore) }
+        if !explore.isEmpty, hasAlarms || explore.contains(.more) || !sections.isEmpty { sections.append(.explore) }
         guard sections != visibleSections else { return }
         visibleSections = sections
+    }
+
+    /// Whether the sheet says "Nothing Here Yet": no section but Explore, and
+    /// not before the first settle (see `hasLoadedInitialContent`). Alarms
+    /// are the rider's own, so Explore holding them isn't empty.
+    var showsEmptyState: Bool {
+        guard hasLoadedInitialContent, visibleSections.allSatisfy({ $0 == .explore }) else { return false }
+        return !exploreItems.contains { if case .alarms = $0 { true } else { false } }
     }
 
     // MARK: - Explore
@@ -220,7 +239,8 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         let items = HomeExploreItem.items(
             offersTripPlanning: offersTripPlanning,
             rentalsEnabled: rentalsEnabled,
-            alarmCount: alarmCount ?? recent.alarmCount
+            alarmCount: alarmCount ?? recent.alarmCount,
+            offersMore: offersMore
         )
         guard items != exploreItems else { return }
         exploreItems = items

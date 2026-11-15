@@ -36,8 +36,17 @@ struct HomeExploreTests {
         )
     }
 
+    /// More has nowhere else to live on iPhone, so it's there whatever else is.
+    @Test func `More comes last, where it's offered`() {
+        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 0, offersMore: true) == [.more])
+        #expect(
+            HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: false, alarmCount: 1, offersMore: true)
+                == [.planTrip, .rentals(isOn: false), .alarms(count: 1), .more]
+        )
+    }
+
     @Test func `Every item has a title and a symbol that exists`() {
-        let items: [HomeExploreItem] = [.planTrip, .rentals(isOn: false), .rentals(isOn: true), .alarms(count: 3)]
+        let items: [HomeExploreItem] = [.planTrip, .rentals(isOn: false), .rentals(isOn: true), .alarms(count: 3), .more]
         for item in items {
             #expect(!item.title.isEmpty)
             #expect(UIImage(systemName: item.systemImage) != nil)

@@ -19,7 +19,7 @@ import OBAKitCore
 /// For You is the mixed view: bookmarks, what leaves nearby, recent stops and
 /// shortcuts. Each of the others is one of its sections at full length, so a
 /// section's header and its chip lead to the same place. More, a tab of the
-/// classic app, is a button beside the search field.
+/// classic app, is a shortcut in For You's Explore row.
 enum HomeTab: CaseIterable, Hashable {
     case home
     case bookmarks
@@ -100,12 +100,46 @@ enum HomeTabs {
     /// Under the search field. With the 4 pt `HomeTabBar` pads its row by, and
     /// the 4 pt a chip's capsule is drawn inside that row, the field and the
     /// chips read as 12 pt apart.
-    static let searchRowBottomPadding: CGFloat = 4
+    nonisolated static let searchRowBottomPadding: CGFloat = 4
 
-    /// Under the chips, so they sit clear of the collapsed sheet's rounded
-    /// bottom. With the rest of the header at the default text size it comes to
-    /// `AppSheetRoute.homeCollapsedHeight`.
-    static let chipsBottomPadding: CGFloat = 17
+    /// Above the search field, on any sheet taller than collapsed.
+    nonisolated static let searchRowStandardTopPadding: CGFloat = 16
+
+    /// Under the chips, before the page's own top margin.
+    static let chipsBottomPadding: CGFloat = 4
+
+    /// The header the collapsed detent is fitted to, for a search field
+    /// `fieldHeight` tall: the field with its standard padding.
+    nonisolated static func headerHeight(fieldHeight: CGFloat) -> CGFloat {
+        searchRowStandardTopPadding + fieldHeight + searchRowBottomPadding
+    }
+
+    /// Above the search field, for a sheet `sheetHeight` tall.
+    ///
+    /// Collapsed, the sheet is the search field alone, centered in it: the
+    /// sheet is drawn no shorter than `AppSheetRoute.homeCollapsedHeight`, which
+    /// is more than the field and its standard padding, and a field pinned to
+    /// the top would leave a band of nothing under it. As the sheet rises the
+    /// padding falls back to the standard, point for point, so the field
+    /// follows the drag rather than jumping when it settles, and the chips
+    /// come up under it.
+    ///
+    /// The collapsed sheet lays its content out at the height it's drawn
+    /// (`HomeCollapsedDetent.collapsedHeight`), not the shorter one its detent
+    /// asks for, so that's the height it rises from.
+    nonisolated static func searchRowTopPadding(fieldHeight: CGFloat, sheetHeight: CGFloat) -> CGFloat {
+        let collapsedHeight = HomeCollapsedDetent.collapsedHeight(headerHeight: headerHeight(fieldHeight: fieldHeight))
+        let centered = (collapsedHeight - fieldHeight) / 2
+        let rise = max(0, sheetHeight - collapsedHeight)
+        return max(searchRowStandardTopPadding, centered - rise)
+    }
+
+    /// Whether the chips have room to show under the search field: all of
+    /// their row. Less, and they're clipped, which is fine mid-drag, but
+    /// neither tappable nor read by VoiceOver.
+    nonisolated static func showsChips(room: CGFloat, chipsHeight: CGFloat) -> Bool {
+        chipsHeight > 0 && room >= chipsHeight - 1
+    }
 
     /// Where the sheet goes when a tab is picked, or `nil` to leave it.
     ///
@@ -127,7 +161,7 @@ enum HomeTabs {
     }
 }
 
-/// The home sheet's smallest detent: the search row over the tabs' chips, and no more.
+/// The home sheet's smallest detent: the search row, and no more.
 ///
 /// Fitted to that header as laid out, measured by `HomeSheetView`, so it holds
 /// both at any text size. The system draws a sheet taller than its detent: a
@@ -138,8 +172,8 @@ enum HomeTabs {
 /// comparisons against `AppSheetRoute.homeCollapsedDetent` keep matching.
 nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     nonisolated struct Measurements: Sendable {
-        /// The search row and the chips, with their padding; see
-        /// `AppSheetRoute.homeCollapsedHeight`.
+        /// The search row, with its standard padding; see
+        /// `HomeTabs.headerHeight(fieldHeight:)`.
         var headerHeight = AppSheetRoute.homeCollapsedHeight
         /// How much taller than its detent the system draws the collapsed sheet,
         /// once seen; see `sheetExtra(sheetHeight:requested:)`.
@@ -168,8 +202,9 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     }
 
     /// The collapsed sheet as drawn, for a header of `headerHeight`: the header,
-    /// and never less than `AppSheetRoute.homeCollapsedHeight`, which a header
-    /// without chips, as on regular width, falls short of.
+    /// and never less than `AppSheetRoute.homeCollapsedHeight`, which the
+    /// search row falls short of at most text sizes; it's centered in the
+    /// extra (`HomeTabs.searchRowTopPadding`).
     static func collapsedHeight(headerHeight: CGFloat) -> CGFloat {
         max(headerHeight, AppSheetRoute.homeCollapsedHeight)
     }
@@ -242,8 +277,8 @@ extension EnvironmentValues {
 /// both; `MapPanelRootView` owns this one and reads it.
 @Observable
 final class HomeSheetMetrics {
-    /// The search row and the chips, with their padding; see
-    /// `AppSheetRoute.homeCollapsedHeight`.
+    /// The search row, with its standard padding; see
+    /// `HomeTabs.headerHeight(fieldHeight:)`.
     var headerHeight = AppSheetRoute.homeCollapsedHeight
 
     /// The collapsed sheet as drawn.
@@ -252,9 +287,8 @@ final class HomeSheetMetrics {
     }
 }
 
-/// The home sheet's tabs, as a row of filter chips under the search field. The
-/// chips grow with the text size, and the collapsed detent with them: it is
-/// fitted to the header as measured.
+/// The home sheet's tabs, as a row of filter chips under the search field,
+/// shown once the sheet rises past collapsed. The chips grow with the text size.
 struct HomeTabBar: View {
     let selection: HomeTab
     let onSelect: (HomeTab) -> Void

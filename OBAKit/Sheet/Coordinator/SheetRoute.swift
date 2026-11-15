@@ -385,12 +385,11 @@ nonisolated extension AppSheetRoute {
     /// for the first frame, before `HomeCollapsedDetent` measures the header,
     /// and the least the detent asks for.
     ///
-    /// The search row (its ~50pt capsule under 16pt, with
-    /// `HomeTabs.searchRowBottomPadding` below) and `HomeTabBar`'s chips under
-    /// it, and nothing else, so the collapsed sheet reads as those two controls
-    /// rather than as a list that got cut off. A regular-width sheet has no tabs
-    /// yet (`HomeTabs.showsTabs`), so its collapsed sheet shows the top of the
-    /// list in that space.
+    /// The search field, centered (`HomeTabs.searchRowTopPadding`), and
+    /// nothing else, so the collapsed sheet reads as that one control rather
+    /// than as a list that got cut off. The tabs' chips come up with the sheet.
+    /// A regular-width sheet has no tabs (`HomeTabs.showsTabs`), so its
+    /// collapsed sheet shows the top of the list under the field.
     ///
     /// Not less: this is about as short as iOS 26 will draw a floating sheet.
     /// Once the system's own extra is given back, a detent under ~100pt (on an
