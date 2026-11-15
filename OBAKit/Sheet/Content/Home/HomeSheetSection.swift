@@ -19,11 +19,19 @@ enum HomeSheetSection: Hashable {
     /// Recent high-severity agency alerts. First, as the UIKit map's nearby
     /// list has them, and with no index of its own.
     case alerts
+    /// First of the rider's own: the section they chose, and the one that
+    /// answers "when is my bus" without a tap.
+    case bookmarks
     case nearby
     case recent
-    case bookmarks
+    /// Shortcuts to what the lists don't hold; see `HomeExploreItem`.
+    case explore
 
     /// How many items each section previews before the header's chevron takes
-    /// over. Defined once so the three sections can't drift apart.
+    /// over. Defined once so the sections can't drift apart.
     static let itemLimit = 4
+
+    /// Recent stops on For You, which has more sections above them than the
+    /// sheet had before. The Recent tab has the rest.
+    static let recentPreviewLimit = 3
 }

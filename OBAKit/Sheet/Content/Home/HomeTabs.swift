@@ -8,48 +8,42 @@
 //
 
 import SwiftUI
+import CoreLocation
 import Synchronization
 import OBAKitCore
 
-/// A tab of the home sheet on iPhone, where the panel lays its sheet out as Find
-/// My does: the tabs in a bar pinned to the bottom of the sheet, over the map.
+/// A tab of the home sheet on iPhone, drawn as a filter chip under the search
+/// field: the tabs sit where the rider's thumb already is after a search, and
+/// leave the bottom of the sheet to its content.
 ///
-/// Home holds the search field and the nearby, recent and bookmarked previews the
-/// sheet had before; it stands in for the classic app's Map tab, since the map is
-/// always behind the sheet. Recent, Bookmarks and More are the classic app's tabs
-/// of the same names, with the same titles and icons.
+/// For You is the mixed view: bookmarks, what leaves nearby, recent stops and
+/// shortcuts. Each of the others is one of its sections at full length, so a
+/// section's header and its chip lead to the same place. More, a tab of the
+/// classic app, is a button beside the search field.
 enum HomeTab: CaseIterable, Hashable {
     case home
-    case recent
     case bookmarks
-    case more
+    case nearby
+    case recent
 
     var title: String {
         switch self {
         case .home:
-            OBALoc("home_sheet.tab.home", value: "Home", comment: "Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet.")
-        case .recent: Strings.recentTabTitle
+            OBALoc("home_sheet.tab.for_you", value: "For You", comment: "Title of the first filter on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is a chip in a row of four.")
         case .bookmarks: Strings.bookmarksTabTitle
-        case .more: Strings.moreTabTitle
+        case .nearby:
+            OBALoc("home_sheet.tab.nearby", value: "Nearby", comment: "Title of a filter on the map panel's home sheet that lists the stops near the center of the map. Short: it is a chip in a row of four.")
+        case .recent: Strings.recentTabTitle
         }
     }
 
-    /// Each has a `.fill` variant, which the bar draws for the selected tab.
-    var systemImage: String {
-        switch self {
-        case .home: "house"
-        case .recent: Icons.recentTabSymbolName
-        case .bookmarks: Icons.bookmarksTabSymbolName
-        case .more: Icons.moreTabSymbolName
-        }
-    }
-
-    /// The tab a home section's header goes to, or `nil` for a section with none,
-    /// whose header still stacks its full list.
+    /// The tab a home section's header goes to, or `nil` for a route that is no
+    /// section's index.
     init?(seeAll route: AppSheetRoute) {
         switch route {
         case .recentStopsAll: self = .recent
         case .bookmarksAll: self = .bookmarks
+        case .nearbyAll: self = .nearby
         default: return nil
         }
     }
@@ -65,22 +59,35 @@ enum HomeTabs {
         horizontalSizeClass != .regular
     }
 
-    /// Less room than a row under the search field and Home shows no list there.
+    /// Less room than a row under the chips and no tab shows its page there.
     /// `nonisolated`, like `showsTabPages`, for `onGeometryChange`'s transform,
     /// which runs off the main actor.
     nonisolated static let minimumListRoom: CGFloat = 44
 
-    /// Whether the tabs' pages show above the tab bar, given the height of the
+    /// Whether the tabs' pages show under the chips, given the height of the
     /// pages' area.
     ///
-    /// Collapsed, the sheet is the search field over the bar, whichever tab is
-    /// picked: the detent fits Home's search row and no more. Home keeps the search
-    /// field and hides its list; Recent, Bookmarks and More hide their whole page.
-    /// Whatever sliver the system leaves, a page peeking through it reads as cut
-    /// off. Measured rather than read off the detent, so the pages follow a drag
-    /// rather than appearing when it settles.
-    nonisolated static func showsTabPages(showsTabs: Bool, pageHeight: CGFloat, searchRowHeight: CGFloat) -> Bool {
-        !showsTabs || pageHeight - searchRowHeight >= minimumListRoom
+    /// Collapsed, the sheet is the search field over the chips, whichever tab is
+    /// picked: the detent fits those two rows and no more, and every tab hides
+    /// its page. Whatever sliver the system leaves, a page peeking through it
+    /// reads as cut off. Measured rather than read off the detent, so the pages
+    /// follow a drag rather than appearing when it settles.
+    nonisolated static func showsTabPages(showsTabs: Bool, pageHeight: CGFloat) -> Bool {
+        !showsTabs || pageHeight >= minimumListRoom
+    }
+
+    /// How far the map has to move before the Nearby tab's list is rebuilt
+    /// around its new center: about a block, less than which the same stops
+    /// are near.
+    static let nearbyAnchorTolerance: CLLocationDistance = 150
+
+    /// Where the Nearby tab's list should be centered when the tab is picked:
+    /// where it already is, unless the map has moved away from there.
+    static func nearbyAnchor(current: CLLocationCoordinate2D?, mapCenter: CLLocationCoordinate2D?) -> CLLocationCoordinate2D? {
+        guard let current, let mapCenter else { return mapCenter ?? current }
+        let moved = CLLocation(latitude: current.latitude, longitude: current.longitude)
+            .distance(from: CLLocation(latitude: mapCenter.latitude, longitude: mapCenter.longitude))
+        return moved > nearbyAnchorTolerance ? mapCenter : current
     }
 
     /// Whether a page's 30-second poll runs: only while the rider can see the page.
@@ -90,27 +97,25 @@ enum HomeTabs {
         isOnScreen && !isCovered && !isCollapsed
     }
 
-    /// The gap between the search field and the tab bar on the collapsed sheet,
-    /// as it reads on screen.
-    static let searchToTabBarSpacing: CGFloat = 8
+    /// Under the search field. With the 4 pt `HomeTabBar` pads its row by, and
+    /// the 4 pt a chip's capsule is drawn inside that row, the field and the
+    /// chips read as 12 pt apart.
+    static let searchRowBottomPadding: CGFloat = 4
 
-    /// The search row's bottom padding, which the collapsed detent fits exactly.
-    /// Less than `searchToTabBarSpacing`: the bar's glass capsule draws inside the
-    /// top of its frame, and the search field's fill inside the bottom of its row,
-    /// together about 3 pt (measured on iOS 26), so 5 pt between the frames reads
-    /// as 8 between the shapes.
-    static let searchRowBottomPadding: CGFloat = searchToTabBarSpacing - 3
+    /// Under the chips, so they sit clear of the collapsed sheet's rounded
+    /// bottom. With the rest of the header at the default text size it comes to
+    /// `AppSheetRoute.homeCollapsedHeight`.
+    static let chipsBottomPadding: CGFloat = 17
 
     /// Where the sheet goes when a tab is picked, or `nil` to leave it.
     ///
-    /// Collapsed, the sheet shows only the search field and the bar, so a picked
-    /// tab would change nothing the rider can see. It rises to `.medium`, as Find
-    /// My's does.
+    /// Collapsed, the sheet shows only the search field and the chips, so a
+    /// picked tab would change nothing the rider can see. It rises to `.medium`.
     static func detent(afterSelectingFrom currentDetent: PresentationDetent) -> PresentationDetent? {
         currentDetent == AppSheetRoute.homeCollapsedDetent ? .medium : nil
     }
 
-    /// Room the bar leaves under itself for the home indicator.
+    /// Room a tab's page leaves at its bottom for the home indicator.
     ///
     /// Sheet content ignores the safe area, so it can't read this itself. A
     /// floating sheet, collapsed or at `.medium` on iOS 26, stops short of the
@@ -122,20 +127,20 @@ enum HomeTabs {
     }
 }
 
-/// The home sheet's smallest detent: the search row over the tab bar, and no more.
+/// The home sheet's smallest detent: the search row over the tabs' chips, and no more.
 ///
-/// Fitted to the search row as laid out, measured by `HomeSheetView`, so the gap
-/// over the bar is `HomeTabs.searchToTabBarSpacing` at any text size. The system
-/// draws a sheet taller than its detent: a floating sheet runs into the home
-/// indicator's area, and a few points more besides. Rather than model that, the
-/// detent learns the difference from the sheet as drawn (`sheetExtra`) and gives
-/// it back. Being a type, it stays the same detent as its height changes, so the
-/// coordinator's selection and the comparisons against
-/// `AppSheetRoute.homeCollapsedDetent` keep matching.
+/// Fitted to that header as laid out, measured by `HomeSheetView`, so it holds
+/// both at any text size. The system draws a sheet taller than its detent: a
+/// floating sheet runs into the home indicator's area, and a few points more
+/// besides. Rather than model that, the detent learns the difference from the
+/// sheet as drawn (`sheetExtra`) and gives it back. Being a type, it stays the
+/// same detent as its height changes, so the coordinator's selection and the
+/// comparisons against `AppSheetRoute.homeCollapsedDetent` keep matching.
 nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     nonisolated struct Measurements: Sendable {
-        /// The search row with its padding; see `AppSheetRoute.homeSearchRowHeight`.
-        var searchRowHeight = AppSheetRoute.homeSearchRowHeight
+        /// The search row and the chips, with their padding; see
+        /// `AppSheetRoute.homeCollapsedHeight`.
+        var headerHeight = AppSheetRoute.homeCollapsedHeight
         /// How much taller than its detent the system draws the collapsed sheet,
         /// once seen; see `sheetExtra(sheetHeight:requested:)`.
         var sheetExtra: CGFloat?
@@ -159,7 +164,14 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     static let measured = Mutex(Measurements())
 
     static func height(_ measurements: Measurements) -> CGFloat {
-        measurements.searchRowHeight + AppSheetRoute.homeTabBarHeight - (measurements.sheetExtra ?? 0)
+        collapsedHeight(headerHeight: measurements.headerHeight) - (measurements.sheetExtra ?? 0)
+    }
+
+    /// The collapsed sheet as drawn, for a header of `headerHeight`: the header,
+    /// and never less than `AppSheetRoute.homeCollapsedHeight`, which a header
+    /// without chips, as on regular width, falls short of.
+    static func collapsedHeight(headerHeight: CGFloat) -> CGFloat {
+        max(headerHeight, AppSheetRoute.homeCollapsedHeight)
     }
 
     /// More than the home indicator's area and some: the sheet is being dragged.
@@ -205,8 +217,7 @@ nonisolated struct ScreenBottom: Equatable, Sendable {
 
 extension EnvironmentValues {
     /// Whether this view is shown as a tab of the home sheet rather than as a sheet
-    /// of its own. A tab has no sheet to close, so no Close button, and keeps clear
-    /// of the bottom, where the tab bar is.
+    /// of its own. A tab has no sheet to close, so no Close button.
     @Entry var isHomeSheetTab = false
 
     /// Whether the home sheet lays out as tabs. Decided once, by `MapPanelRootView`
@@ -225,89 +236,84 @@ extension EnvironmentValues {
 
 /// The home sheet's measurements that the map has to redraw for.
 ///
-/// Observable, so a new search row height, after a text size change, moves the
+/// Observable, so a new header height, after a text size change, moves the
 /// map's padding at once. `HomeCollapsedDetent.measured` holds the same height
 /// for the detent, which can't read this (see there). The home sheet writes
 /// both; `MapPanelRootView` owns this one and reads it.
 @Observable
 final class HomeSheetMetrics {
-    /// The search row with its padding; see `AppSheetRoute.homeSearchRowHeight`.
-    var searchRowHeight = AppSheetRoute.homeSearchRowHeight
+    /// The search row and the chips, with their padding; see
+    /// `AppSheetRoute.homeCollapsedHeight`.
+    var headerHeight = AppSheetRoute.homeCollapsedHeight
 
-    /// The collapsed sheet as drawn: the search row over the bar.
+    /// The collapsed sheet as drawn.
     var collapsedHeight: CGFloat {
-        searchRowHeight + AppSheetRoute.homeTabBarHeight
+        HomeCollapsedDetent.collapsedHeight(headerHeight: headerHeight)
     }
 }
 
-/// The bar of tabs pinned to the bottom of the home sheet: interactive Liquid
-/// Glass on iOS 26, as the system tab bar is, and a material capsule before it.
+/// The home sheet's tabs, as a row of filter chips under the search field. The
+/// chips grow with the text size, and the collapsed detent with them: it is
+/// fitted to the header as measured.
 struct HomeTabBar: View {
     let selection: HomeTab
-    /// Room to leave under the bar for the home indicator; see
-    /// `HomeTabs.bottomClearance`.
-    let bottomClearance: CGFloat
     let onSelect: (HomeTab) -> Void
 
-    private static let capsuleHeight: CGFloat = 54
+    /// A chip's least touch target. Its capsule is drawn 4 pt shorter at each end.
+    private static let minimumRowHeight: CGFloat = 44
+    private static let capsuleInset: CGFloat = 4
 
-    @Namespace private var namespace
+    /// White on it passes 4.5:1 in both appearances, which the lighter brand
+    /// green does not.
+    private let selectedFill = Color(uiColor: ThemeColors.shared.brandAccent)
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(HomeTab.allCases, id: \.self) { tab in
-                tabButton(tab)
+        // Scrolls rather than squeezes: four titles don't fit every language at
+        // every text size.
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(HomeTab.allCases, id: \.self) { tab in
+                    chip(tab)
+                }
             }
+            .padding(.horizontal, 12)
         }
-        .padding(4)
-        .frame(height: Self.capsuleHeight)
-        .regularGlassEffectIfAvailable(in: Capsule(), interactive: true)
-        .padding(.horizontal, 12)
-        .padding(.bottom, AppSheetRoute.homeTabBarHeight - Self.capsuleHeight + bottomClearance)
-        .animation(.smooth(duration: 0.25), value: selection)
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .padding(.top, 4)
+        .padding(.bottom, HomeTabs.chipsBottomPadding)
+        .animation(.smooth(duration: 0.2), value: selection)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isTabBar)
-        // Capped, as the system tab bar is, so the fixed-height capsule doesn't
-        // clip its titles at accessibility sizes; a long press shows them large.
-        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
     }
 
-    private func tabButton(_ tab: HomeTab) -> some View {
+    private func chip(_ tab: HomeTab) -> some View {
         let isSelected = tab == selection
         return Button {
             onSelect(tab)
         } label: {
-            VStack(spacing: 2) {
-                Image(systemName: tab.systemImage)
-                    .symbolVariant(isSelected ? .fill : .none)
-                    .font(.body.weight(.semibold))
-                Text(tab.title)
-                    .font(.caption2.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background {
-                if isSelected {
-                    Capsule()
-                        .fill(Color.primary.opacity(0.08))
-                        .matchedGeometryEffect(id: "selection", in: namespace)
-                }
-            }
-            .contentShape(.capsule)
+            Text(tab.title)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .foregroundStyle(isSelected ? Color.white : Color(uiColor: .label))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .frame(minHeight: Self.minimumRowHeight - 2 * Self.capsuleInset)
+                .background(
+                    isSelected ? AnyShapeStyle(selectedFill) : AnyShapeStyle(Color(.tertiarySystemFill)),
+                    in: Capsule()
+                )
+                .padding(.vertical, Self.capsuleInset)
+                .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityShowsLargeContentViewer {
-            Label(tab.title, systemImage: tab.systemImage)
-        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
 extension View {
-    /// A home sheet tab page's background: the sheet's own, so the tab bar sits
-    /// on one surface. `TabView` gives each page an opaque white. On iOS 26 and
+    /// A home sheet tab page's background: the sheet's own, so the chips and the
+    /// page under them sit on one surface. `TabView` gives each page an opaque white. On iOS 26 and
     /// later it's cleared, showing the sheet's Liquid Glass or, in dark mode, its
     /// opaque gray (see `searchSheetBackground()`); before, it's painted over
     /// with the sheet's gray.

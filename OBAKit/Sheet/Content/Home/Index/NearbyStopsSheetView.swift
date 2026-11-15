@@ -27,6 +27,7 @@ struct NearbyStopsSheetView: View {
     let application: Application
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isHomeSheetTab) private var isHomeSheetTab
 
     init(application: Application, coordinate: CLLocationCoordinate2D?) {
         self.application = application
@@ -39,8 +40,11 @@ struct NearbyStopsSheetView: View {
                 .navigationTitle(Text(Strings.nearbyStops))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        SheetDismissButton(.close) { dismiss() }
+                    // A tab of the home sheet has no sheet of its own to close.
+                    if !isHomeSheetTab {
+                        ToolbarItem(placement: .topBarLeading) {
+                            SheetDismissButton(.close) { dismiss() }
+                        }
                     }
                 }
         }
@@ -74,6 +78,7 @@ struct NearbyStopsSheetView: View {
 private struct NearbyStopsSheetContent: View {
     @StateObject private var viewModel: NearbyStopsViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
+    @Environment(\.isHomeSheetTab) private var isHomeSheetTab
     @State private var searchText = ""
 
     /// Whether `.task` has run to completion at least once.
@@ -101,7 +106,12 @@ private struct NearbyStopsSheetContent: View {
 
     var body: some View {
         list
-            .searchable(text: $searchText)
+            // iOS 26 puts a sheet's search field at the bottom; as a tab of the
+            // home sheet it stays at the top, as `RecentStopsSheetView`'s does.
+            .searchable(
+                text: $searchText,
+                placement: isHomeSheetTab ? .navigationBarDrawer(displayMode: .always) : .automatic
+            )
             .task {
                 await viewModel.loadStops()
                 hasCompletedFirstLoad = true

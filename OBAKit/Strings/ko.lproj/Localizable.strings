@@ -423,11 +423,26 @@
 /* Title for the home sheet's empty state, shown when there are no nearby stops, no recent stops, and no bookmarks. */
 "home_sheet.empty_set.title" = "아직 아무것도 없습니다";
 
+/* Title of a shortcut on the map panel's home sheet that opens the trip planner. Short: it sits under a small round icon. */
+"home_sheet.explore.plan_trip" = "경로 계획";
+
+/* Title of a shortcut on the map panel's home sheet that shows or hides rental bikes and scooters on the map. Short: it sits under a small round icon. */
+"home_sheet.explore.rentals" = "자전거 및 킥보드";
+
+/* Header of a section on the map panel's home sheet that holds shortcuts to other features: the trip planner, bikes and scooters on the map, and alarms. */
+"home_sheet.explore.title" = "둘러보기";
+
+/* A row at the end of the Nearby Stops section on the map panel's home sheet. It opens the full list of stops near the center of the map. */
+"home_sheet.nearby.all_stops" = "주변 정류장 모두 보기";
+
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "이 섹션의 모든 항목을 표시합니다.";
 
-/* Title of the map panel's Home tab, which holds search and the nearby stops. It replaces the Map tab: the map is always behind the sheet. */
-"home_sheet.tab.home" = "홈";
+/* Title of the first filter on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is a chip in a row of four. */
+"home_sheet.tab.for_you" = "추천";
+
+/* Title of a filter on the map panel's home sheet that lists the stops near the center of the map. Short: it is a chip in a row of four. */
+"home_sheet.tab.nearby" = "주변";
 
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "설정에서 실시간 액티비티 설정을 확인해 주세요.";
