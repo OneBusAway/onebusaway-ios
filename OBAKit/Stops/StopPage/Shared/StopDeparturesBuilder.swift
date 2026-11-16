@@ -55,6 +55,7 @@ struct StopDeparturesBuilder {
             // so there's no snapshot-consistency reason to thread it through
             // the caller too.
             isBikeMode: viewModel.isBikeModeEnabled,
+            pillDirections: navigation.pillDirections,
             minutesAfter: viewModel.minutesAfter,
             isBrokenBookmark: viewModel.isBrokenBookmark,
             errorText: viewModel.operationErrorMessage,

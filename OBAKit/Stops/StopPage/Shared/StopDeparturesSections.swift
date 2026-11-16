@@ -32,6 +32,8 @@ struct StopDeparturesSections: View {
     /// Whether `walkMinutes` was computed at bike speed — the chronological
     /// divider's wording/icon/color has to match what actually produced it.
     var isBikeMode: Bool = false
+    /// What tapping the walk divider does; the header's walk and bike pills share it.
+    let pillDirections: StopPillDirections
     let minutesAfter: UInt
     let isBrokenBookmark: Bool
     let errorText: String?
@@ -230,6 +232,7 @@ struct StopDeparturesSections: View {
                 partition: chronologicalPartition,
                 walkMinutes: walkMinutes,
                 isBikeMode: isBikeMode,
+                pillDirections: pillDirections,
                 showPast: !pastCollapsed,
                 highlightedTripID: highlightedTripID,
                 statusProvider: statusProvider,

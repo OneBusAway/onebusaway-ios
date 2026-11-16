@@ -413,22 +413,35 @@ final class StopPageActionPresenterTests: OBATestCase {
         presenter.showTripPlanner(action: .directionsFromStop, stop: stop)
     }
 
-    // MARK: - Walk and bike pills (#1546)
+    // MARK: - Walk and bike times (#1546): header pills and the walk divider share one sheet
 
-    /// With a trip planner, a pill asks before it leaves the stop page.
-    @Test(arguments: [StopDirectionsPill.walk, .bike])
-    func `A pill asks before opening the trip planner`(pill: StopDirectionsPill) async throws {
+    /// With a trip planner, a walk time offers in-app directions first, then the maps hand-off.
+    @Test func `A walk time offers in-app directions first, then a maps app`() async throws {
         let host = makeHost()
         let (presenter, _) = makePresenter(host: host)
         let stop = try #require(Fixtures.loadSomeStops().first)
 
-        presenter.showDirections(.askThenPlanTrip(pill), stop: stop)
+        presenter.showDirections(.offerDirections(.walk), stop: stop)
 
-        let alert = try #require(await waitForPresentation(on: host) as? UIAlertController)
-        #expect(alert.title == StopDirectionsPill.promptTitle)
-        #expect(alert.preferredStyle == .alert)
-        #expect(alert.actions.map(\.title) == [StopTripPlannerAction.directionsToHereTitle, Strings.cancel])
-        #expect(alert.actions.last?.style == .cancel)
+        let sheet = try #require(await waitForPresentation(on: host) as? UIAlertController)
+        #expect(sheet.title == "Walk to this stop")
+        #expect(sheet.message == stop.name)
+        #expect(sheet.preferredStyle == .actionSheet)
+        #expect(sheet.actions.map(\.title) == ["Show Walking Directions", "Open in Maps", Strings.cancel])
+        #expect(sheet.actions.last?.style == .cancel)
+    }
+
+    /// No maps app takes a cycling deep link, so the bike sheet has no hand-off.
+    @Test func `A bike time offers only in-app directions`() async throws {
+        let host = makeHost()
+        let (presenter, _) = makePresenter(host: host)
+        let stop = try #require(Fixtures.loadSomeStops().first)
+
+        presenter.showDirections(.offerDirections(.bike), stop: stop)
+
+        let sheet = try #require(await waitForPresentation(on: host) as? UIAlertController)
+        #expect(sheet.title == "Bike to this stop")
+        #expect(sheet.actions.map(\.title) == ["Show Bike Directions", Strings.cancel])
     }
 
     // MARK: - Map panel sheets

@@ -56,19 +56,15 @@ struct StopDirectionsPillExtendedTests {
     // MARK: - Behavior and Accessibility Hint Equality
 
     @Test func `Behavior equality matches on underlying variant`() {
-        let walkBehavior1 = StopDirectionsPill.Behavior.askThenPlanTrip(.walk)
-        let walkBehavior2 = StopDirectionsPill.Behavior.askThenPlanTrip(.walk)
-        let bikeBehavior = StopDirectionsPill.Behavior.askThenPlanTrip(.bike)
+        let walkBehavior1 = StopDirectionsPill.Behavior.offerDirections(.walk)
+        let walkBehavior2 = StopDirectionsPill.Behavior.offerDirections(.walk)
+        let bikeBehavior = StopDirectionsPill.Behavior.offerDirections(.bike)
         let mapsBehavior = StopDirectionsPill.Behavior.openMapsWalkingDirections
 
         #expect(walkBehavior1 == walkBehavior2)
         #expect(walkBehavior1 != bikeBehavior)
         #expect(walkBehavior1 != mapsBehavior)
         #expect(bikeBehavior != mapsBehavior)
-    }
-
-    @Test func `StopDirectionsPill promptTitle matches expected English text`() {
-        #expect(StopDirectionsPill.promptTitle == "Get directions to this stop in the app?")
     }
 
     @Test func `StopPillDirections none placeholder sets tripPlannerAvailable false`() {
