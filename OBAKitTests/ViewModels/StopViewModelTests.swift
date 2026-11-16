@@ -129,6 +129,7 @@ final class StopViewModelTests: OBATestCase {
     private func buildViewModelWithNullArrivals(bookmarkContext: Bookmark? = nil) -> (StopViewModel, Application) {
         let dataLoader = MockDataLoader(testName: name)
         let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: Data("null".utf8))
+        Fixtures.stubMissingStop(dataLoader: dataLoader)
         let viewModel = StopViewModel(application: app, stopID: testStopID, bookmarkContext: bookmarkContext)
         return (viewModel, app)
     }
@@ -1354,6 +1355,30 @@ final class StopViewModelTests: OBATestCase {
         #expect(content.stopIsMissing)
     }
 
+    /// A weekday-only stop opened on a weekend: Java servers before 2.7.2 answer
+    /// arrivals with `null` even though the stop exists (OneBusAway/maglev#2102).
+    /// Here the stop lookup succeeds, so the page shows the stop with no departures.
+    /// It must not offer to delete a bookmark that is fine.
+    @Test @MainActor
+    func `JSON null arrivals for a stop that exists shows no departures, not a broken bookmark`() async throws {
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Weekday stop", regionIdentifier: pugetSoundRegionIdentifier, stop: stop)
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(dataLoader: dataLoader, analytics: AnalyticsMock(), arrivalsData: Data("null".utf8))
+        let stopResponse = #"{"code":200,"currentTime":1794798357449,"text":"OK","version":2,"data":{"entry":{"id":"\#(testStopID)","code":"TEST","name":"Test Stop","lat":47.6,"lon":-122.3,"locationType":0,"routeIds":[],"direction":"S"},"references":{"agencies":[],"routes":[],"situations":[],"stopTimes":[],"stops":[],"trips":[]}}}"#
+        Fixtures.stubStop(dataLoader: dataLoader, data: Data(stopResponse.utf8))
+        let viewModel = StopViewModel(application: app, stopID: testStopID, bookmarkContext: bookmark)
+
+        await viewModel.refresh()
+
+        #expect(!viewModel.isBrokenBookmark)
+        #expect(!viewModel.stopIsMissing)
+        #expect(viewModel.operationError == nil)
+        #expect(viewModel.stop?.id == testStopID)
+        let arrivals = try #require(viewModel.stopArrivals)
+        #expect(arrivals.arrivalsAndDepartures.isEmpty)
+    }
+
     /// A stop that vanishes between refreshes must drop what the previous fetch left
     /// behind — otherwise the page keeps counting down to a bus that isn't coming.
     @Test @MainActor
@@ -1380,6 +1405,7 @@ final class StopViewModelTests: OBATestCase {
             staging.mock(data: Data("null".utf8)) {
                 $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
             }
+            Fixtures.stubMissingStop(dataLoader: staging)
         }
 
         await viewModel.refresh()

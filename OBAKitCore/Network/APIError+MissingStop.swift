@@ -11,6 +11,19 @@ import Foundation
 
 public extension APIError {
 
+    /// Whether this is the HTTP 200 with body `null` that `APIService+GetData`
+    /// throws as `invalidContentType(_, "json", "nothing")`.
+    ///
+    /// For arrivals, that body can also mean the stop has no service today.
+    /// `RESTAPIService.getArrivalsAndDeparturesForStop` checks which before the
+    /// error reaches a caller.
+    var isNullResponseBody: Bool {
+        if case .invalidContentType(_, let expected, let actual) = self {
+            return expected == "json" && actual == "nothing"
+        }
+        return false
+    }
+
     /// Whether this error means the server has no stop at the requested ID,
     /// rather than that the request failed.
     ///
@@ -32,11 +45,8 @@ public extension APIError {
         switch self {
         case .requestNotFound(let response) where response.statusCode == 404:
             return true
-        case .invalidContentType(_, let expected, let actual)
-            where expected == "json" && actual == "nothing":
-            return true
         default:
-            return false
+            return isNullResponseBody
         }
     }
 }
