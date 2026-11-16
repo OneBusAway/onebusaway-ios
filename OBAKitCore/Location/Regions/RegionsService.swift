@@ -191,14 +191,19 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Regions Data
 
-    /// Tracks whether a successful network refresh of the regions list has occurred in this session.
+    /// Tracks whether a network refresh of the regions list has ever succeeded.
+    ///
+    /// Persisted under `hasCompletedSuccessfulRefreshUserDefaultsKey`, and also seeded from
+    /// `regionsUpdatedAtUserDefaultsKey` when stored regions load from disk, so it lasts across
+    /// launches. It starts false when the app falls back to the bundled regions, until a refresh succeeds.
     private var hasCompletedSuccessfulRefresh: Bool = false
 
     /// Whether the last network refresh of the regions list failed.
     public private(set) var lastRefreshFailed: Bool = false
 
-    /// Whether the current regions list is trusted. The list is untrusted before the first
-    /// successful refresh of the session, or while `lastRefreshFailed` is true.
+    /// Whether the current regions list is trusted. Once any refresh has succeeded, trust lasts
+    /// across launches. The list is untrusted while `lastRefreshFailed` is true, or when the app
+    /// falls back to the bundled regions.
     var canTrustRegionsList: Bool {
         hasCompletedSuccessfulRefresh && !lastRefreshFailed
     }
@@ -217,8 +222,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     ///
     /// The region identifier is persisted in `UserDefaults`. On read, the full `Region` is
     /// looked up by identifier in the known regions list. If the identifier cannot be found in the
-    /// current regions list and the list cannot yet be trusted (before the first successful refresh
-    /// of the session, or while `lastRefreshFailed` is true), the getter falls back to the cached copy
+    /// current regions list and the list cannot be trusted (while `lastRefreshFailed` is true, or when
+    /// the app has fallen back to the bundled regions), the getter falls back to the cached copy
     /// in `ResolvedRegionStore` to preserve the user's selection offline or during network outages.
     /// Once a network refresh succeeds, the regions list is trusted: if the stored identifier is not
     /// in the updated regions list (e.g. after a region is retired or deleted from the server), the

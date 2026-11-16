@@ -24,24 +24,15 @@ import Foundation
 public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     private weak var regionsService: RegionsService?
     private let store: ResolvedRegionStore
-    private var userDefaults: UserDefaults
 
     public init(regionsService: RegionsService, store: ResolvedRegionStore) {
         self.regionsService = regionsService
         self.store = store
-        self.userDefaults = store.userDefaults
         super.init()
 
         // `RegionsService` holds its delegates weakly; the owner retains us.
         regionsService.addDelegate(self)
         persist()
-    }
-
-    public convenience init(regionsService: RegionsService, store: ResolvedRegionStore, userDefaults: UserDefaults?) {
-        self.init(regionsService: regionsService, store: store)
-        if let userDefaults {
-            self.userDefaults = userDefaults
-        }
     }
 
     /// Writes the current region, or clears the store when there is no current selection.
@@ -52,7 +43,7 @@ public final class ResolvedRegionPersister: NSObject, RegionsServiceDelegate {
     public func persist() {
         if let currentRegion = regionsService?.currentRegion {
             store.write(currentRegion)
-        } else if regionsService?.canTrustRegionsList == true || userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil {
+        } else if regionsService?.canTrustRegionsList == true || store.userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == nil {
             store.write(nil)
         }
     }
