@@ -107,7 +107,7 @@ final class CoreAppConfigExtendedTests {
     // MARK: - Filter Matrix Verification
 
     @Test func `All ArrivalDepartureFilter variants persist through CoreAppConfig`() {
-        let filters: [ArrivalDepartureFilter] = [.all, .departures, .arrivals, .estimatedOnly, .scheduledOnly]
+        let filters: [ArrivalDepartureFilter] = [.all, .estimatedOnly, .scheduledOnly]
 
         for filter in filters {
             let config = makeConfig(filter: filter)

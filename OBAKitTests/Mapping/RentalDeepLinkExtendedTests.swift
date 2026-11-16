@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import OTPKit
 import Testing
 @testable import OBAKit
 @testable import OBAKitCore
@@ -17,34 +18,19 @@ final class RentalDeepLinkExtendedTests: OBATestCase {
 
     private func makeRental(
         networkID: String? = nil,
-        networkName: String? = nil,
         networkURL: String? = nil,
         iosURI: String? = nil
-    ) -> VehicleRental {
-        let rentalNetwork: RentalNetwork?
-        if let networkID {
-            rentalNetwork = RentalNetwork(
-                networkId: networkID,
-                name: networkName ?? networkID,
-                url: networkURL
-            )
-        } else {
-            rentalNetwork = nil
-        }
-
-        let rentalUris: RentalUris?
+    ) throws -> VehicleRental {
+        let rentalUris: [String: String]?
         if let iosURI {
-            rentalUris = RentalUris(android: nil, ios: iosURI, web: nil)
+            rentalUris = ["ios": iosURI]
         } else {
             rentalUris = nil
         }
-
-        return VehicleRental(
+        return try RentalFixtures.vehicle(
             id: "rental_test_1",
-            name: "Test Rental",
-            latitude: 47.6062,
-            longitude: -122.3321,
-            rentalNetwork: rentalNetwork,
+            networkId: networkID,
+            networkURL: networkURL,
             rentalUris: rentalUris
         )
     }
@@ -76,9 +62,8 @@ final class RentalDeepLinkExtendedTests: OBATestCase {
     }
 
     @Test func `Feed iOS URI overrides synthesis when valid and safe`() throws {
-        let rental = makeRental(
+        let rental = try makeRental(
             networkID: "lime_seattle",
-            networkName: "Lime",
             iosURI: "https://lime.bike/ride/custom_trip"
         )
         let target = RentalDeepLink.target(for: rental)
@@ -100,9 +85,8 @@ final class RentalDeepLinkExtendedTests: OBATestCase {
         ]
 
         for unsafeURI in unsafeSchemes {
-            let rental = makeRental(
+            let rental = try makeRental(
                 networkID: "lime_seattle",
-                networkName: "Lime",
                 iosURI: unsafeURI
             )
             let target = RentalDeepLink.target(for: rental)
@@ -113,22 +97,21 @@ final class RentalDeepLinkExtendedTests: OBATestCase {
     }
 
     @Test func `Missing feed URI synthesizes app launch link for known operators`() throws {
-        let limeRental = makeRental(networkID: "lime_seattle", networkName: "Lime")
+        let limeRental = try makeRental(networkID: "lime_seattle")
         let limeTarget = try #require(RentalDeepLink.target(for: limeRental))
         #expect(limeTarget.url.absoluteString == "limebike://map")
         #expect(limeTarget.appStoreID == "1199780189")
         #expect(limeTarget.storeFallback?.absoluteString == "https://apps.apple.com/app/id1199780189")
 
-        let birdRental = makeRental(networkID: "bird_portland", networkName: "Bird")
+        let birdRental = try makeRental(networkID: "bird_portland")
         let birdTarget = try #require(RentalDeepLink.target(for: birdRental))
         #expect(birdTarget.url.absoluteString == "bird://")
         #expect(birdTarget.appStoreID == "1260842311")
     }
 
     @Test func `Unknown operator falls back to published network website URL`() throws {
-        let rental = makeRental(
+        let rental = try makeRental(
             networkID: "local_bike_share",
-            networkName: "Local Bikes",
             networkURL: "https://localbikeshare.example.org"
         )
         let target = try #require(RentalDeepLink.target(for: rental))
@@ -138,8 +121,8 @@ final class RentalDeepLinkExtendedTests: OBATestCase {
         #expect(target.appStoreID == nil)
     }
 
-    @Test func `Empty rental without network or feed URI returns nil target`() {
-        let rental = makeRental()
+    @Test func `Empty rental without network or feed URI returns nil target`() throws {
+        let rental = try makeRental()
         #expect(RentalDeepLink.target(for: rental) == nil)
     }
 }

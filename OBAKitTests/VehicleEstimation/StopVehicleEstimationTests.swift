@@ -97,11 +97,22 @@ final class StopVehicleEstimationTests {
         #expect(estimation.estimates.isEmpty)
     }
 
-    @Test func `Refresh when estimation driver is disabled stops and clears estimates`() async throws {
-        harness.isEnabled = false
+    @Test func `Refresh when estimation driver is disabled stops and clears existing estimates`() async throws {
+        // First populate estimates with driver enabled
         let departure = try makeArrivalDeparture()
         let vehicle = makeDrawnVehicle()
 
+        estimation.refresh(
+            vehicles: [vehicle],
+            serverClock: nil,
+            departure: { _ in departure }
+        )
+        await estimation.inputsSettled()
+        #expect(!estimation.estimates.isEmpty)
+        #expect(clock.sleeperCount == 1)
+
+        // Now disable driver and refresh: existing estimates must be cleared and sleeper stopped
+        harness.isEnabled = false
         estimation.refresh(
             vehicles: [vehicle],
             serverClock: nil,
@@ -175,10 +186,5 @@ final class StopVehicleEstimationTests {
         )
         await estimation.inputsSettled()
         #expect(estimation.estimates.isEmpty)
-    }
-
-    @Test func `RemoveAllSchedules clears underlying trip schedules cache`() async {
-        await estimation.removeAllSchedules()
-        // Method completes successfully without crashing or hanging
     }
 }

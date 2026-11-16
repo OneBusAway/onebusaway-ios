@@ -23,7 +23,7 @@ final class CoreApplicationPipelineExtendedTests: OBATestCase {
 
     private func createTestApplication(
         fixedRegionName: String? = Fixtures.pugetSoundRegion.name,
-        defaultFilter: ArrivalDepartureFilter = .departures
+        defaultFilter: ArrivalDepartureFilter = .estimatedOnly
     ) -> Application {
         let locManager = MockAuthorizedLocationManager(
             updateLocation: TestData.mockSeattleLocation,
@@ -58,13 +58,13 @@ final class CoreApplicationPipelineExtendedTests: OBATestCase {
     }
 
     @Test func `Setting arrival departure filter persists value and updates effective filter`() {
-        let app = createTestApplication(defaultFilter: .departures)
+        let app = createTestApplication(defaultFilter: .estimatedOnly)
 
-        app.setArrivalDepartureFilter(.arrivals)
-        #expect(app.effectiveArrivalDepartureFilter == .arrivals)
+        app.setArrivalDepartureFilter(.scheduledOnly)
+        #expect(app.effectiveArrivalDepartureFilter == .scheduledOnly)
 
         let storedValue = userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        #expect(storedValue == ArrivalDepartureFilter.arrivals.rawValue)
+        #expect(storedValue == ArrivalDepartureFilter.scheduledOnly.rawValue)
 
         app.setArrivalDepartureFilter(.all)
         #expect(app.effectiveArrivalDepartureFilter == .all)
@@ -89,11 +89,11 @@ final class CoreApplicationPipelineExtendedTests: OBATestCase {
         let app = createTestApplication()
         #expect(app.userDataStore.bookmarkGroups.isEmpty)
 
-        let stop = StopPreferences(sort: .route, filter: .departures)
+        var stop = StopPreferences()
+        stop.sortType = .route
         app.stopPreferencesDataStore.set(stopPreferences: stop, forStopID: "1_100")
         let retrieved = app.stopPreferencesDataStore.stopPreferences(forStopID: "1_100")
 
-        #expect(retrieved.sort == .route)
-        #expect(retrieved.filter == .departures)
+        #expect(retrieved.sortType == .route)
     }
 }

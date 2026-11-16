@@ -15,6 +15,51 @@ import Testing
 @Suite(.serialized)
 final class EditBookmarkViewModelExtendedTests: OBATestCase {
 
+    var queue: OperationQueue!
+
+    override init() async throws {
+        try await super.init()
+
+        queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+    }
+
+    isolated deinit {
+        queue.cancelAllOperations()
+    }
+
+    private func createApplication(dataLoader: MockDataLoader? = nil) -> Application {
+        let loader = dataLoader ?? MockDataLoader(testName: name)
+        return buildApplication(queue: queue, dataLoader: loader)
+    }
+
+    private func createApplicationWithoutRegion(dataLoader: MockDataLoader? = nil) -> Application {
+        let loader = dataLoader ?? MockDataLoader(testName: name)
+        stubRegions(dataLoader: loader)
+        stubAgenciesWithCoverage(dataLoader: loader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: loader)
+
+        let locManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+
+        let config = AppConfig(
+            regionsBaseURL: regionsURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: loader
+        )
+        return Application(config: config)
+    }
+
     private func makeStop(id: String = "stop_edit_1", name: String = "4th & Pike") throws -> Stop {
         let stopData: [String: Any] = [
             "id": id,
@@ -75,7 +120,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor func `Add group ignores empty and whitespace-only strings`() throws {
-        let app = try makeApplication()
+        let app = createApplication()
         let stop = try makeStop()
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
@@ -89,7 +134,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor func `Add group trims whitespace and appends group`() throws {
-        let app = try makeApplication()
+        let app = createApplication()
         let stop = try makeStop()
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
@@ -100,7 +145,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor func `Resolve duplicate cancelled is a no-op`() throws {
-        let app = try makeApplication()
+        let app = createApplication()
         let stop = try makeStop()
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
@@ -111,7 +156,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor func `Resolve duplicate createDuplicate writes bookmark to data store`() throws {
-        let app = try makeApplication()
+        let app = createApplication()
         let stop = try makeStop()
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
 
@@ -133,8 +178,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor func `PrepareToSave returns regionUnavailable when currentRegion is nil`() throws {
-        let app = try makeApplication()
-        app.currentRegion = nil
+        let app = createApplicationWithoutRegion()
 
         let stop = try makeStop()
         let vm = EditBookmarkViewModel(application: app, source: .stop(stop), bookmark: nil)
@@ -147,7 +191,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor func `PrepareToSave in edit mode always returns readyToSaveExisting`() throws {
-        let app = try makeApplication()
+        let app = createApplication()
         let stop = try makeStop()
         let existing = Bookmark(name: "Existing Stop", regionIdentifier: 1, stop: stop)
         app.userDataStore.add(bookmark: existing)
@@ -163,7 +207,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
     }
 
     @Test @MainActor func `Set destination updates destinationStop and re-resolves default name`() throws {
-        let app = try makeApplication()
+        let app = createApplication()
         let boardingStop = try makeStop(id: "stop_board", name: "Pine St & 4th Ave")
         let destStop = try makeStop(id: "stop_dest", name: "Main St & 2nd Ave")
         let arrDep = try makeArrivalDeparture(stop: boardingStop, routeShortName: "10", headsign: "Downtown")

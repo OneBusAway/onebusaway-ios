@@ -192,18 +192,24 @@ final class StopFocusMapEstimationTests {
         let model = makeModel()
         try await show(model)
         await poll(until: { self.clock.sleeperCount == 1 })
+        let vehiclesBefore = try #require(model.display?.vehicles)
+        #expect(!vehiclesBefore.isEmpty)
 
-        let emptyArrivals = StopArrivals(
-            arrivalsAndDepartures: [],
-            id: "1_10020",
-            nearbyStopIDs: [],
-            situationIDs: [],
-            stopID: "1_10020"
+        var payload = try #require(
+            try JSONSerialization.jsonObject(with: Fixtures.loadData(file: StopArrivalsFixture.fileName)) as? [String: Any]
         )
+        var data = try #require(payload["data"] as? [String: Any])
+        var entry = try #require(data["entry"] as? [String: Any])
+        entry["arrivalsAndDepartures"] = []
+        data["entry"] = entry
+        payload["data"] = data
+        let emptyData = try JSONSerialization.data(withJSONObject: payload)
+        let emptyArrivals = try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<StopArrivals>.self, from: emptyData).list
+
         model.apply(arrivals: emptyArrivals, isListFiltered: false, preferences: StopPreferences(), owner: Self.stop)
         await harness.estimation.inputsSettled()
 
-        let vehicles = model.display?.vehicles ?? []
-        #expect(vehicles.isEmpty)
+        let display = try #require(model.display)
+        #expect(display.vehicles.isEmpty)
     }
 }

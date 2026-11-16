@@ -241,7 +241,7 @@ struct HomeNearbyDeparturesTests {
         #expect(row1 != stopRow1)
     }
 
-    @Test func `Rebuilding rows with newly excluded bookmarks updates row presentation`() throws {
+    @Test func `Rebuilding rows with newly excluded bookmarks updates row presentation`() async throws {
         let stop = try #require(try stops().first)
         let departures = try upcoming()
         let firstKey = TripBookmarkKey(arrivalDeparture: try #require(departures.first))
