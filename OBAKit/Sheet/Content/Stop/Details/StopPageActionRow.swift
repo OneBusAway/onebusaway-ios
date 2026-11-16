@@ -303,12 +303,12 @@ struct StopPageActionRow: View {
 
     /// A control's glyph in its filled circle.
     ///
-    /// A disabled control dims itself, but only because nothing here pins its
-    /// `foregroundStyle`: SwiftUI greys disabled content *through* the
-    /// foreground style, so hard-coding `.primary` anywhere above the control
-    /// would leave a disabled button looking identical to an enabled one while
-    /// still refusing taps. This dimming is the only
-    /// signal that an action is unavailable, so it must not be defeated.
+    /// A disabled control dims itself through `FilledCircleButtonStyle`, which
+    /// reads `isEnabled` and picks the glyph's colour. Nothing here pins a
+    /// `foregroundStyle`, which would override the style's and leave a disabled
+    /// button looking identical to an enabled one while still refusing taps.
+    /// This dimming is the only signal that an action is unavailable, so it
+    /// must not be defeated.
     private func glyph(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
             .font(.body.weight(.semibold))
