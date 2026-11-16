@@ -125,10 +125,9 @@ enum TripPlannerCardMetrics {
     static let badgeHorizontalPadding: CGFloat = 4
     static let badgeSpacing: CGFloat = 4
 
-    /// How far above the coordinate the card's bottom edge sits.
-    static func reach(pinSize: CGFloat = ThemeMetrics.defaultMapAnnotationSize, gap: CGFloat = MapStopLabelLayout.gap) -> CGFloat {
-        pinSize / 2 + gap
-    }
+    /// How far above the coordinate the card's bottom edge sits: a pin's
+    /// half-height plus the label gap.
+    static let reach: CGFloat = ThemeMetrics.defaultMapAnnotationSize / 2 + MapStopLabelLayout.gap
 
     static func size(for annotation: TripPlannerMapDisplayModel.Annotation) -> CGSize {
         // The badge only draws with both of its colors.
@@ -141,8 +140,9 @@ enum TripPlannerCardMetrics {
             let width = (text as NSString).size(withAttributes: [.font: font]).width
             return CGSize(width: ceil(width), height: ceil(font.lineHeight))
         }
-        var width = measure(title, titleFont).width
-        var height = measure(title, titleFont).height
+        let titleSize = measure(title, titleFont)
+        var width = titleSize.width
+        var height = titleSize.height
         if let subtitle {
             let line = measure(subtitle, subtitleFont)
             width = max(width, line.width)
@@ -158,16 +158,16 @@ enum TripPlannerCardMetrics {
 
     /// The point on the card that MapKit places on the coordinate: centred
     /// horizontally, and `reach` below the card's bottom edge.
-    static func anchor(cardHeight: CGFloat, pinSize: CGFloat = ThemeMetrics.defaultMapAnnotationSize, gap: CGFloat = MapStopLabelLayout.gap) -> UnitPoint {
+    static func anchor(cardHeight: CGFloat) -> UnitPoint {
         guard cardHeight > 0 else { return .bottom }
-        return UnitPoint(x: 0.5, y: 1 + reach(pinSize: pinSize, gap: gap) / cardHeight)
+        return UnitPoint(x: 0.5, y: 1 + reach / cardHeight)
     }
 
     /// Where a card of `size` draws when its coordinate projects to `center`.
-    static func rect(size: CGSize, at center: CGPoint, pinSize: CGFloat = ThemeMetrics.defaultMapAnnotationSize, gap: CGFloat = MapStopLabelLayout.gap) -> CGRect {
+    static func rect(size: CGSize, at center: CGPoint) -> CGRect {
         CGRect(
             x: center.x - size.width / 2,
-            y: center.y - reach(pinSize: pinSize, gap: gap) - size.height,
+            y: center.y - reach - size.height,
             width: size.width,
             height: size.height
         )
