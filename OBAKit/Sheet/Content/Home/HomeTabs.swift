@@ -264,6 +264,21 @@ struct HomeTabBar: View {
     /// A tab's least touch target.
     private static let minimumHeight: CGFloat = 44
 
+    /// See `highlightShape`.
+    private static let highlightCornerRadius: CGFloat = 12
+
+    /// The selected tab's highlight. On iOS 26 and later, each corner near one
+    /// of the sheet's is concentric with it, as the sheet's own corners are with
+    /// the screen's: collapsed, Home's and Bookmarks' outer bottom corners follow
+    /// the sheet's curve. Corners far from the sheet's keep the 12-point radius.
+    private static let highlightShape: AnyShape = {
+        if #available(iOS 26.0, *) {
+            AnyShape(ConcentricRectangle(corners: .concentric(minimum: .fixed(highlightCornerRadius))))
+        } else {
+            AnyShape(RoundedRectangle(cornerRadius: highlightCornerRadius, style: .continuous))
+        }
+    }()
+
     /// `#486621` in light mode: legible as text on the light tint below, which
     /// the lighter brand green is not. In dark mode the dark brand accent falls
     /// short of 4.5:1 on the sheet, so the lighter brand green takes over there.
@@ -305,10 +320,12 @@ struct HomeTabBar: View {
             .foregroundStyle(isSelected ? accent : Color(uiColor: .label))
             .frame(maxWidth: .infinity, minHeight: Self.minimumHeight)
             .padding(.vertical, 6)
-            .background(isSelected ? tint : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        // Outside the button: a button gives its label a rectangular container
+        // shape of its own, which leaves every concentric corner square.
+        .background(isSelected ? tint : .clear, in: Self.highlightShape)
         // Read as a tab, "selected" or not, inside the tab bar container above.
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
