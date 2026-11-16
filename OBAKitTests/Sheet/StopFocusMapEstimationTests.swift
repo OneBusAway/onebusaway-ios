@@ -194,6 +194,7 @@ final class StopFocusMapEstimationTests {
         await poll(until: { self.clock.sleeperCount == 1 })
         let vehiclesBefore = try #require(model.display?.vehicles)
         #expect(!vehiclesBefore.isEmpty)
+        #expect(!harness.estimation.estimates.isEmpty)
 
         var payload = try #require(
             try JSONSerialization.jsonObject(with: Fixtures.loadData(file: StopArrivalsFixture.fileName)) as? [String: Any]
