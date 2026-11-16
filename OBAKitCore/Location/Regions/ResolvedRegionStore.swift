@@ -20,7 +20,7 @@ import Foundation
 public struct ResolvedRegionStore {
     public static let defaultsKey = "OBAResolvedCurrentRegion"
 
-    public let userDefaults: UserDefaults
+    let userDefaults: UserDefaults
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
