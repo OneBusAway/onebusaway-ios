@@ -120,12 +120,18 @@ extension APIService {
         cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     ) async throws -> RESTAPIResponse<T> {
         let (decoded, response) = try await getDataAndResponse(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder, cachePolicy: cachePolicy)
-        decoded.serverClock = ServerClockSample(
-            currentTime: decoded.currentTime,
-            age: response.value(forHTTPHeaderField: "Age"),
+        stampServerClock(on: decoded, from: response)
+        return decoded
+    }
+
+    /// Records `response`'s `ServerClockSample`: its `currentTime` against the
+    /// device clock, adjusted by the HTTP `Age` header.
+    nonisolated func stampServerClock(on response: CoreRESTAPIResponse, from http: HTTPURLResponse) {
+        response.serverClock = ServerClockSample(
+            currentTime: response.currentTime,
+            age: http.value(forHTTPHeaderField: "Age"),
             receivedAt: Date()
         )
-        return decoded
     }
 
     nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {

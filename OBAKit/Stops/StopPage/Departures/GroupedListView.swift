@@ -197,7 +197,7 @@ struct GroupedListView: View {
     /// choice); expanding the card reveals rows that lead to the full name.
     private func headsignText(_ next: ArrivalDeparture) -> some View {
         Text(next.tripHeadsign ?? next.routeShortName)
-            .font(.headline.weight(.heavy))
+            .font(.stopRowTitle)
             .lineLimit(2)
     }
 

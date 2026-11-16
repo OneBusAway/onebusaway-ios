@@ -432,17 +432,8 @@
 /* Header of a section on the map panel's home sheet that holds shortcuts to other features: the trip planner, bikes and scooters on the map, and alarms. */
 "home_sheet.explore.title" = "Explorer";
 
-/* A row at the end of the Nearby Stops section on the map panel's home sheet. It opens the full list of stops near the center of the map. */
-"home_sheet.nearby.all_stops" = "Tous les arrêts à proximité";
-
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Affiche tous les éléments de cette section.";
-
-/* Title of the first filter on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is a chip in a row of four. */
-"home_sheet.tab.for_you" = "Pour vous";
-
-/* Title of a filter on the map panel's home sheet that lists the stops near the center of the map. Short: it is a chip in a row of four. */
-"home_sheet.tab.nearby" = "À proximité";
 
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Vérifiez vos réglages des activités en direct dans les Réglages.";
@@ -1431,9 +1422,6 @@
 
 
 
-/* Button revealing recently departed trips. %d is the count. */
-"stop_page.past_toggle_fmt" = "Passés · %d";
-
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Masquer";
 
@@ -2409,3 +2397,15 @@
 
 /* VoiceOver hint for a quick search row, which runs a search and keeps the search field open. */
 "search_controller.accessibility.quick_search" = "Lance cette recherche.";
+
+/* The stop number in the stop sheet header's subtitle, followed by " · " and the direction. %@ is the stop's code. */
+"stop_header.stop_code_fmt" = "Arrêt %@";
+
+/* Visible text of the walk and bike pills in the stop sheet header; the icon says which. %d is the time in minutes. */
+"stop_header.travel_minutes_fmt" = "%d min";
+
+/* Button on the stop page revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
+"stop_page.past_toggle_earlier_fmt" = "%d précédents";
+
+/* Title of the first tab on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is one of three tabs, under an icon. */
+"home_sheet.tab.home" = "Accueil";

@@ -174,11 +174,104 @@ extension RESTAPIService {
         cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
     ) async throws -> RESTAPIResponse<StopArrivals> {
         let url = urlBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
-        return try await getData(
-            for: url,
-            decodeRESTAPIResponseAs: StopArrivals.self,
-            cachePolicy: cachePolicy
+        do {
+            return try await getData(
+                for: url,
+                decodeRESTAPIResponseAs: StopArrivals.self,
+                cachePolicy: cachePolicy
+            )
+        } catch let error as APIError where error.isNullResponseBody {
+            return try await noServiceArrivals(stopID: id, nullBodyError: error, cachePolicy: cachePolicy)
+        }
+    }
+
+    /// Recovers from an arrivals response whose body is the literal `null`.
+    ///
+    /// Java OBA servers older than 2.7.2 send that body (HTTP 200) for two
+    /// different cases, and the body alone can't tell them apart:
+    ///
+    /// - The stop doesn't exist (#1331).
+    /// - The stop exists, but none of its routes run on the requested day. For
+    ///   example, a weekday-only stop opened on a Saturday: Puget Sound stop
+    ///   `1_39810` on 2026-11-15, OneBusAway/maglev#2102.
+    ///
+    /// The same body also comes from a server that crashed while building the
+    /// reply (onebusaway-application-modules#461), with service running.
+    ///
+    /// To tell a missing stop from the rest, fetch the stop. If the server has
+    /// it, build what maglev returns on a no-service day: the stop with no
+    /// arrivals and departures. Callers then show their neutral empty state
+    /// ("No departures in the next N minutes"), which claims nothing about the
+    /// day's service. In the crash case this hides real departures; the `null`
+    /// itself is still logged at error level by `APIService+GetData`.
+    ///
+    /// If the server has no such stop, rethrow `nullBodyError`, so callers keep
+    /// their missing-stop handling (`APIError.indicatesMissingStop`). If the
+    /// stop fetch fails for another reason, throw that error, which reads as a
+    /// transient failure, rather than tell the rider the stop is gone.
+    private nonisolated func noServiceArrivals(
+        stopID: StopID,
+        nullBodyError: APIError,
+        cachePolicy: URLRequest.CachePolicy
+    ) async throws -> RESTAPIResponse<StopArrivals> {
+        let stopData: Data
+        let httpResponse: HTTPURLResponse
+        do {
+            (stopData, httpResponse) = try await getData(for: urlBuilder.getStop(stopID: stopID), cachePolicy: cachePolicy)
+        } catch let stopError as APIError where stopError.indicatesMissingStop {
+            throw nullBodyError
+        }
+
+        // Only a body that says "no such stop" may read as a missing stop. Anything
+        // else that isn't a usable stop (a captive portal's HTML, a malformed body,
+        // an envelope carrying some other error code) is a transient failure, and
+        // must not tell the rider their bookmark is broken.
+        let unusableStopResponse = APIError.invalidContentType(
+            originalError: nil,
+            expectedContentType: "json",
+            actualContentType: httpResponse.contentType
         )
+        guard httpResponse.hasJSONContentType else { throw unusableStopResponse }
+
+        let json: Any
+        do {
+            json = try JSONSerialization.jsonObject(with: stopData, options: .fragmentsAllowed)
+        } catch {
+            throw unusableStopResponse
+        }
+        if json is NSNull { throw nullBodyError }
+        guard var root = json as? [String: Any] else { throw unusableStopResponse }
+
+        guard
+            var payload = root["data"] as? [String: Any],
+            let stopEntry = payload["entry"] as? [String: Any]
+        else {
+            let code = root["code"] as? Int
+            if code == nil || code == 200 || code == 404 { throw nullBodyError }
+            throw unusableStopResponse
+        }
+        guard let resolvedStopID = stopEntry["id"] as? String else { throw unusableStopResponse }
+
+        var references = payload["references"] as? [String: Any] ?? [:]
+        references["stops"] = (references["stops"] as? [[String: Any]] ?? []) + [stopEntry]
+        payload["references"] = references
+        payload["entry"] = [
+            "arrivalsAndDepartures": [Any](),
+            "nearbyStopIds": [Any](),
+            "situationIds": [Any](),
+            "stopId": resolvedStopID
+        ]
+        root["data"] = payload
+
+        // Info, not error: `APIService+GetData` has already logged the `null` itself at
+        // error level, so the server problem shows up without doubling the line on
+        // every poll of a stop that simply has no service today.
+        logger.info("Arrivals for \(stopID, privacy: .public) returned 'null' but the stop exists; showing no departures. This is a server bug: either the stop has no service today or the server failed to build the reply.")
+
+        let synthesized = try JSONSerialization.data(withJSONObject: root)
+        let decoded = try decoder.decode(RESTAPIResponse<StopArrivals>.self, from: synthesized)
+        stampServerClock(on: decoded, from: httpResponse)
+        return decoded
     }
 
     /// The arrival a deep link (an alarm, a shared trip) names.

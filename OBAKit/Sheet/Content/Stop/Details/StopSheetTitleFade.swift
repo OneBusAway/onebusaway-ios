@@ -21,8 +21,7 @@ import CoreGraphics
 /// thread was pegged and the app stopped responding. Two things keep that fixed:
 /// callers pass `contentOffset.y + contentInsets.top`, a sum that holds steady
 /// when an inset changes, and this drives opacity only. The sheet's chrome is
-/// two fixed-height insets — the top bar and the action row — for the same
-/// reason. See the note in `StopDetailsSheetView.sheetBody(proxy:)`.
+/// one fixed-height inset, the top bar, for the same reason. See the note in `StopDetailsSheetView.sheetBody(proxy:)`.
 nonisolated enum StopSheetTitleFade {
 
     /// - Parameters:

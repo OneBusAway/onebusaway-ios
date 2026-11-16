@@ -663,6 +663,7 @@ final class BookmarksViewModelTests: OBATestCase {
         dataLoader.mock(data: Data("null".utf8), statusCode: 200) {
             $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
         }
+        Fixtures.stubMissingStop(dataLoader: dataLoader)
 
         let viewModel = BookmarksViewModel(application: app)
         await viewModel.refreshAndWait()
@@ -736,6 +737,7 @@ final class BookmarksViewModelTests: OBATestCase {
             staging.mock(data: Data("null".utf8), statusCode: 200) {
                 $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
             }
+            Fixtures.stubMissingStop(dataLoader: staging)
         }
 
         await viewModel.refreshAndWait()

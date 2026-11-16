@@ -120,7 +120,7 @@ struct BookmarkCardView: View {
                 BookmarkPinIndicator()
             }
             Text(row.name)
-                .font(.headline.weight(.heavy))
+                .font(.stopRowTitle)
                 .foregroundStyle(.primary)
                 .lineLimit(isAccessibilitySize ? nil : 2)
         }
@@ -331,7 +331,7 @@ struct StopBookmarkRow: View {
                         BookmarkPinIndicator()
                     }
                     Text(row.name)
-                        .font(.headline.weight(.heavy))
+                        .font(.stopRowTitle)
                         .foregroundStyle(.primary)
                         .lineLimit(2)
                 }

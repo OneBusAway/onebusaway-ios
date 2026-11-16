@@ -129,6 +129,11 @@ struct MapPanelBottomPadding {
     ) -> CGFloat {
         if detent == AppSheetRoute.homeCollapsedDetent {
             return homeCollapsedHeight
+        } else if detent == AppSheetRoute.stopCollapsedDetent {
+            // The collapsed stop sheet (#1751), not half the screen: without this
+            // it fell to the default below and padded the map as if at `.medium`.
+            let measurements = StopCollapsedDetent.measured.withLock { $0 }
+            return StopCollapsedDetent.height(measurements, maxDetentValue: totalMapHeight > 0 ? totalMapHeight : halfScreenHeight * 2)
         } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
             return AppSheetRoute.tripPlannerTipHeight
         } else if detent == .medium {
@@ -519,6 +524,7 @@ struct MapPanelRootView: View {
             stopIDs: stopsObserver.renderStops.map(\.id),
             routeLabels: stopsObserver.renderStops.map(\.routeLabel),
             bookmarkIDs: stopsObserver.bookmarks.map(\.stop.id),
+            tripAnnotationIDs: tripPlannerDisplay.annotations.map(\.id),
             selection: mapSelection,
             showsLabels: showStopLabels,
             showsAmbientStops: showsAmbientStops,
@@ -907,9 +913,17 @@ struct MapPanelRootView: View {
             ))
         }
 
+        // The trip planner's cards hang above their coordinates; route pills
+        // stay off them as they stay off pins (#1753).
+        let tripCards: [CGRect] = tripPlannerDisplay.annotations.compactMap { annotation in
+            guard let point = proxy.convert(annotation.coordinate, to: .local) else { return nil }
+            return TripPlannerCardMetrics.rect(size: TripPlannerCardMetrics.size(for: annotation), at: point)
+        }
+
         let placements = MapStopLabelLayout().layout(
             candidates,
             obstaclePins: unlabeledPins,
+            obstacleRects: tripCards,
             viewportCenter: CGPoint(x: mapSize.width / 2, y: mapSize.height / 2),
             heading: cameraHeading,
             previous: stopLabelPlacements
@@ -1564,6 +1578,8 @@ private struct StopLabelLayoutTriggers: ViewModifier {
         /// A stop can keep its ID but gain a route, which widens its pill.
         let routeLabels: [MapRouteLabel?]
         let bookmarkIDs: [StopID]
+        /// Trip planner cards are obstacles for route pills.
+        let tripAnnotationIDs: [String]
         let selection: MapPinSelection?
         let showsLabels: Bool
         let showsAmbientStops: Bool

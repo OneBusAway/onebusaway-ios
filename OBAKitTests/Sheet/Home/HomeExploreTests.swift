@@ -19,25 +19,34 @@ import UIKit
 struct HomeExploreTests {
 
     @Test func `Nothing to offer, no items`() {
-        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 0).isEmpty)
+        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 0, offersMore: false).isEmpty)
     }
 
     /// A shortcut to a feature the region doesn't have would lead nowhere.
     @Test func `Each item appears only where it leads somewhere`() {
-        #expect(HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: nil, alarmCount: 0) == [.planTrip])
-        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: false, alarmCount: 0) == [.rentals(isOn: false)])
-        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 2) == [.alarms(count: 2)])
+        #expect(HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: nil, alarmCount: 0, offersMore: false) == [.planTrip])
+        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: false, alarmCount: 0, offersMore: false) == [.rentals(isOn: false)])
+        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 2, offersMore: false) == [.alarms(count: 2)])
     }
 
     @Test func `Items run Plan a Trip, Bikes and Scooters, Alarms`() {
         #expect(
-            HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: true, alarmCount: 1)
+            HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: true, alarmCount: 1, offersMore: false)
                 == [.planTrip, .rentals(isOn: true), .alarms(count: 1)]
         )
     }
 
+    /// More has nowhere else to live on iPhone, so it's there whatever else is.
+    @Test func `More comes last, where it's offered`() {
+        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 0, offersMore: true) == [.more])
+        #expect(
+            HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: false, alarmCount: 1, offersMore: true)
+                == [.planTrip, .rentals(isOn: false), .alarms(count: 1), .more]
+        )
+    }
+
     @Test func `Every item has a title and a symbol that exists`() {
-        let items: [HomeExploreItem] = [.planTrip, .rentals(isOn: false), .rentals(isOn: true), .alarms(count: 3)]
+        let items: [HomeExploreItem] = [.planTrip, .rentals(isOn: false), .rentals(isOn: true), .alarms(count: 3), .more]
         for item in items {
             #expect(!item.title.isEmpty)
             #expect(UIImage(systemName: item.systemImage) != nil)

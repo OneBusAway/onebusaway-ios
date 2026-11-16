@@ -348,4 +348,21 @@ final class HomeSheetViewModelTests: OBATestCase {
         #expect(viewModel.recent.alarmCount == 0)
         #expect(!viewModel.visibleSections.contains(.explore))
     }
+
+    /// On iPhone, More lives in Explore and nowhere else, so Explore shows
+    /// even with nothing else on the sheet.
+    @Test @MainActor
+    func `Offering More puts it in Explore, which then always shows`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+
+        let viewModel = makeViewModel(application: application)
+        viewModel.offersMore = true
+        viewModel.activate()
+
+        #expect(viewModel.exploreItems.last == .more)
+        #expect(viewModel.visibleSections == [.explore])
+
+        viewModel.offersMore = false
+        #expect(!viewModel.exploreItems.contains(.more))
+    }
 }

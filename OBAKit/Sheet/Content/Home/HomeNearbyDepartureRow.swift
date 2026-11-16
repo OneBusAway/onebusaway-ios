@@ -59,7 +59,7 @@ struct HomeNearbyDepartureRow: View {
                 )
                 VStack(alignment: .leading, spacing: 2) {
                     Text(headsign)
-                        .font(.headline.weight(.heavy))
+                        .font(.stopRowTitle)
                         .foregroundStyle(.primary)
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                     Text(subtitle)

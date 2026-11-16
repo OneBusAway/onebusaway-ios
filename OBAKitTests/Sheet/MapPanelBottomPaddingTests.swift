@@ -218,4 +218,18 @@ struct MapPanelBottomPaddingTests {
         )
         #expect(heightFromLargeDetent == totalHeight * 0.99)
     }
+
+    /// A collapsed stop sheet (#1751) pads the map by its own measured height,
+    /// not by half the screen as `.medium` would.
+    @Test func `Estimated height resolves the collapsed stop detent to its measured height`() {
+        let height = MapPanelBottomPadding.estimatedHeight(
+            for: AppSheetRoute.stopCollapsedDetent,
+            halfScreenHeight: 400,
+            totalMapHeight: 800,
+            homeCollapsedHeight: AppSheetRoute.homeCollapsedHeight
+        )
+        let measured = StopCollapsedDetent.measured.withLock { $0 }
+        #expect(height == StopCollapsedDetent.height(measured, maxDetentValue: 800))
+        #expect(height < 400)
+    }
 }

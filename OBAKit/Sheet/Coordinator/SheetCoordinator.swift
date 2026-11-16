@@ -61,6 +61,17 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// every layer for a value only one of them reads, once.
     private(set) var unwindFocusDepth: Int?
 
+    /// The base sheet's detent when the first stacked sheet opened over it, to go
+    /// back to when the last one closes. `nil` with nothing stacked.
+    ///
+    /// One sheet at a time (HIG, Sheets): while a stacked sheet is up, the base
+    /// sheet rests at its initial detent, which for home is the collapsed search
+    /// field, so a stop opened from an expanded home sheet doesn't sit over a
+    /// second full sheet of lists. Closing the stop puts home back as it was.
+    private(set) var baseDetentBeforeStacking: PresentationDetent?
+    /// The base route `baseDetentBeforeStacking` belongs to.
+    private var baseRouteBeforeStacking: Route?
+
     /// Every route on screen: the base sheet's stack from its root up, then the
     /// stacked sheets from the bottom up.
     var allRoutes: [Route] { routeStack + stackedRoutes }
@@ -87,20 +98,19 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Stacked routes append a new physical sheet over the previous one;
     /// content-swap routes append to the base content stack.
     ///
-    /// Invariant: a stacked route must allow interactive dismissal. The OS
-    /// owns drag-down on the stacked layer, and `truncateStacked` is wired
-    /// to that gesture — locking dismissal would let `stackedEntries` point
-    /// at a sheet that's no longer on screen.
+    /// A stacked route that allows interactive dismissal leaves drag-down to
+    /// the OS, and `truncateStacked` keeps storage in sync with that gesture. A
+    /// stacked route that locks it (the stop sheet, #1751) must offer its own
+    /// way out that calls `pop()`, or the rider has none.
     func push(_ route: Route) {
         lastChangeWasPopToRoot = false
         if route.prefersStacking {
-            precondition(
-                !route.detentConfiguration.isDismissDisabled,
-                "Stacked routes must have isDismissDisabled == false; \(route) does not."
-            )
             // A sheet opening on top takes VoiceOver itself, so an unwind still
             // closing beneath it has no focus left to move.
             unwindFocusDepth = nil
+            if stackedEntries.isEmpty {
+                restBaseSheet()
+            }
             stackedEntries.append(StackedEntry(route: route, detent: route.detentConfiguration.initialDetent))
         } else {
             additionalRoutes.append(route)
@@ -114,6 +124,7 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         lastChangeWasPopToRoot = false
         if !stackedEntries.isEmpty {
             stackedEntries.removeLast()
+            restoreBaseSheetIfUncovered()
             return
         }
         guard !additionalRoutes.isEmpty else { return }
@@ -153,6 +164,28 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         lastChangeWasPopToRoot = false
         guard depth >= 0, depth < stackedEntries.count else { return }
         stackedEntries.removeSubrange(depth...)
+        restoreBaseSheetIfUncovered()
+    }
+
+    /// Moves the base sheet to its initial detent for a stacked sheet opening
+    /// over it, remembering where it was; see `baseDetentBeforeStacking`.
+    private func restBaseSheet() {
+        let resting = currentRoute.detentConfiguration.initialDetent
+        guard currentDetent != resting else { return }
+        baseDetentBeforeStacking = currentDetent
+        baseRouteBeforeStacking = currentRoute
+        currentDetent = resting
+    }
+
+    /// Puts the base sheet back where it was once nothing is stacked over it,
+    /// if it's still showing the route it was rested on.
+    private func restoreBaseSheetIfUncovered() {
+        guard stackedEntries.isEmpty, let detent = baseDetentBeforeStacking else { return }
+        let route = baseRouteBeforeStacking
+        baseDetentBeforeStacking = nil
+        baseRouteBeforeStacking = nil
+        guard route == currentRoute, currentDetents.contains(detent) else { return }
+        currentDetent = detent
     }
 
     /// Updates the stored detent for the stacked sheet at `depth`.
@@ -224,6 +257,8 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     func popToRoot() {
         lastChangeWasPopToRoot = true
         unwindFocusDepth = nil
+        baseDetentBeforeStacking = nil
+        baseRouteBeforeStacking = nil
         stackedEntries.removeAll()
         additionalRoutes.removeAll()
         currentDetent = root.detentConfiguration.initialDetent

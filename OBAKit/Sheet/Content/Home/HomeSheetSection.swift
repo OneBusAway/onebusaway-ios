@@ -31,7 +31,7 @@ enum HomeSheetSection: Hashable {
     /// over. Defined once so the sections can't drift apart.
     static let itemLimit = 4
 
-    /// Recent stops on For You, which has more sections above them than the
+    /// Recent stops on Home, which has more sections above them than the
     /// sheet had before. The Recent tab has the rest.
     static let recentPreviewLimit = 3
 }

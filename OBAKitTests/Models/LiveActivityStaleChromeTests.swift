@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import SwiftUI
 import Testing
 @testable import OBAKitCore
 
@@ -23,6 +24,10 @@ struct LiveActivityStaleChromeTests {
         #expect(text != " ")
     }
 
+    @Test func `Warning color matches theme warning text color`() {
+        #expect(LiveActivityStaleChrome.warningColor == Color(uiColor: ThemeColors.shared.warningText))
+    }
+
     @Test func `Fresh content stays fully opaque`() {
         #expect(LiveActivityStaleChrome.contentOpacity(isStale: false) == 1.0)
     }
@@ -31,5 +36,6 @@ struct LiveActivityStaleChromeTests {
         let opacity = LiveActivityStaleChrome.contentOpacity(isStale: true)
         #expect(opacity < 1.0)
         #expect(opacity > 0.0)
+        #expect(opacity == 0.55)
     }
 }

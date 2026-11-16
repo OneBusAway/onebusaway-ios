@@ -10,22 +10,6 @@ import AppIntents
 import WidgetKit
 import OBAKitCore
 
-// MARK: - RefreshWidgetIntent
-/// this intent serves as a way to refresh the widget and its timelines.
-///
-/// The title is read out of process from this extension's metadata, so it
-/// resolves from the extension's own `AppIntents.strings` (OBAWidget/Strings),
-/// not OBAKitCore's tables. `#bundle` is the only form the metadata processor
-/// accepts; see `TrackBookmarkIntent`.
-struct RefreshWidgetIntent: AppIntent {
-    static let title = LocalizedStringResource("refresh_widget_intent.title", defaultValue: "Refresh Widget", table: "AppIntents", bundle: #bundle)
-
-    func perform() async throws -> some IntentResult {
-        WidgetCenter.shared.reloadAllTimelines()
-        return .result()
-    }
-}
-
 /// A button to manually trigger the widget refresh.
 struct RefreshButton: View {
     @Environment(\.widgetRenderingMode) private var widgetRenderingMode
@@ -51,7 +35,6 @@ struct RefreshButton: View {
     }
 
     var body: some View {
-
         Button(intent: RefreshWidgetIntent()) {
             HStack(spacing: 2) {
                 Image(systemName: "arrow.trianglehead.clockwise")
@@ -66,6 +49,5 @@ struct RefreshButton: View {
             .background(backgroundShape)
         }
         .buttonStyle(.plain)
-
     }
 }

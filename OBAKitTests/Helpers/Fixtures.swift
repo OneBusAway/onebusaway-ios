@@ -220,6 +220,20 @@ class Fixtures {
         }
     }
 
+    /// Answers every `stop/{id}` request with `data`. An arrivals body of `null`
+    /// makes `getArrivalsAndDeparturesForStop` look the stop up (OneBusAway/maglev#2102).
+    class func stubStop(dataLoader: MockDataLoader, data: Data, statusCode: Int = 200) {
+        dataLoader.mock(data: data, statusCode: statusCode) { request in
+            request.url?.path.contains("/api/where/stop/") ?? false
+        }
+    }
+
+    /// Answers `stop/{id}` with `null`, the way these servers report a stop they
+    /// don't have, so a `null` arrivals body keeps the missing-stop outcome.
+    class func stubMissingStop(dataLoader: MockDataLoader) {
+        stubStop(dataLoader: dataLoader, data: Data("null".utf8))
+    }
+
     /// Answers the on-demand zones layer's `services-for-location` probe with
     /// one Alexandria zone. Needed by any suite that pushes a viewport through
     /// an `Application` whose `MapLayerRegistrar` has registered that layer:
