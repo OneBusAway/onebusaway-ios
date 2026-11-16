@@ -257,16 +257,6 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         updateExploreItems()
     }
 
-    /// Where the Nearby tab's list is centered: the map's, as the section's
-    /// stops are.
-    var nearbyCoordinate: CLLocationCoordinate2D? {
-        NearbyCoordinateResolver.coordinate(
-            viewportCenter: nearby.viewportCenter,
-            currentLocation: application.locationService.currentLocation,
-            region: application.currentRegion
-        )
-    }
-
     /// The rider's location, for the Nearby rows' walk times.
     var currentLocation: CLLocation? {
         application.locationService.currentLocation

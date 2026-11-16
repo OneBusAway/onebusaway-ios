@@ -13,8 +13,8 @@ import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
-/// The home sheet's tabs on iPhone: Home, Recent, Bookmarks and More, in a bar
-/// pinned to the bottom of the sheet, as Find My lays its sheet out.
+/// The home sheet's tabs on iPhone: Home, Recent and Bookmarks, in a bar under
+/// the search field that shows at every detent, collapsed included (#1750).
 @MainActor
 @Suite(.serialized)
 struct HomeTabsTests {
@@ -23,10 +23,17 @@ struct HomeTabsTests {
 
     // MARK: - Tabs
 
-    /// The filters under the search field, in the order they read: the mixed
-    /// view first, then one per section of it.
-    @Test func `The tabs run For You, Bookmarks, Nearby, Recent`() {
-        #expect(HomeTab.allCases == [.home, .bookmarks, .nearby, .recent])
+    /// Home, which holds what leaves nearby, then Recent and Bookmarks. No
+    /// Nearby tab: its content is on Home.
+    @Test func `The tabs run Home, Recent, Bookmarks`() {
+        #expect(HomeTab.allCases == [.home, .recent, .bookmarks])
+    }
+
+    /// An icon above each label, so the tab doesn't rely on its text alone.
+    @Test func `Each tab has an icon`() {
+        #expect(HomeTab.home.systemImage == "house")
+        #expect(HomeTab.recent.systemImage == "clock")
+        #expect(HomeTab.bookmarks.systemImage == "bookmark")
     }
 
     /// The classic tab bar's titles, so the panel's tabs arrive translated.
@@ -35,27 +42,9 @@ struct HomeTabsTests {
         #expect(HomeTab.bookmarks.title == OBAKit.OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: ""))
     }
 
-    @Test func `For You and Nearby have titles of their own`() {
-        #expect(HomeTab.home.title == OBAKit.OBALoc("home_sheet.tab.for_you", value: "For You", comment: ""))
-        #expect(HomeTab.nearby.title == OBAKit.OBALoc("home_sheet.tab.nearby", value: "Nearby", comment: ""))
-    }
-
-    // MARK: - Nearby
-
-    /// The Nearby tab keeps its list, scroll position and search text between
-    /// visits, unless the map has moved to where other stops are near.
-    @Test func `Nearby recenters only once the map has moved away`() {
-        let here = CLLocationCoordinate2D(latitude: 47.6097, longitude: -122.3331)
-        // About 50 m and 550 m north.
-        let aStepAway = CLLocationCoordinate2D(latitude: 47.60975 + 0.0004, longitude: -122.3331)
-        let blocksAway = CLLocationCoordinate2D(latitude: 47.6147, longitude: -122.3331)
-
-        #expect(HomeTabs.nearbyAnchor(current: nil, mapCenter: here)?.latitude == here.latitude)
-        #expect(HomeTabs.nearbyAnchor(current: here, mapCenter: aStepAway)?.latitude == here.latitude)
-        #expect(HomeTabs.nearbyAnchor(current: here, mapCenter: blocksAway)?.latitude == blocksAway.latitude)
-        // The map's center lost, as before its first settle: stay put.
-        #expect(HomeTabs.nearbyAnchor(current: here, mapCenter: nil)?.latitude == here.latitude)
-        #expect(HomeTabs.nearbyAnchor(current: nil, mapCenter: nil) == nil)
+    @Test func `Home has a title of its own`() {
+        #expect(HomeTab.home.title == OBAKit.OBALoc("home_sheet.tab.home", value: "Home", comment: ""))
+        #expect(HomeTab.home.title == "Home")
     }
 
     // MARK: - Where they show
@@ -172,10 +161,15 @@ struct HomeTabsTests {
 
     /// With the tabs on screen, a section's header goes to its tab rather than
     /// stacking a second copy of it over the home sheet.
-    @Test func `Bookmarks, Nearby and Recent headers go to their tabs`() {
+    @Test func `Bookmarks and Recent headers go to their tabs`() {
         #expect(HomeTab(seeAll: .recentStopsAll) == .recent)
         #expect(HomeTab(seeAll: .bookmarksAll) == .bookmarks)
-        #expect(HomeTab(seeAll: .nearbyAll) == .nearby)
+    }
+
+    /// No Nearby tab, so the Nearby Stops header stacks the full list, the only
+    /// way into it now that the section has no "All Nearby Stops" row (#1752).
+    @Test func `The Nearby Stops header has no tab to go to`() {
+        #expect(HomeTab(seeAll: .nearbyAll) == nil)
     }
 
     @Test func `Other routes have no tab`() {
@@ -185,38 +179,27 @@ struct HomeTabsTests {
 
     // MARK: - Collapsed header
 
-    /// The detent is fitted to the field and its standard padding, never to
-    /// the centering padding, which is itself derived from the detent.
-    @Test func `The header measured for the detent is the field with its standard padding`() {
-        #expect(HomeTabs.headerHeight(fieldHeight: 50) == 70)
+    /// The detent is fitted to the header as laid out at its standard padding:
+    /// the search field, then the tab bar.
+    @Test func `The header measured for the detent is the field and the tab bar`() {
+        #expect(HomeTabs.headerHeight(fieldHeight: 50, tabBarHeight: 60) == 130) // 16 + 50 + 4 + 60
     }
 
-    /// Collapsed, the field sits in the middle of the sheet rather than over a
-    /// band of nothing.
-    @Test func `Collapsed, the search field is centered in the sheet`() {
-        let collapsed = AppSheetRoute.homeCollapsedHeight
-        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: collapsed) == (collapsed - 50) / 2)
-        // A few points short, as the home view's frame can be.
-        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: collapsed - 4) == (collapsed - 50) / 2)
+    /// Regular width has no tab bar.
+    @Test func `Without a tab bar the header is the field with its padding`() {
+        #expect(HomeTabs.headerHeight(fieldHeight: 50, tabBarHeight: 0) == 70)
     }
 
-    /// Point for point, so the field follows a drag up, down to the standard.
-    @Test func `As the sheet rises the field moves up to the standard padding`() {
-        let collapsed = AppSheetRoute.homeCollapsedHeight
-        let centered = (collapsed - 50) / 2
-        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: collapsed + 10) == centered - 10)
-        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 50, sheetHeight: 400) == HomeTabs.searchRowStandardTopPadding)
+    /// Room for a row under the tabs, empty for now: the collapsed sheet grows
+    /// by exactly that row.
+    @Test func `A row under the tabs adds its own height`() {
+        let without = HomeTabs.headerHeight(fieldHeight: 50, tabBarHeight: 60)
+        #expect(HomeTabs.headerHeight(fieldHeight: 50, tabBarHeight: 60, accessoryHeight: 44) == without + 44)
     }
 
-    /// At the largest text sizes the field outgrows the floor, and there's no
-    /// extra to center it in.
-    @Test func `A field taller than the floor keeps the standard padding`() {
-        #expect(HomeTabs.searchRowTopPadding(fieldHeight: 140, sheetHeight: 160) == HomeTabs.searchRowStandardTopPadding)
-    }
-
-    @Test func `The chips show only with room for all of them`() {
-        #expect(HomeTabs.showsChips(room: 52, chipsHeight: 52))
-        #expect(!HomeTabs.showsChips(room: 30, chipsHeight: 52))
-        #expect(!HomeTabs.showsChips(room: 0, chipsHeight: 0))
+    /// The header grows with Dynamic Type, and the collapsed sheet with it.
+    @Test func `The collapsed sheet follows a header taller than the floor`() {
+        let header = HomeTabs.headerHeight(fieldHeight: 90, tabBarHeight: 120)
+        #expect(HomeCollapsedDetent.collapsedHeight(headerHeight: header) == header)
     }
 }

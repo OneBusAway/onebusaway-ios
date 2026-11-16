@@ -435,12 +435,6 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "يعرض جميع العناصر في هذا القسم.";
 
-/* Title of the first filter on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is a chip in a row of four. */
-"home_sheet.tab.for_you" = "لك";
-
-/* Title of a filter on the map panel's home sheet that lists the stops near the center of the map. Short: it is a chip in a row of four. */
-"home_sheet.tab.nearby" = "بالقرب";
-
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "يُرجى التحقق من إعدادات «الأنشطة المباشرة» في تطبيق «الإعدادات».";
 
@@ -2412,3 +2406,6 @@
 
 /* Button on the stop page revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback. */
 "stop_page.past_toggle_earlier_fmt" = "السابقة: %d";
+
+/* Title of the first tab on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is one of three tabs, under an icon. */
+"home_sheet.tab.home" = "الرئيسية";
