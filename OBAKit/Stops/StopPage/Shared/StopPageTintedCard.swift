@@ -37,16 +37,11 @@ struct StopPageTintedCard<Content: View>: View {
     }
 }
 
-/// A tinted card's header: a gradient badge and a title, then `accessory`
-/// beside the title and `trailing` at the far edge (a disclosure chevron, say).
-struct StopPageCardHeader<Accessory: View, Trailing: View>: View {
+/// A tinted card's header: a gradient badge and a title.
+struct StopPageCardHeader: View {
     let systemImage: String
     let title: String
     let tint: Color
-    /// The badge glyph's colour; pick whichever reads at 4.5:1 on `tint`.
-    var glyphColor: Color = .white
-    @ViewBuilder let accessory: Accessory
-    @ViewBuilder let trailing: Trailing
 
     /// The badge scales with Dynamic Type so its glyph never clips.
     @ScaledMetric(relativeTo: .subheadline) private var badgeSize: CGFloat = 30
@@ -55,24 +50,16 @@ struct StopPageCardHeader<Accessory: View, Trailing: View>: View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(glyphColor)
+                .foregroundStyle(.white)
                 .frame(width: badgeSize, height: badgeSize)
                 .background(tint.gradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
-            accessory
             Spacer(minLength: 0)
-            trailing
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-    }
-}
-
-extension StopPageCardHeader where Accessory == EmptyView, Trailing == EmptyView {
-    init(systemImage: String, title: String, tint: Color, glyphColor: Color = .white) {
-        self.init(systemImage: systemImage, title: title, tint: tint, glyphColor: glyphColor, accessory: { EmptyView() }, trailing: { EmptyView() })
     }
 }
 

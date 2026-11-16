@@ -62,14 +62,13 @@ struct ServiceAlertsSection: View {
             }
         } label: {
             HStack(spacing: 10) {
-                // The glyph is decorative; the title carries the meaning, and the
-                // header's label says it again for VoiceOver. `warningText` is the
+                // The glyph is decorative; the title carries the meaning. `warningText` is the
                 // theme's orange tuned to stay legible in both appearances.
                 Image(systemName: "exclamationmark.triangle")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color(uiColor: ThemeColors.shared.warningText))
                     .accessibilityHidden(true)
-                Text(headerAccessibilityLabel)
+                Text(headerTitle)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                 Spacer(minLength: 0)
@@ -77,13 +76,14 @@ struct ServiceAlertsSection: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(showsServiceAlerts ? 180 : 0))
+                    // Decorative; the value below says expanded or collapsed.
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(headerAccessibilityLabel)
         // Disclosure state, so VoiceOver users know whether activating will
         // reveal or hide the alert rows.
         .accessibilityValue(showsServiceAlerts
@@ -109,7 +109,7 @@ struct ServiceAlertsSection: View {
         .buttonStyle(.plain)
     }
 
-    private var headerAccessibilityLabel: String {
+    private var headerTitle: String {
         CountPlural.format(OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), count: alerts.count)
     }
 
