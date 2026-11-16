@@ -146,6 +146,12 @@ struct StopDetailsSheetView: View {
 
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
+    /// This sheet's own measurements for `StopCollapsedDetent`. Kept here and
+    /// published only while nothing covers the sheet: the detent's store is
+    /// shared, and a stop stacked over another may have a name that wraps
+    /// differently.
+    @State private var collapsedMeasurements = StopCollapsedDetent.Measurements()
+
     init(
         stopID: StopID,
         viewModel: @autoclosure @escaping () -> StopViewModel,
@@ -224,7 +230,8 @@ struct StopDetailsSheetView: View {
                 topBar(navigation: navigation)
                     // Sizes the collapsed detent; see `StopCollapsedDetent`.
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                        StopCollapsedDetent.measured.withLock { $0.topBarHeight = height }
+                        collapsedMeasurements.topBarHeight = height
+                        publishCollapsedMeasurements()
                     }
             }
             // An overlay: it takes no part in the list's layout, so it cannot
@@ -234,6 +241,8 @@ struct StopDetailsSheetView: View {
             // escape would only try to; VoiceOver's two-finger scrub closes it
             // as Close does.
             .accessibilityAction(.escape) { coordinator.pop() }
+            // Uncovered again: this sheet's measurements size the detent.
+            .onChange(of: isCoveredBySheet) { publishCollapsedMeasurements() }
             .stopPageLifecycle(
                 viewModel: viewModel,
                 userDefaults: userDefaults,
@@ -340,6 +349,13 @@ struct StopDetailsSheetView: View {
         )
     }
 
+    /// Sizes the collapsed detent from this sheet, unless another sheet covers it.
+    private func publishCollapsedMeasurements() {
+        guard !isCoveredBySheet else { return }
+        let measurements = collapsedMeasurements
+        StopCollapsedDetent.measured.withLock { $0 = measurements }
+    }
+
     private func reconcileExpandedRoute(against ids: Set<RouteID>) {
         if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
     }
@@ -422,7 +438,8 @@ struct StopDetailsSheetView: View {
                         showsCloseButton: false,
                         mapFocus: mapFocus,
                         onTitleBlockHeight: { height in
-                            StopCollapsedDetent.measured.withLock { $0.titleBlockHeight = height }
+                            collapsedMeasurements.titleBlockHeight = height
+                            publishCollapsedMeasurements()
                         }
                     )
                 } else if showsLoadingState {

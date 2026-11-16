@@ -31,8 +31,9 @@ nonisolated struct StopCollapsedDetent: CustomPresentationDetent {
 
     /// Set as the sheet is laid out. Stored here rather than in the environment
     /// for the reason `HomeCollapsedDetent.measured` is: a custom detent's
-    /// `Context` carries only the system's environment values. Every stop sheet
-    /// writes it; they share one layout, so they measure alike.
+    /// `Context` carries only the system's environment values. Only the
+    /// uncovered stop sheet writes it (`StopDetailsSheetView`), so a stop stacked
+    /// over another sizes the detent from its own name.
     static let measured = Mutex(Measurements())
 
     /// About as short as iOS 26 will draw a floating sheet without narrowing
