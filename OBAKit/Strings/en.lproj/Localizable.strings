@@ -1575,17 +1575,32 @@
 /* VoiceOver description of the bike divider. %d is bike minutes. */
 "stop_page.bike_divider_a11y_fmt" = "Departures above this point leave sooner than your %d minute bike ride to the stop";
 
-/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
-"stop_page.bike_divider_fmt" = "%d MIN BIKE — CATCH BELOW";
-
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "NOW";
 
 /* VoiceOver-only heading that anchors the departures list in the Headings rotor, and the title of the rotor itself; not shown on screen. */
 "stop_page.departures_heading" = "Departures";
 
-/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
-"stop_page.directions_prompt.title" = "Get directions to this stop in the app?";
+/* VoiceOver hint on the stop page's bike-time buttons (header pill and departures divider) when the region has a trip planner. */
+"stop_page.directions.bike_a11y_hint" = "Offers bike directions to this stop.";
+
+/* Title of the sheet shown when the rider taps a bike time on the stop page. */
+"stop_page.directions.bike_sheet_title" = "Bike to this stop";
+
+/* Action that hands walking directions to this stop to a maps app. */
+"stop_page.directions.open_in_maps" = "Open in Maps";
+
+/* Action that plans a bike trip to this stop in the app's trip planner. */
+"stop_page.directions.show_bike_directions" = "Show Bike Directions";
+
+/* Action that plans a walk to this stop in the app's trip planner. */
+"stop_page.directions.show_walking_directions" = "Show Walking Directions";
+
+/* VoiceOver hint on the stop page's walk-time buttons (header pill and departures divider) when the region has a trip planner. */
+"stop_page.directions.walk_a11y_hint" = "Offers walking directions to this stop.";
+
+/* Title of the sheet shown when the rider taps a walk time on the stop page. */
+"stop_page.directions.walk_sheet_title" = "Walk to this stop";
 
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "All routes at this stop are filtered";
@@ -1635,14 +1650,8 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Next departures";
 
-/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
-"stop_page.header.bike_trip_planner_a11y_hint" = "Plans a bike trip to this stop in the app.";
-
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "Opens walking directions to this stop.";
-
-/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
-"stop_page.header.walk_trip_planner_a11y_hint" = "Plans a walk to this stop in the app.";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "Load more";
@@ -1775,11 +1784,11 @@
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min walk";
 
+/* Second half of the walk divider: when the rider would reach the stop if they left now. %@ is a clock time, e.g. 8:20 PM. */
+"stop_page.walk_divider.at_stop_fmt" = "at stop %@";
+
 /* VoiceOver description of the walk divider. %d is walk minutes. */
 "stop_page.walk_divider_a11y_fmt" = "Departures above this point leave sooner than your %d minute walk to the stop";
-
-/* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
-"stop_page.walk_divider_fmt" = "%d MIN WALK — CATCH BELOW";
 
 /* Title of the Edit Stop preferences controller */
 "stop_preferences_controller.title" = "Filter Routes";

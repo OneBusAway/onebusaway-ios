@@ -1338,9 +1338,6 @@
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "الإشعارات متوقفة";
 
-/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
-"stop_page.bike_divider_fmt" = "%d د بالدراجة — يمكنك اللحاق بما بالأسفل";
-
 /* VoiceOver description of the bike divider. %d is bike minutes. */
 "stop_page.bike_divider_a11y_fmt" = "المغادرات فوق هذه النقطة تغادر قبل أن تصل إلى الموقف بالدراجة خلال %d دقيقة";
 
@@ -1350,8 +1347,26 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "الآن";
 
-/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
-"stop_page.directions_prompt.title" = "هل تريد الحصول على اتجاهات إلى هذا الموقف في التطبيق؟";
+/* VoiceOver hint on the stop page's bike-time buttons (header pill and departures divider) when the region has a trip planner. */
+"stop_page.directions.bike_a11y_hint" = "يعرض اتجاهات الدراجة إلى هذا الموقف.";
+
+/* Title of the sheet shown when the rider taps a bike time on the stop page. */
+"stop_page.directions.bike_sheet_title" = "بالدراجة إلى هذا الموقف";
+
+/* Action that hands walking directions to this stop to a maps app. */
+"stop_page.directions.open_in_maps" = "فتح في الخرائط";
+
+/* Action that plans a bike trip to this stop in the app's trip planner. */
+"stop_page.directions.show_bike_directions" = "عرض اتجاهات الدراجة";
+
+/* Action that plans a walk to this stop in the app's trip planner. */
+"stop_page.directions.show_walking_directions" = "عرض اتجاهات المشي";
+
+/* VoiceOver hint on the stop page's walk-time buttons (header pill and departures divider) when the region has a trip planner. */
+"stop_page.directions.walk_a11y_hint" = "يعرض اتجاهات المشي إلى هذا الموقف.";
+
+/* Title of the sheet shown when the rider taps a walk time on the stop page. */
+"stop_page.directions.walk_sheet_title" = "المشي إلى هذا الموقف";
 
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "تمت تصفية جميع الخطوط في هذا الموقف";
@@ -1397,14 +1412,8 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "المغادرات التالية";
 
-/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
-"stop_page.header.bike_trip_planner_a11y_hint" = "يخطط لرحلة بالدراجة إلى هذا الموقف في التطبيق.";
-
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "يفتح اتجاهات المشي إلى هذا الموقف.";
-
-/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
-"stop_page.header.walk_trip_planner_a11y_hint" = "يخطط لمسار مشي إلى هذا الموقف في التطبيق.";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "تحميل المزيد";
@@ -1536,11 +1545,11 @@
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d د مشيًا";
 
+/* Second half of the walk divider: when the rider would reach the stop if they left now. %@ is a clock time, e.g. 8:20 PM. */
+"stop_page.walk_divider.at_stop_fmt" = "عند الموقف %@";
+
 /* VoiceOver description of the walk divider. %d is walk minutes. */
 "stop_page.walk_divider_a11y_fmt" = "المغادرات فوق هذه النقطة تغادر قبل أن تصل إلى الموقف سيرًا خلال %d دقيقة";
-
-/* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
-"stop_page.walk_divider_fmt" = "%d د مشيًا — يمكنك اللحاق بما بالأسفل";
 
 /* Title of the Edit Stop preferences controller */
 "stop_preferences_controller.title" = "تصفية الخطوط";

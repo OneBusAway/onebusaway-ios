@@ -43,7 +43,19 @@ struct DepartureRowView: View {
     @AppStorage(UserDefaultsStore.stopUIReducedColorsKey) private var reducedColors = false
     @AppStorage(UserDefaultsStore.stopTripCompactModeKey) private var compactMode = false
 
-    private var dimmed: Bool { style == .past }
+    /// How far the row fades. Past rows fade furthest, to say "gone"; missed
+    /// rows (upcoming, but sooner than the walk to the stop) fade less, so the
+    /// walk divider's glass capsule is what draws the eye. Increase Contrast
+    /// keeps the cue and the legibility: at 0.55, secondary text falls well
+    /// under 4.5:1.
+    private var rowOpacity: Double {
+        let increased = colorSchemeContrast == .increased
+        switch style {
+        case .past: return increased ? 0.8 : 0.55
+        case .missed: return increased ? 0.85 : 0.7
+        case .normal: return 1.0
+        }
+    }
 
     private var showsAlarmAffordance: Bool { canAlarm || hasAlarm }
 
@@ -92,9 +104,7 @@ struct DepartureRowView: View {
                 }
             }
         }
-        // Past rows fade to say "gone", but at 0.55 their secondary text falls
-        // well under 4.5:1. Increase Contrast keeps the cue and the legibility.
-        .opacity(dimmed ? (colorSchemeContrast == .increased ? 0.8 : 0.55) : 1.0)
+        .opacity(rowOpacity)
         .overlay(alignment: .leading) {
             if isTransferHighlight {
                 RoundedRectangle(cornerRadius: 2)
@@ -183,7 +193,7 @@ struct DepartureRowView: View {
         CountdownView(
             minutes: departure.arrivalDepartureMinutes,
             isRealTime: status.isRealTime,
-            color: dimmed ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color),
+            color: style == .past ? Color(uiColor: .tertiaryLabel) : Color(uiColor: status.color),
             caption: formatters.arrivalDepartureCaption(for: departure.arrivalDepartureStatus, temporalState: departure.temporalState)
         )
     }

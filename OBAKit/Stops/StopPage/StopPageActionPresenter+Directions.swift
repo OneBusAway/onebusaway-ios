@@ -60,19 +60,24 @@ extension StopPageActionPresenter {
         }
     }
 
-    /// A tap on the header's walk or bike pill (#1546). With a trip planner it asks
-    /// before leaving the stop page; "walk" and "bike" read as information first,
-    /// and the planner replaces the whole screen.
+    /// A tap on a walk or bike time — the header's pills or the departures list's
+    /// walk divider (#1546). With a trip planner it offers a sheet before leaving
+    /// the stop page: "walk" and "bike" read as information first, and the planner
+    /// replaces the whole screen.
     func showDirections(_ behavior: StopDirectionsPill.Behavior, stop: Stop) {
         switch behavior {
-        case .askThenPlanTrip(let pill):
-            guard let host = presentationHost(for: "directions prompt") else { return }
-            let prompt = UIAlertController(title: StopDirectionsPill.promptTitle, message: nil, preferredStyle: .alert)
-            prompt.addAction(UIAlertAction(title: StopTripPlannerAction.directionsToHereTitle, style: .default) { [weak self] _ in
+        case .offerDirections(let pill):
+            let sheet = UIAlertController(title: pill.offerTitle, message: stop.name, preferredStyle: .actionSheet)
+            sheet.addAction(UIAlertAction(title: pill.showDirectionsTitle, style: .default) { [weak self] _ in
                 self?.showTripPlanner(action: .directionsToStop, stop: stop, mode: pill.mode)
             })
-            prompt.addAction(.cancelAction)
-            host.present(prompt, animated: true)
+            if pill.hasMapsHandoff {
+                sheet.addAction(UIAlertAction(title: StopDirectionsPill.openInMapsTitle, style: .default) { [weak self] _ in
+                    self?.showWalkingDirections(coordinate: stop.coordinate)
+                })
+            }
+            sheet.addAction(.cancelAction)
+            present(actionSheet: sheet)
         case .openMapsWalkingDirections:
             showWalkingDirections(coordinate: stop.coordinate)
         }

@@ -130,6 +130,7 @@ final class StopDeparturesSectionsTests: OBATestCase {
             onDemandServices: [],
             sortType: content.isGrouped ? .route : .time,
             walkMinutes: nil,
+            pillDirections: .none,
             minutesAfter: 30,
             isBrokenBookmark: false,
             errorText: nil,

@@ -7,32 +7,37 @@
 import SwiftUI
 import OBAKitCore
 
-/// The dashed reachability divider in chronological mode: everything above is
-/// "just missed", everything below is catchable at the user's current travel
-/// mode (§4.5). `walkMinutes` is mode-aware — it's already bike time when Bike
-/// Mode is on — so the label and icon have to say so too, or the divider would
-/// tell a cyclist they have an implausibly fast "walk".
+/// The reachability divider in chronological mode: everything above is "just
+/// missed", everything below is catchable at the user's current travel mode
+/// (§4.5). A glass capsule — "4 min walk · at stop 8:20 PM" — that offers
+/// directions to the stop when tapped.
+///
+/// `walkMinutes` is mode-aware — it's already bike time when Bike Mode is on —
+/// so the label and icon have to say so too, or the divider would tell a
+/// cyclist they have an implausibly fast "walk".
 struct WalkLineDivider: View {
     let walkMinutes: Int
     var isBikeMode: Bool = false
+    var directions: StopPillDirections = .none
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.obaFormatters) private var formatters
 
-    /// Matches the walk/bike pill on the header card (§4.5).
-    private var lineColor: Color {
-        Color(uiColor: isBikeMode ? ThemeColors.shared.blue : ThemeColors.shared.departureOnTime)
+    private var pill: StopDirectionsPill { isBikeMode ? .bike : .walk }
+
+    /// The on-time green or the bike-mode blue: the same fills as the header's
+    /// walk and bike pills (§4.5). The fill token, not `departureOnTime`, because
+    /// a white glyph sits on it: white on the text green is 2.0:1 in dark mode.
+    private var tint: Color {
+        Color(uiColor: isBikeMode ? ThemeColors.shared.blue : ThemeColors.shared.departureOnTimeFill)
     }
 
-    private var systemImage: String {
-        isBikeMode ? "bicycle" : "figure.walk"
+    /// Whether a tap does anything, which decides whether the glass reacts to it.
+    private var isInteractive: Bool {
+        pill.behavior(tripPlannerAvailable: directions.tripPlannerAvailable) != nil
     }
 
-    private var text: String {
-        let fmt = isBikeMode
-            ? OBALoc("stop_page.bike_divider_fmt", value: "%d MIN BIKE — CATCH BELOW", comment: "Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes.")
-            : OBALoc("stop_page.walk_divider_fmt", value: "%d MIN WALK — CATCH BELOW", comment: "Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes.")
-        return String(format: fmt, walkMinutes)
-    }
+    private var minutesText: String { pill.text(minutes: walkMinutes) }
 
     private var accessibilityText: String {
         let fmt = isBikeMode
@@ -42,62 +47,105 @@ struct WalkLineDivider: View {
     }
 
     var body: some View {
-        // At accessibility sizes the flanking dashes go away — they'd squeeze
-        // the label into a sliver — and the label becomes a full-width dashed
-        // banner box that wraps at full size (minimum-scale-factor is not a
-        // Dynamic Type strategy; the text must grow, not the row squeeze it).
-        HStack(spacing: 10) {
-            if dynamicTypeSize.isAccessibilitySize {
-                Label(text, systemImage: systemImage)
-                    .font(.caption.weight(.heavy))
-                    .foregroundStyle(lineColor)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [7, 6]))
-                            .foregroundStyle(lineColor)
-                    )
-            } else {
-                dash
-                Label(text, systemImage: systemImage)
-                    .font(.caption.weight(.heavy))
-                    .foregroundStyle(lineColor)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    // The dashes are greedy (maxWidth: .infinity); without a
-                    // higher priority the HStack squeezes the label instead of
-                    // shortening the dashes.
-                    .layoutPriority(1)
-                dash
+        // Ticks each minute so "at stop" keeps pace with the clock between
+        // arrival refreshes.
+        TimelineView(.everyMinute) { context in
+            let atStop = Self.atStopText(
+                arrival: context.date.addingTimeInterval(TimeInterval(walkMinutes * 60)),
+                formatters: formatters
+            )
+            capsule(atStop: atStop)
+                // Same sequence as the header's `StopTravelPill`: name the element,
+                // then let `directionsAction` decide whether a tap does anything
+                // and add the button trait, default action and hint if so.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(accessibilityText)
+                .accessibilityValue(atStop)
+                .directionsAction(pill, directions)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+    }
+
+    /// One line where it fits. At accessibility sizes, or when a long
+    /// translation won't fit, the capsule becomes a full-width rounded card
+    /// and its two halves stack, so the text grows instead of truncating.
+    @ViewBuilder
+    private func capsule(atStop: String) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            stacked(atStop: atStop)
+        } else {
+            ViewThatFits(in: .horizontal) {
+                inline(atStop: atStop)
+                stacked(atStop: atStop)
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
     }
 
-    private var dash: some View {
-        Line()
-            .stroke(style: StrokeStyle(lineWidth: 2, dash: [7, 6]))
-            .foregroundStyle(lineColor)
-            .frame(height: 2)
-            .frame(maxWidth: .infinity)
-    }
-
-    nonisolated private struct Line: Shape {
-        func path(in rect: CGRect) -> Path {
-            var path = Path()
-            path.move(to: CGPoint(x: 0, y: rect.midY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-            return path
+    private func inline(atStop: String) -> some View {
+        HStack(spacing: 8) {
+            glyph
+            // One unwrappable line, so the capsule's width follows its content
+            // (see `StopTravelPill` for what a List row does otherwise).
+            HStack(spacing: 4) {
+                Text(minutesText).fontWeight(.semibold)
+                Text(verbatim: "·").foregroundStyle(.secondary)
+                Text(atStop).foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
         }
+        .font(.subheadline)
+        .padding(.leading, 6)
+        .padding(.trailing, 14)
+        .padding(.vertical, 6)
+        .frame(minHeight: 44)
+        .contentShape(Capsule())
+        .regularGlassEffectIfAvailable(in: Capsule(), interactive: isInteractive)
+    }
+
+    private func stacked(atStop: String) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+        return HStack(spacing: 12) {
+            glyph
+            VStack(alignment: .leading, spacing: 2) {
+                Text(minutesText).fontWeight(.semibold)
+                Text(atStop).foregroundStyle(.secondary)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .font(.subheadline)
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .contentShape(shape)
+        .regularGlassEffectIfAvailable(in: shape, interactive: isInteractive)
+    }
+
+    private var glyph: some View {
+        Image(systemName: pill.systemImage)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(.white)
+            .frame(width: 30, height: 30)
+            .background(tint, in: Circle())
+            .accessibilityHidden(true)
+    }
+
+    /// "at stop 8:20 PM": when the rider would reach the stop if they left now.
+    /// The clock is in the region's time zone, like the departure times around it.
+    static func atStopText(arrival: Date, formatters: Formatters) -> String {
+        String(
+            format: OBALoc("stop_page.walk_divider.at_stop_fmt", value: "at stop %@", comment: "Second half of the walk divider: when the rider would reach the stop if they left now. %@ is a clock time, e.g. 8:20 PM."),
+            formatters.formattedClockTime(arrival)
+        )
     }
 }
 
 #Preview {
     List {
         WalkLineDivider(walkMinutes: 104)
-        WalkLineDivider(walkMinutes: 8)
+        WalkLineDivider(walkMinutes: 8, directions: StopPillDirections(tripPlannerAvailable: true, perform: { _ in }))
         WalkLineDivider(walkMinutes: 3, isBikeMode: true)
     }
 }

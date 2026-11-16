@@ -19,6 +19,8 @@ struct ChronologicalListView: View {
     /// Whether `walkMinutes` was computed at bike speed — Bike Mode swaps the
     /// divider's wording/icon/color from walk to bike to match.
     var isBikeMode: Bool = false
+    /// What tapping the divider's capsule does; the header's walk and bike pills share it.
+    let pillDirections: StopPillDirections
     let showPast: Bool
     let highlightedTripID: TripIdentifier?
     let statusProvider: (ArrivalDeparture) -> DepartureStatus
@@ -43,7 +45,7 @@ struct ChronologicalListView: View {
             }
             // Walk divider escapes the card chrome (out-of-card row rules).
             Section {
-                WalkLineDivider(walkMinutes: walkMinutes, isBikeMode: isBikeMode)
+                WalkLineDivider(walkMinutes: walkMinutes, isBikeMode: isBikeMode, directions: pillDirections)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)

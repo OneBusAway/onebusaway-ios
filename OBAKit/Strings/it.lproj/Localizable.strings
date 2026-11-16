@@ -1338,9 +1338,6 @@
 /* Title of the alert shown when the user tries to set a departure alarm but notifications are denied in Settings. */
 "stop_page.alarm_permission_denied.title" = "Notifiche disattivate";
 
-/* Divider between departures you'd miss on a bike and ones you can still catch. %d is the bike time in minutes. */
-"stop_page.bike_divider_fmt" = "%d MIN IN BICI — DA QUI IN GIÙ LE PRENDI";
-
 /* VoiceOver description of the bike divider. %d is bike minutes. */
 "stop_page.bike_divider_a11y_fmt" = "Le partenze sopra questo punto avvengono prima dei %d minuti necessari per raggiungere la fermata in bici";
 
@@ -1350,8 +1347,26 @@
 /* Shown in place of the minutes countdown when the vehicle is departing now */
 "stop_page.countdown.now" = "ADESSO";
 
-/* Title of the prompt shown when the rider taps the stop header's walk or bike time and the region has a trip planner. */
-"stop_page.directions_prompt.title" = "Ottenere le indicazioni per questa fermata nell'app?";
+/* VoiceOver hint on the stop page's bike-time buttons (header pill and departures divider) when the region has a trip planner. */
+"stop_page.directions.bike_a11y_hint" = "Offre indicazioni in bici verso questa fermata.";
+
+/* Title of the sheet shown when the rider taps a bike time on the stop page. */
+"stop_page.directions.bike_sheet_title" = "In bici fino a questa fermata";
+
+/* Action that hands walking directions to this stop to a maps app. */
+"stop_page.directions.open_in_maps" = "Apri in Mappe";
+
+/* Action that plans a bike trip to this stop in the app's trip planner. */
+"stop_page.directions.show_bike_directions" = "Mostra indicazioni in bici";
+
+/* Action that plans a walk to this stop in the app's trip planner. */
+"stop_page.directions.show_walking_directions" = "Mostra indicazioni a piedi";
+
+/* VoiceOver hint on the stop page's walk-time buttons (header pill and departures divider) when the region has a trip planner. */
+"stop_page.directions.walk_a11y_hint" = "Offre indicazioni a piedi verso questa fermata.";
+
+/* Title of the sheet shown when the rider taps a walk time on the stop page. */
+"stop_page.directions.walk_sheet_title" = "A piedi fino a questa fermata";
 
 /* Empty state shown when every route at the stop is hidden by the user's filter. */
 "stop_page.empty.all_filtered" = "Tutte le linee di questa fermata sono filtrate";
@@ -1397,14 +1412,8 @@
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Prossime partenze";
 
-/* VoiceOver hint on the stop header's bike-time button when the region has a trip planner. */
-"stop_page.header.bike_trip_planner_a11y_hint" = "Pianifica nell'app un percorso in bicicletta verso questa fermata.";
-
 /* VoiceOver hint on the header card's walk-time button. */
 "stop_page.header.walk_a11y_hint" = "Apre le indicazioni del percorso pedonale verso questa fermata.";
-
-/* VoiceOver hint on the stop header's walk-time button when the region has a trip planner. */
-"stop_page.header.walk_trip_planner_a11y_hint" = "Pianifica nell'app un percorso a piedi verso questa fermata.";
 
 /* Extends the departure time window */
 "stop_page.load_more" = "Carica altro";
@@ -1536,11 +1545,11 @@
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min a piedi";
 
+/* Second half of the walk divider: when the rider would reach the stop if they left now. %@ is a clock time, e.g. 8:20 PM. */
+"stop_page.walk_divider.at_stop_fmt" = "in fermata alle %@";
+
 /* VoiceOver description of the walk divider. %d is walk minutes. */
 "stop_page.walk_divider_a11y_fmt" = "Le partenze sopra questo punto avvengono prima dei %d minuti necessari per raggiungere la fermata a piedi";
-
-/* Divider between departures you'd miss on foot and ones you can still catch. %d is the walk time in minutes. */
-"stop_page.walk_divider_fmt" = "%d MIN A PIEDI — DA QUI IN GIÙ LE PRENDI";
 
 /* Title of the Edit Stop preferences controller */
 "stop_preferences_controller.title" = "Filtra linee";
