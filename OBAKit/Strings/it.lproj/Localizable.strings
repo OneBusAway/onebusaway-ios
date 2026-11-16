@@ -432,9 +432,6 @@
 /* Header of a section on the map panel's home sheet that holds shortcuts to other features: the trip planner, bikes and scooters on the map, and alarms. */
 "home_sheet.explore.title" = "Esplora";
 
-/* A row at the end of the Nearby Stops section on the map panel's home sheet. It opens the full list of stops near the center of the map. */
-"home_sheet.nearby.all_stops" = "Tutte le fermate vicine";
-
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Mostra tutti gli elementi di questa sezione.";
 

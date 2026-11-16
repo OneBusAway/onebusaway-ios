@@ -402,27 +402,6 @@ struct HomeSheetView: View {
                     }
                 }
             }
-            // The header leads to the same list; this says so where the rows end,
-            // which is where a rider who didn't find their stop is looking.
-            Button {
-                showAll(.nearbyAll)
-            } label: {
-                // Label-colored text with the brand's chevron, as the section
-                // headers are: neither brand green passes 4.5:1 as text in both
-                // appearances.
-                HStack(spacing: 8) {
-                    Text(Strings.allNearbyStops)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color(uiColor: .label))
-                    Spacer()
-                    Image(systemName: "chevron.forward")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Color(uiColor: ThemeColors.shared.brand))
-                        .accessibilityHidden(true)
-                }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
         } header: {
             HomeSectionHeader(title: Strings.nearbyStops) {
                 showAll(.nearbyAll)
