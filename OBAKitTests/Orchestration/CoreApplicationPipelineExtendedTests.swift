@@ -101,15 +101,18 @@ final class CoreApplicationPipelineExtendedTests: OBATestCase {
 
     // MARK: - Data Stores Consistency
 
-    @Test func `UserDataStore and StopPreferencesDataStore are accessible and backed by store`() {
+    @Test func `UserDataStore and StopPreferencesDataStore are accessible and backed by store`() throws {
         let app = createTestApplication()
         #expect(app.userDataStore.bookmarkGroups.isEmpty)
 
-        var stop = StopPreferences()
-        stop.sortType = .route
-        app.stopPreferencesDataStore.set(stopPreferences: stop, forStopID: "1_100")
-        let retrieved = app.stopPreferencesDataStore.stopPreferences(forStopID: "1_100")
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let region = Fixtures.pugetSoundRegion
+        var customPrefs = StopPreferences(sortType: .route, hiddenRoutes: ["1_100"])
+
+        app.stopPreferencesDataStore.set(stopPreferences: customPrefs, stop: stop, region: region)
+        let retrieved = app.stopPreferencesDataStore.preferences(stopID: stop.id, region: region)
 
         #expect(retrieved.sortType == .route)
+        #expect(retrieved.hiddenRoutes == ["1_100"])
     }
 }
