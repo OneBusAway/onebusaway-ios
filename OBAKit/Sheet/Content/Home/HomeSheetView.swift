@@ -164,7 +164,7 @@ struct HomeSheetView: View {
                     searchFieldHeight = height
                     publishHeaderHeight()
                 }
-                .padding(.top, HomeTabs.searchRowStandardTopPadding)
+                .padding(.top, HomeTabs.searchRowTopPadding)
                 .padding(.bottom, HomeTabs.searchRowBottomPadding)
             if showsTabs {
                 tabBar

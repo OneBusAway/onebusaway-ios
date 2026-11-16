@@ -9,7 +9,6 @@
 
 import SwiftUI
 import Testing
-import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 

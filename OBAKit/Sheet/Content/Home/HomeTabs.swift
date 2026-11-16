@@ -8,7 +8,6 @@
 //
 
 import SwiftUI
-import CoreLocation
 import Synchronization
 import OBAKitCore
 
@@ -92,7 +91,7 @@ enum HomeTabs {
     nonisolated static let searchRowBottomPadding: CGFloat = 4
 
     /// Above the search field, at every detent.
-    nonisolated static let searchRowStandardTopPadding: CGFloat = 16
+    nonisolated static let searchRowTopPadding: CGFloat = 16
 
     /// Under the tab bar, before the page's own top margin.
     static let tabBarBottomPadding: CGFloat = 4
@@ -103,7 +102,7 @@ enum HomeTabs {
     /// row yet; a next-departure row there would grow the collapsed sheet by its
     /// own height and need no other change (#1750).
     nonisolated static func headerHeight(fieldHeight: CGFloat, tabBarHeight: CGFloat, accessoryHeight: CGFloat = 0) -> CGFloat {
-        searchRowStandardTopPadding + fieldHeight + searchRowBottomPadding + tabBarHeight + accessoryHeight
+        searchRowTopPadding + fieldHeight + searchRowBottomPadding + tabBarHeight + accessoryHeight
     }
 
     /// Where the sheet goes when a tab is picked, or `nil` to leave it.
@@ -306,16 +305,13 @@ struct HomeTabBar: View {
             .foregroundStyle(isSelected ? accent : Color(uiColor: .label))
             .frame(maxWidth: .infinity, minHeight: Self.minimumHeight)
             .padding(.vertical, 6)
-            .background(
-                isSelected ? AnyShapeStyle(tint) : AnyShapeStyle(Color.clear),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-            )
+            .background(isSelected ? tint : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         // Read as a tab, "selected" or not, inside the tab bar container above.
         .accessibilityLabel(tab.title)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
