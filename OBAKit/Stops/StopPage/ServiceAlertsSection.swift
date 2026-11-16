@@ -10,9 +10,9 @@
 import SwiftUI
 import OBAKitCore
 
-/// Service alerts affecting this stop, rendered as one self-contained,
-/// orange-tinted card: a header row (gradient warning badge, title, count pill,
-/// rotating chevron) that toggles expansion, with the alert rows inside the
+/// Service alerts affecting this stop, rendered as one self-contained, neutral
+/// card: a header row (an orange warning glyph, "N service alerts", a rotating
+/// chevron) that toggles expansion, with the alert rows inside the
 /// card when expanded. Each alert row pushes the existing alert-detail screen
 /// via the hosting VC's `onSelect` callback.
 ///
@@ -36,7 +36,9 @@ struct ServiceAlertsSection: View {
     }
 
     var body: some View {
-        StopPageTintedCard(tint: .orange) {
+        // Neutral, with orange only on the glyph (#1754): severity is data, the
+        // card around it isn't.
+        StopPageTintedCard(tint: nil) {
             headerRow
             if showsServiceAlerts {
                 ForEach(visibleAlerts) { alert in
@@ -59,26 +61,29 @@ struct ServiceAlertsSection: View {
                 if !showsServiceAlerts { showAllAlerts = false }
             }
         } label: {
-            // Black on orange, like a road warning sign: white on systemOrange
-            // is 2.2:1, black is 9.5:1 in both appearances.
-            StopPageCardHeader(systemImage: "exclamationmark.triangle.fill", title: Strings.serviceAlerts, tint: .orange, glyphColor: .black) {
-                Text("\(alerts.count)")
-                    .font(.caption.weight(.heavy))
-                    .monospacedDigit()
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(Color.orange, in: Capsule())
-            } trailing: {
+            HStack(spacing: 10) {
+                // The glyph is decorative; the title carries the meaning. `warningText` is the
+                // theme's orange tuned to stay legible in both appearances.
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color(uiColor: ThemeColors.shared.warningText))
+                    .accessibilityHidden(true)
+                Text(headerTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
                 Image(systemName: "chevron.down")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(showsServiceAlerts ? 180 : 0))
+                    // Decorative; the value below says expanded or collapsed.
+                    .accessibilityHidden(true)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(headerAccessibilityLabel)
         // Disclosure state, so VoiceOver users know whether activating will
         // reveal or hide the alert rows.
         .accessibilityValue(showsServiceAlerts
@@ -104,7 +109,7 @@ struct ServiceAlertsSection: View {
         .buttonStyle(.plain)
     }
 
-    private var headerAccessibilityLabel: String {
+    private var headerTitle: String {
         CountPlural.format(OBALoc("stop_page.service_alerts.summary_fmt", value: "%d service alerts", comment: "Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback."), count: alerts.count)
     }
 

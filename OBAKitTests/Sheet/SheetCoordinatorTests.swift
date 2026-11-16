@@ -562,4 +562,36 @@ final class SheetCoordinatorTests {
         #expect(coordinator.currentRoute == .home)
         #expect(coordinator.stackedRoutes == [.stopDetails(stopID: "1_75403")])
     }
+
+    // MARK: - Stop sheets close themselves (#1751)
+
+    /// The stop sheet locks interactive dismissal, so its Close button pops it
+    /// through the coordinator. Pushing one must not trip a stacked-route invariant.
+    @Test func `A stop sheet stacks although it locks interactive dismissal`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.stopDetails(stopID: "1"))
+        #expect(coordinator.stackedRoutes == [.stopDetails(stopID: "1")])
+    }
+
+    /// Closing a stop opened over another stacked sheet returns to that sheet,
+    /// and the pile matches what's on screen.
+    @Test func `Closing a stop over another sheet returns to the sheet underneath`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.nearbyAll)
+        coordinator.push(.stopDetails(stopID: "1"))
+
+        coordinator.pop()
+
+        #expect(coordinator.stackedRoutes == [.nearbyAll])
+        #expect(coordinator.stackedEntries.count == 1)
+    }
+
+    /// A stop sheet's detent can be moved to its collapsed rung, which it declares.
+    @Test func `A stop sheet can rest at its collapsed detent`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.stopDetails(stopID: "1"))
+        let moved = coordinator.setStackedDetent(AppSheetRoute.stopCollapsedDetent) { $0.isStopDetails }
+        #expect(moved)
+        #expect(coordinator.stackedDetent(at: 0, fallback: .large) == AppSheetRoute.stopCollapsedDetent)
+    }
 }

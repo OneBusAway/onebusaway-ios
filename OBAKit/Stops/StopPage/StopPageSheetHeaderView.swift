@@ -70,10 +70,15 @@ struct StopPageSheetHeaderView: View {
     /// observes it — see `StopPageView`'s note on observation discipline.
     @ObservedObject var mapFocus: StopMapFocus
 
+    /// Reports the height of the name and stop code/direction, with the
+    /// header's top padding and its collapsed bottom padding: what the map
+    /// panel's collapsed stop sheet shows under its top bar (`StopCollapsedDetent`).
+    var onTitleBlockHeight: ((CGFloat) -> Void)?
+
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var subtitle: String {
-        Formatters.formattedCodeAndDirection(stop: stop)
+        StopSheetHeaderText.subtitle(for: stop)
     }
 
     /// Sorted, de-duplicated route short names for the badge row. Mirrors
@@ -150,6 +155,11 @@ struct StopPageSheetHeaderView: View {
                         StopSheetCloseButton(action: onClose)
                     }
                 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    onTitleBlockHeight?(
+                        StopSheetHeaderMetrics.topPadding + height + StopSheetHeaderMetrics.collapsedBottomPadding
+                    )
+                }
 
                 if !isCollapsed, walkTime != nil || bikeTime != nil || !chips.isEmpty {
                     // Walk pill, bike pill, and chips share one row — the pills lead, a
@@ -163,10 +173,10 @@ struct StopPageSheetHeaderView: View {
                     ScrollView(.horizontal) {
                         HStack(spacing: 6) {
                             if let walkTime {
-                                travelPill(.walk, walkTime, color: ThemeColors.shared.departureOnTime)
+                                travelPill(.walk, walkTime)
                             }
                             if let bikeTime {
-                                travelPill(.bike, bikeTime, color: ThemeColors.shared.blue)
+                                travelPill(.bike, bikeTime)
                             }
                             if (walkTime != nil || bikeTime != nil) && !chips.isEmpty {
                                 rowSeparator
@@ -210,20 +220,21 @@ struct StopPageSheetHeaderView: View {
             .accessibilityHidden(true)
     }
 
-    /// A tinted capsule rather than the dark card's solid one: the foreground keeps the
-    /// full-strength color (walk: on-time green, already tuned per-appearance for legibility
-    /// at small sizes; bike: blue, matching the pushed header's bike chip) over a 14% fill.
+    /// A neutral capsule, as every control in this header is (#1754): colour here is
+    /// kept for data (route colours, alert severity), and walk and bike are neither. The
+    /// icon names the mode, so the text is just the minutes; VoiceOver reads both.
     ///
     /// Deliberately the same font and padding as a chip. `FlowLayout` places its subviews
     /// top-anchored, so pill and chips must resolve to the same height or the row reads as
     /// ragged — matching their type ramp is what holds that at every Dynamic Type size, where
     /// a hardcoded height would not.
-    private func travelPill(_ pill: StopDirectionsPill, _ info: WalkTimeInfo, color: UIColor) -> some View {
+    private func travelPill(_ pill: StopDirectionsPill, _ info: WalkTimeInfo) -> some View {
         StopTravelPill(
             pill: pill, info: info,
-            font: chipFont, foreground: Color(uiColor: color), fill: Color(uiColor: color).opacity(0.14),
+            font: chipFont, foreground: Color(uiColor: .label), fill: Color(uiColor: .secondarySystemFill),
             horizontalPadding: chipHorizontalPadding, verticalPadding: chipVerticalPadding,
-            directions: pillDirections
+            directions: pillDirections,
+            showsShortText: true
         )
     }
 
@@ -243,48 +254,38 @@ struct StopPageSheetHeaderView: View {
             && mapFocus.focusedRouteID != nil
         let isDimmed = mapFocus.focusedRouteID != nil && !isFocused
 
+        let appearance = RouteChipAppearance(isSelected: isFocused, isDimmed: isDimmed)
+
         HStack(spacing: 5) {
             if let drawn {
-                // The route's map-line color, so the chip and its line read as one thing.
-                Capsule()
-                    .fill(Color(uiColor: drawn.color))
-                    .frame(width: 13, height: 4)
-            }
-            Text(chip.shortName)
-                .font(chipFont)
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-            if let drawn, drawn.hasLiveVehicle {
-                // Only when there is a vehicle on the map to point at. Route-colored, per the
-                // design, so the dot pairs with the dash on the other side of the name rather
-                // than reading as a second, unrelated status color.
+                // One small dot in the route's map-line colour, so the chip and its
+                // line read as one thing. The only colour on the chip (#1754).
                 Circle()
                     .fill(Color(uiColor: drawn.color))
-                    .frame(width: 5, height: 5)
+                    .frame(width: 7, height: 7)
             }
+            Text(chip.shortName)
+                .font(chipFont.weight(appearance.fontWeight))
+                .monospacedDigit()
+                .foregroundStyle(Color(uiColor: .label).opacity(appearance.textOpacity))
+                .lineLimit(1)
         }
         .padding(.horizontal, chipHorizontalPadding)
         .padding(.vertical, chipVerticalPadding)
-        .background(
-            Capsule().fill(isFocused
-                ? Color(uiColor: drawn?.color ?? .clear).opacity(0.16)
-                : Color(uiColor: .secondarySystemFill))
-        )
-        .overlay(
-            Capsule()
-                .strokeBorder(isFocused ? Color(uiColor: drawn?.color ?? .clear) : .clear, lineWidth: 1.5)
-        )
-        .opacity(isDimmed ? 0.45 : 1)
+        .background(Capsule().fill(Color(uiColor: appearance.fill)))
+        // Selection reads without colour: an outline and heavier text.
+        .overlay(Capsule().strokeBorder(Color(uiColor: .label), lineWidth: appearance.strokeWidth))
         // NOT a Button: FlowLayout proposes .unspecified, which a Button answers with a greedy
         // height — that is what stretched the walk pill down the whole sheet. See the note above
         // this view.
         .contentShape(Rectangle())
         .onTapGesture { chip.toggleFocus(in: mapFocus) }
-        // One element per chip: the dash and dot are drawn shapes the label
-        // already describes, and the action below needs a single target.
+        // One element per chip: the dot is a drawn shape the label already
+        // describes, and the action below needs a single target.
         .accessibilityElement(children: .ignore)
-        .accessibilityAddTraits(chip.isInteractive(in: mapFocus) ? .isButton : [])
+        // A toggle (#1754): VoiceOver says it can be switched, and `.isSelected`
+        // below says which way it's set.
+        .accessibilityAddTraits(chip.isInteractive(in: mapFocus) ? [.isButton, .isToggle] : [])
         // `.isSelected` alongside the spoken suffix: the trait is what VoiceOver
         // users learn to listen for on a toggle, the suffix says what it toggles.
         .accessibilityAddTraits(isFocused ? .isSelected : [])
@@ -333,6 +334,39 @@ struct StopPageSheetHeaderView: View {
         }
         return parts.joined(separator: ", ")
     }
+}
+
+/// The stop sheet header's text that isn't the stop's own data.
+nonisolated enum StopSheetHeaderText {
+    /// "Stop 11190 · Northbound": the stop number without the "#", and a middle
+    /// dot rather than a dash (#1754). A non-numeric code keeps the core
+    /// formatter's quoting.
+    static func subtitle(for stop: Stop) -> String {
+        let code = stop.code.isNumeric
+            ? String(
+                format: OBALoc("stop_header.stop_code_fmt", value: "Stop %@", comment: "The stop number in the stop sheet header's subtitle, followed by \" · \" and the direction. %@ is the stop's code."),
+                stop.code
+            )
+            : Formatters.formattedStopCode(stop: stop)
+        guard let direction = Formatters.adjectiveFormOfCardinalDirection(stop.direction) else { return code }
+        return "\(code) · \(direction)"
+    }
+}
+
+/// How a route chip draws for its selection state (#1754). No accent colour:
+/// selected is a slightly darker fill, a label-coloured outline and heavier text;
+/// beside a selected chip the others dim their text, not the whole chip.
+///
+/// Dimmed text is `label` at 70%, which stays above 4.5:1 on
+/// `secondarySystemFill` over the sheet in both appearances.
+struct RouteChipAppearance: Equatable {
+    let isSelected: Bool
+    let isDimmed: Bool
+
+    var strokeWidth: CGFloat { isSelected ? 1.5 : 0 }
+    var fontWeight: Font.Weight { isSelected ? .bold : .semibold }
+    var textOpacity: Double { isDimmed ? 0.7 : 1 }
+    var fill: UIColor { isSelected ? .systemFill : .secondarySystemFill }
 }
 
 /// One header chip. Membership and ordering are unchanged from before this

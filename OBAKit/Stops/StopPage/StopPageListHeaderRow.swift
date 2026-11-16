@@ -43,20 +43,21 @@ struct StopPageModeToggle: View {
             ? AnyLayout(VStackLayout(spacing: 2))
             : AnyLayout(HStackLayout(spacing: 2))
         layout {
-            segment(.time, title: OBALoc("stop_page.mode.time", value: "Time", comment: "Stop page mode toggle: flat time-sorted list"), systemImage: "line.3.horizontal.decrease")
-            segment(.route, title: OBALoc("stop_page.mode.route", value: "Route", comment: "Stop page mode toggle: grouped by route"), systemImage: "bus")
+            segment(.time, title: OBALoc("stop_page.mode.time", value: "Time", comment: "Stop page mode toggle: flat time-sorted list"))
+            segment(.route, title: OBALoc("stop_page.mode.route", value: "Route", comment: "Stop page mode toggle: grouped by route"))
         }
         .padding(3)
         .modifier(GlassContainerBackground(usesCapsule: !isAccessibilitySize))
         .frame(maxWidth: isAccessibilitySize ? .infinity : nil)
     }
 
-    private func segment(_ value: StopSort, title: String, systemImage: String) -> some View {
+    /// Text only (#1754): the words already say what each segment does, and the
+    /// icons were one more shape in a busy header.
+    private func segment(_ value: StopSort, title: String) -> some View {
         Button {
             if mode != value { onChange(value) }
         } label: {
-            Label(title, systemImage: systemImage)
-                .labelStyle(.titleAndIcon)
+            Text(title)
                 .font(.subheadline.weight(mode == value ? .bold : .semibold))
                 .foregroundStyle(mode == value ? Color.primary : Color.secondary)
                 .lineLimit(1)
@@ -177,39 +178,44 @@ struct StopPageListHeaderRow: View {
         }
     }
 
-    /// A capsule with a chevron, not bare bold text. As a label alone it read as a
-    /// section heading — nothing about "Past · 1" said it would open anything — so
-    /// it borrows the header's chip vocabulary for its shape and the app tint for
-    /// its content. The fill stays neutral (`secondarySystemFill`); only the text
-    /// and chevron take the tint.
+    /// The Past button's visible title: "3 earlier", or "Hide past" while the
+    /// past departures show.
+    static func pastToggleTitle(count: Int, showPast: Bool) -> String {
+        showPast
+            ? OBALoc("stop_page.past_toggle_hide", value: "Hide past", comment: "Button hiding recently departed trips")
+            : CountPlural.format(OBALoc("stop_page.past_toggle_earlier_fmt", value: "%d earlier", comment: "Button on the stop page revealing recently departed trips. %d is the count. Plural forms live in Localizable.stringsdict; this value is only the not-found fallback."), count: count)
+    }
+
+    /// A neutral capsule with a chevron, not bare text: as a label alone it read
+    /// as a section heading, and nothing said it would open anything. Label
+    /// colour on the header's neutral fill (#1754): colour in this header is kept
+    /// for data, and this is a control.
     ///
-    /// The chevron follows the conventional disclosure direction — down closed, up
-    /// open — rather than pointing at the disclosed rows, which are below.
+    /// The chevron leads and points up while the earlier departures are hidden,
+    /// since they appear above the upcoming ones; it flips once they show.
     private var pastButton: some View {
         Button(action: togglePastAndAnnounce) {
             HStack(spacing: 5) {
-                Text(showPast
-                     ? OBALoc("stop_page.past_toggle_hide", value: "Hide past", comment: "Button hiding recently departed trips")
-                     : String(format: OBALoc("stop_page.past_toggle_fmt", value: "Past · %d", comment: "Button revealing recently departed trips. %d is the count."), pastCount))
+                Image(systemName: "chevron.up")
+                    .font(.caption2.weight(.bold))
+                    .rotationEffect(.degrees(showPast ? 180 : 0))
+                    .accessibilityHidden(true) // decorative; the label carries the state
+                Text(Self.pastToggleTitle(count: pastCount, showPast: showPast))
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                     // Same reason as the toggle's segments: the count and the verb
                     // are the whole message, so the row grows or wraps rather than
                     // clipping either.
                     .fixedSize(horizontal: true, vertical: false)
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.bold))
-                    .rotationEffect(.degrees(showPast ? 180 : 0))
-                    .accessibilityHidden(true) // decorative; the label carries the state
             }
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(Color(uiColor: .label))
             .padding(.horizontal, 12)
             .frame(minHeight: 34)
             .background(Color(uiColor: .secondarySystemFill), in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        // The visible "Past · 3" is a glanceable token; spoken aloud it needs to
+        // The visible "3 earlier" is a glanceable token; spoken aloud it needs to
         // say what activating actually does.
         .accessibilityLabel(showPast
             ? OBALoc("stop_page.past_toggle_hide_a11y", value: "Hide past departures", comment: "VoiceOver label for the button hiding recently departed trips")

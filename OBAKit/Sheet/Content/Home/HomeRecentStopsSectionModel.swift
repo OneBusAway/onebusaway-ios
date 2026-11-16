@@ -20,7 +20,7 @@ final class HomeRecentStopsSectionModel: ObservableObject {
 
     @Published private(set) var stops: [Stop] = []
 
-    /// Alarms the rider has set. The Recent index lists them, and For You's
+    /// Alarms the rider has set. The Recent index lists them, and Home's
     /// Explore row has the shortcut to it while there are any.
     @Published private(set) var alarmCount = 0
 

@@ -832,5 +832,29 @@
 			<string>%d موقف قبل موقفك</string>
 		</dict>
 	</dict>
+	<key>stop_page.past_toggle_earlier_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>السابقة: %d</string>
+			<key>one</key>
+			<string>السابقة: %d</string>
+			<key>two</key>
+			<string>السابقة: %d</string>
+			<key>few</key>
+			<string>السابقة: %d</string>
+			<key>many</key>
+			<string>السابقة: %d</string>
+			<key>other</key>
+			<string>السابقة: %d</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

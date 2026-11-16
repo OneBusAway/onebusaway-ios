@@ -146,6 +146,12 @@ struct StopDetailsSheetView: View {
 
     @AppStorage("StopViewController.pastDeparturesCollapsed") private var pastCollapsed = true
 
+    /// This sheet's own measurements for `StopCollapsedDetent`. Kept here and
+    /// published only while nothing covers the sheet: the detent's store is
+    /// shared, and a stop stacked over another may have a name that wraps
+    /// differently.
+    @State private var collapsedMeasurements = StopCollapsedDetent.Measurements()
+
     init(
         stopID: StopID,
         viewModel: @autoclosure @escaping () -> StopViewModel,
@@ -220,10 +226,23 @@ struct StopDetailsSheetView: View {
             // The bar is fixed height, so nothing here resizes as the list
             // scrolls. An inset whose height tracked scroll position is what
             // pegged the main thread here once; a constant one has no such loop.
-            .stopSheetChrome { topBar(navigation: navigation) }
+            .stopSheetChrome {
+                topBar(navigation: navigation)
+                    // Sizes the collapsed detent; see `StopCollapsedDetent`.
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        collapsedMeasurements.topBarHeight = height
+                        publishCollapsedMeasurements()
+                    }
+            }
             // An overlay: it takes no part in the list's layout, so it cannot
             // feed back into scroll geometry.
             .overlay(alignment: .bottomTrailing) { scrollToTopOverlay(proxy: proxy) }
+            // The sheet can't be swiped away (#1751), and the system's own
+            // escape would only try to; VoiceOver's two-finger scrub closes it
+            // as Close does.
+            .accessibilityAction(.escape) { coordinator.pop() }
+            // Uncovered again: this sheet's measurements size the detent.
+            .onChange(of: isCoveredBySheet) { publishCollapsedMeasurements() }
             .stopPageLifecycle(
                 viewModel: viewModel,
                 userDefaults: userDefaults,
@@ -330,6 +349,13 @@ struct StopDetailsSheetView: View {
         )
     }
 
+    /// Sizes the collapsed detent from this sheet, unless another sheet covers it.
+    private func publishCollapsedMeasurements() {
+        guard !isCoveredBySheet else { return }
+        let measurements = collapsedMeasurements
+        StopCollapsedDetent.measured.withLock { $0 = measurements }
+    }
+
     private func reconcileExpandedRoute(against ids: Set<RouteID>) {
         if let rid = expandedRouteID, !ids.contains(rid) { expandedRouteID = nil }
     }
@@ -410,7 +436,11 @@ struct StopDetailsSheetView: View {
                         pillDirections: navigation.pillDirections,
                         onClose: { coordinator.pop() },
                         showsCloseButton: false,
-                        mapFocus: mapFocus
+                        mapFocus: mapFocus,
+                        onTitleBlockHeight: { height in
+                            collapsedMeasurements.titleBlockHeight = height
+                            publishCollapsedMeasurements()
+                        }
                     )
                 } else if showsLoadingState {
                     StopPageSheetHeaderPlaceholderView(

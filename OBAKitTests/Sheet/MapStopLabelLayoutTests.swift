@@ -176,4 +176,70 @@ struct MapStopLabelLayoutTests {
         let above = layout.labelRect(for: stop, placement: .above)
         #expect(above.maxY == center.y - 26)
     }
+
+    // MARK: - Obstacle rects (#1753)
+
+    /// A trip planner card covering the spot below a pin pushes the stop's
+    /// label to its curbside side, as another pin would.
+    @Test func `A label avoids an obstacle rect below its pin`() {
+        let card = CGRect(x: 150, y: 430, width: 100, height: 30)
+        let result = layout.layout(
+            [candidate("a", at: center, direction: .n)],
+            obstacleRects: [card],
+            viewportCenter: center
+        )
+        #expect(result["a"] == .right)
+    }
+
+    @Test func `A label is hidden when obstacle rects block every spot`() {
+        let card = CGRect(x: 100, y: 380, width: 220, height: 80)
+        let result = layout.layout(
+            [candidate("a", at: center, direction: .n)],
+            obstacleRects: [card],
+            viewportCenter: center
+        )
+        #expect(result["a"] == .hidden)
+    }
+}
+
+/// The trip planner's cards hang above their coordinate, so a stop pin drawn at
+/// the same spot never covers the name (#1753).
+@Suite(.serialized)
+struct TripPlannerCardMetricsTests {
+    private let center = CGPoint(x: 200, y: 400)
+
+    @Test func `A card's rect sits above a pin at its coordinate without touching it`() {
+        let size = CGSize(width: 180, height: 28)
+        let rect = TripPlannerCardMetrics.rect(size: size, at: center)
+        let pin = MapStopLabelLayout().pinRect(at: center)
+        #expect(!rect.intersects(pin))
+        #expect(rect.midX == center.x)
+        #expect(rect.maxY == center.y - (ThemeMetrics.defaultMapAnnotationSize / 2 + MapStopLabelLayout.gap))
+    }
+
+    /// The anchor is the point on the card MapKit pins to the coordinate. It
+    /// must land the card where `rect` says, below the card's own bottom edge.
+    @Test func `The anchor puts the card where rect says`() {
+        let size = CGSize(width: 180, height: 28)
+        let anchor = TripPlannerCardMetrics.anchor(cardHeight: size.height)
+        let rect = TripPlannerCardMetrics.rect(size: size, at: center)
+        #expect(anchor.x == 0.5)
+        #expect(abs(center.y - anchor.y * size.height - rect.minY) < 0.0001)
+        #expect(anchor.y > 1)
+    }
+
+    @Test func `A badge and a subtitle make the card taller`() {
+        let plain = TripPlannerCardMetrics.size(title: "Fauntleroy Way & SW Myrtle St", subtitle: nil, routeName: nil)
+        let subtitled = TripPlannerCardMetrics.size(title: "Fauntleroy Way & SW Myrtle St", subtitle: "Board here", routeName: nil)
+        let badged = TripPlannerCardMetrics.size(title: "Fauntleroy Way & SW Myrtle St", subtitle: "Board here", routeName: "C Line")
+        #expect(plain.height > 0 && plain.width > 0)
+        #expect(subtitled.height > plain.height)
+        #expect(badged.height > subtitled.height)
+    }
+
+    @Test func `A longer title makes the card wider`() {
+        let short = TripPlannerCardMetrics.size(title: "Start", subtitle: nil, routeName: nil)
+        let long = TripPlannerCardMetrics.size(title: "Fauntleroy Way & SW Myrtle St", subtitle: nil, routeName: nil)
+        #expect(long.width > short.width)
+    }
 }

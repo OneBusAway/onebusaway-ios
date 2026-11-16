@@ -55,17 +55,19 @@ struct MapStopLabelLayout {
     /// - Parameters:
     ///   - candidates: Every stop on screen that wants a label.
     ///   - obstaclePins: Centers of pins with no label to place, which labels must still avoid.
+    ///   - obstacleRects: Other things drawn on the map that labels must avoid, such as the trip planner's cards.
     ///   - viewportCenter: Ties go to the stop nearest this point.
     ///   - heading: The map camera's heading in degrees, so curbside follows a rotated map.
     ///   - previous: The last layout. A label keeps its old spot while it still fits, so labels don't hop as the map moves.
     func layout(
         _ candidates: [Candidate],
         obstaclePins: [CGPoint] = [],
+        obstacleRects: [CGRect] = [],
         viewportCenter: CGPoint,
         heading: Double = 0,
         previous: [StopID: MapStopLabelPlacement] = [:]
     ) -> [StopID: MapStopLabelPlacement] {
-        var occupied = (candidates.map(\.center) + obstaclePins).map(pinRect(at:))
+        var occupied = (candidates.map(\.center) + obstaclePins).map(pinRect(at:)) + obstacleRects
         var result: [StopID: MapStopLabelPlacement] = [:]
 
         let ordered = candidates.sorted { lhs, rhs in

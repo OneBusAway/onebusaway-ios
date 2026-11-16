@@ -63,6 +63,15 @@ enum StopDirectionsPill {
         return String(format: fmt, info.walkMinutes)
     }
 
+    /// "12 min": the stop sheet header's pill, whose icon says walk or bike
+    /// (#1754). VoiceOver still reads `text(for:)`, which names the mode.
+    func shortText(for info: WalkTimeInfo) -> String {
+        String(
+            format: OBALoc("stop_header.travel_minutes_fmt", value: "%d min", comment: "Visible text of the walk and bike pills in the stop sheet header; the icon says which. %d is the time in minutes."),
+            info.walkMinutes
+        )
+    }
+
     /// `nil` when a tap does nothing, so the pill isn't a button.
     func behavior(tripPlannerAvailable: Bool) -> Behavior? {
         if tripPlannerAvailable { return .askThenPlanTrip(self) }
