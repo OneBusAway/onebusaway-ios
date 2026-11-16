@@ -42,14 +42,21 @@ enum HomeSettingsItem: String, Hashable, Identifiable, CaseIterable {
         }
     }
 
-    var subtitle: String {
+    /// - Parameter offersDonations: Whether the More screen has a donate
+    ///   option. It doesn't in an app without donations, so the More row
+    ///   mustn't promise one.
+    func subtitle(offersDonations: Bool) -> String {
         switch self {
         case .customizeMap:
             OBALoc("home_sheet.settings.customize_map.subtitle", value: "Change map display options", comment: "Subtitle of the Customize Map row on the map panel's home sheet.")
         case .settings:
             OBALoc("home_sheet.settings.settings.subtitle", value: "Change app settings", comment: "Subtitle of the Settings row on the map panel's home sheet.")
         case .more:
-            OBALoc("home_sheet.settings.more.subtitle", value: "Donate, Change Region, Give Feedback, and more", comment: "Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds.")
+            if offersDonations {
+                OBALoc("home_sheet.settings.more.subtitle", value: "Donate, Change Region, Give Feedback, and more", comment: "Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds.")
+            } else {
+                OBALoc("home_sheet.settings.more.subtitle_no_donations", value: "Change Region, Give Feedback, and more", comment: "Subtitle of the More row on the map panel's home sheet, in an app without donations, listing some of what the More screen holds.")
+            }
         }
     }
 
@@ -66,6 +73,7 @@ enum HomeSettingsItem: String, Hashable, Identifiable, CaseIterable {
 /// chevron, since each opens another screen.
 struct HomeSettingsRow: View {
     let item: HomeSettingsItem
+    let offersDonations: Bool
     let action: () -> Void
 
     @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 28
@@ -84,7 +92,7 @@ struct HomeSettingsRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title)
                         .foregroundStyle(Color(uiColor: .label))
-                    Text(item.subtitle)
+                    Text(item.subtitle(offersDonations: offersDonations))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -107,7 +115,7 @@ struct HomeSettingsRow: View {
     List {
         Section {
             ForEach(HomeSettingsItem.allCases) { item in
-                HomeSettingsRow(item: item) {}
+                HomeSettingsRow(item: item, offersDonations: true) {}
             }
         } header: {
             HomeSectionTitle(title: Strings.settingsAndMore)

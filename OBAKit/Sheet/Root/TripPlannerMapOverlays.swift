@@ -103,6 +103,10 @@ private func tripAnnotationContent(
     .background(Color(uiColor: .systemBackground))
     .cornerRadius(6)
     .shadow(radius: 2)
+    // One element per card, read as route, title and subtitle together. No
+    // button trait: selecting a card only hands the tap to OTPKit, which may
+    // do nothing for it.
+    .accessibilityElement(children: .combine)
 }
 
 private typealias Metrics = TripPlannerCardMetrics

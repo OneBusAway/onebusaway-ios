@@ -26,18 +26,19 @@ struct HomeSettingsSectionTests {
     @Test func `Every row has a title, a subtitle and a symbol that exists`() {
         for item in HomeSettingsItem.allCases {
             #expect(!item.title.isEmpty)
-            #expect(!item.subtitle.isEmpty)
+            #expect(!item.subtitle(offersDonations: true).isEmpty)
             #expect(UIImage(systemName: item.systemImage) != nil)
         }
     }
 
     @Test func `Rows read as specified`() {
         #expect(HomeSettingsItem.customizeMap.title == "Customize Map")
-        #expect(HomeSettingsItem.customizeMap.subtitle == "Change map display options")
+        #expect(HomeSettingsItem.customizeMap.subtitle(offersDonations: true) == "Change map display options")
         #expect(HomeSettingsItem.settings.title == "Settings")
-        #expect(HomeSettingsItem.settings.subtitle == "Change app settings")
+        #expect(HomeSettingsItem.settings.subtitle(offersDonations: true) == "Change app settings")
         #expect(HomeSettingsItem.more.title == "More")
-        #expect(HomeSettingsItem.more.subtitle == "Donate, Change Region, Give Feedback, and more")
+        #expect(HomeSettingsItem.more.subtitle(offersDonations: true) == "Donate, Change Region, Give Feedback, and more")
+        #expect(HomeSettingsItem.more.subtitle(offersDonations: false) == "Change Region, Give Feedback, and more")
         #expect(Strings.settingsAndMore == "Settings and More")
     }
 }

@@ -732,7 +732,7 @@
 "error_report.title.unknown" = "Không thể tải thông tin này";
 
 /* Explanation of an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.explanation.authentication" = "The server didn't accept this app's request. Please contact support if this continues.";
+"error_report.explanation.authentication" = "Máy chủ không chấp nhận yêu cầu của ứng dụng này. Vui lòng liên hệ bộ phận hỗ trợ nếu sự cố vẫn tiếp diễn.";
 
 /* One-line toast text for an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.summary.authentication" = "The server didn't accept this app's request.";
+"error_report.summary.authentication" = "Máy chủ không chấp nhận yêu cầu của ứng dụng này.";

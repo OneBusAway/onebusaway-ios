@@ -732,7 +732,7 @@
 "error_report.title.unknown" = "이 정보를 불러올 수 없음";
 
 /* Explanation of an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.explanation.authentication" = "The server didn't accept this app's request. Please contact support if this continues.";
+"error_report.explanation.authentication" = "서버가 이 앱의 요청을 받아들이지 않았습니다. 문제가 계속되면 지원팀에 문의해 주세요.";
 
 /* One-line toast text for an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.summary.authentication" = "The server didn't accept this app's request.";
+"error_report.summary.authentication" = "서버가 이 앱의 요청을 받아들이지 않았습니다.";

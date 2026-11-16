@@ -732,7 +732,7 @@
 "error_report.title.unknown" = "无法加载此信息";
 
 /* Explanation of an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.explanation.authentication" = "The server didn't accept this app's request. Please contact support if this continues.";
+"error_report.explanation.authentication" = "服务器未接受此应用的请求。如果问题持续存在，请联系支持人员。";
 
 /* One-line toast text for an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.summary.authentication" = "The server didn't accept this app's request.";
+"error_report.summary.authentication" = "服务器未接受此应用的请求。";

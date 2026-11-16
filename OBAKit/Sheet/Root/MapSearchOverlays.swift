@@ -39,6 +39,7 @@ func searchResultMapContent(
             Annotation("", coordinate: stop.coordinate) {
                 Image(uiImage: stopIcon(stop))
                     .accessibilityLabel(Formatters.formattedAccessibilityLabel(stop: stop))
+                    .accessibilityAddTraits(.isButton)
             }
             .tag(MapPinSelection.stop(stop.id))
         }

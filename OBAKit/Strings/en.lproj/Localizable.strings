@@ -504,6 +504,9 @@
 /* Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds. */
 "home_sheet.settings.more.subtitle" = "Donate, Change Region, Give Feedback, and more";
 
+/* Subtitle of the More row on the map panel's home sheet, in an app without donations, listing some of what the More screen holds. */
+"home_sheet.settings.more.subtitle_no_donations" = "Change Region, Give Feedback, and more";
+
 /* Subtitle of the Settings row on the map panel's home sheet. */
 "home_sheet.settings.settings.subtitle" = "Change app settings";
 

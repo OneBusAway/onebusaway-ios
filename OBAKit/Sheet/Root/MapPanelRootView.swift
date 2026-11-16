@@ -842,6 +842,8 @@ struct MapPanelRootView: View {
             // `accessibilityHidden` didn't keep their text out of VoiceOver.
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityLabel)
+            // Selecting the pin opens the stop, as the rental markers say.
+            .accessibilityAddTraits(.isButton)
         }
         .tag(MapPinSelection.stop(stop.id))
     }

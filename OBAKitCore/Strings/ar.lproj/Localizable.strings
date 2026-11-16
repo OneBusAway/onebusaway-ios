@@ -732,7 +732,7 @@
 "error_report.title.unknown" = "تعذّر تحميل هذه المعلومات";
 
 /* Explanation of an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.explanation.authentication" = "The server didn't accept this app's request. Please contact support if this continues.";
+"error_report.explanation.authentication" = "لم يقبل الخادم طلب هذا التطبيق. يُرجى التواصل مع الدعم إذا استمرت المشكلة.";
 
 /* One-line toast text for an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.summary.authentication" = "The server didn't accept this app's request.";
+"error_report.summary.authentication" = "لم يقبل الخادم طلب هذا التطبيق.";
