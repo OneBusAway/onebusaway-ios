@@ -16,6 +16,8 @@ class MockRegionsFileStorage: RegionsFileStorageProtocol {
     var loadDefaultRegionsError: Error?
     var saveDefaultRegionsError: Error?
     var loadCustomRegionsError: Error?
+    /// Makes this many calls to `loadCustomRegions()` throw before it starts succeeding.
+    var failingCustomRegionsLoads = 0
     var saveCustomRegionError: Error?
     var deleteCustomRegionError: Error?
 
@@ -35,6 +37,10 @@ class MockRegionsFileStorage: RegionsFileStorageProtocol {
 
     func loadCustomRegions() throws -> [Region] {
         if let error = loadCustomRegionsError { throw error }
+        if failingCustomRegionsLoads > 0 {
+            failingCustomRegionsLoads -= 1
+            throw CocoaError(.fileReadUnknown)
+        }
         return storedCustomRegions
     }
 

@@ -706,6 +706,93 @@ final class RegionsServiceTests: OBATestCase {
         #expect(service.find(id: custom.regionIdentifier) == custom)
     }
 
+    @Test func `Upgrade does not retire a saved custom region whose file fails to load`() async throws {
+        let custom = Fixtures.customMinneapolisRegion
+        mockFileStorage.storedDefaultRegions = try Fixtures.loadSomeRegions()
+        // The real storage skips a corrupt file and still returns a list.
+        mockFileStorage.storedCustomRegions = []
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        userDefaults.set(custom.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(custom)
+        let service = makeRegionsService()
+
+        #expect(!RegionsService.isDroppedRegionIdentifier(custom.regionIdentifier, userDefaults: userDefaults))
+        #expect(store.storedRegion == custom)
+
+        let path = regionsAPIPath
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == path }
+        await service.updateRegionsList(forceUpdate: true)
+
+        #expect(service.lastRefreshFailed)
+        #expect(service.currentRegion == custom)
+    }
+
+    @Test func `Upgrade does not retire a custom region found after a failed first read`() throws {
+        let custom = Fixtures.customMinneapolisRegion
+        mockFileStorage.storedDefaultRegions = try Fixtures.loadSomeRegions()
+        mockFileStorage.storedCustomRegions = [custom]
+        mockFileStorage.failingCustomRegionsLoads = 1
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        userDefaults.set(custom.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(custom)
+        let service = makeRegionsService()
+
+        #expect(!RegionsService.isDroppedRegionIdentifier(custom.regionIdentifier, userDefaults: userDefaults))
+        #expect(store.storedRegion == custom)
+        #expect(service.currentRegion == custom)
+    }
+
+    @Test func `A dropped region in the bundled fallback stays gone`() throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        RegionsService.recordDroppedRegionIdentifier(tampa.regionIdentifier, userDefaults: userDefaults)
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
+
+        // Saved defaults cannot be read, so the service falls back to a bundle that still has Tampa.
+        mockFileStorage.loadDefaultRegionsError = CocoaError(.fileReadCorruptFile)
+        let tampaBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [tampa])).write(to: tampaBundle)
+        defer { try? FileManager.default.removeItem(at: tampaBundle) }
+
+        let service = makeRegionsService(bundledRegionsPath: tampaBundle.path)
+
+        #expect(!service.canTrustRegionsList)
+        #expect(service.currentRegion == nil)
+    }
+
+    @Test func `A trusted refresh that brings a dropped region back restores it`() async throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        RegionsService.recordDroppedRegionIdentifier(tampa.regionIdentifier, userDefaults: userDefaults)
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
+
+        let tampaBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [tampa])).write(to: tampaBundle)
+        defer { try? FileManager.default.removeItem(at: tampaBundle) }
+
+        let service = makeRegionsService(bundledRegionsPath: tampaBundle.path)
+        #expect(service.currentRegion == nil)
+
+        let path = regionsAPIPath
+        let tampaList = try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [tampa]))
+        dataLoader.mock(data: tampaList) { $0.url?.path == path }
+        await service.updateRegionsList(forceUpdate: true)
+
+        #expect(service.canTrustRegionsList)
+        #expect(service.currentRegion == tampa)
+        #expect(!RegionsService.isDroppedRegionIdentifier(tampa.regionIdentifier, userDefaults: userDefaults))
+    }
+
     @Test func `Failed refresh preserves cached region fallback`() async throws {
         let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
 
