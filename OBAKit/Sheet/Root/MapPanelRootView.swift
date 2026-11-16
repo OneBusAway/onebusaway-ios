@@ -129,6 +129,11 @@ struct MapPanelBottomPadding {
     ) -> CGFloat {
         if detent == AppSheetRoute.homeCollapsedDetent {
             return homeCollapsedHeight
+        } else if detent == AppSheetRoute.stopCollapsedDetent {
+            // The collapsed stop sheet (#1751), not half the screen: without this
+            // it fell to the default below and padded the map as if at `.medium`.
+            let measurements = StopCollapsedDetent.measured.withLock { $0 }
+            return StopCollapsedDetent.height(measurements, maxDetentValue: totalMapHeight > 0 ? totalMapHeight : halfScreenHeight * 2)
         } else if detent == .height(AppSheetRoute.tripPlannerTipHeight) {
             return AppSheetRoute.tripPlannerTipHeight
         } else if detent == .medium {
