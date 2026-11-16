@@ -122,6 +122,9 @@ struct HomeSheetView: View {
             .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
             .onChange(of: showsTabs, initial: true) { _, showsTabs in
                 viewModel.offersMore = showsTabs
+                // The tab bar comes and goes with the tabs, and leaving takes no
+                // geometry change with it to republish the header without it.
+                publishHeaderHeight()
             }
             .onChange(of: isHomeListVisible, initial: true) { _, isVisible in
                 viewModel.nearbyDepartures.isVisible = isVisible
