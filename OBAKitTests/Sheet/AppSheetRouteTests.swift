@@ -175,9 +175,8 @@ final class AppSheetRouteTests {
     /// cover. The map stays interactive up through `.medium`, as it does under a trip.
     @Test func `Stop details opens at medium over the panel's map`() {
         let config = AppSheetRoute.stopDetails(stopID: "1").detentConfiguration
-        #expect(config.detents == [.medium, .large])
+        #expect(config.detents == [AppSheetRoute.stopCollapsedDetent, .medium, .large])
         #expect(config.initialDetent == .medium)
-        #expect(config.isDismissDisabled == false)
         #expect(config.fullScreenDetent == nil)
         // Not `Equatable`; the descriptions differ for `.disabled`, which is what
         // left the map untouchable behind this sheet before.
@@ -185,6 +184,16 @@ final class AppSheetRouteTests {
             == String(describing: PresentationBackgroundInteraction.enabled(upThrough: .medium)))
         #expect(String(describing: config.backgroundInteraction)
             != String(describing: PresentationBackgroundInteraction.disabled))
+    }
+
+    /// A swipe down collapses the stop sheet rather than closing it; only its
+    /// Close button closes it (#1751). The collapsed detent is the measured
+    /// `StopCollapsedDetent`, so the rider gets the map back without losing the stop.
+    @Test func `Stop details collapses rather than dismissing`() {
+        let config = AppSheetRoute.stopDetails(stopID: "1").detentConfiguration
+        #expect(config.isDismissDisabled == true)
+        #expect(config.detents.contains(.custom(StopCollapsedDetent.self)))
+        #expect(AppSheetRoute.stopCollapsedDetent == .custom(StopCollapsedDetent.self))
     }
 
     /// Opens at `.medium`, not `.large`: the planner draws its route on the map behind
@@ -424,8 +433,8 @@ final class AppSheetRouteTests {
     }
 
     /// Stacked so the home sheet peeks beneath, matching every other detail
-    /// destination — and because `SheetCoordinator.push` preconditions that a
-    /// stacked route allows interactive dismissal.
+    /// destination. It has no Close of its own to fall back on, so it leaves
+    /// dismissal to the drag-down gesture.
     @Test func `Map settings route stacks and allows dismissal`() {
         #expect(AppSheetRoute.mapSettings.prefersStacking)
         #expect(AppSheetRoute.mapSettings.detentConfiguration.isDismissDisabled == false)
@@ -520,9 +529,9 @@ final class AppSheetRouteTests {
         #expect(config.initialDetent == .medium)
     }
 
-    /// `SheetCoordinator.push` preconditions on this for every stacked route: the OS
-    /// owns drag-down on that layer, and locking dismissal would leave
-    /// `stackedEntries` pointing at a sheet that is no longer on screen.
+    /// These sheets leave dismissal to the drag-down gesture, which
+    /// `truncateStacked` keeps in sync with `stackedEntries`; only a route with
+    /// its own Close, like the stop sheet, may lock it.
     @Test func `Stacked search routes allow interactive dismissal`() throws {
         let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)))
         let stopsForRoute = try Fixtures.loadRESTAPIPayload(type: StopsForRoute.self, fileName: "stops_for_route_1_44.json")

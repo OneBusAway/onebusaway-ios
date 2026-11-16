@@ -98,17 +98,13 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Stacked routes append a new physical sheet over the previous one;
     /// content-swap routes append to the base content stack.
     ///
-    /// Invariant: a stacked route must allow interactive dismissal. The OS
-    /// owns drag-down on the stacked layer, and `truncateStacked` is wired
-    /// to that gesture — locking dismissal would let `stackedEntries` point
-    /// at a sheet that's no longer on screen.
+    /// A stacked route that allows interactive dismissal leaves drag-down to
+    /// the OS, and `truncateStacked` keeps storage in sync with that gesture. A
+    /// stacked route that locks it (the stop sheet, #1751) must offer its own
+    /// way out that calls `pop()`, or the rider has none.
     func push(_ route: Route) {
         lastChangeWasPopToRoot = false
         if route.prefersStacking {
-            precondition(
-                !route.detentConfiguration.isDismissDisabled,
-                "Stacked routes must have isDismissDisabled == false; \(route) does not."
-            )
             // A sheet opening on top takes VoiceOver itself, so an unwind still
             // closing beneath it has no focus left to move.
             unwindFocusDepth = nil

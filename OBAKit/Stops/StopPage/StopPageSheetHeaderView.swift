@@ -70,6 +70,11 @@ struct StopPageSheetHeaderView: View {
     /// observes it — see `StopPageView`'s note on observation discipline.
     @ObservedObject var mapFocus: StopMapFocus
 
+    /// Reports the height of the name and stop code/direction, with the
+    /// header's top padding and its collapsed bottom padding: what the map
+    /// panel's collapsed stop sheet shows under its top bar (`StopCollapsedDetent`).
+    var onTitleBlockHeight: ((CGFloat) -> Void)?
+
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var subtitle: String {
@@ -149,6 +154,11 @@ struct StopPageSheetHeaderView: View {
                     if showsCloseButton {
                         StopSheetCloseButton(action: onClose)
                     }
+                }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    onTitleBlockHeight?(
+                        StopSheetHeaderMetrics.topPadding + height + StopSheetHeaderMetrics.collapsedBottomPadding
+                    )
                 }
 
                 if !isCollapsed, walkTime != nil || bikeTime != nil || !chips.isEmpty {

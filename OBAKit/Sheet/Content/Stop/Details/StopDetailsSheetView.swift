@@ -220,10 +220,20 @@ struct StopDetailsSheetView: View {
             // The bar is fixed height, so nothing here resizes as the list
             // scrolls. An inset whose height tracked scroll position is what
             // pegged the main thread here once; a constant one has no such loop.
-            .stopSheetChrome { topBar(navigation: navigation) }
+            .stopSheetChrome {
+                topBar(navigation: navigation)
+                    // Sizes the collapsed detent; see `StopCollapsedDetent`.
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        StopCollapsedDetent.measured.withLock { $0.topBarHeight = height }
+                    }
+            }
             // An overlay: it takes no part in the list's layout, so it cannot
             // feed back into scroll geometry.
             .overlay(alignment: .bottomTrailing) { scrollToTopOverlay(proxy: proxy) }
+            // The sheet can't be swiped away (#1751), and the system's own
+            // escape would only try to; VoiceOver's two-finger scrub closes it
+            // as Close does.
+            .accessibilityAction(.escape) { coordinator.pop() }
             .stopPageLifecycle(
                 viewModel: viewModel,
                 userDefaults: userDefaults,
@@ -410,7 +420,10 @@ struct StopDetailsSheetView: View {
                         pillDirections: navigation.pillDirections,
                         onClose: { coordinator.pop() },
                         showsCloseButton: false,
-                        mapFocus: mapFocus
+                        mapFocus: mapFocus,
+                        onTitleBlockHeight: { height in
+                            StopCollapsedDetent.measured.withLock { $0.titleBlockHeight = height }
+                        }
                     )
                 } else if showsLoadingState {
                     StopPageSheetHeaderPlaceholderView(

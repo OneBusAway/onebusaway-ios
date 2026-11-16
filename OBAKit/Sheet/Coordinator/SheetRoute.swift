@@ -399,6 +399,9 @@ nonisolated extension AppSheetRoute {
     /// The home sheet's smallest detent; see `HomeCollapsedDetent`.
     static var homeCollapsedDetent: PresentationDetent { .custom(HomeCollapsedDetent.self) }
 
+    /// The stop sheet's smallest detent; see `StopCollapsedDetent`.
+    static var stopCollapsedDetent: PresentationDetent { .custom(StopCollapsedDetent.self) }
+
     /// Height of the trip planner's tip detent — a "peek" rung that leaves the
     /// map dominant when the panel is minimized. OTPKit's
     /// `DirectionsSheetView.tipDetent` collapses its own view when turn-by-turn
@@ -450,11 +453,17 @@ nonisolated extension AppSheetRoute {
             // `.enabled(upThrough: .medium)`, which needs `.medium` in `detents`.
             // Without it UIKit has no detent at which to begin dimming, so the
             // sheet stays non-modal and every touch falls through to the map; that
-            // is why the `[.large]`-only routes above state `.disabled`.
+            // is why the `[.large]`-only routes above state `.disabled`. The
+            // collapsed detent sits below `.medium`, so the map stays usable there.
+            //
+            // A swipe down stops at the collapsed detent rather than closing the
+            // sheet, so a rider dragging for more map, or scrolling the arrivals
+            // past the top, doesn't lose the stop. Only Close dismisses it, and
+            // Close pops the route through the coordinator itself (#1751).
             return SheetDetentConfiguration(
-                detents: [.medium, .large],
+                detents: [AppSheetRoute.stopCollapsedDetent, .medium, .large],
                 initialDetent: .medium,
-                isDismissDisabled: false
+                isDismissDisabled: true
             )
         case .tripPlanner:
             // Opens at `.medium`: planning a trip is a map task, and the origin and
