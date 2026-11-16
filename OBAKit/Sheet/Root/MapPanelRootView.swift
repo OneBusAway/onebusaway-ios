@@ -534,7 +534,7 @@ struct MapPanelRootView: View {
         })
         }
         // Switching Bikes on while zoomed out must raise the rental hint now, not
-        // at the next camera settle. Every layer toggle moves the badge count.
+        // at the next camera settle. Every layer toggle moves the enabled-layer count.
         .onChange(of: layersModel.enabledLayerCount) { _, _ in
             guard let visibleMapRectHeight else { return }
             updateRentalZoomHint(visibleMapRectHeight: visibleMapRectHeight)
@@ -697,10 +697,10 @@ struct MapPanelRootView: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            mapControlsCluster
+            currentLocationButton
         }
         .overlay(alignment: .topTrailing) {
-            // On iPhone, More is a button beside the home sheet's search field.
+            // On iPhone, More is a row in the home sheet's Settings and More section.
             if !HomeTabs.showsTabs(horizontalSizeClass: horizontalSizeClass) {
                 moreButton
             }
@@ -1439,13 +1439,10 @@ extension MapPanelRootView {
         .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
     }
 
-    private var mapControlsCluster: some View {
-        MapControlsCluster(
-            mapType: mapViewModel.mapType,
-            badgeCount: layersModel.enabledLayerCount,
-            isLocationButtonVisible: application.locationService.isLocationUseAuthorized,
-            onOpenMapSettings: { coordinator.push(.mapSettings) },
-            onCenterOnUser: centerOnUser
+    private var currentLocationButton: some View {
+        CurrentLocationButton(
+            isVisible: application.locationService.isLocationUseAuthorized,
+            onTap: centerOnUser
         )
         .padding(.trailing, ThemeMetrics.controllerMargin)
         .padding(.bottom, controlsDockOffset)

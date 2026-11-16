@@ -483,6 +483,13 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         present(navigation, from: fromController)
     }
 
+    /// Presents the app's settings modally, in a navigation controller for
+    /// their Done button.
+    public func presentSettings(from fromController: UIViewController) {
+        let settings = SettingsViewController(application: application)
+        present(buildNavigation(controller: settings), from: fromController)
+    }
+
     // MARK: - Helpers
 
     /// Creates and configures a `UINavigationController` for the specified controller, setting some preferred options along the way.

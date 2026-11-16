@@ -435,6 +435,21 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "顯示此區段的所有項目。";
 
+/* Subtitle of the Customize Map row on the map panel's home sheet. */
+"home_sheet.settings.customize_map.subtitle" = "更改地圖顯示選項";
+
+/* Title of a row on the map panel's home sheet that opens the map display options: basemap, routes and layers. */
+"home_sheet.settings.customize_map.title" = "自訂地圖";
+
+/* Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds. */
+"home_sheet.settings.more.subtitle" = "捐款、更改地區、提供意見等";
+
+/* Subtitle of the Settings row on the map panel's home sheet. */
+"home_sheet.settings.settings.subtitle" = "更改 App 設定";
+
+/* Header of the last section on the map panel's home sheet, which holds rows for map display options, app settings, and the More screen. */
+"home_sheet.settings.title" = "設定及更多";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "請檢查「設定」中的「即時動態」設定。";
 

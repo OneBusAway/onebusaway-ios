@@ -232,6 +232,8 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     case nearbyStops(coordinate: CLLocationCoordinate2D)
 
     case more
+    /// Not pushed: Home's Settings row presents `SettingsViewController`
+    /// modally (`ViewRouter.presentSettings(from:)`), as the More screen does.
     case settings
     case mapSettings
 

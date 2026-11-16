@@ -18,22 +18,16 @@ enum HomeExploreItem: Hashable, Identifiable {
     case rentals(isOn: Bool)
     /// The rider's alarms, which the Recent tab lists.
     case alarms(count: Int)
-    /// More: settings, help and the rest of the classic app's More tab. On
-    /// iPhone only, where nothing else on the panel leads there; regular width
-    /// keeps its More button on the map.
-    case more
 
     /// The items to show, in order. Each only where it leads somewhere.
     ///
     /// - Parameter rentalsEnabled: Whether the bike and scooter layers are on,
     ///   or `nil` in a region with none.
-    /// - Parameter offersMore: Whether More belongs here; see `more`.
-    static func items(offersTripPlanning: Bool, rentalsEnabled: Bool?, alarmCount: Int, offersMore: Bool) -> [HomeExploreItem] {
+    static func items(offersTripPlanning: Bool, rentalsEnabled: Bool?, alarmCount: Int) -> [HomeExploreItem] {
         var items: [HomeExploreItem] = []
         if offersTripPlanning { items.append(.planTrip) }
         if let rentalsEnabled { items.append(.rentals(isOn: rentalsEnabled)) }
         if alarmCount > 0 { items.append(.alarms(count: alarmCount)) }
-        if offersMore { items.append(.more) }
         return items
     }
 
@@ -43,7 +37,6 @@ enum HomeExploreItem: Hashable, Identifiable {
         case .planTrip: "planTrip"
         case .rentals: "rentals"
         case .alarms: "alarms"
-        case .more: "more"
         }
     }
 
@@ -55,8 +48,6 @@ enum HomeExploreItem: Hashable, Identifiable {
             OBALoc("home_sheet.explore.rentals", value: "Bikes & Scooters", comment: "Title of a shortcut on the map panel's home sheet that shows or hides rental bikes and scooters on the map. Short: it sits under a small round icon.")
         case .alarms:
             RecentStopsSheetView.alarmsTitle
-        case .more:
-            Strings.moreTabTitle
         }
     }
 
@@ -65,7 +56,6 @@ enum HomeExploreItem: Hashable, Identifiable {
         case .planTrip: "point.topleft.down.to.point.bottomright.curvepath"
         case .rentals: "bicycle"
         case .alarms: "alarm"
-        case .more: "ellipsis"
         }
     }
 
@@ -73,7 +63,7 @@ enum HomeExploreItem: Hashable, Identifiable {
     /// tile's fill or its badge.
     var accessibilityValue: String? {
         switch self {
-        case .planTrip, .more: nil
+        case .planTrip: nil
         case .rentals(let isOn): isOn ? Strings.mapLayersStateOn : Strings.mapLayersStateOff
         case .alarms(let count): count.formatted()
         }
@@ -100,11 +90,11 @@ struct HomeExploreRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        // Fixed columns rather than a scrolling row: there are at most four, and
+        // Fixed columns rather than a scrolling row: there are at most three, and
         // a shortcut hidden off the edge is one nobody finds.
         let columns = Array(
             repeating: GridItem(.flexible(), spacing: 8, alignment: .top),
-            count: typeSize.isAccessibilitySize ? 2 : max(items.count, 3)
+            count: typeSize.isAccessibilitySize ? 2 : 3
         )
         LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
             ForEach(items) { item in

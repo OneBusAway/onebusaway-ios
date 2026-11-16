@@ -18,7 +18,7 @@ import OBAKitCore
 /// shortcuts. Recent and Bookmarks are its sections at full length, so a
 /// section's header and its tab lead to the same place. Nearby has no tab: its
 /// content is on Home, and its header stacks the full list. More, a tab of the
-/// classic app, is a shortcut in Home's Explore row.
+/// classic app, is a row in Home's Settings and More section.
 enum HomeTab: CaseIterable, Hashable {
     case home
     case recent

@@ -435,6 +435,21 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Показывает все элементы этого раздела.";
 
+/* Subtitle of the Customize Map row on the map panel's home sheet. */
+"home_sheet.settings.customize_map.subtitle" = "Изменить параметры отображения карты";
+
+/* Title of a row on the map panel's home sheet that opens the map display options: basemap, routes and layers. */
+"home_sheet.settings.customize_map.title" = "Настроить карту";
+
+/* Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds. */
+"home_sheet.settings.more.subtitle" = "Пожертвовать, сменить регион, оставить отзыв и многое другое";
+
+/* Subtitle of the Settings row on the map panel's home sheet. */
+"home_sheet.settings.settings.subtitle" = "Изменить настройки приложения";
+
+/* Header of the last section on the map panel's home sheet, which holds rows for map display options, app settings, and the More screen. */
+"home_sheet.settings.title" = "Настройки и ещё";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Проверьте настройки Live-активностей в приложении «Настройки».";
 

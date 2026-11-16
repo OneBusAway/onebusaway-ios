@@ -196,6 +196,15 @@ final class AppSheetViewFactory {
                     return
                 }
                 application.viewRouter.navigateTo(alert: alert, from: host)
+            },
+            // Modally, as the More screen opens it: the controller owns its
+            // Done button and dismisses itself.
+            onOpenSettings: { [application, presentingController] in
+                guard let host = presentingController() else {
+                    Logger.error("AppSheetViewFactory: dropping Settings — no presenting controller resolved.")
+                    return
+                }
+                application.viewRouter.presentSettings(from: host)
             }
         )
     }

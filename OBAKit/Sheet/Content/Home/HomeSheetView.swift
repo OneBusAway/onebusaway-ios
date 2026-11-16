@@ -15,8 +15,8 @@ import OBAKitCore
 /// The panel's base sheet: the search field, over the Home / Recent / Bookmarks
 /// tab bar on iPhone. Collapsed, it's those two rows, sized to them (#1750).
 /// Home, the first tab, is the mixed view: bookmark cards, what leaves from
-/// nearby stops, recent stops and a row of shortcuts, More among them. See
-/// `HomeTab`.
+/// nearby stops, recent stops, a row of shortcuts, and last the ways into
+/// the map's options, settings and More. See `HomeTab`.
 struct HomeSheetView: View {
     @StateObject private var viewModel: HomeSheetViewModel
     @EnvironmentObject var coordinator: SheetCoordinator<AppSheetRoute>
@@ -49,13 +49,18 @@ struct HomeSheetView: View {
     /// Opens a service alert's detail.
     private let onSelectAlert: (AgencyAlert) -> Void
 
+    /// Presents the app's settings.
+    private let onOpenSettings: () -> Void
+
     init(
         application: Application,
         viewModel: @autoclosure @escaping () -> HomeSheetViewModel,
-        onSelectAlert: @escaping (AgencyAlert) -> Void = { _ in }
+        onSelectAlert: @escaping (AgencyAlert) -> Void = { _ in },
+        onOpenSettings: @escaping () -> Void = {}
     ) {
         self.application = application
         self.onSelectAlert = onSelectAlert
+        self.onOpenSettings = onOpenSettings
         _viewModel = StateObject(wrappedValue: viewModel())
     }
 
@@ -120,8 +125,7 @@ struct HomeSheetView: View {
             // where the sheet's Liquid Glass is the background (iOS 26, light mode).
             .searchSheetBackground()
             .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
-            .onChange(of: showsTabs, initial: true) { _, showsTabs in
-                viewModel.offersMore = showsTabs
+            .onChange(of: showsTabs, initial: true) {
                 // The tab bar comes and goes with the tabs, and leaving takes no
                 // geometry change with it to republish the header without it.
                 publishHeaderHeight()
@@ -279,33 +283,27 @@ struct HomeSheetView: View {
     // MARK: - Home
 
     /// Home's content, under the search row and tab bar.
-    @ViewBuilder
+    ///
+    /// Always a list: Settings and More, last, shows whatever else does,
+    /// since nothing else on the panel leads to the map's options or settings.
     private var homeList: some View {
-        if !viewModel.visibleSections.isEmpty {
-            List {
-                // Over Explore, which holds More and so shows even when there's
-                // nothing else.
-                if viewModel.showsEmptyState {
-                    emptyState
-                        .frame(maxWidth: .infinity)
-                        .listRowBackground(Color.clear)
-                }
-                ForEach(viewModel.visibleSections, id: \.self) { section in
-                    sectionContent(for: section)
-                }
+        List {
+            // Over Settings and More, when nothing else shows. Not before the
+            // first settle: until nearby has had its chance, "empty" isn't a fact.
+            if viewModel.showsEmptyState {
+                emptyState
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
             }
-            // Applied to the `List`, matching `BookmarksListView`, rather than
-            // to the bookmarks `Section` alone.
-            .environment(\.obaFormatters, application.formatters)
-            .searchListChrome()
-        } else if viewModel.hasLoadedInitialContent {
-            emptyState
-                .frame(maxHeight: .infinity, alignment: .top)
-        } else {
-            // Pre-first-settle: nearby hasn't had its chance yet, so "empty"
-            // isn't a fact. Hold the space rather than flash a wrong answer.
-            Color.clear
+            ForEach(viewModel.visibleSections, id: \.self) { section in
+                sectionContent(for: section)
+            }
+            settingsSection
         }
+        // Applied to the `List`, matching `BookmarksListView`, rather than
+        // to the bookmarks `Section` alone.
+        .environment(\.obaFormatters, application.formatters)
+        .searchListChrome()
     }
 
     // MARK: - Search Bar
@@ -426,9 +424,38 @@ struct HomeSheetView: View {
             }
         case .alarms:
             showAll(.recentStopsAll)
-        case .more:
-            coordinator.push(.more)
         }
+    }
+
+    /// The map's options, settings and More. More only where the sheet has
+    /// tabs; regular width keeps its More button on the map.
+    private var settingsSection: some View {
+        Section {
+            ForEach(HomeSettingsItem.items(offersMore: showsTabs)) { item in
+                HomeSettingsRow(item: item) { open(item) }
+            }
+        } header: {
+            HomeSectionTitle(title: Strings.settingsAndMore)
+        }
+        .textCase(nil)
+    }
+
+    private func open(_ item: HomeSettingsItem) {
+        switch item {
+        case .customizeMap:
+            pushUnlessOnTop(.mapSettings)
+        case .settings:
+            onOpenSettings()
+        case .more:
+            pushUnlessOnTop(.more)
+        }
+    }
+
+    /// A second tap before the stacked sheet covers the row would stack an
+    /// identical copy on the first.
+    private func pushUnlessOnTop(_ route: AppSheetRoute) {
+        guard coordinator.stackedRoutes.last != route else { return }
+        coordinator.push(route)
     }
 
     /// No index to open, so the header is a plain title rather than a
