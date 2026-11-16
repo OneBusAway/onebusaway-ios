@@ -68,6 +68,7 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
             "lon": -122.33,
             "direction": "NB",
             "code": "101",
+            "locationType": 0,
             "routeIds": ["route_10"]
         ]
         let stop = try Fixtures.dictionaryToModel(type: Stop.self, dictionary: stopData)
@@ -98,15 +99,20 @@ final class EditBookmarkViewModelExtendedTests: OBATestCase {
         ]
         let routeData: [String: Any] = [
             "id": "route_10",
+            "agencyId": "1",
             "shortName": routeShortName,
             "longName": "Route \(routeShortName)",
             "type": 3
         ]
         let tripData: [String: Any] = [
             "id": "trip_100",
+            "blockId": "block_1",
             "routeId": "route_10",
+            "routeShortName": routeShortName,
             "tripHeadsign": headsign,
+            "tripShortName": "100",
             "serviceId": "s1",
+            "timeZone": "America/Los_Angeles",
             "directionId": "0"
         ]
 

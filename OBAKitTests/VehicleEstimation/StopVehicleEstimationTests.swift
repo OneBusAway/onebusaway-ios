@@ -109,7 +109,7 @@ final class StopVehicleEstimationTests {
         )
         await estimation.inputsSettled()
         #expect(!estimation.estimates.isEmpty)
-        #expect(clock.sleeperCount == 1)
+        await poll(until: { self.clock.sleeperCount == 1 }, "the tick should be sleeping after the refresh")
 
         // Now disable driver and refresh: existing estimates must be cleared and sleeper stopped
         harness.isEnabled = false

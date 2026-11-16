@@ -209,7 +209,7 @@ final class StopFocusMapEstimationTests {
         model.apply(arrivals: emptyArrivals, isListFiltered: false, preferences: StopPreferences(), owner: Self.stop)
         await harness.estimation.inputsSettled()
 
-        let display = try #require(model.display)
-        #expect(display.vehicles.isEmpty)
+        #expect(model.display == nil)
+        #expect(harness.estimation.estimates.isEmpty)
     }
 }

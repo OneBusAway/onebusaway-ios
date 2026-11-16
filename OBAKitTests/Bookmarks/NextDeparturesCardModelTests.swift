@@ -137,11 +137,10 @@ struct NextDeparturesCardModelTests {
         let upcoming = departures([departure(5), departure(12), departure(20)])
         let model = NextDeparturesCardModel(outcome: upcoming, now: now)
 
-        #expect(model.title == "Library")
+        #expect(model.bookmarkName == "Library")
         #expect(model.routeShortName == "550")
         #expect(model.headsign == "Seattle")
         #expect(model.showsRefresh)
-        #expect(model.showsSettings == false)
 
         #expect(model.rows.count == 3)
         #expect(model.rows[0].timeText == "5m")
@@ -153,6 +152,5 @@ struct NextDeparturesCardModelTests {
         let model = NextDeparturesCardModel(outcome: .loadFailed(name: "Library"), now: now, liveActivitiesEnabled: true)
         #expect(model.showsRefresh == true)
         #expect(model.showsTrack == false)
-        #expect(model.showsSettings == false)
     }
 }

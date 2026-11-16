@@ -21,10 +21,25 @@ import Testing
 @Suite(.serialized)
 final class CoreApplicationPipelineExtendedTests: OBATestCase {
 
+    var queue: OperationQueue!
+
+    override init() async throws {
+        try await super.init()
+        queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+    }
+
+    isolated deinit {
+        queue.cancelAllOperations()
+    }
+
     private func createTestApplication(
         fixedRegionName: String? = Fixtures.pugetSoundRegion.name,
         defaultFilter: ArrivalDepartureFilter = .estimatedOnly
     ) -> Application {
+        let loader = restService.dataLoader as! MockDataLoader
+        stubRegions(dataLoader: loader)
+
         let locManager = MockAuthorizedLocationManager(
             updateLocation: TestData.mockSeattleLocation,
             updateHeading: TestData.mockHeading
@@ -37,12 +52,13 @@ final class CoreApplicationPipelineExtendedTests: OBATestCase {
             appVersion: appVersion,
             userDefaults: userDefaults,
             analytics: AnalyticsMock(),
-            defaultArrivalDepartureFilter: defaultFilter,
+            queue: queue,
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsAPIPath,
-            dataLoader: restService.dataLoader as! MockDataLoader,
-            fixedRegionName: fixedRegionName
+            dataLoader: loader,
+            fixedRegionName: fixedRegionName,
+            defaultArrivalDepartureFilter: defaultFilter
         )
         return Application(config: config)
     }
