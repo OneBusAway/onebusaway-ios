@@ -435,6 +435,21 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "이 섹션의 모든 항목을 표시합니다.";
 
+/* Subtitle of the Customize Map row on the map panel's home sheet. */
+"home_sheet.settings.customize_map.subtitle" = "지도 표시 옵션 변경";
+
+/* Title of a row on the map panel's home sheet that opens the map display options: basemap, routes and layers. */
+"home_sheet.settings.customize_map.title" = "지도 사용자화";
+
+/* Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds. */
+"home_sheet.settings.more.subtitle" = "기부, 지역 변경, 피드백 보내기 등";
+
+/* Subtitle of the Settings row on the map panel's home sheet. */
+"home_sheet.settings.settings.subtitle" = "앱 설정 변경";
+
+/* Header of the last section on the map panel's home sheet, which holds rows for map display options, app settings, and the More screen. */
+"home_sheet.settings.title" = "설정 및 더 보기";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "설정에서 실시간 액티비티 설정을 확인해 주세요.";
 

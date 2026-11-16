@@ -10,9 +10,9 @@
 import OBAKitCore
 import UIKit
 
-/// What the basemap button shows and says. Shared by the SwiftUI `MapTypeButton`
-/// and `MapViewController`'s hover-bar button, which open the same Map sheet and
-/// so have to describe it the same way.
+/// What `MapViewController`'s basemap button shows and says: its hover-bar
+/// button and the vertical bar's item, which open the same Map sheet and so
+/// have to describe it the same way.
 enum MapTypeButtonPresentation {
 
     static func symbolName(for mapType: MapBaseType) -> String {

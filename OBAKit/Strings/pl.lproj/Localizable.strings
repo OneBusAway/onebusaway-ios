@@ -435,6 +435,21 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Pokazuje wszystkie elementy w tej sekcji.";
 
+/* Subtitle of the Customize Map row on the map panel's home sheet. */
+"home_sheet.settings.customize_map.subtitle" = "Zmień opcje wyświetlania mapy";
+
+/* Title of a row on the map panel's home sheet that opens the map display options: basemap, routes and layers. */
+"home_sheet.settings.customize_map.title" = "Dostosuj mapę";
+
+/* Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds. */
+"home_sheet.settings.more.subtitle" = "Wesprzyj, zmień region, prześlij opinię i więcej";
+
+/* Subtitle of the Settings row on the map panel's home sheet. */
+"home_sheet.settings.settings.subtitle" = "Zmień ustawienia aplikacji";
+
+/* Header of the last section on the map panel's home sheet, which holds rows for map display options, app settings, and the More screen. */
+"home_sheet.settings.title" = "Ustawienia i więcej";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Sprawdź ustawienia Aktywności na żywo w aplikacji Ustawienia.";
 

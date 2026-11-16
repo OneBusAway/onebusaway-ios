@@ -399,9 +399,7 @@ public class MoreViewController: UIViewController,
     // MARK: - Actions
 
     @objc func showSettings() {
-        let settingsController = SettingsViewController(application: application)
-        let navigation = application.viewRouter.buildNavigation(controller: settingsController)
-        application.viewRouter.present(navigation, from: self)
+        application.viewRouter.presentSettings(from: self)
     }
 
     // MARK: - Contact Us Button

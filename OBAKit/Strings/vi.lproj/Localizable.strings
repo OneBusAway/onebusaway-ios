@@ -435,6 +435,21 @@
 /* VoiceOver hint for a home sheet section header, which opens that section's full list. */
 "home_sheet.section_header.a11y_hint" = "Hiển thị tất cả mục trong phần này.";
 
+/* Subtitle of the Customize Map row on the map panel's home sheet. */
+"home_sheet.settings.customize_map.subtitle" = "Thay đổi tùy chọn hiển thị bản đồ";
+
+/* Title of a row on the map panel's home sheet that opens the map display options: basemap, routes and layers. */
+"home_sheet.settings.customize_map.title" = "Tùy chỉnh bản đồ";
+
+/* Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds. */
+"home_sheet.settings.more.subtitle" = "Quyên góp, đổi khu vực, gửi phản hồi và hơn thế nữa";
+
+/* Subtitle of the Settings row on the map panel's home sheet. */
+"home_sheet.settings.settings.subtitle" = "Thay đổi cài đặt ứng dụng";
+
+/* Header of the last section on the map panel's home sheet, which holds rows for map display options, app settings, and the More screen. */
+"home_sheet.settings.title" = "Cài đặt và thêm";
+
 /* Alert message for Live Activity error. \"Settings\" is the iOS Settings app. */
 "live_activity.error.message" = "Vui lòng kiểm tra cài đặt Hoạt động Trực tiếp trong Cài đặt.";
 

@@ -401,7 +401,7 @@ final class LocalizationTests {
     /// different words, and neither is the `other` form. Assert through the same
     /// locale-aware path `String.localizedStringWithFormat` takes at runtime.
     ///
-    /// Regression: `MapTypeButton.accessibilityValueText` shipped calling `String(format:)`,
+    /// Regression: the map panel's former basemap button shipped calling `String(format:)`,
     /// which rendered a Polish count of 5 as `other` ("5 warstwy włączonej") rather than
     /// `many` ("5 warstw włączonych").
     /// Structure checks only prove the categories exist. This proves the countdown actually
