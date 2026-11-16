@@ -635,6 +635,77 @@ final class RegionsServiceTests: OBATestCase {
         withExtendedLifetime(secondPersister) {}
     }
 
+    @Test(arguments: [false, true])
+    func `Region retired before upgrade stays gone after a failed refresh`(hasCachedRegion: Bool) async throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        let mtaNewYork = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "MTA New York" }))
+
+        // The old version saved a successful list without Tampa, but did not record dropped IDs.
+        mockFileStorage.storedDefaultRegions = [pugetSound, mtaNewYork]
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        if hasCachedRegion {
+            store.write(tampa)
+        }
+
+        let tampaBundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [tampa])).write(to: tampaBundle)
+        defer { try? FileManager.default.removeItem(at: tampaBundle) }
+
+        let regionsService = makeRegionsService(bundledRegionsPath: tampaBundle.path)
+        let persister = ResolvedRegionPersister(regionsService: regionsService, store: store)
+        #expect(regionsService.canTrustRegionsList)
+        #expect(regionsService.currentRegion == nil)
+
+        let path = regionsAPIPath
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == path }
+        await regionsService.updateRegionsList(forceUpdate: true)
+
+        #expect(regionsService.lastRefreshFailed)
+        #expect(regionsService.currentRegion == nil)
+        #expect(store.region(bundledRegionsFilePath: tampaBundle.path) == nil)
+        #expect(store.storedRegion == nil)
+        #expect(makeRegionsService(bundledRegionsPath: tampaBundle.path).currentRegion == nil)
+        withExtendedLifetime(persister) {}
+    }
+
+    @Test(arguments: [false, true])
+    func `Upgrade does not retire a saved custom region`(loadFails: Bool) async throws {
+        let custom = Fixtures.customMinneapolisRegion
+        mockFileStorage.storedDefaultRegions = try Fixtures.loadSomeRegions()
+        mockFileStorage.storedCustomRegions = [custom]
+        if loadFails {
+            mockFileStorage.loadCustomRegionsError = CocoaError(.fileReadCorruptFile)
+        }
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        userDefaults.set(custom.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        locationManagerMock.location = nil
+
+        let store = ResolvedRegionStore(userDefaults: userDefaults)
+        store.write(custom)
+        let service = makeRegionsService()
+        #expect(service.canTrustRegionsList)
+        #expect(!RegionsService.isDroppedRegionIdentifier(custom.regionIdentifier, userDefaults: userDefaults))
+        #expect(store.storedRegion == custom)
+
+        let path = regionsAPIPath
+        dataLoader.mock(data: Data(), statusCode: 500) { $0.url?.path == path }
+        await service.updateRegionsList(forceUpdate: true)
+
+        #expect(service.lastRefreshFailed)
+        #expect(service.currentRegion == custom)
+        #expect(store.storedRegion == custom)
+
+        mockFileStorage.loadCustomRegionsError = nil
+        #expect(service.find(id: custom.regionIdentifier) == custom)
+    }
+
     @Test func `Failed refresh preserves cached region fallback`() async throws {
         let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
 

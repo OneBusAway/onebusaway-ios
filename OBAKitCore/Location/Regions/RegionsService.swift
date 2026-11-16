@@ -95,6 +95,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         super.init()
 
+        // A saved successful list may predate dropped-region tracking.
+        clearRetiredRegionFallback()
+
         if let delegate = delegate {
             addDelegate(delegate)
         }
@@ -592,24 +595,21 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             lastRefreshFailed = false
             self.regions = regions
 
-            let storedIdentifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int
-            if let storedIdentifier {
-                let customRegionsLoadFailed: Bool
-                do {
-                    _ = try fileStorage.loadCustomRegions()
-                    customRegionsLoadFailed = false
-                } catch {
-                    customRegionsLoadFailed = true
-                }
-                if !customRegionsLoadFailed, find(id: storedIdentifier) == nil {
-                    ResolvedRegionStore(userDefaults: userDefaults).write(nil)
-                    RegionsService.recordDroppedRegionIdentifier(storedIdentifier, userDefaults: userDefaults)
-                }
-            }
+            clearRetiredRegionFallback()
         } catch {
             lastRefreshFailed = true
             throw error
         }
+    }
+
+    private func clearRetiredRegionFallback() {
+        guard canTrustRegionsList,
+              let identifier = userDefaults.object(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) as? Int,
+              find(id: identifier) == nil,
+              (try? fileStorage.loadCustomRegions()) != nil else { return }
+
+        ResolvedRegionStore(userDefaults: userDefaults).write(nil)
+        RegionsService.recordDroppedRegionIdentifier(identifier, userDefaults: userDefaults)
     }
 
     /// Fetches the current list of `Region`s from the network.
