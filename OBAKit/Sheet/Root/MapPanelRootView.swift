@@ -519,6 +519,7 @@ struct MapPanelRootView: View {
             stopIDs: stopsObserver.renderStops.map(\.id),
             routeLabels: stopsObserver.renderStops.map(\.routeLabel),
             bookmarkIDs: stopsObserver.bookmarks.map(\.stop.id),
+            tripAnnotationIDs: tripPlannerDisplay.annotations.map(\.id),
             selection: mapSelection,
             showsLabels: showStopLabels,
             showsAmbientStops: showsAmbientStops,
@@ -907,9 +908,17 @@ struct MapPanelRootView: View {
             ))
         }
 
+        // The trip planner's cards hang above their coordinates; route pills
+        // stay off them as they stay off pins (#1753).
+        let tripCards: [CGRect] = tripPlannerDisplay.annotations.compactMap { annotation in
+            guard let point = proxy.convert(annotation.coordinate, to: .local) else { return nil }
+            return TripPlannerCardMetrics.rect(size: TripPlannerCardMetrics.size(for: annotation), at: point)
+        }
+
         let placements = MapStopLabelLayout().layout(
             candidates,
             obstaclePins: unlabeledPins,
+            obstacleRects: tripCards,
             viewportCenter: CGPoint(x: mapSize.width / 2, y: mapSize.height / 2),
             heading: cameraHeading,
             previous: stopLabelPlacements
@@ -1564,6 +1573,8 @@ private struct StopLabelLayoutTriggers: ViewModifier {
         /// A stop can keep its ID but gain a route, which widens its pill.
         let routeLabels: [MapRouteLabel?]
         let bookmarkIDs: [StopID]
+        /// Trip planner cards are obstacles for route pills.
+        let tripAnnotationIDs: [String]
         let selection: MapPinSelection?
         let showsLabels: Bool
         let showsAmbientStops: Bool
