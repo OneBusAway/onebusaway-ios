@@ -769,6 +769,49 @@ final class RegionsServiceTests: OBATestCase {
         #expect(service.currentRegion == nil)
     }
 
+    @Test(arguments: [false, true])
+    func `Startup does not select a different dropped region`(hasLocation: Bool) throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        for region in [tampa, pugetSound] {
+            RegionsService.recordDroppedRegionIdentifier(region.regionIdentifier, userDefaults: userDefaults)
+        }
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        locationManagerMock.location = hasLocation ? TestData.mockSeattleLocation : nil
+        mockFileStorage.loadDefaultRegionsError = CocoaError(.fileReadCorruptFile)
+
+        let bundle = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        try JSONEncoder.RESTEncoder().encode(TestRegionsRESTResponse(regions: [pugetSound])).write(to: bundle)
+        defer { try? FileManager.default.removeItem(at: bundle) }
+
+        let service = makeRegionsService(bundledRegionsPath: bundle.path)
+
+        #expect(!service.canTrustRegionsList)
+        #expect(service.currentRegion == nil)
+        #expect(userDefaults.integer(forKey: RegionsService.currentRegionIdentifierUserDefaultsKey) == tampa.regionIdentifier)
+        #expect(RegionsService.isDroppedRegionIdentifier(pugetSound.regionIdentifier, userDefaults: userDefaults))
+    }
+
+    @Test func `Location updates do not select a dropped region from an untrusted list`() throws {
+        let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
+        let pugetSound = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Puget Sound" }))
+        RegionsService.recordDroppedRegionIdentifier(pugetSound.regionIdentifier, userDefaults: userDefaults)
+        userDefaults.set(tampa.regionIdentifier, forKey: RegionsService.currentRegionIdentifierUserDefaultsKey)
+        locationManagerMock.location = nil
+        mockFileStorage.loadDefaultRegionsError = CocoaError(.fileReadCorruptFile)
+        let service = makeRegionsService(delegate: testDelegate)
+        #expect(service.currentRegion?.regionIdentifier == tampa.regionIdentifier)
+
+        locationManagerMock.location = TestData.mockSeattleLocation
+
+        #expect(!service.canTrustRegionsList)
+        #expect(service.physicallyLocatedRegion == nil)
+        #expect(service.currentRegion?.regionIdentifier == tampa.regionIdentifier)
+        #expect(RegionsService.isDroppedRegionIdentifier(pugetSound.regionIdentifier, userDefaults: userDefaults))
+        #expect(testDelegate.unableToSelectRegion.didCall)
+        #expect(!testDelegate.newRegionSelected.didCall)
+    }
+
     @Test func `A trusted refresh that brings a dropped region back restores it`() async throws {
         let tampa = try #require(Fixtures.loadSomeRegions().first(where: { $0.name == "Tampa Bay" }))
         RegionsService.recordDroppedRegionIdentifier(tampa.regionIdentifier, userDefaults: userDefaults)

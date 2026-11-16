@@ -103,9 +103,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey) || currentRegion == nil
+        let autoSelectionRegions = self.autoSelectionRegions
 
         if autoSelectRegion, let location = locationService.currentLocation {
-            currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
+            currentRegion = RegionsService.firstRegion(in: autoSelectionRegions, containing: location)
         }
 
         // Fixed region from OBAKitConfig: match by name, then fall back to URL.
@@ -124,7 +125,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         // Auto-select when only one active region is available.
         if currentRegion == nil {
-            let activeRegions = self.regions.filter { $0.isActive }
+            let activeRegions = autoSelectionRegions.filter { $0.isActive }
             if activeRegions.count == 1, let onlyRegion = activeRegions.first {
                 currentRegion = onlyRegion
             }
@@ -278,13 +279,20 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
+    private var autoSelectionRegions: [Region] {
+        guard !canTrustRegionsList else { return regions }
+        return regions.filter {
+            $0.isCustom == true || !RegionsService.isDroppedRegionIdentifier($0.regionIdentifier, userDefaults: userDefaults)
+        }
+    }
+
     /// The `Region`, if one exists, that the user is physically located in. Note that this may be different from `currentRegion`.
     public var physicallyLocatedRegion: Region? {
         guard let location = locationService.currentLocation else {
             return nil
         }
 
-        return RegionsService.firstRegion(in: regions, containing: location)
+        return RegionsService.firstRegion(in: autoSelectionRegions, containing: location)
     }
 
     public var automaticallySelectRegion: Bool {
