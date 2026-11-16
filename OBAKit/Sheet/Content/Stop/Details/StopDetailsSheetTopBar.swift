@@ -99,10 +99,9 @@ struct StopDetailsSheetTopBar<Actions: View>: View {
         Button(action: onClose) {
             Image(systemName: "xmark")
                 .font(.body.weight(.semibold))
-                .foregroundStyle(.primary)
                 .glassCircleLabel(diameter: GlassCircleMetrics.chromeCircleSize)
         }
-        .glassCircleSurface()
+        .filledCircleSurface()
         .accessibilityLabel(Strings.close)
     }
 }

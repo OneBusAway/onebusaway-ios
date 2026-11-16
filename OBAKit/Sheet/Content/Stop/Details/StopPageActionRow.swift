@@ -105,7 +105,7 @@ struct StopPageActionRow: View {
 
     private var filterButton: some View {
         Menu { filterMenu } label: { glyph(state.filterSystemImage) }
-            .glassCircleSurface()
+            .filledCircleSurface()
             .accessibilityLabel(Strings.filter)
             .accessibilityValue(OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active."))
             .largeContentViewer(Strings.filter, systemImage: state.filterSystemImage)
@@ -113,7 +113,7 @@ struct StopPageActionRow: View {
 
     private var bookmarkButton: some View {
         Button(action: onBookmark) { glyph("bookmark") }
-            .glassCircleSurface()
+            .filledCircleSurface()
             .disabled(!state.canActOnStop)
             .accessibilityLabel(Self.bookmarkTitle)
             .largeContentViewer(Self.bookmarkTitle, systemImage: "bookmark")
@@ -141,7 +141,7 @@ struct StopPageActionRow: View {
         } label: {
             glyph("ellipsis")
         }
-        .glassCircleSurface()
+        .filledCircleSurface()
         .accessibilityLabel(Strings.more)
         .largeContentViewer(Strings.more, systemImage: "ellipsis")
     }
@@ -301,7 +301,7 @@ struct StopPageActionRow: View {
         }
     }
 
-    /// A control's glyph in its glass circle.
+    /// A control's glyph in its filled circle.
     ///
     /// A disabled control dims itself, but only because nothing here pins its
     /// `foregroundStyle`: SwiftUI greys disabled content *through* the

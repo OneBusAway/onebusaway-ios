@@ -108,6 +108,30 @@ public extension View {
             .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
             .tint(.primary)
     }
+
+    /// A filled neutral circle, for chrome that sits on a sheet rather than on
+    /// the map: the stop sheet's toolbar (#1754). On a sheet's own glass the
+    /// glass circles read as outlines. Works on a `Button` and on a `Menu`.
+    func filledCircleSurface() -> some View {
+        self
+            .menuStyle(.button)
+            .buttonStyle(FilledCircleButtonStyle())
+    }
+}
+
+/// `filledCircleSurface()`'s style: `secondarySystemFill` behind the glyph.
+///
+/// The glyph is label-coloured, and tertiary-label once disabled. A custom
+/// style has to dim a disabled control itself; nothing else would.
+struct FilledCircleButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(Color(uiColor: isEnabled ? .label : .tertiaryLabel))
+            .background(Color(uiColor: .secondarySystemFill), in: Circle())
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
 }
 
 // MARK: - Sheet glass

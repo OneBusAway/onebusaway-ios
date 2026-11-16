@@ -14,7 +14,8 @@ import SwiftUI
 /// cards so the two stay visually identical. Rows go inside, separated by
 /// `StopPageCardDivider`, usually led by a `StopPageCardHeader`.
 struct StopPageTintedCard<Content: View>: View {
-    let tint: Color
+    /// `nil` for a neutral card: a plain fill and no border.
+    let tint: Color?
     @ViewBuilder let content: Content
 
     private var cardShape: RoundedRectangle {
@@ -26,8 +27,8 @@ struct StopPageTintedCard<Content: View>: View {
             VStack(spacing: 0) {
                 content
             }
-            .background(cardShape.fill(tint.opacity(0.08)))
-            .overlay(cardShape.strokeBorder(tint.opacity(0.22), lineWidth: 1))
+            .background(cardShape.fill(tint.map { $0.opacity(0.08) } ?? Color(uiColor: .secondarySystemFill)))
+            .overlay(cardShape.strokeBorder(tint.map { $0.opacity(0.22) } ?? .clear, lineWidth: 1))
             .clipShape(cardShape)
             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             .listRowBackground(Color.clear)

@@ -28,15 +28,19 @@ struct StopTravelPill: View {
     let horizontalPadding: CGFloat
     let verticalPadding: CGFloat
     let directions: StopPillDirections
+    /// Shows just the minutes ("12 min"); the icon says walk or bike. The
+    /// spoken label keeps the mode either way.
+    var showsShortText = false
 
     var body: some View {
         let text = pill.text(for: info)
+        let visibleText = showsShortText ? pill.shortText(for: info) : text
         HStack(spacing: 4) {
             Image(systemName: pill.systemImage)
             // One unwrappable line, so the pill's width is a function of its content.
             // Without it the pill came out 60pt wide and 168pt tall, with
             // "2 min walk" broken one character per line.
-            Text(text)
+            Text(visibleText)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
         }
