@@ -354,6 +354,11 @@ jobs:
         APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         APP_STORE_CONNECT_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_KEY_CONTENT }}
         TESTFLIGHT_PREVIOUS_SHA: ${{ needs.gate.outputs.previous_sha }}
+        # build_app first runs `xcodebuild -showBuildSettings`, which resolves the
+        # Swift packages on a cold runner. fastlane's default budget (3 s, doubling,
+        # 4 retries) ran out on 2026-11-10, -15 and -16 before the archive began.
+        FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "120"
+        FASTLANE_XCODEBUILD_SETTINGS_RETRIES: "3"
       run: bundle exec fastlane beta
 
     - name: Clean up keychain and provisioning profiles
