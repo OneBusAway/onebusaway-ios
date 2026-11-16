@@ -732,7 +732,7 @@
 "error_report.title.unknown" = "Impossibile caricare queste informazioni";
 
 /* Explanation of an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.explanation.authentication" = "The server didn't accept this app's request. Please contact support if this continues.";
+"error_report.explanation.authentication" = "Il server non ha accettato la richiesta di questa app. Contatta l'assistenza se il problema persiste.";
 
 /* One-line toast text for an authentication or authorization failure that the rider cannot fix in the app. */
-"error_report.summary.authentication" = "The server didn't accept this app's request.";
+"error_report.summary.authentication" = "Il server non ha accettato la richiesta di questa app.";

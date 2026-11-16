@@ -19,8 +19,10 @@ struct MyTripButton: View {
         Button(action: onTap) {
             Image(uiImage: Icons.busButton)
                 .renderingMode(.template)
-                .frame(width: 40, height: 40)
-                .contentShape(Circle())
+                .glassCircleLabel(diameter: 40)
+                // The interaction shape alone is set above; keep the pointer
+                // highlight and previews circular too.
+                .contentShape([.hoverEffect, .contextMenuPreview, .dragPreview], Circle())
         }
         .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
         .accessibilityLabel(Text(OBALoc(

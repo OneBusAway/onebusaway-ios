@@ -65,22 +65,22 @@
 "arrival_departure_filter.scheduled_only" = "المجدولة فقط";
 
 /* Shown on a trip bookmark card with the estimated arrival time at the bookmark's destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives 5:41 PM · Pine St'. */
-"bookmark_card.destination.arrives_fmt" = "Arrives %2$@ · %1$@";
+"bookmark_card.destination.arrives_fmt" = "يصل %2$@ · %1$@";
 
 /* Shown on a trip bookmark card with the scheduled arrival time at the bookmark's destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time. */
-"bookmark_card.destination.arrives_scheduled_fmt" = "Arrives %2$@ (scheduled) · %1$@";
+"bookmark_card.destination.arrives_scheduled_fmt" = "يصل %2$@ (حسب الجدول) · %1$@";
 
 /* VoiceOver sentence for a trip bookmark's scheduled arrival time at its destination stop, when no real-time data is available. 1st placeholder is the destination stop's name, 2nd is the time. */
-"bookmark_card.destination.arrives_scheduled_spoken_fmt" = "Arrives %1$@ at %2$@ (scheduled)";
+"bookmark_card.destination.arrives_scheduled_spoken_fmt" = "يصل إلى %1$@ في %2$@ (حسب الجدول)";
 
 /* VoiceOver sentence for a trip bookmark's estimated arrival time at its destination stop, based on real-time data. 1st placeholder is the destination stop's name, 2nd is the time, e.g. 'Arrives Pine St at 5:41 PM'. */
-"bookmark_card.destination.arrives_spoken_fmt" = "Arrives %1$@ at %2$@";
+"bookmark_card.destination.arrives_spoken_fmt" = "يصل إلى %1$@ في %2$@";
 
 /* Shown on a trip bookmark card while the arrival time at the bookmark's destination stop is loading. The placeholder is the destination stop's name. */
-"bookmark_card.destination.loading_fmt" = "Loading arrival at %@…";
+"bookmark_card.destination.loading_fmt" = "جارٍ تحميل موعد الوصول إلى %@…";
 
 /* Shown on a trip bookmark card when none of the upcoming trips on the route stop at the bookmark's destination stop. The placeholder is the destination stop's name. */
-"bookmark_card.destination.not_served_fmt" = "Upcoming trips don't stop at %@";
+"bookmark_card.destination.not_served_fmt" = "الرحلات القادمة لا تتوقف عند %@";
 
 /* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
 "bookmarks_controller.context_menu.pin" = "تثبيت";
@@ -308,16 +308,16 @@
 "edit_bookmark_controller.destination_default_name_fmt" = "%1$@ → %2$@ (%3$@)";
 
 /* Value of the Destination Stop row on the Add Bookmark screen when no destination stop has been chosen. */
-"edit_bookmark_controller.destination_row.none" = "None";
+"edit_bookmark_controller.destination_row.none" = "لا شيء";
 
 /* Title of the row on the Add Bookmark screen that opens the list of stops to choose the trip's destination from. */
-"edit_bookmark_controller.destination_row.title" = "Destination Stop";
+"edit_bookmark_controller.destination_row.title" = "موقف الوجهة";
 
 /* Footer under the destination stop row on the Add Bookmark screen. */
-"edit_bookmark_controller.destination_section.footer" = "Optional. Choose where you get off to also see when this trip arrives there.";
+"edit_bookmark_controller.destination_section.footer" = "اختياري. اختر المكان الذي تنزل فيه لترى أيضًا متى تصل هذه الرحلة إليه.";
 
 /* Header above the destination stop on the Add/Edit Bookmark screen. */
-"edit_bookmark_controller.destination_section.header_title" = "Destination";
+"edit_bookmark_controller.destination_section.header_title" = "الوجهة";
 
 /* Indicates that the user wants to create a duplicate bookmark. */
 "edit_bookmark_controller.duplicate_alert.affirmative_button" = "إنشاء نسخة مكررة";
@@ -335,7 +335,7 @@
 "edit_bookmark_controller.name_section.header_title" = "اسم الإشارة المرجعية";
 
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
-"edit_bookmark_controller.remove_destination_button" = "Remove Destination";
+"edit_bookmark_controller.remove_destination_button" = "إزالة الوجهة";
 
 
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
@@ -443,6 +443,9 @@
 
 /* Subtitle of the More row on the map panel's home sheet, listing some of what the More screen holds. */
 "home_sheet.settings.more.subtitle" = "التبرع، وتغيير المنطقة، وإرسال الملاحظات، والمزيد";
+
+/* Subtitle of the More row on the map panel's home sheet, in an app without donations, listing some of what the More screen holds. */
+"home_sheet.settings.more.subtitle_no_donations" = "تغيير المنطقة، وإرسال الملاحظات، والمزيد";
 
 /* Subtitle of the Settings row on the map panel's home sheet. */
 "home_sheet.settings.settings.subtitle" = "تغيير إعدادات التطبيق";
@@ -1150,13 +1153,13 @@
 "search_results_sheet.unresolvable_result" = "تعذر فتح نتيجة البحث هذه.";
 
 /* Search scope tag showing all search result types. */
-"search_scope.all" = "All";
+"search_scope.all" = "الكل";
 
 /* Search scope tag filtering results to places and addresses. */
-"search_scope.places" = "Places";
+"search_scope.places" = "الأماكن";
 
 /* Search scope tag filtering results to transit routes. */
-"search_scope.routes" = "Routes";
+"search_scope.routes" = "الخطوط";
 
 /* Accessibility label for the button that clears the search query. */
 "search_sheet.clear_query" = "مسح";

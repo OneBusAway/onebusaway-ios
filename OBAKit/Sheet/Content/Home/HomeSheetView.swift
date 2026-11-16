@@ -39,6 +39,11 @@ struct HomeSheetView: View {
     @State private var searchFieldHeight: CGFloat = 0
     /// The tab bar's height with its padding; zero without tabs.
     @State private var tabBarHeight: CGFloat = 0
+    /// Whether More offers a donate option, once the storefront has answered
+    /// since launch; `nil` until then, when `donationsEnabled` is read live.
+    /// `DonationsManager` isn't observable, so this is what redraws the More
+    /// row's subtitle when the answer changes.
+    @State private var offersDonations: Bool?
     /// The map reads the header's height from here; see `HomeSheetMetrics`.
     /// `nil` outside the map panel.
     @Environment(HomeSheetMetrics.self) private var metrics: HomeSheetMetrics?
@@ -125,6 +130,9 @@ struct HomeSheetView: View {
             // where the sheet's Liquid Glass is the background (iOS 26, light mode).
             .searchSheetBackground()
             .ignoresSafeArea(.container, edges: showsTabs ? [] : .bottom)
+            .onReceive(application.notificationCenter.publisher(for: .donationsEligibilityDidChange)) { _ in
+                offersDonations = application.donationsManager.donationsEnabled
+            }
             .onChange(of: showsTabs, initial: true) {
                 // The tab bar comes and goes with the tabs, and leaving takes no
                 // geometry change with it to republish the header without it.
@@ -432,7 +440,10 @@ struct HomeSheetView: View {
     private var settingsSection: some View {
         Section {
             ForEach(HomeSettingsItem.items(offersMore: showsTabs)) { item in
-                HomeSettingsRow(item: item) { open(item) }
+                HomeSettingsRow(
+                    item: item,
+                    offersDonations: offersDonations ?? application.donationsManager.donationsEnabled
+                ) { open(item) }
             }
         } header: {
             HomeSectionTitle(title: Strings.settingsAndMore)

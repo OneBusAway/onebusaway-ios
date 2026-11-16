@@ -20,9 +20,10 @@ struct MoreButton: View {
         Button(action: action) {
             Image(systemName: "line.3.horizontal")
                 .font(.body.bold())
-                .frame(width: 22, height: 22)
-                .padding(8)
-                .contentShape(Circle())
+                .glassCircleLabel(diameter: 38)
+                // The interaction shape alone is set above; keep the pointer
+                // highlight and previews circular too.
+                .contentShape([.hoverEffect, .contextMenuPreview, .dragPreview], Circle())
         }
         .buttonStyle(.plain)
         .regularGlassEffectIfAvailable(in: Circle())
