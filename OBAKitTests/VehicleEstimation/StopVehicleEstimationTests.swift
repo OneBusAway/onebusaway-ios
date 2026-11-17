@@ -33,15 +33,21 @@ final class StopVehicleEstimationTests {
             "blockTripSequence": 1,
             "closestStop": "1_10020",
             "closestStopTimeOffset": 0,
+            "distanceAlongTrip": 200.0,
             "distanceFromStop": 300.0,
             "lastKnownDistanceAlongTrip": 200.0,
             "lastKnownLocation": ["lat": F.point(north: 200).latitude, "lon": F.point(north: 200).longitude],
             "lastKnownOrientation": 0.0,
             "lastLocationUpdateTime": Int64(F.t0.timeIntervalSince1970 * 1000),
             "lastUpdateTime": Int64(F.t0.timeIntervalSince1970 * 1000),
+            "nextStop": "1_10020",
+            "nextStopTimeOffset": 0,
             "numberOfStopsAway": 1,
+            "orientation": 0.0,
+            "phase": "in_progress",
             "predicted": true,
             "scheduleDeviation": 0,
+            "scheduledDistanceAlongTrip": 200.0,
             "serviceDate": Int64(F.t0.timeIntervalSince1970 * 1000),
             "situationIds": [],
             "status": "default",
@@ -71,6 +77,7 @@ final class StopVehicleEstimationTests {
         ]
 
         let arrival = try Fixtures.dictionaryToModel(type: ArrivalDeparture.self, dictionary: arrivalData)
+        try #require(arrival.tripStatus != nil)
         return arrival
     }
 
