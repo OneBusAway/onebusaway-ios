@@ -130,4 +130,27 @@ struct NextDeparturesCardModelTests {
         #expect(model.message == NextDeparturesSummary.text(for: departures([]), now: now))
         #expect(model.showsRefresh)
     }
+
+    // MARK: - Extended State and Formatting Invariants
+
+    @Test func `Upcoming departures calculate correct minutes countdown values`() throws {
+        let upcoming = departures([departure(5), departure(12), departure(20)])
+        let model = NextDeparturesCardModel(outcome: upcoming, now: now)
+
+        #expect(model.bookmarkName == "Library")
+        #expect(model.routeShortName == "550")
+        #expect(model.headsign == "Seattle")
+        #expect(model.showsRefresh)
+
+        #expect(model.rows.count == 3)
+        #expect(model.rows[0].timeText == "5m")
+        #expect(model.rows[1].timeText == "12m")
+        #expect(model.rows[2].timeText == "20m")
+    }
+
+    @Test func `Failure outcomes show refresh but hide track action`() {
+        let model = NextDeparturesCardModel(outcome: .loadFailed(name: "Library"), now: now, liveActivitiesEnabled: true)
+        #expect(model.showsRefresh == true)
+        #expect(model.showsTrack == false)
+    }
 }

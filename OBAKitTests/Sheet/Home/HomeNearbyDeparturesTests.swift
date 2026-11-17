@@ -223,4 +223,35 @@ struct HomeNearbyDeparturesTests {
         await model.loadIfNeeded()?.value
         #expect(log.stopIDs.count == 2)
     }
+
+    // MARK: - Extended Row Equality & Boundary Invariants
+
+    @Test func `Rebuilding rows with newly excluded bookmarks updates row presentation`() async throws {
+        let stop = try #require(try stops().first)
+        let departures = try upcoming()
+        let firstKey = TripBookmarkKey(arrivalDeparture: try #require(departures.first))
+
+        var excluded: Set<TripBookmarkKey> = []
+        let model = HomeNearbyDeparturesSectionModel(
+            fetch: { _ in departures },
+            excludedKeys: { excluded }
+        )
+        model.stops = [stop]
+        model.isVisible = true
+        await model.loadTask?.value
+
+        let initialKeys = model.rows.compactMap(\.departure).map { TripBookmarkKey(arrivalDeparture: $0.arrivalDeparture) }
+        #expect(initialKeys.contains(firstKey))
+
+        excluded = [firstKey]
+        model.rebuildRows()
+
+        let updatedKeys = model.rows.compactMap(\.departure).map { TripBookmarkKey(arrivalDeparture: $0.arrivalDeparture) }
+        #expect(!updatedKeys.contains(firstKey))
+    }
+
+    @Test func `Empty stops array results in empty rows`() throws {
+        let rows = HomeNearbyDepartures.rows(stops: [], arrivals: [:], excluding: [])
+        #expect(rows.isEmpty)
+    }
 }

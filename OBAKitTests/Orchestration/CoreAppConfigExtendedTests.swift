@@ -103,4 +103,15 @@ final class CoreAppConfigExtendedTests {
         #expect(config.bundledRegionsFilePath == "fallback_regions.json")
         #expect(config.regionsAPIPath == "/custom/regions.json")
     }
+
+    // MARK: - Filter Matrix Verification
+
+    @Test func `All ArrivalDepartureFilter variants persist through CoreAppConfig`() {
+        let filters: [ArrivalDepartureFilter] = [.all, .estimatedOnly, .scheduledOnly]
+
+        for filter in filters {
+            let config = makeConfig(filter: filter)
+            #expect(config.defaultArrivalDepartureFilter == filter)
+        }
+    }
 }

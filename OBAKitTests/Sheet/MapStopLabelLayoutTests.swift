@@ -200,6 +200,66 @@ struct MapStopLabelLayoutTests {
         )
         #expect(result["a"] == .hidden)
     }
+
+    // MARK: - Extended Collision & Priority Arbitration
+
+    @Test func `Deterministic tie-breaking sorts identical distances by StopID`() {
+        // Two stops equidistant from viewportCenter with overlapping label footprints
+        let stopAlpha = candidate("stop_alpha", at: CGPoint(x: 180, y: 400))
+        let stopBeta = candidate("stop_beta", at: CGPoint(x: 220, y: 400))
+
+        let result = layout.layout([stopBeta, stopAlpha], viewportCenter: center)
+        #expect(result["stop_alpha"] == .below)
+        #expect(result["stop_beta"] == .hidden)
+    }
+
+    @Test func `Curbside rotates symmetrically across full 360-degree compass compass headings`() {
+        // Northbound direction (bearing 0):
+        // heading 0 => curb at east (dx > 0) => .right
+        #expect(MapStopLabelLayout.curbside(for: .n, heading: 0) == .right)
+        // heading 90 => curb at north (dy < 0) => .above
+        #expect(MapStopLabelLayout.curbside(for: .n, heading: 90) == .above)
+        // heading 180 => curb at west (dx < 0) => .left
+        #expect(MapStopLabelLayout.curbside(for: .n, heading: 180) == .left)
+        // heading 270 => curb at south (dy > 0) => nil (curbside collides with default below)
+        #expect(MapStopLabelLayout.curbside(for: .n, heading: 270) == nil)
+        // heading 360 => returns to .right
+        #expect(MapStopLabelLayout.curbside(for: .n, heading: 360) == .right)
+    }
+
+    @Test func `Custom pinSize and gap scales placement rect bounds accurately`() {
+        let customLayout = MapStopLabelLayout(pinSize: 32, gap: 4)
+        let customPill = CGSize(width: 80, height: 20)
+        let candidateItem = candidate("scale_test", at: center, size: customPill)
+
+        // reach = 32 / 2 + 4 = 20
+        let belowRect = customLayout.labelRect(for: candidateItem, placement: .below)
+        #expect(belowRect.minY == center.y + 20)
+        #expect(belowRect.width == 80)
+        #expect(belowRect.height == 20)
+
+        let rightRect = customLayout.labelRect(for: candidateItem, placement: .right)
+        #expect(rightRect.minX == center.x + 20)
+        #expect(rightRect.midY == center.y)
+
+        let leftRect = customLayout.labelRect(for: candidateItem, placement: .left)
+        #expect(leftRect.maxX == center.x - 20)
+        #expect(leftRect.midY == center.y)
+
+        let aboveRect = customLayout.labelRect(for: candidateItem, placement: .above)
+        #expect(aboveRect.maxY == center.y - 20)
+        #expect(aboveRect.midX == center.x)
+    }
+
+    @Test func `Empty candidate array safely yields empty layout dictionary`() {
+        let result = layout.layout([], viewportCenter: center)
+        #expect(result.isEmpty)
+    }
+
+    @Test func `Obstacle pins with no candidates produces empty result without error`() {
+        let result = layout.layout([], obstaclePins: [CGPoint(x: 100, y: 100), CGPoint(x: 200, y: 200)], viewportCenter: center)
+        #expect(result.isEmpty)
+    }
 }
 
 /// The trip planner's cards hang above their coordinate, so a stop pin drawn at
