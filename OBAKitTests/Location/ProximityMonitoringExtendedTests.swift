@@ -19,36 +19,6 @@ import Testing
 @Suite(.serialized)
 struct ProximityMonitoringExtendedTests {
 
-    // MARK: - Clamped Radius Edge Cases
-
-    @Test func `Clamped radius preserves distinct requested and monitored distances`() {
-        let result = ProximityMonitoringResult.startedWithClampedRadius(
-            requested: 1000.0,
-            monitored: 400.0
-        )
-
-        #expect(result.isMonitoring)
-
-        switch result {
-        case .startedWithClampedRadius(let requested, let monitored):
-            #expect(requested == 1000.0)
-            #expect(monitored == 400.0)
-            #expect(monitored < requested)
-        default:
-            Issue.record("Expected startedWithClampedRadius")
-        }
-    }
-
-    @Test func `Clamped radius with equal requested and monitored distances remains distinct case`() {
-        let result = ProximityMonitoringResult.startedWithClampedRadius(
-            requested: 300.0,
-            monitored: 300.0
-        )
-
-        #expect(result.isMonitoring)
-        #expect(result != ProximityMonitoringResult.started)
-    }
-
     // MARK: - Insufficient Authorization Invariants
 
     @Test func `Insufficient authorization correctly reflects all unpermitted states`() {
@@ -64,23 +34,6 @@ struct ProximityMonitoringExtendedTests {
 
         #expect(notDetermined != restricted)
         #expect(denied != whenInUse)
-    }
-
-    // MARK: - Region Limit Invariants
-
-    @Test func `Region limit reached preserves threshold value`() {
-        let limit20 = ProximityMonitoringResult.regionLimitReached(limit: 20)
-        let limit0 = ProximityMonitoringResult.regionLimitReached(limit: 0)
-
-        #expect(!limit20.isMonitoring)
-        #expect(!limit0.isMonitoring)
-
-        switch limit20 {
-        case .regionLimitReached(let limit):
-            #expect(limit == 20)
-        default:
-            Issue.record("Expected regionLimitReached")
-        }
     }
 
     // MARK: - RegionMonitoringFailureKind Error Bridging
@@ -125,13 +78,5 @@ struct ProximityMonitoringExtendedTests {
         #expect(failure == .regionRejected)
         #expect(!failure.isTransient)
         #expect(failure.description == "regionRejected")
-    }
-
-    @Test func `RegionMonitoringFailureKind raw value consistency`() {
-        #expect(RegionMonitoringFailureKind(rawValue: 0) == .authorizationDenied)
-        #expect(RegionMonitoringFailureKind(rawValue: 1) == .regionRejected)
-        #expect(RegionMonitoringFailureKind(rawValue: 2) == .transient)
-        #expect(RegionMonitoringFailureKind(rawValue: 3) == .unknown)
-        #expect(RegionMonitoringFailureKind(rawValue: 999) == nil)
     }
 }

@@ -107,7 +107,7 @@ final class CoreApplicationPipelineExtendedTests: OBATestCase {
 
         let stop = try #require(Fixtures.loadSomeStops().first)
         let region = Fixtures.pugetSoundRegion
-        var customPrefs = StopPreferences(sortType: .route, hiddenRoutes: ["1_100"])
+        let customPrefs = StopPreferences(sortType: .route, hiddenRoutes: ["1_100"])
 
         app.stopPreferencesDataStore.set(stopPreferences: customPrefs, stop: stop, region: region)
         let retrieved = app.stopPreferencesDataStore.preferences(stopID: stop.id, region: region)

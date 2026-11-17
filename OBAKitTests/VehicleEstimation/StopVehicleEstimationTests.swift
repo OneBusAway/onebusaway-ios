@@ -26,9 +26,29 @@ final class StopVehicleEstimationTests {
 
     private func makeArrivalDeparture(
         tripID: String = "trip_1",
-        vehicleID: String = "veh_1",
-        shapeID: String = "shape_1"
+        vehicleID: String = "veh_1"
     ) throws -> ArrivalDeparture {
+        let tripStatusData: [String: Any] = [
+            "activeTripId": tripID,
+            "blockTripSequence": 1,
+            "closestStop": "1_10020",
+            "closestStopTimeOffset": 0,
+            "distanceFromStop": 300.0,
+            "lastKnownDistanceAlongTrip": 200.0,
+            "lastKnownLocation": ["lat": F.point(north: 200).latitude, "lon": F.point(north: 200).longitude],
+            "lastKnownOrientation": 0.0,
+            "lastLocationUpdateTime": Int64(F.t0.timeIntervalSince1970 * 1000),
+            "lastUpdateTime": Int64(F.t0.timeIntervalSince1970 * 1000),
+            "numberOfStopsAway": 1,
+            "predicted": true,
+            "scheduleDeviation": 0,
+            "serviceDate": Int64(F.t0.timeIntervalSince1970 * 1000),
+            "situationIds": [],
+            "status": "default",
+            "totalDistanceAlongTrip": 1000.0,
+            "vehicleId": vehicleID
+        ]
+
         let arrivalData: [String: Any] = [
             "arrivalEnabled": true,
             "blockTripSequence": 1,

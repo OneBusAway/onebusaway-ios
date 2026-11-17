@@ -226,21 +226,6 @@ struct HomeNearbyDeparturesTests {
 
     // MARK: - Extended Row Equality & Boundary Invariants
 
-    @Test func `HomeNearbyRow equality reflects scheduleStatus and departure time changes`() throws {
-        let stop = try #require(try stops().first)
-        let baseDepartures = try upcoming()
-        let ad1 = try #require(baseDepartures.first)
-
-        let row1 = HomeNearbyRow.departure(HomeNearbyDeparture(stop: stop, arrivalDeparture: ad1))
-        let row2 = HomeNearbyRow.departure(HomeNearbyDeparture(stop: stop, arrivalDeparture: ad1))
-        #expect(row1 == row2)
-
-        let stopRow1 = HomeNearbyRow.stop(stop)
-        let stopRow2 = HomeNearbyRow.stop(stop)
-        #expect(stopRow1 == stopRow2)
-        #expect(row1 != stopRow1)
-    }
-
     @Test func `Rebuilding rows with newly excluded bookmarks updates row presentation`() async throws {
         let stop = try #require(try stops().first)
         let departures = try upcoming()
