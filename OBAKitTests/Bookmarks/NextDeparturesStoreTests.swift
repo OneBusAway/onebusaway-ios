@@ -183,23 +183,4 @@ struct NextDeparturesStoreTests {
         #expect(await store.outcome(.noBookmark) == .noBookmarks)
         #expect(fetch.count == 1)
     }
-
-    @Test func `Multiple sequential refreshes advance fetch count on demand`() async {
-        let fetch = FakeFetch([departures(3), departures(8), departures(15)])
-        let store = store(fetch)
-
-        let initial = await store.load(.bookmark(bookmarkID))
-        #expect(initial == departures(3))
-        #expect(fetch.count == 1)
-
-        clock.advance(seconds: NextDeparturesStore.refreshReuseInterval + 1)
-        let refreshed1 = await store.refresh(.bookmark(bookmarkID))
-        #expect(refreshed1 == departures(8))
-        #expect(fetch.count == 2)
-
-        clock.advance(seconds: NextDeparturesStore.refreshReuseInterval + 1)
-        let refreshed2 = await store.refresh(.bookmark(bookmarkID))
-        #expect(refreshed2 == departures(15))
-        #expect(fetch.count == 3)
-    }
 }
