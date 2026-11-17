@@ -543,6 +543,38 @@ final class AppSheetRouteTests {
         #expect(AppSheetRoute.nearbyStops(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)).detentConfiguration.isDismissDisabled == false)
     }
 
+    @Test func `Trip details id with destinationStopID includes destination suffix`() throws {
+        let bare = try tripRoute(tripID: "trip_42", stopID: "stop_1")
+        let withDest = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(stopID: "stop_1", tripID: "trip_42"), destinationStopID: "dest_99")
+        #expect(bare.id == "tripDetails-trip_42")
+        #expect(withDest.id == "tripDetails-trip_42-dest_99")
+        #expect(bare.id != withDest.id)
+    }
+
+    @Test func `OnDemandService and OnDemandPicker embed service and payload identifiers`() {
+        let service = OnDemandService(
+            id: "service_flex_1",
+            name: "Metro Flex",
+            serviceKind: .zone,
+            rules: [],
+            bookingRules: [],
+            calendars: [:],
+            areas: [:],
+            locationGroups: [:]
+        )
+        let routeService = AppSheetRoute.onDemandService(service)
+        #expect(routeService.id == "onDemandService-service_flex_1")
+
+        let payload = OnDemandPickerPayload(
+            id: "picker_payload_99",
+            services: [service],
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            address: "Pine St"
+        )
+        let routePicker = AppSheetRoute.onDemandPicker(payload)
+        #expect(routePicker.id == "onDemandPicker-picker_payload_99")
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing

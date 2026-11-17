@@ -213,7 +213,7 @@ struct MapStopLabelLayoutTests {
         #expect(result["stop_beta"] == .hidden)
     }
 
-    @Test func `Curbside rotates symmetrically across full 360-degree compass compass headings`() {
+    @Test func `Curbside rotates symmetrically across full 360-degree compass headings`() {
         // Northbound direction (bearing 0):
         // heading 0 => curb at east (dx > 0) => .right
         #expect(MapStopLabelLayout.curbside(for: .n, heading: 0) == .right)

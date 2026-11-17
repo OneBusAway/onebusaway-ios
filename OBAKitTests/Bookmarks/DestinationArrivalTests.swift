@@ -134,4 +134,24 @@ struct DestinationArrivalTests {
 
         #expect(arrival.scheduledArrivalDate == Date(timeIntervalSinceReferenceDate: TimeInterval(scheduledTime(atIndex: 2))))
     }
+
+    @Test func `An origin stop not found anywhere in stop times returns nil arrival`() throws {
+        let schedule = try stopTimes(["a", "b", "c", "home"])
+        let departure = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: scheduledTime(atIndex: 0),
+            scheduledDeparture: scheduledTime(atIndex: 0),
+            stopSequence: 10,
+            stopID: "completely_unrelated_origin"
+        )
+
+        #expect(DestinationArrival.estimate(origin: departure, stopTimes: schedule, destinationStopID: "home") == nil)
+    }
+
+    @Test func `Destination arrival estimate when origin is last stop returns nil`() throws {
+        let schedule = try stopTimes(["a", "b", "origin"])
+        let departure = try origin(stopID: "origin", stopSequence: 2, delay: 0)
+
+        #expect(DestinationArrival.estimate(origin: departure, stopTimes: schedule, destinationStopID: "home") == nil)
+    }
 }
