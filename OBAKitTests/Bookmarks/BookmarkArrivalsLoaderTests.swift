@@ -242,4 +242,51 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
 
         #expect(countingLoader.callCount == 1)
     }
+
+    @Test func `BookmarkArrivalsRequest matching filters past temporalState and sorts upcoming arrivals soonest first`() throws {
+        let referenceTime = 1_700_000_000
+        let serviceDate = Date(timeIntervalSinceReferenceDate: TimeInterval(referenceTime))
+
+        let dep1 = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: referenceTime + 600,
+            scheduledDeparture: referenceTime + 600,
+            stopSequence: 1,
+            stopID: "1_100"
+        )
+        dep1.serviceDate = serviceDate
+
+        let dep2 = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: referenceTime + 300,
+            scheduledDeparture: referenceTime + 300,
+            stopSequence: 2,
+            stopID: "1_100"
+        )
+        dep2.serviceDate = serviceDate
+
+        let request = BookmarkArrivalsRequest(stopID: "1_100")
+        let matched = request.matching([dep1, dep2])
+
+        #expect(matched.count == 2)
+        #expect(matched.first?.arrivalDepartureDate == dep2.arrivalDepartureDate)
+        #expect(matched.last?.arrivalDepartureDate == dep1.arrivalDepartureDate)
+    }
+
+    @Test func `BookmarkArrivalsRequest matching with non matching tripKey returns empty array`() throws {
+        let referenceTime = 1_700_000_000
+        let dep = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: referenceTime + 300,
+            scheduledDeparture: referenceTime + 300,
+            stopSequence: 1,
+            stopID: "1_100"
+        )
+
+        let unmatchedKey = TripBookmarkKey(stopID: "1_100", routeShortName: "NonExistent", routeID: "1_999", tripHeadsign: "Nowhere")
+        let request = BookmarkArrivalsRequest(stopID: "1_100", tripKey: unmatchedKey)
+
+        let matched = request.matching([dep])
+        #expect(matched.isEmpty)
+    }
 }
