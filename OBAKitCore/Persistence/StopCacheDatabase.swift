@@ -168,6 +168,37 @@ public final class StopCacheDatabase: Sendable {
             }
         }
 
+        // v4: staged region sync rows. A sync writes these in short batches and
+        // publishes their ID in regionStopSync only after every batch succeeds.
+        migrator.registerMigration("v4_stagedRegionStopSync") { db in
+            try db.alter(table: "regionStopSync") { t in
+                t.add(column: "publishedSyncID", .text)
+            }
+
+            try db.create(table: "cachedStopSync") { t in
+                t.column("syncID", .text).notNull()
+                t.column("id", .text).notNull()
+                t.column("regionId", .integer).notNull()
+                t.column("latitude", .double).notNull()
+                t.column("longitude", .double).notNull()
+                t.column("lastUpdated", .double).notNull()
+                t.column("stopData", .blob).notNull()
+                t.column("name", .text)
+                t.column("code", .text)
+                t.primaryKey(["syncID", "regionId", "id"])
+            }
+            try db.create(index: "idx_cachedStopSync_location", on: "cachedStopSync", columns: ["syncID", "regionId", "latitude", "longitude"])
+
+            try db.create(table: "cachedRouteSync") { t in
+                t.column("syncID", .text).notNull()
+                t.column("id", .text).notNull()
+                t.column("regionId", .integer).notNull()
+                t.column("lastUpdated", .double).notNull()
+                t.column("routeData", .blob).notNull()
+                t.primaryKey(["syncID", "regionId", "id"])
+            }
+        }
+
         return migrator
     }
 }

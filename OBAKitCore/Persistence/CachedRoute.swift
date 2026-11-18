@@ -24,6 +24,13 @@ struct CachedRoute: Codable, FetchableRecord, PersistableRecord {
     let lastUpdated: Double
     let routeData: Data
 
+    init(id: String, regionId: Int, lastUpdated: Double, routeData: Data) {
+        self.id = id
+        self.regionId = regionId
+        self.lastUpdated = lastUpdated
+        self.routeData = routeData
+    }
+
     /// Returns `nil` if the route cannot be encoded, so a corrupted route is never stored.
     init?(route: Route, regionId: Int, lastUpdated: Date) {
         do {

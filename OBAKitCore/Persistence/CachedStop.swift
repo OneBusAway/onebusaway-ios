@@ -38,6 +38,17 @@ struct CachedStop: Codable, FetchableRecord, PersistableRecord {
     let name: String?
     let code: String?
 
+    init(id: String, regionId: Int, latitude: Double, longitude: Double, lastUpdated: Double, stopData: Data, name: String?, code: String?) {
+        self.id = id
+        self.regionId = regionId
+        self.latitude = latitude
+        self.longitude = longitude
+        self.lastUpdated = lastUpdated
+        self.stopData = stopData
+        self.name = name
+        self.code = code
+    }
+
     /// Creates a cache record from an API `Stop` model.
     /// Returns `nil` if the stop cannot be encoded, ensuring we never persist corrupted data.
     /// - Parameter lastUpdated: When the stop was written. A region sync stamps

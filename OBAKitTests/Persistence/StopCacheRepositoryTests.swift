@@ -592,6 +592,30 @@ final class StopCacheRepositoryTests {
         #expect(stops == ["1_recent"])
     }
 
+    @Test func `The 30-day purge unpublishes and purges synced stops older than expiration interval`() throws {
+        let now = Date()
+        let expiredDate = now.addingTimeInterval(-31 * 86_400)
+        let state = RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: expiredDate,
+            lastSuccessAt: expiredDate,
+            etag: nil,
+            appVersion: "1.0",
+            publishedSyncID: "sync_old"
+        )
+        try repository.saveSyncState(state)
+        try repository.stageSyncedStops([makeStop(id: "1_expired", routes: [])], regionId: 1, syncID: "sync_old", syncedAt: expiredDate)
+
+        #expect(repository.stops(regionId: 1, after: nil, limit: 10).stops.contains { $0.id == "1_expired" })
+
+        repository.deleteStopsOlderThan(now.addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval), regionId: 1)
+
+        #expect(!repository.stops(regionId: 1, after: nil, limit: 10).stops.contains { $0.id == "1_expired" })
+        let updatedState = try repository.syncState(regionId: 1)
+        #expect(updatedState?.publishedSyncID == nil)
+    }
+
     @Test func `Sync state round-trips, and clearing the cache forgets it`() throws {
         let state = RegionStopSyncState(
             regionId: 1,
@@ -621,6 +645,230 @@ final class StopCacheRepositoryTests {
 
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
         #expect(results.count == 5)
+    }
+
+    // MARK: - Staged Cache and Duplicate Resolution
+
+    @Test func `Visible stops preserves newer main cache updates over staged cache`() throws {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+
+        let syncID = "sync_1"
+        let stagedStop = makeStop(id: "stop_1", name: "Staged Stop Name")
+        try repository.stageSyncedStops([stagedStop], regionId: 1, syncID: syncID, syncedAt: syncDate)
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: syncDate, lastSuccessAt: syncDate, etag: nil, appVersion: "26.5", publishedSyncID: syncID)
+        try repository.saveSyncState(syncState)
+
+        // 1. When main has older stop, staged stop name wins
+        let olderMainStop = makeStop(id: "stop_1", name: "Older Main Name")
+        try repository.writeSyncedStops([olderMainStop], regionId: 1, syncedAt: oldDate)
+        var results = repository.stopsInRegion(minLat: 40.0, maxLat: 50.0, minLon: -130.0, maxLon: -120.0, regionId: 1)
+        #expect(results.first?.name == "Staged Stop Name")
+
+        // 2. When main has newer stop (e.g. from map saveStops), main stop name wins
+        let newerMainStop = makeStop(id: "stop_1", name: "Newer Main Name")
+        try repository.writeSyncedStops([newerMainStop], regionId: 1, syncedAt: newDate)
+        results = repository.stopsInRegion(minLat: 40.0, maxLat: 50.0, minLon: -130.0, maxLon: -120.0, regionId: 1)
+        #expect(results.first?.name == "Newer Main Name")
+    }
+
+    @Test func `Spatial query excludes shadowed older main rows and honors limit`() throws {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let syncID = "sync_1"
+
+        let stagedStops = (1...5).map { makeStop(id: "stop_\($0)", name: "Staged \($0)", lat: 47.6 + Double($0) * 0.001, lon: -122.3) }
+        try repository.stageSyncedStops(stagedStops, regionId: 1, syncID: syncID, syncedAt: syncDate)
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: syncDate, lastSuccessAt: syncDate, etag: nil, appVersion: "26.5", publishedSyncID: syncID)
+        try repository.saveSyncState(syncState)
+
+        let oldStops = [
+            makeStop(id: "stop_1", name: "Old 1", lat: 47.601, lon: -122.3),
+            makeStop(id: "stop_2", name: "Old 2", lat: 47.602, lon: -122.3),
+            makeStop(id: "stop_old", name: "Old Unsynced", lat: 47.6001, lon: -122.3)
+        ]
+        try repository.writeSyncedStops(oldStops, regionId: 1, syncedAt: oldDate)
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1, limit: 3)
+        #expect(results.count == 3)
+        let ids = results.map(\.id)
+        #expect(ids.contains("stop_old"))
+        #expect(ids.contains("stop_1"))
+        #expect(results.first(where: { $0.id == "stop_1" })?.name == "Staged 1")
+    }
+
+    @Test func `Visible routes preserves newer main cache updates over staged cache`() throws {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+        let syncID = "sync_1"
+
+        let routeStaged = makeRoute(id: "route_1", shortName: "Staged")
+        let stopStaged = makeStop(id: "stop_1", routes: [routeStaged])
+        try repository.stageSyncedStops([stopStaged], regionId: 1, syncID: syncID, syncedAt: syncDate)
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: syncDate, lastSuccessAt: syncDate, etag: nil, appVersion: "26.5", publishedSyncID: syncID)
+        try repository.saveSyncState(syncState)
+
+        // 1. Older main route is overridden by staged route
+        let routeOlder = makeRoute(id: "route_1", shortName: "Older")
+        let stopOlder = makeStop(id: "stop_1", routes: [routeOlder])
+        try repository.writeSyncedStops([stopOlder], regionId: 1, syncedAt: oldDate)
+
+        var loadedStop = repository.stops(regionId: 1, after: nil, limit: 10).stops.first
+        #expect(loadedStop?.routes?.first?.shortName == "Staged")
+
+        // 2. Newer main route takes precedence over staged route
+        let routeNewer = makeRoute(id: "route_1", shortName: "Newer")
+        let stopNewer = makeStop(id: "stop_1", routes: [routeNewer])
+        try repository.writeSyncedStops([stopNewer], regionId: 1, syncedAt: newDate)
+
+        loadedStop = repository.stops(regionId: 1, after: nil, limit: 10).stops.first
+        #expect(loadedStop?.routes?.first?.shortName == "Newer")
+    }
+
+    @Test func `Carry over staged stops copies older snapshot stops not present in newer snapshot`() throws {
+        let stop1 = makeStop(id: "stop_1", routes: [makeRoute(id: "route_1", shortName: "1")])
+        let stop2 = makeStop(id: "stop_2", routes: [makeRoute(id: "route_2", shortName: "2")])
+        try repository.stageSyncedStops([stop1, stop2], regionId: 1, syncID: "sync_old", syncedAt: Date())
+
+        let stop2New = makeStop(id: "stop_2", routes: [makeRoute(id: "route_2", shortName: "2_new")])
+        try repository.stageSyncedStops([stop2New], regionId: 1, syncID: "sync_new", syncedAt: Date())
+
+        try repository.carryOverStagedStops(regionId: 1, fromSyncID: "sync_old", toSyncID: "sync_new")
+
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .partial, lastAttemptAt: Date(), lastSuccessAt: nil, etag: nil, appVersion: "26.5", publishedSyncID: "sync_new")
+        try repository.saveSyncState(syncState)
+
+        let stops = repository.stops(regionId: 1, after: nil, limit: 10).stops
+        #expect(stops.count == 2)
+        #expect(stops.first(where: { $0.id == "stop_1" })?.routes?.first?.shortName == "1")
+        #expect(stops.first(where: { $0.id == "stop_2" })?.routes?.first?.shortName == "2_new")
+
+        try repository.purgeSupersededStagedStops(regionId: 1, currentSyncID: "sync_new")
+        let oldCount = try database.dbQueue.read { try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = 'sync_old'") }
+        #expect(oldCount == 0)
+    }
+
+    @Test func `Purge superseded staged stops with purgeLegacyOlderThan purges older legacy rows`() throws {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let newDate = Date(timeIntervalSince1970: 2_000)
+        try repository.writeSyncedStops([makeStop(id: "legacy_old", routes: [])], regionId: 1, syncedAt: oldDate)
+        try repository.writeSyncedStops([makeStop(id: "legacy_new", routes: [])], regionId: 1, syncedAt: newDate)
+
+        try repository.purgeSupersededStagedStops(regionId: 1, currentSyncID: "sync_active", purgeLegacyOlderThan: newDate)
+
+        let remainingLegacy = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop WHERE regionId = 1 ORDER BY id") }
+        #expect(remainingLegacy == ["legacy_new"])
+    }
+
+    @Test func `Spatial query excludes staged rows superseded by newer main rows before limit`() throws {
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+        let syncID = "sync_1"
+
+        // Staged has two stops: stop_superseded is closest to query center, stop_valid is farther
+        let supersededStaged = makeStop(id: "stop_superseded", name: "Staged Old", lat: 47.601, lon: -122.3)
+        let validStaged = makeStop(id: "stop_valid", name: "Staged Valid", lat: 47.605, lon: -122.3)
+        try repository.stageSyncedStops([supersededStaged, validStaged], regionId: 1, syncID: syncID, syncedAt: syncDate)
+
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: syncDate, lastSuccessAt: syncDate, etag: nil, appVersion: "26.5", publishedSyncID: syncID)
+        try repository.saveSyncState(syncState)
+
+        // Main cache has a newer version of stop_superseded, but moved outside the spatial query box
+        let newerMain = makeStop(id: "stop_superseded", name: "Main Newer", lat: 50.0, lon: -122.3)
+        try repository.writeSyncedStops([newerMain], regionId: 1, syncedAt: newDate)
+
+        // Query with limit: 1. Because stop_superseded in staged is superseded by newer main row,
+        // it must be excluded before spatial filtering / limit. stop_valid must be returned.
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1, limit: 1)
+        #expect(results.count == 1)
+        #expect(results.first?.id == "stop_valid")
+        #expect(results.first?.name == "Staged Valid")
+    }
+
+    @Test func `Paged query excludes staged rows superseded by newer main rows before limit`() throws {
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+        let syncID = "sync_1"
+
+        let staged1 = makeStop(id: "stop_1", name: "Staged 1")
+        let staged2 = makeStop(id: "stop_2", name: "Staged 2")
+        try repository.stageSyncedStops([staged1, staged2], regionId: 1, syncID: syncID, syncedAt: syncDate)
+
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: syncDate, lastSuccessAt: syncDate, etag: nil, appVersion: "26.5", publishedSyncID: syncID)
+        try repository.saveSyncState(syncState)
+
+        // Main has newer version of stop_1
+        let newerMain1 = makeStop(id: "stop_1", name: "Newer Main 1")
+        try repository.writeSyncedStops([newerMain1], regionId: 1, syncedAt: newDate)
+
+        // Query page with limit 2: stop_1 is excluded from staged, main provides newer stop_1,
+        // and staged provides stop_2 without being crowded out by superseded row.
+        let page = repository.stops(regionId: 1, after: nil, limit: 2)
+        #expect(page.stops.count == 2)
+        #expect(page.stops[0].id == "stop_1")
+        #expect(page.stops[0].name == "Newer Main 1")
+        #expect(page.stops[1].id == "stop_2")
+        #expect(page.stops[1].name == "Staged 2")
+    }
+
+    @Test func `Stops and their routes decode together in single database read`() throws {
+        let route = makeRoute(id: "route_99", shortName: "99")
+        let stop = makeStop(id: "stop_single_read", routes: [route])
+        repository.saveStops([stop], regionId: 1)
+
+        // Both stopsInRegion and paged stops decode routes via active DB connection
+        let inRegion = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        #expect(inRegion.count == 1)
+        #expect(inRegion.first?.routes?.first?.id == "route_99")
+        #expect(inRegion.first?.routes?.first?.shortName == "99")
+
+        let paged = repository.stops(regionId: 1, after: nil, limit: 5)
+        #expect(paged.stops.count == 1)
+        #expect(paged.stops.first?.routes?.first?.id == "route_99")
+        #expect(paged.stops.first?.routes?.first?.shortName == "99")
+    }
+
+    @Test func `Discard staged stops deletes multiple batches and empties tables`() throws {
+        let syncID = "sync_discard"
+        let stops = (1...15).map {
+            makeStop(
+                id: "stop_\($0)",
+                routes: [makeRoute(id: "route_\($0)", shortName: "\($0)")]
+            )
+        }
+        try repository.stageSyncedStops(stops, regionId: 1, syncID: syncID, syncedAt: Date())
+
+        let otherSyncID = "sync_keep"
+        let otherStop = makeStop(id: "stop_other", routes: [makeRoute(id: "route_other", shortName: "O")])
+        try repository.stageSyncedStops([otherStop], regionId: 1, syncID: otherSyncID, syncedAt: Date())
+
+        let stagedStopCount = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [syncID])
+        }
+        let stagedRouteCount = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedRouteSync WHERE syncID = ?", arguments: [syncID])
+        }
+        #expect(stagedStopCount == 15)
+        #expect(stagedRouteCount == 15)
+
+        // Batch size 5 forces 3 batches for 15 rows
+        try repository.discardStagedStops(regionId: 1, syncID: syncID, batchSize: 5)
+
+        let remainingStops = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [syncID])
+        }
+        let remainingRoutes = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedRouteSync WHERE syncID = ?", arguments: [syncID])
+        }
+        #expect(remainingStops == 0)
+        #expect(remainingRoutes == 0)
+
+        let otherStops = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [otherSyncID])
+        }
+        #expect(otherStops == 1)
     }
 
     // MARK: - Multiple Stops

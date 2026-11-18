@@ -63,17 +63,16 @@ final class RegionStopSyncScheduler: Sendable {
             if state.pending?.regionID == regionID {
                 return
             }
+            let predecessor = state.pending?.task
             state.pending?.task.cancel()
 
             let id = state.nextID
             state.nextID += 1
             let task = Task.detached(priority: .utility) { [weak self] in
                 defer { self?.finish(id) }
-                do {
-                    try await Task.sleep(for: delay)
-                } catch {
-                    return
-                }
+                _ = try? await Task.sleep(for: delay)
+                await predecessor?.value
+                guard !Task.isCancelled else { return }
                 if await service.sync(regionID: regionID, using: fetcher) {
                     await onStopsWritten(regionID)
                 }
