@@ -145,4 +145,47 @@ final class RetryPolicyTests {
         #expect(attempts.value == 1)
         #expect(!sleepCalled.value)
     }
+
+    @Test func `Exhausted retries throw final attempt error`() async {
+        let policy = RetryPolicy(maxAttempts: 3, initialDelay: 0.1, maxDelay: 0.4)
+        let attempts = SendableBox(0)
+        let delays = SendableBox<[UInt64]>([])
+
+        await #expect(throws: URLError.self) {
+            try await policy.execute(operation: { attempt in
+                attempts.value += 1
+                throw URLError(.timedOut)
+            }, sleep: { delays.value.append($0) })
+        }
+
+        #expect(attempts.value == 3)
+        #expect(delays.value.count == 2)
+        #expect(delays.value == [100_000_000, 200_000_000])
+    }
+
+    @Test func `Delay calculation respects initialDelay exponentiation and maxDelay ceiling`() {
+        let policy = RetryPolicy(maxAttempts: 6, initialDelay: 0.25, maxDelay: 1.5)
+
+        #expect(policy.delay(after: 0) == 0.25)
+        #expect(policy.delay(after: 1) == 0.25)
+        #expect(policy.delay(after: 2) == 0.50)
+        #expect(policy.delay(after: 3) == 1.00)
+        #expect(policy.delay(after: 4) == 1.50)
+        #expect(policy.delay(after: 5) == 1.50)
+        #expect(policy.delay(after: 100) == 1.50)
+    }
+
+    @Test func `Server and HTTP 5xx errors trigger retry while 4xx errors stop immediately`() {
+        let policy = RetryPolicy(maxAttempts: 3, initialDelay: 0.25, maxDelay: 1.0)
+
+        let server500 = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 500, httpVersion: nil, headerFields: nil)!
+        let client404 = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 404, httpVersion: nil, headerFields: nil)!
+        let client401 = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 401, httpVersion: nil, headerFields: nil)!
+
+        #expect(policy.shouldRetry(APIError.requestFailure(server500), attempt: 1) == true)
+        #expect(policy.shouldRetry(APIError.serverError(regionName: "Test"), attempt: 1) == true)
+        #expect(policy.shouldRetry(APIError.requestNotFound(client404), attempt: 1) == false)
+        #expect(policy.shouldRetry(APIError.requestFailure(client401), attempt: 1) == false)
+        #expect(policy.shouldRetry(APIError.serverError(regionName: "Test"), attempt: 3) == false)
+    }
 }

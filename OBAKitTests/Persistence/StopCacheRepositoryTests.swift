@@ -469,8 +469,8 @@ final class StopCacheRepositoryTests {
         return try! JSONDecoder().decode(Route.self, from: data)
     }
 
-    private func makeStop(id: String, routes: [Route]) -> Stop {
-        let stop = makeStop(id: id, code: id, name: "Stop \(id)", routeIDs: routes.map(\.id))
+    private func makeStop(id: String, name: String? = nil, routes: [Route]) -> Stop {
+        let stop = makeStop(id: id, code: id, name: name ?? "Stop \(id)", routeIDs: routes.map(\.id))
         stop.routes = routes
         return stop
     }
@@ -852,6 +852,45 @@ final class StopCacheRepositoryTests {
             try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [otherSyncID])
         }
         #expect(otherStops == 1)
+    }
+
+    @Test func `Carry over staged stops in small batches across multiple iterations`() throws {
+        let fromSyncID = "sync_from_batched"
+        let toSyncID = "sync_to_batched"
+
+        let stops = (1...12).map {
+            makeStop(
+                id: "stop_\($0)",
+                routes: [makeRoute(id: "route_\($0)", shortName: "\($0)")]
+            )
+        }
+        try repository.stageSyncedStops(stops, regionId: 1, syncID: fromSyncID, syncedAt: Date())
+
+        // Pre-stage stop_1 and route_1 in toSyncID so it is not carried over again
+        let existingStop = makeStop(id: "stop_1", name: "Pre-existing Stop 1", routes: [makeRoute(id: "route_1", shortName: "1_already")])
+        try repository.stageSyncedStops([existingStop], regionId: 1, syncID: toSyncID, syncedAt: Date())
+
+        // Batch size 4 forces multiple iterations over 11 remaining stops/routes
+        try repository.carryOverStagedStops(regionId: 1, fromSyncID: fromSyncID, toSyncID: toSyncID, batchSize: 4)
+
+        let carriedStops = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [toSyncID])
+        }
+        let carriedRoutes = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedRouteSync WHERE syncID = ?", arguments: [toSyncID])
+        }
+
+        #expect(carriedStops == 12)
+        #expect(carriedRoutes == 12)
+
+        let syncState = RegionStopSyncState(regionId: 1, outcome: .complete, lastAttemptAt: Date(), lastSuccessAt: Date(), etag: nil, appVersion: "26.5", publishedSyncID: toSyncID)
+        try repository.saveSyncState(syncState)
+
+        let paged = repository.stops(regionId: 1, after: nil, limit: 20)
+        #expect(paged.stops.count == 12)
+        let resolvedStop1 = paged.stops.first(where: { $0.id == "stop_1" })
+        #expect(resolvedStop1?.name == "Pre-existing Stop 1")
+        #expect(resolvedStop1?.routes?.first?.shortName == "1_already")
     }
 
     // MARK: - Multiple Stops
