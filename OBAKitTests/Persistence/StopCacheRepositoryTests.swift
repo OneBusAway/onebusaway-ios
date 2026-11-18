@@ -469,8 +469,8 @@ final class StopCacheRepositoryTests {
         return try! JSONDecoder().decode(Route.self, from: data)
     }
 
-    private func makeStop(id: String, routes: [Route]) -> Stop {
-        let stop = makeStop(id: id, code: id, name: "Stop \(id)", routeIDs: routes.map(\.id))
+    private func makeStop(id: String, name: String? = nil, routes: [Route]) -> Stop {
+        let stop = makeStop(id: id, code: id, name: name ?? "Stop \(id)", routeIDs: routes.map(\.id))
         stop.routes = routes
         return stop
     }
