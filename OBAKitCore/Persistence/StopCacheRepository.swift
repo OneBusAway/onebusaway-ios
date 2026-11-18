@@ -501,31 +501,17 @@ public final class StopCacheRepository: Sendable {
         }
     }
 
-    /// Deletes legacy cached stops and routes for a region older than `syncStart`.
-    func deleteStops(regionId: Int, notWrittenSince syncStart: Date) throws {
-        try deleteRows(regionId: regionId, olderThan: syncStart)
-    }
-
     private func deleteRows(regionId: Int, olderThan date: Date) throws {
         let timestamp = date.timeIntervalSince1970
-        try database.dbQueue.write { db in
-            _ = try CachedStop
-                .filter(CachedStop.Columns.regionId == regionId)
-                .filter(CachedStop.Columns.lastUpdated < timestamp)
-                .deleteAll(db)
-            _ = try CachedRoute
-                .filter(CachedRoute.Columns.regionId == regionId)
-                .filter(CachedRoute.Columns.lastUpdated < timestamp)
-                .deleteAll(db)
-            _ = try StagedCachedStop
-                .filter(StagedCachedStop.Columns.regionId == regionId)
-                .filter(StagedCachedStop.Columns.lastUpdated < timestamp)
-                .deleteAll(db)
-            _ = try StagedCachedRoute
-                .filter(StagedCachedRoute.Columns.regionId == regionId)
-                .filter(StagedCachedRoute.Columns.lastUpdated < timestamp)
-                .deleteAll(db)
+        for table in ["cachedStop", "cachedRoute", "cachedStopSync", "cachedRouteSync"] {
+            try deleteRowidsInBatches(
+                table: table,
+                where: "regionId = ? AND lastUpdated < ?",
+                arguments: [regionId, timestamp]
+            )
+        }
 
+        try database.dbQueue.write { db in
             if let syncState = try RegionStopSyncState.fetchOne(db, key: regionId),
                let publishedSyncID = syncState.publishedSyncID {
                 let hasRemainingStagedStops = try StagedCachedStop

@@ -562,23 +562,6 @@ final class StopCacheRepositoryTests {
         #expect(stamps == [1_790_000_000, 1_790_000_000])
     }
 
-    /// A complete sync deletes stops the server no longer lists: everything in
-    /// the region older than the sync. Other regions are untouched.
-    @Test func `A complete sync's sweep deletes only what it didn't write, in that region`() throws {
-        let earlier = Date(timeIntervalSince1970: 1_790_000_000)
-        let syncStart = Date(timeIntervalSince1970: 1_790_600_000)
-        try repository.writeSyncedStops([makeStop(id: "1_gone", routes: [makeRoute(id: "1_old", shortName: "old")])], regionId: 1, syncedAt: earlier)
-        try repository.writeSyncedStops([makeStop(id: "2_other", routes: [makeRoute(id: "2_r", shortName: "r")])], regionId: 2, syncedAt: earlier)
-        try repository.writeSyncedStops([makeStop(id: "1_kept", routes: [makeRoute(id: "1_49", shortName: "49")])], regionId: 1, syncedAt: syncStart)
-
-        try repository.deleteStops(regionId: 1, notWrittenSince: syncStart)
-
-        let stops = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedStop ORDER BY id") }
-        let routes = try database.dbQueue.read { try String.fetchAll($0, sql: "SELECT id FROM cachedRoute ORDER BY id") }
-        #expect(stops == ["1_kept", "2_other"])
-        #expect(routes == ["1_49", "2_r"])
-    }
-
     /// The issue's rule: the 30-day purge never evicts what a sync wrote within
     /// the last 30 days.
     @Test func `The 30-day purge keeps stops a recent sync wrote`() throws {
