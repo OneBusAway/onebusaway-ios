@@ -929,6 +929,16 @@ final class StopCacheRepositoryTests {
         let page2 = repository.stops(regionId: 1, after: page1.cursor, limit: 2)
         #expect(page2.stops.map(\.id) == ["stop_c"])
         #expect(page2.cursor == nil)
+
+        // Reading a single-row page that hits only the corrupted row ("stop_b") returns no stops
+        // but advances cursor to "stop_b", allowing the subsequent read to fetch "stop_c".
+        let corruptOnlyPage = repository.stops(regionId: 1, after: "stop_a", limit: 1)
+        #expect(corruptOnlyPage.stops.isEmpty)
+        #expect(corruptOnlyPage.cursor == "stop_b")
+
+        let resumedPage = repository.stops(regionId: 1, after: corruptOnlyPage.cursor, limit: 1)
+        #expect(resumedPage.stops.map(\.id) == ["stop_c"])
+        #expect(resumedPage.cursor == "stop_c")
     }
 }
 
