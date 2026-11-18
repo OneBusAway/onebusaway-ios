@@ -119,17 +119,7 @@ import OTPKit
     private var mapRegionManager: MapRegionManager { application.mapRegionManager }
 
     private func refresh() {
-        let descriptors = mapRegionManager.mapLayers.map { MapLayerDescriptor(layer: $0) }
-        var enabledIDs = Set<String>()
-        for layer in mapRegionManager.mapLayers where mapRegionManager.isMapLayerEnabled(id: layer.id) {
-            enabledIDs.insert(layer.id)
-        }
-        visibilityState = MapLayerVisibilityState(
-            layers: descriptors,
-            persistedEnabledIDs: enabledIDs,
-            showsPointsOfInterest: mapRegionManager.mapViewShowsPointsOfInterest,
-            rentalRangeFilter: mapRegionManager.rentalRangeFilter
-        )
+        visibilityState = mapRegionManager.visibilityState
 
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
         showsPointsOfInterest = visibilityState.showsPointsOfInterest

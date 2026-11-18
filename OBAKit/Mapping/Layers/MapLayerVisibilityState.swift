@@ -55,6 +55,8 @@ struct MapLayerDescriptor: Equatable, Identifiable, Sendable {
 /// repeated toggling, and reset) from MapKit and rendering side effects. One pure state
 /// drives the map toolbar badge, sheet controls, and layer pipeline.
 struct MapLayerVisibilityState: Equatable, Sendable {
+    static let stopsLayerID = "stops"
+
     private(set) var layers: [String: MapLayerDescriptor]
     private(set) var layerOrder: [String]
     private(set) var enabledLayerIDs: Set<String>
@@ -88,14 +90,24 @@ struct MapLayerVisibilityState: Equatable, Sendable {
 
     /// Whether a layer is marked as enabled.
     func isEnabled(id: String) -> Bool {
-        enabledLayerIDs.contains(id)
+        layers[id] != nil && enabledLayerIDs.contains(id)
     }
 
     /// Whether a layer is actively visible and eligible to draw.
     /// Unsupported layers are never visible even if their stored preference was on.
+    /// Note: Stops layer is additive; an unregistered stops layer renders stops by default.
     func isLayerVisible(id: String) -> Bool {
+        if id == Self.stopsLayerID && layers[id] == nil {
+            return true
+        }
         guard let layer = layers[id], layer.availability != .unsupported else { return false }
         return isEnabled(id: id)
+    }
+
+    /// Whether stop annotations should render. True when no stops layer is
+    /// registered — the layer row is additive; its absence must not hide stops.
+    var isStopsLayerEnabled: Bool {
+        isLayerVisible(id: Self.stopsLayerID)
     }
 
     /// Whether a layer tile or toggle can be tapped by the rider.
@@ -122,12 +134,11 @@ struct MapLayerVisibilityState: Equatable, Sendable {
     }
 
     /// Sets enablement explicitly for a layer.
-    /// Turning on an unavailable or unsupported layer is rejected.
+    /// Unsupported layers cannot be enabled.
     @discardableResult
     mutating func setEnabled(_ enabled: Bool, id: String) -> Bool {
         guard let layer = layers[id], layer.availability != .unsupported else { return false }
         if enabled {
-            if case .unavailable = layer.availability { return false }
             return enabledLayerIDs.insert(id).inserted
         } else {
             return enabledLayerIDs.remove(id) != nil
@@ -196,5 +207,6 @@ struct MapLayerVisibilityState: Equatable, Sendable {
     mutating func remove(id: String) {
         layers.removeValue(forKey: id)
         layerOrder.removeAll { $0 == id }
+        enabledLayerIDs.remove(id)
     }
 }

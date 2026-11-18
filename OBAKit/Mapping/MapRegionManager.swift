@@ -168,6 +168,7 @@ public class MapRegionManager: NSObject,
         set {
             guard mapViewShowsPointsOfInterest != newValue else { return }
             application.userDefaults.set(newValue, forKey: Self.mapViewShowsPointsOfInterestKey)
+            visibilityState.showsPointsOfInterest = newValue
             applyPointsOfInterestVisibility()
             NotificationCenter.default.post(name: .mapPointsOfInterestVisibilityDidChange, object: nil)
         }
@@ -256,6 +257,18 @@ public class MapRegionManager: NSObject,
         mapView.mapType = userSelectedMapType
         currentVisibleMapRect = mapView.visibleMapRect
         applyPointsOfInterestVisibility()
+
+        visibilityState = MapLayerVisibilityState(
+            showsPointsOfInterest: mapViewShowsPointsOfInterest,
+            rentalRangeFilter: rentalRangeFilter
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(mapLayerAvailabilityDidChangeNotification(_:)),
+            name: .mapLayerAvailabilityDidChange,
+            object: nil
+        )
 
         registerAnnotationViews(mapView: mapView)
 
@@ -386,6 +399,19 @@ public class MapRegionManager: NSObject,
     /// republished to the layers. `MapLayerViewportForwardingTests` pins that.
     public private(set) var currentVisibleMapRect: MKMapRect = .world
 
+    /// Pure visibility and selection state for map layers.
+    private(set) var visibilityState = MapLayerVisibilityState()
+
+    @objc private func mapLayerAvailabilityDidChangeNotification(_ note: Notification) {
+        if let id = note.object as? String, let layer = mapLayer(id: id) {
+            visibilityState.updateAvailability(layer.availability, id: id)
+        } else {
+            for layer in mapLayers {
+                visibilityState.updateAvailability(layer.availability, id: layer.id)
+            }
+        }
+    }
+
     /// Registered toggleable data layers, in Map sheet order.
     public private(set) var mapLayers: [MapLayer] = []
 
@@ -405,6 +431,9 @@ public class MapRegionManager: NSObject,
         ])
         mapLayers.append(layer)
 
+        let persisted = application.userDefaults.bool(forKey: Self.mapLayerDefaultsKey(id: layer.id))
+        visibilityState.register(layer: MapLayerDescriptor(layer: layer), persistedEnabled: persisted)
+
         if isMapLayerEnabled(id: layer.id) {
             layer.activate()
             forwardViewport(to: layer)
@@ -419,6 +448,7 @@ public class MapRegionManager: NSObject,
         if isMapLayerEnabled(id: id) {
             layer.deactivate()
         }
+        visibilityState.remove(id: id)
     }
 
     public func mapLayer(id: String) -> MapLayer? {
@@ -426,11 +456,14 @@ public class MapRegionManager: NSObject,
     }
 
     public func isMapLayerEnabled(id: String) -> Bool {
-        application.userDefaults.bool(forKey: Self.mapLayerDefaultsKey(id: id))
+        visibilityState.isEnabled(id: id)
     }
 
     public func setMapLayerEnabled(_ enabled: Bool, id: String) {
-        guard isMapLayerEnabled(id: id) != enabled else { return }
+        if let layer = mapLayer(id: id) {
+            visibilityState.updateAvailability(layer.availability, id: id)
+        }
+        guard visibilityState.setEnabled(enabled, id: id) else { return }
         application.userDefaults.set(enabled, forKey: Self.mapLayerDefaultsKey(id: id))
 
         if let layer = mapLayer(id: id) {
@@ -448,6 +481,15 @@ public class MapRegionManager: NSObject,
             label: AnalyticsLabels.mapLayerToggled,
             value: "\(id):\(enabled ? "on" : "off")"
         )
+    }
+
+    /// Whether a layer tile or toggle can be tapped by the rider.
+    /// Unavailable layers cannot be turned on, but an already-enabled layer can always be turned off.
+    func canToggleMapLayer(id: String) -> Bool {
+        if let layer = mapLayer(id: id) {
+            visibilityState.updateAvailability(layer.availability, id: id)
+        }
+        return visibilityState.canToggle(id: id)
     }
 
     /// The UserDefaults key persisting the shared rental minimum-range threshold.
@@ -469,6 +511,7 @@ public class MapRegionManager: NSObject,
         set {
             guard rentalRangeFilter != newValue else { return }
             application.userDefaults.set(newValue.minimumRangeMeters, forKey: Self.rentalMinimumRangeDefaultsKey)
+            visibilityState.rentalRangeFilter = newValue
 
             NotificationCenter.default.post(name: .rentalRangeFilterDidChange, object: nil)
             application.analytics?.reportEvent(
@@ -481,7 +524,10 @@ public class MapRegionManager: NSObject,
 
     /// The number of enabled, non-hidden layers — the basemap button's badge.
     public var enabledMapLayerCount: Int {
-        mapLayers.filter { $0.availability != .unsupported && isMapLayerEnabled(id: $0.id) }.count
+        for layer in mapLayers {
+            visibilityState.updateAvailability(layer.availability, id: layer.id)
+        }
+        return visibilityState.enabledLayerCount
     }
 
     /// True when any layer's on/off state differs from its default, the rental
@@ -491,16 +537,28 @@ public class MapRegionManager: NSObject,
     /// non-zero filter left over from another region must not offer a Reset that
     /// changes nothing on screen.
     public var mapLayersDifferFromDefaults: Bool {
-        if !mapViewShowsPointsOfInterest { return true }
-        if rentalRangeFilter != .any, mapLayers.contains(where: { $0.group == .otherModes }) { return true }
-        return mapLayers.contains { isMapLayerEnabled(id: $0.id) != $0.isEnabledByDefault }
+        visibilityState.showsPointsOfInterest = mapViewShowsPointsOfInterest
+        visibilityState.rentalRangeFilter = rentalRangeFilter
+        for layer in mapLayers {
+            visibilityState.updateAvailability(layer.availability, id: layer.id)
+        }
+        return visibilityState.differsFromDefaults
     }
 
     /// Restores every registered layer to its default on/off state, clears the
     /// rental range filter, and shows Points of Interest again.
     public func resetMapLayersToDefaults() {
+        visibilityState.resetToDefaults()
         for layer in mapLayers {
-            setMapLayerEnabled(layer.isEnabledByDefault, id: layer.id)
+            let enabled = visibilityState.isEnabled(id: layer.id)
+            application.userDefaults.set(enabled, forKey: Self.mapLayerDefaultsKey(id: layer.id))
+            if enabled {
+                layer.activate()
+                forwardViewport(to: layer)
+            } else {
+                layer.deactivate()
+            }
+            NotificationCenter.default.post(name: .mapLayerEnabledStateDidChange, object: layer.id)
         }
         rentalRangeFilter = .any
         mapViewShowsPointsOfInterest = true
@@ -509,8 +567,7 @@ public class MapRegionManager: NSObject,
     /// Whether stop annotations should render. True when no stops layer is
     /// registered — the layer row is additive; its absence must not hide stops.
     var isStopsLayerEnabled: Bool {
-        guard mapLayer(id: StopsMapLayer.layerID) != nil else { return true }
-        return isMapLayerEnabled(id: StopsMapLayer.layerID)
+        visibilityState.isStopsLayerEnabled
     }
 
     /// Called by `StopsMapLayer` when its toggle flips; re-renders stop annotations.
