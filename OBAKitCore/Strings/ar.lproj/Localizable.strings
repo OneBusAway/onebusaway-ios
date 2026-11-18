@@ -36,6 +36,9 @@
 /* An error message that tells the user that surveys are not available. */
 "api_error.survey_service_not_configured" = "خدمة الاستطلاعات غير متاحة في هذه المنطقة.";
 
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "لم يتم اختيار منطقة نقل.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "إضافة تذكير";
 

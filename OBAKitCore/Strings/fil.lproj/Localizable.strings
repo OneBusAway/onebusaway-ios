@@ -36,6 +36,9 @@
 /* An error message that tells the user that surveys are not available. */
 "api_error.survey_service_not_configured" = "Hindi available ang serbisyo ng survey sa rehiyong ito.";
 
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Walang napiling rehiyon ng transit.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Magdagdag ng Paalala";
 

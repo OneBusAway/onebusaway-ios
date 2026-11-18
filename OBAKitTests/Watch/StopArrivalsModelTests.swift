@@ -45,7 +45,7 @@ struct StopArrivalsModelTests {
         model.startPolling()
 
         if case .failed(let message) = model.phase {
-            #expect(!message.isEmpty)
+            #expect(message == Strings.noTransitRegion)
         } else {
             Issue.record("Expected failed phase when API service is nil, got \(model.phase)")
         }
@@ -138,26 +138,38 @@ struct StopArrivalsModelTests {
         #expect(model.phase == .offline)
     }
 
-    @Test @MainActor func `Retry transitions to loading once and starts poll`() throws {
+    @Test @MainActor func `Retry transitions to loading and restarts polling`() throws {
+        let stop = makeStop()
+        let service = RESTAPIService.standalone(
+            region: Fixtures.pugetSoundRegion,
+            apiKey: "key",
+            appVersion: "1.0",
+            uuid: "uuid"
+        )
+        let model = StopArrivalsModel(stop: stop, apiService: service)
+        let arrival = try makeArrival()
+
+        model.apply(.success([arrival]))
+        #expect(model.phase != .loading)
+
+        model.retry()
+        defer { model.stopPolling() }
+
+        #expect(model.phase == .loading)
+    }
+
+    @Test @MainActor func `Retry without API service ends in failed`() throws {
         let stop = makeStop()
         let model = StopArrivalsModel(stop: stop, apiService: nil)
         let arrival = try makeArrival()
 
         model.apply(.success([arrival]))
-
-        model.retry()
-
-        // When retry is called, it immediately sets phase to .loading once,
-        // and because apiService is nil, startPolling() then sets it to .failed.
-        // We verify that calling retry() while failed resets phase back to .loading before running startPolling().
-        model.stopPolling()
         #expect(model.phase != .loading)
 
-        // Call retry:
         model.retry()
-        // Ends in .failed because apiService is nil, but intermediate state was loading.
-        if case .failed = model.phase {
-            // Expected
+
+        if case .failed(let message) = model.phase {
+            #expect(message == Strings.noTransitRegion)
         } else {
             Issue.record("Expected failed after retry with nil apiService")
         }

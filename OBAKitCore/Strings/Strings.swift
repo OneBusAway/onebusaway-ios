@@ -92,9 +92,11 @@ public class Strings: NSObject {
 
     public static let retry = OBALoc("common.retry", value: "Retry", comment: "The verb 'retry'.")
 
-    public static let offlineTitle = OBALoc("error_report.title.offline", value: "You're offline", comment: "Title for offline screen")
+    public static let noTransitRegion = OBALoc("arrivals.no_service", value: "No transit region selected.", comment: "Arrivals cannot load without a region")
 
-    public static let offlineSummary = OBALoc("error_report.summary.offline", value: "Check your connection and try again.", comment: "Summary for offline screen")
+    public static let offlineTitle = OBALoc("error_report.title.offline", value: "You're offline", comment: "Title of an error shown when the device has no internet connection.")
+
+    public static let offlineSummary = OBALoc("error_report.summary.offline", value: "Check your connection and try again.", comment: "One-line toast text: the device has no internet connection.")
 
     public static let save = OBALoc("common.save", value: "Save", comment: "The verb 'save', as in 'save data'.")
 

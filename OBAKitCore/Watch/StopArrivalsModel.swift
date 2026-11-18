@@ -56,19 +56,10 @@ public final class StopArrivalsModel {
         self.init(stop: stop, apiServiceProvider: { apiService }, interval: interval, poller: poller)
     }
 
-    /// For previews and tests: fixed initial phase.
-    public init(phase: Phase, stop: Stop) {
-        self.stop = stop
-        self.apiServiceProvider = { nil }
-        self.interval = .seconds(30)
-        self.poller = StopArrivalsPoller()
-        self.phase = phase
-    }
-
     public func startPolling() {
         guard pollTask == nil else { return }
         guard let apiService = apiServiceProvider() else {
-            phase = .failed(OBALoc("arrivals.no_service", value: "No transit region selected.", comment: "Arrivals cannot load without a region"))
+            phase = .failed(Strings.noTransitRegion)
             return
         }
 
@@ -92,7 +83,7 @@ public final class StopArrivalsModel {
         startPolling()
     }
 
-    public func apply(_ result: Result<[ArrivalDeparture], Error>) {
+    func apply(_ result: Result<[ArrivalDeparture], Error>) {
         let now = Date()
         switch result {
         case .success(let arrivals):

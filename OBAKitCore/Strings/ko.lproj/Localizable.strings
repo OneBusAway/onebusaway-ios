@@ -36,6 +36,9 @@
 /* An error message that tells the user that surveys are not available. */
 "api_error.survey_service_not_configured" = "이 지역에서는 설문조사 서비스를 사용할 수 없습니다.";
 
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "선택된 대중교통 지역이 없습니다.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "미리 알림 추가";
 
