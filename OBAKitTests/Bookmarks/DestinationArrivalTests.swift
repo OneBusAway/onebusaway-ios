@@ -149,7 +149,7 @@ struct DestinationArrivalTests {
     }
 
     @Test func `Destination arrival estimate when origin is last stop returns nil`() throws {
-        let schedule = try stopTimes(["a", "b", "origin"])
+        let schedule = try stopTimes(["home", "b", "origin"])
         let departure = try origin(stopID: "origin", stopSequence: 2, delay: 0)
 
         #expect(DestinationArrival.estimate(origin: departure, stopTimes: schedule, destinationStopID: "home") == nil)

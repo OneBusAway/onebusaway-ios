@@ -551,28 +551,25 @@ final class AppSheetRouteTests {
         #expect(bare.id != withDest.id)
     }
 
-    @Test func `OnDemandService and OnDemandPicker embed service and payload identifiers`() {
-        let service = OnDemandService(
-            id: "service_flex_1",
-            name: "Metro Flex",
-            serviceKind: .zone,
-            rules: [],
-            bookingRules: [],
-            calendars: [:],
-            areas: [:],
-            locationGroups: [:]
-        )
-        let routeService = AppSheetRoute.onDemandService(service)
-        #expect(routeService.id == "onDemandService-service_flex_1")
+    @Test func `OnDemandService and OnDemandPicker embed service and payload identifiers`() throws {
+        let services = try Fixtures.loadRESTAPIPayload(
+            type: [OnDemandService].self,
+            fileName: "ondemand_services_for_agency_charlevoix.json"
+        ).list
+        let service = try #require(services.first)
 
-        let payload = OnDemandPickerPayload(
-            id: "picker_payload_99",
-            services: [service],
-            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
-            address: "Pine St"
+        let routeService = AppSheetRoute.onDemandService(service)
+        #expect(routeService.id == "onDemandService-\(service.id)")
+
+        let request = OnDemandPickerRequest(
+            matches: [],
+            scope: .insideOnly,
+            source: .rider,
+            coordinate: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2)
         )
+        let payload = OnDemandPickerPayload(request: request, locality: nil)
         let routePicker = AppSheetRoute.onDemandPicker(payload)
-        #expect(routePicker.id == "onDemandPicker-picker_payload_99")
+        #expect(routePicker.id == "onDemandPicker-\(payload.id)")
     }
 
     // MARK: - Exhaustiveness guard
