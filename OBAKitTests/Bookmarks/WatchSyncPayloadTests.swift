@@ -182,4 +182,61 @@ struct WatchSyncPayloadTests {
         #expect(watchGroup.id == groupID)
         #expect(watchGroup.name == "Night Routes")
     }
+
+    @Test func `Sequence number round-trips and defaults safely`() throws {
+        let payload = try WatchSyncPayload(
+            schemaVersion: 1,
+            sequenceNumber: 42,
+            bookmarks: [],
+            groups: [],
+            region: nil
+        )
+
+        let data = try payload.encodeToBinaryPlist()
+        let decoded = try WatchSyncPayload.decode(fromBinaryPlist: data)
+
+        #expect(decoded.sequenceNumber == 42)
+
+        // Verify backward compatibility: legacy payload with no sequenceNumber key decodes safely to 0
+        let legacyDict: [String: Any] = [
+            "schemaVersion": 1,
+            "revision": "legacy_rev_123",
+            "bookmarks": [],
+            "groups": []
+        ]
+        let legacyData = try PropertyListSerialization.data(fromPropertyList: legacyDict, format: .binary, options: 0)
+        let legacyDecoded = try WatchSyncPayload.decode(fromBinaryPlist: legacyData)
+
+        #expect(legacyDecoded.sequenceNumber == 0)
+        #expect(legacyDecoded.revision == "legacy_rev_123")
+    }
+
+    @Test func `Epoch round-trips and defaults safely to nil for legacy payloads`() throws {
+        let testEpoch = UUID()
+        let payload = try WatchSyncPayload(
+            schemaVersion: 1,
+            sequenceNumber: 42,
+            epoch: testEpoch,
+            bookmarks: [],
+            groups: [],
+            region: nil
+        )
+
+        let data = try payload.encodeToBinaryPlist()
+        let decoded = try WatchSyncPayload.decode(fromBinaryPlist: data)
+
+        #expect(decoded.epoch == testEpoch)
+
+        // Verify backward compatibility: legacy payload with no epoch key decodes safely to nil
+        let legacyDict: [String: Any] = [
+            "schemaVersion": 1,
+            "revision": "legacy_rev_456",
+            "bookmarks": [],
+            "groups": []
+        ]
+        let legacyData = try PropertyListSerialization.data(fromPropertyList: legacyDict, format: .binary, options: 0)
+        let legacyDecoded = try WatchSyncPayload.decode(fromBinaryPlist: legacyData)
+
+        #expect(legacyDecoded.epoch == nil)
+    }
 }
