@@ -57,25 +57,38 @@ struct WatchLocalizationTests {
     /// `%@`, `%d`, `%1$@`, `%2$d`, … and the escaped `%%`.
     private static let specifier = try! NSRegularExpression(pattern: #"%(?:\d+\$)?[@dfs]|%%"#) // swiftlint:disable:this force_try
 
-    private static var allowlist: FallbackAllowlist {
+    private static func loadAllowlist() throws -> FallbackAllowlist {
         let url = repoRoot.appending(path: "OBAKitWatch/Strings/fallback_allowlist.json")
-        guard let data = try? Data(contentsOf: url),
-              let decoded = try? JSONDecoder().decode(FallbackAllowlist.self, from: data) else {
-            return FallbackAllowlist(intentionalFallbacks: nil, allowedMissing: nil)
-        }
-        return decoded
+        let data = try Data(contentsOf: url)
+        return try JSONDecoder().decode(FallbackAllowlist.self, from: data)
     }
 
-    private static func isIntentionalFallback(key: String, locale: String) -> Bool {
+    private static var allowlist: FallbackAllowlist {
+        get throws {
+            try loadAllowlist()
+        }
+    }
+
+    private static func isIntentionalFallback(key: String, locale: String, allowlist: FallbackAllowlist) -> Bool {
         let fallbacks = allowlist.intentionalFallbacks
         if let all = fallbacks?.all, all.contains(key) { return true }
         if let byLocale = fallbacks?.byLocale?[locale], byLocale.contains(key) { return true }
         return false
     }
 
-    private static func isAllowedMissing(key: String, locale: String) -> Bool {
+    private static func isAllowedMissing(key: String, locale: String, allowlist: FallbackAllowlist) -> Bool {
         guard let byLocale = allowlist.allowedMissing?.byLocale?[locale] else { return false }
         return byLocale.contains(key)
+    }
+
+    private static func isIntentionalFallback(key: String, locale: String) -> Bool {
+        guard let allowlist = try? loadAllowlist() else { return false }
+        return isIntentionalFallback(key: key, locale: locale, allowlist: allowlist)
+    }
+
+    private static func isAllowedMissing(key: String, locale: String) -> Bool {
+        guard let allowlist = try? loadAllowlist() else { return false }
+        return isAllowedMissing(key: key, locale: locale, allowlist: allowlist)
     }
 
     private static var repoRoot: URL {
@@ -104,9 +117,22 @@ struct WatchLocalizationTests {
 
     private static func specifiers(in value: String) -> [String] {
         let range = NSRange(value.startIndex..., in: value)
-        return specifier.matches(in: value, range: range)
-            .compactMap { Range($0.range, in: value).map { String(value[$0]) } }
-            .sorted()
+        var implicitIndex = 1
+        var result: [String] = []
+        for match in specifier.matches(in: value, range: range) {
+            guard let r = Range(match.range, in: value) else { continue }
+            let token = String(value[r])
+            if token == "%%" {
+                result.append("%%")
+            } else if token.contains("$") {
+                result.append(token)
+            } else {
+                let type = token.dropFirst()
+                result.append("%\(implicitIndex)$\(type)")
+                implicitIndex += 1
+            }
+        }
+        return result.sorted()
     }
 
     @Test func `English table exists and is not empty`() throws {
@@ -117,7 +143,11 @@ struct WatchLocalizationTests {
     @Test(arguments: tables)
     func `Every locale has the same keys as English`(table: String) throws {
         let parts = table.split(separator: "|")
-        let english = try #require(Self.strings(locale: "en", table: table))
+        let enRelativePath = "\(parts[0])/en.lproj/\(parts[1]).strings"
+        let english = try #require(Self.strings(locale: "en", table: table), "File: \(enRelativePath): Missing English strings table")
+        try #require(!english.isEmpty, "File: \(enRelativePath): Base English table is empty")
+        let allowlist = try Self.loadAllowlist()
+
         for locale in Self.locales where locale != "en" {
             let relativePath = "\(parts[0])/\(locale).lproj/\(parts[1]).strings"
             guard let translated = Self.strings(locale: locale, table: table) else {
@@ -126,7 +156,7 @@ struct WatchLocalizationTests {
             }
             let missing = Set(english.keys)
                 .subtracting(translated.keys)
-                .filter { !Self.isAllowedMissing(key: $0, locale: locale) }
+                .filter { !Self.isAllowedMissing(key: $0, locale: locale, allowlist: allowlist) }
             for key in missing.sorted() {
                 Issue.record("File: \(relativePath), Locale: \(locale), Key: '\(key)': Missing key from English base table")
             }
@@ -140,7 +170,10 @@ struct WatchLocalizationTests {
     @Test(arguments: tables)
     func `Every locale keeps the same format specifiers`(table: String) throws {
         let parts = table.split(separator: "|")
-        let english = try #require(Self.strings(locale: "en", table: table))
+        let enRelativePath = "\(parts[0])/en.lproj/\(parts[1]).strings"
+        let english = try #require(Self.strings(locale: "en", table: table), "File: \(enRelativePath): Missing English strings table")
+        try #require(!english.isEmpty, "File: \(enRelativePath): Base English table is empty")
+
         for locale in Self.locales where locale != "en" {
             let relativePath = "\(parts[0])/\(locale).lproj/\(parts[1]).strings"
             guard let translated = Self.strings(locale: locale, table: table) else { continue }
@@ -158,29 +191,36 @@ struct WatchLocalizationTests {
     @Test(arguments: tables)
     func `No locale still carries an untranslated English value`(table: String) throws {
         let parts = table.split(separator: "|")
-        let english = try #require(Self.strings(locale: "en", table: table))
+        let enRelativePath = "\(parts[0])/en.lproj/\(parts[1]).strings"
+        let english = try #require(Self.strings(locale: "en", table: table), "File: \(enRelativePath): Missing English strings table")
+        try #require(!english.isEmpty, "File: \(enRelativePath): Base English table is empty")
+        let allowlist = try Self.loadAllowlist()
+
         for locale in Self.locales where locale != "en" {
             let relativePath = "\(parts[0])/\(locale).lproj/\(parts[1]).strings"
             guard let translated = Self.strings(locale: locale, table: table) else { continue }
-            let untranslated = english.filter { key, value in
-                !Self.isIntentionalFallback(key: key, locale: locale) && translated[key] == value && value.count > 3
-            }.keys.sorted()
-            for key in untranslated {
-                Issue.record("File: \(relativePath), Locale: \(locale), Key: '\(key)': Untranslated English value without intentional fallback allowlist entry")
+            for (key, value) in english {
+                guard let other = translated[key] else { continue }
+                if other.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !Self.isIntentionalFallback(key: key, locale: locale, allowlist: allowlist) {
+                    Issue.record("File: \(relativePath), Locale: \(locale), Key: '\(key)': Empty or whitespace-only translation value without intentional fallback allowlist entry")
+                } else if value.count > 3 && other == value && !Self.isIntentionalFallback(key: key, locale: locale, allowlist: allowlist) {
+                    Issue.record("File: \(relativePath), Locale: \(locale), Key: '\(key)': Untranslated English value without intentional fallback allowlist entry")
+                }
             }
         }
     }
 
     @Test func `Fallback allowlist keys are valid in English tables`() throws {
+        let allowlist = try Self.loadAllowlist()
         let allKeys = Self.allEnglishKeys
         #expect(!allKeys.isEmpty, "English base tables must not be empty")
 
-        if let all = Self.allowlist.intentionalFallbacks?.all {
+        if let all = allowlist.intentionalFallbacks?.all {
             for key in all {
                 #expect(allKeys.contains(key), "File: OBAKitWatch/Strings/fallback_allowlist.json: Key '\(key)' does not exist in English base tables")
             }
         }
-        if let byLocale = Self.allowlist.intentionalFallbacks?.byLocale {
+        if let byLocale = allowlist.intentionalFallbacks?.byLocale {
             for (locale, keys) in byLocale {
                 #expect(Self.locales.contains(locale), "File: OBAKitWatch/Strings/fallback_allowlist.json: Unknown locale '\(locale)' in intentional_fallbacks")
                 for key in keys {
@@ -188,7 +228,7 @@ struct WatchLocalizationTests {
                 }
             }
         }
-        if let allowedMissing = Self.allowlist.allowedMissing?.byLocale {
+        if let allowedMissing = allowlist.allowedMissing?.byLocale {
             for (locale, keys) in allowedMissing {
                 #expect(Self.locales.contains(locale), "File: OBAKitWatch/Strings/fallback_allowlist.json: Unknown locale '\(locale)' in allowed_missing")
                 for key in keys {
@@ -200,9 +240,11 @@ struct WatchLocalizationTests {
 
     @Test func `The watch app's location purpose string is translated in every locale`() {
         for locale in Self.locales where locale != "en" {
-            let url = Self.repoRoot.appending(path: "WatchApp/\(locale).lproj/InfoPlist.strings")
+            let relativePath = "WatchApp/\(locale).lproj/InfoPlist.strings"
+            let url = Self.repoRoot.appending(path: relativePath)
             let table = NSDictionary(contentsOf: url) as? [String: String]
-            #expect(table?["NSLocationWhenInUseUsageDescription"]?.isEmpty == false, "WatchApp/\(locale): missing NSLocationWhenInUseUsageDescription")
+            let purpose = table?["NSLocationWhenInUseUsageDescription"]
+            #expect(purpose?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, "WatchApp/\(locale): missing NSLocationWhenInUseUsageDescription")
         }
     }
 }

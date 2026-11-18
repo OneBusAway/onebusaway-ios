@@ -10,6 +10,7 @@ import json
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 
 
@@ -32,25 +33,77 @@ def parse_strings_file(file_path: Path) -> dict:
             text=True,
             check=True
         )
-        return json.loads(proc.stdout)
+        data = json.loads(proc.stdout)
+        if not isinstance(data, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in data.items()):
+            print(f"[WARN] Invalid format or non-string values in strings file: {file_path}", file=sys.stderr)
+            return None
+        return data
     except Exception as e:
         print(f"[WARN] Failed to parse {file_path} with plutil: {e}", file=sys.stderr)
         return None
 
 
 def extract_specifiers(value: str) -> list:
-    return sorted(SPECIFIER_REGEX.findall(value))
+    specifiers = []
+    implicit_index = 1
+    for match in SPECIFIER_REGEX.finditer(value):
+        token = match.group(0)
+        if token == "%%":
+            specifiers.append("%%")
+        elif "$" in token:
+            specifiers.append(token)
+        else:
+            arg_type = token[1:]
+            specifiers.append(f"%{implicit_index}${arg_type}")
+            implicit_index += 1
+    return sorted(specifiers)
 
 
 def load_allowlist(repo_root: Path) -> dict:
     allowlist_path = repo_root / "OBAKitWatch" / "Strings" / "fallback_allowlist.json"
-    if allowlist_path.exists():
-        try:
-            with open(allowlist_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"[WARN] Could not parse fallback allowlist at {allowlist_path}: {e}")
-    return {"intentional_fallbacks": {"all": [], "by_locale": {}}, "allowed_missing": {"by_locale": {}}}
+    if not allowlist_path.exists():
+        print(f"[ERROR] Fallback allowlist not found at {allowlist_path}", file=sys.stderr)
+        sys.exit(1)
+    try:
+        with open(allowlist_path, "r", encoding="utf-8") as f:
+            allowlist = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"[ERROR] Malformed JSON in fallback allowlist at {allowlist_path}: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"[ERROR] Failed to read fallback allowlist at {allowlist_path}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if not isinstance(allowlist, dict):
+        print(f"[ERROR] Fallback allowlist root must be a JSON object: {allowlist_path}", file=sys.stderr)
+        sys.exit(1)
+
+    for section in ["intentional_fallbacks", "allowed_missing"]:
+        if section not in allowlist or not isinstance(allowlist[section], dict):
+            print(f"[ERROR] Fallback allowlist missing or invalid '{section}' object in {allowlist_path}", file=sys.stderr)
+            sys.exit(1)
+
+    fallbacks = allowlist["intentional_fallbacks"]
+    if "all" not in fallbacks or not isinstance(fallbacks["all"], list) or not all(isinstance(k, str) for k in fallbacks["all"]):
+        print(f"[ERROR] 'intentional_fallbacks.all' must be an array of strings in {allowlist_path}", file=sys.stderr)
+        sys.exit(1)
+
+    if "by_locale" not in fallbacks or not isinstance(fallbacks["by_locale"], dict) or not all(
+        isinstance(loc, str) and isinstance(keys, list) and all(isinstance(k, str) for k in keys)
+        for loc, keys in fallbacks["by_locale"].items()
+    ):
+        print(f"[ERROR] 'intentional_fallbacks.by_locale' must be a map of locale strings to string arrays in {allowlist_path}", file=sys.stderr)
+        sys.exit(1)
+
+    missing = allowlist["allowed_missing"]
+    if "by_locale" not in missing or not isinstance(missing["by_locale"], dict) or not all(
+        isinstance(loc, str) and isinstance(keys, list) and all(isinstance(k, str) for k in keys)
+        for loc, keys in missing["by_locale"].items()
+    ):
+        print(f"[ERROR] 'allowed_missing.by_locale' must be a map of locale strings to string arrays in {allowlist_path}", file=sys.stderr)
+        sys.exit(1)
+
+    return allowlist
 
 
 def is_intentional_fallback(allowlist: dict, key: str, locale: str) -> bool:
@@ -140,9 +193,15 @@ def main():
                     if en_spec != loc_spec:
                         failures.append(f"File: {rel_file}, Locale: {locale}, Key: '{key}': Format arguments differ (expected {en_spec}, got {loc_spec})")
 
-                    # 3. Fallback Check: Check untranslated English values
+                    # 3. Fallback Check: Check untranslated English values or empty/whitespace values
                     val = locale_strings[key]
-                    if len(val) > 3 and val == en_strings[key] and not is_intentional_fallback(allowlist, key, locale):
+                    if not val.strip() and not is_intentional_fallback(allowlist, key, locale):
+                        failures.append(f"File: {rel_file}, Locale: {locale}, Key: '{key}': Empty or whitespace-only translation value without intentional fallback allowlist entry")
+                    elif (
+                        len(val) > 3
+                        and unicodedata.normalize("NFC", val) == unicodedata.normalize("NFC", en_strings[key])
+                        and not is_intentional_fallback(allowlist, key, locale)
+                    ):
                         failures.append(f"File: {rel_file}, Locale: {locale}, Key: '{key}': Untranslated English value without intentional fallback allowlist entry")
 
             # Check extra keys
@@ -158,7 +217,8 @@ def main():
         info_path = repo_root / "WatchApp" / f"{locale}.lproj" / "InfoPlist.strings"
         info_strings = parse_strings_file(info_path)
         total_checks += 1
-        if not info_strings or not info_strings.get("NSLocationWhenInUseUsageDescription"):
+        desc = info_strings.get("NSLocationWhenInUseUsageDescription") if info_strings else None
+        if not isinstance(desc, str) or not desc.strip():
             failures.append(f"File: {info_rel}, Locale: {locale}, Key: 'NSLocationWhenInUseUsageDescription': Missing or empty location purpose string")
 
     if failures:
