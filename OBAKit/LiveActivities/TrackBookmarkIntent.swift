@@ -72,35 +72,59 @@ nonisolated public struct BookmarkEntity: AppEntity {
     }
 }
 
-nonisolated public struct BookmarkEntityQuery: EntityQuery {
+nonisolated public struct BookmarkEntityQuery: EntityStringQuery {
     public init() {}
 
     public func entities(for identifiers: [UUID]) async throws -> [BookmarkEntity] {
-        tripBookmarkEntities().filter { identifiers.contains($0.id) }
+        let (bookmarks, regionID) = loadBookmarksAndRegion()
+        return BookmarkIntentMapping.entities(for: identifiers, from: bookmarks, regionIdentifier: regionID)
     }
 
     public func suggestedEntities() async throws -> [BookmarkEntity] {
         tripBookmarkEntities()
     }
 
+    public func entities(matching string: String) async throws -> [BookmarkEntity] {
+        BookmarkIntentMapping.matching(string, in: tripBookmarkEntities())
+    }
+
     /// Trip bookmarks in the current region only. A whole-stop bookmark has
     /// no single route to Track; an out-of-region trip bookmark never gets
     /// arrivals loaded, so offering it would queue a request that cannot start.
     private func tripBookmarkEntities() -> [BookmarkEntity] {
+        let (bookmarks, regionID) = loadBookmarksAndRegion()
+        return BookmarkIntentMapping.entities(from: bookmarks, regionIdentifier: regionID)
+    }
+
+    private func loadBookmarksAndRegion() -> (bookmarks: [Bookmark], regionID: Int?) {
         guard let suite = Bundle.main.appGroup,
-              let defaults = UserDefaults(suiteName: suite) else { return [] }
+              let defaults = UserDefaults(suiteName: suite) else { return ([], nil) }
         let store = UserDefaultsStore(userDefaults: defaults)
         let regionID = defaults.object(forKey: BookmarkIntentMapping.regionIdentifierUserDefaultsKey) as? Int
-        return BookmarkIntentMapping.entities(from: store.bookmarks, regionIdentifier: regionID)
+        return (store.bookmarks, regionID)
     }
 }
 
 nonisolated enum BookmarkIntentMapping {
     static let regionIdentifierUserDefaultsKey = RegionsService.currentRegionIdentifierUserDefaultsKey
+    static let searchResultLimit = 20
 
     static func entities(from bookmarks: [Bookmark], regionIdentifier: Int?) -> [BookmarkEntity] {
         bookmarks.filter { $0.isTripBookmark && $0.regionIdentifier == regionIdentifier }.map {
             BookmarkEntity(id: $0.id, name: $0.name)
         }
+    }
+
+    static func entities(for identifiers: [UUID], from bookmarks: [Bookmark], regionIdentifier: Int?) -> [BookmarkEntity] {
+        let eligible = entities(from: bookmarks, regionIdentifier: regionIdentifier)
+        let map = Dictionary(eligible.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return identifiers.compactMap { map[$0] }
+    }
+
+    static func matching(_ query: String, in entities: [BookmarkEntity]) -> [BookmarkEntity] {
+        let hits = entities.filter { entity in
+            entity.name.localizedStandardContains(query)
+        }
+        return Array(hits.prefix(searchResultLimit))
     }
 }
