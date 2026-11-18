@@ -543,6 +543,35 @@ final class AppSheetRouteTests {
         #expect(AppSheetRoute.nearbyStops(coordinate: CLLocationCoordinate2D(latitude: 1, longitude: 2)).detentConfiguration.isDismissDisabled == false)
     }
 
+    @Test func `Trip details id with destinationStopID includes destination suffix`() throws {
+        let bare = try tripRoute(tripID: "trip_42", stopID: "stop_1")
+        let withDest = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(stopID: "stop_1", tripID: "trip_42"), destinationStopID: "dest_99")
+        #expect(bare.id == "tripDetails-trip_42")
+        #expect(withDest.id == "tripDetails-trip_42-dest_99")
+        #expect(bare.id != withDest.id)
+    }
+
+    @Test func `OnDemandService and OnDemandPicker embed service and payload identifiers`() throws {
+        let services = try Fixtures.loadRESTAPIPayload(
+            type: [OnDemandService].self,
+            fileName: "ondemand_services_for_agency_charlevoix.json"
+        )
+        let service = try #require(services.first)
+
+        let routeService = AppSheetRoute.onDemandService(service)
+        #expect(routeService.id == "onDemandService-\(service.id)")
+
+        let request = OnDemandPickerRequest(
+            matches: [],
+            scope: .insideOnly,
+            source: .rider,
+            coordinate: CLLocationCoordinate2D(latitude: 45.3, longitude: -85.2)
+        )
+        let payload = OnDemandPickerPayload(request: request, locality: nil)
+        let routePicker = AppSheetRoute.onDemandPicker(payload)
+        #expect(routePicker.id == "onDemandPicker-\(payload.id)")
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing
