@@ -481,6 +481,9 @@ jobs:
         build OBAKitWatch generic/platform=watchOS APPLICATION_EXTENSION_API_ONLY=YES
         build OBAKit generic/platform=iOS
 
+    - name: Validate watch localization completeness
+      run: scripts/validate_watch_localizations
+
     - name: Install xcodegen
       env:
         HOMEBREW_NO_AUTO_UPDATE: 1

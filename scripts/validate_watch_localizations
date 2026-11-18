@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""
+validate_watch_localizations
+
+Validates watch localization completeness, format specifiers, and translation integrity
+against intentional fallback allowlist before review / in CI.
+"""
+
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+
+SPECIFIER_REGEX = re.compile(r"%(?:\d+\$)?[@dfs]|%%")
+STRINGS_PAIR_REGEX = re.compile(r'^\s*"((?:[^"\\]|\\.)+)"\s*=\s*"((?:[^"\\]|\\.)+)"\s*;\s*$', re.MULTILINE)
+
+LOCALES = ["ar", "en", "es", "fil", "fr", "it", "ko", "pl", "pt-BR", "ru", "vi", "zh-Hans", "zh-Hant"]
+TABLES = [
+    ("OBAKitWatch/Strings", "Localizable"),
+    ("Apps/Shared/HealthKit/Sources", "HealthKit"),
+]
+
+
+def parse_strings_file(file_path: Path) -> dict:
+    if not file_path.exists():
+        return None
+    content = file_path.read_text(encoding="utf-8", errors="replace")
+    # Strip multiline comments /* ... */
+    content = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
+    # Strip single line comments // ...
+    content = re.sub(r"//.*$", "", content, flags=re.MULTILINE)
+
+    result = {}
+    for match in STRINGS_PAIR_REGEX.finditer(content):
+        k, v = match.group(1), match.group(2)
+        # Unescape escaped quotes and newlines
+        k = k.replace('\\"', '"').replace("\\n", "\n")
+        v = v.replace('\\"', '"').replace("\\n", "\n")
+        result[k] = v
+    return result
+
+
+def extract_specifiers(value: str) -> list:
+    return sorted(SPECIFIER_REGEX.findall(value))
+
+
+def load_allowlist(repo_root: Path) -> dict:
+    allowlist_path = repo_root / "OBAKitWatch" / "Strings" / "fallback_allowlist.json"
+    if allowlist_path.exists():
+        try:
+            with open(allowlist_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[WARN] Could not parse fallback allowlist at {allowlist_path}: {e}")
+    return {"intentional_fallbacks": {"all": [], "by_locale": {}}, "allowed_missing": {"by_locale": {}}}
+
+
+def is_intentional_fallback(allowlist: dict, key: str, locale: str) -> bool:
+    fallbacks = allowlist.get("intentional_fallbacks", {})
+    if key in fallbacks.get("all", []):
+        return True
+    by_locale = fallbacks.get("by_locale", {})
+    if key in by_locale.get(locale, []):
+        return True
+    return False
+
+
+def is_allowed_missing(allowlist: dict, key: str, locale: str) -> bool:
+    allowed_missing = allowlist.get("allowed_missing", {}).get("by_locale", {})
+    return key in allowed_missing.get(locale, [])
+
+
+def main():
+    repo_root = Path(__file__).resolve().parent.parent
+    allowlist = load_allowlist(repo_root)
+
+    failures = []
+    total_checks = 0
+
+    print("=== Validating Watch Localization Completeness ===")
+
+    for directory, table_name in TABLES:
+        en_path = repo_root / directory / "en.lproj" / f"{table_name}.strings"
+        en_strings = parse_strings_file(en_path)
+        if not en_strings:
+            failures.append(f"File: {directory}/en.lproj/{table_name}.strings: Base English table missing or empty")
+            continue
+
+        for locale in LOCALES:
+            if locale == "en":
+                continue
+
+            rel_file = f"{directory}/{locale}.lproj/{table_name}.strings"
+            locale_path = repo_root / directory / f"{locale}.lproj" / f"{table_name}.strings"
+            locale_strings = parse_strings_file(locale_path)
+
+            if locale_strings is None:
+                failures.append(f"File: {rel_file}, Locale: {locale}: Strings table file not found")
+                continue
+
+            # 1. Key Parity: Check missing keys
+            for key in sorted(en_strings.keys()):
+                total_checks += 1
+                if key not in locale_strings:
+                    if not is_allowed_missing(allowlist, key, locale):
+                        failures.append(f"File: {rel_file}, Locale: {locale}, Key: '{key}': Missing key from English base table")
+                else:
+                    # 2. Format Specifiers: Check argument consistency
+                    en_spec = extract_specifiers(en_strings[key])
+                    loc_spec = extract_specifiers(locale_strings[key])
+                    if en_spec != loc_spec:
+                        failures.append(f"File: {rel_file}, Locale: {locale}, Key: '{key}': Format arguments differ (expected {en_spec}, got {loc_spec})")
+
+                    # 3. Fallback Check: Check untranslated English values
+                    val = locale_strings[key]
+                    if len(val) > 3 and val == en_strings[key] and not is_intentional_fallback(allowlist, key, locale):
+                        failures.append(f"File: {rel_file}, Locale: {locale}, Key: '{key}': Untranslated English value without intentional fallback allowlist entry")
+
+            # Check extra keys
+            for key in sorted(locale_strings.keys()):
+                if key not in en_strings:
+                    failures.append(f"File: {rel_file}, Locale: {locale}, Key: '{key}': Extra key not in English base table")
+
+    # 4. InfoPlist checks
+    for locale in LOCALES:
+        if locale == "en":
+            continue
+        info_rel = f"WatchApp/{locale}.lproj/InfoPlist.strings"
+        info_path = repo_root / "WatchApp" / f"{locale}.lproj" / "InfoPlist.strings"
+        info_strings = parse_strings_file(info_path)
+        total_checks += 1
+        if not info_strings or not info_strings.get("NSLocationWhenInUseUsageDescription"):
+            failures.append(f"File: {info_rel}, Locale: {locale}, Key: 'NSLocationWhenInUseUsageDescription': Missing or empty location purpose string")
+
+    if failures:
+        print(f"\n[FAIL] Localization validation failed with {len(failures)} error(s):")
+        for failure in failures:
+            print(f"  • {failure}")
+        sys.exit(1)
+    else:
+        print(f"\n[PASS] All watch localization tables validated successfully ({total_checks} key checks across {len(LOCALES)} locales).")
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
