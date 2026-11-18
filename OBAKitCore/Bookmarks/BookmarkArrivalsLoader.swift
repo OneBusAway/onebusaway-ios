@@ -161,7 +161,8 @@ extension RESTAPIService {
         apiKey: String,
         appVersion: String,
         uuid: String,
-        dataLoader: URLDataLoader = URLSession.shared
+        dataLoader: URLDataLoader = URLSession.shared,
+        retryPolicy: RetryPolicy = .disabled
     ) -> RESTAPIService {
         RESTAPIService(
             APIServiceConfiguration(
@@ -171,7 +172,8 @@ extension RESTAPIService {
                 appVersion: appVersion,
                 regionIdentifier: region.regionIdentifier
             ),
-            dataLoader: dataLoader
+            dataLoader: dataLoader,
+            retryPolicy: retryPolicy
         )
     }
 }
