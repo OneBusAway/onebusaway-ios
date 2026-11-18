@@ -183,9 +183,9 @@ final class RetryPolicyTests {
         let client401 = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 401, httpVersion: nil, headerFields: nil)!
 
         #expect(policy.shouldRetry(APIError.requestFailure(server500), attempt: 1) == true)
-        #expect(policy.shouldRetry(APIError.serverError, attempt: 1) == true)
+        #expect(policy.shouldRetry(APIError.serverError(regionName: "Test"), attempt: 1) == true)
         #expect(policy.shouldRetry(APIError.requestNotFound(client404), attempt: 1) == false)
         #expect(policy.shouldRetry(APIError.requestFailure(client401), attempt: 1) == false)
-        #expect(policy.shouldRetry(APIError.serverError, attempt: 3) == false)
+        #expect(policy.shouldRetry(APIError.serverError(regionName: "Test"), attempt: 3) == false)
     }
 }

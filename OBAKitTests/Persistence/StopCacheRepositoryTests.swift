@@ -884,7 +884,7 @@ final class StopCacheRepositoryTests {
         try repository.stageSyncedStops(stops, regionId: 1, syncID: fromSyncID, syncedAt: Date())
 
         // Pre-stage stop_1 and route_1 in toSyncID so it is not carried over again
-        let existingStop = makeStop(id: "stop_1", routes: [makeRoute(id: "route_1", shortName: "1_already")])
+        let existingStop = makeStop(id: "stop_1", name: "Pre-existing Stop 1", routes: [makeRoute(id: "route_1", shortName: "1_already")])
         try repository.stageSyncedStops([existingStop], regionId: 1, syncID: toSyncID, syncedAt: Date())
 
         // Batch size 4 forces multiple iterations over 11 remaining stops/routes
@@ -905,7 +905,9 @@ final class StopCacheRepositoryTests {
 
         let paged = repository.stops(regionId: 1, after: nil, limit: 20)
         #expect(paged.stops.count == 12)
-        #expect(paged.stops.first(where: { $0.id == "stop_1" })?.routes?.first?.shortName == "1_already")
+        let resolvedStop1 = paged.stops.first(where: { $0.id == "stop_1" })
+        #expect(resolvedStop1?.name == "Pre-existing Stop 1")
+        #expect(resolvedStop1?.routes?.first?.shortName == "1_already")
     }
 
     // MARK: - Multiple Stops
