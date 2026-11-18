@@ -11,7 +11,7 @@ import MapKit
 import UIKit
 
 /// The group a layer belongs to in the Map sheet.
-public enum MapLayerGroup {
+public enum MapLayerGroup: Sendable {
     /// Transit data (bus stops, and eventually route lines and live vehicles).
     case transit
     /// Non-transit mobility (rental bikes, scooters).
@@ -24,7 +24,7 @@ public enum MapLayerGroup {
 /// hidden, unavailable layers are dimmed with a reason, available layers are live.
 /// Never show an enabled layer that cannot load — an empty layer switched on reads
 /// as "there is nothing here," which is a lie.
-public enum MapLayerAvailability: Equatable {
+public enum MapLayerAvailability: Equatable, Sendable {
     /// The current region has no data source for this layer. Row hidden.
     case unsupported
     /// Configured, but the data source doesn't work right now (e.g. the first

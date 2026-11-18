@@ -89,6 +89,140 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(model.showsPointsOfInterest)
     }
 
+    // MARK: - Pure Visibility State Decisions
+
+    @Test func `Default layer visibility state reflects descriptors without side effects`() {
+        let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
+        let bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: true)
+        let scooters = MapLayerDescriptor(id: "scooters", isEnabledByDefault: false)
+
+        let state = MapLayerVisibilityState(layers: [stops, bikes, scooters])
+
+        #expect(state.isEnabled(id: "stops"))
+        #expect(state.isEnabled(id: "bikes"))
+        #expect(!state.isEnabled(id: "scooters"))
+        #expect(state.isLayerVisible(id: "stops"))
+        #expect(state.isLayerVisible(id: "bikes"))
+        #expect(!state.isLayerVisible(id: "scooters"))
+        #expect(state.enabledLayerCount == 2)
+        #expect(!state.differsFromDefaults)
+    }
+
+    @Test func `Persisted layer state overrides default selection`() {
+        let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
+        let bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: true)
+        let scooters = MapLayerDescriptor(id: "scooters", isEnabledByDefault: false)
+
+        let state = MapLayerVisibilityState(
+            layers: [stops, bikes, scooters],
+            persistedEnabledIDs: ["scooters"]
+        )
+
+        #expect(!state.isEnabled(id: "stops"))
+        #expect(!state.isEnabled(id: "bikes"))
+        #expect(state.isEnabled(id: "scooters"))
+        #expect(state.enabledLayerCount == 1)
+        #expect(state.differsFromDefaults)
+    }
+
+    @Test func `Unavailable and unsupported layer visibility transitions`() {
+        let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true, availability: .available)
+        var bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: false, availability: .unavailable(reason: "No bikes available"))
+        let flex = MapLayerDescriptor(id: "flex", isEnabledByDefault: true, availability: .unsupported)
+
+        var state = MapLayerVisibilityState(layers: [stops, bikes, flex])
+
+        // Unsupported layers never count toward toolbar badge or visible layers
+        #expect(!state.isLayerVisible(id: "flex"))
+        #expect(!state.canToggle(id: "flex"))
+        let setFlex = state.setEnabled(true, id: "flex")
+        #expect(!setFlex)
+        #expect(state.enabledLayerCount == 1)
+
+        // Unavailable layer cannot be toggled on
+        #expect(!state.canToggle(id: "bikes"))
+        let setBikes = state.setEnabled(true, id: "bikes")
+        #expect(!setBikes)
+        let toggledBikes = state.toggle(id: "bikes")
+        #expect(!toggledBikes)
+
+        // If an already-enabled layer becomes unavailable, it can be toggled off
+        bikes.availability = .available
+        state.register(layer: bikes, persistedEnabled: true)
+        #expect(state.isEnabled(id: "bikes"))
+        state.updateAvailability(.unavailable(reason: "Feed interrupted"), id: "bikes")
+
+        #expect(state.canToggle(id: "bikes"))
+        let turnedOff = state.setEnabled(false, id: "bikes")
+        #expect(turnedOff)
+        #expect(!state.isEnabled(id: "bikes"))
+        // Once off, it cannot be toggled back on while unavailable
+        #expect(!state.canToggle(id: "bikes"))
+    }
+
+    @Test func `Repeated toggle states behave deterministically and idempotently`() {
+        let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
+        var state = MapLayerVisibilityState(layers: [stops])
+
+        #expect(state.isEnabled(id: "stops"))
+
+        // Repeated toggles alternate cleanly
+        let t1 = state.toggle(id: "stops")
+        #expect(t1)
+        #expect(!state.isEnabled(id: "stops"))
+        let t2 = state.toggle(id: "stops")
+        #expect(t2)
+        #expect(state.isEnabled(id: "stops"))
+        let t3 = state.toggle(id: "stops")
+        #expect(t3)
+        #expect(!state.isEnabled(id: "stops"))
+
+        // Explicit setEnabled is idempotent
+        let setFalseAgain = state.setEnabled(false, id: "stops")
+        #expect(!setFalseAgain)
+        let setTrue = state.setEnabled(true, id: "stops")
+        #expect(setTrue)
+        let setTrueAgain = state.setEnabled(true, id: "stops")
+        #expect(!setTrueAgain)
+        #expect(state.isEnabled(id: "stops"))
+    }
+
+    @Test func `One pure state drives toolbar layer count and reset to defaults`() {
+        let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
+        let bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: true)
+        var state = MapLayerVisibilityState(layers: [stops, bikes])
+
+        #expect(state.enabledLayerCount == 2)
+        #expect(!state.differsFromDefaults)
+
+        state.setEnabled(false, id: "stops")
+        state.showsPointsOfInterest = false
+        state.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 5000)
+
+        #expect(state.enabledLayerCount == 1)
+        #expect(state.differsFromDefaults)
+
+        state.resetToDefaults()
+
+        #expect(state.enabledLayerCount == 2)
+        #expect(state.isEnabled(id: "stops"))
+        #expect(state.isEnabled(id: "bikes"))
+        #expect(state.showsPointsOfInterest)
+        #expect(state.rentalRangeFilter == .any)
+        #expect(!state.differsFromDefaults)
+    }
+
+    @Test func `MapPanelLayersModel publishes pure visibility state synchronized with manager`() {
+        #expect(model.visibilityState.enabledLayerCount == model.enabledLayerCount)
+        #expect(model.visibilityState.showsPointsOfInterest == model.showsPointsOfInterest)
+        #expect(model.visibilityState.isEnabled(id: StopsMapLayer.layerID) == model.isStopsLayerEnabled)
+
+        application.mapRegionManager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
+
+        #expect(model.visibilityState.enabledLayerCount == model.enabledLayerCount)
+        #expect(model.visibilityState.isEnabled(id: StopsMapLayer.layerID) == false)
+    }
+
     @Test func `Forwards the viewport to the layer pipeline`() {
         let rect = MKMapRect(x: 0, y: 0, width: 10_000, height: 10_000)
 
