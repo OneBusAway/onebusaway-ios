@@ -7,14 +7,13 @@ against intentional fallback allowlist before review / in CI.
 """
 
 import json
-import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 
 SPECIFIER_REGEX = re.compile(r"%(?:\d+\$)?[@dfs]|%%")
-STRINGS_PAIR_REGEX = re.compile(r'^\s*"((?:[^"\\]|\\.)+)"\s*=\s*"((?:[^"\\]|\\.)+)"\s*;\s*$', re.MULTILINE)
 
 LOCALES = ["ar", "en", "es", "fil", "fr", "it", "ko", "pl", "pt-BR", "ru", "vi", "zh-Hans", "zh-Hant"]
 TABLES = [
@@ -26,20 +25,17 @@ TABLES = [
 def parse_strings_file(file_path: Path) -> dict:
     if not file_path.exists():
         return None
-    content = file_path.read_text(encoding="utf-8", errors="replace")
-    # Strip multiline comments /* ... */
-    content = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
-    # Strip single line comments // ...
-    content = re.sub(r"//.*$", "", content, flags=re.MULTILINE)
-
-    result = {}
-    for match in STRINGS_PAIR_REGEX.finditer(content):
-        k, v = match.group(1), match.group(2)
-        # Unescape escaped quotes and newlines
-        k = k.replace('\\"', '"').replace("\\n", "\n")
-        v = v.replace('\\"', '"').replace("\\n", "\n")
-        result[k] = v
-    return result
+    try:
+        proc = subprocess.run(
+            ["plutil", "-convert", "json", "-o", "-", str(file_path)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return json.loads(proc.stdout)
+    except Exception as e:
+        print(f"[WARN] Failed to parse {file_path} with plutil: {e}", file=sys.stderr)
+        return None
 
 
 def extract_specifiers(value: str) -> list:
@@ -72,22 +68,53 @@ def is_allowed_missing(allowlist: dict, key: str, locale: str) -> bool:
     return key in allowed_missing.get(locale, [])
 
 
+def validate_allowlist(allowlist: dict, all_en_keys: set, failures: list):
+    fallbacks = allowlist.get("intentional_fallbacks", {})
+    for key in fallbacks.get("all", []):
+        if key not in all_en_keys:
+            failures.append(f"File: OBAKitWatch/Strings/fallback_allowlist.json: Key '{key}' does not exist in English base tables")
+
+    for locale, keys in fallbacks.get("by_locale", {}).items():
+        if locale not in LOCALES:
+            failures.append(f"File: OBAKitWatch/Strings/fallback_allowlist.json: Unknown locale '{locale}' in intentional_fallbacks")
+        for key in keys:
+            if key not in all_en_keys:
+                failures.append(f"File: OBAKitWatch/Strings/fallback_allowlist.json, Locale: {locale}: Key '{key}' does not exist in English base tables")
+
+    allowed_missing = allowlist.get("allowed_missing", {})
+    for locale, keys in allowed_missing.get("by_locale", {}).items():
+        if locale not in LOCALES:
+            failures.append(f"File: OBAKitWatch/Strings/fallback_allowlist.json: Unknown locale '{locale}' in allowed_missing")
+        for key in keys:
+            if key not in all_en_keys:
+                failures.append(f"File: OBAKitWatch/Strings/fallback_allowlist.json, Locale: {locale}: Key '{key}' does not exist in English base tables")
+
+
 def main():
     repo_root = Path(__file__).resolve().parent.parent
     allowlist = load_allowlist(repo_root)
 
     failures = []
     total_checks = 0
+    all_en_keys = set()
 
     print("=== Validating Watch Localization Completeness ===")
 
+    # First pass: collect English keys from all tables
+    parsed_tables = {}
     for directory, table_name in TABLES:
         en_path = repo_root / directory / "en.lproj" / f"{table_name}.strings"
         en_strings = parse_strings_file(en_path)
         if not en_strings:
             failures.append(f"File: {directory}/en.lproj/{table_name}.strings: Base English table missing or empty")
             continue
+        parsed_tables[(directory, table_name)] = en_strings
+        all_en_keys.update(en_strings.keys())
 
+    # Validate allowlist keys against collected English keys
+    validate_allowlist(allowlist, all_en_keys, failures)
+
+    for (directory, table_name), en_strings in parsed_tables.items():
         for locale in LOCALES:
             if locale == "en":
                 continue

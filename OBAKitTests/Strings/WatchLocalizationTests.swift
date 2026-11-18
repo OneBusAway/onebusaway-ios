@@ -92,6 +92,16 @@ struct WatchLocalizationTests {
         return NSDictionary(contentsOf: url) as? [String: String]
     }
 
+    private static var allEnglishKeys: Set<String> {
+        var keys = Set<String>()
+        for table in tables {
+            if let dict = strings(locale: "en", table: table) {
+                keys.formUnion(dict.keys)
+            }
+        }
+        return keys
+    }
+
     private static func specifiers(in value: String) -> [String] {
         let range = NSRange(value.startIndex..., in: value)
         return specifier.matches(in: value, range: range)
@@ -124,8 +134,6 @@ struct WatchLocalizationTests {
             for key in extra.sorted() {
                 Issue.record("File: \(relativePath), Locale: \(locale), Key: '\(key)': Extra key not in English base table")
             }
-            #expect(missing.isEmpty, "File: \(relativePath), Locale: \(locale) is missing keys: \(missing.sorted())")
-            #expect(extra.isEmpty, "File: \(relativePath), Locale: \(locale) has extra keys: \(extra.sorted())")
         }
     }
 
@@ -143,7 +151,6 @@ struct WatchLocalizationTests {
                 if expected != actual {
                     Issue.record("File: \(relativePath), Locale: \(locale), Key: '\(key)': Format arguments differ (expected: \(expected), got: \(actual))")
                 }
-                #expect(expected == actual, "File: \(relativePath), Locale: \(locale), Key: '\(key)': specifiers differ")
             }
         }
     }
@@ -161,22 +168,31 @@ struct WatchLocalizationTests {
             for key in untranslated {
                 Issue.record("File: \(relativePath), Locale: \(locale), Key: '\(key)': Untranslated English value without intentional fallback allowlist entry")
             }
-            #expect(untranslated.isEmpty, "File: \(relativePath), Locale: \(locale) still has English for \(untranslated)")
         }
     }
 
-    @Test func `Intentional fallback allowlist keys are valid in English table`() throws {
-        let english = try #require(Self.strings(locale: "en"))
+    @Test func `Fallback allowlist keys are valid in English tables`() throws {
+        let allKeys = Self.allEnglishKeys
+        #expect(!allKeys.isEmpty, "English base tables must not be empty")
+
         if let all = Self.allowlist.intentionalFallbacks?.all {
             for key in all {
-                #expect(english[key] != nil, "File: OBAKitWatch/Strings/fallback_allowlist.json: Key '\(key)' does not exist in English table")
+                #expect(allKeys.contains(key), "File: OBAKitWatch/Strings/fallback_allowlist.json: Key '\(key)' does not exist in English base tables")
             }
         }
         if let byLocale = Self.allowlist.intentionalFallbacks?.byLocale {
             for (locale, keys) in byLocale {
-                #expect(Self.locales.contains(locale), "File: OBAKitWatch/Strings/fallback_allowlist.json: Unknown locale '\(locale)'")
+                #expect(Self.locales.contains(locale), "File: OBAKitWatch/Strings/fallback_allowlist.json: Unknown locale '\(locale)' in intentional_fallbacks")
                 for key in keys {
-                    #expect(english[key] != nil, "File: OBAKitWatch/Strings/fallback_allowlist.json, Locale: \(locale): Key '\(key)' does not exist in English table")
+                    #expect(allKeys.contains(key), "File: OBAKitWatch/Strings/fallback_allowlist.json, Locale: \(locale): Key '\(key)' does not exist in English base tables")
+                }
+            }
+        }
+        if let allowedMissing = Self.allowlist.allowedMissing?.byLocale {
+            for (locale, keys) in allowedMissing {
+                #expect(Self.locales.contains(locale), "File: OBAKitWatch/Strings/fallback_allowlist.json: Unknown locale '\(locale)' in allowed_missing")
+                for key in keys {
+                    #expect(allKeys.contains(key), "File: OBAKitWatch/Strings/fallback_allowlist.json, Locale: \(locale): Key '\(key)' does not exist in English base tables")
                 }
             }
         }
