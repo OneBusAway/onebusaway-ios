@@ -151,13 +151,28 @@ final class RetryPolicyTests {
         let attempts = SendableBox(0)
         let delays = SendableBox<[UInt64]>([])
 
-        await #expect(throws: URLError.self) {
-            try await policy.execute(operation: { attempt in
-                attempts.value += 1
-                throw URLError(.timedOut)
-            }, sleep: { delays.value.append($0) })
-        }
+        let finalError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSLocalizedDescriptionKey: "Attempt 3 timed out"])
 
+        let caughtError: (any Error)? = await {
+            do {
+                _ = try await policy.execute(operation: { attempt in
+                    attempts.value += 1
+                    if attempt == 3 {
+                        throw finalError
+                    } else {
+                        throw URLError(.networkConnectionLost)
+                    }
+                }, sleep: { delays.value.append($0) })
+                return nil
+            } catch {
+                return error
+            }
+        }()
+
+        let nsCaught = caughtError as NSError?
+        #expect(nsCaught?.domain == NSURLErrorDomain)
+        #expect(nsCaught?.code == NSURLErrorTimedOut)
+        #expect(nsCaught?.localizedDescription == "Attempt 3 timed out")
         #expect(attempts.value == 3)
         #expect(delays.value.count == 2)
         #expect(delays.value == [100_000_000, 200_000_000])
