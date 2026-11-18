@@ -36,6 +36,9 @@
 /* An error message that tells the user that surveys are not available. */
 "api_error.survey_service_not_configured" = "此區域無法使用問卷服務。";
 
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "尚未選擇大眾運輸區域。";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "加入提醒";
 

@@ -36,6 +36,9 @@
 /* An error message that tells the user that surveys are not available. */
 "api_error.survey_service_not_configured" = "Dịch vụ khảo sát không khả dụng ở khu vực này.";
 
+/* Arrivals cannot load without a region */
+"arrivals.no_service" = "Chưa chọn khu vực giao thông.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Thêm lời nhắc";
 

@@ -13,6 +13,7 @@ import SwiftUI
 /// an optional action.
 struct MessageView: View {
     let text: String
+    var secondaryText: String?
     let systemImage: String
     var actionTitle: String?
     var action: (() -> Void)?
@@ -23,7 +24,14 @@ struct MessageView: View {
                 .font(.title2)
                 .foregroundStyle(.secondary)
         } description: {
-            Text(text)
+            VStack(spacing: 4) {
+                Text(text)
+                if let secondaryText {
+                    Text(secondaryText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         } actions: {
             if let actionTitle, let action {
                 Button(actionTitle, action: action)

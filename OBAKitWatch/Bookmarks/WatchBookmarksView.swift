@@ -44,7 +44,7 @@ public struct WatchBookmarksView: View {
             )
         case .noRegion:
             MessageView(
-                text: OBALoc("arrivals.no_service", value: "No transit region selected.", comment: "Arrivals cannot load without a region"),
+                text: Strings.noTransitRegion,
                 systemImage: "map"
             )
         case .loaded(let sections):
