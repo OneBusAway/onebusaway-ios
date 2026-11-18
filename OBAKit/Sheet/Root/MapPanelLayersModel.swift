@@ -119,11 +119,15 @@ import OTPKit
     private var mapRegionManager: MapRegionManager { application.mapRegionManager }
 
     private func refresh() {
+        mapRegionManager.synchronizeLayerAvailability()
         visibilityState = mapRegionManager.visibilityState
+        for layer in mapRegionManager.mapLayers {
+            visibilityState.updateAvailability(layer.availability, id: layer.id)
+        }
 
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
         showsPointsOfInterest = visibilityState.showsPointsOfInterest
-        enabledLayerCount = visibilityState.enabledLayerCount
+        enabledLayerCount = mapRegionManager.enabledMapLayerCount
         isOnDemandLayerEnabled = mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID)
         subscribeToRentalCoordinator()
         bindOnDemandLayer()

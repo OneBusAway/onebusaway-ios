@@ -402,14 +402,19 @@ public class MapRegionManager: NSObject,
     /// Pure visibility and selection state for map layers.
     private(set) var visibilityState = MapLayerVisibilityState()
 
-    @objc private func mapLayerAvailabilityDidChangeNotification(_ note: Notification) {
-        if let id = note.object as? String, let layer = mapLayer(id: id) {
-            visibilityState.updateAvailability(layer.availability, id: id)
+    /// Synchronizes live availability from registered map layers into `visibilityState`.
+    public func synchronizeLayerAvailability(for layerID: String? = nil) {
+        if let layerID = layerID, let layer = mapLayer(id: layerID) {
+            visibilityState.updateAvailability(layer.availability, id: layerID)
         } else {
             for layer in mapLayers {
                 visibilityState.updateAvailability(layer.availability, id: layer.id)
             }
         }
+    }
+
+    @objc private func mapLayerAvailabilityDidChangeNotification(_ note: Notification) {
+        synchronizeLayerAvailability(for: note.object as? String)
     }
 
     /// Registered toggleable data layers, in Map sheet order.
@@ -460,9 +465,7 @@ public class MapRegionManager: NSObject,
     }
 
     public func setMapLayerEnabled(_ enabled: Bool, id: String) {
-        if let layer = mapLayer(id: id) {
-            visibilityState.updateAvailability(layer.availability, id: id)
-        }
+        synchronizeLayerAvailability(for: id)
         guard visibilityState.setEnabled(enabled, id: id) else { return }
         application.userDefaults.set(enabled, forKey: Self.mapLayerDefaultsKey(id: id))
 
@@ -486,9 +489,7 @@ public class MapRegionManager: NSObject,
     /// Whether a layer tile or toggle can be tapped by the rider.
     /// Unavailable layers cannot be turned on, but an already-enabled layer can always be turned off.
     func canToggleMapLayer(id: String) -> Bool {
-        if let layer = mapLayer(id: id) {
-            visibilityState.updateAvailability(layer.availability, id: id)
-        }
+        synchronizeLayerAvailability(for: id)
         return visibilityState.canToggle(id: id)
     }
 
@@ -524,9 +525,7 @@ public class MapRegionManager: NSObject,
 
     /// The number of enabled, non-hidden layers — the basemap button's badge.
     public var enabledMapLayerCount: Int {
-        for layer in mapLayers {
-            visibilityState.updateAvailability(layer.availability, id: layer.id)
-        }
+        synchronizeLayerAvailability()
         return visibilityState.enabledLayerCount
     }
 
@@ -539,20 +538,24 @@ public class MapRegionManager: NSObject,
     public var mapLayersDifferFromDefaults: Bool {
         visibilityState.showsPointsOfInterest = mapViewShowsPointsOfInterest
         visibilityState.rentalRangeFilter = rentalRangeFilter
-        for layer in mapLayers {
-            visibilityState.updateAvailability(layer.availability, id: layer.id)
-        }
+        synchronizeLayerAvailability()
         return visibilityState.differsFromDefaults
     }
 
     /// Restores every registered layer to its default on/off state, clears the
     /// rental range filter, and shows Points of Interest again.
     public func resetMapLayersToDefaults() {
+        let previousSelections = mapLayers.map { ($0, isMapLayerEnabled(id: $0.id)) }
         visibilityState.resetToDefaults()
-        for layer in mapLayers {
-            let enabled = visibilityState.isEnabled(id: layer.id)
-            application.userDefaults.set(enabled, forKey: Self.mapLayerDefaultsKey(id: layer.id))
-            if enabled {
+        rentalRangeFilter = .any
+        mapViewShowsPointsOfInterest = true
+
+        for (layer, wasEnabled) in previousSelections {
+            let targetEnabled = visibilityState.isEnabled(id: layer.id)
+            guard wasEnabled != targetEnabled else { continue }
+
+            application.userDefaults.set(targetEnabled, forKey: Self.mapLayerDefaultsKey(id: layer.id))
+            if targetEnabled {
                 layer.activate()
                 forwardViewport(to: layer)
             } else {
@@ -560,8 +563,6 @@ public class MapRegionManager: NSObject,
             }
             NotificationCenter.default.post(name: .mapLayerEnabledStateDidChange, object: layer.id)
         }
-        rentalRangeFilter = .any
-        mapViewShowsPointsOfInterest = true
     }
 
     /// Whether stop annotations should render. True when no stops layer is

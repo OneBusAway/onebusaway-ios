@@ -12,6 +12,7 @@ import CoreLocation
 import Foundation
 import MapKit
 import Testing
+import UIKit
 import OTPKit
 @testable import OBAKit
 @testable import OBAKitCore
@@ -23,8 +24,8 @@ import OTPKit
 @Suite(.serialized)
 final class MapPanelLayersModelTests: OBATestCase {
 
-    private var application: Application!
-    private var model: MapPanelLayersModel!
+    var application: Application!
+    var model: MapPanelLayersModel!
 
     override init() async throws {
         try await super.init()
@@ -227,18 +228,22 @@ final class MapPanelLayersModelTests: OBATestCase {
         let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
         var state = MapLayerVisibilityState(layers: [stops])
         #expect(state.isEnabled(id: "stops"))
+        #expect(state.enabledLayerIDs.contains("stops"))
         #expect(state.isLayerVisible(id: "stops"))
 
         state.remove(id: "stops")
         #expect(!state.isEnabled(id: "stops"))
+        #expect(!state.enabledLayerIDs.contains("stops"))
         #expect(state.isLayerVisible(id: "stops"))
         #expect(state.enabledLayerCount == 0)
 
         let bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: true)
         state.register(layer: bikes)
         #expect(state.isEnabled(id: "bikes"))
+        #expect(state.enabledLayerIDs.contains("bikes"))
         state.remove(id: "bikes")
         #expect(!state.isEnabled(id: "bikes"))
+        #expect(!state.enabledLayerIDs.contains("bikes"))
         #expect(!state.isLayerVisible(id: "bikes"))
     }
 
