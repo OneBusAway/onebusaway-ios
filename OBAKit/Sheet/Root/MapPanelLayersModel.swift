@@ -118,7 +118,7 @@ import OTPKit
 
     private var mapRegionManager: MapRegionManager { application.mapRegionManager }
 
-    private func refresh() {
+    func refresh() {
         mapRegionManager.synchronizeLayerAvailability()
         visibilityState = mapRegionManager.visibilityState
         for layer in mapRegionManager.mapLayers {

@@ -456,6 +456,20 @@ public class MapRegionManager: NSObject,
         visibilityState.remove(id: id)
     }
 
+    /// Deactivates and removes a specific layer instance.
+    /// Ensures the old instance is deactivated even if a replacement with the same ID is registered.
+    public func removeMapLayer(_ layer: MapLayer) {
+        if let index = mapLayers.firstIndex(where: { $0 === layer }) {
+            let removed = mapLayers.remove(at: index)
+            if isMapLayerEnabled(id: removed.id) {
+                removed.deactivate()
+            }
+            visibilityState.remove(id: removed.id)
+        } else {
+            layer.deactivate()
+        }
+    }
+
     public func mapLayer(id: String) -> MapLayer? {
         mapLayers.first { $0.id == id }
     }
@@ -546,14 +560,15 @@ public class MapRegionManager: NSObject,
     /// rental range filter, and shows Points of Interest again.
     public func resetMapLayersToDefaults() {
         let previousSelections = mapLayers.map { ($0, isMapLayerEnabled(id: $0.id)) }
-        visibilityState.resetToDefaults()
         rentalRangeFilter = .any
         mapViewShowsPointsOfInterest = true
 
         for (layer, wasEnabled) in previousSelections {
-            let targetEnabled = visibilityState.isEnabled(id: layer.id)
+            guard let current = mapLayer(id: layer.id), current === layer else { continue }
+            let targetEnabled = layer.isEnabledByDefault
             guard wasEnabled != targetEnabled else { continue }
 
+            visibilityState.resetSelection(id: layer.id)
             application.userDefaults.set(targetEnabled, forKey: Self.mapLayerDefaultsKey(id: layer.id))
             if targetEnabled {
                 layer.activate()

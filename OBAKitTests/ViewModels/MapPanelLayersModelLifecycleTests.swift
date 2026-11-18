@@ -139,8 +139,8 @@ extension MapPanelLayersModelTests {
         #expect(box.postedNotificationLayerIDs.contains(changedLayer.id))
     }
 
-    @Test func `Enabled layer count is independent of observer delivery order`() {
-        let stub = MockLifecycleMapLayer(id: "observer_order_layer", isEnabledByDefault: true, availability: .available)
+    @Test func `Enabled layer count updates when manager getter is read before notification`() {
+        let stub = MockLifecycleMapLayer(id: "manager_getter_layer", isEnabledByDefault: true, availability: .available)
         application.mapRegionManager.registerMapLayer(stub)
         defer { application.mapRegionManager.removeMapLayer(id: stub.id) }
 
@@ -150,29 +150,11 @@ extension MapPanelLayersModelTests {
 
         stub.availability = .unsupported
 
-        final class Box: @unchecked Sendable {
-            var earlyObserverFired = false
-            var countInEarlyObserver: Int?
-        }
-        let box = Box()
-
-        let earlyObserver = NotificationCenter.default.addObserver(
-            forName: .mapLayerAvailabilityDidChange,
-            object: nil,
-            queue: nil
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                box.earlyObserverFired = true
-                box.countInEarlyObserver = self.application.mapRegionManager.enabledMapLayerCount
-            }
-        }
-        defer { NotificationCenter.default.removeObserver(earlyObserver) }
+        // Read the getter before posting the notification
+        #expect(application.mapRegionManager.enabledMapLayerCount == countWithStub - 1)
 
         NotificationCenter.default.post(name: .mapLayerAvailabilityDidChange, object: stub.id)
 
-        #expect(box.earlyObserverFired)
-        #expect(box.countInEarlyObserver == countWithStub - 1)
         #expect(model.enabledLayerCount == countWithStub - 1)
         #expect(model.visibilityState.enabledLayerCount == countWithStub - 1)
         #expect(application.mapRegionManager.enabledMapLayerCount == countWithStub - 1)
@@ -181,5 +163,141 @@ extension MapPanelLayersModelTests {
         #expect(application.mapRegionManager.enabledMapLayerCount == countWithStub)
         NotificationCenter.default.post(name: .mapLayerAvailabilityDidChange, object: stub.id)
         #expect(model.enabledLayerCount == countWithStub)
+        #expect(model.visibilityState.enabledLayerCount == countWithStub)
+        #expect(application.mapRegionManager.enabledMapLayerCount == countWithStub)
+    }
+
+    @Test func `Enabled layer count updates when panel refreshes while manager snapshot is stale`() {
+        let stub = MockLifecycleMapLayer(id: "panel_refresh_layer", isEnabledByDefault: true, availability: .available)
+        application.mapRegionManager.registerMapLayer(stub)
+        defer { application.mapRegionManager.removeMapLayer(id: stub.id) }
+
+        NotificationCenter.default.post(name: .mapLayerAvailabilityDidChange, object: stub.id)
+        let countWithStub = model.enabledLayerCount
+        #expect(application.mapRegionManager.enabledMapLayerCount == countWithStub)
+
+        stub.availability = .unsupported
+
+        // Refresh panel availability while manager snapshot is still stale (without calling getter first)
+        model.refresh()
+
+        #expect(model.enabledLayerCount == countWithStub - 1)
+        #expect(model.visibilityState.enabledLayerCount == countWithStub - 1)
+        #expect(application.mapRegionManager.enabledMapLayerCount == countWithStub - 1)
+
+        stub.availability = .available
+        // Without first calling the getter, refresh panel
+        model.refresh()
+
+        #expect(model.enabledLayerCount == countWithStub)
+        #expect(model.visibilityState.enabledLayerCount == countWithStub)
+        #expect(application.mapRegionManager.enabledMapLayerCount == countWithStub)
+    }
+
+    @Test func `Reset to defaults does not overwrite layer selection before its transition`() {
+        let manager = application.mapRegionManager
+        let layer1 = MockLifecycleMapLayer(id: "live_selection_layer1", isEnabledByDefault: true)
+        let layer2 = MockLifecycleMapLayer(id: "live_selection_layer2", isEnabledByDefault: true)
+        manager.registerMapLayer(layer1)
+        manager.registerMapLayer(layer2)
+        defer {
+            manager.removeMapLayer(layer1)
+            manager.removeMapLayer(layer2)
+        }
+
+        manager.setMapLayerEnabled(false, id: layer1.id)
+        manager.setMapLayerEnabled(false, id: layer2.id)
+
+        final class Box: @unchecked Sendable {
+            var layer2EnabledDuringLayer1Transition: Bool?
+        }
+        let box = Box()
+
+        let token = NotificationCenter.default.addObserver(
+            forName: .mapLayerEnabledStateDidChange,
+            object: nil,
+            queue: nil
+        ) { note in
+            let id = note.object as? String
+            MainActor.assumeIsolated {
+                if id == layer1.id {
+                    box.layer2EnabledDuringLayer1Transition = manager.isMapLayerEnabled(id: layer2.id)
+                }
+            }
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        manager.resetMapLayersToDefaults()
+
+        #expect(box.layer2EnabledDuringLayer1Transition == false)
+        #expect(manager.isMapLayerEnabled(id: layer1.id) == true)
+        #expect(manager.isMapLayerEnabled(id: layer2.id) == true)
+    }
+
+    @Test func `Removal deactivates old layer instance even if replacement with same ID is registered`() {
+        let manager = application.mapRegionManager
+        let oldLayer = MockLifecycleMapLayer(id: "replacement_layer", isEnabledByDefault: true)
+        let newLayer = MockLifecycleMapLayer(id: "replacement_layer", isEnabledByDefault: true)
+
+        manager.registerMapLayer(oldLayer)
+        #expect(oldLayer.activateCallCount == 1)
+
+        manager.removeMapLayer(id: oldLayer.id)
+        #expect(oldLayer.deactivateCallCount == 1)
+
+        // Re-activate oldLayer to test removal of an active instance when replacement is registered
+        oldLayer.activate()
+        #expect(oldLayer.activateCallCount == 2)
+
+        manager.registerMapLayer(newLayer)
+        #expect(newLayer.activateCallCount == 1)
+
+        // Remove old instance by instance reference
+        manager.removeMapLayer(oldLayer)
+        #expect(oldLayer.deactivateCallCount == 2)
+        #expect(newLayer.deactivateCallCount == 0)
+        #expect(manager.mapLayer(id: "replacement_layer") === newLayer)
+
+        manager.removeMapLayer(newLayer)
+        #expect(newLayer.deactivateCallCount == 1)
+    }
+
+    @Test func `Reset to defaults skips layer instance replaced during earlier callbacks`() {
+        let manager = application.mapRegionManager
+        let layer1 = MockLifecycleMapLayer(id: "reset_skip_1", isEnabledByDefault: true)
+        let oldLayer2 = MockLifecycleMapLayer(id: "reset_skip_2", isEnabledByDefault: true)
+        let newLayer2 = MockLifecycleMapLayer(id: "reset_skip_2", isEnabledByDefault: true)
+
+        manager.registerMapLayer(layer1)
+        manager.registerMapLayer(oldLayer2)
+        defer {
+            manager.removeMapLayer(layer1)
+            manager.removeMapLayer(oldLayer2)
+            manager.removeMapLayer(newLayer2)
+        }
+
+        manager.setMapLayerEnabled(false, id: layer1.id)
+        manager.setMapLayerEnabled(false, id: oldLayer2.id)
+
+        let token = NotificationCenter.default.addObserver(
+            forName: .mapLayerEnabledStateDidChange,
+            object: nil,
+            queue: nil
+        ) { note in
+            let id = note.object as? String
+            MainActor.assumeIsolated {
+                if id == layer1.id {
+                    manager.removeMapLayer(oldLayer2)
+                    manager.registerMapLayer(newLayer2)
+                }
+            }
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        let old2ActivateBefore = oldLayer2.activateCallCount
+
+        manager.resetMapLayersToDefaults()
+
+        #expect(oldLayer2.activateCallCount == old2ActivateBefore)
     }
 }

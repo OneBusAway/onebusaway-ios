@@ -165,6 +165,17 @@ struct MapLayerVisibilityState: Equatable, Sendable {
         }
     }
 
+    /// Resets enablement for a specific layer to its default.
+    @discardableResult
+    mutating func resetSelection(id: String) -> Bool {
+        guard let layer = layers[id] else { return false }
+        if layer.isEnabledByDefault {
+            return enabledLayerIDs.insert(id).inserted
+        } else {
+            return enabledLayerIDs.remove(id) != nil
+        }
+    }
+
     /// Restores every registered layer to its default enablement, clears the range filter,
     /// and turns points of interest back on.
     mutating func resetToDefaults() {
