@@ -218,4 +218,28 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
         #expect(await service.configuration.baseURL == Fixtures.pugetSoundRegion.OBABaseURL)
         #expect(await service.configuration.regionIdentifier == Fixtures.pugetSoundRegion.regionIdentifier)
     }
+
+    @Test func `Standalone service performs a single attempt against a loader that returns 500`() async {
+        let mockLoader = MockDataLoader(testName: name)
+        mockLoader.mock(data: Data("{}".utf8), statusCode: 500) { _ in true }
+        let countingLoader = CountingDataLoader(mockLoader)
+
+        let service = RESTAPIService.standalone(
+            region: Fixtures.pugetSoundRegion,
+            apiKey: "key",
+            appVersion: "1.0",
+            uuid: "uuid",
+            dataLoader: countingLoader
+        )
+        #expect(service.retryPolicy == .disabled)
+
+        do {
+            _ = try await service.getStop(id: "1_75414")
+            Issue.record("Expected request to fail with 500")
+        } catch {
+            // Expected
+        }
+
+        #expect(countingLoader.callCount == 1)
+    }
 }

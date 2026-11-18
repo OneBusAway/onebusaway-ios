@@ -20,6 +20,7 @@ public actor RESTAPIService: @preconcurrency APIService {
     /// Where the `services-for-location` probe records a server that lacks
     /// `/api/ondemand`. Injectable so tests never share the process-wide cache.
     public nonisolated let onDemandSupport: OnDemandSupport
+    public nonisolated let retryPolicy: RetryPolicy
 
     public let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "RESTAPIService")
 
@@ -29,12 +30,14 @@ public actor RESTAPIService: @preconcurrency APIService {
     public init(
         _ configuration: APIServiceConfiguration,
         dataLoader: URLDataLoader = URLSession.shared,
-        onDemandSupport: OnDemandSupport = .shared
+        onDemandSupport: OnDemandSupport = .shared,
+        retryPolicy: RetryPolicy = .standard
     ) {
         self.configuration = configuration
         self.dataLoader = dataLoader
         self.baseURL = configuration.baseURL
         self.onDemandSupport = onDemandSupport
+        self.retryPolicy = retryPolicy
         self.urlBuilder = RESTAPIURLBuilder(
             baseURL: configuration.baseURL,
             defaultQueryItems: configuration.defaultQueryItems,
@@ -47,6 +50,6 @@ public actor RESTAPIService: @preconcurrency APIService {
     /// A default argument value doesn't count toward protocol witness matching,
     /// so the three-parameter initializer above can't stand in for it on its own.
     public init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
-        self.init(configuration, dataLoader: dataLoader, onDemandSupport: .shared)
+        self.init(configuration, dataLoader: dataLoader, onDemandSupport: .shared, retryPolicy: .standard)
     }
 }

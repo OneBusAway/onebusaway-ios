@@ -34,10 +34,12 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
     /// - Parameter analytics: An object that conforms to the `Analytics` protocol.
-    @objc public convenience init(
+    /// - Parameter retryPolicy: The retry policy for network requests.
+    public convenience init(
         appBundle: Bundle,
         userDefaults: UserDefaults,
-        analytics: Analytics?
+        analytics: Analytics?,
+        retryPolicy: RetryPolicy = .standard
     ) {
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress,
@@ -53,7 +55,8 @@ public class AppConfig: CoreAppConfig {
             fixedRegionName: appBundle.fixedRegionName,
             fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
             defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter,
-            launchRouteID: appBundle.launchRouteID
+            launchRouteID: appBundle.launchRouteID,
+            retryPolicy: retryPolicy
         )
     }
 
@@ -68,6 +71,7 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
+    /// - Parameter retryPolicy: The retry policy for network requests.
     public init(
         regionsBaseURL: URL?,
         apiKey: String,
@@ -83,7 +87,8 @@ public class AppConfig: CoreAppConfig {
         fixedRegionOBABaseURL: URL? = nil,
         defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
         launchRouteID: String? = nil,
-        onDemandSupport: OnDemandSupport = .shared
+        onDemandSupport: OnDemandSupport = .shared,
+        retryPolicy: RetryPolicy = .standard
     ) {
         self.analytics = analytics
         self.launchRouteID = launchRouteID
@@ -100,7 +105,8 @@ public class AppConfig: CoreAppConfig {
             fixedRegionName: fixedRegionName,
             fixedRegionOBABaseURL: fixedRegionOBABaseURL,
             defaultArrivalDepartureFilter: defaultArrivalDepartureFilter,
-            onDemandSupport: onDemandSupport
+            onDemandSupport: onDemandSupport,
+            retryPolicy: retryPolicy
         )
     }
 }

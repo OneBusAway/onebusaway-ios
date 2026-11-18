@@ -122,9 +122,13 @@ class OBATestCase {
 
     var restService: RESTAPIService!
 
-    func buildRESTService(dataLoader: MockDataLoader? = nil, onDemandSupport: OnDemandSupport = OnDemandSupport()) -> RESTAPIService {
+    func buildRESTService(
+        dataLoader: MockDataLoader? = nil,
+        onDemandSupport: OnDemandSupport = OnDemandSupport(),
+        retryPolicy: RetryPolicy = .disabled
+    ) -> RESTAPIService {
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier, surveyBaseURL: surveyBaseURL)
-        return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name), onDemandSupport: onDemandSupport)
+        return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name), onDemandSupport: onDemandSupport, retryPolicy: retryPolicy)
     }
 
     // MARK: - Network Request Stubbing
@@ -219,7 +223,8 @@ class OBATestCase {
         queue: OperationQueue,
         dataLoader: MockDataLoader,
         transport: URLDataLoader? = nil,
-        onDemandSupport: OnDemandSupport = OnDemandSupport()
+        onDemandSupport: OnDemandSupport = OnDemandSupport(),
+        retryPolicy: RetryPolicy = .disabled
     ) -> Application {
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -242,7 +247,8 @@ class OBATestCase {
             regionsAPIPath: regionsAPIPath,
             dataLoader: transport ?? dataLoader,
             fixedRegionName: Fixtures.pugetSoundRegion.name,
-            onDemandSupport: onDemandSupport
+            onDemandSupport: onDemandSupport,
+            retryPolicy: retryPolicy
         )
 
         return Application(config: config)
@@ -281,7 +287,7 @@ class OBATestCase {
             regionIdentifier: pugetSoundRegionIdentifier,
             surveyBaseURL: surveyBaseURL
         )
-        let apiService = RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
+        let apiService = RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name), retryPolicy: .disabled)
         let store = UserDefaultsStore(userDefaults: buildUserDefaults())
         return SurveyService(apiService: apiService, userDataStore: store)
     }
