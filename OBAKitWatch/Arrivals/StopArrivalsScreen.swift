@@ -32,3 +32,9 @@ struct StopArrivalsScreen: View {
         }
     }
 }
+
+extension StopArrivalsModel {
+    public convenience init(host: WatchAppHost, stop: Stop, interval: Duration = .seconds(30)) {
+        self.init(stop: stop, apiServiceProvider: { [weak host] in host?.apiService }, interval: interval)
+    }
+}

@@ -48,10 +48,20 @@ struct StopArrivalsView: View {
             VStack(spacing: 8) {
                 MessageView(
                     text: OBALoc("arrivals.empty", value: "No departures in the next 60 minutes.", comment: "Empty state"),
-                    systemImage: "bus"
+                    systemImage: "bus",
+                    actionTitle: Strings.retry,
+                    action: { model.retry() }
                 )
                 updatedAtText(updatedAt)
             }
+        case .offline:
+            MessageView(
+                text: Strings.offlineTitle,
+                secondaryText: Strings.offlineSummary,
+                systemImage: "wifi.slash",
+                actionTitle: Strings.retry,
+                action: { model.retry() }
+            )
         case .failed(let message):
             MessageView(
                 text: message,
