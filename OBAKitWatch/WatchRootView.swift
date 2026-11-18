@@ -83,17 +83,17 @@ public struct WatchRootView: View {
             if nearby == nil {
                 let nbModel = NearbyRoutesModel(host: host)
                 nearby = nbModel
-                nbModel.refresh()
             }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 bookmarksModel?.refresh()
-                nearby?.refresh()
             }
         }
         .onChange(of: host.authorizationStatus) { _, _ in
-            nearby?.refresh()
+            if tab == .nearby {
+                nearby?.refresh()
+            }
         }
         .onChange(of: host.bookmarkStore.payload?.revision) { _, _ in
             bookmarksModel?.refresh()

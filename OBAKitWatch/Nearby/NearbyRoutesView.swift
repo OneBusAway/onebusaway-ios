@@ -13,6 +13,8 @@ import OBAKitCore
 
 struct NearbyRoutesView: View {
     let model: NearbyRoutesModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var isVisible = false
 
     var body: some View {
         content
@@ -24,6 +26,25 @@ struct NearbyRoutesView: View {
                     } label: {
                         Label(Strings.refresh, systemImage: "arrow.clockwise")
                     }
+                }
+            }
+            .onAppear {
+                isVisible = true
+                if scenePhase == .active {
+                    model.startPolling()
+                }
+            }
+            .onDisappear {
+                isVisible = false
+                model.stopPolling()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active {
+                    if isVisible {
+                        model.startPolling()
+                    }
+                } else {
+                    model.stopPolling()
                 }
             }
     }
@@ -60,7 +81,9 @@ struct NearbyRoutesView: View {
         case .empty:
             MessageView(
                 text: OBALoc("nearby.empty", value: "No departures nearby in the next hour.", comment: "No nearby stop has a departure in the next 60 minutes"),
-                systemImage: "bus"
+                systemImage: "bus",
+                actionTitle: Strings.retry,
+                action: { model.refresh() }
             )
         case .loaded(let directions):
             List(directions) { direction in

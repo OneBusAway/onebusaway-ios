@@ -39,6 +39,12 @@
 /* Arrivals cannot load without a region */
 "arrivals.no_service" = "Транспортный регион не выбран.";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Не удалось определить ваше местоположение. Попробуйте ещё раз.";
+
+/* Shown when offline */
+"nearby.offline" = "Нет подключения к интернету. Не удалось найти маршруты поблизости.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Добавить напоминание";
 

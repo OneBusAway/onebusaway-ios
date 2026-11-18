@@ -40,6 +40,12 @@ public struct RouteDirectionStop: Equatable, Identifiable {
     public let departures: [ArrivalDeparture]
 
     public var id: StopID { stop.id }
+
+    public init(stop: Stop, distance: CLLocationDistance, departures: [ArrivalDeparture]) {
+        self.stop = stop
+        self.distance = distance
+        self.departures = departures
+    }
 }
 
 /// A card on the watch's Nearby screen: a route, the way it is heading, and
@@ -55,6 +61,13 @@ public struct NearbyRouteDirection: Equatable, Identifiable {
 
     public var id: RouteDirectionKey { key }
     public var nearestStop: RouteDirectionStop { stops[0] }
+
+    public init(key: RouteDirectionKey, route: Route, headsign: String, stops: [RouteDirectionStop]) {
+        self.key = key
+        self.route = route
+        self.headsign = headsign
+        self.stops = stops
+    }
 }
 
 /// Builds the route-and-direction list from nearby stops' arrivals. Pure, so

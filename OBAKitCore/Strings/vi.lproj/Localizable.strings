@@ -39,6 +39,12 @@
 /* Arrivals cannot load without a region */
 "arrivals.no_service" = "Chưa chọn khu vực giao thông.";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Không tìm thấy vị trí của bạn. Hãy thử lại.";
+
+/* Shown when offline */
+"nearby.offline" = "Bạn đang ngoại tuyến. Không thể tìm thấy các tuyến gần đây.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Thêm lời nhắc";
 

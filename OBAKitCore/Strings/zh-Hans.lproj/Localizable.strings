@@ -39,6 +39,12 @@
 /* Arrivals cannot load without a region */
 "arrivals.no_service" = "未选择公交地区。";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "无法找到您的位置。请重试。";
+
+/* Shown when offline */
+"nearby.offline" = "您已离线。无法找到附近线路。";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "添加闹钟";
 
