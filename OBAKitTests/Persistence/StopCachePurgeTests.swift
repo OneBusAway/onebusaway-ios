@@ -70,7 +70,7 @@ final class StopCachePurgeTests {
         }
     }
 
-    @Test func `Age purge on non existent region performs zero writes and leaves database intact`() throws {
+    @Test func `Age purge on non existent region commits no deletions and preserves row ids`() throws {
         let database = try StopCacheDatabase(inMemory: true)
         let repository = StopCacheRepository(database: database)
 
@@ -118,9 +118,7 @@ final class StopCachePurgeTests {
         repository.deleteStopsOlderThan(Date(timeIntervalSince1970: 200), regionId: 1)
 
         let postSyncState = try repository.syncState(regionId: 1)
-        #expect(postSyncState?.publishedSyncID == nil)
-        #expect(postSyncState?.etag == "etag_val")
-        #expect(postSyncState?.outcome == .partial)
+        #expect(postSyncState == initialSyncState)
 
         let remainingOrphans = try database.dbQueue.read {
             try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE regionId = 1")
