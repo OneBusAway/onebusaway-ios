@@ -76,11 +76,8 @@ nonisolated public struct BookmarkEntityQuery: EntityStringQuery {
     public init() {}
 
     public func entities(for identifiers: [UUID]) async throws -> [BookmarkEntity] {
-        guard let suite = Bundle.main.appGroup,
-              let defaults = UserDefaults(suiteName: suite) else { return [] }
-        let store = UserDefaultsStore(userDefaults: defaults)
-        let regionID = defaults.object(forKey: BookmarkIntentMapping.regionIdentifierUserDefaultsKey) as? Int
-        return BookmarkIntentMapping.entities(for: identifiers, from: store.bookmarks, regionIdentifier: regionID)
+        let (bookmarks, regionID) = loadBookmarksAndRegion()
+        return BookmarkIntentMapping.entities(for: identifiers, from: bookmarks, regionIdentifier: regionID)
     }
 
     public func suggestedEntities() async throws -> [BookmarkEntity] {
@@ -95,11 +92,16 @@ nonisolated public struct BookmarkEntityQuery: EntityStringQuery {
     /// no single route to Track; an out-of-region trip bookmark never gets
     /// arrivals loaded, so offering it would queue a request that cannot start.
     private func tripBookmarkEntities() -> [BookmarkEntity] {
+        let (bookmarks, regionID) = loadBookmarksAndRegion()
+        return BookmarkIntentMapping.entities(from: bookmarks, regionIdentifier: regionID)
+    }
+
+    private func loadBookmarksAndRegion() -> (bookmarks: [Bookmark], regionID: Int?) {
         guard let suite = Bundle.main.appGroup,
-              let defaults = UserDefaults(suiteName: suite) else { return [] }
+              let defaults = UserDefaults(suiteName: suite) else { return ([], nil) }
         let store = UserDefaultsStore(userDefaults: defaults)
         let regionID = defaults.object(forKey: BookmarkIntentMapping.regionIdentifierUserDefaultsKey) as? Int
-        return BookmarkIntentMapping.entities(from: store.bookmarks, regionIdentifier: regionID)
+        return (store.bookmarks, regionID)
     }
 }
 

@@ -33,10 +33,6 @@ public struct NextDeparturesIntent: AppIntent {
 
     public init() {}
 
-    public init(bookmark: BookmarkEntity?) {
-        self.bookmark = bookmark
-    }
-
     @Parameter(title: LocalizedStringResource("bookmark_entity.parameter_title", defaultValue: "Bookmark", table: "AppIntents"))
     public var bookmark: BookmarkEntity?
 
