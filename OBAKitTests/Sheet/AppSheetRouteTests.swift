@@ -555,7 +555,7 @@ final class AppSheetRouteTests {
         let services = try Fixtures.loadRESTAPIPayload(
             type: [OnDemandService].self,
             fileName: "ondemand_services_for_agency_charlevoix.json"
-        ).list
+        )
         let service = try #require(services.first)
 
         let routeService = AppSheetRoute.onDemandService(service)
