@@ -567,7 +567,6 @@
 
 
 /* Authentication error summary. */
-"error_report.summary.authentication" = "Kailangang mag-authenticate";
-
+"error_report.summary.authentication" = "Hindi na pinatanggap ng server ang humiling ng application";
 /* Authentication error explanation. */
-"error_report.explanation.authentication" = "Kailangang magpatuloy";
+"error_report.explanation.authentication" = "Hindi na pinatanggap ng server ang humiling ng application. Pakiusap na manghingi ng tulong ng suporta kakailanganin pa.";
