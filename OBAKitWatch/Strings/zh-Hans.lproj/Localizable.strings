@@ -4,9 +4,6 @@
 /* Progress text */
 "arrivals.loading" = "正在加载班次……";
 
-/* Arrivals cannot load without a region */
-"arrivals.no_service" = "未选择公交地区。";
-
 /* VoiceOver: route, headsign, time until departure */
 "arrivals.row.a11y_fmt" = "%1$@ 开往 %2$@，%3$@";
 

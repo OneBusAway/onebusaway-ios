@@ -4,9 +4,6 @@
 /* Progress text */
 "arrivals.loading" = "Đang tải chuyến khởi hành…";
 
-/* Arrivals cannot load without a region */
-"arrivals.no_service" = "Chưa chọn khu vực giao thông.";
-
 /* VoiceOver: route, headsign, time until departure */
 "arrivals.row.a11y_fmt" = "%1$@ đi %2$@, %3$@";
 

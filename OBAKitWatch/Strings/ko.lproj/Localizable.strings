@@ -4,9 +4,6 @@
 /* Progress text */
 "arrivals.loading" = "출발 정보를 불러오는 중…";
 
-/* Arrivals cannot load without a region */
-"arrivals.no_service" = "선택된 대중교통 지역이 없습니다.";
-
 /* VoiceOver: route, headsign, time until departure */
 "arrivals.row.a11y_fmt" = "%1$@ %2$@ 방면, %3$@";
 

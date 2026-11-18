@@ -4,9 +4,6 @@
 /* Progress text */
 "arrivals.loading" = "Naglo-load ng mga pag-alis…";
 
-/* Arrivals cannot load without a region */
-"arrivals.no_service" = "Walang napiling rehiyon ng transit.";
-
 /* VoiceOver: route, headsign, time until departure */
 "arrivals.row.a11y_fmt" = "%1$@ papuntang %2$@, %3$@";
 
