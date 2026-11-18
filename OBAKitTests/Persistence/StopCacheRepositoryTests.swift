@@ -830,6 +830,47 @@ final class StopCacheRepositoryTests {
         #expect(paged.stops.first?.routes?.first?.shortName == "99")
     }
 
+    @Test func `Discard staged stops deletes multiple batches and empties tables`() throws {
+        let syncID = "sync_discard"
+        let stops = (1...15).map {
+            makeStop(
+                id: "stop_\($0)",
+                routes: [makeRoute(id: "route_\($0)", shortName: "\($0)")]
+            )
+        }
+        try repository.stageSyncedStops(stops, regionId: 1, syncID: syncID, syncedAt: Date())
+
+        let otherSyncID = "sync_keep"
+        let otherStop = makeStop(id: "stop_other", routes: [makeRoute(id: "route_other", shortName: "O")])
+        try repository.stageSyncedStops([otherStop], regionId: 1, syncID: otherSyncID, syncedAt: Date())
+
+        let stagedStopCount = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [syncID])
+        }
+        let stagedRouteCount = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedRouteSync WHERE syncID = ?", arguments: [syncID])
+        }
+        #expect(stagedStopCount == 15)
+        #expect(stagedRouteCount == 15)
+
+        // Batch size 5 forces 3 batches for 15 rows
+        try repository.discardStagedStops(regionId: 1, syncID: syncID, batchSize: 5)
+
+        let remainingStops = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [syncID])
+        }
+        let remainingRoutes = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedRouteSync WHERE syncID = ?", arguments: [syncID])
+        }
+        #expect(remainingStops == 0)
+        #expect(remainingRoutes == 0)
+
+        let otherStops = try database.dbQueue.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM cachedStopSync WHERE syncID = ?", arguments: [otherSyncID])
+        }
+        #expect(otherStops == 1)
+    }
+
     // MARK: - Multiple Stops
 
     @Test func `Save multiple stops all persisted`() {

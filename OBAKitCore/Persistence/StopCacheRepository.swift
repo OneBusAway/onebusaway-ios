@@ -323,18 +323,20 @@ public final class StopCacheRepository: Sendable {
         }
     }
 
-    /// Removes a snapshot that never reached the publication marker.
-    func discardStagedStops(regionId: Int, syncID: String) throws {
-        try database.dbQueue.write { db in
-            _ = try StagedCachedStop
-                .filter(StagedCachedStop.Columns.regionId == regionId)
-                .filter(StagedCachedStop.Columns.syncID == syncID)
-                .deleteAll(db)
-            _ = try StagedCachedRoute
-                .filter(StagedCachedRoute.Columns.regionId == regionId)
-                .filter(StagedCachedRoute.Columns.syncID == syncID)
-                .deleteAll(db)
-        }
+    /// Removes a snapshot that never reached the publication marker in bounded batches.
+    func discardStagedStops(regionId: Int, syncID: String, batchSize: Int = 500) throws {
+        try deleteRowidsInBatches(
+            table: StagedCachedStop.databaseTableName,
+            where: "regionId = ? AND syncID = ?",
+            arguments: [regionId, syncID],
+            batchSize: batchSize
+        )
+        try deleteRowidsInBatches(
+            table: StagedCachedRoute.databaseTableName,
+            where: "regionId = ? AND syncID = ?",
+            arguments: [regionId, syncID],
+            batchSize: batchSize
+        )
     }
 
     /// Copies staged stops and routes from a previous snapshot into the current snapshot
@@ -499,9 +501,7 @@ public final class StopCacheRepository: Sendable {
         }
     }
 
-    /// After a complete sync, deletes the region's stops and routes the sync
-    /// didn't write: those the server no longer lists. Stops the map saved
-    /// during the sync are newer than `syncStart`, so they stay.
+    /// Deletes legacy cached stops and routes for a region older than `syncStart`.
     func deleteStops(regionId: Int, notWrittenSince syncStart: Date) throws {
         try deleteRows(regionId: regionId, olderThan: syncStart)
     }

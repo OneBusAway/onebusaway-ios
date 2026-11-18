@@ -237,6 +237,7 @@ final class RegionStopSyncService: Sendable {
                 if (error as? URLError)?.networkUnavailableReason == .constrained {
                     // Low Data Mode refuses every agency alike; the retry comes later.
                     Logger.info("Region stop sync: Low Data Mode is on, so region \(regionID) waits.")
+                    try? repository.discardStagedStops(regionId: regionID, syncID: syncID)
                     record(.failed, regionID: regionID, at: start, lastSuccessAt: previous?.lastSuccessAt, etag: previous?.etag, publishedSyncID: previous?.publishedSyncID)
                     return .recorded
                 }
