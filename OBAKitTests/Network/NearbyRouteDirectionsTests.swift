@@ -199,7 +199,32 @@ final class NearbyRouteDirectionsTests: OBATestCase {
         #expect(Set(directions.map(\.key.direction)) == ["headsign:Capitol Hill Via 15th Ave E", "headsign:Downtown Seattle"])
     }
 
+    @Test func `Blank tripHeadsign falls back to route longName then shortName`() async throws {
+        let stop = try #require(try stopsByDistance().first)
+        let arrivals = try await arrivals(fixture: galerFixture) { json in
+            try Self.editArrivals(&json) { _, arrival in
+                arrival["tripHeadsign"] = "   "
+            }
+        }
+
+        let directions = NearbyRouteDirections.group(stops: [stop], arrivalsByStop: [stop.id: arrivals], origin: origin)
+
+        #expect(!directions.isEmpty)
+        for direction in directions {
+            let expectedFallback = direction.route.longName ?? direction.route.shortName
+            #expect(direction.headsign == expectedFallback)
+        }
+    }
+
     // MARK: - Loader
+
+    @Test func `Loader with empty stops returns empty directions without making network requests`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let service = buildRESTService(dataLoader: dataLoader)
+
+        let directions = try await NearbyRoutesLoader().directions(at: [], origin: origin, using: service)
+        #expect(directions.isEmpty)
+    }
 
     @Test func `The loader throws only when every stop fails`() async throws {
         let stops = Array(try stopsByDistance().prefix(2))
