@@ -105,4 +105,21 @@ final class ExternalSurveyLauncherTests: OBATestCase {
         #expect(failed)
         #expect(!self.isCompleted(1))
     }
+
+    @Test func `Launch invalid scheme URL fails gracefully without marking completed`() {
+        let survey = externalSurvey(url: "not a valid url: //foo")
+        var openerCalled = false
+        var failed = false
+        var launcher = ExternalSurveyLauncher(surveyService: service)
+        launcher.urlOpener = { _, _ in openerCalled = true }
+
+        let attempted = launcher.launch(survey: survey, stop: nil,
+                                        onSuccess: {},
+                                        onFailure: { failed = true })
+
+        #expect(!attempted)
+        #expect(!openerCalled)
+        #expect(failed)
+        #expect(!self.isCompleted(1))
+    }
 }
