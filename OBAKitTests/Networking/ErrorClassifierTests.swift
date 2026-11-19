@@ -135,9 +135,7 @@ final class ErrorClassifierTests {
         }
     }
 
-    /// A literal 404 keeps `requestNotFound`'s own copy. Half of the boundary added
-    /// in #1336 — the other half is the empty-200 reclassification below.
-    @Test func `Classify request not found passes through`() {
+    @Test func `Classify request not found passes through and preserves HTTP 404 status code`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stop/1_75403.json")!
         let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestNotFound(response)
@@ -149,10 +147,11 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .requestNotFound:
-            break
+        case .requestNotFound(let classifiedResponse):
+            #expect(classifiedResponse.statusCode == 404)
+            #expect(classifiedResponse.url == url)
         default:
-            Issue.record("Expected .requestNotFound, got \(apiError)")
+            Issue.record("Expected .requestNotFound with status code 404, got \(apiError)")
         }
     }
 
