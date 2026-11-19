@@ -213,11 +213,24 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         #expect(empty.uniqueTripKeys.isEmpty)
     }
 
-    @Test func `TripBookmarkKey equality with nil and empty headsign treats both as equivalent empty representations`() {
-        let keyNil = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: nil)
-        let keyEmpty = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "")
+    @Test func `TripBookmarkKey returns nil for bookmark with nil tripHeadsign`() {
+        let stopBookmark = Bookmark(name: "Stop Bookmark", regionIdentifier: 1, stop: stops[0])
+        #expect(stopBookmark.tripHeadsign == nil)
+        #expect(TripBookmarkKey(bookmark: stopBookmark) == nil)
+    }
 
-        #expect(keyNil == keyEmpty)
-        #expect(keyNil.hashValue == keyEmpty.hashValue)
+    @Test func `TripBookmarkKeys differing only in headsign are unequal and deduplicate in Set`() {
+        let keyA1 = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "Ballard")
+        let keyA2 = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "Ballard")
+        let keyB = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "UW Station")
+
+        #expect(keyA1 == keyA2)
+        #expect(keyA1 != keyB)
+        #expect(keyA1.hashValue == keyA2.hashValue)
+
+        let set: Set<TripBookmarkKey> = [keyA1, keyA2, keyB]
+        #expect(set.count == 2)
+        #expect(set.contains(keyA1))
+        #expect(set.contains(keyB))
     }
 }
