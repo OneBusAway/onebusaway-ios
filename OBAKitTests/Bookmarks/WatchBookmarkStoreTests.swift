@@ -12,10 +12,18 @@ import Testing
 @testable import OBAKitCore
 
 @Suite(.serialized)
-struct WatchBookmarkStoreTests {
+final class WatchBookmarkStoreTests {
+    private var suiteNames: [String] = []
+
+    deinit {
+        for suiteName in suiteNames {
+            UserDefaults().removePersistentDomain(forName: suiteName)
+        }
+    }
 
     private func makeUserDefaults() -> UserDefaults {
         let suiteName = "WatchBookmarkStoreTests-\(UUID().uuidString)"
+        suiteNames.append(suiteName)
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         return defaults
