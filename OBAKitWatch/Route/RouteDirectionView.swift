@@ -103,7 +103,7 @@ struct RouteDirectionView: View {
             }
         }
         .onChange(of: host.currentRegion) { _, _ in
-            if isVisible {
+            if isVisible && scenePhase == .active {
                 model.stopPolling()
                 model.startPolling()
             }
