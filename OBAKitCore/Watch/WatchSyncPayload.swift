@@ -105,12 +105,20 @@ public struct WatchBookmarkGroup: Codable, Sendable, Identifiable, Equatable {
 public struct WatchSyncPayload: Codable, Sendable, Equatable {
     public let schemaVersion: Int32
     public let revision: String
+    public let sequenceNumber: Int64
+    public let epoch: UUID?
     public let bookmarks: [WatchBookmark]
     public let groups: [WatchBookmarkGroup]
     public let region: Region?
 
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, revision, sequenceNumber, epoch, bookmarks, groups, region
+    }
+
     public init(
         schemaVersion: Int32 = 1,
+        sequenceNumber: Int64 = 0,
+        epoch: UUID? = nil,
         bookmarks: [WatchBookmark],
         groups: [WatchBookmarkGroup],
         region: Region?
@@ -123,6 +131,8 @@ public struct WatchSyncPayload: Codable, Sendable, Equatable {
         )
         self.schemaVersion = schemaVersion
         self.revision = revision
+        self.sequenceNumber = sequenceNumber
+        self.epoch = epoch
         self.bookmarks = bookmarks
         self.groups = groups
         self.region = region
@@ -131,15 +141,30 @@ public struct WatchSyncPayload: Codable, Sendable, Equatable {
     public init(
         schemaVersion: Int32,
         revision: String,
+        sequenceNumber: Int64 = 0,
+        epoch: UUID? = nil,
         bookmarks: [WatchBookmark],
         groups: [WatchBookmarkGroup],
         region: Region?
     ) {
         self.schemaVersion = schemaVersion
         self.revision = revision
+        self.sequenceNumber = sequenceNumber
+        self.epoch = epoch
         self.bookmarks = bookmarks
         self.groups = groups
         self.region = region
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.schemaVersion = try container.decode(Int32.self, forKey: .schemaVersion)
+        self.revision = try container.decode(String.self, forKey: .revision)
+        self.sequenceNumber = try container.decodeIfPresent(Int64.self, forKey: .sequenceNumber) ?? 0
+        self.epoch = try container.decodeIfPresent(UUID.self, forKey: .epoch)
+        self.bookmarks = try container.decode([WatchBookmark].self, forKey: .bookmarks)
+        self.groups = try container.decode([WatchBookmarkGroup].self, forKey: .groups)
+        self.region = try container.decodeIfPresent(Region.self, forKey: .region)
     }
 
     public static func computeRevision(
@@ -151,6 +176,8 @@ public struct WatchSyncPayload: Codable, Sendable, Equatable {
         let unhashedPayload = WatchSyncPayload(
             schemaVersion: schemaVersion,
             revision: "",
+            sequenceNumber: 0,
+            epoch: nil,
             bookmarks: bookmarks,
             groups: groups,
             region: region
