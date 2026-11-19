@@ -286,19 +286,21 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
     }
 
     @Test func `BookmarkArrivalsRequest matching with non matching tripKey returns empty array`() throws {
-        let now = Int(Date.timeIntervalSinceReferenceDate)
-        let dep = try Fixtures.arrivalDeparture(
-            predicted: false,
-            scheduledArrival: now + 300,
-            scheduledDeparture: now + 300,
-            stopSequence: 1,
-            stopID: "1_100"
+        let arrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        ).arrivalsAndDepartures
+        let first = try #require(arrivals.first)
+
+        let unmatchedKey = TripBookmarkKey(
+            stopID: first.stopID,
+            routeShortName: "NonExistentRoute",
+            routeID: "1_999999",
+            tripHeadsign: "Nowhere"
         )
+        let request = BookmarkArrivalsRequest(stopID: first.stopID, tripKey: unmatchedKey)
 
-        let unmatchedKey = TripBookmarkKey(stopID: "1_100", routeShortName: "NonExistent", routeID: "1_999", tripHeadsign: "Nowhere")
-        let request = BookmarkArrivalsRequest(stopID: "1_100", tripKey: unmatchedKey)
-
-        let matched = request.matching([dep])
+        let matched = request.matching(arrivals)
         #expect(matched.isEmpty)
     }
 }
