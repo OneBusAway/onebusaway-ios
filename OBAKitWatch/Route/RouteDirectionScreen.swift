@@ -50,7 +50,8 @@ struct RouteDirectionScreen: View {
                 origin: origin,
                 direction: direction,
                 opposite: NearbyRouteDirections.opposite(of: key, in: directions),
-                snapshotDate: nearby.loadedAt ?? Date()
+                snapshotDate: nearby.loadedAt ?? Date(),
+                apiService: nearby.apiService
             )
         }
     }

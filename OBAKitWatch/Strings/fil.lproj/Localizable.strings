@@ -57,3 +57,6 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Naglo-load ng mga bookmark…";
+
+/* Warning shown when nearby departures could not be refreshed and may be out of date */
+"nearby.stale" = "Maaaring luma na ang data na ito.";

@@ -57,3 +57,6 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "즐겨찾기를 불러오는 중…";
+
+/* Warning shown when nearby departures could not be refreshed and may be out of date */
+"nearby.stale" = "이 데이터가 오래되었을 수 있습니다.";
