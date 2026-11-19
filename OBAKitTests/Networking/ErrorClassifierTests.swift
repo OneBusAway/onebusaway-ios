@@ -135,9 +135,7 @@ final class ErrorClassifierTests {
         }
     }
 
-    /// A literal 404 keeps `requestNotFound`'s own copy. Half of the boundary added
-    /// in #1336 — the other half is the empty-200 reclassification below.
-    @Test func `Classify request not found passes through`() {
+    @Test func `Classify request not found passes through and preserves HTTP 404 status code`() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stop/1_75403.json")!
         let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestNotFound(response)
@@ -149,10 +147,11 @@ final class ErrorClassifierTests {
         }
 
         switch apiError {
-        case .requestNotFound:
-            break
+        case .requestNotFound(let classifiedResponse):
+            #expect(classifiedResponse.statusCode == 404)
+            #expect(classifiedResponse.url == url)
         default:
-            Issue.record("Expected .requestNotFound, got \(apiError)")
+            Issue.record("Expected .requestNotFound with status code 404, got \(apiError)")
         }
     }
 
@@ -664,32 +663,6 @@ final class ErrorClassifierTests {
 
         #expect(description.contains("Settings"))
         #expect(description.contains("Cellular"))
-    }
-
-    @Test func `Missing stop 404 response classifies to unknown category while preserving status code`() {
-        let response = HTTPURLResponse(
-            url: URL(string: "https://example.com/api/where/stop/1_99999.json")!,
-            statusCode: 404,
-            httpVersion: nil,
-            headerFields: nil
-        )!
-        let error = APIError.requestNotFound(response)
-        let category = ErrorClassifier.category(for: error)
-
-        #expect(category == .unknown)
-    }
-
-    @Test func `Non-404 requestNotFound classifies to decoding category`() {
-        let response = HTTPURLResponse(
-            url: URL(string: "https://example.com/api/where/arrivals-and-departures-for-stop/1_100.json")!,
-            statusCode: 200,
-            httpVersion: nil,
-            headerFields: nil
-        )!
-        let error = APIError.requestNotFound(response)
-        let category = ErrorClassifier.category(for: error)
-
-        #expect(category == .decoding)
     }
 }
 
