@@ -21,6 +21,9 @@ struct NearbyRoutesModelTests {
         var fetchCount = 0
         var isLowPower = false
         var isOffline = false
+        weak var model: NearbyRoutesModel?
+        var phasesAtLocate: [NearbyRoutesModel.Phase] = []
+        var phasesAtLoad: [NearbyRoutesModel.Phase] = []
 
         func recordFetch() {
             fetchCount += 1
@@ -420,6 +423,258 @@ struct NearbyRoutesModelTests {
         // 30s more (total 60s after refresh) -> tick 3!
         clock.advance(by: .seconds(30))
         await poll(until: { state.fetchCount == 3 })
+
+        model.stopPolling()
+    }
+
+    @Test @MainActor func `Offline directions failure shows the offline message`() async {
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: { self.seattleFix },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                throw NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+            }
+        )
+
+        await model.performRefresh()
+
+        #expect(model.phase == .failed(Strings.nearbyOffline))
+    }
+
+    @Test @MainActor func `Non-offline directions failure shows the error description`() async {
+        let error = NSError(domain: "test", code: 7, userInfo: [NSLocalizedDescriptionKey: "Server exploded"])
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: { self.seattleFix },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in throw error }
+        )
+
+        await model.performRefresh()
+
+        #expect(model.phase == .failed("Server exploded"))
+    }
+
+    @Test @MainActor func `Background poll keeps the empty screen instead of showing progress`() async {
+        let clock = TestClock()
+        let state = TestState()
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: {
+                if let phase = state.model?.phase { state.phasesAtLocate.append(phase) }
+                return self.seattleFix
+            },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                if let phase = state.model?.phase { state.phasesAtLoad.append(phase) }
+                state.recordFetch()
+                return []
+            },
+            cadencePolicy: NearbyPollingCadencePolicy(activeInterval: .seconds(60)),
+            clock: clock
+        )
+        state.model = model
+
+        model.startPolling()
+        await poll(until: { state.fetchCount == 1 })
+        await poll(until: { clock.sleeperCount == 1 })
+        #expect(model.phase == .empty)
+
+        clock.advance(by: .seconds(60))
+        await poll(until: { state.fetchCount == 2 })
+
+        // The first pass shows progress; the background poll keeps the empty screen.
+        #expect(state.phasesAtLocate == [.locating, .empty])
+        #expect(state.phasesAtLoad == [.loading, .empty])
+        #expect(model.phase == .empty)
+
+        model.stopPolling()
+    }
+
+    @Test @MainActor func `Background poll keeps the failed screen instead of showing progress`() async {
+        let clock = TestClock()
+        let state = TestState()
+        let error = NSError(domain: "test", code: 7, userInfo: [NSLocalizedDescriptionKey: "Server exploded"])
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: {
+                if let phase = state.model?.phase { state.phasesAtLocate.append(phase) }
+                return self.seattleFix
+            },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                state.recordFetch()
+                throw error
+            },
+            cadencePolicy: NearbyPollingCadencePolicy(activeInterval: .seconds(60)),
+            clock: clock
+        )
+        state.model = model
+
+        model.startPolling()
+        await poll(until: { state.fetchCount == 1 })
+        await poll(until: { clock.sleeperCount == 1 })
+
+        clock.advance(by: .seconds(60))
+        await poll(until: { state.fetchCount == 2 })
+
+        #expect(state.phasesAtLocate == [.locating, .failed("Server exploded")])
+        #expect(model.phase == .failed("Server exploded"))
+
+        model.stopPolling()
+    }
+
+    @Test @MainActor func `Background poll keeps the no-region screen instead of showing progress`() async {
+        let clock = TestClock()
+        let state = TestState()
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: {
+                if let phase = state.model?.phase { state.phasesAtLocate.append(phase) }
+                state.recordFetch()
+                return self.seattleFix
+            },
+            hasRegion: { false },
+            apiServiceProvider: { nil },
+            cadencePolicy: NearbyPollingCadencePolicy(activeInterval: .seconds(60)),
+            clock: clock
+        )
+        state.model = model
+
+        model.startPolling()
+        await poll(until: { state.fetchCount == 1 })
+        await poll(until: { clock.sleeperCount == 1 })
+
+        clock.advance(by: .seconds(60))
+        await poll(until: { state.fetchCount == 2 })
+
+        #expect(state.phasesAtLocate == [.locating, .noRegion])
+        #expect(model.phase == .noRegion)
+
+        model.stopPolling()
+    }
+
+    @Test @MainActor func `Manual refresh shows progress over the empty screen`() async {
+        let clock = TestClock()
+        let state = TestState()
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: {
+                if let phase = state.model?.phase { state.phasesAtLocate.append(phase) }
+                return self.seattleFix
+            },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                if let phase = state.model?.phase { state.phasesAtLoad.append(phase) }
+                state.recordFetch()
+                return []
+            },
+            cadencePolicy: NearbyPollingCadencePolicy(activeInterval: .seconds(60)),
+            clock: clock
+        )
+        state.model = model
+
+        model.startPolling()
+        await poll(until: { state.fetchCount == 1 })
+        await poll(until: { clock.sleeperCount == 1 })
+
+        model.refresh()
+        await poll(until: { state.fetchCount == 2 })
+
+        #expect(state.phasesAtLocate == [.locating, .locating])
+        #expect(state.phasesAtLoad == [.loading, .loading])
+
+        model.stopPolling()
+    }
+
+    @Test @MainActor func `Turning off Low Power Mode shortens the running sleep`() async {
+        let clock = TestClock()
+        let state = TestState()
+        state.isLowPower = true
+        let center = NotificationCenter()
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: { self.seattleFix },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                state.recordFetch()
+                return []
+            },
+            cadencePolicy: NearbyPollingCadencePolicy(activeInterval: .seconds(60), lowPowerInterval: .seconds(180)),
+            powerStateProvider: { state.isLowPower },
+            clock: clock,
+            notificationCenter: center
+        )
+
+        model.startPolling()
+        await poll(until: { state.fetchCount == 1 })
+        await poll(until: { clock.sleeperCount == 1 })
+
+        // 30s into the 180s low-power sleep, Low Power Mode turns off: the
+        // sleep now ends 60s after it began, not 180s.
+        clock.advance(by: .seconds(30))
+        state.isLowPower = false
+        center.post(name: .NSProcessInfoPowerStateDidChange, object: nil)
+        await poll(until: { clock.sleeperCount == 1 })
+        await Task.yield()
+        #expect(state.fetchCount == 1)
+
+        clock.advance(by: .seconds(30))
+        await poll(until: { state.fetchCount == 2 })
+
+        model.stopPolling()
+    }
+
+    @Test @MainActor func `Turning off Low Power Mode past the active interval polls right away`() async {
+        let clock = TestClock()
+        let state = TestState()
+        state.isLowPower = true
+        let center = NotificationCenter()
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: { self.seattleFix },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                state.recordFetch()
+                return []
+            },
+            cadencePolicy: NearbyPollingCadencePolicy(activeInterval: .seconds(60), lowPowerInterval: .seconds(180)),
+            powerStateProvider: { state.isLowPower },
+            clock: clock,
+            notificationCenter: center
+        )
+
+        model.startPolling()
+        await poll(until: { state.fetchCount == 1 })
+        await poll(until: { clock.sleeperCount == 1 })
+
+        clock.advance(by: .seconds(90))
+        #expect(state.fetchCount == 1)
+        state.isLowPower = false
+        center.post(name: .NSProcessInfoPowerStateDidChange, object: nil)
+        await poll(until: { state.fetchCount == 2 })
 
         model.stopPolling()
     }

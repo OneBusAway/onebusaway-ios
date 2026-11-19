@@ -86,6 +86,7 @@ public final class NearbyRoutesModel {
     @ObservationIgnored private let directionsLoader: DirectionsLoader
     @ObservationIgnored private let powerStateProvider: PowerStateProvider
     @ObservationIgnored private let clock: any Clock<Duration>
+    @ObservationIgnored private let notificationCenter: NotificationCenter
     @ObservationIgnored public let cadencePolicy: NearbyPollingCadencePolicy
 
     @ObservationIgnored private var pollTask: Task<Void, Never>?
@@ -103,7 +104,8 @@ public final class NearbyRoutesModel {
         },
         cadencePolicy: NearbyPollingCadencePolicy = .standard,
         powerStateProvider: @escaping PowerStateProvider = { ProcessInfo.processInfo.isLowPowerModeEnabled },
-        clock: any Clock<Duration> = ContinuousClock()
+        clock: any Clock<Duration> = ContinuousClock(),
+        notificationCenter: NotificationCenter = .default
     ) {
         self.authorizationProvider = authorizationProvider
         self.requestAuthorizationAction = requestAuthorization
@@ -114,6 +116,7 @@ public final class NearbyRoutesModel {
         self.cadencePolicy = cadencePolicy
         self.powerStateProvider = powerStateProvider
         self.clock = clock
+        self.notificationCenter = notificationCenter
         self.phase = .locating
     }
 
@@ -128,6 +131,7 @@ public final class NearbyRoutesModel {
         self.cadencePolicy = .standard
         self.powerStateProvider = { false }
         self.clock = ContinuousClock()
+        self.notificationCenter = .default
         self.phase = phase
         self.origin = origin
         self.loadedAt = Date()
@@ -142,7 +146,7 @@ public final class NearbyRoutesModel {
     public func startPolling() {
         guard pollTask == nil else { return }
         pollTask = Task { [weak self] in
-            await self?.runPollingLoop()
+            await self?.runPollingLoop(userInitiated: false)
         }
     }
 
@@ -159,33 +163,89 @@ public final class NearbyRoutesModel {
         if pollTask != nil {
             pollTask?.cancel()
             pollTask = Task { [weak self] in
-                await self?.runPollingLoop()
+                await self?.runPollingLoop(userInitiated: true)
             }
         } else {
             refreshTask?.cancel()
             refreshTask = Task { [weak self] in
-                await self?.performRefresh()
+                await self?.performRefresh(userInitiated: true)
             }
         }
     }
 
-    private func runPollingLoop() async {
+    /// Only the first pass can be user-initiated; the passes after it are
+    /// background polls.
+    private func runPollingLoop(userInitiated: Bool) async {
+        var userInitiated = userInitiated
         while !Task.isCancelled {
-            await performRefresh()
+            await performRefresh(userInitiated: userInitiated)
+            userInitiated = false
             guard !Task.isCancelled else { break }
 
-            let isLowPower = powerStateProvider()
-            let interval = cadencePolicy.interval(isLowPower: isLowPower, isOffline: isLastRefreshOffline)
-
             do {
-                try await clock.sleep(for: interval)
+                try await sleepForCadence()
             } catch {
                 break
             }
         }
     }
 
-    public func performRefresh() async {
+    /// Sleeps until the cadence interval has passed since the sleep began. A
+    /// Low Power Mode change re-reads the interval against that same start, so
+    /// turning it off doesn't leave a 180s wait running. Throws when cancelled.
+    private func sleepForCadence() async throws {
+        let stopwatch = clock.stopwatch()
+        while true {
+            let interval = cadencePolicy.interval(isLowPower: powerStateProvider(), isOffline: isLastRefreshOffline)
+            guard interval > stopwatch.elapsed() else { return }
+            guard try await sleep(untilElapsed: interval, on: stopwatch) == .powerStateChanged else { return }
+        }
+    }
+
+    private enum SleepOutcome: Sendable {
+        case finished, powerStateChanged
+    }
+
+    private func sleep(untilElapsed interval: Duration, on stopwatch: Stopwatch) async throws -> SleepOutcome {
+        // Observe before sleeping, so a change can't land between the two.
+        let (changes, continuation) = AsyncStream.makeStream(of: Void.self, bufferingPolicy: .bufferingNewest(1))
+        let observer = notificationCenter.addObserver(forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: nil) { _ in
+            continuation.yield()
+        }
+        defer { notificationCenter.removeObserver(observer) }
+
+        return try await withThrowingTaskGroup(of: SleepOutcome.self) { group in
+            group.addTask {
+                try await stopwatch.sleepUntilElapsed(interval)
+                return .finished
+            }
+            group.addTask {
+                for await _ in changes {
+                    return .powerStateChanged
+                }
+                throw CancellationError()
+            }
+            defer { group.cancelAll() }
+            return try await group.next() ?? .finished
+        }
+    }
+
+    /// Shows a progress phase, except over a loaded list. A background poll
+    /// also keeps the empty, failed and no-region screens until the new result
+    /// lands; only a user-initiated refresh shows progress over them.
+    private func showProgress(_ progress: Phase, userInitiated: Bool) {
+        switch phase {
+        case .loaded:
+            return
+        case .empty, .failed, .noRegion:
+            guard userInitiated else { return }
+        default:
+            break
+        }
+        phase = progress
+    }
+
+    public func performRefresh(userInitiated: Bool = true) async {
         guard !Task.isCancelled else { return }
 
         switch authorizationProvider() {
@@ -200,9 +260,7 @@ public final class NearbyRoutesModel {
             break
         }
 
-        if case .loaded = phase {} else {
-            phase = .locating
-        }
+        showProgress(.locating, userInitiated: userInitiated)
 
         let fix: CLLocation
         do {
@@ -242,13 +300,11 @@ public final class NearbyRoutesModel {
             return
         }
 
-        await loadDirections(near: fix, using: apiService)
+        await loadDirections(near: fix, using: apiService, userInitiated: userInitiated)
     }
 
-    private func loadDirections(near fix: CLLocation, using apiService: RESTAPIService) async {
-        if case .loaded = phase {} else {
-            phase = .loading
-        }
+    private func loadDirections(near fix: CLLocation, using apiService: RESTAPIService, userInitiated: Bool) async {
+        showProgress(.loading, userInitiated: userInitiated)
 
         do {
             let directions = try await directionsLoader(fix, apiService)
@@ -264,8 +320,29 @@ public final class NearbyRoutesModel {
             if case .loaded = phase {
                 // Preserve loaded directions across transient background fetch failures
             } else {
-                phase = .failed(error.localizedDescription)
+                phase = .failed(isOffline ? Strings.nearbyOffline : error.localizedDescription)
             }
         }
+    }
+}
+
+/// Time measured from one starting instant on a clock. Lets callers holding
+/// `any Clock<Duration>` measure and sleep against that instant without naming
+/// the clock's `Instant` type.
+private struct Stopwatch: Sendable {
+    /// The time passed since the start.
+    let elapsed: @Sendable () -> Duration
+    /// Sleeps until the given time has passed since the start. The deadline
+    /// is fixed at the start, so it doesn't move with when the sleep begins.
+    let sleepUntilElapsed: @Sendable (Duration) async throws -> Void
+}
+
+private extension Clock where Duration == Swift.Duration {
+    func stopwatch() -> Stopwatch {
+        let start = now
+        return Stopwatch(
+            elapsed: { start.duration(to: self.now) },
+            sleepUntilElapsed: { try await self.sleep(until: start.advanced(by: $0), tolerance: nil) }
+        )
     }
 }
