@@ -89,4 +89,14 @@ final class RESTAPIURLBuilderExtendedTests {
         #expect(url.path == "/api/where/agencies-with-coverage.json")
         #expect(queryValue(url, "key") == "TEST_KEY")
     }
+
+    @Test func `getStopsForAgency encodes special characters and slashes in agency ID`() {
+        let agencyID = "1_KCM/Metro Transit"
+        let url = builder.getStopsForAgency(id: agencyID)
+
+        #expect(queryValue(url, "key") == "TEST_KEY")
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let percentEncodedPath = components?.percentEncodedPath ?? ""
+        #expect(percentEncodedPath == "/api/where/stops-for-agency/1_KCM%2FMetro%20Transit.json")
+    }
 }
