@@ -486,4 +486,71 @@ final class OnDemandAvailabilityTests: OBATestCase {
         #expect(text.localizedCaseInsensitiveContains("tomorrow"), Comment(rawValue: text))
         #expect(text.contains("7:20"), Comment(rawValue: text))
     }
+
+    // MARK: - Explainable eligibility tests
+
+    @Test func `Availability carries explainable eligibility reason for open and late services`() throws {
+        // Tuesday 12:00 EDT: CC1 is open now and eligible to book
+        let openResult = availability(try charlevoix("CC_CC1"), at: instant("2026-03-10T16:00:00Z"))
+        #expect(openResult.eligibilityReason.isEligible)
+        if case .eligible(let cutoff) = openResult.eligibilityReason {
+            #expect(cutoff == instant("2026-03-10T19:10:00Z"))
+        } else {
+            Issue.record("Expected .eligible reason, got \(openResult.eligibilityReason)")
+        }
+
+        // 16:00 EDT: running past cutoff -> tooLate for today
+        let lateResult = availability(try charlevoix("CC_CC1"), at: instant("2026-03-10T20:00:00Z"))
+        #expect(!lateResult.eligibilityReason.isEligible)
+        if case .tooLate(let cutoff) = lateResult.eligibilityReason {
+            #expect(cutoff == instant("2026-03-10T19:10:00Z"))
+        } else {
+            Issue.record("Expected .tooLate reason, got \(lateResult.eligibilityReason)")
+        }
+    }
+
+    @Test func `Availability carries explainable eligibility reason for missing timezone`() throws {
+        let service = try charlevoix("CC_CC1")
+        let result = OnDemandAvailability.evaluate(service: service, timeZone: nil, now: instant("2026-03-10T16:00:00Z"))
+        #expect(result.eligibilityReason == .unavailable(.missingTimeZone))
+        #expect(!result.eligibilityReason.isEligible)
+        #expect(result.eligibilityReason.domainExplanation.contains("time zone is unknown"))
+    }
+
+    @Test func `Availability carries explainable eligibility reason for certification requirement`() throws {
+        let certified = try charlevoix("CC_CC1") { json in
+            var list = (json["data"] as! [String: Any])["list"] as! [[String: Any]]
+            list[0]["eligibility"] = ["requirement": "certificationRequired", "infoUrl": NSNull()]
+            var data = json["data"] as! [String: Any]
+            data["list"] = list
+            json["data"] = data
+        }
+        let result = availability(certified, at: instant("2026-03-10T16:00:00Z"))
+        #expect(result.eligibilityReason == .unavailable(.certificationRequired))
+        #expect(!result.eligibilityReason.isEligible)
+        #expect(result.eligibilityReason.domainExplanation.contains("certification"))
+    }
+
+    @Test func `Availability evaluateEligibility explains service dates and expired calendars`() throws {
+        let service = try charlevoix("CC_CC1")
+        // Sunday 2026-03-15: CC1 only operates Mon-Fri
+        let sundayDate = ServiceDate("2026-03-15")!
+        let sundayReason = OnDemandAvailability.evaluateEligibility(
+            service: service,
+            timeZone: service.timeZone,
+            travelDate: sundayDate,
+            now: instant("2026-03-10T16:00:00Z")
+        )
+        #expect(sundayReason == .unavailable(.noServiceOnDate(sundayDate)))
+
+        // Distant future date after all calendars ended
+        let futureDate = ServiceDate("2030-01-01")!
+        let futureReason = OnDemandAvailability.evaluateEligibility(
+            service: service,
+            timeZone: service.timeZone,
+            travelDate: futureDate,
+            now: instant("2026-03-10T16:00:00Z")
+        )
+        #expect(futureReason == .unavailable(.serviceEnded))
+    }
 }

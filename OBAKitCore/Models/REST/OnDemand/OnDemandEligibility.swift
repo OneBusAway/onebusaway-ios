@@ -27,6 +27,10 @@ public struct OnDemandEligibility: Decodable, Hashable, Sendable {
     public let requirement: Requirement
     public let infoURL: URL?
 
+    public var requiresCertification: Bool {
+        requirement == .certificationRequired
+    }
+
     private enum CodingKeys: String, CodingKey {
         case requirement
         case infoURL = "infoUrl"

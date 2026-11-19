@@ -203,6 +203,42 @@ public struct BookingDeadlineEvaluator: Sendable {
         )
     }
 
+    /// Evaluates the typed eligibility reason for one availability rule on a travel date.
+    public func evaluateEligibility(
+        rule: AvailabilityRule,
+        bookingRule: OnDemandBookingRule?,
+        travelDate: ServiceDate,
+        now: Date
+    ) -> OnDemandEligibilityReason {
+        guard hasUsableCalendar(rule) else {
+            return .unavailable(.unresolvedBookingRule)
+        }
+
+        let latestEnd = rule.calendarIDs.compactMap { calendarsByID[$0]?.endDate }.max()
+        if let latestEnd, travelDate > latestEnd {
+            return .unavailable(.serviceEnded)
+        }
+
+        let isDateActive = rule.calendarIDs.contains { isActive(calendarID: $0, on: travelDate) }
+        guard isDateActive else {
+            return .unavailable(.noServiceOnDate(travelDate))
+        }
+
+        let evaluation = evaluate(rule: rule, bookingRule: bookingRule, travelDate: travelDate, now: now)
+        switch evaluation.state {
+        case .open:
+            return .eligible(cutoff: evaluation.cutoffInstant)
+        case .notYetOpen:
+            guard let open = evaluation.openInstant else { return .unavailable(.unresolvedBookingRule) }
+            return .tooEarly(openInstant: open)
+        case .closedForDate:
+            guard let cutoff = evaluation.cutoffInstant else { return .unavailable(.unresolvedBookingRule) }
+            return .tooLate(cutoffInstant: cutoff)
+        case .unknown:
+            return .unavailable(.unresolvedBookingRule)
+        }
+    }
+
     /// `latestPickup(D) = instant(D, rule.endPickupTime ?? 24:00:00)` — the
     /// deadline every booking type anchors to, computed once rather than
     /// duplicated per type (mirrors Android's `latestPickup`).

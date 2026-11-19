@@ -95,6 +95,11 @@ struct OnDemandServiceView: View {
         }
     }
 
+    /// User-facing explainable eligibility text.
+    var eligibilityExplanationText: String {
+        copy.userFacingExplanation(for: availability.eligibilityReason)
+    }
+
     /// The promoted fact for advance services only (item 2).
     var promotedDeadlineText: String? {
         availability.usabilityTier == OnDemandAvailability.advanceTier ? bookingLineText : nil

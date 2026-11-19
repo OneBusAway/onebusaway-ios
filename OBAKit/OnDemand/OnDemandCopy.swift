@@ -186,6 +186,55 @@ struct OnDemandCopy {
         }
     }
 
+    // MARK: - Eligibility explanation
+
+    func userFacingExplanation(for reason: OnDemandEligibilityReason) -> String {
+        switch reason {
+        case .eligible(let cutoff):
+            if let cutoff {
+                return String(format: Strings.onDemandEligibilityEligibleUntilFormat, relativeDateTime(cutoff))
+            }
+            return Strings.onDemandEligibilityEligible
+        case .tooEarly(let openInstant):
+            return String(format: Strings.onDemandEligibilityTooEarlyFormat, relativeDateTime(openInstant))
+        case .tooLate(let cutoffInstant):
+            return String(format: Strings.onDemandEligibilityTooLateFormat, relativeDateTime(cutoffInstant))
+        case .outsideZone(let failure):
+            switch failure {
+            case .originOutside:
+                return Strings.onDemandEligibilityOutsideZoneOrigin
+            case .destinationOutside:
+                return Strings.onDemandEligibilityOutsideZoneDestination
+            case .disconnected:
+                return Strings.onDemandEligibilityOutsideZoneDisconnected
+            case .pointOutside:
+                return Strings.onDemandEligibilityOutsideZonePoint
+            }
+        case .missingEndpoint(let endpoint):
+            switch endpoint {
+            case .origin:
+                return Strings.onDemandEligibilityMissingEndpointOrigin
+            case .destination:
+                return Strings.onDemandEligibilityMissingEndpointDestination
+            case .both:
+                return Strings.onDemandEligibilityMissingEndpointBoth
+            }
+        case .unavailable(let unavailable):
+            switch unavailable {
+            case .missingTimeZone:
+                return Strings.onDemandEligibilityUnavailableMissingTimeZone
+            case .noServiceOnDate:
+                return Strings.onDemandEligibilityUnavailableNoServiceDate
+            case .serviceEnded:
+                return Strings.onDemandEligibilityUnavailableServiceEnded
+            case .certificationRequired:
+                return Strings.onDemandEligibilityUnavailableCertificationRequired
+            case .unresolvedBookingRule, .noRules:
+                return Strings.onDemandEligibilityUnavailableGeneral
+            }
+        }
+    }
+
     // MARK: - Counts
 
     static func badge(index: Int, count: Int) -> String {
