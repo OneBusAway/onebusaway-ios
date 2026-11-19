@@ -904,6 +904,42 @@ final class StopCacheRepositoryTests {
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
         #expect(results.count == 50)
     }
+
+    @Test func `Paging cursor advances across corrupted stop rows without stalling or ending early`() throws {
+        // Insert 2 valid stops and 1 corrupted blob stop in between in id alphabetical order:
+        // "stop_a" (valid), "stop_b" (corrupt blob), "stop_c" (valid)
+        let stopA = makeStop(id: "stop_a", name: "Stop A")
+        let stopC = makeStop(id: "stop_c", name: "Stop C")
+        repository.saveStops([stopA, stopC], regionId: 1)
+
+        try database.dbQueue.write { db in
+            try db.execute(
+                sql: "INSERT INTO cachedStop (id, regionId, latitude, longitude, lastUpdated, stopData) VALUES (?, ?, ?, ?, ?, ?)",
+                arguments: ["stop_b", 1, 47.6, -122.3, 100.0, Data([0xFF, 0xFE, 0x00])]
+            )
+        }
+
+        // Page with limit 2: fetches "stop_a" and "stop_b".
+        // Decoded stops should only contain "stop_a", but cursor must advance to "stop_b"
+        let page1 = repository.stops(regionId: 1, after: nil, limit: 2)
+        #expect(page1.stops.map(\.id) == ["stop_a"])
+        #expect(page1.cursor == "stop_b")
+
+        // Next page with after: "stop_b": fetches "stop_c".
+        let page2 = repository.stops(regionId: 1, after: page1.cursor, limit: 2)
+        #expect(page2.stops.map(\.id) == ["stop_c"])
+        #expect(page2.cursor == nil)
+
+        // Reading a single-row page that hits only the corrupted row ("stop_b") returns no stops
+        // but advances cursor to "stop_b", allowing the subsequent read to fetch "stop_c".
+        let corruptOnlyPage = repository.stops(regionId: 1, after: "stop_a", limit: 1)
+        #expect(corruptOnlyPage.stops.isEmpty)
+        #expect(corruptOnlyPage.cursor == "stop_b")
+
+        let resumedPage = repository.stops(regionId: 1, after: corruptOnlyPage.cursor, limit: 1)
+        #expect(resumedPage.stops.map(\.id) == ["stop_c"])
+        #expect(resumedPage.cursor == "stop_c")
+    }
 }
 
 // swiftlint:enable force_try
