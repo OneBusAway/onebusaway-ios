@@ -194,12 +194,11 @@ public final class NearbyRoutesModel {
     /// Low Power Mode change re-reads the interval against that same start, so
     /// turning it off doesn't leave a 180s wait running. Throws when cancelled.
     private func sleepForCadence() async throws {
-        let elapsed = clock.stopwatch()
+        let stopwatch = clock.stopwatch()
         while true {
             let interval = cadencePolicy.interval(isLowPower: powerStateProvider(), isOffline: isLastRefreshOffline)
-            let remaining = interval - elapsed()
-            guard remaining > .zero else { return }
-            guard try await sleep(for: remaining) == .powerStateChanged else { return }
+            guard interval > stopwatch.elapsed() else { return }
+            guard try await sleep(untilElapsed: interval, on: stopwatch) == .powerStateChanged else { return }
         }
     }
 
@@ -207,7 +206,7 @@ public final class NearbyRoutesModel {
         case finished, powerStateChanged
     }
 
-    private func sleep(for duration: Duration) async throws -> SleepOutcome {
+    private func sleep(untilElapsed interval: Duration, on stopwatch: Stopwatch) async throws -> SleepOutcome {
         // Observe before sleeping, so a change can't land between the two.
         let (changes, continuation) = AsyncStream.makeStream(of: Void.self, bufferingPolicy: .bufferingNewest(1))
         let observer = notificationCenter.addObserver(forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: nil) { _ in
@@ -215,10 +214,9 @@ public final class NearbyRoutesModel {
         }
         defer { notificationCenter.removeObserver(observer) }
 
-        let clock = clock
         return try await withThrowingTaskGroup(of: SleepOutcome.self) { group in
             group.addTask {
-                try await clock.sleep(for: duration)
+                try await stopwatch.sleepUntilElapsed(interval)
                 return .finished
             }
             group.addTask {
@@ -328,12 +326,23 @@ public final class NearbyRoutesModel {
     }
 }
 
+/// Time measured from one starting instant on a clock. Lets callers holding
+/// `any Clock<Duration>` measure and sleep against that instant without naming
+/// the clock's `Instant` type.
+private struct Stopwatch: Sendable {
+    /// The time passed since the start.
+    let elapsed: @Sendable () -> Duration
+    /// Sleeps until the given time has passed since the start. The deadline
+    /// is fixed at the start, so it doesn't move with when the sleep begins.
+    let sleepUntilElapsed: @Sendable (Duration) async throws -> Void
+}
+
 private extension Clock where Duration == Swift.Duration {
-    /// Returns a closure that reports the time passed on this clock since the
-    /// call. Lets callers holding `any Clock<Duration>` measure elapsed time
-    /// without naming the clock's `Instant` type.
-    func stopwatch() -> @Sendable () -> Duration {
+    func stopwatch() -> Stopwatch {
         let start = now
-        return { start.duration(to: self.now) }
+        return Stopwatch(
+            elapsed: { start.duration(to: self.now) },
+            sleepUntilElapsed: { try await self.sleep(until: start.advanced(by: $0), tolerance: nil) }
+        )
     }
 }
