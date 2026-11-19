@@ -200,4 +200,37 @@ final class WatchBookmarkStoreTests {
         #expect(store.bookmarks.isEmpty)
         #expect(defaults.data(forKey: WatchBookmarkStore.payloadKey) == nil)
     }
+
+    @Test @MainActor func `Corrupted or invalid binary plist in UserDefaults falls back to nil payload`() {
+        let defaults = makeUserDefaults()
+        let corruptData = Data([0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01, 0x02, 0x03])
+        defaults.set(corruptData, forKey: WatchBookmarkStore.payloadKey)
+
+        let store = WatchBookmarkStore(userDefaults: defaults)
+
+        #expect(store.payload == nil)
+        #expect(store.bookmarks.isEmpty)
+        #expect(store.groups.isEmpty)
+        #expect(store.syncedRegion == nil)
+    }
+
+    @Test @MainActor func `Valid payload replaces corrupted storage upon update`() throws {
+        let defaults = makeUserDefaults()
+        let corruptData = Data([0xFF, 0xEE, 0xDD, 0xCC])
+        defaults.set(corruptData, forKey: WatchBookmarkStore.payloadKey)
+
+        let store = WatchBookmarkStore(userDefaults: defaults)
+        #expect(store.payload == nil)
+
+        let validPayload = try makePayload(sequenceNumber: 1, stopID: "1_100", name: "Recovered Stop")
+        #expect(store.update(payload: validPayload) == true)
+
+        #expect(store.payload == validPayload)
+        #expect(store.bookmarks.count == 1)
+        #expect(store.bookmarks.first?.name == "Recovered Stop")
+
+        // Confirm new valid binary plist was written to UserDefaults
+        let reloadedStore = WatchBookmarkStore(userDefaults: defaults)
+        #expect(reloadedStore.payload == validPayload)
+    }
 }
