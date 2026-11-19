@@ -28,6 +28,22 @@ final class StopClusterTests {
         stops = try Fixtures.loadSomeStops()
     }
 
+    private func makeStop(id: String, code: String, name: String, direction: String? = nil) throws -> Stop {
+        var dict: [String: Any] = [
+            "id": id,
+            "code": code,
+            "name": name,
+            "lat": 47.6062,
+            "lon": -122.3321,
+            "locationType": 0,
+            "routeIds": ["1_100"]
+        ]
+        if let direction {
+            dict["direction"] = direction
+        }
+        return try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)
+    }
+
     private func cluster(_ members: [MKAnnotation]) -> MKClusterAnnotation {
         MKClusterAnnotation(memberAnnotations: members)
     }
@@ -98,6 +114,15 @@ final class StopClusterTests {
 
         #expect(title.hasPrefix(stop.name))
         #expect(title.contains(Formatters.formattedCodeAndDirection(stop: stop)))
+    }
+
+    @Test func `Picker title formats stop with empty code and direction gracefully`() throws {
+        let emptyCodeStop = try makeStop(id: "1_empty", code: "", name: "Unnamed Junction", direction: nil)
+        let title = StopCluster.pickerTitle(for: emptyCodeStop)
+
+        #expect(title.hasPrefix("Unnamed Junction"))
+        #expect(title.contains(" · "))
+        #expect(title.contains(Formatters.formattedCodeAndDirection(stop: emptyCodeStop)))
     }
 
     // MARK: - Annotation views
