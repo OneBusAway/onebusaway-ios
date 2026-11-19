@@ -243,42 +243,54 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
         #expect(countingLoader.callCount == 1)
     }
 
-    @Test func `BookmarkArrivalsRequest matching filters past temporalState and sorts upcoming arrivals soonest first`() throws {
-        let referenceTime = 1_700_000_000
-        let serviceDate = Date(timeIntervalSinceReferenceDate: TimeInterval(referenceTime))
+    @Test func `BookmarkArrivalsRequest matching filters past departures and sorts upcoming arrivals soonest first`() throws {
+        let now = Int(Date.timeIntervalSinceReferenceDate)
+        let stopID = "1_100"
 
-        let dep1 = try Fixtures.arrivalDeparture(
+        let past = try Fixtures.arrivalDeparture(
             predicted: false,
-            scheduledArrival: referenceTime + 600,
-            scheduledDeparture: referenceTime + 600,
+            scheduledArrival: now - 3600,
+            scheduledDeparture: now - 3600,
             stopSequence: 1,
-            stopID: "1_100"
+            stopID: stopID,
+            tripID: "trip_past"
         )
-        dep1.serviceDate = serviceDate
-
-        let dep2 = try Fixtures.arrivalDeparture(
+        let upcomingLater = try Fixtures.arrivalDeparture(
             predicted: false,
-            scheduledArrival: referenceTime + 300,
-            scheduledDeparture: referenceTime + 300,
+            scheduledArrival: now + 600,
+            scheduledDeparture: now + 600,
             stopSequence: 2,
-            stopID: "1_100"
+            stopID: stopID,
+            tripID: "trip_later"
         )
-        dep2.serviceDate = serviceDate
+        let upcomingSoon = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: now + 300,
+            scheduledDeparture: now + 300,
+            stopSequence: 3,
+            stopID: stopID,
+            tripID: "trip_soon"
+        )
 
-        let request = BookmarkArrivalsRequest(stopID: "1_100")
-        let matched = request.matching([dep1, dep2])
+        #expect(past.temporalState == .past)
+        #expect(upcomingLater.temporalState != .past)
+        #expect(upcomingSoon.temporalState != .past)
+
+        let request = BookmarkArrivalsRequest(stopID: stopID)
+        let matched = request.matching([upcomingLater, past, upcomingSoon])
 
         #expect(matched.count == 2)
-        #expect(matched.first?.arrivalDepartureDate == dep2.arrivalDepartureDate)
-        #expect(matched.last?.arrivalDepartureDate == dep1.arrivalDepartureDate)
+        #expect(matched.map(\.tripID) == ["trip_soon", "trip_later"])
+        #expect(matched.first?.arrivalDepartureDate == upcomingSoon.arrivalDepartureDate)
+        #expect(matched.last?.arrivalDepartureDate == upcomingLater.arrivalDepartureDate)
     }
 
     @Test func `BookmarkArrivalsRequest matching with non matching tripKey returns empty array`() throws {
-        let referenceTime = 1_700_000_000
+        let now = Int(Date.timeIntervalSinceReferenceDate)
         let dep = try Fixtures.arrivalDeparture(
             predicted: false,
-            scheduledArrival: referenceTime + 300,
-            scheduledDeparture: referenceTime + 300,
+            scheduledArrival: now + 300,
+            scheduledDeparture: now + 300,
             stopSequence: 1,
             stopID: "1_100"
         )
