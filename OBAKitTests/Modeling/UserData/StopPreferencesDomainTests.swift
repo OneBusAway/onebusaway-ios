@@ -119,13 +119,23 @@ final class StopPreferencesDomainTests {
 
     // MARK: - ArrivalDepartureFilter
 
-    @Test func `ArrivalDepartureFilter codable round-trip`() throws {
-        let filters: [ArrivalDepartureFilter] = [.all, .estimatedOnly, .scheduledOnly]
+    @Test func `ArrivalDepartureFilter effective resolves valid saved values and falls back to brand default on invalid or missing key`() {
+        let defaults = UserDefaults(suiteName: "StopPreferencesDomainTests_\(UUID().uuidString)")!
+        defer { defaults.removePersistentDomain(forName: "StopPreferencesDomainTests") }
 
-        for filter in filters {
-            let data = try JSONEncoder().encode(filter)
-            let decoded = try JSONDecoder().decode(ArrivalDepartureFilter.self, from: data)
-            #expect(decoded == filter)
-        }
+        // When key is missing, brand default is returned
+        #expect(ArrivalDepartureFilter.effective(in: defaults, brandDefault: .all) == .all)
+        #expect(ArrivalDepartureFilter.effective(in: defaults, brandDefault: .estimatedOnly) == .estimatedOnly)
+
+        // When key is present and valid
+        defaults.set("scheduledOnly", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        #expect(ArrivalDepartureFilter.effective(in: defaults, brandDefault: .all) == .scheduledOnly)
+
+        defaults.set("estimatedOnly", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        #expect(ArrivalDepartureFilter.effective(in: defaults, brandDefault: .all) == .estimatedOnly)
+
+        // When key has invalid/corrupted string, fallback to brandDefault
+        defaults.set("invalidFilterOption", forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        #expect(ArrivalDepartureFilter.effective(in: defaults, brandDefault: .scheduledOnly) == .scheduledOnly)
     }
 }
