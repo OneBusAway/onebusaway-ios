@@ -439,4 +439,30 @@ final class ServiceAlertTests: OBATestCase {
         #expect(alert.affectedStops.first?.id == "stop_1")
         #expect(alert.affectedTrips.first?.id == "trip_1")
     }
+
+    @Test func `Decode service alert with nil optional text fields and empty windows`() {
+        let minimalAlertData: [String: Any] = [
+            "id": "minimal_alert_456",
+            "creationTime": 1700000000,
+            "reason": "TECHNICAL_PROBLEM",
+            "severity": "NORMAL",
+            "activeWindows": [],
+            "publicationWindows": [],
+            "allAffects": [],
+            "consequences": []
+        ]
+
+        let alert = try! Fixtures.dictionaryToModel(type: ServiceAlert.self, dictionary: minimalAlertData)
+
+        #expect(alert.id == "minimal_alert_456")
+        #expect(alert.reason == "TECHNICAL_PROBLEM")
+        #expect(alert.severity == "NORMAL")
+        #expect(alert.summary == nil)
+        #expect(alert.situationDescription == nil)
+        #expect(alert.urlString == nil)
+        #expect(alert.activeWindows.isEmpty)
+        #expect(alert.publicationWindows.isEmpty)
+        #expect(alert.affectedEntities.isEmpty)
+        #expect(alert.consequences.isEmpty)
+    }
 }
