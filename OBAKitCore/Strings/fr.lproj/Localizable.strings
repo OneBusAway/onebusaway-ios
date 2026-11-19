@@ -39,6 +39,12 @@
 /* Arrivals cannot load without a region */
 "arrivals.no_service" = "Aucune région de transport sélectionnée.";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Impossible de trouver votre position. Réessayez.";
+
+/* Shown when offline */
+"nearby.offline" = "Vous êtes hors ligne. Impossible de trouver les lignes à proximité.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Ajouter un rappel";
 

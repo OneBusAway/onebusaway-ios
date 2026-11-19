@@ -94,6 +94,10 @@ public class Strings: NSObject {
 
     public static let noTransitRegion = OBALoc("arrivals.no_service", value: "No transit region selected.", comment: "Arrivals cannot load without a region")
 
+    public static let locationFailed = OBALoc("nearby.location_failed", value: "Couldn't find your location. Try again.", comment: "Shown when a location fix fails or times out")
+
+    public static let nearbyOffline = OBALoc("nearby.offline", value: "You're offline. Couldn't find nearby routes.", comment: "Shown when offline")
+
     public static let offlineTitle = OBALoc("error_report.title.offline", value: "You're offline", comment: "Title of an error shown when the device has no internet connection.")
 
     public static let offlineSummary = OBALoc("error_report.summary.offline", value: "Check your connection and try again.", comment: "One-line toast text: the device has no internet connection.")

@@ -39,6 +39,12 @@
 /* Arrivals cannot load without a region */
 "arrivals.no_service" = "Walang napiling rehiyon ng transit.";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "Hindi mahanap ang iyong lokasyon. Subukang muli.";
+
+/* Shown when offline */
+"nearby.offline" = "Offline ka. Hindi mahanap ang mga kalapit na ruta.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Magdagdag ng Paalala";
 

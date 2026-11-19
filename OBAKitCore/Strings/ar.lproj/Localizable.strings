@@ -39,6 +39,12 @@
 /* Arrivals cannot load without a region */
 "arrivals.no_service" = "لم يتم اختيار منطقة نقل.";
 
+/* Shown when a location fix fails or times out */
+"nearby.location_failed" = "تعذّر تحديد موقعك. حاول مرة أخرى.";
+
+/* Shown when offline */
+"nearby.offline" = "أنت غير متصل بالإنترنت. تعذّر العثور على الخطوط القريبة.";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "إضافة تذكير";
 
