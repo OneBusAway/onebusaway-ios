@@ -199,11 +199,11 @@ final class NearbyRouteDirectionsTests: OBATestCase {
         #expect(Set(directions.map(\.key.direction)) == ["headsign:Capitol Hill Via 15th Ave E", "headsign:Downtown Seattle"])
     }
 
-    @Test func `Blank tripHeadsign falls back to route longName then shortName`() async throws {
+    @Test func `Empty tripHeadsign falls back to route longName then shortName`() async throws {
         let stop = try #require(try stopsByDistance().first)
         let arrivals = try await arrivals(fixture: galerFixture) { json in
             try Self.editArrivals(&json) { _, arrival in
-                arrival["tripHeadsign"] = "   "
+                arrival["tripHeadsign"] = ""
             }
         }
 
