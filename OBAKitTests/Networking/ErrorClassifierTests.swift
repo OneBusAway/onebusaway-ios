@@ -665,6 +665,32 @@ final class ErrorClassifierTests {
         #expect(description.contains("Settings"))
         #expect(description.contains("Cellular"))
     }
+
+    @Test func `Missing stop 404 response classifies to unknown category while preserving status code`() {
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com/api/where/stop/1_99999.json")!,
+            statusCode: 404,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        let error = APIError.requestNotFound(response)
+        let category = ErrorClassifier.category(for: error)
+
+        #expect(category == .unknown)
+    }
+
+    @Test func `Non-404 requestNotFound classifies to decoding category`() {
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com/api/where/arrivals-and-departures-for-stop/1_100.json")!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        let error = APIError.requestNotFound(response)
+        let category = ErrorClassifier.category(for: error)
+
+        #expect(category == .decoding)
+    }
 }
 
 // MARK: - Test Helpers
