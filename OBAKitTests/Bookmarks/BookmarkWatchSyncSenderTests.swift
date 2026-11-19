@@ -486,6 +486,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
 
     @Test @MainActor func `Region update notification triggers debounced sync and embeds updated region`() async throws {
         let dataLoader = MockDataLoader(testName: name)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
         let clock = TestClock()
         let (defaults, suiteName) = try makeUserDefaults()
