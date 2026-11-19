@@ -304,4 +304,62 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         #expect(payload.bookmarks.isEmpty)
         #expect(payload.groups.isEmpty)
     }
+
+    @Test @MainActor func `Region update notification triggers sync and embeds updated region`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var sentPayload: WatchSyncPayload?
+        let sender = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            userDefaults: defaults,
+            debounceInterval: .milliseconds(50),
+            transport: { payload in
+                sentPayload = payload
+            }
+        )
+
+        let initialRegion = Fixtures.pugetSoundRegion
+        application.regionsService.currentRegion = initialRegion
+        sender.syncExplicitly()
+        #expect(sentPayload?.region?.regionIdentifier == initialRegion.regionIdentifier)
+
+        // Switch to Tampa region
+        let tampaRegion = Fixtures.tampaRegion
+        application.regionsService.currentRegion = tampaRegion
+        sender.regionsService(application.regionsService, updatedRegion: tampaRegion)
+
+        // Explicitly sync to verify the updated region is bundled
+        sender.syncExplicitly()
+        let updatedPayload = try #require(sentPayload)
+        #expect(updatedPayload.region?.regionIdentifier == tampaRegion.regionIdentifier)
+    }
+
+    @Test @MainActor func `Unchanged data re-sync without force does not re-transmit`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var sendCount = 0
+        let sender = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            userDefaults: defaults,
+            debounceInterval: .milliseconds(50),
+            transport: { _ in
+                sendCount += 1
+            }
+        )
+
+        sender.syncExplicitly()
+        #expect(sendCount == 1)
+
+        // Attempting to sync without force and without any changes
+        sender.syncNow(force: false)
+        #expect(sendCount == 1)
+    }
 }
