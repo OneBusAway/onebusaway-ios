@@ -483,4 +483,75 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         await poll(until: { sent != nil })
         #expect(sent?.sequenceNumber == 1)
     }
+
+    @Test @MainActor func `Region update notification triggers debounced sync and embeds updated region`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.tampaRegion.OBABaseURL)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let clock = TestClock()
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var sentPayload: WatchSyncPayload?
+        let sender = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            debounceInterval: .milliseconds(50),
+            clock: clock,
+            transport: { payload in
+                sentPayload = payload
+            }
+        )
+
+        let initialRegion = Fixtures.pugetSoundRegion
+        application.regionsService.currentRegion = initialRegion
+        sender.syncExplicitly()
+        #expect(sentPayload?.region?.regionIdentifier == initialRegion.regionIdentifier)
+
+        // Switch to Tampa region and notify through delegate
+        let tampaRegion = Fixtures.tampaRegion
+        application.regionsService.currentRegion = tampaRegion
+        sentPayload = nil
+        sender.regionsService(application.regionsService, updatedRegion: tampaRegion)
+
+        // Wait for debounce timer to fire naturally
+        await poll(until: { clock.sleeperCount == 1 })
+        clock.advance(by: .milliseconds(50))
+        await poll(until: { sentPayload != nil })
+
+        let updatedPayload = try #require(sentPayload)
+        #expect(updatedPayload.region?.regionIdentifier == tampaRegion.regionIdentifier)
+    }
+
+    @Test @MainActor func `Unchanged data re-sync without force does not re-transmit`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var sendCount = 0
+        let sender = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            debounceInterval: .milliseconds(50),
+            transport: { _ in
+                sendCount += 1
+            }
+        )
+
+        sender.syncExplicitly()
+        #expect(sendCount == 1)
+
+        // Attempting to sync without force and without any changes
+        sender.syncNow(force: false)
+        #expect(sendCount == 1)
+    }
 }
