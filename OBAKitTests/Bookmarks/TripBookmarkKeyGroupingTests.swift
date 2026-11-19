@@ -212,4 +212,12 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         #expect(empty.tripKeyGroupedElements.isEmpty)
         #expect(empty.uniqueTripKeys.isEmpty)
     }
+
+    @Test func `TripBookmarkKey equality with nil and empty headsign treats both as equivalent empty representations`() {
+        let keyNil = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: nil)
+        let keyEmpty = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "")
+
+        #expect(keyNil == keyEmpty)
+        #expect(keyNil.hashValue == keyEmpty.hashValue)
+    }
 }
