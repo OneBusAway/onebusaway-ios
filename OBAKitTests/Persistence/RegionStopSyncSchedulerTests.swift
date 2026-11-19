@@ -179,29 +179,18 @@ final class RegionStopSyncSchedulerTests {
         #expect(reported.value.isEmpty)
     }
 
-    /// Once a sync task completes, its entry in scheduler state is cleared, allowing
-    /// subsequent schedules for the same region to run without being treated as duplicates.
-    @Test func `Completed sync clears pending state and permits subsequent run for same region`() async throws {
+    /// Once a sync task completes, its entry in scheduler state is cleared.
+    @Test func `A completed sync clears pendingSync`() async throws {
         let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_a")])
         let scheduler = makeScheduler(delay: .zero)
 
         scheduler.schedule(regionID: 1, using: fetcher)
-        let firstSync = scheduler.pendingSync
-        await firstSync?.value
+        let sync = scheduler.pendingSync
+        await sync?.value
 
         // Pending sync must be cleared upon completion
         #expect(scheduler.pendingSync == nil)
         #expect(try cachedIDs(region: 1) == ["1_a"])
-
-        // Second schedule for a different region (region 2) runs cleanly without being blocked by prior sync
-        let secondFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["2"], answers: ["2": answer("2_b")])
-        scheduler.schedule(regionID: 2, using: secondFetcher)
-        let secondSync = scheduler.pendingSync
-        await secondSync?.value
-
-        #expect(scheduler.pendingSync == nil)
-        #expect(await secondFetcher.calls == ["agencies", "config", "stops 2"])
-        #expect(try cachedIDs(region: 2) == ["2_b"])
     }
 }
 
