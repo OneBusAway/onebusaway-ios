@@ -41,8 +41,13 @@ public final class WatchBookmarkStore {
 
     /// Updates the stored payload.
     ///
-    /// Ignores duplicate payloads (identical revision) and out-of-order deliveries (older sequence number).
-    /// Resolves ties deterministically by comparing revision hashes.
+    /// A payload from a different epoch than the stored one always applies: the phone
+    /// starts a new epoch when its sequence counter can't be trusted (a reinstall or a
+    /// backup restore), so sequence numbers only compare within one epoch.
+    ///
+    /// Within an epoch, ignores duplicate payloads (identical revision) and out-of-order
+    /// deliveries (older sequence number), and resolves ties deterministically by
+    /// comparing revision hashes.
     ///
     /// - Parameter payload: The candidate payload received from the companion device.
     /// - Returns: `true` if the payload was applied and persisted; `false` if rejected.

@@ -242,4 +242,65 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
 
         #expect(countingLoader.callCount == 1)
     }
+
+    @Test func `BookmarkArrivalsRequest matching filters past departures and sorts upcoming arrivals soonest first`() throws {
+        let now = Int(Date.timeIntervalSinceReferenceDate)
+        let stopID = "1_100"
+
+        let past = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: now - 3600,
+            scheduledDeparture: now - 3600,
+            stopSequence: 1,
+            stopID: stopID,
+            tripID: "trip_past"
+        )
+        let upcomingLater = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: now + 600,
+            scheduledDeparture: now + 600,
+            stopSequence: 2,
+            stopID: stopID,
+            tripID: "trip_later"
+        )
+        let upcomingSoon = try Fixtures.arrivalDeparture(
+            predicted: false,
+            scheduledArrival: now + 300,
+            scheduledDeparture: now + 300,
+            stopSequence: 3,
+            stopID: stopID,
+            tripID: "trip_soon"
+        )
+
+        #expect(past.temporalState == .past)
+        #expect(upcomingLater.temporalState != .past)
+        #expect(upcomingSoon.temporalState != .past)
+
+        let request = BookmarkArrivalsRequest(stopID: stopID)
+        let matched = request.matching([upcomingLater, past, upcomingSoon])
+
+        #expect(matched.count == 2)
+        #expect(matched.map(\.tripID) == ["trip_soon", "trip_later"])
+        #expect(matched.first?.arrivalDepartureDate == upcomingSoon.arrivalDepartureDate)
+        #expect(matched.last?.arrivalDepartureDate == upcomingLater.arrivalDepartureDate)
+    }
+
+    @Test func `BookmarkArrivalsRequest matching with non matching tripKey returns empty array`() throws {
+        let arrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        ).arrivalsAndDepartures
+        let first = try #require(arrivals.first)
+
+        let unmatchedKey = TripBookmarkKey(
+            stopID: first.stopID,
+            routeShortName: "NonExistentRoute",
+            routeID: "1_999999",
+            tripHeadsign: "Nowhere"
+        )
+        let request = BookmarkArrivalsRequest(stopID: first.stopID, tripKey: unmatchedKey)
+
+        let matched = request.matching(arrivals)
+        #expect(matched.isEmpty)
+    }
 }
