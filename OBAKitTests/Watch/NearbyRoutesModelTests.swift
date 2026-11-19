@@ -678,4 +678,101 @@ struct NearbyRoutesModelTests {
 
         model.stopPolling()
     }
+
+    @Test @MainActor func `Offline error preserves loaded directions during polling and updates cadence`() async throws {
+        let clock = TestClock()
+        let state = TestState()
+        let direction = try makeDirection()
+        let policy = NearbyPollingCadencePolicy(
+            activeInterval: .seconds(60),
+            lowPowerInterval: .seconds(180),
+            offlineInterval: .seconds(30)
+        )
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: { self.seattleFix },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                state.recordFetch()
+                if state.isOffline {
+                    throw NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+                }
+                return [direction]
+            },
+            cadencePolicy: policy,
+            powerStateProvider: { false },
+            clock: clock
+        )
+
+        model.startPolling()
+        await poll(until: { state.fetchCount == 1 })
+        await poll(until: { clock.sleeperCount == 1 })
+
+        #expect(model.phase == .loaded([direction]))
+
+        // Simulate subsequent offline failure during polling
+        state.isOffline = true
+        clock.advance(by: .seconds(60))
+        await poll(until: { state.fetchCount == 2 })
+        await poll(until: { clock.sleeperCount == 1 })
+
+        // Loaded directions must be preserved rather than flipping to failed phase
+        #expect(model.phase == .loaded([direction]))
+
+        // Cadence should now use offlineInterval (30s) instead of activeInterval (60s)
+        state.isOffline = false
+        clock.advance(by: .seconds(30))
+        await poll(until: { state.fetchCount == 3 })
+
+        #expect(model.phase == .loaded([direction]))
+        model.stopPolling()
+    }
+
+    @Test @MainActor func `Offline location requester error transitions to offline failure message`() async {
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: {
+                throw NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+            },
+            hasRegion: { true },
+            apiServiceProvider: { nil }
+        )
+
+        await model.performRefresh()
+
+        #expect(model.phase == .failed(Strings.nearbyOffline))
+    }
+
+    @Test @MainActor func `Non-offline fetch failure preserves loaded directions during background poll`() async throws {
+        let direction = try makeDirection()
+        var shouldFail = false
+
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: { self.seattleFix },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in
+                if shouldFail {
+                    throw NSError(domain: "test.server.error", code: 500, userInfo: [NSLocalizedDescriptionKey: "Server error"])
+                }
+                return [direction]
+            }
+        )
+
+        await model.performRefresh()
+        #expect(model.phase == .loaded([direction]))
+
+        shouldFail = true
+        await model.performRefresh()
+
+        // Background fetch failure retains loaded directions
+        #expect(model.phase == .loaded([direction]))
+        #expect(model.directions.count == 1)
+    }
 }
