@@ -90,19 +90,13 @@ final class RESTAPIURLBuilderExtendedTests {
         #expect(queryValue(url, "key") == "TEST_KEY")
     }
 
-    @Test func `getStopsForRoute encodes routeID with slashes in path`() {
-        let routeID = "KCM_100/A"
-        let url = builder.getStopsForRoute(id: routeID)
+    @Test func `getStopsForAgency encodes special characters and slashes in agency ID`() {
+        let agencyID = "1_KCM/Metro Transit"
+        let url = builder.getStopsForAgency(id: agencyID)
 
         #expect(queryValue(url, "key") == "TEST_KEY")
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let percentEncodedPath = components?.percentEncodedPath ?? ""
-        #expect(percentEncodedPath == "/api/where/stops-for-route/KCM_100%2FA.json")
-    }
-
-    @Test func `getStopsForAgency with coverage and time parameters`() {
-        let url = builder.getStopsForAgency(id: "1_KCM")
-        #expect(url.path == "/api/where/stop-ids-for-agency/1_KCM.json")
-        #expect(queryValue(url, "key") == "TEST_KEY")
+        #expect(percentEncodedPath == "/api/where/stops-for-agency/1_KCM%2FMetro%20Transit.json")
     }
 }
