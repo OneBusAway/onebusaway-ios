@@ -232,4 +232,53 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         #expect(set.contains(keyA1))
         #expect(set.contains(keyB))
     }
+
+    @Test func `TripBookmarkKey returns nil when WatchBookmark is missing routeShortName or routeID`() {
+        let baseWatchBookmark = WatchBookmark(
+            id: UUID(),
+            name: "Route 44",
+            regionIdentifier: 1,
+            stopID: "1_100",
+            stopName: "Transit Center",
+            latitude: 47.6097,
+            longitude: -122.3331,
+            isFavorite: false,
+            routeID: "1_44",
+            routeShortName: "44",
+            tripHeadsign: "Ballard"
+        )
+        #expect(TripBookmarkKey(watchBookmark: baseWatchBookmark) != nil)
+
+        // Missing routeShortName
+        let missingShortName = WatchBookmark(
+            id: UUID(),
+            name: "Route 44",
+            regionIdentifier: 1,
+            stopID: "1_100",
+            stopName: "Transit Center",
+            latitude: 47.6097,
+            longitude: -122.3331,
+            isFavorite: false,
+            routeID: "1_44",
+            routeShortName: nil,
+            tripHeadsign: "Ballard"
+        )
+        #expect(TripBookmarkKey(watchBookmark: missingShortName) == nil)
+
+        // Missing routeID
+        let missingRouteID = WatchBookmark(
+            id: UUID(),
+            name: "Route 44",
+            regionIdentifier: 1,
+            stopID: "1_100",
+            stopName: "Transit Center",
+            latitude: 47.6097,
+            longitude: -122.3331,
+            isFavorite: false,
+            routeID: nil,
+            routeShortName: "44",
+            tripHeadsign: "Ballard"
+        )
+        #expect(TripBookmarkKey(watchBookmark: missingRouteID) == nil)
+    }
 }
