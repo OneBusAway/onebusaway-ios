@@ -65,4 +65,10 @@ final class RentalRangeFilterTests {
         let filter = RentalRangeFilter(minimumRangeMeters: 8047)
         #expect(filter.allows(try RentalFixtures.station()))
     }
+
+    @Test func negativeThresholdIsTreatedAsInactive() throws {
+        let negativeFilter = RentalRangeFilter(minimumRangeMeters: -500)
+        #expect(negativeFilter.isActive == false)
+        #expect(negativeFilter.allows(try RentalFixtures.vehicle(rangeMeters: 10)))
+    }
 }
