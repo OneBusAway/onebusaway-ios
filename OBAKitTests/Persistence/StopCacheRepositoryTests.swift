@@ -940,6 +940,31 @@ final class StopCacheRepositoryTests {
         #expect(resumedPage.stops.map(\.id) == ["stop_c"])
         #expect(resumedPage.cursor == "stop_c")
     }
+
+    // MARK: - Freshness Policy Classification
+
+    @Test func `StopCacheFreshnessPolicy classifies boundary timestamps accurately`() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+
+        // Nil sync date is expired
+        #expect(StopCacheFreshnessPolicy.classify(lastSuccessfulSyncAt: nil, now: now) == .expired)
+
+        // 1 second before freshInterval is fresh
+        let freshDate = now.addingTimeInterval(-(StopCacheFreshnessPolicy.freshInterval - 1.0))
+        #expect(StopCacheFreshnessPolicy.classify(lastSuccessfulSyncAt: freshDate, now: now) == .fresh)
+
+        // Exactly at freshInterval (7 days) is stale
+        let exactFreshBoundary = now.addingTimeInterval(-StopCacheFreshnessPolicy.freshInterval)
+        #expect(StopCacheFreshnessPolicy.classify(lastSuccessfulSyncAt: exactFreshBoundary, now: now) == .stale)
+
+        // Exactly at expirationInterval (30 days) is still stale
+        let exactExpirationBoundary = now.addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval)
+        #expect(StopCacheFreshnessPolicy.classify(lastSuccessfulSyncAt: exactExpirationBoundary, now: now) == .stale)
+
+        // 1 second past expirationInterval is expired
+        let expiredDate = now.addingTimeInterval(-(StopCacheFreshnessPolicy.expirationInterval + 1.0))
+        #expect(StopCacheFreshnessPolicy.classify(lastSuccessfulSyncAt: expiredDate, now: now) == .expired)
+    }
 }
 
 // swiftlint:enable force_try
