@@ -245,6 +245,22 @@ final class StopClusterTests {
         #expect(StopAnnotationView.accessibilityLabel(for: stops[0]) == Formatters.formattedAccessibilityLabel(stop: stops[0]))
         #expect(StopAnnotationView.accessibilityLabel(for: MKPointAnnotation()) == nil)
     }
+
+    @Test func `areCoLocated handles empty and single coordinate inputs safely`() {
+        #expect(StopCluster.areCoLocated([]))
+        let single = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.33)
+        #expect(StopCluster.areCoLocated([single]))
+    }
+
+    @Test func `stops in members ignores unrecognised annotation types`() {
+        let pin1 = MKPointAnnotation()
+        let pin2 = MKPointAnnotation()
+        #expect(StopCluster.stops(in: [pin1, pin2]).isEmpty)
+
+        let mixed = StopCluster.stops(in: [pin1, stops[0], pin2])
+        #expect(mixed.count == 1)
+        #expect(mixed.first?.id == stops[0].id)
+    }
 }
 
 /// Stop clustering is opt-in (#1600); `MapRegionManager` answers from the Settings flag.
