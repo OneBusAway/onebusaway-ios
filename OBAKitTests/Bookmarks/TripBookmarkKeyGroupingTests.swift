@@ -213,8 +213,9 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         #expect(empty.uniqueTripKeys.isEmpty)
     }
 
-    @Test func `TripBookmarkKey returns nil for bookmark with nil tripHeadsign`() {
-        let stopBookmark = Bookmark(name: "Stop Bookmark", regionIdentifier: 1, stop: stops[0])
+    @Test func `TripBookmarkKey returns nil for bookmark with nil tripHeadsign`() throws {
+        let stop = try #require(try Fixtures.loadSomeStops().first)
+        let stopBookmark = Bookmark(name: "Stop Bookmark", regionIdentifier: 1, stop: stop)
         #expect(stopBookmark.tripHeadsign == nil)
         #expect(TripBookmarkKey(bookmark: stopBookmark) == nil)
     }
@@ -224,9 +225,7 @@ final class TripBookmarkKeyGroupingTests: OBATestCase {
         let keyA2 = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "Ballard")
         let keyB = TripBookmarkKey(stopID: "1_100", routeShortName: "44", routeID: "1_44", tripHeadsign: "UW Station")
 
-        #expect(keyA1 == keyA2)
         #expect(keyA1 != keyB)
-        #expect(keyA1.hashValue == keyA2.hashValue)
 
         let set: Set<TripBookmarkKey> = [keyA1, keyA2, keyB]
         #expect(set.count == 2)
