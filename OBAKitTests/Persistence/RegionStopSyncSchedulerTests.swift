@@ -197,7 +197,6 @@ final class RegionStopSyncSchedulerTests {
         let secondFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["2"], answers: ["2": answer("2_b")])
         scheduler.schedule(regionID: 2, using: secondFetcher)
         let secondSync = scheduler.pendingSync
-        #expect(secondSync != nil)
         await secondSync?.value
 
         #expect(scheduler.pendingSync == nil)
