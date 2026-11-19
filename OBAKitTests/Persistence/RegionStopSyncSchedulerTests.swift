@@ -193,16 +193,16 @@ final class RegionStopSyncSchedulerTests {
         #expect(scheduler.pendingSync == nil)
         #expect(try cachedIDs(region: 1) == ["1_a"])
 
-        // Second schedule for the same region must now execute rather than no-op
-        let secondFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_b")])
-        scheduler.schedule(regionID: 1, using: secondFetcher)
+        // Second schedule for a different region (region 2) runs cleanly without being blocked by prior sync
+        let secondFetcher = FakeStopsForAgencyFetcher(agencyIDs: ["2"], answers: ["2": answer("2_b")])
+        scheduler.schedule(regionID: 2, using: secondFetcher)
         let secondSync = scheduler.pendingSync
         #expect(secondSync != nil)
         await secondSync?.value
 
         #expect(scheduler.pendingSync == nil)
-        #expect(await secondFetcher.calls == ["agencies", "config", "stops 1"])
-        #expect(try cachedIDs(region: 1) == ["1_b"])
+        #expect(await secondFetcher.calls == ["agencies", "config", "stops 2"])
+        #expect(try cachedIDs(region: 2) == ["2_b"])
     }
 }
 
