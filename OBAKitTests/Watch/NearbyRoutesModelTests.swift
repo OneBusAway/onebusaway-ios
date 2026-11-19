@@ -827,10 +827,8 @@ struct NearbyRoutesModelTests {
         let fix1 = CLLocation(latitude: 47.60, longitude: -122.33)
         let fix2 = CLLocation(latitude: 47.65, longitude: -122.30)
 
-        final class Gate: @unchecked Sendable {
-            var canProceed1 = false
-        }
-        let gate = Gate()
+        let (entered1Stream, entered1Continuation) = AsyncStream.makeStream(of: Void.self)
+        let (release1Stream, release1Continuation) = AsyncStream.makeStream(of: Void.self)
 
         var callCount = 0
         let model = NearbyRoutesModel(
@@ -839,9 +837,8 @@ struct NearbyRoutesModelTests {
             locationRequester: {
                 callCount += 1
                 if callCount == 1 {
-                    while !gate.canProceed1 {
-                        try await Task.sleep(nanoseconds: 10_000_000)
-                    }
+                    entered1Continuation.yield()
+                    for await _ in release1Stream { break }
                     return fix1
                 } else {
                     return fix2
@@ -860,14 +857,14 @@ struct NearbyRoutesModelTests {
 
         // Start refresh 1 (will pause in locationRequester)
         let task1 = Task { await model.performRefresh() }
-        try await Task.sleep(nanoseconds: 50_000_000)
+        for await _ in entered1Stream { break }
 
         // Start refresh 2 (supersedes refresh 1)
         let task2 = Task { await model.performRefresh() }
         _ = await task2.value
 
         // Allow refresh 1 to finish
-        gate.canProceed1 = true
+        release1Continuation.yield()
         _ = await task1.value
 
         // State must reflect refresh 2, not refresh 1

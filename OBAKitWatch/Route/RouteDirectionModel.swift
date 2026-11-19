@@ -97,6 +97,10 @@ public final class RouteDirectionModel {
                     result = .failure(error)
                 }
                 guard !Task.isCancelled else { return }
+                guard !self.isCurrentRegionDifferent else {
+                    self.stale = true
+                    return
+                }
                 self.apply(result, for: key)
 
                 do {
