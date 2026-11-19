@@ -16,6 +16,9 @@ import Testing
 final class BookmarkWatchSyncSenderTests: OBATestCase {
 
     private var queue: OperationQueue!
+    /// Each test gets its own epoch file, so none reads another's epoch.
+    private let epochDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("BookmarkWatchSyncSenderTests-\(UUID().uuidString)", isDirectory: true)
 
     override init() async throws {
         try await super.init()
@@ -25,6 +28,19 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
 
     isolated deinit {
         queue.cancelAllOperations()
+        try? FileManager.default.removeItem(at: epochDirectory)
+    }
+
+    /// Stands in for `WatchSessionBridge.shared`, whose starting epoch and
+    /// sequence number come from the live WatchConnectivity session.
+    private final class FakeWatchSyncBridge: BookmarkWatchSyncBridge {
+        var canSendToWatch = false
+        var lastSentPayload: WatchSyncPayload?
+        var lastSentRevision: String? { lastSentPayload?.revision }
+        func activate() {}
+        func send(payload: WatchSyncPayload) throws {
+            lastSentPayload = payload
+        }
     }
 
     @MainActor
@@ -54,7 +70,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             debounceInterval: .milliseconds(50)
         )
 
@@ -89,7 +107,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             debounceInterval: .milliseconds(100),
             clock: clock,
             transport: { _ in
@@ -119,7 +139,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             debounceInterval: .seconds(60),
             transport: { _ in
                 sendCount += 1
@@ -150,7 +172,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             debounceInterval: .milliseconds(50),
             retryDelays: [.milliseconds(30), .milliseconds(50)],
             clock: clock,
@@ -190,7 +214,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender1 = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             transport: { firstSentPayload = $0 }
         )
 
@@ -206,7 +232,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender2 = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             transport: { secondSentPayload = $0 }
         )
 
@@ -242,7 +270,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             debounceInterval: .milliseconds(50),
             retryDelays: [.milliseconds(20)],
             clock: clock,
@@ -291,7 +321,9 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let sender = BookmarkWatchSyncSender(
             userDataStore: application.userDataStore,
             regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
             userDefaults: defaults,
+            epochDirectory: epochDirectory,
             debounceInterval: .milliseconds(50),
             transport: { payload in
                 sentPayload = payload
@@ -303,5 +335,152 @@ final class BookmarkWatchSyncSenderTests: OBATestCase {
         let payload = try #require(sentPayload)
         #expect(payload.bookmarks.isEmpty)
         #expect(payload.groups.isEmpty)
+    }
+
+    @Test @MainActor func `Epoch is kept in a directory excluded from backups`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var sent: WatchSyncPayload?
+        let sender = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            transport: { sent = $0 }
+        )
+        sender.syncExplicitly()
+
+        let epoch = try #require(sent?.epoch)
+        let stored = try String(contentsOf: epochDirectory.appendingPathComponent("epoch"), encoding: .utf8)
+        #expect(stored == epoch.uuidString)
+        let resourceValues = try epochDirectory.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        #expect(resourceValues.isExcludedFromBackup == true)
+        #expect(defaults.dictionaryRepresentation().values.contains { ($0 as? String) == epoch.uuidString } == false)
+    }
+
+    @Test @MainActor func `Restoring an older backup starts a new epoch`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var sent: [WatchSyncPayload] = []
+        let sender1 = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            transport: { sent.append($0) }
+        )
+        sender1.syncExplicitly()
+
+        // A backup taken now holds sequence number 1.
+        let backup = try #require(defaults.persistentDomain(forName: suiteName))
+
+        let bookmark = try makeBookmark(application: application, name: "After Backup")
+        application.userDataStore.add(bookmark, to: nil)
+        sender1.syncExplicitly()
+        #expect(sent.last?.sequenceNumber == 2)
+
+        // Restore: the bookmarks and UserDefaults roll back, but the epoch
+        // directory isn't in the backup, so it comes back empty.
+        application.userDataStore.delete(bookmark: bookmark)
+        defaults.setPersistentDomain(backup, forName: suiteName)
+        try FileManager.default.removeItem(at: epochDirectory)
+
+        let sender2 = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            transport: { sent.append($0) }
+        )
+        sender2.syncExplicitly()
+
+        let restored = try #require(sent.last)
+        #expect(restored.sequenceNumber == 1)
+        #expect(restored.epoch != sent.first?.epoch)
+
+        // The watch, still holding sequence 2 from the old epoch, applies the
+        // restored phone's lower sequence number.
+        let store = WatchBookmarkStore(userDefaults: defaults)
+        #expect(store.update(payload: sent[1]))
+        #expect(store.update(payload: restored))
+    }
+
+    @Test @MainActor func `A built but unsent revision is sent after a relaunch`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let clock = TestClock()
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let sender1 = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            // Never advanced, so the debounce from adding the bookmark below never fires.
+            clock: TestClock(),
+            transport: { _ in Issue.record("sender1 should not send") }
+        )
+        application.userDataStore.add(try makeBookmark(application: application, name: "Built Only"), to: nil)
+        let built = try #require(sender1.buildPayload())
+
+        // Relaunch with no application context on the session.
+        var sent: WatchSyncPayload?
+        let sender2 = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            debounceInterval: .milliseconds(50),
+            clock: clock,
+            transport: { sent = $0 }
+        )
+        sender2.scheduleSync()
+
+        await poll(until: { clock.sleeperCount == 1 })
+        clock.advance(by: .milliseconds(50))
+        await poll(until: { sent != nil })
+
+        #expect(sent?.revision == built.revision)
+        #expect(sent?.sequenceNumber == built.sequenceNumber)
+    }
+
+    @Test @MainActor func `Scheduling a sync doesn't bump the sequence number before sending`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let clock = TestClock()
+        let (defaults, suiteName) = try makeUserDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var sent: WatchSyncPayload?
+        let sender = BookmarkWatchSyncSender(
+            userDataStore: application.userDataStore,
+            regionsService: application.regionsService,
+            bridge: FakeWatchSyncBridge(),
+            userDefaults: defaults,
+            epochDirectory: epochDirectory,
+            debounceInterval: .milliseconds(50),
+            clock: clock,
+            transport: { sent = $0 }
+        )
+
+        sender.scheduleSync()
+        await poll(until: { clock.sleeperCount == 1 })
+        #expect(defaults.integer(forKey: "BookmarkWatchSyncSender.sequenceNumber") == 0)
+
+        clock.advance(by: .milliseconds(50))
+        await poll(until: { sent != nil })
+        #expect(sent?.sequenceNumber == 1)
     }
 }
