@@ -97,7 +97,10 @@ final class MapPanelLayersModelTests: OBATestCase {
         let bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: true)
         let scooters = MapLayerDescriptor(id: "scooters", isEnabledByDefault: false)
 
-        let state = MapLayerVisibilityState(layers: [stops, bikes, scooters])
+        var state = MapLayerVisibilityState()
+        state.register(layer: stops)
+        state.register(layer: bikes)
+        state.register(layer: scooters)
 
         #expect(state.isEnabled(id: "stops"))
         #expect(state.isEnabled(id: "bikes"))
@@ -114,10 +117,10 @@ final class MapPanelLayersModelTests: OBATestCase {
         let bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: true)
         let scooters = MapLayerDescriptor(id: "scooters", isEnabledByDefault: false)
 
-        let state = MapLayerVisibilityState(
-            layers: [stops, bikes, scooters],
-            persistedEnabledIDs: ["scooters"]
-        )
+        var state = MapLayerVisibilityState()
+        state.register(layer: stops, persistedEnabled: false)
+        state.register(layer: bikes, persistedEnabled: false)
+        state.register(layer: scooters, persistedEnabled: true)
 
         #expect(!state.isEnabled(id: "stops"))
         #expect(!state.isEnabled(id: "bikes"))
@@ -131,7 +134,10 @@ final class MapPanelLayersModelTests: OBATestCase {
         var bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: false, availability: .unavailable(reason: "No bikes available"))
         let flex = MapLayerDescriptor(id: "flex", isEnabledByDefault: true, availability: .unsupported)
 
-        var state = MapLayerVisibilityState(layers: [stops, bikes, flex])
+        var state = MapLayerVisibilityState()
+        state.register(layer: stops)
+        state.register(layer: bikes)
+        state.register(layer: flex)
 
         // Unsupported layers never count toward toolbar badge or visible layers
         #expect(!state.isLayerVisible(id: "flex"))
@@ -142,8 +148,6 @@ final class MapPanelLayersModelTests: OBATestCase {
 
         // Unavailable layer cannot be toggled on
         #expect(!state.canToggle(id: "bikes"))
-        let toggledBikes = state.toggle(id: "bikes")
-        #expect(!toggledBikes)
 
         // If an already-enabled layer becomes unavailable, it can be toggled off
         bikes.availability = .available
@@ -157,24 +161,23 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(!state.isEnabled(id: "bikes"))
         // Once off, it cannot be toggled back on while unavailable
         #expect(!state.canToggle(id: "bikes"))
-        let toggledWhileUnavailable = state.toggle(id: "bikes")
-        #expect(!toggledWhileUnavailable)
     }
 
-    @Test func `Repeated toggle states behave deterministically and idempotently`() {
+    @Test func `Repeated selection states behave deterministically and idempotently`() {
         let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
-        var state = MapLayerVisibilityState(layers: [stops])
+        var state = MapLayerVisibilityState()
+        state.register(layer: stops)
 
         #expect(state.isEnabled(id: "stops"))
 
-        // Repeated toggles alternate cleanly
-        let t1 = state.toggle(id: "stops")
+        // Repeated selection changes alternate cleanly
+        let t1 = state.setEnabled(false, id: "stops")
         #expect(t1)
         #expect(!state.isEnabled(id: "stops"))
-        let t2 = state.toggle(id: "stops")
+        let t2 = state.setEnabled(true, id: "stops")
         #expect(t2)
         #expect(state.isEnabled(id: "stops"))
-        let t3 = state.toggle(id: "stops")
+        let t3 = state.setEnabled(false, id: "stops")
         #expect(t3)
         #expect(!state.isEnabled(id: "stops"))
 
@@ -188,10 +191,12 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(state.isEnabled(id: "stops"))
     }
 
-    @Test func `One pure state drives toolbar layer count and reset to defaults`() {
+    @Test func `One pure state drives toolbar layer count and reset selection`() {
         let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
         let bikes = MapLayerDescriptor(id: "bikes", isEnabledByDefault: true)
-        var state = MapLayerVisibilityState(layers: [stops, bikes])
+        var state = MapLayerVisibilityState()
+        state.register(layer: stops)
+        state.register(layer: bikes)
 
         #expect(state.enabledLayerCount == 2)
         #expect(!state.differsFromDefaults)
@@ -203,7 +208,10 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(state.enabledLayerCount == 1)
         #expect(state.differsFromDefaults)
 
-        state.resetToDefaults()
+        let didReset = state.resetSelection(id: "stops")
+        #expect(didReset)
+        state.showsPointsOfInterest = true
+        state.rentalRangeFilter = .any
 
         #expect(state.enabledLayerCount == 2)
         #expect(state.isEnabled(id: "stops"))
@@ -214,19 +222,25 @@ final class MapPanelLayersModelTests: OBATestCase {
     }
 
     @Test func `MapPanelLayersModel publishes pure visibility state synchronized with manager`() {
-        #expect(model.visibilityState.enabledLayerCount == model.enabledLayerCount)
-        #expect(model.visibilityState.showsPointsOfInterest == model.showsPointsOfInterest)
-        #expect(model.visibilityState.isEnabled(id: StopsMapLayer.layerID) == model.isStopsLayerEnabled)
+        #expect(model.enabledLayerCount == 3)
+        #expect(model.visibilityState.enabledLayerCount == 3)
+        #expect(model.showsPointsOfInterest == true)
+        #expect(model.visibilityState.showsPointsOfInterest == true)
+        #expect(model.isStopsLayerEnabled == true)
+        #expect(model.visibilityState.isEnabled(id: StopsMapLayer.layerID) == true)
 
         application.mapRegionManager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
 
-        #expect(model.visibilityState.enabledLayerCount == model.enabledLayerCount)
+        #expect(model.enabledLayerCount == 2)
+        #expect(model.visibilityState.enabledLayerCount == 2)
+        #expect(model.isStopsLayerEnabled == false)
         #expect(model.visibilityState.isEnabled(id: StopsMapLayer.layerID) == false)
     }
 
     @Test func `Removing a layer removes it from enabled layer IDs and visibility`() {
         let stops = MapLayerDescriptor(id: "stops", isEnabledByDefault: true)
-        var state = MapLayerVisibilityState(layers: [stops])
+        var state = MapLayerVisibilityState()
+        state.register(layer: stops)
         #expect(state.isEnabled(id: "stops"))
         #expect(state.enabledLayerIDs.contains("stops"))
         #expect(state.isLayerVisible(id: "stops"))
@@ -248,37 +262,55 @@ final class MapPanelLayersModelTests: OBATestCase {
     }
 
     @Test func `Unregistered stops layer renders stops by default and agrees with isStopsLayerEnabled`() {
-        let state = MapLayerVisibilityState(layers: [])
+        let state = MapLayerVisibilityState()
         #expect(state.isStopsLayerEnabled)
-        #expect(state.isLayerVisible(id: MapLayerVisibilityState.stopsLayerID))
+        #expect(state.isLayerVisible(id: StopsMapLayer.layerID))
 
-        var registered = MapLayerVisibilityState(layers: [
-            MapLayerDescriptor(id: MapLayerVisibilityState.stopsLayerID, isEnabledByDefault: true)
-        ])
+        var registered = MapLayerVisibilityState()
+        registered.register(layer: MapLayerDescriptor(id: StopsMapLayer.layerID, isEnabledByDefault: true))
         #expect(registered.isStopsLayerEnabled)
-        #expect(registered.isLayerVisible(id: MapLayerVisibilityState.stopsLayerID))
+        #expect(registered.isLayerVisible(id: StopsMapLayer.layerID))
 
-        registered.setEnabled(false, id: MapLayerVisibilityState.stopsLayerID)
+        registered.setEnabled(false, id: StopsMapLayer.layerID)
         #expect(!registered.isStopsLayerEnabled)
-        #expect(!registered.isLayerVisible(id: MapLayerVisibilityState.stopsLayerID))
+        #expect(!registered.isLayerVisible(id: StopsMapLayer.layerID))
     }
 
     @Test func `MapRegionManager delegates selection and visibility rules to MapLayerVisibilityState`() {
         let manager = application.mapRegionManager
-        #expect(manager.isStopsLayerEnabled == manager.visibilityState.isStopsLayerEnabled)
-        #expect(manager.enabledMapLayerCount == manager.visibilityState.enabledLayerCount)
-        #expect(manager.mapLayersDifferFromDefaults == manager.visibilityState.differsFromDefaults)
+        #expect(manager.isStopsLayerEnabled == true)
+        #expect(manager.visibilityState.isStopsLayerEnabled == true)
+        #expect(manager.enabledMapLayerCount == 3)
+        #expect(manager.visibilityState.enabledLayerCount == 3)
+        #expect(manager.mapLayersDifferFromDefaults == false)
+        #expect(manager.visibilityState.differsFromDefaults == false)
 
         manager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
         #expect(manager.isStopsLayerEnabled == false)
         #expect(manager.visibilityState.isStopsLayerEnabled == false)
-        #expect(manager.enabledMapLayerCount == manager.visibilityState.enabledLayerCount)
-        #expect(manager.mapLayersDifferFromDefaults == manager.visibilityState.differsFromDefaults)
+        #expect(manager.enabledMapLayerCount == 2)
+        #expect(manager.visibilityState.enabledLayerCount == 2)
+        #expect(manager.mapLayersDifferFromDefaults == true)
+        #expect(manager.visibilityState.differsFromDefaults == true)
 
         manager.resetMapLayersToDefaults()
-        #expect(manager.isStopsLayerEnabled)
-        #expect(manager.visibilityState.isStopsLayerEnabled)
-        #expect(!manager.mapLayersDifferFromDefaults)
+        #expect(manager.isStopsLayerEnabled == true)
+        #expect(manager.visibilityState.isStopsLayerEnabled == true)
+        #expect(manager.enabledMapLayerCount == 3)
+        #expect(manager.visibilityState.enabledLayerCount == 3)
+        #expect(manager.mapLayersDifferFromDefaults == false)
+        #expect(manager.visibilityState.differsFromDefaults == false)
+    }
+
+    @Test func `Reset reports analytics for changed layers`() throws {
+        let analytics = try #require(application.analytics as? AnalyticsMock)
+        application.mapRegionManager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
+        let countBeforeReset = analytics.reportedEvents.count
+
+        application.mapRegionManager.resetMapLayersToDefaults()
+
+        let resetEvents = analytics.reportedEvents[countBeforeReset...]
+        #expect(resetEvents.contains { $0.label == AnalyticsLabels.mapLayerToggled && $0.value as? String == "\(StopsMapLayer.layerID):on" })
     }
 
     @Test func `Forwards the viewport to the layer pipeline`() {

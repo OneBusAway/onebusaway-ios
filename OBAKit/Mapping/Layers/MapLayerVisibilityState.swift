@@ -55,7 +55,7 @@ struct MapLayerDescriptor: Equatable, Identifiable, Sendable {
 /// repeated toggling, and reset) from MapKit and rendering side effects. One pure state
 /// drives the map toolbar badge, sheet controls, and layer pipeline.
 struct MapLayerVisibilityState: Equatable, Sendable {
-    static let stopsLayerID = "stops"
+    static let stopsLayerID = StopsMapLayer.layerID
 
     private(set) var layers: [String: MapLayerDescriptor]
     private(set) var layerOrder: [String]
@@ -64,26 +64,12 @@ struct MapLayerVisibilityState: Equatable, Sendable {
     var rentalRangeFilter: RentalRangeFilter
 
     init(
-        layers: [MapLayerDescriptor] = [],
-        persistedEnabledIDs: Set<String>? = nil,
         showsPointsOfInterest: Bool = true,
         rentalRangeFilter: RentalRangeFilter = .any
     ) {
-        var dict: [String: MapLayerDescriptor] = [:]
-        var order: [String] = []
-        var defaultEnabled = Set<String>()
-
-        for layer in layers {
-            dict[layer.id] = layer
-            order.append(layer.id)
-            if layer.isEnabledByDefault {
-                defaultEnabled.insert(layer.id)
-            }
-        }
-
-        self.layers = dict
-        self.layerOrder = order
-        self.enabledLayerIDs = persistedEnabledIDs ?? defaultEnabled
+        self.layers = [:]
+        self.layerOrder = []
+        self.enabledLayerIDs = []
         self.showsPointsOfInterest = showsPointsOfInterest
         self.rentalRangeFilter = rentalRangeFilter
     }
@@ -116,19 +102,6 @@ struct MapLayerVisibilityState: Equatable, Sendable {
         guard let layer = layers[id], layer.availability != .unsupported else { return false }
         if case .unavailable = layer.availability {
             return isEnabled(id: id)
-        }
-        return true
-    }
-
-    /// Pure toggle for a layer.
-    /// Returns true if the state changed, or false if the toggle was a no-op or blocked by availability.
-    @discardableResult
-    mutating func toggle(id: String) -> Bool {
-        guard canToggle(id: id) else { return false }
-        if isEnabled(id: id) {
-            enabledLayerIDs.remove(id)
-        } else {
-            enabledLayerIDs.insert(id)
         }
         return true
     }
@@ -174,20 +147,6 @@ struct MapLayerVisibilityState: Equatable, Sendable {
         } else {
             return enabledLayerIDs.remove(id) != nil
         }
-    }
-
-    /// Restores every registered layer to its default enablement, clears the range filter,
-    /// and turns points of interest back on.
-    mutating func resetToDefaults() {
-        var next = Set<String>()
-        for id in layerOrder {
-            if let layer = layers[id], layer.isEnabledByDefault {
-                next.insert(id)
-            }
-        }
-        enabledLayerIDs = next
-        showsPointsOfInterest = true
-        rentalRangeFilter = .any
     }
 
     /// Updates availability status for a layer without side effects.

@@ -481,9 +481,13 @@ public class MapRegionManager: NSObject,
     public func setMapLayerEnabled(_ enabled: Bool, id: String) {
         synchronizeLayerAvailability(for: id)
         guard visibilityState.setEnabled(enabled, id: id) else { return }
+        applyMapLayerEnabled(enabled, id: id, layer: mapLayer(id: id))
+    }
+
+    private func applyMapLayerEnabled(_ enabled: Bool, id: String, layer: MapLayer?) {
         application.userDefaults.set(enabled, forKey: Self.mapLayerDefaultsKey(id: id))
 
-        if let layer = mapLayer(id: id) {
+        if let layer = layer {
             if enabled {
                 layer.activate()
                 forwardViewport(to: layer)
@@ -569,14 +573,7 @@ public class MapRegionManager: NSObject,
             guard wasEnabled != targetEnabled else { continue }
 
             visibilityState.resetSelection(id: layer.id)
-            application.userDefaults.set(targetEnabled, forKey: Self.mapLayerDefaultsKey(id: layer.id))
-            if targetEnabled {
-                layer.activate()
-                forwardViewport(to: layer)
-            } else {
-                layer.deactivate()
-            }
-            NotificationCenter.default.post(name: .mapLayerEnabledStateDidChange, object: layer.id)
+            applyMapLayerEnabled(targetEnabled, id: layer.id, layer: layer)
         }
     }
 
