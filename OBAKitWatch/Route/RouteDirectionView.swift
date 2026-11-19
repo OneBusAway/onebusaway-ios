@@ -102,6 +102,12 @@ struct RouteDirectionView: View {
                 model.stopPolling()
             }
         }
+        .onChange(of: host.currentRegion) { _, _ in
+            if isVisible && scenePhase == .active {
+                model.stopPolling()
+                model.startPolling()
+            }
+        }
     }
 
     private var header: some View {

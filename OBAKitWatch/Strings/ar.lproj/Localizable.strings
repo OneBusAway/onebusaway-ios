@@ -57,3 +57,6 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "جارٍ تحميل الإشارات المرجعية…";
+
+/* Warning shown when nearby departures could not be refreshed and may be out of date */
+"nearby.stale" = "قد تكون هذه البيانات غير حديثة.";

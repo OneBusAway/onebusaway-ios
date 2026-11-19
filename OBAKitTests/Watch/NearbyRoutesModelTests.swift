@@ -775,4 +775,104 @@ struct NearbyRoutesModelTests {
         #expect(model.phase == .loaded([direction]))
         #expect(model.directions.count == 1)
     }
+
+    @Test @MainActor func `Failed refresh in loaded phase marks stale and preserves directions and origin`() async throws {
+        let direction = try makeDirection()
+        var shouldFail = false
+        var hasRegion = true
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: {
+                if shouldFail {
+                    throw NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet)
+                }
+                return self.seattleFix
+            },
+            hasRegion: { hasRegion },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { _, _ in [direction] }
+        )
+
+        await model.performRefresh()
+        #expect(model.phase == .loaded([direction]))
+        #expect(model.origin == self.seattleFix)
+        #expect(!model.isStale)
+        #expect(model.apiService != nil)
+
+        // Offline refresh failure in loaded phase marks stale
+        shouldFail = true
+        await model.performRefresh()
+
+        #expect(model.phase == .loaded([direction]))
+        #expect(model.origin == self.seattleFix)
+        #expect(model.isStale)
+
+        // Successful refresh clears stale
+        shouldFail = false
+        await model.performRefresh()
+
+        #expect(model.phase == .loaded([direction]))
+        #expect(!model.isStale)
+
+        // Moving outside every region drops loaded state to .noRegion (#1777 behavior)
+        hasRegion = false
+        await model.performRefresh()
+        #expect(model.phase == .noRegion)
+    }
+
+    @Test @MainActor func `Superseded refresh drops stale location and directions results`() async throws {
+        let direction1 = try makeDirection(routeID: "1_10", headsign: "Old")
+        let direction2 = try makeDirection(routeID: "1_44", headsign: "New")
+        let fix1 = CLLocation(latitude: 47.60, longitude: -122.33)
+        let fix2 = CLLocation(latitude: 47.65, longitude: -122.30)
+
+        let (entered1Stream, entered1Continuation) = AsyncStream.makeStream(of: Void.self)
+        let (release1Stream, release1Continuation) = AsyncStream.makeStream(of: Void.self)
+
+        var callCount = 0
+        let model = NearbyRoutesModel(
+            authorizationProvider: { .authorizedWhenInUse },
+            requestAuthorization: {},
+            locationRequester: {
+                callCount += 1
+                if callCount == 1 {
+                    entered1Continuation.yield()
+                    for await _ in release1Stream { break }
+                    return fix1
+                } else {
+                    return fix2
+                }
+            },
+            hasRegion: { true },
+            apiServiceProvider: { self.makeAPIService() },
+            directionsLoader: { fix, _ in
+                if fix == fix1 {
+                    return [direction1]
+                } else {
+                    return [direction2]
+                }
+            }
+        )
+
+        // Start refresh 1 (will pause in locationRequester)
+        let task1 = Task { await model.performRefresh() }
+        for await _ in entered1Stream { break }
+
+        // Start refresh 2 (supersedes refresh 1)
+        let task2 = Task { await model.performRefresh() }
+        _ = await task2.value
+
+        // Allow refresh 1 to finish
+        release1Continuation.yield()
+        _ = await task1.value
+
+        // State must reflect refresh 2, not refresh 1
+        #expect(model.origin == fix2)
+        if case .loaded(let directions) = model.phase {
+            #expect(directions.first?.headsign == "New")
+        } else {
+            Issue.record("Expected loaded phase from refresh 2, got \(model.phase)")
+        }
+    }
 }

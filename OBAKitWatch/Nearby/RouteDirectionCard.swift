@@ -23,6 +23,7 @@ struct RouteDirectionCard: View {
         .padding(.vertical, 4)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(RouteDirectionBadge.accessibilityLabel(route: direction.route, headsign: direction.headsign))
+        .accessibilityAddTraits(.isButton)
     }
 }
 

@@ -57,3 +57,6 @@
 
 /* Loading indicator text while bookmarks load */
 "bookmarks.loading" = "Caricamento dei segnalibri…";
+
+/* Warning shown when nearby departures could not be refreshed and may be out of date */
+"nearby.stale" = "Questi dati potrebbero non essere aggiornati.";

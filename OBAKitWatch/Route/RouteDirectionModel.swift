@@ -40,6 +40,7 @@ public final class RouteDirectionModel {
     @ObservationIgnored private let snapshotDate: Date
     @ObservationIgnored private let interval: Duration
     @ObservationIgnored private let loader = NearbyRoutesLoader()
+    @ObservationIgnored private let apiService: RESTAPIService?
     @ObservationIgnored private var pollTask: Task<Void, Never>?
 
     public init(
@@ -48,7 +49,8 @@ public final class RouteDirectionModel {
         direction: NearbyRouteDirection,
         opposite: NearbyRouteDirection?,
         snapshotDate: Date,
-        interval: Duration = .seconds(30)
+        interval: Duration = .seconds(30),
+        apiService: RESTAPIService? = nil
     ) {
         self.host = host
         self.origin = origin
@@ -58,11 +60,24 @@ public final class RouteDirectionModel {
         self.updatedAt = snapshotDate
         self.snapshotDate = snapshotDate
         self.interval = interval
+        self.apiService = apiService ?? host.apiService
+    }
+
+    private var isCurrentRegionDifferent: Bool {
+        guard let currentRegion = host.currentRegion, let apiService else { return false }
+        if let serviceRegionID = apiService.regionIdentifier {
+            return currentRegion.regionIdentifier != serviceRegionID
+        }
+        var currentComponents = URLComponents(url: currentRegion.OBABaseURL, resolvingAgainstBaseURL: false)
+        currentComponents?.query = nil
+        var serviceComponents = URLComponents(url: apiService.baseURL, resolvingAgainstBaseURL: false)
+        serviceComponents?.query = nil
+        return currentComponents?.url != serviceComponents?.url
     }
 
     public func startPolling() {
         guard pollTask == nil else { return }
-        guard let apiService = host.apiService else {
+        guard let apiService, !isCurrentRegionDifferent else {
             stale = true
             return
         }
@@ -71,13 +86,21 @@ public final class RouteDirectionModel {
         let key = direction.key
         pollTask = Task { [weak self, loader, origin, interval] in
             while !Task.isCancelled {
+                guard let self, !self.isCurrentRegionDifferent else {
+                    self?.stale = true
+                    return
+                }
                 let result: Result<[NearbyRouteDirection], Error>
                 do {
                     result = .success(try await loader.directions(at: polledStops, origin: origin, using: apiService))
                 } catch {
                     result = .failure(error)
                 }
-                guard let self, !Task.isCancelled else { return }
+                guard !Task.isCancelled else { return }
+                guard !self.isCurrentRegionDifferent else {
+                    self.stale = true
+                    return
+                }
                 self.apply(result, for: key)
 
                 do {
