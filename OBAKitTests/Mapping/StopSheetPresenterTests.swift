@@ -486,4 +486,242 @@ final class StopSheetPresenterTests {
 
         #expect(panel.surfaceView.appearance.backgroundColor == .systemBackground)
     }
+
+    // MARK: - Selection Handoff & Transitions
+
+    /// Selecting a stop presents the stop sheet and exposes presentedViewController and topViewController.
+    @Test func `Presenting stop exposes presented and top view controllers`() {
+        let stopController = UIViewController()
+        presenter.present(stopController, from: parent) {}
+
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === stopController)
+        #expect(presenter.topViewController === stopController)
+        #expect(panels.count == 1)
+        #expect(panels.first?.state == .half)
+    }
+
+    /// Handoff from stop to vehicle: presenting a vehicle replaces the stop sheet,
+    /// runs the stop's dismiss handler, and leaves the vehicle presented.
+    @Test func `Selection handoff from stop to vehicle runs outgoing cleanup and updates presentation`() {
+        var stopDismissed = 0
+        var vehicleDismissed = 0
+        let stopController = UIViewController()
+        let vehicleController = UIViewController()
+
+        presenter.present(stopController, from: parent) { stopDismissed += 1 }
+        #expect(presenter.presentedViewController === stopController)
+
+        presenter.present(vehicleController, from: parent) { vehicleDismissed += 1 }
+
+        #expect(stopDismissed == 1)
+        #expect(vehicleDismissed == 0)
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === vehicleController)
+        #expect(presenter.topViewController === vehicleController)
+        #expect(panels.count == 1)
+    }
+
+    /// Handoff from vehicle to cluster: presenting a cluster replaces the vehicle sheet,
+    /// runs the vehicle's dismiss handler, and keeps sheet state consistent.
+    @Test func `Selection handoff from vehicle to cluster cleans up vehicle and presents cluster`() {
+        var vehicleDismissed = 0
+        var clusterDismissed = 0
+        let vehicleController = UIViewController()
+        let clusterController = UIViewController()
+
+        presenter.present(vehicleController, from: parent) { vehicleDismissed += 1 }
+        presenter.present(clusterController, from: parent) { clusterDismissed += 1 }
+
+        #expect(vehicleDismissed == 1)
+        #expect(clusterDismissed == 0)
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === clusterController)
+        #expect(panels.count == 1)
+    }
+
+    /// Handoff from cluster to stop: transitions back to a stop, cleaning up the cluster sheet.
+    @Test func `Selection handoff from cluster to stop transitions cleanly`() {
+        var clusterDismissed = 0
+        var stopDismissed = 0
+        let clusterController = UIViewController()
+        let stopController = UIViewController()
+
+        presenter.present(clusterController, from: parent) { clusterDismissed += 1 }
+        presenter.present(stopController, from: parent) { stopDismissed += 1 }
+
+        #expect(clusterDismissed == 1)
+        #expect(stopDismissed == 0)
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === stopController)
+        #expect(panels.count == 1)
+    }
+
+    /// Full cycle handoff: stop -> vehicle -> cluster -> dismissed -> stop.
+    @Test func `Full selection cycle stop to vehicle to cluster to dismissed to stop`() {
+        var stop1Dismissed = 0
+        var vehicleDismissed = 0
+        var clusterDismissed = 0
+        var stop2Dismissed = 0
+
+        let stop1 = UIViewController()
+        let vehicle = UIViewController()
+        let cluster = UIViewController()
+        let stop2 = UIViewController()
+
+        // 1. Select stop
+        presenter.present(stop1, from: parent) { stop1Dismissed += 1 }
+        #expect(presenter.presentedViewController === stop1)
+        #expect(panels.count == 1)
+
+        // 2. Handoff to vehicle
+        presenter.present(vehicle, from: parent) { vehicleDismissed += 1 }
+        #expect(stop1Dismissed == 1)
+        #expect(presenter.presentedViewController === vehicle)
+        #expect(panels.count == 1)
+
+        // 3. Handoff to cluster
+        presenter.present(cluster, from: parent) { clusterDismissed += 1 }
+        #expect(vehicleDismissed == 1)
+        #expect(presenter.presentedViewController === cluster)
+        #expect(panels.count == 1)
+
+        // 4. Dismiss cluster
+        presenter.dismiss(animated: false)
+        #expect(clusterDismissed == 1)
+        #expect(!presenter.isPresenting)
+        #expect(presenter.presentedViewController == nil)
+        #expect(presenter.topViewController == nil)
+        #expect(panels.isEmpty)
+
+        // 5. Select new stop
+        presenter.present(stop2, from: parent) { stop2Dismissed += 1 }
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === stop2)
+        #expect(panels.count == 1)
+        #expect(stop2Dismissed == 0)
+    }
+
+    /// Repeated selection of the exact same content controller is a no-op that does
+    /// not tear down or re-fire dismiss handlers.
+    @Test func `Repeated selection of the same content controller is a no op`() {
+        var dismissed = 0
+        let content = UIViewController()
+
+        presenter.present(content, from: parent) { dismissed += 1 }
+        #expect(presenter.presentedViewController === content)
+        #expect(dismissed == 0)
+
+        // Re-selecting the exact same controller
+        presenter.present(content, from: parent) { dismissed += 1 }
+        #expect(presenter.presentedViewController === content)
+        #expect(dismissed == 0)
+        #expect(panels.count == 1)
+    }
+
+    /// Repeated selection with different controller instances for the same entity replaces cleanly.
+    @Test func `Repeated selection with new controller instance runs outgoing cleanup`() {
+        var firstDismissed = 0
+        var secondDismissed = 0
+        let first = UIViewController()
+        let second = UIViewController()
+
+        presenter.present(first, from: parent) { firstDismissed += 1 }
+        presenter.present(second, from: parent) { secondDismissed += 1 }
+
+        #expect(firstDismissed == 1)
+        #expect(secondDismissed == 0)
+        #expect(presenter.presentedViewController === second)
+        #expect(panels.count == 1)
+    }
+
+    /// Pushing a child controller inside the sheet updates topViewController while
+    /// keeping presentedViewController pointing to the root.
+    @Test func `Pushing inside sheet updates topViewController while root presentedViewController remains`() throws {
+        let root = CollapsibleStub()
+        let child = UIViewController()
+
+        presenter.present(root, from: parent) {}
+        #expect(presenter.presentedViewController === root)
+        #expect(presenter.topViewController === root)
+
+        let navigation = try presentedNavigation()
+        push(child, onto: navigation)
+
+        #expect(presenter.presentedViewController === root)
+        #expect(presenter.topViewController === child)
+
+        try popBack(in: navigation)
+        #expect(presenter.presentedViewController === root)
+        #expect(presenter.topViewController === root)
+    }
+
+    /// Fast selection arrival during an animated dismissal immediately cleans up
+    /// the dismissing panel so panels count remains exactly one.
+    @Test func `Presentation during animated dismissal cancels dismissing panel immediately`() {
+        let first = UIViewController()
+        let second = UIViewController()
+
+        presenter.present(first, from: parent) {}
+        #expect(panels.count == 1)
+
+        presenter.dismiss(animated: true)
+        // Immediately present another before animation completes
+        presenter.present(second, from: parent) {}
+
+        #expect(panels.count == 1)
+        #expect(presenter.presentedViewController === second)
+        #expect(presenter.isPresenting)
+    }
+
+    // MARK: - Map Panel Selection Handoff
+
+    @Test func `Map panel coordinator selection handoff between stop, vehicle, cluster, and dismissal`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let stop2 = AppSheetRoute.stopDetails(stopID: "stop_2")
+        let vehicle = AppSheetRoute.rentalDetail(rentalID: "v_1")
+        let cluster = AppSheetRoute.rentalCluster(memberIDs: ["v_1", "v_2"])
+
+        // 1. Initial stop selection
+        coordinator.push(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // 2. Repeated selection of same stop does not duplicate when guarded
+        if let current = coordinator.stackedRoutes.last, current == stop1 {
+            // No-op on repeated selection
+        } else {
+            coordinator.push(stop1)
+        }
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // 3. Selection handoff to vehicle
+        if let current = coordinator.stackedRoutes.last {
+            coordinator.open(vehicle, from: current)
+        }
+        #expect(coordinator.stackedRoutes == [stop1, vehicle])
+
+        // 4. Selection handoff to cluster
+        if let current = coordinator.stackedRoutes.last {
+            coordinator.open(cluster, from: current)
+        }
+        #expect(coordinator.stackedRoutes == [stop1, vehicle, cluster])
+
+        // 5. Selection handoff back to stop1 unwinds stack
+        if let current = coordinator.stackedRoutes.last {
+            coordinator.open(stop1, from: current)
+        }
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // 6. Selection handoff to stop2 from stop1
+        if let current = coordinator.stackedRoutes.last {
+            coordinator.open(stop2, from: current)
+        }
+        #expect(coordinator.stackedRoutes == [stop1, stop2])
+
+        // 7. Dismissal pops back to home
+        coordinator.popToRoot()
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentRoute == .home)
+    }
 }
