@@ -105,6 +105,15 @@ struct RentalVisibility {
         return reconcile()
     }
 
+    /// Clears the cache and all visible IDs wholesale, returning removals for
+    /// any entities that were currently visible.
+    mutating func reset() -> Changes {
+        let removed = visibleIDs.sorted()
+        cache.removeAll()
+        visibleIDs.removeAll()
+        return Changes(removed: removed)
+    }
+
     /// Recomputes visibility across the whole cache. Sorted by id so the emitted
     /// changes are deterministic, mirroring `VehicleRentalSource`'s own convention
     /// of sorting its removed array.

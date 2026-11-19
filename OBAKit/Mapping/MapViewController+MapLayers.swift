@@ -108,7 +108,13 @@ extension MapViewController {
         registrar.onDemandLayer?.setHighlightedService(onDemandProbeController.highlightedServiceID)
         syncOnDemandLayerEnabled()
 
+        rentalAnnotationSyncer?.removeAll()
+
         guard let coordinator = registrar.rentalCoordinator else {
+            let orphans = mapRegionManager.mapView.annotations.compactMap { $0 as? RentalAnnotation }
+            if !orphans.isEmpty {
+                mapRegionManager.mapView.removeAnnotations(orphans)
+            }
             rentalAnnotationSyncer = nil
             updateMapLayerBadge()
             return

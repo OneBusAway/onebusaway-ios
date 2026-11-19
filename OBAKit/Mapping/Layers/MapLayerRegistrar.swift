@@ -76,6 +76,7 @@ import OTPKit
 
     private func configureRentalLayers() {
         // Tear down any layers built for a previous region; preferences persist.
+        rentalCoordinator?.reset()
         mapRegionManager.removeMapLayer(id: RentalMapLayer.bikesLayerID)
         mapRegionManager.removeMapLayer(id: RentalMapLayer.scootersLayerID)
         rentalCoordinator = nil

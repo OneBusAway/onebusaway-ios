@@ -267,9 +267,23 @@ import OTPKit
         }
     }
 
-    private func setAvailability(_ newValue: MapLayerAvailability) {
+    /// Resets all cached and visible rental state and resets the underlying source.
+    func reset() {
+        coverageGeneration += 1
+        lastReportedMapRect = nil
+        coverageAcceptedAt = .distantFuture
+        applyChanges(visibility.reset())
+        Task { [source] in
+            await source.reset()
+        }
+    }
+
+    func setAvailability(_ newValue: MapLayerAvailability) {
         guard availability != newValue else { return }
         availability = newValue
+        if newValue != .available {
+            applyChanges(visibility.reset())
+        }
         for id in enabledLayerFactors.keys {
             NotificationCenter.default.post(name: .mapLayerAvailabilityDidChange, object: id)
         }
