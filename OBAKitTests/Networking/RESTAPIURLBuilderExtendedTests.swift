@@ -99,4 +99,15 @@ final class RESTAPIURLBuilderExtendedTests {
         let percentEncodedPath = components?.percentEncodedPath ?? ""
         #expect(percentEncodedPath == "/api/where/stops-for-agency/1_KCM%2FMetro%20Transit.json")
     }
+
+    @Test func `getOnDemandServices for agency encodes special characters in agency ID`() {
+        let agencyID = "CC/Transit Agency"
+        let url = builder.getOnDemandServices(agencyID: agencyID, geometryDetail: .simplified)
+
+        #expect(queryValue(url, "key") == "TEST_KEY")
+        #expect(queryValue(url, "geometryDetail") == "simplified")
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let percentEncodedPath = components?.percentEncodedPath ?? ""
+        #expect(percentEncodedPath == "/api/ondemand/services-for-agency/CC%2FTransit%20Agency.json")
+    }
 }
