@@ -4,9 +4,6 @@
 /* Progress text */
 "arrivals.loading" = "Загрузка отправлений…";
 
-/* Arrivals cannot load without a region */
-"arrivals.no_service" = "Транспортный регион не выбран.";
-
 /* VoiceOver: route, headsign, time until departure */
 "arrivals.row.a11y_fmt" = "%1$@ до %2$@, %3$@";
 

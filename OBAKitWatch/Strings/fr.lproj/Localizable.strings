@@ -4,9 +4,6 @@
 /* Progress text */
 "arrivals.loading" = "Chargement des départs…";
 
-/* Arrivals cannot load without a region */
-"arrivals.no_service" = "Aucune région de transport sélectionnée.";
-
 /* VoiceOver: route, headsign, time until departure */
 "arrivals.row.a11y_fmt" = "%1$@ vers %2$@, %3$@";
 

@@ -4,9 +4,6 @@
 /* Progress text */
 "arrivals.loading" = "جارٍ تحميل المغادرات…";
 
-/* Arrivals cannot load without a region */
-"arrivals.no_service" = "لم يتم اختيار منطقة نقل.";
-
 /* VoiceOver: route, headsign, time until departure */
 "arrivals.row.a11y_fmt" = "%1$@ إلى %2$@، %3$@";
 
