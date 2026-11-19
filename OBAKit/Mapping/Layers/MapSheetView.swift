@@ -19,9 +19,23 @@ struct MapLayerTile: Identifiable, Equatable {
     let iconName: String
     let isEnabled: Bool
     let unavailableReason: String?
+    let isTapEnabled: Bool
 
-    /// Unavailable blocks turning a layer on; an enabled layer is always switchable off.
-    var isTapEnabled: Bool { unavailableReason == nil || isEnabled }
+    init(
+        id: String,
+        title: String,
+        iconName: String,
+        isEnabled: Bool,
+        unavailableReason: String?,
+        isTapEnabled: Bool? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.iconName = iconName
+        self.isEnabled = isEnabled
+        self.unavailableReason = unavailableReason
+        self.isTapEnabled = isTapEnabled ?? (unavailableReason == nil || isEnabled)
+    }
 
     var subtitle: String {
         if let unavailableReason { return unavailableReason }
@@ -127,12 +141,20 @@ struct MapLayerTile: Identifiable, Equatable {
                 if case .unavailable(let reason) = layer.availability { return reason }
                 return nil
             }()
-            return MapLayerTile(id: layer.id, title: layer.title, iconName: layer.iconName, isEnabled: isEnabled(layer), unavailableReason: reason)
+            return MapLayerTile(
+                id: layer.id,
+                title: layer.title,
+                iconName: layer.iconName,
+                isEnabled: isEnabled(layer),
+                unavailableReason: reason,
+                isTapEnabled: mapRegionManager.canToggleMapLayer(id: layer.id)
+            )
         }
     }
 
     func toggle(_ tile: MapLayerTile) {
-        guard let layer = mapRegionManager.mapLayer(id: tile.id) else { return }
+        guard mapRegionManager.canToggleMapLayer(id: tile.id),
+              let layer = mapRegionManager.mapLayer(id: tile.id) else { return }
         setEnabled(!tile.isEnabled, layer: layer)
     }
 

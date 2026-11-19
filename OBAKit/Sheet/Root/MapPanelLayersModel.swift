@@ -33,6 +33,9 @@ import OTPKit
     /// readout of layer state.
     @Published private(set) var enabledLayerCount = 0
 
+    /// Pure visibility state driving layer decisions and toolbar indicators.
+    @Published private(set) var visibilityState = MapLayerVisibilityState()
+
     /// Clustered rental markers for the current viewport.
     @Published private(set) var rentalItems: [RentalMapItem] = []
 
@@ -115,9 +118,15 @@ import OTPKit
 
     private var mapRegionManager: MapRegionManager { application.mapRegionManager }
 
-    private func refresh() {
+    func refresh() {
+        mapRegionManager.synchronizeLayerAvailability()
+        visibilityState = mapRegionManager.visibilityState
+        for layer in mapRegionManager.mapLayers {
+            visibilityState.updateAvailability(layer.availability, id: layer.id)
+        }
+
         isStopsLayerEnabled = mapRegionManager.isStopsLayerEnabled
-        showsPointsOfInterest = mapRegionManager.mapViewShowsPointsOfInterest
+        showsPointsOfInterest = visibilityState.showsPointsOfInterest
         enabledLayerCount = mapRegionManager.enabledMapLayerCount
         isOnDemandLayerEnabled = mapRegionManager.isMapLayerEnabled(id: OnDemandMapLayer.layerID)
         subscribeToRentalCoordinator()
