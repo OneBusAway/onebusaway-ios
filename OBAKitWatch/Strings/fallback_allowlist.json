@@ -1,0 +1,22 @@
+{
+  "intentional_fallbacks": {
+    "all": [],
+    "by_locale": {
+      "ar": [],
+      "es": [],
+      "fil": [],
+      "fr": [],
+      "it": [],
+      "ko": [],
+      "pl": [],
+      "pt-BR": [],
+      "ru": [],
+      "vi": [],
+      "zh-Hans": [],
+      "zh-Hant": []
+    }
+  },
+  "allowed_missing": {
+    "by_locale": {}
+  }
+}
