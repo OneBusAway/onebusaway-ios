@@ -71,6 +71,7 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
+    /// - Parameter stopCacheDatabase: The stop cache database, or `nil` for the shared file.
     /// - Parameter retryPolicy: The retry policy for network requests.
     public init(
         regionsBaseURL: URL?,
@@ -88,6 +89,7 @@ public class AppConfig: CoreAppConfig {
         defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
         launchRouteID: String? = nil,
         onDemandSupport: OnDemandSupport = .shared,
+        stopCacheDatabase: StopCacheDatabase? = nil,
         retryPolicy: RetryPolicy = .standard
     ) {
         self.analytics = analytics
@@ -106,6 +108,7 @@ public class AppConfig: CoreAppConfig {
             fixedRegionOBABaseURL: fixedRegionOBABaseURL,
             defaultArrivalDepartureFilter: defaultArrivalDepartureFilter,
             onDemandSupport: onDemandSupport,
+            stopCacheDatabase: stopCacheDatabase,
             retryPolicy: retryPolicy
         )
     }

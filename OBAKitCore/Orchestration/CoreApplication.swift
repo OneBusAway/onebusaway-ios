@@ -148,6 +148,7 @@ open class CoreApplication: NSObject,
     /// The SQLite database for caching transit stops.
     /// Initialized lazily; if database creation fails, the app falls back to direct API calls.
     public private(set) lazy var stopCacheDatabase: StopCacheDatabase? = {
+        if let database = config.stopCacheDatabase { return database }
         do {
             return try StopCacheDatabase()
         } catch {

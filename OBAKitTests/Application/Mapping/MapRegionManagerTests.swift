@@ -55,7 +55,8 @@ final class MapRegionManagerTests: OBATestCase {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsPath,
-            dataLoader: dataLoader
+            dataLoader: dataLoader,
+            stopCacheDatabase: makeStopCacheDatabase()
         )
     }
 
@@ -222,9 +223,6 @@ final class MapRegionManagerTests: OBATestCase {
     @Test func `Request stops in region populates stops`() async {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
-        // The stop cache is a shared file; start clean so the assertion below
-        // can only be satisfied by this test's own network fetch.
-        clearStopCache(for: application)
         let mgr = MapRegionManager(application: application)
         let region = MKCoordinateRegion(
             center: TestData.mockSeattleLocation.coordinate,
@@ -243,7 +241,6 @@ final class MapRegionManagerTests: OBATestCase {
     @Test func `Map sheet model refreshes Routes on Map when stops arrive`() async {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
-        clearStopCache(for: application)
         let mgr = MapRegionManager(application: application)
         let model = MapSheetModel(mapRegionManager: mgr, mapViewModel: MapViewModel(application: application)) { _ in }
         #expect(model.routeFilterContent == .noRoutes)
@@ -269,10 +266,6 @@ final class MapRegionManagerTests: OBATestCase {
     @Test func `Schedule stops request debounced load populates stops`() async {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
-        // Start clean, so reaching a non-empty `stops` below proves the
-        // debounced fetch ran rather than a sibling test's leftover cache rows
-        // being served before the debounce even elapsed.
-        clearStopCache(for: application)
         let mgr = MapRegionManager(application: application)
         // Centered on the fixture stops (~2.8km north of the mock device
         // location) so the region-width cache serve actually covers them.
@@ -330,7 +323,8 @@ final class MapRegionManagerTests: OBATestCase {
             bundledRegionsFilePath: regionsFilePath,
             regionsAPIPath: regionsPath,
             dataLoader: dataLoader,
-            fixedRegionName: Fixtures.pugetSoundRegion.name
+            fixedRegionName: Fixtures.pugetSoundRegion.name,
+            stopCacheDatabase: makeStopCacheDatabase()
         )
         return Application(config: config)
     }
@@ -346,7 +340,6 @@ final class MapRegionManagerTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
-        clearStopCache(for: application)
 
         let populated = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308),
@@ -389,8 +382,6 @@ final class MapRegionManagerTests: OBATestCase {
         let mgr = MapRegionManager(application: application)
 
         let regionId = try #require(application.currentRegion?.regionIdentifier)
-        // The cache DB is file-backed and shared across tests; start clean.
-        clearStopCache(for: application)
 
         // Seed the cache with a distinguishable subset so the cache-served
         // delivery is tellable apart from the full network set.
@@ -430,7 +421,6 @@ final class MapRegionManagerTests: OBATestCase {
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
         let regionId = try #require(application.currentRegion?.regionIdentifier)
-        clearStopCache(for: application)
 
         let center = CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308)
         // A 20 × 20 grid about 200 m across, and a row near the top of the view.
@@ -456,7 +446,6 @@ final class MapRegionManagerTests: OBATestCase {
         #expect(Set(firstDelivery.map(\.id)) == Set(near.map(\.id)))
 
         mgr.cancelScheduledStopsRequest()
-        clearStopCache(for: application)
     }
 
     /// A cache miss is a no-op: the previously-loaded stops stay on the map until
@@ -467,8 +456,6 @@ final class MapRegionManagerTests: OBATestCase {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
-
-        clearStopCache(for: application)
 
         // Pre-populate stops so the map has existing pins to preserve.
         // Centered on the fixture stops so the region-width cache serve covers them.
@@ -510,8 +497,6 @@ final class MapRegionManagerTests: OBATestCase {
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
 
-        clearStopCache(for: application)
-
         // The mock returns the Seattle fixture for any stops request, but this
         // settle is centered ~70km south of those stops. So nothing is cached in
         // this band (first serve empty), the network fetch succeeds and saves the
@@ -543,10 +528,9 @@ final class MapRegionManagerTests: OBATestCase {
         let application = makeSeattleApplication(dataLoader: dataLoader)
         let mgr = MapRegionManager(application: application)
 
-        // An empty cache means the pre-debounce band serve publishes nothing,
-        // so anything that shows up in `stops` can only have come from the
-        // debounced fetch we're cancelling.
-        clearStopCache(for: application)
+        // The cache starts empty, so the pre-debounce band serve publishes
+        // nothing and anything that shows up in `stops` can only have come
+        // from the debounced fetch we're cancelling.
 
         let region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 47.653, longitude: -122.308),
