@@ -12,6 +12,34 @@ import Testing
 @testable import OBAKit
 @testable import OBAKitCore
 
+private struct IntentionalFallbacks: Decodable {
+    let all: [String]?
+    let byLocale: [String: [String]]?
+
+    enum CodingKeys: String, CodingKey {
+        case all
+        case byLocale = "by_locale"
+    }
+}
+
+private struct AllowedMissing: Decodable {
+    let byLocale: [String: [String]]?
+
+    enum CodingKeys: String, CodingKey {
+        case byLocale = "by_locale"
+    }
+}
+
+private struct FallbackAllowlist: Decodable {
+    let intentionalFallbacks: IntentionalFallbacks?
+    let allowedMissing: AllowedMissing?
+
+    enum CodingKeys: String, CodingKey {
+        case intentionalFallbacks = "intentional_fallbacks"
+        case allowedMissing = "allowed_missing"
+    }
+}
+
 /// Guards the localization data itself, which is bulk-imported a hundred-plus keys at a
 /// time and therefore drifts in ways no other test would notice: a missing key silently
 /// falls back to English, and a mismatched format specifier makes `String(format:)` read
@@ -105,11 +133,170 @@ final class LocalizationTests {
         return value == "MISSING" ? nil : value
     }
 
-    private func specifiers(in value: String) -> [String] {
+    nonisolated private static let appTables = [
+        "OBAKit/Strings|Localizable",
+        "OBAKitCore/Strings|Localizable"
+    ]
+
+    private static let locales = ["ar", "en", "es", "fil", "fr", "it", "ko", "pl", "pt-BR", "ru", "vi", "zh-Hans", "zh-Hant"]
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+    }
+
+    private static func loadAllowlist() throws -> FallbackAllowlist {
+        let url = repoRoot.appending(path: "OBAKit/Strings/fallback_allowlist.json")
+        let data = try Data(contentsOf: url)
+        return try JSONDecoder().decode(FallbackAllowlist.self, from: data)
+    }
+
+    private static func isIntentionalFallback(key: String, locale: String, allowlist: FallbackAllowlist) -> Bool {
+        let fallbacks = allowlist.intentionalFallbacks
+        if let all = fallbacks?.all, all.contains(key) { return true }
+        if let byLocale = fallbacks?.byLocale?[locale], byLocale.contains(key) { return true }
+        return false
+    }
+
+    private static func isAllowedMissing(key: String, locale: String, allowlist: FallbackAllowlist) -> Bool {
+        guard let byLocale = allowlist.allowedMissing?.byLocale?[locale] else { return false }
+        return byLocale.contains(key)
+    }
+
+    private static func stringsFromDisk(locale: String, table: String) -> [String: String]? {
+        let parts = table.split(separator: "|")
+        let url = repoRoot.appending(path: "\(parts[0])/\(locale).lproj/\(parts[1]).strings")
+        return NSDictionary(contentsOf: url) as? [String: String]
+    }
+
+    private static var allEnglishKeys: Set<String> {
+        var keys = Set<String>()
+        for table in appTables {
+            if let dict = stringsFromDisk(locale: "en", table: table) {
+                keys.formUnion(dict.keys)
+            }
+        }
+        return keys
+    }
+
+    private static func specifiers(in value: String) -> [String] {
         let range = NSRange(value.startIndex..., in: value)
-        return Self.specifier.matches(in: value, range: range)
-            .compactMap { Range($0.range, in: value).map { String(value[$0]) } }
-            .sorted()
+        var implicitIndex = 1
+        var result: [String] = []
+        for match in specifier.matches(in: value, range: range) {
+            guard let r = Range(match.range, in: value) else { continue }
+            let token = String(value[r])
+            if token == "%%" {
+                result.append("%%")
+            } else if token.contains("$") {
+                result.append(token)
+            } else {
+                let type = token.dropFirst()
+                result.append("%\(implicitIndex)$\(type)")
+                implicitIndex += 1
+            }
+        }
+        return result.sorted()
+    }
+
+    fileprivate static func validateKeyParity(
+        file: String,
+        locale: String,
+        english: [String: String],
+        translated: [String: String],
+        allowlist: FallbackAllowlist
+    ) -> [String] {
+        var failures: [String] = []
+        let missing = Set(english.keys)
+            .subtracting(translated.keys)
+            .filter { !isAllowedMissing(key: $0, locale: locale, allowlist: allowlist) }
+        for key in missing.sorted() {
+            failures.append("File: \(file), Locale: \(locale), Key: '\(key)': Missing key from English base table")
+        }
+        let extra = Set(translated.keys).subtracting(english.keys)
+        for key in extra.sorted() {
+            failures.append("File: \(file), Locale: \(locale), Key: '\(key)': Extra key not in English base table")
+        }
+        return failures
+    }
+
+    fileprivate static func validateFormatSpecifiers(
+        file: String,
+        locale: String,
+        english: [String: String],
+        translated: [String: String]
+    ) -> [String] {
+        var failures: [String] = []
+        for key in english.keys.sorted() {
+            guard let enVal = english[key], let locVal = translated[key] else { continue }
+            let enSpec = specifiers(in: enVal)
+            let locSpec = specifiers(in: locVal)
+            if enSpec != locSpec {
+                failures.append("File: \(file), Locale: \(locale), Key: '\(key)': Format arguments differ (expected: \(enSpec), got: \(locSpec))")
+            }
+        }
+        return failures
+    }
+
+    fileprivate static func validateFallbacks(
+        file: String,
+        locale: String,
+        english: [String: String],
+        translated: [String: String],
+        allowlist: FallbackAllowlist
+    ) -> [String] {
+        var failures: [String] = []
+        for key in english.keys.sorted() {
+            guard let enVal = english[key], let locVal = translated[key] else { continue }
+            if locVal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isIntentionalFallback(key: key, locale: locale, allowlist: allowlist) {
+                failures.append("File: \(file), Locale: \(locale), Key: '\(key)': Empty or whitespace-only translation value without intentional fallback allowlist entry")
+            } else if enVal.count > 3 && locVal == enVal && !isIntentionalFallback(key: key, locale: locale, allowlist: allowlist) {
+                failures.append("File: \(file), Locale: \(locale), Key: '\(key)': Untranslated English value without intentional fallback allowlist entry")
+            }
+        }
+        return failures
+    }
+
+    fileprivate static func validateAllowlistKeys(
+        allowlist: FallbackAllowlist,
+        allEnglishKeys: Set<String>,
+        validLocales: [String] = locales
+    ) -> [String] {
+        var failures: [String] = []
+        if let all = allowlist.intentionalFallbacks?.all {
+            for key in all {
+                if !allEnglishKeys.contains(key) {
+                    failures.append("File: OBAKit/Strings/fallback_allowlist.json: Key '\(key)' does not exist in English base tables")
+                }
+            }
+        }
+        if let byLocale = allowlist.intentionalFallbacks?.byLocale {
+            for (locale, keys) in byLocale {
+                if !validLocales.contains(locale) {
+                    failures.append("File: OBAKit/Strings/fallback_allowlist.json: Unknown locale '\(locale)' in intentional_fallbacks")
+                }
+                for key in keys {
+                    if !allEnglishKeys.contains(key) {
+                        failures.append("File: OBAKit/Strings/fallback_allowlist.json, Locale: \(locale): Key '\(key)' does not exist in English base tables")
+                    }
+                }
+            }
+        }
+        if let allowedMissing = allowlist.allowedMissing?.byLocale {
+            for (locale, keys) in allowedMissing {
+                if !validLocales.contains(locale) {
+                    failures.append("File: OBAKit/Strings/fallback_allowlist.json: Unknown locale '\(locale)' in allowed_missing")
+                }
+                for key in keys {
+                    if !allEnglishKeys.contains(key) {
+                        failures.append("File: OBAKit/Strings/fallback_allowlist.json, Locale: \(locale): Key '\(key)' does not exist in English base tables")
+                    }
+                }
+            }
+        }
+        return failures
     }
 
     // MARK: - Key parity
@@ -145,7 +332,7 @@ final class LocalizationTests {
                 guard let translated = strings(in: bundle, localization: localization) else { continue }
                 for (key, translation) in translated {
                     guard let source = english[key] else { continue }
-                    #expect(specifiers(in: source) == specifiers(in: translation), "\(name)/\(localization)/\(key): format specifiers differ from English — en=\(source) \(localization)=\(translation)")
+                    #expect(Self.specifiers(in: source) == Self.specifiers(in: translation), "\(name)/\(localization)/\(key): format specifiers differ from English — en=\(source) \(localization)=\(translation)")
                 }
             }
         }
@@ -648,5 +835,187 @@ final class LocalizationTests {
         let russian = Locale(identifier: "ru")
         #expect(String(format: ruFormat, locale: russian, 3) == "Показано 3 прошедших отправления")
         #expect(String(format: ruFormat, locale: russian, 5) == "Показано 5 прошедших отправлений")
+    }
+
+    // MARK: - App Localizations Parity & Completeness
+
+    @Test(arguments: appTables)
+    func `Every locale has same keys as english on disk`(table: String) throws {
+        let parts = table.split(separator: "|")
+        let enRelativePath = "\(parts[0])/en.lproj/\(parts[1]).strings"
+        let english = try #require(Self.stringsFromDisk(locale: "en", table: table), "File: \(enRelativePath): Missing English strings table")
+        try #require(!english.isEmpty, "File: \(enRelativePath): Base English table is empty")
+        let allowlist = try Self.loadAllowlist()
+
+        for locale in Self.locales where locale != "en" {
+            let relativePath = "\(parts[0])/\(locale).lproj/\(parts[1]).strings"
+            guard let translated = Self.stringsFromDisk(locale: locale, table: table) else {
+                Issue.record("File: \(relativePath), Locale: \(locale): Missing strings table")
+                continue
+            }
+            let issues = Self.validateKeyParity(file: relativePath, locale: locale, english: english, translated: translated, allowlist: allowlist)
+            for issue in issues {
+                Issue.record("\(issue)")
+            }
+        }
+    }
+
+    @Test(arguments: appTables)
+    func `Every locale preserves english format specifiers on disk`(table: String) throws {
+        let parts = table.split(separator: "|")
+        let enRelativePath = "\(parts[0])/en.lproj/\(parts[1]).strings"
+        let english = try #require(Self.stringsFromDisk(locale: "en", table: table), "File: \(enRelativePath): Missing English strings table")
+        try #require(!english.isEmpty, "File: \(enRelativePath): Base English table is empty")
+
+        for locale in Self.locales where locale != "en" {
+            let relativePath = "\(parts[0])/\(locale).lproj/\(parts[1]).strings"
+            guard let translated = Self.stringsFromDisk(locale: locale, table: table) else { continue }
+            let issues = Self.validateFormatSpecifiers(file: relativePath, locale: locale, english: english, translated: translated)
+            for issue in issues {
+                Issue.record("\(issue)")
+            }
+        }
+    }
+
+    @Test(arguments: appTables)
+    func `No locale carries an untranslated English value without allowlist`(table: String) throws {
+        let parts = table.split(separator: "|")
+        let enRelativePath = "\(parts[0])/en.lproj/\(parts[1]).strings"
+        let english = try #require(Self.stringsFromDisk(locale: "en", table: table), "File: \(enRelativePath): Missing English strings table")
+        try #require(!english.isEmpty, "File: \(enRelativePath): Base English table is empty")
+        let allowlist = try Self.loadAllowlist()
+
+        for locale in Self.locales where locale != "en" {
+            let relativePath = "\(parts[0])/\(locale).lproj/\(parts[1]).strings"
+            guard let translated = Self.stringsFromDisk(locale: locale, table: table) else { continue }
+            let issues = Self.validateFallbacks(file: relativePath, locale: locale, english: english, translated: translated, allowlist: allowlist)
+            for issue in issues {
+                Issue.record("\(issue)")
+            }
+        }
+    }
+
+    @Test func `App fallback allowlist keys are valid in English tables`() throws {
+        let allowlist = try Self.loadAllowlist()
+        let allKeys = Self.allEnglishKeys
+        #expect(!allKeys.isEmpty, "English base tables must not be empty")
+
+        let issues = Self.validateAllowlistKeys(allowlist: allowlist, allEnglishKeys: allKeys)
+        for issue in issues {
+            Issue.record("\(issue)")
+        }
+    }
+
+    @Test func `The app location purpose string is translated in every locale`() {
+        for locale in Self.locales where locale != "en" {
+            let relativePath = "Apps/OneBusAway/\(locale).lproj/InfoPlist.strings"
+            let url = Self.repoRoot.appending(path: relativePath)
+            let table = NSDictionary(contentsOf: url) as? [String: String]
+            let purpose = table?["NSLocationWhenInUseUsageDescription"]
+            #expect(purpose?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, "Apps/OneBusAway/\(locale): missing NSLocationWhenInUseUsageDescription")
+        }
+    }
+
+    // MARK: - Validation Diagnostic & Corruption Tests
+
+    @Test func `Validation diagnostics identify missing and extra keys on intentional corruptions`() {
+        let allowlist = FallbackAllowlist(
+            intentionalFallbacks: nil,
+            allowedMissing: AllowedMissing(byLocale: ["fr": ["allowed_missing_key"]])
+        )
+        let en = ["k1": "Hello", "k2": "World", "allowed_missing_key": "Optional"]
+        let loc = ["k1": "Bonjour", "extra_key": "Extra"]
+
+        let issues = Self.validateKeyParity(
+            file: "Test/fr.lproj/Localizable.strings",
+            locale: "fr",
+            english: en,
+            translated: loc,
+            allowlist: allowlist
+        )
+
+        #expect(issues.contains("File: Test/fr.lproj/Localizable.strings, Locale: fr, Key: 'k2': Missing key from English base table"))
+        #expect(issues.contains("File: Test/fr.lproj/Localizable.strings, Locale: fr, Key: 'extra_key': Extra key not in English base table"))
+        #expect(!issues.contains(where: { $0.contains("allowed_missing_key") }))
+    }
+
+    @Test func `Validation diagnostics identify mismatched format specifiers on intentional corruptions`() {
+        let en = [
+            "spec_mismatch": "Value is %@ of %d",
+            "spec_ok": "Count is %d"
+        ]
+        let loc = [
+            "spec_mismatch": "Valeur est %@ de %@",
+            "spec_ok": "%d compte"
+        ]
+
+        let issues = Self.validateFormatSpecifiers(
+            file: "Test/fr.lproj/Localizable.strings",
+            locale: "fr",
+            english: en,
+            translated: loc
+        )
+
+        #expect(issues.count == 1)
+        #expect(issues[0].contains("File: Test/fr.lproj/Localizable.strings, Locale: fr, Key: 'spec_mismatch': Format arguments differ"))
+        #expect(issues[0].contains("expected: [\"%1$@\", \"%2$d\"]"))
+        #expect(issues[0].contains("got: [\"%1$@\", \"%2$@\"]"))
+    }
+
+    @Test func `Validation diagnostics identify untranslated and empty values on intentional corruptions`() {
+        let allowlist = FallbackAllowlist(
+            intentionalFallbacks: IntentionalFallbacks(all: ["allowed_ident"], byLocale: ["fr": ["allowed_fr_only"]]),
+            allowedMissing: nil
+        )
+        let en = [
+            "untranslated": "Important text",
+            "empty": "Empty text",
+            "allowed_ident": "Universal Symbol",
+            "allowed_fr_only": "French term"
+        ]
+        let loc = [
+            "untranslated": "Important text",
+            "empty": "   ",
+            "allowed_ident": "Universal Symbol",
+            "allowed_fr_only": "French term"
+        ]
+
+        let issues = Self.validateFallbacks(
+            file: "Test/fr.lproj/Localizable.strings",
+            locale: "fr",
+            english: en,
+            translated: loc,
+            allowlist: allowlist
+        )
+
+        #expect(issues.contains("File: Test/fr.lproj/Localizable.strings, Locale: fr, Key: 'untranslated': Untranslated English value without intentional fallback allowlist entry"))
+        #expect(issues.contains("File: Test/fr.lproj/Localizable.strings, Locale: fr, Key: 'empty': Empty or whitespace-only translation value without intentional fallback allowlist entry"))
+        #expect(!issues.contains(where: { $0.contains("allowed_ident") }))
+        #expect(!issues.contains(where: { $0.contains("allowed_fr_only") }))
+    }
+
+    @Test func `Validation diagnostics identify invalid allowlist entries on intentional corruptions`() {
+        let corruptAllowlist = FallbackAllowlist(
+            intentionalFallbacks: IntentionalFallbacks(
+                all: ["ghost_key"],
+                byLocale: ["unknown_loc": ["k1"], "fr": ["nonexistent_k2"]]
+            ),
+            allowedMissing: AllowedMissing(
+                byLocale: ["bad_loc": ["k1"], "es": ["missing_k3"]]
+            )
+        )
+        let allEnglishKeys: Set<String> = ["k1"]
+
+        let issues = Self.validateAllowlistKeys(
+            allowlist: corruptAllowlist,
+            allEnglishKeys: allEnglishKeys,
+            validLocales: ["fr", "es"]
+        )
+
+        #expect(issues.contains("File: OBAKit/Strings/fallback_allowlist.json: Key 'ghost_key' does not exist in English base tables"))
+        #expect(issues.contains("File: OBAKit/Strings/fallback_allowlist.json: Unknown locale 'unknown_loc' in intentional_fallbacks"))
+        #expect(issues.contains("File: OBAKit/Strings/fallback_allowlist.json, Locale: fr: Key 'nonexistent_k2' does not exist in English base tables"))
+        #expect(issues.contains("File: OBAKit/Strings/fallback_allowlist.json: Unknown locale 'bad_loc' in allowed_missing"))
+        #expect(issues.contains("File: OBAKit/Strings/fallback_allowlist.json, Locale: es: Key 'missing_k3' does not exist in English base tables"))
     }
 }
