@@ -292,4 +292,12 @@ class OBATestCase {
         return SurveyService(apiService: apiService, userDataStore: store)
     }
 
+    // MARK: - Concurrency helpers
+
+    /// Lets pending `@MainActor` tasks run. Because the main actor runs jobs
+    /// in FIFO order, awaiting a newly scheduled main-actor task guarantees
+    /// that any tasks enqueued before it have finished executing.
+    func drainMainActor() async {
+        await Task { @MainActor in }.value
+    }
 }
