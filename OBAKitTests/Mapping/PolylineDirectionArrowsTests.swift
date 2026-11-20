@@ -71,4 +71,40 @@ struct PolylineDirectionArrowsTests {
         #expect(!placements.isEmpty)
         #expect(placements.count <= 24)
     }
+
+    @Test func `Non-positive or non-finite spacing produces no arrows`() {
+        let line = [
+            CLLocationCoordinate2D(latitude: 47, longitude: -122),
+            CLLocationCoordinate2D(latitude: 47.018, longitude: -122)
+        ]
+
+        #expect(PolylineDirectionArrows.placements(along: line, spacing: 0).isEmpty)
+        #expect(PolylineDirectionArrows.placements(along: line, spacing: -500).isEmpty)
+        #expect(PolylineDirectionArrows.placements(along: line, spacing: .infinity).isEmpty)
+        #expect(PolylineDirectionArrows.placements(along: line, spacing: .nan).isEmpty)
+    }
+
+    @Test func `Consecutive identical coordinates are skipped without breaking placements`() {
+        let p1 = CLLocationCoordinate2D(latitude: 47, longitude: -122)
+        let p2 = CLLocationCoordinate2D(latitude: 47.018, longitude: -122)
+        let lineWithDuplicates = [p1, p1, p2, p2]
+
+        let placements = PolylineDirectionArrows.placements(along: lineWithDuplicates, spacing: 500)
+        #expect(!placements.isEmpty)
+        #expect(placements.allSatisfy { abs($0.headingDegrees) < 3 })
+    }
+
+    @Test func `PolylineArrowPlacement equality checks coordinate and heading`() {
+        let coord1 = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        let coord2 = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.4)
+
+        let a = PolylineArrowPlacement(coordinate: coord1, headingDegrees: 90)
+        let b = PolylineArrowPlacement(coordinate: coord1, headingDegrees: 90)
+        let differentCoord = PolylineArrowPlacement(coordinate: coord2, headingDegrees: 90)
+        let differentHeading = PolylineArrowPlacement(coordinate: coord1, headingDegrees: 180)
+
+        #expect(a == b)
+        #expect(a != differentCoord)
+        #expect(a != differentHeading)
+    }
 }

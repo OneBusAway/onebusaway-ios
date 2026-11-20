@@ -102,6 +102,13 @@ enum StopCluster {
     /// Co-located stops usually share a name, so the title adds the code and
     /// direction that tell them apart.
     static func pickerTitle(for stop: Stop) -> String {
-        "\(stop.name) · \(Formatters.formattedCodeAndDirection(stop: stop))"
+        guard !stop.code.isEmpty else {
+            if let adj = Formatters.adjectiveFormOfCardinalDirection(stop.direction) {
+                return "\(stop.name) · \(adj)"
+            }
+            return stop.name
+        }
+
+        return "\(stop.name) · \(Formatters.formattedCodeAndDirection(stop: stop))"
     }
 }

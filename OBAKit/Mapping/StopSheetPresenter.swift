@@ -67,6 +67,10 @@ final class StopSheetPresenter: NSObject {
     private var panel: FloatingPanelController?
     private var navigation: UINavigationController?
 
+    /// Retains a panel that is actively animating offscreen during an animated dismissal
+    /// so a fast subsequent selection can detach it immediately rather than leaving overlapping panels.
+    private var dismissingPanel: FloatingPanelController?
+
     /// The tab bar controller whose bar is hidden for the current presentation. Non-nil only
     /// while a sheet is onscreen, so the bar can be put back exactly once.
     private var hostTabBarController: UITabBarController?
@@ -81,6 +85,16 @@ final class StopSheetPresenter: NSObject {
         panel != nil
     }
 
+    /// The root content view controller currently presented in the sheet, or `nil` if none.
+    var presentedViewController: UIViewController? {
+        navigation?.viewControllers.first
+    }
+
+    /// The topmost view controller on the sheet's internal navigation stack, or `nil` if none.
+    var topViewController: UIViewController? {
+        navigation?.topViewController
+    }
+
     // MARK: - Presentation
 
     /// Presents `contentController` in a half-detent panel added to `parent`.
@@ -93,6 +107,11 @@ final class StopSheetPresenter: NSObject {
     ///   - parent: The view controller to add the panel to.
     ///   - onDismiss: Run once this presentation leaves the screen, however it leaves.
     func present(_ contentController: UIViewController, from parent: UIViewController, onDismiss: @escaping () -> Void) {
+        // If this exact content controller is already presented, avoid tearing down and rebuilding.
+        if contentController === presentedViewController {
+            return
+        }
+
         // Swapping one stop for another leaves the tab bar hidden throughout: restoring it here
         // would flash it back into place for a turn, behind the incoming sheet.
         tearDown(animated: false, restoringTabBar: false)
@@ -165,6 +184,13 @@ final class StopSheetPresenter: NSObject {
     /// Detaches by way of `hide` rather than `removePanelFromParent` on purpose: the latter
     /// fires `floatingPanelDidRemove`, which would re-enter this method.
     private func tearDown(animated: Bool, restoringTabBar: Bool) {
+        // Immediately clean up any prior panel that was still in the middle of an animated slide-away.
+        if let dismissing = dismissingPanel {
+            dismissing.view.removeFromSuperview()
+            dismissing.removeFromParent()
+            dismissingPanel = nil
+        }
+
         // An animated teardown holds the tab bar back until the sheet has gone; see
         // `restoreDeferredTabBar()`.
         guard let panel = releaseCurrentPresentation(restoringTabBar: restoringTabBar && !animated) else { return }
@@ -181,10 +207,15 @@ final class StopSheetPresenter: NSObject {
             return
         }
 
+        dismissingPanel = panel
         slideAway(panel) { [weak self] in
             // Leaves the panel at the hidden anchor before it's discarded, so nothing observes a
             // sheet that is offscreen by transform but still `.half` by state.
             panel.hide(animated: false, completion: detach)
+
+            if self?.dismissingPanel === panel {
+                self?.dismissingPanel = nil
+            }
 
             if restoringTabBar {
                 self?.restoreDeferredTabBar()

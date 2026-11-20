@@ -569,6 +569,45 @@ final class FormattersTests: OBATestCase {
         #expect(Formatters.directionAbbreviation(.unknown) == nil)
     }
 
+    @Test func `Formatted time until arrival departure handles present, single minute, and plural minutes`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        // Present state always returns NOW
+        #expect(formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: 0, temporalState: .present) == "NOW")
+        #expect(formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: 5, temporalState: .present) == "NOW")
+
+        // Single minute past vs future
+        #expect(formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: -1, temporalState: .past) == "One minute ago")
+        #expect(formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: 1, temporalState: .future) == "One minute")
+
+        // Multiple minutes past vs future
+        #expect(formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: -7, temporalState: .past) == "-7 minutes")
+        #expect(formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: 12, temporalState: .future) == "12 minutes")
+    }
+
+    @Test func `Formatted schedule deviation explanations for past and future arrivals and departures`() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        // Past arrivals
+        #expect(formatters.formattedScheduleDeviation(temporalState: .past, arrivalDepartureStatus: .arriving, scheduleDeviation: 0) == "arrived on time")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .past, arrivalDepartureStatus: .arriving, scheduleDeviation: 3) == "arrived 3 min late")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .past, arrivalDepartureStatus: .arriving, scheduleDeviation: -2) == "arrived 2 min early")
+
+        // Past departures
+        #expect(formatters.formattedScheduleDeviation(temporalState: .past, arrivalDepartureStatus: .departing, scheduleDeviation: 0) == "departed on time")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .past, arrivalDepartureStatus: .departing, scheduleDeviation: 4) == "departed 4 min late")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .past, arrivalDepartureStatus: .departing, scheduleDeviation: -1) == "departed 1 min early")
+
+        // Future arrivals
+        #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .arriving, scheduleDeviation: 0) == "arrives on time")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .arriving, scheduleDeviation: 5) == "arrives 5 min late")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .arriving, scheduleDeviation: -3) == "arrives 3 min early")
+
+        // Future departures
+        #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: 0) == "departs on time")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: 2) == "departs 2 min late")
+        #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: -4) == "departs 4 min early")
+
     private func makeAgency(id: String, name: String) throws -> Agency {
         let dict: [String: Any] = [
             "id": id,
