@@ -50,10 +50,10 @@ class RoutePickerViewController: UIViewController,
 
     // MARK: - Init
 
-    init(application: Application, delegate: RoutePickerDelegate) {
+    init(application: Application, delegate: RoutePickerDelegate, viewModel: RoutePickerViewModel? = nil) {
         self.application = application
         self.delegate = delegate
-        self.viewModel = RoutePickerViewModel(application: application)
+        self.viewModel = viewModel ?? RoutePickerViewModel(application: application)
         super.init(nibName: nil, bundle: nil)
 
         title = OBALoc(
