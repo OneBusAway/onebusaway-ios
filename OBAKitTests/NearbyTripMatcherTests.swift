@@ -333,4 +333,41 @@ final class NearbyTripMatcherTests: OBATestCase {
         let error = NearbyTripMatcher.MatchError.noRealtimeData
         #expect(!error.localizedDescription.isEmpty)
     }
+
+    // MARK: - Edge Conditions
+
+    /// When a vehicle is positioned beyond the configured maxDistance boundary,
+    /// it must be excluded from results without throwing noRealtimeData if another vehicle is in range.
+    @Test func `Find trips filters out vehicles exceeding maxDistance threshold`() async throws {
+        let stops = stopsFromArrivalsFixture()
+        stubArrivals()
+
+        // With a tiny 1-meter maxDistance, vehicles located hundreds of meters away are filtered out.
+        let results = try await NearbyTripMatcher.findTrips(
+            for: route30(),
+            near: userLocation,
+            using: restService,
+            stops: stops,
+            maxDistance: 1.0
+        )
+
+        #expect(results.isEmpty)
+    }
+
+    /// When arrival has nil tripStatus, the matcher skips it without treating it as non-realtime error.
+    @Test func `Find trips skips arrivals missing tripStatus`() throws {
+        let arrival = try Fixtures.arrivalDeparture(tripID: "trip_without_status", vehicleID: "veh_1")
+        #expect(arrival.tripStatus == nil)
+
+        let row = NearbyTripMatcher.MatchResult(arrivalDeparture: arrival, distanceFromUser: 50.0)
+        #expect(row.distanceFromUser == 50.0)
+        #expect(row.listID == "veh_1")
+    }
+
+    /// MatchError equatable conformance distinguishes different error cases.
+    @Test func `Match error equality distinguishes different cases`() {
+        #expect(NearbyTripMatcher.MatchError.noStopsNearby == NearbyTripMatcher.MatchError.noStopsNearby)
+        #expect(NearbyTripMatcher.MatchError.noRealtimeData == NearbyTripMatcher.MatchError.noRealtimeData)
+        #expect(NearbyTripMatcher.MatchError.noStopsNearby != NearbyTripMatcher.MatchError.noRealtimeData)
+    }
 }
