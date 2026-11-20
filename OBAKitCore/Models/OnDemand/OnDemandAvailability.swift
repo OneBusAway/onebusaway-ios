@@ -66,6 +66,8 @@ public struct OnDemandAvailability: Equatable, Sendable {
     /// tier-3 title reads it: `book_by` for `.bookBy`, `booking_opens` for
     /// `.opensAt` (spec 2.8 with ruling F1).
     public let bookingResolution: OnDemandBookingResolution
+    /// The explainable typed eligibility reason for this service at `now`.
+    public let eligibilityReason: OnDemandEligibilityReason
 
     public init(
         runningNow: Bool,
@@ -78,7 +80,8 @@ public struct OnDemandAvailability: Equatable, Sendable {
         tags: [Tag],
         usabilityTier: Int,
         nextChangeInstant: Date?,
-        bookingResolution: OnDemandBookingResolution = .unknown
+        bookingResolution: OnDemandBookingResolution = .unknown,
+        eligibilityReason: OnDemandEligibilityReason = .unavailable(.unresolvedBookingRule)
     ) {
         self.runningNow = runningNow
         self.runningUntil = runningUntil
@@ -91,12 +94,15 @@ public struct OnDemandAvailability: Equatable, Sendable {
         self.usabilityTier = usabilityTier
         self.nextChangeInstant = nextChangeInstant
         self.bookingResolution = bookingResolution
+        self.eligibilityReason = eligibilityReason
     }
 
     /// Every field null or false: the agency time zone is unknown.
     public static let unknown = OnDemandAvailability(
         runningNow: false, runningUntil: nil, nextRunStart: nil, bookingTier: nil, bookableNow: false,
-        nextBookableServiceDate: nil, status: .unknown, tags: [], usabilityTier: unknownTier, nextChangeInstant: nil
+        nextBookableServiceDate: nil, status: .unknown, tags: [], usabilityTier: unknownTier, nextChangeInstant: nil,
+        bookingResolution: .unknown,
+        eligibilityReason: .unavailable(.missingTimeZone)
     )
 
     // MARK: - Evaluation
@@ -154,6 +160,8 @@ public struct OnDemandAvailability: Equatable, Sendable {
         // service with no other boundary ahead of it (ruling: spec §2.5).
         let nextMidnight = evaluator.anchor(evaluator.adding(days: 1, to: today))
         let nextChange = [runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight].compactMap { $0 }.filter { $0 > now }.min()
+        let targetDate = nextBookable ?? today
+        let eligibilityReason = evaluateEligibility(service: service, timeZone: timeZone, travelDate: targetDate, now: now)
 
         return OnDemandAvailability(
             runningNow: runningNow,
@@ -166,7 +174,23 @@ public struct OnDemandAvailability: Equatable, Sendable {
             tags: tags,
             usabilityTier: usabilityTier(status: status, tags: tags, nextBookableServiceDate: nextBookable, today: today),
             nextChangeInstant: nextChange,
-            bookingResolution: outcome.resolution
+            bookingResolution: outcome.resolution,
+            eligibilityReason: eligibilityReason
+        )
+    }
+
+    /// Evaluates the typed eligibility reason for one on-demand service on a given service date (defaults to today in the agency zone).
+    public static func evaluateEligibility(
+        service: OnDemandService,
+        timeZone: TimeZone?,
+        travelDate: ServiceDate? = nil,
+        now: Date
+    ) -> OnDemandEligibilityReason {
+        OnDemandEligibilityEvaluator.evaluateService(
+            service: service,
+            timeZone: timeZone,
+            travelDate: travelDate,
+            now: now
         )
     }
 

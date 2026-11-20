@@ -164,4 +164,23 @@ public extension Strings {
     static let mapLayersStateOn = OBALoc("map_layers.state.on", value: "On", comment: "Layer tile subtitle when enabled")
     static let mapLayersStateOff = OBALoc("map_layers.state.off", value: "Off", comment: "Layer tile subtitle when disabled")
     static let mapLayersMinRange = OBALoc("map_layers.min_range", value: "Min. range", comment: "Label before the rental range chips")
+
+    // MARK: - Eligibility explanations
+
+    static let onDemandEligibilityEligible = OBALoc("on_demand.eligibility.eligible", value: "Eligible to book", comment: "Explanation when a service is currently eligible for booking")
+    static let onDemandEligibilityEligibleUntilFormat = OBALoc("on_demand.eligibility.eligible_until_fmt", value: "Eligible to book · by %@", comment: "Explanation when a service is eligible until a cutoff deadline. %@ is a relative date/time")
+    static let onDemandEligibilityTooEarlyFormat = OBALoc("on_demand.eligibility.too_early_fmt", value: "Booking not open yet · opens %@", comment: "Explanation when booking is too early. %@ is a relative date/time")
+    static let onDemandEligibilityTooLateFormat = OBALoc("on_demand.eligibility.too_late_fmt", value: "Booking deadline passed · was %@", comment: "Explanation when booking is too late. %@ is a relative date/time")
+    static let onDemandEligibilityOutsideZoneOrigin = OBALoc("on_demand.eligibility.outside_zone_origin", value: "Trip origin is outside the service area", comment: "Explanation when trip origin is outside service zone")
+    static let onDemandEligibilityOutsideZoneDestination = OBALoc("on_demand.eligibility.outside_zone_destination", value: "Trip destination is outside the service area", comment: "Explanation when trip destination is outside service zone")
+    static let onDemandEligibilityOutsideZoneDisconnected = OBALoc("on_demand.eligibility.outside_zone_disconnected", value: "Service does not connect these zones", comment: "Explanation when service rules do not connect origin and destination zones")
+    static let onDemandEligibilityOutsideZonePoint = OBALoc("on_demand.eligibility.outside_zone_point", value: "Location is outside the service area", comment: "Explanation when location point is outside service zone")
+    static let onDemandEligibilityMissingEndpointOrigin = OBALoc("on_demand.eligibility.missing_endpoint_origin", value: "Trip origin location is required", comment: "Explanation when origin is missing")
+    static let onDemandEligibilityMissingEndpointDestination = OBALoc("on_demand.eligibility.missing_endpoint_destination", value: "Trip destination location is required", comment: "Explanation when destination is missing")
+    static let onDemandEligibilityMissingEndpointBoth = OBALoc("on_demand.eligibility.missing_endpoint_both", value: "Origin and destination locations are required", comment: "Explanation when both endpoints are missing")
+    static let onDemandEligibilityUnavailableMissingTimeZone = OBALoc("on_demand.eligibility.unavailable_timezone", value: "Schedule unavailable", comment: "Explanation when service timezone is missing")
+    static let onDemandEligibilityUnavailableNoServiceDate = OBALoc("on_demand.eligibility.unavailable_no_service_date", value: "No service scheduled for this date", comment: "Explanation when service does not run on selected date")
+    static let onDemandEligibilityUnavailableServiceEnded = OBALoc("on_demand.eligibility.unavailable_service_ended", value: "Service has ended", comment: "Explanation when service calendar period has expired")
+    static let onDemandEligibilityUnavailableCertificationRequired = OBALoc("on_demand.eligibility.unavailable_certification", value: "Rider certification required", comment: "Explanation when service requires rider eligibility certification")
+    static let onDemandEligibilityUnavailableGeneral = OBALoc("on_demand.eligibility.unavailable_general", value: "Booking unavailable", comment: "Explanation when booking rules cannot be resolved or service cannot be booked")
 }

@@ -334,4 +334,86 @@ final class BookingDeadlineEvaluatorTests: OBATestCase {
         #expect(!evaluator.hasUsableCalendar(rule(["missing"])))
         #expect(!evaluator.hasUsableCalendar(rule([])))
     }
+
+    // MARK: - Explainable eligibility tests
+
+    @Test func `Eligibility evaluation explains too early, eligible, and too late by cutoff`() throws {
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar])
+        let bookingRule = try JSONDecoder().decode(
+            OnDemandBookingRule.self,
+            from: Data(#"{"id":"same-day-window","bookingType":1,"priorNoticeDurationMin":60,"priorNoticeDurationMax":180}"#.utf8)
+        )
+        let rule = AvailabilityRule(
+            fromIDs: [], toIDs: [],
+            startPickupTime: GTFSTimeOfDay("09:00:00"), endPickupTime: GTFSTimeOfDay("17:00:00"),
+            endDropOffTime: nil, calendarIDs: ["wk"],
+            pickupType: 2, dropOffType: 2,
+            pickupBookingRuleID: "same-day-window", dropOffBookingRuleID: nil,
+            safeDurationFactor: nil, safeDurationOffset: nil
+        )
+        let travelDate = ServiceDate("2026-03-11")!
+        // Start pickup: 09:00. priorNoticeDurationMax: 180 min -> Opens at 06:00.
+        // End pickup: 17:00. priorNoticeDurationMin: 60 min -> Cutoff at 16:00.
+
+        // 1. Before 06:00 -> tooEarly
+        let earlyNow = evaluator.instant(travelDate, GTFSTimeOfDay("05:30:00")!)
+        let earlyReason = evaluator.evaluateEligibility(rule: rule, bookingRule: bookingRule, travelDate: travelDate, now: earlyNow)
+        let expectedOpen = evaluator.instant(travelDate, GTFSTimeOfDay("06:00:00")!)
+        #expect(earlyReason == .tooEarly(openInstant: expectedOpen))
+        #expect(!earlyReason.isEligible)
+        #expect(earlyReason.domainExplanation.contains("Booking has not opened yet"))
+
+        // 2. Between 06:00 and 16:00 -> eligible
+        let eligibleNow = evaluator.instant(travelDate, GTFSTimeOfDay("12:00:00")!)
+        let eligibleReason = evaluator.evaluateEligibility(rule: rule, bookingRule: bookingRule, travelDate: travelDate, now: eligibleNow)
+        let expectedCutoff = evaluator.instant(travelDate, GTFSTimeOfDay("16:00:00")!)
+        #expect(eligibleReason == .eligible(cutoff: expectedCutoff))
+        #expect(eligibleReason.isEligible)
+        #expect(eligibleReason.domainExplanation.contains("Eligible for booking until"))
+
+        // 3. After 16:00 -> tooLate
+        let lateNow = evaluator.instant(travelDate, GTFSTimeOfDay("16:30:00")!)
+        let lateReason = evaluator.evaluateEligibility(rule: rule, bookingRule: bookingRule, travelDate: travelDate, now: lateNow)
+        #expect(lateReason == .tooLate(cutoffInstant: expectedCutoff))
+        #expect(!lateReason.isEligible)
+        #expect(lateReason.domainExplanation.contains("Booking deadline passed"))
+    }
+
+    @Test func `Eligibility evaluation explains inactive service date and calendar end`() {
+        let evaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [weekdayCalendar])
+        let rule = AvailabilityRule(
+            fromIDs: [], toIDs: [],
+            startPickupTime: GTFSTimeOfDay("09:00:00"), endPickupTime: GTFSTimeOfDay("17:00:00"),
+            endDropOffTime: nil, calendarIDs: ["wk"],
+            pickupType: 2, dropOffType: 2,
+            pickupBookingRuleID: nil, dropOffBookingRuleID: nil,
+            safeDurationFactor: nil, safeDurationOffset: nil
+        )
+        let now = evaluator.instant(ServiceDate("2026-03-09")!, GTFSTimeOfDay("12:00:00")!)
+
+        // 1. Excepted date
+        let exceptedDate = ServiceDate("2026-03-10")!
+        let exceptedReason = evaluator.evaluateEligibility(rule: rule, bookingRule: nil, travelDate: exceptedDate, now: now)
+        #expect(exceptedReason == .unavailable(.noServiceOnDate(exceptedDate)))
+        #expect(!exceptedReason.isEligible)
+        #expect(exceptedReason.domainExplanation.contains("no service scheduled"))
+
+        // 2. Inactive weekday (Saturday)
+        let saturday = ServiceDate("2026-03-14")!
+        let saturdayReason = evaluator.evaluateEligibility(rule: rule, bookingRule: nil, travelDate: saturday, now: now)
+        #expect(saturdayReason == .unavailable(.noServiceOnDate(saturday)))
+
+        // 3. Date after calendar end
+        let futureDate = ServiceDate("2027-02-01")!
+        let futureReason = evaluator.evaluateEligibility(rule: rule, bookingRule: nil, travelDate: futureDate, now: now)
+        #expect(futureReason == .unavailable(.serviceEnded))
+        #expect(futureReason.domainExplanation.contains("calendar service period has ended"))
+
+        // 4. Unusable calendar
+        let unendedCalendar = OnDemandCalendar(id: "bad", days: Weekday.allCases, startDate: nil, endDate: nil, exceptedDates: [])
+        let badEvaluator = BookingDeadlineEvaluator(timeZone: losAngeles, calendars: [unendedCalendar])
+        let badRule = AvailabilityRule(fromIDs: [], toIDs: [], startPickupTime: nil, endPickupTime: nil, endDropOffTime: nil, calendarIDs: ["bad"], pickupType: 2, dropOffType: 2, pickupBookingRuleID: nil, dropOffBookingRuleID: nil, safeDurationFactor: nil, safeDurationOffset: nil)
+        let badReason = badEvaluator.evaluateEligibility(rule: badRule, bookingRule: nil, travelDate: ServiceDate("2026-03-11")!, now: now)
+        #expect(badReason == .unavailable(.unresolvedBookingRule))
+    }
 }

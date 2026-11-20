@@ -6,6 +6,22 @@
       "ghost_bus_report.wait.thirty_plus",
       "next_departures_intent.sentences_join_fmt",
       "next_departures_intent.stop_departure_no_headsign_fmt",
+      "on_demand.eligibility.eligible",
+      "on_demand.eligibility.eligible_until_fmt",
+      "on_demand.eligibility.missing_endpoint_both",
+      "on_demand.eligibility.missing_endpoint_destination",
+      "on_demand.eligibility.missing_endpoint_origin",
+      "on_demand.eligibility.outside_zone_destination",
+      "on_demand.eligibility.outside_zone_disconnected",
+      "on_demand.eligibility.outside_zone_origin",
+      "on_demand.eligibility.outside_zone_point",
+      "on_demand.eligibility.too_early_fmt",
+      "on_demand.eligibility.too_late_fmt",
+      "on_demand.eligibility.unavailable_certification",
+      "on_demand.eligibility.unavailable_general",
+      "on_demand.eligibility.unavailable_no_service_date",
+      "on_demand.eligibility.unavailable_service_ended",
+      "on_demand.eligibility.unavailable_timezone",
       "stop_header.travel_minutes_fmt",
       "timezone.clock_with_badge_fmt",
       "timezone.gmt_offset_hours_fmt",
@@ -18,7 +34,9 @@
       "weather.stat.a11y_fmt"
     ],
     "by_locale": {
-      "ar": [],
+      "ar": [
+
+      ],
       "es": [
         "agencies_controller.error_title",
         "common.error",
@@ -111,7 +129,9 @@
         "settings_controller.walking_directions.google",
         "stops_controller.menu.file_title"
       ],
-      "ko": [],
+      "ko": [
+
+      ],
       "pl": [
         "common.alarm",
         "more_controller.debug_section.push_id.title",
@@ -137,11 +157,16 @@
         "settings_controller.walking_directions.apple",
         "settings_controller.walking_directions.google"
       ],
-      "zh-Hans": [],
-      "zh-Hant": []
+      "zh-Hans": [
+
+      ],
+      "zh-Hant": [
+
+      ]
     }
   },
   "allowed_missing": {
-    "by_locale": {}
+    "by_locale": {
+    }
   }
 }
