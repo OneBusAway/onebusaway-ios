@@ -59,25 +59,37 @@ final class SearchableTests: OBATestCase {
         #expect(!route.matchesQuery("Downtown"))
     }
 
-    @Test func `Stop matchesQuery matches stop name, stop code, or associated routes`() throws {
+    @Test func `Stop matchesQuery matches stop name or associated routes, but not stop code`() throws {
         let route = try makeRoute(shortName: "49", longName: "Broadway")
         let stop = try makeStop(code: "10914", name: "15th Ave E & E Thomas St", routes: [route])
 
         #expect(stop.matchesQuery(nil))
         #expect(stop.matchesQuery("15th"))
-        #expect(stop.matchesQuery("10914"))
         #expect(stop.matchesQuery("49"))
         #expect(stop.matchesQuery("broadway"))
+
+        // Stop code is not searched
+        #expect(!stop.matchesQuery("10914"))
         #expect(!stop.matchesQuery("Pike Place"))
     }
 
     @Test func `Bookmark matchesQuery matches routeShortName, tripHeadsign, or underlying stop`() throws {
-        let stop = try makeStop(code: "10914", name: "15th Ave E & E Thomas St")
-        let bookmark = Bookmark(name: "Home Stop", regionIdentifier: 1, stop: stop)
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let arrivalDep = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let tripBookmark = Bookmark(
+            name: "49 to Downtown",
+            regionIdentifier: pugetSoundRegionIdentifier,
+            arrivalDeparture: arrivalDep
+        )
 
-        #expect(bookmark.matchesQuery(nil))
-        #expect(bookmark.matchesQuery("15th"))
-        #expect(bookmark.matchesQuery("10914"))
-        #expect(!bookmark.matchesQuery("Nonexistent"))
+        #expect(tripBookmark.matchesQuery(nil))
+        #expect(tripBookmark.matchesQuery("49"))
+        let headsign = try #require(tripBookmark.tripHeadsign)
+        #expect(tripBookmark.matchesQuery(headsign))
+        #expect(tripBookmark.matchesQuery(tripBookmark.stop.name))
+        #expect(!tripBookmark.matchesQuery("Nonexistent"))
     }
 }
