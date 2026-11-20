@@ -32,6 +32,54 @@ final class VehicleMarkerStalenessTests {
     @Test func `A fresh estimate is live`() {
         #expect(staleness(age: 0) == .live)
         #expect(staleness(age: 44) == .live)
+        #expect(staleness(age: VehicleMarkerStaleness.agingStart) == .live)
+    }
+
+    @Test func `Aging fraction is quantized to tenths and clamped at 1`() {
+        // Horizon = 120, agingStart = 45 -> span = 75
+        // At age 46, (46 - 45) / 75 = 0.0133 -> rounded up to 0.1
+        let justPastAging = staleness(age: 46)
+        if case let .aging(fraction) = justPastAging {
+            #expect(fraction == 0.1)
+        } else {
+            Issue.record("Expected aging case")
+        }
+
+        // At age 120 (at horizon), fraction = 1.0
+        let atHorizon = staleness(age: 120)
+        if case let .aging(fraction) = atHorizon {
+            #expect(fraction == 1.0)
+            #expect(atHorizon.haloDiameter == VehicleMarkerStaleness.maximumHaloDiameter)
+            #expect(atHorizon.pulseDelay == VehicleMarkerStaleness.maximumPulseDelay)
+        } else {
+            Issue.record("Expected aging case")
+        }
+
+        // Past horizon, clamped to 1.0
+        let pastHorizon = staleness(age: 200)
+        if case let .aging(fraction) = pastHorizon {
+            #expect(fraction == 1.0)
+        } else {
+            Issue.record("Expected aging case")
+        }
+    }
+
+    @Test func `Holding mode estimate enters aging past agingStart`() {
+        let holdingFresh = staleness(age: 30, mode: .holding)
+        #expect(holdingFresh == .live)
+
+        let holdingAging = staleness(age: 60, mode: .holding)
+        if case let .aging(fraction) = holdingAging {
+            #expect(fraction > 0)
+        } else {
+            Issue.record("Expected aging case for holding mode")
+        }
+    }
+
+    @Test func `Short horizon at or below agingStart defaults to live`() {
+        let estimate = TripMapFocusFixture.estimate(at: here, fixAge: 50, mode: .estimated)
+        let staleness = VehicleMarkerStaleness(estimate: estimate, horizon: 40)
+        #expect(staleness == .live)
     }
 
     @Test func `An aging estimate grows its halo and slows its pulse toward the horizon`() {
