@@ -144,8 +144,7 @@ struct OnboardingScaffold<Content: View>: View {
 #Preview("Full flow step") {
     OnboardingScaffold(
         progress: (index: 0, total: 4),
-        // swiftlint:disable:next hardcoded_app_name
-        title: "Welcome to OneBusAway",
+        title: String(format: OBALoc("onboarding.welcome.title_fmt", value: "Welcome to %@", comment: "Title of the first onboarding screen; the argument is the app name"), Bundle.main.appName),
         bodyText: "Real-time arrivals for the buses, trains, and ferries you ride.",
         footnote: "Available in dozens of transit regions worldwide",
         primaryTitle: "Get Started",
