@@ -557,4 +557,15 @@ final class FormattersTests: OBATestCase {
         let interval = DateInterval(start: startDate, end: endDate)
         #expect(formatters.formattedDateRange(interval) == expectedRange)
     }
+
+    @Test func `Cardinal directionString and directionAbbreviation formatting`() {
+        let bundle = Bundle.obaKitCore
+        #expect(Formatters.directionString(.n) == NSLocalizedString("formatters.cardinal_direction.north", bundle: bundle, comment: ""))
+        #expect(Formatters.directionString(.s) == NSLocalizedString("formatters.cardinal_direction.south", bundle: bundle, comment: ""))
+        #expect(Formatters.directionString(.unknown) == nil)
+
+        #expect(Formatters.directionAbbreviation(.n) == NSLocalizedString("formatters.cardinal_direction_abbrev.north", bundle: bundle, comment: ""))
+        #expect(Formatters.directionAbbreviation(.sw) == NSLocalizedString("formatters.cardinal_direction_abbrev.southwest", bundle: bundle, comment: ""))
+        #expect(Formatters.directionAbbreviation(.unknown) == nil)
+    }
 }
