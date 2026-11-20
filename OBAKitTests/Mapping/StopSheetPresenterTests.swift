@@ -486,4 +486,97 @@ final class StopSheetPresenterTests {
 
         #expect(panel.surfaceView.appearance.backgroundColor == .systemBackground)
     }
+
+    // MARK: - Selection Handoff & Transitions
+
+    /// Selecting a stop presents the stop sheet and exposes presentedViewController and topViewController.
+    @Test func `Presenting stop exposes presented and top view controllers`() {
+        let stopController = UIViewController()
+        presenter.present(stopController, from: parent) {}
+
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === stopController)
+        #expect(presenter.topViewController === stopController)
+        #expect(panels.count == 1)
+        #expect(panels.first?.state == .half)
+    }
+
+    /// Presenting a different content controller replaces the current presentation,
+    /// runs outgoing cleanup, and keeps sheet state consistent.
+    @Test func `Presenting a new content controller replaces the current one and cleans up outgoing`() {
+        var firstDismissed = 0
+        var secondDismissed = 0
+        let first = UIViewController()
+        let second = UIViewController()
+
+        presenter.present(first, from: parent) { firstDismissed += 1 }
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === first)
+        #expect(firstDismissed == 0)
+
+        presenter.present(second, from: parent) { secondDismissed += 1 }
+
+        #expect(firstDismissed == 1)
+        #expect(secondDismissed == 0)
+        #expect(presenter.isPresenting)
+        #expect(presenter.presentedViewController === second)
+        #expect(presenter.topViewController === second)
+        #expect(panels.count == 1)
+    }
+
+    /// Repeated selection of the exact same content controller is a no-op that does
+    /// not tear down or re-fire dismiss handlers.
+    @Test func `Repeated selection of the same content controller is a no op`() {
+        var dismissed = 0
+        let content = UIViewController()
+
+        presenter.present(content, from: parent) { dismissed += 1 }
+        #expect(presenter.presentedViewController === content)
+        #expect(dismissed == 0)
+
+        // Re-selecting the exact same controller
+        presenter.present(content, from: parent) { dismissed += 1 }
+        #expect(presenter.presentedViewController === content)
+        #expect(dismissed == 0)
+        #expect(panels.count == 1)
+    }
+
+    /// Pushing a child controller inside the sheet updates topViewController while
+    /// keeping presentedViewController pointing to the root.
+    @Test func `Pushing inside sheet updates topViewController while root presentedViewController remains`() throws {
+        let root = CollapsibleStub()
+        let child = UIViewController()
+
+        presenter.present(root, from: parent) {}
+        #expect(presenter.presentedViewController === root)
+        #expect(presenter.topViewController === root)
+
+        let navigation = try presentedNavigation()
+        push(child, onto: navigation)
+
+        #expect(presenter.presentedViewController === root)
+        #expect(presenter.topViewController === child)
+
+        try popBack(in: navigation)
+        #expect(presenter.presentedViewController === root)
+        #expect(presenter.topViewController === root)
+    }
+
+    /// Fast selection arrival during an animated dismissal immediately cleans up
+    /// the dismissing panel so panels count remains exactly one.
+    @Test func `Presentation during animated dismissal cancels dismissing panel immediately`() {
+        let first = UIViewController()
+        let second = UIViewController()
+
+        presenter.present(first, from: parent) {}
+        #expect(panels.count == 1)
+
+        presenter.dismiss(animated: true)
+        // Immediately present another before animation completes
+        presenter.present(second, from: parent) {}
+
+        #expect(panels.count == 1)
+        #expect(presenter.presentedViewController === second)
+        #expect(presenter.isPresenting)
+    }
 }

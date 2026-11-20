@@ -132,4 +132,26 @@ final class RecentStopsTests: OBATestCase {
 
         #expect(store.recentStops(in: nil).isEmpty)
     }
+
+    @Test func `Delete recent stop matches by ID and removes regardless of field drift`() throws {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let region = Fixtures.pugetSoundRegion
+
+        let original = try Self.makeStop(id: "1_660", routeIDs: ["1_100"], regionIdentifier: region.regionIdentifier)
+        let modified = try Self.makeStop(id: "1_660", routeIDs: ["1_100", "1_200"], regionIdentifier: region.regionIdentifier)
+        let other = try Self.makeStop(id: "1_75403", routeIDs: ["1_300"], regionIdentifier: region.regionIdentifier)
+
+        store.addRecentStop(original, region: region)
+        store.addRecentStop(other, region: region)
+        #expect(store.recentStops.count == 2)
+
+        // Deleting with the modified instance matches on ID and removes it
+        store.delete(recentStop: modified)
+        #expect(store.recentStops.count == 1)
+        #expect(store.recentStops.first?.id == "1_75403")
+
+        // deleteAllRecentStops clears everything
+        store.deleteAllRecentStops()
+        #expect(store.recentStops.isEmpty)
+    }
 }
