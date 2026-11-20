@@ -178,6 +178,20 @@ final class RegionStopSyncSchedulerTests {
         #expect(await fetcher.calls == ["agencies", "config", "stops 1"])
         #expect(reported.value.isEmpty)
     }
+
+    /// Once a sync task completes, its entry in scheduler state is cleared.
+    @Test func `A completed sync clears pendingSync`() async throws {
+        let fetcher = FakeStopsForAgencyFetcher(agencyIDs: ["1"], answers: ["1": answer("1_a")])
+        let scheduler = makeScheduler(delay: .zero)
+
+        scheduler.schedule(regionID: 1, using: fetcher)
+        let sync = scheduler.pendingSync
+        await sync?.value
+
+        // Pending sync must be cleared upon completion
+        #expect(scheduler.pendingSync == nil)
+        #expect(try cachedIDs(region: 1) == ["1_a"])
+    }
 }
 
 // swiftlint:enable force_try

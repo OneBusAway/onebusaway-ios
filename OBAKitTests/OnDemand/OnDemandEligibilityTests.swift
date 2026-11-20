@@ -139,52 +139,62 @@ final class OnDemandEligibilityTests: OBATestCase {
         #expect(disconnected.domainExplanation.contains("does not operate between"))
 
         // 4. Trip timing evaluates only across connecting rules when an unrelated rule is open
-        let twoRuleService = try charlevoix("CC_CC1") { json in
-            var body = json["data"] as! [String: Any]
-            var list = body["list"] as! [[String: Any]]
-            var service0 = list[0]
-            service0["areas"] = [
-                ["id": "zone_a", "name": "Zone A"],
-                ["id": "zone_b", "name": "Zone B"],
-                ["id": "zone_c", "name": "Zone C"],
-                ["id": "zone_d", "name": "Zone D"]
-            ]
-            service0["rules"] = [
-                [
-                    "fromIds": ["zone_a"],
-                    "toIds": ["zone_b"],
-                    "startPickupTime": "08:00:00",
-                    "endPickupTime": "12:00:00",
-                    "calendarIds": ["cal_weekday"],
-                    "pickupType": 2,
-                    "dropOffType": 2
-                ],
-                [
-                    "fromIds": ["zone_c"],
-                    "toIds": ["zone_d"],
-                    "startPickupTime": "08:00:00",
-                    "endPickupTime": "18:00:00",
-                    "calendarIds": ["cal_weekday"],
-                    "pickupType": 2,
-                    "dropOffType": 2
+        func makeServiceSnapshot(matchingAreaID: String) throws -> OnDemandService {
+            try charlevoix("CC_CC1") { json in
+                var data = json["data"] as! [String: Any]
+                var refs = data["references"] as! [String: Any]
+                var areas = refs["serviceAreas"] as! [[String: Any]]
+                for i in 0..<areas.count {
+                    if (areas[i]["id"] as? String) == matchingAreaID {
+                        areas[i]["distanceToArea"] = 0.0
+                    } else {
+                        areas[i]["distanceToArea"] = 1000.0
+                    }
+                }
+                refs["serviceAreas"] = areas
+                data["references"] = refs
+
+                var list = data["list"] as! [[String: Any]]
+                var s0 = list[0]
+                s0["matchReason"] = "areaContainsPoint"
+                s0["rules"] = [
+                    [
+                        "fromIds": ["CC_charlevoix_county"],
+                        "toIds": ["CC_petoskey"],
+                        "startPickupTime": "08:00:00",
+                        "endPickupTime": "12:00:00",
+                        "calendarIds": ["CC_mon-tues-wed-thurs-fri"],
+                        "pickupType": 2,
+                        "dropOffType": 2
+                    ],
+                    [
+                        "fromIds": ["CC_beaver_island"],
+                        "toIds": ["CC_gaylord"],
+                        "startPickupTime": "08:00:00",
+                        "endPickupTime": "18:00:00",
+                        "calendarIds": ["CC_mon-tues-wed-thurs-fri"],
+                        "pickupType": 2,
+                        "dropOffType": 2
+                    ]
                 ]
-            ]
-            list[0] = service0
-            body["list"] = list
-            json["data"] = body
+                list[0] = s0
+                data["list"] = list
+                json["data"] = data
+            }
         }
 
-        let originArea = twoRuleService.areas.first { $0.id == "zone_a" }!
-        let destArea = twoRuleService.areas.first { $0.id == "zone_b" }!
-        let originAreaMatch = OnDemandAreaMatch(area: originArea, distanceToArea: 0)
-        let destAreaMatch = OnDemandAreaMatch(area: destArea, distanceToArea: 0)
-        let originMatch = OnDemandServiceMatch(service: twoRuleService, isInside: true, matchedAreas: [originAreaMatch])
-        let destMatch = OnDemandServiceMatch(service: twoRuleService, isInside: true, matchedAreas: [destAreaMatch])
+        let twoRuleService = try makeServiceSnapshot(matchingAreaID: "CC_charlevoix_county")
+        let originService = try makeServiceSnapshot(matchingAreaID: "CC_charlevoix_county")
+        let destService = try makeServiceSnapshot(matchingAreaID: "CC_petoskey")
+
+        let originMatch = OnDemandServiceMatch(service: originService, availability: .unknown)
+        let destMatch = OnDemandServiceMatch(service: destService, availability: .unknown)
 
         // Travel date is Wednesday 2026-03-11.
         // At 14:00:00, Rule A->B closed at 12:00:00, while Rule C->D is open until 18:00:00.
-        let tripTravelDate = ServiceDate("2026-03-11")!
-        let timeAfterConnectingRuleEnd = detroit.date(bySettingHour: 14, minute: 0, second: 0, of: tripTravelDate.date(in: detroit)!)!
+        let tripTravelDate = ServiceDate(year: 2026, month: 3, day: 11)
+        let evaluator = BookingDeadlineEvaluator(timeZone: detroit, calendars: twoRuleService.calendars)
+        let timeAfterConnectingRuleEnd = evaluator.instant(tripTravelDate, GTFSTimeOfDay("14:00:00")!)
         let tripReason = OnDemandEligibilityEvaluator.evaluateTrip(
             service: twoRuleService,
             originMatch: originMatch,
@@ -195,7 +205,7 @@ final class OnDemandEligibilityTests: OBATestCase {
         // Must be tooLate based on connecting rule A->B, NOT eligible via unrelated rule C->D
         #expect(!tripReason.isEligible)
         if case .tooLate(let cutoff) = tripReason {
-            let expectedCutoff = detroit.date(bySettingHour: 12, minute: 0, second: 0, of: tripTravelDate.date(in: detroit)!)!
+            let expectedCutoff = evaluator.instant(tripTravelDate, GTFSTimeOfDay("12:00:00")!)
             #expect(cutoff == expectedCutoff)
         } else {
             Issue.record("Expected .tooLate for expired connecting rule, got \(tripReason)")

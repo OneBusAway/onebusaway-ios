@@ -239,4 +239,32 @@ struct WatchSyncPayloadTests {
 
         #expect(legacyDecoded.epoch == nil)
     }
+
+    @Test func `WatchBookmarkGroup equality and order-preserving payload roundtrip`() throws {
+        let groupID = UUID()
+        let coreGroup = BookmarkGroup(name: "Night Routes", id: groupID, sortOrder: 5)
+        let watchGroup1 = WatchBookmarkGroup(group: coreGroup)
+        let watchGroup2 = WatchBookmarkGroup(group: coreGroup)
+        let differentGroup = WatchBookmarkGroup(group: BookmarkGroup(name: "Day Routes", id: UUID(), sortOrder: 1))
+
+        #expect(watchGroup1 == watchGroup2)
+        #expect(watchGroup1 != differentGroup)
+
+        // Multiple groups encoding and decoding inside WatchSyncPayload
+        let payload = try WatchSyncPayload(
+            schemaVersion: 1,
+            sequenceNumber: 1,
+            bookmarks: [],
+            groups: [watchGroup1, differentGroup],
+            region: nil
+        )
+        let data = try payload.encodeToBinaryPlist()
+        let decoded = try WatchSyncPayload.decode(fromBinaryPlist: data)
+
+        #expect(decoded.groups.count == 2)
+        #expect(decoded.groups.map(\.id) == [watchGroup1.id, differentGroup.id])
+        #expect(decoded.groups[0] == watchGroup1)
+        #expect(decoded.groups[1] == differentGroup)
+        #expect(decoded.region == nil)
+    }
 }

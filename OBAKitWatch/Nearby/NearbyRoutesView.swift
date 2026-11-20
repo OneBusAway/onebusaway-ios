@@ -13,6 +13,7 @@ import OBAKitCore
 
 struct NearbyRoutesView: View {
     let model: NearbyRoutesModel
+    @Environment(WatchAppHost.self) private var host: WatchAppHost?
     @Environment(\.scenePhase) private var scenePhase
     @State private var isVisible = false
 
@@ -86,12 +87,42 @@ struct NearbyRoutesView: View {
                 action: { model.refresh() }
             )
         case .loaded(let directions):
-            List(directions) { direction in
-                NavigationLink(value: direction.key) {
-                    RouteDirectionCard(direction: direction)
+            List {
+                Section {
+                    ForEach(directions) { direction in
+                        NavigationLink(value: direction.key) {
+                            RouteDirectionCard(direction: direction)
+                        }
+                    }
+                } footer: {
+                    if let loadedAt = model.loadedAt {
+                        VStack(alignment: .leading, spacing: 2) {
+                            updatedAtText(loadedAt)
+                            if model.isStale {
+                                Text(OBALoc("nearby.stale", value: "This data may be out of date.", comment: "Shown when nearby routes could not be refreshed"))
+                                    .font(.caption2)
+                            }
+                        }
+                        .foregroundStyle(model.isStale ? .orange : .secondary)
+                        .accessibilityElement(children: .combine)
+                    }
                 }
             }
         }
+    }
+
+    private func updatedAtText(_ date: Date) -> Text {
+        let timeString: String
+        if let host {
+            timeString = host.formatters.timeFormatter.string(from: date)
+        } else {
+            timeString = date.formatted(date: .omitted, time: .shortened)
+        }
+        return Text(String(
+            format: OBALoc("arrivals.updated_at_fmt", value: "Updated at %@", comment: "%@ is a short time, e.g. 3:42 PM"),
+            timeString
+        ))
+        .font(.caption2)
     }
 }
 
@@ -121,4 +152,33 @@ struct NearbyRoutesView: View {
 
 #Preview("Empty") {
     NavigationStack { NearbyRoutesView(model: NearbyRoutesModel(phase: .empty)) }
+}
+
+#Preview("Stale") {
+    NavigationStack {
+        NearbyRoutesView(model: NearbyRoutesModel(
+            phase: .loaded([
+                .previewDirection(shortName: "44", headsign: "UW Stadium"),
+                .previewDirection(shortName: "48", headsign: "Mt Baker")
+            ]),
+            isStale: true
+        ))
+    }
+}
+
+private extension NearbyRouteDirection {
+    static func previewDirection(shortName: String, headsign: String) -> NearbyRouteDirection {
+        let routeData = Data("{\"id\":\"preview_\(shortName)\",\"shortName\":\"\(shortName)\",\"agencyId\":\"1\",\"type\":3}".utf8)
+        guard let route = try? JSONDecoder().decode(Route.self, from: routeData) else {
+            fatalError("Invalid preview route JSON")
+        }
+        let stop = Stop(id: "stop_\(shortName)", name: "15th Ave NE & NE 45th St")
+        let stopDirection = RouteDirectionStop(stop: stop, distance: 120, departures: [])
+        return NearbyRouteDirection(
+            key: RouteDirectionKey(routeID: route.id, direction: "0"),
+            route: route,
+            headsign: headsign,
+            stops: [stopDirection]
+        )
+    }
 }

@@ -117,6 +117,33 @@ final class RoutePickerViewModelTests: OBATestCase {
         #expect(vm.loadError == nil)
     }
 
+    /// Supplied cache contents take precedence over the API and are read again
+    /// on each load, rather than being captured as a snapshot at initialization.
+    @Test func `Load routes reads the supplied cache on every load`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplicationWithoutLocation(dataLoader: dataLoader)
+        let fixtureStops = try Fixtures.loadSomeStops()
+        try #require(!fixtureStops.isEmpty)
+        var cachedStops = Array(fixtureStops.prefix(1))
+        var reads = 0
+        let vm = RoutePickerViewModel(application: app, cachedStops: {
+            reads += 1
+            return cachedStops
+        })
+
+        await vm.loadRoutes()
+        #expect(vm.didFinishLoading)
+        #expect(vm.loadError == nil)
+        #expect(Set(vm.allRoutes.map(\.id)) == Set(cachedStops.flatMap { $0.routes ?? [] }.map(\.id)))
+
+        cachedStops = fixtureStops
+        await vm.loadRoutes()
+        #expect(reads == 2)
+        #expect(vm.loadError == nil)
+        #expect(Set(vm.allRoutes.map(\.id)) == Set(fixtureStops.flatMap { $0.routes ?? [] }.map(\.id)))
+        #expect(!dataLoader.recordedRequestURLs.contains { $0.path.contains("stops-for-location") })
+    }
+
     // MARK: - API fallback load
 
     /// With no cached stops, the VM fetches via the API service, deduplicates and sorts

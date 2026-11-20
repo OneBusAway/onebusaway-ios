@@ -28,6 +28,22 @@ final class StopClusterTests {
         stops = try Fixtures.loadSomeStops()
     }
 
+    private func makeStop(id: String, code: String, name: String, direction: String? = nil) throws -> Stop {
+        var dict: [String: Any] = [
+            "id": id,
+            "code": code,
+            "name": name,
+            "lat": 47.6062,
+            "lon": -122.3321,
+            "locationType": 0,
+            "routeIds": ["1_100"]
+        ]
+        if let direction {
+            dict["direction"] = direction
+        }
+        return try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)
+    }
+
     private func cluster(_ members: [MKAnnotation]) -> MKClusterAnnotation {
         MKClusterAnnotation(memberAnnotations: members)
     }
@@ -98,6 +114,15 @@ final class StopClusterTests {
 
         #expect(title.hasPrefix(stop.name))
         #expect(title.contains(Formatters.formattedCodeAndDirection(stop: stop)))
+    }
+
+    @Test func `Picker title omits code segment when stop code is empty`() throws {
+        let emptyCodeStop = try makeStop(id: "1_empty", code: "", name: "Unnamed Junction", direction: nil)
+        #expect(StopCluster.pickerTitle(for: emptyCodeStop) == "Unnamed Junction")
+
+        let stopWithDirOnly = try makeStop(id: "1_empty_dir", code: "", name: "Unnamed Junction", direction: "N")
+        let expectedNorth = try #require(Formatters.adjectiveFormOfCardinalDirection(.n))
+        #expect(StopCluster.pickerTitle(for: stopWithDirOnly) == "Unnamed Junction · \(expectedNorth)")
     }
 
     // MARK: - Annotation views
@@ -244,6 +269,22 @@ final class StopClusterTests {
     @Test func `A stop pin keeps its stop label, and anything else falls back`() {
         #expect(StopAnnotationView.accessibilityLabel(for: stops[0]) == Formatters.formattedAccessibilityLabel(stop: stops[0]))
         #expect(StopAnnotationView.accessibilityLabel(for: MKPointAnnotation()) == nil)
+    }
+
+    @Test func `areCoLocated handles empty and single coordinate inputs safely`() {
+        #expect(StopCluster.areCoLocated([]))
+        let single = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.33)
+        #expect(StopCluster.areCoLocated([single]))
+    }
+
+    @Test func `stops in members ignores unrecognised annotation types`() {
+        let pin1 = MKPointAnnotation()
+        let pin2 = MKPointAnnotation()
+        #expect(StopCluster.stops(in: [pin1, pin2]).isEmpty)
+
+        let mixed = StopCluster.stops(in: [pin1, stops[0], pin2])
+        #expect(mixed.count == 1)
+        #expect(mixed.first?.id == stops[0].id)
     }
 }
 

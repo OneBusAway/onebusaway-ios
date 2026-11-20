@@ -594,4 +594,94 @@ final class SheetCoordinatorTests {
         #expect(moved)
         #expect(coordinator.stackedDetent(at: 0, fallback: .large) == AppSheetRoute.stopCollapsedDetent)
     }
+
+    // MARK: - selectFromMap(_:)
+
+    /// Selecting a map pin when the stack is empty pushes the route.
+    @Test func `Select from map pushes route when stack is empty`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        coordinator.selectFromMap(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+    }
+
+    /// Tapping the exact same map pin again is a no-op and does not stack duplicate sheets.
+    @Test func `Select from map ignores repeated tap on the same pin`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        coordinator.selectFromMap(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        coordinator.selectFromMap(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+    }
+
+    /// Tapping a different map pin opens over the current sheet.
+    @Test func `Select from map opens a different pin over the current sheet`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let vehicle = AppSheetRoute.rentalDetail(rentalID: "v_1")
+
+        coordinator.selectFromMap(stop1)
+        coordinator.selectFromMap(vehicle)
+
+        #expect(coordinator.stackedRoutes == [stop1, vehicle])
+    }
+
+    /// Tapping a pin for a route already lower in the stack unwinds back to that route.
+    /// E.g. with [stop1, tripPlanner], selecting stop1 unwinds the stack back to [stop1].
+    @Test func `Select from map unwinds to an existing route in the stack`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let tripPlanner = AppSheetRoute.tripPlanner(TripPlannerRequest())
+
+        // Initial stack: [stop1, tripPlanner]
+        coordinator.selectFromMap(stop1)
+        coordinator.push(tripPlanner)
+        #expect(coordinator.stackedRoutes == [stop1, tripPlanner])
+
+        // Tapping stop1 pin unwinds the stack to stop1, closing trip planner
+        coordinator.selectFromMap(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+    }
+
+    /// Full map pin selection sequence: stop1 -> vehicle -> cluster -> unwind to stop1 -> stop2.
+    @Test func `Select from map handles handoff sequence and unwinding across multiple pins`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let stop2 = AppSheetRoute.stopDetails(stopID: "stop_2")
+        let vehicle = AppSheetRoute.rentalDetail(rentalID: "v_1")
+        let cluster = AppSheetRoute.rentalCluster(memberIDs: ["v_1", "v_2"])
+
+        // 1. Initial stop
+        coordinator.selectFromMap(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // 2. Repeated tap
+        coordinator.selectFromMap(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // 3. Handoff to vehicle
+        coordinator.selectFromMap(vehicle)
+        #expect(coordinator.stackedRoutes == [stop1, vehicle])
+
+        // 4. Handoff to cluster
+        coordinator.selectFromMap(cluster)
+        #expect(coordinator.stackedRoutes == [stop1, vehicle, cluster])
+
+        // 5. Tap stop1 again -> unwinds back to stop1
+        coordinator.selectFromMap(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // 6. Tap stop2 -> opens over stop1
+        coordinator.selectFromMap(stop2)
+        #expect(coordinator.stackedRoutes == [stop1, stop2])
+
+        // 7. Pop to root
+        coordinator.popToRoot()
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentRoute == .home)
+    }
 }

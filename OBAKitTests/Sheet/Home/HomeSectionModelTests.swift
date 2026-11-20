@@ -68,7 +68,6 @@ final class HomeSectionModelTests: OBATestCase {
     func `Nearby section publishes the nearest stops up to the limit`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        clearStopCache(for: application)
 
         dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
             request.url?.path.contains("/api/where/stops-for-location.json") ?? false
@@ -95,7 +94,6 @@ final class HomeSectionModelTests: OBATestCase {
     func `Nearby section empties when the observer resets`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        clearStopCache(for: application)
 
         dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
             request.url?.path.contains("/api/where/stops-for-location.json") ?? false
@@ -124,7 +122,6 @@ final class HomeSectionModelTests: OBATestCase {
     func `Nearby section falls back to observer order before the first settle`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        clearStopCache(for: application)
 
         dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
             request.url?.path.contains("/api/where/stops-for-location.json") ?? false

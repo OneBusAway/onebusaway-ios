@@ -75,6 +75,11 @@ public final class NearbyRoutesModel {
     /// When the loaded list's arrivals were fetched; the route screen's
     /// "Updated at" until its first poll lands.
     public private(set) var loadedAt: Date?
+    /// True when a background refresh failed while a previous list was showing.
+    public private(set) var isStale = false
+
+    /// The API service used to fetch the current `directions` snapshot, if any.
+    public private(set) var apiService: RESTAPIService?
 
     public var isPolling: Bool { pollTask != nil }
 
@@ -92,6 +97,7 @@ public final class NearbyRoutesModel {
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
     @ObservationIgnored private var isLastRefreshOffline = false
+    @ObservationIgnored private var currentRefreshID = 0
 
     public init(
         authorizationProvider: @escaping AuthorizationProvider,
@@ -121,12 +127,12 @@ public final class NearbyRoutesModel {
     }
 
     /// For previews and tests: a fixed phase, no services.
-    public init(phase: Phase, origin: CLLocation? = nil) {
+    public init(phase: Phase, origin: CLLocation? = nil, isStale: Bool = false, apiService: RESTAPIService? = nil) {
         self.authorizationProvider = { .authorizedWhenInUse }
         self.requestAuthorizationAction = {}
         self.locationRequester = { origin ?? CLLocation(latitude: 47.6097, longitude: -122.3378) }
         self.hasRegion = { true }
-        self.apiServiceProvider = { nil }
+        self.apiServiceProvider = { apiService }
         self.directionsLoader = { _, _ in [] }
         self.cadencePolicy = .standard
         self.powerStateProvider = { false }
@@ -135,6 +141,8 @@ public final class NearbyRoutesModel {
         self.phase = phase
         self.origin = origin
         self.loadedAt = Date()
+        self.isStale = isStale
+        self.apiService = apiService
     }
 
     /// The loaded directions, or none.
@@ -248,17 +256,10 @@ public final class NearbyRoutesModel {
     public func performRefresh(userInitiated: Bool = true) async {
         guard !Task.isCancelled else { return }
 
-        switch authorizationProvider() {
-        case .notDetermined:
-            phase = .awaitingAuthorization
-            requestAuthorizationAction()
-            return
-        case .denied, .restricted:
-            phase = .locationDenied
-            return
-        default:
-            break
-        }
+        currentRefreshID += 1
+        let refreshID = currentRefreshID
+
+        guard ensureAuthorized() else { return }
 
         showProgress(.locating, userInitiated: userInitiated)
 
@@ -266,24 +267,11 @@ public final class NearbyRoutesModel {
         do {
             fix = try await locationRequester()
         } catch {
-            guard !Task.isCancelled else { return }
-            if error is LocationServiceError {
-                phase = .locationDenied
-            } else {
-                let isOffline = ErrorClassifier.category(for: error) == .offline
-                isLastRefreshOffline = isOffline
-                if case .loaded = phase, isOffline {
-                    // Retain loaded state when offline during background poll
-                } else if isOffline {
-                    phase = .failed(Strings.nearbyOffline)
-                } else {
-                    phase = .failed(Strings.locationFailed)
-                }
-            }
+            handleLocationError(error, refreshID: refreshID)
             return
         }
 
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, currentRefreshID == refreshID else { return }
 
         // `currentRegion` keeps the previous launch's region when a fix lands
         // outside every region, so the rule keys off where the watch *is*.
@@ -300,25 +288,63 @@ public final class NearbyRoutesModel {
             return
         }
 
-        await loadDirections(near: fix, using: apiService, userInitiated: userInitiated)
+        await loadDirections(near: fix, using: apiService, userInitiated: userInitiated, refreshID: refreshID)
     }
 
-    private func loadDirections(near fix: CLLocation, using apiService: RESTAPIService, userInitiated: Bool) async {
+    private func ensureAuthorized() -> Bool {
+        switch authorizationProvider() {
+        case .notDetermined:
+            phase = .awaitingAuthorization
+            isStale = false
+            requestAuthorizationAction()
+            return false
+        case .denied, .restricted:
+            phase = .locationDenied
+            isStale = false
+            return false
+        default:
+            return true
+        }
+    }
+
+    private func handleLocationError(_ error: Error, refreshID: Int) {
+        guard !Task.isCancelled, currentRefreshID == refreshID else { return }
+        if error is LocationServiceError {
+            phase = .locationDenied
+            isStale = false
+        } else {
+            let isOffline = ErrorClassifier.category(for: error) == .offline
+            isLastRefreshOffline = isOffline
+            if case .loaded = phase, isOffline {
+                // Retain loaded state when offline during background poll
+                isStale = true
+            } else if isOffline {
+                phase = .failed(Strings.nearbyOffline)
+            } else {
+                phase = .failed(Strings.locationFailed)
+            }
+        }
+    }
+
+    private func loadDirections(near fix: CLLocation, using apiService: RESTAPIService, userInitiated: Bool, refreshID: Int) async {
         showProgress(.loading, userInitiated: userInitiated)
 
         do {
             let directions = try await directionsLoader(fix, apiService)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, currentRefreshID == refreshID else { return }
             origin = fix
+            self.apiService = apiService
             isLastRefreshOffline = false
             loadedAt = Date()
+            isStale = false
             phase = directions.isEmpty ? .empty : .loaded(directions)
         } catch {
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, currentRefreshID == refreshID else { return }
             let isOffline = ErrorClassifier.category(for: error) == .offline
             isLastRefreshOffline = isOffline
             if case .loaded = phase {
                 // Preserve loaded directions across transient background fetch failures
+                isStale = true
             } else {
                 phase = .failed(isOffline ? Strings.nearbyOffline : error.localizedDescription)
             }

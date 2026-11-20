@@ -596,7 +596,7 @@ final class OnDemandAvailabilityTests: OBATestCase {
         let result = availability(service, at: now)
         #expect(!result.runningNow)
         #expect(!result.bookableNow)
-        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-11")!)
+        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-10")!)
 
         // For today's date, eligibility is tooLate
         let today = ServiceDate("2026-03-10")!

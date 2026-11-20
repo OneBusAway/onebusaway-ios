@@ -74,6 +74,37 @@ final class RESTAPIURLBuilderExtendedTests {
         #expect(queryValue(url, "key") == "TEST_KEY")
     }
 
+    @Test func `getTripArrivalDepartureAtStop omits stopSequence when non-positive and includes vehicleID`() {
+        let urlZero = builder.getTripArrivalDepartureAtStop(
+            stopID: "1_10020",
+            tripID: "1_998877",
+            serviceDate: Date(timeIntervalSince1970: 1_700_000_000),
+            vehicleID: "1_veh99",
+            stopSequence: 0
+        )
+        #expect(queryValue(urlZero, "stopSequence") == nil)
+        #expect(queryValue(urlZero, "vehicleId") == "1_veh99")
+
+        let urlNeg = builder.getTripArrivalDepartureAtStop(
+            stopID: "1_10020",
+            tripID: "1_998877",
+            serviceDate: Date(timeIntervalSince1970: 1_700_000_000),
+            vehicleID: nil,
+            stopSequence: -1
+        )
+        #expect(queryValue(urlNeg, "stopSequence") == nil)
+    }
+
+    @Test func `getTrip includes serviceDate and vehicleID query parameters when present`() {
+        let serviceDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let url = builder.getTrip(tripID: "1_4321098", vehicleID: "1_veh55", serviceDate: serviceDate)
+
+        #expect(url.path == "/api/where/trip-details/1_4321098.json")
+        #expect(queryValue(url, "key") == "TEST_KEY")
+        #expect(queryValue(url, "vehicleId") == "1_veh55")
+        #expect(queryValue(url, "serviceDate") == "1700000000000")
+    }
+
     // MARK: - Extended Endpoint Query Escaping
 
     @Test func `getArrivalsAndDeparturesForStop handles zero before and after intervals`() {
@@ -98,5 +129,16 @@ final class RESTAPIURLBuilderExtendedTests {
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let percentEncodedPath = components?.percentEncodedPath ?? ""
         #expect(percentEncodedPath == "/api/where/stops-for-agency/1_KCM%2FMetro%20Transit.json")
+    }
+
+    @Test func `getOnDemandServices for agency encodes special characters in agency ID`() {
+        let agencyID = "CC/Transit Agency"
+        let url = builder.getOnDemandServices(agencyID: agencyID, geometryDetail: .simplified)
+
+        #expect(queryValue(url, "key") == "TEST_KEY")
+        #expect(queryValue(url, "geometryDetail") == "simplified")
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let percentEncodedPath = components?.percentEncodedPath ?? ""
+        #expect(percentEncodedPath == "/api/ondemand/services-for-agency/CC%2FTransit%20Agency.json")
     }
 }

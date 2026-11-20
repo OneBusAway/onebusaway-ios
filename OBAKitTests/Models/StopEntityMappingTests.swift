@@ -141,4 +141,18 @@ final class StopEntityMappingTests: OBATestCase {
         #expect(resolved.map(\.id) == ["region_2_stop_2_500", "region_1_stop_1_600", "region_1_stop_1_75403"])
         #expect(resolved.map(\.name) == ["Rynek Główny", "3rd Ave & Pike St", nil])
     }
+
+    @Test func `Destination parses identifiers with negative region IDs and multi-segment stop IDs`() {
+        let negRegion = "region_-1_stop_custom_stop_123"
+        let destNeg = StopEntityMapping.destination(fromIdentifier: negRegion)
+        #expect(destNeg?.regionID == -1)
+        #expect(destNeg?.stopID == "custom_stop_123")
+        #expect(StopEntityMapping.identifier(regionID: -1, stopID: "custom_stop_123") == negRegion)
+
+        // Multiple consecutive _stop_ occurrences
+        let multiStop = "region_42_stop_part1_stop_part2_stop_part3"
+        let destMulti = StopEntityMapping.destination(fromIdentifier: multiStop)
+        #expect(destMulti?.regionID == 42)
+        #expect(destMulti?.stopID == "part1_stop_part2_stop_part3")
+    }
 }

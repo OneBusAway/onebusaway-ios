@@ -73,6 +73,17 @@ final class NearbyRouteDirectionsTests: OBATestCase {
         json["data"] = data
     }
 
+    /// Applies `edit` to every `data.references.routes[]` element.
+    private static func editRoutes(_ json: inout [String: Any], _ edit: (inout [String: Any]) -> Void) throws {
+        var data = try #require(json["data"] as? [String: Any])
+        var references = try #require(data["references"] as? [String: Any])
+        var routes = try #require(references["routes"] as? [[String: Any]])
+        for index in routes.indices { edit(&routes[index]) }
+        references["routes"] = routes
+        data["references"] = references
+        json["data"] = data
+    }
+
     /// Stops from the Seattle fixture, nearest to `origin` first.
     private func stopsByDistance() throws -> [Stop] {
         try Fixtures.loadSomeStops().sorted { $0.location.distance(from: origin) < $1.location.distance(from: origin) }
@@ -199,7 +210,41 @@ final class NearbyRouteDirectionsTests: OBATestCase {
         #expect(Set(directions.map(\.key.direction)) == ["headsign:Capitol Hill Via 15th Ave E", "headsign:Downtown Seattle"])
     }
 
+    @Test func `Empty tripHeadsign falls back to route longName then shortName`() async throws {
+        let stop = try #require(try stopsByDistance().first)
+        let arrivals = try await arrivals(fixture: galerFixture) { json in
+            try Self.editArrivals(&json) { _, arrival in
+                arrival["tripHeadsign"] = ""
+            }
+            try Self.editTrips(&json) { trip in
+                trip["tripHeadsign"] = ""
+            }
+            try Self.editRoutes(&json) { route in
+                if route["id"] as? String == "1_100002" {
+                    route["longName"] = "Capitol Hill - Downtown"
+                }
+            }
+        }
+
+        let directions = NearbyRouteDirections.group(stops: [stop], arrivalsByStop: [stop.id: arrivals], origin: origin)
+
+        #expect(!directions.isEmpty)
+        #expect(directions.contains { $0.route.longName != nil })
+        for direction in directions {
+            let expectedFallback = direction.route.longName ?? direction.route.shortName
+            #expect(direction.headsign == expectedFallback)
+        }
+    }
+
     // MARK: - Loader
+
+    @Test func `Loader with empty stops returns empty directions without making network requests`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let service = buildRESTService(dataLoader: dataLoader)
+
+        let directions = try await NearbyRoutesLoader().directions(at: [], origin: origin, using: service)
+        #expect(directions.isEmpty)
+    }
 
     @Test func `The loader throws only when every stop fails`() async throws {
         let stops = Array(try stopsByDistance().prefix(2))

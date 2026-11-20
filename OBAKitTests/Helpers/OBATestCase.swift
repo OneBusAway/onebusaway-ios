@@ -216,6 +216,7 @@ class OBATestCase {
     ///
     /// `onDemandSupport` defaults to a fresh instance, not `.shared`, so a
     /// probe that 404s in one suite can't mark the server unsupported in another.
+    /// For the same reason each application gets its own in-memory stop cache.
     ///
     /// `transport` replaces `dataLoader` as the app's network — a
     /// `GatedDataLoader` wrapping it, say. Stubs still register on `dataLoader`.
@@ -248,6 +249,7 @@ class OBATestCase {
             dataLoader: transport ?? dataLoader,
             fixedRegionName: Fixtures.pugetSoundRegion.name,
             onDemandSupport: onDemandSupport,
+            stopCacheDatabase: makeStopCacheDatabase(),
             retryPolicy: retryPolicy
         )
 
@@ -256,20 +258,18 @@ class OBATestCase {
 
     // MARK: - Stop Cache
 
+    /// A fresh in-memory stop cache, for `AppConfig(stopCacheDatabase:)`.
+    ///
+    /// Without one, `Application` opens `Application Support/stop_cache.sqlite`,
+    /// a file shared by every `Application` in the process. Suites run in
+    /// parallel, so one test's clear or save lands in the middle of another's,
+    /// and writes fail with "database is locked" (#1819).
+    func makeStopCacheDatabase() -> StopCacheDatabase {
+        // swiftlint:disable:next force_try
+        try! StopCacheDatabase(inMemory: true)
+    }
+
     /// Empties the stop cache for `application`'s current region.
-    ///
-    /// `Application.stopCacheRepository` is backed by a real file on disk
-    /// (`Application Support/stop_cache.sqlite`), so it is shared by every
-    /// `Application` built in the process *and* survives between runs of the
-    /// test bundle. `AppConfig` exposes no seam for injecting an
-    /// in-memory `StopCacheDatabase`, so a suite that exercises the cache has
-    /// to reset it explicitly — otherwise a test asserting "the network
-    /// populated the map" can be satisfied by rows another test left behind,
-    /// and still pass with its own code path broken.
-    ///
-    /// This is the same class of problem as the GMT pin at the top of this
-    /// file: process-global state that `.serialized` does not protect.
-    /// Call it before seeding or asserting on cached stops.
     func clearStopCache(for application: Application) {
         guard let regionId = application.currentRegion?.regionIdentifier else { return }
         application.stopCacheRepository?.clearCache(regionId: regionId)

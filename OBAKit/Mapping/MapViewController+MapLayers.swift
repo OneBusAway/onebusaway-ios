@@ -108,6 +108,8 @@ extension MapViewController {
         registrar.onDemandLayer?.setHighlightedService(onDemandProbeController.highlightedServiceID)
         syncOnDemandLayerEnabled()
 
+        rentalAnnotationSyncer?.removeAll()
+
         guard let coordinator = registrar.rentalCoordinator else {
             rentalAnnotationSyncer = nil
             updateMapLayerBadge()
