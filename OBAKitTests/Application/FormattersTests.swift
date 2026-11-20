@@ -568,4 +568,59 @@ final class FormattersTests: OBATestCase {
         #expect(Formatters.directionAbbreviation(.sw) == NSLocalizedString("formatters.cardinal_direction_abbrev.southwest", bundle: bundle, comment: ""))
         #expect(Formatters.directionAbbreviation(.unknown) == nil)
     }
+
+    private func makeAgency(id: String, name: String) throws -> Agency {
+        let dict: [String: Any] = [
+            "id": id,
+            "name": name,
+            "lang": "en",
+            "phone": "555-0100",
+            "timezone": "America/Los_Angeles",
+            "url": "https://agency.example.com",
+            "privateService": false
+        ]
+        return try Fixtures.dictionaryToModel(type: Agency.self, dictionary: dict)
+    }
+
+    @Test func `Formatted agencies for routes dedupes, sorts alphabetically, and formats cleanly`() throws {
+        #expect(Formatters.formattedAgenciesForRoutes([]) == "")
+
+        let soundTransit = try makeAgency(id: "40", name: "Sound Transit")
+        let metroTransit = try makeAgency(id: "1", name: "Metro Transit")
+
+        let route1 = try makeRoute(id: "1_10", shortName: "10", type: 3)
+        route1.agency = soundTransit
+
+        let route2 = try makeRoute(id: "1_11", shortName: "11", type: 3)
+        route2.agency = metroTransit
+
+        let route3 = try makeRoute(id: "1_12", shortName: "12", type: 3)
+        route3.agency = soundTransit
+
+        // Dedupes multiple routes from the same agency
+        #expect(Formatters.formattedAgenciesForRoutes([route1, route3]) == "Sound Transit")
+
+        // Alphabetical sorting of multiple unique agencies
+        #expect(Formatters.formattedAgenciesForRoutes([route1, route2, route3]) == "Metro Transit, Sound Transit")
+    }
+
+    @Test func `Formatted accessibility label leads with distinct bookmark name and omits duplicate or nil`() throws {
+        let stop = try makeStop(id: "1_75403", code: "75403", name: "3rd & Pike", direction: "N")
+
+        let defaultLabel = Formatters.formattedAccessibilityLabel(stop: stop)
+        #expect(defaultLabel.hasPrefix("3rd & Pike; "))
+        #expect(defaultLabel.contains("Stop ID: 75403"))
+
+        // When bookmarkName is identical to stop name, it is not duplicated
+        let sameNameLabel = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "3rd & Pike")
+        #expect(sameNameLabel == defaultLabel)
+
+        // When bookmarkName is empty string, it is omitted
+        let emptyBookmarkLabel = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "")
+        #expect(emptyBookmarkLabel == defaultLabel)
+
+        // When bookmarkName is distinct, it leads the accessibility label
+        let customLabel = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "Work Stop")
+        #expect(customLabel.hasPrefix("Work Stop; 3rd & Pike; "))
+    }
 }
