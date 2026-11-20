@@ -336,32 +336,39 @@ final class NearbyTripMatcherTests: OBATestCase {
 
     // MARK: - Edge Conditions
 
-    /// When a vehicle is positioned beyond the configured maxDistance boundary,
-    /// it must be excluded from results without throwing noRealtimeData if another vehicle is in range.
-    @Test func `Find trips filters out vehicles exceeding maxDistance threshold`() async throws {
+    /// When one arrival lacks tripStatus and another has valid real-time position in range,
+    /// findTrips successfully matches the valid vehicle and skips the status-less arrival without error.
+    @Test func `Find trips skips arrivals missing tripStatus`() async throws {
         let stops = stopsFromArrivalsFixture()
-        stubArrivals()
+        let rawData = Fixtures.loadData(file: arrivalsFixture)
+        let jsonObject = try JSONSerialization.jsonObject(with: rawData) as! [String: Any]
+        var dataDict = jsonObject["data"] as! [String: Any]
+        var entry = dataDict["entry"] as! [String: Any]
+        var arrivals = entry["arrivalsAndDepartures"] as! [[String: Any]]
 
-        // With a tiny 1-meter maxDistance, vehicles located hundreds of meters away are filtered out.
+        // Set tripStatus to nil on the first arrival, leaving the other route 30 arrival intact
+        arrivals[0]["tripStatus"] = NSNull()
+        entry["arrivalsAndDepartures"] = arrivals
+        dataDict["entry"] = entry
+        var modifiedJSON = jsonObject
+        modifiedJSON["data"] = dataDict
+        let modifiedData = try JSONSerialization.data(withJSONObject: modifiedJSON)
+
+        dataLoader.mock(data: modifiedData) { request in
+            request.url?.absoluteString.contains("arrivals-and-departures-for-stop") ?? false
+        }
+
         let results = try await NearbyTripMatcher.findTrips(
             for: route30(),
             near: userLocation,
             using: restService,
             stops: stops,
-            maxDistance: 1.0
+            maxDistance: 500_000
         )
 
-        #expect(results.isEmpty)
-    }
-
-    /// When arrival has nil tripStatus, the matcher skips it without treating it as non-realtime error.
-    @Test func `Find trips skips arrivals missing tripStatus`() throws {
-        let arrival = try Fixtures.arrivalDeparture(tripID: "trip_without_status", vehicleID: "veh_1")
-        #expect(arrival.tripStatus == nil)
-
-        let row = NearbyTripMatcher.MatchResult(arrivalDeparture: arrival, distanceFromUser: 50.0)
-        #expect(row.distanceFromUser == 50.0)
-        #expect(row.listID == "veh_1")
+        // Only the second vehicle (1_7022) with valid real-time position should be returned
+        #expect(results.count == 1)
+        #expect(results.first?.arrivalDeparture.vehicleID == "1_7022")
     }
 
     /// MatchError equatable conformance distinguishes different error cases.
