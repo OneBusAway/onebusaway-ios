@@ -20,6 +20,18 @@ import OBAKitCore
 /// For every other outcome it shows the same localized sentence the dialog
 /// speaks.
 struct NextDeparturesCardModel: Equatable {
+    /// Mutually exclusive content state of the card (#1554), ensuring
+    /// each outcome maps to exactly one visible presentation form and
+    /// eliminating contradictory row/message configurations.
+    enum State: Equatable {
+        /// Successfully loaded departures rows (guaranteed non-empty).
+        case departures([Row])
+        /// An empty or informational message (e.g. no upcoming service, no bookmarks, unavailable stop).
+        case empty(message: String)
+        /// A fetch failure with a recoverable error message.
+        case error(message: String)
+    }
+
     struct Row: Equatable, Identifiable {
         let id: Int
         /// "5m", or "NOW" — the bookmark card's chip text.
@@ -41,6 +53,9 @@ struct NextDeparturesCardModel: Equatable {
         }
     }
 
+    /// The visible content state of the card.
+    let state: State
+
     /// The bookmark the card is about; `nil` for an answer about no bookmark,
     /// and for a stop.
     let bookmarkName: String?
@@ -48,9 +63,7 @@ struct NextDeparturesCardModel: Equatable {
     let stopName: String?
     let routeShortName: String?
     let headsign: String?
-    let rows: [Row]
-    /// The dialog's sentence, shown when there are no departure rows.
-    let message: String?
+
     /// Shown whenever re-fetching could change the card: with departures,
     /// after a failed load, and when nothing is coming yet. Hidden for no
     /// bookmarks, no region, and an unavailable bookmark, which no fetch
@@ -59,6 +72,22 @@ struct NextDeparturesCardModel: Equatable {
     /// Track starts the bookmark's Live Activity, so it needs a departure to
     /// follow and Live Activities turned on for the app.
     let showsTrack: Bool
+
+    /// The departure rows, populated only in the `.departures` state.
+    var rows: [Row] {
+        if case let .departures(rows) = state { return rows }
+        return []
+    }
+
+    /// The dialog's sentence, shown in `.empty` and `.error` states.
+    var message: String? {
+        switch state {
+        case .departures:
+            return nil
+        case let .empty(msg), let .error(msg):
+            return msg
+        }
+    }
 
     /// - Parameter liveActivitiesEnabled: `ActivityAuthorizationInfo().areActivitiesEnabled`.
     init(outcome: NextDeparturesSummary.Outcome, now: Date, liveActivitiesEnabled: Bool = false) {
@@ -69,10 +98,13 @@ struct NextDeparturesCardModel: Equatable {
             self.stopName = stopName
             self.routeShortName = nil
             self.headsign = nil
-            self.rows = rows
-            self.message = rows.isEmpty ? NextDeparturesSummary.text(for: outcome, now: now) : nil
             self.showsRefresh = true
             self.showsTrack = false
+            if rows.isEmpty {
+                self.state = .empty(message: NextDeparturesSummary.text(for: outcome, now: now))
+            } else {
+                self.state = .departures(rows)
+            }
             return
         }
 
@@ -81,13 +113,14 @@ struct NextDeparturesCardModel: Equatable {
             self.bookmarkName = nil
             self.routeShortName = nil
             self.headsign = nil
-            self.rows = []
-            self.message = NextDeparturesSummary.text(for: outcome, now: now)
             self.showsTrack = false
+            let message = NextDeparturesSummary.text(for: outcome, now: now)
             if case .loadFailed = outcome {
                 self.showsRefresh = true
+                self.state = .error(message: message)
             } else {
                 self.showsRefresh = false
+                self.state = .empty(message: message)
             }
             return
         }
@@ -99,13 +132,11 @@ struct NextDeparturesCardModel: Equatable {
         if rows.isEmpty {
             self.routeShortName = nil
             self.headsign = nil
-            self.rows = []
-            self.message = NextDeparturesSummary.text(for: outcome, now: now)
+            self.state = .empty(message: NextDeparturesSummary.text(for: outcome, now: now))
         } else {
             self.routeShortName = routeShortName
             self.headsign = headsign
-            self.rows = rows
-            self.message = nil
+            self.state = .departures(rows)
         }
     }
 

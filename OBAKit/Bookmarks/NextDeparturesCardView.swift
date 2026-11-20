@@ -33,15 +33,14 @@ struct NextDeparturesCardView<Actions: View>: View {
                     .lineLimit(2)
             }
 
-            if !model.rows.isEmpty {
+            switch model.state {
+            case let .departures(rows):
                 VStack(spacing: 8) {
-                    ForEach(model.rows) { row in
+                    ForEach(rows) { row in
                         departureRow(row)
                     }
                 }
-            }
-
-            if let message = model.message {
+            case let .empty(message), let .error(message):
                 Text(message)
                     .font(.body)
                     .fixedSize(horizontal: false, vertical: true)

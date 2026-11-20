@@ -37,6 +37,11 @@ struct NextDeparturesCardModelTests {
         #expect(model.rows.map(\.timeText) == ["5m", "17m", "32m"])
         #expect(model.message == nil)
         #expect(model.showsRefresh)
+        if case let .departures(rows) = model.state {
+            #expect(rows.count == 3)
+        } else {
+            Issue.record("Expected .departures state")
+        }
     }
 
     /// The card and the dialog must agree on which departures are "next".
@@ -152,5 +157,66 @@ struct NextDeparturesCardModelTests {
         let model = NextDeparturesCardModel(outcome: .loadFailed(name: "Library"), now: now, liveActivitiesEnabled: true)
         #expect(model.showsRefresh == true)
         #expect(model.showsTrack == false)
+    }
+
+    // MARK: - Explicit State Modeling Invariants
+
+    @Test func `Empty bookmark outcome maps to empty state with message and no refresh`() {
+        let noBookmarks = NextDeparturesCardModel(outcome: .noBookmarks, now: now)
+        let expectedMessage = NextDeparturesSummary.text(for: .noBookmarks, now: now)
+
+        #expect(noBookmarks.state == .empty(message: expectedMessage))
+        #expect(noBookmarks.message == expectedMessage)
+        #expect(noBookmarks.rows.isEmpty)
+        #expect(!noBookmarks.showsRefresh)
+        #expect(!noBookmarks.showsTrack)
+    }
+
+    @Test func `No departure outcome maps to empty state with message and refresh enabled`() {
+        let emptyDepartures = NextDeparturesCardModel(outcome: departures([]), now: now)
+        let expectedMessage = NextDeparturesSummary.text(for: departures([]), now: now)
+
+        #expect(emptyDepartures.state == .empty(message: expectedMessage))
+        #expect(emptyDepartures.message == expectedMessage)
+        #expect(emptyDepartures.rows.isEmpty)
+        #expect(emptyDepartures.showsRefresh)
+        #expect(!emptyDepartures.showsTrack)
+    }
+
+    @Test func `Failure outcome maps to error state with message and refresh enabled`() {
+        let failure = NextDeparturesCardModel(outcome: .loadFailed(name: "Library"), now: now, liveActivitiesEnabled: true)
+        let expectedError = NextDeparturesSummary.text(for: .loadFailed(name: "Library"), now: now)
+
+        #expect(failure.state == .error(message: expectedError))
+        #expect(failure.message == expectedError)
+        #expect(failure.rows.isEmpty)
+        #expect(failure.showsRefresh)
+        #expect(!failure.showsTrack)
+    }
+
+    @Test func `Each state has exactly one visible outcome`() {
+        let upcoming = departures([departure(5)])
+
+        let models: [(NextDeparturesCardModel, String)] = [
+            (NextDeparturesCardModel(outcome: .noBookmarks, now: now), "empty bookmark"),
+            (NextDeparturesCardModel(outcome: departures([]), now: now), "no departure"),
+            (NextDeparturesCardModel(outcome: .loadFailed(name: "Library"), now: now), "failure"),
+            (NextDeparturesCardModel(outcome: upcoming, now: now), "departures")
+        ]
+
+        for (model, label) in models {
+            switch model.state {
+            case .empty(let msg):
+                #expect(model.rows.isEmpty, "\(label): rows must be empty")
+                #expect(model.message == msg, "\(label): message must match empty text")
+            case .error(let msg):
+                #expect(model.rows.isEmpty, "\(label): rows must be empty")
+                #expect(model.message == msg, "\(label): message must match error text")
+            case .departures(let rows):
+                #expect(!model.rows.isEmpty, "\(label): rows must not be empty")
+                #expect(model.rows == rows, "\(label): rows must match")
+                #expect(model.message == nil, "\(label): message must be nil")
+            }
+        }
     }
 }

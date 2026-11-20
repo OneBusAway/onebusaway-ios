@@ -45,6 +45,23 @@ struct NextDeparturesCardViewTests {
         ), now: now)
     }
 
+    private func emptyBookmarkCard() -> NextDeparturesCardModel {
+        NextDeparturesCardModel(outcome: .noBookmarks, now: now)
+    }
+
+    private func noDeparturesCard() -> NextDeparturesCardModel {
+        NextDeparturesCardModel(outcome: .departures(
+            bookmarkName: "Home from the office, the long way around the lake",
+            routeShortName: "C Line",
+            headsign: "West Seattle Alaska Junction via Downtown and the Viaduct",
+            departures: []
+        ), now: now)
+    }
+
+    private func failureCard() -> NextDeparturesCardModel {
+        NextDeparturesCardModel(outcome: .loadFailed(name: "Home"), now: now)
+    }
+
     /// Two buttons, as the card has with Refresh and Track.
     private func view(_ model: NextDeparturesCardModel) -> some View {
         NextDeparturesCardView(model: model) {
@@ -69,6 +86,30 @@ struct NextDeparturesCardViewTests {
         let size = host.sizeThatFits(in: CGSize(width: 320, height: CGFloat.greatestFiniteMagnitude))
 
         #expect(size.height <= 400, "Card is \(size.height) pt tall")
+    }
+
+    @Test func `An empty bookmark card fits the snippet height limit at the largest standard text size`() {
+        let host = UIHostingController(rootView: view(emptyBookmarkCard()).environment(\.dynamicTypeSize, .xxxLarge))
+
+        let size = host.sizeThatFits(in: CGSize(width: 320, height: CGFloat.greatestFiniteMagnitude))
+
+        #expect(size.height <= 400, "Empty card is \(size.height) pt tall")
+    }
+
+    @Test func `A no-departures card fits the snippet height limit at the largest standard text size`() {
+        let host = UIHostingController(rootView: view(noDeparturesCard()).environment(\.dynamicTypeSize, .xxxLarge))
+
+        let size = host.sizeThatFits(in: CGSize(width: 320, height: CGFloat.greatestFiniteMagnitude))
+
+        #expect(size.height <= 400, "No-departures card is \(size.height) pt tall")
+    }
+
+    @Test func `A failure card fits the snippet height limit at the largest standard text size`() {
+        let host = UIHostingController(rootView: view(failureCard()).environment(\.dynamicTypeSize, .xxxLarge))
+
+        let size = host.sizeThatFits(in: CGSize(width: 320, height: CGFloat.greatestFiniteMagnitude))
+
+        #expect(size.height <= 400, "Failure card is \(size.height) pt tall")
     }
 
     /// Status is drawn in the app's adherence colors (and in words; see the model tests).
