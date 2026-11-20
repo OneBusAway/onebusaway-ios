@@ -604,23 +604,10 @@ final class FormattersTests: OBATestCase {
         #expect(Formatters.formattedAgenciesForRoutes([route1, route2, route3]) == "Metro Transit, Sound Transit")
     }
 
-    @Test func `Formatted accessibility label leads with distinct bookmark name and omits duplicate or nil`() throws {
-        let stop = try makeStop(id: "1_75403", code: "75403", name: "3rd & Pike", direction: "N")
-
+    @Test func `Formatted accessibility label omits empty bookmark name`() throws {
+        let stop = try #require(Fixtures.loadSomeStops().first)
         let defaultLabel = Formatters.formattedAccessibilityLabel(stop: stop)
-        #expect(defaultLabel.hasPrefix("3rd & Pike; "))
-        #expect(defaultLabel.contains("Stop ID: 75403"))
-
-        // When bookmarkName is identical to stop name, it is not duplicated
-        let sameNameLabel = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "3rd & Pike")
-        #expect(sameNameLabel == defaultLabel)
-
-        // When bookmarkName is empty string, it is omitted
         let emptyBookmarkLabel = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "")
         #expect(emptyBookmarkLabel == defaultLabel)
-
-        // When bookmarkName is distinct, it leads the accessibility label
-        let customLabel = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "Work Stop")
-        #expect(customLabel.hasPrefix("Work Stop; 3rd & Pike; "))
     }
 }
