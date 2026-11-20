@@ -37,10 +37,10 @@ final class BrandConfigurationTests: OBATestCase {
 
     // MARK: - Default Branded Target
 
-    @Test func `Default target app name resolves to OneBusAway`() {
-        let appName = Bundle.main.appName
-        #expect(!appName.isEmpty)
-        #expect(appName == "OneBusAway")
+    @Test func `Default target app name resolves from CFBundleDisplayName`() throws {
+        let displayName = try #require(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+        #expect(!displayName.isEmpty)
+        #expect(Bundle.main.appName == displayName)
     }
 
     // MARK: - Alternate White-Label Target Resolution
@@ -57,25 +57,19 @@ final class BrandConfigurationTests: OBATestCase {
 
     // MARK: - Localized Dynamic Strings
 
-    @Test func `Welcome title formats dynamic brand name`() throws {
+    @Test(arguments: ["TransitApp", "KiedyBus", "KiedyBus Wrocław"])
+    func `Welcome title formats dynamic brand name`(appName: String) throws {
         let template = OBAKit.OBALoc(
             "onboarding.welcome.title_fmt",
             value: "Welcome to %@",
             comment: "Title of the first onboarding screen; the argument is the app name"
         )
+        try #require(template.contains("%@"), "The localized welcome title must contain the app-name placeholder")
 
-        // Default target output
-        let defaultWelcome = String(format: template, Bundle.main.appName)
-        #expect(defaultWelcome == "Welcome to OneBusAway")
-
-        // Alternate white-label target output (KiedyBus)
-        let kiedyBusBundle = try MockBrandBundle.create(displayName: "KiedyBus")
-        let whiteLabelWelcome = String(format: template, kiedyBusBundle.appName)
-        #expect(whiteLabelWelcome == "Welcome to KiedyBus")
-
-        // Localized city-specific white-label output
-        let localizedBundle = try MockBrandBundle.create(displayName: "KiedyBus Wrocław")
-        let localizedWelcome = String(format: template, localizedBundle.appName)
-        #expect(localizedWelcome == "Welcome to KiedyBus Wrocław")
+        let bundle = try MockBrandBundle.create(displayName: appName)
+        defer { try? FileManager.default.removeItem(at: bundle.bundleURL) }
+        let welcome = String(format: template, bundle.appName)
+        #expect(welcome.contains(appName))
+        #expect(!welcome.contains("%@"))
     }
 }

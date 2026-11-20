@@ -82,7 +82,7 @@ final class UmamiAnalytics {
         self.installID = installID
         self.dataLoader = dataLoader
 
-        let resolvedAppName = appName ?? (bundle.appName.isEmpty ? "OneBusAway" : bundle.appName)
+        let resolvedAppName = Self.productName(from: appName ?? bundle.appName)
         let resolvedAppVersion = bundle.appVersion.isEmpty ? "1.0" : bundle.appVersion
 #if targetEnvironment(simulator)
         // e.g. OneBusAway/26.1.2 (iOS 18.5; iPhone Simulator arm64)
@@ -90,6 +90,13 @@ final class UmamiAnalytics {
 #else
         self.userAgent = "\(resolvedAppName)/\(resolvedAppVersion) (iOS \(UIDevice.current.systemVersion); \(UIDevice.current.modelName))"
 #endif
+    }
+
+    /// Product names use the ASCII token grammar in RFC 9110, section 5.6.2.
+    private static func productName(from appName: String) -> String {
+        let allowed = CharacterSet(charactersIn: "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+        let token = String(String.UnicodeScalarView(appName.unicodeScalars.filter { allowed.contains($0) }))
+        return token.isEmpty ? "OneBusAway" : token
     }
 
     /// A session with a tight end-to-end resource timeout. `URLSession.shared`

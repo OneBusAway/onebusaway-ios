@@ -2,7 +2,12 @@ targets:
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS
-    sources: ["."]
+    sources:
+      - path: .
+        # Added by analytics_fx_config.yml only when the app enables analytics.
+        excludes:
+          - Analytics/UmamiAnalyticsTests.swift
+          - Analytics/AnalyticsOrchestratorTests.swift
     # No settings overrides: this target inherits the Swift 6 language mode,
     # main-actor default isolation, approachable concurrency, and the
     # concurrency-groups-as-errors lock from Apps/Shared/app_shared.yml, like

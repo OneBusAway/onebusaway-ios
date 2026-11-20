@@ -149,10 +149,41 @@ final class UmamiAnalyticsTests: OBATestCase {
         let loader = MockDataLoader(testName: name)
         let localizedBundle = try TestAppBundle.create(displayName: "KiedyBus Wrocław", version: "1.0.0")
         let reporter = makeReporter(loader: loader, bundle: localizedBundle)
-        #expect(reporter.userAgent.hasPrefix("KiedyBus Wrocław/1.0.0 (iOS "))
+        #expect(reporter.userAgent.hasPrefix("KiedyBusWrocaw/1.0.0 (iOS "))
     }
 
-    @Test func `Report event sends alternate white-label User-Agent header`() async throws {
+    @Test(arguments: [
+        ("OneBusAway", "OneBusAway"),
+        ("KiedyBus", "KiedyBus"),
+        ("KiedyBus Wrocław", "KiedyBusWrocaw"),
+        ("City Transit (Beta)/North", "CityTransitBetaNorth"),
+        ("Cafe\u{0301} 🚍", "Cafe"),
+        ("éøTransit", "Transit"),
+        ("City\r\nTransit: Next", "CityTransitNext"),
+        ("App2.0_preview-Canary", "App2.0_preview-Canary"),
+        ("!#$%&'*+-.^_`|~", "!#$%&'*+-.^_`|~"),
+        ("", "OneBusAway"),
+        (" \t\r\n", "OneBusAway"),
+        ("公共交通🚍", "OneBusAway"),
+        ("()/:;<=>?@[\\]{}\"", "OneBusAway"),
+    ])
+    func `User-Agent app name is an HTTP product token`(appName: String, expected: String) {
+        let reporter = makeReporter(loader: MockDataLoader(testName: name), appName: appName)
+        #expect(reporter.userAgent.hasPrefix("\(expected)/"))
+    }
+
+    @Test func `User-Agent keeps exactly the allowed ASCII token characters`() {
+        let allASCII = String(decoding: (0...127).map(UInt8.init), as: UTF8.self)
+        let reporter = makeReporter(loader: MockDataLoader(testName: name), appName: allASCII)
+        #expect(reporter.userAgent.hasPrefix("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~/"))
+    }
+
+    @Test(arguments: [
+        ("KiedyBus", "KiedyBus"),
+        ("KiedyBus Wrocław", "KiedyBusWrocaw"),
+        ("🚍", "OneBusAway"),
+    ])
+    func `Report event sends alternate white-label User-Agent header`(appName: String, expected: String) async throws {
         let loader = MockDataLoader(testName: name)
         let captured = SendableBox<URLRequest?>(nil)
         loader.mock(data: successBody) { request in
@@ -160,13 +191,14 @@ final class UmamiAnalyticsTests: OBATestCase {
             return true
         }
 
-        let whiteLabelBundle = try TestAppBundle.create(displayName: "KiedyBus", version: "2.5.0")
+        let whiteLabelBundle = try TestAppBundle.create(displayName: appName, version: "2.5.0")
+        defer { try? FileManager.default.removeItem(at: whiteLabelBundle.bundleURL) }
         let reporter = makeReporter(loader: loader, bundle: whiteLabelBundle)
         await reporter.reportSearchQuery("Rynek")
 
         let request = try #require(captured.value)
         let ua = try #require(request.value(forHTTPHeaderField: "User-Agent"))
-        #expect(ua.hasPrefix("KiedyBus/2.5.0 (iOS "))
+        #expect(ua.hasPrefix("\(expected)/2.5.0 (iOS "))
     }
 
     // MARK: - Fail-safe
