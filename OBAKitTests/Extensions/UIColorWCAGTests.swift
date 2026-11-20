@@ -92,4 +92,24 @@ struct UIColorWCAGTests {
         )
         #expect(light.wcagContrastRatio(against: .white) >= 4.5)
     }
+
+    // MARK: - Contrast Ratio Bounds and Pure Primaries
+
+    @Test func `Contrast ratio of identical colors is exactly 1`() {
+        #expect(abs(UIColor.white.wcagContrastRatio(against: .white) - 1.0) < 0.0001)
+        #expect(abs(UIColor.black.wcagContrastRatio(against: .black) - 1.0) < 0.0001)
+        let red = UIColor.red
+        #expect(abs(red.wcagContrastRatio(against: red) - 1.0) < 0.0001)
+    }
+
+    @Test func `Relative luminance of pure RGB primaries aligns with sRGB coefficients`() {
+        // sRGB relative luminance coefficients: R: 0.2126, G: 0.7152, B: 0.0722
+        let red = UIColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        let green = UIColor(red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0)
+        let blue = UIColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0)
+
+        #expect(abs(red.wcagRelativeLuminance - 0.2126) < 0.01)
+        #expect(abs(green.wcagRelativeLuminance - 0.7152) < 0.01)
+        #expect(abs(blue.wcagRelativeLuminance - 0.0722) < 0.01)
+    }
 }
