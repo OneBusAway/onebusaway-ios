@@ -53,6 +53,18 @@ final class BookmarkActions {
                 stopID: bookmark.stopID))
     }
 
+    // MARK: - Pinning
+
+    /// Toggles the pinned state of `bookmark` in the user data store.
+    func togglePin(for bookmark: Bookmark) {
+        setPinned(!bookmark.isPinned, for: bookmark)
+    }
+
+    /// Sets the pinned state of `bookmark` in the user data store.
+    func setPinned(_ isPinned: Bool, for bookmark: Bookmark) {
+        application.userDataStore.setPinned(isPinned, for: bookmark)
+    }
+
     // MARK: - Bookmark Editor
 
     /// Builds the bookmark editor inside a navigation controller. Presentation

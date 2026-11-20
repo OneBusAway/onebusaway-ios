@@ -649,6 +649,198 @@ final class UserDefaultsStore_BookmarksTests: OBATestCase {
         #expect(userDefaultsStore.findBookmarks(in: tampa).map(\.name) == ["Tampa stop"])
         #expect(userDefaultsStore.findBookmarks(in: nil).isEmpty)
     }
+
+    // MARK: - Atomic Mutations & Rollback
+
+    /// Failed persistence during pin toggle rolls back / prevents partial write on in-memory bookmark and emits no notification.
+    @Test func `Set pinned with failed persistence prevents in-memory mutation and emits no notification`() {
+        let bookmark = Bookmark(name: "Pin Test", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bookmark)
+
+        let notificationCount = SendableBox(0)
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in notificationCount.value += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        userDefaultsStore.simulatedPersistenceError = NSError(domain: "test.persistence", code: 500, userInfo: nil)
+        userDefaultsStore.setPinned(true, for: bookmark)
+
+        #expect(bookmark.isPinned == false)
+        #expect(userDefaultsStore.bookmarks.first?.isPinned == false)
+        #expect(notificationCount.value == 0)
+    }
+
+    /// Deleting a group with multiple bookmarks migrates all of them to ungrouped in exactly ONE bookmarksDidChange notification,
+    /// appending them after existing ungrouped bookmarks in their original group order.
+    @Test func `Group deletion appends migrated bookmarks after pre-existing ungrouped bookmarks with single notification`() {
+        let bmU1 = Bookmark(name: "Ungrouped 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        let bmU2 = Bookmark(name: "Ungrouped 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        userDefaultsStore.add(bmU1, to: nil)
+        userDefaultsStore.add(bmU2, to: nil)
+
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+        userDefaultsStore.upsert(bookmarkGroup: group)
+
+        let bmG1 = Bookmark(name: "Group 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[2])
+        let bmG2 = Bookmark(name: "Group 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[3])
+        userDefaultsStore.add(bmG1, to: group)
+        userDefaultsStore.add(bmG2, to: group)
+
+        let bookmarksNotificationCount = SendableBox(0)
+        let token1 = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in bookmarksNotificationCount.value += 1 }
+        defer { NotificationCenter.default.removeObserver(token1) }
+
+        let groupNotificationCount = SendableBox(0)
+        let token2 = NotificationCenter.default.addObserver(
+            forName: .bookmarkGroupsDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in groupNotificationCount.value += 1 }
+        defer { NotificationCenter.default.removeObserver(token2) }
+
+        userDefaultsStore.deleteGroup(group)
+
+        #expect(bookmarksNotificationCount.value == 1, "Must post exactly ONE bookmarksDidChange notification, not one per bookmark")
+        #expect(groupNotificationCount.value == 1)
+        #expect(userDefaultsStore.bookmarkGroups.isEmpty)
+
+        let storedBookmarks = userDefaultsStore.bookmarksInGroup(nil)
+        #expect(storedBookmarks.count == 4)
+        #expect(storedBookmarks.map(\.id) == [bmU1.id, bmU2.id, bmG1.id, bmG2.id], "Group bookmarks must be appended after existing ungrouped without interleaving")
+        #expect(storedBookmarks.map(\.sortOrder) == [0, 1, 2, 3])
+    }
+
+    /// Deleting a group ID not in bookmarkGroups cleans up orphaned bookmarks pointing to that group.
+    @Test func `Delete group cleans up orphaned bookmarks when group record is absent`() {
+        let bmU = Bookmark(name: "Ungrouped", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bmU, to: nil)
+
+        let orphanGroupID = UUID()
+        let orphanBM = Bookmark(name: "Orphan", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        orphanBM.groupID = orphanGroupID
+        orphanBM.sortOrder = 0
+
+        userDefaultsStore.bookmarks = [bmU, orphanBM]
+
+        userDefaultsStore.deleteGroup(id: orphanGroupID)
+
+        let ungrouped = userDefaultsStore.bookmarksInGroup(nil)
+        #expect(ungrouped.count == 2)
+        #expect(ungrouped.map(\.id) == [bmU.id, orphanBM.id])
+        #expect(ungrouped.map(\.sortOrder) == [0, 1])
+    }
+
+    /// Failed persistence during group deletion aborts, preserving both group and bookmark memberships.
+    @Test func `Group deletion with failed persistence preserves group and bookmarks`() {
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+        userDefaultsStore.upsert(bookmarkGroup: group)
+
+        let bm = Bookmark(name: "BM1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bm, to: group)
+
+        userDefaultsStore.simulatedPersistenceError = NSError(domain: "test.persistence", code: 500, userInfo: nil)
+        userDefaultsStore.deleteGroup(group)
+
+        #expect(userDefaultsStore.bookmarkGroups.count == 1)
+        #expect(userDefaultsStore.bookmarks.first?.groupID == group.id)
+    }
+
+    /// Replacing groups migrates orphaned bookmarks to ungrouped in a single pass and single notification,
+    /// preserving pre-existing ungrouped order and deleted groups' order without interleaving.
+    @Test func `Replace bookmark groups preserves ungrouped and deleted group order without interleaving`() {
+        let bmU1 = Bookmark(name: "Ungrouped 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        let bmU2 = Bookmark(name: "Ungrouped 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        userDefaultsStore.add(bmU1, to: nil)
+        userDefaultsStore.add(bmU2, to: nil)
+
+        let g1 = BookmarkGroup(name: "Group 1", sortOrder: 0)
+        let g2 = BookmarkGroup(name: "Group 2", sortOrder: 1)
+        let g3 = BookmarkGroup(name: "Group 3", sortOrder: 2)
+        userDefaultsStore.upsert(bookmarkGroup: g1)
+        userDefaultsStore.upsert(bookmarkGroup: g2)
+        userDefaultsStore.upsert(bookmarkGroup: g3)
+
+        let bm1A = Bookmark(name: "BM 1A", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[2])
+        let bm1B = Bookmark(name: "BM 1B", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bm1A, to: g1)
+        userDefaultsStore.add(bm1B, to: g1)
+
+        let bm2A = Bookmark(name: "BM 2A", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        let bm2B = Bookmark(name: "BM 2B", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[2])
+        userDefaultsStore.add(bm2A, to: g2)
+        userDefaultsStore.add(bm2B, to: g2)
+
+        let bm3A = Bookmark(name: "BM 3A", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bm3A, to: g3)
+
+        let bookmarksNotificationCount = SendableBox(0)
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in bookmarksNotificationCount.value += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        // Replace keeping only g3 (deleting g1 and g2)
+        userDefaultsStore.replaceBookmarkGroups(with: [g3])
+
+        #expect(bookmarksNotificationCount.value == 1)
+        #expect(userDefaultsStore.bookmarkGroups == [g3])
+        #expect(userDefaultsStore.findBookmark(id: bm3A.id)?.groupID == g3.id)
+
+        let ungrouped = userDefaultsStore.bookmarksInGroup(nil)
+        #expect(ungrouped.count == 6)
+        #expect(ungrouped.map(\.id) == [bmU1.id, bmU2.id, bm1A.id, bm1B.id, bm2A.id, bm2B.id], "Ungrouped bookmarks must preserve existing ungrouped order, then g1 order, then g2 order without interleaving")
+        #expect(ungrouped.map(\.sortOrder) == [0, 1, 2, 3, 4, 5])
+    }
+
+    /// Moving a bookmark to the same position and group is a no-op and emits no notifications.
+    @Test func `Moving bookmark to same index and group is a no-op`() {
+        let group = BookmarkGroup(name: "Commute", sortOrder: 0)
+        userDefaultsStore.upsert(bookmarkGroup: group)
+
+        let bm1 = Bookmark(name: "BM1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        let bm2 = Bookmark(name: "BM2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[1])
+        userDefaultsStore.add(bm1, to: group)
+        userDefaultsStore.add(bm2, to: group)
+
+        let notificationCount = SendableBox(0)
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: userDefaultsStore,
+            queue: nil
+        ) { _ in notificationCount.value += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        // Re-adding bm1 to group at its current position (index 0)
+        userDefaultsStore.add(bm1, to: group, index: 0)
+
+        #expect(notificationCount.value == 0)
+    }
+
+    /// Moving bookmark with failed persistence rolls back in-memory bookmark group and leaves store unchanged.
+    @Test func `Moving bookmark with failed persistence rolls back in-memory bookmark and store`() {
+        let group1 = BookmarkGroup(name: "G1", sortOrder: 0)
+        let group2 = BookmarkGroup(name: "G2", sortOrder: 1)
+        userDefaultsStore.upsert(bookmarkGroup: group1)
+        userDefaultsStore.upsert(bookmarkGroup: group2)
+
+        let bm = Bookmark(name: "BM", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stops[0])
+        userDefaultsStore.add(bm, to: group1, index: 0)
+
+        userDefaultsStore.simulatedPersistenceError = NSError(domain: "test.persistence", code: 500, userInfo: nil)
+        userDefaultsStore.add(bm, to: group2, index: 0)
+
+        #expect(bm.groupID == group1.id)
+        #expect(userDefaultsStore.findBookmark(id: bm.id)?.groupID == group1.id)
+    }
 }
 
 /// Counts `UserDataStore.bookmarks` encodes. Subclassing `UserDefaults` is the

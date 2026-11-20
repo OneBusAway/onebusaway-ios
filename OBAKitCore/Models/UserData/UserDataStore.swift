@@ -518,6 +518,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// Defaults key for `showRegionTimeZone`. Dot-free; see `stopUIReducedColorsKey`.
     public static let showRegionTimeZoneKey = "showRegionTimeZone"
 
+    #if DEBUG
+    /// Hook for unit tests to simulate persistence failure and verify rollback/atomic guarantees.
+    public var simulatedPersistenceError: Error?
+    #endif
+
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
@@ -602,16 +607,20 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return groups.sorted { $0.sortOrder < $1.sortOrder }
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarkGroups) // swiftlint:disable:this force_try
-            NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarkGroups)
+                NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
+            } catch {
+                Logger.error("Failed to persist bookmark groups: \(error)")
+            }
         }
     }
 
     public func upsert(bookmarkGroup: BookmarkGroup) {
         var groups = bookmarkGroups
         if let index = groups.firstIndex(where: { $0.id == bookmarkGroup.id }) {
-            groups.remove(at: index)
-            groups.insert(bookmarkGroup, at: index)
+            guard groups[index] != bookmarkGroup else { return }
+            groups[index] = bookmarkGroup
         }
         else {
             groups.append(bookmarkGroup)
@@ -620,21 +629,72 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func deleteGroup(_ group: BookmarkGroup) {
-        // move the group's bookmarks, if any, out of the group.
-        for bm in bookmarksInGroup(group) {
-            add(bm, to: nil, index: .max)
+        let groupID = group.id
+        var groups = bookmarkGroups
+        let groupIndex = groups.firstIndex(where: { $0.id == groupID })
+        let groupExists = (groupIndex != nil)
+
+        var allBookmarks = bookmarks
+        let groupBookmarks = allBookmarks
+            .filter { $0.groupID == groupID }
+            .sorted { $0.sortOrder < $1.sortOrder }
+
+        guard groupExists || !groupBookmarks.isEmpty else { return }
+
+        let bookmarksChanged = !groupBookmarks.isEmpty
+        if bookmarksChanged {
+            let existingUngrouped = allBookmarks
+                .filter { $0.groupID == nil }
+                .sorted { $0.sortOrder < $1.sortOrder }
+
+            let otherBookmarks = allBookmarks.filter { $0.groupID != nil && $0.groupID != groupID }
+
+            for bm in groupBookmarks {
+                bm.groupID = nil
+            }
+
+            let combinedUngrouped = existingUngrouped + groupBookmarks
+            for (idx, bm) in combinedUngrouped.enumerated() {
+                bm.sortOrder = idx
+            }
+
+            allBookmarks = otherBookmarks + combinedUngrouped
         }
 
-        var groups = bookmarkGroups
-        if let index = groups.firstIndex(where: { $0.id == group.id }) {
-            groups.remove(at: index)
-            bookmarkGroups = groups
+        if let groupIndex {
+            groups.remove(at: groupIndex)
+        }
+
+        let originalBookmarks = bookmarks
+        let originalGroups = bookmarkGroups
+
+        do {
+            if bookmarksChanged {
+                try encodeUserDefaultsObjects(allBookmarks, key: UserDefaultsKeys.bookmarks)
+            }
+            if groupExists {
+                try encodeUserDefaultsObjects(groups, key: UserDefaultsKeys.bookmarkGroups)
+            }
+        } catch {
+            try? encodeUserDefaultsObjects(originalBookmarks, key: UserDefaultsKeys.bookmarks)
+            try? encodeUserDefaultsObjects(originalGroups, key: UserDefaultsKeys.bookmarkGroups)
+            Logger.error("Failed to delete bookmark group: \(error)")
+            return
+        }
+
+        if bookmarksChanged {
+            NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
+        }
+        if groupExists {
+            NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
         }
     }
 
     public func deleteGroup(id: UUID) {
         if let group = findGroup(id: id) {
             deleteGroup(group)
+        } else {
+            deleteGroup(BookmarkGroup(name: "", id: id, sortOrder: 0))
         }
     }
 
@@ -651,23 +711,96 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func replaceBookmarkGroups(with newGroups: [BookmarkGroup]) {
-        // All registered groups
-        var groupsToDelete = Set(bookmarkGroups.map { $0.id })
+        let currentGroups = bookmarkGroups
+        let currentGroupIDs = Set(currentGroups.map { $0.id })
+        let newGroupIDs = Set(newGroups.map { $0.id })
+        let deletedGroupIDs = currentGroupIDs.subtracting(newGroupIDs)
 
-        // Remove items from the set that still exist.
-        for g in newGroups {
-            groupsToDelete.remove(g.id)
+        var allBookmarks = bookmarks
+        let orphanedBookmarks = allBookmarks.filter { bm in
+            guard let gid = bm.groupID else { return false }
+            return deletedGroupIDs.contains(gid)
         }
 
-        // Delete the remaining items (which definitionally are items the user has deleted).
-        for uuid in groupsToDelete {
-            deleteGroup(id: uuid)
+        let bookmarksChanged = !orphanedBookmarks.isEmpty
+        if bookmarksChanged {
+            allBookmarks = migrateDeletedGroupBookmarks(
+                deletedGroupIDs: deletedGroupIDs,
+                from: currentGroups,
+                in: allBookmarks
+            )
         }
 
-        // Update/insert the new list of groups.
-        for g in newGroups {
-            upsert(bookmarkGroup: g)
+        let groupsChanged = (currentGroups != newGroups)
+        guard groupsChanged || bookmarksChanged else { return }
+
+        let originalBookmarks = bookmarks
+        let originalGroups = bookmarkGroups
+
+        do {
+            if bookmarksChanged {
+                try encodeUserDefaultsObjects(allBookmarks, key: UserDefaultsKeys.bookmarks)
+            }
+            if groupsChanged {
+                try encodeUserDefaultsObjects(newGroups, key: UserDefaultsKeys.bookmarkGroups)
+            }
+        } catch {
+            try? encodeUserDefaultsObjects(originalBookmarks, key: UserDefaultsKeys.bookmarks)
+            try? encodeUserDefaultsObjects(originalGroups, key: UserDefaultsKeys.bookmarkGroups)
+            Logger.error("Failed to replace bookmark groups: \(error)")
+            return
         }
+
+        if bookmarksChanged {
+            NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
+        }
+        if groupsChanged {
+            NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
+        }
+    }
+
+    private func migrateDeletedGroupBookmarks(
+        deletedGroupIDs: Set<UUID>,
+        from currentGroups: [BookmarkGroup],
+        in allBookmarks: [Bookmark]
+    ) -> [Bookmark] {
+        let existingUngrouped = allBookmarks
+            .filter { $0.groupID == nil }
+            .sorted { $0.sortOrder < $1.sortOrder }
+
+        let survivingBookmarks = allBookmarks.filter { bm in
+            guard let gid = bm.groupID else { return false }
+            return !deletedGroupIDs.contains(gid)
+        }
+
+        let orderedDeletedGroups = currentGroups.filter { deletedGroupIDs.contains($0.id) }
+        var movedBookmarks: [Bookmark] = []
+        for group in orderedDeletedGroups {
+            let bookmarksInDeletedGroup = allBookmarks
+                .filter { $0.groupID == group.id }
+                .sorted { $0.sortOrder < $1.sortOrder }
+            movedBookmarks.append(contentsOf: bookmarksInDeletedGroup)
+        }
+
+        let knownDeletedIDs = Set(orderedDeletedGroups.map(\.id))
+        let otherOrphanedIDs = deletedGroupIDs.subtracting(knownDeletedIDs)
+        if !otherOrphanedIDs.isEmpty {
+            let otherOrphanedBookmarks = allBookmarks
+                .filter { bm in bm.groupID.map(otherOrphanedIDs.contains) == true }
+                .sorted { $0.sortOrder < $1.sortOrder }
+            movedBookmarks.append(contentsOf: otherOrphanedBookmarks)
+        }
+
+        for bm in movedBookmarks {
+            bm.groupID = nil
+        }
+
+        let combinedUngrouped = existingUngrouped + movedBookmarks
+        for (idx, bm) in combinedUngrouped.enumerated() {
+            bm.sortOrder = idx
+        }
+
+        return survivingBookmarks + combinedUngrouped
     }
 
     // MARK: - Bookmarks
@@ -677,7 +810,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [Bookmark].self, key: UserDefaultsKeys.bookmarks) ?? []
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarks) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarks)
+            } catch {
+                Logger.error("Failed to persist bookmarks: \(error)")
+            }
         }
     }
 
@@ -707,21 +844,40 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     // swiftlint:enable for_where
 
-    public func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int) {
-        let oldGroupID = bookmark.groupID
-
-        if let group = group {
-            upsert(bookmarkGroup: group)
+    private func updatedGroupsForAdd(_ group: BookmarkGroup?) -> [BookmarkGroup]? {
+        guard let group = group else { return nil }
+        var allGroups = bookmarkGroups
+        if let existingIndex = allGroups.firstIndex(where: { $0.id == group.id }) {
+            guard allGroups[existingIndex] != group else { return nil }
+            allGroups[existingIndex] = group
+            return allGroups
         }
+        allGroups.append(group)
+        return allGroups
+    }
 
-        bookmark.groupID = group?.id ?? nil
+    private func isNoOpBookmarkAdd(_ bookmark: Bookmark, newGroupID: UUID?, index: Int, allExisting: [Bookmark]) -> Bool {
+        guard let stored = allExisting.first(where: { $0.id == bookmark.id }),
+              stored.groupID == newGroupID,
+              stored.isEqual(bookmark) else {
+            return false
+        }
+        let currentGroup = allExisting
+            .filter { $0.groupID == newGroupID }
+            .sorted { $0.sortOrder < $1.sortOrder }
+        let currentIndex = currentGroup.firstIndex(where: { $0.id == bookmark.id })
+        let targetClampedIndex = min(index, currentGroup.count - 1)
+        return currentIndex == targetClampedIndex
+    }
 
-        // Decode once, mutate in memory, encode once. The previous loop called
-        // `bookmarks` get/set (full plist round-trip) per row, which froze the
-        // UI for several seconds with a dozen bookmarks. See #548.
-        var all = bookmarks.filter { $0.id != bookmark.id }
-        let newGroupID = bookmark.groupID
-
+    private func reorderedBookmarksForAdd(
+        allExisting: [Bookmark],
+        bookmark: Bookmark,
+        newGroupID: UUID?,
+        oldGroupID: UUID?,
+        index: Int
+    ) -> [Bookmark] {
+        var all = allExisting.filter { $0.id != bookmark.id }
         var destination = all
             .filter { $0.groupID == newGroupID }
             .sorted { $0.sortOrder < $1.sortOrder }
@@ -742,8 +898,46 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
                 elt.sortOrder = idx
             }
         }
+        return all
+    }
 
-        bookmarks = all
+    public func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int) {
+        let oldGroupID = bookmark.groupID
+        let newGroupID = group?.id
+        let updatedGroups = updatedGroupsForAdd(group)
+        let allExisting = bookmarks
+
+        if updatedGroups == nil && isNoOpBookmarkAdd(bookmark, newGroupID: newGroupID, index: index, allExisting: allExisting) {
+            return
+        }
+
+        let originalGroupID = bookmark.groupID
+        let originalSortOrder = bookmark.sortOrder
+        bookmark.groupID = newGroupID
+
+        let all = reorderedBookmarksForAdd(
+            allExisting: allExisting,
+            bookmark: bookmark,
+            newGroupID: newGroupID,
+            oldGroupID: oldGroupID,
+            index: index
+        )
+
+        do {
+            if let updatedGroups {
+                try encodeUserDefaultsObjects(updatedGroups, key: UserDefaultsKeys.bookmarkGroups)
+            }
+            try encodeUserDefaultsObjects(all, key: UserDefaultsKeys.bookmarks)
+        } catch {
+            bookmark.groupID = originalGroupID
+            bookmark.sortOrder = originalSortOrder
+            Logger.error("Failed to persist bookmark add: \(error)")
+            return
+        }
+
+        if updatedGroups != nil {
+            NotificationCenter.default.post(name: .bookmarkGroupsDidChange, object: self)
+        }
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
@@ -752,14 +946,18 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         guard let index = allBookmarks.firstIndex(where: { $0.id == bookmark.id }) else { return }
         guard allBookmarks[index].isPinned != isPinned else { return }
 
-        allBookmarks[index].isPinned = isPinned
-        // Keep the caller's instance in step. `bookmarks`' getter decodes fresh
-        // objects, so the one the caller is holding is a different instance than
-        // the one just written — without this its `isPinned` would still read
-        // stale to whoever kept a reference.
-        bookmark.isPinned = isPinned
-        bookmarks = allBookmarks
+        for b in allBookmarks where b.id == bookmark.id {
+            b.isPinned = isPinned
+        }
 
+        do {
+            try encodeUserDefaultsObjects(allBookmarks, key: UserDefaultsKeys.bookmarks)
+        } catch {
+            Logger.error("Failed to persist pinned state: \(error)")
+            return
+        }
+
+        bookmark.isPinned = isPinned
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
@@ -770,7 +968,13 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         bookmark.groupID = all[index].groupID
         bookmark.sortOrder = all[index].sortOrder
         all[index] = bookmark
-        bookmarks = all
+
+        do {
+            try encodeUserDefaultsObjects(all, key: UserDefaultsKeys.bookmarks)
+        } catch {
+            Logger.error("Failed to persist bookmark update: \(error)")
+            return
+        }
 
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
@@ -788,7 +992,13 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             elt.sortOrder = idx
         }
 
-        bookmarks = all
+        do {
+            try encodeUserDefaultsObjects(all, key: UserDefaultsKeys.bookmarks)
+        } catch {
+            Logger.error("Failed to persist bookmark deletion: \(error)")
+            return
+        }
+
         NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
@@ -1381,6 +1591,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     /// - Parameter objects: An `Encodable` object (or an array of them). For example, bookmarks.
     /// - Parameter key: The user defaults key that corresponds to the data being saved.
     private func encodeUserDefaultsObjects<T>(_ object: T, key: String) throws where T: Encodable {
+        #if DEBUG
+        if let simulatedPersistenceError {
+            throw simulatedPersistenceError
+        }
+        #endif
         try userDefaults.encodeUserDefaultsObjects(object, key: key)
     }
 }

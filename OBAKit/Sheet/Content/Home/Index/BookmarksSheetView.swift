@@ -104,7 +104,7 @@ struct BookmarksSheetView: View {
                 }
             },
             togglePin: { bookmark in
-                application.userDataStore.setPinned(!bookmark.isPinned, for: bookmark)
+                actions.togglePin(for: bookmark)
             },
             liveActivitiesEnabled: { ActivityAuthorizationInfo().areActivitiesEnabled },
             refresh: {

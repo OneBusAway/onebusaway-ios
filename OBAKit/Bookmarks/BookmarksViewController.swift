@@ -134,7 +134,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
             },
             togglePin: { [weak self] bookmark in
                 guard let self else { return }
-                self.application.userDataStore.setPinned(!bookmark.isPinned, for: bookmark)
+                self.bookmarkActions.togglePin(for: bookmark)
             },
             liveActivitiesEnabled: { ActivityAuthorizationInfo().areActivitiesEnabled },
             refresh: { [weak self] in
