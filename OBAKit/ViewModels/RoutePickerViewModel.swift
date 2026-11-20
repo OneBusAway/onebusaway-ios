@@ -66,12 +66,14 @@ final class RoutePickerViewModel: ObservableObject {
     // MARK: - Private
 
     private let application: Application
+    private let cachedStopsProvider: () -> [Stop]
     private var searchQuery: String = ""
 
     // MARK: - Init
 
-    init(application: Application) {
+    init(application: Application, cachedStops: (() -> [Stop])? = nil) {
         self.application = application
+        cachedStopsProvider = cachedStops ?? { application.mapRegionManager.stops }
     }
 
     // MARK: - Load
@@ -82,7 +84,7 @@ final class RoutePickerViewModel: ObservableObject {
         loadError = nil
 
         // Primary: extract routes from stops already loaded by MapRegionManager.
-        let cachedStops = application.mapRegionManager.stops
+        let cachedStops = cachedStopsProvider()
         if !cachedStops.isEmpty {
             applyRoutes(from: cachedStops)
             return
