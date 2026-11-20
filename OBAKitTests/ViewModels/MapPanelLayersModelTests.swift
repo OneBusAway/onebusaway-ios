@@ -276,6 +276,45 @@ final class MapPanelLayersModelTests: OBATestCase {
         #expect(!registered.isLayerVisible(id: StopsMapLayer.layerID))
     }
 
+    @Test func `differsFromDefaults ignores rentalRangeFilter when no otherModes layers registered`() {
+        var state = MapLayerVisibilityState()
+        let transit = MapLayerDescriptor(id: "transit_layer", group: .transit, isEnabledByDefault: true)
+        state.register(layer: transit)
+
+        #expect(!state.differsFromDefaults)
+
+        // Non-default range filter when only transit group layers exist does not trigger differsFromDefaults
+        state.rentalRangeFilter = RentalRangeFilter(minimumRangeMeters: 3000)
+        #expect(!state.differsFromDefaults)
+
+        // Once an otherModes layer is registered, range filter change triggers differsFromDefaults
+        let rental = MapLayerDescriptor(id: "rental_bikes", group: .otherModes, isEnabledByDefault: true)
+        state.register(layer: rental)
+        #expect(state.differsFromDefaults)
+
+        state.rentalRangeFilter = .any
+        #expect(!state.differsFromDefaults)
+    }
+
+    @Test func `resetSelection on unregistered layer returns false and preserves state`() {
+        var state = MapLayerVisibilityState()
+        let layer = MapLayerDescriptor(id: "known_layer", isEnabledByDefault: true)
+        state.register(layer: layer)
+
+        let didReset = state.resetSelection(id: "unknown_layer")
+        #expect(!didReset)
+        #expect(state.enabledLayerCount == 1)
+        #expect(state.isEnabled(id: "known_layer"))
+    }
+
+    @Test func `updateAvailability on unregistered layer is a no-op`() {
+        var state = MapLayerVisibilityState()
+        state.updateAvailability(.unavailable(reason: "Offline"), id: "unregistered")
+        #expect(state.layers["unregistered"] == nil)
+        #expect(!state.canToggle(id: "unregistered"))
+        #expect(!state.isLayerVisible(id: "unregistered"))
+    }
+
     @Test func `MapRegionManager delegates selection and visibility rules to MapLayerVisibilityState`() {
         let manager = application.mapRegionManager
         #expect(manager.isStopsLayerEnabled == true)
