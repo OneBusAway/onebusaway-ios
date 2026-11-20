@@ -61,7 +61,10 @@ final class OnDemandZoneCardTests: OBATestCase {
 
         #expect(model.eyebrow == Strings.onDemandCardEyebrow)
         #expect(model.title == "Charlevoix County Dial-a-Ride")
-        #expect(normalizeSpaces(model.meta) == "Open · until 4:40 PM · Same-day booking")
+        // The formatter locale pins the time; labels still follow the app language.
+        let expectedStatus = String(format: Strings.onDemandStatusOpenUntilFormat, "4:40 PM")
+        let expectedMeta = "\(expectedStatus) · \(Strings.onDemandTagSameDay)"
+        #expect(normalizeSpaces(model.meta) == normalizeSpaces(expectedMeta))
         #expect(model.moreCount == 0)
         #expect(model.primary == .call("(231) 582-6900".telephoneURL!))
         #expect(model.color == ThemeColors.shared.brand)
