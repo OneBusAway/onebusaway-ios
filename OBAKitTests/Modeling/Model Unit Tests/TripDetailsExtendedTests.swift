@@ -75,4 +75,16 @@ final class TripDetailsExtendedTests: OBATestCase {
         #expect(firstStop.stop != nil)
         #expect(lastStop.stop != nil)
     }
+
+    // MARK: - Equality and Hash
+
+    @Test func `TripDetails isEqual compares identical payloads as equal`() throws {
+        let (trip1, _) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
+        let (trip2, _) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
+
+        #expect(trip1.isEqual(trip2))
+        #expect(trip1.hash == trip2.hash)
+        #expect(!trip1.isEqual("non_trip_details"))
+        #expect(!trip1.isEqual(nil))
+    }
 }
