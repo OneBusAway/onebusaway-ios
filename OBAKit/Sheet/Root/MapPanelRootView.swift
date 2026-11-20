@@ -556,7 +556,7 @@ struct MapPanelRootView: View {
             guard let selection = mapSelection else { return }
             switch selection {
             case .stop(let stopID):
-                coordinator.push(.stopDetails(stopID: stopID))
+                coordinator.selectFromMap(.stopDetails(stopID: stopID))
             case .rental(let rentalID):
                 // Pin before pushing: the rider just tapped this pin, so it is live now,
                 // and the sheet must keep naming it even if the map later moves somewhere
@@ -565,7 +565,7 @@ struct MapPanelRootView: View {
                     layersModel.pinForOpenSheet([rental])
                 }
                 reportRentalSelected(isCluster: false)
-                coordinator.push(.rentalDetail(rentalID: rentalID))
+                coordinator.selectFromMap(.rentalDetail(rentalID: rentalID))
             case .rentalCluster(let clusterID):
                 let members = layersModel.rentalItems
                     .first { $0.id == clusterID }?
@@ -573,10 +573,10 @@ struct MapPanelRootView: View {
                 guard !members.isEmpty else { break }
                 layersModel.pinForOpenSheet(members)
                 reportRentalSelected(isCluster: true)
-                coordinator.push(.rentalCluster(memberIDs: members.map(\.id)))
+                coordinator.selectFromMap(.rentalCluster(memberIDs: members.map(\.id)))
             case .onDemandZone(let markerID):
                 guard let route = layersModel.onDemandServiceRoute(forMarkerID: markerID, locationCheck: probeController.locationCheck(forServiceID:)) else { break }
-                coordinator.push(route)
+                coordinator.selectFromMap(route)
             case .tripPlannerAnnotation(let identifier):
                 // Hand the tap straight back to OTPKit, which owns what a pin on
                 // its own route means. No route is pushed: the planner sheet is

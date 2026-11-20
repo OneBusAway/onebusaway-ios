@@ -157,6 +157,17 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
         push(route)
     }
 
+    /// Selects a route from a map pin interaction, opening over the current sheet or
+    /// unwinding if already present, while avoiding duplicate sheets on repeated selection.
+    func selectFromMap(_ route: Route) {
+        if let current = stackedRoutes.last {
+            guard current != route else { return }
+            open(route, from: current)
+        } else {
+            push(route)
+        }
+    }
+
     /// Removes every stacked sheet at or above the given depth. Called by the
     /// container when the OS dismisses a sheet (drag-down) so storage stays in
     /// sync with what's actually on screen.
