@@ -116,13 +116,13 @@ final class StopClusterTests {
         #expect(title.contains(Formatters.formattedCodeAndDirection(stop: stop)))
     }
 
-    @Test func `Picker title formats stop with empty code and direction gracefully`() throws {
+    @Test func `Picker title omits code segment when stop code is empty`() throws {
         let emptyCodeStop = try makeStop(id: "1_empty", code: "", name: "Unnamed Junction", direction: nil)
-        let title = StopCluster.pickerTitle(for: emptyCodeStop)
+        #expect(StopCluster.pickerTitle(for: emptyCodeStop) == "Unnamed Junction")
 
-        #expect(title.hasPrefix("Unnamed Junction"))
-        #expect(title.contains(" · "))
-        #expect(title.contains(Formatters.formattedCodeAndDirection(stop: emptyCodeStop)))
+        let stopWithDirOnly = try makeStop(id: "1_empty_dir", code: "", name: "Unnamed Junction", direction: "N")
+        let expectedNorth = try #require(Formatters.adjectiveFormOfCardinalDirection(.n))
+        #expect(StopCluster.pickerTitle(for: stopWithDirOnly) == "Unnamed Junction · \(expectedNorth)")
     }
 
     // MARK: - Annotation views
