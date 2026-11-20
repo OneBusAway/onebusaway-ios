@@ -19,11 +19,18 @@ final class UmamiAnalyticsTests: OBATestCase {
     private let beepBoopBody = #"{"beep":"boop"}"#.data(using: .utf8)!
     private let testInstallID = "test-install-id"
 
-    private func makeReporter(loader: MockDataLoader, installID: String? = nil) -> UmamiAnalytics {
+    private func makeReporter(
+        loader: MockDataLoader,
+        installID: String? = nil,
+        appName: String? = nil,
+        bundle: Bundle = .main
+    ) -> UmamiAnalytics {
         UmamiAnalytics(serverURL: URL(string: "https://analytics.example.com")!,
                        websiteID: "site-uuid",
                        hostname: "api.example.org",
                        installID: installID ?? testInstallID,
+                       appName: appName,
+                       bundle: bundle,
                        dataLoader: loader)
     }
 
@@ -75,8 +82,9 @@ final class UmamiAnalyticsTests: OBATestCase {
 
         // Explicit, non-bot User-Agent — full format: "OneBusAway/<version> (iOS <ver>; <model>)".
         let ua = try #require(request.value(forHTTPHeaderField: "User-Agent"))
-        #expect(ua.contains("OneBusAway/"))
-        #expect(NSPredicate(format: "SELF MATCHES %@", "^OneBusAway/.+ \\(iOS .+; .+\\)$").evaluate(with: ua))
+        let expectedAppName = Bundle.main.appName.isEmpty ? "OneBusAway" : Bundle.main.appName
+        #expect(ua.contains("\(expectedAppName)/"))
+        #expect(NSPredicate(format: "SELF MATCHES %@", "^\(expectedAppName)/.+ \\(iOS .+; .+\\)$").evaluate(with: ua))
 
         // Body matches the Umami contract.
         let body = try JSONSerialization.jsonObject(with: try #require(request.httpBody)) as! [String: Any]
@@ -111,6 +119,54 @@ final class UmamiAnalyticsTests: OBATestCase {
         #expect((payload["name"] as? String) == "Clicked MapStopIcon")
         #expect((payload["url"] as? String) == "/map")
         #expect((payload["id"] as? String) == testInstallID)
+    }
+
+    // MARK: - User-Agent & Brand Configuration
+
+    @Test func `User-Agent formats default branded target`() {
+        let loader = MockDataLoader(testName: name)
+        let reporter = makeReporter(loader: loader)
+        let expectedAppName = Bundle.main.appName.isEmpty ? "OneBusAway" : Bundle.main.appName
+        #expect(reporter.userAgent.hasPrefix("\(expectedAppName)/"))
+        #expect(NSPredicate(format: "SELF MATCHES %@", "^\(expectedAppName)/.+ \\(iOS .+; .+\\)$").evaluate(with: reporter.userAgent))
+    }
+
+    @Test func `User-Agent formats alternate white-label target`() throws {
+        let loader = MockDataLoader(testName: name)
+        // Explicit app name parameter override (e.g. KiedyBus)
+        let kiedyBusReporter = makeReporter(loader: loader, appName: "KiedyBus")
+        #expect(kiedyBusReporter.userAgent.hasPrefix("KiedyBus/"))
+        #expect(NSPredicate(format: "SELF MATCHES %@", "^KiedyBus/.+ \\(iOS .+; .+\\)$").evaluate(with: kiedyBusReporter.userAgent))
+
+        // Target bundle resolution via CFBundleDisplayName
+        let whiteLabelBundle = try TestAppBundle.create(displayName: "KiedyBus", version: "2.4.0")
+        let bundleReporter = makeReporter(loader: loader, bundle: whiteLabelBundle)
+        #expect(bundleReporter.userAgent.hasPrefix("KiedyBus/2.4.0 (iOS "))
+        #expect(NSPredicate(format: "SELF MATCHES %@", "^KiedyBus/2\\.4\\.0 \\(iOS .+; .+\\)$").evaluate(with: bundleReporter.userAgent))
+    }
+
+    @Test func `User-Agent formats localized brand bundle`() throws {
+        let loader = MockDataLoader(testName: name)
+        let localizedBundle = try TestAppBundle.create(displayName: "KiedyBus Wrocław", version: "1.0.0")
+        let reporter = makeReporter(loader: loader, bundle: localizedBundle)
+        #expect(reporter.userAgent.hasPrefix("KiedyBus Wrocław/1.0.0 (iOS "))
+    }
+
+    @Test func `Report event sends alternate white-label User-Agent header`() async throws {
+        let loader = MockDataLoader(testName: name)
+        let captured = SendableBox<URLRequest?>(nil)
+        loader.mock(data: successBody) { request in
+            captured.value = request
+            return true
+        }
+
+        let whiteLabelBundle = try TestAppBundle.create(displayName: "KiedyBus", version: "2.5.0")
+        let reporter = makeReporter(loader: loader, bundle: whiteLabelBundle)
+        await reporter.reportSearchQuery("Rynek")
+
+        let request = try #require(captured.value)
+        let ua = try #require(request.value(forHTTPHeaderField: "User-Agent"))
+        #expect(ua.hasPrefix("KiedyBus/2.5.0 (iOS "))
     }
 
     // MARK: - Fail-safe
@@ -194,5 +250,27 @@ final class UmamiAnalyticsTests: OBATestCase {
 
     @Test func `Install ID without a storage directory is still a valid UUID`() {
         #expect(UUID(uuidString: AnalyticsInstallID.persisted(directory: nil)) != nil)
+    }
+}
+
+/// A `Bundle` whose Info.plist values are configurable, used to simulate default and alternate white-label targets.
+private nonisolated class TestAppBundle: Bundle, @unchecked Sendable {
+    var info: [String: Any] = [:]
+
+    override func object(forInfoDictionaryKey key: String) -> Any? {
+        if let val = info[key] { return val }
+        return super.object(forInfoDictionaryKey: key)
+    }
+
+    static func create(displayName: String? = nil, name: String? = nil, version: String? = nil) throws -> TestAppBundle {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let bundle = try #require(TestAppBundle(path: dir.path))
+        var dict: [String: Any] = [:]
+        if let displayName { dict["CFBundleDisplayName"] = displayName }
+        if let name { dict["CFBundleName"] = name }
+        if let version { dict["CFBundleShortVersionString"] = version }
+        bundle.info = dict
+        return bundle
     }
 }
