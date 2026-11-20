@@ -301,7 +301,8 @@ final class MapPanelLayersModelTests: OBATestCase {
         let layer = MapLayerDescriptor(id: "known_layer", isEnabledByDefault: true)
         state.register(layer: layer)
 
-        #expect(!state.resetSelection(id: "unknown_layer"))
+        let didReset = state.resetSelection(id: "unknown_layer")
+        #expect(!didReset)
         #expect(state.enabledLayerCount == 1)
         #expect(state.isEnabled(id: "known_layer"))
     }
