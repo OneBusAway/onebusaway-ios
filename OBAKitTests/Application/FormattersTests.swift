@@ -607,6 +607,7 @@ final class FormattersTests: OBATestCase {
         #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: 0) == "departs on time")
         #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: 2) == "departs 2 min late")
         #expect(formatters.formattedScheduleDeviation(temporalState: .future, arrivalDepartureStatus: .departing, scheduleDeviation: -4) == "departs 4 min early")
+    }
 
     private func makeAgency(id: String, name: String) throws -> Agency {
         let dict: [String: Any] = [
