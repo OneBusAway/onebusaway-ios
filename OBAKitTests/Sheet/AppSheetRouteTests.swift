@@ -572,6 +572,16 @@ final class AppSheetRouteTests {
         #expect(routePicker.id == "onDemandPicker-\(payload.id)")
     }
 
+    // MARK: - Stop Details Accessors
+
+    @Test func `isStopDetails identifies stop details routes`() {
+        let stop = AppSheetRoute.stopDetails(stopID: "1_75403")
+        #expect(stop.isStopDetails)
+
+        #expect(!AppSheetRoute.home.isStopDetails)
+        #expect(!AppSheetRoute.search.isStopDetails)
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing

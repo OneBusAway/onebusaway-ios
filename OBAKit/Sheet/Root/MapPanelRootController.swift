@@ -237,14 +237,7 @@ public final class MapPanelRootController: UIViewController {
         if popToRootFirst {
             coordinator.popToRoot()
         }
-        if let current = coordinator.stackedRoutes.last ?? coordinator.additionalRoutes.last {
-            if current == route {
-                return
-            }
-            coordinator.open(route, from: current)
-        } else {
-            coordinator.push(route)
-        }
+        coordinator.restoreRoute(route)
     }
 
     /// Opens the trips `CurrentTripView` and vehicle search hand over as the
