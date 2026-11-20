@@ -148,6 +148,24 @@ final class RentalFormatTests {
         #expect(walk == "1 min walk")
     }
 
+    @Test func walkTimeReturnsNilWhenLocationMissingOrBeyondTenKilometers() {
+        let coord = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        #expect(RentalFormat.walkTimeText(from: nil, to: coord) == nil)
+
+        // Point far beyond 10,000 meters (approx 40 km away)
+        let userFar = CLLocation(latitude: 47.25, longitude: -122.44) // Tacoma
+        #expect(RentalFormat.walkTimeText(from: userFar, to: coord) == nil)
+    }
+
+    @Test func stationStockFallsBackToUnknownWhenVehicleTypesEmpty() throws {
+        guard case .station(let station) = try RentalFixtures.station(formFactors: []) else {
+            Issue.record("Expected a station")
+            return
+        }
+        #expect(RentalFormat.stock(of: station) == .unknown)
+        #expect(RentalFormat.stationVehiclesLabel(for: station) == "Available")
+    }
+
     // MARK: - VoiceOver
 
     /// "Range 3.4 miles", not "3.4 mi": an abbreviation reads badly aloud.

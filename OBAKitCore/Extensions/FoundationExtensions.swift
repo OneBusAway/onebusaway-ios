@@ -21,13 +21,21 @@ public extension Bundle {
     }
 
     /// The display name of the app. e.g. "OneBusAway".
-    var appName: String { value(for: "CFBundleDisplayName", type: String.self) }
+    var appName: String {
+        (object(forInfoDictionaryKey: "CFBundleDisplayName") as? String) ??
+        (object(forInfoDictionaryKey: "CFBundleName") as? String) ??
+        ""
+    }
 
     /// The copyright string for the app. e.g. "© Open Transit Software Foundation".
-    var copyright: String { value(for: "NSHumanReadableCopyright", type: String.self) }
+    var copyright: String {
+        (object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String) ?? ""
+    }
 
     /// The app's version number. e.g. "19.1.0".
-    var appVersion: String { value(for: "CFBundleShortVersionString", type: String.self) }
+    var appVersion: String {
+        (object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? ""
+    }
 
     /// A helper method for easily accessing the bundle's `CFBundleIdentifier`.
     var bundleIdentifier: String { value(for: "CFBundleIdentifier", type: String.self) }

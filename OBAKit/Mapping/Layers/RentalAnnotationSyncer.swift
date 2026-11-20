@@ -97,4 +97,15 @@ import OTPKit
         guard let mapView, !annotations.isEmpty else { return }
         mapView.addAnnotations(Array(annotations.values))
     }
+
+    /// Removes all tracked annotations from the map and clears internal state.
+    func removeAll() {
+        guard let mapView else {
+            annotations.removeAll()
+            return
+        }
+        let toRemove = Array(annotations.values)
+        annotations.removeAll()
+        mapView.removeAnnotations(toRemove)
+    }
 }

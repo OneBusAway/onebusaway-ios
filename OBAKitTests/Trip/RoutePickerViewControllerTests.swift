@@ -92,6 +92,14 @@ final class RoutePickerViewControllerTests: OBATestCase {
 
     // MARK: - Controller helpers
 
+    /// These tests exercise the controller's API-backed route list, not MapKit.
+    /// Supplying an empty cache avoids initializing a real map manager just to
+    /// discover that it has no stops.
+    private func makeController(application: Application, delegate: RoutePickerDelegate) -> RoutePickerViewController {
+        let viewModel = RoutePickerViewModel(application: application, cachedStops: { [] })
+        return RoutePickerViewController(application: application, delegate: delegate, viewModel: viewModel)
+    }
+
     /// Loads the view, which starts the controller's load, and waits for that load to finish.
     private func loadAndAwaitRoutes(_ controller: RoutePickerViewController) async throws {
         controller.loadViewIfNeeded()
@@ -126,7 +134,7 @@ final class RoutePickerViewControllerTests: OBATestCase {
 
     @Test func `Typing in the search field narrows the list to matching routes`() async throws {
         let recorder = RouteSelectionRecorder()
-        let controller = RoutePickerViewController(application: buildApplication(), delegate: recorder)
+        let controller = makeController(application: buildApplication(), delegate: recorder)
         try await loadAndAwaitRoutes(controller)
         #expect(rows(controller).count == 34)
 
@@ -137,7 +145,7 @@ final class RoutePickerViewControllerTests: OBATestCase {
 
     @Test func `A row shows the route's long name, or its agency when it has none`() async throws {
         let recorder = RouteSelectionRecorder()
-        let controller = RoutePickerViewController(application: buildApplication(), delegate: recorder)
+        let controller = makeController(application: buildApplication(), delegate: recorder)
         try await loadAndAwaitRoutes(controller)
 
         try search(controller, for: "54")
@@ -149,7 +157,7 @@ final class RoutePickerViewControllerTests: OBATestCase {
 
     @Test func `Picking a route tells the delegate which one`() async throws {
         let recorder = RouteSelectionRecorder()
-        let controller = RoutePickerViewController(application: buildApplication(), delegate: recorder)
+        let controller = makeController(application: buildApplication(), delegate: recorder)
         try await loadAndAwaitRoutes(controller)
         try search(controller, for: "54")
 
@@ -163,7 +171,7 @@ final class RoutePickerViewControllerTests: OBATestCase {
 
     @Test func `A failed load shows why instead of rows`() async throws {
         let recorder = RouteSelectionRecorder()
-        let controller = RoutePickerViewController(application: buildApplication(withLocation: false), delegate: recorder)
+        let controller = makeController(application: buildApplication(withLocation: false), delegate: recorder)
         try await loadAndAwaitRoutes(controller)
 
         #expect(rows(controller).isEmpty)
@@ -172,14 +180,14 @@ final class RoutePickerViewControllerTests: OBATestCase {
 
     @Test func `The list says it is loading until routes arrive, then says when none are nearby`() async throws {
         let recorder = RouteSelectionRecorder()
-        let withRoutes = RoutePickerViewController(application: buildApplication(), delegate: recorder)
+        let withRoutes = makeController(application: buildApplication(), delegate: recorder)
         withRoutes.loadViewIfNeeded()
         let loading = try #require(emptyTitle(withRoutes))
 
         try await loadAndAwaitRoutes(withRoutes)
         #expect(withRoutes.emptyData(for: OBAListView()) == nil)
 
-        let withoutRoutes = RoutePickerViewController(application: buildApplication(stops: try noStops()), delegate: recorder)
+        let withoutRoutes = makeController(application: buildApplication(stops: try noStops()), delegate: recorder)
         try await loadAndAwaitRoutes(withoutRoutes)
         #expect(rows(withoutRoutes).isEmpty)
         let noneNearby = try #require(emptyTitle(withoutRoutes))

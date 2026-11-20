@@ -61,7 +61,7 @@ final class UmamiAnalytics {
     private let hostname: String
     private let installID: String
     private let dataLoader: URLDataLoader
-    private let userAgent: String
+    let userAgent: String
 
     /// Default properties merged into every event's `data`. Set via `setUserProperty`.
     private var defaultData: [String: UmamiJSONValue] = [:]
@@ -73,6 +73,8 @@ final class UmamiAnalytics {
          websiteID: String,
          hostname: String,
          installID: String,
+         appName: String? = nil,
+         bundle: Bundle = .main,
          dataLoader: URLDataLoader = UmamiAnalytics.makeDefaultSession()) {
         self.serverURL = serverURL
         self.websiteID = websiteID
@@ -80,11 +82,13 @@ final class UmamiAnalytics {
         self.installID = installID
         self.dataLoader = dataLoader
 
+        let resolvedAppName = appName ?? (bundle.appName.isEmpty ? "OneBusAway" : bundle.appName)
+        let resolvedAppVersion = bundle.appVersion.isEmpty ? "1.0" : bundle.appVersion
 #if targetEnvironment(simulator)
-        // OneBusAway/26.1.2 (iOS 18.5; iPhone Simulator arm64)
-        self.userAgent = "OneBusAway/\(Bundle.main.appVersion) (iOS \(UIDevice.current.systemVersion); iPhone Simulator \(UIDevice.current.modelName))"
+        // e.g. OneBusAway/26.1.2 (iOS 18.5; iPhone Simulator arm64)
+        self.userAgent = "\(resolvedAppName)/\(resolvedAppVersion) (iOS \(UIDevice.current.systemVersion); iPhone Simulator \(UIDevice.current.modelName))"
 #else
-        self.userAgent = "OneBusAway/\(Bundle.main.appVersion) (iOS \(UIDevice.current.systemVersion); \(UIDevice.current.modelName))"
+        self.userAgent = "\(resolvedAppName)/\(resolvedAppVersion) (iOS \(UIDevice.current.systemVersion); \(UIDevice.current.modelName))"
 #endif
     }
 

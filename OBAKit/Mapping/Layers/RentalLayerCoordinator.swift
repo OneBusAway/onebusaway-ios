@@ -254,7 +254,11 @@ import OTPKit
     }
 
     private func handle(_ failure: VehicleRentalSource.FetchFailure) {
-        Logger.error("Rental fetch failed: \(failure.message)")
+        handleFailure(message: failure.message)
+    }
+
+    func handleFailure(message: String) {
+        Logger.error("Rental fetch failed: \(message)")
 
         // A browse layer never alerts; a failure with nothing on the map dims the
         // layer row instead, so an empty layer is never silently "on".
@@ -264,6 +268,17 @@ import OTPKit
                 value: "Not available right now",
                 comment: "Reason shown on a dimmed rental layer row when its server is unreachable"
             )))
+        }
+    }
+
+    /// Resets all cached and visible rental state and resets the underlying source.
+    func reset() {
+        coverageGeneration += 1
+        lastReportedMapRect = nil
+        coverageAcceptedAt = .distantFuture
+        applyChanges(visibility.reset())
+        Task { [source] in
+            await source.reset()
         }
     }
 

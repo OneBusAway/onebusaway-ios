@@ -43,7 +43,7 @@ class ModuleBoundaryCheckerTests(unittest.TestCase):
         script_path = REPO_ROOT / "scripts" / "check_module_boundaries"
         res = subprocess.run([sys.executable, str(script_path), "--test"], capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"CLI --test failed:\nSTDOUT: {res.stdout}\nSTDERR: {res.stderr}")
-        self.assertIn("All 16 intentional violation fixtures caught", res.stdout)
+        self.assertIn("All 24 intentional violation fixtures caught", res.stdout)
 
     def test_sanitizer_removes_comments_and_strings_accurately(self):
         """Tests that comments and string literals are sanitized without shifting lines or columns."""
@@ -114,11 +114,76 @@ class ModuleBoundaryCheckerTests(unittest.TestCase):
         violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
         self.assertTrue(any(v.rule_id == "CORE_FORBIDDEN_PLATFORM_IF" for v in violations))
 
+    def test_portable_core_violating_import_class_uikit(self):
+        fixture = "import class UIKit.UIView\nclass X {}"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "CORE_UNAUTHORIZED_IMPORT_UIKIT" for v in violations))
+
+    def test_portable_core_violating_canimport_uikit(self):
+        fixture = "#if canImport(UIKit)\nclass X {}\n#endif"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "CORE_FORBIDDEN_PLATFORM_IF" for v in violations))
+
+    def test_portable_core_violating_elseif_platform(self):
+        fixture = "#if DEBUG\n#elseif os(iOS)\nclass X {}\n#endif"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "CORE_FORBIDDEN_PLATFORM_IF" for v in violations))
+
+    def test_portable_core_violating_target_environment(self):
+        fixture = "#if targetEnvironment(simulator)\nclass X {}\n#endif"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "CORE_FORBIDDEN_PLATFORM_IF" for v in violations))
+
+    def test_portable_core_violating_unauthorized_activitykit_conditional(self):
+        fixture = "#if canImport(ActivityKit)\nclass X {}\n#endif"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "CORE_UNAUTHORIZED_ACTIVITYKIT_CONDITIONAL" for v in violations))
+
+    def test_portable_core_violating_unauthorized_watchos_conditional(self):
+        fixture = "#if os(watchOS)\nclass X {}\n#endif"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "CORE_UNAUTHORIZED_WATCHOS_CONDITIONAL" for v in violations))
+
     def test_ios_boundary_missing_if_guard(self):
         fixture = "import UIKit\npublic class SomeHelper {}"
         sanitized = checker.sanitize_code(fixture)
         violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/SomeHelper.swift", fixture, sanitized)
         self.assertTrue(any(v.rule_id == "IOS_MISSING_IF_GUARD" for v in violations))
+
+    def test_ios_boundary_comment_only_guard_fails(self):
+        fixture = "// TODO: wrap in #if os(iOS)\nimport UIKit\npublic class SomeHelper {}"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/SomeHelper.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "IOS_MISSING_IF_GUARD" for v in violations))
+
+    def test_ios_boundary_code_after_endif_fails(self):
+        fixture = "#if os(iOS)\npublic class SomeHelper {}\n#endif\npublic class UnprotectedHelper {}"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/SomeHelper.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "IOS_MISSING_IF_GUARD" for v in violations))
+
+    def test_ios_boundary_spaced_guard_passes(self):
+        fixture = "#if os( iOS )\nimport UIKit\npublic class SomeHelper {}\n#endif // os(iOS)"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/SomeHelper.swift", fixture, sanitized)
+        self.assertEqual(len(violations), 0)
+
+    def test_find_repo_root_walks_up_from_subdirectory(self):
+        sub_dir = REPO_ROOT / "OBAKit" / "Stops"
+        found = checker.find_repo_root(sub_dir)
+        self.assertEqual(found, REPO_ROOT)
+
+    def test_find_repo_root_outside_repo_returns_none(self):
+        found = checker.find_repo_root(Path(tempfile.gettempdir()))
+        # In /tmp there is no Package.swift / OBAKitCore
+        if not (Path(tempfile.gettempdir()) / "Package.swift").exists():
+            self.assertIsNone(found)
 
     def test_ios_boundary_extension_unsafe_uiapplication(self):
         fixture = "#if os(iOS)\nimport UIKit\nfunc open() { UIApplication.shared.open(url) }\n#endif"

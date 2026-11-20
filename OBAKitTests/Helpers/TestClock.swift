@@ -40,9 +40,16 @@ nonisolated final class TestClock: Clock, @unchecked Sendable {
         let continuation: CheckedContinuation<Void, Error>
     }
 
+    private struct Waiter {
+        let id: UUID
+        let count: Int
+        let continuation: CheckedContinuation<Void, Never>
+    }
+
     private let lock = NSLock()
     private var currentInstant = Instant(offset: .zero)
     private var sleepers: [Sleeper] = []
+    private var waiters: [Waiter] = []
 
     var now: Instant {
         lock.withLock { currentInstant }
@@ -53,6 +60,39 @@ nonisolated final class TestClock: Clock, @unchecked Sendable {
     /// How many callers are parked in `sleep`.
     var sleeperCount: Int {
         lock.withLock { sleepers.count }
+    }
+
+    private func matchingWaiters() -> [CheckedContinuation<Void, Never>] {
+        let count = sleepers.count
+        var matched: [CheckedContinuation<Void, Never>] = []
+        waiters.removeAll { waiter in
+            if waiter.count == count {
+                matched.append(waiter.continuation)
+                return true
+            }
+            return false
+        }
+        return matched
+    }
+
+    /// Suspends until `sleeperCount` reaches `target`. Completes immediately if already at `target`.
+    func waitForSleepers(count target: Int) async {
+        let matched = lock.withLock { sleepers.count == target }
+        if matched { return }
+
+        let waiterID = UUID()
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let shouldResumeImmediately = lock.withLock { () -> Bool in
+                if sleepers.count == target {
+                    return true
+                }
+                waiters.append(Waiter(id: waiterID, count: target, continuation: continuation))
+                return false
+            }
+            if shouldResumeImmediately {
+                continuation.resume()
+            }
+        }
     }
 
     func sleep(until deadline: Instant, tolerance: Duration?) async throws {
@@ -66,26 +106,33 @@ nonisolated final class TestClock: Clock, @unchecked Sendable {
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 enum Outcome { case due, cancelled, parked }
-                let outcome = lock.withLock { () -> Outcome in
+                let (outcome, waitersToResume) = lock.withLock { () -> (Outcome, [CheckedContinuation<Void, Never>]) in
                     if Task.isCancelled {
-                        return .cancelled
+                        return (.cancelled, [])
                     }
                     if deadline <= currentInstant {
-                        return .due
+                        return (.due, [])
                     }
                     sleepers.append(Sleeper(id: id, deadline: deadline, continuation: continuation))
-                    return .parked
+                    return (.parked, matchingWaiters())
                 }
                 switch outcome {
                 case .due: continuation.resume()
                 case .cancelled: continuation.resume(throwing: CancellationError())
-                case .parked: break
+                case .parked:
+                    for waiter in waitersToResume {
+                        waiter.resume()
+                    }
                 }
             }
         } onCancel: {
-            let cancelled = lock.withLock { () -> Sleeper? in
-                guard let index = sleepers.firstIndex(where: { $0.id == id }) else { return nil }
-                return sleepers.remove(at: index)
+            let (cancelled, waitersToResume) = lock.withLock { () -> (Sleeper?, [CheckedContinuation<Void, Never>]) in
+                guard let index = sleepers.firstIndex(where: { $0.id == id }) else { return (nil, []) }
+                let removed = sleepers.remove(at: index)
+                return (removed, matchingWaiters())
+            }
+            for waiter in waitersToResume {
+                waiter.resume()
             }
             cancelled?.continuation.resume(throwing: CancellationError())
         }
@@ -93,11 +140,14 @@ nonisolated final class TestClock: Clock, @unchecked Sendable {
 
     /// Moves the clock forward and wakes every sleeper whose deadline has passed.
     func advance(by duration: Duration) {
-        let due = lock.withLock { () -> [Sleeper] in
+        let (due, waitersToResume) = lock.withLock { () -> ([Sleeper], [CheckedContinuation<Void, Never>]) in
             currentInstant = currentInstant.advanced(by: duration)
             let due = sleepers.filter { $0.deadline <= currentInstant }
             sleepers.removeAll { $0.deadline <= currentInstant }
-            return due
+            return (due, matchingWaiters())
+        }
+        for waiter in waitersToResume {
+            waiter.resume()
         }
         for sleeper in due {
             sleeper.continuation.resume()

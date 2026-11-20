@@ -172,4 +172,96 @@ final class RentalLayerCoordinatorTests {
         #expect(!coordinator.visibleRentals.isEmpty)
         #expect(!coordinator.showsFuelLabels)
     }
+
+    // MARK: - Transitions & Availability
+
+    @Test func `reset clears visibleRentals wholesale`() throws {
+        let coordinator = makeCoordinator()
+        coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
+        coordinator.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(id: "v1"),
+            try RentalFixtures.vehicle(id: "v2")
+        ]))
+        #expect(coordinator.visibleRentals.count == 2)
+
+        coordinator.reset()
+        #expect(coordinator.visibleRentals.isEmpty)
+    }
+
+    /// Invariant: when all vehicles are hidden by a filter and a fetch fails transiently,
+    /// relaxing the filter restores vehicles from cache rather than wiping them.
+    @Test func `Transient fetch failure while filter hides all vehicles preserves cache on filter relax`() throws {
+        let coordinator = makeCoordinator()
+        coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
+
+        // 1. Deliver vehicle with 3 km range
+        let vehicle = try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)
+        coordinator.apply(RentalFixtures.snapshot(added: [vehicle]))
+        #expect(coordinator.visibleRentals.map(\.id) == ["v1"])
+
+        // 2. Range filter hides all vehicles
+        coordinator.setRangeFilter(RentalRangeFilter(minimumRangeMeters: 10_000))
+        #expect(coordinator.visibleRentals.isEmpty)
+
+        // 3. Transient fetch failure occurs while visible list is empty
+        coordinator.handleFailure(message: "Server unreachable")
+        #expect(coordinator.visibleRentals.isEmpty)
+        if case .unavailable = coordinator.availability {
+            // expected
+        } else {
+            Issue.record("Expected availability to be unavailable on failure with empty visible list")
+        }
+
+        // 4. Relax filter: vehicle must return from cache
+        coordinator.setRangeFilter(.any)
+        #expect(coordinator.visibleRentals.map(\.id) == ["v1"])
+
+        // 5. Subsequent successful fetch clears unavailable status while keeping vehicle
+        coordinator.apply(RentalFixtures.snapshot())
+        #expect(coordinator.availability == .available)
+        #expect(coordinator.visibleRentals.map(\.id) == ["v1"])
+    }
+
+    @Test func `Empty snapshot clears visibleRentals`() throws {
+        let coordinator = makeCoordinator()
+        coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
+        coordinator.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
+        #expect(coordinator.visibleRentals.count == 1)
+
+        coordinator.apply(RentalFixtures.snapshot(removed: ["v1"]))
+        #expect(coordinator.visibleRentals.isEmpty)
+    }
+
+    @Test func `Repeated reload with identical data preserves visibleRentals`() throws {
+        let coordinator = makeCoordinator()
+        coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
+        let vehicle = try RentalFixtures.vehicle(id: "v1")
+
+        coordinator.apply(RentalFixtures.snapshot(added: [vehicle]))
+        #expect(coordinator.visibleRentals.count == 1)
+
+        coordinator.apply(RentalFixtures.snapshot(updated: [vehicle]))
+        #expect(coordinator.visibleRentals.count == 1)
+        #expect(coordinator.visibleRentals.first?.id == "v1")
+    }
+
+    @Test func `Hiding one layer keeps remaining layer rentals and hiding all clears visibleRentals`() throws {
+        let coordinator = makeCoordinator()
+        let bikes: Set<VehicleFormFactor> = [.bicycle, .cargoBicycle]
+        coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
+        coordinator.setLayer(id: "bikes", enabled: true, formFactors: bikes)
+
+        let bike = try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE")
+        let scooter = try RentalFixtures.vehicle(id: "s1", formFactor: "SCOOTER")
+        coordinator.apply(RentalFixtures.snapshot(added: [bike, scooter]))
+        #expect(coordinator.visibleRentals.count == 2)
+
+        // Hide scooters layer: bikes remain
+        coordinator.setLayer(id: "scooters", enabled: false, formFactors: scooters)
+        #expect(coordinator.visibleRentals.map(\.id) == ["b1"])
+
+        // Hide bikes layer: visibleRentals becomes empty
+        coordinator.setLayer(id: "bikes", enabled: false, formFactors: bikes)
+        #expect(coordinator.visibleRentals.isEmpty)
+    }
 }
