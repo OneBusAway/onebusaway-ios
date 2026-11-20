@@ -20,31 +20,46 @@ public struct OnDemandEligibilityEvaluator: Sendable {
         travelDate: ServiceDate? = nil,
         now: Date
     ) -> OnDemandEligibilityReason {
+        evaluateRules(service.rules, in: service, timeZone: timeZone, travelDate: travelDate, now: now)
+    }
+
+    /// Evaluates the typed eligibility reason across a specified subset of rules of an on-demand service.
+    public static func evaluateRules(
+        _ rules: [AvailabilityRule],
+        in service: OnDemandService,
+        timeZone: TimeZone?,
+        travelDate: ServiceDate? = nil,
+        now: Date
+    ) -> OnDemandEligibilityReason {
         guard let timeZone else { return .unavailable(.missingTimeZone) }
         if service.eligibility?.requirement == .certificationRequired {
             return .unavailable(.certificationRequired)
         }
-        guard !service.rules.isEmpty else { return .unavailable(.noRules) }
+        guard !rules.isEmpty else { return .unavailable(.noRules) }
 
         let evaluator = BookingDeadlineEvaluator(timeZone: timeZone, calendars: service.calendars)
-        guard service.rules.contains(where: { evaluator.hasUsableCalendar($0) }) else {
+        guard rules.contains(where: { evaluator.hasUsableCalendar($0) }) else {
             return .unavailable(.unresolvedBookingRule)
         }
 
         let targetDate = travelDate ?? evaluator.serviceDate(for: now)
-        let activeRules = service.rules.filter { rule in
+        let activeRules = rules.filter { rule in
             rule.calendarIDs.contains { evaluator.isActive(calendarID: $0, on: targetDate) }
         }
 
         guard !activeRules.isEmpty else {
-            return inactiveDateReason(service: service, targetDate: targetDate)
+            return inactiveDateReason(service: service, rules: rules, targetDate: targetDate)
         }
 
         return evaluateActiveRules(activeRules, in: service, evaluator: evaluator, targetDate: targetDate, now: now)
     }
 
-    private static func inactiveDateReason(service: OnDemandService, targetDate: ServiceDate) -> OnDemandEligibilityReason {
-        let ruleCalendarIDs = Set(service.rules.flatMap(\.calendarIDs))
+    private static func inactiveDateReason(
+        service: OnDemandService,
+        rules: [AvailabilityRule],
+        targetDate: ServiceDate
+    ) -> OnDemandEligibilityReason {
+        let ruleCalendarIDs = Set(rules.flatMap(\.calendarIDs))
         let latestEnd = service.calendars.filter { ruleCalendarIDs.contains($0.id) }.compactMap(\.endDate).max()
         if let latestEnd, targetDate > latestEnd {
             return .unavailable(.serviceEnded)
@@ -125,16 +140,17 @@ public struct OnDemandEligibilityEvaluator: Sendable {
         let fromIDs = Set(originMatch.service.areas.filter { $0.distanceToArea == 0 }.map(\.id))
         let toIDs = Set(destinationMatch.service.areas.filter { $0.distanceToArea == 0 }.map(\.id))
 
-        let hasConnectingRule = service.rules.contains { rule in
+        let connectingRules = service.rules.filter { rule in
             !Set(rule.fromIDs).isDisjoint(with: fromIDs) && !Set(rule.toIDs).isDisjoint(with: toIDs)
         }
 
-        guard hasConnectingRule else {
+        guard !connectingRules.isEmpty else {
             return .outsideZone(.disconnected)
         }
 
-        return evaluateService(
-            service: service,
+        return evaluateRules(
+            connectingRules,
+            in: service,
             timeZone: service.timeZone,
             travelDate: travelDate,
             now: now

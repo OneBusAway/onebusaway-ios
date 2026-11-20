@@ -138,6 +138,69 @@ final class OnDemandEligibilityTests: OBATestCase {
         #expect(disconnected == .outsideZone(.disconnected))
         #expect(disconnected.domainExplanation.contains("does not operate between"))
 
+        // 4. Trip timing evaluates only across connecting rules when an unrelated rule is open
+        let twoRuleService = try charlevoix("CC_CC1") { json in
+            var body = json["data"] as! [String: Any]
+            var list = body["list"] as! [[String: Any]]
+            var service0 = list[0]
+            service0["areas"] = [
+                ["id": "zone_a", "name": "Zone A"],
+                ["id": "zone_b", "name": "Zone B"],
+                ["id": "zone_c", "name": "Zone C"],
+                ["id": "zone_d", "name": "Zone D"]
+            ]
+            service0["rules"] = [
+                [
+                    "fromIds": ["zone_a"],
+                    "toIds": ["zone_b"],
+                    "startPickupTime": "08:00:00",
+                    "endPickupTime": "12:00:00",
+                    "calendarIds": ["cal_weekday"],
+                    "pickupType": 2,
+                    "dropOffType": 2
+                ],
+                [
+                    "fromIds": ["zone_c"],
+                    "toIds": ["zone_d"],
+                    "startPickupTime": "08:00:00",
+                    "endPickupTime": "18:00:00",
+                    "calendarIds": ["cal_weekday"],
+                    "pickupType": 2,
+                    "dropOffType": 2
+                ]
+            ]
+            list[0] = service0
+            body["list"] = list
+            json["data"] = body
+        }
+
+        let originArea = twoRuleService.areas.first { $0.id == "zone_a" }!
+        let destArea = twoRuleService.areas.first { $0.id == "zone_b" }!
+        let originAreaMatch = OnDemandAreaMatch(area: originArea, distanceToArea: 0)
+        let destAreaMatch = OnDemandAreaMatch(area: destArea, distanceToArea: 0)
+        let originMatch = OnDemandServiceMatch(service: twoRuleService, isInside: true, matchedAreas: [originAreaMatch])
+        let destMatch = OnDemandServiceMatch(service: twoRuleService, isInside: true, matchedAreas: [destAreaMatch])
+
+        // Travel date is Wednesday 2026-03-11.
+        // At 14:00:00, Rule A->B closed at 12:00:00, while Rule C->D is open until 18:00:00.
+        let tripTravelDate = ServiceDate("2026-03-11")!
+        let timeAfterConnectingRuleEnd = detroit.date(bySettingHour: 14, minute: 0, second: 0, of: tripTravelDate.date(in: detroit)!)!
+        let tripReason = OnDemandEligibilityEvaluator.evaluateTrip(
+            service: twoRuleService,
+            originMatch: originMatch,
+            destinationMatch: destMatch,
+            travelDate: tripTravelDate,
+            now: timeAfterConnectingRuleEnd
+        )
+        // Must be tooLate based on connecting rule A->B, NOT eligible via unrelated rule C->D
+        #expect(!tripReason.isEligible)
+        if case .tooLate(let cutoff) = tripReason {
+            let expectedCutoff = detroit.date(bySettingHour: 12, minute: 0, second: 0, of: tripTravelDate.date(in: detroit)!)!
+            #expect(cutoff == expectedCutoff)
+        } else {
+            Issue.record("Expected .tooLate for expired connecting rule, got \(tripReason)")
+        }
+
         // 4. Point outside
         let pointOutside = OnDemandEligibilityEvaluator.evaluatePoint(
             service: service,
