@@ -1450,6 +1450,112 @@ final class StopViewModelTests: OBATestCase {
         #expect(!message.contains("404"))
     }
 
+    // MARK: - Transient Failure & Arrival Preservation
+
+    /// A transient fetch failure after arrivals have already loaded must preserve the
+    /// last-good arrivals so the rider is not faced with a blank list, while exposing
+    /// the recoverable error and retaining the previous update timestamp.
+    @Test @MainActor
+    func `Transient failure preserves last good arrivals and exposes recoverable error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json"
+        )
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        await viewModel.refresh()
+
+        let initialArrivals = try #require(viewModel.stopArrivals)
+        #expect(!initialArrivals.arrivalsAndDepartures.isEmpty)
+        #expect(viewModel.operationError == nil)
+        let lastUpdatedBefore = try #require(viewModel.lastUpdated)
+
+        // Simulate a transient 500 error on the next refresh
+        dataLoader.replaceMappedResponses { staging in
+            stubRegions(dataLoader: staging)
+            stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: staging)
+            stubSurveys(dataLoader: staging)
+            staging.mock(data: Data(), statusCode: 500) {
+                $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+            }
+        }
+
+        await viewModel.refresh()
+
+        // Departures and lastUpdated are preserved
+        let currentArrivals = try #require(viewModel.stopArrivals)
+        #expect(currentArrivals.arrivalsAndDepartures.count == initialArrivals.arrivalsAndDepartures.count)
+        #expect(viewModel.lastUpdated == lastUpdatedBefore)
+
+        // Error is exposed and failure is noted
+        #expect(viewModel.operationError != nil)
+        #expect(viewModel.operationErrorMessage != nil)
+        #expect(app.promptCoordinator.sawErrorThisSession)
+
+        // Page content does not produce a blank list
+        let content = StopPageContent(viewModel: viewModel)
+        #expect(!content.listIsEmpty)
+        #expect(content.hasLoadedArrivals)
+    }
+
+    /// Request cancellation does not expose an error to the user or clear existing arrivals.
+    @Test @MainActor
+    func `Cancellation preserves arrivals and does not expose error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let app = createApplication(
+            dataLoader: dataLoader,
+            analytics: AnalyticsMock(),
+            arrivalsFixture: "arrivals_and_departures_for_stop_1_10020.json"
+        )
+        let viewModel = StopViewModel(application: app, stopID: testStopID)
+
+        await viewModel.refresh()
+        let initialArrivals = try #require(viewModel.stopArrivals)
+        #expect(viewModel.operationError == nil)
+
+        dataLoader.replaceMappedResponses { staging in
+            stubRegions(dataLoader: staging)
+            stubAgenciesWithCoverage(dataLoader: staging, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+            Fixtures.stubAllAgencyAlerts(dataLoader: staging)
+            stubSurveys(dataLoader: staging)
+            let errorResponse = MockDataResponse(
+                data: nil,
+                urlResponse: nil,
+                error: URLError(.cancelled),
+                matcher: { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+            )
+            staging.mock(response: errorResponse)
+        }
+
+        await viewModel.refresh()
+
+        // Cancellation must not set operationError or clear arrivals
+        #expect(viewModel.operationError == nil)
+        #expect(viewModel.stopArrivals?.arrivalsAndDepartures.count == initialArrivals.arrivalsAndDepartures.count)
+        #expect(!app.promptCoordinator.sawErrorThisSession)
+    }
+
+    /// When the initial load fails with a transient error, no prior arrivals exist,
+    /// so the error is exposed and the empty state is presented with retry capability.
+    @Test @MainActor
+    func `Empty first load failure exposes recoverable error without departures`() async throws {
+        let (viewModel, application) = buildViewModelWithFailingArrivals(statusCode: 500)
+        await viewModel.refresh()
+
+        #expect(viewModel.stopArrivals == nil)
+        #expect(viewModel.operationError != nil)
+        #expect(viewModel.operationErrorMessage != nil)
+        #expect(application.promptCoordinator.sawErrorThisSession)
+
+        let content = StopPageContent(viewModel: viewModel)
+        #expect(content.listIsEmpty)
+        #expect(!content.hasLoadedArrivals)
+        #expect(!content.showsLoadingState)
+    }
+
     // MARK: - Stop Page: Walk/Bike Time
 
     /// `headerWalkTime` and `headerBikeTime` must stay fixed at their respective speeds
