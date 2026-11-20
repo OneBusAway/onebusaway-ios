@@ -58,6 +58,11 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+    - name: Check module boundaries
+      run: |
+        scripts/check_module_boundaries
+        scripts/check_module_boundaries --test
+
     # Fail on SwiftLint *errors* (the error-tier rules in .swiftlint.yml), so a
     # type_body_length breach cannot land on main while staying green on GitHub.
     # Warnings annotate via the GitHub reporter but do not fail the job —
@@ -483,6 +488,9 @@ jobs:
 
     - name: Validate watch localization completeness
       run: scripts/validate_watch_localizations
+
+    - name: Check module boundaries
+      run: scripts/check_module_boundaries
 
     - name: Install xcodegen
       env:

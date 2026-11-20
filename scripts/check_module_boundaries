@@ -1,0 +1,710 @@
+#!/usr/bin/env python3
+"""
+scripts/check_module_boundaries
+
+Executable module boundary checker enforcing architectural invariants across
+OBAKit frameworks and application targets as documented in docs/module-boundaries.md
+and CLAUDE.md:
+  1. Portable OBAKitCore (outside OBAKitCore/iOS/) is free of WidgetKit, ActivityKit,
+     and UIApplication, and contains no UIKit view code or unauthorized UIKit imports.
+  2. Approved iOS-only boundary (OBAKitCore/iOS/) wraps every file in `#if os(iOS)`
+     and remains extension-safe (no UIApplication.shared).
+  3. OBAKitWatch is free of UIKit, ActivityKit, WidgetKit, OBAKit, UIApplication,
+     and never instantiates or reads CoreApplication.
+  4. OBAKit does not import OBAKitWatch or WatchKit.
+
+Usage:
+  scripts/check_module_boundaries [ROOT_DIR]
+  scripts/check_module_boundaries --test
+  scripts/check_module_boundaries --help
+"""
+
+import argparse
+import dataclasses
+import json
+import os
+import re
+import sys
+from pathlib import Path
+from typing import List, Optional, Set, Tuple
+
+
+@dataclasses.dataclass(frozen=True)
+class Violation:
+    file_path: str
+    line: int
+    column: int
+    rule_id: str
+    message: str
+    remediation: str
+
+    def format_diagnostic(self) -> str:
+        return (
+            f"\033[1m{self.file_path}:{self.line}:{self.column}: \033[31merror:\033[0m "
+            f"[\033[33m{self.rule_id}\033[0m] {self.message}\n"
+            f"  \033[36mHint:\033[0m {self.remediation}"
+        )
+
+
+# Allowlisted files in portable OBAKitCore that require `import UIKit` solely for
+# UIColor and NSDirectionalEdgeInsets (which are available on both iOS and watchOS).
+# No UIKit view classes (UIView, UIViewController, UIButton, etc.) are allowed in these files.
+ALLOWED_UIKIT_PORTABLE_FILES: Set[str] = {
+    "OBAKitCore/Extensions/UIColor+Hex.swift",
+    "OBAKitCore/Extensions/UIColor+WCAG.swift",
+    "OBAKitCore/Models/REST/References/Route.swift",
+    "OBAKitCore/Theme/Theme.swift",
+    "OBAKitCore/Theme/ThemeColors.swift",
+}
+
+# Regex patterns for imports, tokens, and APIs
+IMPORT_REGEX = re.compile(r"^\s*(?:@\w+\s+)*import\s+([A-Za-z0-9_]+)", re.MULTILINE)
+
+# UIKit view classes, view controllers, and responder UI components
+UIKIT_VIEW_TYPES = (
+    r"\b("
+    r"UIView|UIViewController|UIWindow|UIButton|UILabel|UIImageView|"
+    r"UITableView|UICollectionView|UIStackView|UITextField|UITextView|"
+    r"UIAlertController|UINavigationController|UITabBarController|"
+    r"UIScrollView|UISwitch|UISlider|UIActivityIndicatorView|UIProgressView|"
+    r"UIPageControl|UISearchBar|UIRefreshControl|UIActionSheet|UIAlertView|"
+    r"UIGestureRecognizer|UIHostingController"
+    r")\b"
+)
+UIKIT_VIEW_REGEX = re.compile(UIKIT_VIEW_TYPES)
+
+UIAPPLICATION_REGEX = re.compile(r"\bUIApplication\b")
+REGION_MONITORING_REGEX = re.compile(r"\b(startMonitoring|stopMonitoring)\s*\(\s*for:")
+CORE_APPLICATION_REGEX = re.compile(r"(\bCoreApplication\s*\(|\\\.\s*coreApplication\b)")
+IF_OS_IOS_REGEX = re.compile(r"#if\s+os\(iOS\)")
+IF_CAN_IMPORT_ACTIVITYKIT_REGEX = re.compile(r"#if\s+canImport\(ActivityKit\)")
+IF_OS_WATCHOS_REGEX = re.compile(r"#if\s+!?os\(watchOS\)")
+
+
+def sanitize_code(code: str) -> str:
+    """
+    Strips single-line and multiline comments, nested comments, and string literals,
+    replacing stripped characters with whitespace (preserving newlines) so that line
+    and column numbers remain exactly identical to the original source.
+    """
+    res: List[str] = []
+    i = 0
+    n = len(code)
+    in_single_line_comment = False
+    comment_depth = 0
+    in_string = False
+    in_multiline_string = False
+
+    while i < n:
+        if in_single_line_comment:
+            if code[i] == "\n":
+                in_single_line_comment = False
+                res.append("\n")
+            else:
+                res.append(" ")
+            i += 1
+        elif comment_depth > 0:
+            if i + 1 < n and code[i:i + 2] == "/*":
+                comment_depth += 1
+                res.append("  ")
+                i += 2
+            elif i + 1 < n and code[i:i + 2] == "*/":
+                comment_depth -= 1
+                res.append("  ")
+                i += 2
+            else:
+                res.append("\n" if code[i] == "\n" else " ")
+                i += 1
+        elif in_multiline_string:
+            if i + 2 < n and code[i:i + 3] == '"""':
+                in_multiline_string = False
+                res.append("   ")
+                i += 3
+            else:
+                res.append("\n" if code[i] == "\n" else " ")
+                i += 1
+        elif in_string:
+            if code[i] == "\\":
+                res.append("  ")
+                i += 2
+            elif code[i] == '"':
+                in_string = False
+                res.append(" ")
+                i += 1
+            else:
+                res.append("\n" if code[i] == "\n" else " ")
+                i += 1
+        else:
+            if i + 2 < n and code[i:i + 3] == '"""':
+                in_multiline_string = True
+                res.append("   ")
+                i += 3
+            elif code[i] == '"':
+                in_string = True
+                res.append(" ")
+                i += 1
+            elif i + 1 < n and code[i:i + 2] == "//":
+                in_single_line_comment = True
+                res.append("  ")
+                i += 2
+            elif i + 1 < n and code[i:i + 2] == "/*":
+                comment_depth = 1
+                res.append("  ")
+                i += 2
+            else:
+                res.append(code[i])
+                i += 1
+
+    return "".join(res)
+
+
+def get_line_and_col(source: str, index: int) -> Tuple[int, int]:
+    """Calculates 1-based (line, column) for character index in source."""
+    prefix = source[:index]
+    line = prefix.count("\n") + 1
+    last_newline = prefix.rfind("\n")
+    col = index + 1 if last_newline == -1 else index - last_newline
+    return line, col
+
+
+def check_portable_core_file(rel_path: str, raw_content: str, sanitized: str) -> List[Violation]:
+    """Validates architectural rules for portable OBAKitCore/ (outside OBAKitCore/iOS/)."""
+    violations: List[Violation] = []
+
+    # 1. Imports
+    for match in IMPORT_REGEX.finditer(sanitized):
+        module = match.group(1)
+        line, col = get_line_and_col(sanitized, match.start(1))
+
+        if module == "ActivityKit":
+            violations.append(Violation(
+                file_path=rel_path,
+                line=line,
+                column=col,
+                rule_id="CORE_FORBIDDEN_IMPORT_ACTIVITYKIT",
+                message="Prohibited import 'ActivityKit' in portable OBAKitCore.",
+                remediation="ActivityKit is iOS-only. Move Live Activity logic to 'OBAKitCore/iOS/LiveActivities/'."
+            ))
+        elif module == "WidgetKit":
+            violations.append(Violation(
+                file_path=rel_path,
+                line=line,
+                column=col,
+                rule_id="CORE_FORBIDDEN_IMPORT_WIDGETKIT",
+                message="Prohibited import 'WidgetKit' in portable OBAKitCore.",
+                remediation="Keep OBAKitCore free of WidgetKit dependencies. Keep timeline logic pure arithmetic (e.g. WidgetTimelinePlanner)."
+            ))
+        elif module == "UIKit":
+            norm_path = rel_path.replace("\\", "/")
+            if norm_path not in ALLOWED_UIKIT_PORTABLE_FILES:
+                violations.append(Violation(
+                    file_path=rel_path,
+                    line=line,
+                    column=col,
+                    rule_id="CORE_UNAUTHORIZED_IMPORT_UIKIT",
+                    message="Unauthorized import 'UIKit' in portable OBAKitCore.",
+                    remediation=f"Portable OBAKitCore must remain free of UIKit imports. Move iOS-only UI code to 'OBAKitCore/iOS/' or 'OBAKit/'. Approved exceptions: {', '.join(sorted(ALLOWED_UIKIT_PORTABLE_FILES))}."
+                ))
+
+    # 2. UIKit view classes
+    for match in UIKIT_VIEW_REGEX.finditer(sanitized):
+        view_type = match.group(1)
+        line, col = get_line_and_col(sanitized, match.start(1))
+        violations.append(Violation(
+            file_path=rel_path,
+            line=line,
+            column=col,
+            rule_id="CORE_FORBIDDEN_UIKIT_VIEW",
+            message=f"Forbidden UIKit view type '{view_type}' in portable OBAKitCore.",
+            remediation="Portable OBAKitCore must contain no UIKit view or view controller code. Move to 'OBAKitCore/iOS/UIKit/' or 'OBAKit/'."
+        ))
+
+    # 3. UIApplication (extension safety)
+    for match in UIAPPLICATION_REGEX.finditer(sanitized):
+        line, col = get_line_and_col(sanitized, match.start())
+        violations.append(Violation(
+            file_path=rel_path,
+            line=line,
+            column=col,
+            rule_id="CORE_FORBIDDEN_UIAPPLICATION",
+            message="Forbidden API 'UIApplication' in portable OBAKitCore.",
+            remediation="OBAKitCore is extension-safe (APPLICATION_EXTENSION_API_ONLY). Do not call UIApplication APIs or UIApplication.shared."
+        ))
+
+    # 4. Region monitoring (iOS only)
+    for match in REGION_MONITORING_REGEX.finditer(sanitized):
+        api_name = match.group(1)
+        line, col = get_line_and_col(sanitized, match.start(1))
+        violations.append(Violation(
+            file_path=rel_path,
+            line=line,
+            column=col,
+            rule_id="CORE_FORBIDDEN_REGION_MONITORING",
+            message=f"Forbidden region monitoring call '{api_name}' in portable OBAKitCore.",
+            remediation="Region monitoring APIs are iOS-only. Move monitoring code to 'OBAKitCore/iOS/Location/'."
+        ))
+
+    # 5. Platform conditionals in portable tree
+    norm_path = rel_path.replace("\\", "/")
+    for match in IF_OS_IOS_REGEX.finditer(sanitized):
+        line, col = get_line_and_col(sanitized, match.start())
+        violations.append(Violation(
+            file_path=rel_path,
+            line=line,
+            column=col,
+            rule_id="CORE_FORBIDDEN_PLATFORM_IF",
+            message="Forbidden '#if os(iOS)' in portable OBAKitCore.",
+            remediation="Do not scatter '#if os(iOS)' in portable core. Move the iOS-only code into 'OBAKitCore/iOS/' instead."
+        ))
+
+    for match in IF_CAN_IMPORT_ACTIVITYKIT_REGEX.finditer(sanitized):
+        if norm_path != "OBAKitCore/Orchestration/CoreApplication.swift":
+            line, col = get_line_and_col(sanitized, match.start())
+            violations.append(Violation(
+                file_path=rel_path,
+                line=line,
+                column=col,
+                rule_id="CORE_UNAUTHORIZED_ACTIVITYKIT_CONDITIONAL",
+                message="Unauthorized '#if canImport(ActivityKit)' outside CoreApplication.swift.",
+                remediation="Only CoreApplication.swift may carry '#if canImport(ActivityKit)'. Move other Live Activity code to 'OBAKitCore/iOS/LiveActivities/'."
+            ))
+
+    for match in IF_OS_WATCHOS_REGEX.finditer(sanitized):
+        if norm_path != "OBAKitCore/Theme/ThemeColors.swift":
+            line, col = get_line_and_col(sanitized, match.start())
+            violations.append(Violation(
+                file_path=rel_path,
+                line=line,
+                column=col,
+                rule_id="CORE_UNAUTHORIZED_WATCHOS_CONDITIONAL",
+                message="Unauthorized '#if os(watchOS)' conditional outside ThemeColors.swift.",
+                remediation="ThemeColors.swift is the only portable file authorized for watchOS platform conditionals."
+            ))
+
+    return violations
+
+
+def check_ios_boundary_file(rel_path: str, raw_content: str, sanitized: str) -> List[Violation]:
+    """Validates architectural rules for OBAKitCore/iOS/."""
+    violations: List[Violation] = []
+
+    # 1. Must be wrapped in #if os(iOS) ... #endif
+    if not IF_OS_IOS_REGEX.search(raw_content):
+        violations.append(Violation(
+            file_path=rel_path,
+            line=1,
+            column=1,
+            rule_id="IOS_MISSING_IF_GUARD",
+            message="Missing '#if os(iOS)' platform guard in OBAKitCore/iOS/.",
+            remediation="SwiftPM compiles all files in OBAKitCore for both iOS and watchOS. Wrap the entire file in '#if os(iOS)' ... '#endif // os(iOS)'."
+        ))
+
+    # 2. Extension safety: no UIApplication.shared or UIApplication calls
+    for match in UIAPPLICATION_REGEX.finditer(sanitized):
+        line, col = get_line_and_col(sanitized, match.start())
+        violations.append(Violation(
+            file_path=rel_path,
+            line=line,
+            column=col,
+            rule_id="IOS_FORBIDDEN_UIAPPLICATION",
+            message="Forbidden API 'UIApplication' in OBAKitCore/iOS/.",
+            remediation="OBAKitCore (including OBAKitCore/iOS/) is linked by app extensions and widgets. Keep it extension-safe; do not call UIApplication APIs."
+        ))
+
+    return violations
+
+
+def check_watch_file(rel_path: str, raw_content: str, sanitized: str) -> List[Violation]:
+    """Validates architectural rules for OBAKitWatch/."""
+    violations: List[Violation] = []
+
+    # 1. Prohibited imports
+    for match in IMPORT_REGEX.finditer(sanitized):
+        module = match.group(1)
+        line, col = get_line_and_col(sanitized, match.start(1))
+        if module in ("UIKit", "ActivityKit", "WidgetKit", "OBAKit"):
+            violations.append(Violation(
+                file_path=rel_path,
+                line=line,
+                column=col,
+                rule_id=f"WATCH_FORBIDDEN_IMPORT_{module.upper()}",
+                message=f"Prohibited import '{module}' in OBAKitWatch.",
+                remediation=f"OBAKitWatch is watchOS SwiftUI only. '{module}' is not supported in this target."
+            ))
+
+    # 2. No CoreApplication usage
+    for match in CORE_APPLICATION_REGEX.finditer(sanitized):
+        line, col = get_line_and_col(sanitized, match.start(1))
+        violations.append(Violation(
+            file_path=rel_path,
+            line=line,
+            column=col,
+            rule_id="WATCH_FORBIDDEN_CORE_APPLICATION",
+            message="Forbidden usage of 'CoreApplication' in OBAKitWatch.",
+            remediation="Watch code never builds a CoreApplication and never reads \\.coreApplication. Use WatchAppHost as the composition root."
+        ))
+
+    # 3. No UIApplication
+    for match in UIAPPLICATION_REGEX.finditer(sanitized):
+        line, col = get_line_and_col(sanitized, match.start())
+        violations.append(Violation(
+            file_path=rel_path,
+            line=line,
+            column=col,
+            rule_id="WATCH_FORBIDDEN_UIAPPLICATION",
+            message="Forbidden API 'UIApplication' in OBAKitWatch.",
+            remediation="OBAKitWatch targets watchOS and app extensions. Use WKApplication or SwiftUI scenes."
+        ))
+
+    return violations
+
+
+def check_obakit_file(rel_path: str, raw_content: str, sanitized: str) -> List[Violation]:
+    """Validates architectural rules for OBAKit/."""
+    violations: List[Violation] = []
+
+    for match in IMPORT_REGEX.finditer(sanitized):
+        module = match.group(1)
+        line, col = get_line_and_col(sanitized, match.start(1))
+        if module in ("OBAKitWatch", "WatchKit"):
+            violations.append(Violation(
+                file_path=rel_path,
+                line=line,
+                column=col,
+                rule_id=f"OBAKIT_FORBIDDEN_IMPORT_{module.upper()}",
+                message=f"Forbidden import '{module}' in OBAKit.",
+                remediation=f"OBAKit is an iOS UI framework and must not depend on watchOS targets ('{module}')."
+            ))
+
+    return violations
+
+
+def scan_tree(root_dir: Path, verbose: bool = False) -> List[Violation]:
+    """Scans all Swift source files under root_dir for module boundary violations."""
+    all_violations: List[Violation] = []
+    scanned_count = 0
+
+    scan_targets = [
+        ("OBAKitCore", True),
+        ("OBAKitWatch", True),
+        ("OBAKit", True),
+    ]
+
+    for target_name, is_mandatory in scan_targets:
+        target_dir = root_dir / target_name
+        if not target_dir.exists():
+            if is_mandatory and verbose:
+                print(f"[WARN] Target directory not found: {target_dir}")
+            continue
+
+        for dirpath, _, filenames in os.walk(target_dir):
+            for filename in sorted(filenames):
+                if not filename.endswith(".swift"):
+                    continue
+
+                abs_file = Path(dirpath) / filename
+                rel_file = str(abs_file.relative_to(root_dir)).replace("\\", "/")
+                scanned_count += 1
+
+                try:
+                    content = abs_file.read_text(encoding="utf-8")
+                except Exception as e:
+                    print(f"Error reading {rel_file}: {e}", file=sys.stderr)
+                    continue
+
+                sanitized = sanitize_code(content)
+
+                if rel_file.startswith("OBAKitCore/iOS/"):
+                    v = check_ios_boundary_file(rel_file, content, sanitized)
+                elif rel_file.startswith("OBAKitCore/"):
+                    v = check_portable_core_file(rel_file, content, sanitized)
+                elif rel_file.startswith("OBAKitWatch/"):
+                    v = check_watch_file(rel_file, content, sanitized)
+                elif rel_file.startswith("OBAKit/"):
+                    v = check_obakit_file(rel_file, content, sanitized)
+                else:
+                    v = []
+
+                all_violations.extend(v)
+
+    if verbose:
+        print(f"Scanned {scanned_count} Swift source files across targets.")
+
+    return all_violations
+
+
+# ============================================================================
+# Self-Test Suite & Fixture Validation
+# ============================================================================
+
+def run_self_tests(repo_root: Path) -> bool:
+    """
+    Validates checker accuracy:
+      1. Asserts clean run on current repository tree (0 violations).
+      2. Asserts actionable failure on synthetic intentional violating fixtures.
+    """
+    import tempfile
+
+    print("==> Running self-test: validating current repository tree...")
+    current_violations = scan_tree(repo_root, verbose=True)
+    if current_violations:
+        print(f"\033[31mSelf-test failure: current tree has {len(current_violations)} violation(s):\033[0m")
+        for v in current_violations:
+            print(v.format_diagnostic())
+        return False
+    print("\033[32m✔ Current repository tree is 100% clean.\033[0m\n")
+
+    print("==> Running self-test: verifying intentional violating fixtures...")
+
+    test_cases: List[Tuple[str, str, str, str]] = [
+        # (rel_path, source_code, expected_rule_id, description)
+        (
+            "OBAKitCore/Models/BadModel.swift",
+            "import ActivityKit\nstruct BadModel {}",
+            "CORE_FORBIDDEN_IMPORT_ACTIVITYKIT",
+            "import ActivityKit in portable core"
+        ),
+        (
+            "OBAKitCore/Network/BadNetwork.swift",
+            "import WidgetKit\nclass BadNetwork {}",
+            "CORE_FORBIDDEN_IMPORT_WIDGETKIT",
+            "import WidgetKit in portable core"
+        ),
+        (
+            "OBAKitCore/Models/UnapprovedUIKit.swift",
+            "import UIKit\nstruct Unapproved {}",
+            "CORE_UNAUTHORIZED_IMPORT_UIKIT",
+            "unauthorized import UIKit in portable core"
+        ),
+        (
+            "OBAKitCore/Models/BadView.swift",
+            "class BadView: UIView {}",
+            "CORE_FORBIDDEN_UIKIT_VIEW",
+            "UIView reference in portable core"
+        ),
+        (
+            "OBAKitCore/Models/BadController.swift",
+            "class BadController: UIViewController {}",
+            "CORE_FORBIDDEN_UIKIT_VIEW",
+            "UIViewController reference in portable core"
+        ),
+        (
+            "OBAKitCore/Network/BadApp.swift",
+            "func test() { _ = UIApplication.shared }",
+            "CORE_FORBIDDEN_UIAPPLICATION",
+            "UIApplication.shared in portable core"
+        ),
+        (
+            "OBAKitCore/Location/BadMonitoring.swift",
+            "func test(mgr: CLLocationManager, reg: CLRegion) { mgr.startMonitoring(for: reg) }",
+            "CORE_FORBIDDEN_REGION_MONITORING",
+            "region monitoring in portable core"
+        ),
+        (
+            "OBAKitCore/Models/BadPlatformIf.swift",
+            "#if os(iOS)\nlet x = 1\n#endif",
+            "CORE_FORBIDDEN_PLATFORM_IF",
+            "#if os(iOS) in portable core"
+        ),
+        (
+            "OBAKitCore/iOS/MissingGuard.swift",
+            "import UIKit\npublic class SomeHelper {}",
+            "IOS_MISSING_IF_GUARD",
+            "missing #if os(iOS) in OBAKitCore/iOS/"
+        ),
+        (
+            "OBAKitCore/iOS/UnsafeExtension.swift",
+            "#if os(iOS)\nimport UIKit\nfunc open() { UIApplication.shared.open(url) }\n#endif",
+            "IOS_FORBIDDEN_UIAPPLICATION",
+            "UIApplication in OBAKitCore/iOS/"
+        ),
+        (
+            "OBAKitWatch/Screens/BadImport.swift",
+            "import UIKit\nstruct BadView: View { var body: some View { EmptyView() } }",
+            "WATCH_FORBIDDEN_IMPORT_UIKIT",
+            "import UIKit in OBAKitWatch"
+        ),
+        (
+            "OBAKitWatch/Host/BadAssembly.swift",
+            "class BadHost { let app = CoreApplication(config: cfg) }",
+            "WATCH_FORBIDDEN_CORE_APPLICATION",
+            "CoreApplication instantiation in OBAKitWatch"
+        ),
+        (
+            "OBAKitWatch/Host/BadKeyPath.swift",
+            "func check() { _ = \\.coreApplication }",
+            "WATCH_FORBIDDEN_CORE_APPLICATION",
+            "\\.coreApplication KeyPath in OBAKitWatch"
+        ),
+        (
+            "OBAKitWatch/Screens/BadOBAKitImport.swift",
+            "import OBAKit\nstruct BadView {}",
+            "WATCH_FORBIDDEN_IMPORT_OBAKIT",
+            "import OBAKit in OBAKitWatch"
+        ),
+        (
+            "OBAKit/UI/BadWatchImport.swift",
+            "import OBAKitWatch\nclass ViewCont {}",
+            "OBAKIT_FORBIDDEN_IMPORT_OBAKITWATCH",
+            "import OBAKitWatch in OBAKit"
+        ),
+        (
+            "OBAKit/UI/BadWatchKitImport.swift",
+            "import WatchKit\nclass ViewCont {}",
+            "OBAKIT_FORBIDDEN_IMPORT_WATCHKIT",
+            "import WatchKit in OBAKit"
+        ),
+    ]
+
+    # Also verify that comments and strings do NOT produce false positives
+    benign_comment_test = (
+        "OBAKitCore/Models/BenignComments.swift",
+        """
+        // WidgetKit for fresh data: pure date arithmetic, no WidgetKit.
+        // ActivityKit is not used here.
+        // Discussion about UIApplication.shared and UIView.
+        /*
+         * import ActivityKit
+         * import WidgetKit
+         * import UIKit
+         * CoreApplication(
+         * startMonitoring(for:
+         */
+        let note = "Discussion: UIApplication, UIView, and ActivityKit are forbidden"
+        struct BenignModel { let id: String }
+        """
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+
+        # 1. Test benign comments
+        benign_file = tmppath / benign_comment_test[0]
+        benign_file.parent.mkdir(parents=True, exist_ok=True)
+        benign_file.write_text(benign_comment_test[1], encoding="utf-8")
+
+        benign_sanitized = sanitize_code(benign_comment_test[1])
+        benign_violations = check_portable_core_file(benign_comment_test[0], benign_comment_test[1], benign_sanitized)
+        if benign_violations:
+            print(f"\033[31mFalse positive test failed on benign comments:\033[0m")
+            for v in benign_violations:
+                print(v.format_diagnostic())
+            return False
+        print("  ✔ Benign comments & string literals: no false positives.")
+
+        # 2. Test each violating case
+        all_passed = True
+        for rel_path, code, expected_rule, desc in test_cases:
+            target_file = tmppath / rel_path
+            target_file.parent.mkdir(parents=True, exist_ok=True)
+            target_file.write_text(code, encoding="utf-8")
+
+            sanitized = sanitize_code(code)
+            if rel_path.startswith("OBAKitCore/iOS/"):
+                violations = check_ios_boundary_file(rel_path, code, sanitized)
+            elif rel_path.startswith("OBAKitCore/"):
+                violations = check_portable_core_file(rel_path, code, sanitized)
+            elif rel_path.startswith("OBAKitWatch/"):
+                violations = check_watch_file(rel_path, code, sanitized)
+            elif rel_path.startswith("OBAKit/"):
+                violations = check_obakit_file(rel_path, code, sanitized)
+            else:
+                violations = []
+
+            found_rules = {v.rule_id for v in violations}
+            if expected_rule in found_rules:
+                # Assert actionable diagnostic format
+                v = next(item for item in violations if item.rule_id == expected_rule)
+                diag = v.format_diagnostic()
+                assert v.line > 0 and v.column > 0
+                assert len(v.remediation) > 0
+                print(f"  ✔ Detected expected violation [{expected_rule}]: {desc}")
+            else:
+                print(f"  \033[31m✘ Failed to detect [{expected_rule}] for {desc}.\033[0m Got: {found_rules}")
+                all_passed = False
+
+            # Cleanup
+            target_file.unlink()
+
+        if all_passed:
+            print(f"\n\033[32m✔ All {len(test_cases)} intentional violation fixtures caught with actionable diagnostics.\033[0m")
+            return True
+        return False
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Enforce architectural module boundaries across OBAKit frameworks and targets."
+    )
+    parser.add_argument(
+        "root_dir",
+        nargs="?",
+        default=None,
+        help="Root directory of repository (defaults to git repo root or current directory)."
+    )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Run self-test suite against clean repository and intentional violating fixtures."
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Print verbose scanning progress."
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output violations as JSON."
+    )
+
+    args = parser.parse_args()
+
+    # Determine root directory
+    if args.root_dir:
+        repo_root = Path(args.root_dir).resolve()
+    else:
+        # Check if current directory or parent contains Package.swift or CLAUDE.md
+        candidate = Path.cwd().resolve()
+        if (candidate / "CLAUDE.md").exists() or (candidate / "Package.swift").exists():
+            repo_root = candidate
+        elif (candidate.parent / "CLAUDE.md").exists():
+            repo_root = candidate.parent
+        else:
+            repo_root = candidate
+
+    if args.test:
+        success = run_self_tests(repo_root)
+        sys.exit(0 if success else 1)
+
+    violations = scan_tree(repo_root, verbose=args.verbose)
+
+    if args.json:
+        output = [
+            {
+                "file": v.file_path,
+                "line": v.line,
+                "column": v.column,
+                "rule_id": v.rule_id,
+                "message": v.message,
+                "remediation": v.remediation,
+            }
+            for v in violations
+        ]
+        print(json.dumps(output, indent=2))
+        sys.exit(0 if not violations else 1)
+
+    if not violations:
+        print(f"\033[32m✔ Module boundary check passed: all targets comply with architectural boundaries.\033[0m")
+        sys.exit(0)
+
+    print(f"\033[31mModule boundary check failed: {len(violations)} violation(s) found:\033[0m\n")
+    for v in violations:
+        print(v.format_diagnostic())
+        print()
+
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
