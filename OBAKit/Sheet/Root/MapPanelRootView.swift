@@ -556,7 +556,7 @@ struct MapPanelRootView: View {
             guard let selection = mapSelection else { return }
             switch selection {
             case .stop(let stopID):
-                selectRouteFromMap(.stopDetails(stopID: stopID))
+                coordinator.selectFromMap(.stopDetails(stopID: stopID))
             case .rental(let rentalID):
                 // Pin before pushing: the rider just tapped this pin, so it is live now,
                 // and the sheet must keep naming it even if the map later moves somewhere
@@ -565,7 +565,7 @@ struct MapPanelRootView: View {
                     layersModel.pinForOpenSheet([rental])
                 }
                 reportRentalSelected(isCluster: false)
-                selectRouteFromMap(.rentalDetail(rentalID: rentalID))
+                coordinator.selectFromMap(.rentalDetail(rentalID: rentalID))
             case .rentalCluster(let clusterID):
                 let members = layersModel.rentalItems
                     .first { $0.id == clusterID }?
@@ -573,10 +573,10 @@ struct MapPanelRootView: View {
                 guard !members.isEmpty else { break }
                 layersModel.pinForOpenSheet(members)
                 reportRentalSelected(isCluster: true)
-                selectRouteFromMap(.rentalCluster(memberIDs: members.map(\.id)))
+                coordinator.selectFromMap(.rentalCluster(memberIDs: members.map(\.id)))
             case .onDemandZone(let markerID):
                 guard let route = layersModel.onDemandServiceRoute(forMarkerID: markerID, locationCheck: probeController.locationCheck(forServiceID:)) else { break }
-                selectRouteFromMap(route)
+                coordinator.selectFromMap(route)
             case .tripPlannerAnnotation(let identifier):
                 // Hand the tap straight back to OTPKit, which owns what a pin on
                 // its own route means. No route is pushed: the planner sheet is
@@ -1195,17 +1195,6 @@ extension MapPanelRootView {
     private func followStopVehicle(_ vehicle: StopFocusMapDisplayModel.Vehicle) {
         guard let owner = stopFocusDisplay.owner else { return }
         coordinator.open(.tripDetails(TripConvertible(arrivalDeparture: vehicle.departure)), from: owner)
-    }
-
-    /// Selects a route from a map pin interaction, opening over the current sheet or
-    /// unwinding if already present, while avoiding duplicate sheets on repeated selection.
-    private func selectRouteFromMap(_ route: AppSheetRoute) {
-        if let current = coordinator.stackedRoutes.last {
-            guard current != route else { return }
-            coordinator.open(route, from: current)
-        } else {
-            coordinator.push(route)
-        }
     }
 
     /// Frames an open trip in the part of the map its sheet leaves visible.
