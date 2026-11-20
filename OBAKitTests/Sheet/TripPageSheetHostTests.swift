@@ -226,4 +226,89 @@ final class TripPageSheetHostTests: OBATestCase {
         page.setCoveredBySheet(false)
         #expect(!page.isCoveredBySheet)
     }
+
+    @Test @MainActor
+    func `Repeated back action calls host close repeatedly`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var closeCount = 0
+
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: try Fixtures.tripConvertible(),
+            onMapFocusChanged: { _ in },
+            onSelectStop: { _, _ in },
+            onSelectTrip: { _ in },
+            onClose: { closeCount += 1 }
+        )
+
+        page.rootView.actions.onBack()
+        page.rootView.actions.onBack()
+        page.rootView.actions.onBack()
+
+        #expect(closeCount == 3)
+    }
+
+    @Test @MainActor
+    func `Back action after nested stop selection continues to route to host close`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var selectedStops: [StopID] = []
+        var closeCount = 0
+
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: TripConvertible(arrivalDeparture: try Fixtures.loadRESTAPIPayload(
+                type: ArrivalDeparture.self,
+                fileName: "arrival-and-departure-for-stop-1_11420.json"
+            )),
+            onMapFocusChanged: { _ in },
+            onSelectStop: { stopID, _ in selectedStops.append(stopID) },
+            onSelectTrip: { _ in },
+            onClose: { closeCount += 1 }
+        )
+
+        page.rootView.actions.onSelectStop(Self.row(sequence: 1, stopID: "1_75403", date: Date()))
+        #expect(selectedStops == ["1_75403"])
+
+        page.rootView.actions.onBack()
+        #expect(closeCount == 1)
+    }
+
+    @Test @MainActor
+    func `Back action after adjacent trip selection continues to route to host close`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        var selectedTrips: [TripConvertible] = []
+        var closeCount = 0
+
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: try Fixtures.tripConvertible(tripID: "trip_1"),
+            onMapFocusChanged: { _ in },
+            onSelectStop: { _, _ in },
+            onSelectTrip: { selectedTrips.append($0) },
+            onClose: { closeCount += 1 }
+        )
+
+        page.openTrip(try Fixtures.tripConvertible(tripID: "trip_2"))
+        #expect(selectedTrips.map(\.tripID) == ["trip_2"])
+
+        page.rootView.actions.onBack()
+        #expect(closeCount == 1)
+    }
+
+    @Test @MainActor
+    func `Sheet host trip page back behavior is dismiss with xmark glyph`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let page = TripPageSheetHost.makeTripPage(
+            application: application,
+            tripConvertible: try Fixtures.tripConvertible(),
+            onMapFocusChanged: { _ in },
+            onSelectStop: { _, _ in },
+            onSelectTrip: { _ in },
+            onClose: {}
+        )
+
+        #expect(page.backBehavior == .dismiss)
+        #expect(page.backBehavior.systemImage == "xmark")
+        #expect(page.backBehavior.accessibilityLabel(originTitle: "Downtown") == Strings.close)
+    }
 }

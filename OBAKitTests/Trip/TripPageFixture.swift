@@ -49,4 +49,24 @@ enum TripPageFixture {
             originTitle: originTitle
         )
     }
+
+    /// Helper for building a `TripStopListModel.Row` in tests.
+    static func makeStopRow(
+        stopID: StopID = "1_75403",
+        name: String = "Stop 1",
+        sequence: Int = 1,
+        date: Date? = nil
+    ) -> TripStopListModel.Row {
+        TripStopListModel.Row(
+            id: "\(sequence)-\(stopID)",
+            stopID: stopID,
+            name: name,
+            coordinate: nil,
+            date: date,
+            isPassed: false,
+            isVehicleHere: false,
+            isUserStop: false,
+            isTerminal: false
+        )
+    }
 }

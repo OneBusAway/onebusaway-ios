@@ -102,6 +102,136 @@ final class TripPageBackWiringTests: OBATestCase {
         #expect(closeCount == 1)
     }
 
+    // MARK: - Entry Routes
+
+    /// The stop entry route: pushed from a stop page onto an existing navigation
+    /// stack, Back pops the page and returns to the stop.
+    @Test func `Stop entry route pops navigation controller back to stop page`() throws {
+        let page = try makeTripPage()
+        let stopPage = UIViewController()
+        let navigation = UINavigationController(rootViewController: stopPage)
+        navigation.pushViewController(page, animated: false)
+
+        #expect(navigation.viewControllers.count == 2)
+        #expect(page.backBehavior == .pop)
+
+        page.rootView.actions.onBack()
+
+        #expect(navigation.viewControllers == [stopPage])
+        #expect(navigation.topViewController === stopPage)
+    }
+
+    /// The trip entry route: when an adjacent or continuation trip is opened from
+    /// a trip page on a navigation stack, it is pushed onto the same stack, and Back
+    /// pops back to the prior trip while preserving stack depth.
+    @Test func `Trip entry route from adjacent trip navigation pops back to prior trip`() throws {
+        let page1 = try makeTripPage()
+        let root = UIViewController()
+        let navigation = UINavigationController(rootViewController: root)
+        navigation.pushViewController(page1, animated: false)
+
+        let convertible2 = try Fixtures.tripConvertible(tripID: "trip_2")
+        page1.openTrip(convertible2)
+
+        #expect(navigation.viewControllers.count == 3)
+        let page2 = try #require(navigation.viewControllers.last as? TripPageViewController)
+        #expect(page2.viewModel.tripConvertible.tripID == "trip_2")
+        #expect(page2.backBehavior == .pop)
+
+        page2.rootView.actions.onBack()
+
+        #expect(navigation.viewControllers.count == 2)
+        #expect(navigation.topViewController === page1)
+        #expect(page1.backBehavior == .pop)
+
+        page1.rootView.actions.onBack()
+
+        #expect(navigation.viewControllers == [root])
+    }
+
+    /// The map-focus entry route: `TripMapHostViewController` embeds the page with
+    /// a map of its own. When pushed, Back pops the host; when root or bare, Back dismisses.
+    @Test func `Map focus entry path in TripMapHostViewController resolves back behavior across stack modes`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_10914.json"
+        )
+        let departure = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let host = TripMapHostViewController(application: application, arrivalDeparture: departure)
+        host.loadViewIfNeeded()
+
+        let root = UIViewController()
+        let navigation = UINavigationController(rootViewController: root)
+        navigation.pushViewController(host, animated: false)
+
+        #expect(host.tripPage.backBehavior == .pop)
+        host.tripPage.rootView.actions.onBack()
+        #expect(navigation.viewControllers == [root])
+
+        let modalHost = TripMapHostViewController(application: application, arrivalDeparture: departure)
+        modalHost.loadViewIfNeeded()
+        let modalNavigation = UINavigationController(rootViewController: modalHost)
+        #expect(modalHost.tripPage.navigationController === modalNavigation)
+        #expect(modalHost.tripPage.backBehavior == .dismiss)
+
+        let bareHost = TripMapHostViewController(application: application, arrivalDeparture: departure)
+        bareHost.loadViewIfNeeded()
+        #expect(bareHost.tripPage.backBehavior == .dismiss)
+    }
+
+    // MARK: - Nested Stop Selection
+
+    /// Nested stop selection from the trip page pushes the stop controller onto
+    /// the navigation stack, and Back from the nested stop returns cleanly to the trip page.
+    @Test func `Nested stop selection from trip page preserves navigation hierarchy and unwinds back deterministically`() throws {
+        let page = try makeTripPage()
+        let root = UIViewController()
+        let navigation = UINavigationController(rootViewController: root)
+        navigation.pushViewController(page, animated: false)
+
+        let stopRow = TripPageFixture.makeStopRow(stopID: "1_75403", name: "Pine St & 5th Ave", sequence: 4)
+        page.rootView.actions.onSelectStop(stopRow)
+
+        #expect(navigation.viewControllers.count == 3)
+        let stopVC = try #require(navigation.viewControllers.last as? StopPageViewController)
+        #expect(stopVC.viewModel.stopID == "1_75403")
+
+        navigation.popViewController(animated: false)
+
+        #expect(navigation.viewControllers.count == 2)
+        #expect(navigation.topViewController === page)
+        #expect(page.backBehavior == .pop)
+
+        page.rootView.actions.onBack()
+
+        #expect(navigation.viewControllers == [root])
+    }
+
+    // MARK: - Repeated Back Action
+
+    /// Repeated Back action on a navigation stack: the first call pops the page,
+    /// and subsequent calls evaluate safely against the updated stack without crashing.
+    @Test func `Repeated back action on navigation stack safely pops without crashing`() throws {
+        let page = try makeTripPage()
+        let root = UIViewController()
+        let navigation = UINavigationController(rootViewController: root)
+        navigation.pushViewController(page, animated: false)
+
+        #expect(navigation.viewControllers.count == 2)
+        #expect(page.backBehavior == .pop)
+
+        page.rootView.actions.onBack()
+
+        #expect(navigation.viewControllers.count == 1)
+        #expect(navigation.topViewController === root)
+
+        // Rapid second tap after pop completed: should evaluate safely as dismiss
+        page.rootView.actions.onBack()
+
+        #expect(navigation.viewControllers == [root])
+    }
+
     // MARK: - VoiceOver
 
     /// The control said only "Back", with the origin as separate text after it, so
