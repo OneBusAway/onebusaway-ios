@@ -109,5 +109,22 @@ final class CoreLocationExtensionsTests {
         
         #expect(simpleRegion.radius > 0)
         #expect(simpleRegion.identifier == "MapRectRegion")
+
+        // Test with a zero-dimension map rect
+        let zeroRect = MKMapRect(x: 1000, y: 1000, width: 0, height: 0)
+        let zeroRegion = CLCircularRegion(mapRect: zeroRect)
+        #expect(zeroRegion.radius == 0)
+        #expect(zeroRegion.identifier == "MapRectRegion")
+    }
+
+    @Test func `CL location coordinate 2 d distance symmetry and boundary`() {
+        let coordA = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
+        let coordB = CLLocationCoordinate2D(latitude: 27.9506, longitude: -82.4572) // Tampa
+
+        let distAB = coordA.distance(from: coordB)
+        let distBA = coordB.distance(from: coordA)
+
+        #expect(distAB > 0)
+        expectClose(distAB, distBA, within: 0.001)
     }
 }
