@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#
+# scripts/pre_pr_check
+#
+# Runs local validation checks before submitting a PR:
+#   1. Module boundary and architectural invariants check
+#   2. Module boundary self-test suite (fixture validation)
+#   3. SwiftLint linting
+#
+# Usage:
+#   scripts/pre_pr_check
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+echo "==> [1/3] Checking module boundaries..."
+scripts/check_module_boundaries
+
+echo "==> [2/3] Validating module boundary fixtures..."
+scripts/check_module_boundaries --test
+
+echo "==> [3/3] Running SwiftLint..."
+scripts/swiftlint.sh
+
+echo "All pre-PR checks passed successfully!"

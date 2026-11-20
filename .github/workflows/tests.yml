@@ -94,6 +94,12 @@ jobs:
           "$SWIFT_IMAGE" \
           sh -c "/swiftlint/swiftlint version | grep -qx '$SWIFTLINT_PIN' && /swiftlint/swiftlint lint --reporter github-actions-logging"
 
+    - name: Check module boundaries
+      if: always()
+      run: |
+        scripts/check_module_boundaries
+        scripts/check_module_boundaries --test
+
   # Builds the shipping iOS app and its tests, generated with --no-watch, and
   # hands the test products to the `test` job. The release lane
   # (fastlane/Fastfile) embeds the watch app; the watch stack is checked by its
@@ -486,6 +492,9 @@ jobs:
 
     - name: Validate app localization completeness
       run: scripts/validate_app_localizations
+
+    - name: Check module boundaries
+      run: scripts/check_module_boundaries
 
     - name: Install xcodegen
       env:

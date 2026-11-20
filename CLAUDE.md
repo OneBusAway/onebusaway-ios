@@ -146,6 +146,9 @@ xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -pr
 ```bash
 scripts/swiftlint.sh                    # Run SwiftLint (skips in CI)
 swiftlint                              # Run SwiftLint directly
+scripts/check_module_boundaries         # Enforce module boundaries and architectural separation (docs/module-boundaries.md)
+scripts/check_module_boundaries --test  # Validate module boundary checker against fixture test suite
+scripts/pre_pr_check                    # Pre-PR check runner: boundaries, tests, SwiftLint
 ```
 
 ### Documentation
@@ -164,13 +167,13 @@ scripts/app_store_screenshots         # App Store slides: capture, frame, captio
 ## Architecture
 
 ### Framework Structure
-- **OBAKitCore**: Core business logic, networking, data models (application extension safe). A **Swift package target**, declared in the root `Package.swift`; the apps consume it as a local package (`packages:` in `Apps/Shared/app_shared.yml`). One module, two directories:
+- **OBAKitCore**: Core business logic, networking, data models (application extension safe). A **Swift package target**, declared in the root `Package.swift`; the apps consume it as a local package (`packages:` in `Apps/Shared/app_shared.yml`). Boundaries are enforced by `scripts/check_module_boundaries` in CI and locally (see `docs/module-boundaries.md`). One module, two directories:
   - `OBAKitCore/` — portable. Builds for **iOS and watchOS**. No UIKit view code, no ActivityKit, no region-monitoring API calls.
   - `OBAKitCore/iOS/` — iOS-only files of the *same module* (no separate `import`). UIKit views, Live Activities, geofencing. SwiftPM can't include a file on one platform only, so **every file here is wrapped in `#if os(iOS)` … `#endif // os(iOS)`**; a new file needs the same wrapper or the watchOS build breaks.
   - **If a file outside `OBAKitCore/iOS/` needs a platform `#if`, move the iOS-only part into `OBAKitCore/iOS/` instead.** The portable tree carries exactly two conditionals (`CoreApplication.swift`'s `canImport(ActivityKit)` and `ThemeColors.swift`'s watch palette); keep it that way.
   - Its resources (string tables, privacy manifest) are in a resource bundle of their own: use `Bundle.module` in Core and `Bundle.obaKitCore` from `@testable` tests. `Bundle(for:)` on a Core type finds the code, not the resources.
   - Extension safety is not enforced by the package itself (it has no `APPLICATION_EXTENSION_API_ONLY`); the `watch` CI job builds it from the bare `Package.swift` with `APPLICATION_EXTENSION_API_ONLY=YES` to catch it.
-- **OBAKitWatch**: watchOS UI (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it. A **Swift package target** (watchOS only) in the root `Package.swift`; strings load from `Bundle.module`. The `watch` CI job builds it with `APPLICATION_EXTENSION_API_ONLY=YES`, the same way as OBAKitCore.
+- **OBAKitWatch**: watchOS UI (SwiftUI). Host, models, and screens; logic stays in OBAKitCore so OBAKitTests covers it. A **Swift package target** (watchOS only) in the root `Package.swift`; strings load from `Bundle.module`. Boundaries are enforced by `scripts/check_module_boundaries` (see `docs/module-boundaries.md`). The `watch` CI job builds it with `APPLICATION_EXTENSION_API_ONLY=YES`, the same way as OBAKitCore.
 - **WatchApp**: watchOS application shell. White-label; per-app identity comes from Apps/<App>/watch.yml.
 - **OBAKit**: UI framework with view controllers and user interface components. Also a **Swift package target** in the root `Package.swift` (iOS only), with main-actor default isolation.
   - Resources load from `Bundle.module` (`Bundle.obaKit` from `@testable` tests). String tables, the asset catalog and the privacy manifest are picked up automatically; any other file it loads (`OBAKit_Credits.plist`, `document_web_view_content.html`) must be listed in `resources:` in `Package.swift`, or it is silently left out of the bundle.
