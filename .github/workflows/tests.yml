@@ -484,6 +484,9 @@ jobs:
     - name: Validate watch localization completeness
       run: scripts/validate_watch_localizations
 
+    - name: Validate app localization completeness
+      run: scripts/validate_app_localizations
+
     - name: Install xcodegen
       env:
         HOMEBREW_NO_AUTO_UPDATE: 1
