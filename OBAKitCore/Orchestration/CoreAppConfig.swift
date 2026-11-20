@@ -44,6 +44,10 @@ open class CoreAppConfig: NSObject {
     /// Injectable so tests never share the process-wide cache.
     public let onDemandSupport: OnDemandSupport
 
+    /// The stop cache database, or `nil` to open the shared file in
+    /// Application Support. Injectable so tests never share that file.
+    public let stopCacheDatabase: StopCacheDatabase?
+
     /// The network retry policy for transient errors on idempotent REST requests.
     public let retryPolicy: RetryPolicy
 
@@ -85,6 +89,7 @@ open class CoreAppConfig: NSObject {
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
+    /// - Parameter stopCacheDatabase: The stop cache database, or `nil` for the shared file.
     /// - Parameter retryPolicy: The retry policy for network requests.
     public init(
         regionsBaseURL: URL?,
@@ -100,6 +105,7 @@ open class CoreAppConfig: NSObject {
         fixedRegionOBABaseURL: URL? = nil,
         defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
         onDemandSupport: OnDemandSupport = .shared,
+        stopCacheDatabase: StopCacheDatabase? = nil,
         retryPolicy: RetryPolicy = .standard
     ) {
         self.regionsBaseURL = regionsBaseURL
@@ -115,6 +121,7 @@ open class CoreAppConfig: NSObject {
         self.fixedRegionOBABaseURL = fixedRegionOBABaseURL
         self.defaultArrivalDepartureFilter = defaultArrivalDepartureFilter
         self.onDemandSupport = onDemandSupport
+        self.stopCacheDatabase = stopCacheDatabase
         self.retryPolicy = retryPolicy
     }
 }

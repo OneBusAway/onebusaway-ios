@@ -83,7 +83,6 @@ final class HomeSheetViewModelTests: OBATestCase {
     func `Visible sections lists nearby before recent`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        clearStopCache(for: application)
 
         dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
             request.url?.path.contains("/api/where/stops-for-location.json") ?? false
@@ -121,7 +120,6 @@ final class HomeSheetViewModelTests: OBATestCase {
     func `Nearby and recent sections cap at the shared section limit`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
-        clearStopCache(for: application)
 
         dataLoader.mock(data: Fixtures.loadData(file: "stops_for_location_seattle.json")) { request in
             request.url?.path.contains("/api/where/stops-for-location.json") ?? false

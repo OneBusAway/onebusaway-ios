@@ -223,7 +223,6 @@ final class RootInterfaceSwapTests: OBATestCase {
         let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
         try #require(application.regionsService.currentRegion?.regionIdentifier != Fixtures.tampaRegion.regionIdentifier)
         try #require(application.mapRegionManager.stops.isEmpty)
-        clearStopCache(for: application)
         return application
     }
 
