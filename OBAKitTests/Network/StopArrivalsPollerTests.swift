@@ -23,13 +23,49 @@ final class StopArrivalsPollerTests: OBATestCase {
         private let lock = NSLock()
         private var _requests = 0
         private var _failing = false
+        private var waiters: [(count: Int, continuation: CheckedContinuation<Void, Never>)] = []
 
         var requests: Int { lock.withLock { _requests } }
         var failing: Bool {
             get { lock.withLock { _failing } }
             set { lock.withLock { _failing = newValue } }
         }
-        func record() { lock.withLock { _requests += 1 } }
+        func record() {
+            let toResume = lock.withLock { () -> [CheckedContinuation<Void, Never>] in
+                _requests += 1
+                let count = _requests
+                var due: [CheckedContinuation<Void, Never>] = []
+                waiters.removeAll { waiter in
+                    if count >= waiter.count {
+                        due.append(waiter.continuation)
+                        return true
+                    }
+                    return false
+                }
+                return due
+            }
+            for waiter in toResume {
+                waiter.resume()
+            }
+        }
+
+        func waitForRequests(count target: Int) async {
+            let alreadyMet = lock.withLock { _requests >= target }
+            if alreadyMet { return }
+
+            await withCheckedContinuation { continuation in
+                let shouldResume = lock.withLock { () -> Bool in
+                    if _requests >= target {
+                        return true
+                    }
+                    waiters.append((count: target, continuation: continuation))
+                    return false
+                }
+                if shouldResume {
+                    continuation.resume()
+                }
+            }
+        }
     }
 
     private func mockArrivals(_ dataLoader: MockDataLoader, gate: Gate) {
@@ -77,7 +113,7 @@ final class StopArrivalsPollerTests: OBATestCase {
         var iterator = stream.makeAsyncIterator()
         _ = await iterator.next()
 
-        await poll(until: { clock.sleeperCount == 1 }, "the poller should be sleeping until the next tick")
+        await clock.waitForSleepers(count: 1)
         clock.advance(by: .seconds(30))
 
         let second = try #require(await iterator.next())
@@ -103,7 +139,7 @@ final class StopArrivalsPollerTests: OBATestCase {
         }
 
         gate.failing = false
-        await poll(until: { clock.sleeperCount == 1 }, "the poller should survive a failure and sleep")
+        await clock.waitForSleepers(count: 1)
         clock.advance(by: .seconds(30))
 
         let second = try #require(await iterator.next())
@@ -126,15 +162,14 @@ final class StopArrivalsPollerTests: OBATestCase {
                 // consume forever
             }
         }
-        await poll(until: { gate.requests == 1 })
-        await poll(until: { clock.sleeperCount == 1 })
+        await gate.waitForRequests(count: 1)
+        await clock.waitForSleepers(count: 1)
 
         consumer.cancel()
         _ = await consumer.value
 
-        await poll(until: { clock.sleeperCount == 0 }, "cancellation should unpark the sleeper")
+        await clock.waitForSleepers(count: 0)
         clock.advance(by: .seconds(60))
-        try await Task.sleep(for: .milliseconds(50))
         #expect(gate.requests == 1)
     }
 }
