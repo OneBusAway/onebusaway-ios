@@ -175,6 +175,19 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         vm.showsRawVehicleFix = true
         #expect(FeatureFlags.showsRawVehicleFix(userDefaults: application.userDefaults))
     }
+
+    @Test func `Realtime cache policy adapts to vehicle position estimation flag`() throws {
+        let defaults = application.userDefaults
+
+        defaults.removeObject(forKey: FeatureFlags.estimatesVehiclePositionsKey)
+        #expect(FeatureFlags.realtimeCachePolicy(userDefaults: defaults) == .useProtocolCachePolicy)
+
+        defaults.set(false, forKey: FeatureFlags.estimatesVehiclePositionsKey)
+        #expect(FeatureFlags.realtimeCachePolicy(userDefaults: defaults) == .useProtocolCachePolicy)
+
+        defaults.set(true, forKey: FeatureFlags.estimatesVehiclePositionsKey)
+        #expect(FeatureFlags.realtimeCachePolicy(userDefaults: defaults) == .reloadIgnoringLocalCacheData)
+    }
 }
 
 /// Stands in for the app delegate: counts root reloads, and builds the root
