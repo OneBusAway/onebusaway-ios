@@ -499,8 +499,11 @@ final class OnDemandAvailabilityTests: OBATestCase {
             Issue.record("Expected .eligible reason, got \(openResult.eligibilityReason)")
         }
 
-        // 16:00 EDT: running past cutoff -> tooLate for today
-        let lateResult = availability(try charlevoix("CC_CC1"), at: instant("2026-03-10T20:00:00Z"))
+        // Running past cutoff on the last day -> no next bookable date, falls back to today -> tooLate
+        let lastDayService = try charlevoix("CC_CC1") { json in
+            self.rewriteReferences(&json, "calendars") { calendar in calendar["endDate"] = "2026-03-10" }
+        }
+        let lateResult = availability(lastDayService, at: instant("2026-03-10T20:00:00Z"))
         #expect(!lateResult.eligibilityReason.isEligible)
         if case .tooLate(let cutoff) = lateResult.eligibilityReason {
             #expect(cutoff == instant("2026-03-10T19:10:00Z"))
@@ -552,5 +555,58 @@ final class OnDemandAvailabilityTests: OBATestCase {
             now: instant("2026-03-10T16:00:00Z")
         )
         #expect(futureReason == .unavailable(.serviceEnded))
+    }
+
+    @Test func `Availability eligibility reason for prior-day advance booking service agrees with status after cutoff`() throws {
+        let service = try alexandria()
+
+        // Tuesday 12:00 PDT (19:00 UTC) before 17:00 PDT cutoff: bookable for Wednesday
+        let noonResult = availability(service, at: instant("2026-03-10T19:00:00Z"))
+        let wednesday = ServiceDate("2026-03-11")!
+        let todayCutoff = instant("2026-03-11T00:00:00Z")
+        #expect(noonResult.nextBookableServiceDate == wednesday)
+        #expect(noonResult.status == .bookBy(deadline: todayCutoff, travelDate: wednesday))
+        #expect(noonResult.eligibilityReason == .eligible(cutoff: todayCutoff))
+
+        // Tuesday 18:00 PDT (01:00 UTC next day) after 17:00 PDT cutoff:
+        // Wednesday is no longer bookable; next bookable is Thursday 2026-03-12, cutoff tomorrow at 17:00 PDT
+        let eveningResult = availability(service, at: instant("2026-03-11T01:00:00Z"))
+        let thursday = ServiceDate("2026-03-12")!
+        let tomorrowCutoff = instant("2026-03-12T00:00:00Z")
+        #expect(eveningResult.nextBookableServiceDate == thursday)
+        #expect(eveningResult.status == .bookBy(deadline: tomorrowCutoff, travelDate: thursday))
+        #expect(eveningResult.eligibilityReason == .eligible(cutoff: tomorrowCutoff))
+    }
+
+    @Test func `Availability for rule without pickup booking rule handles closed operating window`() throws {
+        let service = try alexandria { json in
+            var body = json["data"] as! [String: Any]
+            var entry = body["entry"] as! [String: Any]
+            var rules = entry["rules"] as! [[String: Any]]
+            rules[0]["pickupBookingRuleId"] = NSNull()
+            rules[0]["startPickupTime"] = "09:00:00"
+            rules[0]["endPickupTime"] = "17:00:00"
+            entry["rules"] = rules
+            body["entry"] = entry
+            json["data"] = body
+        }
+
+        // Tuesday 18:00 PDT (2026-03-11T01:00:00Z) - after today's 17:00 PDT window ended
+        let now = instant("2026-03-11T01:00:00Z")
+        let result = availability(service, at: now)
+        #expect(!result.runningNow)
+        #expect(!result.bookableNow)
+        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-11")!)
+
+        // For today's date, eligibility is tooLate
+        let today = ServiceDate("2026-03-10")!
+        let todayReason = OnDemandAvailability.evaluateEligibility(
+            service: service,
+            timeZone: service.timeZone,
+            travelDate: today,
+            now: now
+        )
+        let cutoff = instant("2026-03-11T00:00:00Z")
+        #expect(todayReason == .tooLate(cutoffInstant: cutoff))
     }
 }

@@ -180,6 +180,10 @@ public struct BookingDeadlineEvaluator: Sendable {
         now: Date
     ) -> BookingEvaluation {
         guard let bookingRule else {
+            let cutoff = latestPickup(rule: rule, travelDate: travelDate)
+            if now > cutoff {
+                return BookingEvaluation(state: .closedForDate, cutoffInstant: cutoff, openInstant: nil)
+            }
             return BookingEvaluation(state: .open, cutoffInstant: nil, openInstant: nil)
         }
 
@@ -227,6 +231,11 @@ public struct BookingDeadlineEvaluator: Sendable {
         let evaluation = evaluate(rule: rule, bookingRule: bookingRule, travelDate: travelDate, now: now)
         switch evaluation.state {
         case .open:
+            if bookingRule == nil {
+                if let start = rule.startPickupTime.map({ instant(travelDate, $0) }), now < start {
+                    return .tooEarly(openInstant: start)
+                }
+            }
             return .eligible(cutoff: evaluation.cutoffInstant)
         case .notYetOpen:
             guard let open = evaluation.openInstant else { return .unavailable(.unresolvedBookingRule) }

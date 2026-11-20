@@ -2363,6 +2363,54 @@
 
 /* Map item line when the place is outside the nearest zone. %@ is the service name */
 "on_demand.address.outside" = "Ngoài %@";
+/* Explanation when a service is currently eligible for booking */
+"on_demand.eligibility.eligible" = "Eligible to book";
+
+/* Explanation when a service is eligible until a cutoff deadline. %@ is a relative date/time */
+"on_demand.eligibility.eligible_until_fmt" = "Eligible to book · by %@";
+
+/* Explanation when booking is too early. %@ is a relative date/time */
+"on_demand.eligibility.too_early_fmt" = "Booking not open yet · opens %@";
+
+/* Explanation when booking is too late. %@ is a relative date/time */
+"on_demand.eligibility.too_late_fmt" = "Booking deadline passed · was %@";
+
+/* Explanation when trip origin is outside service zone */
+"on_demand.eligibility.outside_zone_origin" = "Trip origin is outside the service area";
+
+/* Explanation when trip destination is outside service zone */
+"on_demand.eligibility.outside_zone_destination" = "Trip destination is outside the service area";
+
+/* Explanation when service rules do not connect origin and destination zones */
+"on_demand.eligibility.outside_zone_disconnected" = "Service does not connect these zones";
+
+/* Explanation when location point is outside service zone */
+"on_demand.eligibility.outside_zone_point" = "Location is outside the service area";
+
+/* Explanation when origin is missing */
+"on_demand.eligibility.missing_endpoint_origin" = "Trip origin location is required";
+
+/* Explanation when destination is missing */
+"on_demand.eligibility.missing_endpoint_destination" = "Trip destination location is required";
+
+/* Explanation when both endpoints are missing */
+"on_demand.eligibility.missing_endpoint_both" = "Origin and destination locations are required";
+
+/* Explanation when service timezone is missing */
+"on_demand.eligibility.unavailable_timezone" = "Schedule unavailable";
+
+/* Explanation when service does not run on selected date */
+"on_demand.eligibility.unavailable_no_service_date" = "No service scheduled for this date";
+
+/* Explanation when service calendar period has expired */
+"on_demand.eligibility.unavailable_service_ended" = "Service has ended";
+
+/* Explanation when service requires rider eligibility certification */
+"on_demand.eligibility.unavailable_certification" = "Rider certification required";
+
+/* Explanation when booking rules cannot be resolved or service cannot be booked */
+"on_demand.eligibility.unavailable_general" = "Booking unavailable";
+
 
 /* Layers sheet group header */
 "map_layers.group.transit" = "Giao thông công cộng";

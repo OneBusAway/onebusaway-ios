@@ -81,7 +81,7 @@ public struct OnDemandAvailability: Equatable, Sendable {
         usabilityTier: Int,
         nextChangeInstant: Date?,
         bookingResolution: OnDemandBookingResolution = .unknown,
-        eligibilityReason: OnDemandEligibilityReason = .eligible(cutoff: nil)
+        eligibilityReason: OnDemandEligibilityReason = .unavailable(.unresolvedBookingRule)
     ) {
         self.runningNow = runningNow
         self.runningUntil = runningUntil
@@ -160,7 +160,8 @@ public struct OnDemandAvailability: Equatable, Sendable {
         // service with no other boundary ahead of it (ruling: spec §2.5).
         let nextMidnight = evaluator.anchor(evaluator.adding(days: 1, to: today))
         let nextChange = [runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight].compactMap { $0 }.filter { $0 > now }.min()
-        let eligibilityReason = evaluateEligibility(service: service, timeZone: timeZone, travelDate: today, now: now)
+        let targetDate = nextBookable ?? today
+        let eligibilityReason = evaluateEligibility(service: service, timeZone: timeZone, travelDate: targetDate, now: now)
 
         return OnDemandAvailability(
             runningNow: runningNow,

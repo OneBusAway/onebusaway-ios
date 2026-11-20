@@ -44,7 +44,8 @@ public struct OnDemandEligibilityEvaluator: Sendable {
     }
 
     private static func inactiveDateReason(service: OnDemandService, targetDate: ServiceDate) -> OnDemandEligibilityReason {
-        let latestEnd = service.calendars.compactMap(\.endDate).max()
+        let ruleCalendarIDs = Set(service.rules.flatMap(\.calendarIDs))
+        let latestEnd = service.calendars.filter { ruleCalendarIDs.contains($0.id) }.compactMap(\.endDate).max()
         if let latestEnd, targetDate > latestEnd {
             return .unavailable(.serviceEnded)
         }

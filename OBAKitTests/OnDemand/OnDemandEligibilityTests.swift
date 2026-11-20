@@ -260,6 +260,36 @@ final class OnDemandEligibilityTests: OBATestCase {
             now: eligibleNow
         )
         #expect(expiredReason == .unavailable(.serviceEnded))
+
+        // 3. Unreferenced notice calendar ending later than rule calendars does not postpone serviceEnded
+        let serviceWithNoticeCalendar = try charlevoix("CC_CC1") { json in
+            var body = json["data"] as! [String: Any]
+            var references = body["references"] as! [String: Any]
+            var calendars = references["calendars"] as! [[String: Any]]
+            calendars = calendars.map { cal in
+                var cal = cal
+                cal["endDate"] = "2025-12-31"
+                return cal
+            }
+            calendars.append([
+                "id": "unreferenced_notice_cal",
+                "days": ["mon", "tue", "wed", "thu", "fri"],
+                "startDate": "2024-01-01",
+                "endDate": "2030-12-31",
+                "exceptedDates": []
+            ])
+            references["calendars"] = calendars
+            body["references"] = references
+            json["data"] = body
+        }
+        let dateAfterRuleEnd = ServiceDate("2026-06-01")!
+        let ruleExpiredReason = OnDemandAvailability.evaluateEligibility(
+            service: serviceWithNoticeCalendar,
+            timeZone: detroit,
+            travelDate: dateAfterRuleEnd,
+            now: eligibleNow
+        )
+        #expect(ruleExpiredReason == .unavailable(.serviceEnded))
     }
 
     // MARK: - User-Facing Copy Tests
