@@ -192,25 +192,37 @@ final class BookmarkRowViewModelDestinationTests: OBATestCase {
         #expect(row.highlightedTripIDs == ["trip_2"])
     }
 
-    /// When destinationLookup returns pending for some trips and unavailable for others,
-    /// pending takes precedence so user sees the loading state.
-    @Test func `Mixed pending and unavailable lookups yield loading status`() throws {
+    /// Destination status strictly follows the first reachable departure:
+    /// unavailable deliberately evaluates to nil (omitting the arrival line rather than showing a perpetual spinner),
+    /// whereas pending evaluates to .loading.
+    @Test func `Destination status follows the first departure`() throws {
         let bookmark = try makeBookmark(destination: true)
-        let dep1 = try departure("trip_unavail")
-        let dep2 = try departure("trip_pending")
+        let depUnavailable = try departure("trip_unavail")
+        let depPending = try departure("trip_pending")
 
         let lookups: [TripIdentifier: DestinationArrivalLookup] = [
             "trip_unavail": .unavailable,
             "trip_pending": .pending
         ]
 
-        let row = BookmarkRowViewModel(
+        // When the first departure is unavailable, status is nil even if subsequent departures are pending.
+        let rowUnavailableFirst = BookmarkRowViewModel(
             bookmark: bookmark,
-            arrivalDepartures: [dep1, dep2],
+            arrivalDepartures: [depUnavailable, depPending],
             highlightedTripIDs: [],
             destinationLookup: { lookups[$0.tripID] ?? .notServed }
         )
+        #expect(rowUnavailableFirst.destinationStatus == nil)
+        #expect(rowUnavailableFirst.arrivalDepartures.count == 2)
 
-        #expect(row.destinationStatus == .loading)
+        // When the first departure is pending, status is .loading even if subsequent departures are unavailable.
+        let rowPendingFirst = BookmarkRowViewModel(
+            bookmark: bookmark,
+            arrivalDepartures: [depPending, depUnavailable],
+            highlightedTripIDs: [],
+            destinationLookup: { lookups[$0.tripID] ?? .notServed }
+        )
+        #expect(rowPendingFirst.destinationStatus == .loading)
+        #expect(rowPendingFirst.arrivalDepartures.count == 2)
     }
 }
