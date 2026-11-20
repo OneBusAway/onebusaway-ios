@@ -25,6 +25,14 @@ final class CoreLocationExtensionsTests {
         #expect(CLAuthorizationStatus.notDetermined.description == "notDetermined")
         #expect(CLAuthorizationStatus.restricted.description == "restricted")
     }
+
+    @Test func `CL authorization status isAuthorized predicate classification`() {
+        #expect(CLAuthorizationStatus.authorizedAlways.isAuthorized == true)
+        #expect(CLAuthorizationStatus.authorizedWhenInUse.isAuthorized == true)
+        #expect(CLAuthorizationStatus.denied.isAuthorized == false)
+        #expect(CLAuthorizationStatus.notDetermined.isAuthorized == false)
+        #expect(CLAuthorizationStatus.restricted.isAuthorized == false)
+    }
     
     @Test func `CL authorization status init from string`() {
         // LosslessStringConvertible init always returns nil as implemented
