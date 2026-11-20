@@ -134,4 +134,21 @@ final class AgencyAlertsViewControllerTests: OBATestCase {
         let menuActions = controller.contextMenu(controller.listView, for: unrecognizedItem)
         #expect(menuActions == nil)
     }
+
+    // MARK: - Collapsible Sections Delegation
+
+    @Test func testCollapsedSectionsForwardingToViewModel() {
+        let controller = AgencyAlertsViewController(application: app)
+        controller.loadViewIfNeeded()
+
+        #expect(controller.collapsedSections.isEmpty)
+
+        controller.collapsedSections = ["agency_1", "agency_2"]
+        #expect(controller.collapsedSections == ["agency_1", "agency_2"])
+        #expect(controller.collapsedSections.contains("agency_1"))
+        #expect(controller.collapsedSections.contains("agency_2"))
+
+        controller.collapsedSections.remove("agency_1")
+        #expect(controller.collapsedSections == ["agency_2"])
+    }
 }
