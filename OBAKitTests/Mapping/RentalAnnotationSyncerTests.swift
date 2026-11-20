@@ -147,11 +147,12 @@ final class RentalAnnotationSyncerTests {
         #expect(rentalAnnotations(mapView).isEmpty)
     }
 
-    @Test func `init purges pre-existing orphan rental annotations from mapView`() throws {
+    /// Calling removeAll removes all annotations the syncer tracked,
+    /// without touching annotations it does not own.
+    @Test func `Syncer removeAll cleans up only its own tracked annotations`() throws {
         let mapView = MKMapView()
-        let orphan = RentalAnnotation(rental: try RentalFixtures.vehicle(id: "orphan"))
-        mapView.addAnnotation(orphan)
-        #expect(rentalAnnotations(mapView).count == 1)
+        let foreignAnnotation = MKPointAnnotation()
+        mapView.addAnnotation(foreignAnnotation)
 
         let locationManager = MockAuthorizedLocationManager(
             updateLocation: TestData.mockSeattleLocation,
@@ -161,19 +162,20 @@ final class RentalAnnotationSyncerTests {
             service: StubVehicleRentalService(),
             locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager)
         )
-        _ = RentalAnnotationSyncer(coordinator: coordinator, mapView: mapView)
-
-        #expect(rentalAnnotations(mapView).isEmpty)
-    }
-
-    @Test func `Syncing to empty list purges untracked orphan rental annotations`() throws {
-        let (syncer, mapView) = makeSyncer()
-        let orphan = RentalAnnotation(rental: try RentalFixtures.vehicle(id: "orphan"))
-        mapView.addAnnotation(orphan)
+        var syncer: RentalAnnotationSyncer? = RentalAnnotationSyncer(coordinator: coordinator, mapView: mapView)
+        let vehicle = try RentalFixtures.vehicle(id: "v1")
+        syncer?.sync(to: [vehicle])
         #expect(rentalAnnotations(mapView).count == 1)
+        #expect(mapView.annotations.count == 2)
 
-        syncer.sync(to: [])
+        // Tear down syncer (simulating region switch to a region without rental support)
+        syncer?.removeAll()
+        syncer = nil
+
+        // Rental annotation is removed; foreign annotation remains intact
         #expect(rentalAnnotations(mapView).isEmpty)
+        #expect(mapView.annotations.count == 1)
+        #expect(mapView.annotations.first === foreignAnnotation)
     }
 
     @Test func `Region change transition cleans up old annotations and adds new ones`() throws {

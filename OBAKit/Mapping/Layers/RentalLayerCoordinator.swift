@@ -254,7 +254,11 @@ import OTPKit
     }
 
     private func handle(_ failure: VehicleRentalSource.FetchFailure) {
-        Logger.error("Rental fetch failed: \(failure.message)")
+        handleFailure(message: failure.message)
+    }
+
+    func handleFailure(message: String) {
+        Logger.error("Rental fetch failed: \(message)")
 
         // A browse layer never alerts; a failure with nothing on the map dims the
         // layer row instead, so an empty layer is never silently "on".
@@ -278,12 +282,9 @@ import OTPKit
         }
     }
 
-    func setAvailability(_ newValue: MapLayerAvailability) {
+    private func setAvailability(_ newValue: MapLayerAvailability) {
         guard availability != newValue else { return }
         availability = newValue
-        if newValue != .available {
-            applyChanges(visibility.reset())
-        }
         for id in enabledLayerFactors.keys {
             NotificationCenter.default.post(name: .mapLayerAvailabilityDidChange, object: id)
         }

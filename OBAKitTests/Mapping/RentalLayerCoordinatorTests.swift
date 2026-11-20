@@ -188,24 +188,38 @@ final class RentalLayerCoordinatorTests {
         #expect(coordinator.visibleRentals.isEmpty)
     }
 
-    @Test func `Setting availability to unavailable clears visibleRentals`() throws {
+    /// Invariant: when all vehicles are hidden by a filter and a fetch fails transiently,
+    /// relaxing the filter restores vehicles from cache rather than wiping them.
+    @Test func `Transient fetch failure while filter hides all vehicles preserves cache on filter relax`() throws {
         let coordinator = makeCoordinator()
         coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
-        coordinator.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
-        #expect(coordinator.visibleRentals.count == 1)
 
-        coordinator.setAvailability(.unavailable(reason: "Server down"))
+        // 1. Deliver vehicle with 3 km range
+        let vehicle = try RentalFixtures.vehicle(id: "v1", rangeMeters: 3_000)
+        coordinator.apply(RentalFixtures.snapshot(added: [vehicle]))
+        #expect(coordinator.visibleRentals.map(\.id) == ["v1"])
+
+        // 2. Range filter hides all vehicles
+        coordinator.setRangeFilter(RentalRangeFilter(minimumRangeMeters: 10_000))
         #expect(coordinator.visibleRentals.isEmpty)
-    }
 
-    @Test func `Setting availability to unsupported clears visibleRentals`() throws {
-        let coordinator = makeCoordinator()
-        coordinator.setLayer(id: "scooters", enabled: true, formFactors: scooters)
-        coordinator.apply(RentalFixtures.snapshot(added: [try RentalFixtures.vehicle(id: "v1")]))
-        #expect(coordinator.visibleRentals.count == 1)
-
-        coordinator.setAvailability(.unsupported)
+        // 3. Transient fetch failure occurs while visible list is empty
+        coordinator.handleFailure(message: "Server unreachable")
         #expect(coordinator.visibleRentals.isEmpty)
+        if case .unavailable = coordinator.availability {
+            // expected
+        } else {
+            Issue.record("Expected availability to be unavailable on failure with empty visible list")
+        }
+
+        // 4. Relax filter: vehicle must return from cache
+        coordinator.setRangeFilter(.any)
+        #expect(coordinator.visibleRentals.map(\.id) == ["v1"])
+
+        // 5. Subsequent successful fetch clears unavailable status while keeping vehicle
+        coordinator.apply(RentalFixtures.snapshot())
+        #expect(coordinator.availability == .available)
+        #expect(coordinator.visibleRentals.map(\.id) == ["v1"])
     }
 
     @Test func `Empty snapshot clears visibleRentals`() throws {

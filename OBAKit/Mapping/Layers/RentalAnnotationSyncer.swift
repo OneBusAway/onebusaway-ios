@@ -30,13 +30,6 @@ import OTPKit
     init(coordinator: RentalLayerCoordinator, mapView: MKMapView) {
         self.mapView = mapView
 
-        // Purge any orphan rental annotations left on the map so transitions
-        // (such as region changes or re-attaching coordinators) start clean.
-        let orphans = mapView.annotations.compactMap { $0 as? RentalAnnotation }
-        if !orphans.isEmpty {
-            mapView.removeAnnotations(orphans)
-        }
-
         coordinator.$visibleRentals
             .sink { [weak self] rentals in self?.sync(to: rentals) }
             .store(in: &cancellables)
@@ -59,17 +52,6 @@ import OTPKit
             removed.append(annotation)
         }
         mapView.removeAnnotations(removed)
-
-        // When the incoming list is empty (e.g. empty response, all filters/services hidden,
-        // or region cleared), also sweep any orphan rental annotations remaining on the map.
-        if rentals.isEmpty {
-            let remainingRentals = mapView.annotations.compactMap { $0 as? RentalAnnotation }
-            if !remainingRentals.isEmpty {
-                mapView.removeAnnotations(remainingRentals)
-            }
-            annotations.removeAll()
-            return
-        }
 
         var added: [RentalAnnotation] = []
         for rental in rentals {
