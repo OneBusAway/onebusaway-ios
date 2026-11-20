@@ -437,4 +437,97 @@ struct RentalClusteringTests {
             #expect(companionsBefore == companionsAfter, "Vehicle \(vehicle.id) changed clusters when panning north")
         }
     }
+
+    // MARK: - Transitions & Filtering
+
+    @Test func `Transition from cluster to single when members are filtered out`() throws {
+        let v1 = try RentalFixtures.vehicle(id: "v1", lat: 47.60010, lon: -122.29930)
+        let v2 = try RentalFixtures.vehicle(id: "v2", lat: 47.60012, lon: -122.29928)
+        let v3 = try RentalFixtures.vehicle(id: "v3", lat: 47.60014, lon: -122.29926)
+
+        let initial = items([v1, v2, v3])
+        #expect(initial.count == 1)
+        guard case .cluster(_, _, let members) = try #require(initial.first) else {
+            Issue.record("Expected cluster")
+            return
+        }
+        #expect(members.count == 3)
+
+        // Filter removes v2 and v3
+        let filtered = items([v1])
+        #expect(filtered.count == 1)
+        guard case .single(let singleRental) = try #require(filtered.first) else {
+            Issue.record("Expected single item after filtering")
+            return
+        }
+        #expect(singleRental.id == "v1")
+        #expect(singleRental.coordinate.latitude == v1.coordinate.latitude)
+        #expect(singleRental.coordinate.longitude == v1.coordinate.longitude)
+    }
+
+    @Test func `Transition from single to cluster when members are added`() throws {
+        let v1 = try RentalFixtures.vehicle(id: "v1", lat: 47.60010, lon: -122.29930)
+        let v2 = try RentalFixtures.vehicle(id: "v2", lat: 47.60012, lon: -122.29928)
+
+        let singleResult = items([v1])
+        #expect(singleResult.count == 1)
+        guard case .single = try #require(singleResult.first) else {
+            Issue.record("Expected single item")
+            return
+        }
+
+        let clusterResult = items([v1, v2])
+        #expect(clusterResult.count == 1)
+        guard case .cluster(_, _, let members) = try #require(clusterResult.first) else {
+            Issue.record("Expected cluster item after addition")
+            return
+        }
+        #expect(Set(members.map(\.id)) == ["v1", "v2"])
+    }
+
+    @Test func `Transition to empty when all members are removed or filtered`() throws {
+        let v1 = try RentalFixtures.vehicle(id: "v1", lat: 47.60010, lon: -122.29930)
+        let v2 = try RentalFixtures.vehicle(id: "v2", lat: 47.60012, lon: -122.29928)
+
+        #expect(items([v1, v2]).count == 1)
+        #expect(items([]).isEmpty)
+    }
+
+    @Test func `Transition when hidden service is removed from mixed cluster`() throws {
+        let bike = try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE", lat: 47.60010, lon: -122.29930)
+        let s1 = try RentalFixtures.vehicle(id: "s1", formFactor: "SCOOTER", lat: 47.60012, lon: -122.29928)
+        let s2 = try RentalFixtures.vehicle(id: "s2", formFactor: "SCOOTER", lat: 47.60014, lon: -122.29926)
+
+        // All services visible: clusters into 1 item
+        let mixed = items([bike, s1, s2])
+        #expect(mixed.count == 1)
+        guard case .cluster(_, _, let members) = try #require(mixed.first) else {
+            Issue.record("Expected cluster")
+            return
+        }
+        #expect(members.count == 3)
+
+        // Scooter service hidden: transitions to single bike
+        let bikeOnly = items([bike])
+        #expect(bikeOnly.count == 1)
+        guard case .single(let remainingBike) = try #require(bikeOnly.first) else {
+            Issue.record("Expected single bike")
+            return
+        }
+        #expect(remainingBike.id == "b1")
+
+        // Bike service also hidden: transitions to empty
+        #expect(items([]).isEmpty)
+    }
+
+    @Test func `Repeated reload with updated member properties produces unequal item`() throws {
+        let v1Initial = try RentalFixtures.vehicle(id: "v1", batteryPercent: 0.8, lat: 47.60010, lon: -122.29930)
+        let v2 = try RentalFixtures.vehicle(id: "v2", lat: 47.60012, lon: -122.29928)
+        let clusterInitial = items([v1Initial, v2])
+
+        let v1Updated = try RentalFixtures.vehicle(id: "v1", batteryPercent: 0.2, lat: 47.60010, lon: -122.29930)
+        let clusterUpdated = items([v1Updated, v2])
+
+        #expect(clusterInitial != clusterUpdated)
+    }
 }

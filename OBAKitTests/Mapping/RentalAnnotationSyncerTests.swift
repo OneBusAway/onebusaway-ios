@@ -116,4 +116,129 @@ final class RentalAnnotationSyncerTests {
 
         #expect(rentalAnnotations(mapView).count == 1)
     }
+
+    // MARK: - Transitions & Staleness Prevention
+
+    @Test func `Syncing to empty list removes all annotations from mapView`() throws {
+        let (syncer, mapView) = makeSyncer()
+        syncer.sync(to: [
+            try RentalFixtures.vehicle(id: "a"),
+            try RentalFixtures.vehicle(id: "b")
+        ])
+        #expect(rentalAnnotations(mapView).count == 2)
+
+        syncer.sync(to: [])
+        #expect(rentalAnnotations(mapView).isEmpty)
+    }
+
+    @Test func `removeAll purges all annotations and clears tracking`() throws {
+        let (syncer, mapView) = makeSyncer()
+        syncer.sync(to: [
+            try RentalFixtures.vehicle(id: "a"),
+            try RentalFixtures.vehicle(id: "b")
+        ])
+        #expect(rentalAnnotations(mapView).count == 2)
+
+        syncer.removeAll()
+        #expect(rentalAnnotations(mapView).isEmpty)
+
+        // reattach after removeAll should do nothing since tracking is cleared
+        syncer.reattachAnnotations()
+        #expect(rentalAnnotations(mapView).isEmpty)
+    }
+
+    /// Calling removeAll removes all annotations the syncer tracked,
+    /// without touching annotations it does not own.
+    @Test func `Syncer removeAll cleans up only its own tracked annotations`() throws {
+        let mapView = MKMapView()
+        let foreignAnnotation = MKPointAnnotation()
+        mapView.addAnnotation(foreignAnnotation)
+
+        let locationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let coordinator = RentalLayerCoordinator(
+            service: StubVehicleRentalService(),
+            locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager)
+        )
+        var syncer: RentalAnnotationSyncer? = RentalAnnotationSyncer(coordinator: coordinator, mapView: mapView)
+        let vehicle = try RentalFixtures.vehicle(id: "v1")
+        syncer?.sync(to: [vehicle])
+        #expect(rentalAnnotations(mapView).count == 1)
+        #expect(mapView.annotations.count == 2)
+
+        // Tear down syncer (simulating region switch to a region without rental support)
+        syncer?.removeAll()
+        syncer = nil
+
+        // Rental annotation is removed; foreign annotation remains intact
+        #expect(rentalAnnotations(mapView).isEmpty)
+        #expect(mapView.annotations.count == 1)
+        #expect(mapView.annotations.first === foreignAnnotation)
+    }
+
+    @Test func `Region change transition cleans up old annotations and adds new ones`() throws {
+        let mapView = MKMapView()
+        let locationManager = MockAuthorizedLocationManager(
+            updateLocation: TestData.mockSeattleLocation,
+            updateHeading: TestData.mockHeading
+        )
+        let coordinator1 = RentalLayerCoordinator(
+            service: StubVehicleRentalService(),
+            locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager)
+        )
+        let syncer1 = RentalAnnotationSyncer(coordinator: coordinator1, mapView: mapView)
+        syncer1.sync(to: [
+            try RentalFixtures.vehicle(id: "r1_bike"),
+            try RentalFixtures.vehicle(id: "r1_scooter")
+        ])
+        #expect(Set(rentalAnnotations(mapView).map(\.rental.id)) == ["r1_bike", "r1_scooter"])
+
+        // Simulate region transition: old syncer is removed and new syncer created on same mapView
+        syncer1.removeAll()
+        let coordinator2 = RentalLayerCoordinator(
+            service: StubVehicleRentalService(),
+            locationService: LocationService(userDefaults: userDefaults, locationManager: locationManager)
+        )
+        let syncer2 = RentalAnnotationSyncer(coordinator: coordinator2, mapView: mapView)
+        syncer2.sync(to: [try RentalFixtures.vehicle(id: "r2_bike")])
+
+        #expect(rentalAnnotations(mapView).map(\.rental.id) == ["r2_bike"])
+    }
+
+    @Test func `Repeated reloads with same data preserve single annotation instances without duplicates`() throws {
+        let (syncer, mapView) = makeSyncer()
+        let vehicleA = try RentalFixtures.vehicle(id: "a", rangeMeters: 5_000)
+        let vehicleB = try RentalFixtures.vehicle(id: "b", rangeMeters: 8_000)
+
+        syncer.sync(to: [vehicleA, vehicleB])
+        let firstA = try #require(rentalAnnotations(mapView).first(where: { $0.rental.id == "a" }))
+        let firstB = try #require(rentalAnnotations(mapView).first(where: { $0.rental.id == "b" }))
+
+        syncer.sync(to: [vehicleA, vehicleB])
+        let secondA = try #require(rentalAnnotations(mapView).first(where: { $0.rental.id == "a" }))
+        let secondB = try #require(rentalAnnotations(mapView).first(where: { $0.rental.id == "b" }))
+
+        #expect(firstA === secondA)
+        #expect(firstB === secondB)
+        #expect(rentalAnnotations(mapView).count == 2)
+    }
+
+    @Test func `Hiding a service removes its annotations while preserving other services`() throws {
+        let (syncer, mapView) = makeSyncer()
+        let bike = try RentalFixtures.vehicle(id: "bike1", formFactor: "BICYCLE")
+        let scooter = try RentalFixtures.vehicle(id: "scooter1", formFactor: "SCOOTER")
+
+        syncer.sync(to: [bike, scooter])
+        #expect(Set(rentalAnnotations(mapView).map(\.rental.id)) == ["bike1", "scooter1"])
+
+        // Scooters service disabled/hidden
+        syncer.sync(to: [bike])
+        #expect(rentalAnnotations(mapView).map(\.rental.id) == ["bike1"])
+
+        // Bikes service disabled/hidden
+        syncer.sync(to: [])
+        #expect(rentalAnnotations(mapView).isEmpty)
+    }
 }

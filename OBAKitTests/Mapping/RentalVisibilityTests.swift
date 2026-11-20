@@ -286,4 +286,106 @@ final class RentalVisibilityTests {
         #expect(phantom.displayableDocksCount == nil)
         #expect(real.displayableDocksCount == 12)
     }
+
+    // MARK: - Transitions & Staleness Prevention
+
+    @Test func resetClearsCacheAndVisibleIDs() throws {
+        var visibility = RentalVisibility()
+        _ = visibility.setFormFactors(scooters)
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(id: "v1"),
+            try RentalFixtures.vehicle(id: "v2")
+        ]))
+
+        let changes = visibility.reset()
+        #expect(changes.removed.sorted() == ["v1", "v2"])
+        #expect(changes.added.isEmpty)
+        #expect(changes.updated.isEmpty)
+
+        // Widening form factors or relaxing filters must not restore anything from cache
+        let widenChanges = visibility.setFormFactors(scooters.union(bikes))
+        #expect(widenChanges.isEmpty)
+
+        let filterChanges = visibility.setFilter(.any)
+        #expect(filterChanges.isEmpty)
+    }
+
+    @Test func emptyResponseRemovesAllDeliveredEntities() throws {
+        var visibility = RentalVisibility()
+        _ = visibility.setFormFactors(scooters)
+        _ = visibility.apply(RentalFixtures.snapshot(added: [
+            try RentalFixtures.vehicle(id: "v1"),
+            try RentalFixtures.vehicle(id: "v2")
+        ]))
+
+        let changes = visibility.apply(RentalFixtures.snapshot(removed: ["v1", "v2"]))
+        #expect(changes.removed.sorted() == ["v1", "v2"])
+        #expect(changes.added.isEmpty)
+        #expect(changes.updated.isEmpty)
+    }
+
+    @Test func repeatedReloadsWithSameDataEmitNoRedundantChanges() throws {
+        var visibility = RentalVisibility()
+        _ = visibility.setFormFactors(scooters)
+        let v1 = try RentalFixtures.vehicle(id: "v1", rangeMeters: 5_000)
+        let v2 = try RentalFixtures.vehicle(id: "v2", rangeMeters: 10_000)
+
+        let initialChanges = visibility.apply(RentalFixtures.snapshot(added: [v1, v2]))
+        #expect(initialChanges.added.map(\.id).sorted() == ["v1", "v2"])
+
+        // Applying identical entities as additions is ignored
+        let duplicateAddChanges = visibility.apply(RentalFixtures.snapshot(added: [v1, v2]))
+        #expect(duplicateAddChanges.isEmpty)
+
+        // Applying identical entities as updates is treated as in-place updates
+        let duplicateUpdateChanges = visibility.apply(RentalFixtures.snapshot(updated: [v1, v2]))
+        #expect(duplicateUpdateChanges.updated.map(\.id).sorted() == ["v1", "v2"])
+        #expect(duplicateUpdateChanges.added.isEmpty)
+        #expect(duplicateUpdateChanges.removed.isEmpty)
+    }
+
+    @Test func repeatedReloadsWithDeltasApplyCleanly() throws {
+        var visibility = RentalVisibility()
+        _ = visibility.setFormFactors(scooters)
+        let v1 = try RentalFixtures.vehicle(id: "v1", rangeMeters: 5_000)
+        let v2 = try RentalFixtures.vehicle(id: "v2", rangeMeters: 10_000)
+        _ = visibility.apply(RentalFixtures.snapshot(added: [v1, v2]))
+
+        let v3 = try RentalFixtures.vehicle(id: "v3", rangeMeters: 8_000)
+        let v2Updated = try RentalFixtures.vehicle(id: "v2", rangeMeters: 9_000)
+
+        let deltaChanges = visibility.apply(RentalFixtures.snapshot(
+            added: [v3],
+            removed: ["v1"],
+            updated: [v2Updated]
+        ))
+
+        #expect(deltaChanges.added.map(\.id) == ["v3"])
+        #expect(deltaChanges.removed == ["v1"])
+        #expect(deltaChanges.updated.map(\.id) == ["v2"])
+    }
+
+    @Test func hiddenServiceRemovesItsEntitiesAndPreservesOthers() throws {
+        var visibility = RentalVisibility()
+        _ = visibility.setFormFactors(scooters.union(bikes))
+
+        let bike = try RentalFixtures.vehicle(id: "b1", formFactor: "BICYCLE")
+        let scooter = try RentalFixtures.vehicle(id: "s1", formFactor: "SCOOTER")
+        _ = visibility.apply(RentalFixtures.snapshot(added: [bike, scooter]))
+
+        // Hide scooters service: only scooters are removed, bikes remain
+        let hideScootersChanges = visibility.setFormFactors(bikes)
+        #expect(hideScootersChanges.removed == ["s1"])
+        #expect(hideScootersChanges.added.isEmpty)
+
+        // Hide bikes service: remaining bikes removed
+        let hideBikesChanges = visibility.setFormFactors([])
+        #expect(hideBikesChanges.removed == ["b1"])
+        #expect(hideBikesChanges.added.isEmpty)
+
+        // Restore bikes service: only bikes restored from cache
+        let restoreBikesChanges = visibility.setFormFactors(bikes)
+        #expect(restoreBikesChanges.added.map(\.id) == ["b1"])
+        #expect(restoreBikesChanges.removed.isEmpty)
+    }
 }
