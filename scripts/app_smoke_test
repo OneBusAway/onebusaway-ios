@@ -1,0 +1,370 @@
+#!/usr/bin/env bash
+#
+# Builds App (iOS application) for an iOS simulator, installs it, launches it,
+# and asserts it stays alive after launch.
+#
+# Why this exists: `simctl launch` (and XcodeBuildMCP's build_run_sim) print a
+# PID and exit 0 even when dyld kills the app 10 ms later — which is exactly
+# what a missing LD_RUNPATH_SEARCH_PATHS does. A compile cannot catch dyld,
+# Info.plist, or embedding failures; this can.
+#
+# Usage:
+#   scripts/app_smoke_test [DERIVED_DATA_PATH] [OPTIONS]
+#
+# Options:
+#   -d, --derived-data <PATH>   Path to DerivedData (defaults to DerivedData)
+#   -u, --udid <UDID>           Override simulator by explicit UDID
+#   -n, --name <NAME>           Override simulator by name
+#       --pro                   Target newest iPhone Pro simulator
+#       --duo                   Target newest iPhone Duo simulator
+#   -a, --app <NAME>            App brand to test: OneBusAway (default) or KiedyBus
+#       --skip-build            Skip xcodebuild; assume App.app is already built
+#   -c, --configuration <CFG>   Build configuration: Debug (default) or Release
+#   -t, --timeout <SECONDS>     Seconds to wait and assert liveness (default: 8)
+#       --screenshot-on-failure [PATH]
+#                               Capture simulator screenshot on failure
+#       --screenshot-dir <DIR>  Directory to save diagnostic screenshots
+#       --dry-run               Validate configuration, simulator and paths without building/launching
+#   -h, --help                  Show this help message
+#
+# Environment variables:
+#   CAS_PATH                    Xcode compilation cache path (used in CI)
+#   SIMULATOR_OVERRIDE_UDID     Default iOS simulator UDID override
+#   SIMULATOR_OVERRIDE_NAME     Default iOS simulator name override
+#   SMOKE_SCREENSHOT_DIR        Default directory for failure screenshots
+#   SMOKE_SCREENSHOT_ON_FAILURE Set to 1 to enable failure screenshot capture
+
+set -euo pipefail
+
+# Resolve script directory and source shared smoke testing routines
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/lib/smoke_common.sh"
+
+show_help() {
+    cat <<'EOF'
+Usage: scripts/app_smoke_test [DERIVED_DATA_PATH] [OPTIONS]
+
+Builds the iOS App target for an iOS simulator, installs it, launches it,
+and asserts it stays alive after launch.
+
+Arguments:
+  [DERIVED_DATA_PATH]         DerivedData directory (defaults to DerivedData)
+
+Options:
+  -d, --derived-data <PATH>   DerivedData directory
+  -u, --udid <UDID>           Override simulator by explicit UDID
+  -n, --name <NAME>           Override simulator by name
+      --pro                   Select newest iPhone Pro simulator
+      --duo                   Select newest iPhone Duo simulator
+  -a, --app <NAME>            App brand: OneBusAway (default) or KiedyBus
+      --skip-build            Skip xcodebuild step (use prebuilt App.app)
+  -c, --configuration <CFG>   Build configuration: Debug (default) or Release
+  -t, --timeout <SECONDS>     Seconds to wait and verify liveness (default: 8)
+      --screenshot-on-failure [PATH]
+                              Capture simulator screenshot on failure
+      --screenshot-dir <DIR>  Directory to save failure screenshots
+      --dry-run               Validate preflight checks without compiling or launching
+  -h, --help                  Show this help message
+
+Environment variables:
+  CAS_PATH                    Xcode compilation cache path (used in CI)
+  SIMULATOR_OVERRIDE_UDID     Default iOS simulator UDID override
+  SIMULATOR_OVERRIDE_NAME     Default iOS simulator name override
+  SMOKE_SCREENSHOT_DIR        Default directory for failure screenshots
+  SMOKE_SCREENSHOT_ON_FAILURE Set to 1 to enable failure screenshot capture
+EOF
+}
+
+derived_arg=""
+udid_override=""
+name_override=""
+use_pro=0
+use_duo=0
+app_name="OneBusAway"
+scheme="App"
+configuration="Debug"
+skip_build=0
+dry_run=0
+timeout=8
+screenshot_path=""
+screenshot_dir="${SMOKE_SCREENSHOT_DIR:-}"
+screenshot_on_failure="${SMOKE_SCREENSHOT_ON_FAILURE:-0}"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -d|--derived-data)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            derived_arg="$2"
+            shift 2
+            ;;
+        --derived-data=*)
+            derived_arg="${1#*=}"
+            shift
+            ;;
+        -u|--udid)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            udid_override="$2"
+            shift 2
+            ;;
+        --udid=*)
+            udid_override="${1#*=}"
+            shift
+            ;;
+        -n|--name)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            name_override="$2"
+            shift 2
+            ;;
+        --name=*)
+            name_override="${1#*=}"
+            shift
+            ;;
+        --pro)
+            use_pro=1
+            shift
+            ;;
+        --duo)
+            use_duo=1
+            shift
+            ;;
+        -a|--app)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            app_name="$2"
+            shift 2
+            ;;
+        --app=*)
+            app_name="${1#*=}"
+            shift
+            ;;
+        -c|--configuration)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            configuration="$2"
+            shift 2
+            ;;
+        --configuration=*)
+            configuration="${1#*=}"
+            shift
+            ;;
+        --skip-build)
+            skip_build=1
+            shift
+            ;;
+        -t|--timeout)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            timeout="$2"
+            shift 2
+            ;;
+        --timeout=*)
+            timeout="${1#*=}"
+            shift
+            ;;
+        --screenshot-on-failure)
+            screenshot_on_failure=1
+            if [[ $# -gt 1 ]] && [[ "$2" != -* ]]; then
+                screenshot_path="$2"
+                shift 2
+            else
+                shift
+            fi
+            ;;
+        --screenshot-on-failure=*)
+            screenshot_on_failure=1
+            screenshot_path="${1#*=}"
+            shift
+            ;;
+        --screenshot-dir)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            screenshot_dir="$2"
+            screenshot_on_failure=1
+            shift 2
+            ;;
+        --screenshot-dir=*)
+            screenshot_dir="${1#*=}"
+            screenshot_on_failure=1
+            shift
+            ;;
+        --dry-run)
+            dry_run=1
+            shift
+            ;;
+        -*)
+            echo "error: unknown argument: $1 (see --help)" >&2
+            exit 2
+            ;;
+        *)
+            if [ -z "$derived_arg" ]; then
+                derived_arg="$1"
+                shift
+            else
+                echo "error: unexpected positional argument: $1" >&2
+                exit 2
+            fi
+            ;;
+    esac
+done
+
+case "$app_name" in
+    OneBusAway)
+        expected_bundle_id="org.onebusaway.iphone"
+        ;;
+    KiedyBus)
+        expected_bundle_id="pl.kiedybus.iphone"
+        ;;
+    *)
+        echo "error: unknown app '$app_name' (expected 'OneBusAway' or 'KiedyBus')" >&2
+        exit 2
+        ;;
+esac
+
+derived="${derived_arg:-DerivedData}"
+[[ $derived = /* ]] || derived="$PWD/$derived"
+cd "$REPO_ROOT"
+
+validate_project_brand() {
+    if [ -f "OBAKit.xcodeproj/project.pbxproj" ]; then
+        if ! grep -q "PRODUCT_BUNDLE_IDENTIFIER = $expected_bundle_id;" OBAKit.xcodeproj/project.pbxproj 2>/dev/null; then
+            echo "error: OBAKit.xcodeproj was not generated for $app_name (expected bundle ID: $expected_bundle_id)" >&2
+            echo "hint: regenerate the project with: scripts/generate_project $app_name" >&2
+            exit 1
+        fi
+    elif [ "$skip_build" -eq 0 ]; then
+        echo "error: OBAKit.xcodeproj not found." >&2
+        echo "hint: generate the project with: scripts/generate_project $app_name" >&2
+        exit 1
+    fi
+}
+
+# Resolve iOS simulator UDID
+resolver_args=()
+if [ -n "$udid_override" ]; then
+    resolver_args+=(-u "$udid_override")
+fi
+if [ -n "$name_override" ]; then
+    resolver_args+=(-n "$name_override")
+fi
+if [ "$use_pro" -eq 1 ]; then
+    resolver_args+=(--pro)
+fi
+if [ "$use_duo" -eq 1 ]; then
+    resolver_args+=(--duo)
+fi
+
+if ! udid=$(scripts/resolve_simulator_udid ${resolver_args[@]+"${resolver_args[@]}"}); then
+    echo "error: could not resolve iOS simulator UDID" >&2
+    exit 1
+fi
+
+# The App target's product is App.app for both OneBusAway and KiedyBus
+# (Apps/OneBusAway/project.yml and Apps/KiedyBus/project.yml set no PRODUCT_NAME).
+# We pin this exact path and never fall back to a `find` that could pick a
+# stale or unrelated bundle (e.g. OBAKitUITests-Runner.app from build-for-testing).
+expected_app="$derived/Build/Products/${configuration}-iphonesimulator/App.app"
+
+# Configure failure screenshot path if enabled
+if [ "$screenshot_on_failure" = "1" ] || [ -n "$screenshot_path" ] || [ -n "$screenshot_dir" ]; then
+    screenshot_on_failure=1
+    if [ -z "$screenshot_path" ]; then
+        screenshot_dir="${screenshot_dir:-$derived/smoke_screenshots}"
+        screenshot_path="$screenshot_dir/app_smoke_failure_$(date +%Y%m%d_%H%M%S).png"
+    fi
+fi
+
+if [ "$dry_run" -eq 1 ]; then
+    echo "[dry-run] iOS App smoke test configuration:"
+    echo "  Simulator UDID:        $udid"
+    echo "  Target App Brand:      $app_name ($expected_bundle_id, scheme: $scheme, config: $configuration)"
+    echo "  DerivedData path:      $derived"
+    echo "  Expected app product:  $expected_app"
+    echo "  Liveness timeout:      ${timeout}s"
+    echo "  Skip build:            $skip_build"
+    echo "  Capture screenshot:    $screenshot_on_failure (${screenshot_path:-none})"
+    validate_project_brand
+    smoke_validate_preflight "$udid" "$expected_app" "$skip_build"
+    exit $?
+fi
+
+if [ "$skip_build" -eq 0 ]; then
+    validate_project_brand
+    echo "Building $scheme ($app_name) for iOS Simulator (id=$udid)..."
+    xcodebuild build \
+      -project OBAKit.xcodeproj \
+      -scheme "$scheme" \
+      -configuration "$configuration" \
+      -destination "platform=iOS Simulator,id=$udid" \
+      -derivedDataPath "$derived" \
+      ${CAS_PATH:+COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH="$CAS_PATH"} \
+      -quiet
+fi
+
+app="$expected_app"
+if [ ! -d "$app" ]; then
+    echo "error: $app was not produced by the build" >&2
+    exit 1
+fi
+
+bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist" 2>/dev/null || echo "")
+if [ "$bundle_id" != "$expected_bundle_id" ]; then
+    echo "error: app bundle ID ($bundle_id) does not match requested app $app_name ($expected_bundle_id)" >&2
+    echo "hint: regenerate the project with: scripts/generate_project $app_name" >&2
+    exit 1
+fi
+executable_name=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$app/Info.plist" 2>/dev/null || echo "App")
+
+if ! smoke_install_with_retry "$udid" "$app" "$bundle_id"; then
+    smoke_capture_diagnostics "$udid" "$bundle_id" "$executable_name" "$screenshot_path"
+    exit 1
+fi
+
+launch_output=""
+if ! launch_output=$(xcrun simctl launch "$udid" "$bundle_id" 2>&1); then
+    echo "error: simctl launch failed:" >&2
+    echo "$launch_output" >&2
+    smoke_capture_diagnostics "$udid" "$bundle_id" "$executable_name" "$screenshot_path"
+    exit 1
+fi
+
+pid=$(echo "$launch_output" | sed -n 's/.*: *\([0-9]*\).*/\1/p' | tr -d '[:space:]')
+if [ -z "$pid" ]; then
+    pid=$(echo "$launch_output" | awk '{print $NF}' | tr -d '[:space:]')
+fi
+
+echo "launched $bundle_id as pid $pid; waiting ${timeout} s"
+sleep "$timeout"
+
+smoke_check_launchd_registration "$udid" "$bundle_id"
+
+if smoke_verify_liveness "$pid" "$executable_name"; then
+    comm=$(ps -p "$pid" -o comm= 2>/dev/null || echo "$executable_name")
+    echo "PASS: $bundle_id is running (pid $pid, comm=$comm)"
+    exit 0
+fi
+
+echo "FAIL: $bundle_id did not remain running as $executable_name (pid=$pid)" >&2
+smoke_capture_diagnostics "$udid" "$bundle_id" "$executable_name" "$screenshot_path"
+exit 1

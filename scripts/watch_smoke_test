@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 #
 # Builds WatchApp for an unpaired watch simulator, installs it, launches it,
-# and asserts it is still alive 8 seconds later.
+# and asserts it is still alive 8 seconds later (or user-specified timeout).
 #
 # Why this exists: `simctl launch` (and XcodeBuildMCP's build_run_sim) print a
 # PID and exit 0 even when dyld kills the app 10 ms later — which is exactly
 # what a missing LD_RUNPATH_SEARCH_PATHS does. A compile cannot catch dyld,
 # Info.plist, or embedding failures; this can.
 #
-# Usage: scripts/watch_smoke_test [DERIVED_DATA_PATH]
+# Usage:
+#   scripts/watch_smoke_test [DERIVED_DATA_PATH] [OPTIONS]
 #   Assumes OBAKit.xcodeproj was generated with the watch targets enabled.
 #   When $CAS_PATH is set (CI), builds with Xcode's compilation cache there.
 #
-# On FAIL, the dyld/library-load query runs first and is printed up to 20
+# On FAIL, the dyld/library-load query runs first and is printed up to 30
 # lines: the daemons that re-announce the dead bundle ID to Spotlight/
 # LaunchServices in the following seconds outnumber the one dyld line that
 # actually explains the crash, so a single tail-ed query buries it.
@@ -26,29 +27,225 @@
 
 set -euo pipefail
 
-# Resolve the argument from the caller's directory before moving to the repo
-# root, which the script and project paths below assume.
-derived=${1:-DerivedData}
+# Resolve script directory and source shared smoke testing routines
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/lib/smoke_common.sh"
+
+show_help() {
+    cat <<'EOF'
+Usage: scripts/watch_smoke_test [DERIVED_DATA_PATH] [OPTIONS]
+
+Builds WatchApp for a watch simulator, installs it, launches it,
+and asserts it stays alive after launch.
+
+Arguments:
+  [DERIVED_DATA_PATH]         DerivedData directory (defaults to DerivedData)
+
+Options:
+  -d, --derived-data <PATH>   DerivedData directory
+  -u, --udid <UDID>           Override simulator by explicit UDID
+  -n, --name <NAME>           Override simulator by name
+      --ultra                 Use Apple Watch Ultra simulator
+      --skip-build            Skip xcodebuild step (use prebuilt WatchApp.app)
+  -t, --timeout <SECONDS>     Seconds to wait and verify liveness (default: 8)
+      --screenshot-on-failure [PATH]
+                              Capture simulator screenshot on failure
+      --screenshot-dir <DIR>  Directory to save failure screenshots
+      --dry-run               Validate preflight checks without compiling or launching
+  -h, --help                  Show this help message
+
+Environment variables:
+  CAS_PATH                    Xcode compilation cache path (used in CI)
+  WATCH_SIMULATOR_OVERRIDE_UDID   Default watch simulator UDID override
+  WATCH_SIMULATOR_OVERRIDE_NAME   Default watch simulator name override
+  SMOKE_SCREENSHOT_DIR        Default directory for failure screenshots
+  SMOKE_SCREENSHOT_ON_FAILURE Set to 1 to enable failure screenshot capture
+EOF
+}
+
+derived_arg=""
+udid_override=""
+name_override=""
+use_ultra=0
+skip_build=0
+dry_run=0
+timeout=8
+screenshot_path=""
+screenshot_dir="${SMOKE_SCREENSHOT_DIR:-}"
+screenshot_on_failure="${SMOKE_SCREENSHOT_ON_FAILURE:-0}"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -d|--derived-data)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            derived_arg="$2"
+            shift 2
+            ;;
+        --derived-data=*)
+            derived_arg="${1#*=}"
+            shift
+            ;;
+        -u|--udid)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            udid_override="$2"
+            shift 2
+            ;;
+        --udid=*)
+            udid_override="${1#*=}"
+            shift
+            ;;
+        -n|--name)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            name_override="$2"
+            shift 2
+            ;;
+        --name=*)
+            name_override="${1#*=}"
+            shift
+            ;;
+        --ultra)
+            use_ultra=1
+            shift
+            ;;
+        --skip-build)
+            skip_build=1
+            shift
+            ;;
+        -t|--timeout)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            timeout="$2"
+            shift 2
+            ;;
+        --timeout=*)
+            timeout="${1#*=}"
+            shift
+            ;;
+        --screenshot-on-failure)
+            screenshot_on_failure=1
+            if [[ $# -gt 1 ]] && [[ "$2" != -* ]]; then
+                screenshot_path="$2"
+                shift 2
+            else
+                shift
+            fi
+            ;;
+        --screenshot-on-failure=*)
+            screenshot_on_failure=1
+            screenshot_path="${1#*=}"
+            shift
+            ;;
+        --screenshot-dir)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            screenshot_dir="$2"
+            screenshot_on_failure=1
+            shift 2
+            ;;
+        --screenshot-dir=*)
+            screenshot_dir="${1#*=}"
+            screenshot_on_failure=1
+            shift
+            ;;
+        --dry-run)
+            dry_run=1
+            shift
+            ;;
+        -*)
+            echo "error: unknown argument: $1 (see --help)" >&2
+            exit 2
+            ;;
+        *)
+            if [ -z "$derived_arg" ]; then
+                derived_arg="$1"
+                shift
+            else
+                echo "error: unexpected positional argument: $1" >&2
+                exit 2
+            fi
+            ;;
+    esac
+done
+
+derived="${derived_arg:-DerivedData}"
 [[ $derived = /* ]] || derived="$PWD/$derived"
-cd "$(dirname "$0")/.."
+cd "$REPO_ROOT"
 
-udid=$(scripts/resolve_watch_simulator_udid)
+# Resolve watchOS simulator UDID
+resolver_args=()
+if [ -n "$udid_override" ]; then
+    resolver_args+=(-u "$udid_override")
+fi
+if [ -n "$name_override" ]; then
+    resolver_args+=(-n "$name_override")
+fi
+if [ "$use_ultra" -eq 1 ]; then
+    resolver_args+=(--ultra)
+fi
 
-# `-quiet` prints only warnings and errors; `set -e` fails the script on a
-# failed build, so a broken compile is reported as itself, not as a missing app.
-xcodebuild build \
-  -project OBAKit.xcodeproj \
-  -scheme WatchApp \
-  -configuration Debug \
-  -destination "platform=watchOS Simulator,id=$udid" \
-  -derivedDataPath "$derived" \
-  ${CAS_PATH:+COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH="$CAS_PATH"} \
-  -quiet
+if ! udid=$(scripts/resolve_watch_simulator_udid ${resolver_args[@]+"${resolver_args[@]}"}); then
+    echo "error: could not resolve watchOS simulator UDID" >&2
+    exit 1
+fi
 
 # The exact product path for -configuration Debug, rather than a `find` that
 # could pick a stale WatchApp.app if $derived is a reused/cached path holding
 # more than one matching build.
 app="$derived/Build/Products/Debug-watchsimulator/WatchApp.app"
+
+# Configure failure screenshot path if enabled
+if [ "$screenshot_on_failure" = "1" ] || [ -n "$screenshot_path" ] || [ -n "$screenshot_dir" ]; then
+    screenshot_on_failure=1
+    if [ -z "$screenshot_path" ]; then
+        screenshot_dir="${screenshot_dir:-$derived/smoke_screenshots}"
+        screenshot_path="$screenshot_dir/watch_smoke_failure_$(date +%Y%m%d_%H%M%S).png"
+    fi
+fi
+
+if [ "$dry_run" -eq 1 ]; then
+    echo "[dry-run] watchOS WatchApp smoke test configuration:"
+    echo "  Simulator UDID:        $udid"
+    echo "  DerivedData path:      $derived"
+    echo "  Expected app product:  $app"
+    echo "  Liveness timeout:      ${timeout}s"
+    echo "  Skip build:            $skip_build"
+    echo "  Capture screenshot:    $screenshot_on_failure (${screenshot_path:-none})"
+    smoke_validate_preflight "$udid" "$app" "$skip_build"
+    exit $?
+fi
+
+if [ "$skip_build" -eq 0 ]; then
+    # `-quiet` prints only warnings and errors; `set -e` fails the script on a
+    # failed build, so a broken compile is reported as itself, not as a missing app.
+    echo "Building WatchApp for watchOS Simulator (id=$udid)..."
+    xcodebuild build \
+      -project OBAKit.xcodeproj \
+      -scheme WatchApp \
+      -configuration Debug \
+      -destination "platform=watchOS Simulator,id=$udid" \
+      -derivedDataPath "$derived" \
+      ${CAS_PATH:+COMPILATION_CACHE_ENABLE_CACHING=YES COMPILATION_CACHE_CAS_PATH="$CAS_PATH"} \
+      -quiet
+fi
+
 if [ ! -d "$app" ]; then
     echo "error: $app was not produced by the build" >&2
     exit 1
@@ -64,76 +261,37 @@ bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.pl
 # Even booted here, a CI simulator has passed bootstatus and then been found
 # shut down by install (#1591). That is the runner, not the app, so only that
 # failure boots it again; any other install error fails at once.
-installed=0
-for attempt in 1 2 3; do
-    xcrun simctl boot "$udid" 2>/dev/null || true
-    if ! xcrun simctl bootstatus "$udid" -b >/dev/null; then
-        echo "error: simctl bootstatus failed" >&2
-        exit 1
-    fi
-
-    xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
-    if install_output=$(xcrun simctl install "$udid" "$app" 2>&1); then
-        installed=1
-        break
-    fi
-    echo "$install_output" >&2
-    if ! grep -q "current state: Shutdown" <<<"$install_output" || [ "$attempt" = 3 ]; then
-        break
-    fi
-    echo "simulator shut down before install (attempt $attempt of 3); booting it again" >&2
-done
-if [ "$installed" != 1 ]; then
-    echo "error: simctl install failed" >&2
+if ! smoke_install_with_retry "$udid" "$app" "$bundle_id"; then
+    smoke_capture_diagnostics "$udid" "$bundle_id" "WatchApp" "$screenshot_path"
     exit 1
 fi
-if ! launch_output=$(xcrun simctl launch "$udid" "$bundle_id"); then
-    echo "error: simctl launch failed" >&2
+
+launch_output=""
+if ! launch_output=$(xcrun simctl launch "$udid" "$bundle_id" 2>&1); then
+    echo "error: simctl launch failed:" >&2
+    echo "$launch_output" >&2
+    smoke_capture_diagnostics "$udid" "$bundle_id" "WatchApp" "$screenshot_path"
     exit 1
 fi
-pid=${launch_output##*: }
-echo "launched $bundle_id as pid $pid; waiting 8 s"
-sleep 8
 
-alive=0
-if kill -0 "$pid" 2>/dev/null; then
-    alive=1
+pid=$(echo "$launch_output" | sed -n 's/.*: *\([0-9]*\).*/\1/p' | tr -d '[:space:]')
+if [ -z "$pid" ]; then
+    pid=$(echo "$launch_output" | awk '{print $NF}' | tr -d '[:space:]')
 fi
 
-comm=$(ps -p "$pid" -o comm= 2>/dev/null || true)
-name_ok=0
-if [ "$(basename "$comm")" = "WatchApp" ]; then
-    name_ok=1
-fi
+echo "launched $bundle_id as pid $pid; waiting ${timeout} s"
+sleep "$timeout"
 
 # Informational only: launchd registration does not gate PASS/FAIL (see the
 # header comment above for why).
-registered=0
-for _ in 1 2 3 4 5; do
-    if xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -q "$bundle_id"; then
-        registered=1
-        break
-    fi
-    sleep 2
-done
-if [ "$registered" = 1 ]; then
-    echo "launchd registration: yes"
-else
-    echo "launchd registration: not observed within 10 s (informational)"
-fi
+smoke_check_launchd_registration "$udid" "$bundle_id"
 
-if [ "$alive" = 1 ] && [ "$name_ok" = 1 ]; then
+if smoke_verify_liveness "$pid" "WatchApp"; then
+    comm=$(ps -p "$pid" -o comm= 2>/dev/null || echo "WatchApp")
     echo "PASS: $bundle_id is running (pid $pid, comm=$comm)"
     exit 0
 fi
 
-echo "FAIL: alive=$alive name_ok=$name_ok (comm=$comm)" >&2
-
-echo "--- dyld / library-load failures ---" >&2
-xcrun simctl spawn "$udid" log show --last 2m --style compact \
-  --predicate 'eventMessage CONTAINS "Library not loaded" OR eventMessage CONTAINS "OS_REASON_DYLD" OR eventMessage CONTAINS "dyld"' 2>/dev/null | head -20 >&2 || true
-
-echo "--- last minute of simulator log mentioning the app or dyld ---" >&2
-xcrun simctl spawn "$udid" log show --last 2m \
-  --predicate "process == 'WatchApp' OR eventMessage CONTAINS '$bundle_id'" 2>/dev/null | tail -40 >&2 || true
+echo "FAIL: $bundle_id did not remain running as WatchApp (pid=$pid)" >&2
+smoke_capture_diagnostics "$udid" "$bundle_id" "WatchApp" "$screenshot_path"
 exit 1

@@ -13,6 +13,16 @@
 #   WATCH_UDID=$(scripts/resolve_watch_simulator_udid)
 #   xcodebuild ... -destination "platform=watchOS Simulator,id=$WATCH_UDID"
 #
+# Options:
+#   -u, --udid <UDID>   Validate and use explicit simulator UDID
+#   -n, --name <NAME>   Select simulator matching name (case-insensitive substring/exact)
+#       --ultra         Select (or create) the newest Apple Watch Ultra
+#   -h, --help          Show this help message
+#
+# Environment variables:
+#   WATCH_SIMULATOR_OVERRIDE_UDID   Default watch UDID override
+#   WATCH_SIMULATOR_OVERRIDE_NAME   Default watch name override
+#
 # With --ultra it resolves (or creates) the newest Apple Watch Ultra instead:
 # its screen is the largest App Store watch size, which
 # `scripts/app_store_screenshots --watch` captures at.
@@ -21,11 +31,62 @@ set -euo pipefail
 
 family="Apple-Watch"
 name="OBA Watch Smoke"
-case "${1:-}" in
-    "") ;;
-    --ultra) family="Apple-Watch-Ultra"; name="OBA Watch Ultra" ;;
-    *) echo "error: unknown argument: $1 (expected --ultra or nothing)" >&2; exit 2 ;;
-esac
+explicit_udid="${WATCH_SIMULATOR_OVERRIDE_UDID:-}"
+explicit_name="${WATCH_SIMULATOR_OVERRIDE_NAME:-}"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            echo "Usage: scripts/resolve_watch_simulator_udid [OPTIONS]"
+            echo ""
+            echo "Prints the UDID of an available Apple Watch simulator."
+            echo ""
+            echo "Options:"
+            echo "  -u, --udid <UDID>   Validate and use explicit simulator UDID"
+            echo "  -n, --name <NAME>   Select simulator matching name (case-insensitive substring/exact)"
+            echo "      --ultra         Select (or create) the newest Apple Watch Ultra"
+            echo "  -h, --help          Show this help message"
+            echo ""
+            echo "Environment variables:"
+            echo "  WATCH_SIMULATOR_OVERRIDE_UDID   Default watch UDID override"
+            echo "  WATCH_SIMULATOR_OVERRIDE_NAME   Default watch name override"
+            exit 0
+            ;;
+        --ultra)
+            family="Apple-Watch-Ultra"
+            name="OBA Watch Ultra"
+            shift
+            ;;
+        -u|--udid)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            explicit_udid="$2"
+            shift 2
+            ;;
+        --udid=*)
+            explicit_udid="${1#*=}"
+            shift
+            ;;
+        -n|--name)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            explicit_name="$2"
+            shift 2
+            ;;
+        --name=*)
+            explicit_name="${1#*=}"
+            shift
+            ;;
+        *)
+            echo "error: unknown argument: $1 (expected --udid, --name, --ultra or --help)" >&2
+            exit 2
+            ;;
+    esac
+done
 
 if ! devices_json=$(xcrun simctl list devices available -j 2>&1); then
     echo "error: \`xcrun simctl\` failed:" >&2
@@ -41,21 +102,49 @@ try:
 except (json.JSONDecodeError, KeyError, TypeError) as error:
     sys.exit("error: could not parse the device list: " + str(error))
 
+family = sys.argv[1]
+udid_override = sys.argv[2] if len(sys.argv) > 2 else ""
+name_override = sys.argv[3] if len(sys.argv) > 3 else ""
+
 def version(runtime):
     match = re.search(r"watchOS-(\d+)-(\d+)", runtime)
     return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
 
+if udid_override:
+    for runtime, runtime_devices in devices.items():
+        if not re.search(r"watchOS-\d+-\d+", runtime):
+            continue
+        for d in runtime_devices:
+            if d.get("udid", "").lower() == udid_override.lower():
+                print(d["udid"])
+                sys.exit(0)
+    sys.exit("error: watch simulator with UDID \"" + udid_override + "\" not found among available watchOS devices.")
+
+if name_override:
+    sorted_runtimes = sorted([r for r in devices.keys() if re.search(r"watchOS-\d+-\d+", r)], key=version, reverse=True)
+    for r in sorted_runtimes:
+        for d in devices[r]:
+            if d.get("name", "").strip().lower() == name_override.strip().lower():
+                print(d["udid"])
+                sys.exit(0)
+    for r in sorted_runtimes:
+        for d in devices[r]:
+            if name_override.strip().lower() in d.get("name", "").strip().lower():
+                print(d["udid"])
+                sys.exit(0)
+    sys.exit("error: no available watch simulator matching name \"" + name_override + "\" found.")
+
 for runtime in sorted(devices, key=version, reverse=True):
     if not re.search(r"watchOS-\d+-\d+", runtime):
         continue
-    watches = [d for d in devices[runtime] if sys.argv[1] + "-" in d.get("deviceTypeIdentifier", "")]
+    watches = [d for d in devices[runtime] if family + "-" in d.get("deviceTypeIdentifier", "")]
     if watches:
         # Newest model first, e.g. "Ultra-4" over "Ultra-3".
-        if sys.argv[1] != "Apple-Watch":  # the default keeps its first-listed choice
+        if family != "Apple-Watch":  # the default keeps its first-listed choice
             watches.sort(key=lambda d: [int(n) for n in re.findall(r"-(\d+)-", d["deviceTypeIdentifier"])], reverse=True)
         print(watches[0]["udid"])
         break
-' "$family")
+' "$family" "$explicit_udid" "$explicit_name")
 
 if [ -z "$udid" ]; then
     # No device on any watchOS runtime: create one from the newest runtime and

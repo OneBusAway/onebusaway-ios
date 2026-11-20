@@ -34,6 +34,14 @@ That prints the first iPhone on the newest installed iOS runtime — the same
 selection `.github/workflows/tests.yml` makes, from the same implementation, so
 the two cannot drift apart.
 
+The resolver supports explicit overrides across machines:
+- `-u, --udid <UDID>`: Explicit simulator UDID override.
+- `-n, --name <NAME>`: Named simulator override (e.g. `--name "iPhone 18 Pro"`).
+- `--pro`: Select newest iPhone Pro.
+- `--duo`: Select newest iPhone Duo.
+- Environment variables: `SIMULATOR_OVERRIDE_UDID` / `SIMULATOR_OVERRIDE_NAME`.
+(For watchOS workflows, `scripts/resolve_watch_simulator_udid` provides matching overrides: `-u`, `-n`, `--ultra`).
+
 **Run it in the same shell invocation as the command that uses it.** It sets an
 ordinary shell variable, and this file's audience is Claude Code, whose Bash tool
 starts a fresh shell per call — the working directory persists, environment does
@@ -150,6 +158,31 @@ scripts/check_module_boundaries         # Enforce module boundaries and architec
 scripts/check_module_boundaries --test  # Validate module boundary checker against fixture test suite
 scripts/pre_pr_check                    # Pre-PR check runner: boundaries, tests, SwiftLint
 ```
+
+### Release Smoke Tests
+
+Pre-release smoke tests assert that built apps boot, install, launch, and stay alive without dynamic linker (dyld), embedding, asset, or `Info.plist` crashes that static compiles and unit tests cannot catch.
+
+```bash
+# Smoke test the main iOS app
+scripts/app_smoke_test [DerivedData]               # Build, install, launch and verify liveness
+scripts/app_smoke_test --skip-build                # Use existing build in DerivedData
+scripts/app_smoke_test --name "iPhone 18 Pro"      # Target specific simulator by name
+scripts/app_smoke_test --udid "$SIMULATOR_UDID"    # Target specific simulator by UDID
+scripts/app_smoke_test --screenshot-on-failure     # Save failure screenshot on crash
+scripts/app_smoke_test --dry-run                   # Validate preflight checks without build
+
+# Smoke test the watchOS app
+scripts/watch_smoke_test [DerivedData]             # Build, install, launch and verify liveness
+scripts/watch_smoke_test --skip-build              # Use existing build in DerivedData
+scripts/watch_smoke_test --ultra                   # Target Apple Watch Ultra simulator
+scripts/watch_smoke_test --name "OBA Watch Smoke"  # Target specific simulator by name
+scripts/watch_smoke_test --udid "$WATCH_UDID"      # Target specific simulator by UDID
+scripts/watch_smoke_test --screenshot-on-failure   # Save failure screenshot on crash
+scripts/watch_smoke_test --dry-run                 # Validate preflight checks without build
+```
+
+See [docs/smoke_tests.md](docs/smoke_tests.md) for full diagnostic and CI details.
 
 ### Documentation
 ```bash
