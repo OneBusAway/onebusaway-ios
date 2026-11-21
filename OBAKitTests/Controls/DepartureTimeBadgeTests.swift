@@ -122,4 +122,41 @@ final class DepartureTimeBadgeTests {
         #expect(badge.text == nil)
         #expect(badge.layer.backgroundColor == nil)
     }
+
+    @Test func testConfigureWithNilClearsProperties() {
+        let badge = DepartureTimeBadge(frame: .zero)
+        let config = DepartureTimeBadge.Configuration(
+            accessibilityLabel: "Departing soon",
+            displayText: "10m",
+            backgroundColor: UIColor.red.cgColor
+        )
+        badge.configure(config)
+        #expect(badge.text == "10m")
+
+        badge.configure(nil)
+        #expect(badge.accessibilityLabel == nil)
+        #expect(badge.text == nil)
+        #expect(badge.layer.backgroundColor == nil)
+    }
+
+    @Test func testConfigurationEquality() {
+        let config1 = DepartureTimeBadge.Configuration(
+            accessibilityLabel: "Departing",
+            displayText: "5m",
+            backgroundColor: UIColor.green.cgColor
+        )
+        let config2 = DepartureTimeBadge.Configuration(
+            accessibilityLabel: "Departing",
+            displayText: "5m",
+            backgroundColor: UIColor.green.cgColor
+        )
+        let configDiff = DepartureTimeBadge.Configuration(
+            accessibilityLabel: "Arriving",
+            displayText: "5m",
+            backgroundColor: UIColor.green.cgColor
+        )
+
+        #expect(config1 == config2)
+        #expect(config1 != configDiff)
+    }
 }
