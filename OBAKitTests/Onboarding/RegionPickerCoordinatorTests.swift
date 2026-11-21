@@ -48,14 +48,6 @@ final class RegionPickerCoordinatorTests: OBATestCase {
         RegionPickerCoordinator(regionsService: service, userDataStore: store)
     }
 
-    /// Lets the coordinator's pending delegate callbacks run. Each one is a
-    /// `Task { @MainActor in }`, and the main actor runs its jobs in the order
-    /// they were enqueued, so once a task enqueued after them has finished, they
-    /// have finished too.
-    private func drainMainActor() async {
-        await Task { @MainActor in }.value
-    }
-
     // MARK: - Custom regions
 
     @Test func `Adding a custom region makes it current and turns off automatic selection`() async throws {

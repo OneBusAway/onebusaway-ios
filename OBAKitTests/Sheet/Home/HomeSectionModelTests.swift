@@ -702,4 +702,67 @@ final class HomeSectionModelTests: OBATestCase {
 
         #expect(model.loadedArrivals(for: bookmark) == nil)
     }
+
+    /// Fresh arrivals delivered to the home bookmarks section reload widget timelines
+    /// through the production default reload path.
+    @Test @MainActor
+    func `Home bookmarks section arrivals refresh widget timelines`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try makeTripBookmarks(count: 1, application: application)
+        await drainMainActor()
+
+        let originalReload = BookmarkWidgetRefresher.defaultReloadKind
+        defer { BookmarkWidgetRefresher.defaultReloadKind = originalReload }
+
+        var reloadedKinds: [String] = []
+        BookmarkWidgetRefresher.defaultReloadKind = { reloadedKinds.append($0) }
+
+        dataLoader.mock(data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_75414.json")) { request in
+            request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        try #require(application.currentRegion != nil)
+
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+
+        let start = Date()
+        try #require(model.loadIfNeeded(now: start, staleAfter: 30))
+
+        await model.loader.loadDataAndWait()
+        try #require(model.loader.lastBatchHadError == false, "Precondition: the batch must have succeeded")
+
+        #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+    }
+
+    /// When a batch fails or delivers no arrivals, widget timelines must not be reloaded.
+    @Test @MainActor
+    func `Home bookmarks section failed batch does not reload widgets`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplicationWithRegion(queue: queue, dataLoader: dataLoader)
+        _ = try makeTripBookmarks(count: 1, application: application)
+        await drainMainActor()
+
+        let originalReload = BookmarkWidgetRefresher.defaultReloadKind
+        defer { BookmarkWidgetRefresher.defaultReloadKind = originalReload }
+
+        var reloadedCount = 0
+        BookmarkWidgetRefresher.defaultReloadKind = { _ in reloadedCount += 1 }
+
+        dataLoader.mock(data: Data(), statusCode: 500) { request in
+            request.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false
+        }
+
+        try #require(application.currentRegion != nil)
+
+        let model = HomeBookmarksSectionModel(application: application, limit: 4)
+
+        let start = Date()
+        try #require(model.loadIfNeeded(now: start, staleAfter: 30))
+
+        await model.loader.loadDataAndWait()
+        try #require(model.loader.lastBatchHadError, "Precondition: the batch must have failed")
+
+        #expect(reloadedCount == 0)
+    }
 }

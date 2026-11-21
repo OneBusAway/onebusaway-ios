@@ -172,4 +172,23 @@ final class BookmarksSheetViewTests: OBATestCase {
         #expect(changes == 1)
         #expect(closes == 1)
     }
+
+    /// Toggling a bookmark pin from the sheet writes to the store, which triggers
+    /// a widget refresh that must reload widget timelines.
+    @Test @MainActor func `Toggling pin from sheet reloads widget`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try seedBookmark(application: application)
+        var reloadedKinds: [String] = []
+        let refresher = BookmarkWidgetRefresher(reloadKind: { reloadedKinds.append($0) })
+
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let handler = makeHandler(application: application, coordinator: coordinator)
+        handler.togglePin(bookmark)
+
+        await drainMainActor()
+
+        #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
+        withExtendedLifetime(refresher) {}
+    }
 }
