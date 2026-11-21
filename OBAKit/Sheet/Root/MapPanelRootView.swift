@@ -203,8 +203,12 @@ struct MapPanelRootView: View {
     /// missing here keeps its label below the pin.
     @State private var stopLabelPlacements: [StopID: MapStopLabelPlacement] = [:]
 
-    /// The settled camera heading, so curbside labels follow a rotated map.
+    /// The settled camera heading, so curbside labels and the rider's heading
+    /// cone follow a rotated map.
     @State private var cameraHeading: Double = 0
+
+    /// The rider's heading, for the cone on their location.
+    @State private var headingObserver: MapPanelHeadingObserver
 
     /// Set when the first location fix arrives; cleared once the map has
     /// actually been recentered. Needed because the fix can precede the Map's
@@ -361,6 +365,7 @@ struct MapPanelRootView: View {
         self.application = application
         self.factory = factory
         self.viewportRecorder = MapViewportRecorder(application: application)
+        _headingObserver = State(initialValue: MapPanelHeadingObserver(locationService: application.locationService))
         self.tripPlanEmptyFallback = MapPanelOnDemandPlanner.makeFallback(
             probeController: probeController,
             notificationCenter: application.notificationCenter,
@@ -405,7 +410,12 @@ struct MapPanelRootView: View {
     var body: some View {
         MapReader { proxy in
         Map(position: $cameraPosition, selection: $mapSelection) {
-            MapPanelUserLocation(userDefaults: application.userDefaults)
+            MapPanelUserLocation(
+                userDefaults: application.userDefaults,
+                headingObserver: headingObserver,
+                isReducedAccuracy: headingObserver.isReducedAccuracy,
+                cameraHeading: cameraHeading
+            )
             onDemandZoneContent
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in

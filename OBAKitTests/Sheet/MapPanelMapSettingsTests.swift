@@ -22,6 +22,15 @@ final class MapPanelMapSettingsTests: OBATestCase {
         MapPanelMapSettings(style: .standard(pointsOfInterest: true), userDefaults: application.userDefaults)
     }
 
+    private func makePanelLocation(_ application: Application) -> MapPanelUserLocation {
+        MapPanelUserLocation(
+            userDefaults: application.userDefaults,
+            headingObserver: MapPanelHeadingObserver(locationService: application.locationService),
+            isReducedAccuracy: false,
+            cameraHeading: 0
+        )
+    }
+
     @Test func `Both maps start with every switch on`() {
         let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: name))
         let manager = application.mapRegionManager
@@ -33,7 +42,7 @@ final class MapPanelMapSettingsTests: OBATestCase {
 
         #expect(panel.showsScale)
         #expect(panel.showsTraffic)
-        #expect(MapPanelUserLocation(userDefaults: application.userDefaults).showsHeading)
+        #expect(makePanelLocation(application).showsHeading)
     }
 
     @Test func `The panel map reads the switches Settings writes`() {
@@ -52,10 +61,10 @@ final class MapPanelMapSettingsTests: OBATestCase {
         let settings = SettingsViewModel(application: application)
 
         settings.mapShowsHeading = false
-        #expect(!MapPanelUserLocation(userDefaults: application.userDefaults).showsHeading)
+        #expect(!makePanelLocation(application).showsHeading)
 
         settings.mapShowsHeading = true
-        #expect(MapPanelUserLocation(userDefaults: application.userDefaults).showsHeading)
+        #expect(makePanelLocation(application).showsHeading)
     }
 
     @Test func `The stored keys keep riders' existing choices`() {

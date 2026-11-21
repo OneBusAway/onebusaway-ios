@@ -28,7 +28,7 @@ public final nonisolated class OBAMockHeading: CLHeading, @unchecked Sendable {
         return _trueHeading
     }
 
-    let _headingAccuracy: CLLocationDirection = 0.0
+    let _headingAccuracy: CLLocationDirection
     public override var headingAccuracy: CLLocationDirection {
         return _headingAccuracy
     }
@@ -38,9 +38,21 @@ public final nonisolated class OBAMockHeading: CLHeading, @unchecked Sendable {
         return _timestamp
     }
 
-    public init(heading: CLLocationDirection, timestamp: Date = Date()) {
-        self._magneticHeading = heading
-        self._trueHeading = heading
+    public convenience init(heading: CLLocationDirection, timestamp: Date = Date()) {
+        self.init(magneticHeading: heading, trueHeading: heading, timestamp: timestamp)
+    }
+
+    /// Core Location reports an unknown true heading, or an invalid reading,
+    /// with a negative value.
+    public init(
+        magneticHeading: CLLocationDirection,
+        trueHeading: CLLocationDirection,
+        headingAccuracy: CLLocationDirection = 0.0,
+        timestamp: Date = Date()
+    ) {
+        self._magneticHeading = magneticHeading
+        self._trueHeading = trueHeading
+        self._headingAccuracy = headingAccuracy
         self._timestamp = timestamp
 
         super.init()
