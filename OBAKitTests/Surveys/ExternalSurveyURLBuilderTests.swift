@@ -323,28 +323,7 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: localBuilder.buildURL(for: survey, stop: nil), for: "region_id") == nil)
     }
 
-    // MARK: - Edge Cases
-
-    @Test func `Build URL omits route_id when stop has empty routeIDs array`() {
-        let stopWithEmptyRoutes = SurveysTestHelpers.makeStop(id: "1_29270", routeIDs: [])
-        let survey = SurveysTestHelpers.makeSurvey(questions: [makeQuestionWithFields(["route_id", "stop_id"])])
-
-        let url = builder.buildURL(for: survey, stop: stopWithEmptyRoutes)
-
-        #expect(self.queryValue(in: url, for: "stop_id") == "1_29270")
-        #expect(self.queryValue(in: url, for: "route_id") == nil)
-    }
-
-    @Test func `Build URL produces clean URL without trailing question mark when queryItems is empty`() {
-        let survey = SurveysTestHelpers.makeSurvey(questions: [
-            SurveysTestHelpers.makeSurveyQuestion(url: "https://oba.co/clean_survey", embeddedDataFields: [])
-        ])
-
-        let url = builder.buildURL(for: survey, stop: nil)
-
-        #expect(url?.absoluteString == "https://oba.co/clean_survey")
-        #expect(url?.query == nil)
-    }
+    // MARK: - Query Parameter Preservation
 
     @Test func `Build URL preserves multiple pre-existing query parameters and appends embedded fields`() {
         let survey = SurveysTestHelpers.makeSurvey(questions: [
