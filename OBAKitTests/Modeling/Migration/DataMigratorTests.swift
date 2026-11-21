@@ -225,6 +225,56 @@ final class DataMigrator_Tests: OBATestCase {
         #expect(bookmarks[4].tripHeadsign == "University Of Washington Station")
     }
 
+    // MARK: - Migration Failure Preconditions and Edge Paths
+
+    @Test func `Migration throws invalidAPIService when region identifier does not match apiService`() async {
+        let mismatchedParams = DataMigrator.MigrationParameters(
+            forceMigration: true,
+            regionIdentifier: 99999, // Mismatched region ID
+            delegate: dataStore
+        )
+
+        await #expect(throws: DataMigrationError.self) {
+            _ = try await self.migrator.performMigration(mismatchedParams, apiService: self.restService)
+        }
+    }
+
+    @Test func `Migration throws noDataToMigrate when defaults have no legacy data`() async throws {
+        let cleanDefaults = buildUserDefaults()
+        let emptyMigrator = DataMigrator(userDefaults: cleanDefaults)
+
+        #expect(!emptyMigrator.hasDataToMigrate)
+        #expect(!emptyMigrator.shouldPerformMigration)
+
+        await #expect(throws: DataMigrationError.noDataToMigrate) {
+            _ = try await emptyMigrator.performMigration(self.migrationParameters, apiService: self.restService)
+        }
+    }
+
+    @Test func `Migration throws noMigrationPending when migration not pending and forceMigration is false`() async throws {
+        migrator.isMigrationPending = false
+        #expect(!migrator.shouldPerformMigration)
+
+        let unforcedParams = DataMigrator.MigrationParameters(
+            forceMigration: false,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            delegate: dataStore
+        )
+
+        await #expect(throws: DataMigrationError.noMigrationPending) {
+            _ = try await self.migrator.performMigration(unforcedParams, apiService: self.restService)
+        }
+
+        // When forceMigration is true, it proceeds despite migrationPending being false
+        let forcedParams = DataMigrator.MigrationParameters(
+            forceMigration: true,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            delegate: dataStore
+        )
+        let report = try await self.migrator.performMigration(forcedParams, apiService: self.restService)
+        #expect(report.isFinished)
+    }
+
     // MARK: - TestDelegate
 
     private class DataStore: DataMigrationDelegate {
