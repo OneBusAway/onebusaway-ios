@@ -155,4 +155,38 @@ struct StopAnnotationSyncTests {
         #expect(changes.stopIDsToAdd.isEmpty)
         #expect(changes.bookmarkIDsToAdd == [bookmarkA])
     }
+
+    /// When a selected stop is also bookmarked, the bookmark shadows the stop annotation
+    /// so the stop is not added or preserved as a duplicate stop pin.
+    @Test func `Selected stop shadowed by bookmark does not emit stop annotation`() {
+        let changes = StopAnnotationSync.changes(
+            existingStopIDs: [],
+            existingBookmarks: [],
+            incomingStopIDs: ["10"],
+            bookmarksByStopID: ["10": bookmarkA],
+            selectedStopIDs: ["10"],
+            isStopsLayerEnabled: true
+        )
+
+        #expect(changes.stopIDsToAdd.isEmpty)
+        #expect(changes.stopIDsToRemove.isEmpty)
+        #expect(changes.bookmarkIDsToAdd == [bookmarkA])
+    }
+
+    /// When stops layer is disabled but a stop is currently selected, the selected stop pin
+    /// is preserved/added unless shadowed by a bookmark.
+    @Test func `Selected unbookmarked stop is added even when stops layer is disabled`() {
+        let changes = StopAnnotationSync.changes(
+            existingStopIDs: [],
+            existingBookmarks: [],
+            incomingStopIDs: ["20", "30"],
+            bookmarksByStopID: [:],
+            selectedStopIDs: ["20"],
+            isStopsLayerEnabled: false
+        )
+
+        #expect(changes.stopIDsToAdd == ["20"])
+        #expect(!changes.stopIDsToAdd.contains("30"))
+        #expect(changes.stopIDsToRemove.isEmpty)
+    }
 }
