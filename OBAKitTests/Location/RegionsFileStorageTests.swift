@@ -152,6 +152,41 @@ final class RegionsFileStorageTests {
         #expect(loaded.first?.name == validRegion.name)
     }
 
+    // MARK: - Concurrency and File Coordination
+
+    @Test func `RegionsFileStorageProtocol and storage conform to Sendable`() async throws {
+        let sendableStorage: any RegionsFileStorageProtocol = storage
+
+        let task = Task.detached { () -> Bool in
+            let regions = try sendableStorage.loadDefaultRegions()
+            return regions == nil || regions?.isEmpty == false
+        }
+        let result = try await task.value
+        #expect(result)
+    }
+
+    @Test func `Concurrent reads and writes do not corrupt storage`() async throws {
+        let region = Fixtures.customMinneapolisRegion
+        try storage.saveDefaultRegions([region])
+        let sendableStorage: any RegionsFileStorageProtocol = storage
+
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<10 {
+                group.addTask {
+                    if i % 2 == 0 {
+                        _ = try? sendableStorage.loadDefaultRegions()
+                    } else {
+                        try? sendableStorage.saveDefaultRegions([region])
+                    }
+                }
+            }
+        }
+
+        let loaded = try #require(try storage.loadDefaultRegions())
+        #expect(loaded.count == 1)
+        #expect(loaded.first?.name == region.name)
+    }
+
     // MARK: - Helpers
 
     private func defaultRegionsFileURL() throws -> URL {
