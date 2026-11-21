@@ -54,6 +54,14 @@ log_error() {
   printf "${RED}✗ %s${RESET}\n" "$1" >&2
 }
 
+# Prints `git status --porcelain`. Exits if git fails, so a failure is never read as a clean tree.
+git_status_porcelain() {
+  if ! git status --porcelain; then
+    log_error "git status failed, so the working tree state is unknown."
+    exit 1
+  fi
+}
+
 # Mode flags
 RUN_BOUNDARIES=true
 RUN_LINT=true
@@ -202,11 +210,27 @@ run_lint_checks() {
 # Backs up the developer's active project configuration and derived files, restoring them on completion or failure.
 BACKUP_DIR=""
 HAD_PROJECT=false
+MATRIX_STARTED=false
+
+# Used when no project existed before the matrix: removes the generated project and
+# restores (or removes) the root project files, depending on whether they were backed up.
+remove_matrix_project_files() {
+  rm -rf OBAKit.xcodeproj
+  local f
+  for f in project.yml project.local.yml; do
+    if [ -f "$BACKUP_DIR/$f" ]; then
+      cp "$BACKUP_DIR/$f" .
+    else
+      rm -f "$f"
+    fi
+  done
+}
 
 cleanup_project_state() {
   local exit_code=$?
   if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
-    if [ "$HAD_PROJECT" = true ]; then
+    # Before the matrix starts nothing has been changed, so there is nothing to restore.
+    if [ "$MATRIX_STARTED" = true ] && [ "$HAD_PROJECT" = true ]; then
       rm -rf OBAKit.xcodeproj project.yml project.local.yml
       [ -d "$BACKUP_DIR/OBAKit.xcodeproj" ] && cp -R "$BACKUP_DIR/OBAKit.xcodeproj" .
       [ -f "$BACKUP_DIR/project.yml" ] && cp "$BACKUP_DIR/project.yml" .
@@ -229,8 +253,8 @@ cleanup_project_state() {
           cp "$BACKUP_DIR/derived/$target" "$target"
         done
       fi
-    else
-      rm -rf OBAKit.xcodeproj project.yml project.local.yml
+    elif [ "$MATRIX_STARTED" = true ]; then
+      remove_matrix_project_files
       if [ -f "$BACKUP_DIR/orig_derived_files.txt" ]; then
         find Apps OBAWidget WatchApp OBAKit OBAKitCore OBAKitWatch OBAKitTests -type f \( -name "Info.plist" -o -name "*.entitlements" \) 2>/dev/null | while IFS= read -r cur_f; do
           if ! grep -Fxq "$cur_f" "$BACKUP_DIR/orig_derived_files.txt"; then
@@ -272,11 +296,14 @@ run_project_generation_checks() {
   local orig_healthkit=""
   local orig_desc="none"
 
+  # Back up the root project files even without a project, so cleanup only removes what the matrix created.
+  if [ -f "project.yml" ]; then cp project.yml "$BACKUP_DIR/project.yml"; fi
+  if [ -f "project.local.yml" ]; then cp project.local.yml "$BACKUP_DIR/project.local.yml"; fi
+
   if [ -d "OBAKit.xcodeproj" ]; then
-    HAD_PROJECT=true
     cp -R OBAKit.xcodeproj "$BACKUP_DIR/OBAKit.xcodeproj"
-    [ -f "project.yml" ] && cp project.yml "$BACKUP_DIR/project.yml"
-    [ -f "project.local.yml" ] && cp project.local.yml "$BACKUP_DIR/project.local.yml"
+    # Only set once the backup is complete, so a failed copy never leads to a restore from it.
+    HAD_PROJECT=true
 
     # Inspect previous configuration for reporting and restoration
     if grep -q "CFBundleDisplayName: KiedyBus" project.yml 2>/dev/null || grep -q "pl.kiedybus.iphone" project.yml 2>/dev/null; then
@@ -311,6 +338,7 @@ run_project_generation_checks() {
   git status --porcelain | sed -n 's/^\?\? //p' | sort > "$pre_untracked_file"
 
   # 1. OneBusAway (with watch target)
+  MATRIX_STARTED=true
   run_matrix_step "OneBusAway (with watch target)" OneBusAway
   if ! grep -q 'name = WatchApp;' OBAKit.xcodeproj/project.pbxproj 2>/dev/null; then
     log_error "OneBusAway project generation failed: expected WatchApp target in OBAKit.xcodeproj"
@@ -358,7 +386,7 @@ run_project_generation_checks() {
     fi
   else
     echo "Cleaning up matrix project (no prior project existed)..."
-    rm -rf OBAKit.xcodeproj project.yml project.local.yml
+    remove_matrix_project_files
     if [ -f "$BACKUP_DIR/orig_derived_files.txt" ]; then
       find Apps OBAWidget WatchApp OBAKit OBAKitCore OBAKitWatch OBAKitTests -type f \( -name "Info.plist" -o -name "*.entitlements" \) 2>/dev/null | while IFS= read -r cur_f; do
         if ! grep -Fxq "$cur_f" "$BACKUP_DIR/orig_derived_files.txt"; then
@@ -453,7 +481,7 @@ run_target_and_cleanliness_checks() {
     fi
 
     local doc_files
-    doc_files=$(echo "$changed_files" | grep -E '^docs/|^README|^\.md$' || true)
+    doc_files=$(echo "$changed_files" | grep -E '^docs/|^README|\.md$' || true)
     if [ -n "$doc_files" ]; then
       printf "  • ${BOLD}Documentation${RESET} (%d files)\n" "$(echo "$doc_files" | grep -c . || true)"
     fi
@@ -463,7 +491,7 @@ run_target_and_cleanliness_checks() {
 
   # Check working tree cleanliness
   local status_output
-  status_output="$(git status --porcelain 2>/dev/null || true)"
+  status_output="$(git_status_porcelain)"
 
   if [ -n "$status_output" ]; then
     if [ "$REQUIRE_CLEAN" = true ]; then
@@ -479,7 +507,22 @@ run_target_and_cleanliness_checks() {
   fi
 }
 
+require_clean_tree() {
+  local clean_status
+  clean_status="$(git_status_porcelain)"
+  if [ -n "$clean_status" ]; then
+    log_error "Working tree has uncommitted modifications (--require-clean specified):"
+    echo "$clean_status" >&2
+    exit 1
+  fi
+}
+
 main() {
+  # Fail fast on a dirty tree instead of after the slow generation matrix
+  if [ "$REQUIRE_CLEAN" = true ]; then
+    require_clean_tree
+  fi
+
   if [ "$RUN_BOUNDARIES" = true ]; then
     run_boundary_checks
     echo ""
@@ -502,13 +545,7 @@ main() {
 
   # Always enforce --require-clean across all invocation modes if requested
   if [ "$REQUIRE_CLEAN" = true ]; then
-    local clean_status
-    clean_status="$(git status --porcelain 2>/dev/null || true)"
-    if [ -n "$clean_status" ]; then
-      log_error "Working tree has uncommitted modifications (--require-clean specified):"
-      echo "$clean_status" >&2
-      exit 1
-    fi
+    require_clean_tree
   fi
 
   log_success "All pre-PR checks passed successfully!"

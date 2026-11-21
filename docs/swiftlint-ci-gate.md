@@ -50,15 +50,15 @@ The unified pre-PR check mirrors the CI gate structure across four steps:
     2. `scripts/generate_project OneBusAway --no-watch` followed by `scripts/assert_no_watch_target`
     3. `scripts/generate_project KiedyBus` followed by `scripts/assert_no_watch_target`
   * Guarantees project configuration changes do not break white-label apps or leak watch targets into iOS-only builds.
+  * Verifies that the project generation matrix does not introduce unexpected modifications to tracked repository files or create untracked artifacts.
   * **Preserves developer configuration:** Backs up the active project and all derived `Info.plist` and `.entitlements` files across `Apps/`, `OBAWidget/`, and `WatchApp/` before validation. Restores the developer's exact prior configuration (re-running generation with detected app, watch, and `--healthkit` arguments, and falling back to file-level restore on failure or cancellation via an EXIT trap), so active watch, KiedyBus, HealthKit, or local override setups are never lost.
 
 ### 4. Changed Targets & Working Copy Verification
 
 * **Locally (`scripts/pre_pr_check` or `scripts/pre_pr_check --targets-only`):**
-  * Verifies that the project generation matrix does not introduce unexpected modifications to tracked repository files or create untracked artifacts.
   * Analyzes changed files against the base branch (`upstream/main` or `origin/main`) and groups them by target/component (`OBAKitCore`, `OBAKit`, `OBAKitWatch`, `WatchApp`, `OBAWidget`, `Apps/*`, `Tests`, `Tooling`, `Documentation`).
   * Identifies affected targets to help developers understand which test suites and CI jobs their changes will exercise.
-  * Checks `git status` for uncommitted changes, with optional strict enforcement via `--require-clean`.
+  * Checks `git status` for uncommitted changes, with optional strict enforcement via `--require-clean`. With `--require-clean`, a dirty tree also fails before any other step runs.
 
 ## Command Reference
 
