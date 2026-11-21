@@ -138,7 +138,7 @@ struct TripStopListModel {
         sharedDestinationStopID: StopID? = nil
     ) -> TripStopListModel {
         let riderStops: RiderStops? = userStopID.map {
-            riderStops(
+            Self.riderStops(
                 in: stopTimes,
                 userStopID: $0,
                 userStopSequence: userStopSequence,
