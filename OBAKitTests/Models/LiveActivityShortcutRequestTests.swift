@@ -76,8 +76,8 @@ struct LiveActivityShortcutRequestTests {
     @Test func `Garbage stored value is treated as empty`() {
         withDefaults { userDefaults in
             userDefaults.set("not-a-uuid", forKey: LiveActivityShortcutRequest.userDefaultsKey)
-            userDefaults.set(Date().timeIntervalSince1970, forKey: LiveActivityShortcutRequest.storedAtKey)
-            #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults) == nil)
+            userDefaults.set(TestData.frozenDate.timeIntervalSince1970, forKey: LiveActivityShortcutRequest.storedAtKey)
+            #expect(LiveActivityShortcutRequest.peek(userDefaults: userDefaults, now: TestData.frozenDate) == nil)
             #expect(userDefaults.string(forKey: LiveActivityShortcutRequest.userDefaultsKey) == nil)
             #expect(userDefaults.object(forKey: LiveActivityShortcutRequest.storedAtKey) == nil)
         }

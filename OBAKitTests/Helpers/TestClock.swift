@@ -9,15 +9,19 @@
 
 import Foundation
 
-/// A `Clock` that only moves when a test calls `advance(by:)`.
+/// A `Clock` that only moves when a test calls `advance(by:)` or `advance(bySeconds:)`.
 ///
 /// `sleep(until:)` parks the caller until the clock reaches the deadline;
 /// cancellation throws `CancellationError` and unparks only the cancelled
 /// caller. Tests wait for `sleeperCount` to reach the expected value before
 /// advancing, so the sleeper is registered before the clock moves.
 nonisolated final class TestClock: Clock, @unchecked Sendable {
-    struct Instant: InstantProtocol {
+    struct Instant: InstantProtocol, Sendable {
         var offset: Duration
+
+        init(offset: Duration = .zero) {
+            self.offset = offset
+        }
 
         func advanced(by duration: Duration) -> Instant {
             Instant(offset: offset + duration)
@@ -50,6 +54,8 @@ nonisolated final class TestClock: Clock, @unchecked Sendable {
     private var currentInstant = Instant(offset: .zero)
     private var sleepers: [Sleeper] = []
     private var waiters: [Waiter] = []
+
+    init() {}
 
     var now: Instant {
         lock.withLock { currentInstant }
@@ -152,5 +158,10 @@ nonisolated final class TestClock: Clock, @unchecked Sendable {
         for sleeper in due {
             sleeper.continuation.resume()
         }
+    }
+
+    /// Moves the clock forward by seconds.
+    func advance(bySeconds seconds: Double) {
+        advance(by: .seconds(seconds))
     }
 }
