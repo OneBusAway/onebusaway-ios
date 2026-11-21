@@ -59,8 +59,12 @@ ALLOWED_UIKIT_PORTABLE_FILES: Set[str] = {
 
 # Regex patterns for imports, tokens, and APIs
 IMPORT_KIND_KEYWORDS = r"(?:typealias|struct|class|enum|protocol|let|var|func)"
+# `@preconcurrency`, `public`, `internal` and the like may come before `import`.
+IMPORT_PREFIX = r"(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:public|package|internal|fileprivate|private)\s+)?"
+IMPORT_DECL = IMPORT_PREFIX + r"import\s+(?:" + IMPORT_KIND_KEYWORDS + r"\s+)?"
+# An import starts a line or follows a `;` (`import Foundation; import UIKit`).
 IMPORT_REGEX = re.compile(
-    r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*import\s+(?:" + IMPORT_KIND_KEYWORDS + r"\s+)?([A-Za-z0-9_]+)(?:\.[A-Za-z0-9_]+)*",
+    r"(?:^|;)[ \t]*" + IMPORT_DECL + r"([A-Za-z0-9_]+)(?:\.[A-Za-z0-9_]+)*",
     re.MULTILINE
 )
 
@@ -93,9 +97,12 @@ IF_OS_WATCHOS_REGEX = re.compile(
 )
 
 # iOS boundary guard regexes
-START_GUARD_REGEX = re.compile(r"^#\s*if\s+(?:\(\s*)?os\s*\(\s*iOS\s*\)")
+# The whole condition must be `os(iOS)`: `#if os(iOS) || os(watchOS)` is not a guard.
+START_GUARD_REGEX = re.compile(r"^#\s*if\s+(?:\(\s*)?os\s*\(\s*iOS\s*\)(?:\s*\))?\s*$")
+_IMPORT_ITEM = IMPORT_DECL + r"[A-Za-z0-9_.]+"
+# A line holding only imports, one or several separated by `;`.
 IMPORT_LINE_REGEX = re.compile(
-    r"^(?:@\w+(?:\([^)]*\))?\s+)*import\s+(?:" + IMPORT_KIND_KEYWORDS + r"\s+)?[A-Za-z0-9_.]+"
+    r"^" + _IMPORT_ITEM + r"(?:\s*;\s*" + _IMPORT_ITEM + r")*\s*;?\s*$"
 )
 
 
@@ -104,73 +111,100 @@ def sanitize_code(code: str) -> str:
     Strips single-line and multiline comments, nested comments, and string literals,
     replacing stripped characters with whitespace (preserving newlines) so that line
     and column numbers remain exactly identical to the original source.
+
+    Code inside string interpolation (`"\\(expr)"`, `#"\\#(expr)"#`) is kept, since
+    it compiles like any other code. Raw strings (`#"..."#`) end only at a quote
+    followed by the same number of `#`, and a backslash in them is literal unless
+    it is followed by those `#` too.
     """
-    res: List[str] = []
-    i = 0
+    res: List[str] = list(code)
     n = len(code)
-    in_single_line_comment = False
-    comment_depth = 0
-    in_string = False
-    in_multiline_string = False
+
+    def blank(start: int, stop: int) -> None:
+        for j in range(start, min(stop, n)):
+            if res[j] != "\n":
+                res[j] = " "
+
+    # Each frame is either ("code", paren_depth) or ("string", hashes, multiline).
+    # Code frames above the bottom one are string interpolations.
+    stack: List[list] = [["code", 0]]
+    i = 0
 
     while i < n:
-        if in_single_line_comment:
-            if code[i] == "\n":
-                in_single_line_comment = False
-                res.append("\n")
+        frame = stack[-1]
+        if frame[0] == "code":
+            if code.startswith("//", i):
+                stop = code.find("\n", i)
+                stop = n if stop == -1 else stop
+                blank(i, stop)
+                i = stop
+            elif code.startswith("/*", i):
+                depth = 0
+                j = i
+                while j < n:
+                    if code.startswith("/*", j):
+                        depth += 1
+                        j += 2
+                    elif code.startswith("*/", j):
+                        depth -= 1
+                        j += 2
+                        if depth == 0:
+                            break
+                    else:
+                        j += 1
+                blank(i, j)
+                i = j
             else:
-                res.append(" ")
-            i += 1
-        elif comment_depth > 0:
-            if i + 1 < n and code[i:i + 2] == "/*":
-                comment_depth += 1
-                res.append("  ")
-                i += 2
-            elif i + 1 < n and code[i:i + 2] == "*/":
-                comment_depth -= 1
-                res.append("  ")
-                i += 2
-            else:
-                res.append("\n" if code[i] == "\n" else " ")
-                i += 1
-        elif in_multiline_string:
-            if i + 2 < n and code[i:i + 3] == '"""':
-                in_multiline_string = False
-                res.append("   ")
-                i += 3
-            else:
-                res.append("\n" if code[i] == "\n" else " ")
-                i += 1
-        elif in_string:
-            if code[i] == "\\":
-                res.append("  ")
-                i += 2
-            elif code[i] == '"':
-                in_string = False
-                res.append(" ")
-                i += 1
-            else:
-                res.append("\n" if code[i] == "\n" else " ")
-                i += 1
+                hashes = 0
+                while i + hashes < n and code[i + hashes] == "#":
+                    hashes += 1
+                if code.startswith('"', i + hashes):
+                    multiline = code.startswith('"""', i + hashes)
+                    if multiline and hashes:
+                        # Like Swift's lexer: a raw `"""` whose line also holds
+                        # a closing `"#...` is a single-line string (`#"""#`).
+                        line_end = code.find("\n", i)
+                        line_end = n if line_end == -1 else line_end
+                        rest = code[i + hashes + 1:line_end]
+                        multiline = ('"' + "#" * hashes) not in rest
+                    stop = i + hashes + (3 if multiline else 1)
+                    blank(i, stop)
+                    stack.append(["string", hashes, multiline])
+                    i = stop
+                elif hashes:
+                    i += hashes
+                elif code[i] == "(":
+                    frame[1] += 1
+                    i += 1
+                elif code[i] == ")" and len(stack) > 1 and frame[1] == 0:
+                    # Closes an interpolation: back to the enclosing string.
+                    blank(i, i + 1)
+                    stack.pop()
+                    i += 1
+                else:
+                    if code[i] == ")":
+                        frame[1] -= 1
+                    i += 1
         else:
-            if i + 2 < n and code[i:i + 3] == '"""':
-                in_multiline_string = True
-                res.append("   ")
-                i += 3
-            elif code[i] == '"':
-                in_string = True
-                res.append(" ")
-                i += 1
-            elif i + 1 < n and code[i:i + 2] == "//":
-                in_single_line_comment = True
-                res.append("  ")
-                i += 2
-            elif i + 1 < n and code[i:i + 2] == "/*":
-                comment_depth = 1
-                res.append("  ")
-                i += 2
+            _, hashes, multiline = frame
+            delimiter = "#" * hashes
+            closing = ('"""' if multiline else '"') + delimiter
+            escape = "\\" + delimiter
+            if code.startswith(closing, i):
+                blank(i, i + len(closing))
+                stack.pop()
+                i += len(closing)
+            elif code.startswith(escape, i):
+                after = i + len(escape)
+                if code.startswith("(", after):
+                    blank(i, after + 1)
+                    stack.append(["code", 0])
+                    i = after + 1
+                else:
+                    blank(i, after + 1)
+                    i = after + 1
             else:
-                res.append(code[i])
+                blank(i, i + 1)
                 i += 1
 
     return "".join(res)
@@ -342,6 +376,10 @@ def check_ios_boundary_file(rel_path: str, raw_content: str, sanitized: str) -> 
 
             if re.match(r"^#\s*if\b", line):
                 depth += 1
+            elif depth == 1 and re.match(r"^#\s*(?:else|elseif)\b", line):
+                # An `#else` branch of the guard itself compiles on watchOS.
+                guard_valid = False
+                break
             elif re.match(r"^#\s*endif\b", line):
                 depth -= 1
                 last_directive = "#endif"
@@ -456,7 +494,7 @@ def scan_tree(root_dir: Path, verbose: bool = False) -> List[Violation]:
         target_dir = root_dir / target_name
         if not target_dir.exists():
             if is_mandatory and verbose:
-                print(f"[WARN] Target directory not found: {target_dir}")
+                print(f"[WARN] Target directory not found: {target_dir}", file=sys.stderr)
             continue
 
         for dirpath, _, filenames in os.walk(target_dir):
@@ -490,7 +528,8 @@ def scan_tree(root_dir: Path, verbose: bool = False) -> List[Violation]:
                 all_violations.extend(v)
 
     if verbose:
-        print(f"Scanned {scanned_count} Swift source files across targets.")
+        # stderr, so `--json --verbose` still prints only JSON on stdout.
+        print(f"Scanned {scanned_count} Swift source files across targets.", file=sys.stderr)
 
     return all_violations
 
@@ -627,6 +666,66 @@ def run_self_tests(repo_root: Path) -> bool:
             "#if os(iOS)\nimport UIKit\nfunc open() { UIApplication.shared.open(url) }\n#endif",
             "IOS_FORBIDDEN_UIAPPLICATION",
             "UIApplication in OBAKitCore/iOS/"
+        ),
+        (
+            "OBAKitCore/iOS/ElseBranch.swift",
+            "#if os(iOS)\npublic class SomeHelper {}\n#else\npublic class WatchHelper {}\n#endif",
+            "IOS_MISSING_IF_GUARD",
+            "#else branch of the guard in OBAKitCore/iOS/"
+        ),
+        (
+            "OBAKitCore/iOS/ElseIfBranch.swift",
+            "#if os(iOS)\npublic class SomeHelper {}\n#elseif os(watchOS)\npublic class WatchHelper {}\n#endif",
+            "IOS_MISSING_IF_GUARD",
+            "#elseif branch of the guard in OBAKitCore/iOS/"
+        ),
+        (
+            "OBAKitCore/iOS/CompoundGuard.swift",
+            "#if os(iOS) || os(watchOS)\npublic class SomeHelper {}\n#endif",
+            "IOS_MISSING_IF_GUARD",
+            "compound #if os(iOS) || os(watchOS) in OBAKitCore/iOS/"
+        ),
+        (
+            "OBAKitCore/Models/AccessLevelUIKit.swift",
+            "internal import UIKit\nstruct Unapproved {}",
+            "CORE_UNAUTHORIZED_IMPORT_UIKIT",
+            "internal import UIKit in portable core"
+        ),
+        (
+            "OBAKitCore/Models/PublicWidgetKit.swift",
+            "@preconcurrency public import WidgetKit\nstruct BadModel {}",
+            "CORE_FORBIDDEN_IMPORT_WIDGETKIT",
+            "@preconcurrency public import WidgetKit in portable core"
+        ),
+        (
+            "OBAKitCore/Models/SemicolonImport.swift",
+            "import Foundation; import ActivityKit\nstruct BadModel {}",
+            "CORE_FORBIDDEN_IMPORT_ACTIVITYKIT",
+            "second import after ';' in portable core"
+        ),
+        (
+            "OBAKitCore/Network/InterpolatedApp.swift",
+            "let name = \"\\(UIApplication.shared)\"",
+            "CORE_FORBIDDEN_UIAPPLICATION",
+            "UIApplication inside string interpolation in portable core"
+        ),
+        (
+            "OBAKitCore/Network/AfterRawString.swift",
+            "let path = #\"C:\\\"#\nlet app = UIApplication.shared",
+            "CORE_FORBIDDEN_UIAPPLICATION",
+            "UIApplication after a raw string ending in a backslash in portable core"
+        ),
+        (
+            "OBAKitCore/Models/QuoteRawString.swift",
+            "let quote = #\"\"\"#\nimport ActivityKit",
+            "CORE_FORBIDDEN_IMPORT_ACTIVITYKIT",
+            "import after a single-line raw string #\"\"\"# in portable core"
+        ),
+        (
+            "OBAKitWatch/Screens/PackageImport.swift",
+            "package import UIKit\nstruct BadView {}",
+            "WATCH_FORBIDDEN_IMPORT_UIKIT",
+            "package import UIKit in OBAKitWatch"
         ),
         (
             "OBAKitWatch/Screens/BadImport.swift",
@@ -807,7 +906,7 @@ def main() -> None:
         "root_dir",
         nargs="?",
         default=None,
-        help="Root directory of repository (defaults to git repo root or current directory)."
+        help="Root directory of repository (defaults to the repository root containing the current directory)."
     )
     parser.add_argument(
         "--test",
