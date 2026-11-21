@@ -4,6 +4,12 @@ packages:
     majorVersion: 12.16.0
 
 targets:
+  OBAKitTests:
+    sources:
+      - path: ../../OBAKitTests/Analytics/UmamiAnalyticsTests.swift
+        group: Analytics Tests
+      - path: ../../OBAKitTests/Analytics/AnalyticsOrchestratorTests.swift
+        group: Analytics Tests
   App:
     dependencies:
       - package: Firebase
