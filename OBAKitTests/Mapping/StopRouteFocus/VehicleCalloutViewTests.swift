@@ -79,7 +79,7 @@ final class VehicleCalloutViewTests {
     }
 
     /// The headsign wraps rather than truncating — the one deliberate departure
-    /// from the design, since a headsign is the text a rider has to read.
+    /// from the design, since a headsign is the one piece of text here a rider has to read.
     @Test func `A long headsign grows the callout instead of truncating`() {
         let short = makeView()
         let long = VehicleCalloutView(
@@ -153,5 +153,120 @@ final class VehicleCalloutViewTests {
         #expect(first.accessibilityLabel != second.accessibilityLabel)
         #expect(second.accessibilityLabel?.contains("Lake City") == true)
         #expect(second.accessibilityLabel?.contains("on time") == true)
+    }
+
+    @Test func `Standard content size maintains horizontal header and 32pt badge`() {
+        let view = makeView()
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .large))
+
+        #expect(view.headerStackAxis == .horizontal)
+        #expect(view.badgeSize == 32)
+        let size = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        #expect(size.width == 240)
+        #expect(size.height > 100)
+    }
+
+    @Test func `Accessibility content size adapts header stack to vertical, scales badge, and grows callout downward`() {
+        let view = makeView()
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .large))
+        let standardSize = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+
+        let accessibilityTraits = UITraitCollection(preferredContentSizeCategory: .accessibilityExtraLarge)
+        view.updateLayout(for: accessibilityTraits)
+
+        #expect(view.headerStackAxis == .vertical)
+        #expect(view.badgeSize > 32)
+        #expect(view.badgeLabel.font.pointSize > 17)
+
+        let a11ySize = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        // Width remains bounded to 240pt so callout does not overflow screen width
+        #expect(a11ySize.width == 240)
+        // Vertical header and wrapping text expand callout downward
+        #expect(a11ySize.height > standardSize.height)
+    }
+
+    @Test func `Dynamic Type size category changes dynamically switch header axis and badge scale`() {
+        let view = makeView()
+
+        // Switch to accessibility size
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .accessibilityMedium))
+        #expect(view.headerStackAxis == .vertical)
+        #expect(view.badgeSize > 32)
+
+        // Switch back to standard default size (.large)
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .large))
+        #expect(view.headerStackAxis == .horizontal)
+        #expect(view.badgeSize == 32)
+
+        // Switch to smaller size (.medium scales below standard)
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .medium))
+        #expect(view.headerStackAxis == .horizontal)
+        #expect(view.badgeSize < 32)
+    }
+
+    @Test func `Long headsign wraps without clipping at both standard and accessibility sizes`() {
+        let longHeadsign = "Very Long Headsign That Spans Multiple Lines Via Downtown Seattle University District And Northgate Transit Center"
+        let view = VehicleCalloutView(
+            routeShortName: "H",
+            headsign: longHeadsign,
+            vehicleLabel: "Vehicle 6821",
+            countdownText: "1m",
+            statusText: "1 min late",
+            statusColor: .systemBlue,
+            updatedText: "12s ago",
+            routeColor: .systemRed,
+            onFollow: {}
+        )
+
+        #expect(view.headsignLabel.numberOfLines == 0)
+
+        // Standard size: grows callout vertically
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .large))
+        let standardHeight = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
+        #expect(standardHeight > 100)
+
+        // Accessibility size: adapts to vertical header and grows even taller without clipping
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .accessibilityExtraLarge))
+        let accessibilityHeight = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height
+        #expect(accessibilityHeight > standardHeight)
+    }
+
+    @Test func `Callout accommodates compact widths and wraps text properly`() {
+        let view = makeView()
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .large))
+
+        // Compress horizontally to 200pt (smaller than standard 240pt width)
+        let compactWidth: CGFloat = 200
+        let compactSize = view.systemLayoutSizeFitting(
+            CGSize(width: compactWidth, height: UIView.noIntrinsicMetric),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        )
+
+        #expect(compactSize.width == compactWidth)
+        #expect(compactSize.height > 100)
+
+        // Even in compact width with accessibility category
+        view.updateLayout(for: UITraitCollection(preferredContentSizeCategory: .accessibilityExtraLarge))
+        let compactA11ySize = view.systemLayoutSizeFitting(
+            CGSize(width: compactWidth, height: UIView.noIntrinsicMetric),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        )
+        #expect(compactA11ySize.width == compactWidth)
+        #expect(compactA11ySize.height > compactSize.height)
+    }
+
+    @Test func `Callout adapts properly to right-to-left layout direction`() {
+        let view = makeView()
+        let rtlTraits = UITraitCollection(layoutDirection: .rightToLeft)
+        view.updateLayout(for: rtlTraits)
+
+        view.frame = CGRect(x: 0, y: 0, width: 240, height: 200)
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+
+        // Follow button chevron trailing edge placed properly in RTL
+        #expect(view.followButton.configuration?.imagePlacement == .trailing)
     }
 }

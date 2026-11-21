@@ -33,7 +33,33 @@ final class VehicleCalloutView: UIView {
     }
 
     private let onFollow: () -> Void
-    private let followButton = UIButton(type: .system)
+    let followButton = UIButton(type: .system)
+
+    let headerStack: UIStackView
+    let textStack: UIStackView
+    let badgeLabel = UILabel()
+    private var badgeWidthConstraint: NSLayoutConstraint?
+    private var badgeHeightConstraint: NSLayoutConstraint?
+    private var textStackWidthConstraint: NSLayoutConstraint?
+    private var widthConstraint: NSLayoutConstraint?
+
+    let headsignLabel: UILabel
+    let vehicleLabel: UILabel
+    let countdownLabel = UILabel()
+    let updatedLabel: UILabel
+
+    private let routeShortName: String
+    private let countdownTextString: String
+    private let statusTextString: String
+    private let statusColor: UIColor
+
+    var badgeSize: CGFloat {
+        badgeWidthConstraint?.constant ?? Layout.badgeSize
+    }
+
+    var headerStackAxis: NSLayoutConstraint.Axis {
+        headerStack.axis
+    }
 
     init(
         routeShortName: String,
@@ -47,60 +73,42 @@ final class VehicleCalloutView: UIView {
         onFollow: @escaping () -> Void
     ) {
         self.onFollow = onFollow
-        super.init(frame: .zero)
+        self.routeShortName = routeShortName
+        self.countdownTextString = countdownText
+        self.statusTextString = statusText
+        self.statusColor = statusColor
 
-        let headsignLabel = Self.makeLabel(text: headsign, style: .subheadline, bold: true, numberOfLines: 3)
-        let vehicle = Self.makeLabel(text: vehicleLabel, style: .caption1, color: .secondaryLabel)
-        let updated = Self.makeLabel(
+        headsignLabel = Self.makeLabel(text: headsign, style: .subheadline, bold: true, numberOfLines: 0)
+        self.vehicleLabel = Self.makeLabel(text: vehicleLabel, style: .caption1, color: .secondaryLabel, numberOfLines: 0)
+        updatedLabel = Self.makeLabel(
             text: String(format: Self.positionUpdatedFormat, updatedText),
             style: .caption2,
-            color: .tertiaryLabel
+            color: .tertiaryLabel,
+            numberOfLines: 0
         )
 
-        let countdown = UILabel()
-        countdown.numberOfLines = 0
-        countdown.adjustsFontForContentSizeCategory = true
-        countdown.attributedText = Self.countdownText(
-            countdown: countdownText,
-            statusText: statusText,
-            statusColor: statusColor
-        )
+        countdownLabel.numberOfLines = 0
+        countdownLabel.adjustsFontForContentSizeCategory = true
 
-        configureFollowButton()
+        textStack = UIStackView.verticalStack(arrangedSubviews: [headsignLabel, self.vehicleLabel])
 
         // `.top` so a wrapping headsign grows downward from the badge rather than
         // dragging the badge to the vertical center of a three-line block.
-        let header = UIStackView(arrangedSubviews: [
-            Self.makeBadge(routeShortName: routeShortName, routeColor: routeColor),
-            UIStackView.verticalStack(arrangedSubviews: [headsignLabel, vehicle])
-        ])
-        header.axis = .horizontal
-        header.alignment = .top
-        header.spacing = Layout.badgeToText
+        headerStack = UIStackView(arrangedSubviews: [badgeLabel, textStack])
+        headerStack.alignment = .top
+        headerStack.spacing = Layout.badgeToText
 
-        let rule = UIView()
-        rule.backgroundColor = .separator
-        let ruleHeight = rule.heightAnchor.constraint(equalToConstant: 1.0 / traitCollection.displayScale)
-        ruleHeight.isActive = true
-        registerForTraitChanges([UITraitDisplayScale.self]) { (self: Self, _) in
-            ruleHeight.constant = 1.0 / self.traitCollection.displayScale
+        super.init(frame: .zero)
+
+        configureBadge(routeShortName: routeShortName, routeColor: routeColor)
+        configureFollowButton()
+        setupHierarchyAndConstraints()
+
+        updateLayout(for: traitCollection)
+
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (self: Self, _) in
+            self.updateLayout(for: self.traitCollection)
         }
-
-        let stack = UIStackView(arrangedSubviews: [header, rule, countdown, updated, followButton])
-        stack.axis = .vertical
-        stack.spacing = 10
-        // The countdown and its freshness line are one thought; the button is not.
-        stack.setCustomSpacing(2, after: countdown)
-        stack.setCustomSpacing(12, after: updated)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            widthAnchor.constraint(equalToConstant: Layout.width)
-        ])
 
         // One VoiceOver element: reading five separate labels inside a callout is
         // worse than one sentence.
@@ -112,6 +120,93 @@ final class VehicleCalloutView: UIView {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private func setupHierarchyAndConstraints() {
+        textStackWidthConstraint = textStack.widthAnchor.constraint(equalTo: headerStack.widthAnchor)
+
+        let rule = UIView()
+        rule.backgroundColor = .separator
+        let ruleHeight = rule.heightAnchor.constraint(equalToConstant: 1.0 / max(traitCollection.displayScale, 1.0))
+        ruleHeight.isActive = true
+        registerForTraitChanges([UITraitDisplayScale.self]) { (self: Self, _) in
+            ruleHeight.constant = 1.0 / max(self.traitCollection.displayScale, 1.0)
+        }
+
+        let stack = UIStackView(arrangedSubviews: [headerStack, rule, countdownLabel, updatedLabel, followButton])
+        stack.axis = .vertical
+        stack.spacing = 10
+        // The countdown and its freshness line are one thought; the button is not.
+        stack.setCustomSpacing(2, after: countdownLabel)
+        stack.setCustomSpacing(12, after: updatedLabel)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+
+        let width = widthAnchor.constraint(equalToConstant: Layout.width)
+        width.priority = UILayoutPriority(rawValue: 999)
+        self.widthConstraint = width
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: topAnchor),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            width
+        ])
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let expectedAxis: NSLayoutConstraint.Axis = traitCollection.preferredContentSizeCategory.isAccessibilityCategory ? .vertical : .horizontal
+        if headerStack.axis != expectedAxis {
+            updateLayout(for: traitCollection)
+        }
+    }
+
+    func updateLayout(for traitCollection: UITraitCollection) {
+        let isAccessibility = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+
+        if isAccessibility {
+            headerStack.axis = .vertical
+            headerStack.alignment = .leading
+            textStackWidthConstraint?.isActive = true
+        } else {
+            textStackWidthConstraint?.isActive = false
+            headerStack.axis = .horizontal
+            headerStack.alignment = .top
+        }
+
+        let scaledBadgeSize = UIFontMetrics(forTextStyle: .body).scaledValue(for: Layout.badgeSize, compatibleWith: traitCollection)
+        badgeWidthConstraint?.constant = scaledBadgeSize
+        badgeHeightConstraint?.constant = scaledBadgeSize
+        let cornerScale = scaledBadgeSize / Layout.badgeSize
+        badgeLabel.layer.cornerRadius = Layout.badgeCornerRadius * cornerScale
+
+        let baseFontSize: CGFloat = routeShortName.count <= 2 ? 17 : 13
+        let baseFont = UIFont.systemFont(ofSize: baseFontSize, weight: .heavy)
+        badgeLabel.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: baseFont, compatibleWith: traitCollection)
+
+        let headsignFont = UIFont.preferredFont(forTextStyle: .subheadline, compatibleWith: traitCollection)
+        headsignLabel.font = headsignFont.bold
+        vehicleLabel.font = UIFont.preferredFont(forTextStyle: .caption1, compatibleWith: traitCollection)
+        updatedLabel.font = UIFont.preferredFont(forTextStyle: .caption2, compatibleWith: traitCollection)
+
+        countdownLabel.attributedText = Self.countdownText(
+            countdown: countdownTextString,
+            statusText: statusTextString,
+            statusColor: statusColor,
+            traitCollection: traitCollection
+        )
+
+        followButton.setNeedsUpdateConfiguration()
+
+        // Keep callout width at Layout.width (240 pt) so it never overflows the screen width
+        // at accessibility text sizes. Vertical header and wrapping labels allow the callout
+        // to expand downward instead.
+        widthConstraint?.constant = Layout.width
+
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
+    }
 
     // MARK: - Strings
 
@@ -139,10 +234,11 @@ final class VehicleCalloutView: UIView {
     private static func countdownText(
         countdown: String,
         statusText: String,
-        statusColor: UIColor
+        statusColor: UIColor,
+        traitCollection: UITraitCollection? = nil
     ) -> NSAttributedString {
-        let large = UIFont.preferredFont(forTextStyle: .title2).bold
-        let small = UIFont.preferredFont(forTextStyle: .subheadline)
+        let large = UIFont.preferredFont(forTextStyle: .title2, compatibleWith: traitCollection).bold
+        let small = UIFont.preferredFont(forTextStyle: .subheadline, compatibleWith: traitCollection)
 
         let text = NSMutableAttributedString(
             string: countdown,
@@ -170,32 +266,33 @@ final class VehicleCalloutView: UIView {
     /// `RouteBadgeView` — hosting that one inside a `detailCalloutAccessoryView`
     /// would mean a child view controller for a 32pt square. The text color comes
     /// from the same WCAG helper, so the two cannot disagree about legibility.
-    private static func makeBadge(routeShortName: String, routeColor: UIColor) -> UIView {
-        let badge = UILabel()
-        badge.text = routeShortName
-        badge.textAlignment = .center
-        badge.font = .systemFont(ofSize: routeShortName.count <= 2 ? 17 : 13, weight: .heavy)
-        badge.textColor = routeColor.badgeTextColor(preferring: nil, minimumRatio: 4.5)
-        badge.backgroundColor = routeColor
-        badge.adjustsFontSizeToFitWidth = true
-        badge.minimumScaleFactor = 0.6
-        badge.layer.cornerRadius = Layout.badgeCornerRadius
-        badge.layer.cornerCurve = .continuous
-        badge.clipsToBounds = true
-        badge.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            badge.widthAnchor.constraint(equalToConstant: Layout.badgeSize),
-            badge.heightAnchor.constraint(equalToConstant: Layout.badgeSize)
-        ])
-        // The route name is already in the callout's combined accessibility label.
-        badge.isAccessibilityElement = false
-        return badge
+    private func configureBadge(routeShortName: String, routeColor: UIColor) {
+        badgeLabel.text = routeShortName
+        badgeLabel.textAlignment = .center
+        badgeLabel.textColor = routeColor.badgeTextColor(preferring: nil, minimumRatio: 4.5)
+        badgeLabel.backgroundColor = routeColor
+        badgeLabel.adjustsFontSizeToFitWidth = true
+        badgeLabel.minimumScaleFactor = 0.6
+        badgeLabel.layer.cornerCurve = .continuous
+        badgeLabel.clipsToBounds = true
+        badgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        badgeLabel.isAccessibilityElement = false
+
+        badgeLabel.setContentHuggingPriority(.required, for: .horizontal)
+        badgeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let width = badgeLabel.widthAnchor.constraint(equalToConstant: Layout.badgeSize)
+        let height = badgeLabel.heightAnchor.constraint(equalToConstant: Layout.badgeSize)
+        badgeWidthConstraint = width
+        badgeHeightConstraint = height
+        NSLayoutConstraint.activate([width, height])
     }
 
     private func configureFollowButton() {
         var config = UIButton.Configuration.gray()
         config.title = OBALoc("vehicle_callout.follow_this_trip", value: "Follow this trip",
                               comment: "Button in the live-vehicle map callout that opens the trip screen.")
+        config.titleLineBreakMode = .byWordWrapping
         config.image = UIImage(
             systemName: "chevron.forward",
             withConfiguration: UIImage.SymbolConfiguration(scale: .small)
@@ -204,9 +301,10 @@ final class VehicleCalloutView: UIView {
         config.imagePadding = 4
         config.cornerStyle = .medium
         config.buttonSize = .medium
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { [weak self] incoming in
             var outgoing = incoming
-            outgoing.font = UIFont.preferredFont(forTextStyle: .subheadline).bold
+            let traits = self?.traitCollection
+            outgoing.font = UIFont.preferredFont(forTextStyle: .subheadline, compatibleWith: traits).bold
             return outgoing
         }
         followButton.configuration = config
@@ -218,7 +316,7 @@ final class VehicleCalloutView: UIView {
         style: UIFont.TextStyle,
         bold: Bool = false,
         color: UIColor = .label,
-        numberOfLines: Int = 1
+        numberOfLines: Int = 0
     ) -> UILabel {
         let label = UILabel()
         label.text = text
