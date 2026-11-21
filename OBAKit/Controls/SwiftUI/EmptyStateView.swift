@@ -26,9 +26,11 @@ struct EmptyStateView<Actions: View>: View {
     var body: some View {
         ContentUnavailableView {
             Label(title, systemImage: systemImage)
+                .accessibilityIdentifier("empty_state_title")
         } description: {
             if let description {
                 Text(description)
+                    .accessibilityIdentifier("empty_state_description")
             }
         } actions: {
             actions()

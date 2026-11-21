@@ -121,6 +121,7 @@ struct DepartureRowView: View {
         // matching the legacy `StopArrivalView`'s `[.button, .updatesFrequently]`.
         // VoiceOver re-reads only the focused element, so this isn't chatty.
         .accessibilityAddTraits([.isButton, .updatesFrequently])
+        .accessibilityIdentifier("departure_row")
         // THE contract for every tap-driven row on this page, restated nowhere
         // else: `.isButton` only changes the spoken trait, and the row's tap lives
         // on `.onTapGesture`, which assistive tech cannot reach — so without an
