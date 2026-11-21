@@ -54,7 +54,7 @@ OneBusAway iOS is built as a set of modular, white-label Swift package targets a
 - **Platforms:** iOS only (compiled as part of the same `OBAKitCore` module).
 - **Role:** iOS-specific core features: UIKit helper views, Live Activities push tracking and cards, and CoreLocation region monitoring.
 - **Invariants:**
-  - **Mandatory `#if os(iOS)` Wrapping:** Swift Package Manager compiles every source file in `OBAKitCore` for both platforms. To prevent breaking watchOS compilation, **every single file in `OBAKitCore/iOS/` must be wrapped in `#if os(iOS)` … `#endif // os(iOS)`**. The first non-import, non-comment directive in the file must be `#if os(iOS)` and the file must terminate with `#endif`.
+  - **Mandatory `#if os(iOS)` Wrapping:** Swift Package Manager compiles every source file in `OBAKitCore` for both platforms. To prevent breaking watchOS compilation, **every single file in `OBAKitCore/iOS/` must be wrapped in `#if os(iOS)` … `#endif // os(iOS)`**. The first non-import, non-comment directive in the file must be `#if os(iOS)` and the file must terminate with `#endif`. The condition must be `os(iOS)` alone (not `os(iOS) || os(watchOS)`), and the guard may not have its own `#else` or `#elseif` branch, since that code would compile on watchOS.
   - **Extension Safe:** Because `OBAKitCore` is linked into app extensions and validated in CI with `APPLICATION_EXTENSION_API_ONLY=YES`, files in `OBAKitCore/iOS/` must also remain extension-safe and must not call `UIApplication.shared`.
 
 ### 3. `OBAKitWatch/` (watchOS UI Framework)
@@ -87,7 +87,7 @@ The repository includes an executable Python checker that enforces these invaria
 # Run boundary check across all targets (OBAKitCore, OBAKitWatch, OBAKit)
 scripts/check_module_boundaries
 
-# Run self-test suite (validates current tree + 16 intentional violating fixtures)
+# Run self-test suite (validates current tree + 33 intentional violating fixtures)
 scripts/check_module_boundaries --test
 
 # Run with verbose scan reporting

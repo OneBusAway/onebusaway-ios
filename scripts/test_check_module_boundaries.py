@@ -6,6 +6,7 @@ Unit test suite verifying scripts/check_module_boundaries.
 Asserts clean run on current tree and actionable failures on intentional violating fixtures.
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -43,7 +44,7 @@ class ModuleBoundaryCheckerTests(unittest.TestCase):
         script_path = REPO_ROOT / "scripts" / "check_module_boundaries"
         res = subprocess.run([sys.executable, str(script_path), "--test"], capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"CLI --test failed:\nSTDOUT: {res.stdout}\nSTDERR: {res.stderr}")
-        self.assertIn("All 24 intentional violation fixtures caught", res.stdout)
+        self.assertIn("All 33 intentional violation fixtures caught", res.stdout)
 
     def test_sanitizer_removes_comments_and_strings_accurately(self):
         """Tests that comments and string literals are sanitized without shifting lines or columns."""
@@ -173,6 +174,98 @@ class ModuleBoundaryCheckerTests(unittest.TestCase):
         sanitized = checker.sanitize_code(fixture)
         violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/SomeHelper.swift", fixture, sanitized)
         self.assertEqual(len(violations), 0)
+
+    def test_portable_core_access_level_imports(self):
+        cases = {
+            "internal import UIKit": "CORE_UNAUTHORIZED_IMPORT_UIKIT",
+            "public import WidgetKit": "CORE_FORBIDDEN_IMPORT_WIDGETKIT",
+            "package import ActivityKit": "CORE_FORBIDDEN_IMPORT_ACTIVITYKIT",
+            "fileprivate import UIKit": "CORE_UNAUTHORIZED_IMPORT_UIKIT",
+            "private import WidgetKit": "CORE_FORBIDDEN_IMPORT_WIDGETKIT",
+            "@preconcurrency internal import UIKit": "CORE_UNAUTHORIZED_IMPORT_UIKIT",
+            "import Foundation; import WidgetKit": "CORE_FORBIDDEN_IMPORT_WIDGETKIT",
+        }
+        for imports, rule in cases.items():
+            fixture = f"{imports}\nstruct X {{}}"
+            sanitized = checker.sanitize_code(fixture)
+            violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+            self.assertTrue(any(v.rule_id == rule for v in violations), f"Failed for {imports!r}")
+
+    def test_watch_access_level_import(self):
+        fixture = "public import WidgetKit\nstruct View {}"
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_watch_file("OBAKitWatch/Screens/View.swift", fixture, sanitized)
+        self.assertTrue(any(v.rule_id == "WATCH_FORBIDDEN_IMPORT_WIDGETKIT" for v in violations))
+
+    def test_ios_boundary_guard_with_else_branch_fails(self):
+        for branch in ("#else", "#elseif os(watchOS)"):
+            fixture = f"#if os(iOS)\npublic class A {{}}\n{branch}\npublic class B {{}}\n#endif"
+            sanitized = checker.sanitize_code(fixture)
+            violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/A.swift", fixture, sanitized)
+            self.assertTrue(any(v.rule_id == "IOS_MISSING_IF_GUARD" for v in violations), f"Failed for {branch}")
+
+    def test_ios_boundary_compound_guard_fails(self):
+        for condition in ("os(iOS) || os(watchOS)", "os(iOS) || DEBUG"):
+            fixture = f"#if {condition}\npublic class A {{}}\n#endif"
+            sanitized = checker.sanitize_code(fixture)
+            violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/A.swift", fixture, sanitized)
+            self.assertTrue(any(v.rule_id == "IOS_MISSING_IF_GUARD" for v in violations), f"Failed for {condition}")
+
+    def test_ios_boundary_nested_else_and_access_level_imports_pass(self):
+        fixture = (
+            "public import Foundation; internal import UIKit\n"
+            "#if os(iOS) // os(iOS)\n"
+            "#if DEBUG\nlet a = 1\n#else\nlet a = 2\n#endif\n"
+            "#endif // os(iOS)"
+        )
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_ios_boundary_file("OBAKitCore/iOS/UIKit/A.swift", fixture, sanitized)
+        self.assertEqual(violations, [])
+
+    def test_sanitizer_keeps_interpolated_code(self):
+        fixture = 'let name = "app: \\(UIApplication.shared) and UIView"'
+        sanitized = checker.sanitize_code(fixture)
+        self.assertIn("UIApplication.shared", sanitized)
+        self.assertNotIn("UIView", sanitized)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertEqual([v.rule_id for v in violations], ["CORE_FORBIDDEN_UIAPPLICATION"])
+
+    def test_sanitizer_handles_nested_strings_in_interpolation(self):
+        fixture = 'let s = "a \\(f("UIView", g(1))) b"\nlet x = UIApplication.shared'
+        sanitized = checker.sanitize_code(fixture)
+        self.assertNotIn("UIView", sanitized)
+        self.assertIn("f(", sanitized)
+        self.assertIn("UIApplication.shared", sanitized)
+
+    def test_sanitizer_handles_raw_strings(self):
+        fixture = (
+            'let path = #"C:\\"#\n'
+            'let text = #"import UIKit "quoted" \\(UIView)"#\n'
+            'let real = ##"a \\##(UIApplication.shared) "# b"##\n'
+            "let x = 1"
+        )
+        sanitized = checker.sanitize_code(fixture)
+        self.assertEqual(fixture.count("\n"), sanitized.count("\n"))
+        self.assertEqual(len(fixture), len(sanitized))
+        self.assertNotIn("UIKit", sanitized)
+        self.assertNotIn("UIView", sanitized)
+        self.assertNotIn("quoted", sanitized)
+        self.assertIn("UIApplication.shared", sanitized)
+        self.assertIn("let x = 1", sanitized)
+
+    def test_sanitizer_preserves_columns_after_interpolation(self):
+        fixture = 'let s = "\\(a)"; let app = UIApplication.shared'
+        sanitized = checker.sanitize_code(fixture)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        self.assertEqual(len(violations), 1)
+        self.assertEqual(violations[0].column, fixture.index("UIApplication") + 1)
+
+    def test_cli_json_verbose_stdout_is_only_json(self):
+        script_path = REPO_ROOT / "scripts" / "check_module_boundaries"
+        res = subprocess.run([sys.executable, str(script_path), "--json", "--verbose"], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertEqual(json.loads(res.stdout), [])
+        self.assertIn("Scanned", res.stderr)
 
     def test_find_repo_root_walks_up_from_subdirectory(self):
         sub_dir = REPO_ROOT / "OBAKit" / "Stops"
