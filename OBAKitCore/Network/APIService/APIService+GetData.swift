@@ -84,8 +84,12 @@ extension APIService {
         return (data, httpResponse)
     }
 
-    nonisolated func getData(for url: URL, cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy) async throws -> (Data, HTTPURLResponse) {
-        var request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: 10.0)
+    nonisolated func getData(
+        for url: URL,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        timeoutPolicy: RequestTimeoutPolicy = .interactive
+    ) async throws -> (Data, HTTPURLResponse) {
+        var request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: timeoutPolicy.interval)
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
         // Force en-US locale to prevent server-side locale-dependent number parsing issues.
         // Some OBA servers use Accept-Language to set their parsing locale, causing 400 errors
@@ -95,17 +99,23 @@ extension APIService {
         return try await data(for: request)
     }
 
-    nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type, using decoder: DataDecoder) async throws -> T {
-        try await getDataAndResponse(for: url, decodeAs: decodeAs, using: decoder, cachePolicy: .useProtocolCachePolicy).0
+    nonisolated func getData<T: Decodable>(
+        for url: URL,
+        decodeAs: T.Type,
+        using decoder: DataDecoder,
+        timeoutPolicy: RequestTimeoutPolicy = .interactive
+    ) async throws -> T {
+        try await getDataAndResponse(for: url, decodeAs: decodeAs, using: decoder, cachePolicy: .useProtocolCachePolicy, timeoutPolicy: timeoutPolicy).0
     }
 
     private nonisolated func getDataAndResponse<T: Decodable>(
         for url: URL,
         decodeAs: T.Type,
         using decoder: DataDecoder,
-        cachePolicy: URLRequest.CachePolicy
+        cachePolicy: URLRequest.CachePolicy,
+        timeoutPolicy: RequestTimeoutPolicy = .interactive
     ) async throws -> (T, HTTPURLResponse) {
-        let (data, response) = try await self.getData(for: url, cachePolicy: cachePolicy)
+        let (data, response) = try await self.getData(for: url, cachePolicy: cachePolicy, timeoutPolicy: timeoutPolicy)
 
         guard response.hasJSONContentType else {
             logger.error("Failed network request for \(ErrorReport.stripQuery(url), privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
@@ -137,9 +147,10 @@ extension APIService {
         for url: URL,
         decodeRESTAPIResponseAs decodeType: T.Type,
         using decoder: DataDecoder,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        timeoutPolicy: RequestTimeoutPolicy = .interactive
     ) async throws -> RESTAPIResponse<T> {
-        let (decoded, response) = try await getDataAndResponse(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder, cachePolicy: cachePolicy)
+        let (decoded, response) = try await getDataAndResponse(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder, cachePolicy: cachePolicy, timeoutPolicy: timeoutPolicy)
         stampServerClock(on: decoded, from: response)
         return decoded
     }

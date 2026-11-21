@@ -232,4 +232,74 @@ final class APIServiceSendDataTests: OBATestCase {
 
         #expect(countingLoader.callCount == 1)
     }
+
+    // MARK: - Timeout Policies & Gzip Support Tests
+
+    @Test func `postData includes gzip header and default submission timeout`() async throws {
+        let payload = MockRequestPayload(name: "Pass", amount: 100)
+        let responseData = try JSONEncoder().encode(MockResponsePayload(id: "1", success: true))
+        let capturedTimeout = SendableBox<TimeInterval?>(nil)
+        let capturedGzip = SendableBox<String?>(nil)
+
+        dataLoader.mock(data: responseData) { request in
+            capturedTimeout.value = request.timeoutInterval
+            capturedGzip.value = request.value(forHTTPHeaderField: "Accept-Encoding")
+            return true
+        }
+
+        let _: MockResponsePayload = try await service.postData(url: endpointURL, data: payload)
+
+        #expect(capturedTimeout.value == 15.0)
+        #expect(capturedGzip.value == "gzip")
+    }
+
+    @Test func `updateData includes gzip header and custom timeout interval`() async throws {
+        let payload = MockRequestPayload(name: "Pass", amount: 200)
+        let responseData = try JSONEncoder().encode(MockResponsePayload(id: "2", success: true))
+        let capturedTimeout = SendableBox<TimeInterval?>(nil)
+        let capturedGzip = SendableBox<String?>(nil)
+
+        dataLoader.mock(data: responseData) { request in
+            capturedTimeout.value = request.timeoutInterval
+            capturedGzip.value = request.value(forHTTPHeaderField: "Accept-Encoding")
+            return true
+        }
+
+        let _: MockResponsePayload = try await service.updateData(
+            url: endpointURL,
+            data: payload,
+            timeoutPolicy: .custom(42.0)
+        )
+
+        #expect(capturedTimeout.value == 42.0)
+        #expect(capturedGzip.value == "gzip")
+    }
+
+    @Test func `getData applies interactive and batch timeout intervals`() async throws {
+        let capturedTimeouts = SendableBox<[TimeInterval]>([])
+        let emptyJSON = Data("{}".utf8)
+
+        dataLoader.mock(data: emptyJSON) { request in
+            capturedTimeouts.value.append(request.timeoutInterval)
+            return true
+        }
+
+        _ = try? await service.getData(for: endpointURL, timeoutPolicy: .interactive)
+        _ = try? await service.getData(for: endpointURL, timeoutPolicy: .batch)
+
+        #expect(capturedTimeouts.value == [10.0, 60.0])
+    }
+
+    @Test func `Cancellation propagates before sendData execution`() async {
+        let payload = MockRequestPayload(name: "Pass", amount: 100)
+
+        let task = Task { () -> MockResponsePayload in
+            try await service.postData(url: endpointURL, data: payload)
+        }
+        task.cancel()
+
+        await #expect(throws: CancellationError.self) {
+            try await task.value
+        }
+    }
 }
