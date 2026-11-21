@@ -76,9 +76,10 @@ final class LiveActivityDismissHintTests {
 
     /// The hint is one extra line under the arrivals, so the card grows by it.
     @Test func `The Lock Screen card draws the hint only when asked`() {
-        let state = TripAttributes.ContentState(arrivals: [
-            .init(departureTime: Int(Date().timeIntervalSince1970) + 600, scheduleStatus: .onTime, scheduleDeviation: 0, isArrival: false)
-        ])
+        let state = TestData.buildActivityContentState(
+            departureOffsets: [600],
+            baseTimestamp: Int(Date().timeIntervalSince1970)
+        )
         func height(showsDismissHint: Bool) -> CGFloat {
             let card = TripLiveActivityCardView(staticData: staticData, contentState: state, showsDismissHint: showsDismissHint)
             return UIHostingController(rootView: card).sizeThatFits(in: CGSize(width: 370, height: 1000)).height
@@ -90,10 +91,10 @@ final class LiveActivityDismissHintTests {
     /// ActivityKit clips a Lock Screen card past 160 pt. A stale card already adds a
     /// warning row, which matters more than the hint, so the hint steps aside.
     @Test func `A stale card drops the hint and stays within the Lock Screen's height`() {
-        let now = Int(Date().timeIntervalSince1970)
-        let state = TripAttributes.ContentState(arrivals: [600, 1500, 2400].map {
-            .init(departureTime: now + $0, scheduleStatus: .onTime, scheduleDeviation: 0, isArrival: false)
-        })
+        let state = TestData.buildActivityContentState(
+            departureOffsets: [600, 1500, 2400],
+            baseTimestamp: Int(Date().timeIntervalSince1970)
+        )
         func height(showsDismissHint: Bool) -> CGFloat {
             let card = TripLiveActivityCardView(staticData: staticData, contentState: state, isStale: true, showsDismissHint: showsDismissHint)
             return UIHostingController(rootView: card).sizeThatFits(in: CGSize(width: 370, height: 1000)).height
