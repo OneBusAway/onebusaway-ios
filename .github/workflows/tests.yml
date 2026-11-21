@@ -101,6 +101,10 @@ jobs:
         scripts/check_module_boundaries
         scripts/check_module_boundaries --test
 
+    - name: Self-test the test slice parsers
+      if: always()
+      run: scripts/run_test_slice self-test
+
   # Builds the shipping iOS app and its tests, generated with --no-watch, and
   # hands the test products to the `test` job. The release lane
   # (fastlane/Fastfile) embeds the watch app; the watch stack is checked by its
@@ -240,6 +244,9 @@ jobs:
   # which would start the boot only after the build finished.
   test:
     runs-on: xcode-27
+    # Every step that can hang has its own timeout; this caps the whole job
+    # well under GitHub's 6-hour default in case one is missed.
+    timeout-minutes: 120
     permissions:
       actions: read
       checks: write
@@ -335,6 +342,8 @@ jobs:
     # Verify that the test slices partition 100% of all compiled tests in the
     # .xctestrun bundle with zero dropped tests and zero overlaps before running slices.
     - name: Verify test slice coverage
+      id: verify_coverage
+      timeout-minutes: 10
       run: |
         XCTESTRUN=$(ls "$RUNNER_TEMP"/products/*.xctestrun)
         [ "$(echo "$XCTESTRUN" | wc -l)" -eq 1 ] || { echo "expected one .xctestrun, found: $XCTESTRUN" >&2; exit 1; }
@@ -344,11 +353,12 @@ jobs:
     # so an isolated failure in one target is immediately visible without scrolling
     # through thousands of lines of unrelated test output.
     # Each slice runs in its own step with failure isolation: even if an earlier slice
-    # fails, all subsequent slices still execute. If any slice fails or drops tests,
-    # the final verification step fails the job.
+    # fails, all subsequent slices still execute. None of them run if the coverage
+    # check failed, since the slices it would hand them can't be trusted. If any
+    # slice fails, is skipped or drops tests, the final verification step fails the job.
 
-    # Output is teed to a log so the "Report test slice summaries" and verification
-    # steps can surface per-test timing and verify execution coverage; `set -o pipefail`
+    # Output is teed to a log so the "Report test slice summaries" step can surface
+    # per-test timing; the verification step reads the result bundles. `set -o pipefail`
     # keeps xcodebuild's exit code through the pipe. `-collect-test-diagnostics never`:
     # on any failure xcodebuild otherwise runs `simctl diagnose` and waits on it until
     # this step times out — it cost failing runs ~9 idle minutes, and the per-test
@@ -366,7 +376,7 @@ jobs:
 
     - name: "Test Slice: App & UI"
       id: test_app
-      if: success() || failure()
+      if: (success() || failure()) && steps.verify_coverage.outcome == 'success'
       timeout-minutes: 15
       run: |
         set -o pipefail
@@ -378,7 +388,7 @@ jobs:
 
     - name: "Test Slice: Widget & Extensions"
       id: test_widget
-      if: success() || failure()
+      if: (success() || failure()) && steps.verify_coverage.outcome == 'success'
       timeout-minutes: 15
       run: |
         set -o pipefail
@@ -390,7 +400,7 @@ jobs:
 
     - name: "Test Slice: Watch"
       id: test_watch
-      if: success() || failure()
+      if: (success() || failure()) && steps.verify_coverage.outcome == 'success'
       timeout-minutes: 15
       run: |
         set -o pipefail
@@ -527,9 +537,9 @@ jobs:
           fi
         done
 
-        # Verify that total tests actually run matches enumerated total across all slices
-        if ! scripts/run_test_slice verify-results test-logs; then
-          echo "::error::Test slice execution verification failed: actual tests executed did not match enumerated test total."
+        # Verify that each slice's result bundle ran exactly its enumerated tests
+        if ! scripts/run_test_slice verify-results .; then
+          echo "::error::Test slice execution verification failed: the tests the slices ran did not match the enumerated tests."
           failed=1
         fi
 
