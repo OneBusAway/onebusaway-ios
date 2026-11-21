@@ -75,4 +75,21 @@ final class TripDetailsExtendedTests: OBATestCase {
         #expect(firstStop.stop != nil)
         #expect(lastStop.stop != nil)
     }
+
+    // MARK: - Equality and Identity Semantics
+
+    @Test func `TripDetails inherits NSObject reference identity equality`() throws {
+        let (trip1, _) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
+        let (trip2, _) = try loadTripDetailsPayload(file: "trip_details_1_18196913.json")
+
+        // Identical instance compares equal to itself
+        #expect(trip1.isEqual(trip1))
+
+        // Separately decoded instances do not override isEqual, so they exhibit reference inequality
+        #expect(!trip1.isEqual(trip2))
+
+        // Negative comparisons against nil or foreign types
+        #expect(!trip1.isEqual("non_trip_details"))
+        #expect(!trip1.isEqual(nil))
+    }
 }
