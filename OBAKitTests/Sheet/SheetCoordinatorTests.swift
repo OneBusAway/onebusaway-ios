@@ -10,6 +10,7 @@
 import Testing
 import MapKit
 @testable import OBAKit
+@testable import OBAKitCore
 
 /// Behavior tests for `SheetCoordinator`'s content-swap and stacked navigation,
 /// using `AppSheetRoute` as the concrete `SheetRouteable` driver.
@@ -683,5 +684,244 @@ final class SheetCoordinatorTests {
         coordinator.popToRoot()
         #expect(coordinator.stackedRoutes.isEmpty)
         #expect(coordinator.currentRoute == .home)
+    }
+
+    // MARK: - restoreRoute(_:)
+
+    /// Restoring a stop route when empty pushes the route with its initial detent.
+    @Test func `Restore route pushes route with initial detent when stack is empty`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        coordinator.restoreRoute(stop1)
+
+        #expect(coordinator.stackedRoutes == [stop1])
+        #expect(coordinator.stackedDetent(at: 0, fallback: .large) == stop1.detentConfiguration.initialDetent)
+        #expect(coordinator.currentRoute == .home)
+    }
+
+    /// Calling restoreRoute repeatedly is idempotent and does not duplicate sheets.
+    @Test func `Restore route is idempotent and does not duplicate on repeated calls`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        coordinator.restoreRoute(stop1)
+        coordinator.restoreRoute(stop1)
+        coordinator.restoreRoute(stop1)
+
+        #expect(coordinator.stackedRoutes == [stop1])
+        #expect(coordinator.stackedDetents == [stop1.detentConfiguration.initialDetent])
+    }
+
+    /// Repeated dismissal via pop or truncate leaves the coordinator in a clean state, and subsequent restoration succeeds.
+    @Test func `Repeated dismissal leaves stack empty and subsequent restoration succeeds`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        coordinator.restoreRoute(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // Dismiss repeatedly
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes.isEmpty)
+
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes.isEmpty)
+
+        coordinator.truncateStacked(toDepth: 0)
+        #expect(coordinator.stackedRoutes.isEmpty)
+
+        coordinator.popToRoot()
+        #expect(coordinator.stackedRoutes.isEmpty)
+
+        // Restoring after repeated dismissal cleanly presents the stop
+        coordinator.restoreRoute(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+    }
+
+    /// Dismissing multiple stacked sheets and restoring returns to a stable state with proper base sheet restoration.
+    @Test func `Dismissing multiple stacked sheets and restoring returns to stable state`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.currentDetent = .medium // rider expanded home before stacking
+
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let trip1 = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "trip_1"))
+
+        coordinator.restoreRoute(stop1)
+        coordinator.restoreRoute(trip1)
+        #expect(coordinator.stackedRoutes == [stop1, trip1])
+
+        // Dismiss top trip
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // Dismiss stop
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentDetent == .medium) // base sheet detent restored
+
+        // Dismiss again (repeated dismissal)
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentDetent == .medium)
+
+        // Restore stop1 again
+        coordinator.restoreRoute(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        coordinator.pop()
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentDetent == .medium)
+    }
+
+    /// Restoring an already open route preserves presentation without duplicate.
+    @Test func `Restoring already open route preserves presentation without duplicate`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        coordinator.restoreRoute(stop1)
+        coordinator.setStackedDetent(.large, at: 0)
+        #expect(coordinator.stackedDetent(at: 0, fallback: .medium) == .large)
+
+        // Same stop restored
+        coordinator.restoreRoute(stop1)
+
+        #expect(coordinator.stackedRoutes == [stop1])
+        // Preserves current presentation detent instead of resetting to initial
+        #expect(coordinator.stackedDetent(at: 0, fallback: .medium) == .large)
+    }
+
+    /// Restoring stop with transfer context matches plain stop route identity.
+    @Test func `Restoring stop with transfer context matches plain stop route identity`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let plain = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let context = TransferContext(
+            arrivalTime: Date(timeIntervalSince1970: 1_700_000_000),
+            fromRouteShortName: "7",
+            fromTripHeadsign: "Downtown",
+            fromTripID: "trip_7"
+        )
+        let withContext = AppSheetRoute.stopDetails(stopID: "stop_1", transferContext: context)
+
+        coordinator.restoreRoute(plain)
+        #expect(coordinator.stackedRoutes == [plain])
+
+        // Carries transferContext but same stopID
+        coordinator.restoreRoute(withContext)
+
+        // Route identity matches: no duplicate sheet presented
+        #expect(coordinator.stackedRoutes.count == 1)
+        #expect(coordinator.stackedRoutes.first?.id == plain.id)
+    }
+
+    /// Restoring route unwinds higher sheets back to the target route.
+    @Test func `Restoring route unwinds higher sheets back to target route`() throws {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let stop2 = AppSheetRoute.stopDetails(stopID: "stop_2")
+        let trip1 = AppSheetRoute.tripDetails(try Fixtures.tripConvertible(tripID: "trip_1"))
+
+        coordinator.restoreRoute(stop1)
+        coordinator.restoreRoute(trip1)
+        coordinator.restoreRoute(stop2)
+        #expect(coordinator.stackedRoutes == [stop1, trip1, stop2])
+
+        // Unwinds back to stop1
+        coordinator.restoreRoute(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+    }
+
+    /// Restoring route presents new destination over existing stack.
+    @Test func `Restoring route presents new destination over existing stack`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        let stop2 = AppSheetRoute.stopDetails(stopID: "stop_2")
+
+        coordinator.restoreRoute(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // Stop2 arrives
+        coordinator.restoreRoute(stop2)
+        #expect(coordinator.stackedRoutes == [stop1, stop2])
+
+        // Rapid duplicate does not duplicate
+        coordinator.restoreRoute(stop2)
+        #expect(coordinator.stackedRoutes == [stop1, stop2])
+    }
+
+    /// Restore route with content-swap route unwinds and preserves single state.
+    @Test func `Restore route with content swap route unwinds and preserves single state`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        coordinator.restoreRoute(.search)
+        #expect(coordinator.currentRoute == .search)
+        #expect(coordinator.routeStack == [.home, .search])
+
+        // Stacking over search
+        coordinator.restoreRoute(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // Restoring search clears stacked layer and keeps search as current
+        coordinator.restoreRoute(.search)
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentRoute == .search)
+
+        // Restoring home pops to root
+        coordinator.restoreRoute(.home)
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentRoute == .home)
+    }
+
+    /// Restoring the current base route while stacked sheets are open unwinds stacked sheets
+    /// and preserves the base sheet's saved detent instead of resetting it to initialDetent.
+    @Test func `Restore route preserves base sheet detent when unwinding stacked sheets over current base route`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        // Push non-stacking base route with initial detent .large
+        coordinator.push(.routePicker)
+        #expect(coordinator.currentRoute == .routePicker)
+        #expect(coordinator.currentDetent == .large)
+
+        // Change detent to .medium
+        coordinator.currentDetent = .medium
+
+        // Stacking over base route rests base sheet and saves its detent (.medium)
+        coordinator.push(stop1)
+        #expect(coordinator.stackedRoutes == [stop1])
+
+        // Restoring .routePicker uncovers base route and restores its saved detent
+        coordinator.restoreRoute(.routePicker)
+        #expect(coordinator.stackedRoutes.isEmpty)
+        #expect(coordinator.currentRoute == .routePicker)
+        #expect(coordinator.currentDetent == .medium)
+    }
+
+    /// Restoring a route that is already on top does not clear lastChangeWasPopToRoot.
+    @Test func `Restore route does not clear lastChangeWasPopToRoot on no-op early return`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+
+        // Pop to root sets flag
+        coordinator.push(.search)
+        coordinator.popToRoot()
+        #expect(coordinator.lastChangeWasPopToRoot)
+
+        // Restoring .home when already at root leaves flag true
+        coordinator.restoreRoute(.home)
+        #expect(coordinator.lastChangeWasPopToRoot)
+    }
+
+    /// One input yields one stable state regardless of repetition.
+    @Test func `One input yields one stable state across repeated invocations`() {
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+
+        // Repeating 5 times produces identical stable state
+        for _ in 0..<5 {
+            coordinator.restoreRoute(stop1)
+            #expect(coordinator.stackedRoutes == [stop1])
+            #expect(coordinator.stackedDetents.count == 1)
+        }
     }
 }

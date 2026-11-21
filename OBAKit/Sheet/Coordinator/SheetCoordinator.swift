@@ -160,10 +160,50 @@ final class SheetCoordinator<Route: SheetRouteable>: ObservableObject {
     /// Selects a route from a map pin interaction, opening over the current sheet or
     /// unwinding if already present, while avoiding duplicate sheets on repeated selection.
     func selectFromMap(_ route: Route) {
-        if let current = stackedRoutes.last {
-            guard current != route else { return }
-            open(route, from: current)
+        restoreRoute(route)
+    }
+
+    /// Navigates to a route, unwinding to an existing entry if already presented or opening
+    /// over the current sheet, consolidating map-selection and panel navigation paths.
+    func restoreRoute(_ route: Route) {
+        if route.prefersStacking {
+            if stackedRoutes.last == route {
+                return
+            }
+            lastChangeWasPopToRoot = false
+            if let existing = stackedEntries.lastIndex(where: { $0.route == route }) {
+                let closingDepth = existing + 1
+                if closingDepth < stackedEntries.count {
+                    unwindFocusDepth = closingDepth
+                }
+                truncateStacked(toDepth: closingDepth)
+                return
+            }
+            if let current = stackedRoutes.last {
+                open(route, from: current)
+            } else {
+                push(route)
+            }
         } else {
+            if route == root {
+                popToRoot()
+                return
+            }
+            if currentRoute == route, stackedEntries.isEmpty {
+                return
+            }
+            lastChangeWasPopToRoot = false
+            if !stackedEntries.isEmpty {
+                truncateStacked(toDepth: 0)
+                if currentRoute == route {
+                    return
+                }
+            }
+            if let existing = additionalRoutes.lastIndex(where: { $0 == route }) {
+                additionalRoutes.removeSubrange((existing + 1)...)
+                currentDetent = currentRoute.detentConfiguration.initialDetent
+                return
+            }
             push(route)
         }
     }
