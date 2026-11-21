@@ -174,4 +174,30 @@ final class ActivityIndicatedButtonTests {
         #expect(buttonView.button.isHidden == false)
         #expect(buttonView.chevron.isHidden == false)
     }
+
+    @Test func testButtonDidTapSuppressesIndicatorWhenFlagIsFalse() {
+        var actionExecuted = false
+        let config = ActivityIndicatedButton.Configuration(
+            text: "No Indicator",
+            largeContentImage: nil,
+            showsActivityIndicatorOnTap: false,
+            action: { actionExecuted = true }
+        )
+        let buttonView = ActivityIndicatedButton(config: config)
+        buttonView.configureView()
+
+        buttonView.buttonDidTap(UIButton())
+
+        #expect(actionExecuted == true)
+        #expect(buttonView.activityIndicator.isAnimating == false)
+        #expect(buttonView.button.isHidden == false)
+        #expect(buttonView.chevron.isHidden == false)
+    }
+
+    @Test func testButtonDidTapNoOpsWhenConfigIsNil() {
+        let buttonView = ActivityIndicatedButton(config: nil)
+        buttonView.buttonDidTap(UIButton())
+
+        #expect(buttonView.activityIndicator.isAnimating == false)
+    }
 }
