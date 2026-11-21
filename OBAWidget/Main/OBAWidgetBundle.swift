@@ -12,6 +12,7 @@ import SwiftUI
 struct CBWidgetBundle: WidgetBundle {
     var body: some Widget {
         OBAWidget()
+        NextDepartureWidget()
         TripLiveActivity()
     }
 }
