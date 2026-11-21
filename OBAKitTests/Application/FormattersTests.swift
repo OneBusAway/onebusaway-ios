@@ -650,4 +650,24 @@ final class FormattersTests: OBATestCase {
         let emptyBookmarkLabel = Formatters.formattedAccessibilityLabel(stop: stop, bookmarkName: "")
         #expect(emptyBookmarkLabel == defaultLabel)
     }
+
+    // MARK: - Cardinal Direction Adjectives & Short Minutes
+
+    @Test func `Adjective form of cardinal direction maps all known directions and returns nil for unknown`() {
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.n) == "Northbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.ne) == "NE bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.e) == "Eastbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.se) == "SE bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.s) == "Southbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.sw) == "SW bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.w) == "Westbound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.nw) == "NW bound")
+        #expect(Formatters.adjectiveFormOfCardinalDirection(.unknown) == nil)
+    }
+
+    @Test func `Short minutes text formats positive, zero, and negative values`() {
+        #expect(Formatters.shortMinutesText(5) == "5m")
+        #expect(Formatters.shortMinutesText(0) == "0m")
+        #expect(Formatters.shortMinutesText(-3) == "-3m")
+    }
 }
