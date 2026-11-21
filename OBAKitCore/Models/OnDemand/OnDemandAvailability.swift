@@ -158,10 +158,10 @@ public struct OnDemandAvailability: Equatable, Sendable {
         // rollover always counts as a next change, even for a continuous
         // service with no other boundary ahead of it (ruling: spec §2.5).
         let nextMidnight = evaluator.anchor(evaluator.adding(days: 1, to: today))
-        // The booking resolution walks from today, so a cutoff on yesterday's
-        // service day (past midnight) is added here.
-        let previousDayCutoffs = bookable.filter { $0.date == yesterday }.map(\.cutoff)
-        let nextChange = ([runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight] + previousDayCutoffs)
+        // Each valid rule's cutoff is added here too: the booking resolution
+        // drops all of them when another rule's booking rule is unresolved.
+        let bookingCutoffs = bookable.map(\.cutoff)
+        let nextChange = ([runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight] + bookingCutoffs)
             .compactMap { $0 }.filter { $0 > now }.min()
         // With nothing left to book, explain the service day running now
         // (yesterday's, after midnight) rather than today.
@@ -217,6 +217,12 @@ public struct OnDemandAvailability: Equatable, Sendable {
 
     private static func isActive(_ rule: AvailabilityRule, on date: ServiceDate, evaluator: BookingDeadlineEvaluator) -> Bool {
         rule.calendarIDs.contains { evaluator.isActive(calendarID: $0, on: date) }
+    }
+
+    /// Whether `rule`'s window on `date` is still running at `now`. Windows
+    /// pass 24:00, so yesterday's can still be running after midnight.
+    static func isRunning(_ rule: AvailabilityRule, on date: ServiceDate, evaluator: BookingDeadlineEvaluator, now: Date) -> Bool {
+        isActive(rule, on: date, evaluator: evaluator) && now < window(of: rule, on: date, evaluator: evaluator).end
     }
 
     private static func window(of rule: AvailabilityRule, on date: ServiceDate, evaluator: BookingDeadlineEvaluator) -> Window {
@@ -320,8 +326,7 @@ public struct OnDemandAvailability: Equatable, Sendable {
             return true
         }
 
-        if isActive(rule, on: yesterday, evaluator: evaluator),
-           now < window(of: rule, on: yesterday, evaluator: evaluator).end {
+        if isRunning(rule, on: yesterday, evaluator: evaluator, now: now) {
             let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: yesterday, now: now)
             if isBookable(yesterday, evaluation) {
                 return (yesterday, evaluation.cutoffInstant)
