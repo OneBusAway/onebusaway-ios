@@ -40,8 +40,11 @@ public struct StopArrivalsPoller: Sendable {
         let task = Task {
             while !Task.isCancelled {
                 for await (_, result) in loader.arrivals(for: [request], using: apiService) {
+                    guard !Task.isCancelled else { break }
                     continuation.yield(result.map { request.matching($0) })
                 }
+
+                guard !Task.isCancelled else { break }
 
                 do {
                     try await clock.sleep(for: interval)

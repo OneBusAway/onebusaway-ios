@@ -150,6 +150,54 @@ final class StopArrivalsPollerTests: OBATestCase {
         #expect(gate.requests == 2)
     }
 
+    @Test func `A cancellation failure during fetch delivers failure without ending the stream and next tick recovers`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        // First request fails with URLError(.cancelled)
+        dataLoader.mock(response: MockDataResponse(
+            data: nil,
+            urlResponse: nil,
+            error: URLError(.cancelled),
+            matcher: { [arrivalsPath] request in
+                guard request.url?.path.contains(arrivalsPath) == true, gate.failing else { return false }
+                gate.record()
+                return true
+            }
+        ))
+        dataLoader.mock(data: Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_75414.json")) { [arrivalsPath] request in
+            guard request.url?.path.contains(arrivalsPath) == true else { return false }
+            gate.record()
+            return true
+        }
+
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+
+        gate.failing = true
+        let stream = StopArrivalsPoller().arrivals(for: stopID, every: .seconds(30), using: service, clock: clock)
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. First tick delivers failure (cancellation-flavored failure is delivered as .failure without terminating the stream)
+        let first = try #require(await iterator.next())
+        guard case .failure(let error) = first else {
+            Issue.record("expected first tick to deliver failure")
+            return
+        }
+        #expect((error as? URLError)?.code == .cancelled)
+
+        // 2. Next tick recovers cleanly
+        gate.failing = false
+        await clock.waitForSleepers(count: 1)
+        clock.advance(by: .seconds(30))
+
+        let second = try #require(await iterator.next())
+        guard case .success = second else {
+            Issue.record("expected second tick to recover")
+            return
+        }
+        #expect(gate.requests == 2)
+    }
+
     @Test func `Cancelling the consumer stops the fetches`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let gate = Gate()
