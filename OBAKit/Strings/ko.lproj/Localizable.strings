@@ -2487,3 +2487,9 @@
 
 /* Title of the first tab on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is one of three tabs, under an icon. */
 "home_sheet.tab.home" = "홈";
+
+"stop_page.toolbar.bookmark.hint" = "이 정류장을 즐겨찾기에 추가합니다.";
+"stop_page.toolbar.more.hint" = "옵션을 더 표시합니다.";
+"stop_page.toolbar.refresh.hint" = "도착 시간을 새로고침합니다.";
+"stop_page.toolbar.refresh.updating_hint" = "현재 도착 시간을 업데이트하고 있습니다.";
+"stop_page.toolbar.schedules.hint" = "이 정류장의 시간표를 표시합니다.";

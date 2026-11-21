@@ -2487,3 +2487,9 @@
 
 /* Title of the first tab on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is one of three tabs, under an icon. */
 "home_sheet.tab.home" = "Главная";
+
+"stop_page.toolbar.bookmark.hint" = "Добавляет в закладки эту остановку.";
+"stop_page.toolbar.more.hint" = "Показывает дополнительные параметры.";
+"stop_page.toolbar.refresh.hint" = "Обновляет время прибытия.";
+"stop_page.toolbar.refresh.updating_hint" = "Время прибытия сейчас обновляется.";
+"stop_page.toolbar.schedules.hint" = "Показывает расписания для этой остановки.";

@@ -2487,3 +2487,9 @@
 
 /* Title of the first tab on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is one of three tabs, under an icon. */
 "home_sheet.tab.home" = "首頁";
+
+"stop_page.toolbar.bookmark.hint" = "為此站牌新增書籤。";
+"stop_page.toolbar.more.hint" = "顯示更多選項。";
+"stop_page.toolbar.refresh.hint" = "重新整理抵達時間。";
+"stop_page.toolbar.refresh.updating_hint" = "抵達時間正在更新。";
+"stop_page.toolbar.schedules.hint" = "顯示此站牌的時刻表。";

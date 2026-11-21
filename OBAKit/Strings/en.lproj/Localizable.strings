@@ -1802,6 +1802,21 @@
 /* Bottom-toolbar item on the Stop page that opens the Add Bookmark screen. */
 "stop_page.toolbar.bookmark" = "Bookmark";
 
+/* Accessibility hint for the Bookmark button on the stop page toolbar. */
+"stop_page.toolbar.bookmark.hint" = "Adds a bookmark for this stop.";
+
+/* Accessibility hint for the More button on the stop page toolbar. */
+"stop_page.toolbar.more.hint" = "Shows more options.";
+
+/* Accessibility hint for the Refresh button on the stop page toolbar. */
+"stop_page.toolbar.refresh.hint" = "Refreshes arrival times.";
+
+/* Accessibility hint explaining that refresh is disabled while arrival times are updating. */
+"stop_page.toolbar.refresh.updating_hint" = "Arrival times are currently updating.";
+
+/* Accessibility hint for the Schedules button on the stop page toolbar. */
+"stop_page.toolbar.schedules.hint" = "Shows schedules for this stop.";
+
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min walk";
 
