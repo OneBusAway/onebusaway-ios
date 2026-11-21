@@ -596,7 +596,12 @@ final class OnDemandAvailabilityTests: OBATestCase {
         let result = availability(service, at: now)
         #expect(!result.runningNow)
         #expect(!result.bookableNow)
-        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-10")!)
+        // Today's last pickup has passed, so the next bookable date is
+        // Wednesday, and the reason agrees with it.
+        let wednesday = ServiceDate("2026-03-11")!
+        #expect(result.nextBookableServiceDate == wednesday)
+        #expect(result.eligibilityReason == .tooEarly(openInstant: instant("2026-03-11T16:00:00Z")))
+        #expect(result.usabilityTier == OnDemandAvailability.advanceTier)
 
         // For today's date, eligibility is tooLate
         let today = ServiceDate("2026-03-10")!
@@ -608,5 +613,100 @@ final class OnDemandAvailabilityTests: OBATestCase {
         )
         let cutoff = instant("2026-03-11T00:00:00Z")
         #expect(todayReason == .tooLate(cutoffInstant: cutoff))
+    }
+
+    /// Alexandria rewritten to a 23:00–25:00 no-notice service, with every
+    /// calendar ending on `endDate` when given.
+    private func overnightService(endDate: String? = nil) throws -> OnDemandService {
+        try alexandria { json in
+            self.rewriteRules(&json) { rule in
+                rule["startPickupTime"] = "23:00:00"
+                rule["endPickupTime"] = "25:00:00"
+                rule["pickupBookingRuleId"] = NSNull()
+            }
+            if let endDate {
+                self.rewriteReferences(&json, "calendars") { calendar in calendar["endDate"] = endDate }
+            }
+        }
+    }
+
+    /// Wednesday 00:30 PDT: Tuesday's 23:00–01:00 window is running, so the
+    /// service is bookable for Tuesday's service day, not "opens tonight".
+    @Test func `Overnight service past midnight is eligible for the previous service day`() throws {
+        let result = availability(try overnightService(), at: instant("2026-03-11T07:30:00Z"))
+        #expect(result.runningNow)
+        #expect(result.bookableNow)
+        #expect(result.status == .openNow(until: instant("2026-03-11T08:00:00Z")))
+        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-10")!)
+        #expect(result.eligibilityReason == .eligible(cutoff: nil))
+    }
+
+    /// The same moment on the calendar's last night: the service is still
+    /// running and bookable, so it has not ended yet.
+    @Test func `Overnight service past midnight on the last night is still eligible`() throws {
+        let result = availability(try overnightService(endDate: "2026-03-10"), at: instant("2026-03-11T07:30:00Z"))
+        #expect(result.runningNow)
+        #expect(result.bookableNow)
+        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-10")!)
+        #expect(result.eligibilityReason == .eligible(cutoff: nil))
+    }
+
+    /// Once the last night's window has closed, the service has ended.
+    @Test func `Overnight service after the last night's window has ended`() throws {
+        let result = availability(try overnightService(endDate: "2026-03-10"), at: instant("2026-03-11T08:30:00Z"))
+        #expect(!result.runningNow)
+        #expect(result.nextBookableServiceDate == nil)
+        #expect(result.eligibilityReason == .unavailable(.serviceEnded))
+    }
+
+    /// A same-day rule with 15 minutes' notice on Tuesday's 23:00–01:00
+    /// window: at 00:30 it is bookable for Tuesday until 00:45, so that is
+    /// the next change, not the window's 01:00 end.
+    @Test func `Overnight same-day service changes at the previous day's cutoff`() throws {
+        let service = try alexandria { json in
+            self.rewriteRules(&json) { rule in
+                rule["startPickupTime"] = "23:00:00"
+                rule["endPickupTime"] = "25:00:00"
+            }
+            self.rewriteReferences(&json, "bookingRules") { rule in
+                rule["bookingType"] = 1
+                rule["priorNoticeDurationMin"] = 15
+                rule["priorNoticeLastDay"] = nil
+                rule["priorNoticeLastTime"] = nil
+                rule["priorNoticeStartDay"] = nil
+                rule["priorNoticeStartTime"] = nil
+            }
+        }
+        let cutoff = instant("2026-03-11T07:45:00Z")
+        let result = availability(service, at: instant("2026-03-11T07:30:00Z"))
+        #expect(result.bookableNow)
+        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-10")!)
+        #expect(result.eligibilityReason == .eligible(cutoff: cutoff))
+        #expect(result.nextChangeInstant == cutoff)
+    }
+
+    /// A same-day rule past its cutoff on the last night is too late for the
+    /// running service day, not ended.
+    @Test func `Overnight same-day service past its cutoff on the last night is too late`() throws {
+        let service = try alexandria { json in
+            self.rewriteRules(&json) { rule in
+                rule["startPickupTime"] = "23:00:00"
+                rule["endPickupTime"] = "25:00:00"
+            }
+            self.rewriteReferences(&json, "calendars") { calendar in calendar["endDate"] = "2026-03-10" }
+            self.rewriteReferences(&json, "bookingRules") { rule in
+                rule["bookingType"] = 1
+                rule["priorNoticeDurationMin"] = 60
+                rule["priorNoticeLastDay"] = nil
+                rule["priorNoticeLastTime"] = nil
+                rule["priorNoticeStartDay"] = nil
+                rule["priorNoticeStartTime"] = nil
+            }
+        }
+        let result = availability(service, at: instant("2026-03-11T07:30:00Z"))
+        #expect(result.runningNow)
+        #expect(!result.bookableNow)
+        #expect(result.nextBookableServiceDate == nil)
+        #expect(result.eligibilityReason == .tooLate(cutoffInstant: instant("2026-03-11T07:00:00Z")))
     }
 }

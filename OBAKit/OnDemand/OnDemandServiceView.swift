@@ -83,10 +83,14 @@ struct OnDemandServiceView: View {
 
     var tags: [OnDemandAvailability.Tag] { availability.tags }
 
-    /// Tiers 1 and 2, and a closed tier 5; nothing for unknown (item 1).
+    /// Tiers 1 and 2, a tier 3 that needs no notice (it has no deadline to
+    /// promote, so it falls back to the status like the bar title), and a
+    /// closed tier 5; nothing for unknown (item 1).
     var statusLineText: String? {
         switch availability.usabilityTier {
         case OnDemandAvailability.openNowTier, OnDemandAvailability.sameDayTier:
+            return copy.statusText(availability.status, style: .detail)
+        case OnDemandAvailability.advanceTier where availability.bookingResolution == .noNoticeRequired:
             return copy.statusText(availability.status, style: .detail)
         case OnDemandAvailability.unknownTier where availability.status == .closed:
             return Strings.onDemandStatusClosed
@@ -100,9 +104,12 @@ struct OnDemandServiceView: View {
         copy.userFacingExplanation(for: availability.eligibilityReason)
     }
 
-    /// The promoted fact for advance services only (item 2).
+    /// The promoted fact for advance services only (item 2), when there is a
+    /// deadline or opening to promote.
     var promotedDeadlineText: String? {
-        availability.usabilityTier == OnDemandAvailability.advanceTier ? bookingLineText : nil
+        guard availability.usabilityTier == OnDemandAvailability.advanceTier,
+              availability.bookingResolution != .noNoticeRequired else { return nil }
+        return bookingLineText
     }
 
     var primaryContact: PrimaryContact? {
