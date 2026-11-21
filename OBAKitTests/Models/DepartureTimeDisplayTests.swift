@@ -137,4 +137,26 @@ final class DepartureTimeDisplayTests {
         #expect(display.expectedTimeText == formatters.timeFormatter.string(from: arrivalDeparture.scheduledDate))
         #expect(display.scheduledTimeText == nil)
     }
+
+    // MARK: - Equatable & Non-Realtime Discrepancy
+
+    @Test func `DepartureTimeDisplay equality compares expected and scheduled texts`() {
+        let displayA1 = display(expectedOffset: 3 * 60)
+        let displayA2 = display(expectedOffset: 3 * 60)
+        let displayB = display(expectedOffset: -4 * 60)
+        let displayNoRT = display(expectedOffset: 0, isRealTime: false)
+
+        #expect(displayA1 == displayA2)
+        #expect(displayA1 != displayB)
+        #expect(displayA1 != displayNoRT)
+    }
+
+    @Test func `Non realtime with differing dates still ignores prediction and shows no strikethrough`() {
+        // Even when expectedDate differs by hours, isRealTime = false forces pure scheduled display
+        let display = display(expectedOffset: 120 * 60, isRealTime: false)
+
+        #expect(display.expectedTimeText == formatted(0))
+        #expect(display.scheduledTimeText == nil)
+        #expect(display.accessibilityTimeDescription == "at \(formatted(0))")
+    }
 }
