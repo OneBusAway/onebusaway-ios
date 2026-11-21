@@ -475,6 +475,7 @@ private extension StopPageViewController {
             ? OBALoc("stop_page.filter.a11y_on", value: "on", comment: "VoiceOver value of the route-filter bar button when the filter is active.")
             : OBALoc("stop_page.filter.a11y_off", value: "off", comment: "VoiceOver value of the route-filter bar button when the filter is inactive.")
         let moreMenuButton = UIBarButtonItem(title: Strings.more, image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
+        moreMenuButton.accessibilityIdentifier = "stop_page_more_button"
         let schedulesBtn = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
         schedulesBtn.accessibilityLabel = Strings.schedules
 
