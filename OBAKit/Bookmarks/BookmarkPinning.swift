@@ -22,6 +22,16 @@ struct BookmarkPinButton: View {
     let isPinned: Bool
     let onToggle: () -> Void
 
+    init(isPinned: Bool, onToggle: @escaping () -> Void) {
+        self.isPinned = isPinned
+        self.onToggle = onToggle
+    }
+
+    init(bookmark: Bookmark, actions: BookmarkActions) {
+        self.isPinned = bookmark.isPinned
+        self.onToggle = { actions.togglePin(for: bookmark) }
+    }
+
     var body: some View {
         Button(action: onToggle) {
             if isPinned {

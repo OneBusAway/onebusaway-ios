@@ -132,6 +132,52 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         withExtendedLifetime(refresher) {}
     }
 
+    /// Deleting a group with multiple bookmarks migrates all of them atomically
+    /// and triggers exactly ONE widget reload.
+    @Test @MainActor func `Deleting a populated group reloads the widget exactly once`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let recorder = ReloadRecorder()
+        let refresher = BookmarkWidgetRefresher(reloadKind: { recorder.record(kind: $0) })
+
+        let group = BookmarkGroup(name: "Test Group", sortOrder: 0)
+        application.userDataStore.upsert(bookmarkGroup: group)
+
+        let bm1 = try makeBookmark(application: application)
+        let bm2 = try makeBookmark(application: application)
+        application.userDataStore.add(bm1, to: group)
+        application.userDataStore.add(bm2, to: group)
+        await drainMainActor()
+
+        recorder.reset()
+        application.userDataStore.deleteGroup(group)
+        await drainMainActor()
+
+        #expect(recorder.reloadedKinds == BookmarkWidgetRefresher.widgetKinds, "Must reload widget exactly once for the group deletion")
+        withExtendedLifetime(refresher) {}
+    }
+
+    /// Failed persistence does not reload the widget.
+    @Test @MainActor func `Failed persistence does not reload the widget`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let store = try #require(application.userDataStore as? UserDefaultsStore)
+        let recorder = ReloadRecorder()
+        let refresher = BookmarkWidgetRefresher(reloadKind: { recorder.record(kind: $0) })
+
+        let bookmark = try makeBookmark(application: application)
+        application.userDataStore.add(bookmark, to: nil)
+        await drainMainActor()
+        recorder.reset()
+
+        store.simulatedPersistenceError = NSError(domain: "test.persistence", code: 500, userInfo: nil)
+        application.userDataStore.setPinned(true, for: bookmark)
+        await drainMainActor()
+
+        #expect(recorder.reloadedKinds.isEmpty)
+        withExtendedLifetime(refresher) {}
+    }
+
     /// The tab's own arrival-batch reload targets the same widget kinds, so the
     /// two paths can't drift apart on the identifiers.
     @Test @MainActor func `Widget kind matches the registered extension kind`() {
