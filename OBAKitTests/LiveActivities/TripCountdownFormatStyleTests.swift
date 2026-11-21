@@ -86,4 +86,40 @@ struct TripCountdownFormatStyleTests {
         #expect(style.format(next!) == "1m")
         #expect(next! < departure.addingTimeInterval(-60))
     }
+
+    // MARK: - discreteInput(before:)
+
+    @Test func `discreteInput before dates sixty seconds or more past departure returns nil`() {
+        let sixtySecondsPast = departure.addingTimeInterval(60)
+        let twoMinutesPast = departure.addingTimeInterval(120)
+        #expect(style.discreteInput(before: sixtySecondsPast) == nil)
+        #expect(style.discreteInput(before: twoMinutesPast) == nil)
+    }
+
+    @Test func `discreteInput before within first minute past departure returns start of NOW interval`() {
+        // Within 0..<60s past departure, Int(remaining/60.0) truncates to 0, returning departure - 60s
+        let thirtySecondsPast = departure.addingTimeInterval(30)
+        #expect(style.discreteInput(before: thirtySecondsPast) == departure.addingTimeInterval(-60))
+    }
+
+    @Test func `discreteInput before NOW boundary returns start of NOW interval`() {
+        // When remaining is 30s (minutes == 0), the boundary is departure - 60s
+        let now = departure.addingTimeInterval(-30)
+        let prev = style.discreteInput(before: now)
+        #expect(prev == departure.addingTimeInterval(-60))
+    }
+
+    @Test func `discreteInput before exact floor boundary returns previous interval boundary`() {
+        // At departure - 60s, minutes == 1, startOfCurrent = departure - 2*60 = departure - 120s
+        let exactOneMinuteBoundary = departure.addingTimeInterval(-60)
+        #expect(style.discreteInput(before: exactOneMinuteBoundary) == departure.addingTimeInterval(-120))
+    }
+
+    @Test func `discreteInput before mid-minute returns previous minute boundary`() {
+        // At remaining 510s (8m 30s), minutes == 8, previous minute boundary is departure - (8+1)*60 = departure - 540s (9m)
+        let now = departure.addingTimeInterval(-510)
+        let prev = style.discreteInput(before: now)
+        #expect(prev == departure.addingTimeInterval(-540))
+        #expect(style.format(prev!) == "9m")
+    }
 }
