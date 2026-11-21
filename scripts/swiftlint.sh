@@ -1,5 +1,12 @@
+#!/usr/bin/env bash
 # Adds support for Apple Silicon brew directory
 export PATH="$PATH:/opt/homebrew/bin"
+
+# If called with --pre-pr or --all, delegate to unified pre-PR check
+if [ "${1:-}" = "--pre-pr" ] || [ "${1:-}" = "--all" ]; then
+  shift
+  exec "$(dirname "$0")/pre_pr_check" "$@"
+fi
 
 # CI runs SwiftLint as its own workflow step (errors fail the job; warnings
 # annotate). Skipping the build-phase copy here keeps Xcode from double-linting
@@ -10,7 +17,7 @@ export PATH="$PATH:/opt/homebrew/bin"
 if [ "$CI" = true ]; then
   echo "skipping build-phase swiftlint; CI runs it as a dedicated step"
 elif which swiftlint >/dev/null; then
-  swiftlint
+  swiftlint "$@"
 else
   echo "warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint"
 fi

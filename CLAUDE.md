@@ -150,13 +150,17 @@ xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcod
 xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 ```
 
-### Code Quality
+### Code Quality & Pre-PR Verification
 ```bash
-scripts/swiftlint.sh                    # Run SwiftLint (skips in CI)
+scripts/pre_pr_check                    # Unified pre-PR gate: module boundaries, SwiftLint, project matrix, target/cleanliness check
+scripts/pre_pr_check --boundaries-only  # Run module boundary check and fixture tests only
+scripts/pre_pr_check --lint-only        # Run SwiftLint error and custom rules checks only
+scripts/pre_pr_check --project-only     # Run project generation matrix & watch target assertions only
+scripts/pre_pr_check --targets-only     # Run target classification and working tree checks only
+scripts/swiftlint.sh                    # Run SwiftLint (skips in CI; supports args or --pre-pr)
 swiftlint                              # Run SwiftLint directly
 scripts/check_module_boundaries         # Enforce module boundaries and architectural separation (docs/module-boundaries.md)
 scripts/check_module_boundaries --test  # Validate module boundary checker against fixture test suite
-scripts/pre_pr_check                    # Pre-PR check runner: boundaries, tests, SwiftLint
 ```
 
 ### Release Smoke Tests
