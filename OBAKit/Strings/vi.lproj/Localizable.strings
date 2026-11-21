@@ -566,6 +566,9 @@
 /* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
 "map_controller.stop_cluster.accessibility_hint" = "Liệt kê các điểm dừng tại đây.";
 
+/* VoiceOver hint for a map stop pin. Activating it opens the stop's departures. */
+"map_controller.stop_annotation.accessibility_hint" = "Hiển thị các chuyến khởi hành cho điểm dừng này.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "Phương tiện bạn chọn dường như hiện không chạy chuyến nào, vì vậy chúng tôi không biết cách hiển thị nó cho bạn.";
 

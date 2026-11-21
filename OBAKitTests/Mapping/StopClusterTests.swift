@@ -271,6 +271,32 @@ final class StopClusterTests {
         #expect(StopAnnotationView.accessibilityLabel(for: MKPointAnnotation()) == nil)
     }
 
+    @Test func `Stop pin exposes semantics for stop name, route context, alert state and button traits`() {
+        let view = StopAnnotationView(annotation: stops[0], reuseIdentifier: nil)
+        #expect(view.isAccessibilityElement)
+        #expect(view.accessibilityTraits.contains(.button))
+        #expect(view.stopName == stops[0].name)
+        #expect(view.routeContext == StopAnnotationView.routeContext(for: stops[0]))
+        #expect(view.accessibilityHint == StopAnnotationView.accessibilityHint)
+        #expect(view.alertState == nil)
+        #expect(view.accessibilityValue == nil)
+
+        view.hasAlert = true
+        #expect(view.hasAlert)
+        #expect(view.alertState == Strings.serviceAlert)
+        #expect(view.accessibilityValue == Strings.serviceAlert)
+        // Alert is announced in accessibilityValue, keeping primary label uncluttered
+        #expect(view.accessibilityLabel?.contains(Strings.serviceAlert) == false)
+    }
+
+    @Test func `Bookmark pin exposes bookmark name as stopName and has departures hint`() {
+        let bookmark = Bookmark(name: "Work", regionIdentifier: 1, stop: stops[0])
+        let view = StopAnnotationView(annotation: bookmark, reuseIdentifier: nil)
+        #expect(view.stopName == "Work")
+        #expect(view.accessibilityHint == StopAnnotationView.accessibilityHint)
+        #expect(view.accessibilityTraits.contains(.button))
+    }
+
     @Test func `areCoLocated handles empty and single coordinate inputs safely`() {
         #expect(StopCluster.areCoLocated([]))
         let single = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.33)

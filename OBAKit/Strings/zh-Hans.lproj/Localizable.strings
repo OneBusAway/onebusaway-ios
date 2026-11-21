@@ -566,6 +566,9 @@
 /* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
 "map_controller.stop_cluster.accessibility_hint" = "列出此处的站点。";
 
+/* VoiceOver hint for a map stop pin. Activating it opens the stop's departures. */
+"map_controller.stop_annotation.accessibility_hint" = "显示此站点的出发班次。";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "您选择的公交车辆并未被安排出行，所以我们无法为您显示它。";
 
