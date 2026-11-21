@@ -7,6 +7,17 @@
 #   SIMULATOR_UDID=$(scripts/resolve_simulator_udid)
 #   xcodebuild ... -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 #
+# Options:
+#   -u, --udid <UDID>   Validate and use explicit simulator UDID
+#   -n, --name <NAME>   Select simulator matching name (case-insensitive substring/exact)
+#       --pro           Select newest iPhone Pro
+#       --duo           Select newest iPhone Duo
+#   -h, --help          Show this help message
+#
+# Environment variables:
+#   SIMULATOR_OVERRIDE_UDID   Default UDID override
+#   SIMULATOR_OVERRIDE_NAME   Default name override
+#
 # With --pro it prints the newest "iPhone NN Pro" (not Max) instead, on the
 # newest runtime that has one: its screen is the 6.3" App Store size, which
 # scripts/app_store_screenshots captures at. With --duo it prints the newest
@@ -36,12 +47,68 @@ set -euo pipefail
 
 kind=any
 label="iPhone"
-case "${1:-}" in
-    "") ;;
-    --pro) kind=pro; label="iPhone Pro" ;;
-    --duo) kind=duo; label="iPhone Duo" ;;
-    *) echo "error: unknown argument: $1 (expected --pro, --duo or nothing)" >&2; exit 2 ;;
-esac
+explicit_udid="${SIMULATOR_OVERRIDE_UDID:-}"
+explicit_name="${SIMULATOR_OVERRIDE_NAME:-}"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            echo "Usage: scripts/resolve_simulator_udid [OPTIONS]"
+            echo ""
+            echo "Prints the UDID of an available iOS simulator on the newest installed runtime."
+            echo ""
+            echo "Options:"
+            echo "  -u, --udid <UDID>   Validate and use explicit simulator UDID"
+            echo "  -n, --name <NAME>   Select simulator matching name (case-insensitive substring/exact)"
+            echo "      --pro           Select newest iPhone Pro"
+            echo "      --duo           Select newest iPhone Duo"
+            echo "  -h, --help          Show this help message"
+            echo ""
+            echo "Environment variables:"
+            echo "  SIMULATOR_OVERRIDE_UDID   Default UDID override"
+            echo "  SIMULATOR_OVERRIDE_NAME   Default name override"
+            exit 0
+            ;;
+        --pro)
+            kind=pro
+            label="iPhone Pro"
+            shift
+            ;;
+        --duo)
+            kind=duo
+            label="iPhone Duo"
+            shift
+            ;;
+        -u|--udid)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            explicit_udid="$2"
+            shift 2
+            ;;
+        --udid=*)
+            explicit_udid="${1#*=}"
+            shift
+            ;;
+        -n|--name)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            explicit_name="$2"
+            shift 2
+            ;;
+        --name=*)
+            explicit_name="${1#*=}"
+            shift
+            ;;
+        *)
+            echo "error: unknown argument: $1 (expected --udid, --name, --pro, --duo or --help)" >&2
+            exit 2
+            ;;
+    esac
+done
 
 if ! devices_json=$(xcrun simctl list devices available -j 2>&1); then
     echo "error: \`xcrun simctl\` failed:" >&2
@@ -63,21 +130,49 @@ except (json.JSONDecodeError, KeyError, TypeError) as error:
     sys.exit("error: could not parse the device list from "
              "xcrun simctl list devices available -j: " + str(error))
 
+kind = sys.argv[1]
+udid_override = sys.argv[2] if len(sys.argv) > 2 else ""
+name_override = sys.argv[3] if len(sys.argv) > 3 else ""
+
 def ios_version(runtime):
     match = re.search(r"iOS-(\d+)-(\d+)", runtime)
     return (int(match.group(1)), int(match.group(2))) if match else (0, 0)
 
+if udid_override:
+    for runtime, runtime_devices in devices.items():
+        if not re.search(r"iOS-\d+-\d+", runtime):
+            continue
+        for d in runtime_devices:
+            if d.get("udid", "").lower() == udid_override.lower():
+                print(d["udid"])
+                sys.exit(0)
+    sys.exit("error: iOS simulator with UDID \"" + udid_override + "\" not found among available devices.")
+
+if name_override:
+    sorted_runtimes = sorted([r for r in devices.keys() if re.search(r"iOS-\d+-\d+", r)], key=ios_version, reverse=True)
+    for r in sorted_runtimes:
+        for d in devices[r]:
+            if d.get("name", "").strip().lower() == name_override.strip().lower():
+                print(d["udid"])
+                sys.exit(0)
+    for r in sorted_runtimes:
+        for d in devices[r]:
+            if name_override.strip().lower() in d.get("name", "").strip().lower():
+                print(d["udid"])
+                sys.exit(0)
+    sys.exit("error: no available iOS simulator matching name \"" + name_override + "\" found.")
+
 for runtime in sorted(devices, key=ios_version, reverse=True):
     if not re.search(r"iOS-\d+-\d+", runtime):
         continue
-    if sys.argv[1] == "duo":
+    if kind == "duo":
         duos = [d["udid"] for d in devices[runtime]
                 if d.get("deviceTypeIdentifier", "").endswith(".iPhone-Duo")]
         if duos:
             print(duos[0])
             break
         continue
-    if sys.argv[1] == "pro":
+    if kind == "pro":
         # Highest model number wins: "iPhone-18-Pro" over "iPhone-17-Pro".
         pros = [(int(match.group(1)), d["udid"]) for d in devices[runtime]
                 if (match := re.search(r"iPhone-(\d+)-Pro$", d.get("deviceTypeIdentifier", "")))]
@@ -89,7 +184,7 @@ for runtime in sorted(devices, key=ios_version, reverse=True):
     if phones:
         print(phones[0]["udid"])
         break
-' "$kind")
+' "$kind" "$explicit_udid" "$explicit_name")
 
 if [ -z "$udid" ]; then
     echo "error: no available $label simulator on any installed iOS runtime." >&2
