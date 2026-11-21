@@ -68,55 +68,15 @@ struct StopPageToolbarAccessibilityTests {
 
     // MARK: - Accessibility Hints & Explanations
 
-    @Test func `Refresh hint explains disabled updating state when active`() {
-        let idleToolbar = makeToolbar(isRefreshing: false)
-        #expect(idleToolbar.refreshHint == "Refreshes arrival times.")
+    @Test func `Refresh hint explains updating state`() {
         #expect(StopPageToolbar.refreshAccessibilityHint(isRefreshing: false) == "Refreshes arrival times.")
-
-        let updatingToolbar = makeToolbar(isRefreshing: true)
-        #expect(updatingToolbar.refreshHint == "Arrival times are currently updating.")
         #expect(StopPageToolbar.refreshAccessibilityHint(isRefreshing: true) == "Arrival times are currently updating.")
     }
 
-    @Test func `Bookmark and Schedules expose expected accessibility hints`() {
-        let toolbar = makeToolbar()
-        #expect(toolbar.bookmarkHint == "Adds a bookmark for this stop.")
-        #expect(toolbar.schedulesHint == "Shows schedules for this stop.")
-        #expect(toolbar.moreHint == "Shows more options.")
-    }
-
-    @Test func `Filter hint explains disabled state on single route stop`() {
-        let multiRoute = makeToolbar(canFilter: true)
-        #expect(multiRoute.filterHint == "Filters routes at this stop.")
-        #expect(StopPageToolbar.filterAccessibilityHint(canFilter: true) == "Filters routes at this stop.")
-
-        let singleRoute = makeToolbar(canFilter: false)
-        #expect(singleRoute.filterHint == "Filtering is unavailable because this stop only serves one route.")
-        #expect(StopPageToolbar.filterAccessibilityHint(canFilter: false) == "Filtering is unavailable because this stop only serves one route.")
-    }
-
-    @Test func `Service alerts hint explains disabled state when no alerts exist`() {
-        let withAlerts = makeToolbar(hasServiceAlerts: true)
-        #expect(withAlerts.serviceAlertsHint == "Shows service alerts for this stop.")
-        #expect(StopPageToolbar.serviceAlertsAccessibilityHint(hasServiceAlerts: true) == "Shows service alerts for this stop.")
-
-        let withoutAlerts = makeToolbar(hasServiceAlerts: false)
-        #expect(withoutAlerts.serviceAlertsHint == "No active service alerts for this stop.")
-        #expect(StopPageToolbar.serviceAlertsAccessibilityHint(hasServiceAlerts: false) == "No active service alerts for this stop.")
-    }
-
-    // MARK: - Disabled State Predicates
-
-    @Test func `Toolbar disabled state predicates match expected inputs`() {
-        let active = makeToolbar(isRefreshing: true, canFilter: false, hasServiceAlerts: false)
-        #expect(active.isRefreshDisabled)
-        #expect(active.isFilterDisabled)
-        #expect(active.isServiceAlertsDisabled)
-
-        let idle = makeToolbar(isRefreshing: false, canFilter: true, hasServiceAlerts: true)
-        #expect(!idle.isRefreshDisabled)
-        #expect(!idle.isFilterDisabled)
-        #expect(!idle.isServiceAlertsDisabled)
+    @Test func `Toolbar items expose expected accessibility hints`() {
+        #expect(StopPageToolbar.bookmarkAccessibilityHint == "Adds a bookmark for this stop.")
+        #expect(StopPageToolbar.schedulesAccessibilityHint == "Shows schedules for this stop.")
+        #expect(StopPageToolbar.moreAccessibilityHint == "Shows more options.")
     }
 
     // MARK: - Custom Actions Presence
@@ -207,14 +167,10 @@ struct StopPageToolbarAccessibilityTests {
 
         let keys = [
             "stop_page.toolbar.bookmark.hint": "Adds a bookmark for this stop.",
-            "stop_page.toolbar.filter.disabled_hint": "Filtering is unavailable because this stop only serves one route.",
-            "stop_page.toolbar.filter.hint": "Filters routes at this stop.",
             "stop_page.toolbar.more.hint": "Shows more options.",
             "stop_page.toolbar.refresh.hint": "Refreshes arrival times.",
             "stop_page.toolbar.refresh.updating_hint": "Arrival times are currently updating.",
-            "stop_page.toolbar.schedules.hint": "Shows schedules for this stop.",
-            "stop_page.toolbar.service_alerts.disabled_hint": "No active service alerts for this stop.",
-            "stop_page.toolbar.service_alerts.hint": "Shows service alerts for this stop."
+            "stop_page.toolbar.schedules.hint": "Shows schedules for this stop."
         ]
 
         for (key, expectedValue) in keys {

@@ -1716,21 +1716,6 @@
 /* Stop Location menu action that sets a notification for when the rider approaches this stop. */
 "stop_page.proximity_alert.menu.set" = "Alert Me When Nearby";
 
-/* VoiceOver hint when nearby alert is active. */
-"stop_page.proximity_alert.a11y_hint_cancel" = "Cancels the nearby alert for this stop.";
-
-/* VoiceOver hint when nearby alert is inactive. */
-"stop_page.proximity_alert.a11y_hint_set" = "Alerts you when approaching this stop.";
-
-/* VoiceOver accessibility label for the proximity alert action. */
-"stop_page.proximity_alert.a11y_label" = "Nearby alert";
-
-/* VoiceOver value when nearby alert is active. */
-"stop_page.proximity_alert.a11y_value_active" = "active";
-
-/* VoiceOver value when nearby alert is inactive. */
-"stop_page.proximity_alert.a11y_value_inactive" = "inactive";
-
 /* Body of the alert shown when notifications are denied. %@ is the app name. */
 "stop_page.proximity_alert.notifications_denied.message_fmt" = "Nearby alerts arrive as notifications. Allow them for %@ in Settings.";
 
@@ -1817,12 +1802,6 @@
 /* Accessibility hint for the Bookmark button on the stop page toolbar. */
 "stop_page.toolbar.bookmark.hint" = "Adds a bookmark for this stop.";
 
-/* Accessibility hint explaining why route filtering is disabled. */
-"stop_page.toolbar.filter.disabled_hint" = "Filtering is unavailable because this stop only serves one route.";
-
-/* Accessibility hint for the route filter menu item. */
-"stop_page.toolbar.filter.hint" = "Filters routes at this stop.";
-
 /* Accessibility hint for the More button on the stop page toolbar. */
 "stop_page.toolbar.more.hint" = "Shows more options.";
 
@@ -1834,12 +1813,6 @@
 
 /* Accessibility hint for the Schedules button on the stop page toolbar. */
 "stop_page.toolbar.schedules.hint" = "Shows schedules for this stop.";
-
-/* Accessibility hint explaining why service alerts is disabled. */
-"stop_page.toolbar.service_alerts.disabled_hint" = "No active service alerts for this stop.";
-
-/* Accessibility hint for the service alerts button. */
-"stop_page.toolbar.service_alerts.hint" = "Shows service alerts for this stop.";
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min walk";

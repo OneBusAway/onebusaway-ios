@@ -266,38 +266,6 @@ extension StopPageActionPresenter {
             comment: "Toast confirming the rider's nearby alert for this stop was taken down."
         )
     }
-
-    // MARK: - Accessibility Semantics
-
-    /// Forwards proximity alert accessibility label based on active status.
-    static func proximityAlertAccessibilityLabel(isActive: Bool) -> String {
-        ProximityAlertMenuItem.accessibilityLabel(isActive: isActive)
-    }
-
-    /// Forwards proximity alert accessibility value based on active status.
-    static func proximityAlertAccessibilityValue(isActive: Bool) -> String {
-        ProximityAlertMenuItem.accessibilityValue(isActive: isActive)
-    }
-
-    /// Forwards proximity alert accessibility hint based on active status.
-    static func proximityAlertAccessibilityHint(isActive: Bool) -> String {
-        ProximityAlertMenuItem.accessibilityHint(isActive: isActive)
-    }
-
-    /// Returns proximity alert accessibility label for the stop held in `viewModel`.
-    func proximityAlertAccessibilityLabel(viewModel: StopViewModel) -> String {
-        ProximityAlertMenuItem.accessibilityLabel(isActive: viewModel.proximityAlert != nil)
-    }
-
-    /// Returns proximity alert accessibility value for the stop held in `viewModel`.
-    func proximityAlertAccessibilityValue(viewModel: StopViewModel) -> String {
-        ProximityAlertMenuItem.accessibilityValue(isActive: viewModel.proximityAlert != nil)
-    }
-
-    /// Returns proximity alert accessibility hint for the stop held in `viewModel`.
-    func proximityAlertAccessibilityHint(viewModel: StopViewModel) -> String {
-        ProximityAlertMenuItem.accessibilityHint(isActive: viewModel.proximityAlert != nil)
-    }
 }
 
 // MARK: - LocationServiceDelegate

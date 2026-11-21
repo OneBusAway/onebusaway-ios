@@ -2485,17 +2485,8 @@
 /* Title of the first tab on the map panel's home sheet: the mixed view of the rider's bookmarks, departures from nearby stops, and recent stops. Short: it is one of three tabs, under an icon. */
 "home_sheet.tab.home" = "Inicio";
 
-"stop_page.proximity_alert.a11y_hint_cancel" = "Cancels the nearby alert for this stop.";
-"stop_page.proximity_alert.a11y_hint_set" = "Alerts you when approaching this stop.";
-"stop_page.proximity_alert.a11y_label" = "Nearby alert";
-"stop_page.proximity_alert.a11y_value_active" = "active";
-"stop_page.proximity_alert.a11y_value_inactive" = "inactive";
-"stop_page.toolbar.bookmark.hint" = "Adds a bookmark for this stop.";
-"stop_page.toolbar.filter.disabled_hint" = "Filtering is unavailable because this stop only serves one route.";
-"stop_page.toolbar.filter.hint" = "Filters routes at this stop.";
-"stop_page.toolbar.more.hint" = "Shows more options.";
-"stop_page.toolbar.refresh.hint" = "Refreshes arrival times.";
-"stop_page.toolbar.refresh.updating_hint" = "Arrival times are currently updating.";
-"stop_page.toolbar.schedules.hint" = "Shows schedules for this stop.";
-"stop_page.toolbar.service_alerts.disabled_hint" = "No active service alerts for this stop.";
-"stop_page.toolbar.service_alerts.hint" = "Shows service alerts for this stop.";
+"stop_page.toolbar.bookmark.hint" = "Agrega un marcador para esta parada.";
+"stop_page.toolbar.more.hint" = "Muestra más opciones.";
+"stop_page.toolbar.refresh.hint" = "Actualiza los horarios de llegada.";
+"stop_page.toolbar.refresh.updating_hint" = "Los horarios de llegada se están actualizando.";
+"stop_page.toolbar.schedules.hint" = "Muestra los horarios de esta parada.";

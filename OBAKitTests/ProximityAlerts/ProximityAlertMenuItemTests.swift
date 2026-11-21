@@ -36,33 +36,6 @@ struct ProximityAlertMenuItemTests {
         #expect(ProximityAlertMenuItem.title(isActive: true) != ProximityAlertMenuItem.title(isActive: false))
     }
 
-    // MARK: - Accessibility Semantics
-
-    @Test func `Accessibility label matches item title for state`() {
-        #expect(ProximityAlertMenuItem.accessibilityLabel(isActive: false) == ProximityAlertMenuItem.title(isActive: false))
-        #expect(ProximityAlertMenuItem.accessibilityLabel(isActive: true) == ProximityAlertMenuItem.title(isActive: true))
-        #expect(ProximityAlertMenuItem.accessibilityLabel == "Nearby alert")
-    }
-
-    @Test func `Accessibility value reflects active state`() {
-        #expect(ProximityAlertMenuItem.accessibilityValue(isActive: true) == "active")
-        #expect(ProximityAlertMenuItem.accessibilityValue(isActive: false) == "inactive")
-    }
-
-    @Test func `Accessibility hint explains action outcome`() {
-        #expect(ProximityAlertMenuItem.accessibilityHint(isActive: false) == "Alerts you when approaching this stop.")
-        #expect(ProximityAlertMenuItem.accessibilityHint(isActive: true) == "Cancels the nearby alert for this stop.")
-    }
-
-    @Test func `Presenter forwards proximity alert accessibility semantics`() {
-        #expect(StopPageActionPresenter.proximityAlertAccessibilityLabel(isActive: false) == ProximityAlertMenuItem.accessibilityLabel(isActive: false))
-        #expect(StopPageActionPresenter.proximityAlertAccessibilityLabel(isActive: true) == ProximityAlertMenuItem.accessibilityLabel(isActive: true))
-        #expect(StopPageActionPresenter.proximityAlertAccessibilityValue(isActive: false) == "inactive")
-        #expect(StopPageActionPresenter.proximityAlertAccessibilityValue(isActive: true) == "active")
-        #expect(StopPageActionPresenter.proximityAlertAccessibilityHint(isActive: false) == "Alerts you when approaching this stop.")
-        #expect(StopPageActionPresenter.proximityAlertAccessibilityHint(isActive: true) == "Cancels the nearby alert for this stop.")
-    }
-
     // MARK: - String Catalog Integrity
 
     @Test func `Menu item localization keys exist in the English string bundle`() throws {
@@ -70,12 +43,7 @@ struct ProximityAlertMenuItemTests {
 
         let keys = [
             "stop_page.proximity_alert.menu.set": "Alert Me When Nearby",
-            "stop_page.proximity_alert.menu.cancel": "Cancel Nearby Alert",
-            "stop_page.proximity_alert.a11y_label": "Nearby alert",
-            "stop_page.proximity_alert.a11y_value_active": "active",
-            "stop_page.proximity_alert.a11y_value_inactive": "inactive",
-            "stop_page.proximity_alert.a11y_hint_set": "Alerts you when approaching this stop.",
-            "stop_page.proximity_alert.a11y_hint_cancel": "Cancels the nearby alert for this stop."
+            "stop_page.proximity_alert.menu.cancel": "Cancel Nearby Alert"
         ]
 
         for (key, expectedValue) in keys {

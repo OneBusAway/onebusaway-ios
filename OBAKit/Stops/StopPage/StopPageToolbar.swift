@@ -101,9 +101,6 @@ struct StopPageToolbar: View {
         .padding(.bottom, 6)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
-        .accessibilityActions {
-            moreAccessibilityActions
-        }
     }
 
     @ViewBuilder
@@ -138,7 +135,7 @@ struct StopPageToolbar: View {
             systemImage: "arrow.clockwise",
             accessibilityLabel: Self.refreshAccessibilityLabel,
             accessibilityValue: statusText,
-            accessibilityHint: refreshHint,
+            accessibilityHint: Self.refreshAccessibilityHint(isRefreshing: isRefreshing),
             action: onRefresh
         )
         .disabled(isRefreshing)
@@ -218,7 +215,6 @@ struct StopPageToolbar: View {
             )
         }
         .disabled(!canFilter)
-        .accessibilityHint(filterHint)
     }
 
     private var departureFilterSubmenu: some View {
@@ -248,7 +244,6 @@ struct StopPageToolbar: View {
             Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
         }
         .disabled(!hasServiceAlerts)
-        .accessibilityHint(serviceAlertsHint)
     }
 
     private var locationSection: some View {
@@ -280,9 +275,6 @@ struct StopPageToolbar: View {
                     systemImage: Icons.proximityAlertSymbolName(isActive: isProximityAlertActive)
                 )
             }
-            .accessibilityLabel(ProximityAlertMenuItem.accessibilityLabel(isActive: isProximityAlertActive))
-            .accessibilityValue(ProximityAlertMenuItem.accessibilityValue(isActive: isProximityAlertActive))
-            .accessibilityHint(ProximityAlertMenuItem.accessibilityHint(isActive: isProximityAlertActive))
         }
     }
 
@@ -317,18 +309,6 @@ struct StopPageToolbar: View {
         return actions
     }
 
-    /// Predicates describing item disabled states.
-    var isRefreshDisabled: Bool { isRefreshing }
-    var isFilterDisabled: Bool { !canFilter }
-    var isServiceAlertsDisabled: Bool { !hasServiceAlerts }
-
-    var refreshHint: String { Self.refreshAccessibilityHint(isRefreshing: isRefreshing) }
-    var filterHint: String { Self.filterAccessibilityHint(canFilter: canFilter) }
-    var serviceAlertsHint: String { Self.serviceAlertsAccessibilityHint(hasServiceAlerts: hasServiceAlerts) }
-    var bookmarkHint: String { Self.bookmarkAccessibilityHint }
-    var schedulesHint: String { Self.schedulesAccessibilityHint }
-    var moreHint: String { Self.moreAccessibilityHint }
-
     static var refreshAccessibilityLabel: String { Strings.refresh }
     static var bookmarkAccessibilityLabel: String { bookmarkTitle }
     static var schedulesAccessibilityLabel: String { Strings.schedules }
@@ -350,18 +330,6 @@ struct StopPageToolbar: View {
 
     static var moreAccessibilityHint: String {
         OBALoc("stop_page.toolbar.more.hint", value: "Shows more options.", comment: "Accessibility hint for the More button on the stop page toolbar.")
-    }
-
-    static func filterAccessibilityHint(canFilter: Bool) -> String {
-        canFilter
-            ? OBALoc("stop_page.toolbar.filter.hint", value: "Filters routes at this stop.", comment: "Accessibility hint for the route filter menu item.")
-            : OBALoc("stop_page.toolbar.filter.disabled_hint", value: "Filtering is unavailable because this stop only serves one route.", comment: "Accessibility hint explaining why route filtering is disabled.")
-    }
-
-    static func serviceAlertsAccessibilityHint(hasServiceAlerts: Bool) -> String {
-        hasServiceAlerts
-            ? OBALoc("stop_page.toolbar.service_alerts.hint", value: "Shows service alerts for this stop.", comment: "Accessibility hint for the service alerts button.")
-            : OBALoc("stop_page.toolbar.service_alerts.disabled_hint", value: "No active service alerts for this stop.", comment: "Accessibility hint explaining why service alerts is disabled.")
     }
 
     static var bookmarkTitle: String {
