@@ -333,4 +333,48 @@ final class NearbyTripMatcherTests: OBATestCase {
         let error = NearbyTripMatcher.MatchError.noRealtimeData
         #expect(!error.localizedDescription.isEmpty)
     }
+
+    // MARK: - Edge Conditions
+
+    /// When one arrival lacks tripStatus and another has valid real-time position in range,
+    /// findTrips successfully matches the valid vehicle and skips the status-less arrival without error.
+    @Test func `Find trips skips arrivals missing tripStatus`() async throws {
+        let stops = stopsFromArrivalsFixture()
+        let rawData = Fixtures.loadData(file: arrivalsFixture)
+        let jsonObject = try JSONSerialization.jsonObject(with: rawData) as! [String: Any]
+        var dataDict = jsonObject["data"] as! [String: Any]
+        var entry = dataDict["entry"] as! [String: Any]
+        var arrivals = entry["arrivalsAndDepartures"] as! [[String: Any]]
+
+        // Set tripStatus to nil on the first arrival, leaving the other route 30 arrival intact
+        arrivals[0]["tripStatus"] = NSNull()
+        entry["arrivalsAndDepartures"] = arrivals
+        dataDict["entry"] = entry
+        var modifiedJSON = jsonObject
+        modifiedJSON["data"] = dataDict
+        let modifiedData = try JSONSerialization.data(withJSONObject: modifiedJSON)
+
+        dataLoader.mock(data: modifiedData) { request in
+            request.url?.absoluteString.contains("arrivals-and-departures-for-stop") ?? false
+        }
+
+        let results = try await NearbyTripMatcher.findTrips(
+            for: route30(),
+            near: userLocation,
+            using: restService,
+            stops: stops,
+            maxDistance: 500_000
+        )
+
+        // Only the second vehicle (1_7022) with valid real-time position should be returned
+        #expect(results.count == 1)
+        #expect(results.first?.arrivalDeparture.vehicleID == "1_7022")
+    }
+
+    /// MatchError equatable conformance distinguishes different error cases.
+    @Test func `Match error equality distinguishes different cases`() {
+        #expect(NearbyTripMatcher.MatchError.noStopsNearby == NearbyTripMatcher.MatchError.noStopsNearby)
+        #expect(NearbyTripMatcher.MatchError.noRealtimeData == NearbyTripMatcher.MatchError.noRealtimeData)
+        #expect(NearbyTripMatcher.MatchError.noStopsNearby != NearbyTripMatcher.MatchError.noRealtimeData)
+    }
 }
