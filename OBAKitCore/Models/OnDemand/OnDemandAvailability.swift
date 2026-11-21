@@ -129,10 +129,8 @@ public struct OnDemandAvailability: Equatable, Sendable {
         let firstActiveDate = firstDateWithService(service: service, evaluator: evaluator, from: today)
         let bookingTier = bookingTier(service: service, evaluator: evaluator, on: firstActiveDate)
         let bookableNow = containing.contains { window in isOpen(rule: window.rule, on: window.date, service: service, evaluator: evaluator, now: now) }
-        let nextBookable = service.rules.compactMap { rule -> ServiceDate? in
-            let bookingRule = service.bookingRule(id: rule.pickupBookingRuleID)
-            if rule.pickupBookingRuleID != nil, bookingRule == nil { return nil }
-            return evaluator.nextBookableServiceDate(rule: rule, bookingRule: bookingRule, now: now)
+        let nextBookable = service.rules.compactMap { rule in
+            nextBookableServiceDate(rule: rule, service: service, evaluator: evaluator, yesterday: yesterday, now: now)
         }.min()
         let outcome = OnDemandBookingResolution.resolve(service: service, evaluator: evaluator, now: now)
 
@@ -160,7 +158,9 @@ public struct OnDemandAvailability: Equatable, Sendable {
         // service with no other boundary ahead of it (ruling: spec §2.5).
         let nextMidnight = evaluator.anchor(evaluator.adding(days: 1, to: today))
         let nextChange = [runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight].compactMap { $0 }.filter { $0 > now }.min()
-        let targetDate = nextBookable ?? today
+        // With nothing left to book, explain the service day running now
+        // (yesterday's, after midnight) rather than today.
+        let targetDate = nextBookable ?? containing.map(\.date).max() ?? today
         let eligibilityReason = evaluateEligibility(service: service, timeZone: timeZone, travelDate: targetDate, now: now)
 
         return OnDemandAvailability(
@@ -289,6 +289,45 @@ public struct OnDemandAvailability: Equatable, Sendable {
     }
 
     // MARK: - Booking
+
+    /// The first service date `rule` can still be booked for at `now`.
+    /// `BookingDeadlineEvaluator.nextBookableServiceDate` walks from today, so
+    /// yesterday's window running past 24:00 is checked here first. Without a
+    /// booking rule every date evaluates open, so a date whose last pickup has
+    /// passed is skipped, the same way the eligibility reason calls it too late.
+    private static func nextBookableServiceDate(
+        rule: AvailabilityRule,
+        service: OnDemandService,
+        evaluator: BookingDeadlineEvaluator,
+        yesterday: ServiceDate,
+        now: Date
+    ) -> ServiceDate? {
+        let bookingRule = service.bookingRule(id: rule.pickupBookingRuleID)
+        if rule.pickupBookingRuleID != nil, bookingRule == nil { return nil }
+
+        func isBookable(_ date: ServiceDate, _ evaluation: BookingEvaluation) -> Bool {
+            guard evaluation.state == .open else { return false }
+            guard bookingRule == nil else { return true }
+            if case .tooLate = evaluator.evaluateEligibility(rule: rule, bookingRule: nil, travelDate: date, now: now) {
+                return false
+            }
+            return true
+        }
+
+        if isActive(rule, on: yesterday, evaluator: evaluator),
+           now < window(of: rule, on: yesterday, evaluator: evaluator).end,
+           isBookable(yesterday, evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: yesterday, now: now)) {
+            return yesterday
+        }
+
+        var found: ServiceDate?
+        evaluator.walkServiceDates(rule: rule, bookingRule: bookingRule, now: now) { date, evaluation in
+            guard isBookable(date, evaluation) else { return true }
+            found = date
+            return false
+        }
+        return found
+    }
 
     /// The least demanding pickup booking type among the rules active on the
     /// next date with service. A null id counts as real-time; a dangling id is skipped.
