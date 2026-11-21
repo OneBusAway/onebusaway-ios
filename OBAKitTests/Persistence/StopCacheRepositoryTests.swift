@@ -965,6 +965,56 @@ final class StopCacheRepositoryTests {
         let expiredDate = now.addingTimeInterval(-(StopCacheFreshnessPolicy.expirationInterval + 1.0))
         #expect(StopCacheFreshnessPolicy.classify(lastSuccessfulSyncAt: expiredDate, now: now) == .expired)
     }
+
+    // MARK: - Bounds and Zero Limit Edge Cases
+
+    @Test func `Stops in region with zero limit returns empty array`() {
+        let stop = makeStop(id: "stop_zero_limit", lat: 47.6062, lon: -122.3321)
+        repository.saveStops([stop], regionId: 1)
+
+        let populatedResults = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        #expect(populatedResults.map(\.id) == ["stop_zero_limit"])
+
+        let zeroLimitResults = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1,
+            limit: 0
+        )
+        #expect(zeroLimitResults.isEmpty)
+    }
+
+    @Test func `Stops in region with inverted bounds returns empty array`() {
+        let stop = makeStop(id: "stop_inverted", lat: 47.6062, lon: -122.3321)
+        repository.saveStops([stop], regionId: 1)
+
+        let populatedResults = repository.stopsInRegion(
+            minLat: 47.0,
+            maxLat: 48.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        #expect(populatedResults.map(\.id) == ["stop_inverted"])
+
+        // minLat > maxLat
+        let invertedResults = repository.stopsInRegion(
+            minLat: 48.0,
+            maxLat: 47.0,
+            minLon: -123.0,
+            maxLon: -122.0,
+            regionId: 1
+        )
+        #expect(invertedResults.isEmpty)
+    }
 }
 
 // swiftlint:enable force_try
