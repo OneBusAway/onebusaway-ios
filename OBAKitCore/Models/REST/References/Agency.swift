@@ -9,9 +9,7 @@
 
 import Foundation
 
-// @unchecked Sendable: all stored properties are immutable; NSObject prevents
-// a checked Sendable conformance.
-public final class Agency: NSObject, Identifiable, Codable, @unchecked Sendable {
+public final class Agency: NSObject, Identifiable, Codable, Sendable {
     public let disclaimer: String?
     public let email: String?
     public let fareURL: URL?

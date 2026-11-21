@@ -15,7 +15,7 @@ public typealias RegionIdentifier = Int
 
 /// Represents a OneBusAway server deployment.
 /// For example, OBA regions include Tampa, Puget Sound, and Washington, D.C.
-public class Region: NSObject, Identifiable, Codable, @unchecked Sendable {
+public final class Region: NSObject, Identifiable, Codable, Sendable {
 
     /// The human-readable name of the region. Example: Puget Sound.
     public let name: String
@@ -471,7 +471,7 @@ public class Region: NSObject, Identifiable, Codable, @unchecked Sendable {
     // MARK: - Location Helpers
 
     /// Internal type for constructing regional boundaries from the server's JSON output.
-    struct RegionBound: Codable {
+    struct RegionBound: Codable, Sendable {
         let lat: Double
         let lon: Double
         let latSpan: Double
@@ -495,7 +495,7 @@ public class Region: NSObject, Identifiable, Codable, @unchecked Sendable {
     let regionBounds: [RegionBound]
 
     /// Returns a map rect that describes this region's boundaries.
-    public lazy var serviceRect: MKMapRect = {
+    public var serviceRect: MKMapRect {
         var minX: Double = .greatestFiniteMagnitude
         var minY: Double = .greatestFiniteMagnitude
         var maxX: Double = .leastNormalMagnitude
@@ -512,12 +512,13 @@ public class Region: NSObject, Identifiable, Codable, @unchecked Sendable {
         }
 
         return MKMapRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
-    }()
+    }
 
     /// Returns the center coordinate of `serviceRect`.
-    public lazy var centerCoordinate: CLLocationCoordinate2D = {
-        return MKMapPoint(x: serviceRect.midX, y: serviceRect.midY).coordinate
-    }()
+    public var centerCoordinate: CLLocationCoordinate2D {
+        let rect = serviceRect
+        return MKMapPoint(x: rect.midX, y: rect.midY).coordinate
+    }
 
     /// Calculates the distance from the center of this region to the specified location.
     ///
@@ -566,7 +567,7 @@ public class Region: NSObject, Identifiable, Codable, @unchecked Sendable {
 ///
 /// `nil` (a JSON `null` or an absent key) means analytics is disabled for the
 /// region and no events should be emitted.
-public struct UmamiAnalyticsConfig: Codable, Equatable, Hashable {
+public struct UmamiAnalyticsConfig: Codable, Equatable, Hashable, Sendable {
     /// The Umami host to POST events to, e.g. `https://analytics.onebusawaycloud.com`.
     public let url: URL
 
@@ -592,7 +593,7 @@ public struct UmamiAnalyticsConfig: Codable, Equatable, Hashable {
 // MARK: - Open311Server
 
 /// Defines an Open311 server, which is supported in some OBA regions.
-public class Open311Server: NSObject, Codable {
+public final class Open311Server: NSObject, Codable, Sendable {
     public let jurisdictionID: String?
     public let apiKey: String
     public let baseURL: URL
