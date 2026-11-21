@@ -158,7 +158,10 @@ public struct OnDemandAvailability: Equatable, Sendable {
         // rollover always counts as a next change, even for a continuous
         // service with no other boundary ahead of it (ruling: spec §2.5).
         let nextMidnight = evaluator.anchor(evaluator.adding(days: 1, to: today))
-        let nextChange = [runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight]
+        // Each valid rule's cutoff is added here too: the booking resolution
+        // drops all of them when another rule's booking rule is unresolved.
+        let bookingCutoffs = bookable.map(\.cutoff)
+        let nextChange = ([runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight] + bookingCutoffs)
             .compactMap { $0 }.filter { $0 > now }.min()
         // With nothing left to book, explain the service day running now
         // (yesterday's, after midnight) rather than today.

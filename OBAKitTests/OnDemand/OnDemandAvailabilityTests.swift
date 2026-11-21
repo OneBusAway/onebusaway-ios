@@ -687,6 +687,38 @@ final class OnDemandAvailabilityTests: OBATestCase {
         #expect(result.bookingResolution == .bookBy(cutoff: cutoff, travelDate: ServiceDate("2026-03-10")!))
     }
 
+    /// The same overnight rule next to a rule whose booking rule is missing:
+    /// the booking line is unknown, but the valid rule's 00:45 cutoff is
+    /// still the next change, not the window's 01:00 end.
+    @Test func `Overnight cutoff stays the next change next to an unresolved booking rule`() throws {
+        let service = try alexandria { json in
+            self.rewriteRules(&json) { rule in
+                rule["startPickupTime"] = "23:00:00"
+                rule["endPickupTime"] = "25:00:00"
+            }
+            self.rewriteReferences(&json, "bookingRules") { rule in
+                rule["bookingType"] = 1
+                rule["priorNoticeDurationMin"] = 15
+                rule["priorNoticeLastDay"] = nil
+                rule["priorNoticeLastTime"] = nil
+                rule["priorNoticeStartDay"] = nil
+                rule["priorNoticeStartTime"] = nil
+            }
+            var body = json["data"] as! [String: Any]
+            var entry = body["entry"] as! [String: Any]
+            var rules = entry["rules"] as! [[String: Any]]
+            var dangling = rules[0]
+            dangling["pickupBookingRuleId"] = "missing_booking_rule"
+            rules.append(dangling)
+            entry["rules"] = rules
+            body["entry"] = entry
+            json["data"] = body
+        }
+        let result = availability(service, at: instant("2026-03-11T07:30:00Z"))
+        #expect(result.bookingResolution == .unknown)
+        #expect(result.nextChangeInstant == instant("2026-03-11T07:45:00Z"))
+    }
+
     /// A same-day rule past its cutoff on the last night is too late for the
     /// running service day, not ended.
     @Test func `Overnight same-day service past its cutoff on the last night is too late`() throws {
