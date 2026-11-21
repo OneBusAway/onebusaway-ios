@@ -56,7 +56,7 @@ public struct WidgetTimelinePlanner: Sendable {
         maximumEntries: Int = 12,
         preDepartureLeadTime: TimeInterval = 0
     ) {
-        self.minimumEntrySpacing = minimumEntrySpacing
+        self.minimumEntrySpacing = max(0, minimumEntrySpacing)
         self.maximumEntries = max(1, maximumEntries)
         self.preDepartureLeadTime = max(0, preDepartureLeadTime)
     }
@@ -69,6 +69,8 @@ public struct WidgetTimelinePlanner: Sendable {
         WidgetTimelinePlanner(minimumEntrySpacing: 0, maximumEntries: 64, preDepartureLeadTime: 59)
     }
 
+    /// Computes timeline entry dates and the reload date.
+    /// Works purely on absolute instants (`Date` / `TimeInterval`), independent of timezones or calendars.
     public func plan(departureDates: [Date], now: Date) -> Plan {
         let futureDepartures = departureDates.filter { $0 > now }
         var boundarySet = Set(futureDepartures)
@@ -112,7 +114,8 @@ extension WidgetTimelinePlanner {
     /// Strictly, because an undeferred entry is dated exactly at a departure —
     /// that entry exists to take that bus off the screen. `>=` would keep it
     /// there until the next boundary, which on a sparse route is the whole
-    /// reload interval.
+    /// reload interval. Departures at or before `entryDate` are considered
+    /// expired for this timeline entry.
     public static func departures(_ departures: [ArrivalDeparture], visibleAt entryDate: Date) -> [ArrivalDeparture] {
         departures.filter { $0.arrivalDepartureDate > entryDate }
     }
