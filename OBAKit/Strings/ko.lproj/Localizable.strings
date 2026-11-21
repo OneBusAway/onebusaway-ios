@@ -566,6 +566,9 @@
 /* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
 "map_controller.stop_cluster.accessibility_hint" = "이곳의 정류장 목록을 표시합니다.";
 
+/* VoiceOver hint for a map stop pin. Activating it opens the stop's departures. */
+"map_controller.stop_annotation.accessibility_hint" = "이 정류장의 출발 정보를 표시합니다.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "선택하신 차량은 현재 운행 중이 아닌 것으로 보여 표시할 수 없습니다.";
 

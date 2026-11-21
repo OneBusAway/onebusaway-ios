@@ -18,6 +18,15 @@ protocol StopAnnotationDelegate: NSObjectProtocol {
 
     /// Whether stop pins that would overlap merge into a cluster.
     var clustersStops: Bool { get }
+
+    /// Whether this stop currently has an active alert.
+    func hasAlert(for stop: Stop) -> Bool
+}
+
+extension StopAnnotationDelegate {
+    func hasAlert(for stop: Stop) -> Bool {
+        return false
+    }
 }
 
 /// A stop or bookmark pin. It shows no callout: selecting it opens the stop.
@@ -76,6 +85,9 @@ class StopAnnotationView: MKAnnotationView {
 
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
 
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
             if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
                 self.rebuildIcon()
@@ -92,8 +104,10 @@ class StopAnnotationView: MKAnnotationView {
 
         labelStack.isHidden = true
         clusteringIdentifier = nil
-
+        hasAlert = false
         titleLabel.text = nil
+        accessibilityLabel = nil
+        accessibilityValue = nil
     }
 
     public override func prepareForDisplay() {
@@ -130,12 +144,16 @@ class StopAnnotationView: MKAnnotationView {
     }
 
     private func prepareForDisplay(bookmark: Bookmark, delegate: StopAnnotationDelegate) {
+        hasAlert = delegate.hasAlert(for: bookmark.stop)
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
         image = delegate.iconFactory.buildIcon(for: bookmark.stop, isBookmarked: true, traits: traitCollection)
         titleLabel.attributedText = strokedText(bookmark.name)
+        accessibilityLabel = Self.accessibilityLabel(for: bookmark)
+        accessibilityValue = alertState
     }
 
     private func prepareForDisplay(stop: Stop, delegate: StopAnnotationDelegate) {
+        hasAlert = delegate.hasAlert(for: stop)
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
         image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
         if let mapTitle = stop.mapTitle {
@@ -144,6 +162,80 @@ class StopAnnotationView: MKAnnotationView {
         else {
             titleLabel.text = ""
         }
+        accessibilityLabel = Self.accessibilityLabel(for: stop)
+        accessibilityValue = alertState
+    }
+
+    // MARK: - Semantics
+
+    /// Human-readable name of the stop or bookmark.
+    public var stopName: String? {
+        Self.stopName(for: annotation)
+    }
+
+    /// Extract human-readable stop or bookmark name.
+    public static func stopName(for annotation: MKAnnotation?) -> String? {
+        switch annotation {
+        case let stop as Stop:
+            return stop.name
+        case let bookmark as Bookmark:
+            return !bookmark.name.isEmpty ? bookmark.name : bookmark.stop.name
+        default:
+            return nil
+        }
+    }
+
+    /// Route context for the stop (direction and routes served).
+    public var routeContext: String? {
+        Self.routeContext(for: annotation)
+    }
+
+    /// Extract route context for an annotation.
+    public static func routeContext(for annotation: MKAnnotation?) -> String? {
+        let stop: Stop?
+        switch annotation {
+        case let s as Stop:
+            stop = s
+        case let b as Bookmark:
+            stop = b.stop
+        default:
+            stop = nil
+        }
+        guard let stop else { return nil }
+
+        var parts: [String] = []
+        if let direction = Formatters.directionString(stop.direction) {
+            parts.append(direction)
+        }
+        if let routes = Formatters.formattedRoutes(stop.routes) {
+            parts.append(routes)
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: "; ")
+    }
+
+    /// Whether this stop currently has an active alert.
+    public var hasAlert: Bool = false {
+        didSet {
+            accessibilityValue = alertState
+        }
+    }
+
+    /// Localized alert state description when an alert is active, or nil.
+    public var alertState: String? {
+        Self.alertState(hasAlert: hasAlert)
+    }
+
+    public static func alertState(hasAlert: Bool) -> String? {
+        hasAlert ? Strings.serviceAlert : nil
+    }
+
+    /// VoiceOver hint for activating this stop annotation.
+    public static var accessibilityHint: String {
+        OBALoc(
+            "map_controller.stop_annotation.accessibility_hint",
+            value: "Shows departures for this stop.",
+            comment: "VoiceOver hint for a map stop pin. Activating it opens the stop's departures."
+        )
     }
 
     // MARK: - Appearance
@@ -159,6 +251,28 @@ class StopAnnotationView: MKAnnotationView {
 
     // MARK: - Accessibility
 
+    override var isAccessibilityElement: Bool {
+        get { true }
+        set { super.isAccessibilityElement = newValue }
+    }
+
+    override var accessibilityTraits: UIAccessibilityTraits {
+        get { super.accessibilityTraits.union(.button) }
+        set { super.accessibilityTraits = newValue }
+    }
+
+    override var accessibilityHint: String? {
+        get {
+            guard annotation is Stop || annotation is Bookmark else {
+                return super.accessibilityHint
+            }
+            return Self.accessibilityHint
+        }
+        set {
+            super.accessibilityHint = newValue
+        }
+    }
+
     override var accessibilityLabel: String? {
         get {
             Self.accessibilityLabel(for: annotation) ?? super.accessibilityLabel
@@ -167,6 +281,35 @@ class StopAnnotationView: MKAnnotationView {
         set {
             super.accessibilityLabel = newValue
         }
+    }
+
+    override var accessibilityValue: String? {
+        get {
+            alertState
+        }
+        set {
+            super.accessibilityValue = newValue
+        }
+    }
+
+    override func accessibilityActivate() -> Bool {
+        guard let mapView = findMapView() else { return false }
+        if let annotation = annotation {
+            mapView.selectAnnotation(annotation, animated: true)
+            return true
+        }
+        return false
+    }
+
+    private func findMapView() -> MKMapView? {
+        var view: UIView? = self.superview
+        while let current = view {
+            if let map = current as? MKMapView {
+                return map
+            }
+            view = current.superview
+        }
+        return nil
     }
 
     /// Bookmarks share this view with stops, and used to fall through to `nil` —
