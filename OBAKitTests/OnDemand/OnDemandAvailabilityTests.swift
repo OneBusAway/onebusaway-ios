@@ -659,6 +659,32 @@ final class OnDemandAvailabilityTests: OBATestCase {
         #expect(result.eligibilityReason == .unavailable(.serviceEnded))
     }
 
+    /// A same-day rule with 15 minutes' notice on Tuesday's 23:00–01:00
+    /// window: at 00:30 it is bookable for Tuesday until 00:45, so that is
+    /// the next change, not the window's 01:00 end.
+    @Test func `Overnight same-day service changes at the previous day's cutoff`() throws {
+        let service = try alexandria { json in
+            self.rewriteRules(&json) { rule in
+                rule["startPickupTime"] = "23:00:00"
+                rule["endPickupTime"] = "25:00:00"
+            }
+            self.rewriteReferences(&json, "bookingRules") { rule in
+                rule["bookingType"] = 1
+                rule["priorNoticeDurationMin"] = 15
+                rule["priorNoticeLastDay"] = nil
+                rule["priorNoticeLastTime"] = nil
+                rule["priorNoticeStartDay"] = nil
+                rule["priorNoticeStartTime"] = nil
+            }
+        }
+        let cutoff = instant("2026-03-11T07:45:00Z")
+        let result = availability(service, at: instant("2026-03-11T07:30:00Z"))
+        #expect(result.bookableNow)
+        #expect(result.nextBookableServiceDate == ServiceDate("2026-03-10")!)
+        #expect(result.eligibilityReason == .eligible(cutoff: cutoff))
+        #expect(result.nextChangeInstant == cutoff)
+    }
+
     /// A same-day rule past its cutoff on the last night is too late for the
     /// running service day, not ended.
     @Test func `Overnight same-day service past its cutoff on the last night is too late`() throws {

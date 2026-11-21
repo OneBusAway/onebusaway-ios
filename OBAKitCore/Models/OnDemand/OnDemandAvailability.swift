@@ -129,9 +129,10 @@ public struct OnDemandAvailability: Equatable, Sendable {
         let firstActiveDate = firstDateWithService(service: service, evaluator: evaluator, from: today)
         let bookingTier = bookingTier(service: service, evaluator: evaluator, on: firstActiveDate)
         let bookableNow = containing.contains { window in isOpen(rule: window.rule, on: window.date, service: service, evaluator: evaluator, now: now) }
-        let nextBookable = service.rules.compactMap { rule in
+        let bookable = service.rules.compactMap { rule in
             nextBookableServiceDate(rule: rule, service: service, evaluator: evaluator, yesterday: yesterday, now: now)
-        }.min()
+        }
+        let nextBookable = bookable.map(\.date).min()
         let outcome = OnDemandBookingResolution.resolve(service: service, evaluator: evaluator, now: now)
 
         // A rule whose calendars the references do not carry has no service
@@ -157,7 +158,11 @@ public struct OnDemandAvailability: Equatable, Sendable {
         // rollover always counts as a next change, even for a continuous
         // service with no other boundary ahead of it (ruling: spec §2.5).
         let nextMidnight = evaluator.anchor(evaluator.adding(days: 1, to: today))
-        let nextChange = [runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight].compactMap { $0 }.filter { $0 > now }.min()
+        // The booking resolution walks from today, so a cutoff on yesterday's
+        // service day (past midnight) is added here.
+        let previousDayCutoffs = bookable.filter { $0.date == yesterday }.map(\.cutoff)
+        let nextChange = ([runningUntil, nextRunStart, outcome.nextChangeInstant, nextMidnight] + previousDayCutoffs)
+            .compactMap { $0 }.filter { $0 > now }.min()
         // With nothing left to book, explain the service day running now
         // (yesterday's, after midnight) rather than today.
         let targetDate = nextBookable ?? containing.map(\.date).max() ?? today
@@ -295,13 +300,14 @@ public struct OnDemandAvailability: Equatable, Sendable {
     /// yesterday's window running past 24:00 is checked here first. Without a
     /// booking rule every date evaluates open, so a date whose last pickup has
     /// passed is skipped, the same way the eligibility reason calls it too late.
+    /// Returns that date with its booking cutoff, if it has one.
     private static func nextBookableServiceDate(
         rule: AvailabilityRule,
         service: OnDemandService,
         evaluator: BookingDeadlineEvaluator,
         yesterday: ServiceDate,
         now: Date
-    ) -> ServiceDate? {
+    ) -> (date: ServiceDate, cutoff: Date?)? {
         let bookingRule = service.bookingRule(id: rule.pickupBookingRuleID)
         if rule.pickupBookingRuleID != nil, bookingRule == nil { return nil }
 
@@ -315,15 +321,17 @@ public struct OnDemandAvailability: Equatable, Sendable {
         }
 
         if isActive(rule, on: yesterday, evaluator: evaluator),
-           now < window(of: rule, on: yesterday, evaluator: evaluator).end,
-           isBookable(yesterday, evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: yesterday, now: now)) {
-            return yesterday
+           now < window(of: rule, on: yesterday, evaluator: evaluator).end {
+            let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: yesterday, now: now)
+            if isBookable(yesterday, evaluation) {
+                return (yesterday, evaluation.cutoffInstant)
+            }
         }
 
-        var found: ServiceDate?
+        var found: (date: ServiceDate, cutoff: Date?)?
         evaluator.walkServiceDates(rule: rule, bookingRule: bookingRule, now: now) { date, evaluation in
             guard isBookable(date, evaluation) else { return true }
-            found = date
+            found = (date, evaluation.cutoffInstant)
             return false
         }
         return found

@@ -361,6 +361,39 @@ final class OnDemandServiceViewTests: OBATestCase {
         #expect(view.promotedDeadlineText?.contains("Mar 11") == true)
     }
 
+    /// Alexandria as a 09:00–17:00 service with no pickup booking rule.
+    private func alexandriaNoNotice() throws -> OnDemandService {
+        let data = Fixtures.loadData(file: "ondemand_service_alexandria.json")
+        var json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var body = try #require(json["data"] as? [String: Any])
+        var entry = try #require(body["entry"] as? [String: Any])
+        let rules = try #require(entry["rules"] as? [[String: Any]])
+        entry["rules"] = rules.map { rule in
+            var rule = rule
+            rule["pickupBookingRuleId"] = NSNull()
+            rule["startPickupTime"] = "09:00:00"
+            rule["endPickupTime"] = "17:00:00"
+            return rule
+        }
+        body["entry"] = entry
+        json["data"] = body
+        return try JSONDecoder.RESTDecoder().decode(RESTAPIResponse<OnDemandService>.self, from: JSONSerialization.data(withJSONObject: json)).entry
+    }
+
+    /// Tuesday 18:00 PDT, after the last pickup: tier 3 with no deadline, so
+    /// the header keeps tomorrow's opening instead of promoting "no notice".
+    @Test func `Tier three with no notice needed shows the next opening`() throws {
+        let view = makeView(try alexandriaNoNotice(), now: instant("2026-03-11T01:00:00Z"))
+        #expect(view.availability.usabilityTier == OnDemandAvailability.advanceTier)
+        #expect(view.availability.nextBookableServiceDate == ServiceDate("2026-03-11")!)
+        #expect(
+            matches(view.statusLineText, twelveHour: "Opens tomorrow at 9:00 AM", twentyFourHour: "Opens tomorrow at 09:00"),
+            "\(String(describing: view.statusLineText))"
+        )
+        #expect(view.promotedDeadlineText == nil)
+        #expect(view.bookingLineText == Strings.onDemandNoNoticeRequired)
+    }
+
     @Test func `A closed service shows Closed and an unknown one shows nothing`() throws {
         let closed = makeView(try charlevoix("CC_CC1") { json in
             self.rewriteReferences(&json, "calendars") { $0["endDate"] = "2026-03-01" }
