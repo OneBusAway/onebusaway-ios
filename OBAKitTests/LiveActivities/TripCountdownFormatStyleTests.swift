@@ -86,4 +86,31 @@ struct TripCountdownFormatStyleTests {
         #expect(style.format(next!) == "1m")
         #expect(next! < departure.addingTimeInterval(-60))
     }
+
+    // MARK: - discreteInput(before:)
+
+    @Test func `discreteInput before past departure returns nil`() {
+        let past = departure.addingTimeInterval(30)
+        #expect(style.discreteInput(before: past) == nil)
+    }
+
+    @Test func `discreteInput before NOW boundary returns start of NOW interval`() {
+        // When remaining is 30s (minutes == 0), the boundary is departure - 60s
+        let now = departure.addingTimeInterval(-30)
+        let prev = style.discreteInput(before: now)
+        #expect(prev == departure.addingTimeInterval(-60))
+    }
+
+    @Test func `discreteInput before exact floor boundary returns nil when start equals date`() {
+        let exactNowBoundary = departure.addingTimeInterval(-60)
+        #expect(style.discreteInput(before: exactNowBoundary) == nil)
+    }
+
+    @Test func `discreteInput before mid-minute returns previous minute boundary`() {
+        // At remaining 510s (8m 30s), minutes == 8, previous minute boundary is departure - (8+1)*60 = departure - 540s (9m)
+        let now = departure.addingTimeInterval(-510)
+        let prev = style.discreteInput(before: now)
+        #expect(prev == departure.addingTimeInterval(-540))
+        #expect(style.format(prev!) == "9m")
+    }
 }
