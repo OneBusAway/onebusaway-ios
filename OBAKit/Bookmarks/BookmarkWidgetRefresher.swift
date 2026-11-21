@@ -34,7 +34,8 @@ final class BookmarkWidgetRefresher {
 
     /// Matches the `kind` values the widget extension registers under.
     static let widgetKind = "OBAWidget"
-    static let widgetKinds = [widgetKind]
+    static let complicationWidgetKind = "NextDepartureWidget"
+    static let widgetKinds = [widgetKind, complicationWidgetKind]
 
     /// The default action invoked to reload a widget kind. Overridden in tests to spy on
     /// reloads without invoking `WidgetCenter`.

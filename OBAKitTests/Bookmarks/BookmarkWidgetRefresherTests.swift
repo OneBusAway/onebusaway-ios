@@ -136,7 +136,8 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
     /// two paths can't drift apart on the identifiers.
     @Test @MainActor func `Widget kind matches the registered extension kind`() {
         #expect(BookmarkWidgetRefresher.widgetKind == "OBAWidget")
-        #expect(BookmarkWidgetRefresher.widgetKinds == ["OBAWidget"])
+        #expect(BookmarkWidgetRefresher.complicationWidgetKind == "NextDepartureWidget")
+        #expect(BookmarkWidgetRefresher.widgetKinds == ["OBAWidget", "NextDepartureWidget"])
     }
 
     @Test @MainActor func `ReloadAllTimelines reloads every registered widget kind`() {
@@ -144,6 +145,6 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         BookmarkWidgetRefresher.reloadAllTimelines(using: { reloadedKinds.append($0) })
 
         #expect(reloadedKinds == BookmarkWidgetRefresher.widgetKinds)
-        #expect(reloadedKinds == ["OBAWidget"])
+        #expect(reloadedKinds == ["OBAWidget", "NextDepartureWidget"])
     }
 }

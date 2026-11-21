@@ -54,6 +54,36 @@ public enum WidgetStrings {
         let fmt = OBALoc("widget.last_updated_fmt", value: "Last updated at %@", comment: "Widget header showing when departures were last fetched. %@ is a clock time such as 9:41 AM.")
         return String(format: fmt, time)
     }
+
+    /// Name of the next-departure accessory widget in the Add Widget gallery.
+    public static var nextDepartureGalleryDisplayName: String {
+        OBALoc("widget.next_departure.gallery.display_name", value: "Next Departure", comment: "Name of the next-departure Lock Screen accessory widget in the Add Widget gallery.")
+    }
+
+    /// Description of the next-departure accessory widget in the Add Widget gallery.
+    public static var nextDepartureGalleryDescription: String {
+        OBALoc("widget.next_departure.gallery.description", value: "See the next upcoming departure for your top bookmark.", comment: "Description of the next-departure Lock Screen accessory widget in the Add Widget gallery.")
+    }
+
+    /// Short fallback label when an accessory widget's bookmark has no upcoming departures.
+    public static var complicationNoDepartures: String {
+        OBALoc("widget.complication.no_departures", value: "No departures", comment: "Short fallback text on a Lock Screen accessory widget when a bookmark has no upcoming departures.")
+    }
+
+    /// Short fallback label when no bookmarks are configured for the accessory widget.
+    public static var complicationNoBookmarks: String {
+        OBALoc("widget.complication.no_bookmarks", value: "No bookmarks", comment: "Short fallback text on a Lock Screen accessory widget when no bookmarks are configured.")
+    }
+
+    /// Short hint shown in a rectangular accessory widget when no bookmarks are configured.
+    public static var complicationNoBookmarksHint: String {
+        OBALoc("widget.complication.no_bookmarks_hint", value: "Enable a widget bookmark in the app.", comment: "Hint shown in a rectangular Lock Screen accessory widget when no bookmarks are shown in the widget.")
+    }
+
+    /// Short fallback label when accessory widget departure data is unavailable.
+    public static var complicationUnavailable: String {
+        OBALoc("widget.complication.unavailable", value: "Unavailable", comment: "Short fallback text on a Lock Screen accessory widget when departure data could not be loaded.")
+    }
 }
 
 #endif // os(iOS)
