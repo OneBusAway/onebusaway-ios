@@ -29,24 +29,42 @@ struct DepartureTimeBadgeView: View {
         )
     }
 
-    private var scheduleColor: UIColor {
-        formatters.backgroundColorForScheduleStatus(arrivalDeparture.scheduleStatus)
+    /// The schedule-status color, except that on-time badges use
+    /// `departureOnTimeFill`: in dark mode the on-time color is systemGreen,
+    /// which white text only reaches 2.0:1 against.
+    private var fillColor: UIColor {
+        if arrivalDeparture.scheduleStatus == .onTime {
+            return ThemeColors.shared.departureOnTimeFill
+        }
+        return formatters.backgroundColorForScheduleStatus(arrivalDeparture.scheduleStatus)
     }
 
-    private var backgroundColor: Color {
-        Color(scheduleColor)
-    }
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
-    private var foregroundColor: Color {
-        Color(scheduleColor.contrastingTextColor)
+    /// Dark text on light fills (the gray of a scheduled-only departure),
+    /// opaque white on the rest. Not `contrastingTextColor`: its light choice
+    /// is `UIColor.lightText`, which is white at 60% opacity.
+    ///
+    /// The fill is resolved against this view's environment first: `isLightColor`
+    /// reads `getRed`, which otherwise resolves a dynamic color against
+    /// `UITraitCollection.current`, not the appearance the widget renders in.
+    private var textColor: UIColor {
+        let style: UIUserInterfaceStyle = colorScheme == .dark ? .dark : .light
+        let contrast: UIAccessibilityContrast = colorSchemeContrast == .increased ? .high : .normal
+        let traits = UITraitCollection { traits in
+            traits.userInterfaceStyle = style
+            traits.accessibilityContrast = contrast
+        }
+        return fillColor.resolvedColor(with: traits).isLightColor ? .darkText : ThemeColors.shared.lightText
     }
 
     var body: some View {
         VStack {
             Text("\(displayText)")
                 .badgeStyle(
-                    backgroundColor: backgroundColor,
-                    textColor: foregroundColor,
+                    backgroundColor: Color(fillColor),
+                    textColor: Color(textColor),
                     accessibilityLabel: accessibilityLabel
                 )
         }
