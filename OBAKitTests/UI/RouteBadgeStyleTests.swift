@@ -30,4 +30,20 @@ struct RouteBadgeStyleTests {
         #expect(averageChannel(RouteBadgeStyle.textColor(routeColor: gray, routeTextColor: .white, contrast: .standard)) > 0.99)
         #expect(averageChannel(RouteBadgeStyle.textColor(routeColor: gray, routeTextColor: .white, contrast: .increased)) < 0.01)
     }
+
+    @Test @MainActor func nilPreferredTextColorFallsBackToCalculatedContrastColor() {
+        func averageChannel(_ color: Color) -> CGFloat {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            return (red + green + blue) / 3
+        }
+
+        // Over pure white background, nil preferred text color yields black text (avg < 0.01)
+        let whiteBgText = RouteBadgeStyle.textColor(routeColor: .white, routeTextColor: nil, contrast: .standard)
+        #expect(averageChannel(whiteBgText) < 0.01)
+
+        // Over pure black background, nil preferred text color yields white text (avg > 0.99)
+        let blackBgText = RouteBadgeStyle.textColor(routeColor: .black, routeTextColor: nil, contrast: .standard)
+        #expect(averageChannel(blackBgText) > 0.99)
+    }
 }
