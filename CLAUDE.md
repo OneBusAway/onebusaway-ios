@@ -146,6 +146,13 @@ xcodebuild clean build-for-testing -scheme 'App' -destination "platform=iOS Simu
 # Run unit tests
 xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 
+# Run focused test slices by target (Core, App, Widget, Watch)
+scripts/run_test_slice core             # Run Core / Frameworks test slice
+scripts/run_test_slice app              # Run App & UI test slice
+scripts/run_test_slice widget           # Run Widget & Extensions test slice
+scripts/run_test_slice watch            # Run Watch test slice
+scripts/run_test_slice verify-coverage  # Verify 100% test slice coverage against .xctestrun
+
 # Run specific test class
 xcodebuild test-without-building -only-testing:OBAKitTests/SpecificTestClass -project 'OBAKit.xcodeproj' -scheme 'App' -destination "platform=iOS Simulator,id=$SIMULATOR_UDID"
 ```
