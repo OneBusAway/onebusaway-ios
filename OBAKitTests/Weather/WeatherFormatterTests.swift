@@ -185,4 +185,39 @@ final class WeatherFormatterTests {
         #expect(result?.high.contains("59") == true)
         #expect(result?.low.contains("50") == true)
     }
+
+    // MARK: - upcomingHourly Edge Cases
+
+    @Test func `Upcoming hourly deduplicates identical timestamps and drops past hours`() {
+        let now = Date(timeIntervalSince1970: 3600 * 5) // Hour 5
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+
+        // Create entries: hour 3 (past), hour 4 (past), hour 5 (current hour start),
+        // hour 6 (duplicate 1), hour 6 (duplicate 2 with different temperature), hour 7.
+        let json: [[String: Any]] = [
+            ["icon": "clear-day", "precip_per_hour": 0.0, "precip_probability": 0.0, "summary": "Past", "temperature": 40.0, "temperature_feels_like": 0.0, "time": TimeInterval(3600 * 3), "wind_speed": 0.0],
+            ["icon": "clear-day", "precip_per_hour": 0.0, "precip_probability": 0.0, "summary": "Past", "temperature": 42.0, "temperature_feels_like": 0.0, "time": TimeInterval(3600 * 4), "wind_speed": 0.0],
+            ["icon": "clear-day", "precip_per_hour": 0.0, "precip_probability": 0.0, "summary": "Current", "temperature": 55.0, "temperature_feels_like": 0.0, "time": TimeInterval(3600 * 5), "wind_speed": 0.0],
+            ["icon": "clear-day", "precip_per_hour": 0.0, "precip_probability": 0.0, "summary": "DupFirst", "temperature": 60.0, "temperature_feels_like": 0.0, "time": TimeInterval(3600 * 6), "wind_speed": 0.0],
+            ["icon": "rain", "precip_per_hour": 0.0, "precip_probability": 0.0, "summary": "DupSecond", "temperature": 99.0, "temperature_feels_like": 0.0, "time": TimeInterval(3600 * 6), "wind_speed": 0.0],
+            ["icon": "cloudy", "precip_per_hour": 0.0, "precip_probability": 0.0, "summary": "Next", "temperature": 65.0, "temperature_feels_like": 0.0, "time": TimeInterval(3600 * 7), "wind_speed": 0.0]
+        ]
+        let data = try! JSONSerialization.data(withJSONObject: json)
+        let hourly = try! JSONDecoder().decode([WeatherForecast.HourlyForecast].self, from: data)
+
+        let window = WeatherFormatter.upcomingHourly(from: hourly, now: now, calendar: calendar)
+
+        // Past hours (3, 4) must be dropped
+        #expect(window.count == 3)
+        #expect(window[0].time == Date(timeIntervalSince1970: 3600 * 5))
+        #expect(window[0].temperature == 55.0)
+
+        // Duplicate hour 6 must keep the first occurrence (temperature 60.0, not 99.0)
+        #expect(window[1].time == Date(timeIntervalSince1970: 3600 * 6))
+        #expect(window[1].temperature == 60.0)
+
+        #expect(window[2].time == Date(timeIntervalSince1970: 3600 * 7))
+        #expect(window[2].temperature == 65.0)
+    }
 }
