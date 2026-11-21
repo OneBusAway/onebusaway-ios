@@ -87,7 +87,7 @@ The repository includes an executable Python checker that enforces these invaria
 # Run boundary check across all targets (OBAKitCore, OBAKitWatch, OBAKit)
 scripts/check_module_boundaries
 
-# Run self-test suite (validates current tree + 33 intentional violating fixtures)
+# Run self-test suite (validates current tree + 34 intentional violating fixtures)
 scripts/check_module_boundaries --test
 
 # Run with verbose scan reporting

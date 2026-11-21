@@ -44,7 +44,7 @@ class ModuleBoundaryCheckerTests(unittest.TestCase):
         script_path = REPO_ROOT / "scripts" / "check_module_boundaries"
         res = subprocess.run([sys.executable, str(script_path), "--test"], capture_output=True, text=True)
         self.assertEqual(res.returncode, 0, f"CLI --test failed:\nSTDOUT: {res.stdout}\nSTDERR: {res.stderr}")
-        self.assertIn("All 33 intentional violation fixtures caught", res.stdout)
+        self.assertIn("All 34 intentional violation fixtures caught", res.stdout)
 
     def test_sanitizer_removes_comments_and_strings_accurately(self):
         """Tests that comments and string literals are sanitized without shifting lines or columns."""
@@ -251,6 +251,20 @@ class ModuleBoundaryCheckerTests(unittest.TestCase):
         self.assertNotIn("UIView", sanitized)
         self.assertNotIn("quoted", sanitized)
         self.assertIn("UIApplication.shared", sanitized)
+        self.assertIn("let x = 1", sanitized)
+
+    def test_sanitizer_single_line_raw_string_of_quotes(self):
+        fixture = 'let quote = #"""#\nimport ActivityKit\nlet x = 1'
+        sanitized = checker.sanitize_code(fixture)
+        self.assertIn("import ActivityKit", sanitized)
+        violations = checker.check_portable_core_file("OBAKitCore/Models/X.swift", fixture, sanitized)
+        v = next(v for v in violations if v.rule_id == "CORE_FORBIDDEN_IMPORT_ACTIVITYKIT")
+        self.assertEqual(v.line, 2)
+
+    def test_sanitizer_raw_multiline_string_still_stripped(self):
+        fixture = 'let text = #"""\nimport ActivityKit "# not the end\n"""#\nlet x = 1'
+        sanitized = checker.sanitize_code(fixture)
+        self.assertNotIn("ActivityKit", sanitized)
         self.assertIn("let x = 1", sanitized)
 
     def test_sanitizer_preserves_columns_after_interpolation(self):

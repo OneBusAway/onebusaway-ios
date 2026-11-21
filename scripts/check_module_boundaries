@@ -160,6 +160,13 @@ def sanitize_code(code: str) -> str:
                     hashes += 1
                 if code.startswith('"', i + hashes):
                     multiline = code.startswith('"""', i + hashes)
+                    if multiline and hashes:
+                        # Like Swift's lexer: a raw `"""` whose line also holds
+                        # a closing `"#...` is a single-line string (`#"""#`).
+                        line_end = code.find("\n", i)
+                        line_end = n if line_end == -1 else line_end
+                        rest = code[i + hashes + 1:line_end]
+                        multiline = ('"' + "#" * hashes) not in rest
                     stop = i + hashes + (3 if multiline else 1)
                     blank(i, stop)
                     stack.append(["string", hashes, multiline])
@@ -707,6 +714,12 @@ def run_self_tests(repo_root: Path) -> bool:
             "let path = #\"C:\\\"#\nlet app = UIApplication.shared",
             "CORE_FORBIDDEN_UIAPPLICATION",
             "UIApplication after a raw string ending in a backslash in portable core"
+        ),
+        (
+            "OBAKitCore/Models/QuoteRawString.swift",
+            "let quote = #\"\"\"#\nimport ActivityKit",
+            "CORE_FORBIDDEN_IMPORT_ACTIVITYKIT",
+            "import after a single-line raw string #\"\"\"# in portable core"
         ),
         (
             "OBAKitWatch/Screens/PackageImport.swift",
