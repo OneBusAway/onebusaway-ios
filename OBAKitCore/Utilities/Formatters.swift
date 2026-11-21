@@ -16,7 +16,11 @@ public extension Notification.Name {
     static let formattersTimeZoneDidChange = Notification.Name("OBAFormattersTimeZoneDidChange")
 }
 
-public class Formatters: NSObject {
+public class Formatters: NSObject, @unchecked Sendable {
+    /// A default, thread-safe Formatters instance configured with autoupdatingCurrent locale, calendar, and shared theme colors.
+    public static var `default`: Formatters {
+        Formatters(locale: .autoupdatingCurrent, calendar: .autoupdatingCurrent, themeColors: .shared)
+    }
     private let locale: Locale
     private let themeColors: ThemeColors
     private let calendar: Calendar

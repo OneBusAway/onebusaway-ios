@@ -42,6 +42,29 @@ final class FormattersTests: OBATestCase {
         #expect(environment.obaFormatters === injected)
     }
 
+    @Test func `SwiftUI formatter environment default supports concurrent reads across tasks`() async {
+        let formatters = EnvironmentValues().obaFormatters
+
+        // Verify Sendable transfer across detached tasks
+        let task = Task.detached { () -> Bool in
+            let text = formatters.formattedClockTime(Date(timeIntervalSince1970: 0))
+            return !text.isEmpty
+        }
+        let result = await task.value
+        #expect(result)
+
+        // Concurrent reads across multiple tasks
+        await withTaskGroup(of: Bool.self) { group in
+            for _ in 0..<10 {
+                group.addTask {
+                    let env = EnvironmentValues()
+                    let f = env.obaFormatters
+                    return !f.formattedClockTime(Date(timeIntervalSince1970: 0)).isEmpty
+                }
+            }
+        }
+    }
+
     @Test func example() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let stopArrivals = try! Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures-for-stop-1_75414.json")
