@@ -13,17 +13,44 @@ typealias PulsingAnnotationWillMoveAnimationBlock = (PulsingAnnotationView?, UIV
 /// Swift port of https://github.com/samvermette/SVPulsingAnnotationView
 class PulsingAnnotationView: MKAnnotationView {
 
+    /// Provider closure for reduce motion state, defaulting to `UIAccessibility.isReduceMotionEnabled`.
+    /// Exposed for testing.
+    var reduceMotionProvider: () -> Bool = { UIAccessibility.isReduceMotionEnabled }
+
+    /// Whether Reduce Motion is enabled, disabling decorative pulsing animations.
+    var isReduceMotionEnabled: Bool {
+        get {
+            _isReduceMotionEnabled ?? reduceMotionProvider()
+        }
+        set {
+            _isReduceMotionEnabled = newValue
+            rebuildLayers()
+        }
+    }
+    private var _isReduceMotionEnabled: Bool?
+
+    /// Whether decorative pulsing animations are currently attached to the layers.
+    var hasPulseAnimation: Bool {
+        colorDotLayer.animation(forKey: "pulse") != nil || colorHaloLayer.animation(forKey: "pulse") != nil
+    }
+
     /// Default is same as MKUserLocationView
     public var annotationColor = UIColor(red: 0.0, green: 0.478, blue: 1.0, alpha: 1.0) {
         didSet {
-            if superview != nil {
+            if superview != nil || colorDotLayer.superlayer != nil {
                 rebuildLayers()
             }
         }
     }
 
     /// default is white
-    var outerColor: UIColor? = .white
+    var outerColor: UIColor? = .white {
+        didSet {
+            if superview != nil || colorDotLayer.superlayer != nil {
+                rebuildLayers()
+            }
+        }
+    }
 
     /// default is same as annotationColor
     var pulseColor: UIColor? {
@@ -32,6 +59,9 @@ class PulsingAnnotationView: MKAnnotationView {
         }
         set {
             _pulseColor = newValue
+            if superview != nil || colorDotLayer.superlayer != nil {
+                rebuildLayers()
+            }
         }
     }
     var _pulseColor: UIColor?
@@ -40,7 +70,7 @@ class PulsingAnnotationView: MKAnnotationView {
         get { imageView.image }
         set {
             imageView.image = newValue
-            if superview != nil {
+            if superview != nil || colorDotLayer.superlayer != nil {
                 rebuildLayers()
             }
         }
@@ -50,7 +80,7 @@ class PulsingAnnotationView: MKAnnotationView {
     var headingImage: UIImage? {
         didSet {
             headingImageView.image = headingImage
-            if superview != nil {
+            if superview != nil || colorDotLayer.superlayer != nil {
                 rebuildLayers()
             }
         }
@@ -74,7 +104,7 @@ class PulsingAnnotationView: MKAnnotationView {
 
     var pulseAnimationDuration: TimeInterval = 1.5 {
         didSet {
-            if superview != nil {
+            if superview != nil || colorDotLayer.superlayer != nil {
                 rebuildLayers()
             }
         }
@@ -84,41 +114,63 @@ class PulsingAnnotationView: MKAnnotationView {
 
     var delayBetweenPulseCycles: TimeInterval = 0.0 {
         didSet {
-            if superview != nil {
+            if superview != nil || colorDotLayer.superlayer != nil {
                 rebuildLayers()
             }
         }
     }
 
     var willMoveToSuperviewAnimationBlock: PulsingAnnotationWillMoveAnimationBlock? = { (view: PulsingAnnotationView?, _) in
+        guard let view = view, !view.isReduceMotionEnabled else { return }
         let bounceAnimation = CAKeyframeAnimation(keyPath: "transform.scale")
         let easeInOut = CAMediaTimingFunction(name: .easeInEaseOut)
         bounceAnimation.values = [0.05, 1.25, 0.8, 1.1, 0.9, 1.0]
         bounceAnimation.duration = 0.3
         bounceAnimation.timingFunctions = [easeInOut, easeInOut, easeInOut, easeInOut, easeInOut, easeInOut]
-        view?.layer.add(bounceAnimation, forKey: "popIn")
+        view.layer.add(bounceAnimation, forKey: "popIn")
     }
 
-    private var outerDotLayer: CALayer
-    private var colorDotLayer: CALayer
-    private var colorHaloLayer: CALayer
-    private var pulseAnimationGroup: CAAnimationGroup
+    private(set) var outerDotLayer: CALayer
+    private(set) var colorDotLayer: CALayer
+    private(set) var colorHaloLayer: CALayer
+    private(set) var pulseAnimationGroup: CAAnimationGroup
 
     private let defaultAnnotationSize: CGFloat = 22.0
 
     override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         let bounds = CGRect(x: 0, y: 0, width: defaultAnnotationSize, height: defaultAnnotationSize)
 
+        let initialReduceMotion = UIAccessibility.isReduceMotionEnabled
         outerDotLayer = PulsingAnnotationView.buildOuterDotLayer(bounds: bounds, outerColor: outerColor!, outerDotAlpha: outerDotAlpha)
-        colorDotLayer = PulsingAnnotationView.buildColorDotLayer(bounds: bounds, backgroundColor: annotationColor, delayBetweenPulseCycles: 0.0, pulseAnimationDuration: pulseAnimationDuration)
-        pulseAnimationGroup = PulsingAnnotationView.buildPulseAnimationGroup(outerPulseAnimationDuration: outerPulseAnimationDuration, delayBetweenPulseCycles: delayBetweenPulseCycles)
-        colorHaloLayer = PulsingAnnotationView.buildColorHaloLayer(bounds: bounds, pulseScaleFactor: pulseScaleFactor, pulseColor: annotationColor, delayBetweenPulseCycles: delayBetweenPulseCycles, pulseAnimationGroup: pulseAnimationGroup)
+        colorDotLayer = PulsingAnnotationView.buildColorDotLayer(
+            bounds: bounds,
+            backgroundColor: annotationColor,
+            delayBetweenPulseCycles: delayBetweenPulseCycles,
+            pulseAnimationDuration: pulseAnimationDuration,
+            isReduceMotionEnabled: initialReduceMotion
+        )
+        pulseAnimationGroup = PulsingAnnotationView.buildPulseAnimationGroup(
+            outerPulseAnimationDuration: outerPulseAnimationDuration,
+            delayBetweenPulseCycles: delayBetweenPulseCycles
+        )
+        colorHaloLayer = PulsingAnnotationView.buildColorHaloLayer(
+            bounds: bounds,
+            pulseScaleFactor: pulseScaleFactor,
+            pulseColor: annotationColor,
+            delayBetweenPulseCycles: delayBetweenPulseCycles,
+            pulseAnimationGroup: pulseAnimationGroup,
+            isReduceMotionEnabled: initialReduceMotion
+        )
 
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
 
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         calloutOffset = CGPoint(x: 0, y: 4)
         self.bounds = bounds
+
+        layer.addSublayer(colorHaloLayer)
+        layer.addSublayer(outerDotLayer)
+        layer.addSublayer(colorDotLayer)
 
         updateLayerContentsScale()
 
@@ -130,6 +182,24 @@ class PulsingAnnotationView: MKAnnotationView {
         registerForTraitChanges([UITraitDisplayScale.self]) { (self: Self, _) in
             self.updateLayerContentsScale()
         }
+        registerForTraitChanges([UITraitAccessibilityContrast.self]) { (self: Self, _) in
+            self.rebuildLayers()
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(reduceMotionStatusDidChange),
+            name: UIAccessibility.reduceMotionStatusDidChangeNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func reduceMotionStatusDidChange(_ notification: Notification) {
+        rebuildLayers()
     }
 
     /// The layers are built before `super.init`, when there are no traits to read, so
@@ -144,17 +214,33 @@ class PulsingAnnotationView: MKAnnotationView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func rebuildLayers() {
+    func rebuildLayers() {
         outerDotLayer.removeFromSuperlayer()
         outerDotLayer = PulsingAnnotationView.buildOuterDotLayer(bounds: bounds, outerColor: outerColor!, outerDotAlpha: outerDotAlpha)
 
         colorDotLayer.removeFromSuperlayer()
-        colorDotLayer = PulsingAnnotationView.buildColorDotLayer(bounds: bounds, backgroundColor: annotationColor, delayBetweenPulseCycles: 0.0, pulseAnimationDuration: pulseAnimationDuration)
+        colorDotLayer = PulsingAnnotationView.buildColorDotLayer(
+            bounds: bounds,
+            backgroundColor: annotationColor,
+            delayBetweenPulseCycles: delayBetweenPulseCycles,
+            pulseAnimationDuration: pulseAnimationDuration,
+            isReduceMotionEnabled: isReduceMotionEnabled
+        )
 
-        pulseAnimationGroup = PulsingAnnotationView.buildPulseAnimationGroup(outerPulseAnimationDuration: outerPulseAnimationDuration, delayBetweenPulseCycles: delayBetweenPulseCycles)
+        pulseAnimationGroup = PulsingAnnotationView.buildPulseAnimationGroup(
+            outerPulseAnimationDuration: outerPulseAnimationDuration,
+            delayBetweenPulseCycles: delayBetweenPulseCycles
+        )
 
         colorHaloLayer.removeFromSuperlayer()
-        colorHaloLayer = PulsingAnnotationView.buildColorHaloLayer(bounds: bounds, pulseScaleFactor: pulseScaleFactor, pulseColor: pulseColor, delayBetweenPulseCycles: delayBetweenPulseCycles, pulseAnimationGroup: pulseAnimationGroup)
+        colorHaloLayer = PulsingAnnotationView.buildColorHaloLayer(
+            bounds: bounds,
+            pulseScaleFactor: pulseScaleFactor,
+            pulseColor: pulseColor,
+            delayBetweenPulseCycles: delayBetweenPulseCycles,
+            pulseAnimationGroup: pulseAnimationGroup,
+            isReduceMotionEnabled: isReduceMotionEnabled
+        )
         updateLayerContentsScale()
 
         if image == nil {
@@ -181,6 +267,10 @@ class PulsingAnnotationView: MKAnnotationView {
             }
             bringSubviewToFront(imageView)
         }
+
+        if isReduceMotionEnabled {
+            layer.removeAnimation(forKey: "popIn")
+        }
     }
 
     override func willMove(toSuperview newSuperview: UIView?) {
@@ -191,7 +281,13 @@ class PulsingAnnotationView: MKAnnotationView {
         willMoveToSuperviewAnimationBlock?(self, newSuperview)
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        rebuildLayers()
+    }
+
     func popIn() {
+        guard !isReduceMotionEnabled else { return }
         let bounceAnimation = CAKeyframeAnimation(keyPath: "transform.scale")
         let easeInOut = CAMediaTimingFunction(name: .easeInEaseOut)
         bounceAnimation.values = [0.05, 1.25, 0.8, 1.1, 0.9, 1.0]
@@ -229,7 +325,14 @@ class PulsingAnnotationView: MKAnnotationView {
         return pulseAnimationGroup
     }
 
-    private static func buildColorHaloLayer(bounds: CGRect, pulseScaleFactor: CGFloat, pulseColor: UIColor?, delayBetweenPulseCycles: TimeInterval, pulseAnimationGroup: CAAnimationGroup) -> CALayer {
+    private static func buildColorHaloLayer(
+        bounds: CGRect,
+        pulseScaleFactor: CGFloat,
+        pulseColor: UIColor?,
+        delayBetweenPulseCycles: TimeInterval,
+        pulseAnimationGroup: CAAnimationGroup,
+        isReduceMotionEnabled: Bool
+    ) -> CALayer {
         let layer = CALayer()
         let width = bounds.width * pulseScaleFactor
         layer.bounds = CGRect(x: 0, y: 0, width: width, height: width)
@@ -238,14 +341,20 @@ class PulsingAnnotationView: MKAnnotationView {
         layer.cornerRadius = width / 2.0
         layer.opacity = 0
 
-        if delayBetweenPulseCycles != .infinity {
+        if !isReduceMotionEnabled && delayBetweenPulseCycles != .infinity {
             layer.add(pulseAnimationGroup, forKey: "pulse")
         }
 
         return layer
     }
 
-    private static func buildColorDotLayer(bounds: CGRect, backgroundColor: UIColor?, delayBetweenPulseCycles: TimeInterval, pulseAnimationDuration: TimeInterval) -> CALayer {
+    private static func buildColorDotLayer(
+        bounds: CGRect,
+        backgroundColor: UIColor?,
+        delayBetweenPulseCycles: TimeInterval,
+        pulseAnimationDuration: TimeInterval,
+        isReduceMotionEnabled: Bool
+    ) -> CALayer {
         let layer = CALayer()
         let width = bounds.width - 6.0
         layer.bounds = CGRect(x: 0, y: 0, width: width, height: width)
@@ -254,7 +363,7 @@ class PulsingAnnotationView: MKAnnotationView {
         layer.cornerRadius = width / 2.0
         layer.position = CGPoint(x: bounds.width / 2.0, y: bounds.height / 2.0)
 
-        if delayBetweenPulseCycles != .infinity {
+        if !isReduceMotionEnabled && delayBetweenPulseCycles != .infinity {
             let defaultCurve = CAMediaTimingFunction(name: CAMediaTimingFunctionName.default)
             let animationGroup = CAAnimationGroup()
             animationGroup.duration = pulseAnimationDuration

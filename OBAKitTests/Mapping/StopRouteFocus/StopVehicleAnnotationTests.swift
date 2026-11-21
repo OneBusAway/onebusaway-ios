@@ -185,4 +185,14 @@ final class StopVehicleAnnotationTests {
         view.isSelectable = true
         #expect(view.isUserInteractionEnabled == true)
     }
+
+    @Test func `Vehicle marker respects Reduce Motion while preserving selection`() {
+        let view = PulsingVehicleAnnotationView(annotation: nil, reuseIdentifier: "test")
+        view.isRealTime = true
+        view.isReduceMotionEnabled = true
+
+        #expect(!view.hasPulseAnimation)
+        view.isSelectable = true
+        #expect(view.isUserInteractionEnabled)
+    }
 }
