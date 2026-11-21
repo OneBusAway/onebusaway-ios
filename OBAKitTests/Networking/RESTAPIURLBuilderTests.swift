@@ -462,4 +462,45 @@ final class RESTAPIURLBuilderTests {
         #expect(queryValue(url, "userLon") == nil)
         #expect(queryValue(url, "userLocationAccuracy") == nil)
     }
+
+    // MARK: - URLComponents & Value Semantics Tests
+
+    @Test func testBuilderIsSendableStructWithValueSemantics() async {
+        let copy = builder!
+        let task = Task.detached { () -> URL in
+            return copy.getCurrentTime()
+        }
+        let url = await task.value
+        #expect(url.path == "/api/where/current-time.json")
+    }
+
+    @Test func testReservedCharactersInIDDoNotTrap() {
+        let specialID = "stop/variant:1[north]#east?query=yes"
+        let url = builder.getStop(stopID: specialID)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components != nil)
+        #expect(url.absoluteString.contains("stop%2Fvariant:1%5Bnorth%5D"))
+    }
+
+    @Test func testQueryItemEscapingSpecialCharacters() {
+        let url = builder.generateURL(path: "/api/where/test.json", params: [
+            "comment": "hello & goodbye = 1 + 2 / 3",
+            "name": "Line [A]"
+        ])
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components != nil)
+        #expect(queryValue(url, "comment") == "hello & goodbye = 1 + 2 / 3")
+        #expect(queryValue(url, "name") == "Line [A]")
+        #expect(url.absoluteString.contains("comment=hello%20%26%20goodbye%20%3D%201%20+%202%20/%203"))
+        #expect(url.absoluteString.contains("name=Line%20%5BA%5D"))
+    }
+
+    @Test func testMalformedPathProtectionDoesNotTrap() {
+        let malformedPath = "api/where/unencoded path with spaces & [brackets].json"
+        let url = builder.generateURL(path: malformedPath)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components != nil)
+        #expect(url.path.contains("unencoded path with spaces"))
+        #expect(components?.percentEncodedPath.contains("%20") == true)
+    }
 }

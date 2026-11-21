@@ -11,63 +11,48 @@ import Foundation
 import CoreLocation
 import MapKit
 
-// MARK: - URL Builder Class
+// MARK: - URL Builder
 
-// All stored properties are immutable; @unchecked only because NSObject itself is not Sendable.
 /// Creates `URL`s for the `RESTAPIService`.
 ///
-/// This class is designed to handle the oddities of different OBA regions' URL schemes without over- or under-escaping paths.
-final class RESTAPIURLBuilder: NSObject, @unchecked Sendable {
-    private let baseURL: URL
-    private let defaultQueryItems: [URLQueryItem]
-    private let surveyBaseURL: URL?
+/// This struct is designed to handle the oddities of different OBA regions' URL schemes without over- or under-escaping paths.
+public struct RESTAPIURLBuilder: Sendable {
+    public let baseURL: URL
+    public let defaultQueryItems: [URLQueryItem]
+    public let surveyBaseURL: URL?
 
-    init(baseURL: URL, defaultQueryItems: [URLQueryItem], surveyBaseURL: URL? = nil) {
+    public init(baseURL: URL, defaultQueryItems: [URLQueryItem], surveyBaseURL: URL? = nil) {
         self.baseURL = baseURL
         self.defaultQueryItems = defaultQueryItems
         self.surveyBaseURL = surveyBaseURL
     }
 
     public func generateURL(path: String, params: [String: Any]? = nil) -> URL {
-        let urlString = joinBaseURLToPath(path)
-        let queryParamString = buildQueryParams(params)
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true) ?? URLComponents()
+        let basePath = components.percentEncodedPath
+        let combinedPath = combinePaths(base: basePath, path: path)
 
-        if !queryParamString.isEmpty {
-            let fullURLString = String(format: "%@?%@", urlString, queryParamString)
-            return URL(string: fullURLString)!
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.insert("%")
+        components.percentEncodedPath = combinedPath.addingPercentEncoding(withAllowedCharacters: allowed) ?? combinedPath
+
+        var queryItems: [URLQueryItem] = []
+        if let params = params, !params.isEmpty {
+            queryItems.append(contentsOf: NetworkHelpers.dictionary(toQueryItems: params).sorted { $0.name < $1.name })
         }
+        queryItems.append(contentsOf: defaultQueryItems)
 
-        return URL(string: urlString)!
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components.url ?? baseURL.appendingPathComponent(path)
     }
 
-    private func joinBaseURLToPath(_ path: String) -> String {
-        let baseURLString = baseURL.absoluteString
-
-        if baseURLString.hasSuffix("/") && path.hasPrefix("/") {
-            return baseURLString + String(path.dropFirst())
+    private func combinePaths(base: String, path: String) -> String {
+        let trimmedBase = base.hasSuffix("/") ? String(base.dropLast()) : base
+        let leadingPath = path.hasPrefix("/") ? path : "/" + path
+        if trimmedBase.isEmpty || trimmedBase == "/" {
+            return leadingPath
         }
-        else if !baseURLString.hasSuffix("/") && !path.hasPrefix("/") {
-            return String(format: "%@/%@", baseURLString, path)
-        }
-        else {
-            return baseURLString + path
-        }
-    }
-
-    /// Takes in a hash of params and this object's default query items, and produces a list of `&`-separated `key=value` pairs.
-    /// - Parameter params: Additional query parameters having to do with the in-flight API call.
-    private func buildQueryParams(_ params: [String: Any]? = nil) -> String {
-        let allQueryItems: [URLQueryItem] = NetworkHelpers.dictionary(toQueryItems: params ?? [:]) + defaultQueryItems
-        return allQueryItems.compactMap { queryItem in
-            guard
-                let key = queryItem.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                let value = queryItem.value?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-            else {
-                return nil
-            }
-
-            return String(format: "%@=%@", key, value)
-        }.joined(separator: "&")
+        return trimmedBase + leadingPath
     }
 }
 
