@@ -1,0 +1,609 @@
+#!/usr/bin/env ruby
+
+require "open3"
+require "fileutils"
+require "tmpdir"
+require "json"
+
+$stdout.sync = true
+$stderr.sync = true
+
+# scripts/run_test_slice
+#
+# Runs focused test slices by target (Core, App, Widget, Watch) against a built
+# .xctestrun artifact, or outputs the -only-testing filter arguments for xcodebuild.
+#
+# Usage:
+#   scripts/run_test_slice <slice|verify-coverage|verify-results|self-test> [--filter-args] [--list]
+#   scripts/run_test_slice <slice> [XCTESTRUN] [SIMULATOR_UDID] [RESULT_BUNDLE_PATH] [LOG_PATH]
+#   scripts/run_test_slice verify-coverage [XCTESTRUN] [SIMULATOR_UDID]
+#   scripts/run_test_slice verify-results [RESULT_DIR] [MANIFEST_PATH]
+#   scripts/run_test_slice self-test
+#
+# Slices:
+#   core            - Core frameworks, models, networking, persistence, location, etc.
+#   app             - App UI, view controllers, sheet, mapping, controls, onboarding, etc.
+#   widget          - WidgetKit extension, LiveActivities, push notifications, proximity alerts.
+#   watch           - Watch models, sync bridges, watch localizations, watch bookmark store.
+#   all             - Full test suite without target filtering.
+#   verify-coverage - Verifies that the slices partition 100% of all compiled tests in .xctestrun.
+#   verify-results  - Verifies, by test identifier, that each slice's result bundle (RESULT_DIR/OBAKitTests-<slice>.xcresult)
+#                     ran exactly the tests verify-coverage enumerated for it: none dropped, none extra.
+#   self-test       - Checks the enumeration and result-bundle parsers against built-in fixtures (no Xcode needed).
+
+VALID_COMMANDS = %w[core app widget watch all verify-coverage verify-results self-test].freeze
+
+command = ARGV[0]&.downcase
+unless command && VALID_COMMANDS.include?(command)
+  abort "Usage: #{$PROGRAM_NAME} <core|app|widget|watch|all|verify-coverage|verify-results|self-test> [--filter-args|--list] [XCTESTRUN] [SIMULATOR_UDID] [RESULT_BUNDLE_PATH] [LOG_PATH]"
+end
+
+MODE_FILTER_ARGS = ARGV.include?("--filter-args")
+MODE_LIST = ARGV.include?("--list")
+pos_args = ARGV[1..].reject { |a| a.start_with?("--") }
+
+CORE_PREFIXES = %w[
+  Modeling/
+  Models/
+  Network/
+  Networking/
+  Persistence/
+  Location/
+  Weather/
+  Errors/
+  Utilities/
+  Extensions/
+  Regions/
+  Schedules/
+  VehicleEstimation/
+  Vehicles/
+  Surveys/
+  Orchestration/
+  Helpers/
+].freeze
+
+TEST_ROOT = File.expand_path("../OBAKitTests", __dir__)
+PROJECT_PATH = File.expand_path("../OBAKit.xcodeproj", __dir__)
+
+# `xcodebuild build-for-testing` without -derivedDataPath (the command in
+# CLAUDE.md) writes to Xcode's default DerivedData, in a hashed OBAKit-* folder.
+# Only the folder whose info.plist points at this checkout's project counts, so
+# a build from another clone or worktree is never picked up.
+def default_derived_data_xctestruns
+  Dir.glob(File.expand_path("~/Library/Developer/Xcode/DerivedData/OBAKit-*")).flat_map do |dir|
+    info = File.join(dir, "info.plist")
+    next [] unless File.exist?(info)
+
+    workspace, status = Open3.capture2e("/usr/libexec/PlistBuddy", "-c", "Print :WorkspacePath", info)
+    next [] unless status.success? && workspace.strip == PROJECT_PATH
+
+    Dir.glob(File.join(dir, "Build/Products/*.xctestrun"))
+  end.sort_by { |f| -File.mtime(f).to_f }
+end
+
+def resolve_xctestrun(pos_path)
+  return pos_path if pos_path && File.exist?(pos_path)
+  return ENV["XCTESTRUN"] if ENV["XCTESTRUN"] && File.exist?(ENV["XCTESTRUN"])
+
+  candidates = [
+    Dir.glob("DerivedData/Build/Products/*.xctestrun"),
+    Dir.glob("#{ENV['RUNNER_TEMP']}/products/*.xctestrun"),
+    Dir.glob("#{ENV['RUNNER_TEMP']}/*.xctestrun")
+  ].flatten
+  candidates.find { |f| File.exist?(f) } || default_derived_data_xctestruns.first
+end
+
+def resolve_simulator_udid(pos_udid)
+  return pos_udid if pos_udid && !pos_udid.empty?
+  return ENV["SIMULATOR_UDID"] if ENV["SIMULATOR_UDID"] && !ENV["SIMULATOR_UDID"].empty?
+
+  resolve_script = File.expand_path("resolve_simulator_udid", __dir__)
+  if File.executable?(resolve_script)
+    udid = `#{resolve_script}`.strip
+    return udid unless udid.empty?
+  end
+  nil
+end
+
+def classify_path(rel_path, basename)
+  if rel_path.start_with?("Watch/") || basename.include?("Watch")
+    :watch
+  elsif rel_path.start_with?("LiveActivities/") ||
+        rel_path.start_with?("PushNotifications/") ||
+        rel_path.start_with?("ProximityAlerts/") ||
+        basename.include?("Widget") ||
+        basename.include?("LiveActivity")
+    :widget
+  elsif CORE_PREFIXES.any? { |p| rel_path.start_with?(p) }
+    :core
+  else
+    :app
+  end
+end
+
+def build_test_source_index
+  file_contents = {}
+  Dir.glob("#{TEST_ROOT}/**/*.swift").sort.each do |f|
+    next if f.include?("/Helpers/") && !f.end_with?("Tests.swift")
+
+    file_contents[f] = File.read(f, encoding: "UTF-8", invalid: :replace, replace: "")
+  end
+  file_contents
+end
+
+def parse_enumeration_json(json_content)
+  data = JSON.parse(json_content)
+  suites = []
+  suite_test_counts = Hash.new(0)
+  suite_test_names = Hash.new { |h, k| h[k] = [] }
+
+  tests = data.fetch("values", []).flat_map { |v| v["enabledTests"] || [] }
+  tests.each do |t|
+    identifier = t["identifier"] || ""
+    parts = identifier.split("/", 3)
+    next unless parts.size >= 2
+
+    suite = parts[1]
+    test_name = parts[2] || parts[1]
+    suites << suite
+    suite_test_counts[suite] += 1
+    suite_test_names[suite] << test_name
+  end
+
+  # Fallback for hierarchical style JSON if ever emitted
+  if suites.empty?
+    collect = ->(node) {
+      if node["kind"] == "class"
+        name = node["name"]
+        suites << name
+        node_tests = (node["children"] || []).select { |c| c["kind"] == "test" || c["kind"] == "method" }
+        suite_test_counts[name] = node_tests.size
+        suite_test_names[name] = node_tests.map { |ct| ct["name"] }
+      end
+      children = (node["values"] || []) + (node["children"] || [])
+      children.each { |child| collect.call(child) }
+    }
+    collect.call(data)
+  end
+
+  {
+    suites: suites.uniq.sort,
+    suite_test_counts: suite_test_counts,
+    suite_test_names: suite_test_names,
+    total_tests: suite_test_counts.values.sum
+  }
+end
+
+def parse_enumeration_lines(lines)
+  suites = []
+  suite_test_counts = Hash.new(0)
+  current_suite = nil
+
+  lines.each do |line|
+    if line =~ /^\s*Class\s+([A-Za-z0-9_]+)/
+      current_suite = Regexp.last_match(1)
+      suites << current_suite
+      suite_test_counts[current_suite] = 0
+    elsif current_suite && line =~ /^\s*(?:Test|Method)\s+([`'"].+|test[A-Za-z0-9_]+)/
+      suite_test_counts[current_suite] += 1
+    end
+  end
+
+  {
+    suites: suites.uniq.sort,
+    suite_test_counts: suite_test_counts,
+    total_tests: suite_test_counts.values.sum
+  }
+end
+
+def enumerate_suites_from_xctestrun(xctestrun, udid)
+  temp_dir = ENV["RUNNER_TEMP"] || Dir.tmpdir
+  cache_key = "#{File.basename(xctestrun)}_#{File.mtime(xctestrun).to_i}"
+  cache_file = File.join(temp_dir, "xcodebuild_enumerated_#{cache_key}.json")
+
+  if File.exist?(cache_file) && File.size(cache_file) > 0
+    begin
+      return parse_enumeration_json(File.read(cache_file))
+    rescue StandardError => e
+      warn "Warning: failed to read cached enumeration JSON (#{e.message}), re-enumerating..."
+    end
+  end
+
+  json_out = File.join(temp_dir, "xcodebuild_enum_#{Process.pid}_#{Time.now.to_i}.json")
+  cmd = [
+    "xcodebuild", "test-without-building",
+    "-xctestrun", xctestrun,
+    "-destination", "platform=iOS Simulator,id=#{udid}",
+    "-enumerate-tests",
+    "-test-enumeration-style", "flat",
+    "-test-enumeration-format", "json",
+    "-test-enumeration-output-path", json_out
+  ]
+
+  _stdout_str, stderr_str, status = Open3.capture3(*cmd)
+  reason = if !status.success?
+             "xcodebuild exited with status #{status.exitstatus}: #{(stderr_str.lines.grep(/error:/i).first || stderr_str.lines.last).to_s.strip}"
+           elsif !File.exist?(json_out) || File.size(json_out).zero?
+             "xcodebuild wrote no enumeration JSON"
+           end
+  unless reason
+    begin
+      result = parse_enumeration_json(File.read(json_out))
+      if result[:suites].any?
+        FileUtils.mv(json_out, cache_file)
+        return result
+      end
+      reason = "the enumeration JSON listed no test suites"
+    rescue StandardError => e
+      reason = "the enumeration JSON could not be parsed (#{e.message})"
+    end
+  end
+
+  FileUtils.rm_f(json_out)
+
+  # The text output of -enumerate-tests is a display format; its parser has
+  # miscounted parameterized tests before. CI must not trust it, so there the
+  # JSON failure is fatal. Locally it stays as a fallback for older Xcodes.
+  if ENV["GITHUB_ACTIONS"] == "true"
+    abort "Error: JSON test enumeration failed: #{reason}"
+  end
+  warn "Warning: JSON test enumeration failed (#{reason}). Falling back to the text parser, whose counts may be off."
+
+  # Fallback to text enumeration if json enumeration flag is unsupported or failed
+  fallback_cmd = [
+    "xcodebuild", "test-without-building",
+    "-xctestrun", xctestrun,
+    "-destination", "platform=iOS Simulator,id=#{udid}",
+    "-enumerate-tests"
+  ]
+
+  fallback_stdout, fallback_stderr, fallback_status = Open3.capture3(*fallback_cmd)
+  unless fallback_status.success?
+    abort "Error: xcodebuild -enumerate-tests failed (exit status #{fallback_status.exitstatus}):\n#{fallback_stderr}"
+  end
+
+  lines = fallback_stdout.lines.map(&:rstrip)
+  result = parse_enumeration_lines(lines)
+  if result[:suites].empty?
+    abort "Error: xcodebuild -enumerate-tests returned 0 test suites from #{xctestrun}."
+  end
+
+  result
+end
+
+def discover_suites_from_source(file_contents)
+  suites = []
+  file_contents.each do |f, content|
+    next unless content.match?(/@Test\b|func test[A-Za-z0-9_]*\s*\(/)
+
+    declared = []
+    content.scan(/(?:class|struct|actor|enum)\s+([A-Za-z0-9_]+)/) do |m|
+      t = m[0]
+      next if t.start_with?("Mock") || t.start_with?("Stub") || t.start_with?("Fake") ||
+              t.end_with?("Delegate") || t.end_with?("Helper") || t.end_with?("Spy")
+      declared << t
+    end
+
+    base = File.basename(f, ".swift")
+    declared << base if declared.empty? || content.match?(/^@Test\b/)
+    suites.concat(declared)
+  end
+  suites.uniq.sort
+end
+
+def partition_suites_into_slices(suites, file_contents)
+  slices = { core: [], app: [], widget: [], watch: [] }
+
+  suites.each do |suite|
+    found_file = file_contents.keys.find { |f| File.basename(f, ".swift") == suite }
+    unless found_file
+      pattern = /(?:class|struct|actor|enum)\s+#{Regexp.escape(suite)}\b/
+      found_file = file_contents.keys.find { |f| file_contents[f].match?(pattern) }
+    end
+    unless found_file
+      found_file = file_contents.keys.find { |f| file_contents[f].include?(suite) }
+    end
+
+    if found_file
+      rel = found_file.sub("#{TEST_ROOT}/", "")
+      base = File.basename(found_file)
+      cat = classify_path(rel, base)
+      slices[cat] << suite
+    else
+      # If not matched to any source file, assign to app so no test is ever dropped
+      slices[:app] << suite
+    end
+  end
+
+  slices.transform_values { |v| v.uniq.sort }
+end
+
+# Test identifiers in a slice's result bundle (`xcresulttool get test-results
+# tests`), as "Suite/test()": the enumeration's identifiers without the
+# "OBAKitTests/" prefix. A parameterized test is one Test Case node with an
+# Arguments child per argument, so it counts once, as in the enumeration. Suite
+# nodes are skipped: their name is the @Suite display name, not the type name.
+def xcresult_test_identifiers(tests_json)
+  ids = []
+  walk = lambda do |node|
+    ids << node["nodeIdentifier"] if node["nodeType"] == "Test Case" && node["nodeIdentifier"]
+    (node["children"] || []).each { |child| walk.call(child) }
+  end
+  (tests_json["testNodes"] || []).each { |node| walk.call(node) }
+  ids.uniq
+end
+
+def slice_identifier_errors(slice_name, expected, actual)
+  errors = []
+  { "missed" => expected - actual, "ran unexpected" => actual - expected }.each do |what, ids|
+    next if ids.empty?
+
+    shown = ids.sort.first(10).map { |id| "      #{id}" }.join("\n")
+    more = ids.size > 10 ? "\n      … and #{ids.size - 10} more" : ""
+    errors << "Slice '#{slice_name}' #{what} #{ids.size} test(s):\n#{shown}#{more}"
+  end
+  errors
+end
+
+# Special Command: self-test
+# Fixture checks for the parsers above; needs no Xcode, so the lint job runs it.
+if command == "self-test"
+  failures = []
+  check = lambda do |name, actual, expected|
+    if actual == expected
+      puts "    ✓ #{name}"
+    else
+      failures << name
+      puts "    ✗ #{name}: expected #{expected.inspect}, got #{actual.inspect}"
+    end
+  end
+
+  enumeration = {
+    "values" => [{ "enabledTests" => [
+      { "identifier" => "OBAKitTests/AlarmTests/`An alarm on a different visit isn't found`(_:)" },
+      { "identifier" => "OBAKitTests/AlarmTests/`An alarm is found`()" },
+      { "identifier" => "OBAKitTests/PolylinePerformanceTests/testDecode" }
+    ] }]
+  }
+  parsed = parse_enumeration_json(JSON.generate(enumeration))
+  check.call("enumeration counts a parameterized test once", parsed[:suite_test_counts]["AlarmTests"], 2)
+  check.call("enumeration total", parsed[:total_tests], 3)
+
+  argument = ->(name) { { "nodeType" => "Arguments", "name" => name } }
+  xcresult = {
+    "testNodes" => [{ "nodeType" => "Test Plan", "children" => [{ "nodeType" => "Unit test bundle", "children" => [
+      { "nodeType" => "Test Suite", "name" => "Alarm lookups", "children" => [
+        { "nodeType" => "Test Case", "nodeIdentifier" => "AlarmTests/`An alarm on a different visit isn't found`(_:)",
+          "children" => [argument.call(".stop"), argument.call(".trip"), argument.call(".region")] },
+        { "nodeType" => "Test Case", "nodeIdentifier" => "AlarmTests/`An alarm is found`()" }
+      ] },
+      { "nodeType" => "Test Suite", "name" => "PolylinePerformanceTests", "children" => [
+        { "nodeType" => "Test Case", "nodeIdentifier" => "PolylinePerformanceTests/testDecode" }
+      ] }
+    ] }] }]
+  }
+  actual = xcresult_test_identifiers(xcresult)
+  expected = parsed[:suite_test_names].flat_map { |suite, tests| tests.map { |t| "#{suite}/#{t}" } }
+  check.call("xcresult counts a parameterized test once, under a display-named suite", actual.size, 3)
+  check.call("enumeration and xcresult identifiers match", actual.sort, expected.sort)
+  check.call("a full run has no errors", slice_identifier_errors("core", expected, actual), [])
+
+  errors = slice_identifier_errors("core", expected - ["AlarmTests/`An alarm is found`()"], actual + ["Stray/`extra`()"])
+  check.call("an extra test is reported", errors.count { |e| e.include?("ran unexpected 2 test(s)") }, 1)
+  errors = slice_identifier_errors("core", expected, actual - ["PolylinePerformanceTests/testDecode"])
+  check.call("a missed test is reported", errors.count { |e| e.include?("missed 1 test(s)") && e.include?("testDecode") }, 1)
+
+  abort "Error: #{failures.size} run_test_slice self-test(s) failed." if failures.any?
+  puts "✓ run_test_slice self-test passed."
+  exit 0
+end
+
+# Special Command: verify-results
+# Compares the test identifiers each slice's result bundle ran against the ones
+# verify-coverage enumerated for it, so a dropped or extra test fails the job
+# even when the counts happen to match.
+if command == "verify-results"
+  result_dir = pos_args[0] || "."
+  manifest_path = pos_args[1] || ENV["TEST_MANIFEST_PATH"] || File.join(ENV["RUNNER_TEMP"] || Dir.tmpdir, "test_slice_manifest.json")
+
+  unless File.exist?(manifest_path)
+    abort "Error: verify-results requires test manifest at #{manifest_path}. Run verify-coverage first."
+  end
+
+  manifest = JSON.parse(File.read(manifest_path))
+  total_enumerated_tests = manifest["total_tests"]
+  slices_meta = manifest["slices"]
+
+  puts "==> Verifying the tests each slice ran against the enumerated manifest (#{manifest['total_suites']} suites, #{total_enumerated_tests} tests)..."
+
+  total_actual_tests = 0
+  errors = []
+
+  %w[core app widget watch].each do |slice_name|
+    expected = slices_meta.dig(slice_name, "test_identifiers")
+    unless expected
+      errors << "The manifest has no test identifiers for slice '#{slice_name}'; it was written by the text enumeration fallback."
+      next
+    end
+
+    bundle = File.join(result_dir, "OBAKitTests-#{slice_name}.xcresult")
+    unless File.exist?(bundle)
+      errors << "Missing result bundle for slice '#{slice_name}': #{bundle}"
+      next
+    end
+
+    stdout_str, stderr_str, status = Open3.capture3("xcrun", "xcresulttool", "get", "test-results", "tests", "--path", bundle)
+    unless status.success?
+      errors << "xcresulttool could not read #{bundle}: #{stderr_str.strip}"
+      next
+    end
+
+    actual = xcresult_test_identifiers(JSON.parse(stdout_str))
+    total_actual_tests += actual.size
+    slice_errors = slice_identifier_errors(slice_name, expected, actual)
+    errors.concat(slice_errors)
+
+    mark = slice_errors.empty? ? "✓" : "✗"
+    puts "    #{slice_name.capitalize.ljust(8)}: #{mark} ran #{actual.size} of #{expected.size} expected tests"
+  end
+
+  puts "    Total tests run across slices: #{total_actual_tests} / #{total_enumerated_tests}"
+
+  if errors.any?
+    abort "Error: Test execution verification failed with #{errors.size} error(s):\n" + errors.map { |e| "  • #{e}" }.join("\n")
+  end
+
+  puts "✓ 100% test execution verified: every one of the #{total_enumerated_tests} enumerated tests ran in its slice, and nothing else did."
+  exit 0
+end
+
+# Resolve parameters
+xctestrun = resolve_xctestrun(pos_args[0])
+udid = resolve_simulator_udid(pos_args[1])
+result_bundle = pos_args[2]
+log_path = pos_args[3]
+
+file_contents = build_test_source_index
+
+enum_result = nil
+if xctestrun && udid
+  # If xctestrun and udid are provided (as in CI), enumeration failure is fatal
+  enum_result = enumerate_suites_from_xctestrun(xctestrun, udid)
+elsif command == "verify-coverage"
+  abort "Error: verify-coverage requires a valid .xctestrun and simulator UDID."
+else
+  # Offline fallback for local development only (e.g. scripts/run_test_slice core --list)
+  suites = discover_suites_from_source(file_contents)
+  enum_result = {
+    suites: suites,
+    suite_test_counts: Hash.new(1),
+    total_tests: suites.size
+  }
+end
+
+all_suites = enum_result[:suites]
+slices = partition_suites_into_slices(all_suites, file_contents)
+
+# Mode: verify-coverage
+if command == "verify-coverage"
+  abort "Error: verify-coverage requires a valid .xctestrun and simulator UDID." unless xctestrun && udid
+
+  total_enumerated_suites = all_suites.size
+  total_enumerated_tests = enum_result[:total_tests]
+  slice_sum = slices.values.map(&:size).sum
+  union_suites = slices.values.flatten.uniq
+
+  puts "==> Verifying test slice coverage against #{xctestrun}..."
+  puts "    Total enumerated suites: #{total_enumerated_suites}"
+  puts "    Total enumerated tests:  #{total_enumerated_tests}"
+
+  expected_tests_per_slice = {}
+  slices.each do |cat, s_suites|
+    count = s_suites.map { |s| enum_result[:suite_test_counts][s] || 0 }.sum
+    expected_tests_per_slice[cat] = count
+    puts "    #{cat.to_s.capitalize.ljust(8)}: #{s_suites.size.to_s.rjust(3)} suites, #{count.to_s.rjust(5)} tests"
+  end
+
+  missing = all_suites - union_suites
+  if missing.any?
+    abort "Error: Slices miss #{missing.size} test suite(s): #{missing.join(', ')}"
+  end
+
+  if union_suites.size != total_enumerated_suites || slice_sum != total_enumerated_suites
+    abort "Error: Suite count mismatch. Enumerated: #{total_enumerated_suites}, union: #{union_suites.size}, sum: #{slice_sum}."
+  end
+
+  test_sum = expected_tests_per_slice.values.sum
+  if test_sum != total_enumerated_tests
+    abort "Error: Test count mismatch across slices. Enumerated: #{total_enumerated_tests}, partitioned sum: #{test_sum}."
+  end
+
+  manifest = {
+    total_suites: total_enumerated_suites,
+    total_tests: total_enumerated_tests,
+    slices: {}
+  }
+  slices.each do |cat, s_suites|
+    manifest[:slices][cat.to_s] = {
+      "suites" => s_suites.size,
+      "tests" => expected_tests_per_slice[cat],
+      "suite_names" => s_suites,
+      # Only the JSON enumeration has test names; without them verify-results refuses to run.
+      "test_identifiers" => enum_result[:suite_test_names]&.then { |names| s_suites.flat_map { |s| names[s].map { |t| "#{s}/#{t}" } } }
+    }
+  end
+
+  manifest_path = ENV["TEST_MANIFEST_PATH"] || File.join(ENV["RUNNER_TEMP"] || Dir.tmpdir, "test_slice_manifest.json")
+  File.write(manifest_path, JSON.pretty_generate(manifest))
+  puts "    Saved coverage manifest: #{manifest_path}"
+
+  puts "✓ Test slice coverage verified: Core (#{slices[:core].size} suites, #{expected_tests_per_slice[:core]} tests), " \
+       "App (#{slices[:app].size} suites, #{expected_tests_per_slice[:app]} tests), " \
+       "Widget (#{slices[:widget].size} suites, #{expected_tests_per_slice[:widget]} tests), " \
+       "Watch (#{slices[:watch].size} suites, #{expected_tests_per_slice[:watch]} tests) = " \
+       "#{total_enumerated_suites} suites / #{total_enumerated_tests} tests (100% coverage)."
+  exit 0
+end
+
+target_suites = if command == "all"
+                  all_suites
+                else
+                  slices[command.to_sym]
+                end
+
+if MODE_LIST
+  puts target_suites
+  exit 0
+end
+
+if MODE_FILTER_ARGS
+  if command == "all"
+    print "-only-testing:OBAKitTests"
+  else
+    args = target_suites.map { |s| "-only-testing:OBAKitTests/#{s}" }
+    print args.join(" ")
+  end
+  exit 0
+end
+
+abort "Error: No .xctestrun file found or specified." unless xctestrun && File.exist?(xctestrun)
+abort "Error: No simulator UDID specified or resolved." if udid.nil? || udid.empty?
+
+cmd = [
+  "xcodebuild", "test-without-building",
+  "-xctestrun", xctestrun,
+  "-destination", "platform=iOS Simulator,id=#{udid}",
+  "-enableCodeCoverage", "NO",
+  "-collect-test-diagnostics", "never"
+]
+
+if result_bundle
+  FileUtils.rm_rf(result_bundle)
+  cmd += ["-resultBundlePath", result_bundle]
+end
+
+if command == "all"
+  cmd += ["-only-testing:OBAKitTests"]
+else
+  abort "Error: No test suites found for slice '#{command}'." if target_suites.empty?
+  target_suites.each do |s|
+    cmd += ["-only-testing:OBAKitTests/#{s}"]
+  end
+end
+
+puts "==> Running focused test slice '#{command}' (#{target_suites.size} suites) on simulator #{udid}..."
+
+if log_path
+  FileUtils.mkdir_p(File.dirname(log_path))
+  Open3.popen2e(*cmd) do |_stdin, stdout_and_stderr, wait_thr|
+    File.open(log_path, "w") do |log_file|
+      stdout_and_stderr.each_line do |line|
+        puts line
+        log_file.puts line
+      end
+    end
+    exit(wait_thr.value.exitstatus || 1)
+  end
+else
+  exec(*cmd)
+end

@@ -844,6 +844,7 @@ struct MapPanelRootView: View {
             .accessibilityLabel(accessibilityLabel)
             // Selecting the pin opens the stop, as the rental markers say.
             .accessibilityAddTraits(.isButton)
+            .accessibilityHint(StopAnnotationView.accessibilityHint)
         }
         .tag(MapPinSelection.stop(stop.id))
     }

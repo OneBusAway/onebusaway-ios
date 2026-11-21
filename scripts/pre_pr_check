@@ -2,25 +2,553 @@
 #
 # scripts/pre_pr_check
 #
-# Runs local validation checks before submitting a PR:
-#   1. Module boundary and architectural invariants check
-#   2. Module boundary self-test suite (fixture validation)
-#   3. SwiftLint linting
+# Unified pre-PR gate for OneBusAway iOS:
+# 1. Module boundary and architectural invariants check + self-tests.
+# 2. SwiftLint error & custom rules checks (matching CI linux/swiftlint checks).
+# 3. Project generation validation matrix (OneBusAway, OneBusAway --no-watch, KiedyBus).
+#    Preserves the developer's exact active project configuration upon exit.
+# 4. Changed-target classification and working copy verification.
 #
-# Usage:
-#   scripts/pre_pr_check
 
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+# Ensure brew bin is in PATH for Apple Silicon and Intel macOS
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
 
-echo "==> [1/3] Checking module boundaries..."
-scripts/check_module_boundaries
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
-echo "==> [2/3] Validating module boundary fixtures..."
-scripts/check_module_boundaries --test
+# Pinned SwiftLint release in .github/workflows/tests.yml
+CI_SWIFTLINT_PIN="0.65.1"
 
-echo "==> [3/3] Running SwiftLint..."
-scripts/swiftlint.sh
+# Text styles
+if [ -t 1 ]; then
+  BOLD="\033[1m"
+  GREEN="\033[32m"
+  YELLOW="\033[33m"
+  RED="\033[31m"
+  CYAN="\033[36m"
+  RESET="\033[0m"
+else
+  BOLD=""
+  GREEN=""
+  YELLOW=""
+  RED=""
+  CYAN=""
+  RESET=""
+fi
 
-echo "All pre-PR checks passed successfully!"
+log_info() {
+  printf "${CYAN}==>${RESET} ${BOLD}%s${RESET}\n" "$1"
+}
+
+log_success() {
+  printf "${GREEN}✓ %s${RESET}\n" "$1"
+}
+
+log_warn() {
+  printf "${YELLOW}⚠ %s${RESET}\n" "$1"
+}
+
+log_error() {
+  printf "${RED}✗ %s${RESET}\n" "$1" >&2
+}
+
+# Prints `git status --porcelain`. Exits if git fails, so a failure is never read as a clean tree.
+git_status_porcelain() {
+  if ! git status --porcelain; then
+    log_error "git status failed, so the working tree state is unknown."
+    exit 1
+  fi
+}
+
+# Mode flags
+RUN_BOUNDARIES=true
+RUN_LINT=true
+RUN_PROJECT=true
+RUN_TARGETS=true
+REQUIRE_CLEAN=false
+
+display_usage() {
+  cat <<EOF
+Usage: scripts/pre_pr_check [OPTIONS]
+
+Unified pre-PR check: validates module boundaries, lints code,
+validates project generation matrix, and checks changed targets and
+working copy cleanliness.
+
+Options:
+  --boundaries-only   Run only module boundary checks
+  --lint-only         Run only SwiftLint errors and custom rules check
+  --project-only      Run only project generation matrix validation
+  --targets-only      Run only changed-target and working copy checks
+  --skip-boundaries   Skip module boundary checks
+  --skip-lint         Skip SwiftLint check
+  --skip-project      Skip project generation check
+  --require-clean     Fail if git working copy has uncommitted changes (honored in all modes)
+  -h, --help          Show this help message
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --boundaries-only)
+      RUN_BOUNDARIES=true
+      RUN_LINT=false
+      RUN_PROJECT=false
+      RUN_TARGETS=false
+      shift
+      ;;
+    --lint-only)
+      RUN_BOUNDARIES=false
+      RUN_LINT=true
+      RUN_PROJECT=false
+      RUN_TARGETS=false
+      shift
+      ;;
+    --project-only)
+      RUN_BOUNDARIES=false
+      RUN_LINT=false
+      RUN_PROJECT=true
+      RUN_TARGETS=false
+      shift
+      ;;
+    --targets-only)
+      RUN_BOUNDARIES=false
+      RUN_LINT=false
+      RUN_PROJECT=false
+      RUN_TARGETS=true
+      shift
+      ;;
+    --skip-boundaries)
+      RUN_BOUNDARIES=false
+      shift
+      ;;
+    --skip-lint)
+      RUN_LINT=false
+      shift
+      ;;
+    --skip-project)
+      RUN_PROJECT=false
+      shift
+      ;;
+    --require-clean)
+      REQUIRE_CLEAN=true
+      shift
+      ;;
+    -h|--help)
+      display_usage
+      exit 0
+      ;;
+    *)
+      log_error "Unknown option: $1"
+      display_usage
+      exit 1
+      ;;
+  esac
+done
+
+# Step 1: Module boundary checks
+run_boundary_checks() {
+  log_info "[1/4] Checking module boundaries and architectural invariants..."
+
+  if [ ! -x "scripts/check_module_boundaries" ]; then
+    log_error "scripts/check_module_boundaries not found or not executable."
+    exit 1
+  fi
+
+  scripts/check_module_boundaries
+  echo "Validating module boundary fixtures..."
+  scripts/check_module_boundaries --test
+  log_success "Module boundary and self-test checks passed."
+}
+
+# Step 2: SwiftLint checks
+run_lint_checks() {
+  log_info "[2/4] Running SwiftLint (errors and custom rules)..."
+
+  if ! command -v swiftlint >/dev/null 2>&1; then
+    log_error "SwiftLint not found. Install via Homebrew: brew install swiftlint"
+    exit 1
+  fi
+
+  local version
+  version="$(swiftlint version 2>/dev/null || echo "unknown")"
+  echo "Using SwiftLint ${version} (CI pinned: ${CI_SWIFTLINT_PIN})"
+
+  if [ "$version" != "$CI_SWIFTLINT_PIN" ] && [ "$version" != "unknown" ]; then
+    log_warn "Local SwiftLint ($version) differs from CI pinned release ($CI_SWIFTLINT_PIN). Rule behavior or violation thresholds may differ from GitHub Actions."
+  fi
+
+  # SwiftLint default exit code is non-zero (2) on errors and 0 on warnings alone.
+  # This matches CI (tests.yml), where errors fail the gate while warnings annotate.
+  local lint_output
+  local lint_status=0
+  set +e
+  lint_output="$(swiftlint lint 2>&1)"
+  lint_status=$?
+  set -e
+
+  if [ $lint_status -ne 0 ]; then
+    log_error "SwiftLint checks failed with error-tier violations:"
+    echo "$lint_output" | grep -E "error:" || echo "$lint_output"
+    echo ""
+    log_error "Resolve all SwiftLint errors (including custom rules) before submitting PR."
+    exit 1
+  fi
+
+  local warning_count
+  warning_count=$(echo "$lint_output" | grep -c "warning:" || true)
+  if [ "$warning_count" -gt 0 ]; then
+    log_warn "SwiftLint passed with ${warning_count} warnings (0 errors). Errors block CI; warnings do not."
+  else
+    log_success "SwiftLint passed (0 errors, 0 warnings)."
+  fi
+}
+
+# Step 3: Project generation matrix validation
+# Backs up the developer's active project configuration and derived files, restoring them on completion or failure.
+BACKUP_DIR=""
+HAD_PROJECT=false
+MATRIX_STARTED=false
+
+# Used when no project existed before the matrix: removes the generated project and
+# restores (or removes) the root project files, depending on whether they were backed up.
+remove_matrix_project_files() {
+  rm -rf OBAKit.xcodeproj
+  local f
+  for f in project.yml project.local.yml; do
+    if [ -f "$BACKUP_DIR/$f" ]; then
+      cp "$BACKUP_DIR/$f" .
+    else
+      rm -f "$f"
+    fi
+  done
+}
+
+cleanup_project_state() {
+  local exit_code=$?
+  if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
+    # Before the matrix starts nothing has been changed, so there is nothing to restore.
+    if [ "$MATRIX_STARTED" = true ] && [ "$HAD_PROJECT" = true ]; then
+      rm -rf OBAKit.xcodeproj project.yml project.local.yml
+      [ -d "$BACKUP_DIR/OBAKit.xcodeproj" ] && cp -R "$BACKUP_DIR/OBAKit.xcodeproj" .
+      [ -f "$BACKUP_DIR/project.yml" ] && cp "$BACKUP_DIR/project.yml" .
+      [ -f "$BACKUP_DIR/project.local.yml" ] && cp "$BACKUP_DIR/project.local.yml" .
+
+      # Remove any derived files generated during the matrix that didn't exist before
+      if [ -f "$BACKUP_DIR/orig_derived_files.txt" ]; then
+        find Apps OBAWidget WatchApp OBAKit OBAKitCore OBAKitWatch OBAKitTests -type f \( -name "Info.plist" -o -name "*.entitlements" \) 2>/dev/null | while IFS= read -r cur_f; do
+          if ! grep -Fxq "$cur_f" "$BACKUP_DIR/orig_derived_files.txt"; then
+            rm -f "$cur_f"
+          fi
+        done
+      fi
+
+      # Restore original derived files from backup
+      if [ -d "$BACKUP_DIR/derived" ]; then
+        (cd "$BACKUP_DIR/derived" && find . -type f) | while IFS= read -r rel_f; do
+          target="${rel_f#./}"
+          mkdir -p "$(dirname "$target")"
+          cp "$BACKUP_DIR/derived/$target" "$target"
+        done
+      fi
+    elif [ "$MATRIX_STARTED" = true ]; then
+      remove_matrix_project_files
+      if [ -f "$BACKUP_DIR/orig_derived_files.txt" ]; then
+        find Apps OBAWidget WatchApp OBAKit OBAKitCore OBAKitWatch OBAKitTests -type f \( -name "Info.plist" -o -name "*.entitlements" \) 2>/dev/null | while IFS= read -r cur_f; do
+          if ! grep -Fxq "$cur_f" "$BACKUP_DIR/orig_derived_files.txt"; then
+            rm -f "$cur_f"
+          fi
+        done
+      fi
+    fi
+    rm -rf "$BACKUP_DIR"
+  fi
+  exit "$exit_code"
+}
+
+run_matrix_step() {
+  local name="$1"
+  shift
+  local log_file="$BACKUP_DIR/gen_${RANDOM}.log"
+  echo "Testing: ${name}..."
+  if ! scripts/generate_project "$@" >"$log_file" 2>&1; then
+    log_error "Project generation failed for: ${name}"
+    cat "$log_file" >&2
+    exit 1
+  fi
+}
+
+run_project_generation_checks() {
+  log_info "[3/4] Validating project generation matrix..."
+
+  if ! command -v xcodegen >/dev/null 2>&1; then
+    log_error "XcodeGen not found. Install via Homebrew: brew install xcodegen"
+    exit 1
+  fi
+
+  BACKUP_DIR="$(mktemp -d)"
+  trap cleanup_project_state EXIT INT TERM
+
+  local orig_app="OneBusAway"
+  local orig_no_watch=""
+  local orig_healthkit=""
+  local orig_desc="none"
+
+  # Back up the root project files even without a project, so cleanup only removes what the matrix created.
+  if [ -f "project.yml" ]; then cp project.yml "$BACKUP_DIR/project.yml"; fi
+  if [ -f "project.local.yml" ]; then cp project.local.yml "$BACKUP_DIR/project.local.yml"; fi
+
+  if [ -d "OBAKit.xcodeproj" ]; then
+    cp -R OBAKit.xcodeproj "$BACKUP_DIR/OBAKit.xcodeproj"
+    # Only set once the backup is complete, so a failed copy never leads to a restore from it.
+    HAD_PROJECT=true
+
+    # Inspect previous configuration for reporting and restoration
+    if grep -q "CFBundleDisplayName: KiedyBus" project.yml 2>/dev/null || grep -q "pl.kiedybus.iphone" project.yml 2>/dev/null; then
+      orig_app="KiedyBus"
+    fi
+    if ! grep -q 'name = WatchApp;' OBAKit.xcodeproj/project.pbxproj 2>/dev/null; then
+      orig_no_watch="--no-watch"
+    fi
+    if grep -q "OBA_HEALTHKIT" OBAKit.xcodeproj/project.pbxproj 2>/dev/null || \
+       grep -q "com.apple.developer.healthkit" Apps/OneBusAway/OneBusAway.entitlements 2>/dev/null || \
+       grep -q "NSHealthUpdateUsageDescription" Apps/OneBusAway/Info.plist 2>/dev/null; then
+      orig_healthkit="--healthkit"
+    fi
+
+    orig_desc="${orig_app}${orig_no_watch:+ ${orig_no_watch}}${orig_healthkit:+ ${orig_healthkit}}"
+  fi
+
+  # Back up all gitignored derived files (plists and entitlements)
+  mkdir -p "$BACKUP_DIR/derived"
+  find Apps OBAWidget WatchApp OBAKit OBAKitCore OBAKitWatch OBAKitTests -type f \( -name "Info.plist" -o -name "*.entitlements" \) 2>/dev/null | while IFS= read -r f; do
+    mkdir -p "$BACKUP_DIR/derived/$(dirname "$f")"
+    cp "$f" "$BACKUP_DIR/derived/$f"
+  done
+  find Apps OBAWidget WatchApp OBAKit OBAKitCore OBAKitWatch OBAKitTests -type f \( -name "Info.plist" -o -name "*.entitlements" \) 2>/dev/null > "$BACKUP_DIR/orig_derived_files.txt"
+
+  echo "Backing up current workspace project (${orig_desc})..."
+
+  # Record git diff and untracked files prior to matrix execution
+  local pre_diff_file="$BACKUP_DIR/pre_matrix.patch"
+  git diff > "$pre_diff_file"
+  local pre_untracked_file="$BACKUP_DIR/pre_untracked.txt"
+  git status --porcelain | sed -n 's/^\?\? //p' | sort > "$pre_untracked_file"
+
+  # 1. OneBusAway (with watch target)
+  MATRIX_STARTED=true
+  run_matrix_step "OneBusAway (with watch target)" OneBusAway
+  if ! grep -q 'name = WatchApp;' OBAKit.xcodeproj/project.pbxproj 2>/dev/null; then
+    log_error "OneBusAway project generation failed: expected WatchApp target in OBAKit.xcodeproj"
+    exit 1
+  fi
+  log_success "OneBusAway produces watch targets (WatchApp verified)"
+
+  # 2. OneBusAway --no-watch
+  run_matrix_step "OneBusAway (--no-watch)" OneBusAway --no-watch
+  scripts/assert_no_watch_target >/dev/null
+  log_success "OneBusAway --no-watch produces no watch targets"
+
+  # 3. KiedyBus (must have no watch target)
+  run_matrix_step "KiedyBus" KiedyBus
+  scripts/assert_no_watch_target >/dev/null
+  log_success "KiedyBus produces no watch targets"
+
+  # Restore developer's original project state
+  if [ "$HAD_PROJECT" = true ]; then
+    echo "Restoring previous project configuration (${orig_desc})..."
+    local gen_args=("$orig_app")
+    [ -n "$orig_no_watch" ] && gen_args+=("$orig_no_watch")
+    [ -n "$orig_healthkit" ] && gen_args+=("$orig_healthkit")
+
+    local restore_output
+    local restore_status=0
+    set +e
+    restore_output=$(scripts/generate_project "${gen_args[@]}" 2>&1)
+    restore_status=$?
+    set -e
+
+    if [ $restore_status -ne 0 ]; then
+      # Fall back to file-level restore from backup
+      rm -rf OBAKit.xcodeproj project.yml project.local.yml
+      [ -d "$BACKUP_DIR/OBAKit.xcodeproj" ] && cp -R "$BACKUP_DIR/OBAKit.xcodeproj" .
+      [ -f "$BACKUP_DIR/project.yml" ] && cp "$BACKUP_DIR/project.yml" .
+      [ -f "$BACKUP_DIR/project.local.yml" ] && cp "$BACKUP_DIR/project.local.yml" .
+      if [ -d "$BACKUP_DIR/derived" ]; then
+        (cd "$BACKUP_DIR/derived" && find . -type f) | while IFS= read -r rel_f; do
+          target="${rel_f#./}"
+          mkdir -p "$(dirname "$target")"
+          cp "$BACKUP_DIR/derived/$target" "$target"
+        done
+      fi
+    fi
+  else
+    echo "Cleaning up matrix project (no prior project existed)..."
+    remove_matrix_project_files
+    if [ -f "$BACKUP_DIR/orig_derived_files.txt" ]; then
+      find Apps OBAWidget WatchApp OBAKit OBAKitCore OBAKitWatch OBAKitTests -type f \( -name "Info.plist" -o -name "*.entitlements" \) 2>/dev/null | while IFS= read -r cur_f; do
+        if ! grep -Fxq "$cur_f" "$BACKUP_DIR/orig_derived_files.txt"; then
+          rm -f "$cur_f"
+        fi
+      done
+    fi
+  fi
+
+  # Verify project generation did not modify any tracked repository files
+  local post_diff_file="$BACKUP_DIR/post_matrix.patch"
+  git diff > "$post_diff_file"
+  if ! cmp -s "$pre_diff_file" "$post_diff_file"; then
+    log_error "Project generation unexpectedly modified tracked repository files:"
+    diff -u "$pre_diff_file" "$post_diff_file" || true
+    exit 1
+  fi
+
+  # Verify project generation did not introduce new untracked files in tracked directories
+  local post_untracked_file="$BACKUP_DIR/post_untracked.txt"
+  git status --porcelain | sed -n 's/^\?\? //p' | sort > "$post_untracked_file"
+  local new_untracked
+  new_untracked=$(comm -13 "$pre_untracked_file" "$post_untracked_file" || true)
+  if [ -n "$new_untracked" ]; then
+    log_error "Project generation created unexpected untracked file(s):"
+    echo "$new_untracked" >&2
+    exit 1
+  fi
+
+  log_success "Project generation matrix passed and original state restored."
+}
+
+# Step 4: Changed-target classification & working copy checks
+run_target_and_cleanliness_checks() {
+  log_info "[4/4] Inspecting changed targets and working copy status..."
+
+  local base_ref="HEAD"
+  if git rev-parse --verify upstream/main >/dev/null 2>&1; then
+    base_ref="upstream/main"
+  elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+    base_ref="origin/main"
+  fi
+
+  echo "Comparing changes against base reference: ${base_ref}"
+
+  local changed_files
+  changed_files="$(git diff --name-only "$base_ref"...HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null || true)"
+
+  if [ -n "$changed_files" ]; then
+    echo "Changed files by subsystem:"
+
+    local core_files
+    core_files=$(echo "$changed_files" | grep -E '^OBAKitCore/' || true)
+    if [ -n "$core_files" ]; then
+      printf "  • ${BOLD}OBAKitCore${RESET} (%d files)\n" "$(echo "$core_files" | grep -c . || true)"
+    fi
+
+    local kit_files
+    kit_files=$(echo "$changed_files" | grep -E '^OBAKit/' || true)
+    if [ -n "$kit_files" ]; then
+      printf "  • ${BOLD}OBAKit${RESET} (%d files)\n" "$(echo "$kit_files" | grep -c . || true)"
+    fi
+
+    local watch_files
+    watch_files=$(echo "$changed_files" | grep -E '^OBAKitWatch/|^WatchApp/' || true)
+    if [ -n "$watch_files" ]; then
+      printf "  • ${BOLD}WatchApp / OBAKitWatch${RESET} (%d files)\n" "$(echo "$watch_files" | grep -c . || true)"
+    fi
+
+    local widget_files
+    widget_files=$(echo "$changed_files" | grep -E '^OBAWidget/' || true)
+    if [ -n "$widget_files" ]; then
+      printf "  • ${BOLD}OBAWidget${RESET} (%d files)\n" "$(echo "$widget_files" | grep -c . || true)"
+    fi
+
+    local app_files
+    app_files=$(echo "$changed_files" | grep -E '^Apps/' || true)
+    if [ -n "$app_files" ]; then
+      printf "  • ${BOLD}Apps (Brand Configuration)${RESET} (%d files)\n" "$(echo "$app_files" | grep -c . || true)"
+    fi
+
+    local test_files
+    test_files=$(echo "$changed_files" | grep -E '^OBAKitTests/|^OBAKitCoreTests/|^OBAKitWatchTests/|^OBAKitWidgetTests/|^OBAKitUITests/' || true)
+    if [ -n "$test_files" ]; then
+      printf "  • ${BOLD}Tests${RESET} (%d files)\n" "$(echo "$test_files" | grep -c . || true)"
+    fi
+
+    local tooling_files
+    tooling_files=$(echo "$changed_files" | grep -E '^scripts/|^\.github/' || true)
+    if [ -n "$tooling_files" ]; then
+      printf "  • ${BOLD}Tooling / CI${RESET} (%d files)\n" "$(echo "$tooling_files" | grep -c . || true)"
+    fi
+
+    local doc_files
+    doc_files=$(echo "$changed_files" | grep -E '^docs/|^README|\.md$' || true)
+    if [ -n "$doc_files" ]; then
+      printf "  • ${BOLD}Documentation${RESET} (%d files)\n" "$(echo "$doc_files" | grep -c . || true)"
+    fi
+  else
+    echo "No files modified relative to ${base_ref}."
+  fi
+
+  # Check working tree cleanliness
+  local status_output
+  status_output="$(git_status_porcelain)"
+
+  if [ -n "$status_output" ]; then
+    if [ "$REQUIRE_CLEAN" = true ]; then
+      log_error "Working tree has uncommitted modifications (--require-clean specified):"
+      echo "$status_output" >&2
+      exit 1
+    else
+      log_warn "Working tree has uncommitted modifications:"
+      echo "$status_output"
+    fi
+  else
+    log_success "Working tree is clean."
+  fi
+}
+
+require_clean_tree() {
+  local clean_status
+  clean_status="$(git_status_porcelain)"
+  if [ -n "$clean_status" ]; then
+    log_error "Working tree has uncommitted modifications (--require-clean specified):"
+    echo "$clean_status" >&2
+    exit 1
+  fi
+}
+
+main() {
+  # Fail fast on a dirty tree instead of after the slow generation matrix
+  if [ "$REQUIRE_CLEAN" = true ]; then
+    require_clean_tree
+  fi
+
+  if [ "$RUN_BOUNDARIES" = true ]; then
+    run_boundary_checks
+    echo ""
+  fi
+
+  if [ "$RUN_LINT" = true ]; then
+    run_lint_checks
+    echo ""
+  fi
+
+  if [ "$RUN_PROJECT" = true ]; then
+    run_project_generation_checks
+    echo ""
+  fi
+
+  if [ "$RUN_TARGETS" = true ]; then
+    run_target_and_cleanliness_checks
+    echo ""
+  fi
+
+  # Always enforce --require-clean across all invocation modes if requested
+  if [ "$REQUIRE_CLEAN" = true ]; then
+    require_clean_tree
+  fi
+
+  log_success "All pre-PR checks passed successfully!"
+}
+
+main "$@"

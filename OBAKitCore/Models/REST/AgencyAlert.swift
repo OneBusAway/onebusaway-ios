@@ -224,4 +224,13 @@ extension AgencyAlert {
 
         return false
     }
+
+    /// Whether this alert applies to the given stop.
+    public func applies(to stop: Stop) -> Bool {
+        if isRegionWide { return true }
+        if let routes = stop.routes {
+            return routes.contains { $0.agencyID == agencyID || $0.agency?.id == agencyID }
+        }
+        return stop.id.hasPrefix("\(agencyID)_")
+    }
 }

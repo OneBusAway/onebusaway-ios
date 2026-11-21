@@ -28,6 +28,8 @@ open OBAKit.xcodeproj
 
 `scripts/setup` verifies `xcodebuild` + XcodeGen, reminds you about signing, and calls `scripts/generate_project`. The generated `OBAKit.xcodeproj` is gitignored — always regenerate after pulling. Xcode resolves the project's Swift Package Manager dependencies when you open it.
 
+Before submitting a pull request, run `./scripts/pre_pr_check` to verify SwiftLint rules, validate project generation across all app targets, and inspect affected components. See [docs/swiftlint-ci-gate.md](docs/swiftlint-ci-gate.md) for details.
+
 ### Signing / bundle IDs for contributors outside the OBA org
 
 Shared `Apps/OneBusAway/project.yml` points at the Open Transit Software Foundation team. For a personal build:

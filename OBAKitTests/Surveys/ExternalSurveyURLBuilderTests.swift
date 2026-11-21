@@ -323,6 +323,23 @@ final class ExternalSurveyURLBuilderTests: OBATestCase {
         #expect(self.queryValue(in: localBuilder.buildURL(for: survey, stop: nil), for: "region_id") == nil)
     }
 
+    // MARK: - Query Parameter Preservation
+
+    @Test func `Build URL preserves multiple pre-existing query parameters and appends embedded fields`() {
+        let survey = SurveysTestHelpers.makeSurvey(questions: [
+            SurveysTestHelpers.makeSurveyQuestion(
+                url: "https://oba.co/survey?campaign=fall2026&lang=en",
+                embeddedDataFields: ["user_id"]
+            )
+        ])
+
+        let url = builder.buildURL(for: survey, stop: nil)
+
+        #expect(self.queryValue(in: url, for: "campaign") == "fall2026")
+        #expect(self.queryValue(in: url, for: "lang") == "en")
+        #expect(self.queryValue(in: url, for: "user_id") == testUserID)
+    }
+
     // MARK: - Helpers
 
     private func makeQuestionWithFields(_ fields: [String], baseURL: String = "https://oba.co/survey") -> SurveyQuestion {

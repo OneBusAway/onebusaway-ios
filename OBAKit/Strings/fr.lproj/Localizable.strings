@@ -566,6 +566,9 @@
 /* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
 "map_controller.stop_cluster.accessibility_hint" = "Affiche la liste des arrêts à cet endroit.";
 
+/* VoiceOver hint for a map stop pin. Activating it opens the stop's departures. */
+"map_controller.stop_annotation.accessibility_hint" = "Affiche les départs pour cet arrêt.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "Le véhicule que vous avez choisi ne semble pas effectuer de trajet en ce moment, nous ne savons donc pas comment vous l'afficher.";
 

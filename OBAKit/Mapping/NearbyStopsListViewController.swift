@@ -63,6 +63,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
         /// a row that changed identity on every location fix would be deleted and
         /// re-inserted, taking VoiceOver focus with it.
         let accessibilityLabel: String?
+        let accessibilityValue: String?
 
         static func == (lhs: Item, rhs: Item) -> Bool {
             lhs.title == rhs.title && lhs.subtitle == rhs.subtitle && lhs.image == rhs.image && lhs.type == rhs.type
@@ -81,14 +82,16 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             self.image = nil
             self.type = .header
             self.accessibilityLabel = nil
+            self.accessibilityValue = nil
         }
 
-        init(_ stop: Stop, accessibilityLabel: String) {
+        init(_ stop: Stop, accessibilityLabel: String, accessibilityValue: String? = nil) {
             self.title = stop.nameWithLocalizedDirectionAbbreviation
             self.subtitle = stop.subtitle
             self.image = Icons.transportIcon(from: stop.prioritizedRouteTypeForDisplay)
             self.type = .stop(stopID: stop.id)
             self.accessibilityLabel = accessibilityLabel
+            self.accessibilityValue = accessibilityValue
         }
 
         init(_ alert: AgencyAlert) {
@@ -97,6 +100,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             self.image = Icons.unreadAlert
             self.type = .alert(alert)
             self.accessibilityLabel = nil
+            self.accessibilityValue = nil
         }
     }
 
@@ -142,8 +146,14 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             cell.contentConfiguration = config
             // The title abbreviates the direction, "(W)", which VoiceOver reads as a letter.
             cell.accessibilityLabel = item.accessibilityLabel
+            cell.accessibilityValue = item.accessibilityValue
             // Activating a row opens the stop or the alert.
             cell.accessibilityTraits.insert(.button)
+            if case .stop = item.type {
+                cell.accessibilityHint = StopAnnotationView.accessibilityHint
+            } else {
+                cell.accessibilityHint = nil
+            }
         }
 
         self.collectionView = .init(frame: .zero, collectionViewLayout: createLayout())
@@ -256,7 +266,9 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             sectionSnapshot.append([nearbyStopsHeader])
 
             let userLocation = dataSource.userLocation
-            let nearbyStops = dataSource.stops.map { Item($0, accessibilityLabel: Self.accessibilityLabel(for: $0, from: userLocation)) }
+            let nearbyStops = dataSource.stops.map {
+                Item($0, accessibilityLabel: Self.accessibilityLabel(for: $0, from: userLocation), accessibilityValue: self.dataSourceHasAlert(for: $0) ? Strings.serviceAlert : nil)
+            }
             sectionSnapshot.append(nearbyStops)
 
             stopsSectionSnapshot = sectionSnapshot
@@ -285,6 +297,11 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     }
 
     // MARK: - Accessibility
+
+    private func dataSourceHasAlert(for stop: Stop) -> Bool {
+        guard let alerts = dataSource?.highSeverityAlerts else { return false }
+        return alerts.contains { $0.applies(to: stop) }
+    }
 
     /// The map pin's label (name, direction, routes, stop ID), then how far away the stop is.
     static func accessibilityLabel(for stop: Stop, from userLocation: CLLocation?) -> String {
