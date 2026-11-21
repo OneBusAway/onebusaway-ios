@@ -92,6 +92,16 @@ public enum OnDemandBookingResolution: Equatable, Sendable {
         // closed (spec §6.3).
         guard evaluator.hasUsableCalendar(rule) else { return .unknown }
 
+        // The walk starts at today, so yesterday's window still running past
+        // 24:00 is checked first, the same way `OnDemandAvailability` does.
+        let yesterday = evaluator.adding(days: -1, to: evaluator.serviceDate(for: now))
+        if OnDemandAvailability.isRunning(rule, on: yesterday, evaluator: evaluator, now: now) {
+            let evaluation = evaluator.evaluate(rule: rule, bookingRule: bookingRule, travelDate: yesterday, now: now)
+            if evaluation.state == .open {
+                return .bookable(Candidate(travelDate: yesterday, evaluation: evaluation))
+            }
+        }
+
         var bookable: Candidate?
         var firstOpenInstant: Date?
         var sawUnknown = false

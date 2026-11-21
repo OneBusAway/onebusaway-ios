@@ -683,6 +683,8 @@ final class OnDemandAvailabilityTests: OBATestCase {
         #expect(result.nextBookableServiceDate == ServiceDate("2026-03-10")!)
         #expect(result.eligibilityReason == .eligible(cutoff: cutoff))
         #expect(result.nextChangeInstant == cutoff)
+        // The booking line agrees with the eligibility reason (#1867).
+        #expect(result.bookingResolution == .bookBy(cutoff: cutoff, travelDate: ServiceDate("2026-03-10")!))
     }
 
     /// A same-day rule past its cutoff on the last night is too late for the
@@ -708,5 +710,6 @@ final class OnDemandAvailabilityTests: OBATestCase {
         #expect(!result.bookableNow)
         #expect(result.nextBookableServiceDate == nil)
         #expect(result.eligibilityReason == .tooLate(cutoffInstant: instant("2026-03-11T07:00:00Z")))
+        #expect(result.bookingResolution == .closed)
     }
 }
