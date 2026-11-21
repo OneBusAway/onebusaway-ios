@@ -160,4 +160,69 @@ final class BookmarkRowViewModelDestinationTests: OBATestCase {
         let scheduledTime = formatters.timeFormatter.string(from: scheduled.arrivalDate)
         #expect(try text(.arrives(scheduled)) == "Arrives \(scheduledTime) (scheduled) · \(name)")
     }
+
+    // MARK: - Multiple Departures and Highlighted Trips
+
+    /// When multiple departures exist, the row takes destination status from the first arrival that reaches the destination.
+    @Test func `Multiple departures prioritize first matching arrival status`() throws {
+        let bookmark = try makeBookmark(destination: true)
+        let dep1 = try departure("trip_1")
+        let dep2 = try departure("trip_2")
+
+        let arrivalLater = DestinationArrival(
+            arrivalDate: Date(timeIntervalSinceReferenceDate: 1_700_002_000),
+            scheduledArrivalDate: Date(timeIntervalSinceReferenceDate: 1_700_002_000),
+            isRealTime: true
+        )
+
+        let lookups: [TripIdentifier: DestinationArrivalLookup] = [
+            "trip_1": .arrives(arrival),
+            "trip_2": .arrives(arrivalLater)
+        ]
+
+        let row = BookmarkRowViewModel(
+            bookmark: bookmark,
+            arrivalDepartures: [dep1, dep2],
+            highlightedTripIDs: ["trip_2"],
+            destinationLookup: { lookups[$0.tripID] ?? .notServed }
+        )
+
+        #expect(row.arrivalDepartures.count == 2)
+        #expect(row.destinationStatus == .arrives(arrival))
+        #expect(row.highlightedTripIDs == ["trip_2"])
+    }
+
+    /// Destination status strictly follows the first reachable departure:
+    /// unavailable deliberately evaluates to nil (omitting the arrival line rather than showing a perpetual spinner),
+    /// whereas pending evaluates to .loading.
+    @Test func `Destination status follows the first departure`() throws {
+        let bookmark = try makeBookmark(destination: true)
+        let depUnavailable = try departure("trip_unavail")
+        let depPending = try departure("trip_pending")
+
+        let lookups: [TripIdentifier: DestinationArrivalLookup] = [
+            "trip_unavail": .unavailable,
+            "trip_pending": .pending
+        ]
+
+        // When the first departure is unavailable, status is nil even if subsequent departures are pending.
+        let rowUnavailableFirst = BookmarkRowViewModel(
+            bookmark: bookmark,
+            arrivalDepartures: [depUnavailable, depPending],
+            highlightedTripIDs: [],
+            destinationLookup: { lookups[$0.tripID] ?? .notServed }
+        )
+        #expect(rowUnavailableFirst.destinationStatus == nil)
+        #expect(rowUnavailableFirst.arrivalDepartures.count == 2)
+
+        // When the first departure is pending, status is .loading even if subsequent departures are unavailable.
+        let rowPendingFirst = BookmarkRowViewModel(
+            bookmark: bookmark,
+            arrivalDepartures: [depPending, depUnavailable],
+            highlightedTripIDs: [],
+            destinationLookup: { lookups[$0.tripID] ?? .notServed }
+        )
+        #expect(rowPendingFirst.destinationStatus == .loading)
+        #expect(rowPendingFirst.arrivalDepartures.count == 2)
+    }
 }
