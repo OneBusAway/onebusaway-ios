@@ -822,12 +822,20 @@ final class URLSchemeRouterTests {
     }
 
     /// Boundary values are on the globe and must decode.
-    @Test func `Decode URL type view rentals accepts the poles and antimeridian`() {
-        let url = URL(string: "onebusaway://rentals?lat=-90&lon=180")!
-        guard case .viewRentals? = router.decodeURLType(from: url) else {
+    @Test(arguments: [
+        (-90.0, -180.0),
+        (-90.0, 180.0),
+        (90.0, -180.0),
+        (90.0, 180.0)
+    ])
+    func `Decode URL type view rentals accepts the poles and antimeridian`(lat: Double, lon: Double) throws {
+        let url = try #require(URL(string: "onebusaway://rentals?lat=\(lat)&lon=\(lon)"))
+        guard case .viewRentals(let coordinate)? = router.decodeURLType(from: url) else {
             Issue.record("Expected viewRentals URLType")
             return
         }
+        #expect(coordinate.latitude == lat)
+        #expect(coordinate.longitude == lon)
     }
 
     /// A malformed link is not a rentals link: nil, so the app ignores it instead
