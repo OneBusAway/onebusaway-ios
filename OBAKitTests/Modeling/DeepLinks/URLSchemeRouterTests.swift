@@ -822,12 +822,20 @@ final class URLSchemeRouterTests {
     }
 
     /// Boundary values are on the globe and must decode.
-    @Test func `Decode URL type view rentals accepts the poles and antimeridian`() {
-        let url = URL(string: "onebusaway://rentals?lat=-90&lon=180")!
-        guard case .viewRentals? = router.decodeURLType(from: url) else {
+    @Test(arguments: [
+        (-90.0, -180.0),
+        (-90.0, 180.0),
+        (90.0, -180.0),
+        (90.0, 180.0)
+    ])
+    func `Decode URL type view rentals accepts the poles and antimeridian`(lat: Double, lon: Double) throws {
+        let url = try #require(URL(string: "onebusaway://rentals?lat=\(lat)&lon=\(lon)"))
+        guard case .viewRentals(let coordinate)? = router.decodeURLType(from: url) else {
             Issue.record("Expected viewRentals URLType")
             return
         }
+        #expect(coordinate.latitude == lat)
+        #expect(coordinate.longitude == lon)
     }
 
     /// A malformed link is not a rentals link: nil, so the app ignores it instead
@@ -872,33 +880,6 @@ final class URLSchemeRouterTests {
         }
         #expect(data.stopID == "123")
         #expect(data.regionID == 1)
-    }
-
-    @Test func `Decode URL type view rentals supports latitude and longitude boundary values`() throws {
-        // Valid exact boundaries: lat in [-90, 90], lon in [-180, 180]
-        let urlNorthEast = try #require(URL(string: "onebusaway://rentals?lat=90.0&lon=180.0"))
-        guard case .viewRentals(let coordNorthEast)? = router.decodeURLType(from: urlNorthEast) else {
-            Issue.record("Expected viewRentals URLType for 90.0, 180.0")
-            return
-        }
-        #expect(coordNorthEast.latitude == 90.0)
-        #expect(coordNorthEast.longitude == 180.0)
-
-        let urlSouthWest = try #require(URL(string: "onebusaway://rentals?lat=-90.0&lon=-180.0"))
-        guard case .viewRentals(let coordSouthWest)? = router.decodeURLType(from: urlSouthWest) else {
-            Issue.record("Expected viewRentals URLType for -90.0, -180.0")
-            return
-        }
-        #expect(coordSouthWest.latitude == -90.0)
-        #expect(coordSouthWest.longitude == -180.0)
-    }
-
-    @Test func `Decode URL type view rentals rejects missing latitude or longitude`() throws {
-        let urlMissingLon = try #require(URL(string: "onebusaway://rentals?lat=47.6"))
-        #expect(router.decodeURLType(from: urlMissingLon) == nil)
-
-        let urlMissingLat = try #require(URL(string: "onebusaway://rentals?lon=-122.3"))
-        #expect(router.decodeURLType(from: urlMissingLat) == nil)
     }
 }
 
