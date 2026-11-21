@@ -10,6 +10,29 @@
 import SwiftUI
 import OBAKitCore
 
+/// Kinds of accessible actions exposed on the stop page toolbar rotor.
+enum StopPageToolbarCustomActionKind: Equatable {
+    case serviceAlerts
+    case nearbyStops
+    case walkingDirections
+    case directionsToHere
+    case directionsFromHere
+    case proximityAlert
+    case reportProblem
+}
+
+/// An accessible action exposed on the stop page toolbar rotor.
+struct StopPageToolbarCustomAction: Identifiable, Equatable {
+    var id: StopPageToolbarCustomActionKind { kind }
+    let kind: StopPageToolbarCustomActionKind
+    let name: String
+    let perform: () -> Void
+
+    static func == (lhs: StopPageToolbarCustomAction, rhs: StopPageToolbarCustomAction) -> Bool {
+        lhs.kind == rhs.kind && lhs.name == rhs.name
+    }
+}
+
 /// The bottom toolbar shown when the Stop page is presented as a sheet over the map.
 ///
 /// It carries the chrome that the pushed presentation puts in the navigation bar's right-hand
@@ -78,6 +101,9 @@ struct StopPageToolbar: View {
         .padding(.bottom, 6)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
+        .accessibilityActions {
+            moreAccessibilityActions
+        }
     }
 
     @ViewBuilder
@@ -85,12 +111,20 @@ struct StopPageToolbar: View {
         refreshItem
 
         button(
-            title: OBALoc("stop_page.toolbar.bookmark", value: "Bookmark", comment: "Bottom-toolbar item on the Stop page that opens the Add Bookmark screen."),
+            title: Self.bookmarkTitle,
             systemImage: "bookmark",
+            accessibilityLabel: Self.bookmarkAccessibilityLabel,
+            accessibilityHint: Self.bookmarkAccessibilityHint,
             action: onBookmark
         )
 
-        button(title: Strings.schedules, systemImage: "calendar", action: onSchedule)
+        button(
+            title: Strings.schedules,
+            systemImage: "calendar",
+            accessibilityLabel: Self.schedulesAccessibilityLabel,
+            accessibilityHint: Self.schedulesAccessibilityHint,
+            action: onSchedule
+        )
 
         moreItem
     }
@@ -102,8 +136,9 @@ struct StopPageToolbar: View {
         button(
             title: isRefreshing ? Strings.updating : Strings.refresh,
             systemImage: "arrow.clockwise",
-            accessibilityLabel: Strings.refresh,
+            accessibilityLabel: Self.refreshAccessibilityLabel,
             accessibilityValue: statusText,
+            accessibilityHint: refreshHint,
             action: onRefresh
         )
         .disabled(isRefreshing)
@@ -129,90 +164,11 @@ struct StopPageToolbar: View {
 
     private var moreItem: some View {
         Menu {
-            Menu {
-                filterChoice(
-                    title: OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."),
-                    isSelected: !isFilterOn,
-                    filtered: false
-                )
-                filterChoice(
-                    title: OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."),
-                    isSelected: isFilterOn,
-                    filtered: true
-                )
-            } label: {
-                // Route filter only. Unlike the pushed presentation — where this
-                // glyph sits on the bar button that *contains* both filters, and so
-                // fills for either — here the two are sibling submenus. Filling this
-                // one for a Departure Type change would point at the wrong filter,
-                // so each submenu carries its own state instead.
-                Label(
-                    Strings.filter,
-                    systemImage: isFilterOn ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
-                )
-            }
-            .disabled(!canFilter)
-
-            Menu {
-                ForEach(ArrivalDepartureFilter.allCases, id: \.self) { filter in
-                    Button {
-                        onSetDepartureFilter(filter)
-                    } label: {
-                        if filter == activeDepartureFilter {
-                            Label(filter.displayTitle, systemImage: "checkmark")
-                        } else {
-                            Text(filter.displayTitle)
-                        }
-                    }
-                    .accessibilityAddTraits(filter == activeDepartureFilter ? .isSelected : [])
-                }
-            } label: {
-                Label(
-                    OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type"),
-                    systemImage: Icons.departureTypeSymbolName(isActive: activeDepartureFilter != .all)
-                )
-            }
-
-            Button(action: onServiceAlerts) {
-                Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
-            }
-            .disabled(!hasServiceAlerts)
-
-            Section {
-                Button(action: onNearbyStops) {
-                    Label(OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), systemImage: "location")
-                }
-                Button(action: onWalkingDirections) {
-                    Label(OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"), systemImage: "figure.walk")
-                }
-                if let onDirectionsToHere {
-                    Button(action: onDirectionsToHere) {
-                        Label(StopTripPlannerAction.directionsToHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond")
-                    }
-                }
-                if let onDirectionsFromHere {
-                    Button(action: onDirectionsFromHere) {
-                        Label(StopTripPlannerAction.directionsFromHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond.fill")
-                    }
-                }
-                // Last in the Location group, and never disabled. Its siblings
-                // are all "getting to this stop"; this is "tell me when I've got
-                // there". A rider who can't use it yet needs to be told why,
-                // which is what the tap does — a greyed row would reproduce the
-                // silent no-op the authorization step exists to prevent.
-                Button(action: onToggleProximityAlert) {
-                    Label(
-                        ProximityAlertMenuItem.title(isActive: isProximityAlertActive),
-                        systemImage: Icons.proximityAlertSymbolName(isActive: isProximityAlertActive)
-                    )
-                }
-            }
-
-            Section {
-                Button(action: onReportProblem) {
-                    Label(OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), systemImage: "exclamationmark.bubble")
-                }
-            }
+            routeFilterMenu
+            departureFilterSubmenu
+            serviceAlertsMenuItem
+            locationSection
+            reportProblemSection
         } label: {
             // Forgoes the pressed dimming the real buttons get; a menu opening over
             // the tap is its own feedback. See `FrostedBackground` for why a
@@ -221,22 +177,221 @@ struct StopPageToolbar: View {
                 .foregroundStyle(Color(uiColor: .label))
                 .modifier(FrostedBackground())
         }
-        .accessibilityLabel(Strings.more)
+        .accessibilityLabel(Self.moreAccessibilityLabel)
+        .accessibilityHint(Self.moreAccessibilityHint)
+        .accessibilityActions {
+            moreAccessibilityActions
+        }
         .accessibilityShowsLargeContentViewer {
             Label(Strings.more, systemImage: "ellipsis")
         }
     }
 
+    @ViewBuilder
+    private var moreAccessibilityActions: some View {
+        ForEach(customAccessibilityActions) { action in
+            Button(action.name, action: action.perform)
+        }
+    }
+
+    private var routeFilterMenu: some View {
+        Menu {
+            filterChoice(
+                title: OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again."),
+                isSelected: !isFilterOn,
+                filtered: false
+            )
+            filterChoice(
+                title: OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes."),
+                isSelected: isFilterOn,
+                filtered: true
+            )
+        } label: {
+            // Route filter only. Unlike the pushed presentation — where this
+            // glyph sits on the bar button that *contains* both filters, and so
+            // fills for either — here the two are sibling submenus. Filling this
+            // one for a Departure Type change would point at the wrong filter,
+            // so each submenu carries its own state instead.
+            Label(
+                Strings.filter,
+                systemImage: isFilterOn ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle"
+            )
+        }
+        .disabled(!canFilter)
+        .accessibilityHint(filterHint)
+    }
+
+    private var departureFilterSubmenu: some View {
+        Menu {
+            ForEach(ArrivalDepartureFilter.allCases, id: \.self) { filter in
+                Button {
+                    onSetDepartureFilter(filter)
+                } label: {
+                    if filter == activeDepartureFilter {
+                        Label(filter.displayTitle, systemImage: "checkmark")
+                    } else {
+                        Text(filter.displayTitle)
+                    }
+                }
+                .accessibilityAddTraits(filter == activeDepartureFilter ? .isSelected : [])
+            }
+        } label: {
+            Label(
+                OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type"),
+                systemImage: Icons.departureTypeSymbolName(isActive: activeDepartureFilter != .all)
+            )
+        }
+    }
+
+    private var serviceAlertsMenuItem: some View {
+        Button(action: onServiceAlerts) {
+            Label(Strings.serviceAlerts, systemImage: "exclamationmark.circle")
+        }
+        .disabled(!hasServiceAlerts)
+        .accessibilityHint(serviceAlertsHint)
+    }
+
+    private var locationSection: some View {
+        Section {
+            Button(action: onNearbyStops) {
+                Label(Self.nearbyStopsTitle, systemImage: "location")
+            }
+            Button(action: onWalkingDirections) {
+                Label(Self.walkingDirectionsTitle, systemImage: "figure.walk")
+            }
+            if let onDirectionsToHere {
+                Button(action: onDirectionsToHere) {
+                    Label(StopTripPlannerAction.directionsToHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond")
+                }
+            }
+            if let onDirectionsFromHere {
+                Button(action: onDirectionsFromHere) {
+                    Label(StopTripPlannerAction.directionsFromHereTitle, systemImage: "arrow.triangle.turn.up.right.diamond.fill")
+                }
+            }
+            // Last in the Location group, and never disabled. Its siblings
+            // are all "getting to this stop"; this is "tell me when I've got
+            // there". A rider who can't use it yet needs to be told why,
+            // which is what the tap does — a greyed row would reproduce the
+            // silent no-op the authorization step exists to prevent.
+            Button(action: onToggleProximityAlert) {
+                Label(
+                    ProximityAlertMenuItem.title(isActive: isProximityAlertActive),
+                    systemImage: Icons.proximityAlertSymbolName(isActive: isProximityAlertActive)
+                )
+            }
+            .accessibilityLabel(ProximityAlertMenuItem.accessibilityLabel(isActive: isProximityAlertActive))
+            .accessibilityValue(ProximityAlertMenuItem.accessibilityValue(isActive: isProximityAlertActive))
+            .accessibilityHint(ProximityAlertMenuItem.accessibilityHint(isActive: isProximityAlertActive))
+        }
+    }
+
+    private var reportProblemSection: some View {
+        Section {
+            Button(action: onReportProblem) {
+                Label(Self.reportProblemTitle, systemImage: "exclamationmark.bubble")
+            }
+        }
+    }
+
+    // MARK: - Accessibility Semantics & Custom Actions
+
+    typealias CustomAccessibilityAction = StopPageToolbarCustomAction
+    typealias CustomActionKind = StopPageToolbarCustomActionKind
+
+    var customAccessibilityActions: [StopPageToolbarCustomAction] {
+        var actions: [StopPageToolbarCustomAction] = []
+        if hasServiceAlerts {
+            actions.append(StopPageToolbarCustomAction(kind: .serviceAlerts, name: Strings.serviceAlerts, perform: onServiceAlerts))
+        }
+        actions.append(StopPageToolbarCustomAction(kind: .nearbyStops, name: Self.nearbyStopsTitle, perform: onNearbyStops))
+        actions.append(StopPageToolbarCustomAction(kind: .walkingDirections, name: Self.walkingDirectionsTitle, perform: onWalkingDirections))
+        if let onDirectionsToHere {
+            actions.append(StopPageToolbarCustomAction(kind: .directionsToHere, name: StopTripPlannerAction.directionsToHereTitle, perform: onDirectionsToHere))
+        }
+        if let onDirectionsFromHere {
+            actions.append(StopPageToolbarCustomAction(kind: .directionsFromHere, name: StopTripPlannerAction.directionsFromHereTitle, perform: onDirectionsFromHere))
+        }
+        actions.append(StopPageToolbarCustomAction(kind: .proximityAlert, name: ProximityAlertMenuItem.title(isActive: isProximityAlertActive), perform: onToggleProximityAlert))
+        actions.append(StopPageToolbarCustomAction(kind: .reportProblem, name: Self.reportProblemTitle, perform: onReportProblem))
+        return actions
+    }
+
+    /// Predicates describing item disabled states.
+    var isRefreshDisabled: Bool { isRefreshing }
+    var isFilterDisabled: Bool { !canFilter }
+    var isServiceAlertsDisabled: Bool { !hasServiceAlerts }
+
+    var refreshHint: String { Self.refreshAccessibilityHint(isRefreshing: isRefreshing) }
+    var filterHint: String { Self.filterAccessibilityHint(canFilter: canFilter) }
+    var serviceAlertsHint: String { Self.serviceAlertsAccessibilityHint(hasServiceAlerts: hasServiceAlerts) }
+    var bookmarkHint: String { Self.bookmarkAccessibilityHint }
+    var schedulesHint: String { Self.schedulesAccessibilityHint }
+    var moreHint: String { Self.moreAccessibilityHint }
+
+    static var refreshAccessibilityLabel: String { Strings.refresh }
+    static var bookmarkAccessibilityLabel: String { bookmarkTitle }
+    static var schedulesAccessibilityLabel: String { Strings.schedules }
+    static var moreAccessibilityLabel: String { Strings.more }
+
+    static func refreshAccessibilityHint(isRefreshing: Bool) -> String {
+        isRefreshing
+            ? OBALoc("stop_page.toolbar.refresh.updating_hint", value: "Arrival times are currently updating.", comment: "Accessibility hint explaining that refresh is disabled while arrival times are updating.")
+            : OBALoc("stop_page.toolbar.refresh.hint", value: "Refreshes arrival times.", comment: "Accessibility hint for the Refresh button on the stop page toolbar.")
+    }
+
+    static var bookmarkAccessibilityHint: String {
+        OBALoc("stop_page.toolbar.bookmark.hint", value: "Adds a bookmark for this stop.", comment: "Accessibility hint for the Bookmark button on the stop page toolbar.")
+    }
+
+    static var schedulesAccessibilityHint: String {
+        OBALoc("stop_page.toolbar.schedules.hint", value: "Shows schedules for this stop.", comment: "Accessibility hint for the Schedules button on the stop page toolbar.")
+    }
+
+    static var moreAccessibilityHint: String {
+        OBALoc("stop_page.toolbar.more.hint", value: "Shows more options.", comment: "Accessibility hint for the More button on the stop page toolbar.")
+    }
+
+    static func filterAccessibilityHint(canFilter: Bool) -> String {
+        canFilter
+            ? OBALoc("stop_page.toolbar.filter.hint", value: "Filters routes at this stop.", comment: "Accessibility hint for the route filter menu item.")
+            : OBALoc("stop_page.toolbar.filter.disabled_hint", value: "Filtering is unavailable because this stop only serves one route.", comment: "Accessibility hint explaining why route filtering is disabled.")
+    }
+
+    static func serviceAlertsAccessibilityHint(hasServiceAlerts: Bool) -> String {
+        hasServiceAlerts
+            ? OBALoc("stop_page.toolbar.service_alerts.hint", value: "Shows service alerts for this stop.", comment: "Accessibility hint for the service alerts button.")
+            : OBALoc("stop_page.toolbar.service_alerts.disabled_hint", value: "No active service alerts for this stop.", comment: "Accessibility hint explaining why service alerts is disabled.")
+    }
+
+    static var bookmarkTitle: String {
+        OBALoc("stop_page.toolbar.bookmark", value: "Bookmark", comment: "Bottom-toolbar item on the Stop page that opens the Add Bookmark screen.")
+    }
+
+    static var nearbyStopsTitle: String {
+        OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one.")
+    }
+
+    static var walkingDirectionsTitle: String {
+        OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop")
+    }
+
+    static var reportProblemTitle: String {
+        OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI.")
+    }
+
     // MARK: - Item Building
 
+    @ViewBuilder
     private func button(
         title: String,
         systemImage: String,
         accessibilityLabel: String? = nil,
         accessibilityValue: String? = nil,
+        accessibilityHint: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let base = Button(action: action) {
             label(title: title, systemImage: systemImage)
         }
         .buttonStyle(FrostedActionButtonStyle())
@@ -246,6 +401,12 @@ struct StopPageToolbar: View {
         // at large text sizes a long-press shows the item enlarged instead.
         .accessibilityShowsLargeContentViewer {
             Label(title, systemImage: systemImage)
+        }
+
+        if let accessibilityHint, !accessibilityHint.isEmpty {
+            base.accessibilityHint(accessibilityHint)
+        } else {
+            base
         }
     }
 
