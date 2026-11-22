@@ -446,8 +446,13 @@ final class StopArrivalsPollerTests: OBATestCase {
         // 2. Toggle Low Power Mode to true while mid-sleep
         await coordinator.setLowPower(true)
 
-        // Advance 15s — no premature fetch
+        // Advance 15s — no premature fetch. Wait for the sleeper/waiter to
+        // re-register first: without that, the assertion runs before any
+        // async fetch could finish, so it would still pass if toggling woke
+        // the sleep.
         clock.advance(by: .seconds(15))
+        await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
         #expect(gate.requests == 1)
 
         // Complete the remaining 15s of the current 30s interval
@@ -467,6 +472,117 @@ final class StopArrivalsPollerTests: OBATestCase {
         clock.advance(by: .seconds(30))
         let third = try #require(await iterator.next())
         #expect((try? third.get()) != nil)
+        #expect(gate.requests == 3)
+    }
+
+    @Test func `A refresh that arrives while backgrounded does not fetch twice on foregrounding`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+        let coordinator = PollerCoordinator()
+
+        let (sceneStream, sceneContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let (refreshStream, refreshContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+
+        let stream = StopArrivalsPoller().arrivals(
+            for: stopID,
+            every: .seconds(30),
+            using: service,
+            clock: clock,
+            powerStateProvider: { false },
+            scenePhaseStream: sceneStream,
+            refreshSignal: refreshStream,
+            coordinator: coordinator
+        )
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. Initial emission
+        _ = await iterator.next()
+        #expect(gate.requests == 1)
+        await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
+
+        // 2. Go to background, then trigger a refresh while backgrounded
+        sceneContinuation.yield(.background)
+        await clock.waitForSleepers(count: 0)
+        await coordinator.waitForWaiters(count: 1)
+
+        refreshContinuation.yield()
+        // Let the poller process the refresh while still backgrounded, so
+        // the foreground fetch below is the one that consumes it.
+        await Task.yield()
+        await Task.yield()
+
+        // 3. Return to foreground — one fetch for the refresh, not two
+        sceneContinuation.yield(.active)
+        let resumed = try #require(await iterator.next())
+        #expect((try? resumed.get()) != nil)
+        #expect(gate.requests == 2)
+
+        // Settle into the next sleep, then confirm no second fetch followed
+        await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
+        clock.advance(by: .seconds(5))
+        #expect(gate.requests == 2)
+    }
+
+    @Test func `A fresh refresh stream per poll works across sequential pollers`() async throws {
+        // Documents the contract: callers pass a fresh stream per arrivals()
+        // call. An AsyncStream whose iteration was cancelled cannot be
+        // iterated again, so a stream must never be reused across a retry() —
+        // each poller gets its own stream, as StopArrivalsModel does.
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+
+        // 1. First poller with its own stream: initial fetch, then cancel it.
+        let (refreshStream1, _) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let coordinator1 = PollerCoordinator()
+        let firstConsumer = Task {
+            for await _ in StopArrivalsPoller().arrivals(
+                for: stopID,
+                every: .seconds(30),
+                using: service,
+                clock: clock,
+                powerStateProvider: { false },
+                refreshSignal: refreshStream1,
+                coordinator: coordinator1
+            ) {}
+        }
+        await gate.waitForRequests(count: 1)
+        await clock.waitForSleepers(count: 1)
+        await coordinator1.waitForWaiters(count: 1)
+
+        firstConsumer.cancel()
+        _ = await firstConsumer.value
+        await clock.waitForSleepers(count: 0)
+
+        // 2. Second poller with a fresh stream: initial fetch, then a refresh
+        // on the fresh stream is delivered.
+        let (refreshStream2, refreshContinuation2) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let coordinator2 = PollerCoordinator()
+        let stream2 = StopArrivalsPoller().arrivals(
+            for: stopID,
+            every: .seconds(30),
+            using: service,
+            clock: clock,
+            powerStateProvider: { false },
+            refreshSignal: refreshStream2,
+            coordinator: coordinator2
+        )
+        var iterator2 = stream2.makeAsyncIterator()
+        _ = await iterator2.next()
+        #expect(gate.requests == 2)
+        await clock.waitForSleepers(count: 1)
+        await coordinator2.waitForWaiters(count: 1)
+
+        refreshContinuation2.yield()
+        let refreshed = try #require(await iterator2.next())
+        #expect((try? refreshed.get()) != nil)
         #expect(gate.requests == 3)
     }
 }

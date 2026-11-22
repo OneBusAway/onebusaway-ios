@@ -28,13 +28,15 @@ struct StopArrivalsView: View {
                 model.stopPolling()
             }
             .onChange(of: scenePhase) { _, phase in
-                // A wrist raise makes every view in the stack active again, including
-                // this one when a pushed screen is covering it. Only the one on
-                // screen should poll.
-                if phase == .active {
-                    if isVisible { model.startPolling() }
-                } else {
-                    model.stopPolling()
+                // Forward the phase so the poller pauses in the background and
+                // resumes with an immediate fetch on foregrounding, instead of
+                // cancelling and restarting the poll. A wrist raise makes every
+                // view in the stack active again, including this one when a
+                // pushed screen is covering it. Only the one on screen should
+                // poll, so a covered screen still never starts polling.
+                model.setScenePhase(PollerScenePhase(phase))
+                if phase == .active, isVisible {
+                    model.startPolling()
                 }
             }
     }
@@ -89,5 +91,18 @@ struct StopArrivalsView: View {
             host.formatters.timeFormatter.string(from: date)
         ))
         .font(.caption2)
+    }
+}
+
+extension PollerScenePhase {
+    /// Maps SwiftUI's scene phase onto the poller's own phase, which has the
+    /// same three cases.
+    init(_ scenePhase: ScenePhase) {
+        switch scenePhase {
+        case .active: self = .active
+        case .inactive: self = .inactive
+        case .background: self = .background
+        @unknown default: self = .inactive
+        }
     }
 }

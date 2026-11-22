@@ -34,6 +34,19 @@ public final class StopArrivalsModel {
     @ObservationIgnored private let poller: StopArrivalsPoller
     @ObservationIgnored private var pollTask: Task<Void, Never>?
 
+    /// Continuations for the streams forwarded to the running poller. These
+    /// are created fresh on every startPolling(): an AsyncStream whose
+    /// iteration was cancelled cannot be iterated again, so a stream must
+    /// never be reused across a retry() — the poller bridges them internally
+    /// and never finishes them, but its cancellation still ends their
+    /// iteration. `.bufferingNewest(1)` keeps only the latest phase /
+    /// coalesces repeated refreshes into one.
+    @ObservationIgnored private var scenePhaseContinuation: AsyncStream<PollerScenePhase>.Continuation?
+    @ObservationIgnored private var refreshContinuation: AsyncStream<Void>.Continuation?
+    /// Latest scene phase, replayed into a fresh stream when polling starts
+    /// so a poll started while backgrounded begins paused.
+    @ObservationIgnored private var currentPhase: PollerScenePhase = .active
+
     public init(
         stop: Stop,
         apiServiceProvider: @escaping APIServiceProvider,
@@ -63,7 +76,17 @@ public final class StopArrivalsModel {
             return
         }
 
-        let stream = poller.arrivals(for: stop.id, every: interval, using: apiService, clock: ContinuousClock())
+        // Fresh streams per poll: a stream whose iteration was cancelled
+        // cannot be iterated again, so these must not be reused across a
+        // retry(). The current phase is replayed first so a poll started
+        // while backgrounded begins paused.
+        let (scenePhaseStream, scenePhaseContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        self.scenePhaseContinuation = scenePhaseContinuation
+        let (refreshStream, refreshContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        self.refreshContinuation = refreshContinuation
+        scenePhaseContinuation.yield(currentPhase)
+
+        let stream = poller.arrivals(for: stop.id, every: interval, using: apiService, clock: ContinuousClock(), scenePhaseStream: scenePhaseStream, refreshSignal: refreshStream)
         pollTask = Task { [weak self] in
             for await result in stream {
                 guard let self, !Task.isCancelled else { return }
@@ -75,12 +98,37 @@ public final class StopArrivalsModel {
     public func stopPolling() {
         pollTask?.cancel()
         pollTask = nil
+        // The streams die with the cancelled poller; fresh ones are created
+        // on the next startPolling().
+        scenePhaseContinuation = nil
+        refreshContinuation = nil
     }
 
     public func retry() {
-        stopPolling()
-        phase = .loading
-        startPolling()
+        // Refresh in place when already polling instead of restarting the
+        // poll: the refresh signal triggers an immediate fetch.
+        if pollTask != nil {
+            phase = .loading
+            triggerRefresh()
+        } else {
+            phase = .loading
+            startPolling()
+        }
+    }
+
+    /// Forwards a scene phase change to the poller so it can pause in the
+    /// background and resume with an immediate fetch on foregrounding. The
+    /// phase is remembered so a later poll starts with the right one.
+    public func setScenePhase(_ phase: PollerScenePhase) {
+        currentPhase = phase
+        scenePhaseContinuation?.yield(phase)
+    }
+
+    /// Triggers an immediate fetch on the running poller (pull-to-refresh /
+    /// Retry), without waiting for the timer and without restarting the poll.
+    /// No-op when not polling.
+    public func triggerRefresh() {
+        refreshContinuation?.yield()
     }
 
     func apply(_ result: Result<[ArrivalDeparture], Error>) {
