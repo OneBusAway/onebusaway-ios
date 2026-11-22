@@ -456,7 +456,10 @@ struct MapPanelRootView: View {
                 }
             }
 
-            rentalAnnotations
+            // Bikes and scooters step aside too while a stop's routes are drawn.
+            if focusedStopID == nil {
+                rentalAnnotations
+            }
 
             searchResultMapContent(for: searchDisplay.display) { stop in
                 application.stopIconFactory.buildSquircleIcon(
@@ -872,7 +875,8 @@ struct MapPanelRootView: View {
         .tag(MapPinSelection.stop(stop.id))
     }
 
-    /// A stop other than the open one while its routes are drawn: a small dot
+    /// A stop other than the open one while its routes are drawn (when bikes and
+    /// scooters hide altogether): a small dot
     /// rather than a pin, so the routes read first. No label, no selection tag
     /// and no hit testing, so it can't be tapped, and hidden from VoiceOver,
     /// which reaches stops through the open stop's sheet meanwhile. Bookmarks
