@@ -65,9 +65,19 @@ struct MapLayerTile: Identifiable, Equatable {
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(mapRegionManager: MapRegionManager, mapViewModel: MapViewModel, onSelectRoute: @escaping (Route) -> Void) {
+    /// Where the Trip Suggestions switch is stored, when this map offers suggestions.
+    /// Only the panel does, so the classic map leaves it `nil` and the row is hidden.
+    private let tripSuggestionDefaults: UserDefaults?
+
+    init(
+        mapRegionManager: MapRegionManager,
+        mapViewModel: MapViewModel,
+        tripSuggestionDefaults: UserDefaults? = nil,
+        onSelectRoute: @escaping (Route) -> Void
+    ) {
         self.mapRegionManager = mapRegionManager
         self.mapViewModel = mapViewModel
+        self.tripSuggestionDefaults = tripSuggestionDefaults
         self.onSelectRoute = onSelectRoute
         super.init()
 
@@ -205,6 +215,21 @@ struct MapLayerTile: Identifiable, Equatable {
         mapRegionManager.mapViewShowsPointsOfInterest = shows
     }
 
+    // MARK: - Trip Suggestions
+
+    var showsTripSuggestionsSetting: Bool { tripSuggestionDefaults != nil }
+
+    var tripSuggestionsEnabled: Bool {
+        guard let tripSuggestionDefaults else { return false }
+        return TripSuggestionSettings.isEnabled(userDefaults: tripSuggestionDefaults)
+    }
+
+    func setTripSuggestionsEnabled(_ enabled: Bool) {
+        guard let tripSuggestionDefaults else { return }
+        objectWillChange.send()
+        TripSuggestionSettings.setEnabled(enabled, userDefaults: tripSuggestionDefaults)
+    }
+
     // MARK: - Routes on Map
 
     /// `showZoomWarning` rather than `mapRegionManager.zoomInStatus`: the panel
@@ -251,6 +276,9 @@ struct MapSheetView: View {
                     }
                     if model.showsRangeChips {
                         RentalRangeChipRow(presets: model.rangeFilterPresets, selectedID: model.selectedRangePresetID) { model.selectRangePreset(id: $0) }
+                    }
+                    if model.showsTripSuggestionsSetting {
+                        tripSuggestionsCard
                     }
                     pointsOfInterestCard
                 }
@@ -344,6 +372,30 @@ struct MapSheetView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Trip Suggestions
+
+    /// Under the transit layers because it's about riding transit, with a footer
+    /// saying what it does, as the Routes on Map card has.
+    private var tripSuggestionsCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: Binding(get: { model.tripSuggestionsEnabled }, set: { model.setTripSuggestionsEnabled($0) })) {
+                Label(
+                    OBALoc("map_sheet.trip_suggestions", value: "Trip Suggestions", comment: "Map sheet switch that lets the app offer to track the trip the rider seems to be riding."),
+                    systemImage: "bus"
+                )
+            }
+            .mapSheetCard()
+            Text(OBALoc(
+                "map_sheet.trip_suggestions_footer",
+                value: "Offer to track your trip when you’re riding a bus. Requires Precise Location.",
+                comment: "Footer under the Trip Suggestions switch in the Map sheet."
+            ))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 16)
         }
     }
 

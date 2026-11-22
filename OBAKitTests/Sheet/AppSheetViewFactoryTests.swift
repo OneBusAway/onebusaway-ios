@@ -60,7 +60,8 @@ final class AppSheetViewFactoryTests: OBATestCase {
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel ?? TripPlannerMapDisplayModel(),
             tripFocusMapDisplayModel: tripFocusMapDisplayModel ?? TripFocusMapDisplayModel(userLocation: { nil }),
             stopFocusMapDisplayModel: StopFocusMapDisplayModel(shapeCache: ShapeCache { _ in "" }, formatters: application.formatters),
-            onDemandProbeController: OnDemandProbeController.make(application: application)
+            onDemandProbeController: OnDemandProbeController.make(application: application),
+            tripSuggestions: TripSuggestionController(locationService: application.locationService, userDefaults: application.userDefaults, dataSource: { nil })
         )
     }
 
@@ -215,7 +216,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
     /// A departure tapped on the Stop sheet opens its trip on top of that sheet,
     /// so Back from the trip returns to the stop. Going through `onPresentTrip`
-    /// instead unwound to Home, which is what My Trip and vehicle search want.
+    /// instead unwound to Home, which is what trip suggestions and vehicle search want.
     @Test @MainActor
     func `A Stop sheet departure opens its trip on top, and Back returns to the stop`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))

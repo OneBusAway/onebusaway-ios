@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "致谢";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "正在寻找您乘坐的车辆……";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "距您%@";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "无法连接到公交数据服务。";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "无法获取位置。请开启定位服务。";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "找到多辆车辆";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "我的车程";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "此线路暂无实时追踪数据";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "未在您附近找到此线路上正在运行的车辆";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "重试";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "该地区 API 服务器的根地址,无需包含会自动添加的\"/api/where\"部分。默认为\"https://\"。";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "移除目的地";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "站点 ID";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "复制站点 ID。";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "（未分类）";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "请允许本App使用您的定位信息，以便更好地帮您找到附近的公交车站。";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "您好！";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "前往“设置”页面打开定位分享";
@@ -550,9 +519,6 @@
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "标准";
-
-/* Accessibility label for the My Trip button on the map toolbar. */
-"map_controller.my_trip_button" = "我的车程";
 
 /* A generic message shown when the user's search query produces no search results. */
 "map_controller.no_search_results_found" = "未找到结果。";
@@ -888,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ 仅在应用打开时使用你的位置信息。你可以随时在设置中更改此设置。";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "使用我的位置";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "查看你周围的交通";
 
@@ -1040,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "行程问题";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "无法获取位置。请开启定位服务以查找附近的线路。";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "无法连接到公交数据服务。";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "正在加载线路……";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "附近未找到线路。";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "搜索线路……";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "选择您的线路";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "无站点";
@@ -1429,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "设置闹钟";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "后续班次";
 
@@ -1447,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "线路";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "隐藏已离站";
@@ -1559,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "时刻表数据";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "步行%d分钟";
@@ -2414,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "公交";
 
@@ -2444,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "供支持团队参考";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "App";
@@ -2493,3 +2428,54 @@
 "stop_page.toolbar.refresh.hint" = "刷新到达时间。";
 "stop_page.toolbar.refresh.updating_hint" = "到达时间正在更新。";
 "stop_page.toolbar.schedules.hint" = "显示此车站的时刻表。";
+
+/* Map sheet switch that lets the app offer to track the trip the rider seems to be riding. */
+"map_sheet.trip_suggestions" = "行程建议";
+
+/* Footer under the Trip Suggestions switch in the Map sheet. */
+"map_sheet.trip_suggestions_footer" = "乘坐公交时提议追踪你的行程。需要精确位置。";
+
+/* Title of the map card that asks whether the rider is on a particular bus route. %@ is the route's short name, e.g. 'On Route 10?' */
+"trip_suggestion.title_one_fmt" = "在 %@ 路上吗？";
+
+/* Title of the map card shown when the rider seems to be on one of several buses moving with them. */
+"trip_suggestion.title_several_buses" = "在公交车上吗？";
+
+/* Title of the map card shown when the rider seems to be on one of several transit vehicles of different kinds (e.g. a bus and a streetcar) moving with them. */
+"trip_suggestion.title_several_vehicles" = "在交通工具上吗？";
+
+/* Subtitle naming where the suggested trip goes. %@ is the trip's headsign, e.g. 'To Capitol Hill'. */
+"trip_suggestion.destination_fmt" = "开往%@";
+
+/* Button on the trip suggestion card that opens the suggested trip. */
+"trip_suggestion.track_trip" = "追踪行程";
+
+/* Button on the trip suggestion card that lists the buses the rider might be on. */
+"trip_suggestion.choose_bus" = "选择公交车";
+
+/* Button on the trip suggestion card that lists the vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_vehicle" = "选择车辆";
+
+/* Title of the sheet listing the buses the rider might be on. */
+"trip_suggestion.choose_title_bus" = "选择公交车";
+
+/* Title of the sheet listing the transit vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_title_vehicle" = "选择车辆";
+
+/* A route in the Choose a Bus list when its trip has no headsign. %@ is the route's short name. */
+"trip_suggestion.route_fmt" = "%@ 路";
+
+/* A route in the Choose a Bus list. %1$@ is the route's short name, %2$@ the trip's headsign, e.g. 'Route 10 to Capitol Hill'. */
+"trip_suggestion.route_destination_fmt" = "%1$@ 路开往%2$@";
+
+/* A bus's fleet number in the Choose a Bus list, e.g. 'Bus 4521'. */
+"trip_suggestion.bus_number_fmt" = "公交车 %@";
+
+/* A non-bus transit vehicle's fleet number in the Choose a Vehicle list, e.g. 'Vehicle 112'. */
+"trip_suggestion.vehicle_number_fmt" = "车辆 %@";
+
+/* How far the rider is from a vehicle in the Choose a Bus list. %@ is a distance, e.g. '30 m away'. */
+"trip_suggestion.distance_fmt" = "相距 %@";
+
+/* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
+"trip_suggestion.title_one_line_fmt" = "在 %@ 上吗？";

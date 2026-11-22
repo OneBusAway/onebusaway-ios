@@ -19,19 +19,16 @@ final class MapToolbarItems {
     let location: UIBarButtonItem
     let mapLayers: UIBarButtonItem
     let weather: UIBarButtonItem
-    let myTrip: UIBarButtonItem
 
     init(
         location: UIButton,
         mapLayers: UIButton,
         weather: UIButton,
-        myTrip: UIButton,
         showsWeather: Bool
     ) {
         self.location = Self.item(mirroring: location)
         self.mapLayers = Self.item(mirroring: mapLayers)
         self.weather = Self.item(mirroring: weather)
-        self.myTrip = Self.item(mirroring: myTrip)
         self.showsWeather = showsWeather
         self.weather.isHidden = true
 
@@ -47,7 +44,7 @@ final class MapToolbarItems {
 
     /// In display order, top to bottom. Hidden items stay in the array; UIKit skips them.
     var items: [UIBarButtonItem] {
-        showsWeather ? [location, mapLayers, weather, myTrip] : [location, mapLayers, myTrip]
+        showsWeather ? [location, mapLayers, weather] : [location, mapLayers]
     }
 
     /// An item that forwards to `button`'s own action, so the hover bar and the

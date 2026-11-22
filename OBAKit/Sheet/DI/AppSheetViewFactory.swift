@@ -48,6 +48,9 @@ final class AppSheetViewFactory {
     /// panel mirrors onto the zone layer, so bar pages and picker rows share
     /// one source of truth.
     let onDemandProbeController: OnDemandProbeController
+    /// The panel's trip suggestions: the card the root view shows, and the Map
+    /// sheet's switch.
+    let tripSuggestions: TripSuggestionController
 
     /// Nothing here is defaulted, on purpose, and for two separate reasons.
     ///
@@ -78,7 +81,8 @@ final class AppSheetViewFactory {
         tripPlannerMapDisplayModel: TripPlannerMapDisplayModel,
         tripFocusMapDisplayModel: TripFocusMapDisplayModel,
         stopFocusMapDisplayModel: StopFocusMapDisplayModel,
-        onDemandProbeController: OnDemandProbeController
+        onDemandProbeController: OnDemandProbeController,
+        tripSuggestions: TripSuggestionController
     ) {
         self.application = application
         self.mapViewModel = mapViewModel
@@ -93,6 +97,7 @@ final class AppSheetViewFactory {
         self.tripFocusMapDisplayModel = tripFocusMapDisplayModel
         self.stopFocusMapDisplayModel = stopFocusMapDisplayModel
         self.onDemandProbeController = onDemandProbeController
+        self.tripSuggestions = tripSuggestions
     }
 
     /// Built once and shared: the search sheet and the results sheet must route a
@@ -156,11 +161,8 @@ final class AppSheetViewFactory {
         case .stopDetails(let stopID, let transferContext):
             stopDetailView(stopID: stopID, transferContext: transferContext)
 
-        case .routePicker:
-            routePickerView()
-
-        case .currentTrip(let route):
-            currentTripView(route: route)
+        case .tripSuggestions(let candidates):
+            chooseTripSuggestionView(candidates: candidates)
 
         case .rentalDetail(let rentalID):
             rentalDetailView(rentalID: rentalID)
@@ -237,8 +239,8 @@ final class AppSheetViewFactory {
                     application: self.application,
                     presentingController: self.presentingController
                 )
-                // Not `onPresentTrip`: that unwinds to Home, which is right for My
-                // Trip and vehicle search. A departure tapped here opens its trip
+                // Not `onPresentTrip`: that unwinds to Home, which is right for trip
+                // suggestions and vehicle search. A departure tapped here opens its trip
                 // on top of this Stop sheet so Back returns to the stop, and goes
                 // back to the trip instead if it's already open further down.
                 presenter.onShowTripInSheet = { [coordinator = self.coordinator] departure in
@@ -297,9 +299,6 @@ final class AppSheetViewFactory {
         )
     }
 
-    func routePickerView() -> RoutePickerView {
-        RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
-    }
 
     /// The SwiftUI trip page as a stacked sheet over the panel's map.
     ///
@@ -366,14 +365,25 @@ final class AppSheetViewFactory {
         )
     }
 
-    private func currentTripView(route: Route) -> CurrentTripView {
-        CurrentTripView(
-            viewModel: CurrentTripViewModel(application: self.application, route: route),
-            feedback: DataLoadFeedbackGenerator(application: self.application),
+    private func chooseTripSuggestionView(candidates: [TripSuggestionCandidate]) -> ChooseTripSuggestionView {
+        ChooseTripSuggestionView(
+            candidates: candidates,
             formatters: self.application.formatters,
-            onPresentTrip: onPresentTrip
+            onSelect: { [weak self] candidate in self?.trackTripSuggestion(candidate) },
+            onClose: { [coordinator] in coordinator.pop() }
         )
     }
+
+    /// Opens a suggested vehicle's trip, from the card or Choose a Bus. The
+    /// suggestion is dismissed first, so the trips it offered aren't offered again
+    /// during this ride.
+    func trackTripSuggestion(_ candidate: TripSuggestionCandidate) {
+        tripSuggestions.dismiss()
+        if let arrival = candidate.arrivalDeparture {
+            onPresentTrip(arrival)
+        }
+    }
+
 
     /// The Map sheet, shared verbatim with `MapViewController`. Its own doc
     /// comment calls it "the single canonical place riders turn layers on and
@@ -382,6 +392,7 @@ final class AppSheetViewFactory {
         MapSheetView(model: MapSheetModel(
             mapRegionManager: self.application.mapRegionManager,
             mapViewModel: self.mapViewModel,
+            tripSuggestionDefaults: self.application.userDefaults,
             onSelectRoute: { [weak self] route in
                 guard let self else { return }
                 Task { await self.showRouteOnMap(route) }

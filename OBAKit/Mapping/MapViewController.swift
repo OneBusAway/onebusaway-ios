@@ -50,10 +50,7 @@ class MapViewController: UIViewController,
             hover.stackView.addArrangedSubview(weatherButton)
         }
 
-        hover.stackView.addArrangedSubview(HoverBarSeparator())
-        hover.stackView.addArrangedSubview(myTripButton)
-
-        configureLargeContentViewer(on: hover, buttons: [locationButton, toggleMapTypeButton, weatherButton, myTripButton])
+        configureLargeContentViewer(on: hover, buttons: [locationButton, toggleMapTypeButton, weatherButton])
 
         return hover
     }()
@@ -65,7 +62,6 @@ class MapViewController: UIViewController,
             location: locationButton,
             mapLayers: toggleMapTypeButton,
             weather: weatherButton,
-            myTrip: myTripButton,
             showsWeather: application.features.obaco == .running
         )
         items.setLocationAvailable(application.locationService.isLocationUseAuthorized)
@@ -173,8 +169,7 @@ class MapViewController: UIViewController,
             toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
-            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
-            myTripButton.heightAnchor.constraint(equalTo: myTripButton.widthAnchor)
+            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
         ])
         observeVerticalBarEdge()
 
@@ -435,24 +430,6 @@ class MapViewController: UIViewController,
         button.accessibilityLabel = OBALoc("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
         return button
     }()
-
-    // MARK: - My Trip
-
-    private lazy var myTripButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(Icons.busButton, for: .normal)
-        button.addTarget(self, action: #selector(showCurrentTrip), for: .touchUpInside)
-        button.accessibilityLabel = OBALoc(
-            "map_controller.my_trip_button",
-            value: "My Trip",
-            comment: "Accessibility label for the My Trip button on the map toolbar."
-        )
-        return button
-    }()
-
-    @objc private func showCurrentTrip() {
-        application.viewRouter.navigateToCurrentTrip(from: topmostPresentedController)
-    }
 
     // MARK: - Weather
 

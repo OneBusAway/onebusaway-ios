@@ -131,7 +131,8 @@ final class OnDemandPickerTests: OBATestCase {
             tripPlannerMapDisplayModel: TripPlannerMapDisplayModel(),
             tripFocusMapDisplayModel: TripFocusMapDisplayModel(userLocation: { nil }),
             stopFocusMapDisplayModel: StopFocusMapDisplayModel(shapeCache: ShapeCache { _ in "" }, formatters: application.formatters),
-            onDemandProbeController: OnDemandProbeController.make(application: application)
+            onDemandProbeController: OnDemandProbeController.make(application: application),
+            tripSuggestions: TripSuggestionController(locationService: application.locationService, userDefaults: application.userDefaults, dataSource: { nil })
         )
         let payload = try dialARidePayload(source: .mapCenter, locality: "Boyne City")
         let view = factory.onDemandPickerView(payload: payload)
@@ -195,7 +196,8 @@ final class OnDemandPickerTests: OBATestCase {
             tripPlannerMapDisplayModel: TripPlannerMapDisplayModel(),
             tripFocusMapDisplayModel: TripFocusMapDisplayModel(userLocation: { nil }),
             stopFocusMapDisplayModel: StopFocusMapDisplayModel(shapeCache: ShapeCache { _ in "" }, formatters: application.formatters),
-            onDemandProbeController: probeController
+            onDemandProbeController: probeController,
+            tripSuggestions: TripSuggestionController(locationService: application.locationService, userDefaults: application.userDefaults, dataSource: { nil })
         )
         let payload = try dialARidePayload()
         coordinator.push(.onDemandPicker(payload))

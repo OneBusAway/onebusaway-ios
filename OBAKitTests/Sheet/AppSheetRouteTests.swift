@@ -34,7 +34,6 @@ final class AppSheetRouteTests {
         #expect(AppSheetRoute.nearbyAll.id == "nearbyAll")
         #expect(AppSheetRoute.recentStopsAll.id == "recentStopsAll")
         #expect(AppSheetRoute.bookmarksAll.id == "bookmarksAll")
-        #expect(AppSheetRoute.routePicker.id == "routePicker")
         #expect(AppSheetRoute.more.id == "more")
         #expect(AppSheetRoute.settings.id == "settings")
     }
@@ -42,8 +41,6 @@ final class AppSheetRouteTests {
     @Test func `Id embeds associated values`() throws {
         #expect(AppSheetRoute.stopDetails(stopID: "1_75403").id == "stopDetails-1_75403")
         #expect(try tripRoute(tripID: "trip_42").id == "tripDetails-trip_42")
-        let route = try Fixtures.createRoute(id: "route_8")
-        #expect(AppSheetRoute.currentTrip(route: route).id == "currentTrip-route_8")
         #expect(AppSheetRoute.transitAlert(alertID: "alert_99").id == "transitAlert-alert_99")
     }
 
@@ -72,8 +69,8 @@ final class AppSheetRouteTests {
         #expect(withContext.hashValue == plain.hashValue)
     }
 
-    /// `CurrentTripView` hands over a freshly fetched arrival on every refresh, and
-    /// a rider can reach the same trip from a different stop's row. Both have to
+    /// A refresh hands over a freshly fetched arrival, and a rider can reach the
+    /// same trip from a different stop's row. Both have to
     /// produce the route already on screen, or a repeat push can't be recognized.
     @Test func `Trip details id is stable across arrivals for the same trip`() throws {
         let first = try tripRoute(tripID: "1_18196913", stopID: "stop_1")
@@ -90,7 +87,7 @@ final class AppSheetRouteTests {
         #expect(a.id != b.id)
     }
 
-    /// My Trip carries an arrival and a vehicle tap carries a vehicle status. The
+    /// A trip suggestion carries an arrival and a vehicle tap carries a vehicle status. The
     /// identity is the trip's, so the same trip opened either way is one route.
     @Test func `Trip details id is the trip's whichever model carried it`() throws {
         let vehicle = try Fixtures.loadRESTAPIPayload(type: VehicleStatus.self, fileName: "api_where_vehicle_1_4351.json")
@@ -114,15 +111,12 @@ final class AppSheetRouteTests {
     @Test func `Prefers stacking base layer routes`() {
         #expect(AppSheetRoute.home.prefersStacking == false)
         #expect(AppSheetRoute.search.prefersStacking == false)
-        #expect(AppSheetRoute.routePicker.prefersStacking == false)
     }
 
     @Test func `Prefers stacking stacked layer routes`() throws {
         #expect(AppSheetRoute.stopDetails(stopID: "1").prefersStacking == true)
         #expect(AppSheetRoute.tripPlanner(TripPlannerRequest()).prefersStacking == true)
         #expect(try tripRoute().prefersStacking == true)
-        let route = try Fixtures.createRoute(id: "r")
-        #expect(AppSheetRoute.currentTrip(route: route).prefersStacking == true)
         #expect(AppSheetRoute.transitAlert(alertID: "a").prefersStacking == true)
         #expect(AppSheetRoute.more.prefersStacking == true)
         #expect(AppSheetRoute.nearbyAll.prefersStacking == true)
@@ -219,10 +213,7 @@ final class AppSheetRouteTests {
     }
 
     @Test func `Stacked detail routes share large start and allow dismiss`() throws {
-        let currentTripRoute = try Fixtures.createRoute(id: "r")
         let routes: [AppSheetRoute] = [
-            .routePicker,
-            .currentTrip(route: currentTripRoute),
             .transitAlert(alertID: "a"),
             .more,
             .settings
@@ -244,7 +235,7 @@ final class AppSheetRouteTests {
     /// keeps the map's glass from washing them out.
     @Test func `Detail pages get the plain background`() throws {
         let routes: [AppSheetRoute] = [
-            .stopDetails(stopID: "1"), try tripRoute(), .routePicker, .currentTrip(route: try Fixtures.createRoute(id: "r")),
+            .stopDetails(stopID: "1"), try tripRoute(),
             .transitAlert(alertID: "a"), .rentalDetail(rentalID: "bike_7"), .rentalCluster(memberIDs: ["bike_7", "bike_8"]),
             .mapItem(MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)))),
             .settings
@@ -275,12 +266,11 @@ final class AppSheetRouteTests {
     @Test func `All routes show drag indicator`() throws {
         // No route currently opts out of the drag indicator; this guards against
         // an accidental flip when adding a new case.
-        let currentTripRoute = try Fixtures.createRoute(id: "r")
         let trip = try tripRoute()
         let routes: [AppSheetRoute] = [
             .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
             .stopDetails(stopID: "1"), .tripPlanner(TripPlannerRequest()), trip,
-            .routePicker, .currentTrip(route: currentTripRoute), .transitAlert(alertID: "a"),
+            .transitAlert(alertID: "a"),
             .more, .settings
         ]
         for route in routes {
@@ -344,17 +334,13 @@ final class AppSheetRouteTests {
 
     @Test func `Equality different associated values are not equal`() throws {
         #expect(AppSheetRoute.stopDetails(stopID: "1_1") != AppSheetRoute.stopDetails(stopID: "1_2"))
-        let route1 = try Fixtures.createRoute(id: "r1")
-        let route2 = try Fixtures.createRoute(id: "r2")
-        #expect(AppSheetRoute.currentTrip(route: route1) != AppSheetRoute.currentTrip(route: route2))
+        #expect(AppSheetRoute.tripSuggestions([suggestionCandidate("a")]) != AppSheetRoute.tripSuggestions([suggestionCandidate("b")]))
     }
 
     @Test func `Hash consistency for value equal routes`() throws {
-        let route1 = try Fixtures.createRoute(id: "r1")
-        let route2 = try Fixtures.createRoute(id: "r1")
-        let sheetRoute1 = AppSheetRoute.currentTrip(route: route1)
-        let sheetRoute2 = AppSheetRoute.currentTrip(route: route2)
-        // Two routes with the same ID should hash to the same value
+        let sheetRoute1 = AppSheetRoute.tripSuggestions([suggestionCandidate("r1")])
+        let sheetRoute2 = AppSheetRoute.tripSuggestions([suggestionCandidate("r1")])
+        // Two separately built candidates for the same vehicle should hash to the same value
         #expect(sheetRoute1.hashValue == sheetRoute2.hashValue)
     }
 
@@ -582,6 +568,26 @@ final class AppSheetRouteTests {
         #expect(!AppSheetRoute.search.isStopDetails)
     }
 
+    // MARK: - Trip suggestions
+
+    private func suggestionCandidate(_ id: String) -> TripSuggestionCandidate {
+        TripSuggestionCandidate(
+            id: id, tripID: "trip_\(id)", vehicleID: id, routeShortName: "10", headsign: nil,
+            routeType: .bus, agencyName: nil, routeColor: nil, routeTextColor: nil, serviceDate: nil,
+            sighting: VehicleSighting(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3), fixTime: Date(), heading: nil),
+            arrivalDeparture: nil
+        )
+    }
+
+    @Test func `Choose a Bus is a stacked medium sheet keyed on its vehicles`() {
+        let route = AppSheetRoute.tripSuggestions([suggestionCandidate("1_4521"), suggestionCandidate("1_3807")])
+        #expect(route.id == "tripSuggestions-1_4521_1_3807")
+        #expect(route.prefersStacking)
+        #expect(route.detentConfiguration.detents == [.medium, .large])
+        #expect(route.detentConfiguration.initialDetent == .medium)
+        #expect(route.sheetBackground == .plain)
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing
@@ -589,8 +595,8 @@ final class AppSheetRouteTests {
     private func exhaustivenessGuard(_ route: AppSheetRoute) {
         switch route {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-             .currentTrip, .transitAlert, .more, .settings, .mapSettings,
+             .stopDetails, .tripPlanner, .tripDetails,
+             .tripSuggestions, .transitAlert, .more, .settings, .mapSettings,
              .rentalDetail, .rentalCluster, .onDemandService, .onDemandPicker,
              .searchResults, .mapItem, .routeStops, .nearbyStops:
             break

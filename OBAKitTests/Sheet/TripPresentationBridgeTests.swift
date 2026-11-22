@@ -8,12 +8,13 @@
 //
 
 import Foundation
+import CoreLocation
 import Testing
 import UIKit
 @testable import OBAKitCore
 @testable import OBAKit
 
-/// Where the map panel sends a trip from My Trip or a vehicle search: onto the
+/// Where the map panel sends a trip from a trip suggestion or a vehicle search: onto the
 /// sheet stack as `.tripDetails`, over the map, rather than into a modal that
 /// covers it.
 @MainActor
@@ -41,13 +42,17 @@ final class TripPresentationBridgeTests {
         return try JSONDecoder.RESTDecoder().decode(VehicleStatus.self, from: JSONSerialization.data(withJSONObject: entry))
     }
 
-    /// My Trip's route picker and results sit at full height. Left under a
-    /// `.medium` trip sheet they would cover the map it's drawn on, and stay
-    /// draggable through it.
-    @Test func `A trip from My Trip closes My Trip and opens over home`() throws {
-        coordinator.push(.routePicker)
-        coordinator.push(.currentTrip(route: try Fixtures.createRoute(id: "route_2")))
+    /// Choose a Bus, left under a `.medium` trip sheet, would cover the map the
+    /// trip is drawn on and stay draggable through it.
+    @Test func `A trip from Choose a Bus closes it and opens over home`() throws {
         let arrival = try Fixtures.arrivalDeparture(tripID: "trip_42")
+        let candidate = TripSuggestionCandidate(
+            id: "1_4521", tripID: "trip_42", vehicleID: "1_4521", routeShortName: "10", headsign: nil,
+            routeType: .bus, agencyName: nil, routeColor: nil, routeTextColor: nil, serviceDate: nil,
+            sighting: VehicleSighting(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3), fixTime: Date(), heading: nil),
+            arrivalDeparture: arrival
+        )
+        coordinator.push(.tripSuggestions([candidate]))
 
         makeBridge().present(arrival)
 
@@ -73,7 +78,7 @@ final class TripPresentationBridgeTests {
     }
 
     /// The fixture's vehicle is on `1_47649081`. Reached by a vehicle tap and then
-    /// from My Trip, that trip is one sheet.
+    /// from a trip suggestion, that trip is one sheet.
     @Test func `A vehicle on a trip opens that trip's sheet, and its arrival doesn't open another`() throws {
         let vehicle = try Fixtures.loadRESTAPIPayload(type: VehicleStatus.self, fileName: "api_where_vehicle_1_4351.json")
         let bridge = makeBridge()

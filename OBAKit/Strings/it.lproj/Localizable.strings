@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Riconoscimenti";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "Ricerca del tuo veicolo…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "%@ di distanza";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Impossibile connettersi al servizio di trasporto.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "Posizione non disponibile. Abilita i servizi di localizzazione.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "Trovati più veicoli";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "Il mio viaggio";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "Nessun tracciamento in tempo reale disponibile per questa linea";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "Nessun veicolo attivo trovato su questa linea vicino a te";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "Riprova";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "L'indirizzo radice del server API della regione, senza la parte \"/api/where\", che viene aggiunta automaticamente. Si presume \"https://\".";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "Rimuovi destinazione";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "ID fermata";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "Copia l'ID fermata.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Nessun gruppo)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Consenti all'applicazione di accedere alla tua posizione per facilitare l'individuazione di fermate nei tuoi dintorni. ";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Ti diamo il benvenuto!";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Attiva nelle impostazioni";
@@ -550,9 +519,6 @@
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "standard";
-
-/* Accessibility label for the My Trip button on the map toolbar. */
-"map_controller.my_trip_button" = "Il mio viaggio";
 
 /* A generic message shown when the user's search query produces no search results. */
 "map_controller.no_search_results_found" = "La tua ricerca non ha prodotto risultati.";
@@ -888,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ utilizza la tua posizione solo mentre l'app è aperta. Puoi modificarlo in qualsiasi momento in Impostazioni.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "Usa la mia posizione";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Scopri i trasporti intorno a te";
 
@@ -1040,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "Problema con una corsa";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Posizione non disponibile. Abilita i servizi di localizzazione per trovare le linee vicine.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Impossibile connettersi al servizio di trasporto.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Caricamento delle linee…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Nessuna linea trovata nelle vicinanze.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Cerca linee…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Seleziona la tua linea";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "Nessuna fermata";
@@ -1429,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "Imposta sveglia";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Prossime partenze";
 
@@ -1447,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "Linea";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Nascondi passate";
@@ -1559,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "dati di orario";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min a piedi";
@@ -2414,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "Trasporto pubblico";
 
@@ -2444,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "Per l'assistenza";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "App";
@@ -2493,3 +2428,54 @@
 "stop_page.toolbar.refresh.hint" = "Aggiorna gli orari di arrivo.";
 "stop_page.toolbar.refresh.updating_hint" = "Gli orari di arrivo sono in fase di aggiornamento.";
 "stop_page.toolbar.schedules.hint" = "Mostra gli orari per questa fermata.";
+
+/* Map sheet switch that lets the app offer to track the trip the rider seems to be riding. */
+"map_sheet.trip_suggestions" = "Suggerimenti di viaggio";
+
+/* Footer under the Trip Suggestions switch in the Map sheet. */
+"map_sheet.trip_suggestions_footer" = "Propone di seguire il tuo viaggio quando sei su un autobus. Richiede Posizione esatta.";
+
+/* Title of the map card that asks whether the rider is on a particular bus route. %@ is the route's short name, e.g. 'On Route 10?' */
+"trip_suggestion.title_one_fmt" = "Sulla linea %@?";
+
+/* Title of the map card shown when the rider seems to be on one of several buses moving with them. */
+"trip_suggestion.title_several_buses" = "Su un autobus?";
+
+/* Title of the map card shown when the rider seems to be on one of several transit vehicles of different kinds (e.g. a bus and a streetcar) moving with them. */
+"trip_suggestion.title_several_vehicles" = "Su un veicolo?";
+
+/* Subtitle naming where the suggested trip goes. %@ is the trip's headsign, e.g. 'To Capitol Hill'. */
+"trip_suggestion.destination_fmt" = "Per %@";
+
+/* Button on the trip suggestion card that opens the suggested trip. */
+"trip_suggestion.track_trip" = "Segui viaggio";
+
+/* Button on the trip suggestion card that lists the buses the rider might be on. */
+"trip_suggestion.choose_bus" = "Scegli autobus";
+
+/* Button on the trip suggestion card that lists the vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_vehicle" = "Scegli veicolo";
+
+/* Title of the sheet listing the buses the rider might be on. */
+"trip_suggestion.choose_title_bus" = "Scegli un autobus";
+
+/* Title of the sheet listing the transit vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_title_vehicle" = "Scegli un veicolo";
+
+/* A route in the Choose a Bus list when its trip has no headsign. %@ is the route's short name. */
+"trip_suggestion.route_fmt" = "Linea %@";
+
+/* A route in the Choose a Bus list. %1$@ is the route's short name, %2$@ the trip's headsign, e.g. 'Route 10 to Capitol Hill'. */
+"trip_suggestion.route_destination_fmt" = "Linea %1$@ per %2$@";
+
+/* A bus's fleet number in the Choose a Bus list, e.g. 'Bus 4521'. */
+"trip_suggestion.bus_number_fmt" = "Autobus %@";
+
+/* A non-bus transit vehicle's fleet number in the Choose a Vehicle list, e.g. 'Vehicle 112'. */
+"trip_suggestion.vehicle_number_fmt" = "Veicolo %@";
+
+/* How far the rider is from a vehicle in the Choose a Bus list. %@ is a distance, e.g. '30 m away'. */
+"trip_suggestion.distance_fmt" = "A %@";
+
+/* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
+"trip_suggestion.title_one_line_fmt" = "Sulla %@?";

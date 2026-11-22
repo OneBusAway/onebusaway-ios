@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "鳴謝";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "正在尋找您的車輛…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "距離 %@";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "無法連線至大眾運輸服務。";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "無法取得位置。請開啟定位服務。";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "找到多輛車輛";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "我的行程";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "此路線沒有即時追蹤資料";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "在您附近的這條路線上找不到行駛中的車輛";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "再試一次";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "該地區 API 伺服器的根位址,不含會自動加上的「/api/where」部分。預設為「https://」。";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "移除目的地";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "站點 ID";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "拷貝站點 ID。";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "（無群組）";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "請允許 App 取用您的位置，以便更輕鬆地找到附近的大眾運輸站牌。";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "歡迎！";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "前往「設定」開啟";
@@ -550,9 +519,6 @@
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "標準";
-
-/* Accessibility label for the My Trip button on the map toolbar. */
-"map_controller.my_trip_button" = "我的行程";
 
 /* A generic message shown when the user's search query produces no search results. */
 "map_controller.no_search_results_found" = "找不到搜尋結果。";
@@ -888,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ 僅在應用程式開啟時使用你的位置。你可以隨時在設定中變更此設定。";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "使用我的位置";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "查看你周圍的大眾運輸";
 
@@ -1040,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "行程問題";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "無法取得位置。請開啟定位服務以尋找附近路線。";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "無法連線至大眾運輸服務。";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "正在載入路線…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "附近找不到路線。";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "搜尋路線…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "選擇您的路線";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "無站點";
@@ -1429,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "設定提醒";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "接下來的離站班次";
 
@@ -1447,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "路線";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "隱藏已離站";
@@ -1559,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "時刻表資料";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "步行 %d 分鐘";
@@ -2414,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "大眾運輸";
 
@@ -2444,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "提供給支援團隊";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "App";
@@ -2493,3 +2428,54 @@
 "stop_page.toolbar.refresh.hint" = "重新整理抵達時間。";
 "stop_page.toolbar.refresh.updating_hint" = "抵達時間正在更新。";
 "stop_page.toolbar.schedules.hint" = "顯示此站牌的時刻表。";
+
+/* Map sheet switch that lets the app offer to track the trip the rider seems to be riding. */
+"map_sheet.trip_suggestions" = "行程建議";
+
+/* Footer under the Trip Suggestions switch in the Map sheet. */
+"map_sheet.trip_suggestions_footer" = "搭乘公車時提議追蹤你的行程。需要準確位置。";
+
+/* Title of the map card that asks whether the rider is on a particular bus route. %@ is the route's short name, e.g. 'On Route 10?' */
+"trip_suggestion.title_one_fmt" = "在 %@ 路線上嗎？";
+
+/* Title of the map card shown when the rider seems to be on one of several buses moving with them. */
+"trip_suggestion.title_several_buses" = "在公車上嗎？";
+
+/* Title of the map card shown when the rider seems to be on one of several transit vehicles of different kinds (e.g. a bus and a streetcar) moving with them. */
+"trip_suggestion.title_several_vehicles" = "在交通工具上嗎？";
+
+/* Subtitle naming where the suggested trip goes. %@ is the trip's headsign, e.g. 'To Capitol Hill'. */
+"trip_suggestion.destination_fmt" = "往%@";
+
+/* Button on the trip suggestion card that opens the suggested trip. */
+"trip_suggestion.track_trip" = "追蹤行程";
+
+/* Button on the trip suggestion card that lists the buses the rider might be on. */
+"trip_suggestion.choose_bus" = "選擇公車";
+
+/* Button on the trip suggestion card that lists the vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_vehicle" = "選擇車輛";
+
+/* Title of the sheet listing the buses the rider might be on. */
+"trip_suggestion.choose_title_bus" = "選擇公車";
+
+/* Title of the sheet listing the transit vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_title_vehicle" = "選擇車輛";
+
+/* A route in the Choose a Bus list when its trip has no headsign. %@ is the route's short name. */
+"trip_suggestion.route_fmt" = "%@ 路線";
+
+/* A route in the Choose a Bus list. %1$@ is the route's short name, %2$@ the trip's headsign, e.g. 'Route 10 to Capitol Hill'. */
+"trip_suggestion.route_destination_fmt" = "%1$@ 路線往%2$@";
+
+/* A bus's fleet number in the Choose a Bus list, e.g. 'Bus 4521'. */
+"trip_suggestion.bus_number_fmt" = "公車 %@";
+
+/* A non-bus transit vehicle's fleet number in the Choose a Vehicle list, e.g. 'Vehicle 112'. */
+"trip_suggestion.vehicle_number_fmt" = "車輛 %@";
+
+/* How far the rider is from a vehicle in the Choose a Bus list. %@ is a distance, e.g. '30 m away'. */
+"trip_suggestion.distance_fmt" = "相距 %@";
+
+/* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
+"trip_suggestion.title_one_line_fmt" = "在 %@ 上嗎？";

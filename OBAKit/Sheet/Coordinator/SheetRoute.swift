@@ -219,8 +219,8 @@ nonisolated enum AppSheetRoute: SheetRouteable {
     // The convertible, not just its trip ID: the trip page's view model fetches
     // with the vehicle and service date as well, which an ID can't supply.
     case tripDetails(TripConvertible, destinationStopID: StopID? = nil)
-    case routePicker
-    case currentTrip(route: Route)
+    /// Choose a Bus: the vehicles a trip suggestion found moving with the rider.
+    case tripSuggestions([TripSuggestionCandidate])
     case transitAlert(alertID: String)
     case rentalDetail(rentalID: VehicleRental.ID)
     case rentalCluster(memberIDs: [VehicleRental.ID])
@@ -262,7 +262,7 @@ nonisolated extension AppSheetRoute {
     var id: String {
         switch self {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
-             .routePicker, .more, .settings, .mapSettings:
+             .more, .settings, .mapSettings:
             return caseName
         case .stopDetails(let stopID, _):
             // Not the transfer context. A stop is one sheet however it was
@@ -295,8 +295,8 @@ nonisolated extension AppSheetRoute {
             // with a destination is distinguished from a bare trip.
             let destSuffix = destinationStopID.map { "-\($0)" } ?? ""
             return "\(caseName)-\(convertible.tripID)\(destSuffix)"
-        case .currentTrip(let route):
-            return "\(caseName)-\(route.id)"
+        case .tripSuggestions(let candidates):
+            return "\(caseName)-\(candidates.map(\.id).joined(separator: "_"))"
         case .transitAlert(let alertID):
             return "\(caseName)-\(alertID)"
         case .rentalDetail(let rentalID):
@@ -342,7 +342,7 @@ nonisolated extension AppSheetRoute {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll, .tripPlanner,
              .searchResults, .routeStops, .nearbyStops, .more:
             .grouped
-        case .stopDetails, .tripDetails, .routePicker, .currentTrip, .transitAlert, .rentalDetail,
+        case .stopDetails, .tripDetails, .tripSuggestions, .transitAlert, .rentalDetail,
              .rentalCluster, .onDemandService, .onDemandPicker, .mapItem, .settings:
             .plain
         // `MapSheetView.mapSheetBackground()`.
@@ -356,11 +356,11 @@ nonisolated extension AppSheetRoute {
     /// Detail destinations prefer the stacked layer so the base sheet peeks beneath.
     var prefersStacking: Bool {
         switch self {
-        case .stopDetails, .tripPlanner, .tripDetails, .currentTrip, .transitAlert, .more, .nearbyAll,
+        case .stopDetails, .tripPlanner, .tripDetails, .tripSuggestions, .transitAlert, .more, .nearbyAll,
              .recentStopsAll, .bookmarksAll, .settings, .mapSettings, .rentalDetail, .rentalCluster,
              .onDemandService, .onDemandPicker, .searchResults, .mapItem, .routeStops, .nearbyStops:
             return true
-        case .home, .search, .routePicker:
+        case .home, .search:
             return false
         }
     }
@@ -488,10 +488,18 @@ nonisolated extension AppSheetRoute {
                 initialDetent: .medium,
                 isDismissDisabled: false
             )
-        case .routePicker, .currentTrip, .transitAlert, .more, .settings:
+        case .transitAlert, .more, .settings:
             return SheetDetentConfiguration(
                 detents: [.medium, .large],
                 initialDetent: .large,
+                isDismissDisabled: false
+            )
+        case .tripSuggestions:
+            // `.medium`: the list is two or three rows, and the map above shows
+            // the buses it names.
+            return SheetDetentConfiguration(
+                detents: [.medium, .large],
+                initialDetent: .medium,
                 isDismissDisabled: false
             )
         case .rentalDetail, .rentalCluster:

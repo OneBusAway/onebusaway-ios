@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "شكر وتقدير";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "جارٍ البحث عن مركبتك…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "على بُعد %@";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "تعذّر الاتصال بخدمة النقل.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "الموقع غير متاح. يُرجى تفعيل خدمات الموقع.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "تم العثور على عدة مركبات";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "رحلتي";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "لا يتوفر تتبّع في الوقت الفعلي لهذا الخط";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "لم يتم العثور على مركبة نشطة على هذا الخط بالقرب منك";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "إعادة المحاولة";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "العنوان الجذري لخادم API الخاص بالمنطقة، بدون جزء \"/api/where\" الذي تتم إضافته تلقائيًا. من المفترض استخدام \"https://\".";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "إزالة الوجهة";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "معرّف المحطة";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "ينسخ معرّف المحطة.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(بدون مجموعة)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "يُرجى السماح للتطبيق بالوصول إلى موقعك لتسهيل العثور على مواقف النقل القريبة منك.";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "مرحبًا!";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "التفعيل من الإعدادات";
@@ -550,9 +519,6 @@
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "قياسية";
-
-/* Accessibility label for the My Trip button on the map toolbar. */
-"map_controller.my_trip_button" = "رحلتي";
 
 /* A generic message shown when the user's search query produces no search results. */
 "map_controller.no_search_results_found" = "لم يتم العثور على نتائج بحث.";
@@ -888,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "يستخدم %@ موقعك فقط أثناء فتح التطبيق. يمكنك تغيير ذلك في أي وقت من الإعدادات.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "استخدام موقعي";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "شاهد وسائل النقل من حولك";
 
@@ -1040,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "مشكلة في رحلة";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "الموقع غير متاح. يُرجى تفعيل خدمات الموقع للعثور على الخطوط القريبة.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "تعذّر الاتصال بخدمة النقل.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "جارٍ تحميل الخطوط…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "لم يتم العثور على خطوط قريبة.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "البحث في الخطوط…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "اختر خطك";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "لا توجد محطات";
@@ -1429,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "ضبط تذكير";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "المغادرات التالية";
 
@@ -1447,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "الخط";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "إخفاء السابقة";
@@ -1559,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "بيانات الجدول";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d د مشيًا";
@@ -2414,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "النقل العام";
 
@@ -2444,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "لفريق الدعم";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "التطبيق";
@@ -2493,3 +2428,54 @@
 "stop_page.toolbar.refresh.hint" = "يحدّث أوقات الوصول.";
 "stop_page.toolbar.refresh.updating_hint" = "يجري حالياً تحديث أوقات الوصول.";
 "stop_page.toolbar.schedules.hint" = "يعرض جداول المواعيد لهذا الموقف.";
+
+/* Map sheet switch that lets the app offer to track the trip the rider seems to be riding. */
+"map_sheet.trip_suggestions" = "اقتراحات الرحلات";
+
+/* Footer under the Trip Suggestions switch in the Map sheet. */
+"map_sheet.trip_suggestions_footer" = "يعرض تتبع رحلتك عندما تكون في حافلة. يتطلب الموقع الدقيق.";
+
+/* Title of the map card that asks whether the rider is on a particular bus route. %@ is the route's short name, e.g. 'On Route 10?' */
+"trip_suggestion.title_one_fmt" = "على الخط %@؟";
+
+/* Title of the map card shown when the rider seems to be on one of several buses moving with them. */
+"trip_suggestion.title_several_buses" = "في حافلة؟";
+
+/* Title of the map card shown when the rider seems to be on one of several transit vehicles of different kinds (e.g. a bus and a streetcar) moving with them. */
+"trip_suggestion.title_several_vehicles" = "في مركبة؟";
+
+/* Subtitle naming where the suggested trip goes. %@ is the trip's headsign, e.g. 'To Capitol Hill'. */
+"trip_suggestion.destination_fmt" = "إلى %@";
+
+/* Button on the trip suggestion card that opens the suggested trip. */
+"trip_suggestion.track_trip" = "تتبع الرحلة";
+
+/* Button on the trip suggestion card that lists the buses the rider might be on. */
+"trip_suggestion.choose_bus" = "اختيار الحافلة";
+
+/* Button on the trip suggestion card that lists the vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_vehicle" = "اختيار المركبة";
+
+/* Title of the sheet listing the buses the rider might be on. */
+"trip_suggestion.choose_title_bus" = "اختر حافلة";
+
+/* Title of the sheet listing the transit vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_title_vehicle" = "اختر مركبة";
+
+/* A route in the Choose a Bus list when its trip has no headsign. %@ is the route's short name. */
+"trip_suggestion.route_fmt" = "الخط %@";
+
+/* A route in the Choose a Bus list. %1$@ is the route's short name, %2$@ the trip's headsign, e.g. 'Route 10 to Capitol Hill'. */
+"trip_suggestion.route_destination_fmt" = "الخط %1$@ إلى %2$@";
+
+/* A bus's fleet number in the Choose a Bus list, e.g. 'Bus 4521'. */
+"trip_suggestion.bus_number_fmt" = "الحافلة %@";
+
+/* A non-bus transit vehicle's fleet number in the Choose a Vehicle list, e.g. 'Vehicle 112'. */
+"trip_suggestion.vehicle_number_fmt" = "المركبة %@";
+
+/* How far the rider is from a vehicle in the Choose a Bus list. %@ is a distance, e.g. '30 m away'. */
+"trip_suggestion.distance_fmt" = "على بعد %@";
+
+/* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
+"trip_suggestion.title_one_line_fmt" = "على %@؟";

@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "크레딧";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "차량을 찾는 중…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "%@ 거리";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "대중교통 서비스에 연결할 수 없습니다.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "위치를 사용할 수 없습니다. 위치 서비스를 활성화해 주세요.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "여러 대의 차량을 찾았습니다";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "내 여정";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "이 노선에는 실시간 추적 정보가 없습니다";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "주변에서 이 노선의 운행 중인 차량을 찾을 수 없습니다";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "다시 시도";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "지역 API 서버의 루트 주소이며, \"/api/where\" 부분은 자동으로 추가되므로 제외합니다. \"https://\"가 기본으로 적용됩니다.";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "목적지 삭제";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "정류장 ID";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "정류장 ID를 복사합니다.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(그룹 없음)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "대중교통 정류장을 더 쉽게 찾을 수 있도록 앱이 사용자의 위치에 접근하도록 허용해 주세요.";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "환영합니다!";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "설정에서 켜기";
@@ -550,9 +519,6 @@
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "표준";
-
-/* Accessibility label for the My Trip button on the map toolbar. */
-"map_controller.my_trip_button" = "내 여정";
 
 /* A generic message shown when the user's search query produces no search results. */
 "map_controller.no_search_results_found" = "검색 결과가 없습니다.";
@@ -888,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@은(는) 앱이 열려 있는 동안에만 위치 정보를 사용합니다. 설정에서 언제든지 변경할 수 있습니다.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "내 위치 사용";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "주변 대중교통 보기";
 
@@ -1040,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "운행 관련 문제";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "위치를 사용할 수 없습니다. 주변 노선을 찾으려면 위치 서비스를 활성화해 주세요.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "대중교통 서비스에 연결할 수 없습니다.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "노선을 불러오는 중…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "주변에서 노선을 찾을 수 없습니다.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "노선 검색…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "노선 선택";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "정류장 없음";
@@ -1429,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "미리 알림 설정";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "다음 출발";
 
@@ -1447,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "노선";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "지난 출발 숨기기";
@@ -1559,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "시간표 기준";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "도보 %d분";
@@ -2414,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "대중교통";
 
@@ -2444,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "지원팀용 정보";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "앱";
@@ -2493,3 +2428,54 @@
 "stop_page.toolbar.refresh.hint" = "도착 시간을 새로고침합니다.";
 "stop_page.toolbar.refresh.updating_hint" = "현재 도착 시간을 업데이트하고 있습니다.";
 "stop_page.toolbar.schedules.hint" = "이 정류장의 시간표를 표시합니다.";
+
+/* Map sheet switch that lets the app offer to track the trip the rider seems to be riding. */
+"map_sheet.trip_suggestions" = "여정 제안";
+
+/* Footer under the Trip Suggestions switch in the Map sheet. */
+"map_sheet.trip_suggestions_footer" = "버스에 타고 있을 때 여정 추적을 제안합니다. 정확한 위치가 필요합니다.";
+
+/* Title of the map card that asks whether the rider is on a particular bus route. %@ is the route's short name, e.g. 'On Route 10?' */
+"trip_suggestion.title_one_fmt" = "%@번 노선에 탑승 중이신가요?";
+
+/* Title of the map card shown when the rider seems to be on one of several buses moving with them. */
+"trip_suggestion.title_several_buses" = "버스에 탑승 중이신가요?";
+
+/* Title of the map card shown when the rider seems to be on one of several transit vehicles of different kinds (e.g. a bus and a streetcar) moving with them. */
+"trip_suggestion.title_several_vehicles" = "대중교통에 탑승 중이신가요?";
+
+/* Subtitle naming where the suggested trip goes. %@ is the trip's headsign, e.g. 'To Capitol Hill'. */
+"trip_suggestion.destination_fmt" = "%@ 방면";
+
+/* Button on the trip suggestion card that opens the suggested trip. */
+"trip_suggestion.track_trip" = "여정 추적";
+
+/* Button on the trip suggestion card that lists the buses the rider might be on. */
+"trip_suggestion.choose_bus" = "버스 선택";
+
+/* Button on the trip suggestion card that lists the vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_vehicle" = "차량 선택";
+
+/* Title of the sheet listing the buses the rider might be on. */
+"trip_suggestion.choose_title_bus" = "버스 선택";
+
+/* Title of the sheet listing the transit vehicles, of more than one kind, the rider might be on. */
+"trip_suggestion.choose_title_vehicle" = "차량 선택";
+
+/* A route in the Choose a Bus list when its trip has no headsign. %@ is the route's short name. */
+"trip_suggestion.route_fmt" = "%@번 노선";
+
+/* A route in the Choose a Bus list. %1$@ is the route's short name, %2$@ the trip's headsign, e.g. 'Route 10 to Capitol Hill'. */
+"trip_suggestion.route_destination_fmt" = "%1$@번 노선 %2$@ 방면";
+
+/* A bus's fleet number in the Choose a Bus list, e.g. 'Bus 4521'. */
+"trip_suggestion.bus_number_fmt" = "버스 %@";
+
+/* A non-bus transit vehicle's fleet number in the Choose a Vehicle list, e.g. 'Vehicle 112'. */
+"trip_suggestion.vehicle_number_fmt" = "차량 %@";
+
+/* How far the rider is from a vehicle in the Choose a Bus list. %@ is a distance, e.g. '30 m away'. */
+"trip_suggestion.distance_fmt" = "%@ 거리";
+
+/* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
+"trip_suggestion.title_one_line_fmt" = "%@에 탑승 중이신가요?";

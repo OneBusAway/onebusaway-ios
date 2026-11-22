@@ -876,25 +876,26 @@ final class SheetCoordinatorTests {
     /// Restoring the current base route while stacked sheets are open unwinds stacked sheets
     /// and preserves the base sheet's saved detent instead of resetting it to initialDetent.
     @Test func `Restore route preserves base sheet detent when unwinding stacked sheets over current base route`() {
-        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
-        let stop1 = AppSheetRoute.stopDetails(stopID: "stop_1")
+        // No app route is a non-root base sheet with more than one detent, so a
+        // stand-in exercises the path.
+        let coordinator = SheetCoordinator<BaseAndDetailRoute>(root: .root)
 
         // Push non-stacking base route with initial detent .large
-        coordinator.push(.routePicker)
-        #expect(coordinator.currentRoute == .routePicker)
+        coordinator.push(.base)
+        #expect(coordinator.currentRoute == .base)
         #expect(coordinator.currentDetent == .large)
 
         // Change detent to .medium
         coordinator.currentDetent = .medium
 
         // Stacking over base route rests base sheet and saves its detent (.medium)
-        coordinator.push(stop1)
-        #expect(coordinator.stackedRoutes == [stop1])
+        coordinator.push(.detail)
+        #expect(coordinator.stackedRoutes == [.detail])
 
-        // Restoring .routePicker uncovers base route and restores its saved detent
-        coordinator.restoreRoute(.routePicker)
+        // Restoring .base uncovers base route and restores its saved detent
+        coordinator.restoreRoute(.base)
         #expect(coordinator.stackedRoutes.isEmpty)
-        #expect(coordinator.currentRoute == .routePicker)
+        #expect(coordinator.currentRoute == .base)
         #expect(coordinator.currentDetent == .medium)
     }
 
@@ -924,4 +925,20 @@ final class SheetCoordinatorTests {
             #expect(coordinator.stackedDetents.count == 1)
         }
     }
+}
+
+/// A root, a non-stacking base sheet that opens large and can be dragged to medium,
+/// and a stacked detail.
+private nonisolated enum BaseAndDetailRoute: String, SheetRouteable {
+    case root, base, detail
+
+    var id: String { rawValue }
+
+    var detentConfiguration: SheetDetentConfiguration {
+        SheetDetentConfiguration(detents: [.medium, .large], initialDetent: self == .root ? .medium : .large, isDismissDisabled: false)
+    }
+
+    var prefersStacking: Bool { self == .detail }
+
+    var sheetBackground: SheetBackground { .plain }
 }

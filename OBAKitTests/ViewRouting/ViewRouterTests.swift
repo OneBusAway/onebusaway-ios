@@ -140,56 +140,6 @@ final class ViewRouterTests: OBATestCase {
 
     // MARK: - Trip entry points
 
-    /// Two arrivals at stop 1_1121 on different trips, with their references loaded.
-    private func makeArrivals() throws -> [ArrivalDeparture] {
-        let stopArrivals = try Fixtures.loadRESTAPIPayload(
-            type: StopArrivals.self,
-            fileName: "arrivals-and-departures_1_1121.json"
-        )
-        let arrivals = Array(stopArrivals.arrivalsAndDepartures.prefix(2))
-        #expect(arrivals.count == 2)
-        #expect(arrivals.first?.tripID != arrivals.last?.tripID)
-        return arrivals
-    }
-
-    /// My Trip found the rider's vehicle: the trip replaces My Trip on the stack,
-    /// so Back returns to the route picker.
-    @Test func `My Trip's single match opens the trip map host in its place`() async throws {
-        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
-        let arrival = try #require(try makeArrivals().first)
-        let picker = UIViewController()
-        let currentTrip = CurrentTripViewController(application: application, route: arrival.route)
-        let navigation = UINavigationController(rootViewController: picker)
-        navigation.pushViewController(currentTrip, animated: false)
-        currentTrip.loadViewIfNeeded()
-
-        currentTrip.viewModel.handle(results: [NearbyTripMatcher.MatchResult(arrivalDeparture: arrival, distanceFromUser: 40)])
-        await poll(until: { navigation.viewControllers.last is TripMapHostViewController }, "My Trip never opened the trip")
-
-        #expect(navigation.viewControllers.count == 2)
-        #expect(navigation.viewControllers.first === picker)
-        let host = try #require(navigation.viewControllers.last as? TripMapHostViewController)
-        #expect(host.tripPage.viewModel.tripConvertible.tripID == arrival.tripID)
-    }
-
-    /// Several vehicles on the route: the rider picks one from the list.
-    @Test func `My Trip's chosen match pushes the trip map host`() throws {
-        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
-        let arrivals = try makeArrivals()
-        let currentTrip = CurrentTripViewController(application: application, route: arrivals[0].route)
-        let navigation = UINavigationController(rootViewController: currentTrip)
-        currentTrip.loadViewIfNeeded()
-
-        currentTrip.viewModel.handle(results: arrivals.map { NearbyTripMatcher.MatchResult(arrivalDeparture: $0, distanceFromUser: 40) })
-        let rows = try #require(currentTrip.items(for: OBAListView()).first?.contents)
-        let second = try #require(rows.last)
-        let select = try #require(second.onSelectAction)
-        select(second)
-
-        let host = try #require(navigation.viewControllers.last as? TripMapHostViewController)
-        #expect(host.tripPage.viewModel.tripConvertible.tripID == arrivals[1].tripID)
-    }
-
     /// Searching the map for a vehicle number opens that vehicle's trip.
     @Test func `A vehicle search result pushes the trip map host`() async throws {
         let dataLoader = MockDataLoader(testName: "ViewRouterTests")

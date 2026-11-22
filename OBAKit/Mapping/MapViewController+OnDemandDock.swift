@@ -96,7 +96,7 @@ extension MapViewController {
 
     /// The planner card rises from the half-height planner toward the top of
     /// the screen; at compact width it spans the map, so it stops below the
-    /// map controls instead of covering Layers and My Trip.
+    /// map controls instead of covering them.
     private func plannerCardCeilsAtToolbar(for placement: OnDemandDockPlacement) -> Bool {
         placement == .compact && !toolbar.isHidden
     }
