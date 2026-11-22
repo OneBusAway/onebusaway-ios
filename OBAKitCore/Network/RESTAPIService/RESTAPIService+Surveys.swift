@@ -32,7 +32,7 @@ extension RESTAPIService {
             throw APIError.surveyServiceNotConfigured
         }
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
@@ -49,7 +49,7 @@ extension RESTAPIService {
             throw APIError.surveyServiceNotConfigured
         }
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 

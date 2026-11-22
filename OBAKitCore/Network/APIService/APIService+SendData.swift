@@ -15,20 +15,30 @@ extension APIService {
     /// - Parameters:
     ///   - url: The endpoint URL.
     ///   - data: The Encodable body to send.
+    ///   - timeoutPolicy: The timeout policy for the request (defaults to `.submission`, 15 seconds).
     /// - Returns: A decoded response of type `Response`.
     /// - Throws: `APIError` if the network request fails or decoding fails.
-    nonisolated public func postData<Data: Encodable, Response: Decodable>(url: URL, data: Data) async throws -> Response {
-        try await sendData(url: url, method: .post, body: data)
+    nonisolated public func postData<Data: Encodable, Response: Decodable>(
+        url: URL,
+        data: Data,
+        timeoutPolicy: RequestTimeoutPolicy = .submission
+    ) async throws -> Response {
+        try await sendData(url: url, method: .post, body: data, timeoutPolicy: timeoutPolicy)
     }
 
     /// Sends a PUT request to the given URL with the provided Encodable body.
     /// - Parameters:
     ///   - url: The endpoint URL.
     ///   - data: The Encodable body to update.
+    ///   - timeoutPolicy: The timeout policy for the request (defaults to `.submission`, 15 seconds).
     /// - Returns: A decoded response of type `Response`.
     /// - Throws: `APIError` if the network request fails or decoding fails.
-    nonisolated public func updateData<Data: Encodable, Response: Decodable>(url: URL, data: Data) async throws -> Response {
-        try await sendData(url: url, method: .put, body: data)
+    nonisolated public func updateData<Data: Encodable, Response: Decodable>(
+        url: URL,
+        data: Data,
+        timeoutPolicy: RequestTimeoutPolicy = .submission
+    ) async throws -> Response {
+        try await sendData(url: url, method: .put, body: data, timeoutPolicy: timeoutPolicy)
     }
 
     /// Sends an encoded request body using the specified HTTP method and decodes the response.
@@ -36,14 +46,21 @@ extension APIService {
     ///   - url: The endpoint URL.
     ///   - method: The HTTP method to use (e.g., POST, PUT).
     ///   - body: The `Encodable` payload to send.
+    ///   - timeoutPolicy: The timeout policy for the request.
     /// - Returns: The decoded response of type `Response`.
     /// - Throws: `APIError` for network or decoding failures.
-    nonisolated private func sendData<Data: Encodable, Response: Decodable>(url: URL, method: HTTPMethod, body: Data) async throws -> Response {
+    nonisolated private func sendData<Data: Encodable, Response: Decodable>(
+        url: URL,
+        method: HTTPMethod,
+        body: Data,
+        timeoutPolicy: RequestTimeoutPolicy = .submission
+    ) async throws -> Response {
+        try Task.checkCancellation()
 
         let encoder = JSONEncoder()
         let requestData = try encoder.encode(body)
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: timeoutPolicy.interval)
         request.httpMethod = method.value
         request.httpBody = requestData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -24,6 +24,35 @@ extension APIService {
     public var retryPolicy: RetryPolicy { .disabled }
 }
 
+/// Typed timeout policies for `APIService` operations.
+public enum RequestTimeoutPolicy: Sendable, Equatable {
+    /// Interactive requests expected to complete quickly (e.g. arrivals, stops, routes, weather, alerts). 10 seconds.
+    case interactive
+
+    /// Form or reporting submissions (e.g. problem reports, survey responses, alarms, payment intents, ghost bus reports, push registrations, live activities). 15 seconds.
+    case submission
+
+    /// Large or batch data sync operations (e.g. bulk stops-for-agency download). 60 seconds.
+    case batch
+
+    /// Custom timeout interval.
+    case custom(TimeInterval)
+
+    /// Timeout interval in seconds.
+    public var interval: TimeInterval {
+        switch self {
+        case .interactive:
+            return 10.0
+        case .submission:
+            return 15.0
+        case .batch:
+            return 60.0
+        case .custom(let interval):
+            return interval
+        }
+    }
+}
+
 public struct APIServiceConfiguration: Sendable {
     let baseURL: URL
     let apiKey: String
