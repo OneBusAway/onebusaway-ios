@@ -152,6 +152,20 @@ final class RegionsFileStorageTests {
         #expect(loaded.first?.name == validRegion.name)
     }
 
+    // MARK: - Concurrency
+
+    @Test func `RegionsFileStorage can be transferred to detached task`() async throws {
+        let validRegion = Fixtures.customMinneapolisRegion
+        try storage.saveDefaultRegions([validRegion])
+
+        let sendableStorage: any RegionsFileStorageProtocol = storage
+        let loaded = try await Task.detached {
+            try sendableStorage.loadDefaultRegions()
+        }.value
+
+        #expect(loaded?.first?.name == validRegion.name)
+    }
+
     // MARK: - Helpers
 
     private func defaultRegionsFileURL() throws -> URL {

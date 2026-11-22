@@ -12,7 +12,7 @@ import Foundation
 // MARK: - Protocol
 
 /// Provides file-based persistence for region data.
-public protocol RegionsFileStorageProtocol {
+public protocol RegionsFileStorageProtocol: Sendable {
     /// Loads downloaded/server-refreshed regions from disk.
     /// Returns `nil` if no file exists yet.
     func loadDefaultRegions() throws -> [Region]?
@@ -37,9 +37,9 @@ public protocol RegionsFileStorageProtocol {
 // MARK: - Implementation
 
 /// File-based storage for region data.
-public final class RegionsFileStorage: RegionsFileStorageProtocol {
+public final class RegionsFileStorage: RegionsFileStorageProtocol, Sendable {
 
-    private let fileManager: FileManager
+    nonisolated(unsafe) private let fileManager: FileManager
 
     public init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
