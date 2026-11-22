@@ -46,7 +46,8 @@ final class MapItemSheetViewTests: OBATestCase {
             tripPlannerMapDisplayModel: TripPlannerMapDisplayModel(),
             tripFocusMapDisplayModel: TripFocusMapDisplayModel(userLocation: { nil }),
             stopFocusMapDisplayModel: StopFocusMapDisplayModel(shapeCache: ShapeCache { _ in "" }, formatters: application.formatters),
-            onDemandProbeController: probeController ?? OnDemandProbeController.make(application: application)
+            onDemandProbeController: probeController ?? OnDemandProbeController.make(application: application),
+            tripSuggestions: TripSuggestionController(locationService: application.locationService, userDefaults: application.userDefaults, dataSource: { nil })
         )
     }
 

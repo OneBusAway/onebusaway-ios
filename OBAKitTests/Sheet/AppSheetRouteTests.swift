@@ -582,6 +582,26 @@ final class AppSheetRouteTests {
         #expect(!AppSheetRoute.search.isStopDetails)
     }
 
+    // MARK: - Trip suggestions
+
+    private func suggestionCandidate(_ id: String) -> TripSuggestionCandidate {
+        TripSuggestionCandidate(
+            id: id, tripID: "trip_\(id)", vehicleID: id, routeShortName: "10", headsign: nil,
+            routeType: .bus, agencyName: nil, routeColor: nil, routeTextColor: nil, serviceDate: nil,
+            sighting: VehicleSighting(coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3), fixTime: Date(), heading: nil),
+            arrivalDeparture: nil
+        )
+    }
+
+    @Test func `Choose a Bus is a stacked medium sheet keyed on its vehicles`() {
+        let route = AppSheetRoute.tripSuggestions([suggestionCandidate("1_4521"), suggestionCandidate("1_3807")])
+        #expect(route.id == "tripSuggestions-1_4521_1_3807")
+        #expect(route.prefersStacking)
+        #expect(route.detentConfiguration.detents == [.medium, .large])
+        #expect(route.detentConfiguration.initialDetent == .medium)
+        #expect(route.sheetBackground == .plain)
+    }
+
     // MARK: - Exhaustiveness guard
 
     /// Adding a new `AppSheetRoute` case must fail to compile here, forcing
@@ -590,7 +610,7 @@ final class AppSheetRouteTests {
         switch route {
         case .home, .search, .nearbyAll, .recentStopsAll, .bookmarksAll,
              .stopDetails, .tripPlanner, .tripDetails, .routePicker,
-             .currentTrip, .transitAlert, .more, .settings, .mapSettings,
+             .currentTrip, .tripSuggestions, .transitAlert, .more, .settings, .mapSettings,
              .rentalDetail, .rentalCluster, .onDemandService, .onDemandPicker,
              .searchResults, .mapItem, .routeStops, .nearbyStops:
             break

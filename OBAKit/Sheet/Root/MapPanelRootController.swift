@@ -71,7 +71,8 @@ public final class MapPanelRootController: UIViewController {
             tripPlannerMapDisplayModel: tripPlannerMapDisplayModel,
             tripFocusMapDisplayModel: tripFocusMapDisplayModel,
             stopFocusMapDisplayModel: stopFocusMapDisplayModel,
-            onDemandProbeController: probeController
+            onDemandProbeController: probeController,
+            tripSuggestions: Self.makeTripSuggestionController(application: application)
         )
         let rootView = MapPanelRootView(
             application: application,
@@ -94,6 +95,17 @@ public final class MapPanelRootController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         self.bridge.host = self
         self.application.viewRouter.register(mapPanelRootController: self)
+    }
+
+    /// The API service is read per search because it changes with the region.
+    private static func makeTripSuggestionController(application: Application) -> TripSuggestionController {
+        TripSuggestionController(
+            locationService: application.locationService,
+            userDefaults: application.userDefaults,
+            dataSource: { [weak application] in
+                application?.apiService.map { RESTTripSuggestionDataSource(apiService: $0) }
+            }
+        )
     }
 
     /// The rider's location only frames the trip when the app may use it.

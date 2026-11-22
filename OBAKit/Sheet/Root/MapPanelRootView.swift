@@ -68,7 +68,7 @@ struct MapPanelBottomPadding {
 
     /// Minimum bottom padding floor (in points) applied to the map at collapsed sheet detents
     /// to ensure Apple's logo and Legal link remain completely visible and tappable above
-    /// floating controls (such as `MyTripButton`).
+    /// floating controls (such as the current-location button).
     static let minimumPaddingFloor: CGFloat = 180
 
     /// Calculates effective bottom safe area padding for the map given the
@@ -263,6 +263,8 @@ struct MapPanelRootView: View {
     @State private var homeSheetMetrics = HomeSheetMetrics()
     @State private var toolbarsAnimationDuration: CGFloat = 0
     @State private var toolbarsOpacity: CGFloat = 1
+    /// The trip suggestion card's height; zero while it's hidden.
+    @State private var tripSuggestionHeight: CGFloat = 0
 
     @State private var halfScreenHeight: CGFloat = 350
 
@@ -715,11 +717,11 @@ struct MapPanelRootView: View {
                 moreButton
             }
         }
-        .overlay(alignment: .bottomLeading) {
-            myTripButton
-        }
         .overlay(alignment: .bottom) {
             onDemandDock
+        }
+        .overlay(alignment: .top) {
+            tripSuggestionOverlay
         }
         .onChange(of: sheetRoutes.map(\.id)) { _, _ in
             // The focus hides the dock, and leaving the bar drops the highlight;
@@ -1113,8 +1115,9 @@ struct MapPanelRootView: View {
                 isWeatherPopupPresented = true
             }
             .padding(ThemeMetrics.controllerMargin)
-            .padding(.top, pillHeight)
+            .padding(.top, pillHeight + tripSuggestionLift)
             .animation(.smooth(duration: 0.3), value: pillHeight)
+            .animation(.smooth(duration: 0.3), value: tripSuggestionLift)
         }
     }
 
@@ -1443,15 +1446,6 @@ extension MapPanelRootView {
         .animation(.smooth(duration: 0.3), value: pillHeight)
     }
 
-    private var myTripButton: some View {
-        MyTripButton {
-            pushUnlessOnTop(.routePicker)
-        }
-        .padding(.leading, ThemeMetrics.controllerMargin)
-        .padding(.bottom, controlsDockOffset)
-        .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
-    }
-
     private var currentLocationButton: some View {
         CurrentLocationButton(
             isVisible: application.locationService.isLocationUseAuthorized,
@@ -1460,6 +1454,43 @@ extension MapPanelRootView {
         .padding(.trailing, ThemeMetrics.controllerMargin)
         .padding(.bottom, controlsDockOffset)
         .floatingOverSheet(height: sheetHeight, opacity: toolbarsOpacity, duration: toolbarsAnimationDuration)
+    }
+
+    // MARK: - Trip suggestion
+
+    /// Moves the weather button down below a showing suggestion card. At regular
+    /// width the card is centered and narrow, clear of the leading corner.
+    private var tripSuggestionLift: CGFloat {
+        guard horizontalSizeClass != .regular, tripSuggestionHeight > 0 else { return 0 }
+        return tripSuggestionHeight + ThemeMetrics.padding
+    }
+
+    /// Suggestions show only over the home sheet: any other sheet is the rider
+    /// doing something else, and a stop or trip page already covers the map.
+    /// Not `scenePhase`: in this hosting controller it can stay `.background` with
+    /// the app in front. The controller checks the application state itself.
+    private var isTripSuggestionActive: Bool {
+        coordinator.currentRoute == .home && coordinator.stackedRoutes.isEmpty
+    }
+
+    private var tripSuggestionOverlay: some View {
+        TripSuggestionOverlay(
+            controller: factory.tripSuggestions,
+            isActive: isTripSuggestionActive,
+            onTrack: factory.trackTripSuggestion,
+            onChoose: { candidates in
+                // Dismissed as it opens: backing out of Choose a Bus is a no.
+                factory.tripSuggestions.dismiss()
+                coordinator.push(.tripSuggestions(candidates))
+            },
+            onHeightChange: { tripSuggestionHeight = $0 }
+        )
+        // At the top, under the status pill: clear of the sheet at every detent,
+        // and of a regular-width side panel when centered.
+        .frame(maxWidth: horizontalSizeClass == .regular ? OnDemandDockPlacement.floatingMaxWidth : .infinity)
+        .padding(.horizontal, ThemeMetrics.controllerMargin)
+        .padding(.top, ThemeMetrics.padding + pillHeight)
+        .animation(.smooth(duration: 0.3), value: pillHeight)
     }
 
     private var controlsDockOffset: CGFloat {

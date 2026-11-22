@@ -93,6 +93,7 @@
         "settings_controller.walking_directions.google",
         "trip_page.bookmark",
         "trip_status_annotation.title_fmt",
+        "trip_suggestion.bus_number_fmt",
         "vehicle_problem_controller.on_vehicle_section.vehicle_id_title",
         "weather.condition.sleet"
       ],
@@ -114,7 +115,8 @@
         "schedule_view.direction_number_fmt",
         "settings_controller.walking_directions.google",
         "stop_schedule_view.date",
-        "survey_vc.questions_section_title"
+        "survey_vc.questions_section_title",
+        "trip_suggestion.bus_number_fmt"
       ],
       "it": [
         "home_sheet.tab.home",
