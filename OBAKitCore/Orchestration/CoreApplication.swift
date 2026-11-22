@@ -197,20 +197,18 @@ open class CoreApplication: NSObject,
         scheduler.schedule(regionID: regionID, using: apiService)
     }
 
-    /// Purges cached stops older than 30 days for the current region.
+    /// Prunes expired stops across all cached regions, clears retired regions,
+    /// and vacuums the freelist.
     /// Called during `refreshServices()` (app launch and region change).
     private func purgeStaleStopCache() {
         guard let repository = stopCacheRepository else {
             return
         }
         let currentRegionID = currentRegion?.regionIdentifier
-        let knownRegionIDs: Set<Int>?
-        if regionsService.canTrustRegionsList {
-            let all = regionsService.allRegions
-            knownRegionIDs = all.isEmpty ? nil : Set(all.map(\.regionIdentifier))
-        } else {
-            knownRegionIDs = nil
-        }
+        // Nil when the regions list can't be trusted (or the custom-region
+        // file failed to load), so the prune never retires a region on the
+        // basis of a failed read.
+        let knownRegionIDs = regionsService.trustedKnownRegionIDs
         Task.detached(priority: .utility) {
             repository.pruneExpiredStops(
                 activeRegionID: currentRegionID,

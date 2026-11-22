@@ -15,7 +15,7 @@ import GRDB
 public final class StopCacheDatabase: Sendable {
 
     /// Default threshold of freelist pages before triggering incremental vacuum.
-    public static let defaultFreelistThreshold: Int = 50
+    static let defaultFreelistThreshold: Int = 50
 
     /// The underlying GRDB database queue for serialized access.
     let dbQueue: DatabaseQueue
@@ -78,10 +78,26 @@ public final class StopCacheDatabase: Sendable {
         return configuration
     }
 
+    /// How long to wait before retrying a failed `auto_vacuum` upgrade.
+    /// A failed `VACUUM` writes a temporary copy of the whole database each
+    /// time it runs, so retrying on every launch and region change is
+    /// expensive when the failure persists (e.g. insufficient disk space).
+    static let autoVacuumUpgradeRetryCooldown: TimeInterval = 24 * 60 * 60
+
+    /// UserDefaults key recording when the last `auto_vacuum` upgrade failed.
+    static let lastAutoVacuumUpgradeFailureKey = "OBAKitCore.StopCacheDatabase.lastAutoVacuumUpgradeFailure"
+
     /// Upgrades a database created with `auto_vacuum = NONE` to `INCREMENTAL`.
     /// Runs outside transactions; catches and logs any failure (e.g. insufficient disk space)
     /// without throwing so the database remains fully functional.
-    public func upgradeAutoVacuumIfNeeded() {
+    /// A failed upgrade is retried only after `autoVacuumUpgradeRetryCooldown`
+    /// has passed, so a persistent failure doesn't rewrite a temporary copy
+    /// of the whole database on every launch and region change.
+    func upgradeAutoVacuumIfNeeded() {
+        if let lastFailure = UserDefaults.standard.object(forKey: Self.lastAutoVacuumUpgradeFailureKey) as? Date,
+           Date().timeIntervalSince(lastFailure) < Self.autoVacuumUpgradeRetryCooldown {
+            return
+        }
         do {
             let autoVacuum = try dbQueue.read { db in
                 try Int.fetchOne(db, sql: "PRAGMA auto_vacuum") ?? 0
@@ -92,13 +108,16 @@ public final class StopCacheDatabase: Sendable {
                     try db.execute(sql: "VACUUM")
                 }
             }
+            // Success (or already upgraded): forget any recorded failure.
+            UserDefaults.standard.removeObject(forKey: Self.lastAutoVacuumUpgradeFailureKey)
         } catch {
             Logger.warn("Failed to upgrade auto_vacuum to INCREMENTAL: \(error)")
+            UserDefaults.standard.set(Date(), forKey: Self.lastAutoVacuumUpgradeFailureKey)
         }
     }
 
     /// The number of unused pages on the database freelist.
-    public var freelistCount: Int {
+    var freelistCount: Int {
         do {
             return try dbQueue.read { db in
                 try Int.fetchOne(db, sql: "PRAGMA freelist_count") ?? 0
@@ -111,13 +130,31 @@ public final class StopCacheDatabase: Sendable {
 
     /// Truncates up to `pages` unused pages from the freelist back to the operating system.
     /// If `pages` is nil, truncates all unused pages.
-    public func incrementalVacuum(pages: Int? = nil) throws {
+    func incrementalVacuum(pages: Int? = nil) throws {
         try dbQueue.writeWithoutTransaction { db in
             if let pages {
                 try db.execute(sql: "PRAGMA incremental_vacuum(\(pages))")
             } else {
                 try db.execute(sql: "PRAGMA incremental_vacuum")
             }
+        }
+    }
+
+    /// Pages freed per `incremental_vacuum` chunk.
+    static let incrementalVacuumChunkPages = 100
+
+    /// Truncates unused pages back to the operating system in bounded chunks,
+    /// releasing the database queue between chunks so other writers (e.g. the
+    /// map's cache save) can interleave instead of waiting behind one long
+    /// vacuum. Drains the freelist fully; each chunk frees at most
+    /// `incrementalVacuumChunkPages` pages.
+    func incrementalVacuumInChunks(pagesPerChunk: Int = incrementalVacuumChunkPages) throws {
+        while freelistCount > 0 {
+            let before = freelistCount
+            try incrementalVacuum(pages: pagesPerChunk)
+            // Stop if a chunk made no progress, so a freelist that can't
+            // shrink further doesn't spin.
+            if freelistCount >= before { break }
         }
     }
 

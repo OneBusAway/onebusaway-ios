@@ -381,6 +381,20 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         return regions + customRegions
     }
 
+    /// Region IDs the app knows about, or nil when the list can't be trusted.
+    /// Returns nil when the server list is untrusted or the custom-region file
+    /// failed to load, so callers never retire a region on the basis of a
+    /// failed read: a failed load looks like "no custom regions", and the
+    /// prune would then treat every custom region's cache, including the
+    /// selected one, as retired. One read decides both that custom regions
+    /// are readable and what they are, mirroring `clearRetiredRegionFallback`.
+    var trustedKnownRegionIDs: Set<Int>? {
+        guard canTrustRegionsList else { return nil }
+        guard let custom = try? fileStorage.loadCustomRegions() else { return nil }
+        let all = regions + custom
+        return all.isEmpty ? nil : Set(all.map(\.regionIdentifier))
+    }
+
     /// The user's most recent location, if available.
     public var currentLocation: CLLocation? {
         locationService.currentLocation

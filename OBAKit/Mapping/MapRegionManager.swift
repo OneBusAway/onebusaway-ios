@@ -1574,7 +1574,7 @@ extension MapRegionManager {
             }
 
             // Published before caching, so the pins aren't waiting on a SQLite write.
-            saveStopsToCache(stops)
+            await saveStopsToCache(stops)
         } catch {
             // A cancelled request isn't a failure. It arrives in more than one
             // shape — Swift's `CancellationError`, or a URLSession
@@ -1638,12 +1638,17 @@ extension MapRegionManager {
     }
 
     /// Persists `stops` to `StopCacheRepository` for offline use.
+    /// The write runs in a detached task, off the main actor: a long hold on
+    /// the shared database queue (e.g. behind a `VACUUM`) must not stall the
+    /// map. Callers await it, so `refreshStopCache` still writes before its
+    /// caller re-serves from the cache.
     /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
-    private func saveStopsToCache(_ stops: [Stop]) {
-        if let regionId = application.currentRegion?.regionIdentifier,
-           let repository = application.stopCacheRepository {
+    private func saveStopsToCache(_ stops: [Stop]) async {
+        guard let regionId = application.currentRegion?.regionIdentifier,
+              let repository = application.stopCacheRepository else { return }
+        await Task.detached(priority: .userInitiated) {
             repository.saveStops(stops, regionId: regionId)
-        }
+        }.value
     }
 
     /// Fetches stops, caches them, and returns the set so callers can publish it
@@ -1651,7 +1656,7 @@ extension MapRegionManager {
     /// `nil` when no API service is configured; rethrows network errors.
     private func refreshStopCache(in region: MKCoordinateRegion) async throws -> [Stop]? {
         guard let stops = try await fetchStops(in: region) else { return nil }
-        saveStopsToCache(stops)
+        await saveStopsToCache(stops)
         return stops
     }
 

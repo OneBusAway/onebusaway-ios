@@ -24,13 +24,19 @@ public final class StopCacheRepository: Sendable {
     // MARK: - Freshness
 
     /// Returns the set of distinct region IDs currently present in the cache.
-    public func cachedRegionIDs() -> Set<Int> {
+    /// Includes regions left with only route rows: without `cachedRoute` /
+    /// `cachedRouteSync` in the union, such a region would never be cleaned up.
+    func cachedRegionIDs() -> Set<Int> {
         do {
             return try database.dbQueue.read { db in
                 let sql = """
                 SELECT DISTINCT regionId FROM cachedStop
                 UNION
                 SELECT DISTINCT regionId FROM cachedStopSync
+                UNION
+                SELECT DISTINCT regionId FROM cachedRoute
+                UNION
+                SELECT DISTINCT regionId FROM cachedRouteSync
                 UNION
                 SELECT DISTINCT regionId FROM regionStopSync
                 """
@@ -521,7 +527,9 @@ public final class StopCacheRepository: Sendable {
         activeRegionID: Int?,
         olderThan date: Date = Date().addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval),
         knownRegionIDs: Set<Int>? = nil,
-        freelistPageThreshold: Int = StopCacheDatabase.defaultFreelistThreshold
+        // Matches StopCacheDatabase.defaultFreelistThreshold; a literal is used
+        // because a public function can't take its default from an internal constant.
+        freelistPageThreshold: Int = 50
     ) -> Bool {
         prune(
             activeRegionID: activeRegionID,
@@ -538,7 +546,7 @@ public final class StopCacheRepository: Sendable {
     /// Checks database freelistCount against threshold; triggers incrementalVacuum if >= threshold.
     /// - Returns: whether incremental vacuum was executed.
     @discardableResult
-    public func pruneInactiveRegions(
+    func pruneInactiveRegions(
         activeRegionID: Int? = nil,
         olderThan date: Date = Date().addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval),
         knownRegionIDs: Set<Int>? = nil,
@@ -592,7 +600,7 @@ public final class StopCacheRepository: Sendable {
         let freelist = database.freelistCount
         if freelist >= freelistPageThreshold {
             do {
-                try database.incrementalVacuum()
+                try database.incrementalVacuumInChunks()
                 return true
             } catch {
                 Logger.error("Failed to run incremental vacuum: \(error)")
@@ -647,21 +655,19 @@ public final class StopCacheRepository: Sendable {
 
     /// Deletes all cached stops and routes for a specific region, and forgets its
     /// sync, so the next sync starts over instead of trusting an emptied cache.
+    /// Rows are deleted in bounded batches so clearing a large retired region
+    /// doesn't hold the database queue for one long transaction; the sync
+    /// state is forgotten last, once its rows are gone.
     public func clearCache(regionId: Int) {
         do {
+            for table in ["cachedStop", "cachedRoute", "cachedStopSync", "cachedRouteSync"] {
+                try deleteRowidsInBatches(
+                    table: table,
+                    where: "regionId = ?",
+                    arguments: [regionId]
+                )
+            }
             try database.dbQueue.write { db in
-                _ = try CachedStop
-                    .filter(CachedStop.Columns.regionId == regionId)
-                    .deleteAll(db)
-                _ = try CachedRoute
-                    .filter(CachedRoute.Columns.regionId == regionId)
-                    .deleteAll(db)
-                _ = try StagedCachedStop
-                    .filter(StagedCachedStop.Columns.regionId == regionId)
-                    .deleteAll(db)
-                _ = try StagedCachedRoute
-                    .filter(StagedCachedRoute.Columns.regionId == regionId)
-                    .deleteAll(db)
                 _ = try RegionStopSyncState.deleteOne(db, key: regionId)
             }
         } catch {
