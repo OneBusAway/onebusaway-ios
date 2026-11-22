@@ -122,7 +122,7 @@ public class ScheduleForStop: NSObject, Identifiable, Decodable, HasReferences {
     }
 
     /// A single stop time entry in the stop schedule
-    public class StopScheduleStopTime: NSObject, Decodable {
+    public final class StopScheduleStopTime: NSObject, Decodable, @unchecked Sendable {
         /// The trip ID
         public let tripID: String
 

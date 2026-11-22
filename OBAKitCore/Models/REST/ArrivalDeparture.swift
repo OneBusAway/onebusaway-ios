@@ -41,10 +41,10 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     public let predicted: Bool
 
     /// Predicted arrival time. `nil` if no real-time information is available.
-    let predictedArrival: Date?
+    public let predictedArrival: Date?
 
     /// Predicted departure time. `nil` if no real-time information is available.
-    let predictedDeparture: Date?
+    public let predictedDeparture: Date?
 
     /// the route id for the arriving vehicle
     public let routeID: RouteID
@@ -59,10 +59,10 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     private let _routeShortName: String?
 
     /// The arrival date according to the schedule
-    let scheduledArrival: Date
+    public let scheduledArrival: Date
 
     /// The departure date according to the schedule
-    let scheduledDeparture: Date
+    public let scheduledDeparture: Date
 
     /// Time of midnight for start of the service date for the trip
     public let serviceDate: Date
@@ -132,6 +132,74 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         case tripID = "tripId"
         case tripStatus
         case vehicleID = "vehicleId"
+    }
+
+    public init(
+        arrivalEnabled: Bool = true,
+        blockTripSequence: Int = 0,
+        departureEnabled: Bool = true,
+        distanceFromStop: Double = 0.0,
+        frequency: Frequency? = nil,
+        lastUpdated: Date = Date(),
+        numberOfStopsAway: Int = 0,
+        predicted: Bool = false,
+        predictedArrival: Date? = nil,
+        predictedDeparture: Date? = nil,
+        routeID: RouteID,
+        route: Route? = nil,
+        routeLongName: String? = nil,
+        routeShortName: String? = nil,
+        scheduledArrival: Date,
+        scheduledDeparture: Date,
+        serviceDate: Date,
+        situationIDs: [String] = [],
+        serviceAlerts: [ServiceAlert] = [],
+        status: String = "default",
+        stopID: StopID,
+        stop: Stop? = nil,
+        stopSequence: Int = 0,
+        totalStopsInTrip: Int? = nil,
+        tripHeadsign: String? = nil,
+        tripID: TripIdentifier,
+        trip: Trip? = nil,
+        tripStatus: TripStatus? = nil,
+        vehicleID: String? = nil,
+        regionIdentifier: Int? = nil,
+        occupancyStatus: OccupancyStatus? = nil,
+        historicalOccupancyStatus: OccupancyStatus? = nil
+    ) {
+        self.arrivalEnabled = arrivalEnabled
+        self.blockTripSequence = blockTripSequence
+        self.departureEnabled = departureEnabled
+        self.distanceFromStop = distanceFromStop
+        self.frequency = frequency
+        self.lastUpdated = lastUpdated
+        self.numberOfStopsAway = numberOfStopsAway
+        self.predicted = predicted
+        self.predictedArrival = predictedArrival
+        self.predictedDeparture = predictedDeparture
+        self.routeID = routeID
+        self.route = route
+        self._routeLongName = routeLongName
+        self._routeShortName = routeShortName
+        self.scheduledArrival = scheduledArrival
+        self.scheduledDeparture = scheduledDeparture
+        self.serviceDate = serviceDate
+        self.situationIDs = situationIDs
+        self.serviceAlerts = serviceAlerts
+        self.status = status
+        self.stopID = stopID
+        self.stop = stop
+        self.stopSequence = stopSequence
+        self.totalStopsInTrip = totalStopsInTrip
+        self._tripHeadsign = tripHeadsign
+        self.tripID = tripID
+        self.trip = trip
+        self.tripStatus = tripStatus
+        self.vehicleID = vehicleID
+        self.regionIdentifier = regionIdentifier
+        self.occupancyStatus = occupancyStatus
+        self.historicalOccupancyStatus = historicalOccupancyStatus
     }
 
     public required init(from decoder: Decoder) throws {
