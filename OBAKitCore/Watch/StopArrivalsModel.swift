@@ -86,7 +86,7 @@ public final class StopArrivalsModel {
         self.refreshContinuation = refreshContinuation
         scenePhaseContinuation.yield(currentPhase)
 
-        let stream = poller.arrivals(for: stop.id, every: interval, using: apiService, clock: ContinuousClock(), scenePhaseStream: scenePhaseStream, refreshSignal: refreshStream)
+        let stream = poller.arrivals(for: stop.id, every: interval, using: apiService, clock: ContinuousClock(), scenePhaseStream: scenePhaseStream, refreshSignal: refreshStream, initialScenePhase: currentPhase)
         pollTask = Task { [weak self] in
             for await result in stream {
                 guard let self, !Task.isCancelled else { return }

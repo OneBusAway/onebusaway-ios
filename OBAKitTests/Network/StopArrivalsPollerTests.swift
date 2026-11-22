@@ -484,7 +484,6 @@ final class StopArrivalsPollerTests: OBATestCase {
         let coordinator = PollerCoordinator()
 
         let (sceneStream, sceneContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
-        let (refreshStream, refreshContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
 
         let stream = StopArrivalsPoller().arrivals(
             for: stopID,
@@ -493,7 +492,6 @@ final class StopArrivalsPollerTests: OBATestCase {
             clock: clock,
             powerStateProvider: { false },
             scenePhaseStream: sceneStream,
-            refreshSignal: refreshStream,
             coordinator: coordinator
         )
         var iterator = stream.makeAsyncIterator()
@@ -509,11 +507,12 @@ final class StopArrivalsPollerTests: OBATestCase {
         await clock.waitForSleepers(count: 0)
         await coordinator.waitForWaiters(count: 1)
 
-        refreshContinuation.yield()
-        // Let the poller process the refresh while still backgrounded, so
-        // the foreground fetch below is the one that consumes it.
-        await Task.yield()
-        await Task.yield()
+        // Trigger the refresh directly on the coordinator: Task.yield() does
+        // not guarantee the refresh consumer runs, so yielding via the
+        // stream here is racy. triggerRefresh() records the refresh
+        // deterministically, and the foreground fetch below is the one that
+        // consumes it.
+        await coordinator.triggerRefresh()
 
         // 3. Return to foreground — one fetch for the refresh, not two
         sceneContinuation.yield(.active)

@@ -44,6 +44,10 @@ public struct StopArrivalsPoller: Sendable {
 
     /// Returns an `AsyncStream` delivering arrivals updates on every tick of `clock`.
     ///
+    /// `initialScenePhase` seeds the coordinator so a poll started while
+    /// backgrounded begins paused instead of racing the first bridged phase
+    /// value and fetching once while backgrounded.
+    ///
     /// Pass fresh `scenePhaseStream` / `refreshSignal` streams on every call:
     /// cancelling the poller ends the iteration of the streams it was given,
     /// and an `AsyncStream` whose iteration was cancelled cannot be iterated
@@ -57,10 +61,11 @@ public struct StopArrivalsPoller: Sendable {
         lowPowerMultiplier: Double = 2.0,
         scenePhaseStream: AsyncStream<PollerScenePhase>? = nil,
         refreshSignal: AsyncStream<Void>? = nil,
-        notificationCenter: NotificationCenter = .default
+        notificationCenter: NotificationCenter = .default,
+        initialScenePhase: PollerScenePhase = .active
     ) -> AsyncStream<Result<[ArrivalDeparture], Error>> {
         let coordinator = PollerCoordinator(
-            initialForeground: true,
+            initialForeground: initialScenePhase.isForeground,
             isLowPower: powerStateProvider()
         )
         return arrivals(
