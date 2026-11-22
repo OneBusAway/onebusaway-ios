@@ -738,3 +738,18 @@
 
 /* One-line toast text for an authentication or authorization failure that the rider cannot fix in the app. */
 "error_report.summary.authentication" = "O servidor não aceitou a solicitação deste app.";
+
+/* Error message when feed payload contains zero bytes. */
+"gtfs_realtime.error.empty_data" = "GTFS-Realtime feed payload is empty.";
+
+/* Error message when feed timestamp exceeds allowable future clock skew. %1$@ is formatted date, %2$@ is duration. */
+"gtfs_realtime.error.future_feed_fmt" = "GTFS-Realtime feed timestamp is too far in the future (timestamp: %1$@, ahead by: %2$@).";
+
+/* Error message when feed payload cannot be decoded as protobuf. %@ is the error description. */
+"gtfs_realtime.error.malformed_data_fmt" = "Failed to parse GTFS-Realtime Protobuf message: %@";
+
+/* Error message when feed timestamp is older than allowed staleness threshold. %1$@ is formatted date, %2$@ is duration. */
+"gtfs_realtime.error.stale_feed_fmt" = "GTFS-Realtime feed is stale (timestamp: %1$@, age: %2$@).";
+
+/* Error message when feed uses unsupported incrementality like differential. %@ is the mode name. */
+"gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
