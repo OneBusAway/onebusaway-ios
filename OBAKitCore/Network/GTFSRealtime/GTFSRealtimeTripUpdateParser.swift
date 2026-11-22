@@ -184,6 +184,8 @@ public struct GTFSRTTripUpdate: Sendable, Equatable {
     public let entityID: String?
     /// Trip identifier.
     public let tripID: String
+    /// Source trip identifier if this update represents a DUPLICATED trip.
+    public let sourceTripID: String?
     /// Route identifier.
     public let routeID: String?
     /// Direction identifier.
@@ -208,6 +210,7 @@ public struct GTFSRTTripUpdate: Sendable, Equatable {
     public init(
         entityID: String? = nil,
         tripID: String,
+        sourceTripID: String? = nil,
         routeID: String? = nil,
         directionID: UInt32? = nil,
         startTime: String? = nil,
@@ -221,6 +224,7 @@ public struct GTFSRTTripUpdate: Sendable, Equatable {
     ) {
         self.entityID = entityID
         self.tripID = tripID
+        self.sourceTripID = sourceTripID
         self.routeID = routeID
         self.directionID = directionID
         self.startTime = startTime
@@ -235,14 +239,32 @@ public struct GTFSRTTripUpdate: Sendable, Equatable {
 
     public init(protobuf: TransitRealtime_TripUpdate, entityID: String? = nil) {
         self.entityID = entityID
-        self.tripID = protobuf.hasTrip && protobuf.trip.hasTripID ? protobuf.trip.tripID : ""
-        self.routeID = protobuf.hasTrip && protobuf.trip.hasRouteID ? protobuf.trip.routeID : nil
-        self.directionID = protobuf.hasTrip && protobuf.trip.hasDirectionID ? protobuf.trip.directionID : nil
-        self.startTime = protobuf.hasTrip && protobuf.trip.hasStartTime ? protobuf.trip.startTime : nil
-        self.startDate = protobuf.hasTrip && protobuf.trip.hasStartDate ? protobuf.trip.startDate : nil
-        self.scheduleRelationship = protobuf.hasTrip
+        let rel = protobuf.hasTrip
             ? GTFSRTTripScheduleRelationship(protobuf: protobuf.trip.scheduleRelationship)
             : .scheduled
+        self.scheduleRelationship = rel
+
+        let rawTripID = protobuf.hasTrip && protobuf.trip.hasTripID ? protobuf.trip.tripID : ""
+        if rel == .duplicated && protobuf.hasTripProperties && protobuf.tripProperties.hasTripID {
+            self.tripID = protobuf.tripProperties.tripID
+            self.sourceTripID = rawTripID.isEmpty ? nil : rawTripID
+        } else {
+            self.tripID = rawTripID
+            self.sourceTripID = nil
+        }
+
+        let startD = protobuf.hasTrip && protobuf.trip.hasStartDate ? protobuf.trip.startDate : nil
+        let startT = protobuf.hasTrip && protobuf.trip.hasStartTime ? protobuf.trip.startTime : nil
+        if rel == .duplicated && protobuf.hasTripProperties {
+            self.startDate = (protobuf.tripProperties.hasStartDate ? protobuf.tripProperties.startDate : nil) ?? startD
+            self.startTime = (protobuf.tripProperties.hasStartTime ? protobuf.tripProperties.startTime : nil) ?? startT
+        } else {
+            self.startDate = startD
+            self.startTime = startT
+        }
+
+        self.routeID = protobuf.hasTrip && protobuf.trip.hasRouteID ? protobuf.trip.routeID : nil
+        self.directionID = protobuf.hasTrip && protobuf.trip.hasDirectionID ? protobuf.trip.directionID : nil
         self.vehicleID = protobuf.hasVehicle && protobuf.vehicle.hasID ? protobuf.vehicle.id : nil
         self.vehicleLabel = protobuf.hasVehicle && protobuf.vehicle.hasLabel ? protobuf.vehicle.label : nil
         self.timestamp = protobuf.hasTimestamp && protobuf.timestamp > 0
@@ -349,7 +371,11 @@ public struct GTFSRTReconciledSchedule<Item: GTFSRTReconcilableSchedule> {
 
     /// True if real-time delay or prediction information is active.
     public var isLive: Bool {
-        tripUpdate != nil && !isNoData && (reconciledArrival != nil || reconciledDeparture != nil || arrivalDelay != nil || departureDelay != nil)
+        tripUpdate != nil &&
+            !isCanceled &&
+            !isSkipped &&
+            !isNoData &&
+            (reconciledArrival != nil || reconciledDeparture != nil || arrivalDelay != nil || departureDelay != nil)
     }
 }
 
@@ -362,6 +388,51 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
     public init() {}
 
     public static let standard = GTFSRealtimeDelayReconciler()
+
+    private static let serviceDateFormatterUTC: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+
+    private static let serviceDateFormatterCurrent: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        formatter.timeZone = .current
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+
+    /// Matches a feed trip ID against a REST trip ID, handling optional agency ID prefixes (e.g., "1_12345" vs "12345").
+    public static func tripIDsMatch(feedTripID: String, restTripID: String) -> Bool {
+        if feedTripID == restTripID { return true }
+        if let idx = restTripID.firstIndex(of: "_") {
+            let strippedREST = String(restTripID[restTripID.index(after: idx)...])
+            if strippedREST == feedTripID { return true }
+        }
+        if let idx = feedTripID.firstIndex(of: "_") {
+            let strippedFeed = String(feedTripID[feedTripID.index(after: idx)...])
+            if strippedFeed == restTripID { return true }
+        }
+        return false
+    }
+
+    /// Matches a feed stop ID against a REST stop ID, handling optional agency ID prefixes.
+    public static func stopIDsMatch(feedStopID: String?, restStopID: String?) -> Bool {
+        guard let feedStopID, let restStopID, !feedStopID.isEmpty, !restStopID.isEmpty else { return false }
+        if feedStopID == restStopID { return true }
+        if let idx = restStopID.firstIndex(of: "_") {
+            let strippedREST = String(restStopID[restStopID.index(after: idx)...])
+            if strippedREST == feedStopID { return true }
+        }
+        if let idx = feedStopID.firstIndex(of: "_") {
+            let strippedFeed = String(feedStopID[feedStopID.index(after: idx)...])
+            if strippedFeed == restStopID { return true }
+        }
+        return false
+    }
 
     /// Reconciles an arbitrary `GTFSRTReconcilableSchedule` with an optional matching `GTFSRTTripUpdate`.
     public func reconcile<Schedule: GTFSRTReconcilableSchedule>(
@@ -380,24 +451,67 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
                 stopScheduleRelationship: nil,
                 arrivalDelay: nil,
                 departureDelay: nil,
-                reconciledArrival: schedule.scheduledArrivalDate,
-                reconciledDeparture: schedule.scheduledDepartureDate
+                reconciledArrival: nil,
+                reconciledDeparture: nil
             )
         }
 
         let isTripCanceled = tripUpdate.scheduleRelationship.isCanceledOrDeleted
         let matchedStop = findMatchingStopTimeUpdate(for: schedule, in: tripUpdate)
         let isStopSkipped = matchedStop?.scheduleRelationship.isSkipped ?? false
-        let isNoData = matchedStop?.scheduleRelationship.isNoData ?? false
+        let isDirectNoData = matchedStop?.scheduleRelationship.isNoData ?? false
+
+        // Determine upstream stop updates for propagation of delay and NO_DATA
+        let upstreamUpdates: [GTFSRTStopTimeUpdate]
+        if let schedSeq = schedule.reconcilableStopSequence {
+            upstreamUpdates = tripUpdate.stopTimeUpdates
+                .filter { ($0.stopSequence ?? 0) < UInt32(schedSeq) && $0.stopSequence != nil }
+                .sorted { ($0.stopSequence ?? 0) < ($1.stopSequence ?? 0) }
+        } else if let matched = matchedStop, let idx = tripUpdate.stopTimeUpdates.firstIndex(where: { $0 == matched }) {
+            upstreamUpdates = Array(tripUpdate.stopTimeUpdates[0..<idx])
+        } else {
+            upstreamUpdates = []
+        }
+
+        // Propagate upstream delay and NO_DATA state
+        var propagatedDelay: Int? = tripUpdate.tripDelay
+        var isUpstreamNoData = false
+
+        for u in upstreamUpdates {
+            if u.scheduleRelationship.isNoData {
+                isUpstreamNoData = true
+                propagatedDelay = nil
+            } else if let dep = u.departureDelay {
+                isUpstreamNoData = false
+                propagatedDelay = dep
+            } else if let arr = u.arrivalDelay {
+                isUpstreamNoData = false
+                propagatedDelay = arr
+            }
+        }
+
+        // Determine NO_DATA state for this stop
+        let isNoData: Bool
+        if isTripCanceled {
+            isNoData = false
+        } else if isDirectNoData {
+            isNoData = true
+        } else if matchedStop == nil {
+            isNoData = isUpstreamNoData
+        } else if matchedStop?.departureDelay == nil && matchedStop?.arrivalDelay == nil && matchedStop?.departureTime == nil && matchedStop?.arrivalTime == nil {
+            isNoData = isUpstreamNoData
+        } else {
+            isNoData = false
+        }
 
         let arrDelay: Int?
         let depDelay: Int?
-        if isNoData {
+        if isTripCanceled || isStopSkipped || isNoData {
             arrDelay = nil
             depDelay = nil
         } else {
-            arrDelay = matchedStop?.arrivalDelay ?? tripUpdate.tripDelay
-            depDelay = matchedStop?.departureDelay ?? matchedStop?.arrivalDelay ?? tripUpdate.tripDelay
+            arrDelay = matchedStop?.arrivalDelay ?? propagatedDelay
+            depDelay = matchedStop?.departureDelay ?? matchedStop?.arrivalDelay ?? propagatedDelay
         }
 
         let recArrival: Date?
@@ -408,7 +522,7 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         } else if let arrDelay, let schedArr = schedule.scheduledArrivalDate {
             recArrival = schedArr.addingTimeInterval(TimeInterval(arrDelay))
         } else {
-            recArrival = schedule.scheduledArrivalDate
+            recArrival = nil
         }
 
         let recDeparture: Date?
@@ -419,7 +533,7 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         } else if let depDelay, let schedDep = schedule.scheduledDepartureDate {
             recDeparture = schedDep.addingTimeInterval(TimeInterval(depDelay))
         } else {
-            recDeparture = schedule.scheduledDepartureDate
+            recDeparture = nil
         }
 
         return GTFSRTReconciledSchedule(
@@ -438,21 +552,42 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         )
     }
 
-    /// Finds matching `GTFSRTStopTimeUpdate` by stop sequence first, then stop ID.
+    /// Finds matching `GTFSRTStopTimeUpdate` by stop ID or stop sequence, rejecting conflicting sequences.
     public func findMatchingStopTimeUpdate<Schedule: GTFSRTReconcilableSchedule>(
         for schedule: Schedule,
         in tripUpdate: GTFSRTTripUpdate
     ) -> GTFSRTStopTimeUpdate? {
-        if let seq = schedule.reconcilableStopSequence {
-            if let match = tripUpdate.stopTimeUpdates.first(where: { $0.stopSequence == UInt32(seq) }) {
+        // 1. If stopID is present, find by stopID while rejecting sequence conflicts
+        if let schedStopID = schedule.reconcilableStopID, !schedStopID.isEmpty {
+            for update in tripUpdate.stopTimeUpdates {
+                guard Self.stopIDsMatch(feedStopID: update.stopID, restStopID: schedStopID) else {
+                    continue
+                }
+                // Reject fallback if both sides provide comparable sequences and they conflict
+                if let schedSeq = schedule.reconcilableStopSequence,
+                   let updateSeq = update.stopSequence {
+                    if UInt32(schedSeq) != updateSeq {
+                        continue
+                    }
+                }
+                return update
+            }
+        }
+
+        // 2. If stopSequence is present on schedule, match by stopSequence
+        if let schedSeq = schedule.reconcilableStopSequence {
+            if let match = tripUpdate.stopTimeUpdates.first(where: { $0.stopSequence == UInt32(schedSeq) }) {
+                if let schedStopID = schedule.reconcilableStopID,
+                   let updateStopID = match.stopID,
+                   !schedStopID.isEmpty,
+                   !updateStopID.isEmpty,
+                   !Self.stopIDsMatch(feedStopID: updateStopID, restStopID: schedStopID) {
+                    return nil
+                }
                 return match
             }
         }
-        if let stopID = schedule.reconcilableStopID, !stopID.isEmpty {
-            if let match = tripUpdate.stopTimeUpdates.first(where: { $0.stopID == stopID }) {
-                return match
-            }
-        }
+
         return nil
     }
 
@@ -465,14 +600,31 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
     }
 
     /// Reconciles an array of `ArrivalDeparture` instances with an array of `GTFSRTTripUpdate` models.
+    ///
+    /// Matches trip updates by `tripID` (supporting agency prefix differences such as "1_123" vs "123").
+    /// If multiple trip updates match the trip ID, matches by `startDate` against the arrival departure's `serviceDate`.
     public func reconcile(
         arrivalDepartures: [ArrivalDeparture],
         with tripUpdates: [GTFSRTTripUpdate]
     ) -> [ReconciledArrivalDeparture] {
-        let updatesByTripID = Dictionary(grouping: tripUpdates, by: \.tripID)
         return arrivalDepartures.map { arrDep in
-            let update = updatesByTripID[arrDep.tripID]?.first
-            return reconcile(arrivalDeparture: arrDep, with: update)
+            let matchingUpdates = tripUpdates.filter { update in
+                Self.tripIDsMatch(feedTripID: update.tripID, restTripID: arrDep.tripID)
+            }
+            let selectedUpdate: GTFSRTTripUpdate?
+            if matchingUpdates.isEmpty {
+                selectedUpdate = nil
+            } else if matchingUpdates.count == 1 {
+                selectedUpdate = matchingUpdates[0]
+            } else {
+                let utcDateStr = Self.serviceDateFormatterUTC.string(from: arrDep.serviceDate)
+                let curDateStr = Self.serviceDateFormatterCurrent.string(from: arrDep.serviceDate)
+                selectedUpdate = matchingUpdates.first { update in
+                    guard let startDate = update.startDate else { return false }
+                    return startDate == utcDateStr || startDate == curDateStr
+                } ?? matchingUpdates[0]
+            }
+            return reconcile(arrivalDeparture: arrDep, with: selectedUpdate)
         }
     }
 }
@@ -484,38 +636,79 @@ public typealias ReconciledArrivalDeparture = GTFSRTReconciledSchedule<ArrivalDe
 extension ArrivalDeparture: GTFSRTReconcilableSchedule {
     public var reconcilableTripID: String { tripID }
     public var reconcilableStopID: String? { stopID }
-    public var reconcilableStopSequence: Int? { stopSequence }
+    public var reconcilableStopSequence: Int? { nil }
     public var scheduledArrivalDate: Date? { scheduledArrival }
     public var scheduledDepartureDate: Date? { scheduledDeparture }
 
     /// Applies a reconciled update, creating an updated `ArrivalDeparture` instance.
     public func applying(reconciliation: ReconciledArrivalDeparture) -> ArrivalDeparture {
-        ArrivalDeparture(
-            arrivalEnabled: arrivalEnabled,
+        let updatedPredicted: Bool
+        let updatedPredictedArrival: Date?
+        let updatedPredictedDeparture: Date?
+
+        if reconciliation.isNoData {
+            updatedPredicted = false
+            updatedPredictedArrival = nil
+            updatedPredictedDeparture = nil
+        } else if reconciliation.isLive {
+            updatedPredicted = true
+            updatedPredictedArrival = reconciliation.reconciledArrival ?? predictedArrival
+            updatedPredictedDeparture = reconciliation.reconciledDeparture ?? predictedDeparture
+        } else {
+            // Unmatched or no live prediction: preserve existing predictions
+            updatedPredicted = predicted
+            updatedPredictedArrival = predictedArrival
+            updatedPredictedDeparture = predictedDeparture
+        }
+
+        let updatedStatus: String
+        let updatedArrivalEnabled: Bool
+        let updatedDepartureEnabled: Bool
+
+        if reconciliation.isCanceled {
+            updatedStatus = "canceled"
+            updatedArrivalEnabled = arrivalEnabled
+            updatedDepartureEnabled = departureEnabled
+        } else if reconciliation.isSkipped {
+            updatedStatus = "skipped"
+            updatedArrivalEnabled = false
+            updatedDepartureEnabled = false
+        } else if reconciliation.tripUpdate != nil && (status == "canceled" || status == "skipped") {
+            updatedStatus = "default"
+            updatedArrivalEnabled = true
+            updatedDepartureEnabled = true
+        } else {
+            updatedStatus = status
+            updatedArrivalEnabled = arrivalEnabled
+            updatedDepartureEnabled = departureEnabled
+        }
+
+        return ArrivalDeparture(
+            arrivalEnabled: updatedArrivalEnabled,
             blockTripSequence: blockTripSequence,
-            departureEnabled: departureEnabled,
+            departureEnabled: updatedDepartureEnabled,
             distanceFromStop: distanceFromStop,
             frequency: frequency,
             lastUpdated: reconciliation.tripUpdate?.timestamp ?? lastUpdated,
             numberOfStopsAway: numberOfStopsAway,
-            predicted: reconciliation.isLive || predicted,
-            predictedArrival: reconciliation.reconciledArrival ?? predictedArrival,
-            predictedDeparture: reconciliation.reconciledDeparture ?? predictedDeparture,
+            predicted: updatedPredicted,
+            predictedArrival: updatedPredictedArrival,
+            predictedDeparture: updatedPredictedDeparture,
             routeID: routeID,
             route: route,
-            routeLongName: routeLongName,
-            routeShortName: routeShortName,
+            routeLongName: _routeLongName,
+            routeShortName: _routeShortName,
             scheduledArrival: scheduledArrival,
             scheduledDeparture: scheduledDeparture,
             serviceDate: serviceDate,
             situationIDs: situationIDs,
             serviceAlerts: serviceAlerts,
-            status: reconciliation.isCanceled ? "canceled" : status,
+            status: updatedStatus,
             stopID: stopID,
             stop: stop,
             stopSequence: stopSequence,
             totalStopsInTrip: totalStopsInTrip,
-            tripHeadsign: tripHeadsign,
+            tripHeadsign: _tripHeadsign,
             tripID: tripID,
             trip: trip,
             tripStatus: tripStatus,
@@ -532,12 +725,23 @@ extension GTFSRTReconciledSchedule where Item == ArrivalDeparture {
 
     /// Reconciled date for display based on arrival/departure status.
     public var reconciledDate: Date {
-        switch item.arrivalDepartureStatus {
-        case .arriving:
-            return reconciledArrival ?? item.arrivalDepartureDate
-        case .departing:
-            return reconciledDeparture ?? item.arrivalDepartureDate
+        if isNoData {
+            switch item.arrivalDepartureStatus {
+            case .arriving:
+                return item.scheduledArrival
+            case .departing:
+                return item.scheduledDeparture
+            }
         }
+        if isLive {
+            switch item.arrivalDepartureStatus {
+            case .arriving:
+                return reconciledArrival ?? item.arrivalDepartureDate
+            case .departing:
+                return reconciledDeparture ?? item.arrivalDepartureDate
+            }
+        }
+        return item.arrivalDepartureDate
     }
 
     /// Evaluates the real-time schedule deviation into an early, onTime, or delayed status.
@@ -545,20 +749,32 @@ extension GTFSRTReconciledSchedule where Item == ArrivalDeparture {
         guard isLive else {
             return item.scheduleStatus
         }
-        let delaySeconds: Int
+        let deviationSeconds: TimeInterval
         switch item.arrivalDepartureStatus {
         case .arriving:
-            delaySeconds = arrivalDelay ?? departureDelay ?? 0
+            if let recArr = reconciledArrival {
+                deviationSeconds = recArr.timeIntervalSince(item.scheduledArrival)
+            } else if let arrDelay = arrivalDelay ?? departureDelay {
+                deviationSeconds = TimeInterval(arrDelay)
+            } else {
+                return item.scheduleStatus
+            }
         case .departing:
-            delaySeconds = departureDelay ?? arrivalDelay ?? 0
+            if let recDep = reconciledDeparture {
+                deviationSeconds = recDep.timeIntervalSince(item.scheduledDeparture)
+            } else if let depDelay = departureDelay ?? arrivalDelay {
+                deviationSeconds = TimeInterval(depDelay)
+            } else {
+                return item.scheduleStatus
+            }
         }
-        let minutesDiff = Double(delaySeconds) / 60.0
+        let minutesDiff = deviationSeconds / 60.0
         if minutesDiff < -1.5 {
             return .early
-        } else if minutesDiff > 1.5 {
-            return .delayed
-        } else {
+        } else if minutesDiff < 1.5 {
             return .onTime
+        } else {
+            return .delayed
         }
     }
 }

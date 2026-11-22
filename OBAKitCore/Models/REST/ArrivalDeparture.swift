@@ -53,10 +53,10 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     public private(set) var route: Route!
 
     /// the route long name that potentially overrides the route long name in the referenced `Route` element
-    private let _routeLongName: String?
+    internal let _routeLongName: String?
 
     /// the route short name that potentially overrides the route short name in the referenced `Route` element
-    private let _routeShortName: String?
+    internal let _routeShortName: String?
 
     /// The arrival date according to the schedule
     public let scheduledArrival: Date
@@ -88,7 +88,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     public let totalStopsInTrip: Int?
 
     /// The trip headsign that potentially overrides the trip headsign in the referenced `Trip` element
-    private let _tripHeadsign: String?
+    internal let _tripHeadsign: String?
 
     /// The trip id for the arriving vehicle
     public let tripID: TripIdentifier
