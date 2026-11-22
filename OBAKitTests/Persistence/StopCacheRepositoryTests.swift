@@ -10,6 +10,7 @@
 import Foundation
 import Testing
 import CoreLocation
+import GRDB
 @testable import OBAKitCore
 
 // swiftlint:disable force_try
@@ -1014,6 +1015,249 @@ final class StopCacheRepositoryTests {
             regionId: 1
         )
         #expect(invertedResults.isEmpty)
+    }
+
+    // MARK: - Direct Primary-Key Stop Lookup (#65)
+
+    @Test func `Direct stop lookup by primary key returns cached stop from main table`() {
+        let stop = makeStop(
+            id: "1_75403",
+            code: "75403",
+            name: "E Pine St & 15th Ave",
+            lat: 47.6153,
+            lon: -122.3148,
+            direction: "W",
+            routeIDs: ["1_10", "1_49"]
+        )
+        repository.saveStops([stop], regionId: 1)
+
+        let cached = repository.stop(stopID: "1_75403", regionID: 1)
+        #expect(cached != nil)
+        #expect(cached?.id == "1_75403")
+        #expect(cached?.code == "75403")
+        #expect(cached?.name == "E Pine St & 15th Ave")
+        expectClose(cached!.location.coordinate.latitude, 47.6153, within: 0.0001)
+        expectClose(cached!.location.coordinate.longitude, -122.3148, within: 0.0001)
+        #expect(cached?.direction == .w)
+        #expect(cached?.locationType == .stop)
+        #expect(cached?.routeIDs == ["1_10", "1_49"])
+        #expect(cached?.regionIdentifier == 1)
+
+        // Querying different region returns nil
+        #expect(repository.stop(stopID: "1_75403", regionID: 999) == nil)
+    }
+
+    @Test func `Direct stop lookup by primary key returns cached stop from staged table`() throws {
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let syncID = "sync_staged_lookup"
+        let stagedStop = makeStop(id: "staged_1", code: "S1", name: "Staged Stop 1", lat: 47.61, lon: -122.33)
+        try repository.stageSyncedStops([stagedStop], regionId: 1, syncID: syncID, syncedAt: syncDate)
+
+        // Before publishing, staged stop is invisible
+        #expect(repository.stop(stopID: "staged_1", regionID: 1) == nil)
+
+        // After publishing, staged stop resolves cleanly
+        let syncState = RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: syncDate,
+            lastSuccessAt: syncDate,
+            etag: nil,
+            appVersion: "26.5",
+            publishedSyncID: syncID
+        )
+        try repository.saveSyncState(syncState)
+
+        let resolved = repository.stop(stopID: "staged_1", regionID: 1)
+        #expect(resolved?.id == "staged_1")
+        #expect(resolved?.code == "S1")
+        #expect(resolved?.name == "Staged Stop 1")
+        #expect(resolved?.regionIdentifier == 1)
+    }
+
+    @Test func `Direct stop lookup resolves precedence between main and staged tables`() throws {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+        let syncID = "sync_precedence"
+
+        let stagedStop = makeStop(id: "stop_conflict", name: "Staged Stop Name")
+        try repository.stageSyncedStops([stagedStop], regionId: 1, syncID: syncID, syncedAt: syncDate)
+        let syncState = RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: syncDate,
+            lastSuccessAt: syncDate,
+            etag: nil,
+            appVersion: "26.5",
+            publishedSyncID: syncID
+        )
+        try repository.saveSyncState(syncState)
+
+        // 1. Staged stop is newer than older main stop -> staged wins
+        let olderMain = makeStop(id: "stop_conflict", name: "Older Main Name")
+        try repository.writeSyncedStops([olderMain], regionId: 1, syncedAt: oldDate)
+        #expect(repository.stop(stopID: "stop_conflict", regionID: 1)?.name == "Staged Stop Name")
+
+        // 2. Main stop is newer than staged stop -> main wins
+        let newerMain = makeStop(id: "stop_conflict", name: "Newer Main Name")
+        try repository.writeSyncedStops([newerMain], regionId: 1, syncedAt: newDate)
+        #expect(repository.stop(stopID: "stop_conflict", regionID: 1)?.name == "Newer Main Name")
+    }
+
+    @Test func `Direct stop lookup hydrates routes from main and staged route tables`() throws {
+        let routeMain = makeRoute(id: "route_main", shortName: "M1")
+        let stopMain = makeStop(id: "stop_with_routes", routes: [routeMain])
+        repository.saveStops([stopMain], regionId: 1)
+
+        let loadedMain = repository.stop(stopID: "stop_with_routes", regionID: 1)
+        #expect(loadedMain?.routes?.count == 1)
+        #expect(loadedMain?.routes?.first?.id == "route_main")
+        #expect(loadedMain?.routes?.first?.shortName == "M1")
+
+        // Staged routes hydration
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let syncID = "sync_routes"
+        let routeStaged = makeRoute(id: "route_staged", shortName: "S1")
+        let stopStaged = makeStop(id: "stop_staged_routes", routes: [routeStaged])
+        try repository.stageSyncedStops([stopStaged], regionId: 1, syncID: syncID, syncedAt: syncDate)
+        try repository.saveSyncState(RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: syncDate,
+            lastSuccessAt: syncDate,
+            etag: nil,
+            appVersion: "26.5",
+            publishedSyncID: syncID
+        ))
+
+        let loadedStaged = repository.stop(stopID: "stop_staged_routes", regionID: 1)
+        #expect(loadedStaged?.routes?.count == 1)
+        #expect(loadedStaged?.routes?.first?.id == "route_staged")
+        #expect(loadedStaged?.routes?.first?.shortName == "S1")
+    }
+
+    @Test func `Missing stop returns nil without table scan`() throws {
+        let otherStops = (1...10).map { makeStop(id: "stop_\($0)") }
+        repository.saveStops(otherStops, regionId: 1)
+
+        let missing = repository.stop(stopID: "non_existent_stop", regionID: 1)
+        #expect(missing == nil)
+
+        // Verify with EXPLAIN QUERY PLAN that index lookup is used on cachedStop and cachedStopSync
+        try database.dbQueue.read { db in
+            let mainPlans = try Row.fetchAll(
+                db,
+                sql: "EXPLAIN QUERY PLAN SELECT * FROM cachedStop WHERE regionId = ? AND id = ?",
+                arguments: [1, "non_existent_stop"]
+            )
+            let mainDetails = mainPlans.compactMap { $0["detail"] as? String }
+            #expect(!mainDetails.isEmpty)
+            for detail in mainDetails {
+                #expect(!detail.contains("SCAN"), "cachedStop query should search index, not scan table: \(detail)")
+                #expect(detail.contains("SEARCH") && detail.contains("cachedStop"))
+            }
+
+            let stagedPlans = try Row.fetchAll(
+                db,
+                sql: "EXPLAIN QUERY PLAN SELECT * FROM cachedStopSync WHERE syncID = ? AND regionId = ? AND id = ?",
+                arguments: ["sync_test", 1, "non_existent_stop"]
+            )
+            let stagedDetails = stagedPlans.compactMap { $0["detail"] as? String }
+            #expect(!stagedDetails.isEmpty)
+            for detail in stagedDetails {
+                #expect(!detail.contains("SCAN"), "cachedStopSync query should search index, not scan table: \(detail)")
+                #expect(detail.contains("SEARCH") && detail.contains("cachedStopSync"))
+            }
+        }
+    }
+
+    @Test func `Batch stop lookup returns matching stops in requested order`() {
+        let stops = [
+            makeStop(id: "stop_1", name: "Stop One"),
+            makeStop(id: "stop_2", name: "Stop Two"),
+            makeStop(id: "stop_3", name: "Stop Three"),
+            makeStop(id: "stop_4", name: "Stop Four")
+        ]
+        repository.saveStops(stops, regionId: 1)
+
+        let requestedIDs = ["stop_3", "stop_1", "stop_missing", "stop_3", "stop_4"]
+        let results = repository.stops(stopIDs: requestedIDs, regionID: 1)
+
+        // Preserves requested order, omits missing, deduplicates duplicate requests
+        #expect(results.map(\.id) == ["stop_3", "stop_1", "stop_4"])
+        #expect(results.map(\.name) == ["Stop Three", "Stop One", "Stop Four"])
+
+        // stopsByID returns mapping
+        let byID = repository.stopsByID(stopIDs: requestedIDs, regionID: 1)
+        #expect(byID.count == 3)
+        #expect(byID["stop_3"]?.name == "Stop Three")
+        #expect(byID["stop_1"]?.name == "Stop One")
+        #expect(byID["stop_4"]?.name == "Stop Four")
+        #expect(byID["stop_missing"] == nil)
+    }
+
+    @Test func `Batch stop lookup isolates by regionID`() {
+        let stopRegion1 = makeStop(id: "stop_common", name: "Region 1 Stop")
+        let stopRegion2 = makeStop(id: "stop_common", name: "Region 2 Stop")
+        repository.saveStops([stopRegion1], regionId: 1)
+        repository.saveStops([stopRegion2], regionId: 2)
+
+        let region1Results = repository.stops(stopIDs: ["stop_common"], regionID: 1)
+        #expect(region1Results.count == 1)
+        #expect(region1Results.first?.name == "Region 1 Stop")
+        #expect(region1Results.first?.regionIdentifier == 1)
+
+        let region2Results = repository.stops(stopIDs: ["stop_common"], regionID: 2)
+        #expect(region2Results.count == 1)
+        #expect(region2Results.first?.name == "Region 2 Stop")
+        #expect(region2Results.first?.regionIdentifier == 2)
+    }
+
+    @Test func `Batch stop lookup merges main and staged snapshots across multiple stops`() throws {
+        let oldDate = Date(timeIntervalSince1970: 1_000)
+        let syncDate = Date(timeIntervalSince1970: 2_000)
+        let newDate = Date(timeIntervalSince1970: 3_000)
+        let syncID = "sync_batch"
+
+        // Stop A: in main only
+        let stopA = makeStop(id: "stop_a", name: "Main Only A")
+        // Stop B: in staged only
+        let stopB = makeStop(id: "stop_b", name: "Staged Only B")
+        // Stop C: in both, staged newer
+        let stopCOld = makeStop(id: "stop_c", name: "Old Main C")
+        let stopCNew = makeStop(id: "stop_c", name: "New Staged C")
+        // Stop D: in both, main newer
+        let stopDOld = makeStop(id: "stop_d", name: "Old Staged D")
+        let stopDNew = makeStop(id: "stop_d", name: "New Main D")
+
+        try repository.writeSyncedStops([stopA, stopCOld], regionId: 1, syncedAt: oldDate)
+        try repository.stageSyncedStops([stopB, stopCNew, stopDOld], regionId: 1, syncID: syncID, syncedAt: syncDate)
+        try repository.writeSyncedStops([stopDNew], regionId: 1, syncedAt: newDate)
+        try repository.saveSyncState(RegionStopSyncState(
+            regionId: 1,
+            outcome: .complete,
+            lastAttemptAt: syncDate,
+            lastSuccessAt: syncDate,
+            etag: nil,
+            appVersion: "26.5",
+            publishedSyncID: syncID
+        ))
+
+        let results = repository.stops(stopIDs: ["stop_a", "stop_b", "stop_c", "stop_d"], regionID: 1)
+        #expect(results.count == 4)
+        #expect(results.first(where: { $0.id == "stop_a" })?.name == "Main Only A")
+        #expect(results.first(where: { $0.id == "stop_b" })?.name == "Staged Only B")
+        #expect(results.first(where: { $0.id == "stop_c" })?.name == "New Staged C")
+        #expect(results.first(where: { $0.id == "stop_d" })?.name == "New Main D")
+    }
+
+    @Test func `Batch stop lookup with empty stopIDs returns empty array without database read`() {
+        let results = repository.stops(stopIDs: [], regionID: 1)
+        #expect(results.isEmpty)
+
+        let byID = repository.stopsByID(stopIDs: [], regionID: 1)
+        #expect(byID.isEmpty)
     }
 }
 

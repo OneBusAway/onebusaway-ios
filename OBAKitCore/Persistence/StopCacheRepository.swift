@@ -40,6 +40,74 @@ public final class StopCacheRepository: Sendable {
 
     // MARK: - Read
 
+    /// Fetches a single cached stop by primary key (`stopID`, `regionID`).
+    /// Returns `nil` if the stop does not exist in the cache or fails to decode.
+    ///
+    /// Routes are fully hydrated from `cachedRoute` and `cachedRouteSync`.
+    public func stop(stopID: StopID, regionID: Int) -> Stop? {
+        do {
+            return try database.dbQueue.read { db in
+                guard let cachedStop = try visibleStop(stopID: stopID, regionId: regionID, in: db) else {
+                    return nil
+                }
+                return try stops(from: [cachedStop], regionId: regionID, in: db).first
+            }
+        } catch {
+            Logger.error("Failed to fetch stop \(stopID) in region \(regionID): \(error)")
+            return nil
+        }
+    }
+
+    /// Convenience overload matching legacy naming.
+    public func stop(stopID: StopID, regionId: Int) -> Stop? {
+        stop(stopID: stopID, regionID: regionId)
+    }
+
+    /// Fetches multiple cached stops by primary key (`stopIDs`, `regionID`).
+    /// Missing stops are omitted. The returned stops preserve the order
+    /// of unique requested `stopIDs`.
+    ///
+    /// Routes are fully hydrated from `cachedRoute` and `cachedRouteSync`.
+    public func stops(stopIDs: [StopID], regionID: Int) -> [Stop] {
+        guard !stopIDs.isEmpty else { return [] }
+        if stopIDs.count == 1, let single = stopIDs.first {
+            return stop(stopID: single, regionID: regionID).map { [$0] } ?? []
+        }
+
+        do {
+            return try database.dbQueue.read { db in
+                let cachedStops = try visibleStops(stopIDs: stopIDs, regionId: regionID, in: db)
+                guard !cachedStops.isEmpty else { return [] }
+                let decodedStops = try stops(from: cachedStops, regionId: regionID, in: db)
+                let byID = Dictionary(uniqueKeysWithValues: decodedStops.map { ($0.id, $0) })
+                var seen = Set<StopID>()
+                return stopIDs.compactMap { id in
+                    guard seen.insert(id).inserted else { return nil }
+                    return byID[id]
+                }
+            }
+        } catch {
+            Logger.error("Failed to fetch stops \(stopIDs) in region \(regionID): \(error)")
+            return []
+        }
+    }
+
+    /// Convenience overload matching legacy naming.
+    public func stops(stopIDs: [StopID], regionId: Int) -> [Stop] {
+        stops(stopIDs: stopIDs, regionID: regionId)
+    }
+
+    /// Fetches multiple cached stops as a dictionary keyed by stop ID.
+    public func stopsByID(stopIDs: [StopID], regionID: Int) -> [StopID: Stop] {
+        let list = stops(stopIDs: stopIDs, regionID: regionID)
+        return Dictionary(uniqueKeysWithValues: list.map { ($0.id, $0) })
+    }
+
+    /// Convenience overload matching legacy naming.
+    public func stopsByID(stopIDs: [StopID], regionId: Int) -> [StopID: Stop] {
+        stopsByID(stopIDs: stopIDs, regionID: regionId)
+    }
+
     /// Fetches cached stops within the given coordinate bounds for a specific region.
     /// Uses a bounding-box query on lat/lon columns as described in the issue requirements.
     ///
@@ -251,6 +319,67 @@ public final class StopCacheRepository: Sendable {
             }
         }
         return Array(byID.values.sorted { $0.id < $1.id }.prefix(limit))
+    }
+
+    private func visibleStop(stopID: StopID, regionId: Int, in db: Database) throws -> CachedStop? {
+        let publishedSyncID = try RegionStopSyncState.fetchOne(db, key: regionId)?.publishedSyncID
+
+        let mainStop = try CachedStop
+            .filter(CachedStop.Columns.regionId == regionId && CachedStop.Columns.id == stopID)
+            .fetchOne(db)
+
+        if let publishedSyncID {
+            let stagedStop = try StagedCachedStop
+                .filter(StagedCachedStop.Columns.syncID == publishedSyncID && StagedCachedStop.Columns.regionId == regionId && StagedCachedStop.Columns.id == stopID)
+                .fetchOne(db)
+
+            if let stagedStop {
+                if let mainStop {
+                    return stagedStop.lastUpdated >= mainStop.lastUpdated ? stagedStop.cachedStop : mainStop
+                } else {
+                    return stagedStop.cachedStop
+                }
+            }
+        }
+
+        return mainStop
+    }
+
+    private func visibleStops(stopIDs: [StopID], regionId: Int, in db: Database) throws -> [CachedStop] {
+        guard !stopIDs.isEmpty else { return [] }
+        let publishedSyncID = try RegionStopSyncState.fetchOne(db, key: regionId)?.publishedSyncID
+
+        let batchSize = 500
+        var byID = [StopID: CachedStop]()
+
+        for chunk in stride(from: 0, to: stopIDs.count, by: batchSize).map({ Array(stopIDs[$0..<min($0 + batchSize, stopIDs.count)]) }) {
+            let mainRows = try CachedStop
+                .filter(CachedStop.Columns.regionId == regionId)
+                .filter(chunk.contains(CachedStop.Columns.id))
+                .fetchAll(db)
+            for row in mainRows {
+                byID[row.id] = row
+            }
+
+            if let publishedSyncID {
+                let stagedRows = try StagedCachedStop
+                    .filter(StagedCachedStop.Columns.syncID == publishedSyncID)
+                    .filter(StagedCachedStop.Columns.regionId == regionId)
+                    .filter(chunk.contains(StagedCachedStop.Columns.id))
+                    .fetchAll(db)
+                for row in stagedRows {
+                    if let existing = byID[row.id] {
+                        if row.lastUpdated >= existing.lastUpdated {
+                            byID[row.id] = row.cachedStop
+                        }
+                    } else {
+                        byID[row.id] = row.cachedStop
+                    }
+                }
+            }
+        }
+
+        return Array(byID.values)
     }
 
     private func visibleRoutes(routeIDs: [RouteID], regionId: Int, in db: Database) throws -> [CachedRoute] {
