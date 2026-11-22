@@ -94,6 +94,12 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         self.locationManager.delegate = self
     }
 
+    deinit {
+        for continuation in locationStreamContinuations.values {
+            continuation.finish()
+        }
+    }
+
     // MARK: - User Defaults
 
     private let userDefaults: UserDefaults
@@ -117,6 +123,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         didSet {
             if let currentLocation = currentLocation {
                 notifyDelegatesLocationChanged(currentLocation)
+                notifyStreamSubscribers(currentLocation)
             }
         }
     }
@@ -235,8 +242,11 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         // `CLLocationManager` left running keeps the location-usage indicator lit
         // and the magnetometer powered for the rest of the process.
         if isLocationUseAuthorized {
+            if startsUpdatesOnAuthorization || !locationStreamContinuations.isEmpty {
+                startUpdatingLocation()
+            }
             if startsUpdatesOnAuthorization {
-                startUpdates()
+                startUpdatingHeading()
             }
         } else {
             stopUpdates()
@@ -374,6 +384,9 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - State Management
 
+    /// Whether continuous location updates are actively running on the underlying manager.
+    public private(set) var isUpdatingLocation: Bool = false
+
     public func startUpdates() {
         startUpdatingLocation()
         startUpdatingHeading()
@@ -391,6 +404,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
             return
         }
 
+        isUpdatingLocation = true
         locationManager.startUpdatingLocation()
     }
 
@@ -404,8 +418,40 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// caller that queued up behind them. Revocation, the services-off latch
     /// and external stops all come through here.
     public func stopUpdatingLocation() {
+        isUpdatingLocation = false
         failOneShotRequests(with: LocationServiceError.notAuthorized)
         locationManager.stopUpdatingLocation()
+    }
+
+    // MARK: - Async Location Stream
+
+    /// Active continuation entries for location streams, keyed by unique subscription ID.
+    private var locationStreamContinuations: [UUID: AsyncStream<CLLocation>.Continuation] = [:]
+
+    /// Count of active location stream subscriptions.
+    public var locationStreamSubscriberCount: Int {
+        locationStreamContinuations.count
+    }
+
+    func addLocationStreamSubscriber(id: UUID, continuation: AsyncStream<CLLocation>.Continuation) {
+        let wasEmpty = locationStreamContinuations.isEmpty
+        locationStreamContinuations[id] = continuation
+        if wasEmpty {
+            startUpdatingLocation()
+        }
+    }
+
+    func removeLocationStreamSubscriber(id: UUID) {
+        guard locationStreamContinuations.removeValue(forKey: id) != nil else { return }
+        if locationStreamContinuations.isEmpty {
+            stopUpdatingLocation()
+        }
+    }
+
+    private func notifyStreamSubscribers(_ location: CLLocation) {
+        for continuation in locationStreamContinuations.values {
+            continuation.yield(location)
+        }
     }
 
     // MARK: - One-shot location
