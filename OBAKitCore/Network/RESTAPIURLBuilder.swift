@@ -49,23 +49,27 @@ struct RESTAPIURLBuilder: Sendable {
 
     /// Re-encodes any `%` character that is not followed by two valid ASCII hexadecimal digits as `%25`.
     /// This prevents `URLComponents.percentEncodedPath` from trapping on invalid percent encoding.
+    ///
+    /// Scans `unicodeScalars` rather than `Character`s: a `%` followed by a combining
+    /// mark (U+0301) is a single `Character`, so a `Character`-based scan would miss
+    /// the bare `%` and the URL would trap.
     private func sanitizePercentEncoding(_ path: String) -> String {
         var result = ""
         result.reserveCapacity(path.utf8.count)
-        var index = path.startIndex
-        while index < path.endIndex {
-            if path[index] == "%" {
-                let nextIndex = path.index(after: index)
-                if nextIndex < path.endIndex {
-                    let secondIndex = path.index(after: nextIndex)
-                    if secondIndex < path.endIndex {
-                        let c1 = path[nextIndex]
-                        let c2 = path[secondIndex]
-                        if c1.isHexDigit && c1.isASCII && c2.isHexDigit && c2.isASCII {
+        var index = path.unicodeScalars.startIndex
+        while index < path.unicodeScalars.endIndex {
+            if path.unicodeScalars[index] == "%" {
+                let nextIndex = path.unicodeScalars.index(after: index)
+                if nextIndex < path.unicodeScalars.endIndex {
+                    let secondIndex = path.unicodeScalars.index(after: nextIndex)
+                    if secondIndex < path.unicodeScalars.endIndex {
+                        let c1 = path.unicodeScalars[nextIndex]
+                        let c2 = path.unicodeScalars[secondIndex]
+                        if c1.properties.isHexDigit && c1.isASCII && c2.properties.isHexDigit && c2.isASCII {
                             result.append("%")
-                            result.append(c1)
-                            result.append(c2)
-                            index = path.index(after: secondIndex)
+                            result.unicodeScalars.append(c1)
+                            result.unicodeScalars.append(c2)
+                            index = path.unicodeScalars.index(after: secondIndex)
                             continue
                         }
                     }
@@ -73,8 +77,8 @@ struct RESTAPIURLBuilder: Sendable {
                 result.append("%25")
                 index = nextIndex
             } else {
-                result.append(path[index])
-                index = path.index(after: index)
+                result.unicodeScalars.append(path.unicodeScalars[index])
+                index = path.unicodeScalars.index(after: index)
             }
         }
         return result

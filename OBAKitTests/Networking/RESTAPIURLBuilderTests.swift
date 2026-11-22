@@ -517,4 +517,14 @@ final class RESTAPIURLBuilderTests {
         #expect(components != nil)
         #expect(url.absoluteString.contains("/api/where/report-problem-with-stop/1_50%25zz.json"))
     }
+
+    @Test func testPercentFollowedByCombiningMarkDoesNotTrap() {
+        // "%" followed by a combining mark (U+0301) is a single Swift Character,
+        // so a Character-based scan misses the bare "%" and the URL traps.
+        // The sanitizer must scan Unicode scalars instead.
+        let url = builder.generateURL(path: "/x/a%\u{301}b")
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components != nil)
+        #expect(url.absoluteString.contains("/x/a%25%CC%81b"))
+    }
 }
