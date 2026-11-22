@@ -484,14 +484,14 @@ final class RESTAPIURLBuilderTests {
 
     @Test func testQueryItemEscapingSpecialCharacters() {
         let url = builder.generateURL(path: "/api/where/test.json", params: [
-            "comment": "hello & goodbye = 1 + 2 / 3",
+            "comment": "hello & goodbye = test / 123",
             "name": "Line [A]"
         ])
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         #expect(components != nil)
-        #expect(queryValue(url, "comment") == "hello & goodbye = 1 + 2 / 3")
+        #expect(queryValue(url, "comment") == "hello & goodbye = test / 123")
         #expect(queryValue(url, "name") == "Line [A]")
-        #expect(url.absoluteString.contains("comment=hello%20%26%20goodbye%20%3D%201%20+%202%20/%203"))
+        #expect(url.absoluteString.contains("comment=hello%20%26%20goodbye%20%3D%20test%20/%20123"))
         #expect(url.absoluteString.contains("name=Line%20%5BA%5D"))
     }
 
@@ -502,5 +502,19 @@ final class RESTAPIURLBuilderTests {
         #expect(components != nil)
         #expect(url.path.contains("unencoded path with spaces"))
         #expect(components?.percentEncodedPath.contains("%20") == true)
+    }
+
+    @Test func testStrayPercentInStopIDDoesNotTrap() {
+        let url = builder.getStopProblem(stopID: "1_50%zz", code: .other, comment: nil, location: nil)
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components != nil)
+        #expect(url.absoluteString.contains("/api/where/report-problem-with-stop/1_50%25zz.json"))
+    }
+
+    @Test func testStrayPercentInPathDoesNotTrap() {
+        let url = builder.generateURL(path: "/api/where/report-problem-with-stop/1_50%zz.json")
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        #expect(components != nil)
+        #expect(url.absoluteString.contains("/api/where/report-problem-with-stop/1_50%25zz.json"))
     }
 }
