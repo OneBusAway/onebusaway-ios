@@ -41,7 +41,7 @@
 "alarm_time_picker.description" = "在公交车离站多久前提醒我：";
 
 /* Title of the Alarm Time Picker page. */
-"alarm_time_picker.title" = "添加提醒";
+"alarm_time_picker.title" = "添加闹钟";
 
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "在锁定屏幕上追踪";
@@ -261,6 +261,21 @@
 
 /* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
 "donation_cell.title" = "🚨 %@需要您的帮助";
+
+/* Button at the bottom of the donation explanation screen that opens the donation page on the project's website. */
+"donation_learn_more.donate_button" = "在我们的网站上捐款";
+
+/* Full explanation on the donation explanation screen. %1$@ is the app name and appears four times. $27.50 is an amount in US dollars; keep it in dollars. 501(c)(3) is a US tax status; keep it unchanged. */
+"donation_learn_more.explanation_fmt" = "我们有许多改进%1$@的宏大计划，但没有您的帮助就无法实现。本App目前100%%由志愿者开发，我们需要您的帮助来资助未来的开发工作。\n\n作为Open Transit Software Foundation（一家501(c)(3)非营利组织）的核心项目，我们依靠像您这样的用户的善意来维持运转并不断改进这款软件。\n\n每年只有一小部分用户捐款，但每一份贡献，无论多少，都有助于让%1$@保持免费、持续更新并人人可用。一笔小小的捐款，哪怕只是一周的通勤费用27.50美元，也能带来巨大改变。\n\n您的捐款可抵税，它确保%1$@对所有人保持免费和可用。让我们一起塑造公共交通的未来！\n\n谢谢！\n%1$@团队";
+
+/* Heading above the explanation on the donation explanation screen. */
+"donation_learn_more.header" = "我们为什么需要您的帮助";
+
+/* Credit for the header photo on the donation explanation screen. Keep the photographer's name, the license name and the URL unchanged. */
+"donation_learn_more.photo_credit" = "照片：Timothy Neesam / 许可协议：CC-BY-ND 2.0 (https://flickr.com/photos/neesam)";
+
+/* Button on the donation explanation screen that expands the truncated explanation to its full length. */
+"donation_learn_more.read_more" = "阅读更多...";
 
 /* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "我现在不想提供帮助";
@@ -484,11 +499,11 @@
 /* Placeholder text for Bookmark Group. */
 "manage_groups_controller.text_field_placeholder" = "分类名称";
 
-/* Manage Groups controller title */
-"manage_groups_controller.title" = "编辑书签";
-
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "使地图居中于当前位置";
+
+/* Subtitle of a pin the user dropped on the map when looking up its address failed. */
+"map_controller.dropped_pin_no_details" = "无法获取位置详细信息";
 
 /* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
 "map_controller.dropped_pin_title" = "已放置的大头针";
@@ -504,9 +519,6 @@
 
 /* Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes. */
 "map_controller.map_settings.accessibility_label" = "地图设置";
-
-/* Voiceover text indicating that this button toggles the base map type. */
-"map_controller.map_type.accessibility_label" = "地图类型";
 
 /* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@，已开启 %2$d 个图层";
@@ -716,6 +728,9 @@
 /* Siri asks which stop to report departures for when the user didn't name one. */
 "next_departures_at_stop_intent.choose_stop" = "哪个车站？";
 
+/* Short button on the Next Departures card that starts a Live Activity for the bookmark */
+"next_departures_card.track_button" = "追踪";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "该书签在你当前的地区不可用。";
 
@@ -852,10 +867,25 @@
 "onboarding.location.benefit_nearby_title" = "查看附近站点";
 
 /* Footnote of the location onboarding screen; the argument is the app name */
-"onboarding.location.footnote_fmt" = "%@ 仅在应用打开时使用你的位置信息。你可以随时在设置中更改此设置。";
+"onboarding.location.footnote_fmt" = "除非你开启接近提醒，否则 %@ 仅在应用打开时使用你的位置信息。你可以随时在设置中更改此设置。";
 
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "查看你周围的交通";
+
+/* Body of the screen that introduces the app's new map layout, on iPhone. 'Home', 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body" = "地图现已铺满整个屏幕，站点、书签和搜索位于可向上滑动的面板中。“设置”和“更多”位于“首页”列表底部。";
+
+/* Body of the screen that introduces the app's new map layout, on iPad and other wide screens. 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body_regular" = "地图现已铺满整个屏幕，站点、书签和搜索位于面板中。“设置”位于面板底部，“更多”是地图上的按钮。";
+
+/* Footnote of the screen that introduces the app's new map layout. 'Classic tab bar layout' is the name of the switch in Settings and must match its translation (settings_controller.layout_section.classic_tab_bar). */
+"onboarding.map_panel_intro.footnote" = "更喜欢标签栏？请在“设置”中打开“经典标签栏布局”。";
+
+/* Badge on the screen that introduces the app's new map layout to people who used the previous one */
+"onboarding.map_panel_intro.new_badge" = "新";
+
+/* Title of the screen that introduces the app's new map layout to people who used the previous tab bar layout */
+"onboarding.map_panel_intro.title" = "全新外观";
 
 /* Body of the notifications onboarding screen */
 "onboarding.notifications.body" = "接收关于全区域服务提醒的通知 — 冰暴、洪水以及改变交通运行方式的重大事件。";
@@ -889,6 +919,9 @@
 
 /* Body of the region onboarding screen prompting the rider to choose a transit network */
 "onboarding.region.body_choose" = "选择你乘坐的交通网络。";
+
+/* Header above the regions list when no region has been detected or selected yet */
+"onboarding.region.choose_header" = "选择你的地区";
 
 /* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
 "onboarding.region.current_label" = "当前地区";
@@ -973,6 +1006,9 @@
 
 /* Help text displayed on an inactive region. */
 "region_picker.inactive_region_help_text" = "未启用的地区";
+
+/* Title of the menu on the region picker that holds the New Custom Region button and the Show Inactive and Show Experimental toggles. */
+"region_picker.more_options_button" = "更多选项";
 
 /* Title of a button that shows a region creation view controller. */
 "region_picker.new_custom_region_button" = "新建自定义地区";
@@ -1109,9 +1145,6 @@
 /* Search scope tag filtering results to transit routes. */
 "search_scope.routes" = "线路";
 
-/* Accessibility label for the button that clears the search query. */
-"search_sheet.clear_query" = "清除";
-
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "受此影响的公交公司";
 
@@ -1163,9 +1196,6 @@
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
 "settings_controller.arrival_display_section.region_time_zone" = "以区域时区显示时间";
 
-/* Title for the departure filter selection alert */
-"settings_controller.arrival_filter.selector_title" = "显示班次";
-
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "显示班次";
 
@@ -1196,9 +1226,6 @@
 /* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
 "settings_controller.experimental_section.estimate_vehicle_positions" = "估算车辆当前位置";
 
-/* Settings > Experimental section > Map panel toggle */
-"settings_controller.experimental_section.map_panel" = "使用地图面板体验";
-
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "实验性功能";
 
@@ -1213,6 +1240,15 @@
 
 /* Settings > Feedback section title */
 "settings_controller.feedback_section.title" = "反馈";
+
+/* Settings > Layout section > Toggle that replaces the full-screen map and sliding panel with the tab bar layout from earlier versions of the app */
+"settings_controller.layout_section.classic_tab_bar" = "经典标签栏布局";
+
+/* Settings > Layout section footer explaining the Classic tab bar layout toggle */
+"settings_controller.layout_section.footer" = "使用早期版本的标签栏，而不是带滑动面板的全屏地图。";
+
+/* Settings > Layout section title. The section chooses how the app's main screen is arranged. */
+"settings_controller.layout_section.title" = "布局";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "显示我现在的朝向";
@@ -1481,6 +1517,9 @@
 
 /* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.service_alerts.summary_fmt" = "%d条服务通知";
+
+/* Title of the card shown above a stop's departures when refreshing them failed, so the times on screen are from the last successful update. */
+"stop_page.stale.title" = "无法更新班次信息";
 
 /* VoiceOver status suffix for a live departure. %@ is the adherence label. */
 "stop_page.status.a11y_live_fmt" = "实时追踪，%@";
@@ -1857,14 +1896,8 @@
 "map_sheet.basemap_satellite" = "卫星";
 /* Basemap style: standard street map */
 "map_sheet.basemap_standard" = "标准";
-/* Map sheet section for display options like Points of Interest */
-"map_sheet.display_group" = "地图显示";
-/* Map sheet row label for the rental minimum-range filter */
-"map_sheet.minimum_range" = "最低续航里程";
 /* Range filter menu option imposing no minimum range */
 "map_sheet.minimum_range_any" = "不限";
-/* Map sheet group header for non-transit mobility layers */
-"map_sheet.other_modes_group" = "其他出行方式";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "重置";
 /* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
@@ -1881,8 +1914,6 @@
 "map_sheet.shows_points_of_interest" = "兴趣点";
 /* Title of the Map sheet */
 "map_sheet.title" = "地图";
-/* Map sheet group header for transit layers */
-"map_sheet.transit_group" = "公共交通";
 /* Header for More-tab rows that open tutorial, phone, or text links configured by the agency. */
 "more_controller.agency_contact.header" = "联系与帮助";
 /* Opens a tel: link to call the transit agency from the More tab. */
@@ -2031,14 +2062,6 @@
 "trip_page.vehicle_label_fmt" = "车辆 %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
 "trip_page.view_schedule" = "查看时刻表";
-/* Shown when the vehicle is arriving at the user's stop */
-"trip_progress.arriving_now" = "即将到站";
-/* Estimated time of arrival to the user's stop. e.g. ~8 min to your stop */
-"trip_progress.eta_to_stop_fmt" = "距您的车站约%d分钟";
-/* Shown when the vehicle has already passed the user's destination stop */
-"trip_progress.passed_your_stop" = "已过您的车站";
-/* Shows the current stop position. e.g. Stop 5 of 18 */
-"trip_progress.stop_count_fmt" = "第%1$d站，共%2$d站";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "语音搜索";

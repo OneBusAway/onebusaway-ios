@@ -162,7 +162,7 @@ final class SettingsViewModel {
         }
     }
 
-    // MARK: - Experimental
+    // MARK: - Layout and Experimental
 
     /// The window's root is built from this flag, so changing it rebuilds the
     /// root at once. Settings sits inside the root being replaced, so it goes first.
@@ -174,6 +174,13 @@ final class SettingsViewModel {
                 application.reloadRootUserInterface()
             }
         }
+    }
+
+    /// Settings > Layout's switch: the inverse of `usesMapPanelExperience`, which
+    /// stays the stored value, so ON means the tab bar.
+    var usesClassicTabBarLayout: Bool {
+        get { !usesMapPanelExperience }
+        set { usesMapPanelExperience = !newValue }
     }
 
     var clustersStops: Bool {

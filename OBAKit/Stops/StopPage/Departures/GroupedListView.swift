@@ -262,6 +262,7 @@ struct GroupedListView: View {
             } label: {
                 HStack(spacing: 5) {
                     Image(systemName: alarm != nil ? "bell.fill" : "bell")
+                        .accessibilityIdentifier("departure_alarm_bell")
                     Text(alarm.map { Formatters.shortMinutesText(alarmLeadTime($0)) } ?? Strings.alarm)
                         .monospacedDigit()
                 }
@@ -367,6 +368,7 @@ struct GroupedListView: View {
         if showsAlarmAffordance(for: departure) {
             Button { onAlarmToggle(departure) } label: {
                 Image(systemName: alarm != nil ? "bell.fill" : "bell")
+                    .accessibilityIdentifier("departure_alarm_bell")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(alarm != nil ? Color.white : Color.secondary)
                     .frame(width: alarmCircleSize, height: alarmCircleSize)

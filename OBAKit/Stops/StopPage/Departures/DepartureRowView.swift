@@ -169,6 +169,7 @@ struct DepartureRowView: View {
     private var alarmCircleButton: some View {
         if showsAlarmAffordance {
             Image(systemName: hasAlarm ? "bell.fill" : "bell")
+                .accessibilityIdentifier("departure_alarm_bell")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(hasAlarm ? Color.white : Color.secondary)
                 .frame(width: alarmCircleSize, height: alarmCircleSize)

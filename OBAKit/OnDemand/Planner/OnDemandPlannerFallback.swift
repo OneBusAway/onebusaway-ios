@@ -171,7 +171,7 @@ struct OnDemandPlannerFallbackView: View {
                 HStack {
                     Text(OnDemandCopy.moreServingBoth(moreCount)).font(.subheadline.weight(.semibold))
                     Spacer(minLength: 0)
-                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).accessibilityHidden(true)
+                    Image(systemName: "chevron.forward").font(.caption.weight(.semibold)).accessibilityHidden(true)
                 }
                 .foregroundStyle(accent)
                 .frame(minHeight: OnDemandZoneCardView.minimumTouchTarget)
@@ -199,7 +199,7 @@ struct OnDemandPlannerFallbackView: View {
                         }
                     }
                     Spacer(minLength: 0)
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary).accessibilityHidden(true)
+                    Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary).accessibilityHidden(true)
                 }
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .combine)

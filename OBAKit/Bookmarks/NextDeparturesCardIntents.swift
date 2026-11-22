@@ -114,9 +114,10 @@ struct NextDeparturesSnippetIntent: SnippetIntent {
         })
     }
 
-    /// The Bookmarks list's "Track" action, already translated.
+    /// Its own key: the Bookmarks list's context-menu action shares the verb but
+    /// says "Track on Lock Screen", which is too long for the card's button.
     private static var trackTitle: String {
-        OBALoc("bookmarks_controller.context_menu.track_live_activity", value: "Track", comment: "Action to start a Live Activity for a specific bookmark")
+        OBALoc("next_departures_card.track_button", value: "Track", comment: "Short button on the Next Departures card that starts a Live Activity for the bookmark")
     }
 }
 

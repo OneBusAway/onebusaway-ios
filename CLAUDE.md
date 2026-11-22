@@ -39,6 +39,8 @@ The resolver supports explicit overrides across machines:
 - `-n, --name <NAME>`: Named simulator override (e.g. `--name "iPhone 18 Pro"`).
 - `--pro`: Select newest iPhone Pro.
 - `--duo`: Select newest iPhone Duo.
+- `--ipad`: Select an iPad (an iPad Pro when the runtime has one).
+- `--os <MAJOR>`: Only consider iOS `<MAJOR>.x` runtimes (e.g. `--os 18` for the deployment target); combines with `--ipad`, `--pro`, `--duo` and `--name`.
 - Environment variables: `SIMULATOR_OVERRIDE_UDID` / `SIMULATOR_OVERRIDE_NAME`.
 (For watchOS workflows, `scripts/resolve_watch_simulator_udid` provides matching overrides: `-u`, `-n`, `--ultra`).
 
@@ -180,6 +182,8 @@ scripts/app_smoke_test [DerivedData]               # Build, install, launch and 
 scripts/app_smoke_test --skip-build                # Use existing build in DerivedData
 scripts/app_smoke_test --name "iPhone 18 Pro"      # Target specific simulator by name
 scripts/app_smoke_test --udid "$SIMULATOR_UDID"    # Target specific simulator by UDID
+scripts/app_smoke_test --ipad                      # Target an iPad on the newest runtime
+scripts/app_smoke_test --ipad --os 18 --skip-build # Reuse the build on an iPadOS 18 simulator (deployment target)
 scripts/app_smoke_test --screenshot-on-failure     # Save failure screenshot on crash
 scripts/app_smoke_test --dry-run                   # Validate preflight checks without build
 

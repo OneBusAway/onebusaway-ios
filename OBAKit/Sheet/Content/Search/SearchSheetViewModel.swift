@@ -27,6 +27,14 @@ struct SearchSheetMessage: Identifiable, Equatable {
     let id = UUID()
     let kind: Kind
     let text: String
+
+    /// The alert title. An empty result isn't a failure, so it isn't titled "Error".
+    var title: String {
+        switch kind {
+        case .noResults: SearchResultsSheetView.noResultsTitle
+        case .error: Strings.error
+        }
+    }
 }
 
 /// Owns a search session: the query, the `SearchInteractor` that turns it into
@@ -48,7 +56,15 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         }
     }
 
-    @Published private(set) var message: SearchSheetMessage?
+    @Published private(set) var message: SearchSheetMessage? {
+        didSet {
+            if let message { messageTitle = message.title }
+        }
+    }
+
+    /// The title of the most recent message. Kept after `message` clears so the
+    /// alert's title doesn't change under it while it animates away.
+    private(set) var messageTitle = Strings.error
 
     @Published private(set) var isSearching = false
 
@@ -289,7 +305,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             response = try await application.searchManager.fetchResults(for: request)
         } catch {
             guard !Task.isCancelled else { return }
-            message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
+            message = errorMessage(for: error)
             return
         }
 
@@ -323,7 +339,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             guard let resolved = await router.resolveSingleResult(from: response) else {
                 guard !Task.isCancelled else { return }
                 if let error = router.lastError {
-                    message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
+                    message = errorMessage(for: error)
                 }
                 return
             }
@@ -334,6 +350,17 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
             coordinator.pop()
             router.present(resolved)
         }
+    }
+
+    /// Classified the same way as `StopViewModel.operationErrorMessage`, so a raw
+    /// `URLError` or decoding failure reads as an explanation rather than a code.
+    private func errorMessage(for error: Error) -> SearchSheetMessage {
+        let classified = ErrorClassifier.classify(
+            error,
+            regionName: application.currentRegionName,
+            isCellularDataRestricted: application.isCellularDataRestricted
+        )
+        return SearchSheetMessage(kind: .error, text: classified.localizedDescription)
     }
 
     static let noResultsText = OBALoc(
@@ -369,7 +396,7 @@ final class SearchSheetViewModel: NSObject, ObservableObject, SearchDelegate {
         guard !Task.isCancelled else { return }
         guard let resolved else {
             if let error = router.lastError {
-                message = SearchSheetMessage(kind: .error, text: error.localizedDescription)
+                message = errorMessage(for: error)
             }
             return
         }

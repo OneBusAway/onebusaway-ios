@@ -42,6 +42,15 @@ enum HomeTab: CaseIterable, Hashable {
         }
     }
 
+    /// For UI tests, which can't match on the localized title.
+    var accessibilityIdentifier: String {
+        switch self {
+        case .home: "home_tab_home"
+        case .recent: "home_tab_recent"
+        case .bookmarks: "home_tab_bookmarks"
+        }
+    }
+
     /// The tab a home section's header goes to, or `nil` for a route that is no
     /// tab's index.
     init?(seeAll route: AppSheetRoute) {
@@ -158,6 +167,19 @@ nonisolated struct HomeCollapsedDetent: CustomPresentationDetent {
     /// values, only the system's, so one set around or in the sheet read as its
     /// default. The sheet's layout passes ask for the height again, so a
     /// measurement takes effect on the pass after it lands.
+    ///
+    /// One per process, not per scene: `height(in:)` gets no scene or window
+    /// identity to key it by. On iPad with two windows, each window's home sheet
+    /// writes `headerHeight`, `requested` and `sheetExtra` here, and each sheet's
+    /// detent reads whichever window wrote last. They agree while the windows'
+    /// headers lay out alike; they can disagree when the windows differ in
+    /// horizontal size class (tabs in one, none in the other), Dynamic Type, or
+    /// screen geometry (`sheetExtra`, e.g. one window in Slide Over or on an
+    /// external display). The effect is a collapsed detent sized for the other
+    /// window until this window's header publishes again, which happens only
+    /// when its height changes (a resize, size-class or text-size change) or the
+    /// sheet is built anew; a layout pass alone doesn't. Accepted for 26.5 as
+    /// cosmetic.
     static let measured = Mutex(Measurements())
 
     static func height(_ measurements: Measurements) -> CGFloat {
@@ -329,6 +351,7 @@ struct HomeTabBar: View {
         // Read as a tab, "selected" or not, inside the tab bar container above.
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier(tab.accessibilityIdentifier)
     }
 }
 

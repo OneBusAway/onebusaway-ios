@@ -138,6 +138,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         let searchBar = UISearchBar.autolayoutNew()
         searchBar.searchBarStyle = .minimal
         searchBar.delegate = self
+        searchBar.searchTextField.accessibilityIdentifier = "map_search_field"
         return searchBar
     }()
 

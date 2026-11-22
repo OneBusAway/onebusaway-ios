@@ -35,7 +35,19 @@ final class OnboardingRegistryTests {
             shouldPerformMigration: false,
             locationAuthorizationDetermined: false,
             notificationAuthorizationDetermined: false,
-            isPushServiceConfigured: true)
+            isPushServiceConfigured: true,
+            hasCurrentRegion: false,
+            usesMapPanelExperience: true)
+    }
+
+    /// Environment helper: someone who already picked a region, on the default
+    /// map panel layout, with notifications already decided.
+    private func existingUserEnvironment() -> OnboardingEnvironment {
+        var env = newUserEnvironment()
+        env.hasCurrentRegion = true
+        env.locationAuthorizationDetermined = true
+        env.notificationAuthorizationDetermined = true
+        return env
     }
 
     private func flowIDs(_ environment: OnboardingEnvironment) -> [OnboardingStepID] {
@@ -56,6 +68,50 @@ final class OnboardingRegistryTests {
     @Test func `Backfilled existing user gets exactly notifications`() {
         store.backfillIfNeeded(hasCurrentRegion: true)
         #expect(flowIDs(newUserEnvironment()) == [.notifications])
+    }
+
+    // MARK: - Map panel intro
+
+    /// An upgrader moved onto the map panel by default is told where things went.
+    @Test func `Existing user on the map panel gets the map panel intro alone`() {
+        store.backfillIfNeeded(hasCurrentRegion: true)
+        #expect(flowIDs(existingUserEnvironment()) == [.mapPanelIntro])
+    }
+
+    @Test func `Existing user who chose the tab bar never gets the map panel intro`() {
+        store.backfillIfNeeded(hasCurrentRegion: true)
+        var env = existingUserEnvironment()
+        env.usesMapPanelExperience = false
+        #expect(flowIDs(env) == [])
+    }
+
+    @Test func `The map panel intro shows once`() {
+        store.backfillIfNeeded(hasCurrentRegion: true)
+        store.markSeen(.mapPanelIntro, version: 1)
+        #expect(flowIDs(existingUserEnvironment()) == [])
+    }
+
+    /// A new install never saw the tab bar, so the full flow leaves the intro out…
+    @Test func `New user's full flow leaves out the map panel intro`() {
+        #expect(!flowIDs(newUserEnvironment()).contains(.mapPanelIntro))
+    }
+
+    /// …and it doesn't turn up on their next launch, once onboarding gave them a region.
+    @Test func `New user skipped past the map panel intro never gets it later`() {
+        OnboardingRegistry.skipExistingUserOnlySteps(store: store)
+        #expect(store.seenVersion(of: .mapPanelIntro) == 1)
+        // What the full flow marks seen as the new user finishes it.
+        for id in OnboardingStepStore.backfilledStepIDs { store.markSeen(id, version: 1) }
+        store.markSeen(.notifications, version: 1)
+
+        #expect(flowIDs(existingUserEnvironment()) == [])
+    }
+
+    @Test func `Skipping existing-user-only steps touches nothing else`() {
+        OnboardingRegistry.skipExistingUserOnlySteps(store: store)
+        for id in OnboardingStepID.allCases where id != .mapPanelIntro {
+            #expect(store.seenVersion(of: id) == 0)
+        }
     }
 
     @Test func `No push provider hides notifications step`() {

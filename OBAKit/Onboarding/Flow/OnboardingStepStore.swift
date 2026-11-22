@@ -17,6 +17,7 @@ enum OnboardingStepID: String, CaseIterable, Sendable {
     case location
     case region
     case notifications
+    case mapPanelIntro
     case done
 }
 

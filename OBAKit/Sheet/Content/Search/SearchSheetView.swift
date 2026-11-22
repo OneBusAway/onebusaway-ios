@@ -23,9 +23,9 @@ struct SearchSheetView: View {
         self.placeholder = placeholder
     }
 
-    /// Mirrors `AlertPresenter.show(errorMessage:)`, which the UIKit map uses for
-    /// both search failures and the no-results case: `Strings.error` as the title,
-    /// the message as the body, one dismiss button.
+    /// One alert for both outcomes: the message as the body, one dismiss button,
+    /// titled by kind (`SearchSheetMessage.title`) so an empty result isn't
+    /// announced as an error.
     private var messageAlert: Binding<Bool> {
         Binding(
             get: { viewModel.message != nil },
@@ -125,7 +125,7 @@ struct SearchSheetView: View {
         // Outcomes go to an alert rather than a banner above the list: the banner
         // pushed the list down on every failed search, and it sat in the one place
         // the user is looking while typing.
-        .alert(Strings.error, isPresented: messageAlert, presenting: viewModel.message) { _ in
+        .alert(viewModel.messageTitle, isPresented: messageAlert, presenting: viewModel.message) { _ in
             Button(Strings.dismiss, role: .cancel) { }
         } message: { message in
             Text(message.text)

@@ -150,8 +150,16 @@ class AgencyAlertsViewController: UIViewController,
         let activityItems = viewModel.shareActivityItems(for: alert)
 
         return UIAction(title: Strings.share, image: Icons.share) { [weak self] _ in
+            guard let self else { return }
             let vc = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-            self?.present(vc, animated: true, completion: nil)
+            // iPad support: without an anchored popover, presenting a share
+            // sheet on iPad throws at runtime.
+            if let popover = vc.popoverPresentationController {
+                popover.sourceView = self.view
+                popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            self.present(vc, animated: true, completion: nil)
         }
     }
 

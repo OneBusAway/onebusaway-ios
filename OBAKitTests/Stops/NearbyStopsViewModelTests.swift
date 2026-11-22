@@ -137,6 +137,34 @@ final class NearbyStopsViewModelTests: OBATestCase {
         #expect(!viewModel.isLoading)
     }
 
+    // MARK: - Error message
+
+    @Test @MainActor
+    func `Operation error message is nil without an error`() {
+        let viewModel = NearbyStopsViewModel(coordinate: coordinate, apiService: nil)
+        #expect(viewModel.operationErrorMessage == nil)
+    }
+
+    /// The sheet shows `operationErrorMessage`, not the raw error, so it has to go
+    /// through `ErrorClassifier` the way `StopViewModel.operationErrorMessage` does.
+    @Test @MainActor
+    func `Operation error message is classified`() async throws {
+        let loader = MockDataLoader(testName: name)
+        let offline = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet, userInfo: nil)
+        loader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: offline) { _ in true })
+        let viewModel = NearbyStopsViewModel(
+            coordinate: coordinate,
+            apiService: buildRESTService(dataLoader: loader),
+            regionName: { "Puget Sound" },
+            isCellularDataRestricted: { true }
+        )
+
+        await viewModel.loadStops()
+
+        let message = try #require(viewModel.operationErrorMessage)
+        #expect(message == APIError.cellularDataRestricted.localizedDescription)
+    }
+
     // MARK: - Guard: prevents concurrent double-load
 
     @Test @MainActor

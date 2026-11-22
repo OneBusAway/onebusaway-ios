@@ -59,6 +59,9 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
             "-OBACurrentRegionIdentifierUserDefaultsKey", "<integer>1</integer>",
+            // Every onboarding step seen, so an existing user's one-time steps (the
+            // map panel intro) don't cover the first slide.
+            "-OBAOnboardingSeenStepVersions", OnboardingBypass.seenStepVersions,
             // The slides show the map panel, even on a simulator switched to the classic UI.
             "-OBAUseMapPanelExperience", "YES",
             // A popover tip would sit over the screen and swallow the first tap.
@@ -152,7 +155,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
 
     @MainActor private func openTripPage(in app: XCUIApplication) {
         firstDeparture(in: app).tap()
-        XCTAssertTrue(app.buttons["Track on Lock Screen"].waitForExistence(timeout: 30), "Trip page never loaded")
+        XCTAssertTrue(app.buttons["trip_track_live_activity_button"].waitForExistence(timeout: 30), "Trip page never loaded")
     }
 
     // MARK: - Slides
@@ -172,7 +175,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         // Stub departures: the real trip has usually left by capture time.
         let app = launchOnStopSheet(environment: ["TEST_SCREENSHOT_LIVE_ACTIVITY_MINUTES": "4,12,21"])
         openTripPage(in: app)
-        app.buttons["Track on Lock Screen"].tap()
+        app.buttons["trip_track_live_activity_button"].tap()
         sleep(3)
 
         // XCUIDevice has no public lock button; this is the private selector
@@ -210,10 +213,12 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
     /// 04 — Trip planner results from the rider's location to UW's Allen Center.
     @MainActor func test04TripPlanner() {
         let app = launch()
-        let search = app.searchFields["Where are you going?"]
-        // The home sheet's search bar is a button that opens the search sheet,
-        // whose field has the same label. A first tap can only raise the sheet.
-        let searchBar = app.buttons["Where are you going?"]
+        // The search sheet's field is a native `.searchable` one, which takes no
+        // identifier; it's the only search field on screen.
+        let search = app.searchFields.firstMatch
+        // The home sheet's search bar is a button that opens the search sheet.
+        // A first tap can only raise the sheet.
+        let searchBar = app.buttons["home_search_button"]
         tap(searchBar, timeout: 30, "Map search bar missing")
         if !search.waitForExistence(timeout: 5) {
             searchBar.tap()
@@ -236,24 +241,24 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         capture("04-trip-planner")
     }
 
-    /// 05 — The Add Reminder sheet, on a departure far enough out that the
+    /// 05 — The Add Alarm sheet, on a departure far enough out that the
     /// picker can offer 10 minutes.
     @MainActor func test05Alarm() throws {
         let app = launchOnStopSheet()
         guard let row = departure(atLeast: 12, in: app) else {
             throw XCTSkip("No departure 12 or more minutes away at Capitol Hill right now.")
         }
-        let bell = row.images["bell"]
+        let bell = row.images["departure_alarm_bell"]
         XCTAssertTrue(bell.exists, "Departure has no alarm button; alarms need Obaco and push running")
         bell.tap()
-        XCTAssertTrue(app.staticTexts["Add Reminder"].waitForExistence(timeout: 15), "Alarm sheet never appeared")
+        XCTAssertTrue(app.staticTexts["Add Alarm"].waitForExistence(timeout: 15), "Alarm sheet never appeared")
         capture("05-alarm")
     }
 
     /// 06 — The home sheet's Bookmarks tab, seeded with two groups of trip bookmarks.
     @MainActor func test06Bookmarks() {
         let app = launch(environment: ["TEST_SCREENSHOT_BOOKMARKS": Self.bookmarks])
-        let tab = app.buttons["Bookmarks"].firstMatch
+        let tab = app.buttons["home_tab_bookmarks"].firstMatch
         XCTAssertTrue(tab.waitForExistence(timeout: 30), "Home sheet has no Bookmarks tab")
 
         // The seed fetches live arrivals for each bookmark, so it lands a few
@@ -289,7 +294,7 @@ nonisolated final class AppStoreScreenshotUITests: XCTestCase {
         // Launch once so the app ends slide 2's Live Activity, or it shows in
         // the Dynamic Island over Safari.
         let app = launch()
-        XCTAssertTrue(app.buttons["Where are you going?"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["home_search_button"].waitForExistence(timeout: 30))
         sleep(2)
         app.terminate()
 

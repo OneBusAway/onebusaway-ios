@@ -20,14 +20,40 @@ final class NearbyStopsViewModel: ObservableObject {
 
     private let coordinate: CLLocationCoordinate2D
     private let apiService: RESTAPIService?
+    private let regionName: () -> String?
+    private let isCellularDataRestricted: () -> Bool
 
     convenience init(coordinate: CLLocationCoordinate2D, application: Application) {
-        self.init(coordinate: coordinate, apiService: application.apiService)
+        self.init(
+            coordinate: coordinate,
+            apiService: application.apiService,
+            regionName: { [weak application] in application?.currentRegionName },
+            isCellularDataRestricted: { [weak application] in application?.isCellularDataRestricted ?? false }
+        )
     }
 
-    init(coordinate: CLLocationCoordinate2D, apiService: RESTAPIService?) {
+    init(
+        coordinate: CLLocationCoordinate2D,
+        apiService: RESTAPIService?,
+        regionName: @escaping () -> String? = { nil },
+        isCellularDataRestricted: @escaping () -> Bool = { false }
+    ) {
         self.coordinate = coordinate
         self.apiService = apiService
+        self.regionName = regionName
+        self.isCellularDataRestricted = isCellularDataRestricted
+    }
+
+    /// `operationError` as the rider should read it — classified the same way as
+    /// `StopViewModel.operationErrorMessage`, so a raw `URLError` or decoding failure
+    /// reads as an explanation rather than a code.
+    var operationErrorMessage: String? {
+        guard let operationError else { return nil }
+        return ErrorClassifier.classify(
+            operationError,
+            regionName: regionName(),
+            isCellularDataRestricted: isCellularDataRestricted()
+        ).localizedDescription
     }
 
     func loadStops() async {

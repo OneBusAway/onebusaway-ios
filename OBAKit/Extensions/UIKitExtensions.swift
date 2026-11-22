@@ -25,8 +25,9 @@ public extension UIButton {
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .vertical)
         NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(equalToConstant: 40.0),
-            button.widthAnchor.constraint(equalToConstant: 40.0)
+            // 44pt: the HIG minimum hit target.
+            button.heightAnchor.constraint(equalToConstant: 44.0),
+            button.widthAnchor.constraint(equalToConstant: 44.0)
         ])
 
         button.accessibilityLabel = Strings.close

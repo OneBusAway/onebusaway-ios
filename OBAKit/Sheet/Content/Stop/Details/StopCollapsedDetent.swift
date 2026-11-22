@@ -34,6 +34,16 @@ nonisolated struct StopCollapsedDetent: CustomPresentationDetent {
     /// `Context` carries only the system's environment values. Only the
     /// uncovered stop sheet writes it (`StopDetailsSheetView`), so a stop stacked
     /// over another sizes the detent from its own name.
+    ///
+    /// One per process, not per scene, as `HomeCollapsedDetent.measured` is and
+    /// for the same reason. On iPad with a stop sheet open in two windows, the
+    /// window that last laid out its stop sheet sets the collapsed detent for
+    /// both, and for the map padding `MapPanelRootView.estimatedHeight` reads from
+    /// here. They differ when the stops' names wrap to different line counts, or
+    /// the windows differ in Dynamic Type. The effect is a collapsed stop sheet
+    /// sized for the other window's stop until this window's sheet publishes
+    /// again, which happens only when its top bar or name block changes height,
+    /// or it is uncovered or built anew. Accepted for 26.5 as cosmetic.
     static let measured = Mutex(Measurements())
 
     /// About as short as iOS 26 will draw a floating sheet without narrowing

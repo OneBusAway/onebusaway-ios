@@ -9,6 +9,7 @@
 
 import Foundation
 import UserNotifications
+import OBAKitCore
 
 /// A snapshot of the app state that onboarding eligibility predicates run against.
 /// Pure data so the flow computation is synchronous and unit-testable; any async
@@ -20,6 +21,11 @@ struct OnboardingEnvironment: Sendable {
     var locationAuthorizationDetermined: Bool
     var notificationAuthorizationDetermined: Bool
     var isPushServiceConfigured: Bool
+    /// A region was already selected when onboarding was evaluated — someone who
+    /// has used the app before, rather than a new install.
+    var hasCurrentRegion: Bool = false
+    /// The map panel is the root UI (`FeatureFlags.isMapPanelExperienceEnabled`).
+    var usesMapPanelExperience: Bool = false
 
     @MainActor
     static func current(application: Application) async -> OnboardingEnvironment {
@@ -40,7 +46,9 @@ struct OnboardingEnvironment: Sendable {
             shouldPerformMigration: application.shouldPerformMigration,
             locationAuthorizationDetermined: !application.locationService.canRequestAuthorization,
             notificationAuthorizationDetermined: notificationAuthorizationDetermined,
-            isPushServiceConfigured: isPushServiceConfigured)
+            isPushServiceConfigured: isPushServiceConfigured,
+            hasCurrentRegion: application.regionsService.currentRegion != nil,
+            usesMapPanelExperience: FeatureFlags.isMapPanelExperienceEnabled(userDefaults: application.userDefaults))
     }
 }
 

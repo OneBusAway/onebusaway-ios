@@ -289,7 +289,8 @@ struct StopDetailsSheetView: View {
     /// The shared assembly of the departures list. Identical to the one the
     /// pushed page builds apart from `onRetry`: this presentation has no
     /// pull-to-refresh, so a retry goes through the same spinner-floored path as
-    /// the top bar's button.
+    /// the top bar's button. And the stale-arrivals notice carries the
+    /// "Updated: …" line, which this sheet shows nowhere else.
     private func departuresBuilder(navigation: StopPageNavigationHandler) -> StopDeparturesBuilder {
         StopDeparturesBuilder(
             viewModel: viewModel,
@@ -298,7 +299,8 @@ struct StopDetailsSheetView: View {
             onRetry: refresh,
             expandedRouteID: $expandedRouteID,
             donationHidden: $donationHidden,
-            pastCollapsed: $pastCollapsed
+            pastCollapsed: $pastCollapsed,
+            showsFreshnessInStaleNotice: true
         )
     }
 

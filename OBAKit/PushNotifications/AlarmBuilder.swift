@@ -177,7 +177,7 @@ class AlarmTimePickerItem: ThemedBulletinPage {
         self.userDefaults = userDefaults
         self.timePickerManager = AlarmTimePickerManager(arrivalDeparture: arrivalDeparture, initialMinutes: initialMinutes)
 
-        let title = OBALoc("alarm_time_picker.title", value: "Add Reminder", comment: "Title of the Alarm Time Picker page.")
+        let title = OBALoc("alarm_time_picker.title", value: "Add Alarm", comment: "Title of the Alarm Time Picker page.")
         super.init(title: title)
 
         userDefaults.register(defaults: [Self.trackOnLockScreenKey: true])

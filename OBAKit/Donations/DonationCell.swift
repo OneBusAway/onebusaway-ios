@@ -80,6 +80,8 @@ class DonationCell: OBAListViewCell {
     lazy var donateButton: UIButton = {
         let button = UIButton(configuration: .borderedProminent())
         button.translatesAutoresizingMaskIntoConstraints = false
+        // The fill carries a white title; `brandAccent` keeps it at AA in both appearances.
+        button.tintColor = ThemeColors.shared.brandAccent
         button.setTitle(OBALoc("donation_cell.donate_button_title", value: "Donate Now", comment: "Title of the button that shows the donation UI."), for: .normal)
 
         let action = UIAction { [self] _ in

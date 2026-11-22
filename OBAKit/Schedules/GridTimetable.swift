@@ -12,19 +12,20 @@ struct GridTimetable: View {
     @EnvironmentObject var viewModel: ScheduleForRouteViewModel
 
     /// Column width for each stop in the timetable. Scales with Dynamic Type so the
-    /// monospaced times and the stop names keep fitting at larger text sizes.
-    @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 80
+    /// monospaced times and the stop names keep fitting at larger text sizes. Wide
+    /// enough for a 12-hour time with its day period ("12:45 PM").
+    @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 96
 
     var body: some View {
         // `formattersTimeZoneGeneration` forces a rebuild when the region zone
-        // lands asynchronously (#332 / PR #1308); dates and HH:mm both depend on it.
+        // lands asynchronously (#332 / PR #1308); dates and times both depend on it.
         let _ = viewModel.formattersTimeZoneGeneration
         // Single ScrollView for both horizontal and vertical scrolling
         // LazyVStack with pinnedViews keeps header sticky during vertical scroll
         ScrollView([.horizontal, .vertical], showsIndicators: true) {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    // All departure times in one continuous list (24-hour format)
+                    // All departure times in one continuous list, in the user's 12/24-hour format
                     ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { index, row in
                         departureRow(times: row, isAlternate: index % 2 == 1)
                         Divider()
@@ -44,6 +45,8 @@ struct GridTimetable: View {
             ForEach(Array(times.enumerated()), id: \.offset) { index, time in
                 Text(viewModel.formatTime(time))
                     .font(.system(.body, design: .monospaced))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .frame(width: columnWidth, alignment: .leading)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 4)

@@ -61,6 +61,7 @@ struct DataMigrationReportView: View {
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color(uiColor: ThemeColors.shared.brandAccent))
 
                 if !isViewingReport {
                     Button(OBALoc("data_migration_bulletin.view_report_button", value: "View Report", comment: "Button title to let the user view a data migration report.")) {

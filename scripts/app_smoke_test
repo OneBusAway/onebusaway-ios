@@ -17,6 +17,8 @@
 #   -n, --name <NAME>           Override simulator by name
 #       --pro                   Target newest iPhone Pro simulator
 #       --duo                   Target newest iPhone Duo simulator
+#       --ipad                  Target an iPad simulator (an iPad Pro when available)
+#       --os <MAJOR>            Only consider iOS <MAJOR>.x runtimes (e.g. 18)
 #   -a, --app <NAME>            App brand to test: OneBusAway (default) or KiedyBus
 #       --skip-build            Skip xcodebuild; assume App.app is already built
 #   -c, --configuration <CFG>   Build configuration: Debug (default) or Release
@@ -57,6 +59,8 @@ Options:
   -n, --name <NAME>           Override simulator by name
       --pro                   Select newest iPhone Pro simulator
       --duo                   Select newest iPhone Duo simulator
+      --ipad                  Select an iPad simulator (an iPad Pro when available)
+      --os <MAJOR>            Only consider iOS <MAJOR>.x runtimes (e.g. --os 18)
   -a, --app <NAME>            App brand: OneBusAway (default) or KiedyBus
       --skip-build            Skip xcodebuild step (use prebuilt App.app)
   -c, --configuration <CFG>   Build configuration: Debug (default) or Release
@@ -81,6 +85,8 @@ udid_override=""
 name_override=""
 use_pro=0
 use_duo=0
+use_ipad=0
+os_major=""
 app_name="OneBusAway"
 scheme="App"
 configuration="Debug"
@@ -139,6 +145,22 @@ while [[ $# -gt 0 ]]; do
             ;;
         --duo)
             use_duo=1
+            shift
+            ;;
+        --ipad)
+            use_ipad=1
+            shift
+            ;;
+        --os)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            os_major="$2"
+            shift 2
+            ;;
+        --os=*)
+            os_major="${1#*=}"
             shift
             ;;
         -a|--app)
@@ -273,6 +295,12 @@ if [ "$use_pro" -eq 1 ]; then
 fi
 if [ "$use_duo" -eq 1 ]; then
     resolver_args+=(--duo)
+fi
+if [ "$use_ipad" -eq 1 ]; then
+    resolver_args+=(--ipad)
+fi
+if [ -n "$os_major" ]; then
+    resolver_args+=(--os "$os_major")
 fi
 
 if ! udid=$(scripts/resolve_simulator_udid ${resolver_args[@]+"${resolver_args[@]}"}); then

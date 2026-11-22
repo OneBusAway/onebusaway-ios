@@ -144,7 +144,7 @@ final class StopDeparturesBuilderTests: OBATestCase {
         StopViewModel(environment: environment, stopID: stopID, bookmarkContext: bookmarkContext)
     }
 
-    private func makeBuilder(_ viewModel: StopViewModel) -> StopDeparturesBuilder {
+    private func makeBuilder(_ viewModel: StopViewModel, showsFreshnessInStaleNotice: Bool = false) -> StopDeparturesBuilder {
         let state = state!
         return StopDeparturesBuilder(
             viewModel: viewModel,
@@ -153,11 +153,12 @@ final class StopDeparturesBuilderTests: OBATestCase {
             onRetry: {},
             expandedRouteID: Binding(get: { state.expandedRouteID }, set: { state.expandedRouteID = $0 }),
             donationHidden: Binding(get: { state.donationHidden }, set: { state.donationHidden = $0 }),
-            pastCollapsed: Binding(get: { state.pastCollapsed }, set: { state.pastCollapsed = $0 })
+            pastCollapsed: Binding(get: { state.pastCollapsed }, set: { state.pastCollapsed = $0 }),
+            showsFreshnessInStaleNotice: showsFreshnessInStaleNotice
         )
     }
 
-    private func sections(_ viewModel: StopViewModel, hasLoadedArrivals: Bool = true) -> StopDeparturesSections {
+    private func sections(_ viewModel: StopViewModel, hasLoadedArrivals: Bool = true, showsFreshnessInStaleNotice: Bool = false) -> StopDeparturesSections {
         let content = StopPageContent(
             stop: nil,
             allDepartures: [],
@@ -169,7 +170,7 @@ final class StopDeparturesBuilderTests: OBATestCase {
             hasError: false,
             isBrokenBookmark: false
         )
-        return makeBuilder(viewModel).sections(content: content, walkTime: nil)
+        return makeBuilder(viewModel, showsFreshnessInStaleNotice: showsFreshnessInStaleNotice).sections(content: content, walkTime: nil)
     }
 
     /// `Fixtures.arrivalDeparture` takes seconds since the 2001 reference date.
@@ -241,6 +242,24 @@ final class StopDeparturesBuilderTests: OBATestCase {
         let message = try #require(viewModel.operationErrorMessage)
 
         #expect(sections(viewModel).errorText == message)
+    }
+
+    /// The map sheet has no other "Updated: …" line, so its stale notice carries one.
+    @Test func `The stale notice carries freshness only where asked`() async throws {
+        stubArrivals(file: "arrivals_and_departures_for_stop_1_10020.json")
+        let viewModel = makeViewModel(stopID: "1_10020")
+        await viewModel.refresh()
+        #expect(!viewModel.statusText.isEmpty)
+
+        #expect(sections(viewModel, showsFreshnessInStaleNotice: true).staleNoticeStatusText == viewModel.statusText)
+        #expect(sections(viewModel).staleNoticeStatusText == nil)
+    }
+
+    /// Nothing has loaded, so there's no freshness to state.
+    @Test func `The stale notice carries no freshness before a load`() {
+        let viewModel = makeViewModel()
+
+        #expect(sections(viewModel, showsFreshnessInStaleNotice: true).staleNoticeStatusText == nil)
     }
 
     @Test func `Donation card shows only once arrivals load, donations are wanted, and the rider hasn't hidden it`() {

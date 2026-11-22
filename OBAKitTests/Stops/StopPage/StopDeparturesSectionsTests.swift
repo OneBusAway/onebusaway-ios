@@ -99,7 +99,8 @@ final class StopDeparturesSectionsTests: OBATestCase {
         departures: [ArrivalDeparture] = [],
         sortType: StopSort = .time,
         hasLoadedArrivals: Bool = true,
-        isLoading: Bool = false
+        isLoading: Bool = false,
+        hasError: Bool = false
     ) -> StopPageContent {
         var preferences = StopPreferences()
         preferences.sortType = sortType
@@ -111,7 +112,7 @@ final class StopDeparturesSectionsTests: OBATestCase {
             isListFiltered: false,
             arrivalDepartureFilter: .all,
             isLoading: isLoading,
-            hasError: false,
+            hasError: hasError,
             isBrokenBookmark: false
         )
     }
@@ -243,6 +244,18 @@ final class StopDeparturesSectionsTests: OBATestCase {
 
         #expect(list.rowsPerSection == [1, 1, 1])
         #expect(list.spinnerCount == 0)
+    }
+
+    // MARK: - Stale arrivals
+
+    /// A failed refresh over departures already on screen adds the notice as its
+    /// own section, directly above the departures header.
+    @Test func `A failed refresh over loaded departures adds the stale notice above them`() throws {
+        let departures = try upcomingDepartures()
+
+        let list = try host(sections(content(departures: departures, sortType: .time, hasError: true)))
+
+        #expect(list.rowsPerSection == [1, 1, 4, 1])
     }
 
     // MARK: - Departures

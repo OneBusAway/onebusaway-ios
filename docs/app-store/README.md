@@ -191,7 +191,7 @@ Screen slide leaves its trip sheet open.
 | 2 | `02-lock-screen` | Live Activity on the Lock Screen |
 | 3 | `03-trip-vehicle` | Trip sheet with the train on the map |
 | 4 | `04-trip-planner` | Trip planner results to UW's Allen Center |
-| 5 | `05-alarm` | Add Reminder sheet |
+| 5 | `05-alarm` | Add Alarm sheet |
 | 6 | `06-bookmarks` | Home sheet Bookmarks tab, Work and Home groups |
 | 7 | `07-open-source` | opentransitsoftwarefoundation.org in Safari |
 

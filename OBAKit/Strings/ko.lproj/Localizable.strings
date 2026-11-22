@@ -262,6 +262,21 @@
 /* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
 "donation_cell.title" = "🚨 %@ 앱에 여러분의 도움이 필요합니다";
 
+/* Button at the bottom of the donation explanation screen that opens the donation page on the project's website. */
+"donation_learn_more.donate_button" = "웹사이트에서 기부하기";
+
+/* Full explanation on the donation explanation screen. %1$@ is the app name and appears four times. $27.50 is an amount in US dollars; keep it in dollars. 501(c)(3) is a US tax status; keep it unchanged. */
+"donation_learn_more.explanation_fmt" = "저희는 %1$@ 앱을 개선할 큰 계획을 가지고 있지만, 여러분의 도움 없이는 이룰 수 없습니다. 이 앱은 현재 100%% 자원봉사로 만들어지고 있으며, 향후 개발 자금 마련을 위해 여러분의 도움이 필요합니다.\n\n비영리 단체인 Open Transit Software Foundation(501(c)(3))의 핵심 프로젝트로서, 저희는 이 소프트웨어를 계속 운영하고 개선하기 위해 여러분과 같은 사용자의 선의에 의지하고 있습니다.\n\n매년 기부하는 사용자는 극히 일부에 불과하지만, 크든 작든 모든 기부는 %1$@ 앱이 무료로, 최신 상태로, 모두가 이용할 수 있도록 유지하는 데 도움이 됩니다. 일주일 통근 비용인 $27.50 정도의 작은 기부도 큰 변화를 만들 수 있습니다.\n\n세금 공제가 가능한 여러분의 기부로 %1$@ 앱은 누구나 무료로 이용할 수 있습니다. 대중교통의 미래를 함께 만들어 가요!\n\n감사합니다.\n%1$@ 팀 드림";
+
+/* Heading above the explanation on the donation explanation screen. */
+"donation_learn_more.header" = "여러분의 도움이 필요한 이유";
+
+/* Credit for the header photo on the donation explanation screen. Keep the photographer's name, the license name and the URL unchanged. */
+"donation_learn_more.photo_credit" = "사진: Timothy Neesam / 라이선스: CC-BY-ND 2.0 (https://flickr.com/photos/neesam)";
+
+/* Button on the donation explanation screen that expands the truncated explanation to its full length. */
+"donation_learn_more.read_more" = "더 읽기...";
+
 /* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "지금은 돕고 싶지 않습니다";
 
@@ -484,11 +499,11 @@
 /* Placeholder text for Bookmark Group. */
 "manage_groups_controller.text_field_placeholder" = "그룹 이름";
 
-/* Manage Groups controller title */
-"manage_groups_controller.title" = "즐겨찾기 편집";
-
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "현재 위치를 지도 중앙에 표시";
+
+/* Subtitle of a pin the user dropped on the map when looking up its address failed. */
+"map_controller.dropped_pin_no_details" = "위치 세부 정보를 가져올 수 없습니다";
 
 /* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
 "map_controller.dropped_pin_title" = "드롭된 핀";
@@ -504,9 +519,6 @@
 
 /* Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes. */
 "map_controller.map_settings.accessibility_label" = "지도 설정";
-
-/* Voiceover text indicating that this button toggles the base map type. */
-"map_controller.map_type.accessibility_label" = "지도 유형";
 
 /* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, 레이어 %2$d개 켜짐";
@@ -716,6 +728,9 @@
 /* Siri asks which stop to report departures for when the user didn't name one. */
 "next_departures_at_stop_intent.choose_stop" = "어떤 정류장인가요?";
 
+/* Short button on the Next Departures card that starts a Live Activity for the bookmark */
+"next_departures_card.track_button" = "추적";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "해당 즐겨찾기는 현재 지역에서 사용할 수 없습니다.";
 
@@ -852,10 +867,25 @@
 "onboarding.location.benefit_nearby_title" = "주변 정류장 보기";
 
 /* Footnote of the location onboarding screen; the argument is the app name */
-"onboarding.location.footnote_fmt" = "%@은(는) 앱이 열려 있는 동안에만 위치 정보를 사용합니다. 설정에서 언제든지 변경할 수 있습니다.";
+"onboarding.location.footnote_fmt" = "%@은(는) 근처 알림을 켜지 않는 한 앱이 열려 있는 동안에만 위치 정보를 사용합니다. 설정에서 언제든지 변경할 수 있습니다.";
 
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "주변 대중교통 보기";
+
+/* Body of the screen that introduces the app's new map layout, on iPhone. 'Home', 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body" = "이제 지도가 화면 전체를 채우고, 정류장, 즐겨찾기, 검색은 위로 밀어 올리는 패널에 있습니다. 설정과 더 보기는 홈 목록 맨 아래에 있습니다.";
+
+/* Body of the screen that introduces the app's new map layout, on iPad and other wide screens. 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body_regular" = "이제 지도가 화면 전체를 채우고, 정류장, 즐겨찾기, 검색은 패널에 있습니다. 설정은 패널 맨 아래에 있고, 더 보기는 지도 위의 버튼입니다.";
+
+/* Footnote of the screen that introduces the app's new map layout. 'Classic tab bar layout' is the name of the switch in Settings and must match its translation (settings_controller.layout_section.classic_tab_bar). */
+"onboarding.map_panel_intro.footnote" = "탭 막대가 더 좋으신가요? 설정에서 기존 탭 막대 레이아웃을 켜세요.";
+
+/* Badge on the screen that introduces the app's new map layout to people who used the previous one */
+"onboarding.map_panel_intro.new_badge" = "신규";
+
+/* Title of the screen that introduces the app's new map layout to people who used the previous tab bar layout */
+"onboarding.map_panel_intro.title" = "새로운 모습";
 
 /* Body of the notifications onboarding screen */
 "onboarding.notifications.body" = "결빙 폭풍, 홍수 등 대중교통 운행 방식을 바꾸는 지역 전체 서비스 알림을 받아보세요.";
@@ -889,6 +919,9 @@
 
 /* Body of the region onboarding screen prompting the rider to choose a transit network */
 "onboarding.region.body_choose" = "이용하는 교통 네트워크를 선택하세요.";
+
+/* Header above the regions list when no region has been detected or selected yet */
+"onboarding.region.choose_header" = "지역 선택";
 
 /* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
 "onboarding.region.current_label" = "현재 지역";
@@ -973,6 +1006,9 @@
 
 /* Help text displayed on an inactive region. */
 "region_picker.inactive_region_help_text" = "비활성 지역";
+
+/* Title of the menu on the region picker that holds the New Custom Region button and the Show Inactive and Show Experimental toggles. */
+"region_picker.more_options_button" = "추가 옵션";
 
 /* Title of a button that shows a region creation view controller. */
 "region_picker.new_custom_region_button" = "새 사용자 지정 지역";
@@ -1109,9 +1145,6 @@
 /* Search scope tag filtering results to transit routes. */
 "search_scope.routes" = "노선";
 
-/* Accessibility label for the button that clears the search query. */
-"search_sheet.clear_query" = "지우기";
-
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "영향을 받는 운영 기관";
 
@@ -1163,9 +1196,6 @@
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
 "settings_controller.arrival_display_section.region_time_zone" = "지역 시간대로 시간 표시";
 
-/* Title for the departure filter selection alert */
-"settings_controller.arrival_filter.selector_title" = "출발 표시";
-
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "출발 표시";
 
@@ -1196,9 +1226,6 @@
 /* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
 "settings_controller.experimental_section.estimate_vehicle_positions" = "차량의 현재 위치 추정";
 
-/* Settings > Experimental section > Map panel toggle */
-"settings_controller.experimental_section.map_panel" = "지도 패널 사용";
-
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "실험적 기능";
 
@@ -1213,6 +1240,15 @@
 
 /* Settings > Feedback section title */
 "settings_controller.feedback_section.title" = "피드백";
+
+/* Settings > Layout section > Toggle that replaces the full-screen map and sliding panel with the tab bar layout from earlier versions of the app */
+"settings_controller.layout_section.classic_tab_bar" = "기존 탭 막대 레이아웃";
+
+/* Settings > Layout section footer explaining the Classic tab bar layout toggle */
+"settings_controller.layout_section.footer" = "슬라이드 패널이 있는 전체 화면 지도 대신 이전 버전의 탭 막대를 사용합니다.";
+
+/* Settings > Layout section title. The section chooses how the app's main screen is arranged. */
+"settings_controller.layout_section.title" = "레이아웃";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "현재 방향 표시";
@@ -1481,6 +1517,9 @@
 
 /* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.service_alerts.summary_fmt" = "운행 알림 %d건";
+
+/* Title of the card shown above a stop's departures when refreshing them failed, so the times on screen are from the last successful update. */
+"stop_page.stale.title" = "출발 정보를 업데이트할 수 없음";
 
 /* VoiceOver status suffix for a live departure. %@ is the adherence label. */
 "stop_page.status.a11y_live_fmt" = "실시간 추적, %@";
@@ -1857,14 +1896,8 @@
 "map_sheet.basemap_satellite" = "위성";
 /* Basemap style: standard street map */
 "map_sheet.basemap_standard" = "표준";
-/* Map sheet section for display options like Points of Interest */
-"map_sheet.display_group" = "지도 표시";
-/* Map sheet row label for the rental minimum-range filter */
-"map_sheet.minimum_range" = "최소 주행 거리";
 /* Range filter menu option imposing no minimum range */
 "map_sheet.minimum_range_any" = "제한 없음";
-/* Map sheet group header for non-transit mobility layers */
-"map_sheet.other_modes_group" = "다른 이동 수단";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "초기화";
 /* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
@@ -1881,8 +1914,6 @@
 "map_sheet.shows_points_of_interest" = "관심 지점";
 /* Title of the Map sheet */
 "map_sheet.title" = "지도";
-/* Map sheet group header for transit layers */
-"map_sheet.transit_group" = "대중교통";
 /* Header for More-tab rows that open tutorial, phone, or text links configured by the agency. */
 "more_controller.agency_contact.header" = "문의 및 도움말";
 /* Opens a tel: link to call the transit agency from the More tab. */
@@ -2031,14 +2062,6 @@
 "trip_page.vehicle_label_fmt" = "차량 %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
 "trip_page.view_schedule" = "시간표 보기";
-/* Shown when the vehicle is arriving at the user's stop */
-"trip_progress.arriving_now" = "지금 도착";
-/* Estimated time of arrival to the user's stop. e.g. ~8 min to your stop */
-"trip_progress.eta_to_stop_fmt" = "내 정류장까지 약 %d분";
-/* Shown when the vehicle has already passed the user's destination stop */
-"trip_progress.passed_your_stop" = "내 정류장 지나감";
-/* Shows the current stop position. e.g. Stop 5 of 18 */
-"trip_progress.stop_count_fmt" = "%2$d개 중 %1$d번째 정류장";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "음성 검색";

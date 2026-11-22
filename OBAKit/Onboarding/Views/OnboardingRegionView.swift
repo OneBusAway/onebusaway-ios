@@ -58,7 +58,11 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
                 }
 
                 if !shortList.isEmpty {
-                    Text(OBALoc("onboarding.region.other_header", value: "Or choose another", comment: "Header above the alternate-regions list"))
+                    // "Or choose another" only reads right beneath a region card; with no
+                    // card (no location, no current region) the list is the first choice.
+                    Text(selection == nil
+                         ? OBALoc("onboarding.region.choose_header", value: "Choose your region", comment: "Header above the regions list when no region has been detected or selected yet")
+                         : OBALoc("onboarding.region.other_header", value: "Or choose another", comment: "Header above the alternate-regions list"))
                         .font(.caption.weight(.semibold))
                         // `.secondary`, not `.tertiary`: tertiary label on this
                         // background is well under 4.5:1 for caption text.
@@ -180,7 +184,11 @@ struct OnboardingRegionView<Provider: RegionProvider>: View {
     }
 
     private func confirmSelection() {
-        guard let region = selection?.region else { return }
+        guard let selection else { return }
+        let region = selection.region
+        if !selection.keepsAutomaticRegionSelection {
+            regionProvider.automaticallySelectRegion = false
+        }
         isSettingRegion = true
         Task {
             defer { isSettingRegion = false }

@@ -38,15 +38,11 @@ nonisolated final class SearchSheetUITests: XCTestCase {
     }
 
     @MainActor func test_searchSheet_nativeSearchableAndScopingTags() throws {
-        let homeSearchButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Where are you going?")).firstMatch
-        let fallbackSearchButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Search")).firstMatch
-
-        if homeSearchButton.waitForExistence(timeout: 20) {
-            homeSearchButton.tap()
-        } else {
-            XCTAssertTrue(fallbackSearchButton.waitForExistence(timeout: 10), "Home search trigger missing")
-            fallbackSearchButton.tap()
-        }
+        // Matched by identifier: its label is the placeholder, which varies by
+        // region (trip planning or not) and locale.
+        let homeSearchButton = app.buttons["home_search_button"]
+        XCTAssertTrue(homeSearchButton.waitForExistence(timeout: 30), "Home search trigger missing")
+        homeSearchButton.tap()
 
         let searchField = app.searchFields.firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 10), "Native search field missing")

@@ -42,6 +42,13 @@ scripts/resolve_simulator_udid --udid "6F86FE65-A734-42C1-BF22-245618CCB265"
 scripts/resolve_watch_simulator_udid --udid "$WATCH_UDID"
 ```
 
+### iPad and Older-Runtime Selection
+`--ipad` selects an iPad (an iPad Pro when the runtime has one) instead of an iPhone. `--os <MAJOR>` restricts the search to iOS `<MAJOR>.x` runtimes, newest minor first, and combines with `--ipad`, `--pro`, `--duo` and `--name`. `--os 18` reaches the iOS 18.0 deployment target, which the newest-runtime default never lands on. Without these flags the default selection is unchanged.
+```bash
+scripts/resolve_simulator_udid --ipad          # iPad on the newest runtime
+scripts/resolve_simulator_udid --ipad --os 18  # iPad on the newest installed iOS 18.x runtime
+```
+
 ### Environment Variables
 You can also supply default overrides via environment variables:
 - `SIMULATOR_OVERRIDE_UDID` / `SIMULATOR_OVERRIDE_NAME`
@@ -66,6 +73,10 @@ scripts/app_smoke_test --skip-build
 # Override target simulator by name or UDID
 scripts/app_smoke_test --name "iPhone 18 Pro"
 scripts/app_smoke_test --udid "6F86FE65-A734-42C1-BF22-245618CCB265"
+
+# iPad, and the iOS 18 deployment target; build once, then reuse it on another device
+scripts/app_smoke_test --ipad
+scripts/app_smoke_test --ipad --os 18 --skip-build
 
 # Capture a screenshot if the app fails or crashes
 scripts/app_smoke_test --screenshot-on-failure
@@ -139,6 +150,13 @@ In GitHub Actions workflows (`.github/workflows/tests.yml`), the watch smoke tes
   timeout-minutes: 15
   run: scripts/watch_smoke_test DerivedData
 ```
+
+The iOS app smoke tests run last in the `test` job, against the `App.app` the `build` job already produced (`--skip-build`, laid out as `$RUNNER_TEMP/smoke/Build/Products`), on the devices the test slices never use:
+
+- **iPad app launch smoke test**: `scripts/app_smoke_test "$RUNNER_TEMP/smoke" --skip-build --ipad`, on the newest runtime.
+- **iOS 18 runtime launch smoke test**: `--ipad --os 18`. If the image has no iOS 18 runtime, the step downloads one (`xcodebuild -downloadPlatform iOS -buildVersion $IOS_18_RUNTIME`) and creates an iPad on it if none appears. A runtime that cannot be downloaded, or no iPad device type on it, fails the step with an `::error::`; it never skips.
+
+Failure screenshots from both are uploaded as the `smoke-test-screenshots-<attempt>` artifact.
 
 ### Suggested CI Enhancement: Diagnostic Screenshots (Optional)
 

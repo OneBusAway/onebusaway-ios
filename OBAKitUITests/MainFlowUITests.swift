@@ -61,7 +61,7 @@ nonisolated final class MainFlowUITests: XCTestCase {
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 30))
 
-        for tabName in ["Recent", "Bookmarks", "More", "Map"] {
+        for tabName in ["tab_recent", "tab_bookmarks", "tab_more", "tab_map"] {
             let tab = tabBar.buttons[tabName]
             XCTAssertTrue(tab.waitForExistence(timeout: 10), "Tab '\(tabName)' should exist")
             tab.tap()
@@ -150,7 +150,7 @@ nonisolated final class MainFlowUITests: XCTestCase {
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 30))
 
-        let moreTab = tabBar.buttons["More"]
+        let moreTab = tabBar.buttons["tab_more"]
         moreTab.tap()
         // Re-tap to trigger the interruption monitor without touching screen content.
         moreTab.tap()

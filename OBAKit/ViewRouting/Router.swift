@@ -251,10 +251,14 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     ///   - fromController: The controller that presents `presentedController`.
     ///   - isModal: When running on iOS 13 and above, this is the value that will be set for `presentedController.isModalInPresentation`,
     ///              which controls whether a modal view controller can be interactively dismissed by the user. Defaults to `false`, mirroring iOS's behavior.
-    ///   - isPopover: if `presentedController` should be displayed as a popover. If this is true, then the next two parameters must also be set.
+    ///   - isPopover: if `presentedController` should be displayed as a popover. If this is true, then a source must also be set.
     ///   - popoverSourceView: Used to set the `sourceView` property of the popover presentation controller.
     ///   - popoverSourceFrame: Used to set the `sourceRect` property of the popover presentation controller.
-    ///   - popoverBarButtonItem: Used to set the `sourceRect` property of the popover presentation controller.
+    ///   - popoverBarButtonItem: Used to set the `barButtonItem` property of the popover presentation controller.
+    ///
+    /// - Note: A passed source is applied whether or not `isPopover` is set. UIKit can present an
+    ///   action sheet as a popover even when the caller's size class is compact (a form sheet on
+    ///   iPadOS 18, say), and a popover without an anchor raises.
     public func present(
         _ presentedController: UIViewController,
         from fromController: UIViewController,
@@ -265,14 +269,17 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         popoverBarButtonItem: UIBarButtonItem? = nil
     ) {
         presentedController.isModalInPresentation = isModal
-        if isPopover, let popover = presentedController.popoverPresentationController {
+        let hasPopoverSource = popoverSourceView != nil || popoverBarButtonItem != nil
+        if isPopover || hasPopoverSource, let popover = presentedController.popoverPresentationController {
             if let popoverSourceFrame = popoverSourceFrame {
                 popover.sourceRect = popoverSourceFrame
             }
 
             popover.sourceView = popoverSourceView
             popover.barButtonItem = popoverBarButtonItem
-            presentedController.modalPresentationStyle = .popover
+            if isPopover {
+                presentedController.modalPresentationStyle = .popover
+            }
         }
 
         fromController.present(presentedController, animated: true, completion: nil)

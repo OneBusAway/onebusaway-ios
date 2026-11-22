@@ -19,11 +19,12 @@ struct DonationLearnMoreView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Button("Close") {
+            Button(Strings.close) {
                 analyticsModel.analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationCanceled, value: nil)
                 dismiss()
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color(uiColor: ThemeColors.shared.brandAccent))
             .padding()
             .zIndex(2)
 
@@ -46,17 +47,18 @@ struct DonationLearnMoreView: View {
         Button {
             donationModel.donate()
         } label: {
-            Text("Donate on our Website")
+            Text(OBALoc("donation_learn_more.donate_button", value: "Donate on our Website", comment: "Button at the bottom of the donation explanation screen that opens the donation page on the project's website."))
         }
         .frame(maxWidth: .infinity)
         .padding(20)
         .buttonStyle(.borderedProminent)
+        .tint(Color(uiColor: ThemeColors.shared.brandAccent))
         .fontWeight(.bold)
         .font(.title2)
     }
 
     func buildPhotoCreditSection() -> some View {
-        Text("Photo by Timothy Neesam / License CC-BY-ND 2.0 (https://flickr.com/photos/neesam)")
+        Text(OBALoc("donation_learn_more.photo_credit", value: "Photo by Timothy Neesam / License CC-BY-ND 2.0 (https://flickr.com/photos/neesam)", comment: "Credit for the header photo on the donation explanation screen. Keep the photographer's name, the license name and the URL unchanged."))
             .font(.footnote)
             .foregroundStyle(.gray)
             .listRowSeparator(.hidden)
@@ -64,31 +66,20 @@ struct DonationLearnMoreView: View {
 
     /// Built as a `String` so the app name can be interpolated — this framework also
     /// ships as KiedyBus.
-    ///
-    /// NOTE: this screen is not localized. Every string here is a bare SwiftUI literal,
-    /// and `Text(LocalizedStringKey)` resolves against `Bundle.main`, whereas OBAKit's
-    /// strings live in the framework bundle — so these never resolve and ship in English
-    /// in all 13 locales. Localizing it means routing through `OBALoc` (or a
-    /// `Text(_:bundle:)` shim); adding keys to `OBAKit/Strings/*.lproj` alone will not work.
     private var explanationText: String {
-        let appName = Bundle.main.appName
-        return """
-        We have big plans to improve \(appName), but we can't do it without your help. This app is currently built with 100% volunteer labor, and we need you to help us fund future development.
-
-        As a key project of the Open Transit Software Foundation, a 501(c)(3) non-profit, we rely on the goodwill of users like you to keep running and making this software better.
-
-        Every year, only a small fraction of our users donate, but every contribution, big or small, helps ensure that \(appName) remains free, updated, and accessible to everyone. A small donation, even just the cost of one week of commuting, $27.50, can make all the difference.
-
-        Your tax-deductible contribution ensures that \(appName) remains free and accessible for everyone. Let's shape the future of transit together!
-
-        Thank you,
-        The \(appName) Team
-        """
+        String(
+            format: OBALoc(
+                "donation_learn_more.explanation_fmt",
+                value: "We have big plans to improve %1$@, but we can't do it without your help. This app is currently built with 100%% volunteer labor, and we need you to help us fund future development.\n\nAs a key project of the Open Transit Software Foundation, a 501(c)(3) non-profit, we rely on the goodwill of users like you to keep running and making this software better.\n\nEvery year, only a small fraction of our users donate, but every contribution, big or small, helps ensure that %1$@ remains free, updated, and accessible to everyone. A small donation, even just the cost of one week of commuting, $27.50, can make all the difference.\n\nYour tax-deductible contribution ensures that %1$@ remains free and accessible for everyone. Let's shape the future of transit together!\n\nThank you,\nThe %1$@ Team",
+                comment: "Full explanation on the donation explanation screen. %1$@ is the app name and appears four times. $27.50 is an amount in US dollars; keep it in dollars. 501(c)(3) is a US tax status; keep it unchanged."
+            ),
+            Bundle.main.appName
+        )
     }
 
     func buildExplanationSection() -> some View {
         Group {
-            Text("Here's why we need your help").font(.title2).bold()
+            Text(OBALoc("donation_learn_more.header", value: "Here's why we need your help", comment: "Heading above the explanation on the donation explanation screen.")).font(.title2).bold()
             Text(explanationText)
             .lineLimit(showFullExplanation ? nil : 3)
 
@@ -96,7 +87,7 @@ struct DonationLearnMoreView: View {
                 Button {
                     showFullExplanation = true
                 } label: {
-                    Text("Read More...")
+                    Text(OBALoc("donation_learn_more.read_more", value: "Read More...", comment: "Button on the donation explanation screen that expands the truncated explanation to its full length."))
                         .foregroundColor(.accentColor)
                 }
             }

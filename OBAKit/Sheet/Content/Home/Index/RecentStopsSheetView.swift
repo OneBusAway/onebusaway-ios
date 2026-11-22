@@ -219,7 +219,8 @@ struct RecentStopsSheetView: View {
                 }
             }
         }
-        .swipeActions(edge: .trailing) {
+        // No full swipe: deleting an alarm can't be undone.
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(Strings.delete, role: .destructive) {
                 viewModel.delete(alarm: alarm)
             }

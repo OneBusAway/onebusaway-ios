@@ -155,6 +155,7 @@ struct MapSurveyCard: View {
                 Spacer()
                 Button(OBALoc("survey_launcher.take_survey_button", value: "Take survey", comment: "Primary button on the survey launcher card; opens the survey."), action: onTakeSurvey)
                     .buttonStyle(.borderedProminent)
+                    .tint(Color(uiColor: ThemeColors.shared.brandAccent))
             }
         }
         .padding(16)

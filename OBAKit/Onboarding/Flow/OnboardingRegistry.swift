@@ -28,8 +28,29 @@ enum OnboardingRegistry {
         OnboardingStep(id: .notifications, weight: 40, version: 1) {
             $0.isPushServiceConfigured && !$0.notificationAuthorizationDetermined
         },
+        // Tells people who used the tab bar where Settings and More went when the
+        // map panel became the default. Nobody on the tab bar sees it, and neither
+        // does a new install: see `existingUserOnlyStepIDs`.
+        OnboardingStep(id: .mapPanelIntro, weight: 50, version: 1) {
+            $0.hasCurrentRegion && $0.usesMapPanelExperience
+        },
         OnboardingStep(id: .done, weight: 99, version: 1) { _ in true }
     ]
+
+    /// Steps that introduce a change to people who used the app before it. A new
+    /// install has nothing to compare against, so `evaluate` marks these seen when
+    /// it finds no region; otherwise they would greet a new user on their second
+    /// launch, once onboarding had given them one.
+    static let existingUserOnlyStepIDs: Set<OnboardingStepID> = [.mapPanelIntro]
+
+    /// Marks `existingUserOnlyStepIDs` seen at their registry versions. Call for a
+    /// new install (no region), before computing its flow.
+    @MainActor
+    static func skipExistingUserOnlySteps(steps: [OnboardingStep] = Self.steps, store: OnboardingStepStore) {
+        for step in steps where existingUserOnlyStepIDs.contains(step.id) {
+            store.markSeen(step.id, version: step.version)
+        }
+    }
 
     @MainActor
     static func flow(

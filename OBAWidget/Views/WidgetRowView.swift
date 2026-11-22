@@ -23,6 +23,9 @@ struct WidgetRowView: View {
     let formatters: Formatters
     let departures: [ArrivalDeparture]?
 
+    /// The stop rows' countdown tint is otherwise their only adherence cue.
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
     private var bookmarkTitle: String {
         bookmark?.name ?? " "
     }
@@ -87,12 +90,23 @@ struct WidgetRowView: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                         Spacer()
-                        Text(formatters.shortFormattedTime(until: departure))
-                            .font(.footnote.weight(.bold))
-                            .foregroundStyle(Color(formatters.colorForScheduleStatus(departure.scheduleStatus)))
+                        // A single-child stack lays out exactly as the bare text,
+                        // so the row is unchanged unless the glyph is drawn.
+                        HStack(spacing: 2) {
+                            if differentiateWithoutColor {
+                                // Decorative: the row's label already speaks the status.
+                                Image(systemName: departure.scheduleStatus.differentiateWithoutColorGlyphName(isRealTime: departure.predicted))
+                                    .imageScale(.small)
+                                    .accessibilityHidden(true)
+                            }
+                            Text(formatters.shortFormattedTime(until: departure))
+                        }
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(Color(formatters.colorForScheduleStatus(departure.scheduleStatus)))
                     }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(departure.routeAndHeadsign), \(formatters.explanation(from: departure))")
+                    // The countdown's tint is inaudible: say the adherence too.
+                    .accessibilityLabel("\(departure.routeAndHeadsign), \(formatters.explanation(from: departure)), \(formatters.deviationLabel(for: departure))")
                 }
             } else {
                 Text(fallbackLabel)

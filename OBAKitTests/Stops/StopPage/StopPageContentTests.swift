@@ -356,4 +356,42 @@ final class StopPageContentTests: OBATestCase {
         #expect(content.showsLoadingState)
     }
 
+    // MARK: - Stale arrivals notice
+
+    /// A refresh failed while departures from an earlier fetch are still on screen:
+    /// the countdowns would otherwise look live.
+    @Test func `A failed refresh over loaded departures shows the stale notice`() throws {
+        let content = makeContent(allDepartures: try departures(), hasError: true)
+
+        #expect(content.showsStaleArrivalsNotice)
+    }
+
+    @Test func `A successful refresh hides the stale notice`() throws {
+        let content = makeContent(allDepartures: try departures(), hasError: false)
+
+        #expect(!content.showsStaleArrivalsNotice)
+    }
+
+    /// The notice stays up while the retry is in flight, so the card doesn't
+    /// flicker away and back when the retry fails too.
+    @Test func `The stale notice stays up during a retry`() throws {
+        let content = makeContent(allDepartures: try departures(), isLoading: true, hasError: true)
+
+        #expect(content.showsStaleArrivalsNotice)
+    }
+
+    /// The empty-state row already shows the error, with its own Retry.
+    @Test func `An empty list never shows the stale notice`() {
+        let content = makeContent(allDepartures: [], hasError: true)
+
+        #expect(content.listIsEmpty)
+        #expect(!content.showsStaleArrivalsNotice)
+    }
+
+    /// The first fetch failing has nothing stale to warn about.
+    @Test func `A failed first fetch never shows the stale notice`() {
+        let content = makeContent(allDepartures: [], hasLoadedArrivals: false, hasError: true)
+
+        #expect(!content.showsStaleArrivalsNotice)
+    }
 }

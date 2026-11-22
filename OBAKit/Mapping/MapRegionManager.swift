@@ -1475,13 +1475,17 @@ extension MapRegionManager {
                 return
             }
             Logger.error("Geocoding error: \(error.localizedDescription)")
-            annotation.title = "Unknown Location"
-            annotation.subtitle = "Could not retrieve location details"
+            annotation.title = UserDroppedPin.defaultTitle
+            annotation.subtitle = OBALoc(
+                "map_controller.dropped_pin_no_details",
+                value: "Could not retrieve location details",
+                comment: "Subtitle of a pin the user dropped on the map when looking up its address failed."
+            )
             return
         }
 
         guard let placemark = placemarks?.first else {
-            annotation.title = "Unknown Location"
+            annotation.title = UserDroppedPin.defaultTitle
             return
         }
 
@@ -1539,7 +1543,7 @@ extension MapRegionManager {
         }
 
         // Set the annotation text
-        annotation.title = titleComponents.isEmpty ? "Unknown Location" : titleComponents.joined(separator: ", ")
+        annotation.title = titleComponents.isEmpty ? UserDroppedPin.defaultTitle : titleComponents.joined(separator: ", ")
         annotation.subtitle = subtitleComponents.joined(separator: ", ")
     }
 }

@@ -40,6 +40,7 @@ class OBAFloatingPanelController: FloatingPanelController {
 
         surfaceView.grabberHandle.accessibilityCustomActions = [expandAction, collapseAction]
         surfaceView.grabberHandle.isAccessibilityElement = true
+        surfaceView.grabberHandle.accessibilityIdentifier = "sheet_grabber"
         updateAccessibilityValue()
 
         Self.registerVoiceOverDefaults(in: userDefaults)

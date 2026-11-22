@@ -43,9 +43,13 @@ struct RouteDirectionBadge: View {
     }
 
     static func accessibilityLabel(route: Route, headsign: String) -> String {
+        accessibilityLabel(routeShortName: route.shortName, headsign: headsign)
+    }
+
+    static func accessibilityLabel(routeShortName: String, headsign: String) -> String {
         String(
             format: OBALoc("nearby.card.a11y_fmt", value: "%1$@ to %2$@", comment: "VoiceOver: route short name, headsign. e.g. 'C Line to South Lake Union'"),
-            route.shortName, headsign
+            routeShortName, headsign
         )
     }
 }

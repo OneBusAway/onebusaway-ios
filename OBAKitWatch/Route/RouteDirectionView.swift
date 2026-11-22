@@ -142,6 +142,8 @@ private struct DepartureRow: View {
     let headsign: String
     let formatters: Formatters
 
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
     private var statusColor: Color {
         Color(uiColor: formatters.colorForScheduleStatus(departure.scheduleStatus))
     }
@@ -149,7 +151,18 @@ private struct DepartureRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(alignment: .firstTextBaseline) {
-                CountdownView(departure: departure.arrivalDepartureDate, isRealTime: departure.predicted, color: statusColor)
+                // A single-child stack lays out exactly as the bare countdown, so
+                // the row is unchanged unless the glyph is drawn.
+                HStack(spacing: 2) {
+                    // Schedule-only countdowns already carry a clock glyph.
+                    if differentiateWithoutColor, departure.predicted {
+                        Image(systemName: departure.scheduleStatus.differentiateWithoutColorGlyphName(isRealTime: true))
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(statusColor)
+                            .accessibilityHidden(true)
+                    }
+                    CountdownView(departure: departure.arrivalDepartureDate, isRealTime: departure.predicted, color: statusColor)
+                }
                 Spacer(minLength: 4)
                 Text(formatters.timeFormatter.string(from: departure.arrivalDepartureDate))
                     .font(.caption2)
@@ -176,8 +189,11 @@ private struct AlsoNearbyRow: View {
     let stop: RouteDirectionStop
     let formatters: Formatters
 
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
     var body: some View {
         let next = stop.departures[0]
+        let countdownColor = Color(uiColor: formatters.colorForScheduleStatus(next.scheduleStatus))
         VStack(alignment: .leading, spacing: 2) {
             Text(stop.stop.nameWithLocalizedDirectionAbbreviation)
                 .font(.footnote)
@@ -187,12 +203,23 @@ private struct AlsoNearbyRow: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 4)
-                CountdownView(
-                    departure: next.arrivalDepartureDate,
-                    isRealTime: next.predicted,
-                    color: Color(uiColor: formatters.colorForScheduleStatus(next.scheduleStatus)),
-                    emphasized: false
-                )
+                // A single-child stack lays out exactly as the bare countdown, so
+                // the row is unchanged unless the glyph is drawn.
+                HStack(spacing: 2) {
+                    // Schedule-only countdowns already carry a clock glyph.
+                    if differentiateWithoutColor, next.predicted {
+                        Image(systemName: next.scheduleStatus.differentiateWithoutColorGlyphName(isRealTime: true))
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(countdownColor)
+                            .accessibilityHidden(true)
+                    }
+                    CountdownView(
+                        departure: next.arrivalDepartureDate,
+                        isRealTime: next.predicted,
+                        color: countdownColor,
+                        emphasized: false
+                    )
+                }
             }
         }
         .accessibilityElement(children: .ignore)

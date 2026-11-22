@@ -262,7 +262,8 @@ class SurveyCell: OBAListViewCell {
     private static func prominentButton(title: String) -> UIButton {
         var config = UIButton.Configuration.filled()
         config.title = title
-        config.baseBackgroundColor = ThemeColors.shared.brand
+        // Not `brand`: white on it is 2.76:1 in the OneBusAway app.
+        config.baseBackgroundColor = ThemeColors.shared.brandAccent
         config.baseForegroundColor = .white
         config.cornerStyle = .large
         config.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 20)

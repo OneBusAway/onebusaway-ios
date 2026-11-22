@@ -129,7 +129,7 @@ class ScheduleForRouteViewModel: ObservableObject {
         return sorted.map { $0.times }
     }
 
-    /// Returns departure times for display in 24-hour format
+    /// Returns departure times for display, formatted by `formatTime(_:)`.
     /// All trips shown in one continuous list without AM/PM grouping
     var departureTimesDisplay: [[Date?]] {
         return sortedDepartureTimes
@@ -149,9 +149,11 @@ class ScheduleForRouteViewModel: ObservableObject {
 
     // MARK: - Time Formatters
 
-    private lazy var timeFormatter: DateFormatter = {
+    /// Follows the user's 12/24-hour setting. Internal, not private, so tests can pin a locale.
+    lazy var timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
         formatter.timeZone = application.formatters.timeZone
         return formatter
     }()

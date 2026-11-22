@@ -24,6 +24,15 @@ final class UIKitExtensionsTests {
         #expect(button.translatesAutoresizingMaskIntoConstraints == false)
         #expect(button.accessibilityLabel == Strings.close)
     }
+
+    @Test func `Close button meets the 44pt minimum hit target`() {
+        let button = UIButton.buildCloseButton()
+        func constant(_ attribute: NSLayoutConstraint.Attribute) -> CGFloat? {
+            button.constraints.first { $0.firstItem === button && $0.firstAttribute == attribute && $0.secondItem == nil }?.constant
+        }
+        #expect(constant(.width) == 44)
+        #expect(constant(.height) == 44)
+    }
     
     @Test func `UI trait environment is accessibility`() {
         _ = UITraitCollection(preferredContentSizeCategory: .extraLarge)

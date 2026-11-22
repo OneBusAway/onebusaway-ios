@@ -12,8 +12,9 @@ targets:
         name: App
         group: KiedyBus
         # gpx files are simulated-location fixtures for schemes, not app
-        # resources; keep them out of the bundle. project.yml is project wiring.
-        excludes: ["gpx_files", "project.yml"]
+        # resources; keep them out of the bundle. project.yml, Package.resolved
+        # and local.yml.example are project wiring, not resources.
+        excludes: ["gpx_files", "project.yml", "Package.resolved", "local.yml.example"]
       - path: Apps/Shared/CommonClient
         name: Common
         group: KiedyBus

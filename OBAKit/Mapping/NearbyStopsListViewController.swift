@@ -206,7 +206,9 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
                     self?.onExpandSearchTapped?()
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(ThemeColors.shared.brandTint))
+                // A fill under white text: `brandTint` lightens in dark mode,
+                // leaving white at 2.7:1; `brandAccent` keeps AA in both.
+                .tint(Color(uiColor: ThemeColors.shared.brandAccent))
                 .clipShape(Capsule())
             }
 
