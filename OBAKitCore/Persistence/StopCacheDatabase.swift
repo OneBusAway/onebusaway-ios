@@ -14,6 +14,9 @@ import GRDB
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
 public final class StopCacheDatabase: Sendable {
 
+    /// Default threshold of freelist pages before triggering incremental vacuum.
+    public static let defaultFreelistThreshold: Int = 50
+
     /// The underlying GRDB database queue for serialized access.
     let dbQueue: DatabaseQueue
 
@@ -35,17 +38,19 @@ public final class StopCacheDatabase: Sendable {
             path = appSupport.appendingPathComponent("stop_cache.sqlite").path
         }
 
+        let configuration = Self.makeConfiguration()
         let queue: DatabaseQueue
         do {
-            queue = try DatabaseQueue(path: path)
+            queue = try DatabaseQueue(path: path, configuration: configuration)
         } catch {
             Logger.error("Cache database corrupted, recreating: \(error)")
             try? FileManager.default.removeItem(atPath: path)
             try? FileManager.default.removeItem(atPath: path + "-wal")
             try? FileManager.default.removeItem(atPath: path + "-shm")
-            queue = try DatabaseQueue(path: path)
+            queue = try DatabaseQueue(path: path, configuration: configuration)
         }
 
+        try Self.upgradeAutoVacuumIfNeeded(in: queue)
         dbQueue = queue
         try Self.makeMigrator().migrate(dbQueue)
     }
@@ -53,15 +58,63 @@ public final class StopCacheDatabase: Sendable {
     /// Creates an in-memory database for testing.
     public init(inMemory: Bool) throws {
         precondition(inMemory, "Use init(databasePath:) for persistent databases")
-        dbQueue = try DatabaseQueue()
+        let queue = try DatabaseQueue(configuration: Self.makeConfiguration())
+        try Self.upgradeAutoVacuumIfNeeded(in: queue)
+        dbQueue = queue
         try Self.makeMigrator().migrate(dbQueue)
     }
 
     /// Creates a database at `databasePath` migrated only through
     /// `lastMigration`, so tests can upgrade a real older schema.
     init(databasePath: String, migratingUpTo lastMigration: String) throws {
-        dbQueue = try DatabaseQueue(path: databasePath)
+        let queue = try DatabaseQueue(path: databasePath, configuration: Self.makeConfiguration())
+        try Self.upgradeAutoVacuumIfNeeded(in: queue)
+        dbQueue = queue
         try Self.makeMigrator().migrate(dbQueue, upTo: lastMigration)
+    }
+
+    private static func makeConfiguration() -> Configuration {
+        var configuration = Configuration()
+        configuration.prepareDatabase { db in
+            try db.execute(sql: "PRAGMA auto_vacuum = INCREMENTAL")
+        }
+        return configuration
+    }
+
+    private static func upgradeAutoVacuumIfNeeded(in dbQueue: DatabaseQueue) throws {
+        let autoVacuum = try dbQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum") ?? 0
+        }
+        if autoVacuum == 0 {
+            try dbQueue.writeWithoutTransaction { db in
+                try db.execute(sql: "PRAGMA auto_vacuum = INCREMENTAL")
+                try db.execute(sql: "VACUUM")
+            }
+        }
+    }
+
+    /// The number of unused pages on the database freelist.
+    public var freelistCount: Int {
+        do {
+            return try dbQueue.read { db in
+                try Int.fetchOne(db, sql: "PRAGMA freelist_count") ?? 0
+            }
+        } catch {
+            Logger.error("Failed to read freelist count: \(error)")
+            return 0
+        }
+    }
+
+    /// Truncates up to `pages` unused pages from the freelist back to the operating system.
+    /// If `pages` is nil, truncates all unused pages.
+    public func incrementalVacuum(pages: Int? = nil) throws {
+        try dbQueue.writeWithoutTransaction { db in
+            if let pages {
+                try db.execute(sql: "PRAGMA incremental_vacuum(\(pages))")
+            } else {
+                try db.execute(sql: "PRAGMA incremental_vacuum")
+            }
+        }
     }
 
     // MARK: - Migrations

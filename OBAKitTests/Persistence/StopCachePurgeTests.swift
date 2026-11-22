@@ -125,6 +125,179 @@ final class StopCachePurgeTests {
         }
         #expect(remainingOrphans == 0)
     }
+
+    @Test func `Prune inactive and retired regions (inactive region expired rows deleted, fresh rows kept; retired region completely cleared; active region preserved)`() throws {
+        let database = try StopCacheDatabase(inMemory: true)
+        let repository = StopCacheRepository(database: database)
+        let tables = ["cachedStop", "cachedRoute", "cachedStopSync", "cachedRouteSync"]
+
+        // Setup 3 regions:
+        // Region 1: Active region (has expired row at 100, fresh row at 300)
+        // Region 2: Inactive region (has expired row at 100, fresh row at 300)
+        // Region 3: Retired region (has row at 100, row at 300)
+        try database.dbQueue.write { db in
+            for table in tables {
+                let stopColumns = table.contains("Stop") ? ", latitude, longitude, stopData" : ", routeData"
+                let stopValues = table.contains("Stop") ? ", 47.6, -122.3, X'00'" : ", X'00'"
+                let syncColumn = table.hasSuffix("Sync") ? ", syncID" : ""
+                let syncValue = table.hasSuffix("Sync") ? ", 'published'" : ""
+
+                for (id, region, timestamp) in [
+                    ("act_exp", 1, 100), ("act_fresh", 1, 300),
+                    ("inact_exp", 2, 100), ("inact_fresh", 2, 300),
+                    ("ret_exp", 3, 100), ("ret_fresh", 3, 300)
+                ] {
+                    try db.execute(
+                        sql: "INSERT INTO \(table) (id, regionId, lastUpdated\(stopColumns)\(syncColumn)) VALUES (?, ?, ?\(stopValues)\(syncValue))",
+                        arguments: [id, region, timestamp]
+                    )
+                }
+            }
+        }
+
+        for regionId in [1, 2, 3] {
+            try repository.saveSyncState(RegionStopSyncState(
+                regionId: regionId, outcome: .complete, lastAttemptAt: Date(timeIntervalSince1970: 300),
+                lastSuccessAt: Date(timeIntervalSince1970: 300), etag: nil, appVersion: "test", publishedSyncID: "published"
+            ))
+        }
+
+        #expect(repository.cachedRegionIDs() == Set([1, 2, 3]))
+
+        // Prune inactive regions with activeRegionID = 1, knownRegionIDs = [1, 2], cutoff = 200
+        let cutoff = Date(timeIntervalSince1970: 200)
+        _ = repository.pruneInactiveRegions(activeRegionID: 1, olderThan: cutoff, knownRegionIDs: [1, 2])
+
+        // Retired region 3 is completely cleared (no rows in any table, sync state deleted)
+        // Inactive region 2 expired row deleted, fresh row kept
+        // Active region 1 preserved (both rows kept)
+        try database.dbQueue.read { db in
+            for table in tables {
+                let r1IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 1 ORDER BY id")
+                #expect(r1IDs == ["act_exp", "act_fresh"])
+
+                let r2IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 2 ORDER BY id")
+                #expect(r2IDs == ["inact_fresh"])
+
+                let r3IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 3")
+                #expect(r3IDs.isEmpty)
+            }
+        }
+        #expect(try repository.syncState(regionId: 3) == nil)
+        #expect(try repository.syncState(regionId: 2) != nil)
+        #expect(try repository.syncState(regionId: 1) != nil)
+        #expect(repository.cachedRegionIDs() == Set([1, 2]))
+
+        // Calling pruneExpiredStops also prunes expired rows from active region if specified
+        _ = repository.pruneExpiredStops(activeRegionID: 1, olderThan: cutoff, knownRegionIDs: [1, 2])
+        try database.dbQueue.read { db in
+            for table in tables {
+                let r1IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 1 ORDER BY id")
+                #expect(r1IDs == ["act_fresh"])
+            }
+        }
+    }
+
+    @Test func `Incremental vacuum trigger on page threshold`() throws {
+        let database = try StopCacheDatabase(inMemory: true)
+        let repository = StopCacheRepository(database: database)
+
+        // Insert rows with sizable data to generate freelist pages when deleted
+        let largeBlob = Data(repeating: 0x55, count: 4096)
+        try database.dbQueue.write { db in
+            for i in 1...100 {
+                try db.execute(
+                    sql: "INSERT INTO cachedStop (id, regionId, lastUpdated, latitude, longitude, stopData) VALUES (?, 1, 100, 47.6, -122.3, ?)",
+                    arguments: ["stop_\(i)", largeBlob]
+                )
+            }
+        }
+
+        // Delete rows so pages are added to freelist
+        try database.dbQueue.write { db in
+            try db.execute(sql: "DELETE FROM cachedStop WHERE regionId = 1")
+        }
+
+        let freelist = database.freelistCount
+        #expect(freelist >= 50)
+
+        // Freelist >= threshold (50) -> vacuum runs and returns true, freelist resets to 0
+        let vacuumRan = repository.pruneExpiredStops(activeRegionID: 1, knownRegionIDs: [1], freelistPageThreshold: 50)
+        #expect(vacuumRan == true)
+        #expect(database.freelistCount == 0)
+
+        // When freelist is 0, running again returns false (freelist < threshold)
+        let secondRun = repository.pruneExpiredStops(activeRegionID: 1, knownRegionIDs: [1], freelistPageThreshold: 50)
+        #expect(secondRun == false)
+    }
+
+    @Test func `File size bounded on disk`() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+        let dbPath = tempDir.appendingPathComponent("test_stop_cache_shrink_\(UUID().uuidString).sqlite").path
+        defer {
+            try? FileManager.default.removeItem(atPath: dbPath)
+            try? FileManager.default.removeItem(atPath: dbPath + "-wal")
+            try? FileManager.default.removeItem(atPath: dbPath + "-shm")
+        }
+
+        let database = try StopCacheDatabase(databasePath: dbPath)
+        let repository = StopCacheRepository(database: database)
+
+        let largeBlob = Data(repeating: 0xAA, count: 65536)
+        try database.dbQueue.write { db in
+            for i in 1...20 {
+                try db.execute(
+                    sql: "INSERT INTO cachedStop (id, regionId, lastUpdated, latitude, longitude, stopData) VALUES (?, 1, 100, 47.6, -122.3, ?)",
+                    arguments: ["blob_\(i)", largeBlob]
+                )
+            }
+        }
+
+        let sizeWithData = (try FileManager.default.attributesOfItem(atPath: dbPath)[.size] as? Int64) ?? 0
+        #expect(sizeWithData > 1_000_000)
+
+        // Delete the large blobs
+        repository.clearCache(regionId: 1)
+
+        let freelistBeforeVacuum = database.freelistCount
+        #expect(freelistBeforeVacuum > 0)
+
+        // Incremental vacuum should reduce freelist to 0 and shrink file on disk
+        try database.incrementalVacuum()
+
+        let freelistAfterVacuum = database.freelistCount
+        #expect(freelistAfterVacuum == 0)
+
+        let sizeAfterVacuum = (try FileManager.default.attributesOfItem(atPath: dbPath)[.size] as? Int64) ?? 0
+        #expect(sizeAfterVacuum < sizeWithData)
+    }
+
+    @Test func `Existing database with auto_vacuum 0 is upgraded to incremental outside transaction`() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+        let dbPath = tempDir.appendingPathComponent("test_legacy_autovacuum_\(UUID().uuidString).sqlite").path
+        defer {
+            try? FileManager.default.removeItem(atPath: dbPath)
+            try? FileManager.default.removeItem(atPath: dbPath + "-wal")
+            try? FileManager.default.removeItem(atPath: dbPath + "-shm")
+        }
+
+        // Create an unconfigured database where auto_vacuum is 0
+        let unconfiguredQueue = try DatabaseQueue(path: dbPath)
+        try unconfiguredQueue.write { db in
+            try db.execute(sql: "CREATE TABLE dummy (id INTEGER PRIMARY KEY)")
+        }
+        let initialAutoVacuum = try unconfiguredQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
+        }
+        #expect(initialAutoVacuum == 0)
+
+        // Opening through StopCacheDatabase upgrades mode and vacuums outside transaction
+        let database = try StopCacheDatabase(databasePath: dbPath)
+        let upgradedAutoVacuum = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
+        }
+        #expect(upgradedAutoVacuum == 2) // 2 = INCREMENTAL
+    }
 }
 
 /// Accessed only on the database queue, including when the test reads the counts.
