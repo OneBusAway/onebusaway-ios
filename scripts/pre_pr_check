@@ -226,6 +226,17 @@ remove_matrix_project_files() {
   done
 }
 
+# Copies the backed-up derived files (Info.plist, .entitlements) back over the ones the matrix changed.
+restore_derived_files() {
+  if [ -d "$BACKUP_DIR/derived" ]; then
+    (cd "$BACKUP_DIR/derived" && find . -type f) | while IFS= read -r rel_f; do
+      target="${rel_f#./}"
+      mkdir -p "$(dirname "$target")"
+      cp "$BACKUP_DIR/derived/$target" "$target"
+    done
+  fi
+}
+
 cleanup_project_state() {
   local exit_code=$?
   if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
@@ -245,14 +256,7 @@ cleanup_project_state() {
         done
       fi
 
-      # Restore original derived files from backup
-      if [ -d "$BACKUP_DIR/derived" ]; then
-        (cd "$BACKUP_DIR/derived" && find . -type f) | while IFS= read -r rel_f; do
-          target="${rel_f#./}"
-          mkdir -p "$(dirname "$target")"
-          cp "$BACKUP_DIR/derived/$target" "$target"
-        done
-      fi
+      restore_derived_files
     elif [ "$MATRIX_STARTED" = true ]; then
       remove_matrix_project_files
       if [ -f "$BACKUP_DIR/orig_derived_files.txt" ]; then
@@ -262,6 +266,7 @@ cleanup_project_state() {
           fi
         done
       fi
+      restore_derived_files
     fi
     rm -rf "$BACKUP_DIR"
   fi
@@ -376,13 +381,7 @@ run_project_generation_checks() {
       [ -d "$BACKUP_DIR/OBAKit.xcodeproj" ] && cp -R "$BACKUP_DIR/OBAKit.xcodeproj" .
       [ -f "$BACKUP_DIR/project.yml" ] && cp "$BACKUP_DIR/project.yml" .
       [ -f "$BACKUP_DIR/project.local.yml" ] && cp "$BACKUP_DIR/project.local.yml" .
-      if [ -d "$BACKUP_DIR/derived" ]; then
-        (cd "$BACKUP_DIR/derived" && find . -type f) | while IFS= read -r rel_f; do
-          target="${rel_f#./}"
-          mkdir -p "$(dirname "$target")"
-          cp "$BACKUP_DIR/derived/$target" "$target"
-        done
-      fi
+      restore_derived_files
     fi
   else
     echo "Cleaning up matrix project (no prior project existed)..."
@@ -394,6 +393,7 @@ run_project_generation_checks() {
         fi
       done
     fi
+    restore_derived_files
   fi
 
   # Verify project generation did not modify any tracked repository files
