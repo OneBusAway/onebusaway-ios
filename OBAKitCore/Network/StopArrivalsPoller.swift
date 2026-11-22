@@ -45,7 +45,7 @@ public struct StopArrivalsPoller: Sendable {
     /// Returns an `AsyncStream` delivering arrivals updates on every tick of `clock`.
     ///
     /// `initialScenePhase` seeds the coordinator so a poll started while
-    /// backgrounded begins paused instead of racing the first bridged phase
+    /// backgrounded begins paused instead of racing the first forwarded phase
     /// value and fetching once while backgrounded.
     ///
     /// Pass fresh `scenePhaseStream` / `refreshSignal` streams on every call:
@@ -56,7 +56,7 @@ public struct StopArrivalsPoller: Sendable {
         for stopID: StopID,
         every interval: Duration,
         using apiService: RESTAPIService,
-        clock: some Clock<Duration> = ContinuousClock(),
+        clock: any Clock<Duration> & Sendable = ContinuousClock(),
         powerStateProvider: @escaping @Sendable () -> Bool = { ProcessInfo.processInfo.isLowPowerModeEnabled },
         lowPowerMultiplier: Double = 2.0,
         scenePhaseStream: AsyncStream<PollerScenePhase>? = nil,
@@ -86,7 +86,7 @@ public struct StopArrivalsPoller: Sendable {
         for stopID: StopID,
         every interval: Duration,
         using apiService: RESTAPIService,
-        clock: some Clock<Duration>,
+        clock: any Clock<Duration> & Sendable,
         powerStateProvider: @escaping @Sendable () -> Bool = { ProcessInfo.processInfo.isLowPowerModeEnabled },
         lowPowerMultiplier: Double = 2.0,
         scenePhaseStream: AsyncStream<PollerScenePhase>? = nil,
@@ -106,47 +106,26 @@ public struct StopArrivalsPoller: Sendable {
             }
             defer { notificationCenter.removeObserver(observer) }
 
-            // Bridge the caller's streams through streams owned by this poller.
-            // Cancelling the poller ends only its own iteration of the bridged
-            // streams: the poller never finishes a caller stream itself.
-            // (That alone does not make a stream reusable across a retry() —
-            // cancelling any iteration ends the stream — so callers must
-            // still pass fresh streams per call; see arrivals(for:).)
-            let (scenePhases, scenePhaseContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
-            let (refreshes, refreshContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
-
-            let forwarding = Task {
+            // The subtasks iterate the caller's streams directly. The bridging
+            // layer this replaced added no protection: cancelling the poller
+            // ends the iteration of the streams it was given either way, so
+            // callers must still pass fresh streams per call (see
+            // arrivals(for:)). Iterating directly behaves the same with
+            // less code.
+            let subtasks = Task {
                 await withTaskGroup(of: Void.self) { group in
                     if let scenePhaseStream {
                         group.addTask {
-                            defer { scenePhaseContinuation.finish() }
                             for await phase in scenePhaseStream {
-                                scenePhaseContinuation.yield(phase)
+                                await coordinator.setScenePhase(phase.isForeground)
                             }
                         }
                     }
                     if let refreshSignal {
                         group.addTask {
-                            defer { refreshContinuation.finish() }
                             for await _ in refreshSignal {
-                                refreshContinuation.yield()
+                                await coordinator.triggerRefresh()
                             }
-                        }
-                    }
-                }
-            }
-            defer { forwarding.cancel() }
-
-            let subtasks = Task {
-                await withTaskGroup(of: Void.self) { group in
-                    group.addTask {
-                        for await phase in scenePhases {
-                            await coordinator.setScenePhase(phase.isForeground)
-                        }
-                    }
-                    group.addTask {
-                        for await _ in refreshes {
-                            await coordinator.triggerRefresh()
                         }
                     }
                     group.addTask {
@@ -284,7 +263,7 @@ actor PollerCoordinator {
         refreshTriggered = false
     }
 
-    func sleep(for interval: Duration, clock: some Clock<Duration>) async throws {
+    func sleep(for interval: Duration, clock: any Clock<Duration> & Sendable) async throws {
         if refreshTriggered {
             refreshTriggered = false
             return

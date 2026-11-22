@@ -32,14 +32,15 @@ public final class StopArrivalsModel {
     @ObservationIgnored private let apiServiceProvider: APIServiceProvider
     @ObservationIgnored private let interval: Duration
     @ObservationIgnored private let poller: StopArrivalsPoller
+    @ObservationIgnored private let clock: any Clock<Duration> & Sendable
     @ObservationIgnored private var pollTask: Task<Void, Never>?
 
     /// Continuations for the streams forwarded to the running poller. These
     /// are created fresh on every startPolling(): an AsyncStream whose
     /// iteration was cancelled cannot be iterated again, so a stream must
-    /// never be reused across a retry() — the poller bridges them internally
-    /// and never finishes them, but its cancellation still ends their
-    /// iteration. `.bufferingNewest(1)` keeps only the latest phase /
+    /// never be reused across a retry() — the poller iterates them directly,
+    /// and its cancellation ends their iteration. `.bufferingNewest(1)`
+    /// keeps only the latest phase /
     /// coalesces repeated refreshes into one.
     @ObservationIgnored private var scenePhaseContinuation: AsyncStream<PollerScenePhase>.Continuation?
     @ObservationIgnored private var refreshContinuation: AsyncStream<Void>.Continuation?
@@ -51,12 +52,14 @@ public final class StopArrivalsModel {
         stop: Stop,
         apiServiceProvider: @escaping APIServiceProvider,
         interval: Duration = .seconds(30),
-        poller: StopArrivalsPoller = StopArrivalsPoller()
+        poller: StopArrivalsPoller = StopArrivalsPoller(),
+        clock: any Clock<Duration> & Sendable = ContinuousClock()
     ) {
         self.stop = stop
         self.apiServiceProvider = apiServiceProvider
         self.interval = interval
         self.poller = poller
+        self.clock = clock
         self.phase = .loading
     }
 
@@ -64,9 +67,10 @@ public final class StopArrivalsModel {
         stop: Stop,
         apiService: RESTAPIService?,
         interval: Duration = .seconds(30),
-        poller: StopArrivalsPoller = StopArrivalsPoller()
+        poller: StopArrivalsPoller = StopArrivalsPoller(),
+        clock: any Clock<Duration> & Sendable = ContinuousClock()
     ) {
-        self.init(stop: stop, apiServiceProvider: { apiService }, interval: interval, poller: poller)
+        self.init(stop: stop, apiServiceProvider: { apiService }, interval: interval, poller: poller, clock: clock)
     }
 
     public func startPolling() {
@@ -86,7 +90,7 @@ public final class StopArrivalsModel {
         self.refreshContinuation = refreshContinuation
         scenePhaseContinuation.yield(currentPhase)
 
-        let stream = poller.arrivals(for: stop.id, every: interval, using: apiService, clock: ContinuousClock(), scenePhaseStream: scenePhaseStream, refreshSignal: refreshStream, initialScenePhase: currentPhase)
+        let stream = poller.arrivals(for: stop.id, every: interval, using: apiService, clock: clock, scenePhaseStream: scenePhaseStream, refreshSignal: refreshStream, initialScenePhase: currentPhase)
         pollTask = Task { [weak self] in
             for await result in stream {
                 guard let self, !Task.isCancelled else { return }
