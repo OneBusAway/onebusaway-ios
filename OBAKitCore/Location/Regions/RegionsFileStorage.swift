@@ -37,9 +37,9 @@ public protocol RegionsFileStorageProtocol: Sendable {
 // MARK: - Implementation
 
 /// File-based storage for region data.
-public final class RegionsFileStorage: RegionsFileStorageProtocol, @unchecked Sendable {
+public final class RegionsFileStorage: RegionsFileStorageProtocol, Sendable {
 
-    private let fileManager: FileManager
+    nonisolated(unsafe) private let fileManager: FileManager
 
     public init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -80,7 +80,8 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol, @unchecked Se
             return nil
         }
 
-        guard let data = try coordinateRead(from: url), !data.isEmpty else {
+        let data = try Data(contentsOf: url)
+        guard !data.isEmpty else {
             Logger.error("RegionsFileStorage: default-regions.json is empty")
             return nil
         }
@@ -100,7 +101,7 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol, @unchecked Se
         let url = try defaultRegionsFileURL()
         try createDirectoryIfNeeded(for: url)
         let data = try JSONEncoder.RESTEncoder().encode(regions)
-        try coordinateWrite(to: url, data: data)
+        try data.write(to: url, options: .atomic)
     }
 
     // MARK: - Custom Regions
@@ -121,7 +122,8 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol, @unchecked Se
         return contents.compactMap { fileURL -> Region? in
             guard fileURL.pathExtension == "json" else { return nil }
             do {
-                guard let data = try coordinateRead(from: fileURL), !data.isEmpty else {
+                let data = try Data(contentsOf: fileURL)
+                guard !data.isEmpty else {
                     Logger.error("RegionsFileStorage: Custom region file '\(fileURL.lastPathComponent)' is empty")
                     return nil
                 }
@@ -137,7 +139,7 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol, @unchecked Se
         let url = try customRegionFileURL(identifier: region.regionIdentifier)
         try createDirectoryIfNeeded(for: url)
         let data = try JSONEncoder.RESTEncoder().encode(region)
-        try coordinateWrite(to: url, data: data)
+        try data.write(to: url, options: .atomic)
     }
 
     public func deleteCustomRegion(identifier: RegionIdentifier) throws {
@@ -147,70 +149,10 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol, @unchecked Se
             return
         }
 
-        try coordinateDelete(at: url)
-    }
-
-    // MARK: - File Coordination Helpers
-
-    private func coordinateWrite(to fileURL: URL, data: Data) throws {
-        var coordinatorError: NSError?
-        var writeError: Error?
-
-        let coordinator = NSFileCoordinator(filePresenter: nil)
-        coordinator.coordinate(writingItemAt: fileURL, options: .forReplacing, error: &coordinatorError) { targetURL in
-            do {
-                try data.write(to: targetURL, options: .atomic)
-            } catch {
-                writeError = error
-            }
-        }
-
-        if let error = writeError ?? coordinatorError {
-            throw error
-        }
-    }
-
-    private func coordinateRead(from fileURL: URL) throws -> Data? {
-        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
-
-        var coordinatorError: NSError?
-        var readData: Data?
-        var readError: Error?
-
-        let coordinator = NSFileCoordinator(filePresenter: nil)
-        coordinator.coordinate(readingItemAt: fileURL, options: [], error: &coordinatorError) { targetURL in
-            do {
-                readData = try Data(contentsOf: targetURL)
-            } catch {
-                readError = error
-            }
-        }
-
-        if let error = readError ?? coordinatorError {
-            throw error
-        }
-        return readData
-    }
-
-    private func coordinateDelete(at fileURL: URL) throws {
-        guard fileManager.fileExists(atPath: fileURL.path) else { return }
-
-        var coordinatorError: NSError?
-        var deleteError: Error?
-
-        let coordinator = NSFileCoordinator(filePresenter: nil)
-        coordinator.coordinate(writingItemAt: fileURL, options: .forDeleting, error: &coordinatorError) { targetURL in
-            do {
-                try fileManager.removeItem(at: targetURL)
-            } catch let error as CocoaError where error.code == .fileNoSuchFile {
-                return
-            } catch {
-                deleteError = error
-            }
-        }
-
-        if let error = deleteError ?? coordinatorError {
-            throw error
+        do {
+            try fileManager.removeItem(at: url)
+        } catch let error as CocoaError where error.code == .fileNoSuchFile {
+            return
         }
     }
 

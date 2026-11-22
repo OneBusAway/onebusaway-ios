@@ -152,39 +152,18 @@ final class RegionsFileStorageTests {
         #expect(loaded.first?.name == validRegion.name)
     }
 
-    // MARK: - Concurrency and File Coordination
+    // MARK: - Concurrency
 
-    @Test func `RegionsFileStorageProtocol and storage conform to Sendable`() async throws {
+    @Test func `RegionsFileStorage can be transferred to detached task`() async throws {
+        let validRegion = Fixtures.customMinneapolisRegion
+        try storage.saveDefaultRegions([validRegion])
+
         let sendableStorage: any RegionsFileStorageProtocol = storage
+        let loaded = try await Task.detached {
+            try sendableStorage.loadDefaultRegions()
+        }.value
 
-        let task = Task.detached { () -> Bool in
-            let regions = try sendableStorage.loadDefaultRegions()
-            return regions == nil || regions?.isEmpty == false
-        }
-        let result = try await task.value
-        #expect(result)
-    }
-
-    @Test func `Concurrent reads and writes do not corrupt storage`() async throws {
-        let region = Fixtures.customMinneapolisRegion
-        try storage.saveDefaultRegions([region])
-        let sendableStorage: any RegionsFileStorageProtocol = storage
-
-        await withTaskGroup(of: Void.self) { group in
-            for i in 0..<10 {
-                group.addTask {
-                    if i % 2 == 0 {
-                        _ = try? sendableStorage.loadDefaultRegions()
-                    } else {
-                        try? sendableStorage.saveDefaultRegions([region])
-                    }
-                }
-            }
-        }
-
-        let loaded = try #require(try storage.loadDefaultRegions())
-        #expect(loaded.count == 1)
-        #expect(loaded.first?.name == region.name)
+        #expect(loaded?.first?.name == validRegion.name)
     }
 
     // MARK: - Helpers

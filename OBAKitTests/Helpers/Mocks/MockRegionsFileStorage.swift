@@ -10,7 +10,8 @@
 import Foundation
 @testable import OBAKitCore
 
-final class MockRegionsFileStorage: RegionsFileStorageProtocol, @unchecked Sendable {
+@MainActor
+final class MockRegionsFileStorage: @preconcurrency RegionsFileStorageProtocol {
     var storedDefaultRegions: [Region]?
     var storedCustomRegions: [Region] = []
     var loadDefaultRegionsError: Error?
