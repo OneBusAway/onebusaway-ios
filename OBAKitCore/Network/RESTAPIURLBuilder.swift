@@ -11,16 +11,15 @@ import Foundation
 import CoreLocation
 import MapKit
 
-// MARK: - URL Builder Class
+// MARK: - URL Builder
 
-// All stored properties are immutable; @unchecked only because NSObject itself is not Sendable.
 /// Creates `URL`s for the `RESTAPIService`.
 ///
-/// This class is designed to handle the oddities of different OBA regions' URL schemes without over- or under-escaping paths.
-final class RESTAPIURLBuilder: NSObject, @unchecked Sendable {
-    private let baseURL: URL
-    private let defaultQueryItems: [URLQueryItem]
-    private let surveyBaseURL: URL?
+/// This struct is designed to handle the oddities of different OBA regions' URL schemes without over- or under-escaping paths.
+struct RESTAPIURLBuilder: Sendable {
+    let baseURL: URL
+    let defaultQueryItems: [URLQueryItem]
+    let surveyBaseURL: URL?
 
     init(baseURL: URL, defaultQueryItems: [URLQueryItem], surveyBaseURL: URL? = nil) {
         self.baseURL = baseURL
@@ -28,46 +27,66 @@ final class RESTAPIURLBuilder: NSObject, @unchecked Sendable {
         self.surveyBaseURL = surveyBaseURL
     }
 
-    public func generateURL(path: String, params: [String: Any]? = nil) -> URL {
-        let urlString = joinBaseURLToPath(path)
-        let queryParamString = buildQueryParams(params)
+    func generateURL(path: String, params: [String: Any]? = nil) -> URL {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true) ?? URLComponents()
+        let basePath = components.percentEncodedPath
+        let combinedPath = combinePaths(base: basePath, path: path)
 
-        if !queryParamString.isEmpty {
-            let fullURLString = String(format: "%@?%@", urlString, queryParamString)
-            return URL(string: fullURLString)!
+        let sanitizedPath = sanitizePercentEncoding(combinedPath)
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.insert("%")
+        components.percentEncodedPath = sanitizedPath.addingPercentEncoding(withAllowedCharacters: allowed) ?? sanitizedPath
+
+        var queryItems: [URLQueryItem] = []
+        if let params = params, !params.isEmpty {
+            queryItems.append(contentsOf: NetworkHelpers.dictionary(toQueryItems: params).sorted { $0.name < $1.name })
         }
+        queryItems.append(contentsOf: defaultQueryItems)
 
-        return URL(string: urlString)!
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components.url ?? baseURL.appendingPathComponent(path)
     }
 
-    private func joinBaseURLToPath(_ path: String) -> String {
-        let baseURLString = baseURL.absoluteString
-
-        if baseURLString.hasSuffix("/") && path.hasPrefix("/") {
-            return baseURLString + String(path.dropFirst())
-        }
-        else if !baseURLString.hasSuffix("/") && !path.hasPrefix("/") {
-            return String(format: "%@/%@", baseURLString, path)
-        }
-        else {
-            return baseURLString + path
-        }
-    }
-
-    /// Takes in a hash of params and this object's default query items, and produces a list of `&`-separated `key=value` pairs.
-    /// - Parameter params: Additional query parameters having to do with the in-flight API call.
-    private func buildQueryParams(_ params: [String: Any]? = nil) -> String {
-        let allQueryItems: [URLQueryItem] = NetworkHelpers.dictionary(toQueryItems: params ?? [:]) + defaultQueryItems
-        return allQueryItems.compactMap { queryItem in
-            guard
-                let key = queryItem.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                let value = queryItem.value?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-            else {
-                return nil
+    /// Re-encodes any `%` character that is not followed by two valid ASCII hexadecimal digits as `%25`.
+    /// This prevents `URLComponents.percentEncodedPath` from trapping on invalid percent encoding.
+    private func sanitizePercentEncoding(_ path: String) -> String {
+        var result = ""
+        result.reserveCapacity(path.utf8.count)
+        var index = path.startIndex
+        while index < path.endIndex {
+            if path[index] == "%" {
+                let nextIndex = path.index(after: index)
+                if nextIndex < path.endIndex {
+                    let secondIndex = path.index(after: nextIndex)
+                    if secondIndex < path.endIndex {
+                        let c1 = path[nextIndex]
+                        let c2 = path[secondIndex]
+                        if c1.isHexDigit && c1.isASCII && c2.isHexDigit && c2.isASCII {
+                            result.append("%")
+                            result.append(c1)
+                            result.append(c2)
+                            index = path.index(after: secondIndex)
+                            continue
+                        }
+                    }
+                }
+                result.append("%25")
+                index = nextIndex
+            } else {
+                result.append(path[index])
+                index = path.index(after: index)
             }
+        }
+        return result
+    }
 
-            return String(format: "%@=%@", key, value)
-        }.joined(separator: "&")
+    private func combinePaths(base: String, path: String) -> String {
+        let trimmedBase = base.hasSuffix("/") ? String(base.dropLast()) : base
+        let leadingPath = path.hasPrefix("/") ? path : "/" + path
+        if trimmedBase.isEmpty || trimmedBase == "/" {
+            return leadingPath
+        }
+        return trimmedBase + leadingPath
     }
 }
 
@@ -94,7 +113,7 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - vehicleID: The ID of the vehicle
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getVehicleTrip(vehicleID: String) -> URL {
+    func getVehicleTrip(vehicleID: String) -> URL {
         let apiPath = String(format: "/api/where/trip-for-vehicle/%@.json", NetworkHelpers.escapePathVariable(vehicleID))
         return generateURL(path: apiPath)
     }
@@ -104,7 +123,7 @@ extension RESTAPIURLBuilder {
     /// - API Endpoint: `/api/where/current-time.json`
     ///
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getCurrentTime() -> URL {
+    func getCurrentTime() -> URL {
         generateURL(path: "/api/where/current-time.json")
     }
 
@@ -119,7 +138,7 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - coordinate: The coordinate around which to search for stops.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getStops(coordinate: CLLocationCoordinate2D) -> URL {
+    func getStops(coordinate: CLLocationCoordinate2D) -> URL {
         generateURL(path: getStopsAPIPath, params: [
             "lat": coordinate.latitude,
             "lon": coordinate.longitude
@@ -132,7 +151,7 @@ extension RESTAPIURLBuilder {
     ///
     /// - Parameter region: The coordinate region for which the API call will be generated.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getStops(region: MKCoordinateRegion) -> URL {
+    func getStops(region: MKCoordinateRegion) -> URL {
         generateURL(path: getStopsAPIPath, params: [
             "lat": region.center.latitude,
             "lon": region.center.longitude,
@@ -149,7 +168,7 @@ extension RESTAPIURLBuilder {
     ///   - circularRegion: A circular region  for which the API call will be generated.
     ///   - query: A search query.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getStops(circularRegion: CLCircularRegion, query: String) -> URL {
+    func getStops(circularRegion: CLCircularRegion, query: String) -> URL {
         generateURL(path: getStopsAPIPath, params: [
             "lat": circularRegion.center.latitude,
             "lon": circularRegion.center.longitude,
@@ -171,7 +190,7 @@ extension RESTAPIURLBuilder {
     ///   - region: The coordinate region to search within.
     ///   - query: A stop code / stop number query.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getStops(region: MKCoordinateRegion, query: String) -> URL {
+    func getStops(region: MKCoordinateRegion, query: String) -> URL {
         generateURL(path: getStopsAPIPath, params: [
             "lat": region.center.latitude,
             "lon": region.center.longitude,
@@ -188,7 +207,7 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - id: The full, agency-prefixed ID of the stop.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getStop(stopID: StopID) -> URL {
+    func getStop(stopID: StopID) -> URL {
         generateURL(path: String(
             format: "/api/where/stop/%@.json",
             NetworkHelpers.escapePathVariable(stopID)
@@ -204,7 +223,7 @@ extension RESTAPIURLBuilder {
     ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
     ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) -> URL {
+    func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) -> URL {
         generateURL(
             path: String(format: "/api/where/arrivals-and-departures-for-stop/%@.json",
                          NetworkHelpers.escapePathVariable(id)),
@@ -225,7 +244,7 @@ extension RESTAPIURLBuilder {
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getTripArrivalDepartureAtStop(stopID: StopID, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> URL {
+    func getTripArrivalDepartureAtStop(stopID: StopID, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> URL {
         var args: [String: Any] = [
             "serviceDate": Int64(serviceDate.timeIntervalSince1970 * 1000),
             "tripId": tripID
@@ -251,7 +270,7 @@ extension RESTAPIURLBuilder {
     ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
     ///   - serviceDate: The service date for this trip.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getTrip(tripID: String, vehicleID: String?, serviceDate: Date?) -> URL {
+    func getTrip(tripID: String, vehicleID: String?, serviceDate: Date?) -> URL {
         var args: [String: Any] = [:]
         if let serviceDate = serviceDate {
             args["serviceDate"] = Int64(serviceDate.timeIntervalSince1970 * 1000)
@@ -274,7 +293,7 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - id: The route ID.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getStopsForRoute(id: RouteID) -> URL {
+    func getStopsForRoute(id: RouteID) -> URL {
         generateURL(path: String(
             format: "/api/where/stops-for-route/%@.json",
             NetworkHelpers.escapePathVariable(id)
@@ -288,7 +307,7 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - id: The agency ID.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getStopsForAgency(id: String) -> URL {
+    func getStopsForAgency(id: String) -> URL {
         generateURL(path: String(
             format: "/api/where/stops-for-agency/%@.json",
             NetworkHelpers.escapePathVariable(id)
@@ -303,7 +322,7 @@ extension RESTAPIURLBuilder {
     ///   - query: Search query
     ///   - region: The circular region from which to return results.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getRoute(query: String, region: CLCircularRegion) -> URL {
+    func getRoute(query: String, region: CLCircularRegion) -> URL {
         generateURL(
             path: "/api/where/routes-for-location.json",
             params: [
@@ -331,7 +350,7 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - id: The ID of the shape to retrieve.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getShape(id: String) -> URL {
+    func getShape(id: String) -> URL {
         generateURL(path: String(
             format: "/api/where/shape/%@.json",
             NetworkHelpers.escapePathVariable(id)
@@ -343,7 +362,7 @@ extension RESTAPIURLBuilder {
     /// - API Endpoint: `/api/where/agencies-with-coverage.json`
     ///
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getAgenciesWithCoverage() -> URL {
+    func getAgenciesWithCoverage() -> URL {
         generateURL(path: "/api/where/agencies-with-coverage.json")
     }
 
@@ -352,7 +371,7 @@ extension RESTAPIURLBuilder {
     /// - API Endpoint: `/api/where/config.json`
     ///
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getConfig() -> URL {
+    func getConfig() -> URL {
         generateURL(path: "/api/where/config.json")
     }
 
@@ -366,7 +385,7 @@ extension RESTAPIURLBuilder {
     ///   - id: The route ID.
     ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
     /// - Returns: A URL suitable for making a request to retrieve schedule information.
-    public func getScheduleForRoute(id: RouteID, date: Date? = nil) -> URL {
+    func getScheduleForRoute(id: RouteID, date: Date? = nil) -> URL {
         var params: [String: Any] = [:]
         if let date = date {
             let formatter = DateFormatter()
@@ -391,7 +410,7 @@ extension RESTAPIURLBuilder {
     ///   - id: The stop ID.
     ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
     /// - Returns: A URL suitable for making a request to retrieve schedule information.
-    public func getScheduleForStop(id: StopID, date: Date? = nil) -> URL {
+    func getScheduleForStop(id: StopID, date: Date? = nil) -> URL {
         var params: [String: Any] = [:]
         if let date = date {
             let formatter = DateFormatter()
@@ -408,7 +427,7 @@ extension RESTAPIURLBuilder {
         )
     }
 
-    public enum RegionalAlertsSource: String {
+    enum RegionalAlertsSource: String {
         case obaco = "/api/v1/regions/%@/alerts.pb"
         case rest = "/api/gtfs_realtime/alerts-for-agency/%@.pb"
     }
@@ -420,14 +439,14 @@ extension RESTAPIURLBuilder {
     /// - Parameters:
     ///   - agencyID: The ID of the agency for which alerts will be requested.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getRESTRegionalAlerts(agencyID: String) -> URL {
+    func getRESTRegionalAlerts(agencyID: String) -> URL {
         generateURL(path: String(
             format: "/api/gtfs_realtime/alerts-for-agency/%@.pb",
             NetworkHelpers.escapePathVariable(agencyID)
         ))
     }
 
-    public func getStopProblem(
+    func getStopProblem(
         stopID: StopID,
         code: StopProblemCode,
         comment: String?,
@@ -447,10 +466,13 @@ extension RESTAPIURLBuilder {
             args["userLocationAccuracy"] = location.horizontalAccuracy
         }
 
-        return generateURL(path: "/api/where/report-problem-with-stop/\(stopID).json", params: args)
+        return generateURL(
+            path: String(format: "/api/where/report-problem-with-stop/%@.json", NetworkHelpers.escapePathVariable(stopID)),
+            params: args
+        )
     }
 
-    public func getTripProblem(
+    func getTripProblem(
         tripID: String,
         serviceDate: Date,
         vehicleID: String?,
@@ -499,7 +521,7 @@ extension RESTAPIURLBuilder {
     ///   - id: The combined on-demand service ID.
     ///   - geometryDetail: How much zone geometry to embed in the references.
     /// - Returns: An URL suitable for making a request to retrieve information.
-    public func getOnDemandService(id: String, geometryDetail: OnDemandGeometryDetail) -> URL {
+    func getOnDemandService(id: String, geometryDetail: OnDemandGeometryDetail) -> URL {
         generateURL(
             path: String(format: "/api/ondemand/service/%@.json", NetworkHelpers.escapePathVariable(id)),
             params: ["geometryDetail": geometryDetail.rawValue]
@@ -509,7 +531,7 @@ extension RESTAPIURLBuilder {
     /// Creates a full URL for the `getOnDemandServices(agencyID:)` API call.
     ///
     /// - API Endpoint: `/api/ondemand/services-for-agency/{id}.json`
-    public func getOnDemandServices(agencyID: String, geometryDetail: OnDemandGeometryDetail) -> URL {
+    func getOnDemandServices(agencyID: String, geometryDetail: OnDemandGeometryDetail) -> URL {
         generateURL(
             path: String(format: "/api/ondemand/services-for-agency/%@.json", NetworkHelpers.escapePathVariable(agencyID)),
             params: ["geometryDetail": geometryDetail.rawValue]
@@ -520,7 +542,7 @@ extension RESTAPIURLBuilder {
     /// the server's viewport mode (`latSpan`/`lonSpan`, no `radius`).
     ///
     /// - API Endpoint: `/api/ondemand/services-for-location.json`
-    public func getOnDemandServices(region: MKCoordinateRegion, geometryDetail: OnDemandGeometryDetail) -> URL {
+    func getOnDemandServices(region: MKCoordinateRegion, geometryDetail: OnDemandGeometryDetail) -> URL {
         generateURL(path: "/api/ondemand/services-for-location.json", params: [
             "lat": region.center.latitude,
             "lon": region.center.longitude,
@@ -535,7 +557,7 @@ extension RESTAPIURLBuilder {
     /// positive radius win over a span, so none is sent.
     ///
     /// - API Endpoint: `/api/ondemand/services-for-location.json`
-    public func getOnDemandServices(near coordinate: CLLocationCoordinate2D, radiusMeters: Double, geometryDetail: OnDemandGeometryDetail) -> URL {
+    func getOnDemandServices(near coordinate: CLLocationCoordinate2D, radiusMeters: Double, geometryDetail: OnDemandGeometryDetail) -> URL {
         generateURL(path: "/api/ondemand/services-for-location.json", params: [
             "lat": coordinate.latitude,
             "lon": coordinate.longitude,
@@ -553,7 +575,7 @@ extension RESTAPIURLBuilder {
     /// - Parameter userID: The user's unique identifier
     /// - Parameter regionID: The region identifier
     /// - Returns: An URL suitable for making a request to retrieve surveys.
-    public func getSurveys(userID: String, regionID: Int) -> URL? {
+    func getSurveys(userID: String, regionID: Int) -> URL? {
         guard let surveyBaseURL = surveyBaseURL else { return nil }
 
         let builder = RESTAPIURLBuilder(baseURL: surveyBaseURL, defaultQueryItems: defaultQueryItems)
@@ -568,7 +590,7 @@ extension RESTAPIURLBuilder {
     /// - API Endpoint: `/api/v1/survey_responses/`
     ///
     /// - Returns: An URL suitable for making a POST request to submit survey responses.
-    public func submitSurveyResponse() -> URL? {
+    func submitSurveyResponse() -> URL? {
         guard let surveyBaseURL = surveyBaseURL else { return nil }
 
         let builder = RESTAPIURLBuilder(baseURL: surveyBaseURL, defaultQueryItems: defaultQueryItems)
@@ -581,7 +603,7 @@ extension RESTAPIURLBuilder {
     ///
     /// - Parameter responseID: The ID of the existing survey response
     /// - Returns: An URL suitable for making a PUT request to update survey responses.
-    public func updateSurveyResponse(responseID: String) -> URL? {
+    func updateSurveyResponse(responseID: String) -> URL? {
         guard let surveyBaseURL = surveyBaseURL else { return nil }
 
         let builder = RESTAPIURLBuilder(baseURL: surveyBaseURL, defaultQueryItems: defaultQueryItems)
