@@ -141,4 +141,27 @@ final class RESTAPIURLBuilderExtendedTests {
         let percentEncodedPath = components?.percentEncodedPath ?? ""
         #expect(percentEncodedPath == "/api/ondemand/services-for-agency/CC%2FTransit%20Agency.json")
     }
+
+    // MARK: - Base URLs with a path
+
+    @Test func `base URLs with a path are combined without doubling slashes`() {
+        // Locks in combinePaths behaviour for region servers whose base URL
+        // carries a path prefix (e.g. https://host/onebusaway-api-webapp/).
+        let cases: [(base: String, path: String, expectedPath: String)] = [
+            ("https://host/onebusaway-api-webapp/", "/api/where/current-time.json", "/onebusaway-api-webapp/api/where/current-time.json"),
+            ("https://host/onebusaway-api-webapp", "/api/where/current-time.json", "/onebusaway-api-webapp/api/where/current-time.json"),
+            ("https://host/api/", "/api/where/current-time.json", "/api/api/where/current-time.json"),
+            ("https://host/api", "/api/where/current-time.json", "/api/api/where/current-time.json"),
+            ("https://host/onebusaway-api-webapp/", "api/where/current-time.json", "/onebusaway-api-webapp/api/where/current-time.json"),
+            ("https://host/api", "api/where/current-time.json", "/api/api/where/current-time.json"),
+        ]
+        for (base, path, expectedPath) in cases {
+            let pathBuilder = RESTAPIURLBuilder(
+                baseURL: URL(string: base)!,
+                defaultQueryItems: [URLQueryItem(name: "key", value: "TEST_KEY")]
+            )
+            let url = pathBuilder.generateURL(path: path)
+            #expect(url.path == expectedPath, "base \(base), path \(path)")
+        }
+    }
 }
