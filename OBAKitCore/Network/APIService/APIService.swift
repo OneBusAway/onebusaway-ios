@@ -22,18 +22,17 @@ public protocol APIService {
 
 extension APIService {
     public var retryPolicy: RetryPolicy { .disabled }
-    public var defaultTimeoutPolicy: RequestTimeoutPolicy { .interactive }
 }
 
 /// Typed timeout policies for `APIService` operations.
 public enum RequestTimeoutPolicy: Sendable, Equatable {
-    /// Interactive requests expected to complete quickly (e.g. arrivals, stops, routes). 10 seconds.
+    /// Interactive requests expected to complete quickly (e.g. arrivals, stops, routes, weather, alerts). 10 seconds.
     case interactive
 
-    /// Form or reporting submissions (e.g. problem reports, survey responses). 15 seconds.
+    /// Form or reporting submissions (e.g. problem reports, survey responses, alarms, payment intents, ghost bus reports, push registrations, live activities). 15 seconds.
     case submission
 
-    /// Large or batch data sync operations (e.g. schedules, shape downloads, bundled migrations). 60 seconds.
+    /// Large or batch data sync operations (e.g. bulk stops-for-agency download). 60 seconds.
     case batch
 
     /// Custom timeout interval.

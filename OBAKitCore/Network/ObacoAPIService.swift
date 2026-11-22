@@ -92,7 +92,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         testMode: Bool
     ) async throws -> PaymentIntentResponse {
         let url = await buildURL(path: "/api/v1/payment_intents")
-        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         urlRequest.httpMethod = "POST"
 
         let params: [String: Any] = [
@@ -120,7 +120,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         userPushID: String
     ) async throws -> Alarm {
         let url = await buildURL(path: String(format: "/api/v2/regions/%d/alarms", regionID))
-        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         urlRequest.httpMethod = "POST"
 
         var params: [String: Any] = [
@@ -146,7 +146,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
     }
 
     @discardableResult public nonisolated func deleteAlarm(url: URL) async throws -> (Data, URLResponse) {
-        let request = NSMutableURLRequest(url: url)
+        let request = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         request.httpMethod = "DELETE"
 
         return try await data(for: request as URLRequest)
@@ -160,7 +160,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
     /// - parameter userID: The app's anonymous, persisted user UUID.
     public nonisolated func postGhostBusReport(_ draft: GhostBusReportDraft, userID: String) async throws -> GhostBusReport {
         let url = await buildURL(path: String(format: "/api/v2/regions/%d/ghost_bus_reports", regionID))
-        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         urlRequest.httpMethod = "POST"
 
         var params: [String: Any] = [
@@ -246,7 +246,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
     ///     Sent only when non-nil and non-empty.
     public nonisolated func postPushRegistration(token: String, locale: String, testDevice: Bool, description: String?) async throws {
         let url = await buildURL(path: String(format: "/api/v2/regions/%d/push_registrations", regionID))
-        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         urlRequest.httpMethod = "POST"
 
         var params: [String: Any] = [
@@ -279,7 +279,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         let url = await buildURL(
             path: String(format: "/api/v2/regions/%d/push_registrations", regionID),
             queryItems: [URLQueryItem(name: "token", value: token)])
-        let request = NSMutableURLRequest(url: url)
+        let request = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         request.httpMethod = "DELETE"
         return try await data(for: request as URLRequest)
     }
@@ -305,7 +305,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         stopSequence: Int?
     ) async throws -> URL {
         let url = await buildURL(path: String(format: "/api/v2/regions/%d/live_activities", regionID))
-        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         urlRequest.httpMethod = "POST"
 
         var params: [String: Any] = [
@@ -334,7 +334,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
     /// Unregisters a Live Activity subscription (the server sends no push; the
     /// activity already ended on-device).
     @discardableResult public nonisolated func deleteLiveActivity(url: URL) async throws -> (Data, URLResponse) {
-        let request = NSMutableURLRequest(url: url)
+        let request = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: RequestTimeoutPolicy.submission.interval)
         request.httpMethod = "DELETE"
         return try await data(for: request as URLRequest)
     }

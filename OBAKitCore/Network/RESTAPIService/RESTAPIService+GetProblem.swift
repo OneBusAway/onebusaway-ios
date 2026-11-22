@@ -45,7 +45,7 @@ extension RESTAPIService {
     /// - returns: ``CoreRESTAPIResponse``.
     public nonisolated func getStopProblem(report: StopProblemReport) async throws -> CoreRESTAPIResponse {
         let url = urlBuilder.getStopProblem(stopID: report.stopID, code: report.code, comment: report.comment, location: report.location)
-        return try await getData(for: url, decodeAs: CoreRESTAPIResponse.self)
+        return try await getData(for: url, decodeAs: CoreRESTAPIResponse.self, timeoutPolicy: .submission)
     }
 
     // MARK: - Trip problem reporting
@@ -104,6 +104,6 @@ extension RESTAPIService {
     /// - returns: ``CoreRESTAPIResponse``.
     public nonisolated func getTripProblem(report: TripProblemReport) async throws -> CoreRESTAPIResponse {
         let url = urlBuilder.getTripProblem(tripID: report.tripID, serviceDate: report.serviceDate, vehicleID: report.vehicleID, stopID: report.stopID, code: report.code, comment: report.comment, userOnVehicle: report.userOnVehicle, location: report.location)
-        return try await getData(for: url, decodeAs: CoreRESTAPIResponse.self)
+        return try await getData(for: url, decodeAs: CoreRESTAPIResponse.self, timeoutPolicy: .submission)
     }
 }

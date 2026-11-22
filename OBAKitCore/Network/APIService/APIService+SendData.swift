@@ -64,7 +64,6 @@ extension APIService {
         request.httpMethod = method.value
         request.httpBody = requestData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
         request.setValue("en-US", forHTTPHeaderField: "Accept-Language")
 
         let (data, response): (Foundation.Data, URLResponse)

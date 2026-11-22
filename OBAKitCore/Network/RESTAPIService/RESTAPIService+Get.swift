@@ -457,15 +457,20 @@ extension RESTAPIService {
     }
 
     // MARK: - Helpers
-    nonisolated func getData<T: Decodable>(for url: URL, decodeAs decodeType: T.Type) async throws -> T {
-        return try await getData(for: url, decodeAs: decodeType, using: self.decoder)
+    nonisolated func getData<T: Decodable>(
+        for url: URL,
+        decodeAs decodeType: T.Type,
+        timeoutPolicy: RequestTimeoutPolicy = .interactive
+    ) async throws -> T {
+        return try await getData(for: url, decodeAs: decodeType, using: self.decoder, timeoutPolicy: timeoutPolicy)
     }
 
     nonisolated func getData<T: Decodable>(
         for url: URL,
         decodeRESTAPIResponseAs decodeType: T.Type,
-        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
+        timeoutPolicy: RequestTimeoutPolicy = .interactive
     ) async throws -> RESTAPIResponse<T> {
-        return try await getData(for: url, decodeRESTAPIResponseAs: decodeType, using: self.decoder, cachePolicy: cachePolicy)
+        return try await getData(for: url, decodeRESTAPIResponseAs: decodeType, using: self.decoder, cachePolicy: cachePolicy, timeoutPolicy: timeoutPolicy)
     }
 }

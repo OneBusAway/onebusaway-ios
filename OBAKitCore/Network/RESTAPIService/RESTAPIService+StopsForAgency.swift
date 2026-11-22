@@ -46,7 +46,7 @@ extension RESTAPIService {
     ///   tell a server without the endpoint from a request that failed.
     nonisolated func getStopsForAgency(id: String, ifNoneMatch etag: String? = nil) async throws -> StopsForAgencyResult {
         let url = urlBuilder.getStopsForAgency(id: id)
-        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60)
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: RequestTimeoutPolicy.batch.interval)
         request.allowsConstrainedNetworkAccess = false
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
         // As in `getData(for:)`: some servers parse numbers by this locale.

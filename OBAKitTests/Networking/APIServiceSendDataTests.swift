@@ -233,35 +233,30 @@ final class APIServiceSendDataTests: OBATestCase {
         #expect(countingLoader.callCount == 1)
     }
 
-    // MARK: - Timeout Policies & Gzip Support Tests
+    // MARK: - Timeout Policies Tests
 
-    @Test func `postData includes gzip header and default submission timeout`() async throws {
+    @Test func `postData applies default submission timeout`() async throws {
         let payload = MockRequestPayload(name: "Pass", amount: 100)
         let responseData = try JSONEncoder().encode(MockResponsePayload(id: "1", success: true))
         let capturedTimeout = SendableBox<TimeInterval?>(nil)
-        let capturedGzip = SendableBox<String?>(nil)
 
         dataLoader.mock(data: responseData) { request in
             capturedTimeout.value = request.timeoutInterval
-            capturedGzip.value = request.value(forHTTPHeaderField: "Accept-Encoding")
             return true
         }
 
         let _: MockResponsePayload = try await service.postData(url: endpointURL, data: payload)
 
         #expect(capturedTimeout.value == 15.0)
-        #expect(capturedGzip.value == "gzip")
     }
 
-    @Test func `updateData includes gzip header and custom timeout interval`() async throws {
+    @Test func `updateData applies custom timeout interval`() async throws {
         let payload = MockRequestPayload(name: "Pass", amount: 200)
         let responseData = try JSONEncoder().encode(MockResponsePayload(id: "2", success: true))
         let capturedTimeout = SendableBox<TimeInterval?>(nil)
-        let capturedGzip = SendableBox<String?>(nil)
 
         dataLoader.mock(data: responseData) { request in
             capturedTimeout.value = request.timeoutInterval
-            capturedGzip.value = request.value(forHTTPHeaderField: "Accept-Encoding")
             return true
         }
 
@@ -272,7 +267,6 @@ final class APIServiceSendDataTests: OBATestCase {
         )
 
         #expect(capturedTimeout.value == 42.0)
-        #expect(capturedGzip.value == "gzip")
     }
 
     @Test func `getData applies interactive and batch timeout intervals`() async throws {
@@ -288,6 +282,24 @@ final class APIServiceSendDataTests: OBATestCase {
         _ = try? await service.getData(for: endpointURL, timeoutPolicy: .batch)
 
         #expect(capturedTimeouts.value == [10.0, 60.0])
+    }
+
+    @Test func `Survey submission uses submission timeout policy`() async throws {
+        let json = """
+        {"survey_response": {"id": "1", "update_path": "/path", "user_identifier": "u1"}}
+        """
+        let responseData = Data(json.utf8)
+        let capturedTimeout = SendableBox<TimeInterval?>(nil)
+
+        dataLoader.mock(data: responseData) { request in
+            capturedTimeout.value = request.timeoutInterval
+            return true
+        }
+
+        let submission = SurveySubmission(userIdentifier: "user1", surveyId: 10, responses: [])
+        _ = try await restService.submitSurveyResponse(submission)
+
+        #expect(capturedTimeout.value == 15.0)
     }
 
     @Test func `Cancellation propagates before sendData execution`() async {
