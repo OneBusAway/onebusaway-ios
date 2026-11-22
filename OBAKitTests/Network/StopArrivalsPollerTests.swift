@@ -263,6 +263,7 @@ final class StopArrivalsPollerTests: OBATestCase {
         mockArrivals(dataLoader, gate: gate)
         let service = buildRESTService(dataLoader: dataLoader)
         let clock = TestClock()
+        let coordinator = PollerCoordinator()
 
         let (sceneStream, sceneContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
 
@@ -272,7 +273,8 @@ final class StopArrivalsPollerTests: OBATestCase {
             using: service,
             clock: clock,
             powerStateProvider: { false },
-            scenePhaseStream: sceneStream
+            scenePhaseStream: sceneStream,
+            coordinator: coordinator
         )
         var iterator = stream.makeAsyncIterator()
 
@@ -280,14 +282,14 @@ final class StopArrivalsPollerTests: OBATestCase {
         _ = await iterator.next()
         #expect(gate.requests == 1)
         await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
 
         // 2. Transition to background
         sceneContinuation.yield(.background)
 
-        // Give background transition a moment to process
-        while await clock.sleeperCount > 0 {
-            await Task.yield()
-        }
+        // Poller exits sleep, cancels clock sleeper, and waits in waitUntilActive
+        await clock.waitForSleepers(count: 0)
+        await coordinator.waitForWaiters(count: 1)
 
         // Advance clock while in background — no new requests should fire
         clock.advance(by: .seconds(60))
@@ -308,6 +310,7 @@ final class StopArrivalsPollerTests: OBATestCase {
         mockArrivals(dataLoader, gate: gate)
         let service = buildRESTService(dataLoader: dataLoader)
         let clock = TestClock()
+        let coordinator = PollerCoordinator()
 
         let (refreshStream, refreshContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
 
@@ -317,7 +320,8 @@ final class StopArrivalsPollerTests: OBATestCase {
             using: service,
             clock: clock,
             powerStateProvider: { false },
-            refreshSignal: refreshStream
+            refreshSignal: refreshStream,
+            coordinator: coordinator
         )
         var iterator = stream.makeAsyncIterator()
 
@@ -326,6 +330,7 @@ final class StopArrivalsPollerTests: OBATestCase {
         #expect(gate.requests == 1)
 
         await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
 
         // 2. Trigger pull-to-refresh signal without advancing clock
         refreshContinuation.yield()
@@ -365,6 +370,7 @@ final class StopArrivalsPollerTests: OBATestCase {
         mockArrivals(dataLoader, gate: gate)
         let service = buildRESTService(dataLoader: dataLoader)
         let clock = TestClock()
+        let coordinator = PollerCoordinator()
 
         let (sceneStream, sceneContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
 
@@ -374,7 +380,8 @@ final class StopArrivalsPollerTests: OBATestCase {
             using: service,
             clock: clock,
             powerStateProvider: { false },
-            scenePhaseStream: sceneStream
+            scenePhaseStream: sceneStream,
+            coordinator: coordinator
         )
         var iterator = stream.makeAsyncIterator()
 
@@ -384,19 +391,20 @@ final class StopArrivalsPollerTests: OBATestCase {
 
         // 2. Complete one normal tick in foreground
         await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
         clock.advance(by: .seconds(30))
         let second = try #require(await iterator.next())
         #expect((try? second.get()) != nil)
         #expect(gate.requests == 2)
 
         await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
 
         // 3. Transition to background
         sceneContinuation.yield(.background)
 
-        while await clock.sleeperCount > 0 {
-            await Task.yield()
-        }
+        await clock.waitForSleepers(count: 0)
+        await coordinator.waitForWaiters(count: 1)
 
         // Advance 90s (3 full intervals) while in background — no new requests
         clock.advance(by: .seconds(90))
@@ -406,6 +414,59 @@ final class StopArrivalsPollerTests: OBATestCase {
         sceneContinuation.yield(.active)
         let resumed = try #require(await iterator.next())
         #expect((try? resumed.get()) != nil)
+        #expect(gate.requests == 3)
+    }
+
+    @Test func `Toggling Low Power Mode does not trigger immediate fetch but applies multiplier on next sleep`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+        let coordinator = PollerCoordinator()
+
+        let stream = StopArrivalsPoller().arrivals(
+            for: stopID,
+            every: .seconds(30),
+            using: service,
+            clock: clock,
+            powerStateProvider: { false },
+            lowPowerMultiplier: 2.0,
+            coordinator: coordinator
+        )
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. Initial emission
+        _ = await iterator.next()
+        #expect(gate.requests == 1)
+
+        await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
+
+        // 2. Toggle Low Power Mode to true while mid-sleep
+        await coordinator.setLowPower(true)
+
+        // Advance 15s — no premature fetch
+        clock.advance(by: .seconds(15))
+        #expect(gate.requests == 1)
+
+        // Complete the remaining 15s of the current 30s interval
+        clock.advance(by: .seconds(15))
+        let second = try #require(await iterator.next())
+        #expect((try? second.get()) != nil)
+        #expect(gate.requests == 2)
+
+        // 3. Next sleep now uses multiplied 60s interval
+        await clock.waitForSleepers(count: 1)
+        await coordinator.waitForWaiters(count: 1)
+
+        clock.advance(by: .seconds(30))
+        #expect(await clock.sleeperCount == 1)
+        #expect(gate.requests == 2)
+
+        clock.advance(by: .seconds(30))
+        let third = try #require(await iterator.next())
+        #expect((try? third.get()) != nil)
         #expect(gate.requests == 3)
     }
 }
