@@ -57,6 +57,7 @@ struct BookmarkCardView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(row.accessibilityLabel(base: formatters.accessibilityLabel(for: row)))
         .accessibilityValue(formatters.accessibilityValue(for: row) ?? "")
+        .accessibilityIdentifier("bookmark_row")
         .accessibilityAddTraits([.isButton, .updatesFrequently])
     }
 
@@ -346,6 +347,7 @@ struct StopBookmarkRow: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(row.accessibilityLabel(base: formatters.accessibilityLabel(for: row)))
+        .accessibilityIdentifier("bookmark_row")
         .accessibilityAddTraits(.isButton)
     }
 }

@@ -96,6 +96,7 @@ struct StopPageHeaderView: View {
             // The screen's title: mark it a heading so it anchors VoiceOver's
             // Headings rotor for quick top-of-page navigation.
             .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("stop_page_header")
             // Two independent estimates: the walk chip (tappable, opens walking
             // directions) and the bike chip. Both are always shown when
             // available — Bike Mode only affects the arrival split, not these.

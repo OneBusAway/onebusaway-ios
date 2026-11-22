@@ -9,12 +9,12 @@
 
 import XCTest
 
+// nonisolated: the target defaults to the main actor, and XCTestCase's
+// initializers and setUp are nonisolated.
 /// Reads what VoiceOver would read on the stop page, trip page and nearby list.
 /// SwiftUI only builds its accessibility tree while something asks for it, so
 /// combined elements can't be checked from a unit test; XCUITest asks the way
 /// VoiceOver does. Runs against the live Puget Sound server.
-// nonisolated: the target defaults to the main actor, and XCTestCase\'s
-// initializers and setUp are nonisolated.
 nonisolated final class AccessibilityDeviceTests: XCTestCase {
 
     @MainActor private var app: XCUIApplication!
@@ -24,6 +24,8 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
 
         app = XCUIApplication()
         app.launchArguments += OnboardingBypass.launchArguments
+        // Enforce chronological (time-sorted) departures layout so departure_row is always present.
+        app.launchArguments += ["-OBALastUsedStopSort", "time"]
         app.launchEnvironment["TEST_SUPPRESS_ALERT_BULLETINS"] = "1"
 
         addUIInterruptionMonitor(withDescription: "Permissions") { alert in
@@ -112,5 +114,141 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
         // Stops" even zoomed out downtown. Nothing to read when it does.
         try XCTSkipUnless(found, "The map showed No Nearby Stops, so there were no rows to read")
         XCTAssertTrue(rows.firstMatch.label.contains("away"), "Nearby row has no distance")
+    }
+
+    // MARK: - Accessibility Smoke Path
+
+    /// Asserts that an interactive UI element exists and provides a meaningful, non-empty accessibility label.
+    @MainActor private func assertAccessible(
+        _ element: XCUIElement,
+        component: String,
+        timeout: TimeInterval = 20,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(
+            element.waitForExistence(timeout: timeout),
+            "Accessibility Failure: Expected UI component '\(component)' was not found within \(timeout)s",
+            file: file,
+            line: line
+        )
+
+        let label = element.label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let placeholder = (element.placeholderValue ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let accessibilityText = !label.isEmpty ? label : placeholder
+
+        XCTAssertFalse(
+            accessibilityText.isEmpty,
+            "Accessibility Failure: UI component '\(component)' is missing a non-empty accessibility label",
+            file: file,
+            line: line
+        )
+    }
+
+    /// End-to-end accessibility smoke path:
+    /// - Launches app with onboarding bypass
+    /// - Asserts non-empty accessibility labels and expected titles on tab bar buttons
+    /// - Opens Bookmarks and asserts accessible navigation bar elements (Edit button, title) and empty-state content
+    /// - Opens Home/Map and asserts accessible search field
+    /// - Opens stop details via deep link and asserts accessible stop header, navigation bar actions, and departure row
+    @MainActor func test_accessibilitySmokePath() throws {
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 30), "Tab bar should appear after onboarding bypass")
+
+        let expectedTabs = ["Map", "Recent", "Bookmarks", "More"]
+        let tabButtons = tabBar.buttons
+        XCTAssertGreaterThanOrEqual(tabButtons.count, expectedTabs.count, "Tab bar should contain at least \(expectedTabs.count) buttons")
+
+        for (index, tabName) in expectedTabs.enumerated() {
+            let button = tabButtons.element(boundBy: index)
+            assertAccessible(button, component: "Tab '\(tabName)'")
+            XCTAssertEqual(button.label, tabName, "Tab button at index \(index) should have label '\(tabName)'")
+        }
+
+        verifyBookmarksAccessibility(tabBar: tabBar)
+        verifyMapAndSearchAccessibility(tabBar: tabBar)
+        verifyStopDetailsAccessibility()
+    }
+
+    @MainActor private func verifyBookmarksAccessibility(tabBar: XCUIElement) {
+        tabBar.buttons["Bookmarks"].tap()
+        let bookmarksNavBar = app.navigationBars["Bookmarks"]
+        XCTAssertTrue(bookmarksNavBar.waitForExistence(timeout: 10), "Bookmarks navigation bar should exist")
+
+        let bookmarksTitle = bookmarksNavBar.staticTexts.firstMatch
+        assertAccessible(bookmarksTitle, component: "Bookmarks navigation bar title")
+        XCTAssertEqual(bookmarksTitle.label, "Bookmarks")
+
+        let editButton = bookmarksNavBar.buttons.firstMatch
+        assertAccessible(editButton, component: "Bookmarks Edit button")
+        XCTAssertEqual(editButton.label, "Edit")
+
+        let emptyStateTitle = app.staticTexts["empty_state_title"]
+        if emptyStateTitle.waitForExistence(timeout: 3) {
+            assertAccessible(emptyStateTitle, component: "Bookmarks empty state title")
+            XCTAssertEqual(emptyStateTitle.label, "No Bookmarks")
+        } else {
+            // Scope query to the list collection view to avoid matching tab buttons or nav bar titles.
+            let bookmarksList = app.collectionViews.firstMatch
+            XCTAssertTrue(bookmarksList.waitForExistence(timeout: 5), "Bookmarks list collection view should exist")
+
+            let bookmarkRowById = bookmarksList.descendants(matching: .any)["bookmark_row"].firstMatch
+            let firstBookmark = bookmarkRowById.exists ? bookmarkRowById : bookmarksList.cells.firstMatch
+            assertAccessible(firstBookmark, component: "First bookmark row", timeout: 5)
+
+            // Formatters.accessibilityLabel(for:) produces one of these three prefixes:
+            let validPrefixes = [
+                "Stop Bookmark,",
+                "Route Bookmark,",
+                "Favorite Route Bookmark,"
+            ]
+            let label = firstBookmark.label
+            let hasValidPrefix = validPrefixes.contains { label.hasPrefix($0) }
+            XCTAssertTrue(
+                hasValidPrefix,
+                "Bookmark row label should start with 'Stop Bookmark,', 'Route Bookmark,', or 'Favorite Route Bookmark,', got: '\(label)'"
+            )
+        }
+    }
+
+    @MainActor private func verifyMapAndSearchAccessibility(tabBar: XCUIElement) {
+        tabBar.buttons["Map"].tap()
+        let map = app.maps.firstMatch
+        XCTAssertTrue(map.waitForExistence(timeout: 15), "Map element should exist on Map tab")
+
+        let searchField = app.searchFields.firstMatch
+        assertAccessible(searchField, component: "Search bar")
+    }
+
+    @MainActor private func verifyStopDetailsAccessibility() {
+        openStop1110()
+
+        let stopCollectionView = app.collectionViews.firstMatch
+        XCTAssertTrue(stopCollectionView.waitForExistence(timeout: 20), "Stop page collection view should appear")
+
+        let stopHeader = stopCollectionView.descendants(matching: .any)["stop_page_header"].firstMatch
+        assertAccessible(stopHeader, component: "Stop details header (Pine St & 5th Ave)", timeout: 20)
+        XCTAssertTrue(stopHeader.label.contains("Pine St & 5th Ave"), "Stop header should contain stop name")
+        XCTAssertTrue(
+            stopHeader.label.contains("Routes") || stopHeader.label.contains("bound"),
+            "Stop header should contain route or direction context"
+        )
+
+        let stopNavBar = app.navigationBars.firstMatch
+        XCTAssertTrue(stopNavBar.waitForExistence(timeout: 10), "Stop page navigation bar should exist")
+
+        let moreButton = stopNavBar.buttons["stop_page_more_button"].firstMatch
+        assertAccessible(moreButton, component: "Stop details More menu button")
+        XCTAssertEqual(moreButton.label, "More")
+
+        // Note: departure_row is rendered in chronological (time-sorted) layout,
+        // enforced via "-OBALastUsedStopSort time" in launchArguments.
+        let departureRow = stopCollectionView.buttons["departure_row"].firstMatch
+        assertAccessible(departureRow, component: "Stop details departure row", timeout: 20)
+        XCTAssertTrue(departureRow.label.contains("Route"), "Departure row label should contain route context, got: \(departureRow.label)")
+        XCTAssertTrue(
+            departureRow.label.contains("minute") || departureRow.label.contains("ago") || departureRow.label.contains("now"),
+            "Departure row label should contain time/countdown context, got: \(departureRow.label)"
+        )
     }
 }
