@@ -40,45 +40,40 @@ public final class StopCacheRepository: Sendable {
 
     // MARK: - Read
 
-    /// Fetches a single cached stop by primary key (`stopID`, `regionID`).
+    /// Fetches a single cached stop by primary key (`stopID`, `regionId`).
     /// Returns `nil` if the stop does not exist in the cache or fails to decode.
     ///
     /// Routes are fully hydrated from `cachedRoute` and `cachedRouteSync`.
-    public func stop(stopID: StopID, regionID: Int) -> Stop? {
+    public func stop(stopID: StopID, regionId: Int) -> Stop? {
         do {
             return try database.dbQueue.read { db in
-                guard let cachedStop = try visibleStop(stopID: stopID, regionId: regionID, in: db) else {
+                guard let cachedStop = try visibleStop(stopID: stopID, regionId: regionId, in: db) else {
                     return nil
                 }
-                return try stops(from: [cachedStop], regionId: regionID, in: db).first
+                return try stops(from: [cachedStop], regionId: regionId, in: db).first
             }
         } catch {
-            Logger.error("Failed to fetch stop \(stopID) in region \(regionID): \(error)")
+            Logger.error("Failed to fetch stop \(stopID) in region \(regionId): \(error)")
             return nil
         }
     }
 
-    /// Convenience overload matching legacy naming.
-    public func stop(stopID: StopID, regionId: Int) -> Stop? {
-        stop(stopID: stopID, regionID: regionId)
-    }
-
-    /// Fetches multiple cached stops by primary key (`stopIDs`, `regionID`).
+    /// Fetches multiple cached stops by primary key (`stopIDs`, `regionId`).
     /// Missing stops are omitted. The returned stops preserve the order
     /// of unique requested `stopIDs`.
     ///
     /// Routes are fully hydrated from `cachedRoute` and `cachedRouteSync`.
-    public func stops(stopIDs: [StopID], regionID: Int) -> [Stop] {
+    public func stops(stopIDs: [StopID], regionId: Int) -> [Stop] {
         guard !stopIDs.isEmpty else { return [] }
         if stopIDs.count == 1, let single = stopIDs.first {
-            return stop(stopID: single, regionID: regionID).map { [$0] } ?? []
+            return stop(stopID: single, regionId: regionId).map { [$0] } ?? []
         }
 
         do {
             return try database.dbQueue.read { db in
-                let cachedStops = try visibleStops(stopIDs: stopIDs, regionId: regionID, in: db)
+                let cachedStops = try visibleStops(stopIDs: stopIDs, regionId: regionId, in: db)
                 guard !cachedStops.isEmpty else { return [] }
-                let decodedStops = try stops(from: cachedStops, regionId: regionID, in: db)
+                let decodedStops = try stops(from: cachedStops, regionId: regionId, in: db)
                 let byID = Dictionary(uniqueKeysWithValues: decodedStops.map { ($0.id, $0) })
                 var seen = Set<StopID>()
                 return stopIDs.compactMap { id in
@@ -87,25 +82,9 @@ public final class StopCacheRepository: Sendable {
                 }
             }
         } catch {
-            Logger.error("Failed to fetch stops \(stopIDs) in region \(regionID): \(error)")
+            Logger.error("Failed to fetch stops \(stopIDs) in region \(regionId): \(error)")
             return []
         }
-    }
-
-    /// Convenience overload matching legacy naming.
-    public func stops(stopIDs: [StopID], regionId: Int) -> [Stop] {
-        stops(stopIDs: stopIDs, regionID: regionId)
-    }
-
-    /// Fetches multiple cached stops as a dictionary keyed by stop ID.
-    public func stopsByID(stopIDs: [StopID], regionID: Int) -> [StopID: Stop] {
-        let list = stops(stopIDs: stopIDs, regionID: regionID)
-        return Dictionary(uniqueKeysWithValues: list.map { ($0.id, $0) })
-    }
-
-    /// Convenience overload matching legacy naming.
-    public func stopsByID(stopIDs: [StopID], regionId: Int) -> [StopID: Stop] {
-        stopsByID(stopIDs: stopIDs, regionID: regionId)
     }
 
     /// Fetches cached stops within the given coordinate bounds for a specific region.

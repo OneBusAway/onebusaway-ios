@@ -231,9 +231,12 @@ final class AppSheetViewFactory {
     /// trip highlight off: the same check `ViewRouter.makeStopController` makes.
     func stopDetailView(stopID: Stop.ID, transferContext: TransferContext? = nil) -> StopDetailsSheetRootView {
         let transferContext = application.userDataStore.displayedTransferContext(transferContext)
+        let cachedStop = application.currentRegion.flatMap {
+            application.stopCacheRepository?.stop(stopID: stopID, regionId: $0.regionIdentifier)
+        }
         return StopDetailsSheetRootView(
             stopID: stopID,
-            makeViewModel: { StopViewModel(environment: self.application, stopID: stopID, transferContext: transferContext) },
+            makeViewModel: { StopViewModel(environment: self.application, stopID: stopID, stop: cachedStop, transferContext: transferContext) },
             makePresenter: {
                 let presenter = StopPageActionPresenter(
                     application: self.application,
