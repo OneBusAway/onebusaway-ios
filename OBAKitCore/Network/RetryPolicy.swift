@@ -20,18 +20,18 @@ public struct RetryPolicy: Sendable, Equatable {
     /// No retries. Used by API services that opt out of REST retry behavior.
     public static let disabled = RetryPolicy(maxAttempts: 1, initialDelay: 0, maxDelay: 0, jitter: false)
 
-    /// REST defaults: at most three total requests and a bounded 250/500 ms backoff with decorrelated jitter.
+    /// REST defaults: at most three total requests with bounded random jitter between initialDelay and 1.5× the exponential delay (250–375 ms for attempt 1, 250–750 ms for attempt 2).
     public static let standard = RetryPolicy(maxAttempts: 3, initialDelay: 0.25, maxDelay: 2, jitter: true)
 
-    /// Parses the HTTP `Retry-After` header value (seconds or RFC 7231 / HTTP-date).
+    /// Parses the HTTP `Retry-After` header value (non-negative integer seconds per RFC 9110 or RFC 7231 / HTTP-date).
     /// - Parameters:
     ///   - headerValue: The raw `Retry-After` header string.
     ///   - now: The current reference date (defaults to `Date()`).
-    /// - Returns: Delay in seconds, or `nil` if unparseable.
+    /// - Returns: Delay in seconds, or `nil` if unparseable, negative, or invalid.
     public static func parseRetryAfter(_ headerValue: String, now: Date = Date()) -> TimeInterval? {
         let trimmed = headerValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let seconds = Double(trimmed) {
-            return max(0, seconds)
+        if let seconds = Int(trimmed), seconds >= 0 {
+            return TimeInterval(seconds)
         }
 
         let dateFormats = [

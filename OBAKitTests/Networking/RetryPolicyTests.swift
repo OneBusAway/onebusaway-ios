@@ -210,8 +210,10 @@ final class RetryPolicyTests {
         let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
 
         #expect(RetryPolicy.parseRetryAfter("120", now: referenceDate) == 120.0)
-        #expect(RetryPolicy.parseRetryAfter(" 5.5 ", now: referenceDate) == 5.5)
-        #expect(RetryPolicy.parseRetryAfter("-10", now: referenceDate) == 0.0)
+        #expect(RetryPolicy.parseRetryAfter("0", now: referenceDate) == 0.0)
+        #expect(RetryPolicy.parseRetryAfter(" 5.5 ", now: referenceDate) == nil)
+        #expect(RetryPolicy.parseRetryAfter("-10", now: referenceDate) == nil)
+        #expect(RetryPolicy.parseRetryAfter("nan", now: referenceDate) == nil)
         #expect(RetryPolicy.parseRetryAfter("invalid_seconds", now: referenceDate) == nil)
 
         let targetDate = Date(timeIntervalSince1970: 1_700_000_045)
@@ -277,17 +279,23 @@ final class RetryPolicyTests {
         #expect(!sleepCalled.value)
     }
 
-    @Test func `Jittered delay calculation stays within decorrelated bounds`() {
-        let policy = RetryPolicy(maxAttempts: 5, initialDelay: 0.2, maxDelay: 2.0, jitter: true)
+    @Test func `Jittered delay calculation stays within expected fixed ranges`() {
+        let policy = RetryPolicy.standard
 
-        for attempt in 1...5 {
-            let baseDelay = policy.baseExponentialDelay(after: attempt)
-            let minBound = min(policy.initialDelay, baseDelay)
-            let maxBound = min(policy.maxDelay, max(minBound, baseDelay * 1.5))
+        // Fixed expected bounds for .standard (initialDelay: 0.25, maxDelay: 2.0):
+        // Attempt 1: base = 0.25s -> range 0.25...0.375s
+        // Attempt 2: base = 0.50s -> range 0.25...0.75s
+        // Attempt 3: base = 1.00s -> range 0.25...1.50s
+        let expectedRanges: [Int: ClosedRange<Double>] = [
+            1: 0.25...0.375,
+            2: 0.25...0.75,
+            3: 0.25...1.50
+        ]
 
+        for (attempt, expectedRange) in expectedRanges {
             for _ in 0..<50 {
-                let jittered = policy.delay(after: attempt)
-                #expect(jittered >= minBound && jittered <= maxBound)
+                let delay = policy.delay(after: attempt)
+                #expect(expectedRange.contains(delay), "Attempt \(attempt) delay \(delay) outside expected range \(expectedRange)")
             }
         }
     }
