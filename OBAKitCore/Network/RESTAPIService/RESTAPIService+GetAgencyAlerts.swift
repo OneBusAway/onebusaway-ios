@@ -30,7 +30,7 @@ extension RESTAPIService {
 
         do {
             let (data, _) = try await self.getData(for: url)
-            let message = try TransitRealtime_FeedMessage(serializedBytes: data)
+            let message = try GTFSRealtimeFeedParser.standard.parse(data: data)
             return message.entity
                 .filter(isQualifiedAlert)
                 .compactMap { entity in

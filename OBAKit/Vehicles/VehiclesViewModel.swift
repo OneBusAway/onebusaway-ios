@@ -231,7 +231,7 @@ class VehiclesViewModel: ObservableObject {
 
             let message: TransitRealtime_FeedMessage
             do {
-                message = try TransitRealtime_FeedMessage(serializedBytes: data)
+                message = try GTFSRealtimeFeedParser.standard.parse(data: data)
             } catch {
                 status.error = .decodingError(error)
                 return ([], status)

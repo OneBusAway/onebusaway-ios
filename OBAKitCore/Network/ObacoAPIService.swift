@@ -354,7 +354,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         let url = await buildURL(path: apiPath, queryItems: queryItems)
 
         let (data, _) = try await getData(for: url)
-        let message = try TransitRealtime_FeedMessage(serializedBytes: data)
+        let message = try GTFSRealtimeFeedParser.standard.parse(data: data)
         let entities = message.entity
 
         var qualifiedEntities: [TransitRealtime_FeedEntity] = []
