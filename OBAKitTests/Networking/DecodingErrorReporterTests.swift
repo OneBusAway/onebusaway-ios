@@ -27,6 +27,7 @@ final class DecodingErrorReporterTests {
 
     deinit {
         DecodingErrorReporter.reportHandler = nil
+        DecodingErrorReporter.diagnosticHandler = nil
     }
 
     // MARK: - keyNotFound Tests
@@ -371,6 +372,304 @@ final class DecodingErrorReporterTests {
         #expect(capturedMessage.value!.contains("Missing key: 'fare'"))
     }
     
+    // MARK: - DecodingErrorDiagnostic Tests
+
+    @Test func `Diagnostic generation for keyNotFound`() throws {
+        let json = """
+        {
+            "id": 123,
+            "nested": {
+                "value": "test",
+                "count": 5
+            }
+        }
+        """.data(using: .utf8)!
+
+        do {
+            _ = try JSONDecoder().decode(TestModel.self, from: json)
+            Issue.record("Expected decoding to fail")
+        } catch let error as DecodingError {
+            let fixedDate = Date(timeIntervalSince1970: 1700000000)
+            let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=SECRET_TOKEN&lat=47.6097&lon=-122.3331")!
+            let diagnostic = DecodingErrorReporter.diagnostic(for: error, url: testURL, httpMethod: "GET", date: fixedDate)
+
+            #expect(diagnostic.errorType == "keyNotFound")
+            #expect(diagnostic.missingKey == "name")
+            #expect(diagnostic.expectedType == nil)
+            #expect(diagnostic.codingPath.isEmpty)
+            #expect(diagnostic.schemaPath == "root")
+            #expect(diagnostic.httpMethod == "GET")
+            #expect(diagnostic.timestamp == fixedDate)
+            #expect(diagnostic.message.contains("Missing key: 'name'"))
+            #expect(!diagnostic.debugDescription.isEmpty)
+            #expect(!diagnostic.url.absoluteString.contains("SECRET_TOKEN"))
+            #expect(!diagnostic.url.absoluteString.contains("47.6097"))
+            let query = diagnostic.url.query?.removingPercentEncoding ?? (diagnostic.url.query ?? "")
+            #expect(query.contains("key=[REDACTED]"))
+            #expect(query.contains("lat=[REDACTED]"))
+            #expect(query.contains("lon=[REDACTED]"))
+        }
+    }
+
+    @Test func `Diagnostic generation for keyNotFound with nested path`() throws {
+        struct Model: Decodable {
+            let data: DataWrapper
+        }
+        struct DataWrapper: Decodable {
+            let items: [Item]
+        }
+        struct Item: Decodable {
+            let id: Int
+            let required: String
+        }
+
+        let json = """
+        {
+            "data": {
+                "items": [
+                    {
+                        "id": 1
+                    }
+                ]
+            }
+        }
+        """.data(using: .utf8)!
+
+        do {
+            _ = try JSONDecoder().decode(Model.self, from: json)
+            Issue.record("Expected decoding to fail")
+        } catch let error as DecodingError {
+            let mockURL = URL(string: "https://api.onebusaway.org/nested")!
+            let diagnostic = DecodingErrorReporter.diagnostic(for: error, url: mockURL, httpMethod: "POST")
+
+            #expect(diagnostic.errorType == "keyNotFound")
+            #expect(diagnostic.missingKey == "required")
+            #expect(diagnostic.expectedType == nil)
+            #expect(diagnostic.codingPath.contains("data"))
+            #expect(diagnostic.codingPath.contains("items"))
+            #expect(diagnostic.schemaPath.contains("data → items"))
+            #expect(diagnostic.httpMethod == "POST")
+        }
+    }
+
+    @Test func `Diagnostic generation for typeMismatch`() throws {
+        let json = """
+        {
+            "id": "not_a_number",
+            "name": "test",
+            "nested": {
+                "value": "test",
+                "count": 5
+            }
+        }
+        """.data(using: .utf8)!
+
+        do {
+            _ = try JSONDecoder().decode(TestModel.self, from: json)
+            Issue.record("Expected decoding to fail")
+        } catch let error as DecodingError {
+            let mockURL = URL(string: "https://api.onebusaway.org/type")!
+            let diagnostic = DecodingErrorReporter.diagnostic(for: error, url: mockURL, httpMethod: "GET")
+
+            #expect(diagnostic.errorType == "typeMismatch")
+            #expect(diagnostic.missingKey == nil)
+            #expect(diagnostic.expectedType?.contains("Int") == true)
+            #expect(diagnostic.schemaPath == "id")
+            #expect(diagnostic.codingPath == ["id"])
+            #expect(diagnostic.message.contains("Type mismatch"))
+        }
+    }
+
+    @Test func `Diagnostic generation for valueNotFound`() throws {
+        let json = """
+        {
+            "id": 123,
+            "name": null,
+            "nested": {
+                "value": "test",
+                "count": 5
+            }
+        }
+        """.data(using: .utf8)!
+
+        do {
+            _ = try JSONDecoder().decode(TestModel.self, from: json)
+            Issue.record("Expected decoding to fail")
+        } catch let error as DecodingError {
+            let mockURL = URL(string: "https://api.onebusaway.org/value")!
+            let diagnostic = DecodingErrorReporter.diagnostic(for: error, url: mockURL, httpMethod: "GET")
+
+            #expect(diagnostic.errorType == "valueNotFound")
+            #expect(diagnostic.missingKey == nil)
+            #expect(diagnostic.expectedType?.contains("String") == true)
+            #expect(diagnostic.schemaPath == "name")
+            #expect(diagnostic.codingPath == ["name"])
+            #expect(diagnostic.message.contains("Missing value"))
+        }
+    }
+
+    @Test func `Diagnostic generation for dataCorrupted`() throws {
+        struct DateModel: Decodable {
+            let timestamp: Date
+        }
+
+        let json = """
+        {
+            "timestamp": "not-a-valid-date"
+        }
+        """.data(using: .utf8)!
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        do {
+            _ = try decoder.decode(DateModel.self, from: json)
+            Issue.record("Expected decoding to fail")
+        } catch let error as DecodingError {
+            let mockURL = URL(string: "https://api.onebusaway.org/corrupted")!
+            let diagnostic = DecodingErrorReporter.diagnostic(for: error, url: mockURL, httpMethod: "PUT")
+
+            #expect(diagnostic.errorType == "dataCorrupted")
+            #expect(diagnostic.missingKey == nil)
+            #expect(diagnostic.expectedType == nil)
+            #expect(diagnostic.schemaPath == "root")
+            #expect(diagnostic.codingPath.isEmpty)
+            #expect(diagnostic.httpMethod == "PUT")
+            #expect(diagnostic.message.contains("Data corrupted"))
+        }
+    }
+
+    // MARK: - Query Redaction Tests
+
+    @Test func `Query redaction sanitizes tokens and user coordinates`() {
+        let sensitiveURL = URL(string: "https://api.onebusaway.org/api/where/stops-for-location.json?key=SECRET_TOKEN&token=XYZ&lat=47.6097&lon=-122.3331&latitude=47.6097&longitude=-122.3331")!
+        let redactedURL = DecodingErrorReporter.redactURL(sensitiveURL)
+
+        #expect(!redactedURL.absoluteString.contains("SECRET_TOKEN"))
+        #expect(!redactedURL.absoluteString.contains("XYZ"))
+        #expect(!redactedURL.absoluteString.contains("47.6097"))
+        #expect(!redactedURL.absoluteString.contains("-122.3331"))
+
+        let query = redactedURL.query?.removingPercentEncoding ?? (redactedURL.query ?? "")
+        #expect(query.contains("key=[REDACTED]"))
+        #expect(query.contains("token=[REDACTED]"))
+        #expect(query.contains("lat=[REDACTED]"))
+        #expect(query.contains("lon=[REDACTED]"))
+        #expect(query.contains("latitude=[REDACTED]"))
+        #expect(query.contains("longitude=[REDACTED]"))
+
+        let components = URLComponents(url: redactedURL, resolvingAgainstBaseURL: false)
+        #expect(components?.queryItems?.first(where: { $0.name == "key" })?.value == "[REDACTED]")
+        #expect(components?.queryItems?.first(where: { $0.name == "token" })?.value == "[REDACTED]")
+        #expect(components?.queryItems?.first(where: { $0.name == "lat" })?.value == "[REDACTED]")
+        #expect(components?.queryItems?.first(where: { $0.name == "lon" })?.value == "[REDACTED]")
+        #expect(components?.queryItems?.first(where: { $0.name == "latitude" })?.value == "[REDACTED]")
+        #expect(components?.queryItems?.first(where: { $0.name == "longitude" })?.value == "[REDACTED]")
+    }
+
+    @Test func `Query redaction preserves URLs without query parameters`() {
+        let cleanURL = URL(string: "https://api.onebusaway.org/api/where/stops")!
+        let redacted = DecodingErrorReporter.redactURL(cleanURL)
+        #expect(redacted == cleanURL)
+    }
+
+    // MARK: - Codable Serialization Tests
+
+    @Test func `DecodingErrorDiagnostic JSON serialization round trip`() throws {
+        let fixedDate = Date(timeIntervalSince1970: 1700000000)
+        let original = DecodingErrorDiagnostic(
+            errorType: "keyNotFound",
+            schemaPath: "data → items → 0 → id",
+            codingPath: ["data", "items", "0", "id"],
+            missingKey: "id",
+            expectedType: nil,
+            debugDescription: "No value associated with key 'id'",
+            message: "Missing key: 'id'\nPath: data → items → 0 → id",
+            url: URL(string: "https://api.onebusaway.org/api/where/stops?key=%5BREDACTED%5D")!,
+            httpMethod: "POST",
+            timestamp: fixedDate
+        )
+
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(original)
+
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(DecodingErrorDiagnostic.self, from: data)
+
+        #expect(decoded == original)
+        #expect(decoded.errorType == "keyNotFound")
+        #expect(decoded.schemaPath == "data → items → 0 → id")
+        #expect(decoded.codingPath == ["data", "items", "0", "id"])
+        #expect(decoded.missingKey == "id")
+        #expect(decoded.expectedType == nil)
+        #expect(decoded.debugDescription == "No value associated with key 'id'")
+        #expect(decoded.message == original.message)
+        #expect(decoded.url == original.url)
+        #expect(decoded.httpMethod == "POST")
+        #expect(decoded.timestamp == fixedDate)
+    }
+
+    // MARK: - Diagnostic Handler Tests
+
+    @Test func `Report invokes diagnosticHandler when configured`() async {
+        let capturedDiagnostic = SendableBox<DecodingErrorDiagnostic?>(nil)
+        let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=SECRET_TOKEN&lat=47.6097&lon=-122.3331")!
+
+        await confirmation("Diagnostic handler called") { handlerCalled in
+            DecodingErrorReporter.diagnosticHandler = { diagnostic in
+                capturedDiagnostic.value = diagnostic
+                handlerCalled()
+            }
+
+            let error = DecodingError.keyNotFound(
+                TestCodingKey(stringValue: "id"),
+                .init(codingPath: [], debugDescription: "Missing id")
+            )
+
+            DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
+        }
+
+        #expect(capturedDiagnostic.value != nil)
+        #expect(capturedDiagnostic.value?.errorType == "keyNotFound")
+        #expect(capturedDiagnostic.value?.missingKey == "id")
+        #expect(capturedDiagnostic.value?.httpMethod == "GET")
+        #expect(capturedDiagnostic.value?.url.absoluteString.contains("SECRET_TOKEN") == false)
+        #expect(capturedDiagnostic.value?.url.absoluteString.contains("47.6097") == false)
+        let query = capturedDiagnostic.value?.url.query?.removingPercentEncoding ?? (capturedDiagnostic.value?.url.query ?? "")
+        #expect(query.contains("key=[REDACTED]"))
+        #expect(query.contains("lat=[REDACTED]"))
+    }
+
+    @Test func `Report invokes both reportHandler and diagnosticHandler when both configured`() async {
+        let capturedLegacyURL = SendableBox<URL?>(nil)
+        let capturedDiagnostic = SendableBox<DecodingErrorDiagnostic?>(nil)
+        let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=SECRET_TOKEN&lat=47.6097")!
+
+        await confirmation("Both handlers called", expectedCount: 2) { handlerCalled in
+            DecodingErrorReporter.reportHandler = { _, url, _, _ in
+                capturedLegacyURL.value = url
+                handlerCalled()
+            }
+
+            DecodingErrorReporter.diagnosticHandler = { diagnostic in
+                capturedDiagnostic.value = diagnostic
+                handlerCalled()
+            }
+
+            let error = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Corrupted data"))
+            DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "POST")
+        }
+
+        // Backward compatibility: legacy handler receives stripped URL without query
+        #expect(capturedLegacyURL.value?.absoluteString == "https://api.onebusaway.org/api/where/stops")
+        // Structured handler receives diagnostic with redacted query
+        let query = capturedDiagnostic.value?.url.query?.removingPercentEncoding ?? (capturedDiagnostic.value?.url.query ?? "")
+        #expect(query.contains("key=[REDACTED]"))
+        #expect(capturedDiagnostic.value?.url.absoluteString.contains("SECRET_TOKEN") == false)
+        #expect(capturedDiagnostic.value?.errorType == "dataCorrupted")
+        #expect(capturedDiagnostic.value?.httpMethod == "POST")
+    }
+
     // MARK: - Helper Types
 
     struct TestCodingKey: CodingKey {
