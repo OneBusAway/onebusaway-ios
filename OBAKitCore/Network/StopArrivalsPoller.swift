@@ -38,8 +38,15 @@ public struct StopArrivalsPoller: Sendable {
 
     public let minutesAfter: UInt
 
+    /// Test-only coordinator override. When set, `arrivals(for:...)` uses this
+    /// coordinator instead of creating one, so a test can observe the
+    /// coordinator's state (for example, waiting for it to reach its
+    /// background wait). Production code never sets it.
+    var testCoordinator: PollerCoordinator?
+
     public init(minutesAfter: UInt = 60) {
         self.minutesAfter = minutesAfter
+        self.testCoordinator = nil
     }
 
     /// Returns an `AsyncStream` delivering arrivals updates on every tick of `clock`.
@@ -64,7 +71,7 @@ public struct StopArrivalsPoller: Sendable {
         notificationCenter: NotificationCenter = .default,
         initialScenePhase: PollerScenePhase = .active
     ) -> AsyncStream<Result<[ArrivalDeparture], Error>> {
-        let coordinator = PollerCoordinator(
+        let coordinator = testCoordinator ?? PollerCoordinator(
             initialForeground: initialScenePhase.isForeground,
             isLowPower: powerStateProvider()
         )
