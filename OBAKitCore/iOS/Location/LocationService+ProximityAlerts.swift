@@ -13,8 +13,83 @@ import Foundation
 import CoreLocation
 
 // iOS-only: watchOS has no region monitoring. `LocationService` holds no
-// proximity *stored* state, which is what lets all of this be an extension.
+// proximity *stored* state directly on the portable class; dynamic state
+// is maintained via associated objects.
 extension LocationService {
+
+    // MARK: - Retry State
+
+    private final class ProximityRetryState {
+        struct Entry {
+            var attemptCount: Int
+            var task: Task<Void, Never>?
+            var region: CLCircularRegion?
+        }
+
+        var entries: [String: Entry] = [:]
+        var policy: RegionMonitoringRetryPolicy = .standard
+        var customSleeper: (@Sendable (TimeInterval) async throws -> Void)?
+    }
+
+    private static var retryStateKey: UInt8 = 0
+
+    private var retryState: ProximityRetryState {
+        if let state = objc_getAssociatedObject(self, &Self.retryStateKey) as? ProximityRetryState {
+            return state
+        }
+        let state = ProximityRetryState()
+        objc_setAssociatedObject(self, &Self.retryStateKey, state, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return state
+    }
+
+    /// The retry policy applied when Core Location reports transient region-monitoring failures.
+    public var regionMonitoringRetryPolicy: RegionMonitoringRetryPolicy {
+        get { retryState.policy }
+        set { retryState.policy = newValue }
+    }
+
+    /// Injectable sleeper for testing backoff delays without waiting in real time.
+    var regionMonitoringSleeper: (@Sendable (TimeInterval) async throws -> Void)? {
+        get { retryState.customSleeper }
+        set { retryState.customSleeper = newValue }
+    }
+
+    public func hasPendingRetry(for alert: ProximityAlert) -> Bool {
+        hasPendingRetry(forRegionIdentifier: Self.proximityRegionIdentifier(for: alert))
+    }
+
+    public func hasPendingRetry(forRegionIdentifier identifier: String) -> Bool {
+        retryState.entries[identifier]?.task != nil
+    }
+
+    public func pendingRetryTask(for alert: ProximityAlert) -> Task<Void, Never>? {
+        pendingRetryTask(forRegionIdentifier: Self.proximityRegionIdentifier(for: alert))
+    }
+
+    public func pendingRetryTask(forRegionIdentifier identifier: String) -> Task<Void, Never>? {
+        retryState.entries[identifier]?.task
+    }
+
+    public func retryAttemptCount(for alert: ProximityAlert) -> Int {
+        retryAttemptCount(forRegionIdentifier: Self.proximityRegionIdentifier(for: alert))
+    }
+
+    public func retryAttemptCount(forRegionIdentifier identifier: String) -> Int {
+        retryState.entries[identifier]?.attemptCount ?? 0
+    }
+
+    public func cancelRetry(for identifier: String) {
+        if let entry = retryState.entries.removeValue(forKey: identifier) {
+            entry.task?.cancel()
+        }
+    }
+
+    public func cancelAllRetries() {
+        for (_, entry) in retryState.entries {
+            entry.task?.cancel()
+        }
+        retryState.entries.removeAll()
+    }
 
     // MARK: - Region Monitoring
 
@@ -108,6 +183,7 @@ extension LocationService {
         }
 
         let identifier = Self.proximityRegionIdentifier(for: alert)
+        cancelRetry(for: identifier)
 
         // Re-arming an alert already being monitored replaces its region instead
         // of adding one — `CLRegion` hashes on identifier — so it can't push the
@@ -123,14 +199,6 @@ extension LocationService {
         // asynchronously through `monitoringDidFailFor` carrying no radius — too
         // late, and too vague, to tell the rider their alert would have fired
         // somewhere other than where they asked.
-        //
-        // `-1` is not an unknown limit. Apple documents it as region monitoring
-        // being unavailable or unsupported on this device, so honouring the
-        // request in that case hands the caller `.started` for an alert that can
-        // never fire. Left that way for now — the failure does still surface
-        // through `monitoringDidFailFor` — but refusing up front wants an
-        // `isMonitoringAvailable(for:)` check and a result case to carry it.
-        // Both points flagged in review of #1292.
         let requestedRadius = alert.radiusMeters
         let deviceMaximum = regionMonitor.maximumRegionMonitoringDistance
         let radius = deviceMaximum > 0 ? min(requestedRadius, deviceMaximum) : requestedRadius
@@ -138,6 +206,9 @@ extension LocationService {
         let region = CLCircularRegion(center: alert.coordinate, radius: radius, identifier: identifier)
         region.notifyOnEntry = true
         region.notifyOnExit = false
+
+        retryState.entries[identifier] = ProximityRetryState.Entry(attemptCount: 0, task: nil, region: region)
+
         regionMonitor.startMonitoring(for: region)
 
         guard radius == requestedRadius else {
@@ -162,6 +233,7 @@ extension LocationService {
     /// survives to identify it.
     public func stopMonitoringProximityAlert(id: UUID) {
         let identifier = Self.proximityRegionIdentifier(forAlertID: id)
+        cancelRetry(for: identifier)
         guard let matchingRegion = regionMonitor.monitoredRegions.first(where: {
             $0.identifier == identifier
         }) else {
@@ -173,6 +245,7 @@ extension LocationService {
 
     /// Stops monitoring all proximity alert regions without affecting other monitored regions.
     public func stopMonitoringAllProximityAlerts() {
+        cancelAllRetries()
         for region in monitoredProximityRegions {
             regionMonitor.stopMonitoring(for: region)
         }
@@ -190,6 +263,7 @@ extension LocationService {
             return
         }
 
+        cancelRetry(for: region.identifier)
         notifyDelegatesDidEnterMonitoredRegion(region.identifier)
     }
 
@@ -213,8 +287,81 @@ extension LocationService {
             return
         }
 
-        Logger.error("Region monitoring failed for proximity region \(identifier) (\(kind)): \(error)")
-        notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
+        guard kind.isTransient else {
+            Logger.error("Region monitoring failed permanently for proximity region \(identifier) (\(kind)): \(error)")
+            cancelRetry(for: identifier)
+            notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
+            return
+        }
+
+        let previousAttempt = retryState.entries[identifier]?.attemptCount ?? 0
+        let currentAttempt = previousAttempt + 1
+
+        guard currentAttempt <= regionMonitoringRetryPolicy.maxAttempts else {
+            Logger.error("Region monitoring transient retries exhausted (\(regionMonitoringRetryPolicy.maxAttempts) attempts) for proximity region \(identifier) (\(kind)): \(error)")
+            cancelRetry(for: identifier)
+            notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
+            return
+        }
+
+        let delay = regionMonitoringRetryPolicy.delay(forAttempt: currentAttempt)
+        Logger.info("Region monitoring delayed/transient error for proximity region \(identifier) (\(kind)): scheduling retry attempt \(currentAttempt)/\(regionMonitoringRetryPolicy.maxAttempts) in \(delay)s.")
+
+        let targetRegion: CLCircularRegion? = (region as? CLCircularRegion) ?? retryState.entries[identifier]?.region
+
+        retryState.entries[identifier]?.task?.cancel()
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            if delay > 0 {
+                do {
+                    if let customSleeper = self.regionMonitoringSleeper {
+                        try await customSleeper(delay)
+                    } else {
+                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    }
+                } catch {
+                    return
+                }
+            }
+
+            guard !Task.isCancelled else { return }
+
+            guard self.isProximityMonitoringAuthorized else {
+                Logger.warn("Retry aborted for proximity region \(identifier): authorization is no longer Always (\(self.authorizationStatus)).")
+                self.cancelRetry(for: identifier)
+                self.notifyDelegatesMonitoringDidFail(identifier, error: error, kind: .authorizationDenied)
+                return
+            }
+
+            let isReplacement = self.regionMonitor.monitoredRegions.contains { $0.identifier == identifier }
+            if !isReplacement, self.regionMonitor.monitoredRegions.count >= Self.maximumMonitoredRegions {
+                Logger.warn("Retry aborted for proximity region \(identifier): region limit reached.")
+                self.cancelRetry(for: identifier)
+                self.notifyDelegatesMonitoringDidFail(identifier, error: error, kind: .regionRejected)
+                return
+            }
+
+            guard let circularRegion = targetRegion else {
+                Logger.error("Retry aborted for proximity region \(identifier): no circular region available to monitor.")
+                self.cancelRetry(for: identifier)
+                self.notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
+                return
+            }
+
+            Logger.info("Retrying region monitoring (attempt \(currentAttempt)) for proximity region \(identifier).")
+            self.regionMonitor.startMonitoring(for: circularRegion)
+            if self.retryState.entries[identifier]?.attemptCount == currentAttempt {
+                self.retryState.entries[identifier]?.task = nil
+            }
+        }
+
+        retryState.entries[identifier] = ProximityRetryState.Entry(
+            attemptCount: currentAttempt,
+            task: task,
+            region: targetRegion
+        )
     }
 }
 

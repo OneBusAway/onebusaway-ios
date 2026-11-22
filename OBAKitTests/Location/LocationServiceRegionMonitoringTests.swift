@@ -531,4 +531,289 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(service.responds(to: #selector(CLLocationManagerDelegate.locationManager(_:monitoringDidFailFor:withError:))))
         #expect((LocationManagerMock() as LocationManager) is RegionMonitoringLocationManager)
     }
+
+    // MARK: - Bounded Retry: Transient Errors
+
+    @Test func `Retry policy calculates exponential backoff delay correctly`() {
+        let policy = RegionMonitoringRetryPolicy(maxAttempts: 3, initialDelay: 1.0, maxDelay: 10.0, backoffMultiplier: 2.0)
+
+        #expect(policy.delay(forAttempt: 0) == 0)
+        #expect(policy.delay(forAttempt: 1) == 1.0)
+        #expect(policy.delay(forAttempt: 2) == 2.0)
+        #expect(policy.delay(forAttempt: 3) == 4.0)
+        #expect(policy.delay(forAttempt: 4) == 8.0)
+        #expect(policy.delay(forAttempt: 5) == 10.0) // capped at maxDelay
+
+        #expect(policy.shouldRetry(kind: .transient, currentAttempt: 0))
+        #expect(policy.shouldRetry(kind: .transient, currentAttempt: 2))
+        #expect(!policy.shouldRetry(kind: .transient, currentAttempt: 3))
+        #expect(!policy.shouldRetry(kind: .authorizationDenied, currentAttempt: 1))
+        #expect(!policy.shouldRetry(kind: .regionRejected, currentAttempt: 1))
+    }
+
+    @Test func `Monitoring did fail transient error schedules retry and re arms geofence`() async {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+
+        // Clear mock to simulate daemon restart dropping the monitored region
+        self.locationManagerMock.stopMonitoring(for: region)
+        #expect(self.locationManagerMock.monitoredRegions.isEmpty)
+
+        // Transient failure occurs
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+
+        // Delegate is not notified immediately
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+        #expect(self.service.hasPendingRetry(for: alert))
+
+        // Await retry task completion
+        if let task = self.service.pendingRetryTask(for: alert) {
+            await task.value
+        }
+
+        // Region is re-armed
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+        #expect(self.locationManagerMock.monitoredRegions.first?.identifier == region.identifier)
+        #expect(!self.service.hasPendingRetry(for: alert))
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+    }
+
+    @Test func `Transient system rejection on daemon restart re arms geofence via bounded retry`() async {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        // Simulate daemon restart: connection dropped with transient network/response delayed error
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.network))
+
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+        #expect(self.service.hasPendingRetry(for: alert))
+
+        if let task = self.service.pendingRetryTask(for: alert) {
+            await task.value
+        }
+
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+    }
+
+    @Test func `Monitoring did fail transient errors retry up to maximum attempts before notifying delegate`() async {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        // Attempt 1
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+        #expect(self.service.retryAttemptCount(for: alert) == 1)
+        if let task = self.service.pendingRetryTask(for: alert) { await task.value }
+
+        // Attempt 2
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringResponseDelayed))
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+        #expect(self.service.retryAttemptCount(for: alert) == 2)
+        if let task = self.service.pendingRetryTask(for: alert) { await task.value }
+
+        // Attempt 3
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.network))
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+        #expect(self.service.retryAttemptCount(for: alert) == 3)
+        if let task = self.service.pendingRetryTask(for: alert) { await task.value }
+
+        // Attempt 4: retries exhausted, delegate must now be notified
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+        #expect(self.delegate.monitoringFailedKind == .transient)
+        #expect(!self.service.hasPendingRetry(for: alert))
+    }
+
+    // MARK: - Immediate Surface of Permanent Errors
+
+    @Test func `Monitoring did fail permanent error surfaces immediately without retry`() {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.denied))
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+        #expect(self.delegate.monitoringFailedKind == .authorizationDenied)
+        #expect(!self.service.hasPendingRetry(for: alert))
+    }
+
+    @Test func `Monitoring did fail region limit rejection surfaces immediately without retry`() {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringFailure))
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+        #expect(self.delegate.monitoringFailedKind == .regionRejected)
+        #expect(!self.service.hasPendingRetry(for: alert))
+    }
+
+    @Test func `Transient retry aborts and surfaces authorization denied if permission revoked before retry`() async {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        // Transient failure
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.service.hasPendingRetry(for: alert))
+
+        // Revoke authorization before retry executes
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
+
+        if let task = self.service.pendingRetryTask(for: alert) {
+            await task.value
+        }
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedKind == .authorizationDenied)
+        #expect(!self.service.hasPendingRetry(for: alert))
+    }
+
+    @Test func `Transient retry aborts and surfaces region rejected if region limit reached before retry`() async {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        // Transient failure
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.service.hasPendingRetry(for: alert))
+
+        // Clear existing region from mock so it's not a replacement, then fill to maximum
+        locationManagerMock.stopMonitoring(for: region)
+        fillMonitoredRegions(count: LocationService.maximumMonitoredRegions)
+
+        if let task = self.service.pendingRetryTask(for: alert) {
+            await task.value
+        }
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedKind == .regionRejected)
+        #expect(!self.service.hasPendingRetry(for: alert))
+    }
+
+    // MARK: - Cancellation on Alert Delete
+
+    @Test func `Stop monitoring proximity cancels pending retry`() {
+        service.regionMonitoringRetryPolicy = RegionMonitoringRetryPolicy(maxAttempts: 3, initialDelay: 10.0, maxDelay: 20.0)
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.service.hasPendingRetry(for: alert))
+
+        service.stopMonitoringProximity(for: alert)
+
+        #expect(!self.service.hasPendingRetry(for: alert))
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+    }
+
+    @Test func `Stop monitoring proximity by alert ID cancels pending retry`() {
+        service.regionMonitoringRetryPolicy = RegionMonitoringRetryPolicy(maxAttempts: 3, initialDelay: 10.0, maxDelay: 20.0)
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.service.hasPendingRetry(for: alert))
+
+        service.stopMonitoringProximityAlert(id: alert.id)
+
+        #expect(!self.service.hasPendingRetry(for: alert))
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+    }
+
+    @Test func `Stop monitoring all proximity alerts cancels all pending retries`() {
+        service.regionMonitoringRetryPolicy = RegionMonitoringRetryPolicy(maxAttempts: 3, initialDelay: 10.0, maxDelay: 20.0)
+        let stops = try! Fixtures.loadSomeStops()
+        let alert1 = ProximityAlert(stop: stops[0])
+        let alert2 = ProximityAlert(stop: stops[1])
+        let region1 = CLCircularRegion(
+            center: alert1.coordinate,
+            radius: alert1.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert1)
+        )
+        let region2 = CLCircularRegion(
+            center: alert2.coordinate,
+            radius: alert2.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert2)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert1) == .started)
+        #expect(service.startMonitoringProximity(for: alert2) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region1, withError: CLError(.regionMonitoringSetupDelayed))
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region2, withError: CLError(.regionMonitoringSetupDelayed))
+
+        #expect(self.service.hasPendingRetry(for: alert1))
+        #expect(self.service.hasPendingRetry(for: alert2))
+
+        service.stopMonitoringAllProximityAlerts()
+
+        #expect(!self.service.hasPendingRetry(for: alert1))
+        #expect(!self.service.hasPendingRetry(for: alert2))
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+    }
 }
