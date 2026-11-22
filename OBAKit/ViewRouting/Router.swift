@@ -474,15 +474,6 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: OnDemandServiceViewController(application: application, service: service), from: fromController)
     }
 
-    /// Presents the route picker modal, then navigates to the current trip flow.
-    ///
-    /// - Parameter fromController: The view controller presenting the modal.
-    public func navigateToCurrentTrip(from fromController: UIViewController) {
-        let picker = RoutePickerViewController(application: application, delegate: self)
-        let navigation = buildNavigation(controller: picker)
-        present(navigation, from: fromController)
-    }
-
     /// Presents the app's settings modally, in a navigation controller for
     /// their Done button.
     public func presentSettings(from fromController: UIViewController) {
@@ -509,13 +500,3 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     }
 }
 
-// MARK: - RoutePickerDelegate
-
-extension ViewRouter: RoutePickerDelegate {
-    func routePicker(_ picker: RoutePickerViewController, didSelectRoute route: Route) {
-        guard let navigation = picker.navigationController else { return }
-
-        let currentTripController = CurrentTripViewController(application: application, route: route)
-        navigation.pushViewController(currentTripController, animated: true)
-    }
-}

@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Ghi công";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "Đang tìm phương tiện của bạn…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "Cách %@";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Không thể kết nối với dịch vụ vận tải.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "Không có thông tin vị trí. Vui lòng bật dịch vụ định vị.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "Tìm thấy nhiều phương tiện";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "Chuyến đi của tôi";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "Không có theo dõi thời gian thực cho tuyến này";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "Không tìm thấy phương tiện đang hoạt động trên tuyến này gần bạn";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "Thử lại";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "Địa chỉ gốc của máy chủ API của khu vực, không có phần \"/api/where\" — phần đó sẽ được thêm tự động. Mặc định là \"https://\".";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "Xóa điểm đến";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "ID điểm dừng";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "Sao chép ID điểm dừng.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Không có nhóm)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Vui lòng cho phép ứng dụng truy cập vị trí của bạn để việc tìm các điểm dừng phương tiện công cộng dễ dàng hơn.";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Chào mừng!";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Bật trong Cài đặt";
@@ -885,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ chỉ sử dụng vị trí của bạn khi ứng dụng đang mở. Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "Dùng vị trí của tôi";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Xem giao thông quanh bạn";
 
@@ -1037,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "Sự cố với chuyến đi";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Không có thông tin vị trí. Vui lòng bật dịch vụ định vị để tìm các tuyến lân cận.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Không thể kết nối với dịch vụ vận tải.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Đang tải tuyến…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Không tìm thấy tuyến nào ở gần.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Tìm kiếm tuyến…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Chọn tuyến của bạn";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "Không có điểm dừng";
@@ -1426,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "Đặt lời nhắc";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Chuyến khởi hành tiếp theo";
 
@@ -1444,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "Tuyến";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Ẩn chuyến đã qua";
@@ -1556,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "dữ liệu lịch trình";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "Đi bộ %d phút";
@@ -2411,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "Giao thông công cộng";
 
@@ -2441,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "Dành cho bộ phận hỗ trợ";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "Ứng dụng";

@@ -161,12 +161,6 @@ final class AppSheetViewFactory {
         case .stopDetails(let stopID, let transferContext):
             stopDetailView(stopID: stopID, transferContext: transferContext)
 
-        case .routePicker:
-            routePickerView()
-
-        case .currentTrip(let route):
-            currentTripView(route: route)
-
         case .tripSuggestions(let candidates):
             chooseTripSuggestionView(candidates: candidates)
 
@@ -245,8 +239,8 @@ final class AppSheetViewFactory {
                     application: self.application,
                     presentingController: self.presentingController
                 )
-                // Not `onPresentTrip`: that unwinds to Home, which is right for My
-                // Trip and vehicle search. A departure tapped here opens its trip
+                // Not `onPresentTrip`: that unwinds to Home, which is right for trip
+                // suggestions and vehicle search. A departure tapped here opens its trip
                 // on top of this Stop sheet so Back returns to the stop, and goes
                 // back to the trip instead if it's already open further down.
                 presenter.onShowTripInSheet = { [coordinator = self.coordinator] departure in
@@ -305,9 +299,6 @@ final class AppSheetViewFactory {
         )
     }
 
-    func routePickerView() -> RoutePickerView {
-        RoutePickerView(viewModel: RoutePickerViewModel(application: self.application))
-    }
 
     /// The SwiftUI trip page as a stacked sheet over the panel's map.
     ///
@@ -393,14 +384,6 @@ final class AppSheetViewFactory {
         }
     }
 
-    private func currentTripView(route: Route) -> CurrentTripView {
-        CurrentTripView(
-            viewModel: CurrentTripViewModel(application: self.application, route: route),
-            feedback: DataLoadFeedbackGenerator(application: self.application),
-            formatters: self.application.formatters,
-            onPresentTrip: onPresentTrip
-        )
-    }
 
     /// The Map sheet, shared verbatim with `MapViewController`. Its own doc
     /// comment calls it "the single canonical place riders turn layers on and

@@ -43,7 +43,6 @@ final class TripSuggestionControllerTests {
     private let locationService: LocationService
     private let dataSource = FakeTripSuggestionDataSource()
     private var controller: TripSuggestionController!
-    private var appIsActive = true
     /// Where the last fix put the rider.
     private var riderCoordinate: CLLocationCoordinate2D
 
@@ -59,8 +58,7 @@ final class TripSuggestionControllerTests {
             userDefaults: defaults,
             dataSource: { [dataSource] in dataSource },
             now: { [unowned self] in clock },
-            sleep: { _ in },
-            isAppActive: { [unowned self] in appIsActive }
+            sleep: { _ in }
         )
         controller.setActive(true)
     }
@@ -260,17 +258,6 @@ final class TripSuggestionControllerTests {
         dataSource.vehicles = [vehicle(id: "4521")]
         await ride(from: 0, through: 60)
         #expect(dataSource.searchCount == 0)
-    }
-
-    @Test func `nothing is fetched while the app is in the background`() async {
-        appIsActive = false
-        dataSource.vehicles = [vehicle(id: "4521")]
-        await ride(from: 0, through: 60)
-        #expect(dataSource.searchCount == 0)
-
-        appIsActive = true
-        await ride(from: 65, through: 65)
-        #expect(dataSource.searchCount == 1)
     }
 
     // MARK: - Copy

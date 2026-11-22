@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Podziękowania";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "Wyszukiwanie Twojego pojazdu…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "%@ stąd";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Nie można połączyć się z usługą transportową.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "Lokalizacja niedostępna. Włącz usługi lokalizacji.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "Znaleziono wiele pojazdów";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "Moja podróż";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "Brak śledzenia na żywo dla tej linii";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "Nie znaleziono aktywnego pojazdu na tej linii w pobliżu";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "Spróbuj ponownie";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "Podstawowy adres serwera API regionu, bez części \"/api/where\" — ta jest dodawana automatycznie. Zakłada się \"https://\".";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "Usuń cel podróży";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "ID przystanku";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "Kopiuje ID przystanku.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Bez grupy)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Zezwól aplikacji na dostęp do Twojej lokalizacji, aby ułatwić wyszukiwanie Twoich najbliższych przystanków.";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Witaj!";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Włącz w ustawieniach";
@@ -885,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ korzysta z Twojej lokalizacji tylko wtedy, gdy aplikacja jest otwarta. Możesz to zmienić w dowolnym momencie w Ustawieniach.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "Użyj mojej lokalizacji";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Zobacz transport wokół siebie";
 
@@ -1037,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "Problem z kursem";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Lokalizacja niedostępna. Włącz usługi lokalizacji, aby znaleźć pobliskie linie.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Nie można połączyć się z usługą transportową.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Wczytywanie linii…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Nie znaleziono linii w pobliżu.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Szukaj linii…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Wybierz swoją linię";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "Brak przystanków";
@@ -1426,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "Ustaw alarm";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Najbliższe odjazdy";
 
@@ -1444,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "Linia";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Ukryj minione";
@@ -1556,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "dane rozkładowe";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min pieszo";
@@ -2411,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "Transport publiczny";
 
@@ -2441,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "Dla zespołu pomocy";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "Aplikacja";

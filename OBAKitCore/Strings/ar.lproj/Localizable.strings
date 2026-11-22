@@ -397,12 +397,6 @@
 /* Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers */
 "map_layers_tip.title" = "جديد: الدراجات والسكوترات";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "لا تتوفر بيانات تتبّع في الوقت الفعلي لهذا الخط.";
-
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "لم يتم العثور على مواقف قريبة.";
-
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "حافلة";
 
@@ -516,7 +510,6 @@
 
 /* Accessibility label  that toggles the selection state of a survey option. */
 "surveys.accessibility_tap_toggle_selection" = "اضغط لتبديل التحديد";
-
 
 /* Clock time with a timezone badge, e.g. 4:00 PM (PST). First argument is the clock. Second is the badge. */
 "timezone.clock_with_badge_fmt" = "%1$@ (%2$@)";

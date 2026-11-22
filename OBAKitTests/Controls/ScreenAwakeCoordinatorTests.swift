@@ -71,12 +71,12 @@ struct ScreenAwakeCoordinatorTests {
         let tripScreen = NSObject()
         let sheetScreen = NSObject()
 
-        // CurrentTripView appears.
+        // A trip screen appears.
         ScreenAwakeCoordinator.shared.acquire(owner: ObjectIdentifier(tripScreen))
         // The stop sheet appears on top of it — SwiftUI runs the incoming
         // onAppear before the outgoing onDisappear.
         ScreenAwakeCoordinator.shared.acquire(owner: ObjectIdentifier(sheetScreen))
-        // CurrentTripView goes away.
+        // The trip screen goes away.
         ScreenAwakeCoordinator.shared.release(owner: ObjectIdentifier(tripScreen))
 
         #expect(UIApplication.shared.isIdleTimerDisabled)

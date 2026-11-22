@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Credits";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "Finding your vehicle…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "%@ away";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Unable to connect to the transit service.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "Location unavailable. Please enable location services.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "Multiple vehicles found";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "My Trip";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "No real-time tracking available for this route";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "No active vehicle found on this route near you";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "Try Again";
-
 /* An explanation of the optional Umami analytics fields of a custom region. */
 "custom_region_builder_controller.analytics_section.explanation" = "Optional. The address of an Umami analytics server and this region's website ID. Both fields are required to enable analytics; leave them blank to disable it.";
 
@@ -352,7 +325,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "Remove Destination";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "Stop ID";
 
@@ -364,7 +336,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "Copies the stop ID.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(No Group)";
@@ -1023,9 +994,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ only uses your location while the app is open. Change this anytime in Settings.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "Use My Location";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "See transit around you";
 
@@ -1241,24 +1209,6 @@
 
 /* Section header for reporting a problem with a specific trip or vehicle service. Feedback helps improve transit data. */
 "report_problem_controller.trip_problem.header" = "Problem with a Trip";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Location unavailable. Please enable location services to find nearby routes.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Unable to connect to the transit service.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Loading routes…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "No routes found nearby.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Search routes…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Select Your Route";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "No stops";
@@ -2542,7 +2492,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "Transit";
 
@@ -2572,7 +2521,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "For Support";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "App";

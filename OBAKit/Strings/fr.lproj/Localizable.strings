@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Crédits";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "Recherche de votre véhicule…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "À %@";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Impossible de se connecter au service de transport.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "Position indisponible. Veuillez activer les services de localisation.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "Plusieurs véhicules trouvés";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "Mon trajet";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "Aucun suivi en temps réel disponible pour cette ligne";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "Aucun véhicule actif trouvé sur cette ligne près de vous";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "Réessayer";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "L'adresse racine du serveur API de la région, sans la partie « /api/where » qui est ajoutée automatiquement. « https:// » est supposé.";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "Supprimer la destination";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "ID d’arrêt";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "Copie l’ID d’arrêt.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Aucun groupe)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Veuillez autoriser l'app à accéder à votre position pour faciliter la recherche de vos arrêts de transport.";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Bienvenue !";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Activer dans Réglages";
@@ -885,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ n'utilise votre position que lorsque l'application est ouverte. Vous pouvez modifier cela à tout moment dans Réglages.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "Utiliser ma position";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Découvrez les transports autour de vous";
 
@@ -1037,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "Problème concernant un trajet";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Position indisponible. Veuillez activer les services de localisation pour trouver les lignes à proximité.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Impossible de se connecter au service de transport.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Chargement des lignes…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Aucune ligne trouvée à proximité.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Rechercher des lignes…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Sélectionnez votre ligne";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "Aucun arrêt";
@@ -1426,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "Ajouter un rappel";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Prochains départs";
 
@@ -1444,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "Ligne";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Masquer";
@@ -1556,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "horaire théorique";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min à pied";
@@ -2411,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "Transport en commun";
 
@@ -2441,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "Pour l'assistance";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "App";

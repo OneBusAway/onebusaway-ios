@@ -1465,12 +1465,11 @@ extension MapPanelRootView {
         return tripSuggestionHeight + ThemeMetrics.padding
     }
 
-    /// Suggestions show only over the home sheet: any other sheet is the rider
-    /// doing something else, and a stop or trip page already covers the map.
-    /// Not `scenePhase`: in this hosting controller it can stay `.background` with
-    /// the app in front. The controller checks the application state itself.
+    /// Suggestions show only in the foreground, over the home sheet: any other
+    /// sheet is the rider doing something else, and a stop or trip page already
+    /// covers the map.
     private var isTripSuggestionActive: Bool {
-        coordinator.currentRoute == .home && coordinator.stackedRoutes.isEmpty
+        scenePhase == .active && coordinator.currentRoute == .home && coordinator.stackedRoutes.isEmpty
     }
 
     private var tripSuggestionOverlay: some View {

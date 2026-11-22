@@ -22,7 +22,10 @@ public final class MapPanelRootController: UIViewController {
 
     public let application: Application
     let coordinator: SheetCoordinator<AppSheetRoute>
-    private let host: UIHostingController<MapPanelRootView>
+    private let host: UIHostingController<ModifiedContent<MapPanelRootView, HostedScenePhaseModifier>>
+    /// The panel's `scenePhase`, which SwiftUI leaves at `.background` under the
+    /// UIKit life cycle; see `HostedScenePhase`.
+    private let scenePhase: HostedScenePhase
     private let bridge: TripPresentationBridge
     /// Kept, with `probeController` and `layersModel`, so the panel can unhook them from the
     /// shared services when it goes away.
@@ -87,7 +90,9 @@ public final class MapPanelRootController: UIViewController {
             stopFocusMapDisplayModel: stopFocusMapDisplayModel,
             probeController: probeController
         )
-        self.host = UIHostingController(rootView: rootView)
+        let scenePhase = HostedScenePhase(initialPhase: HostedScenePhase.phase(for: UIApplication.shared.applicationState))
+        self.scenePhase = scenePhase
+        self.host = UIHostingController(rootView: rootView.modifier(HostedScenePhaseModifier(tracker: scenePhase)))
         self.bridge = bridge
         self.stopsObserver = stopsObserver
         self.probeController = probeController
@@ -146,6 +151,12 @@ public final class MapPanelRootController: UIViewController {
         stopsObserver.stopObserving()
         probeController.detach(from: application)
         layersModel.stopObserving()
+    }
+
+    public override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+        // Only now is the window, and so its scene, known.
+        scenePhase.attach(to: view.window?.windowScene)
     }
 
     public override func viewDidLoad() {
@@ -252,7 +263,7 @@ public final class MapPanelRootController: UIViewController {
         coordinator.restoreRoute(route)
     }
 
-    /// Opens the trips `CurrentTripView` and vehicle search hand over as the
+    /// Opens the trips a trip suggestion and vehicle search hand over as the
     /// `.tripDetails` sheet, over the map it's showing, and resolves where the
     /// stop sheet's UIKit modals present from. A separate type because `self`
     /// isn't available before `super.init`, and the closures baked into the
@@ -297,9 +308,8 @@ public final class MapPanelRootController: UIViewController {
         /// Opens the trip over the home sheet, unless it is already open.
         ///
         /// The sheets that led here are closed first, as search closes itself
-        /// before opening a result. The trip is drawn on the map, and My Trip's
-        /// route picker and results sit at full height under a `.medium` trip
-        /// sheet, covering that map.
+        /// before opening a result. The trip is drawn on the map, and Choose a Bus
+        /// left under a `.medium` trip sheet would cover that map.
         private func open(_ convertible: TripConvertible) {
             let route = AppSheetRoute.tripDetails(convertible)
             // Already open: unwinding would close it only to open it again.

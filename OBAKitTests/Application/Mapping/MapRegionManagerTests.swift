@@ -330,12 +330,9 @@ final class MapRegionManagerTests: OBATestCase {
     }
 
     /// A region that genuinely has no stops must publish the empty set rather
-    /// than leaving the previous region's stops in place. `mapRegionManager.stops`
-    /// is read directly by `RoutePickerViewModel` (which skips its own API
-    /// fallback when the set is non-empty) and `CurrentTripViewModel`, so a stale
-    /// set doesn't just look wrong on the map — it feeds those two the wrong
-    /// region's stops. Distinct from a nil `apiService`, where nothing was
-    /// fetched and nothing should be published.
+    /// than leaving the previous region's stops in place: a stale set would put
+    /// the wrong region's stops on the map. Distinct from a nil `apiService`,
+    /// where nothing was fetched and nothing should be published.
     @Test func `Schedule stops request publishes an empty set for a region with no stops`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let application = makeSeattleApplication(dataLoader: dataLoader)

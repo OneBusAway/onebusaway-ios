@@ -90,10 +90,6 @@ final class TripSuggestionController: NSObject, ObservableObject {
     private let matcherThresholds: TripSuggestionMatcher.Thresholds
     private let now: () -> Date
     private let sleep: (Duration) async throws -> Void
-    /// Whether the app is in the foreground. Location can keep arriving in the
-    /// background (proximity alerts hold Always access), and nothing should be
-    /// fetched for a map nobody can see.
-    private let isAppActive: () -> Bool
 
     private var gate: RiderMotionGate
     private var isActive = false
@@ -111,8 +107,7 @@ final class TripSuggestionController: NSObject, ObservableObject {
         matcherThresholds: TripSuggestionMatcher.Thresholds = .init(),
         timing: Timing = Timing(),
         now: @escaping () -> Date = Date.init,
-        sleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) },
-        isAppActive: @escaping () -> Bool = { UIApplication.shared.applicationState == .active }
+        sleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
     ) {
         self.locationService = locationService
         self.userDefaults = userDefaults
@@ -122,7 +117,6 @@ final class TripSuggestionController: NSObject, ObservableObject {
         self.timing = timing
         self.now = now
         self.sleep = sleep
-        self.isAppActive = isAppActive
         super.init()
         locationService.addDelegate(self)
     }
@@ -169,12 +163,7 @@ final class TripSuggestionController: NSObject, ObservableObject {
         }
 
         gate.record(location)
-        guard isActive, isAppActive() else {
-            // Hidden without a snooze: a card left up while the app was away would
-            // be stale when the rider comes back.
-            stop()
-            return
-        }
+        guard isActive else { return }
 
         guard gate.isMoving else {
             stop()
@@ -233,7 +222,7 @@ final class TripSuggestionController: NSObject, ObservableObject {
 
     /// Whether a search that has been waiting on the network may still go on.
     private var shouldContinueSearch: Bool {
-        !Task.isCancelled && isActive && isAppActive() && isAllowed && gate.isMoving
+        !Task.isCancelled && isActive && isAllowed && gate.isMoving
     }
 
     /// Vehicles close to the rider and heading their way, closest first. The data

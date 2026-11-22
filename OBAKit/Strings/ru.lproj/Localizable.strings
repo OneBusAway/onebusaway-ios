@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Благодарности";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "Поиск вашего транспорта…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "%@ от вас";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Не удаётся подключиться к транспортному сервису.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "Геопозиция недоступна. Включите службы геолокации.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "Найдено несколько транспортных средств";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "Моя поездка";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "Для этого маршрута нет отслеживания в реальном времени";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "Рядом с вами не найден активный транспорт на этом маршруте";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "Повторить";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "Корневой адрес API-сервера региона, без части \"/api/where\" — она добавляется автоматически. Предполагается \"https://\".";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "Удалить пункт назначения";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "ID остановки";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "Копирует ID остановки.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Без группы)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Разрешите приложению доступ к вашей геопозиции, чтобы было проще находить остановки рядом с вами.";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Добро пожаловать!";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "Включить в Настройках";
@@ -885,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "%@ использует вашу геолокацию только пока приложение открыто. Вы можете изменить это в любой момент в Настройках.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "Использовать мою геолокацию";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Смотрите транспорт вокруг себя";
 
@@ -1037,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "Проблема с рейсом";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Геопозиция недоступна. Включите службы геолокации, чтобы найти маршруты поблизости.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Не удаётся подключиться к транспортному сервису.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Загрузка маршрутов…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Маршруты поблизости не найдены.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Поиск маршрутов…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Выберите маршрут";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "Нет остановок";
@@ -1426,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "Добавить напоминание";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Следующие отправления";
 
@@ -1444,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "Маршрут";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Скрыть прошедшие";
@@ -1556,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "по расписанию";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d мин. пешком";
@@ -2411,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "Транспорт";
 
@@ -2441,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "Для поддержки";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "Приложение";

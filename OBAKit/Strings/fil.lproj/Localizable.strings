@@ -145,33 +145,6 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Mga Credit";
 
-/* Loading message while searching for the user's vehicle. */
-"current_trip_controller.detecting" = "Hinahanap ang iyong sasakyan…";
-
-/* Distance from user to vehicle. e.g. '0.2 mi away' */
-"current_trip_controller.distance_fmt" = "%@ ang layo";
-
-/* Error when the API service is unavailable. */
-"current_trip_controller.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
-
-/* Error message when the user's location is not available. */
-"current_trip_controller.location_unavailable" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon.";
-
-/* Section header when multiple vehicles are found on the selected route. */
-"current_trip_controller.multiple_vehicles" = "Maraming sasakyan ang natagpuan";
-
-/* Title for the current trip screen. */
-"current_trip_controller.my_trip" = "Aking Biyahe";
-
-/* Message when the route has no real-time tracking data. */
-"current_trip_controller.no_realtime" = "Walang real-time na pagsubaybay para sa rutang ito";
-
-/* Message when no active vehicle is found near the user on the selected route. */
-"current_trip_controller.no_results" = "Walang aktibong sasakyan na natagpuan sa rutang ito malapit sa iyo";
-
-/* Button to retry finding the user's vehicle. */
-"current_trip_controller.retry" = "Subukang Muli";
-
 /* An explanation of what the Base URL field of a custom region requires. */
 "custom_region_builder_controller.base_url_section.explanation" = "Ang root address ng API server ng rehiyon, nang walang \"/api/where\" na bahagi — awtomatiko itong idadagdag. Ipinapalagay na \"https://\".";
 
@@ -337,7 +310,6 @@
 /* Button on the Add Bookmark screen that clears the chosen destination stop. */
 "edit_bookmark_controller.remove_destination_button" = "Alisin ang Destinasyon";
 
-
 /* Header above the read-only Stop ID on the Edit Bookmark screen. */
 "edit_bookmark_controller.stop_id_section.header_title" = "Stop ID";
 
@@ -349,7 +321,6 @@
 
 /* VoiceOver hint for the read-only Stop ID row on the Edit Bookmark screen. Activating the row copies the stop ID. */
 "edit_bookmark_controller.stop_id_row.accessibility_hint" = "Kinokopya ang Stop ID.";
-
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Walang Grupo)";
@@ -468,10 +439,8 @@
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Pakipayagan ang app na ma-access ang iyong lokasyon para mas madaling mahanap ang mga hintuan ng transit.";
 
-
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Maligayang Pagdating!";
-
 
 /* No comment provided by engineer. */
 "locationservices_alert_gotosettings.button" = "I-on sa Mga Setting";
@@ -885,9 +854,6 @@
 /* Footnote of the location onboarding screen; the argument is the app name */
 "onboarding.location.footnote_fmt" = "Ginagamit lang ng %@ ang iyong lokasyon habang bukas ang app. Puwede mong baguhin ito anumang oras sa Settings.";
 
-/* Button the user taps to grant access to their location. */
-"onboarding.location.primary_button" = "Gamitin ang Aking Lokasyon";
-
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Tingnan ang transportasyon sa paligid mo";
 
@@ -1037,24 +1003,6 @@
 
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.trip_problem.header" = "Problema sa Biyahe";
-
-/* Error when location is unavailable in the route picker. */
-"route_picker.error_no_location" = "Hindi available ang lokasyon. Paki-enable ang mga serbisyo ng lokasyon para makahanap ng mga kalapit na ruta.";
-
-/* Error when the API service is unavailable in the route picker. */
-"route_picker.error_no_service" = "Hindi makakonekta sa serbisyo ng transit.";
-
-/* Loading message while fetching nearby routes. */
-"route_picker.loading" = "Naglo-load ng mga ruta…";
-
-/* Message when no routes are found near the user's location. */
-"route_picker.no_routes" = "Walang nahanap na ruta sa malapit.";
-
-/* Placeholder text in the route search field. */
-"route_picker.search_placeholder" = "Maghanap ng ruta…";
-
-/* Title for the route picker screen where the user selects their transit route. */
-"route_picker.title" = "Piliin ang Iyong Ruta";
 
 /* Title shown when a route's stop list could not be loaded or is empty. */
 "route_stops_sheet.empty.title" = "Walang mga hintuan";
@@ -1426,7 +1374,6 @@
 /* VoiceOver custom action on a grouped route card's header that creates an alarm for the next departure. */
 "stop_page.grouped.a11y_set_alarm" = "Magtakda ng paalala";
 
-
 /* Caption above the upcoming-departure minute chips on a grouped route card at accessibility text sizes. */
 "stop_page.grouped.next_departures" = "Mga susunod na pag-alis";
 
@@ -1444,10 +1391,6 @@
 
 /* Stop page mode toggle: grouped by route */
 "stop_page.mode.route" = "Ruta";
-
-
-
-
 
 /* Button hiding recently departed trips */
 "stop_page.past_toggle_hide" = "Itago ang nakaraan";
@@ -1556,9 +1499,6 @@
 
 /* Adherence label for a departure with no real-time signal; deliberately avoids claiming the bus is on time. */
 "stop_page.status.schedule_data" = "data ng iskedyul";
-
-
-
 
 /* Walk chip on the header card. %d is the walk time in minutes. */
 "stop_page.walk_chip_minutes_fmt" = "%d min lakad";
@@ -2411,7 +2351,6 @@
 /* Explanation when booking rules cannot be resolved or service cannot be booked */
 "on_demand.eligibility.unavailable_general" = "Booking unavailable";
 
-
 /* Layers sheet group header */
 "map_layers.group.transit" = "Transportasyon";
 
@@ -2441,7 +2380,6 @@
 
 /* Section header above technical details meant for the support team. */
 "problem_details.for_support" = "Para sa Support";
-
 
 /* Row label: app version, iOS version and device model. */
 "problem_details.row.app" = "App";

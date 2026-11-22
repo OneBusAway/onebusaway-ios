@@ -418,12 +418,6 @@
 /* Title for the tip pointing at the map toolbar's basemap button when a region gains bike and scooter rental map layers */
 "map_layers_tip.title" = "New: Bikes and Scooters";
 
-/* Error when a route has no real-time vehicle tracking data. */
-"nearby_trip_matcher.error.no_realtime" = "No real-time tracking data is available for this route.";
-
-/* Error when no transit stops are found near the user's location. */
-"nearby_trip_matcher.error.no_stops" = "No stops found nearby.";
-
 /* Bus. Used for short- and long-distance bus routes. */
 "route_type.bus" = "Bus";
 
@@ -630,7 +624,6 @@
 
 /* Widget row subtitle when departures for a bookmark are not loaded yet. Tapping opens the stop in the app. */
 "widget.tap_for_more_information" = "Tap for more information";
-
 
 /* An error shown when the server answers HTTP 429 Too Many Requests. The substituted value is the app name. */
 "api_error.rate_limited_fmt" = "%@ is getting more requests than it can handle right now. Please try again in a minute.";
