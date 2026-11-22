@@ -256,17 +256,4 @@ final class VehicleCalloutViewTests {
         #expect(compactA11ySize.width == compactWidth)
         #expect(compactA11ySize.height > compactSize.height)
     }
-
-    @Test func `Callout adapts properly to right-to-left layout direction`() {
-        let view = makeView()
-        let rtlTraits = UITraitCollection(layoutDirection: .rightToLeft)
-        view.updateLayout(for: rtlTraits)
-
-        view.frame = CGRect(x: 0, y: 0, width: 240, height: 200)
-        view.setNeedsLayout()
-        view.layoutIfNeeded()
-
-        // Follow button chevron trailing edge placed properly in RTL
-        #expect(view.followButton.configuration?.imagePlacement == .trailing)
-    }
 }

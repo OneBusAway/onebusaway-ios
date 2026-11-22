@@ -41,7 +41,6 @@ final class VehicleCalloutView: UIView {
     private var badgeWidthConstraint: NSLayoutConstraint?
     private var badgeHeightConstraint: NSLayoutConstraint?
     private var textStackWidthConstraint: NSLayoutConstraint?
-    private var widthConstraint: NSLayoutConstraint?
 
     let headsignLabel: UILabel
     let vehicleLabel: UILabel
@@ -143,7 +142,6 @@ final class VehicleCalloutView: UIView {
 
         let width = widthAnchor.constraint(equalToConstant: Layout.width)
         width.priority = UILayoutPriority(rawValue: 999)
-        self.widthConstraint = width
 
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: topAnchor),
@@ -152,14 +150,6 @@ final class VehicleCalloutView: UIView {
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
             width
         ])
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let expectedAxis: NSLayoutConstraint.Axis = traitCollection.preferredContentSizeCategory.isAccessibilityCategory ? .vertical : .horizontal
-        if headerStack.axis != expectedAxis {
-            updateLayout(for: traitCollection)
-        }
     }
 
     func updateLayout(for traitCollection: UITraitCollection) {
@@ -198,11 +188,6 @@ final class VehicleCalloutView: UIView {
         )
 
         followButton.setNeedsUpdateConfiguration()
-
-        // Keep callout width at Layout.width (240 pt) so it never overflows the screen width
-        // at accessibility text sizes. Vertical header and wrapping labels allow the callout
-        // to expand downward instead.
-        widthConstraint?.constant = Layout.width
 
         invalidateIntrinsicContentSize()
         setNeedsLayout()
