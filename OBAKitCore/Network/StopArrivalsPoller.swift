@@ -129,36 +129,30 @@ private actor PollerCoordinator {
     private var isForeground: Bool
     private var isLowPower: Bool
     private var refreshTriggered: Bool = false
-    private let wakeContinuation: AsyncStream<Void>.Continuation
-    private let wakeStream: AsyncStream<Void>
+    private var waiters: [UUID: CheckedContinuation<Void, Never>] = [:]
 
     init(initialForeground: Bool = true, isLowPower: Bool = false) {
         self.isForeground = initialForeground
         self.isLowPower = isLowPower
-        let (stream, continuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
-        self.wakeStream = stream
-        self.wakeContinuation = continuation
     }
 
     func setScenePhase(_ isForeground: Bool) {
-        let old = self.isForeground
+        let changed = self.isForeground != isForeground
         self.isForeground = isForeground
-        if !old && isForeground {
-            wakeContinuation.yield()
-        } else if old && !isForeground {
-            wakeContinuation.yield()
+        if changed {
+            wakeAll()
         }
     }
 
     func triggerRefresh() {
         refreshTriggered = true
-        wakeContinuation.yield()
+        wakeAll()
     }
 
     func setLowPower(_ lowPower: Bool) {
         if isLowPower != lowPower {
             isLowPower = lowPower
-            wakeContinuation.yield()
+            wakeAll()
         }
     }
 
@@ -166,15 +160,41 @@ private actor PollerCoordinator {
         isLowPower
     }
 
-    func waitUntilActive() async throws {
-        if isForeground {
-            return
+    private func wakeAll() {
+        let currentWaiters = waiters
+        waiters.removeAll()
+        for (_, continuation) in currentWaiters {
+            continuation.resume()
         }
-        for await _ in wakeStream {
-            try Task.checkCancellation()
-            if isForeground {
-                return
+    }
+
+    func waitForWake() async {
+        let id = UUID()
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                if Task.isCancelled {
+                    continuation.resume()
+                } else {
+                    waiters[id] = continuation
+                }
             }
+        } onCancel: {
+            Task {
+                await self.cancelWaiter(id: id)
+            }
+        }
+    }
+
+    private func cancelWaiter(id: UUID) {
+        if let cont = waiters.removeValue(forKey: id) {
+            cont.resume()
+        }
+    }
+
+    func waitUntilActive() async throws {
+        while !isForeground {
+            try Task.checkCancellation()
+            await waitForWake()
         }
     }
 
@@ -184,15 +204,12 @@ private actor PollerCoordinator {
             return
         }
 
-        let stream = wakeStream
         try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask {
                 try await clock.sleep(for: interval)
             }
             group.addTask {
-                for await _ in stream {
-                    return
-                }
+                await self.waitForWake()
             }
 
             try await group.next()

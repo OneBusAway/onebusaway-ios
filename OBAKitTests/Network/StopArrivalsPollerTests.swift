@@ -247,6 +247,7 @@ final class StopArrivalsPollerTests: OBATestCase {
         await clock.waitForSleepers(count: 1)
         // 2. Advance 30s — under LPM (60s interval), it should still be sleeping
         clock.advance(by: .seconds(30))
+        #expect(await clock.sleeperCount == 1)
         #expect(gate.requests == 1)
 
         // 3. Advance remaining 30s (total 60s) — now it emits
@@ -332,5 +333,79 @@ final class StopArrivalsPollerTests: OBATestCase {
         let refreshed = try #require(await iterator.next())
         #expect((try? refreshed.get()) != nil)
         #expect(gate.requests == 2)
+    }
+
+    @Test func `Advances through multiple ticks with exactly one request per interval`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+
+        let stream = StopArrivalsPoller().arrivals(for: stopID, every: .seconds(30), using: service, clock: clock)
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. Initial emission
+        _ = await iterator.next()
+        #expect(gate.requests == 1)
+
+        // 2. Advance through 3 separate ticks
+        for expectedRequests in 2...4 {
+            await clock.waitForSleepers(count: 1)
+            clock.advance(by: .seconds(30))
+            let nextEmission = try #require(await iterator.next())
+            #expect((try? nextEmission.get()) != nil)
+            #expect(gate.requests == expectedRequests)
+        }
+    }
+
+    @Test func `Sleeps through one normal tick before backgrounding and pausing`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+
+        let (sceneStream, sceneContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
+
+        let stream = StopArrivalsPoller().arrivals(
+            for: stopID,
+            every: .seconds(30),
+            using: service,
+            clock: clock,
+            powerStateProvider: { false },
+            scenePhaseStream: sceneStream
+        )
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. First fetch on start
+        _ = await iterator.next()
+        #expect(gate.requests == 1)
+
+        // 2. Complete one normal tick in foreground
+        await clock.waitForSleepers(count: 1)
+        clock.advance(by: .seconds(30))
+        let second = try #require(await iterator.next())
+        #expect((try? second.get()) != nil)
+        #expect(gate.requests == 2)
+
+        await clock.waitForSleepers(count: 1)
+
+        // 3. Transition to background
+        sceneContinuation.yield(.background)
+
+        while await clock.sleeperCount > 0 {
+            await Task.yield()
+        }
+
+        // Advance 90s (3 full intervals) while in background — no new requests
+        clock.advance(by: .seconds(90))
+        #expect(gate.requests == 2)
+
+        // 4. Return to foreground — immediate fetch
+        sceneContinuation.yield(.active)
+        let resumed = try #require(await iterator.next())
+        #expect((try? resumed.get()) != nil)
+        #expect(gate.requests == 3)
     }
 }
