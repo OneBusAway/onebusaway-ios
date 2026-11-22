@@ -24,6 +24,8 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
 
         app = XCUIApplication()
         app.launchArguments += OnboardingBypass.launchArguments
+        // Enforce chronological (time-sorted) departures layout so departure_row is always present.
+        app.launchArguments += ["-OBALastUsedStopSort", "time"]
         app.launchEnvironment["TEST_SUPPRESS_ALERT_BULLETINS"] = "1"
 
         addUIInterruptionMonitor(withDescription: "Permissions") { alert in
@@ -182,20 +184,30 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
         XCTAssertEqual(editButton.label, "Edit")
 
         let emptyStateTitle = app.staticTexts["empty_state_title"]
-        let firstBookmark = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS 'Bookmark'"))
-            .firstMatch
-
         if emptyStateTitle.waitForExistence(timeout: 3) {
             assertAccessible(emptyStateTitle, component: "Bookmarks empty state title")
             XCTAssertEqual(emptyStateTitle.label, "No Bookmarks")
-        } else if firstBookmark.waitForExistence(timeout: 5) {
-            assertAccessible(firstBookmark, component: "First bookmark row")
-            XCTAssertTrue(firstBookmark.label.contains("Bookmark"), "Bookmark row label should contain 'Bookmark', got: \(firstBookmark.label)")
         } else {
-            let firstCell = app.cells.firstMatch
-            assertAccessible(firstCell, component: "First bookmark cell", timeout: 5)
-            XCTAssertFalse(firstCell.label.isEmpty, "Bookmark row label should not be empty")
+            // Scope query to the list collection view to avoid matching tab buttons or nav bar titles.
+            let bookmarksList = app.collectionViews.firstMatch
+            XCTAssertTrue(bookmarksList.waitForExistence(timeout: 5), "Bookmarks list collection view should exist")
+
+            let bookmarkRowById = bookmarksList.descendants(matching: .any)["bookmark_row"].firstMatch
+            let firstBookmark = bookmarkRowById.exists ? bookmarkRowById : bookmarksList.cells.firstMatch
+            assertAccessible(firstBookmark, component: "First bookmark row", timeout: 5)
+
+            // Formatters.accessibilityLabel(for:) produces one of these three prefixes:
+            let validPrefixes = [
+                "Stop Bookmark,",
+                "Route Bookmark,",
+                "Favorite Route Bookmark,"
+            ]
+            let label = firstBookmark.label
+            let hasValidPrefix = validPrefixes.contains { label.hasPrefix($0) }
+            XCTAssertTrue(
+                hasValidPrefix,
+                "Bookmark row label should start with 'Stop Bookmark,', 'Route Bookmark,', or 'Favorite Route Bookmark,', got: '\(label)'"
+            )
         }
     }
 
@@ -229,6 +241,8 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
         assertAccessible(moreButton, component: "Stop details More menu button")
         XCTAssertEqual(moreButton.label, "More")
 
+        // Note: departure_row is rendered in chronological (time-sorted) layout,
+        // enforced via "-OBALastUsedStopSort time" in launchArguments.
         let departureRow = stopCollectionView.buttons["departure_row"].firstMatch
         assertAccessible(departureRow, component: "Stop details departure row", timeout: 20)
         XCTAssertTrue(departureRow.label.contains("Route"), "Departure row label should contain route context, got: \(departureRow.label)")

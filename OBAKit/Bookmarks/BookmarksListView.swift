@@ -188,6 +188,7 @@ struct BookmarksListView: View {
         } preview: {
             navigation.makeStopPreview(row.stopID)
         }
+        .accessibilityIdentifier("bookmark_row")
     }
 
     @ViewBuilder
