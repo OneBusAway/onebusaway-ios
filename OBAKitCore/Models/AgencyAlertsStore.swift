@@ -285,19 +285,25 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
         let didStoreAlerts = stateLock.withLock {
             guard updateGeneration == generation else { return false }
 
+            var deduplicated: [String: AgencyAlert] = [:]
             for alert in agencyAlerts {
-                if let existing = self.alerts.first(where: { $0.id == alert.id }) {
-                    // Deduplicate identical alert IDs across entities / feeds.
+                if let existing = deduplicated[alert.id] {
                     // Prefer agency-specific alert over region-wide (agency == nil) if available.
                     if existing.agency == nil && alert.agency != nil {
-                        self.alerts.remove(existing)
-                        self.alerts.insert(alert)
+                        deduplicated[alert.id] = alert
+                    } else if existing.agency != nil && alert.agency == nil {
+                        // Keep the agency-specific copy
+                        continue
+                    } else {
+                        // Same specificity level: incoming alert replaces existing
+                        deduplicated[alert.id] = alert
                     }
                 } else {
-                    self.alerts.insert(alert)
+                    deduplicated[alert.id] = alert
                 }
             }
 
+            self.alerts = Set(deduplicated.values)
             return true
         }
 
@@ -312,6 +318,9 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     func insertAlerts(_ newAlerts: [AgencyAlert]) {
         stateLock.withLock {
             for alert in newAlerts {
+                if let existing = alerts.first(where: { $0.id == alert.id }) {
+                    alerts.remove(existing)
+                }
                 alerts.insert(alert)
             }
         }

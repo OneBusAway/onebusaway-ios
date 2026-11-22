@@ -83,23 +83,22 @@ public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
 
     private func candidateLanguages(preferredLanguages: [String], fallbackLocale: Locale?) -> [String] {
         var languages: [String] = []
-        if let fallbackLocale {
-            let code = selectLanguageCode(locale: fallbackLocale)
-            if !code.isEmpty {
-                languages.append(code)
-            }
-        }
         for lang in preferredLanguages {
             let trimmed = lang.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty && !languages.contains(trimmed) {
                 languages.append(trimmed)
             }
         }
+        if let fallbackLocale {
+            let fullTag = fallbackLocale.identifier.replacingOccurrences(of: "_", with: "-")
+            if !fullTag.isEmpty && !languages.contains(fullTag) {
+                languages.append(fullTag)
+            }
+            if let code = fallbackLocale.language.languageCode?.identifier, !code.isEmpty && !languages.contains(code) {
+                languages.append(code)
+            }
+        }
         return languages
-    }
-
-    private func selectLanguageCode(locale: Locale) -> String {
-        locale.language.languageCode?.identifier ?? defaultLanguageCode
     }
 
     private let defaultLanguageCode = "en"
@@ -267,36 +266,50 @@ extension AgencyAlert {
     ) -> String? {
         guard !translations.isEmpty else { return nil }
 
-        // 1. Check user's preferred languages in hierarchy order
-        for pref in preferredLanguages {
-            let prefClean = pref.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !prefClean.isEmpty else { continue }
+        let normalizedLangs = preferredLanguages.map { $0.replacingOccurrences(of: "_", with: "-") }
 
-            // Exact language code match first (e.g. "es-MX" or "es")
-            if let exact = translations.first(where: { $0.language.caseInsensitiveCompare(prefClean) == .orderedSame }) {
-                return exact.text
-            }
-
-            // Language identifier match (e.g. "es", "fr")
-            let prefCode = languageCode(from: prefClean)
-            if !prefCode.isEmpty,
-               let match = translations.first(where: {
-                   let transCode = languageCode(from: $0.language)
-                   return !transCode.isEmpty && transCode == prefCode
-               }) {
+        // 1. Check exact language code match for full preferred tags first (e.g. "es-MX" or "zh-Hant-TW")
+        for pref in normalizedLangs {
+            guard !pref.isEmpty else { continue }
+            if let match = translations.first(where: {
+                $0.language.replacingOccurrences(of: "_", with: "-").caseInsensitiveCompare(pref) == .orderedSame
+            }) {
                 return match.text
             }
         }
 
-        // 2. Fall back to English ("en")
-        if let exactEn = translations.first(where: { $0.language.caseInsensitiveCompare(defaultLanguageCode) == .orderedSame }) {
-            return exactEn.text
-        }
-        if let langEn = translations.first(where: { languageCode(from: $0.language) == defaultLanguageCode }) {
-            return langEn.text
+        // 2. Exact dialect / script match using Bundle.preferredLocalizations (e.g. zh-Hant-TW -> zh-Hant)
+        let availableLangs = translations.map { $0.language.replacingOccurrences(of: "_", with: "-") }
+        let matchedLangs = Bundle.preferredLocalizations(from: availableLangs, forPreferences: normalizedLangs)
+        for matched in matchedLangs {
+            if let match = translations.first(where: {
+                $0.language.replacingOccurrences(of: "_", with: "-").caseInsensitiveCompare(matched) == .orderedSame
+            }) {
+                return match.text
+            }
         }
 
-        // 3. Fall back to raw / first translation
+        // 3. Base language identifier fallback (e.g. "es", "fr", "zh") across preferred languages in order
+        for pref in normalizedLangs {
+            let prefCode = languageCode(from: pref)
+            guard !prefCode.isEmpty else { continue }
+            if let match = translations.first(where: {
+                let transCode = languageCode(from: $0.language)
+                return !transCode.isEmpty && transCode == prefCode
+            }) {
+                return match.text
+            }
+        }
+
+        // 4. Fall back to English ("en")
+        if let exactEn = translations.first(where: {
+            $0.language.caseInsensitiveCompare(defaultLanguageCode) == .orderedSame ||
+            languageCode(from: $0.language) == defaultLanguageCode
+        }) {
+            return exactEn.text
+        }
+
+        // 5. Fall back to raw / first translation
         return translations.first?.text
     }
 }

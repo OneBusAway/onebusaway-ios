@@ -167,6 +167,26 @@ final class AgencyAlertsStoreTests: OBATestCase {
         return try message.serializedData()
     }
 
+    private func feed(entities: [(id: String, agencyID: String, title: String)]) throws -> Data {
+        var message = TransitRealtime_FeedMessage()
+        message.header.gtfsRealtimeVersion = "2.0"
+        message.entity = entities.map { item in
+            var entity = TransitRealtime_FeedEntity()
+            entity.id = item.id
+            if !item.agencyID.isEmpty {
+                var selector = TransitRealtime_EntitySelector()
+                selector.agencyID = item.agencyID
+                entity.alert.informedEntity = [selector]
+            }
+            var title = TransitRealtime_TranslatedString.Translation()
+            title.language = "en"
+            title.text = item.title
+            entity.alert.headerText.translation = [title]
+            return entity
+        }
+        return try message.serializedData()
+    }
+
     /// Agency `1`'s REST feed and the Obaco regional feed each carry an alert
     /// of their own; every other agency's REST feed is empty.
     private func stubAlertFeeds() throws {
@@ -324,7 +344,12 @@ final class AgencyAlertsStoreTests: OBATestCase {
         stubAgenciesWithCoverage(dataLoader: dataLoader)
 
         let duplicateID = "same-feed-dup-id"
-        dataLoader.mock(data: try feed(alertIDs: [duplicateID, duplicateID])) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
+        // Feed carries two entities with the same ID but updated title
+        let feedData = try feed(entities: [
+            (id: duplicateID, agencyID: "1", title: "Original Title"),
+            (id: duplicateID, agencyID: "1", title: "Updated Title")
+        ])
+        dataLoader.mock(data: feedData) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
         dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
         dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
 
@@ -336,5 +361,70 @@ final class AgencyAlertsStoreTests: OBATestCase {
 
         #expect(store.agencyAlerts.count == 1)
         #expect(store.agencyAlerts.first?.id == duplicateID)
+        #expect(store.agencyAlerts.first?.title(preferredLanguages: ["en"]) == "Updated Title")
+    }
+
+    @Test func `Edited alert with same ID replaces existing stored alert on subsequent refresh`() async throws {
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+
+        let alertID = "in-place-edited-alert"
+        dataLoader.mock(data: try feed(entities: [(id: alertID, agencyID: "1", title: "Version 1")])) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let firstOutcome = await checkForUpdates()
+        guard case .updated = firstOutcome else {
+            Issue.record("Expected first update, got \(firstOutcome)")
+            return
+        }
+
+        #expect(store.agencyAlerts.count == 1)
+        #expect(store.agencyAlerts.first?.title(preferredLanguages: ["en"]) == "Version 1")
+
+        // Feed updates alert in place with new text
+        dataLoader.removeMappedResponses()
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        dataLoader.mock(data: try feed(entities: [(id: alertID, agencyID: "1", title: "Version 2 (Extended)")])) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let secondOutcome = await checkForUpdates()
+        guard case .updated = secondOutcome else {
+            Issue.record("Expected second update, got \(secondOutcome)")
+            return
+        }
+
+        #expect(store.agencyAlerts.count == 1)
+        #expect(store.agencyAlerts.first?.id == alertID)
+        #expect(store.agencyAlerts.first?.title(preferredLanguages: ["en"]) == "Version 2 (Extended)")
+    }
+
+    @Test func `Alert dropped from feed disappears on subsequent refresh`() async throws {
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+
+        let alertID = "transient-alert"
+        dataLoader.mock(data: try feed(alertIDs: [alertID])) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let firstOutcome = await checkForUpdates()
+        guard case .updated = firstOutcome else {
+            Issue.record("Expected first update, got \(firstOutcome)")
+            return
+        }
+        #expect(store.agencyAlerts.count == 1)
+
+        // Feed drops the alert on next check
+        dataLoader.removeMappedResponses()
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let secondOutcome = await checkForUpdates()
+        guard case .updated = secondOutcome else {
+            Issue.record("Expected second update, got \(secondOutcome)")
+            return
+        }
+        #expect(store.agencyAlerts.isEmpty)
     }
 }

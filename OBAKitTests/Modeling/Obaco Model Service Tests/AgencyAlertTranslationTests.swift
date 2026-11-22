@@ -75,7 +75,7 @@ final class AgencyAlertTranslationTests: OBATestCase {
             translation("fr", "Titre français")
         ])
 
-        #expect(alert.title(forLocale: Locale(identifier: "fr_FR")) == "Titre français")
+        #expect(alert.title(preferredLanguages: ["fr"]) == "Titre français")
     }
 
     @Test func `Missing language falls back to english`() throws {
@@ -84,7 +84,7 @@ final class AgencyAlertTranslationTests: OBATestCase {
             translation("en", "English title")
         ])
 
-        #expect(alert.title(forLocale: Locale(identifier: "es_ES")) == "English title")
+        #expect(alert.title(preferredLanguages: ["es"]) == "English title")
     }
 
     @Test func `Missing language and english falls back to first entry in feed order`() throws {
@@ -93,7 +93,7 @@ final class AgencyAlertTranslationTests: OBATestCase {
             translation("de", "Deutscher Titel")
         ])
 
-        #expect(alert.title(forLocale: Locale(identifier: "es_ES")) == "Titre français")
+        #expect(alert.title(preferredLanguages: ["es"]) == "Titre français")
     }
 
     @Test func `Duplicate language entries first wins`() throws {
@@ -102,7 +102,26 @@ final class AgencyAlertTranslationTests: OBATestCase {
             translation("en", "Second English title")
         ])
 
-        #expect(alert.title(forLocale: Locale(identifier: "en_US")) == "First English title")
+        #expect(alert.title(preferredLanguages: ["en"]) == "First English title")
+    }
+
+    @Test func `forLocale matches exact dialect before base language`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("zh-Hans", "简体中文标题"),
+            translation("zh-Hant", "繁體中文標題")
+        ])
+
+        #expect(alert.title(forLocale: Locale(identifier: "zh-Hant-TW"), preferredLanguages: ["zh-Hant-TW", "en-US"]) == "繁體中文標題")
+        #expect(alert.title(forLocale: Locale(identifier: "zh-Hans-CN"), preferredLanguages: ["zh-Hans-CN", "en-US"]) == "简体中文标题")
+    }
+
+    @Test func `forLocale with Spanish dialect matches dialect before base language`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("es", "Título general"),
+            translation("es-MX", "Título mexicano")
+        ])
+
+        #expect(alert.title(forLocale: Locale(identifier: "es-MX"), preferredLanguages: ["es-MX", "en-US"]) == "Título mexicano")
     }
 
     @Test func `Preferred language hierarchy matches first available language`() throws {
