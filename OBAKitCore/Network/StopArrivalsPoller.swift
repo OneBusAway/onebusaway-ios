@@ -43,6 +43,15 @@ public struct StopArrivalsPoller: Sendable {
     }
 
     /// Returns an `AsyncStream` delivering arrivals updates on every tick of `clock`.
+    ///
+    /// `initialScenePhase` seeds the coordinator so a poll started while
+    /// backgrounded begins paused instead of racing the first bridged phase
+    /// value and fetching once while backgrounded.
+    ///
+    /// Pass fresh `scenePhaseStream` / `refreshSignal` streams on every call:
+    /// cancelling the poller ends the iteration of the streams it was given,
+    /// and an `AsyncStream` whose iteration was cancelled cannot be iterated
+    /// again, so a stream must never be reused across a retry().
     public func arrivals(
         for stopID: StopID,
         every interval: Duration,
@@ -52,10 +61,11 @@ public struct StopArrivalsPoller: Sendable {
         lowPowerMultiplier: Double = 2.0,
         scenePhaseStream: AsyncStream<PollerScenePhase>? = nil,
         refreshSignal: AsyncStream<Void>? = nil,
-        notificationCenter: NotificationCenter = .default
+        notificationCenter: NotificationCenter = .default,
+        initialScenePhase: PollerScenePhase = .active
     ) -> AsyncStream<Result<[ArrivalDeparture], Error>> {
         let coordinator = PollerCoordinator(
-            initialForeground: true,
+            initialForeground: initialScenePhase.isForeground,
             isLowPower: powerStateProvider()
         )
         return arrivals(
@@ -96,20 +106,47 @@ public struct StopArrivalsPoller: Sendable {
             }
             defer { notificationCenter.removeObserver(observer) }
 
-            let subtasks = Task {
+            // Bridge the caller's streams through streams owned by this poller.
+            // Cancelling the poller ends only its own iteration of the bridged
+            // streams: the poller never finishes a caller stream itself.
+            // (That alone does not make a stream reusable across a retry() —
+            // cancelling any iteration ends the stream — so callers must
+            // still pass fresh streams per call; see arrivals(for:).)
+            let (scenePhases, scenePhaseContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
+            let (refreshes, refreshContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+
+            let forwarding = Task {
                 await withTaskGroup(of: Void.self) { group in
                     if let scenePhaseStream {
                         group.addTask {
+                            defer { scenePhaseContinuation.finish() }
                             for await phase in scenePhaseStream {
-                                await coordinator.setScenePhase(phase.isForeground)
+                                scenePhaseContinuation.yield(phase)
                             }
                         }
                     }
                     if let refreshSignal {
                         group.addTask {
+                            defer { refreshContinuation.finish() }
                             for await _ in refreshSignal {
-                                await coordinator.triggerRefresh()
+                                refreshContinuation.yield()
                             }
+                        }
+                    }
+                }
+            }
+            defer { forwarding.cancel() }
+
+            let subtasks = Task {
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask {
+                        for await phase in scenePhases {
+                            await coordinator.setScenePhase(phase.isForeground)
+                        }
+                    }
+                    group.addTask {
+                        for await _ in refreshes {
+                            await coordinator.triggerRefresh()
                         }
                     }
                     group.addTask {
@@ -241,6 +278,10 @@ actor PollerCoordinator {
             let generation = wakeGeneration
             await waitForWake(after: generation)
         }
+        // A refresh that arrived while backgrounded is consumed by the fetch
+        // that follows immediately: clear it here so sleep() doesn't see the
+        // stale flag and fetch a second time.
+        refreshTriggered = false
     }
 
     func sleep(for interval: Duration, clock: some Clock<Duration>) async throws {
