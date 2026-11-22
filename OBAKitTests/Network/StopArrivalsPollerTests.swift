@@ -220,4 +220,117 @@ final class StopArrivalsPollerTests: OBATestCase {
         clock.advance(by: .seconds(60))
         #expect(gate.requests == 1)
     }
+
+    // MARK: - Adaptive Cadence & Lifecycle Tests
+
+    @Test func `Low Power Mode multiplies cadence interval`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+
+        let stream = StopArrivalsPoller().arrivals(
+            for: stopID,
+            every: .seconds(30),
+            using: service,
+            clock: clock,
+            powerStateProvider: { true },
+            lowPowerMultiplier: 2.0
+        )
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. Initial emission
+        _ = await iterator.next()
+        #expect(gate.requests == 1)
+
+        await clock.waitForSleepers(count: 1)
+        // 2. Advance 30s — under LPM (60s interval), it should still be sleeping
+        clock.advance(by: .seconds(30))
+        #expect(gate.requests == 1)
+
+        // 3. Advance remaining 30s (total 60s) — now it emits
+        clock.advance(by: .seconds(30))
+        let second = try #require(await iterator.next())
+        #expect((try? second.get()) != nil)
+        #expect(gate.requests == 2)
+    }
+
+    @Test func `Background scene phase pauses polling and foreground resumes with immediate fetch`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+
+        let (sceneStream, sceneContinuation) = AsyncStream<PollerScenePhase>.makeStream(bufferingPolicy: .bufferingNewest(1))
+
+        let stream = StopArrivalsPoller().arrivals(
+            for: stopID,
+            every: .seconds(30),
+            using: service,
+            clock: clock,
+            powerStateProvider: { false },
+            scenePhaseStream: sceneStream
+        )
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. First fetch on start
+        _ = await iterator.next()
+        #expect(gate.requests == 1)
+        await clock.waitForSleepers(count: 1)
+
+        // 2. Transition to background
+        sceneContinuation.yield(.background)
+
+        // Give background transition a moment to process
+        while await clock.sleeperCount > 0 {
+            await Task.yield()
+        }
+
+        // Advance clock while in background — no new requests should fire
+        clock.advance(by: .seconds(60))
+        #expect(gate.requests == 1)
+
+        // 3. Transition back to active foreground
+        sceneContinuation.yield(.active)
+
+        // It should immediately perform a fetch upon returning to foreground
+        let resumed = try #require(await iterator.next())
+        #expect((try? resumed.get()) != nil)
+        #expect(gate.requests == 2)
+    }
+
+    @Test func `Pull to refresh signal triggers immediate fetch without waiting for timer`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let gate = Gate()
+        mockArrivals(dataLoader, gate: gate)
+        let service = buildRESTService(dataLoader: dataLoader)
+        let clock = TestClock()
+
+        let (refreshStream, refreshContinuation) = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+
+        let stream = StopArrivalsPoller().arrivals(
+            for: stopID,
+            every: .seconds(30),
+            using: service,
+            clock: clock,
+            powerStateProvider: { false },
+            refreshSignal: refreshStream
+        )
+        var iterator = stream.makeAsyncIterator()
+
+        // 1. Initial emission
+        _ = await iterator.next()
+        #expect(gate.requests == 1)
+
+        await clock.waitForSleepers(count: 1)
+
+        // 2. Trigger pull-to-refresh signal without advancing clock
+        refreshContinuation.yield()
+
+        let refreshed = try #require(await iterator.next())
+        #expect((try? refreshed.get()) != nil)
+        #expect(gate.requests == 2)
+    }
 }
