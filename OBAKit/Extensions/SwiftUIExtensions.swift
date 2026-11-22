@@ -46,16 +46,44 @@ public extension View {
     /// `borderShape` drives the iOS 26 glass morphing, `fallbackShape` fills
     /// the pre-26 material background. Pass matching shapes (e.g. `.circle` +
     /// `Circle()`) for a consistent look across versions.
+    ///
+    /// - Parameter tint: Tints the glass, for a button on the map (see
+    ///   `MapChromeGlass`); the fallback is then the thicker material. A tinted
+    ///   glass button style needs iOS 26.1: on 26.0 the glass stays untinted.
     @ViewBuilder
     func liquidGlassButtonStyle(
         borderShape: ButtonBorderShape = .capsule,
-        fallbackShape: some Shape = Capsule()
+        fallbackShape: some Shape = Capsule(),
+        tint: Color? = nil
     ) -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.1, *), let tint {
+            self.buttonStyle(.glass(.regular.tint(tint))).buttonBorderShape(borderShape)
+        } else if #available(iOS 26.0, *) {
             self.buttonStyle(.glass).buttonBorderShape(borderShape)
         } else {
-            self.buttonStyle(.plain).background(.regularMaterial, in: fallbackShape)
+            self.buttonStyle(.plain).background(tint == nil ? .regularMaterial : .thickMaterial, in: fallbackShape)
         }
+    }
+}
+
+// MARK: - Map chrome glass
+
+/// The surface of a control floating straight on the map: the weather chip and
+/// the current-location button.
+///
+/// Plain regular glass nearly vanishes over the muted map, which is about the
+/// same light gray as the glass. These controls take glass tinted with the
+/// system background (`tint`), so it reads as a solid chip in either
+/// appearance, and `mapChromeShadow()`, which separates it from the map.
+enum MapChromeGlass {
+    /// Dynamic, so it follows the appearance.
+    static let tint = Color(uiColor: .systemBackground).opacity(0.55)
+}
+
+extension View {
+    /// The soft shadow under a control on the map; see `MapChromeGlass`.
+    func mapChromeShadow() -> some View {
+        shadow(color: .black.opacity(0.18), radius: 6, y: 2)
     }
 }
 
@@ -204,12 +232,14 @@ public extension View {
     /// - Parameter interactive: Whether the glass scales and shimmers under a
     ///   finger, as the system's controls do; for custom controls such as a tab
     ///   bar. No effect on the fallback.
+    /// - Parameter tint: Tints the glass, for a control on the map (see
+    ///   `MapChromeGlass`); the fallback is then the thicker material.
     @ViewBuilder
-    func regularGlassEffectIfAvailable(in shape: some Shape = Capsule(), interactive: Bool = false) -> some View {
+    func regularGlassEffectIfAvailable(in shape: some Shape = Capsule(), interactive: Bool = false, tint: Color? = nil) -> some View {
         if #available(iOS 26.0, *) {
-            self.glassEffect(.regular.interactive(interactive), in: shape)
+            self.glassEffect(.regular.tint(tint).interactive(interactive), in: shape)
         } else {
-            self.background(.regularMaterial, in: shape)
+            self.background(tint == nil ? .regularMaterial : .thickMaterial, in: shape)
         }
     }
 

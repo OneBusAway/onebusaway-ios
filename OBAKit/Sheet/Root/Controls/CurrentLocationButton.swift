@@ -22,12 +22,13 @@ struct CurrentLocationButton: View {
             Button(action: onTap) {
                 Image(uiImage: Icons.nearMe)
                     .renderingMode(.template)
-                    .glassCircleLabel(diameter: 40)
+                    .glassCircleLabel(diameter: 44)
                     // The interaction shape alone is set above; keep the pointer
                     // highlight and previews circular too.
                     .contentShape([.hoverEffect, .contextMenuPreview, .dragPreview], Circle())
             }
-            .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle())
+            .liquidGlassButtonStyle(borderShape: .circle, fallbackShape: Circle(), tint: MapChromeGlass.tint)
+            .mapChromeShadow()
             .accessibilityLabel(Text(OBALoc(
                 "map_controller.center_user_location",
                 value: "Center map on current location",

@@ -32,7 +32,8 @@ struct WeatherButton: View {
                 .padding(.vertical, 8)
                 .contentShape(Capsule())
             }
-            .regularGlassEffectIfAvailable()
+            .regularGlassEffectIfAvailable(tint: MapChromeGlass.tint)
+            .mapChromeShadow()
             .buttonStyle(.plain)
             .accessibilityLabel(
                 Text(OBALoc(

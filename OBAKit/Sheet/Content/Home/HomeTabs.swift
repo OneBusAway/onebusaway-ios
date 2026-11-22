@@ -264,20 +264,40 @@ struct HomeTabBar: View {
     /// A tab's least touch target.
     private static let minimumHeight: CGFloat = 44
 
-    /// See `highlightShape`.
+    /// See `highlight(in:)`.
     private static let highlightCornerRadius: CGFloat = 12
 
-    /// The selected tab's highlight. On iOS 26 and later, each corner near one
-    /// of the sheet's is concentric with it, as the sheet's own corners are with
-    /// the screen's: collapsed, Home's and Bookmarks' outer bottom corners follow
-    /// the sheet's curve. Corners far from the sheet's keep the 12-point radius.
-    private static let highlightShape: AnyShape = {
-        if #available(iOS 26.0, *) {
-            AnyShape(ConcentricRectangle(corners: .concentric(minimum: .fixed(highlightCornerRadius))))
-        } else {
-            AnyShape(RoundedRectangle(cornerRadius: highlightCornerRadius, style: .continuous))
-        }
-    }()
+    /// The tab bar's own coordinates, which `SheetCornerTracker` reports the
+    /// sheet in and the highlight measures itself in.
+    private static let coordinateSpace = "HomeTabBar"
+
+    /// The sheet's frame and corner radius; see `SheetCornerTracker`. `nil`
+    /// before iOS 26, or until read.
+    @State private var sheetCorners: SheetCornerGeometry?
+
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    /// The selected tab's highlight, at `frame` in the tab bar. Each corner
+    /// near one of the sheet's is concentric with it, as the sheet's own corners
+    /// are with the screen's: collapsed, Home's and Bookmarks' outer bottom
+    /// corners follow the sheet's curve. The rest keep the 12-point radius. See
+    /// `HomeTabs.highlightCornerRadii`.
+    ///
+    /// Worked out here rather than left to `ConcentricRectangle`, which tried
+    /// it and drew every corner at its minimum, or at a radius that didn't
+    /// match the sheet, depending on how it was built.
+    private func highlight(in frame: CGRect) -> some View {
+        UnevenRoundedRectangle(
+            cornerRadii: HomeTabs.highlightCornerRadii(
+                highlight: frame,
+                sheet: sheetCorners,
+                minimum: Self.highlightCornerRadius,
+                layoutDirection: layoutDirection
+            ),
+            style: .continuous
+        )
+        .fill(tint)
+    }
 
     /// `#486621` in light mode: legible as text on the light tint below, which
     /// the lighter brand green is not. In dark mode the dark brand accent falls
@@ -292,6 +312,11 @@ struct HomeTabBar: View {
             ForEach(HomeTab.allCases, id: \.self) { tab in
                 tabButton(tab)
             }
+        }
+        .coordinateSpace(.named(Self.coordinateSpace))
+        // The same frame as the coordinate space above, so the two compare.
+        .background {
+            SheetCornerTracker { sheetCorners = $0 }
         }
         .padding(.horizontal, 12)
         .padding(.top, 4)
@@ -323,12 +348,156 @@ struct HomeTabBar: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        // Outside the button: a button gives its label a rectangular container
-        // shape of its own, which leaves every concentric corner square.
-        .background(isSelected ? tint : .clear, in: Self.highlightShape)
+        .background {
+            if isSelected {
+                GeometryReader { proxy in
+                    highlight(in: proxy.frame(in: .named(Self.coordinateSpace)))
+                }
+            }
+        }
         // Read as a tab, "selected" or not, inside the tab bar container above.
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// A sheet's frame and corner radius, in the coordinates of a view inside it.
+nonisolated struct SheetCornerGeometry: Equatable, Sendable {
+    var frame: CGRect
+    var radius: CGFloat
+}
+
+extension HomeTabs {
+    /// The selected tab highlight's corners: each concentric with the sheet's
+    /// nearest corner where it is close enough to one to follow its curve, and
+    /// never less than `minimum`.
+    ///
+    /// Concentric means the sheet's radius less the distance between the two
+    /// shapes' edges, as the sheet's own corners are inset from the screen's.
+    /// Where the two edges are unequally far apart, the larger distance counts,
+    /// which keeps the curve inside the sheet's. A corner farther from the
+    /// sheet's than its radius gets `minimum`: on the collapsed sheet, every
+    /// corner but the outer tabs' bottom outer ones, and at taller detents all
+    /// of them. Without `sheet`, all corners are `minimum`.
+    ///
+    /// The frames are laid out left to right whatever the language; in a
+    /// right-to-left layout the leading corners are the right-hand ones.
+    nonisolated static func highlightCornerRadii(
+        highlight: CGRect,
+        sheet: SheetCornerGeometry?,
+        minimum: CGFloat,
+        layoutDirection: LayoutDirection
+    ) -> RectangleCornerRadii {
+        guard let sheet, sheet.radius > 0 else {
+            return RectangleCornerRadii(topLeading: minimum, bottomLeading: minimum, bottomTrailing: minimum, topTrailing: minimum)
+        }
+        let outer = sheet.frame
+        func radius(_ horizontalInset: CGFloat, _ verticalInset: CGFloat) -> CGFloat {
+            max(minimum, sheet.radius - max(horizontalInset, verticalInset, 0))
+        }
+        let top = highlight.minY - outer.minY
+        let bottom = outer.maxY - highlight.maxY
+        let left = highlight.minX - outer.minX
+        let right = outer.maxX - highlight.maxX
+        let (leading, trailing) = layoutDirection == .rightToLeft ? (right, left) : (left, right)
+        return RectangleCornerRadii(
+            topLeading: radius(leading, top),
+            bottomLeading: radius(leading, bottom),
+            bottomTrailing: radius(trailing, bottom),
+            topTrailing: radius(trailing, top)
+        )
+    }
+}
+
+/// Keeps `SheetCornerReader` current as the sheet is dragged, in a view of its
+/// own so a drag redraws only this. The tab bar redraws only when the reported
+/// geometry changes, which `SheetCornerReader` keeps to drags near the
+/// collapsed detent, where a corner follows the sheet.
+private struct SheetCornerTracker: View {
+    let onChange: (SheetCornerGeometry?) -> Void
+
+    /// Where this is on screen: it moves as the sheet is dragged, and a change
+    /// has the reader read the sheet again.
+    @State private var screenFrame: CGRect = .zero
+
+    var body: some View {
+        SheetCornerReader(refreshTrigger: screenFrame, onChange: onChange)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { screenFrame = $0 }
+    }
+}
+
+/// Reports the frame and corner radius of the sheet it's in, in its own
+/// coordinates: the nearest view above it with rounded corners, by
+/// `UIView.effectiveRadius(corner:)` (iOS 26). Reports `nil` before iOS 26,
+/// where the sheet's corners are fixed and plain.
+///
+/// Read again whenever its own layout changes, and whenever `refreshTrigger`
+/// does, which it doesn't use but which changes as the sheet is dragged.
+private struct SheetCornerReader: UIViewRepresentable {
+    let refreshTrigger: CGRect
+    let onChange: (SheetCornerGeometry?) -> Void
+
+    func makeUIView(context: Context) -> ReaderView {
+        let view = ReaderView()
+        view.isUserInteractionEnabled = false
+        return view
+    }
+
+    func updateUIView(_ uiView: ReaderView, context: Context) {
+        uiView.onChange = onChange
+        uiView.read()
+    }
+
+    final class ReaderView: UIView {
+        var onChange: ((SheetCornerGeometry?) -> Void)?
+        private var lastReported: SheetCornerGeometry??
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            read()
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            read()
+        }
+
+        func read() {
+            guard window != nil else { return }
+            let geometry = sheetGeometry()
+            guard lastReported != .some(geometry) else { return }
+            lastReported = .some(geometry)
+            // Not during SwiftUI's update, which this is called from.
+            DispatchQueue.main.async { [onChange] in onChange?(geometry) }
+        }
+
+        private func sheetGeometry() -> SheetCornerGeometry? {
+            guard #available(iOS 26.0, *),
+                  let sheet = ancestors.first(where: { $0.effectiveRadius(corner: [.bottomLeft, .bottomRight]) > 0 })
+            else { return nil }
+            let radius = sheet.effectiveRadius(corner: [.bottomLeft, .bottomRight])
+            return SheetCornerGeometry(frame: clamped(sheet.convert(sheet.bounds, to: self), reach: radius), radius: radius)
+        }
+
+        /// `frame` with an edge farther from these bounds than `reach` pulled
+        /// in to just past it: no corner that far off is rounded by it, and a
+        /// sheet dragged at a taller detent then reports no change at all.
+        private func clamped(_ frame: CGRect, reach: CGFloat) -> CGRect {
+            let minY = max(frame.minY, bounds.minY - reach - 1)
+            let maxY = min(frame.maxY, bounds.maxY + reach + 1)
+            return CGRect(x: frame.minX, y: minY, width: frame.width, height: max(0, maxY - minY))
+        }
+    }
+}
+
+private extension UIView {
+    /// This view's superviews, nearest first, short of the window.
+    var ancestors: some Sequence<UIView> {
+        sequence(first: superview, next: { $0?.superview })
+            .prefix { $0 != nil && !($0 is UIWindow) }
+            .compactMap { $0 }
     }
 }
 
