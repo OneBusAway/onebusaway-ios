@@ -143,8 +143,11 @@ final class AppSheetViewFactory {
         case .tripDetails(let tripConvertible, let destinationStopID):
             tripDetailsView(tripConvertible: tripConvertible, destinationStopID: destinationStopID)
 
-        case .transitAlert, .settings:
-            unimplementedView(for: route)
+        case .transitAlert(let alertID):
+            transitAlertView(alertID: alertID)
+
+        case .settings:
+            settingsView()
 
         case .searchResults(let response):
             searchResultsView(response: response)
@@ -218,6 +221,46 @@ final class AppSheetViewFactory {
         MoreSheetHost(application: application) { [coordinator] in
             coordinator.truncateStacked(toDepth: coordinator.stackedRoutes.lastIndex(of: .more) ?? coordinator.stackedRoutes.count)
         }
+    }
+
+    /// Hosts `SettingsViewController` as a stacked sheet over the panel,
+    /// wiring Done to popping the route from the coordinator.
+    func settingsView() -> SettingsSheetHost {
+        SettingsSheetHost(application: application) { [coordinator] in
+            coordinator.pop()
+        }
+    }
+
+    /// Renders transit alert details inside a stacked sheet if found in
+    /// `application.alertsStore.agencyAlerts`, or a fallback notice if absent.
+    @ViewBuilder
+    func transitAlertView(alertID: String) -> some View {
+        if let alert = findTransitAlert(alertID: alertID) {
+            TransitAlertSheetHost(alert: alert) { [coordinator] in
+                coordinator.pop()
+            }
+        } else {
+            alertNotFoundView
+        }
+    }
+
+    func findTransitAlert(alertID: String) -> TransitAlertViewModel? {
+        if let alert = application.alertsStore.agencyAlerts.first(where: { $0.id == alertID }) {
+            return alert
+        }
+        return nil
+    }
+
+    private var alertNotFoundView: some View {
+        Text(OBALoc(
+            "app_sheet.transit_alert_not_found",
+            value: "Alert not found",
+            comment: "Shown on transit alert sheet when the requested alert cannot be found"
+        ))
+        .font(.headline)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .padding()
     }
 
     /// The Stop page as a native SwiftUI sheet over the map panel.
@@ -298,7 +341,6 @@ final class AppSheetViewFactory {
             }
         )
     }
-
 
     /// The SwiftUI trip page as a stacked sheet over the panel's map.
     ///
@@ -383,7 +425,6 @@ final class AppSheetViewFactory {
             onPresentTrip(arrival)
         }
     }
-
 
     /// The Map sheet, shared verbatim with `MapViewController`. Its own doc
     /// comment calls it "the single canonical place riders turn layers on and
@@ -680,14 +721,12 @@ final class AppSheetViewFactory {
         // `let _` (not `_ =`) so SwiftUI's @ViewBuilder treats this as a
         // declaration rather than an expression statement — the latter fails
         // to build because `Void` doesn't conform to `View`.
-        // swiftlint:disable:next redundant_discardable_let
         let _ = assertionFailure("AppSheetRoute.\(route.id) has no view registered yet.")
         Text("Unimplemented route: \(route.id)")
             .font(.headline)
             .foregroundStyle(.secondary)
             .padding()
 #else
-        // swiftlint:disable:next redundant_discardable_let
         let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
         indexPlaceholderView(for: route)
 #endif
