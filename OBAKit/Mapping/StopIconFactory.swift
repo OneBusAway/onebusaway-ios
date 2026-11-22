@@ -75,6 +75,11 @@ class StopIconFactory: NSObject {
         themeColors.brand
     }
 
+    /// The bookmarked squircle's border: its brand fill, darkened.
+    private var bookmarkedSquircleBorderColor: UIColor {
+        themeColors.brand.blended(with: .black, amount: 0.45)
+    }
+
     // MARK: - Sizes
 
     /// The outer gutter for the directional arrow.
@@ -183,11 +188,15 @@ class StopIconFactory: NSObject {
                 self.drawSquircleBackground(rect: rect, isBookmarked: isBookmarked, context: ctx)
                 let glyphColor: UIColor = isBookmarked ? .white : self.transportIconColor
                 self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: glyphColor)
-                // A border keeps the neutral (non-bookmarked) squircle legible over
-                // the muted map; the brand fill of a bookmark already stands on its own.
-                if !isBookmarked {
-                    self.drawSquircleBorder(rect: rect, context: ctx)
-                }
+                // A border keeps the squircle legible over the muted map. A
+                // bookmark's is a deeper shade of its brand fill, so it gets the
+                // same crisp edge as a stop's without reading as a gray outline.
+                self.drawBorder(
+                    color: isBookmarked ? self.bookmarkedSquircleBorderColor : self.strokeColor,
+                    rect: rect,
+                    cornerRadius: rect.width * Icons.squircleCornerRadiusRatio,
+                    context: ctx
+                )
             }
         }
 
@@ -201,7 +210,9 @@ class StopIconFactory: NSObject {
     private func drawSquircleBackground(rect: CGRect, isBookmarked: Bool, context: CGContext) {
         context.pushPop {
             let cornerRadius = rect.width * Icons.squircleCornerRadiusRatio
-            UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).addClip()
+            // Inset half a point, as in `drawBackground`, so the fill doesn't
+            // fringe the border's antialiased outer edge.
+            UIBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: cornerRadius).addClip()
 
             let baseColor = isBookmarked ? themeColors.brand : fillColor
             let colors = [
@@ -221,18 +232,6 @@ class StopIconFactory: NSObject {
                 end: CGPoint(x: rect.midX, y: rect.maxY),
                 options: []
             )
-        }
-    }
-
-    /// Strokes the rounded-square border used by the neutral squircle treatment.
-    private func drawSquircleBorder(rect: CGRect, context: CGContext) {
-        context.pushPop {
-            let inset = borderWidth / 2.0
-            let cornerRadius = rect.width * Icons.squircleCornerRadiusRatio
-            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: cornerRadius)
-            bezierPath.lineWidth = borderWidth
-            context.setStrokeColor(strokeColor.cgColor)
-            bezierPath.stroke()
         }
     }
 
@@ -272,10 +271,11 @@ class StopIconFactory: NSObject {
     /// - Parameter color: Stroke/border color.
     /// - Parameter rect: The rectangle in which to draw.
     /// - Parameter context: The Core Graphics context in which drawing happens.
-    private func drawBorder(color: UIColor, rect: CGRect, context: CGContext) {
+    /// - Parameter cornerRadius: The border's corner radius; the squircle's is larger.
+    private func drawBorder(color: UIColor, rect: CGRect, cornerRadius: CGFloat = ThemeMetrics.stopAnnotationCornerRadius, context: CGContext) {
         context.pushPop {
             let inset = borderWidth / 2.0
-            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: ThemeMetrics.stopAnnotationCornerRadius)
+            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: cornerRadius)
             bezierPath.lineWidth = borderWidth
             context.setStrokeColor(color.cgColor)
             bezierPath.stroke()

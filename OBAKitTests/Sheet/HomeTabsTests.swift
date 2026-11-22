@@ -201,4 +201,62 @@ struct HomeTabsTests {
         let header = HomeTabs.headerHeight(fieldHeight: 90, tabBarHeight: 120)
         #expect(HomeCollapsedDetent.collapsedHeight(headerHeight: header) == header)
     }
+
+    // MARK: - Highlight corners
+
+    /// The collapsed sheet as measured on an iPhone 17 Pro: 386 wide, its
+    /// corners 54 points round, and Home's highlight 12 points in from its left
+    /// edge and about 7 up from its bottom.
+    private static let sheet = SheetCornerGeometry(frame: CGRect(x: -12, y: -66, width: 386, height: 130), radius: 54)
+    private static let homeHighlight = CGRect(x: 0, y: 4, width: 116, height: 53.5)
+    private static let bookmarksHighlight = CGRect(x: 246, y: 4, width: 116, height: 53.5)
+    private static let allMinimum = RectangleCornerRadii(topLeading: 12, bottomLeading: 12, bottomTrailing: 12, topTrailing: 12)
+
+    private func radii(
+        _ highlight: CGRect,
+        sheet: SheetCornerGeometry? = HomeTabsTests.sheet,
+        _ layoutDirection: LayoutDirection = .leftToRight
+    ) -> RectangleCornerRadii {
+        HomeTabs.highlightCornerRadii(highlight: highlight, sheet: sheet, minimum: 12, layoutDirection: layoutDirection)
+    }
+
+    /// Concentric with the sheet's corner it sits in: the sheet's radius less
+    /// the larger of the two insets.
+    @Test func `Home's outer bottom corner follows the collapsed sheet's`() {
+        #expect(radii(Self.homeHighlight).bottomLeading == 42)
+    }
+
+    /// Too far from any sheet corner to follow one.
+    @Test func `Home's other corners keep the minimum`() {
+        let radii = radii(Self.homeHighlight)
+        #expect(radii.topLeading == 12)
+        #expect(radii.topTrailing == 12)
+        #expect(radii.bottomTrailing == 12)
+    }
+
+    /// Bookmarks mirrors Home, at the sheet's other corner.
+    @Test func `Bookmarks' outer bottom corner follows the collapsed sheet's`() {
+        let radii = radii(Self.bookmarksHighlight)
+        #expect(radii.bottomTrailing == 42)
+        #expect(radii.bottomLeading == 12)
+    }
+
+    /// Taller, the sheet's bottom corners are far below the tab bar.
+    @Test func `At a taller detent every corner keeps the minimum`() {
+        let tall = SheetCornerGeometry(frame: CGRect(x: -12, y: -66, width: 386, height: 700), radius: 54)
+        #expect(radii(Self.homeHighlight, sheet: tall) == Self.allMinimum)
+    }
+
+    /// Before iOS 26, or before the sheet has been read.
+    @Test func `Without the sheet every corner keeps the minimum`() {
+        #expect(radii(Self.homeHighlight, sheet: nil) == Self.allMinimum)
+    }
+
+    /// Right to left, the left-hand highlight's rounded corner is its trailing
+    /// one: Bookmarks sits there, at the end of the row.
+    @Test func `In a right-to-left layout the left-hand corner is the trailing one`() {
+        let radii = radii(Self.homeHighlight, .rightToLeft)
+        #expect(radii.bottomTrailing == 42)
+        #expect(radii.bottomLeading == 12)
+    }
 }

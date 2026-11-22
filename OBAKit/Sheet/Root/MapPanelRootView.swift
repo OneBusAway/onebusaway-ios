@@ -419,17 +419,23 @@ struct MapPanelRootView: View {
                 cameraHeading: cameraHeading
             )
             onDemandZoneContent
+            // Read once: it walks every route, and each stop below asks.
+            let focusedStopID = routeFocusedStopID
             // Bookmark pins render at every zoom level, like the UIKit map.
             ForEach(stopsObserver.bookmarks) { bookmark in
-                stopAnnotation(
-                    for: bookmark.stop,
-                    isBookmarked: true,
-                    label: .name(bookmark.name),
-                    accessibilityLabel: Formatters.formattedAccessibilityLabel(
-                        stop: bookmark.stop,
-                        bookmarkName: bookmark.name
+                if Self.isDeemphasized(bookmark.stop.id, focusedStopID: focusedStopID) {
+                    stopDot(for: bookmark.stop, isBookmarked: true)
+                } else {
+                    stopAnnotation(
+                        for: bookmark.stop,
+                        isBookmarked: true,
+                        label: .name(bookmark.name),
+                        accessibilityLabel: Formatters.formattedAccessibilityLabel(
+                            stop: bookmark.stop,
+                            bookmarkName: bookmark.name
+                        )
                     )
-                )
+                }
             }
             // Regular stops show only zoomed in; `renderStops` already excludes
             // bookmarked stops and precomputes labels. Suppress them if a search
@@ -437,12 +443,16 @@ struct MapPanelRootView: View {
             // the map.
             if showsAmbientStops {
                 ForEach(stopsObserver.renderStops) { renderStop in
-                    stopAnnotation(
-                        for: renderStop.stop,
-                        isBookmarked: false,
-                        label: .routes(renderStop.routeLabel),
-                        accessibilityLabel: renderStop.accessibilityLabel
-                    )
+                    if Self.isDeemphasized(renderStop.id, focusedStopID: focusedStopID) {
+                        stopDot(for: renderStop.stop, isBookmarked: false)
+                    } else {
+                        stopAnnotation(
+                            for: renderStop.stop,
+                            isBookmarked: false,
+                            label: .routes(renderStop.routeLabel),
+                            accessibilityLabel: renderStop.accessibilityLabel
+                        )
+                    }
                 }
             }
 
@@ -540,6 +550,7 @@ struct MapPanelRootView: View {
             selection: mapSelection,
             showsLabels: showStopLabels,
             showsAmbientStops: showsAmbientStops,
+            routeFocusedStopID: routeFocusedStopID,
             dynamicTypeSize: dynamicTypeSize
         )) {
             layoutStopLabels(using: proxy)
@@ -861,6 +872,43 @@ struct MapPanelRootView: View {
         .tag(MapPinSelection.stop(stop.id))
     }
 
+    /// A stop other than the open one while its routes are drawn: a small dot
+    /// rather than a pin, so the routes read first. No label, no selection tag
+    /// and no hit testing, so it can't be tapped, and hidden from VoiceOver,
+    /// which reaches stops through the open stop's sheet meanwhile. Bookmarks
+    /// keep the brand colour, so they still stand apart.
+    @MapContentBuilder
+    private func stopDot(for stop: Stop, isBookmarked: Bool) -> some MapContent {
+        Annotation("", coordinate: stop.coordinate, anchor: .center) {
+            Circle()
+                .fill(isBookmarked ? Color(uiColor: ThemeColors.shared.brand) : Color(uiColor: .systemGray))
+                .frame(width: Self.stopDotDiameter, height: Self.stopDotDiameter)
+                .overlay(Circle().stroke(Color(uiColor: .systemBackground), lineWidth: 1.5))
+                .opacity(0.8)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private static let stopDotDiameter: CGFloat = 9
+
+    /// The stop whose routes are drawn on the map, when they are; see
+    /// `stopDot(for:isBookmarked:)`.
+    private var routeFocusedStopID: StopID? {
+        guard stopTakesMap,
+              let display = stopFocusDisplay.display, !display.routes.isEmpty,
+              case .stopDetails(let stopID, _) = stopFocusDisplay.owner
+        else { return nil }
+        return stopID
+    }
+
+    /// Whether `stopID` draws as a dot while `focusedStopID`'s routes are
+    /// drawn; see `stopDot(for:isBookmarked:)` and `routeFocusedStopID`.
+    private static func isDeemphasized(_ stopID: StopID, focusedStopID: StopID?) -> Bool {
+        guard let focusedStopID else { return false }
+        return stopID != focusedStopID
+    }
+
     /// Whether ambient (non-bookmarked) stops draw. Hidden while a search
     /// result, a planned trip or an open trip takes over the map.
     private var showsAmbientStops: Bool {
@@ -909,6 +957,11 @@ struct MapPanelRootView: View {
                     isRequired: renderStop.id == selectedStopID
                 )
             }
+        }
+
+        // A dot has no label, and is too small to keep one off it.
+        if let focusedStopID = routeFocusedStopID {
+            pins.removeAll { Self.isDeemphasized($0.stop.id, focusedStopID: focusedStopID) }
         }
 
         var candidates: [MapStopLabelLayout.Candidate] = []
@@ -1623,6 +1676,8 @@ private struct StopLabelLayoutTriggers: ViewModifier {
         let selection: MapPinSelection?
         let showsLabels: Bool
         let showsAmbientStops: Bool
+        /// Its routes drawn, every other stop is a dot, with no label.
+        let routeFocusedStopID: StopID?
         let dynamicTypeSize: DynamicTypeSize
     }
 
