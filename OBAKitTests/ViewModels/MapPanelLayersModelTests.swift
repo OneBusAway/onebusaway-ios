@@ -72,10 +72,10 @@ final class MapPanelLayersModelTests: OBATestCase {
     /// has to move with the toggles.
     @Test func `Badge count follows enabled layers`() {
         let initial = model.enabledLayerCount
-        #expect(initial == 3)
+        #expect(initial == 2)
 
         application.mapRegionManager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
-        #expect(model.enabledLayerCount == 2)
+        #expect(model.enabledLayerCount == 1)
     }
 
     /// Reset restores stops on and points of interest on in one write; the model
@@ -222,8 +222,8 @@ final class MapPanelLayersModelTests: OBATestCase {
     }
 
     @Test func `MapPanelLayersModel publishes pure visibility state synchronized with manager`() {
-        #expect(model.enabledLayerCount == 3)
-        #expect(model.visibilityState.enabledLayerCount == 3)
+        #expect(model.enabledLayerCount == 2)
+        #expect(model.visibilityState.enabledLayerCount == 2)
         #expect(model.showsPointsOfInterest == true)
         #expect(model.visibilityState.showsPointsOfInterest == true)
         #expect(model.isStopsLayerEnabled == true)
@@ -231,8 +231,8 @@ final class MapPanelLayersModelTests: OBATestCase {
 
         application.mapRegionManager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
 
-        #expect(model.enabledLayerCount == 2)
-        #expect(model.visibilityState.enabledLayerCount == 2)
+        #expect(model.enabledLayerCount == 1)
+        #expect(model.visibilityState.enabledLayerCount == 1)
         #expect(model.isStopsLayerEnabled == false)
         #expect(model.visibilityState.isEnabled(id: StopsMapLayer.layerID) == false)
     }
@@ -319,24 +319,24 @@ final class MapPanelLayersModelTests: OBATestCase {
         let manager = application.mapRegionManager
         #expect(manager.isStopsLayerEnabled == true)
         #expect(manager.visibilityState.isStopsLayerEnabled == true)
-        #expect(manager.enabledMapLayerCount == 3)
-        #expect(manager.visibilityState.enabledLayerCount == 3)
+        #expect(manager.enabledMapLayerCount == 2)
+        #expect(manager.visibilityState.enabledLayerCount == 2)
         #expect(manager.mapLayersDifferFromDefaults == false)
         #expect(manager.visibilityState.differsFromDefaults == false)
 
         manager.setMapLayerEnabled(false, id: StopsMapLayer.layerID)
         #expect(manager.isStopsLayerEnabled == false)
         #expect(manager.visibilityState.isStopsLayerEnabled == false)
-        #expect(manager.enabledMapLayerCount == 2)
-        #expect(manager.visibilityState.enabledLayerCount == 2)
+        #expect(manager.enabledMapLayerCount == 1)
+        #expect(manager.visibilityState.enabledLayerCount == 1)
         #expect(manager.mapLayersDifferFromDefaults == true)
         #expect(manager.visibilityState.differsFromDefaults == true)
 
         manager.resetMapLayersToDefaults()
         #expect(manager.isStopsLayerEnabled == true)
         #expect(manager.visibilityState.isStopsLayerEnabled == true)
-        #expect(manager.enabledMapLayerCount == 3)
-        #expect(manager.visibilityState.enabledLayerCount == 3)
+        #expect(manager.enabledMapLayerCount == 2)
+        #expect(manager.visibilityState.enabledLayerCount == 2)
         #expect(manager.mapLayersDifferFromDefaults == false)
         #expect(manager.visibilityState.differsFromDefaults == false)
     }

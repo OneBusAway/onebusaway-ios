@@ -37,21 +37,21 @@ import OTPKit
     /// no `MKMapView` to re-attach to.
     weak var annotationSyncer: RentalAnnotationSyncer?
 
-    /// Builds the Bikes layer: enabled by default so the first-run map is useful,
+    /// Builds the Bikes layer: off by default to keep the first-run map calm,
     /// fail-open entities included (matching the framework filter).
     static func bikesLayer(coordinator: RentalLayerCoordinator) -> RentalMapLayer {
         RentalMapLayer(
             id: bikesLayerID,
             title: OBALoc("map_layers.bikes", value: "Bikes", comment: "Map sheet row for the rental bikes layer"),
             iconName: "bicycle",
-            isEnabledByDefault: true,
+            isEnabledByDefault: false,
             formFactors: [.bicycle, .cargoBicycle],
             coordinator: coordinator
         )
     }
 
-    /// Builds the Scooters layer: off by default to keep the first-run map calm,
-    /// but one tap away — scooters are 74% of the launch region's supply.
+    /// Builds the Scooters layer: off by default, like Bikes, but one tap away —
+    /// scooters are 74% of the launch region's supply.
     static func scootersLayer(coordinator: RentalLayerCoordinator) -> RentalMapLayer {
         RentalMapLayer(
             id: scootersLayerID,
