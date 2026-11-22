@@ -152,9 +152,9 @@ final class AgencyAlertsStoreTests: OBATestCase {
 
     /// A feed holding an agency-wide alert for King County Metro (agency `1`)
     /// with each of `alertIDs`.
-    private func feed(alertIDs: [String]) throws -> Data {
+    private func feed(alertIDs: [String], agencyID: String = "1") throws -> Data {
         var selector = TransitRealtime_EntitySelector()
-        selector.agencyID = "1"
+        selector.agencyID = agencyID
 
         var message = TransitRealtime_FeedMessage()
         message.header.gtfsRealtimeVersion = "2.0"
@@ -299,5 +299,42 @@ final class AgencyAlertsStoreTests: OBATestCase {
         _ = try await staleTask.value
 
         #expect(store.agencyAlerts.map(\.id) == ["new-alert"])
+    }
+
+    @Test func `Duplicate alert IDs across overlapping feeds are deduplicated`() async throws {
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+
+        let sharedID = "duplicate-alert-id"
+        dataLoader.mock(data: try feed(alertIDs: [sharedID])) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [sharedID], agencyID: "")) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let outcome = await checkForUpdates()
+        guard case .updated = outcome else {
+            Issue.record("Expected an update, got \(outcome)")
+            return
+        }
+
+        #expect(store.agencyAlerts.count == 1)
+        #expect(store.agencyAlerts.first?.id == sharedID)
+        #expect(store.agencyAlerts.first?.agency != nil)
+    }
+
+    @Test func `Duplicate alert IDs within the same feed entity list are deduplicated`() async throws {
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+
+        let duplicateID = "same-feed-dup-id"
+        dataLoader.mock(data: try feed(alertIDs: [duplicateID, duplicateID])) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let outcome = await checkForUpdates()
+        guard case .updated = outcome else {
+            Issue.record("Expected an update, got \(outcome)")
+            return
+        }
+
+        #expect(store.agencyAlerts.count == 1)
+        #expect(store.agencyAlerts.first?.id == duplicateID)
     }
 }

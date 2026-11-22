@@ -286,7 +286,16 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
             guard updateGeneration == generation else { return false }
 
             for alert in agencyAlerts {
-                self.alerts.insert(alert)
+                if let existing = self.alerts.first(where: { $0.id == alert.id }) {
+                    // Deduplicate identical alert IDs across entities / feeds.
+                    // Prefer agency-specific alert over region-wide (agency == nil) if available.
+                    if existing.agency == nil && alert.agency != nil {
+                        self.alerts.remove(existing)
+                        self.alerts.insert(alert)
+                    }
+                } else {
+                    self.alerts.insert(alert)
+                }
             }
 
             return true

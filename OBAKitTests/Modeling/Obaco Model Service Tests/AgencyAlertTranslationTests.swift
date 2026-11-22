@@ -30,7 +30,11 @@ final class AgencyAlertTranslationTests: OBATestCase {
     }
 
     /// Builds a region-wide alert (no agency needed) whose header carries `translations`.
-    private func makeAlert(headerTranslations: [TransitRealtime_TranslatedString.Translation]) throws -> AgencyAlert {
+    private func makeAlert(
+        headerTranslations: [TransitRealtime_TranslatedString.Translation],
+        bodyTranslations: [TransitRealtime_TranslatedString.Translation] = [],
+        urlTranslations: [TransitRealtime_TranslatedString.Translation] = []
+    ) throws -> AgencyAlert {
         var period = TransitRealtime_TimeRange()
         period.start = UInt64(Date().timeIntervalSince1970)
 
@@ -40,11 +44,23 @@ final class AgencyAlertTranslationTests: OBATestCase {
         var header = TransitRealtime_TranslatedString()
         header.translation = headerTranslations
 
+        var body = TransitRealtime_TranslatedString()
+        body.translation = bodyTranslations
+
+        var url = TransitRealtime_TranslatedString()
+        url.translation = urlTranslations
+
         var alert = TransitRealtime_Alert()
         alert.severityLevel = .warning
         alert.activePeriod = [period]
         alert.informedEntity = [entitySelector]
         alert.headerText = header
+        if !bodyTranslations.isEmpty {
+            alert.descriptionText = body
+        }
+        if !urlTranslations.isEmpty {
+            alert.url = url
+        }
 
         var feedEntity = TransitRealtime_FeedEntity()
         feedEntity.id = "Alert_1"
@@ -87,5 +103,83 @@ final class AgencyAlertTranslationTests: OBATestCase {
         ])
 
         #expect(alert.title(forLocale: Locale(identifier: "en_US")) == "First English title")
+    }
+
+    @Test func `Preferred language hierarchy matches first available language`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("es", "Título en español"),
+            translation("fr", "Titre en français"),
+            translation("de", "Deutscher Titel")
+        ])
+
+        #expect(alert.title(preferredLanguages: ["fr", "es"]) == "Titre en français")
+        #expect(alert.title(preferredLanguages: ["es", "fr"]) == "Título en español")
+    }
+
+    @Test func `Preferred language dialect matches base language identifier`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("es", "Título en español"),
+            translation("en", "English title")
+        ])
+
+        #expect(alert.title(preferredLanguages: ["es-MX", "en-US"]) == "Título en español")
+    }
+
+    @Test func `Preferred language exact dialect matches before base language identifier`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("es", "Título general"),
+            translation("es-MX", "Título mexicano")
+        ])
+
+        #expect(alert.title(preferredLanguages: ["es-MX", "en-US"]) == "Título mexicano")
+    }
+
+    @Test func `Preferred language hierarchy skips unavailable language to next preferred`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("fr", "Titre en français"),
+            translation("de", "Deutscher Titel")
+        ])
+
+        #expect(alert.title(preferredLanguages: ["ja", "de", "fr"]) == "Deutscher Titel")
+    }
+
+    @Test func `Preferred language hierarchy resolves body and URL`() throws {
+        let alert = try makeAlert(
+            headerTranslations: [
+                translation("es", "Título en español"),
+                translation("fr", "Titre en français")
+            ],
+            bodyTranslations: [
+                translation("es", "Cuerpo en español"),
+                translation("fr", "Corps en français")
+            ],
+            urlTranslations: [
+                translation("es", "https://example.com/es"),
+                translation("fr", "https://example.com/fr")
+            ]
+        )
+
+        #expect(alert.body(preferredLanguages: ["fr", "es"]) == "Corps en français")
+        #expect(alert.url(preferredLanguages: ["fr", "es"]) == URL(string: "https://example.com/fr"))
+        #expect(alert.body(preferredLanguages: ["es", "fr"]) == "Cuerpo en español")
+        #expect(alert.url(preferredLanguages: ["es", "fr"]) == URL(string: "https://example.com/es"))
+    }
+
+    @Test func `Preferred language falls back to English when no preferred languages match`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("en", "English title"),
+            translation("de", "Deutscher Titel")
+        ])
+
+        #expect(alert.title(preferredLanguages: ["ja", "ko"]) == "English title")
+    }
+
+    @Test func `Preferred language falls back to first translation when neither preferred nor English match`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("de", "Deutscher Titel"),
+            translation("it", "Titolo italiano")
+        ])
+
+        #expect(alert.title(preferredLanguages: ["ja", "ko"]) == "Deutscher Titel")
     }
 }
