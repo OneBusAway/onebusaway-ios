@@ -14,7 +14,7 @@ public enum StopSort: String, Codable {
 }
 
 /// Controls which arrivals/departures are displayed based on real-time data availability.
-public enum ArrivalDepartureFilter: String, Codable, CaseIterable {
+public enum ArrivalDepartureFilter: String, Codable, CaseIterable, Sendable {
     case all
     case estimatedOnly
     case scheduledOnly

@@ -128,4 +128,17 @@ final class StopPreferencesDomainTests {
             #expect(decoded == filter)
         }
     }
+
+    @Test(arguments: ArrivalDepartureFilter.allCases)
+    func `ArrivalDepartureFilter effective resolves saved value overriding different brand default`(filter: ArrivalDepartureFilter) throws {
+        let suiteName = "StopPreferencesDomainTests_\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        // Choose a brand default distinct from the saved filter value
+        let differingBrandDefault: ArrivalDepartureFilter = (filter == .all) ? .estimatedOnly : .all
+
+        defaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        #expect(ArrivalDepartureFilter.effective(in: defaults, brandDefault: differingBrandDefault) == filter)
+    }
 }
