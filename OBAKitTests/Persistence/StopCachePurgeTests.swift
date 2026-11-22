@@ -272,7 +272,7 @@ final class StopCachePurgeTests {
         #expect(sizeAfterVacuum < sizeWithData)
     }
 
-    @Test func `Existing database with auto_vacuum 0 is upgraded to incremental outside transaction`() throws {
+    @Test func `Existing database with auto_vacuum 0 is upgraded to incremental lazily outside init`() throws {
         let tempDir = FileManager.default.temporaryDirectory
         let dbPath = tempDir.appendingPathComponent("test_legacy_autovacuum_\(UUID().uuidString).sqlite").path
         defer {
@@ -291,12 +291,186 @@ final class StopCachePurgeTests {
         }
         #expect(initialAutoVacuum == 0)
 
-        // Opening through StopCacheDatabase upgrades mode and vacuums outside transaction
+        // Opening through StopCacheDatabase does NOT run VACUUM during init
         let database = try StopCacheDatabase(databasePath: dbPath)
+        let unvacuumedMode = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
+        }
+        #expect(unvacuumedMode == 0)
+
+        // Upgrading lazily (off main thread or during prune) upgrades auto_vacuum to incremental
+        database.upgradeAutoVacuumIfNeeded()
         let upgradedAutoVacuum = try database.dbQueue.read { db in
             try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
         }
         #expect(upgradedAutoVacuum == 2) // 2 = INCREMENTAL
+    }
+
+    @Test func `Active region missing from knownRegionIDs keeps its rows and is never retired`() throws {
+        let database = try StopCacheDatabase(inMemory: true)
+        let repository = StopCacheRepository(database: database)
+        let tables = ["cachedStop", "cachedRoute", "cachedStopSync", "cachedRouteSync"]
+
+        // Setup 3 regions:
+        // Region 100: Active (e.g. custom region not present in knownRegionIDs list)
+        // Region 200: Truly retired region (neither active nor in knownRegionIDs)
+        // Region 300: Inactive known region
+        try database.dbQueue.write { db in
+            for table in tables {
+                let stopColumns = table.contains("Stop") ? ", latitude, longitude, stopData" : ", routeData"
+                let stopValues = table.contains("Stop") ? ", 47.6, -122.3, X'00'" : ", X'00'"
+                let syncColumn = table.hasSuffix("Sync") ? ", syncID" : ""
+                let syncValue = table.hasSuffix("Sync") ? ", 'published'" : ""
+
+                for (id, region, timestamp) in [
+                    ("act_exp", 100, 100), ("act_fresh", 100, 300),
+                    ("ret_exp", 200, 100), ("ret_fresh", 200, 300),
+                    ("known_exp", 300, 100), ("known_fresh", 300, 300)
+                ] {
+                    try db.execute(
+                        sql: "INSERT INTO \(table) (id, regionId, lastUpdated\(stopColumns)\(syncColumn)) VALUES (?, ?, ?\(stopValues)\(syncValue))",
+                        arguments: [id, region, timestamp]
+                    )
+                }
+            }
+        }
+
+        for regionId in [100, 200, 300] {
+            try repository.saveSyncState(RegionStopSyncState(
+                regionId: regionId, outcome: .complete, lastAttemptAt: Date(timeIntervalSince1970: 300),
+                lastSuccessAt: Date(timeIntervalSince1970: 300), etag: nil, appVersion: "test", publishedSyncID: "published"
+            ))
+        }
+
+        #expect(repository.cachedRegionIDs() == Set([100, 200, 300]))
+
+        // Prune inactive regions where activeRegionID is 100, but knownRegionIDs only has [300]
+        let cutoff = Date(timeIntervalSince1970: 200)
+        _ = repository.pruneInactiveRegions(activeRegionID: 100, olderThan: cutoff, knownRegionIDs: [300])
+
+        // Retired region 200 was purged completely
+        #expect(try repository.syncState(regionId: 200) == nil)
+
+        // Known region 300 kept its fresh row, expired row was deleted
+        #expect(try repository.syncState(regionId: 300) != nil)
+
+        // Active region 100 was NOT retired even though missing from knownRegionIDs!
+        // Both rows (exp and fresh) preserved under pruneInactiveRegions
+        #expect(try repository.syncState(regionId: 100) != nil)
+        try database.dbQueue.read { db in
+            for table in tables {
+                let r100IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 100 ORDER BY id")
+                #expect(r100IDs == ["act_exp", "act_fresh"])
+
+                let r200IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 200")
+                #expect(r200IDs.isEmpty)
+
+                let r300IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 300 ORDER BY id")
+                #expect(r300IDs == ["known_fresh"])
+            }
+        }
+
+        // Even with pruneExpiredStops, active region 100 only has expired rows pruned, NOT cleared
+        _ = repository.pruneExpiredStops(activeRegionID: 100, olderThan: cutoff, knownRegionIDs: [300])
+        #expect(try repository.syncState(regionId: 100) != nil)
+        try database.dbQueue.read { db in
+            for table in tables {
+                let r100IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 100 ORDER BY id")
+                #expect(r100IDs == ["act_fresh"])
+            }
+        }
+    }
+
+    @Test func `Untrusted regions list when knownRegionIDs is nil does not retire cached regions`() throws {
+        let database = try StopCacheDatabase(inMemory: true)
+        let repository = StopCacheRepository(database: database)
+        let tables = ["cachedStop", "cachedRoute"]
+
+        try database.dbQueue.write { db in
+            for table in tables {
+                let stopColumns = table.contains("Stop") ? ", latitude, longitude, stopData" : ", routeData"
+                let stopValues = table.contains("Stop") ? ", 47.6, -122.3, X'00'" : ", X'00'"
+
+                for (id, region, timestamp) in [
+                    ("r1_fresh", 1, 300),
+                    ("r2_fresh", 2, 300),
+                    ("r3_fresh", 3, 300)
+                ] {
+                    try db.execute(
+                        sql: "INSERT INTO \(table) (id, regionId, lastUpdated\(stopColumns)) VALUES (?, ?, ?\(stopValues))",
+                        arguments: [id, region, timestamp]
+                    )
+                }
+            }
+        }
+
+        for regionId in [1, 2, 3] {
+            try repository.saveSyncState(RegionStopSyncState(
+                regionId: regionId, outcome: .complete, lastAttemptAt: Date(timeIntervalSince1970: 300),
+                lastSuccessAt: Date(timeIntervalSince1970: 300), etag: nil, appVersion: "test", publishedSyncID: nil
+            ))
+        }
+
+        // When canTrustRegionsList is false, CoreApplication passes knownRegionIDs: nil
+        _ = repository.pruneInactiveRegions(activeRegionID: 1, knownRegionIDs: nil)
+
+        // All 3 regions kept intact; zero regions retired
+        #expect(repository.cachedRegionIDs() == Set([1, 2, 3]))
+        for regionId in [1, 2, 3] {
+            #expect(try repository.syncState(regionId: regionId) != nil)
+        }
+    }
+
+    @Test func `Custom region present in allRegions is preserved during prune`() throws {
+        let database = try StopCacheDatabase(inMemory: true)
+        let repository = StopCacheRepository(database: database)
+        let tables = ["cachedStop", "cachedRoute"]
+
+        // Region 1: Server region (active)
+        // Region 999: Custom region (inactive, present in allRegions)
+        // Region 888: Retired server region (not in allRegions)
+        try database.dbQueue.write { db in
+            for table in tables {
+                let stopColumns = table.contains("Stop") ? ", latitude, longitude, stopData" : ", routeData"
+                let stopValues = table.contains("Stop") ? ", 47.6, -122.3, X'00'" : ", X'00'"
+
+                for (id, region, timestamp) in [
+                    ("r1", 1, 300),
+                    ("r999_exp", 999, 100), ("r999_fresh", 999, 300),
+                    ("r888", 888, 300)
+                ] {
+                    try db.execute(
+                        sql: "INSERT INTO \(table) (id, regionId, lastUpdated\(stopColumns)) VALUES (?, ?, ?\(stopValues))",
+                        arguments: [id, region, timestamp]
+                    )
+                }
+            }
+        }
+
+        for regionId in [1, 999, 888] {
+            try repository.saveSyncState(RegionStopSyncState(
+                regionId: regionId, outcome: .complete, lastAttemptAt: Date(timeIntervalSince1970: 300),
+                lastSuccessAt: Date(timeIntervalSince1970: 300), etag: nil, appVersion: "test", publishedSyncID: nil
+            ))
+        }
+
+        // allRegions has region 1 and custom region 999
+        let allRegionIDs: Set<Int> = [1, 999]
+        let cutoff = Date(timeIntervalSince1970: 200)
+        _ = repository.pruneInactiveRegions(activeRegionID: 1, olderThan: cutoff, knownRegionIDs: allRegionIDs)
+
+        // Custom region 999 is NOT retired: fresh data and syncState kept
+        #expect(try repository.syncState(regionId: 999) != nil)
+        try database.dbQueue.read { db in
+            for table in tables {
+                let r999IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 999 ORDER BY id")
+                #expect(r999IDs == ["r999_fresh"])
+
+                let r888IDs = try String.fetchAll(db, sql: "SELECT id FROM \(table) WHERE regionId = 888")
+                #expect(r888IDs.isEmpty)
+            }
+        }
+        #expect(try repository.syncState(regionId: 888) == nil)
     }
 }
 

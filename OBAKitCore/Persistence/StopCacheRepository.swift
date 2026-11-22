@@ -533,7 +533,7 @@ public final class StopCacheRepository: Sendable {
     }
 
     /// Prunes inactive and retired regions.
-    /// Fully clears retired regions (regions not in `knownRegionIDs`).
+    /// Fully clears retired regions (regions not in `knownRegionIDs`, excluding `activeRegionID`).
     /// Prunes expired stops and routes older than `date` in all inactive regions, preserving the active region.
     /// Checks database freelistCount against threshold; triggers incrementalVacuum if >= threshold.
     /// - Returns: whether incremental vacuum was executed.
@@ -553,23 +553,6 @@ public final class StopCacheRepository: Sendable {
         )
     }
 
-    /// Prunes inactive and retired regions with known region IDs passed explicitly.
-    @discardableResult
-    public func pruneInactiveRegions(
-        knownRegionIDs: Set<Int>,
-        activeRegionID: Int? = nil,
-        olderThan date: Date = Date().addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval),
-        freelistPageThreshold: Int = StopCacheDatabase.defaultFreelistThreshold
-    ) -> Bool {
-        prune(
-            activeRegionID: activeRegionID,
-            pruneActiveRegion: false,
-            olderThan: date,
-            knownRegionIDs: knownRegionIDs,
-            freelistPageThreshold: freelistPageThreshold
-        )
-    }
-
     private func prune(
         activeRegionID: Int?,
         pruneActiveRegion: Bool,
@@ -577,11 +560,17 @@ public final class StopCacheRepository: Sendable {
         knownRegionIDs: Set<Int>?,
         freelistPageThreshold: Int
     ) -> Bool {
+        database.upgradeAutoVacuumIfNeeded()
+
         let cachedIDs = cachedRegionIDs()
 
         let retiredIDs: Set<Int>
         if let knownRegionIDs {
-            retiredIDs = cachedIDs.subtracting(knownRegionIDs)
+            var candidateRetired = cachedIDs.subtracting(knownRegionIDs)
+            if let activeRegionID {
+                candidateRetired.remove(activeRegionID)
+            }
+            retiredIDs = candidateRetired
             for regionId in retiredIDs {
                 clearCache(regionId: regionId)
             }

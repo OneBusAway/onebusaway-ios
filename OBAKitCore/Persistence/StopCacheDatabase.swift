@@ -50,7 +50,6 @@ public final class StopCacheDatabase: Sendable {
             queue = try DatabaseQueue(path: path, configuration: configuration)
         }
 
-        try Self.upgradeAutoVacuumIfNeeded(in: queue)
         dbQueue = queue
         try Self.makeMigrator().migrate(dbQueue)
     }
@@ -59,7 +58,6 @@ public final class StopCacheDatabase: Sendable {
     public init(inMemory: Bool) throws {
         precondition(inMemory, "Use init(databasePath:) for persistent databases")
         let queue = try DatabaseQueue(configuration: Self.makeConfiguration())
-        try Self.upgradeAutoVacuumIfNeeded(in: queue)
         dbQueue = queue
         try Self.makeMigrator().migrate(dbQueue)
     }
@@ -68,7 +66,6 @@ public final class StopCacheDatabase: Sendable {
     /// `lastMigration`, so tests can upgrade a real older schema.
     init(databasePath: String, migratingUpTo lastMigration: String) throws {
         let queue = try DatabaseQueue(path: databasePath, configuration: Self.makeConfiguration())
-        try Self.upgradeAutoVacuumIfNeeded(in: queue)
         dbQueue = queue
         try Self.makeMigrator().migrate(dbQueue, upTo: lastMigration)
     }
@@ -81,15 +78,22 @@ public final class StopCacheDatabase: Sendable {
         return configuration
     }
 
-    private static func upgradeAutoVacuumIfNeeded(in dbQueue: DatabaseQueue) throws {
-        let autoVacuum = try dbQueue.read { db in
-            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum") ?? 0
-        }
-        if autoVacuum == 0 {
-            try dbQueue.writeWithoutTransaction { db in
-                try db.execute(sql: "PRAGMA auto_vacuum = INCREMENTAL")
-                try db.execute(sql: "VACUUM")
+    /// Upgrades a database created with `auto_vacuum = NONE` to `INCREMENTAL`.
+    /// Runs outside transactions; catches and logs any failure (e.g. insufficient disk space)
+    /// without throwing so the database remains fully functional.
+    public func upgradeAutoVacuumIfNeeded() {
+        do {
+            let autoVacuum = try dbQueue.read { db in
+                try Int.fetchOne(db, sql: "PRAGMA auto_vacuum") ?? 0
             }
+            if autoVacuum == 0 {
+                try dbQueue.writeWithoutTransaction { db in
+                    try db.execute(sql: "PRAGMA auto_vacuum = INCREMENTAL")
+                    try db.execute(sql: "VACUUM")
+                }
+            }
+        } catch {
+            Logger.warn("Failed to upgrade auto_vacuum to INCREMENTAL: \(error)")
         }
     }
 

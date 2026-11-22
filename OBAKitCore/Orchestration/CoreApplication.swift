@@ -204,7 +204,13 @@ open class CoreApplication: NSObject,
             return
         }
         let currentRegionID = currentRegion?.regionIdentifier
-        let knownRegionIDs = regionsService.regions.isEmpty ? nil : Set(regionsService.regions.map(\.regionIdentifier))
+        let knownRegionIDs: Set<Int>?
+        if regionsService.canTrustRegionsList {
+            let all = regionsService.allRegions
+            knownRegionIDs = all.isEmpty ? nil : Set(all.map(\.regionIdentifier))
+        } else {
+            knownRegionIDs = nil
+        }
         Task.detached(priority: .utility) {
             repository.pruneExpiredStops(
                 activeRegionID: currentRegionID,
