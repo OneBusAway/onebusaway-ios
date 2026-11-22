@@ -4,6 +4,11 @@
       "edit_bookmark_controller.destination_default_name_fmt",
       "ghost_bus_report.wait.minutes_fmt",
       "ghost_bus_report.wait.thirty_plus",
+      "gtfs_realtime.error.empty_data",
+      "gtfs_realtime.error.future_feed_fmt",
+      "gtfs_realtime.error.malformed_data_fmt",
+      "gtfs_realtime.error.stale_feed_fmt",
+      "gtfs_realtime.error.unsupported_incrementality_fmt",
       "next_departures_intent.sentences_join_fmt",
       "next_departures_intent.stop_departure_no_headsign_fmt",
       "on_demand.eligibility.eligible",
@@ -34,9 +39,7 @@
       "weather.stat.a11y_fmt"
     ],
     "by_locale": {
-      "ar": [
-
-      ],
+      "ar": [],
       "es": [
         "agencies_controller.error_title",
         "common.error",
@@ -129,9 +132,7 @@
         "settings_controller.walking_directions.google",
         "stops_controller.menu.file_title"
       ],
-      "ko": [
-
-      ],
+      "ko": [],
       "pl": [
         "common.alarm",
         "more_controller.debug_section.push_id.title",
@@ -157,16 +158,11 @@
         "settings_controller.walking_directions.apple",
         "settings_controller.walking_directions.google"
       ],
-      "zh-Hans": [
-
-      ],
-      "zh-Hant": [
-
-      ]
+      "zh-Hans": [],
+      "zh-Hant": []
     }
   },
   "allowed_missing": {
-    "by_locale": {
-    }
+    "by_locale": {}
   }
 }

@@ -11,9 +11,9 @@ import Foundation
 import SwiftProtobuf
 
 /// Errors encountered when decoding and validating GTFS-Realtime feeds.
-public enum GTFSRealtimeError: Error, Sendable, Equatable, LocalizedError {
+public enum GTFSRealtimeError: Error, Sendable, LocalizedError {
     case emptyData
-    case malformedData(String)
+    case malformedData(any Error & Sendable)
     case unsupportedIncrementality(TransitRealtime_FeedHeader.Incrementality)
     case staleFeed(timestamp: Date, age: TimeInterval)
     case futureFeed(timestamp: Date, aheadBy: TimeInterval)
@@ -21,15 +21,67 @@ public enum GTFSRealtimeError: Error, Sendable, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .emptyData:
-            return "GTFS-Realtime feed payload is empty."
-        case .malformedData(let details):
-            return "Failed to parse GTFS-Realtime Protobuf message: \(details)"
+            return OBALoc(
+                "gtfs_realtime.error.empty_data",
+                value: "GTFS-Realtime feed payload is empty.",
+                comment: "Error message when feed payload contains zero bytes."
+            )
+        case .malformedData(let error):
+            let format = OBALoc(
+                "gtfs_realtime.error.malformed_data_fmt",
+                value: "Failed to parse GTFS-Realtime Protobuf message: %@",
+                comment: "Error message when feed payload cannot be decoded as protobuf. %@ is the error description."
+            )
+            return String(format: format, error.localizedDescription)
         case .unsupportedIncrementality(let mode):
-            return "Unsupported GTFS-Realtime incrementality mode: \(mode)."
+            let format = OBALoc(
+                "gtfs_realtime.error.unsupported_incrementality_fmt",
+                value: "Unsupported GTFS-Realtime incrementality mode: %@.",
+                comment: "Error message when feed uses unsupported incrementality like differential. %@ is the mode name."
+            )
+            return String(format: format, String(describing: mode))
         case .staleFeed(let timestamp, let age):
-            return "GTFS-Realtime feed is stale (timestamp: \(timestamp), age: \(Int(age))s)."
+            let format = OBALoc(
+                "gtfs_realtime.error.stale_feed_fmt",
+                value: "GTFS-Realtime feed is stale (timestamp: %1$@, age: %2$@).",
+                comment: "Error message when feed timestamp is older than allowed staleness threshold. %1$@ is formatted date, %2$@ is duration."
+            )
+            let dateStr = timestamp.formatted(.iso8601)
+            let ageStr = Self.formatDuration(age)
+            return String(format: format, dateStr, ageStr)
         case .futureFeed(let timestamp, let aheadBy):
-            return "GTFS-Realtime feed timestamp is too far in the future (timestamp: \(timestamp), ahead by: \(Int(aheadBy))s)."
+            let format = OBALoc(
+                "gtfs_realtime.error.future_feed_fmt",
+                value: "GTFS-Realtime feed timestamp is too far in the future (timestamp: %1$@, ahead by: %2$@).",
+                comment: "Error message when feed timestamp exceeds allowable future clock skew. %1$@ is formatted date, %2$@ is duration."
+            )
+            let dateStr = timestamp.formatted(.iso8601)
+            let aheadStr = Self.formatDuration(aheadBy)
+            return String(format: format, dateStr, aheadStr)
+        }
+    }
+
+    private static func formatDuration(_ duration: TimeInterval) -> String {
+        guard duration.isFinite else { return "—" }
+        return String(format: "%.0fs", max(0, duration))
+    }
+}
+
+extension GTFSRealtimeError: Equatable {
+    public static func == (lhs: GTFSRealtimeError, rhs: GTFSRealtimeError) -> Bool {
+        switch (lhs, rhs) {
+        case (.emptyData, .emptyData):
+            return true
+        case (.unsupportedIncrementality(let l), .unsupportedIncrementality(let r)):
+            return l == r
+        case (.staleFeed(let lDate, let lAge), .staleFeed(let rDate, let rAge)):
+            return lDate == rDate && lAge == rAge
+        case (.futureFeed(let lDate, let lAhead), .futureFeed(let rDate, let rAhead)):
+            return lDate == rDate && lAhead == rAhead
+        case (.malformedData(let lErr), .malformedData(let rErr)):
+            return (lErr as NSError) == (rErr as NSError) || String(describing: lErr) == String(describing: rErr)
+        default:
+            return false
         }
     }
 }
@@ -37,7 +89,7 @@ public enum GTFSRealtimeError: Error, Sendable, Equatable, LocalizedError {
 /// Unified decoder and header validator for GTFS-Realtime Protobuf feeds.
 ///
 /// Validates Protobuf structure, feed incrementality (rejecting unsupported `.differential` feeds),
-/// and timestamp staleness / future drift.
+/// and timestamp staleness / future drift when configured.
 public struct GTFSRealtimeFeedParser: Sendable {
 
     /// Maximum permitted age in seconds before a feed is rejected as stale.
@@ -53,7 +105,7 @@ public struct GTFSRealtimeFeedParser: Sendable {
 
     public init(
         maxStaleness: TimeInterval? = nil,
-        maxFutureTolerance: TimeInterval? = 300,
+        maxFutureTolerance: TimeInterval? = nil,
         allowedIncrementalities: Set<TransitRealtime_FeedHeader.Incrementality> = [.fullDataset]
     ) {
         self.maxStaleness = maxStaleness
@@ -61,7 +113,8 @@ public struct GTFSRealtimeFeedParser: Sendable {
         self.allowedIncrementalities = allowedIncrementalities
     }
 
-    /// Default parser with standard validation rules.
+    /// Default parser with standard validation rules. Validates Protobuf structure and incrementality only;
+    /// does not reject feeds on clock skew.
     public static let standard = GTFSRealtimeFeedParser()
 
     /// Deserializes raw Protobuf data and validates the feed header.
@@ -82,7 +135,7 @@ public struct GTFSRealtimeFeedParser: Sendable {
         do {
             message = try TransitRealtime_FeedMessage(serializedBytes: data)
         } catch {
-            throw GTFSRealtimeError.malformedData(error.localizedDescription)
+            throw GTFSRealtimeError.malformedData(error)
         }
 
         try validateHeader(message.header, referenceDate: referenceDate)
@@ -110,25 +163,10 @@ public struct GTFSRealtimeFeedParser: Sendable {
 
             if let maxFutureTolerance, age < -maxFutureTolerance {
                 throw GTFSRealtimeError.futureFeed(timestamp: feedDate, aheadBy: -age)
+            } else if age < 0 {
+                let skewSeconds = String(format: "%.1f", -age)
+                Logger.warn("GTFSRealtimeFeedParser: feed timestamp \(feedDate) is in the future relative to device clock (skew: \(skewSeconds)s)")
             }
         }
-    }
-
-    /// Parses feed message and returns all valid alert entities.
-    public func parseAlertEntities(data: Data, referenceDate: Date = Date()) throws -> [TransitRealtime_FeedEntity] {
-        let message = try parse(data: data, referenceDate: referenceDate)
-        return message.entity.filter { $0.hasAlert }
-    }
-
-    /// Parses feed message and returns all valid vehicle position entities.
-    public func parseVehicleEntities(data: Data, referenceDate: Date = Date()) throws -> [TransitRealtime_FeedEntity] {
-        let message = try parse(data: data, referenceDate: referenceDate)
-        return message.entity.filter { $0.hasVehicle }
-    }
-
-    /// Parses feed message and returns all valid trip update entities.
-    public func parseTripUpdateEntities(data: Data, referenceDate: Date = Date()) throws -> [TransitRealtime_FeedEntity] {
-        let message = try parse(data: data, referenceDate: referenceDate)
-        return message.entity.filter { $0.hasTripUpdate }
     }
 }

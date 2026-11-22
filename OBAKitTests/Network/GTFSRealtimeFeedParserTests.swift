@@ -40,11 +40,21 @@ final class GTFSRealtimeFeedParserTests {
         }
     }
 
-    @Test func `Malformed bytes throw malformedData error`() {
+    @Test func `Malformed bytes throw malformedData error preserving underlying error`() {
         let parser = GTFSRealtimeFeedParser.standard
         let garbage = Data([0xFF, 0xFE, 0xFD, 0x00, 0x01, 0x02, 0xAA, 0xBB])
-        #expect(throws: GTFSRealtimeError.self) {
-            try parser.parse(data: garbage)
+
+        do {
+            _ = try parser.parse(data: garbage)
+            Issue.record("Expected malformedData error to be thrown")
+        } catch let error as GTFSRealtimeError {
+            guard case .malformedData(let underlying) = error else {
+                Issue.record("Expected .malformedData, got \(error)")
+                return
+            }
+            #expect(underlying is BinaryDecodingError)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
         }
     }
 
@@ -73,6 +83,17 @@ final class GTFSRealtimeFeedParserTests {
         }
     }
 
+    @Test func `Standard parser accepts future feed without rejecting on clock skew`() throws {
+        let parser = GTFSRealtimeFeedParser.standard
+        let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let futureTimestamp: UInt64 = 1_700_000_000 + 3600 // 1 hour in the future
+
+        let data = try makeFeedData(timestamp: futureTimestamp, incrementality: .fullDataset)
+        let message = try parser.parse(data: data, referenceDate: referenceDate)
+
+        #expect(message.header.timestamp == futureTimestamp)
+    }
+
     @Test func `Feed header timestamp staleness validation rejects outdated feeds`() throws {
         let parser = GTFSRealtimeFeedParser(maxStaleness: 300) // 5 minutes max staleness
         let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
@@ -95,7 +116,7 @@ final class GTFSRealtimeFeedParserTests {
         }
     }
 
-    @Test func `Feed header timestamp too far in future is rejected`() throws {
+    @Test func `Opt-in future tolerance rejects feeds exceeding threshold`() throws {
         let parser = GTFSRealtimeFeedParser(maxFutureTolerance: 120) // 2 minutes max future drift
         let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
         let futureTimestamp: UInt64 = 1_700_000_000 + 300 // 5 minutes ahead
@@ -117,32 +138,27 @@ final class GTFSRealtimeFeedParserTests {
         }
     }
 
-    @Test func `Convenience entity extractors filter alert and vehicle types`() throws {
-        let parser = GTFSRealtimeFeedParser.standard
+    @Test func `Error description formats durations without integer overflow trap`() {
+        let testDate = Date(timeIntervalSince1970: 1_700_000_000)
 
-        var alertEntity = TransitRealtime_FeedEntity()
-        alertEntity.id = "alert_1"
-        alertEntity.alert = TransitRealtime_Alert()
+        // Standard values
+        let stale = GTFSRealtimeError.staleFeed(timestamp: testDate, age: 300)
+        #expect(stale.errorDescription?.contains("300s") == true)
 
-        var vehicleEntity = TransitRealtime_FeedEntity()
-        vehicleEntity.id = "vehicle_1"
-        vehicleEntity.vehicle = TransitRealtime_VehiclePosition()
+        let future = GTFSRealtimeError.futureFeed(timestamp: testDate, aheadBy: 120)
+        #expect(future.errorDescription?.contains("120s") == true)
 
-        var tripEntity = TransitRealtime_FeedEntity()
-        tripEntity.id = "trip_1"
-        var tripUpdate = TransitRealtime_TripUpdate()
-        tripUpdate.trip = TransitRealtime_TripDescriptor()
-        tripUpdate.trip.tripID = "trip_id_1"
-        tripEntity.tripUpdate = tripUpdate
+        // Extreme values that would overflow Int on 32-bit watchOS or trap in Int(Double)
+        let hugeStale = GTFSRealtimeError.staleFeed(timestamp: testDate, age: Double.greatestFiniteMagnitude)
+        #expect(hugeStale.errorDescription != nil)
 
-        let data = try makeFeedData(entities: [alertEntity, vehicleEntity, tripEntity])
+        let infiniteFuture = GTFSRealtimeError.futureFeed(timestamp: testDate, aheadBy: Double.infinity)
+        #expect(infiniteFuture.errorDescription != nil)
 
-        let alerts = try parser.parseAlertEntities(data: data)
-        let vehicles = try parser.parseVehicleEntities(data: data)
-        let trips = try parser.parseTripUpdateEntities(data: data)
+        let empty = GTFSRealtimeError.emptyData
+        #expect(empty.errorDescription != nil)
 
-        #expect(alerts.map(\.id) == ["alert_1"])
-        #expect(vehicles.map(\.id) == ["vehicle_1"])
-        #expect(trips.map(\.id) == ["trip_1"])
+        let unsupported = GTFSRealtimeError.unsupportedIncrementality(.differential)
+        #expect(unsupported.errorDescription != nil)
     }
 }
