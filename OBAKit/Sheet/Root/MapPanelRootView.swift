@@ -565,6 +565,11 @@ struct MapPanelRootView: View {
             guard let visibleMapRectHeight else { return }
             updateRentalZoomHint(visibleMapRectHeight: visibleMapRectHeight)
         }
+        // Rentals hide while a stop's routes are drawn, and their hint with them.
+        .onChange(of: routeFocusedStopID) { _, _ in
+            guard let visibleMapRectHeight else { return }
+            updateRentalZoomHint(visibleMapRectHeight: visibleMapRectHeight)
+        }
         .onChange(of: mismatchCamera.applyLaunch) { _, flag in
             guard flag else { return }
             mismatchCamera.applyLaunch = false
@@ -875,8 +880,7 @@ struct MapPanelRootView: View {
         .tag(MapPinSelection.stop(stop.id))
     }
 
-    /// A stop other than the open one while its routes are drawn (when bikes and
-    /// scooters hide altogether): a small dot
+    /// A stop other than the open one while its routes are drawn: a small dot
     /// rather than a pin, so the routes read first. No label, no selection tag
     /// and no hit testing, so it can't be tapped, and hidden from VoiceOver,
     /// which reaches stops through the open stop's sheet meanwhile. Bookmarks
@@ -896,8 +900,9 @@ struct MapPanelRootView: View {
 
     private static let stopDotDiameter: CGFloat = 9
 
-    /// The stop whose routes are drawn on the map, when they are; see
-    /// `stopDot(for:isBookmarked:)`.
+    /// The stop whose routes are drawn on the map, when they are. Every other
+    /// stop is then a dot (`stopDot(for:isBookmarked:)`), and bikes and
+    /// scooters hide, with their zoom hint.
     private var routeFocusedStopID: StopID? {
         guard stopTakesMap,
               let display = stopFocusDisplay.display, !display.routes.isEmpty,
@@ -1210,7 +1215,7 @@ extension MapPanelRootView {
     private func updateRentalZoomHint(visibleMapRectHeight height: Double) {
         mapViewModel.updateRentalZoomHint(MapRegionManager.shouldShowRentalZoomHint(
             forVisibleMapRectHeight: height,
-            rentalLayerEnabled: application.mapRegionManager.isAnyRentalLayerShowing
+            rentalLayerEnabled: application.mapRegionManager.isAnyRentalLayerShowing && routeFocusedStopID == nil
         ))
     }
 
