@@ -23,6 +23,26 @@ public final class StopCacheRepository: Sendable {
 
     // MARK: - Freshness
 
+    /// Returns the set of distinct region IDs currently present in the cache.
+    public func cachedRegionIDs() -> Set<Int> {
+        do {
+            return try database.dbQueue.read { db in
+                let sql = """
+                SELECT DISTINCT regionId FROM cachedStop
+                UNION
+                SELECT DISTINCT regionId FROM cachedStopSync
+                UNION
+                SELECT DISTINCT regionId FROM regionStopSync
+                """
+                let ids = try Int.fetchAll(db, sql: sql)
+                return Set(ids)
+            }
+        } catch {
+            Logger.error("Failed to query cached region IDs: \(error)")
+            return []
+        }
+    }
+
     /// Classifies a region from its last successful sync. Unsynced
     /// caches are expired so callers have one deterministic answer before
     /// deciding whether offline data may be used.
@@ -490,6 +510,97 @@ public final class StopCacheRepository: Sendable {
     }
 
     // MARK: - Delete
+
+    /// Prunes expired stops and routes across cached regions.
+    /// Fully clears retired regions (regions not in `knownRegionIDs`).
+    /// Prunes expired stops and routes older than `date` in all inactive regions (and the active region if specified).
+    /// Checks database freelistCount against threshold; triggers incrementalVacuum if >= threshold.
+    /// - Returns: whether incremental vacuum was executed.
+    @discardableResult
+    public func pruneExpiredStops(
+        activeRegionID: Int?,
+        olderThan date: Date = Date().addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval),
+        knownRegionIDs: Set<Int>? = nil,
+        freelistPageThreshold: Int = StopCacheDatabase.defaultFreelistThreshold
+    ) -> Bool {
+        prune(
+            activeRegionID: activeRegionID,
+            pruneActiveRegion: true,
+            olderThan: date,
+            knownRegionIDs: knownRegionIDs,
+            freelistPageThreshold: freelistPageThreshold
+        )
+    }
+
+    /// Prunes inactive and retired regions.
+    /// Fully clears retired regions (regions not in `knownRegionIDs`, excluding `activeRegionID`).
+    /// Prunes expired stops and routes older than `date` in all inactive regions, preserving the active region.
+    /// Checks database freelistCount against threshold; triggers incrementalVacuum if >= threshold.
+    /// - Returns: whether incremental vacuum was executed.
+    @discardableResult
+    public func pruneInactiveRegions(
+        activeRegionID: Int? = nil,
+        olderThan date: Date = Date().addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval),
+        knownRegionIDs: Set<Int>? = nil,
+        freelistPageThreshold: Int = StopCacheDatabase.defaultFreelistThreshold
+    ) -> Bool {
+        prune(
+            activeRegionID: activeRegionID,
+            pruneActiveRegion: false,
+            olderThan: date,
+            knownRegionIDs: knownRegionIDs,
+            freelistPageThreshold: freelistPageThreshold
+        )
+    }
+
+    private func prune(
+        activeRegionID: Int?,
+        pruneActiveRegion: Bool,
+        olderThan date: Date,
+        knownRegionIDs: Set<Int>?,
+        freelistPageThreshold: Int
+    ) -> Bool {
+        database.upgradeAutoVacuumIfNeeded()
+
+        let cachedIDs = cachedRegionIDs()
+
+        let retiredIDs: Set<Int>
+        if let knownRegionIDs {
+            var candidateRetired = cachedIDs.subtracting(knownRegionIDs)
+            if let activeRegionID {
+                candidateRetired.remove(activeRegionID)
+            }
+            retiredIDs = candidateRetired
+            for regionId in retiredIDs {
+                clearCache(regionId: regionId)
+            }
+        } else {
+            retiredIDs = []
+        }
+
+        let remainingIDs = cachedIDs.subtracting(retiredIDs)
+        for regionId in remainingIDs {
+            if let activeRegionID, regionId == activeRegionID {
+                if pruneActiveRegion {
+                    deleteStopsOlderThan(date, regionId: regionId)
+                }
+            } else {
+                deleteStopsOlderThan(date, regionId: regionId)
+            }
+        }
+
+        let freelist = database.freelistCount
+        if freelist >= freelistPageThreshold {
+            do {
+                try database.incrementalVacuum()
+                return true
+            } catch {
+                Logger.error("Failed to run incremental vacuum: \(error)")
+                return false
+            }
+        }
+        return false
+    }
 
     /// Deletes cached stops and routes older than the given date for a specific region.
     /// A stop's routes are rewritten whenever the stop is, so no fresh stop loses its routes.

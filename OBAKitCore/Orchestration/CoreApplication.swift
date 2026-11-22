@@ -200,13 +200,22 @@ open class CoreApplication: NSObject,
     /// Purges cached stops older than 30 days for the current region.
     /// Called during `refreshServices()` (app launch and region change).
     private func purgeStaleStopCache() {
-        guard let repository = stopCacheRepository,
-              let regionId = currentRegion?.regionIdentifier else {
+        guard let repository = stopCacheRepository else {
             return
         }
+        let currentRegionID = currentRegion?.regionIdentifier
+        let knownRegionIDs: Set<Int>?
+        if regionsService.canTrustRegionsList {
+            let all = regionsService.allRegions
+            knownRegionIDs = all.isEmpty ? nil : Set(all.map(\.regionIdentifier))
+        } else {
+            knownRegionIDs = nil
+        }
         Task.detached(priority: .utility) {
-            let thirtyDaysAgo = Date().addingTimeInterval(-StopCacheFreshnessPolicy.expirationInterval)
-            repository.deleteStopsOlderThan(thirtyDaysAgo, regionId: regionId)
+            repository.pruneExpiredStops(
+                activeRegionID: currentRegionID,
+                knownRegionIDs: knownRegionIDs
+            )
         }
     }
 
