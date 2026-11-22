@@ -55,6 +55,13 @@ public enum ErrorClassifier {
                 return inner.map { category(for: $0) } ?? .offline
             case .captivePortal, .cellularDataRestricted:
                 return .offline
+            case .tlsError(let reason, _):
+                switch reason {
+                case .untrustedCertificate, .expiredCertificate:
+                    return .server
+                case .handshakeFailed:
+                    return .offline
+                }
             default:
                 return .unknown
             }
@@ -72,6 +79,15 @@ public enum ErrorClassifier {
             case NSURLErrorCannotConnectToHost,
                  NSURLErrorCannotFindHost:
                 return .server
+            case NSURLErrorServerCertificateUntrusted,
+                 NSURLErrorServerCertificateHasUnknownRoot,
+                 NSURLErrorServerCertificateHasBadDate,
+                 NSURLErrorServerCertificateNotYetValid:
+                return .server
+            case NSURLErrorSecureConnectionFailed,
+                 NSURLErrorClientCertificateRejected,
+                 NSURLErrorClientCertificateRequired:
+                return .offline
             default:
                 return .unknown
             }
@@ -90,7 +106,7 @@ public enum ErrorClassifier {
         // Already-classified errors pass through unchanged.
         if let apiError = error as? APIError {
             switch apiError {
-            case .serverError, .serverUnavailable, .invalidResponseData, .cellularDataRestricted, .rateLimited:
+            case .serverError, .serverUnavailable, .invalidResponseData, .cellularDataRestricted, .rateLimited, .tlsError:
                 return apiError
             default:
                 return classifyAPIError(apiError, regionName: regionName, isCellularDataRestricted: isCellularDataRestricted)
@@ -150,10 +166,17 @@ public enum ErrorClassifier {
             }
             return APIError.invalidResponseData(regionName: regionName)
 
-        case .networkFailure:
+        case .networkFailure(let inner):
             if isCellularDataRestricted {
                 logger.info("Network failure reclassified as cellular data restriction.")
                 return APIError.cellularDataRestricted
+            }
+            if let inner = inner as? NSError, inner.domain == NSURLErrorDomain {
+                let classified = classifyURLError(inner, regionName: regionName, isCellularDataRestricted: isCellularDataRestricted)
+                if case .networkFailure = classified as? APIError {
+                    return apiError
+                }
+                return classified
             }
             return apiError
 
@@ -181,6 +204,19 @@ public enum ErrorClassifier {
                 return APIError.networkFailure(nsError)
             }
             return APIError.serverUnavailable(regionName: regionName, statusCode: nil, underlyingError: nsError)
+
+        case NSURLErrorServerCertificateUntrusted,
+             NSURLErrorServerCertificateHasUnknownRoot:
+            return APIError.tlsError(reason: .untrustedCertificate, underlyingError: nsError)
+
+        case NSURLErrorServerCertificateHasBadDate,
+             NSURLErrorServerCertificateNotYetValid:
+            return APIError.tlsError(reason: .expiredCertificate, underlyingError: nsError)
+
+        case NSURLErrorSecureConnectionFailed,
+             NSURLErrorClientCertificateRejected,
+             NSURLErrorClientCertificateRequired:
+            return APIError.tlsError(reason: .handshakeFailed, underlyingError: nsError)
 
         default:
             return APIError.networkFailure(nsError)

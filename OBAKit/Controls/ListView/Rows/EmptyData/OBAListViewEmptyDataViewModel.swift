@@ -71,6 +71,8 @@ extension EmptyDataSetView {
             symbolName = "doc.text.magnifyingglass"
         case .noRegionSelected:
             symbolName = "location.slash"
+        case .tlsError:
+            symbolName = "lock.shield"
         }
         return UIImage(systemName: symbolName)
     }

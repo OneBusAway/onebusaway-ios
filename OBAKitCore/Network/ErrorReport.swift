@@ -346,6 +346,13 @@ public struct ErrorReport: Sendable {
         case .noRegionSelected: return .noRegionSelected
         case .surveyServiceNotConfigured: return .silent
         case .requestFailure: return .fallback
+        case .tlsError(let reason, _):
+            switch reason {
+            case .untrustedCertificate, .expiredCertificate:
+                return .serverUnavailable
+            case .handshakeFailed:
+                return .offline
+            }
         }
     }
 
@@ -526,7 +533,7 @@ public struct ErrorReport: Sendable {
 
     private static func innermostError(_ error: Error) -> Error {
         switch error as? APIError {
-        case .networkFailure(let inner?), .serverUnavailable(_, _, let inner?):
+        case .networkFailure(let inner?), .serverUnavailable(_, _, let inner?), .tlsError(_, let inner?):
             return inner
         default:
             return error
@@ -541,7 +548,7 @@ public struct ErrorReport: Sendable {
             switch apiError {
             case .requestFailure(let response), .requestNotFound(let response):
                 return response.url
-            case .networkFailure(let inner?):
+            case .networkFailure(let inner?), .tlsError(_, let inner?):
                 return requestURL(from: inner)
             default:
                 return nil

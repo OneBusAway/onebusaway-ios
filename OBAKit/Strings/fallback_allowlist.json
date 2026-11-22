@@ -1,6 +1,9 @@
 {
   "intentional_fallbacks": {
     "all": [
+      "api_error.tls_expired_cert",
+      "api_error.tls_handshake_failed",
+      "api_error.tls_untrusted_cert",
       "edit_bookmark_controller.destination_default_name_fmt",
       "ghost_bus_report.wait.minutes_fmt",
       "ghost_bus_report.wait.thirty_plus",

@@ -68,7 +68,14 @@ final class ErrorClassifierTests {
             ("403", APIError.requestFailure(response(403))),
             ("429", APIError.requestFailure(response(429))),
             ("500", APIError.requestFailure(response(500))),
-            ("503", APIError.requestFailure(response(503)))
+            ("503", APIError.requestFailure(response(503))),
+            ("untrusted cert", NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted)),
+            ("unknown root", NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasUnknownRoot)),
+            ("expired cert", NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasBadDate)),
+            ("not yet valid cert", NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateNotYetValid)),
+            ("handshake failed", NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed)),
+            ("client cert rejected", NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRejected)),
+            ("client cert required", NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRequired))
         ]
         for (name, error) in errors {
             for region in ["Puget Sound", nil] {
@@ -663,6 +670,144 @@ final class ErrorClassifierTests {
 
         #expect(description.contains("Settings"))
         #expect(description.contains("Cellular"))
+    }
+
+    // MARK: - SSL/TLS Error Classification
+
+    @Test func `Classify url error untrusted certificate becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted)
+        let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound")
+
+        guard case .tlsError(let reason, let underlying) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .untrustedCertificate)
+        #expect((underlying as NSError?)?.code == NSURLErrorServerCertificateUntrusted)
+    }
+
+    @Test func `Classify url error unknown root certificate becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasUnknownRoot)
+        let result = ErrorClassifier.classify(urlError, regionName: "Tampa")
+
+        guard case .tlsError(let reason, _) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .untrustedCertificate)
+    }
+
+    @Test func `Classify url error bad date certificate becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasBadDate)
+        let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound")
+
+        guard case .tlsError(let reason, let underlying) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .expiredCertificate)
+        #expect((underlying as NSError?)?.code == NSURLErrorServerCertificateHasBadDate)
+    }
+
+    @Test func `Classify url error not yet valid certificate becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateNotYetValid)
+        let result = ErrorClassifier.classify(urlError, regionName: "San Diego")
+
+        guard case .tlsError(let reason, _) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .expiredCertificate)
+    }
+
+    @Test func `Classify url error secure connection failed becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed)
+        let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound")
+
+        guard case .tlsError(let reason, let underlying) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .handshakeFailed)
+        #expect((underlying as NSError?)?.code == NSURLErrorSecureConnectionFailed)
+    }
+
+    @Test func `Classify url error client cert rejected becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRejected)
+        let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound")
+
+        guard case .tlsError(let reason, _) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .handshakeFailed)
+    }
+
+    @Test func `Classify network failure wrapping untrusted cert becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted)
+        let wrapped = APIError.networkFailure(urlError)
+        let result = ErrorClassifier.classify(wrapped, regionName: "Puget Sound")
+
+        guard case .tlsError(let reason, _) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .untrustedCertificate)
+    }
+
+    @Test func `Classify tls error passes through unchanged`() {
+        let error = APIError.tlsError(reason: .untrustedCertificate)
+        let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
+
+        guard case .tlsError(let reason, _) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .untrustedCertificate)
+    }
+
+    @Test func `Category for TLS errors returns server or offline`() {
+        let untrustedRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted)
+        let expiredRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasBadDate)
+        let handshakeRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed)
+
+        let untrustedTyped = APIError.tlsError(reason: .untrustedCertificate)
+        let expiredTyped = APIError.tlsError(reason: .expiredCertificate)
+        let handshakeTyped = APIError.tlsError(reason: .handshakeFailed)
+
+        #expect(ErrorClassifier.category(for: untrustedRaw) == .server)
+        #expect(ErrorClassifier.category(for: expiredRaw) == .server)
+        #expect(ErrorClassifier.category(for: handshakeRaw) == .offline)
+
+        #expect(ErrorClassifier.category(for: untrustedTyped) == .server)
+        #expect(ErrorClassifier.category(for: expiredTyped) == .server)
+        #expect(ErrorClassifier.category(for: handshakeTyped) == .offline)
+    }
+
+    @Test func `TLS error descriptions contain user friendly recovery text`() {
+        let untrusted = APIError.tlsError(reason: .untrustedCertificate)
+        let expired = APIError.tlsError(reason: .expiredCertificate)
+        let handshake = APIError.tlsError(reason: .handshakeFailed)
+
+        let untrustedDesc = untrusted.localizedDescription
+        #expect(untrustedDesc.contains("trusted"))
+        #expect(untrustedDesc.contains("Wi-Fi") || untrustedDesc.contains("cellular"))
+
+        let expiredDesc = expired.localizedDescription
+        #expect(expiredDesc.contains("expired"))
+        #expect(expiredDesc.contains("Settings") || expiredDesc.contains("date"))
+
+        let handshakeDesc = handshake.localizedDescription
+        #expect(handshakeDesc.contains("secure connection") || handshakeDesc.contains("connection"))
+        #expect(handshakeDesc.contains("VPN") || handshakeDesc.contains("network"))
     }
 }
 
