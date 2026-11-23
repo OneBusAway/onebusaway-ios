@@ -12,20 +12,6 @@ import CoreLocation
 
 extension LocationService {
 
-    /// An asynchronous stream of location updates delivered as they are received.
-    ///
-    /// Subscribing to this stream automatically starts location tracking on the underlying
-    /// location manager if not already running. When the stream consumer terminates or cancels,
-    /// the subscriber is removed; when active subscribers drop to zero, location tracking halts.
-    public var locations: AsyncStream<CLLocation> {
-        locationStream()
-    }
-
-    /// A convenience property exposing the async location stream.
-    public var locationStream: AsyncStream<CLLocation> {
-        locationStream()
-    }
-
     /// Creates and returns an `AsyncStream<CLLocation>` with automatic start/stop tracking
     /// tied to the stream consumer's lifecycle.
     ///

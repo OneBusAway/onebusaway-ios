@@ -242,11 +242,14 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         // `CLLocationManager` left running keeps the location-usage indicator lit
         // and the magnetometer powered for the rest of the process.
         if isLocationUseAuthorized {
-            if startsUpdatesOnAuthorization || !locationStreamContinuations.isEmpty {
-                startUpdatingLocation()
-            }
             if startsUpdatesOnAuthorization {
+                startUpdatingLocation()
                 startUpdatingHeading()
+            } else if !locationStreamContinuations.isEmpty {
+                if !isUpdatingLocation {
+                    streamStartedLocationUpdates = true
+                    performStartUpdatingLocation()
+                }
             }
         } else {
             stopUpdates()
@@ -387,6 +390,9 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// Whether continuous location updates are actively running on the underlying manager.
     public private(set) var isUpdatingLocation: Bool = false
 
+    /// Whether continuous location updates were initiated by an active stream subscriber.
+    private var streamStartedLocationUpdates: Bool = false
+
     public func startUpdates() {
         startUpdatingLocation()
         startUpdatingHeading()
@@ -400,6 +406,11 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     // MARK: - Location
 
     public func startUpdatingLocation() {
+        streamStartedLocationUpdates = false
+        performStartUpdatingLocation()
+    }
+
+    private func performStartUpdatingLocation() {
         guard isLocationUseAuthorized else {
             return
         }
@@ -419,6 +430,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// and external stops all come through here.
     public func stopUpdatingLocation() {
         isUpdatingLocation = false
+        streamStartedLocationUpdates = false
         failOneShotRequests(with: LocationServiceError.notAuthorized)
         locationManager.stopUpdatingLocation()
     }
@@ -434,17 +446,22 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     }
 
     func addLocationStreamSubscriber(id: UUID, continuation: AsyncStream<CLLocation>.Continuation) {
-        let wasEmpty = locationStreamContinuations.isEmpty
-        locationStreamContinuations[id] = continuation
-        if wasEmpty {
-            startUpdatingLocation()
+        if locationStreamContinuations.isEmpty {
+            if !isUpdatingLocation {
+                streamStartedLocationUpdates = true
+                performStartUpdatingLocation()
+            }
         }
+        locationStreamContinuations[id] = continuation
     }
 
     func removeLocationStreamSubscriber(id: UUID) {
         guard locationStreamContinuations.removeValue(forKey: id) != nil else { return }
         if locationStreamContinuations.isEmpty {
-            stopUpdatingLocation()
+            if streamStartedLocationUpdates {
+                streamStartedLocationUpdates = false
+                stopUpdatingLocation()
+            }
         }
     }
 

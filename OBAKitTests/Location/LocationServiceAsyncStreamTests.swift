@@ -10,7 +10,6 @@
 import Foundation
 import CoreLocation
 import Testing
-@testable import OBAKit
 @testable import OBAKitCore
 
 @MainActor
@@ -52,7 +51,7 @@ final class LocationServiceAsyncStreamTests {
         let (_, service) = makeService()
         service.requestInUseAuthorization()
 
-        let stream = service.locations
+        let stream = service.locationStream()
         var iterator = stream.makeAsyncIterator()
 
         let firstFix = TestData.mockSeattleLocation
@@ -74,7 +73,7 @@ final class LocationServiceAsyncStreamTests {
         let (_, service) = makeService()
         service.requestInUseAuthorization()
 
-        let stream1 = service.locations
+        let stream1 = service.locationStream()
         let stream2 = service.locationStream()
         var iterator1 = stream1.makeAsyncIterator()
         var iterator2 = stream2.makeAsyncIterator()
@@ -97,7 +96,7 @@ final class LocationServiceAsyncStreamTests {
 
         var receivedLocations: [CLLocation] = []
         let task = Task { @MainActor in
-            for await location in service.locations {
+            for await location in service.locationStream() {
                 receivedLocations.append(location)
             }
         }
@@ -137,7 +136,7 @@ final class LocationServiceAsyncStreamTests {
         #expect(service.locationStreamSubscriberCount == 0)
 
         // First subscriber starts updates
-        let stream1 = service.locations
+        let stream1 = service.locationStream()
         let task1 = Task { @MainActor in
             for await _ in stream1 {}
         }
@@ -148,7 +147,7 @@ final class LocationServiceAsyncStreamTests {
         #expect(service.isUpdatingLocation)
 
         // Second subscriber joins; updates continue
-        let stream2 = service.locations
+        let stream2 = service.locationStream()
         let task2 = Task { @MainActor in
             for await _ in stream2 {}
         }
@@ -182,7 +181,7 @@ final class LocationServiceAsyncStreamTests {
         #expect(!mock.locationUpdatesStarted)
         #expect(!service.isUpdatingLocation)
 
-        let stream = service.locations
+        let stream = service.locationStream()
         let task = Task { @MainActor in
             for await _ in stream {}
         }
@@ -204,29 +203,38 @@ final class LocationServiceAsyncStreamTests {
         #expect(!service.isUpdatingLocation)
     }
 
-    @Test func `Property and method facades return active streams`() async {
-        let (_, service) = makeService()
-        service.requestInUseAuthorization()
+    // MARK: - Stream Cancellation Does Not Stop Preexisting Updates
 
-        let fromProperty = service.locations
-        let fromPropertyAlias = service.locationStream
-        let fromMethod = service.locationStream(bufferingPolicy: .unbounded)
+    @Test func `Stream cancellation preserves updates when updates were already running`() async {
+        let (mock, service) = makeService(startsUpdatesOnAuthorization: false)
+        mock.requestWhenInUseAuthorization()
 
-        #expect(service.locationStreamSubscriberCount == 3)
+        // Explicitly start continuous updates first
+        service.startUpdatingLocation()
+        #expect(service.isUpdatingLocation)
+        #expect(mock.locationUpdatesStarted)
 
-        var it1 = fromProperty.makeAsyncIterator()
-        var it2 = fromPropertyAlias.makeAsyncIterator()
-        var it3 = fromMethod.makeAsyncIterator()
+        // Subscribe to location stream
+        let stream = service.locationStream()
+        let task = Task { @MainActor in
+            for await _ in stream {}
+        }
 
-        let fix = TestData.mockSeattleLocation
-        service.locationManager(CLLocationManager(), didUpdateLocations: [fix])
+        await poll(until: { service.locationStreamSubscriberCount == 1 }, "subscriber did not register")
+        #expect(service.locationStreamSubscriberCount == 1)
+        #expect(service.isUpdatingLocation)
+        #expect(mock.locationUpdatesStarted)
 
-        let r1 = await it1.next()
-        let r2 = await it2.next()
-        let r3 = await it3.next()
+        // Cancel subscriber: updates must continue running for the rest of the app
+        task.cancel()
+        await poll(until: { service.locationStreamSubscriberCount == 0 }, "subscriber did not terminate")
+        #expect(service.locationStreamSubscriberCount == 0)
+        #expect(service.isUpdatingLocation)
+        #expect(mock.locationUpdatesStarted)
 
-        #expect(r1 == fix)
-        #expect(r2 == fix)
-        #expect(r3 == fix)
+        // Explicit stop stops updates
+        service.stopUpdatingLocation()
+        #expect(!service.isUpdatingLocation)
+        #expect(!mock.locationUpdatesStarted)
     }
 }
