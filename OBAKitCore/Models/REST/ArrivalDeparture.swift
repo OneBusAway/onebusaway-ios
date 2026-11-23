@@ -279,9 +279,13 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         }
     }
 
-    /// Number of minutes until/after `arrivalDepartureDate`.
+    /// Number of minutes until/after `arrivalDepartureDate`, rounded down to the
+    /// minute containing the departure: the minute still in progress is 0, and
+    /// any elapsed time after the departure is negative, so the `.past`
+    /// boundary in `temporalState` lands on the departure itself instead of a
+    /// minute after it.
     public var arrivalDepartureMinutes: Int {
-        return Int(arrivalDepartureDate.timeIntervalSinceNow / 60.0)
+        return Int(floor(arrivalDepartureDate.timeIntervalSinceNow / 60.0))
     }
 
     /// Whether `arrivalDepartureDate` occurred in the past, is occurring now, or is occurring in the future.
