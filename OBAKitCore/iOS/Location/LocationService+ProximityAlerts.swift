@@ -22,6 +22,7 @@ extension LocationService {
     private final class ProximityRetryState {
         struct Entry {
             var attemptCount: Int
+            var taskID: UUID?
             var task: Task<Void, Never>?
             var region: CLCircularRegion?
         }
@@ -215,7 +216,7 @@ extension LocationService {
         region.notifyOnEntry = true
         region.notifyOnExit = false
 
-        retryState.entries[identifier] = ProximityRetryState.Entry(attemptCount: 0, task: nil, region: region)
+        retryState.entries[identifier] = ProximityRetryState.Entry(attemptCount: 0, taskID: nil, task: nil, region: region)
 
         regionMonitor.startMonitoring(for: region)
 
@@ -262,7 +263,9 @@ extension LocationService {
     public func locationManager(_ manager: CLLocationManager, didStartMonitoringFor region: CLRegion) {
         guard region.identifier.hasPrefix(Self.proximityRegionPrefix) else { return }
         retryState.entries[region.identifier]?.attemptCount = 0
+        retryState.entries[region.identifier]?.task?.cancel()
         retryState.entries[region.identifier]?.task = nil
+        retryState.entries[region.identifier]?.taskID = nil
     }
 
     public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
@@ -309,9 +312,25 @@ extension LocationService {
             return
         }
 
+        // Apple defines .regionMonitoringResponseDelayed as events still being delivered, possibly late.
+        // The geofence is already armed and monitoring; retrying would disarm/re-arm a working geofence
+        // and drop entry events for users already inside.
+        if let clError = error as? CLError, clError.code == .regionMonitoringResponseDelayed {
+            Logger.info("Region monitoring response delayed for proximity region \(identifier); leaving it armed without retry.")
+            notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
+            return
+        }
+
         // Only retry transient failures if an entry already exists for an alert that is currently tracked and wanted.
         guard let entry = retryState.entries[identifier] else {
             Logger.warn("Region monitoring transient failure ignored for untracked or deleted proximity region \(identifier) (\(kind)): \(error)")
+            return
+        }
+
+        // A retry attempt is already scheduled/pending. Ignore redundant callbacks from
+        // bursts so they do not consume the retry budget before an attempt executes.
+        guard entry.task == nil else {
+            Logger.info("Ignoring transient region monitoring failure callback burst for \(identifier); retry attempt \(entry.attemptCount) is already pending.")
             return
         }
 
@@ -329,8 +348,7 @@ extension LocationService {
         Logger.info("Region monitoring delayed/transient error for proximity region \(identifier) (\(kind)): scheduling retry attempt \(currentAttempt)/\(regionMonitoringRetryPolicy.maxAttempts) in \(delay)s.")
 
         let targetRegion: CLCircularRegion? = (region as? CLCircularRegion) ?? entry.region
-
-        entry.task?.cancel()
+        let retryID = UUID()
 
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -348,6 +366,13 @@ extension LocationService {
             }
 
             guard !Task.isCancelled else { return }
+
+            // Ensure the alert still exists and this retry task is still current.
+            // If didStartMonitoringFor or an alert deletion occurred while sleeping, abort.
+            guard let currentEntry = self.retryState.entries[identifier], currentEntry.taskID == retryID else {
+                Logger.info("Retry task for proximity region \(identifier) cancelled or superseded; not re-arming.")
+                return
+            }
 
             guard self.isProximityMonitoringAuthorized else {
                 Logger.warn("Retry aborted for proximity region \(identifier): authorization is no longer Always (\(self.authorizationStatus)).")
@@ -372,13 +397,14 @@ extension LocationService {
             Logger.info("Retrying region monitoring (attempt \(currentAttempt)) for proximity region \(identifier).")
             self.regionMonitor.stopMonitoring(for: circularRegion)
             self.regionMonitor.startMonitoring(for: circularRegion)
-            if self.retryState.entries[identifier]?.attemptCount == currentAttempt {
+            if self.retryState.entries[identifier]?.taskID == retryID {
                 self.retryState.entries[identifier]?.task = nil
             }
         }
 
         retryState.entries[identifier] = ProximityRetryState.Entry(
             attemptCount: currentAttempt,
+            taskID: retryID,
             task: task,
             region: targetRegion
         )

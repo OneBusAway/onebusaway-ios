@@ -629,13 +629,13 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
         if let task = self.service.pendingRetryTask(for: alert) { await task.value }
 
         // Attempt 2
-        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringResponseDelayed))
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.network))
         #expect(self.delegate.monitoringFailedCallCount == 0)
         #expect(self.service.retryAttemptCount(for: alert) == 2)
         if let task = self.service.pendingRetryTask(for: alert) { await task.value }
 
         // Attempt 3
-        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.network))
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
         #expect(self.delegate.monitoringFailedCallCount == 0)
         #expect(self.service.retryAttemptCount(for: alert) == 3)
         if let task = self.service.pendingRetryTask(for: alert) { await task.value }
@@ -853,5 +853,163 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(!self.service.hasPendingRetry(for: alert1))
         #expect(!self.service.hasPendingRetry(for: alert2))
         #expect(self.delegate.monitoringFailedCallCount == 0)
+    }
+
+    // MARK: - Delayed Response
+
+    @Test func `Delayed response does not schedule retry and leaves alert armed`() {
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+
+        // Multiple delayed response callbacks
+        for _ in 1...5 {
+            service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringResponseDelayed))
+        }
+
+        #expect(!self.service.hasPendingRetry(for: alert))
+        #expect(self.service.retryAttemptCount(for: alert) == 0)
+        #expect(self.delegate.monitoringFailedCallCount == 5)
+        #expect(self.delegate.monitoringFailedKind == .transient)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+    }
+
+    // MARK: - Resurrection Prevention
+
+    private final class AsyncGate: @unchecked Sendable {
+        private var isResumed = false
+        private var sleepContinuation: CheckedContinuation<Void, Never>?
+        private var enteredSleepContinuation: CheckedContinuation<Void, Never>?
+        private let lock = NSLock()
+
+        func waitUntilSleeping() async {
+            await withCheckedContinuation { cont in
+                lock.lock()
+                if sleepContinuation != nil {
+                    lock.unlock()
+                    cont.resume()
+                } else {
+                    enteredSleepContinuation = cont
+                    lock.unlock()
+                }
+            }
+        }
+
+        func sleep() async {
+            await withCheckedContinuation { cont in
+                lock.lock()
+                if isResumed {
+                    lock.unlock()
+                    cont.resume()
+                } else {
+                    sleepContinuation = cont
+                    let entered = enteredSleepContinuation
+                    enteredSleepContinuation = nil
+                    lock.unlock()
+                    entered?.resume()
+                }
+            }
+        }
+
+        func resume() {
+            lock.lock()
+            isResumed = true
+            let cont = sleepContinuation
+            sleepContinuation = nil
+            lock.unlock()
+            cont?.resume()
+        }
+    }
+
+    @Test func `Task asleep, didStartMonitoringFor called, alert deleted, task wakes and does not re-arm`() async {
+        let gate = AsyncGate()
+        service.regionMonitoringSleeper = { _ in
+            await gate.sleep()
+        }
+        service.regionMonitoringRetryPolicy = RegionMonitoringRetryPolicy(maxAttempts: 3, initialDelay: 10.0, maxDelay: 20.0)
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+
+        // 1. Transient failure schedules a retry; wait until task is asleep
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.service.hasPendingRetry(for: alert))
+        let retryTask = self.service.pendingRetryTask(for: alert)
+        #expect(retryTask != nil)
+        await gate.waitUntilSleeping()
+
+        // Clear mock regions to verify whether re-arming occurs
+        self.locationManagerMock.stopMonitoring(for: region)
+        #expect(self.locationManagerMock.monitoredRegions.isEmpty)
+
+        // 2. OS starts the region and calls didStartMonitoringFor
+        service.locationManager(CLLocationManager(), didStartMonitoringFor: region)
+
+        // 3. Rider deletes the alert
+        service.stopMonitoringProximityAlert(id: alert.id)
+
+        // 4. Task wakes up
+        gate.resume()
+        if let retryTask {
+            await retryTask.value
+        }
+
+        // Geofence must NOT be re-armed
+        #expect(self.locationManagerMock.monitoredRegions.isEmpty)
+        #expect(!self.service.hasPendingRetry(for: alert))
+    }
+
+    // MARK: - Callback Bursts
+
+    @Test func `Callback bursts do not exhaust retry budget without attempts`() async {
+        let gate = AsyncGate()
+        service.regionMonitoringSleeper = { _ in
+            await gate.sleep()
+        }
+        service.regionMonitoringRetryPolicy = RegionMonitoringRetryPolicy(maxAttempts: 3, initialDelay: 5.0, maxDelay: 10.0)
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        // Initial transient failure schedules attempt 1; wait until asleep
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(self.service.retryAttemptCount(for: alert) == 1)
+        await gate.waitUntilSleeping()
+
+        // Burst of multiple callbacks while task is still asleep
+        for _ in 0..<10 {
+            service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        }
+
+        // Budget must NOT be exhausted by burst; attempt count remains 1
+        #expect(self.service.retryAttemptCount(for: alert) == 1)
+        #expect(self.delegate.monitoringFailedCallCount == 0)
+        #expect(self.service.hasPendingRetry(for: alert))
+
+        // Wake task to let attempt 1 execute
+        gate.resume()
+        if let task = self.service.pendingRetryTask(for: alert) {
+            await task.value
+        }
+
+        #expect(self.service.retryAttemptCount(for: alert) == 1)
+        #expect(!self.service.hasPendingRetry(for: alert))
     }
 }

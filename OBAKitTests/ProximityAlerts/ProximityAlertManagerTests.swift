@@ -715,31 +715,27 @@ final class ProximityAlertManagerTests: OBATestCase {
 
         failMonitoring(for: alert, error: .regionMonitoringSetupDelayed)
 
-        // A transient failure triggers bounded backoff retry in LocationService,
-        // leaving the alert armed while retries are in flight rather than disarming immediately.
+        // The OS deferred the request rather than refusing it, and will retry on
+        // its own. Disarming now would throw away an alert about to start working.
         #expect(self.locationService.monitoredProximityAlertIDs == [alert.id])
         #expect(self.store.proximityAlerts.count == 1)
     }
 
-    @Test func `A transient failure whose retries are exhausted disarms the region`() async {
+    @Test func `Delayed response errors leave alert armed without disarming`() async {
         let manager = makeManager()
-        locationService.regionMonitoringRetryPolicy = .immediate
         guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
             Issue.record("Setup failed: alert did not activate")
             return
         }
 
-        // Exhaust all 3 retries
-        for _ in 1...3 {
-            failMonitoring(for: alert, error: .regionMonitoringSetupDelayed)
-            if let task = locationService.pendingRetryTask(for: alert) { await task.value }
+        // Apple defines .regionMonitoringResponseDelayed as events still being delivered,
+        // possibly late. Multiple delayed response errors must never disarm a working alert.
+        for _ in 1...5 {
+            failMonitoring(for: alert, error: .regionMonitoringResponseDelayed)
         }
 
-        // 4th failure exhausts retries and notifies delegate
-        failMonitoring(for: alert, error: .regionMonitoringSetupDelayed)
-
-        #expect(self.locationService.monitoredProximityAlertIDs.isEmpty)
-        #expect(self.store.proximityAlerts.map(\.id) == [alert.id])
+        #expect(self.locationService.monitoredProximityAlertIDs == [alert.id])
+        #expect(self.store.proximityAlerts.count == 1)
     }
 
     @Test func `A permanently rejected region is disarmed but its alert kept`() async {
