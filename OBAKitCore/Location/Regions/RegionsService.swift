@@ -388,6 +388,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// prune would then treat every custom region's cache, including the
     /// selected one, as retired. One read decides both that custom regions
     /// are readable and what they are, mirroring `clearRetiredRegionFallback`.
+    /// This reads the custom-region file from disk on the main thread on every
+    /// call. That is fine for launch and prune, but if anything starts calling
+    /// it on a hot path it would be worth caching.
     var trustedKnownRegionIDs: Set<Int>? {
         guard canTrustRegionsList else { return nil }
         guard let custom = try? fileStorage.loadCustomRegions() else { return nil }

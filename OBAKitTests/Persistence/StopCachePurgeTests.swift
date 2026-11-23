@@ -511,12 +511,16 @@ final class StopCachePurgeTests {
 
     @Test func `Failed auto_vacuum upgrade is not retried within the cooldown`() throws {
         let tempDir = FileManager.default.temporaryDirectory
+        // An isolated suite, so this test neither reads nor writes the shared
+        // `.standard` store other tests and the app use.
+        let suiteName = UUID().uuidString
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
         let dbPath = tempDir.appendingPathComponent("test_autovacuum_cooldown_\(UUID().uuidString).sqlite").path
         defer {
             try? FileManager.default.removeItem(atPath: dbPath)
             try? FileManager.default.removeItem(atPath: dbPath + "-wal")
             try? FileManager.default.removeItem(atPath: dbPath + "-shm")
-            UserDefaults.standard.removeObject(forKey: StopCacheDatabase.lastAutoVacuumUpgradeFailureKey)
         }
 
         // Create an unconfigured database where auto_vacuum is 0
@@ -525,20 +529,39 @@ final class StopCachePurgeTests {
             try db.execute(sql: "CREATE TABLE dummy (id INTEGER PRIMARY KEY)")
         }
 
-        let database = try StopCacheDatabase(databasePath: dbPath)
+        let database = try StopCacheDatabase(databasePath: dbPath, userDefaults: userDefaults)
 
         // A failure recorded just now: the upgrade is skipped, auto_vacuum stays 0.
-        UserDefaults.standard.set(Date(), forKey: StopCacheDatabase.lastAutoVacuumUpgradeFailureKey)
+        userDefaults.set(Date(), forKey: database.lastAutoVacuumUpgradeFailureKey)
         database.upgradeAutoVacuumIfNeeded()
         let stillUnupgraded = try database.dbQueue.read { db in
             try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
         }
         #expect(stillUnupgraded == 0)
 
+        // A failure on this database doesn't block a different database,
+        // even though both share this test's store: the record is keyed per database.
+        let otherDBPath = tempDir.appendingPathComponent("test_autovacuum_cooldown_other_\(UUID().uuidString).sqlite").path
+        defer {
+            try? FileManager.default.removeItem(atPath: otherDBPath)
+            try? FileManager.default.removeItem(atPath: otherDBPath + "-wal")
+            try? FileManager.default.removeItem(atPath: otherDBPath + "-shm")
+        }
+        let otherUnconfiguredQueue = try DatabaseQueue(path: otherDBPath)
+        try otherUnconfiguredQueue.write { db in
+            try db.execute(sql: "CREATE TABLE dummy (id INTEGER PRIMARY KEY)")
+        }
+        let otherDatabase = try StopCacheDatabase(databasePath: otherDBPath, userDefaults: userDefaults)
+        otherDatabase.upgradeAutoVacuumIfNeeded()
+        let otherUpgradedAutoVacuum = try otherDatabase.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
+        }
+        #expect(otherUpgradedAutoVacuum == 2) // 2 = INCREMENTAL
+
         // A failure recorded long ago: the cooldown has passed, the upgrade proceeds.
-        UserDefaults.standard.set(
+        userDefaults.set(
             Date().addingTimeInterval(-2 * StopCacheDatabase.autoVacuumUpgradeRetryCooldown),
-            forKey: StopCacheDatabase.lastAutoVacuumUpgradeFailureKey
+            forKey: database.lastAutoVacuumUpgradeFailureKey
         )
         database.upgradeAutoVacuumIfNeeded()
         let upgradedAutoVacuum = try database.dbQueue.read { db in
@@ -547,7 +570,7 @@ final class StopCachePurgeTests {
         #expect(upgradedAutoVacuum == 2) // 2 = INCREMENTAL
 
         // A successful upgrade clears the recorded failure.
-        #expect(UserDefaults.standard.object(forKey: StopCacheDatabase.lastAutoVacuumUpgradeFailureKey) == nil)
+        #expect(userDefaults.object(forKey: database.lastAutoVacuumUpgradeFailureKey) == nil)
     }
 }
 

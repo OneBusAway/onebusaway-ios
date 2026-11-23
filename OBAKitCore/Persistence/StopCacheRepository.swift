@@ -658,6 +658,11 @@ public final class StopCacheRepository: Sendable {
     /// Rows are deleted in bounded batches so clearing a large retired region
     /// doesn't hold the database queue for one long transaction; the sync
     /// state is forgotten last, once its rows are gone.
+    /// This is deliberately not one transaction: if it fails partway, the region
+    /// keeps its sync state with some or all of its stops already deleted, and
+    /// the next sync may trust that partially emptied cache. That is accepted
+    /// because failing to clear a retired region at all is worse — but callers
+    /// should know the clear is best-effort, not atomic.
     public func clearCache(regionId: Int) {
         do {
             for table in ["cachedStop", "cachedRoute", "cachedStopSync", "cachedRouteSync"] {

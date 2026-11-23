@@ -20,11 +20,22 @@ public final class StopCacheDatabase: Sendable {
     /// The underlying GRDB database queue for serialized access.
     let dbQueue: DatabaseQueue
 
+    /// Identifies this database for the `auto_vacuum` retry cooldown: its file
+    /// path, or a per-instance UUID for in-memory databases (which have no path).
+    private let cooldownIdentity: String
+
+    /// The store recording `auto_vacuum` upgrade failures for the retry cooldown.
+    /// Injected so tests can pass an isolated suite instead of the process-wide
+    /// `.standard` store: suites run concurrently, so a failure recorded by one
+    /// test must not suppress upgrades in another. `UserDefaults` is thread-safe
+    /// by design, which is why this is `nonisolated(unsafe)` on this `Sendable` class.
+    nonisolated(unsafe) private let userDefaults: UserDefaults
+
     /// Creates a persistent database at the specified path.
     /// If the database file is corrupted, it is deleted and recreated since this is a cache.
     /// - Parameter databasePath: The full path to the database file.
     ///   Defaults to `stop_cache.sqlite` in the app's Application Support directory.
-    public init(databasePath: String? = nil) throws {
+    public init(databasePath: String? = nil, userDefaults: UserDefaults = .standard) throws {
         let path: String
         if let databasePath {
             path = databasePath
@@ -51,22 +62,28 @@ public final class StopCacheDatabase: Sendable {
         }
 
         dbQueue = queue
+        cooldownIdentity = path
+        self.userDefaults = userDefaults
         try Self.makeMigrator().migrate(dbQueue)
     }
 
     /// Creates an in-memory database for testing.
-    public init(inMemory: Bool) throws {
+    public init(inMemory: Bool, userDefaults: UserDefaults = .standard) throws {
         precondition(inMemory, "Use init(databasePath:) for persistent databases")
         let queue = try DatabaseQueue(configuration: Self.makeConfiguration())
         dbQueue = queue
+        cooldownIdentity = UUID().uuidString
+        self.userDefaults = userDefaults
         try Self.makeMigrator().migrate(dbQueue)
     }
 
     /// Creates a database at `databasePath` migrated only through
     /// `lastMigration`, so tests can upgrade a real older schema.
-    init(databasePath: String, migratingUpTo lastMigration: String) throws {
+    init(databasePath: String, migratingUpTo lastMigration: String, userDefaults: UserDefaults = .standard) throws {
         let queue = try DatabaseQueue(path: databasePath, configuration: Self.makeConfiguration())
         dbQueue = queue
+        cooldownIdentity = databasePath
+        self.userDefaults = userDefaults
         try Self.makeMigrator().migrate(dbQueue, upTo: lastMigration)
     }
 
@@ -84,17 +101,30 @@ public final class StopCacheDatabase: Sendable {
     /// expensive when the failure persists (e.g. insufficient disk space).
     static let autoVacuumUpgradeRetryCooldown: TimeInterval = 24 * 60 * 60
 
-    /// UserDefaults key recording when the last `auto_vacuum` upgrade failed.
-    static let lastAutoVacuumUpgradeFailureKey = "OBAKitCore.StopCacheDatabase.lastAutoVacuumUpgradeFailure"
+    /// UserDefaults key prefix recording when the last `auto_vacuum` upgrade failed.
+    /// The full key is scoped per database (see `lastAutoVacuumUpgradeFailureKey`),
+    /// so a failure on one database does not block upgrades on another.
+    static let lastAutoVacuumUpgradeFailureKeyPrefix = "OBAKitCore.StopCacheDatabase.lastAutoVacuumUpgradeFailure"
+
+    /// UserDefaults key recording when the last `auto_vacuum` upgrade failed for
+    /// this database. Scoped by `cooldownIdentity` so a failure on one database
+    /// cannot block upgrades on a different database.
+    var lastAutoVacuumUpgradeFailureKey: String {
+        "\(Self.lastAutoVacuumUpgradeFailureKeyPrefix).\(cooldownIdentity)"
+    }
 
     /// Upgrades a database created with `auto_vacuum = NONE` to `INCREMENTAL`.
     /// Runs outside transactions; catches and logs any failure (e.g. insufficient disk space)
     /// without throwing so the database remains fully functional.
     /// A failed upgrade is retried only after `autoVacuumUpgradeRetryCooldown`
     /// has passed, so a persistent failure doesn't rewrite a temporary copy
-    /// of the whole database on every launch and region change.
+    /// of the whole database on every launch and region change. The cooldown is
+    /// recorded per database, so a failure on one database doesn't block
+    /// upgrades on another. The record lives in the injected `userDefaults`
+    /// store (`.standard` in production), so tests can isolate it with a
+    /// per-test suite instead of sharing process-wide state.
     func upgradeAutoVacuumIfNeeded() {
-        if let lastFailure = UserDefaults.standard.object(forKey: Self.lastAutoVacuumUpgradeFailureKey) as? Date,
+        if let lastFailure = userDefaults.object(forKey: lastAutoVacuumUpgradeFailureKey) as? Date,
            Date().timeIntervalSince(lastFailure) < Self.autoVacuumUpgradeRetryCooldown {
             return
         }
@@ -109,10 +139,10 @@ public final class StopCacheDatabase: Sendable {
                 }
             }
             // Success (or already upgraded): forget any recorded failure.
-            UserDefaults.standard.removeObject(forKey: Self.lastAutoVacuumUpgradeFailureKey)
+            userDefaults.removeObject(forKey: lastAutoVacuumUpgradeFailureKey)
         } catch {
             Logger.warn("Failed to upgrade auto_vacuum to INCREMENTAL: \(error)")
-            UserDefaults.standard.set(Date(), forKey: Self.lastAutoVacuumUpgradeFailureKey)
+            userDefaults.set(Date(), forKey: lastAutoVacuumUpgradeFailureKey)
         }
     }
 
