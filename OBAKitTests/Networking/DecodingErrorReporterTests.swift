@@ -573,6 +573,20 @@ final class DecodingErrorReporterTests {
         #expect(redacted == cleanURL)
     }
 
+    @Test func `Query redaction clears URL fragment`() {
+        let urlWithFragment = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST&lat=47.6#sensitive_anchor")!
+        let redacted = DecodingErrorReporter.redactURL(urlWithFragment)
+        #expect(redacted.fragment == nil)
+        #expect(!redacted.absoluteString.contains("sensitive_anchor"))
+        #expect(redacted.absoluteString == "https://api.onebusaway.org/api/where/stops?key=%5BREDACTED%5D&lat=%5BREDACTED%5D")
+
+        let noQueryWithFragment = URL(string: "https://api.onebusaway.org/api/where/stops#fragment_only")!
+        let redactedNoQuery = DecodingErrorReporter.redactURL(noQueryWithFragment)
+        #expect(redactedNoQuery.fragment == nil)
+        #expect(!redactedNoQuery.absoluteString.contains("fragment_only"))
+        #expect(redactedNoQuery.absoluteString == "https://api.onebusaway.org/api/where/stops")
+    }
+
     // MARK: - Codable Serialization Tests
 
     @Test func `DecodingErrorDiagnostic JSON serialization round trip`() throws {

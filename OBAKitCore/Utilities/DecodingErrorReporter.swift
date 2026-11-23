@@ -101,26 +101,20 @@ public enum DecodingErrorReporter {
     }
 
     /// Redacts query parameters in a URL, replacing parameter values with `[REDACTED]`
-    /// so sensitive tokens (e.g. key, token, apiKey) and coordinates (e.g. lat, lon) are sanitized.
+    /// so sensitive tokens (e.g. key, token, apiKey) and coordinates (e.g. lat, lon) are sanitized,
+    /// and clears any URL fragment (#1710 privacy policy).
     public static func redactURL(_ url: URL) -> URL {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return url
         }
+        components.fragment = nil
         guard let queryItems = components.queryItems, !queryItems.isEmpty else {
-            return url
+            return components.url ?? url
         }
         components.queryItems = queryItems.map { item in
             URLQueryItem(name: item.name, value: "[REDACTED]")
         }
         return components.url ?? url
-    }
-
-    public static func redactedURL(_ url: URL) -> URL {
-        redactURL(url)
-    }
-
-    public static func redactQuery(in url: URL) -> URL {
-        redactURL(url)
     }
 
     /// Generates a structured `DecodingErrorDiagnostic` from a `DecodingError`.
