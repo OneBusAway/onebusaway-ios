@@ -183,6 +183,14 @@ final class RegionsFileStorageTests {
         #expect(result.complete == true, "Expected an empty custom-regions directory to be a complete load")
     }
 
+    @Test func `Conformer without completeness reporting gets a complete load by default`() throws {
+        let legacy = LegacyRegionsFileStorage(customRegions: [Fixtures.customMinneapolisRegion])
+
+        let result = try legacy.loadCustomRegionsWithCompleteness()
+        #expect(result.regions.count == 1)
+        #expect(result.complete == true)
+    }
+
     // MARK: - Concurrency
 
     @Test func `RegionsFileStorage can be transferred to detached task`() async throws {
@@ -245,4 +253,15 @@ private nonisolated class TemporaryDirectoryFileManager: FileManager {
         }
         return result
     }
+}
+
+/// Implements only the requirements that predate `loadCustomRegionsWithCompleteness()`.
+private struct LegacyRegionsFileStorage: RegionsFileStorageProtocol {
+    let customRegions: [Region]
+
+    func loadDefaultRegions() throws -> [Region]? { nil }
+    func saveDefaultRegions(_ regions: [Region]) throws {}
+    func loadCustomRegions() throws -> [Region] { customRegions }
+    func saveCustomRegion(_ region: Region) throws {}
+    func deleteCustomRegion(identifier: RegionIdentifier) throws {}
 }
