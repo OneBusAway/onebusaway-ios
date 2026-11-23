@@ -850,11 +850,12 @@ final class AppSheetViewFactoryTests: OBATestCase {
         let factory = makeFactory(application: application, coordinator: coordinator)
         _ = factory.view(for: .transitAlert(alertID: alertID))
 
-        let nav = TransitAlertSheetHost.makeNavigationController(alert: agencyAlert, onClose: {
-            coordinator.pop()
-        })
+        let host = try #require(factory.transitAlertHost(alertID: alertID))
+        #expect((host.alert as? AgencyAlert)?.id == alertID)
+        #expect(host.alert.title(forLocale: .current) == agencyAlert.title(forLocale: .current))
+
+        let nav = TransitAlertSheetHost.makeNavigationController(alert: host.alert, onClose: host.onClose)
         let detailVC = try #require(nav.viewControllers.first as? TransitAlertDetailViewController)
-        #expect(detailVC.transitAlert.title(forLocale: .current) == agencyAlert.title(forLocale: .current))
 
         detailVC.close()
         #expect(coordinator.stackedRoutes.isEmpty)
@@ -868,6 +869,7 @@ final class AppSheetViewFactoryTests: OBATestCase {
 
         _ = factory.view(for: .transitAlert(alertID: "nonexistent-alert"))
 
+        #expect(factory.transitAlertHost(alertID: "nonexistent-alert") == nil)
         #expect(AppSheetRoute.transitAlert(alertID: "nonexistent-alert").id == "transitAlert-nonexistent-alert")
         #expect(AppSheetRoute.transitAlert(alertID: "nonexistent-alert").prefersStacking == true)
     }

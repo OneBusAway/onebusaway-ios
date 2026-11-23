@@ -61,7 +61,7 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
 
     // MARK: - Transit Alert
 
-    let transitAlert: TransitAlertViewModel
+    private let transitAlert: TransitAlertViewModel
 
     /// Returns the alert's URL only when its scheme is `https` or `http`.
     /// Any other scheme (e.g. `javascript:`) is silently dropped.

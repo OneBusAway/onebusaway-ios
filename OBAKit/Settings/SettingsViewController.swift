@@ -14,11 +14,9 @@ import OBAKitCore
 /// Hosts `SettingsView`, and owns what it can't: the Done button, error toasts
 /// and the share sheet for exported data.
 class SettingsViewController: UIHostingController<SettingsView> {
-    let application: Application
     var onClose: (() -> Void)?
 
     init(application: Application, onClose: (() -> Void)? = nil) {
-        self.application = application
         self.onClose = onClose
         let viewModel = SettingsViewModel(application: application)
         super.init(rootView: SettingsView(viewModel: viewModel))

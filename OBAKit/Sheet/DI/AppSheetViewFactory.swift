@@ -231,14 +231,21 @@ final class AppSheetViewFactory {
         }
     }
 
+    /// Builds the `TransitAlertSheetHost` for the given alert ID if found in
+    /// `application.alertsStore`.
+    func transitAlertHost(alertID: String) -> TransitAlertSheetHost? {
+        guard let alert = findTransitAlert(alertID: alertID) else { return nil }
+        return TransitAlertSheetHost(alert: alert) { [coordinator] in
+            coordinator.pop()
+        }
+    }
+
     /// Renders transit alert details inside a stacked sheet if found in
-    /// `application.alertsStore.agencyAlerts`, or a fallback notice if absent.
+    /// `application.alertsStore`, or a fallback notice if absent.
     @ViewBuilder
     func transitAlertView(alertID: String) -> some View {
-        if let alert = findTransitAlert(alertID: alertID) {
-            TransitAlertSheetHost(alert: alert) { [coordinator] in
-                coordinator.pop()
-            }
+        if let host = transitAlertHost(alertID: alertID) {
+            host
         } else {
             alertNotFoundView
         }
@@ -246,6 +253,9 @@ final class AppSheetViewFactory {
 
     func findTransitAlert(alertID: String) -> TransitAlertViewModel? {
         if let alert = application.alertsStore.agencyAlerts.first(where: { $0.id == alertID }) {
+            return alert
+        }
+        if let alert = application.alertsStore.recentHighSeverityAlerts.first(where: { $0.id == alertID }) {
             return alert
         }
         return nil
@@ -721,12 +731,14 @@ final class AppSheetViewFactory {
         // `let _` (not `_ =`) so SwiftUI's @ViewBuilder treats this as a
         // declaration rather than an expression statement — the latter fails
         // to build because `Void` doesn't conform to `View`.
+        // swiftlint:disable:next redundant_discardable_let
         let _ = assertionFailure("AppSheetRoute.\(route.id) has no view registered yet.")
         Text("Unimplemented route: \(route.id)")
             .font(.headline)
             .foregroundStyle(.secondary)
             .padding()
 #else
+        // swiftlint:disable:next redundant_discardable_let
         let _ = Logger.error("AppSheetRoute.\(route.id) pushed but no view is registered — rendering placeholder.")
         indexPlaceholderView(for: route)
 #endif
