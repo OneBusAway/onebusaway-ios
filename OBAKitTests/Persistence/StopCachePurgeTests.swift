@@ -472,6 +472,106 @@ final class StopCachePurgeTests {
         }
         #expect(try repository.syncState(regionId: 888) == nil)
     }
+
+    @Test func `Route-only region appears in cachedRegionIDs and is retired by prune`() throws {
+        let database = try StopCacheDatabase(inMemory: true)
+        let repository = StopCacheRepository(database: database)
+
+        // Region 7 has only route rows (no stops); region 1 has stops and routes.
+        try database.dbQueue.write { db in
+            try db.execute(
+                sql: "INSERT INTO cachedRoute (id, regionId, lastUpdated, routeData) VALUES ('r7', 7, 300, X'00')"
+            )
+            try db.execute(
+                sql: "INSERT INTO cachedRouteSync (syncID, id, regionId, lastUpdated, routeData) VALUES ('published', 'r7s', 7, 300, X'00')"
+            )
+            try db.execute(
+                sql: "INSERT INTO cachedStop (id, regionId, latitude, longitude, lastUpdated, stopData) VALUES ('s1', 1, 47.6, -122.3, 300, X'00')"
+            )
+            try db.execute(
+                sql: "INSERT INTO cachedRoute (id, regionId, lastUpdated, routeData) VALUES ('r1', 1, 300, X'00')"
+            )
+        }
+
+        // Without cachedRoute/cachedRouteSync in the union, region 7 would be invisible.
+        #expect(repository.cachedRegionIDs() == Set([1, 7]))
+
+        // Region 7 is not in knownRegionIDs, so the prune retires it.
+        let cutoff = Date(timeIntervalSince1970: 200)
+        _ = repository.pruneInactiveRegions(activeRegionID: 1, olderThan: cutoff, knownRegionIDs: [1])
+
+        #expect(repository.cachedRegionIDs() == Set([1]))
+        try database.dbQueue.read { db in
+            let r7Routes = try String.fetchAll(db, sql: "SELECT id FROM cachedRoute WHERE regionId = 7")
+            #expect(r7Routes.isEmpty)
+            let r7StagedRoutes = try String.fetchAll(db, sql: "SELECT id FROM cachedRouteSync WHERE regionId = 7")
+            #expect(r7StagedRoutes.isEmpty)
+        }
+    }
+
+    @Test func `Failed auto_vacuum upgrade is not retried within the cooldown`() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+        // An isolated suite, so this test neither reads nor writes the shared
+        // `.standard` store other tests and the app use.
+        let suiteName = UUID().uuidString
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+        let dbPath = tempDir.appendingPathComponent("test_autovacuum_cooldown_\(UUID().uuidString).sqlite").path
+        defer {
+            try? FileManager.default.removeItem(atPath: dbPath)
+            try? FileManager.default.removeItem(atPath: dbPath + "-wal")
+            try? FileManager.default.removeItem(atPath: dbPath + "-shm")
+        }
+
+        // Create an unconfigured database where auto_vacuum is 0
+        let unconfiguredQueue = try DatabaseQueue(path: dbPath)
+        try unconfiguredQueue.write { db in
+            try db.execute(sql: "CREATE TABLE dummy (id INTEGER PRIMARY KEY)")
+        }
+
+        let database = try StopCacheDatabase(databasePath: dbPath, userDefaults: userDefaults)
+
+        // A failure recorded just now: the upgrade is skipped, auto_vacuum stays 0.
+        userDefaults.set(Date(), forKey: database.lastAutoVacuumUpgradeFailureKey)
+        database.upgradeAutoVacuumIfNeeded()
+        let stillUnupgraded = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
+        }
+        #expect(stillUnupgraded == 0)
+
+        // A failure on this database doesn't block a different database,
+        // even though both share this test's store: the record is keyed per database.
+        let otherDBPath = tempDir.appendingPathComponent("test_autovacuum_cooldown_other_\(UUID().uuidString).sqlite").path
+        defer {
+            try? FileManager.default.removeItem(atPath: otherDBPath)
+            try? FileManager.default.removeItem(atPath: otherDBPath + "-wal")
+            try? FileManager.default.removeItem(atPath: otherDBPath + "-shm")
+        }
+        let otherUnconfiguredQueue = try DatabaseQueue(path: otherDBPath)
+        try otherUnconfiguredQueue.write { db in
+            try db.execute(sql: "CREATE TABLE dummy (id INTEGER PRIMARY KEY)")
+        }
+        let otherDatabase = try StopCacheDatabase(databasePath: otherDBPath, userDefaults: userDefaults)
+        otherDatabase.upgradeAutoVacuumIfNeeded()
+        let otherUpgradedAutoVacuum = try otherDatabase.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
+        }
+        #expect(otherUpgradedAutoVacuum == 2) // 2 = INCREMENTAL
+
+        // A failure recorded long ago: the cooldown has passed, the upgrade proceeds.
+        userDefaults.set(
+            Date().addingTimeInterval(-2 * StopCacheDatabase.autoVacuumUpgradeRetryCooldown),
+            forKey: database.lastAutoVacuumUpgradeFailureKey
+        )
+        database.upgradeAutoVacuumIfNeeded()
+        let upgradedAutoVacuum = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA auto_vacuum")
+        }
+        #expect(upgradedAutoVacuum == 2) // 2 = INCREMENTAL
+
+        // A successful upgrade clears the recorded failure.
+        #expect(userDefaults.object(forKey: database.lastAutoVacuumUpgradeFailureKey) == nil)
+    }
 }
 
 /// Accessed only on the database queue, including when the test reads the counts.

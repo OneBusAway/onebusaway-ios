@@ -706,6 +706,48 @@ final class RegionsServiceTests: OBATestCase {
         #expect(service.find(id: custom.regionIdentifier) == custom)
     }
 
+    @Test func `trustedKnownRegionIDs is nil when the custom-region file fails to load`() throws {
+        let custom = Fixtures.customMinneapolisRegion
+        mockFileStorage.storedDefaultRegions = try Fixtures.loadSomeRegions()
+        mockFileStorage.storedCustomRegions = [custom]
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        let service = makeRegionsService()
+        #expect(service.canTrustRegionsList)
+
+        // Load succeeds: the custom region's ID is known.
+        #expect(service.trustedKnownRegionIDs?.contains(custom.regionIdentifier) == true)
+
+        // Load fails: the list can't be trusted, so retirement must be skipped.
+        mockFileStorage.loadCustomRegionsError = CocoaError(.fileReadCorruptFile)
+        #expect(service.trustedKnownRegionIDs == nil)
+
+        mockFileStorage.loadCustomRegionsError = nil
+        #expect(service.trustedKnownRegionIDs?.contains(custom.regionIdentifier) == true)
+    }
+
+    @Test func `trustedKnownRegionIDs is nil when a custom-region file fails to load but others succeed`() throws {
+        let custom = Fixtures.customMinneapolisRegion
+        mockFileStorage.storedDefaultRegions = try Fixtures.loadSomeRegions()
+        mockFileStorage.storedCustomRegions = [custom]
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        let service = makeRegionsService()
+        #expect(service.canTrustRegionsList)
+
+        // Complete load: the custom region's ID is known.
+        #expect(service.trustedKnownRegionIDs?.contains(custom.regionIdentifier) == true)
+
+        // Partial load: one file unreadable, the rest load — the list can't be trusted.
+        mockFileStorage.partialCustomRegionsLoad = true
+        #expect(service.trustedKnownRegionIDs == nil)
+
+        mockFileStorage.partialCustomRegionsLoad = false
+        #expect(service.trustedKnownRegionIDs?.contains(custom.regionIdentifier) == true)
+
+        // Legitimately empty custom-regions directory: still a complete load.
+        mockFileStorage.storedCustomRegions = []
+        #expect(service.trustedKnownRegionIDs != nil)
+    }
+
     @Test func `Upgrade does not retire a saved custom region whose file fails to load`() async throws {
         let custom = Fixtures.customMinneapolisRegion
         mockFileStorage.storedDefaultRegions = try Fixtures.loadSomeRegions()

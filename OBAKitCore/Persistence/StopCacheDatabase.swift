@@ -15,16 +15,27 @@ import GRDB
 public final class StopCacheDatabase: Sendable {
 
     /// Default threshold of freelist pages before triggering incremental vacuum.
-    public static let defaultFreelistThreshold: Int = 50
+    static let defaultFreelistThreshold: Int = 50
 
     /// The underlying GRDB database queue for serialized access.
     let dbQueue: DatabaseQueue
+
+    /// Identifies this database for the `auto_vacuum` retry cooldown: its file
+    /// path, or a per-instance UUID for in-memory databases (which have no path).
+    private let cooldownIdentity: String
+
+    /// The store recording `auto_vacuum` upgrade failures for the retry cooldown.
+    /// Injected so tests can pass an isolated suite instead of the process-wide
+    /// `.standard` store: suites run concurrently, so a failure recorded by one
+    /// test must not suppress upgrades in another. `UserDefaults` is thread-safe
+    /// by design, which is why this is `nonisolated(unsafe)` on this `Sendable` class.
+    nonisolated(unsafe) private let userDefaults: UserDefaults
 
     /// Creates a persistent database at the specified path.
     /// If the database file is corrupted, it is deleted and recreated since this is a cache.
     /// - Parameter databasePath: The full path to the database file.
     ///   Defaults to `stop_cache.sqlite` in the app's Application Support directory.
-    public init(databasePath: String? = nil) throws {
+    public init(databasePath: String? = nil, userDefaults: UserDefaults = .standard) throws {
         let path: String
         if let databasePath {
             path = databasePath
@@ -51,22 +62,28 @@ public final class StopCacheDatabase: Sendable {
         }
 
         dbQueue = queue
+        cooldownIdentity = path
+        self.userDefaults = userDefaults
         try Self.makeMigrator().migrate(dbQueue)
     }
 
     /// Creates an in-memory database for testing.
-    public init(inMemory: Bool) throws {
+    public init(inMemory: Bool, userDefaults: UserDefaults = .standard) throws {
         precondition(inMemory, "Use init(databasePath:) for persistent databases")
         let queue = try DatabaseQueue(configuration: Self.makeConfiguration())
         dbQueue = queue
+        cooldownIdentity = UUID().uuidString
+        self.userDefaults = userDefaults
         try Self.makeMigrator().migrate(dbQueue)
     }
 
     /// Creates a database at `databasePath` migrated only through
     /// `lastMigration`, so tests can upgrade a real older schema.
-    init(databasePath: String, migratingUpTo lastMigration: String) throws {
+    init(databasePath: String, migratingUpTo lastMigration: String, userDefaults: UserDefaults = .standard) throws {
         let queue = try DatabaseQueue(path: databasePath, configuration: Self.makeConfiguration())
         dbQueue = queue
+        cooldownIdentity = databasePath
+        self.userDefaults = userDefaults
         try Self.makeMigrator().migrate(dbQueue, upTo: lastMigration)
     }
 
@@ -78,10 +95,39 @@ public final class StopCacheDatabase: Sendable {
         return configuration
     }
 
+    /// How long to wait before retrying a failed `auto_vacuum` upgrade.
+    /// A failed `VACUUM` writes a temporary copy of the whole database each
+    /// time it runs, so retrying on every launch and region change is
+    /// expensive when the failure persists (e.g. insufficient disk space).
+    static let autoVacuumUpgradeRetryCooldown: TimeInterval = 24 * 60 * 60
+
+    /// UserDefaults key prefix recording when the last `auto_vacuum` upgrade failed.
+    /// The full key is scoped per database (see `lastAutoVacuumUpgradeFailureKey`),
+    /// so a failure on one database does not block upgrades on another.
+    static let lastAutoVacuumUpgradeFailureKeyPrefix = "OBAKitCore.StopCacheDatabase.lastAutoVacuumUpgradeFailure"
+
+    /// UserDefaults key recording when the last `auto_vacuum` upgrade failed for
+    /// this database. Scoped by `cooldownIdentity` so a failure on one database
+    /// cannot block upgrades on a different database.
+    var lastAutoVacuumUpgradeFailureKey: String {
+        "\(Self.lastAutoVacuumUpgradeFailureKeyPrefix).\(cooldownIdentity)"
+    }
+
     /// Upgrades a database created with `auto_vacuum = NONE` to `INCREMENTAL`.
     /// Runs outside transactions; catches and logs any failure (e.g. insufficient disk space)
     /// without throwing so the database remains fully functional.
-    public func upgradeAutoVacuumIfNeeded() {
+    /// A failed upgrade is retried only after `autoVacuumUpgradeRetryCooldown`
+    /// has passed, so a persistent failure doesn't rewrite a temporary copy
+    /// of the whole database on every launch and region change. The cooldown is
+    /// recorded per database, so a failure on one database doesn't block
+    /// upgrades on another. The record lives in the injected `userDefaults`
+    /// store (`.standard` in production), so tests can isolate it with a
+    /// per-test suite instead of sharing process-wide state.
+    func upgradeAutoVacuumIfNeeded() {
+        if let lastFailure = userDefaults.object(forKey: lastAutoVacuumUpgradeFailureKey) as? Date,
+           Date().timeIntervalSince(lastFailure) < Self.autoVacuumUpgradeRetryCooldown {
+            return
+        }
         do {
             let autoVacuum = try dbQueue.read { db in
                 try Int.fetchOne(db, sql: "PRAGMA auto_vacuum") ?? 0
@@ -92,13 +138,16 @@ public final class StopCacheDatabase: Sendable {
                     try db.execute(sql: "VACUUM")
                 }
             }
+            // Success (or already upgraded): forget any recorded failure.
+            userDefaults.removeObject(forKey: lastAutoVacuumUpgradeFailureKey)
         } catch {
             Logger.warn("Failed to upgrade auto_vacuum to INCREMENTAL: \(error)")
+            userDefaults.set(Date(), forKey: lastAutoVacuumUpgradeFailureKey)
         }
     }
 
     /// The number of unused pages on the database freelist.
-    public var freelistCount: Int {
+    var freelistCount: Int {
         do {
             return try dbQueue.read { db in
                 try Int.fetchOne(db, sql: "PRAGMA freelist_count") ?? 0
@@ -111,13 +160,31 @@ public final class StopCacheDatabase: Sendable {
 
     /// Truncates up to `pages` unused pages from the freelist back to the operating system.
     /// If `pages` is nil, truncates all unused pages.
-    public func incrementalVacuum(pages: Int? = nil) throws {
+    func incrementalVacuum(pages: Int? = nil) throws {
         try dbQueue.writeWithoutTransaction { db in
             if let pages {
                 try db.execute(sql: "PRAGMA incremental_vacuum(\(pages))")
             } else {
                 try db.execute(sql: "PRAGMA incremental_vacuum")
             }
+        }
+    }
+
+    /// Pages freed per `incremental_vacuum` chunk.
+    static let incrementalVacuumChunkPages = 100
+
+    /// Truncates unused pages back to the operating system in bounded chunks,
+    /// releasing the database queue between chunks so other writers (e.g. the
+    /// map's cache save) can interleave instead of waiting behind one long
+    /// vacuum. Drains the freelist fully; each chunk frees at most
+    /// `incrementalVacuumChunkPages` pages.
+    func incrementalVacuumInChunks(pagesPerChunk: Int = incrementalVacuumChunkPages) throws {
+        while freelistCount > 0 {
+            let before = freelistCount
+            try incrementalVacuum(pages: pagesPerChunk)
+            // Stop if a chunk made no progress, so a freelist that can't
+            // shrink further doesn't spin.
+            if freelistCount >= before { break }
         }
     }
 
