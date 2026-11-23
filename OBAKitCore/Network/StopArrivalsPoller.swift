@@ -38,15 +38,16 @@ public struct StopArrivalsPoller: Sendable {
 
     public let minutesAfter: UInt
 
-    /// Test-only coordinator override. When set, `arrivals(for:...)` uses this
-    /// coordinator instead of creating one, so a test can observe the
-    /// coordinator's state (for example, waiting for it to reach its
-    /// background wait). Production code never sets it.
-    var testCoordinator: PollerCoordinator?
+    /// Test-only hook, called with the coordinator `arrivals(for:...)` creates.
+    /// A test can use it to observe the coordinator the poller actually built —
+    /// for example, waiting for it to reach its background wait — without
+    /// bypassing the `initialScenePhase` seeding the coordinator is created
+    /// with. Production code never sets it.
+    var onCoordinatorCreated: (@Sendable (PollerCoordinator) -> Void)?
 
     public init(minutesAfter: UInt = 60) {
         self.minutesAfter = minutesAfter
-        self.testCoordinator = nil
+        self.onCoordinatorCreated = nil
     }
 
     /// Returns an `AsyncStream` delivering arrivals updates on every tick of `clock`.
@@ -71,10 +72,11 @@ public struct StopArrivalsPoller: Sendable {
         notificationCenter: NotificationCenter = .default,
         initialScenePhase: PollerScenePhase = .active
     ) -> AsyncStream<Result<[ArrivalDeparture], Error>> {
-        let coordinator = testCoordinator ?? PollerCoordinator(
+        let coordinator = PollerCoordinator(
             initialForeground: initialScenePhase.isForeground,
             isLowPower: powerStateProvider()
         )
+        onCoordinatorCreated?(coordinator)
         return arrivals(
             for: stopID,
             every: interval,
@@ -185,9 +187,16 @@ actor PollerCoordinator {
     private var wakeGeneration: UInt64 = 0
     private var waiters: [UUID: CheckedContinuation<Void, Never>] = [:]
 
+    /// Whether the poll started in the foreground, as seeded at creation.
+    /// Immutable after creation, so a test can assert the seeding even after
+    /// later phase changes — unlike `isForeground`, which the scene-phase
+    /// stream may already have flipped.
+    let initialForeground: Bool
+
     init(initialForeground: Bool = true, isLowPower: Bool = false) {
         self.isForeground = initialForeground
         self.isLowPower = isLowPower
+        self.initialForeground = initialForeground
     }
 
     var waiterCount: Int {

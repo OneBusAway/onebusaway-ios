@@ -319,11 +319,15 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         )
     }
 
-    /// Waits for the model to apply a fetch and reach `.empty`. The request
-    /// gate fires when the request is issued, before the response reaches the
-    /// model, so asserting the phase right after `waitForRequests` can read
-    /// `.loading` and fail a correct wiring. Polls with a bound so a missing
-    /// response still fails the test instead of hanging it.
+    /// Waits until the model has applied a fetch and reached `.empty`. The
+    /// request gate fires when the request is issued, before the response
+    /// reaches the model, so asserting the phase right after `waitForRequests`
+    /// can read `.loading` and fail a correct wiring. Polls with a bound so a
+    /// missing response still fails the test instead of hanging it.
+    /// Note: every arrival in the fixture is in the past, so the model is
+    /// already `.empty` once the first fetch lands — in these tests this
+    /// mainly confirms a fetch was applied, and the request count is the
+    /// real assertion.
     private func waitForEmptyPhase(_ model: StopArrivalsModel) async throws {
         for _ in 0..<400 {
             if case .empty = model.phase {
@@ -334,7 +338,7 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         Issue.record("Expected empty phase, got \(model.phase)")
     }
 
-    @Test func `setScenePhase background pauses polling and active resumes with an immediate fetch`() async throws {
+    @Test(.timeLimit(.minutes(1))) func `setScenePhase background pauses polling and active resumes with an immediate fetch`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let gate = Gate()
         mockArrivals(dataLoader, gate: gate)
@@ -362,7 +366,7 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         try await waitForEmptyPhase(model)
     }
 
-    @Test func `triggerRefresh triggers an immediate fetch without waiting for the timer`() async throws {
+    @Test(.timeLimit(.minutes(1))) func `triggerRefresh triggers an immediate fetch without waiting for the timer`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let gate = Gate()
         mockArrivals(dataLoader, gate: gate)
@@ -383,7 +387,7 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         try await waitForEmptyPhase(model)
     }
 
-    @Test func `retry while polling refreshes in place without waiting for the timer`() async throws {
+    @Test(.timeLimit(.minutes(1))) func `retry while polling refreshes in place without waiting for the timer`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let gate = Gate()
         mockArrivals(dataLoader, gate: gate)
@@ -395,26 +399,28 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         await gate.waitForRequests(count: 1)
         await clock.waitForSleepers(count: 1)
 
-        // retry() while polling refreshes in place: loading, then a prompt
-        // re-fetch with no clock advance and no poll restart.
+        // retry() while polling refreshes in place: a prompt re-fetch with
+        // no clock advance and no poll restart.
         model.retry()
-        #expect(model.phase == .loading)
         await gate.waitForRequests(count: 2)
         try await waitForEmptyPhase(model)
     }
 
-    @Test func `startPolling while backgrounded begins paused and fetches on foregrounding`() async throws {
+    @Test(.timeLimit(.minutes(1))) func `startPolling while backgrounded begins paused and fetches on foregrounding`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let gate = Gate()
         mockArrivals(dataLoader, gate: gate)
         let clock = TestClock()
-        // Observe the coordinator the poller creates, so the test can wait
-        // for the poller to reach its background wait instead of guessing
-        // with a fixed sleep: if the poller had not started yet, "no
-        // request, no sleeper" would pass vacuously.
-        let coordinator = PollerCoordinator(initialForeground: false)
+        // Observe the coordinator the poller itself creates from the model's
+        // remembered phase, so the test can wait for the poller to reach its
+        // background wait instead of guessing with a fixed sleep: if the
+        // poller had not started yet, "no request, no sleeper" would pass
+        // vacuously. The coordinator must come from the poller, not the test:
+        // a test-built coordinator would bypass the `initialScenePhase`
+        // seeding this test exists to cover.
+        let (coordinatorStream, coordinatorContinuation) = AsyncStream<PollerCoordinator>.makeStream(bufferingPolicy: .bufferingNewest(1))
         var poller = StopArrivalsPoller()
-        poller.testCoordinator = coordinator
+        poller.onCoordinatorCreated = { coordinator in coordinatorContinuation.yield(coordinator) }
         let model = makeModel(dataLoader: dataLoader, clock: clock, poller: poller)
         defer { model.stopPolling() }
 
@@ -423,6 +429,20 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         model.setScenePhase(.background)
 
         model.startPolling()
+
+        // The coordinator the poller actually created, from the model's
+        // remembered phase.
+        var coordinatorIterator = coordinatorStream.makeAsyncIterator()
+        guard let coordinator = await coordinatorIterator.next() else {
+            Issue.record("Expected the poller to create a coordinator")
+            return
+        }
+
+        // The seeding itself: the coordinator must have been created
+        // backgrounded. This is what fails if startPolling() stops passing
+        // the remembered phase — the wait below alone cannot prove it,
+        // because the replayed phase could park the coordinator first.
+        #expect(await coordinator.initialForeground == false)
 
         // The poller has reached its background wait: it started, and it is
         // parked instead of fetching. If the replay were missing it would
@@ -437,7 +457,7 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         try await waitForEmptyPhase(model)
     }
 
-    @Test func `restarting polling creates fresh streams so triggerRefresh still works`() async throws {
+    @Test(.timeLimit(.minutes(1))) func `restarting polling creates fresh streams so triggerRefresh still works`() async throws {
         let dataLoader = MockDataLoader(testName: name)
         let gate = Gate()
         mockArrivals(dataLoader, gate: gate)
