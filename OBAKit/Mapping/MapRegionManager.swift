@@ -1018,6 +1018,10 @@ public class MapRegionManager: NSObject,
         application.userDefaults.bool(forKey: FeatureFlags.clustersStopsKey)
     }
 
+    func hasAlert(for stop: Stop) -> Bool {
+        return application.alertsStore.recentHighSeverityAlerts.contains { $0.applies(to: stop) }
+    }
+
     /// Above this visible-map-rect height (map points), stop pins are too
     /// zoomed-out for their under-pin label. Shared with `MapPanelRootView`.
     ///

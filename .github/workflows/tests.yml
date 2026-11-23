@@ -13,10 +13,11 @@ on:
 #
 # Four jobs that start together, so wall time is the slowest one, not the sum.
 # `build` builds the shipping iOS app and its tests, `test` runs them on a
-# runner of its own, `watch` builds the Swift package on its own, compiles and
-# launches the watch stack, and checks project generation, and `lint` lints.
-# None `needs:` another (`test` waits for `build`'s products itself); GitHub
-# still requires them all to pass.
+# runner of its own in focused test slices (Core, App, Widget, Watch), `watch`
+# builds the Swift package on its own, compiles and launches the watch stack,
+# and checks project generation, and `lint` lints. None `needs:` another
+# (`test` waits for `build`'s products itself); GitHub still requires them all
+# to pass.
 #
 # The build jobs carry Xcode's compilation cache (the CAS) between runs; it is
 # off unless COMPILATION_CACHE_ENABLE_CACHING is set. A cached DerivedData
@@ -99,6 +100,10 @@ jobs:
       run: |
         scripts/check_module_boundaries
         scripts/check_module_boundaries --test
+
+    - name: Self-test the test slice parsers
+      if: always()
+      run: scripts/run_test_slice self-test
 
   # Builds the shipping iOS app and its tests, generated with --no-watch, and
   # hands the test products to the `test` job. The release lane
@@ -239,6 +244,9 @@ jobs:
   # which would start the boot only after the build finished.
   test:
     runs-on: xcode-27
+    # Every step that can hang has its own timeout; this caps the whole job
+    # well under GitHub's 6-hour default in case one is missed.
+    timeout-minutes: 120
     permissions:
       actions: read
       checks: write
@@ -331,30 +339,79 @@ jobs:
         xcrun simctl bootstatus "$SIMULATOR_UDID" -b
         cat "$RUNNER_TEMP/simctl-boot.log" || true
 
-    # Output is teed to a log so the "Report slowest tests" step can surface
-    # per-test timing; `set -o pipefail` keeps xcodebuild's exit code through
-    # the pipe. `-collect-test-diagnostics never`: on any failure xcodebuild
-    # otherwise runs `simctl diagnose` and waits on it until this step times
-    # out — it cost failing runs ~9 idle minutes, and the per-test failures
-    # are already in the log and the result bundle.
-    - name: OBAKit Unit Test
+    # Verify that the test slices partition 100% of all compiled tests in the
+    # .xctestrun bundle with zero dropped tests and zero overlaps before running slices.
+    - name: Verify test slice coverage
+      id: verify_coverage
+      timeout-minutes: 10
+      run: |
+        XCTESTRUN=$(ls "$RUNNER_TEMP"/products/*.xctestrun)
+        [ "$(echo "$XCTESTRUN" | wc -l)" -eq 1 ] || { echo "expected one .xctestrun, found: $XCTESTRUN" >&2; exit 1; }
+        scripts/run_test_slice verify-coverage "$XCTESTRUN" "${SIMULATOR_UDID}"
+
+    # Focused test slices separate failures across Core, App, Widget, and Watch
+    # so an isolated failure in one target is immediately visible without scrolling
+    # through thousands of lines of unrelated test output.
+    # Each slice runs in its own step with failure isolation: even if an earlier slice
+    # fails, all subsequent slices still execute. None of them run if the coverage
+    # check failed, since the slices it would hand them can't be trusted. If any
+    # slice fails, is skipped or drops tests, the final verification step fails the job.
+
+    # Output is teed to a log so the "Report test slice summaries" step can surface
+    # per-test timing; the verification step reads the result bundles. `set -o pipefail`
+    # keeps xcodebuild's exit code through the pipe. `-collect-test-diagnostics never`:
+    # on any failure xcodebuild otherwise runs `simctl diagnose` and waits on it until
+    # this step times out — it cost failing runs ~9 idle minutes, and the per-test
+    # failures are already in the log and the result bundle.
+    - name: "Test Slice: Core / Frameworks"
+      id: test_core
       timeout-minutes: 15
       run: |
         set -o pipefail
         sudo renice -n -10 -p $$ >/dev/null
         XCTESTRUN=$(ls "$RUNNER_TEMP"/products/*.xctestrun)
         [ "$(echo "$XCTESTRUN" | wc -l)" -eq 1 ] || { echo "expected one .xctestrun, found: $XCTESTRUN" >&2; exit 1; }
-        xcodebuild test-without-building \
-          -xctestrun "$XCTESTRUN" \
-          -only-testing:OBAKitTests \
-          -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
-          -enableCodeCoverage NO \
-          -collect-test-diagnostics never \
-          -resultBundlePath OBAKitTests.xcresult \
-          | tee xcodebuild-test.log
+        mkdir -p test-logs
+        scripts/run_test_slice core "$XCTESTRUN" "${SIMULATOR_UDID}" OBAKitTests-core.xcresult test-logs/core.log
 
-    # Surface the slowest tests in the job summary so a regression in *test*
-    # time (vs. infra time) is easy to spot without re-running the investigation.
+    - name: "Test Slice: App & UI"
+      id: test_app
+      if: (success() || failure()) && steps.verify_coverage.outcome == 'success'
+      timeout-minutes: 15
+      run: |
+        set -o pipefail
+        sudo renice -n -10 -p $$ >/dev/null
+        XCTESTRUN=$(ls "$RUNNER_TEMP"/products/*.xctestrun)
+        [ "$(echo "$XCTESTRUN" | wc -l)" -eq 1 ] || { echo "expected one .xctestrun, found: $XCTESTRUN" >&2; exit 1; }
+        mkdir -p test-logs
+        scripts/run_test_slice app "$XCTESTRUN" "${SIMULATOR_UDID}" OBAKitTests-app.xcresult test-logs/app.log
+
+    - name: "Test Slice: Widget & Extensions"
+      id: test_widget
+      if: (success() || failure()) && steps.verify_coverage.outcome == 'success'
+      timeout-minutes: 15
+      run: |
+        set -o pipefail
+        sudo renice -n -10 -p $$ >/dev/null
+        XCTESTRUN=$(ls "$RUNNER_TEMP"/products/*.xctestrun)
+        [ "$(echo "$XCTESTRUN" | wc -l)" -eq 1 ] || { echo "expected one .xctestrun, found: $XCTESTRUN" >&2; exit 1; }
+        mkdir -p test-logs
+        scripts/run_test_slice widget "$XCTESTRUN" "${SIMULATOR_UDID}" OBAKitTests-widget.xcresult test-logs/widget.log
+
+    - name: "Test Slice: Watch"
+      id: test_watch
+      if: (success() || failure()) && steps.verify_coverage.outcome == 'success'
+      timeout-minutes: 15
+      run: |
+        set -o pipefail
+        sudo renice -n -10 -p $$ >/dev/null
+        XCTESTRUN=$(ls "$RUNNER_TEMP"/products/*.xctestrun)
+        [ "$(echo "$XCTESTRUN" | wc -l)" -eq 1 ] || { echo "expected one .xctestrun, found: $XCTESTRUN" >&2; exit 1; }
+        mkdir -p test-logs
+        scripts/run_test_slice watch "$XCTESTRUN" "${SIMULATOR_UDID}" OBAKitTests-watch.xcresult test-logs/watch.log
+
+    # Surface test slice results and slowest tests in the job summary so regressions
+    # in any specific slice are immediately obvious.
     #
     # Parses both formats, because the suite spans both: swift-testing's
     # "✔ Test <name> passed after N seconds" covers everything except
@@ -365,34 +422,131 @@ jobs:
     # The `grep -v` drops swift-testing's run summary, "✔ Test run with N tests
     # in M suites passed after …", which otherwise matches the same pattern and
     # sorts to the top as the slowest "test".
-    - name: Report slowest tests
+    - name: Report test slice summaries
       if: success() || failure()
+      env:
+        OUTCOME_CORE: ${{ steps.test_core.outcome }}
+        OUTCOME_APP: ${{ steps.test_app.outcome }}
+        OUTCOME_WIDGET: ${{ steps.test_widget.outcome }}
+        OUTCOME_WATCH: ${{ steps.test_watch.outcome }}
       run: |
         {
-          echo "### Slowest 20 tests"
+          echo "## Test Target Results"
+          echo "| Target Slice | Status | Tests Executed | Result Bundle |"
+          echo "|---|---|---|---|"
+
+          report_slice() {
+            local name="$1"
+            local outcome="$2"
+            local bundle="$3"
+            local log="test-logs/$4.log"
+            local tests="-"
+            if [ -f "$log" ]; then
+              local swift_cnt=$(grep -oE "(Test run with [0-9]+ tests)" "$log" | awk '{print $4}' | tail -1 || true)
+              local xc_cnt=$(grep -c "Test Case '-\[OBAKitTests\." "$log" || true)
+              local total=$(( ${swift_cnt:-0} + ${xc_cnt:-0} ))
+              [ "$total" -gt 0 ] && tests="$total tests"
+            fi
+            local status
+            case "$outcome" in
+              success) status="✅ Passed" ;;
+              failure) status="❌ Failed" ;;
+              cancelled) status="⏰ Timed Out / Cancelled" ;;
+              skipped) status="⏭️ Skipped" ;;
+              *) status="❓ ${outcome:-Unknown}" ;;
+            esac
+            echo "| $name | $status | $tests | \`$bundle\` |"
+          }
+
+          report_slice "Core / Frameworks" "$OUTCOME_CORE" "OBAKitTests-core.xcresult" "core"
+          report_slice "App & UI" "$OUTCOME_APP" "OBAKitTests-app.xcresult" "app"
+          report_slice "Widget & Extensions" "$OUTCOME_WIDGET" "OBAKitTests-widget.xcresult" "widget"
+          report_slice "Watch" "$OUTCOME_WATCH" "OBAKitTests-watch.xcresult" "watch"
+          echo ""
+
+          echo "### Slowest 20 tests across all slices"
           echo '```'
           {
-            grep -oE "✔ Test .+ passed after [0-9.]+ seconds" xcodebuild-test.log \
+            grep -h -oE "✔ Test .+ passed after [0-9.]+ seconds" test-logs/*.log 2>/dev/null \
               | grep -v '✔ Test run with ' \
               | sed -E "s/✔ Test (.+) passed after ([0-9.]+) seconds/\2  \1/"
-            grep -oE "'-\[OBAKitTests\.[^]]+\]' passed \([0-9.]+ seconds\)" xcodebuild-test.log \
+            grep -h -oE "'-\[OBAKitTests\.[^]]+\]' passed \([0-9.]+ seconds\)" test-logs/*.log 2>/dev/null \
               | sed -E "s/'-\[OBAKitTests\.(.+)\]' passed \(([0-9.]+) seconds\)/\2  \1/"
           } | sort -rn | head -20
           echo '```'
         } >> "$GITHUB_STEP_SUMMARY" || true
 
-    # Upload results only when the run fails — parsing/uploading the xcresult
+    # Upload results only when a run fails — parsing/uploading the xcresult
     # bundle takes minutes and is wasted effort on green runs. Trade-off: this is
     # the only consumer of the `checks: write` permission, so green runs do not
-    # publish the per-test GitHub Checks summary; the "Report slowest tests" step
+    # publish the per-test GitHub Checks summary; the "Report test slice summaries" step
     # writes a lighter summary to $GITHUB_STEP_SUMMARY instead.
-    - uses: slidoapp/xcresulttool@0930e06ae335d8c5e2d2f311ee98d495889a6103 # v3.1.1
+    - name: Annotate Core test failures
+      uses: slidoapp/xcresulttool@0930e06ae335d8c5e2d2f311ee98d495889a6103 # v3.1.1
       continue-on-error: true
-      if: failure()
+      if: failure() && hashFiles('OBAKitTests-core.xcresult/**') != ''
       with:
-         path: OBAKitTests.xcresult
+         path: OBAKitTests-core.xcresult
          show-passed-tests: false
          show-code-coverage: false
+
+    - name: Annotate App test failures
+      uses: slidoapp/xcresulttool@0930e06ae335d8c5e2d2f311ee98d495889a6103 # v3.1.1
+      continue-on-error: true
+      if: failure() && hashFiles('OBAKitTests-app.xcresult/**') != ''
+      with:
+         path: OBAKitTests-app.xcresult
+         show-passed-tests: false
+         show-code-coverage: false
+
+    - name: Annotate Widget test failures
+      uses: slidoapp/xcresulttool@0930e06ae335d8c5e2d2f311ee98d495889a6103 # v3.1.1
+      continue-on-error: true
+      if: failure() && hashFiles('OBAKitTests-widget.xcresult/**') != ''
+      with:
+         path: OBAKitTests-widget.xcresult
+         show-passed-tests: false
+         show-code-coverage: false
+
+    - name: Annotate Watch test failures
+      uses: slidoapp/xcresulttool@0930e06ae335d8c5e2d2f311ee98d495889a6103 # v3.1.1
+      continue-on-error: true
+      if: failure() && hashFiles('OBAKitTests-watch.xcresult/**') != ''
+      with:
+         path: OBAKitTests-watch.xcresult
+         show-passed-tests: false
+         show-code-coverage: false
+
+    # Fail the job if any slice recorded a failure, timeout, or cancellation,
+    # or if test counts do not match 100% of enumerated tests.
+    - name: Verify all test slices passed and all tests executed
+      if: success() || failure()
+      env:
+        OUTCOME_CORE: ${{ steps.test_core.outcome }}
+        OUTCOME_APP: ${{ steps.test_app.outcome }}
+        OUTCOME_WIDGET: ${{ steps.test_widget.outcome }}
+        OUTCOME_WATCH: ${{ steps.test_watch.outcome }}
+      run: |
+        failed=0
+        for pair in "Core:$OUTCOME_CORE" "App:$OUTCOME_APP" "Widget:$OUTCOME_WIDGET" "Watch:$OUTCOME_WATCH"; do
+          slice="${pair%%:*}"
+          outcome="${pair##*:}"
+          if [ "$outcome" != "success" ]; then
+            echo "::error::Test slice '$slice' did not succeed (outcome: $outcome)"
+            failed=1
+          fi
+        done
+
+        # Verify that each slice's result bundle ran exactly its enumerated tests
+        if ! scripts/run_test_slice verify-results .; then
+          echo "::error::Test slice execution verification failed: the tests the slices ran did not match the enumerated tests."
+          failed=1
+        fi
+
+        if [ "$failed" -ne 0 ]; then
+          exit 1
+        fi
+        echo "All focused test slices (Core, App, Widget, Watch) passed with verified 100% test execution."
 
   # The watch stack: a device-architecture compile and a launch on the
   # simulator, then the project-generation checks. Its own job, so it neither

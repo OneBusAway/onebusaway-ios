@@ -61,4 +61,27 @@ final class MapViewControllerAccessibilityOrderTests: OBATestCase {
         #expect(order.contains(late))
         #expect(order.last is MKMapView)
     }
+
+    @Test func `Stop annotations on map expose stop name, route context, alert state and button traits`() throws {
+        let controller = MapViewController(application: application)
+        controller.loadViewIfNeeded()
+
+        let stop = try #require(Fixtures.loadSomeStops().first)
+        let view = try #require(controller.mapRegionManager.mapView(controller.mapRegionManager.mapView, viewFor: stop) as? StopAnnotationView)
+
+        #expect(view.isAccessibilityElement)
+        #expect(view.accessibilityTraits.contains(.button))
+        #expect(view.stopName == stop.name)
+        #expect(view.routeContext != nil)
+        #expect(view.accessibilityHint == StopAnnotationView.accessibilityHint)
+        #expect(view.alertState == nil)
+        #expect(view.accessibilityValue == nil)
+
+        view.hasAlert = true
+        #expect(view.hasAlert)
+        #expect(view.alertState == Strings.serviceAlert)
+        #expect(view.accessibilityValue == Strings.serviceAlert)
+        // Alert is announced in accessibilityValue, keeping primary label uncluttered
+        #expect(view.accessibilityLabel?.contains(Strings.serviceAlert) == false)
+    }
 }

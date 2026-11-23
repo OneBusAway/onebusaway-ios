@@ -428,6 +428,116 @@ final class BookmarkActionsTests: OBATestCase {
         #expect(delegate.editedCount == 0)
     }
 
+    // MARK: - Pinning & Atomic Mutations
+
+    /// Toggling a pin through `BookmarkActions` updates both in-memory instance and store atomically.
+    @Test @MainActor func `Toggle pin changes bookmark pinned state atomically`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeStopBookmark(application: application)
+        let actions = BookmarkActions(application: application)
+
+        #expect(bookmark.isPinned == false)
+        #expect(application.userDataStore.findBookmark(id: bookmark.id)?.isPinned == false)
+
+        actions.togglePin(for: bookmark)
+        #expect(bookmark.isPinned == true)
+        #expect(application.userDataStore.findBookmark(id: bookmark.id)?.isPinned == true)
+
+        actions.togglePin(for: bookmark)
+        #expect(bookmark.isPinned == false)
+        #expect(application.userDataStore.findBookmark(id: bookmark.id)?.isPinned == false)
+    }
+
+    /// Repeated pin mutation with the same target state is a no-op and does not post duplicate notifications.
+    @Test @MainActor func `Repeated pin mutation is a no-op`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeStopBookmark(application: application)
+        let actions = BookmarkActions(application: application)
+
+        actions.setPinned(true, for: bookmark)
+        #expect(bookmark.isPinned == true)
+
+        let notificationCount = SendableBox(0)
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: nil,
+            queue: nil
+        ) { _ in notificationCount.value += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        // Setting same pinned state again should be no-op
+        actions.setPinned(true, for: bookmark)
+        #expect(notificationCount.value == 0)
+        #expect(bookmark.isPinned == true)
+    }
+
+    /// Failed persistence during pin toggle rolls back / prevents partial write on in-memory bookmark.
+    @Test @MainActor func `Failed persistence in pin toggle preserves consistent in-memory state`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let store = try #require(application.userDataStore as? UserDefaultsStore)
+        let bookmark = try makeStopBookmark(application: application)
+        let actions = BookmarkActions(application: application)
+
+        let notificationCount = SendableBox(0)
+        let token = NotificationCenter.default.addObserver(
+            forName: .bookmarksDidChange,
+            object: nil,
+            queue: nil
+        ) { _ in notificationCount.value += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        store.simulatedPersistenceError = NSError(domain: "test.persistence", code: 500, userInfo: nil)
+        actions.togglePin(for: bookmark)
+
+        // Bookmark in memory must remain unpinned, store remains unpinned, no notification posted
+        #expect(bookmark.isPinned == false)
+        #expect(application.userDataStore.findBookmark(id: bookmark.id)?.isPinned == false)
+        #expect(notificationCount.value == 0)
+    }
+
+    /// BookmarkPinButton convenience initializer triggers BookmarkActions togglePin.
+    @Test @MainActor func `BookmarkPinButton initializes with actions and toggles pin`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeStopBookmark(application: application)
+        let actions = BookmarkActions(application: application)
+
+        let button = BookmarkPinButton(bookmark: bookmark, actions: actions)
+        #expect(button.isPinned == false)
+
+        button.onToggle()
+        #expect(bookmark.isPinned == true)
+        #expect(application.userDataStore.findBookmark(id: bookmark.id)?.isPinned == true)
+    }
+
+    /// Toggling a pin triggers a single widget refresh callback, and repeated mutation triggers none.
+    @Test @MainActor func `Pin toggle mutation triggers single widget refresh callback`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let bookmark = try makeStopBookmark(application: application)
+        let actions = BookmarkActions(application: application)
+
+        let reloadCount = SendableBox(0)
+        let refresher = BookmarkWidgetRefresher {
+            reloadCount.value += 1
+        }
+
+        actions.togglePin(for: bookmark)
+        await Task { @MainActor in }.value
+
+        #expect(reloadCount.value == 1)
+
+        // Repeating same state triggers no refresh
+        actions.setPinned(true, for: bookmark)
+        await Task { @MainActor in }.value
+
+        #expect(reloadCount.value == 1)
+        withExtendedLifetime(refresher) {}
+    }
+
     /// Minimal `ArrivalDeparture` for Live Activity content-state tests. Times are
     /// JSON numbers; `JSONDecoder`'s default Date strategy is seconds-since-2001,
     /// which is fine — we compare through `arrivalDepartureDate`, not the raw ints.

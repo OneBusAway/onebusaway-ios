@@ -566,6 +566,9 @@
 /* VoiceOver hint for a map pin that groups several nearby stops. Activating it opens a list of those stops to choose from. */
 "map_controller.stop_cluster.accessibility_hint" = "يعرض قائمة بالمحطات الموجودة هنا.";
 
+/* VoiceOver hint for a map stop pin. Activating it opens the stop's departures. */
+"map_controller.stop_annotation.accessibility_hint" = "يعرض مواعيد المغادرة لهذه المحطة.";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "يبدو أن المركبة التي اخترتها ليست في رحلة حاليًا، لذا لا نعرف كيف نعرضها لك.";
 

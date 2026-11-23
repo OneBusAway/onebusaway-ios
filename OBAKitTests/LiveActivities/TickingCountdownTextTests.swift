@@ -66,4 +66,16 @@ struct TickingCountdownTextTests {
     @Test func `At departure it is spoken as now`() {
         #expect(TickingCountdownText.spokenSnapshot(departure: departure, now: departure, locale: english) == "now")
     }
+
+    // MARK: - Boundary & Large Past Offsets
+
+    @Test func `Exact boundary of sixty seconds reads 1m`() {
+        #expect(TickingCountdownText.snapshot(departure: departure, now: departure.addingTimeInterval(-60), locale: english) == "1m")
+    }
+
+    @Test func `Large past departure offset does not crash and stably reads 0m`() {
+        // Even 2 hours past departure (backwards range trap protection)
+        let twoHoursPast = departure.addingTimeInterval(7200)
+        #expect(TickingCountdownText.snapshot(departure: departure, now: twoHoursPast, locale: english) == "0m")
+    }
 }
