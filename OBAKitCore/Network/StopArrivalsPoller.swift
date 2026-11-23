@@ -203,8 +203,13 @@ actor PollerCoordinator {
         waiters.count
     }
 
+    /// Suspends until `waiterCount` reaches `target`. Cancellation-aware:
+    /// `Task.yield()` never throws, so without the check the loop would spin
+    /// forever after the waiting test is cancelled (e.g. by a `@Test` time
+    /// limit) and the test task would never finish.
     func waitForWaiters(count target: Int) async {
         while waiters.count < target {
+            guard !Task.isCancelled else { return }
             await Task.yield()
         }
     }

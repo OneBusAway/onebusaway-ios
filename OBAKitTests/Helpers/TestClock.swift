@@ -82,22 +82,41 @@ nonisolated final class TestClock: Clock, @unchecked Sendable {
     }
 
     /// Suspends until `sleeperCount` reaches `target`. Completes immediately if already at `target`.
+    /// Cancellation-aware: if the waiting test is cancelled (e.g. by a `@Test`
+    /// time limit), the wait returns instead of suspending forever in the
+    /// checked continuation — otherwise the test body (and its deferred
+    /// cleanup) would never run and the test run would hang.
     func waitForSleepers(count target: Int) async {
+        if Task.isCancelled { return }
         let matched = lock.withLock { sleepers.count == target }
         if matched { return }
 
         let waiterID = UUID()
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            let shouldResumeImmediately = lock.withLock { () -> Bool in
-                if sleepers.count == target {
-                    return true
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                let shouldResumeImmediately = lock.withLock { () -> Bool in
+                    // Checked under the same lock as registration: a cancel
+                    // landing between the entry check and this point must
+                    // not leave a waiter nobody resumes.
+                    if Task.isCancelled || sleepers.count == target {
+                        return true
+                    }
+                    waiters.append(Waiter(id: waiterID, count: target, continuation: continuation))
+                    return false
                 }
-                waiters.append(Waiter(id: waiterID, count: target, continuation: continuation))
-                return false
+                if shouldResumeImmediately {
+                    continuation.resume()
+                }
             }
-            if shouldResumeImmediately {
-                continuation.resume()
+        } onCancel: {
+            // Removal under the lock is the handoff: matchingWaiters()
+            // removes due waiters the same way, so the continuation is
+            // resumed exactly once, by whichever side claims it first.
+            let toResume = lock.withLock { () -> CheckedContinuation<Void, Never>? in
+                guard let index = waiters.firstIndex(where: { $0.id == waiterID }) else { return nil }
+                return waiters.remove(at: index).continuation
             }
+            toResume?.resume()
         }
     }
 

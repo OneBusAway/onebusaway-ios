@@ -253,7 +253,7 @@ final class StopArrivalsModelWiringTests: OBATestCase {
     private nonisolated final class Gate: @unchecked Sendable {
         private let lock = NSLock()
         private var _requests = 0
-        private var waiters: [(count: Int, continuation: CheckedContinuation<Void, Never>)] = []
+        private var waiters: [(id: UUID, count: Int, continuation: CheckedContinuation<Void, Never>)] = []
 
         var requests: Int { lock.withLock { _requests } }
 
@@ -276,22 +276,58 @@ final class StopArrivalsModelWiringTests: OBATestCase {
             }
         }
 
+        /// Suspends until `requests` reaches `target`. Returns immediately if
+        /// already met. Cancellation-aware: if the waiting test is cancelled
+        /// (e.g. by a `@Test` time limit), the wait returns instead of
+        /// suspending forever in the checked continuation — otherwise the
+        /// test body (and its deferred `stopPolling()`) would never run and
+        /// the test run would hang. Callers reach a throwing suspension (or
+        /// return) promptly after this returns.
         func waitForRequests(count target: Int) async {
+            if Task.isCancelled { return }
             let alreadyMet = lock.withLock { _requests >= target }
             if alreadyMet { return }
 
-            await withCheckedContinuation { continuation in
-                let shouldResume = lock.withLock { () -> Bool in
-                    if _requests >= target {
-                        return true
+            let waiterID = UUID()
+            await withTaskCancellationHandler {
+                await withCheckedContinuation { continuation in
+                    let shouldResume = lock.withLock { () -> Bool in
+                        // Checked under the same lock as registration: a
+                        // cancel landing between the entry check and this
+                        // point must not leave a waiter nobody resumes.
+                        if Task.isCancelled || _requests >= target {
+                            return true
+                        }
+                        waiters.append((id: waiterID, count: target, continuation: continuation))
+                        return false
                     }
-                    waiters.append((count: target, continuation: continuation))
-                    return false
+                    if shouldResume {
+                        continuation.resume()
+                    }
                 }
-                if shouldResume {
-                    continuation.resume()
+            } onCancel: {
+                // Removal under the lock is the handoff: record() removes
+                // due waiters the same way, so the continuation is resumed
+                // exactly once, by whichever side claims it first.
+                let toResume = lock.withLock { () -> CheckedContinuation<Void, Never>? in
+                    guard let index = waiters.firstIndex(where: { $0.id == waiterID }) else { return nil }
+                    return waiters.remove(at: index).continuation
                 }
+                toResume?.resume()
             }
+        }
+    }
+
+    /// Thread-safe counter for `onCoordinatorCreated` observations: each
+    /// `arrivals(for:)` call creates exactly one coordinator.
+    private nonisolated final class CoordinatorCounter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _count = 0
+
+        var count: Int { lock.withLock { _count } }
+
+        func increment() {
+            lock.withLock { _count += 1 }
         }
     }
 
@@ -392,18 +428,27 @@ final class StopArrivalsModelWiringTests: OBATestCase {
         let gate = Gate()
         mockArrivals(dataLoader, gate: gate)
         let clock = TestClock()
-        let model = makeModel(dataLoader: dataLoader, clock: clock)
+        // Count the coordinators the poller actually creates: retry() must
+        // refresh in place, so the count stays one. A stop/start retry
+        // would create a second coordinator (and still issue request 2
+        // promptly), so the request count alone cannot tell them apart.
+        let coordinatorCount = CoordinatorCounter()
+        var poller = StopArrivalsPoller()
+        poller.onCoordinatorCreated = { _ in coordinatorCount.increment() }
+        let model = makeModel(dataLoader: dataLoader, clock: clock, poller: poller)
         defer { model.stopPolling() }
 
         model.startPolling()
         await gate.waitForRequests(count: 1)
         await clock.waitForSleepers(count: 1)
+        #expect(coordinatorCount.count == 1)
 
         // retry() while polling refreshes in place: a prompt re-fetch with
         // no clock advance and no poll restart.
         model.retry()
         await gate.waitForRequests(count: 2)
         try await waitForEmptyPhase(model)
+        #expect(coordinatorCount.count == 1)
     }
 
     @Test(.timeLimit(.minutes(1))) func `startPolling while backgrounded begins paused and fetches on foregrounding`() async throws {
