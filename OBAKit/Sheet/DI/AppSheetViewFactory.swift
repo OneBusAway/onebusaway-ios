@@ -233,7 +233,12 @@ final class AppSheetViewFactory {
         let transferContext = application.userDataStore.displayedTransferContext(transferContext)
         return StopDetailsSheetRootView(
             stopID: stopID,
-            makeViewModel: { StopViewModel(environment: self.application, stopID: stopID, transferContext: transferContext) },
+            makeViewModel: {
+                let cachedStop = self.application.currentRegion.flatMap {
+                    self.application.stopCacheRepository?.stop(stopID: stopID, regionId: $0.regionIdentifier)
+                }
+                return StopViewModel(environment: self.application, stopID: stopID, stop: cachedStop, transferContext: transferContext)
+            },
             makePresenter: {
                 let presenter = StopPageActionPresenter(
                     application: self.application,

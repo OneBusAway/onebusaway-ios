@@ -412,12 +412,21 @@ final class StopSpotlightIndexer {
         only wanted: Set<StopID>? = nil
     ) async throws {
         let indexedIDs = Set((snapshot.bookmarked + snapshot.recent).map(\.stopID))
+        if let wanted {
+            let neededIDs = Array(wanted.subtracting(indexedIDs))
+            guard !neededIDs.isEmpty else { return }
+            let stops = stopCache.stops(stopIDs: neededIDs, regionId: snapshot.regionID)
+            let entities = stops.map { StopEntityMapping.entity(for: $0, regionID: snapshot.regionID) }
+            try await Self.submit(entities, priority: 1, to: index)
+            return
+        }
+
         var cursor: StopID?
         repeat {
             try Task.checkCancellation()
             let page = stopCache.stops(regionId: snapshot.regionID, after: cursor, limit: batchSize)
             let entities = page.stops
-                .filter { !indexedIDs.contains($0.id) && (wanted?.contains($0.id) ?? true) }
+                .filter { !indexedIDs.contains($0.id) }
                 .map { StopEntityMapping.entity(for: $0, regionID: snapshot.regionID) }
             try await Self.submit(entities, priority: 1, to: index)
             cursor = page.cursor

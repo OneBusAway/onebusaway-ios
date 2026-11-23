@@ -104,7 +104,10 @@ class StopPageViewController: UIHostingController<StopPageRootView>,
     }
 
     convenience init(application: Application, stopID: StopID, showToolbarOnBottom: Bool = false) {
-        self.init(application: application, stopID: stopID, stop: nil, showToolbarOnBottom: showToolbarOnBottom)
+        let cached = application.currentRegion.flatMap {
+            application.stopCacheRepository?.stop(stopID: stopID, regionId: $0.regionIdentifier)
+        }
+        self.init(application: application, stopID: stopID, stop: cached, showToolbarOnBottom: showToolbarOnBottom)
     }
 
     private init(application: Application, stopID: StopID, stop: Stop?, showToolbarOnBottom: Bool) {
