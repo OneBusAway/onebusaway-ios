@@ -380,13 +380,6 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
     }
 
     public func locationService(_ service: LocationService, monitoringDidFailFor identifier: String?, error: Error, kind: RegionMonitoringFailureKind) {
-        guard !kind.isTransient else {
-            // The OS deferred the request instead of refusing it, and will get to
-            // it on its own. Re-arming now would race that retry.
-            Logger.info("Proximity monitoring for \(identifier ?? "an unattributed region") was delayed; leaving it armed.")
-            return
-        }
-
         guard let identifier, let alertID = LocationService.proximityAlertID(forRegionIdentifier: identifier) else {
             // Core Location reports the region-count cap, and some setup failures,
             // with no region attached. There is no alert to act on.
@@ -394,10 +387,11 @@ public final class ProximityAlertManager: NSObject, LocationServiceDelegate {
             return
         }
 
-        // The region is dead and won't recover on its own, so give its slot back.
+        // When LocationService forwards a failure (permanent error or exhausted transient retries),
+        // the region cannot be established and won't recover on its own, so give its slot back.
         // The alert itself stays stored: it is the rider's, not ours to delete on
         // an OS error, and the next reconciliation gets to try once more.
-        Logger.error("Proximity monitoring failed permanently (\(kind)) for alert \(alertID); disarming its region: \(error)")
+        Logger.error("Proximity monitoring failed (\(kind)) for alert \(alertID); disarming its region: \(error)")
         service.stopMonitoringProximityAlert(id: alertID)
     }
 

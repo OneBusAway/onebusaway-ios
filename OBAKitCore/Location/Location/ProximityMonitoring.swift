@@ -65,8 +65,9 @@ public enum RegionMonitoringFailureKind: Int, Sendable {
     /// not monitor. Permanent until the app changes what it asks for.
     case regionRejected
 
-    /// The OS delayed the request rather than refusing it. Expected to resolve
-    /// without intervention, so the alert is safe to leave armed.
+    /// The OS delayed the request rather than refusing it immediately. LocationService
+    /// applies bounded exponential backoff retries; if retries are exhausted, the failure
+    /// surfaces to delegates to disarm the unmonitored geofence slot.
     case transient
 
     /// An error Core Location does not document for this path. Treated as

@@ -688,7 +688,7 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(!self.service.hasPendingRetry(for: alert))
     }
 
-    @Test func `Transient retry aborts and surfaces authorization denied if permission revoked before retry`() async {
+    @Test func `Transient retry aborts cleanly if permission revoked before retry`() async {
         service.regionMonitoringRetryPolicy = .immediate
         let alert = ProximityAlert(stop: stop)
         let region = CLCircularRegion(
@@ -710,12 +710,11 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
             await task.value
         }
 
-        #expect(self.delegate.monitoringFailedCallCount == 1)
-        #expect(self.delegate.monitoringFailedKind == .authorizationDenied)
+        #expect(self.delegate.monitoringFailedCallCount == 0)
         #expect(!self.service.hasPendingRetry(for: alert))
     }
 
-    @Test func `Transient retry aborts and surfaces region rejected if region limit reached before retry`() async {
+    @Test func `Transient retry aborts cleanly if region limit reached before retry`() async {
         service.regionMonitoringRetryPolicy = .immediate
         let alert = ProximityAlert(stop: stop)
         let region = CLCircularRegion(
@@ -738,9 +737,48 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
             await task.value
         }
 
-        #expect(self.delegate.monitoringFailedCallCount == 1)
-        #expect(self.delegate.monitoringFailedKind == .regionRejected)
+        #expect(self.delegate.monitoringFailedCallCount == 0)
         #expect(!self.service.hasPendingRetry(for: alert))
+    }
+
+    @Test func `Late transient failure for deleted alert does not schedule retry or re arm geofence`() {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+        service.stopMonitoringProximityAlert(id: alert.id)
+        #expect(locationManagerMock.monitoredRegions.isEmpty)
+
+        // Late transient failure arrives for the stopped/deleted alert
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+
+        #expect(!service.hasPendingRetry(for: alert))
+        #expect(locationManagerMock.monitoredRegions.isEmpty)
+        #expect(delegate.monitoringFailedCallCount == 0)
+    }
+
+    @Test func `Successful monitoring start resets retry attempt count`() {
+        service.regionMonitoringRetryPolicy = .immediate
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+        #expect(service.retryAttemptCount(for: alert) == 1)
+
+        // Successful start callback from Core Location resets count
+        service.locationManager(CLLocationManager(), didStartMonitoringFor: region)
+        #expect(service.retryAttemptCount(for: alert) == 0)
     }
 
     // MARK: - Cancellation on Alert Delete

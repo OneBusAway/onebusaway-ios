@@ -54,37 +54,37 @@ extension LocationService {
         set { retryState.customSleeper = newValue }
     }
 
-    public func hasPendingRetry(for alert: ProximityAlert) -> Bool {
+    func hasPendingRetry(for alert: ProximityAlert) -> Bool {
         hasPendingRetry(forRegionIdentifier: Self.proximityRegionIdentifier(for: alert))
     }
 
-    public func hasPendingRetry(forRegionIdentifier identifier: String) -> Bool {
+    func hasPendingRetry(forRegionIdentifier identifier: String) -> Bool {
         retryState.entries[identifier]?.task != nil
     }
 
-    public func pendingRetryTask(for alert: ProximityAlert) -> Task<Void, Never>? {
+    func pendingRetryTask(for alert: ProximityAlert) -> Task<Void, Never>? {
         pendingRetryTask(forRegionIdentifier: Self.proximityRegionIdentifier(for: alert))
     }
 
-    public func pendingRetryTask(forRegionIdentifier identifier: String) -> Task<Void, Never>? {
+    func pendingRetryTask(forRegionIdentifier identifier: String) -> Task<Void, Never>? {
         retryState.entries[identifier]?.task
     }
 
-    public func retryAttemptCount(for alert: ProximityAlert) -> Int {
+    func retryAttemptCount(for alert: ProximityAlert) -> Int {
         retryAttemptCount(forRegionIdentifier: Self.proximityRegionIdentifier(for: alert))
     }
 
-    public func retryAttemptCount(forRegionIdentifier identifier: String) -> Int {
+    func retryAttemptCount(forRegionIdentifier identifier: String) -> Int {
         retryState.entries[identifier]?.attemptCount ?? 0
     }
 
-    public func cancelRetry(for identifier: String) {
+    func cancelRetry(for identifier: String) {
         if let entry = retryState.entries.removeValue(forKey: identifier) {
             entry.task?.cancel()
         }
     }
 
-    public func cancelAllRetries() {
+    func cancelAllRetries() {
         for (_, entry) in retryState.entries {
             entry.task?.cancel()
         }
@@ -199,6 +199,14 @@ extension LocationService {
         // asynchronously through `monitoringDidFailFor` carrying no radius — too
         // late, and too vague, to tell the rider their alert would have fired
         // somewhere other than where they asked.
+        //
+        // `-1` is not an unknown limit. Apple documents it as region monitoring
+        // being unavailable or unsupported on this device, so honouring the
+        // request in that case hands the caller `.started` for an alert that can
+        // never fire. Left that way for now — the failure does still surface
+        // through `monitoringDidFailFor` — but refusing up front wants an
+        // `isMonitoringAvailable(for:)` check and a result case to carry it.
+        // Both points flagged in review of #1292.
         let requestedRadius = alert.radiusMeters
         let deviceMaximum = regionMonitor.maximumRegionMonitoringDistance
         let radius = deviceMaximum > 0 ? min(requestedRadius, deviceMaximum) : requestedRadius
@@ -251,6 +259,12 @@ extension LocationService {
         }
     }
 
+    public func locationManager(_ manager: CLLocationManager, didStartMonitoringFor region: CLRegion) {
+        guard region.identifier.hasPrefix(Self.proximityRegionPrefix) else { return }
+        retryState.entries[region.identifier]?.attemptCount = 0
+        retryState.entries[region.identifier]?.task = nil
+    }
+
     public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
         guard region.identifier.hasPrefix(Self.proximityRegionPrefix) else { return }
 
@@ -263,6 +277,7 @@ extension LocationService {
             return
         }
 
+        retryState.entries[region.identifier]?.attemptCount = 0
         cancelRetry(for: region.identifier)
         notifyDelegatesDidEnterMonitoredRegion(region.identifier)
     }
@@ -294,7 +309,13 @@ extension LocationService {
             return
         }
 
-        let previousAttempt = retryState.entries[identifier]?.attemptCount ?? 0
+        // Only retry transient failures if an entry already exists for an alert that is currently tracked and wanted.
+        guard let entry = retryState.entries[identifier] else {
+            Logger.warn("Region monitoring transient failure ignored for untracked or deleted proximity region \(identifier) (\(kind)): \(error)")
+            return
+        }
+
+        let previousAttempt = entry.attemptCount
         let currentAttempt = previousAttempt + 1
 
         guard currentAttempt <= regionMonitoringRetryPolicy.maxAttempts else {
@@ -307,9 +328,9 @@ extension LocationService {
         let delay = regionMonitoringRetryPolicy.delay(forAttempt: currentAttempt)
         Logger.info("Region monitoring delayed/transient error for proximity region \(identifier) (\(kind)): scheduling retry attempt \(currentAttempt)/\(regionMonitoringRetryPolicy.maxAttempts) in \(delay)s.")
 
-        let targetRegion: CLCircularRegion? = (region as? CLCircularRegion) ?? retryState.entries[identifier]?.region
+        let targetRegion: CLCircularRegion? = (region as? CLCircularRegion) ?? entry.region
 
-        retryState.entries[identifier]?.task?.cancel()
+        entry.task?.cancel()
 
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -331,7 +352,6 @@ extension LocationService {
             guard self.isProximityMonitoringAuthorized else {
                 Logger.warn("Retry aborted for proximity region \(identifier): authorization is no longer Always (\(self.authorizationStatus)).")
                 self.cancelRetry(for: identifier)
-                self.notifyDelegatesMonitoringDidFail(identifier, error: error, kind: .authorizationDenied)
                 return
             }
 
@@ -339,7 +359,6 @@ extension LocationService {
             if !isReplacement, self.regionMonitor.monitoredRegions.count >= Self.maximumMonitoredRegions {
                 Logger.warn("Retry aborted for proximity region \(identifier): region limit reached.")
                 self.cancelRetry(for: identifier)
-                self.notifyDelegatesMonitoringDidFail(identifier, error: error, kind: .regionRejected)
                 return
             }
 
@@ -351,6 +370,7 @@ extension LocationService {
             }
 
             Logger.info("Retrying region monitoring (attempt \(currentAttempt)) for proximity region \(identifier).")
+            self.regionMonitor.stopMonitoring(for: circularRegion)
             self.regionMonitor.startMonitoring(for: circularRegion)
             if self.retryState.entries[identifier]?.attemptCount == currentAttempt {
                 self.retryState.entries[identifier]?.task = nil
