@@ -152,6 +152,37 @@ final class RegionsFileStorageTests {
         #expect(loaded.first?.name == validRegion.name)
     }
 
+    @Test func `Load custom regions reports incomplete when a file is corrupted`() throws {
+        let validRegion = Fixtures.customMinneapolisRegion
+        try storage.saveCustomRegion(validRegion)
+
+        let corruptedFileURL = try customRegionsDirectoryURL().appendingPathComponent("corrupted.json")
+        try "{ this is not valid JSON }".write(to: corruptedFileURL, atomically: true, encoding: .utf8)
+
+        // loadCustomRegions still skips the corrupted file and returns the rest.
+        let loaded = try storage.loadCustomRegions()
+        #expect(loaded.count == 1)
+
+        // ...but the completeness signal reports the partial load.
+        let result = try storage.loadCustomRegionsWithCompleteness()
+        #expect(result.regions.count == 1)
+        #expect(result.complete == false, "Expected an incomplete load when a custom-region file is corrupted")
+    }
+
+    @Test func `Load custom regions reports complete when every file loads`() throws {
+        try storage.saveCustomRegion(Fixtures.customMinneapolisRegion)
+
+        let result = try storage.loadCustomRegionsWithCompleteness()
+        #expect(result.regions.count == 1)
+        #expect(result.complete == true)
+    }
+
+    @Test func `Load custom regions reports complete for an empty directory`() throws {
+        let result = try storage.loadCustomRegionsWithCompleteness()
+        #expect(result.regions.isEmpty)
+        #expect(result.complete == true, "Expected an empty custom-regions directory to be a complete load")
+    }
+
     // MARK: - Concurrency
 
     @Test func `RegionsFileStorage can be transferred to detached task`() async throws {

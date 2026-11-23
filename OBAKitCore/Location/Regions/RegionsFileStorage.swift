@@ -25,6 +25,12 @@ public protocol RegionsFileStorageProtocol: Sendable {
     /// Corrupted individual region files are logged and skipped; the rest are returned.
     func loadCustomRegions() throws -> [Region]
 
+    /// Loads all custom (user-created) regions from disk, reporting whether the load was complete.
+    /// `complete` is false when any custom-region file could not be read or decoded; a legitimately
+    /// empty (or absent) custom-regions directory is a complete load.
+    /// Throws for total-failure conditions (inaccessible directory, directory listing failure).
+    func loadCustomRegionsWithCompleteness() throws -> (regions: [Region], complete: Bool)
+
     /// Persists a single custom region to disk.
     /// If a file for this region already exists, it is replaced.
     func saveCustomRegion(_ region: Region) throws
@@ -107,10 +113,14 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol, Sendable {
     // MARK: - Custom Regions
 
     public func loadCustomRegions() throws -> [Region] {
+        try loadCustomRegionsWithCompleteness().regions
+    }
+
+    public func loadCustomRegionsWithCompleteness() throws -> (regions: [Region], complete: Bool) {
         let directoryURL = try customRegionsDirectoryURL()
 
         guard fileManager.fileExists(atPath: directoryURL.path) else {
-            return []
+            return ([], true)
         }
 
         let contents = try fileManager.contentsOfDirectory(
@@ -119,20 +129,24 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol, Sendable {
             options: .skipsHiddenFiles
         )
 
-        return contents.compactMap { fileURL -> Region? in
+        var complete = true
+        let regions = contents.compactMap { fileURL -> Region? in
             guard fileURL.pathExtension == "json" else { return nil }
             do {
                 let data = try Data(contentsOf: fileURL)
                 guard !data.isEmpty else {
                     Logger.error("RegionsFileStorage: Custom region file '\(fileURL.lastPathComponent)' is empty")
+                    complete = false
                     return nil
                 }
                 return try JSONDecoder.RESTDecoder().decode(Region.self, from: data)
             } catch {
                 Logger.error("RegionsFileStorage: Skipping corrupted custom region file '\(fileURL.lastPathComponent)': \(error)")
+                complete = false
                 return nil
             }
         }
+        return (regions, complete)
     }
 
     public func saveCustomRegion(_ region: Region) throws {

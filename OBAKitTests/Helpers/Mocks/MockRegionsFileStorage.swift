@@ -19,6 +19,10 @@ final class MockRegionsFileStorage: @preconcurrency RegionsFileStorageProtocol {
     var loadCustomRegionsError: Error?
     /// Makes this many calls to `loadCustomRegions()` throw before it starts succeeding.
     var failingCustomRegionsLoads = 0
+    /// Makes `loadCustomRegionsWithCompleteness()` report an incomplete load
+    /// (some custom-region file failed to read or decode) while
+    /// `loadCustomRegions()` still returns the stored regions.
+    var partialCustomRegionsLoad = false
     var saveCustomRegionError: Error?
     var deleteCustomRegionError: Error?
 
@@ -43,6 +47,11 @@ final class MockRegionsFileStorage: @preconcurrency RegionsFileStorageProtocol {
             throw CocoaError(.fileReadUnknown)
         }
         return storedCustomRegions
+    }
+
+    func loadCustomRegionsWithCompleteness() throws -> (regions: [Region], complete: Bool) {
+        let regions = try loadCustomRegions()
+        return (regions, !partialCustomRegionsLoad)
     }
 
     func saveCustomRegion(_ region: Region) throws {

@@ -382,19 +382,22 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     /// Region IDs the app knows about, or nil when the list can't be trusted.
-    /// Returns nil when the server list is untrusted or the custom-region file
-    /// failed to load, so callers never retire a region on the basis of a
-    /// failed read: a failed load looks like "no custom regions", and the
-    /// prune would then treat every custom region's cache, including the
-    /// selected one, as retired. One read decides both that custom regions
-    /// are readable and what they are, mirroring `clearRetiredRegionFallback`.
+    /// Returns nil when the server list is untrusted, the custom-region file
+    /// failed to load, or any custom-region file failed to read or decode, so
+    /// callers never retire a region on the basis of a failed or partial read:
+    /// a failed load looks like "no custom regions", and the prune would then
+    /// treat every custom region's cache, including the selected one, as
+    /// retired. One read decides both that custom regions are readable and
+    /// what they are, mirroring `clearRetiredRegionFallback`. A legitimately
+    /// empty custom-regions directory is a complete load and still returns
+    /// the server regions' identifiers.
     /// This reads the custom-region file from disk on the main thread on every
     /// call. That is fine for launch and prune, but if anything starts calling
     /// it on a hot path it would be worth caching.
     var trustedKnownRegionIDs: Set<Int>? {
         guard canTrustRegionsList else { return nil }
-        guard let custom = try? fileStorage.loadCustomRegions() else { return nil }
-        let all = regions + custom
+        guard let loaded = try? fileStorage.loadCustomRegionsWithCompleteness(), loaded.complete else { return nil }
+        let all = regions + loaded.regions
         return all.isEmpty ? nil : Set(all.map(\.regionIdentifier))
     }
 
