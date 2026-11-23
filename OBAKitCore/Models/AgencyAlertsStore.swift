@@ -318,9 +318,6 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     func insertAlerts(_ newAlerts: [AgencyAlert]) {
         stateLock.withLock {
             for alert in newAlerts {
-                if let existing = alerts.first(where: { $0.id == alert.id }) {
-                    alerts.remove(existing)
-                }
                 alerts.insert(alert)
             }
         }
