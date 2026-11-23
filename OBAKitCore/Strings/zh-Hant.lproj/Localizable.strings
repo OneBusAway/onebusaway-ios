@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "此班次已結束。";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "安全性憑證不受信任。";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "請檢查您裝置的日期與時間。";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "無法建立安全連線。";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "無法載入到站時間";
@@ -755,10 +764,10 @@
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
 
 /* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
-"api_error.tls_untrusted_cert" = "Unable to establish a secure connection because the server's security certificate is not trusted. If you are connected to a public Wi-Fi network, try logging in or switching to cellular data.";
+"api_error.tls_untrusted_cert" = "由於伺服器的安全性憑證不受信任，無法建立安全連線。如果您連接的是公用 Wi-Fi 網路，請嘗試登入驗證或切換至行動數據。";
 
 /* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
-"api_error.tls_expired_cert" = "Unable to establish a secure connection because the server's security certificate has expired or is not yet valid. Please check that your device's date and time are set correctly in Settings, or try again later.";
+"api_error.tls_expired_cert" = "由於伺服器的安全性憑證已過期或尚未生效，無法建立安全連線。請在「設定」中檢查裝置的日期與時間是否正確，或稍後再試。";
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
-"api_error.tls_handshake_failed" = "A secure connection could not be established with the server. Please check your network connection, disable any active VPN or proxy, and try again.";
+"api_error.tls_handshake_failed" = "無法與伺服器建立安全連線。請檢查您的網路連線，關閉任何已啟用的 VPN 或代理伺服器後再試一次。";

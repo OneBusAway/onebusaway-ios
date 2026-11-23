@@ -201,6 +201,32 @@ final class ErrorReportTests {
         #expect(!report(APIError.requestFailure(response("stop/1.json", status: 500))).cause.isRiderActionable)
     }
 
+    @Test func `TLS failures map to dedicated causes with actionable explanations`() {
+        let untrusted = report(NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted))
+        #expect(untrusted.cause == .tlsUntrustedCertificate)
+        #expect(untrusted.cause.isRiderActionable)
+        #expect(untrusted.summary == "The security certificate isn't trusted.")
+        #expect(untrusted.explanation.contains("public Wi-Fi"))
+        #expect(untrusted.action == .details)
+
+        let expired = report(NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasBadDate))
+        #expect(expired.cause == .tlsExpiredCertificate)
+        #expect(expired.cause.isRiderActionable)
+        #expect(expired.summary == "Check your device's date and time.")
+        #expect(expired.explanation.contains("Settings"))
+        #expect(expired.action == .details)
+
+        let handshake = report(NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed))
+        #expect(handshake.cause == .tlsHandshakeFailed)
+        #expect(handshake.cause.isRiderActionable)
+        #expect(handshake.summary == "Can't establish a secure connection.")
+        #expect(handshake.explanation.contains("VPN"))
+        #expect(handshake.action == .details)
+
+        let direct = report(APIError.tlsError(reason: .handshakeFailed))
+        #expect(direct.cause == .tlsHandshakeFailed)
+    }
+
     @Test func `Survey not configured is silent`() {
         #expect(report(APIError.surveyServiceNotConfigured).isSilent)
     }

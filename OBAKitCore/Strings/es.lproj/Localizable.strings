@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "Este viaje ha terminado.";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "El certificado de seguridad no es de confianza.";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "Compruebe la fecha y la hora de su dispositivo.";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "No se puede establecer una conexión segura.";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "No se pudieron cargar las horas de llegada";
@@ -755,10 +764,10 @@
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
 
 /* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
-"api_error.tls_untrusted_cert" = "Unable to establish a secure connection because the server's security certificate is not trusted. If you are connected to a public Wi-Fi network, try logging in or switching to cellular data.";
+"api_error.tls_untrusted_cert" = "No se puede establecer una conexión segura porque el certificado de seguridad del servidor no es de confianza. Si está conectado a una red Wi-Fi pública, intente iniciar sesión o cambie a datos móviles.";
 
 /* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
-"api_error.tls_expired_cert" = "Unable to establish a secure connection because the server's security certificate has expired or is not yet valid. Please check that your device's date and time are set correctly in Settings, or try again later.";
+"api_error.tls_expired_cert" = "No se puede establecer una conexión segura porque el certificado de seguridad del servidor ha caducado o aún no es válido. Compruebe que la fecha y la hora del dispositivo sean correctas en Ajustes o inténtelo de nuevo más tarde.";
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
-"api_error.tls_handshake_failed" = "A secure connection could not be established with the server. Please check your network connection, disable any active VPN or proxy, and try again.";
+"api_error.tls_handshake_failed" = "No se pudo establecer una conexión segura con el servidor. Compruebe su conexión de red, desactive cualquier VPN o proxy activo e inténtelo de nuevo.";

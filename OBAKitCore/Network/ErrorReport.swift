@@ -114,6 +114,9 @@ public struct ErrorReport: Sendable {
         case captivePortal
         case noRegionSelected
         case authentication
+        case tlsUntrustedCertificate
+        case tlsExpiredCertificate
+        case tlsHandshakeFailed
         /// Not worth telling the rider about; see ``ErrorReport/isSilent``.
         case silent
         /// Not a failed request: an error that carries its own message, like
@@ -126,7 +129,9 @@ public struct ErrorReport: Sendable {
         /// ours or the agency's. Drives the toast's icon.
         public var isRiderActionable: Bool {
             switch self {
-            case .offline, .cellularDataRestricted, .captivePortal, .noRegionSelected: return true
+            case .offline, .cellularDataRestricted, .captivePortal, .noRegionSelected,
+                 .tlsUntrustedCertificate, .tlsExpiredCertificate, .tlsHandshakeFailed:
+                return true
             default: return false
             }
         }
@@ -348,10 +353,12 @@ public struct ErrorReport: Sendable {
         case .requestFailure: return .fallback
         case .tlsError(let reason, _):
             switch reason {
-            case .untrustedCertificate, .expiredCertificate:
-                return .serverUnavailable
+            case .untrustedCertificate:
+                return .tlsUntrustedCertificate
+            case .expiredCertificate:
+                return .tlsExpiredCertificate
             case .handshakeFailed:
-                return .offline
+                return .tlsHandshakeFailed
             }
         }
     }
@@ -403,6 +410,12 @@ public struct ErrorReport: Sendable {
             return OBALoc("error_report.summary.no_region_selected", value: "Choose your region to see transit info.", comment: "One-line toast text: no transit region has been selected.")
         case .authentication:
             return OBALoc("error_report.summary.authentication", value: "The server didn't accept this app's request.", comment: "One-line toast text for an authentication or authorization failure that the rider cannot fix in the app.")
+        case .tlsUntrustedCertificate:
+            return OBALoc("error_report.summary.tls_untrusted_cert", value: "The security certificate isn't trusted.", comment: "One-line toast text: server TLS certificate is untrusted.")
+        case .tlsExpiredCertificate:
+            return OBALoc("error_report.summary.tls_expired_cert", value: "Check your device's date and time.", comment: "One-line toast text: server TLS certificate is expired or device clock is wrong.")
+        case .tlsHandshakeFailed:
+            return OBALoc("error_report.summary.tls_handshake_failed", value: "Can't establish a secure connection.", comment: "One-line toast text: TLS handshake failed.")
         case .silent, .message, .fallback:
             return fallbackSummary
         }
@@ -445,6 +458,12 @@ public struct ErrorReport: Sendable {
             return String(format: fmt, Bundle.main.appName)
         case .authentication:
             return OBALoc("error_report.explanation.authentication", value: "The server didn't accept this app's request. Please contact support if this continues.", comment: "Explanation of an authentication or authorization failure that the rider cannot fix in the app.")
+        case .tlsUntrustedCertificate:
+            return APIError.tlsError(reason: .untrustedCertificate).errorDescription ?? fallbackExplanation
+        case .tlsExpiredCertificate:
+            return APIError.tlsError(reason: .expiredCertificate).errorDescription ?? fallbackExplanation
+        case .tlsHandshakeFailed:
+            return APIError.tlsError(reason: .handshakeFailed).errorDescription ?? fallbackExplanation
         case .silent, .message, .fallback:
             return fallbackExplanation
         }

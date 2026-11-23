@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "운행이 종료되었습니다.";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "보안 인증서를 신뢰할 수 없습니다.";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "기기의 날짜와 시간을 확인하세요.";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "보안 연결을 설정할 수 없습니다.";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "도착 시간을 불러올 수 없음";
@@ -755,10 +764,10 @@
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
 
 /* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
-"api_error.tls_untrusted_cert" = "Unable to establish a secure connection because the server's security certificate is not trusted. If you are connected to a public Wi-Fi network, try logging in or switching to cellular data.";
+"api_error.tls_untrusted_cert" = "서버의 보안 인증서를 신뢰할 수 없어 보안 연결을 설정할 수 없습니다. 공용 Wi-Fi 네트워크에 연결되어 있는 경우 로그인하거나 셀룰러 데이터로 전환해 보세요.";
 
 /* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
-"api_error.tls_expired_cert" = "Unable to establish a secure connection because the server's security certificate has expired or is not yet valid. Please check that your device's date and time are set correctly in Settings, or try again later.";
+"api_error.tls_expired_cert" = "서버의 보안 인증서가 만료되었거나 아직 유효하지 않아 보안 연결을 설정할 수 없습니다. 설정에서 기기의 날짜와 시간이 올바르게 설정되어 있는지 확인하거나 나중에 다시 시도해 주세요.";
 
 /* An error shown when an SSL/TLS handshake or secure connection fails. */
-"api_error.tls_handshake_failed" = "A secure connection could not be established with the server. Please check your network connection, disable any active VPN or proxy, and try again.";
+"api_error.tls_handshake_failed" = "서버와의 보안 연결을 설정할 수 없습니다. 네트워크 연결을 확인하고 활성화된 VPN이나 프록시를 끈 후 다시 시도해 주세요.";

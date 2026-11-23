@@ -9,18 +9,12 @@
 
 import Foundation
 
-public typealias TLSErrorReason = APIError.TLSReason
-
 public enum APIError: Error, LocalizedError {
     /// Stable reasons for SSL/TLS connection and certificate failures.
     public enum TLSReason: Sendable, Equatable {
         case untrustedCertificate
         case expiredCertificate
         case handshakeFailed
-
-        public static let untrustedCert: TLSReason = .untrustedCertificate
-        public static let expiredCert: TLSReason = .expiredCertificate
-        public static let handshakeError: TLSReason = .handshakeFailed
     }
 
     case captivePortal
@@ -31,10 +25,6 @@ public enum APIError: Error, LocalizedError {
 
     /// An SSL/TLS failure occurred during connection or certificate validation.
     case tlsError(reason: TLSReason, underlyingError: Error? = nil)
-
-    public static func tlsError(_ reason: TLSReason, underlyingError: Error? = nil) -> APIError {
-        .tlsError(reason: reason, underlyingError: underlyingError)
-    }
 
     /// A `404` error.
     case requestNotFound(HTTPURLResponse)
