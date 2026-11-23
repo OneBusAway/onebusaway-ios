@@ -161,4 +161,97 @@ final class GTFSRealtimeFeedParserTests {
         let unsupported = GTFSRealtimeError.unsupportedIncrementality(.differential)
         #expect(unsupported.errorDescription != nil)
     }
+
+    // MARK: - Edge Cases & Equatable Conformance
+
+    @Test func `Feed header without timestamp bypasses staleness and future checks`() throws {
+        let parser = GTFSRealtimeFeedParser(maxStaleness: 10, maxFutureTolerance: 10)
+        let data = try makeFeedData(timestamp: nil, incrementality: .fullDataset)
+        let message = try parser.parse(data: data)
+        #expect(!message.header.hasTimestamp)
+    }
+
+    @Test func `Feed header with zero timestamp bypasses staleness and future checks`() throws {
+        let parser = GTFSRealtimeFeedParser(maxStaleness: 10, maxFutureTolerance: 10)
+        let data = try makeFeedData(timestamp: 0, incrementality: .fullDataset)
+        let message = try parser.parse(data: data)
+        #expect(message.header.timestamp == 0)
+    }
+
+    @Test func `Feed header with custom allowed incrementality permits differential feeds`() throws {
+        let customParser = GTFSRealtimeFeedParser(allowedIncrementalities: [.differential, .fullDataset])
+        let data = try makeFeedData(incrementality: .differential)
+        let message = try customParser.parse(data: data)
+        #expect(message.header.incrementality == .differential)
+    }
+
+    @Test func `Feed header with exact staleness boundary is accepted`() throws {
+        let parser = GTFSRealtimeFeedParser(maxStaleness: 300)
+        let referenceDate = Date(timeIntervalSince1970: 1_700_000_300)
+        let exactTimestamp: UInt64 = 1_700_000_000
+
+        let data = try makeFeedData(timestamp: exactTimestamp)
+        let message = try parser.parse(data: data, referenceDate: referenceDate)
+        #expect(message.header.timestamp == exactTimestamp)
+    }
+
+    @Test func `Feed header with exact future tolerance boundary is accepted`() throws {
+        let parser = GTFSRealtimeFeedParser(maxFutureTolerance: 120)
+        let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let exactFutureTimestamp: UInt64 = 1_700_000_120
+
+        let data = try makeFeedData(timestamp: exactFutureTimestamp)
+        let message = try parser.parse(data: data, referenceDate: referenceDate)
+        #expect(message.header.timestamp == exactFutureTimestamp)
+    }
+
+    @Test func `GTFSRealtimeError Equatable conformance distinguishes error variants and attributes`() {
+        let date1 = Date(timeIntervalSince1970: 1_000)
+        let date2 = Date(timeIntervalSince1970: 2_000)
+
+        #expect(GTFSRealtimeError.emptyData == GTFSRealtimeError.emptyData)
+        #expect(GTFSRealtimeError.emptyData != GTFSRealtimeError.unsupportedIncrementality(.differential))
+
+        #expect(
+            GTFSRealtimeError.unsupportedIncrementality(.differential)
+            == GTFSRealtimeError.unsupportedIncrementality(.differential)
+        )
+        #expect(
+            GTFSRealtimeError.unsupportedIncrementality(.differential)
+            != GTFSRealtimeError.unsupportedIncrementality(.fullDataset)
+        )
+
+        #expect(
+            GTFSRealtimeError.staleFeed(timestamp: date1, age: 100)
+            == GTFSRealtimeError.staleFeed(timestamp: date1, age: 100)
+        )
+        #expect(
+            GTFSRealtimeError.staleFeed(timestamp: date1, age: 100)
+            != GTFSRealtimeError.staleFeed(timestamp: date2, age: 100)
+        )
+        #expect(
+            GTFSRealtimeError.staleFeed(timestamp: date1, age: 100)
+            != GTFSRealtimeError.staleFeed(timestamp: date1, age: 200)
+        )
+
+        #expect(
+            GTFSRealtimeError.futureFeed(timestamp: date1, aheadBy: 50)
+            == GTFSRealtimeError.futureFeed(timestamp: date1, aheadBy: 50)
+        )
+        #expect(
+            GTFSRealtimeError.futureFeed(timestamp: date1, aheadBy: 50)
+            != GTFSRealtimeError.futureFeed(timestamp: date2, aheadBy: 50)
+        )
+        #expect(
+            GTFSRealtimeError.futureFeed(timestamp: date1, aheadBy: 50)
+            != GTFSRealtimeError.futureFeed(timestamp: date1, aheadBy: 150)
+        )
+
+        enum CustomTestError: Error, Sendable {
+            case a, b
+        }
+        #expect(GTFSRealtimeError.malformedData(CustomTestError.a) == GTFSRealtimeError.malformedData(CustomTestError.a))
+        #expect(GTFSRealtimeError.malformedData(CustomTestError.a) != GTFSRealtimeError.malformedData(CustomTestError.b))
+        #expect(GTFSRealtimeError.malformedData(CustomTestError.a) != GTFSRealtimeError.emptyData)
+    }
 }
