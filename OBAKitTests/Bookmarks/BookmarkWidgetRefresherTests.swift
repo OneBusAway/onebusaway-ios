@@ -178,6 +178,22 @@ final class BookmarkWidgetRefresherTests: OBATestCase {
         withExtendedLifetime(refresher) {}
     }
 
+    /// A single aggregate reload callback is invoked once per timeline refresh event,
+    /// even when multiple widget kinds are registered.
+    @Test @MainActor func `Aggregate reload callback is invoked once per refresh event`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        var reloadCount = 0
+        let refresher = BookmarkWidgetRefresher { reloadCount += 1 }
+
+        let bookmark = try makeBookmark(application: application)
+        application.userDataStore.add(bookmark, to: nil)
+        await drainMainActor()
+
+        #expect(reloadCount == 1)
+        withExtendedLifetime(refresher) {}
+    }
+
     /// The tab's own arrival-batch reload targets the same widget kinds, so the
     /// two paths can't drift apart on the identifiers.
     @Test @MainActor func `Widget kind matches the registered extension kind`() {

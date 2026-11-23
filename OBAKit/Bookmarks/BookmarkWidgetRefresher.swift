@@ -42,7 +42,8 @@ final class BookmarkWidgetRefresher {
     static var defaultReloadKind: (String) -> Void = { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
 
     /// Invoked instead of `WidgetCenter` when set. Tests inject a spy here;
-    /// production leaves it nil and reloads for real.
+    /// production leaves both nil and reloads for real.
+    private let reload: (() -> Void)?
     private let reloadKind: ((String) -> Void)?
 
     /// Observes `NotificationCenter.default` because that is where
@@ -50,7 +51,8 @@ final class BookmarkWidgetRefresher {
     /// and `add(_:to:index:)`. Selector-based observation is auto-removed on
     /// dealloc, so no token/deinit is needed.
     init(reload: (() -> Void)? = nil) {
-        self.reloadKind = reload.map { spy in { _ in spy() } }
+        self.reload = reload
+        self.reloadKind = nil
 
         NotificationCenter.default.addObserver(
             self,
@@ -61,6 +63,7 @@ final class BookmarkWidgetRefresher {
     }
 
     init(reloadKind: @escaping (String) -> Void) {
+        self.reload = nil
         self.reloadKind = reloadKind
 
         NotificationCenter.default.addObserver(
@@ -81,6 +84,10 @@ final class BookmarkWidgetRefresher {
     }
 
     func reloadTimelines() {
+        if let reload {
+            reload()
+            return
+        }
         if let reloadKind {
             Self.reloadAllTimelines(using: reloadKind)
             return
