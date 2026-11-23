@@ -85,6 +85,12 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     public let stopSequence: Int
 
     /// The GTFS stop sequence for this stop if provided, matching GTFS stop_times.txt / stop_time_update.stop_sequence.
+    ///
+    /// - Note: OBA REST API servers do not return GTFS stop sequences for arrivals/departures;
+    ///         only internal 0- or 1-indexed `stopSequence` is returned. Therefore, for decoded REST
+    ///         arrivals, `gtfsStopSequence` is nil. Delay carry-forward based on stop sequence numbers
+    ///         is omitted for `ArrivalDeparture`, but stop-level matching by `stopID` and trip-level delay
+    ///         fallback (`tripDelay`) remain fully functional.
     public let gtfsStopSequence: Int?
 
     /// The number of stops in this active trip
@@ -467,6 +473,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
             stopID == rhs.stopID &&
             stop == rhs.stop &&
             stopSequence == rhs.stopSequence &&
+            gtfsStopSequence == rhs.gtfsStopSequence &&
             totalStopsInTrip == rhs.totalStopsInTrip &&
             _tripHeadsign == rhs._tripHeadsign &&
             tripID == rhs.tripID &&
@@ -502,6 +509,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         hasher.combine(stopID)
         hasher.combine(stop)
         hasher.combine(stopSequence)
+        hasher.combine(gtfsStopSequence)
         hasher.combine(totalStopsInTrip)
         hasher.combine(_tripHeadsign)
         hasher.combine(tripID)

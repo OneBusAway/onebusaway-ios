@@ -23,10 +23,12 @@ final class GTFSRealtimeDelayReconcilerTests {
         gtfsStopSequence: Int? = nil,
         scheduledArrival: Date = Date(timeIntervalSince1970: 1_700_001_000),
         scheduledDeparture: Date = Date(timeIntervalSince1970: 1_700_001_100),
+        serviceDate: Date = Date(timeIntervalSince1970: 1_700_000_000),
         predictedArrival: Date? = nil,
         predictedDeparture: Date? = nil,
         predicted: Bool = false,
-        status: String = "default"
+        status: String = "default",
+        tripStatus: TripStatus? = nil
     ) -> ArrivalDeparture {
         ArrivalDeparture(
             arrivalEnabled: true,
@@ -44,7 +46,7 @@ final class GTFSRealtimeDelayReconcilerTests {
             routeShortName: "E",
             scheduledArrival: scheduledArrival,
             scheduledDeparture: scheduledDeparture,
-            serviceDate: Date(timeIntervalSince1970: 1_700_000_000),
+            serviceDate: serviceDate,
             situationIDs: [],
             serviceAlerts: [],
             status: status,
@@ -54,6 +56,7 @@ final class GTFSRealtimeDelayReconcilerTests {
             totalStopsInTrip: 20,
             tripHeadsign: "Downtown Seattle",
             tripID: tripID,
+            tripStatus: tripStatus,
             vehicleID: "veh_10"
         )
     }
@@ -624,12 +627,12 @@ final class GTFSRealtimeDelayReconcilerTests {
         #expect(resultEarly.scheduleStatus == .early)
     }
 
-    @Test func `Delay carries forward to later stops for ArrivalDeparture with no stop update`() {
+    @Test func `ArrivalDeparture without gtfsStopSequence does not carry forward upstream stop update when tripDelay is nil`() {
         let arrDep = makeArrivalDeparture(
-            tripID: "trip_propagate_arrdep",
+            tripID: "trip_no_carry_forward",
             stopID: "stop_downstream",
             stopSequence: 5,
-            gtfsStopSequence: 5,
+            gtfsStopSequence: nil,
             scheduledArrival: Date(timeIntervalSince1970: 1_700_001_000),
             scheduledDeparture: Date(timeIntervalSince1970: 1_700_001_100)
         )
@@ -640,21 +643,19 @@ final class GTFSRealtimeDelayReconcilerTests {
             departure: GTFSRTStopTimeEvent(delay: 150)
         )
         let tripUpdate = GTFSRTTripUpdate(
-            tripID: "trip_propagate_arrdep",
+            tripID: "trip_no_carry_forward",
             tripDelay: nil,
             stopTimeUpdates: [upstreamUpdate]
         )
 
         let result = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: arrDep, with: tripUpdate)
-        #expect(result.isLive == true)
-        #expect(result.arrivalDelay == 150)
-        #expect(result.departureDelay == 150)
-        #expect(result.reconciledArrival == Date(timeIntervalSince1970: 1_700_001_150))
-        #expect(result.reconciledDeparture == Date(timeIntervalSince1970: 1_700_001_250))
+        #expect(result.isLive == false)
+        #expect(result.arrivalDelay == nil)
+        #expect(result.departureDelay == nil)
 
         let applied = arrDep.applying(reconciliation: result)
-        #expect(applied.predicted == true)
-        #expect(applied.predictedArrival == Date(timeIntervalSince1970: 1_700_001_150))
+        #expect(applied.predicted == false)
+        #expect(applied.predictedArrival == nil)
     }
 
     @Test func `Canceled trip clears ArrivalDeparture predictions and attaches canceled tripStatus`() {
@@ -921,5 +922,203 @@ final class GTFSRealtimeDelayReconcilerTests {
         #expect(results.count == 1)
         #expect(results[0].arrivalDelay == 180)
         #expect(results[0].tripUpdate?.startDate == "20261122")
+    }
+
+    @Test func `Reconciler with real decoded arrivals fixture performs stop-level match and trip-level delay fallback`() throws {
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals_and_departures_for_stop_1_75403.json")
+        let arrival = try #require(stopArrivals.arrivalsAndDepartures.first)
+
+        // 1. Verify REST API does not return gtfsStopSequence
+        #expect(arrival.gtfsStopSequence == nil)
+        #expect(arrival.stopID == "1_75403")
+        #expect(arrival.tripID == "1_18198879")
+
+        let reconciler = GTFSRealtimeDelayReconciler.standard
+
+        // 2. Stop-level match: update matching arrival.stopID
+        let stopMatchUpdate = GTFSRTTripUpdate(
+            tripID: arrival.tripID,
+            stopTimeUpdates: [
+                GTFSRTStopTimeUpdate(
+                    stopID: arrival.stopID,
+                    arrival: GTFSRTStopTimeEvent(delay: 180),
+                    departure: GTFSRTStopTimeEvent(delay: 240)
+                )
+            ]
+        )
+        let stopMatchResult = reconciler.reconcile(arrivalDeparture: arrival, with: stopMatchUpdate)
+        #expect(stopMatchResult.arrivalDelay == 180)
+        #expect(stopMatchResult.departureDelay == 240)
+        #expect(stopMatchResult.reconciledArrival == arrival.scheduledArrival.addingTimeInterval(180))
+
+        // 3. Trip-level delay fallback: update with tripDelay and stop updates for DIFFERENT stops.
+        // Because arrival.gtfsStopSequence is nil, stop-sequence carry-forward does not match the other stop;
+        // it cleanly falls back to trip-level delay.
+        let tripFallbackUpdate = GTFSRTTripUpdate(
+            tripID: arrival.tripID,
+            tripDelay: 420,
+            stopTimeUpdates: [
+                GTFSRTStopTimeUpdate(
+                    stopSequence: 10,
+                    stopID: "1_99999",
+                    arrival: GTFSRTStopTimeEvent(delay: 900)
+                )
+            ]
+        )
+        let tripFallbackResult = reconciler.reconcile(arrivalDeparture: arrival, with: tripFallbackUpdate)
+        #expect(tripFallbackResult.arrivalDelay == 420)
+        #expect(tripFallbackResult.departureDelay == 420)
+        #expect(tripFallbackResult.reconciledArrival == arrival.scheduledArrival.addingTimeInterval(420))
+    }
+
+    @Test func `selectBestTripUpdate rejects update when startDate does not match arrival service date`() {
+        let calendar = Calendar(identifier: .gregorian)
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 11
+        components.day = 22
+        components.hour = 0
+        components.minute = 0
+        components.second = 0
+        components.timeZone = TimeZone(identifier: "UTC")
+        let todayMidnight = calendar.date(from: components)!
+
+        let arrDepToday = makeArrivalDeparture(
+            tripID: "trip_reject_yesterday",
+            stopID: "stop_1",
+            scheduledArrival: todayMidnight.addingTimeInterval(3600),
+            scheduledDeparture: todayMidnight.addingTimeInterval(3700),
+            serviceDate: todayMidnight
+        )
+
+        // Only yesterday's update is present in feed
+        let updateYesterday = GTFSRTTripUpdate(
+            tripID: "trip_reject_yesterday",
+            startDate: "20261121",
+            tripDelay: 300
+        )
+
+        let reconciler = GTFSRealtimeDelayReconciler.standard
+        let results = reconciler.reconcile(
+            arrivalDepartures: [arrDepToday],
+            with: [updateYesterday],
+            timeZone: TimeZone(identifier: "UTC")
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].tripUpdate == nil)
+        #expect(results[0].arrivalDelay == nil)
+        #expect(results[0].isLive == false)
+
+        let applied = arrDepToday.applying(reconciliation: results[0])
+        #expect(applied.predicted == false)
+        #expect(applied.predictedArrival == nil)
+    }
+
+    @Test func `buildUpdatedTripStatus preserves statusModifier on empty reconciliation or no-match`() {
+        let sched = Date(timeIntervalSince1970: 1_700_001_000)
+
+        // Canceled statusModifier
+        let canceledTripStatus = TripStatus(
+            activeTripID: "trip_preserve_status",
+            closestStopID: "stop_1",
+            statusModifier: .canceled
+        )
+        let arrDepCanceled = ArrivalDeparture(
+            arrivalEnabled: false,
+            routeID: "route_1",
+            scheduledArrival: sched,
+            scheduledDeparture: sched.addingTimeInterval(60),
+            serviceDate: Date(timeIntervalSince1970: 1_700_000_000),
+            stopID: "stop_1",
+            tripID: "trip_preserve_status",
+            tripStatus: canceledTripStatus
+        )
+
+        // Scheduled statusModifier
+        let scheduledTripStatus = TripStatus(
+            activeTripID: "trip_preserve_status_2",
+            closestStopID: "stop_1",
+            statusModifier: .scheduled
+        )
+        let arrDepScheduled = ArrivalDeparture(
+            arrivalEnabled: true,
+            routeID: "route_1",
+            scheduledArrival: sched,
+            scheduledDeparture: sched.addingTimeInterval(60),
+            serviceDate: Date(timeIntervalSince1970: 1_700_000_000),
+            stopID: "stop_1",
+            tripID: "trip_preserve_status_2",
+            tripStatus: scheduledTripStatus
+        )
+
+        let reconciler = GTFSRealtimeDelayReconciler.standard
+
+        // Reconcile with nil (empty reconciliation)
+        let emptyResultCanceled = reconciler.reconcile(arrivalDeparture: arrDepCanceled, with: nil)
+        let appliedCanceled = arrDepCanceled.applying(reconciliation: emptyResultCanceled)
+        #expect(appliedCanceled.tripStatus?.statusModifier == .canceled)
+
+        let emptyResultScheduled = reconciler.reconcile(arrivalDeparture: arrDepScheduled, with: nil)
+        let appliedScheduled = arrDepScheduled.applying(reconciliation: emptyResultScheduled)
+        #expect(appliedScheduled.tripStatus?.statusModifier == .scheduled)
+
+        // Reconcile batch with no matching updates (no-match)
+        let batchResults = reconciler.reconcile(
+            arrivalDepartures: [arrDepCanceled, arrDepScheduled],
+            with: [GTFSRTTripUpdate(tripID: "some_unrelated_trip", tripDelay: 60)]
+        )
+        let batchAppliedCanceled = arrDepCanceled.applying(reconciliation: batchResults[0])
+        #expect(batchAppliedCanceled.tripStatus?.statusModifier == .canceled)
+
+        let batchAppliedScheduled = arrDepScheduled.applying(reconciliation: batchResults[1])
+        #expect(batchAppliedScheduled.tripStatus?.statusModifier == .scheduled)
+    }
+
+    @Test func `ArrivalDeparture isEqual and hash include gtfsStopSequence`() {
+        let arrDep1 = makeArrivalDeparture(stopSequence: 3, gtfsStopSequence: 10)
+        let arrDep2 = makeArrivalDeparture(stopSequence: 3, gtfsStopSequence: 10)
+        let arrDepDifferentSeq = makeArrivalDeparture(stopSequence: 3, gtfsStopSequence: 20)
+        let arrDepNilSeq = makeArrivalDeparture(stopSequence: 3, gtfsStopSequence: nil)
+
+        #expect(arrDep1 == arrDep2)
+        #expect(arrDep1.hashValue == arrDep2.hashValue)
+
+        #expect(arrDep1 != arrDepDifferentSeq)
+        #expect(arrDep1 != arrDepNilSeq)
+    }
+
+    @Test func `buildUpdatedTripStatus uses tripDelay for scheduleDeviation rather than single stop arrivalDelay`() {
+        let initialTripStatus = TripStatus(
+            activeTripID: "trip_dev_test",
+            closestStopID: "stop_dev",
+            scheduleDeviation: 100,
+            statusModifier: .default
+        )
+        let arrDep = makeArrivalDeparture(
+            tripID: "trip_dev_test",
+            stopID: "stop_dev",
+            tripStatus: initialTripStatus
+        )
+
+        let tripUpdate = GTFSRTTripUpdate(
+            tripID: "trip_dev_test",
+            tripDelay: 500,
+            stopTimeUpdates: [
+                GTFSRTStopTimeUpdate(
+                    stopID: "stop_dev",
+                    arrival: GTFSRTStopTimeEvent(delay: 60)
+                )
+            ]
+        )
+
+        let result = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: arrDep, with: tripUpdate)
+        #expect(result.arrivalDelay == 60)
+
+        let applied = arrDep.applying(reconciliation: result)
+        // Stop arrival is adjusted by stop's arrivalDelay (60)
+        #expect(applied.predictedArrival == arrDep.scheduledArrival.addingTimeInterval(60))
+        // But trip-level scheduleDeviation reflects trip-level tripDelay (500)
+        #expect(applied.tripStatus?.scheduleDeviation == 500)
     }
 }

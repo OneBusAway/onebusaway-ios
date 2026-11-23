@@ -90,22 +90,6 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
 
     public static let standard = GTFSRealtimeDelayReconciler()
 
-    private static let serviceDateFormatterUTC: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter
-    }()
-
-    private static let serviceDateFormatterCurrent: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd"
-        formatter.timeZone = .current
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter
-    }()
-
     /// Extracts the agency prefix from an identifier if present (e.g. "1_100" -> "1").
     public static func agencyPrefix(from identifier: String?) -> String? {
         guard let identifier, let idx = identifier.firstIndex(of: "_"), idx > identifier.startIndex else {
@@ -172,10 +156,6 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         }
 
         return false
-    }
-
-    private static func parseServiceDate(_ dateString: String) -> Date? {
-        serviceDateFormatterUTC.date(from: dateString)
     }
 
     private func emptyReconciliation<Schedule: GTFSRTReconcilableSchedule>(for schedule: Schedule) -> GTFSRTReconciledSchedule<Schedule> {
@@ -465,20 +445,37 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
 
         let expectedDateString = formatter.string(from: arrDep.serviceDate)
 
-        if let exact = matchingUpdates.first(where: { $0.startDate == expectedDateString }) {
+        // When start_date is present, it MUST match the arrival service date.
+        // Updates with a non-matching start_date are rejected.
+        let validUpdates = matchingUpdates.filter { update in
+            guard let startDate = update.startDate, !startDate.isEmpty else {
+                return true
+            }
+            return startDate == expectedDateString
+        }
+
+        if let exact = validUpdates.first(where: { $0.startDate == expectedDateString }) {
             return exact
         }
 
-        let updatesWithDate = matchingUpdates.compactMap { update -> (GTFSRTTripUpdate, TimeInterval)? in
-            guard let s = update.startDate, let d = formatter.date(from: s) else { return nil }
-            return (update, abs(d.timeIntervalSince(arrDep.serviceDate)))
+        // Candidate updates without start_date: only use nearest 36-hour candidate fallback
+        let candidatesWithoutStartDate = validUpdates.filter { $0.startDate == nil || $0.startDate?.isEmpty == true }
+        if candidatesWithoutStartDate.isEmpty {
+            return nil
+        }
+
+        let updatesWithDate = candidatesWithoutStartDate.compactMap { update -> (GTFSRTTripUpdate, TimeInterval)? in
+            guard let date = update.timestamp ?? update.stopTimeUpdates.compactMap({ $0.arrivalTime ?? $0.departureTime }).first else {
+                return nil
+            }
+            return (update, abs(date.timeIntervalSince(arrDep.serviceDate)))
         }.sorted { $0.1 < $1.1 }
 
         if let best = updatesWithDate.first {
             return best.1 <= 36.0 * 3600.0 ? best.0 : nil
         }
 
-        return matchingUpdates.count == 1 ? matchingUpdates[0] : nil
+        return candidatesWithoutStartDate.count == 1 ? candidatesWithoutStartDate[0] : nil
     }
 
     /// Reconciles an array of `ArrivalDeparture` instances with an array of `GTFSRTTripUpdate` models.
@@ -503,6 +500,12 @@ public typealias ReconciledArrivalDeparture = GTFSRTReconciledSchedule<ArrivalDe
 extension ArrivalDeparture: GTFSRTReconcilableSchedule {
     public var reconcilableTripID: String { tripID }
     public var reconcilableStopID: String? { stopID }
+
+    /// The GTFS stop sequence for delay carry-forward.
+    ///
+    /// - Note: OBA REST API servers do not return GTFS stop sequences (`gtfsStopSequence` is nil for decoded REST arrivals).
+    ///         When nil, sequence-based carry-forward is skipped, while stop-level matching (by stop ID) and
+    ///         trip-level delay fallback remain active.
     public var reconcilableStopSequence: Int? { gtfsStopSequence }
     public var scheduledArrivalDate: Date? { scheduledArrival }
     public var scheduledDepartureDate: Date? { scheduledDeparture }
@@ -564,11 +567,11 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
             }
         } else if let tripStatus {
             let updatedRealTime = reconciliation.isNoData ? false : (reconciliation.isLive ? true : tripStatus.isRealTime)
-            let updatedDev = reconciliation.arrivalDelay.map(TimeInterval.init) ?? tripStatus.scheduleDeviation
+            let updatedDev = reconciliation.tripUpdate?.tripDelay.map(TimeInterval.init) ?? tripStatus.scheduleDeviation
             let updatedLastUp = reconciliation.tripUpdate?.timestamp ?? tripStatus.lastUpdate
             let updatedVeh = reconciliation.tripUpdate?.vehicleID ?? tripStatus.vehicleID
             return tripStatus.updating(
-                statusModifier: .default,
+                statusModifier: tripStatus.statusModifier,
                 isRealTime: updatedRealTime,
                 scheduleDeviation: updatedDev,
                 lastUpdate: updatedLastUp,
@@ -580,6 +583,9 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
 
     /// Applies a reconciled update, creating an updated `ArrivalDeparture` instance.
     public func applying(reconciliation: ReconciledArrivalDeparture) -> ArrivalDeparture {
+        guard reconciliation.tripUpdate != nil else {
+            return self
+        }
         let pred = resolvePredictions(reconciliation: reconciliation)
         let stat = resolveStatusAndBoarding(reconciliation: reconciliation)
         let updatedTripStatus = buildUpdatedTripStatus(reconciliation: reconciliation)
