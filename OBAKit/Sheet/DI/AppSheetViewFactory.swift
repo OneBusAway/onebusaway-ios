@@ -193,23 +193,11 @@ final class AppSheetViewFactory {
                 application: self.application,
                 stopsObserver: self.stopsObserver
             ),
-            // Modally, as the UIKit map's nearby list opens one: the detail
-            // closes itself from UIKit, which a sheet in the stack can't take.
-            onSelectAlert: { [application, presentingController] alert in
-                guard let host = presentingController() else {
-                    Logger.error("AppSheetViewFactory: dropping an alert's detail — no presenting controller resolved.")
-                    return
-                }
-                application.viewRouter.navigateTo(alert: alert, from: host)
+            onSelectAlert: { [coordinator] alert in
+                coordinator.push(.transitAlert(alertID: alert.id))
             },
-            // Modally, as the More screen opens it: the controller owns its
-            // Done button and dismisses itself.
-            onOpenSettings: { [application, presentingController] in
-                guard let host = presentingController() else {
-                    Logger.error("AppSheetViewFactory: dropping Settings — no presenting controller resolved.")
-                    return
-                }
-                application.viewRouter.presentSettings(from: host)
+            onOpenSettings: { [coordinator] in
+                coordinator.push(.settings)
             }
         )
     }

@@ -52,10 +52,10 @@ struct HomeSheetView: View {
     private let application: Application
 
     /// Opens a service alert's detail.
-    private let onSelectAlert: (AgencyAlert) -> Void
+    let onSelectAlert: (AgencyAlert) -> Void
 
     /// Presents the app's settings.
-    private let onOpenSettings: () -> Void
+    let onOpenSettings: () -> Void
 
     init(
         application: Application,

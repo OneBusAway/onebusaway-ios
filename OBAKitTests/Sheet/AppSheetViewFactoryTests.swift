@@ -818,6 +818,44 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(didClose)
     }
 
+    @Test @MainActor
+    func `Home view onOpenSettings pushes settings route onto coordinator`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let factory = makeFactory(application: application, coordinator: coordinator)
+        let homeView = factory.homeView()
+
+        homeView.onOpenSettings()
+        #expect(coordinator.stackedRoutes == [.settings])
+    }
+
+    @Test @MainActor
+    func `Home view onSelectAlert pushes transit alert route onto coordinator`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let factory = makeFactory(application: application, coordinator: coordinator)
+        let homeView = factory.homeView()
+
+        let alertID = "test-alert-456"
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = ""
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.activePeriod = [period]
+        transitAlert.informedEntity = [entitySelector]
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = alertID
+        feedEntity.alert = transitAlert
+        let agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: nil)
+
+        homeView.onSelectAlert(agencyAlert)
+        #expect(coordinator.stackedRoutes == [.transitAlert(alertID: alertID)])
+    }
+
     // MARK: - Transit Alert View
 
     @Test @MainActor
