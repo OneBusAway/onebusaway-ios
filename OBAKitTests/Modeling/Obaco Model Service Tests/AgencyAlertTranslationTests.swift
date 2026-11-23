@@ -193,6 +193,15 @@ final class AgencyAlertTranslationTests: OBATestCase {
         #expect(alert.title(preferredLanguages: ["ja", "ko"]) == "English title")
     }
 
+    @Test func `Higher priority language dialect matches base before lower priority exact match`() throws {
+        let alert = try makeAlert(headerTranslations: [
+            translation("es", "Título en español"),
+            translation("fr", "Titre en français")
+        ])
+
+        #expect(alert.title(preferredLanguages: ["es-MX", "fr"]) == "Título en español")
+    }
+
     @Test func `Preferred language falls back to first translation when neither preferred nor English match`() throws {
         let alert = try makeAlert(headerTranslations: [
             translation("de", "Deutscher Titel"),

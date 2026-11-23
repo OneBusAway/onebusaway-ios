@@ -25,4 +25,24 @@ final class RegionalAlertsModelOperationTests: OBATestCase {
         let alerts = await restService.getAlerts(agencies: agencies)
         #expect(alerts.count == 20)
     }
+
+    @Test func `getAlerts keeps cached alerts when agency fetch fails`() async throws {
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
+
+        let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
+        let agency = agencies.first(where: { $0.agencyID == "1" })!
+
+        let initialAlerts = await restService.getAlerts(agency: agency)
+        #expect(!initialAlerts.isEmpty)
+
+        // Second fetch fails with network error
+        dataLoader.removeMappedResponses()
+        dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: URLError(.notConnectedToInternet)) { $0.url?.path.contains("/alerts-for-agency/") ?? false })
+
+        let cachedAlerts = await restService.getAlerts(agency: agency)
+        #expect(cachedAlerts.count == initialAlerts.count)
+        #expect(cachedAlerts.map(\.id) == initialAlerts.map(\.id))
+    }
 }

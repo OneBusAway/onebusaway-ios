@@ -7,6 +7,7 @@
 
 import Foundation
 import os.log
+import Synchronization
 
 /// Makes API calls to the OBA REST service and converts the server's responses into model objects.
 public actor RESTAPIService: @preconcurrency APIService {
@@ -29,6 +30,7 @@ public actor RESTAPIService: @preconcurrency APIService {
 
     nonisolated let urlBuilder: RESTAPIURLBuilder
     nonisolated let decoder: JSONDecoder
+    nonisolated let cachedAlertsByAgency = Mutex<[String: [AgencyAlert]]>([:])
 
     public init(
         _ configuration: APIServiceConfiguration,

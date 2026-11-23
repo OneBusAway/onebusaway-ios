@@ -427,4 +427,36 @@ final class AgencyAlertsStoreTests: OBATestCase {
         }
         #expect(store.agencyAlerts.isEmpty)
     }
+
+    @Test func `Agency alerts preserved when agency fetch fails`() async throws {
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+
+        let alertID = "cached-alert"
+        dataLoader.mock(data: try feed(alertIDs: [alertID])) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let firstOutcome = await checkForUpdates()
+        guard case .updated = firstOutcome else {
+            Issue.record("Expected first update, got \(firstOutcome)")
+            return
+        }
+        #expect(store.agencyAlerts.count == 1)
+        #expect(store.agencyAlerts.first?.id == alertID)
+
+        // Subsequent check: agency 1 fetch fails with network error
+        dataLoader.removeMappedResponses()
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        dataLoader.mock(response: MockDataResponse(data: nil, urlResponse: nil, error: URLError(.notConnectedToInternet)) { $0.url?.path.hasSuffix("/alerts-for-agency/1.pb") ?? false })
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.contains("/alerts-for-agency/") ?? false }
+        dataLoader.mock(data: try feed(alertIDs: [])) { $0.url?.path.hasSuffix("/alerts.pb") ?? false }
+
+        let secondOutcome = await checkForUpdates()
+        guard case .updated = secondOutcome else {
+            Issue.record("Expected second update, got \(secondOutcome)")
+            return
+        }
+        #expect(store.agencyAlerts.count == 1)
+        #expect(store.agencyAlerts.first?.id == alertID)
+    }
 }

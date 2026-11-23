@@ -268,17 +268,9 @@ extension AgencyAlert {
 
         let normalizedLangs = preferredLanguages.map { $0.replacingOccurrences(of: "_", with: "-") }
 
-        // 1. Check exact language code match for full preferred tags first (e.g. "es-MX" or "zh-Hant-TW")
-        for pref in normalizedLangs {
-            guard !pref.isEmpty else { continue }
-            if let match = translations.first(where: {
-                $0.language.replacingOccurrences(of: "_", with: "-").caseInsensitiveCompare(pref) == .orderedSame
-            }) {
-                return match.text
-            }
-        }
-
-        // 2. Exact dialect / script match using Bundle.preferredLocalizations (e.g. zh-Hant-TW -> zh-Hant)
+        // 1. Language matching using Bundle.preferredLocalizations.
+        // Evaluates preferred languages in priority order, matching exact tags as well as dialect
+        // and script fallbacks (e.g. "es-MX" -> "es", "zh-Hant-TW" -> "zh-Hant").
         let availableLangs = translations.map { $0.language.replacingOccurrences(of: "_", with: "-") }
         let matchedLangs = Bundle.preferredLocalizations(from: availableLangs, forPreferences: normalizedLangs)
         for matched in matchedLangs {
@@ -289,7 +281,10 @@ extension AgencyAlert {
             }
         }
 
-        // 3. Base language identifier fallback (e.g. "es", "fr", "zh") across preferred languages in order
+        // Steps 2-4 run only when `Bundle.preferredLocalizations` returns an empty array
+        // (e.g. if `normalizedLangs` is empty, or on platforms/environments where localization resolution behaves strictly).
+
+        // 2. Base language identifier fallback (e.g. "es", "fr", "zh") across preferred languages in order
         for pref in normalizedLangs {
             let prefCode = languageCode(from: pref)
             guard !prefCode.isEmpty else { continue }
@@ -301,7 +296,7 @@ extension AgencyAlert {
             }
         }
 
-        // 4. Fall back to English ("en")
+        // 3. Fall back to English ("en")
         if let exactEn = translations.first(where: {
             $0.language.caseInsensitiveCompare(defaultLanguageCode) == .orderedSame ||
             languageCode(from: $0.language) == defaultLanguageCode
@@ -309,7 +304,7 @@ extension AgencyAlert {
             return exactEn.text
         }
 
-        // 5. Fall back to raw / first translation
+        // 4. Fall back to raw / first translation
         return translations.first?.text
     }
 }
