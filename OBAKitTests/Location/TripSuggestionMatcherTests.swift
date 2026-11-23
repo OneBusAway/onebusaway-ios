@@ -148,4 +148,59 @@ struct TripSuggestionMatcherTests {
         let sighting = VehicleSighting(coordinate: point(30, bearing: 90), fixTime: now, heading: nil)
         #expect(TripSuggestionMatcher.confirmedDistance(of: sighting, earlier: sighting, rider: rider(speed: 0)) != nil)
     }
+
+    // MARK: - Motion Filling & Cardinal Bearings
+
+    @Test func `fillingMotion preserves valid motion and fills only invalid components`() {
+        let earlier = RiderSample(coordinate: origin, speed: 12.0, course: 180.0, timestamp: now)
+
+        // Invalid course only
+        let invalidCourseSample = RiderSample(coordinate: origin, speed: 15.0, course: -1.0, timestamp: now)
+        let filledCourse = invalidCourseSample.fillingMotion(from: earlier)
+        #expect(filledCourse.speed == 15.0)
+        #expect(filledCourse.course == 180.0)
+
+        // Invalid speed only
+        let invalidSpeedSample = RiderSample(coordinate: origin, speed: -1.0, course: 90.0, timestamp: now)
+        let filledSpeed = invalidSpeedSample.fillingMotion(from: earlier)
+        #expect(filledSpeed.speed == 12.0)
+        #expect(filledSpeed.course == 90.0)
+
+        // Both invalid
+        let invalidBothSample = RiderSample(coordinate: origin, speed: -5.0, course: -10.0, timestamp: now)
+        let filledBoth = invalidBothSample.fillingMotion(from: earlier)
+        #expect(filledBoth.speed == 12.0)
+        #expect(filledBoth.course == 180.0)
+    }
+
+    @Test func `normalized degrees wraps multi-turn and negative angles correctly`() {
+        #expect(TripSuggestionMatcher.normalized(0) == 0)
+        #expect(TripSuggestionMatcher.normalized(360) == 0)
+        #expect(TripSuggestionMatcher.normalized(720) == 0)
+        #expect(TripSuggestionMatcher.normalized(450) == 90)
+        #expect(TripSuggestionMatcher.normalized(-90) == 270)
+        #expect(TripSuggestionMatcher.normalized(-450) == 270)
+        #expect(TripSuggestionMatcher.normalized(-360) == 0)
+    }
+
+    @Test func `bearing calculation across cardinal directions`() {
+        let northPoint = CLLocationCoordinate2D(latitude: 47.7, longitude: -122.3393)
+        let southPoint = CLLocationCoordinate2D(latitude: 47.5, longitude: -122.3393)
+        let eastPoint = CLLocationCoordinate2D(latitude: 47.6105, longitude: -122.2)
+        let westPoint = CLLocationCoordinate2D(latitude: 47.6105, longitude: -122.5)
+
+        #expect(abs(TripSuggestionMatcher.bearing(from: origin, to: northPoint) - 0.0) < 0.1)
+        #expect(abs(TripSuggestionMatcher.bearing(from: origin, to: southPoint) - 180.0) < 0.1)
+        #expect(abs(TripSuggestionMatcher.bearing(from: origin, to: eastPoint) - 90.0) < 0.5)
+        #expect(abs(TripSuggestionMatcher.bearing(from: origin, to: westPoint) - 270.0) < 0.5)
+    }
+
+    @Test func `confirmedDistance ignores earlier travel if distance is below minimum travel threshold`() {
+        // Vehicle moved only 5m (< minimumTravelForBearing 25m) with travel direction 90° away from rider
+        let earlier = VehicleSighting(coordinate: point(10, bearing: 180), fixTime: now.addingTimeInterval(-20), heading: 0)
+        let later = VehicleSighting(coordinate: point(15, bearing: 180), fixTime: now, heading: 0)
+
+        // Despite perpendicular travel, since travel distance < 25m, the bearing check is bypassed
+        #expect(TripSuggestionMatcher.confirmedDistance(of: later, earlier: earlier, rider: rider()) != nil)
+    }
 }
