@@ -20,6 +20,7 @@ final class GTFSRealtimeDelayReconcilerTests {
         tripID: String = "trip_100",
         stopID: String = "stop_200",
         stopSequence: Int = 5,
+        gtfsStopSequence: Int? = nil,
         scheduledArrival: Date = Date(timeIntervalSince1970: 1_700_001_000),
         scheduledDeparture: Date = Date(timeIntervalSince1970: 1_700_001_100),
         predictedArrival: Date? = nil,
@@ -49,6 +50,7 @@ final class GTFSRealtimeDelayReconcilerTests {
             status: status,
             stopID: stopID,
             stopSequence: stopSequence,
+            gtfsStopSequence: gtfsStopSequence,
             totalStopsInTrip: 20,
             tripHeadsign: "Downtown Seattle",
             tripID: tripID,
@@ -467,7 +469,8 @@ final class GTFSRealtimeDelayReconcilerTests {
 
         let results = GTFSRealtimeDelayReconciler.standard.reconcile(
             arrivalDepartures: [arrDep],
-            with: [updateYesterday, updateToday]
+            with: [updateYesterday, updateToday],
+            timeZone: TimeZone(identifier: "UTC")
         )
 
         #expect(results.count == 1)
@@ -558,6 +561,9 @@ final class GTFSRealtimeDelayReconcilerTests {
         #expect(skippedArrDep.status == "skipped")
         #expect(skippedArrDep.arrivalEnabled == false)
         #expect(skippedArrDep.departureEnabled == false)
+        #expect(skippedArrDep.predicted == false)
+        #expect(skippedArrDep.predictedArrival == nil)
+        #expect(skippedArrDep.predictedDeparture == nil)
 
         let activeUpdate = GTFSRTTripUpdate(
             tripID: "trip_status",
@@ -623,6 +629,7 @@ final class GTFSRealtimeDelayReconcilerTests {
             tripID: "trip_propagate_arrdep",
             stopID: "stop_downstream",
             stopSequence: 5,
+            gtfsStopSequence: 5,
             scheduledArrival: Date(timeIntervalSince1970: 1_700_001_000),
             scheduledDeparture: Date(timeIntervalSince1970: 1_700_001_100)
         )
@@ -709,7 +716,8 @@ final class GTFSRealtimeDelayReconcilerTests {
         let visit2ArrDep = makeArrivalDeparture(
             tripID: "trip_loop_route",
             stopID: "stop_shared",
-            stopSequence: 10,
+            stopSequence: 1,
+            gtfsStopSequence: 10,
             scheduledArrival: Date(timeIntervalSince1970: 1_700_005_000)
         )
 
@@ -787,7 +795,8 @@ final class GTFSRealtimeDelayReconcilerTests {
 
         let results = GTFSRealtimeDelayReconciler.standard.reconcile(
             arrivalDepartures: [arrDep],
-            with: [updateYesterday, updateToday]
+            with: [updateYesterday, updateToday],
+            timeZone: TimeZone(identifier: "Europe/Warsaw")
         )
 
         #expect(results.count == 1)
@@ -817,5 +826,100 @@ final class GTFSRealtimeDelayReconcilerTests {
         )
         #expect(stResults[0].isLive == true)
         #expect(stResults[0].arrivalDelay == 200)
+    }
+
+    @Test func `ArrivalDeparture with zero-based stopSequence matches feed stop by stopID when feed uses 1-based GTFS stop_sequence`() {
+        let arrDep = makeArrivalDeparture(
+            tripID: "trip_express",
+            stopID: "stop_pike",
+            stopSequence: 0,
+            scheduledArrival: Date(timeIntervalSince1970: 1_700_000_500),
+            scheduledDeparture: Date(timeIntervalSince1970: 1_700_000_600)
+        )
+
+        let stopUpdate = GTFSRTStopTimeUpdate(
+            stopSequence: 10,
+            stopID: "stop_pike",
+            arrival: GTFSRTStopTimeEvent(delay: 90),
+            departure: GTFSRTStopTimeEvent(delay: 150),
+            scheduleRelationship: .scheduled
+        )
+        let tripUpdate = GTFSRTTripUpdate(
+            tripID: "trip_express",
+            scheduleRelationship: .scheduled,
+            stopTimeUpdates: [stopUpdate]
+        )
+
+        let result = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: arrDep, with: tripUpdate)
+        #expect(result.matchedStopTimeUpdate?.stopSequence == 10)
+        #expect(result.arrivalDelay == 90)
+        #expect(result.departureDelay == 150)
+    }
+
+    @Test func `Negative stop sequence does not trap and returns nil sequence match`() {
+        let item = GTFSRTScheduleItem(tripID: "trip_1", stopID: "stop_1", stopSequence: -1)
+        let update = GTFSRTStopTimeUpdate(stopSequence: 1, stopID: "stop_1")
+        let tripUpdate = GTFSRTTripUpdate(tripID: "trip_1", stopTimeUpdates: [update])
+
+        let result = GTFSRealtimeDelayReconciler.standard.reconcile(schedule: item, with: tripUpdate)
+        #expect(result.matchedStopTimeUpdate?.stopSequence == 1)
+    }
+
+    @Test func `Batch reconciliation isolates raw feed trip ID by feed agency`() {
+        let kcmArrDep = makeArrivalDeparture(tripID: "1_100", stopID: "1_50")
+        let soundTransitArrDep = makeArrivalDeparture(tripID: "40_100", stopID: "40_50")
+
+        let rawFeedUpdate = GTFSRTTripUpdate(tripID: "100", tripDelay: 200)
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [kcmArrDep, soundTransitArrDep],
+            with: [rawFeedUpdate],
+            agencyID: "1"
+        )
+
+        #expect(results.count == 2)
+        #expect(results[0].isLive == true)
+        #expect(results[0].arrivalDelay == 200)
+        #expect(results[1].isLive == false)
+    }
+
+    @Test func `Service date matching in UTC+13 agency timezone picks today over yesterday`() {
+        guard let aucklandTZ = TimeZone(identifier: "Pacific/Auckland") else { return }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = aucklandTZ
+
+        let components = DateComponents(year: 2026, month: 11, day: 22, hour: 0, minute: 0, second: 0)
+        guard let aucklandMidnight = cal.date(from: components) else { return }
+
+        let arrDep = ArrivalDeparture(
+            arrivalEnabled: true,
+            routeID: "1_10",
+            scheduledArrival: aucklandMidnight.addingTimeInterval(3600),
+            scheduledDeparture: aucklandMidnight.addingTimeInterval(3700),
+            serviceDate: aucklandMidnight,
+            stopID: "1_stop",
+            tripID: "1_trip_nz"
+        )
+
+        let updateYesterday = GTFSRTTripUpdate(
+            tripID: "trip_nz",
+            startDate: "20261121",
+            tripDelay: 45
+        )
+        let updateToday = GTFSRTTripUpdate(
+            tripID: "trip_nz",
+            startDate: "20261122",
+            tripDelay: 180
+        )
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDep],
+            with: [updateYesterday, updateToday],
+            timeZone: aucklandTZ
+        )
+
+        #expect(results.count == 1)
+        #expect(results[0].arrivalDelay == 180)
+        #expect(results[0].tripUpdate?.startDate == "20261122")
     }
 }

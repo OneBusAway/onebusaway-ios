@@ -202,9 +202,9 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         stopOrder: [String]?,
         agencyID: String?
     ) -> [GTFSRTStopTimeUpdate] {
-        if let schedSeq = schedule.reconcilableStopSequence {
+        if let schedSeq = schedule.reconcilableStopSequence, let targetSeq = UInt32(exactly: schedSeq) {
             let seqMatches = tripUpdate.stopTimeUpdates
-                .filter { $0.stopSequence != nil && ($0.stopSequence ?? 0) < UInt32(schedSeq) }
+                .filter { $0.stopSequence != nil && ($0.stopSequence ?? 0) < targetSeq }
                 .sorted { ($0.stopSequence ?? 0) < ($1.stopSequence ?? 0) }
             if !seqMatches.isEmpty { return seqMatches }
         }
@@ -360,11 +360,12 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         agencyID: String?
     ) -> GTFSRTStopTimeUpdate? {
         guard let schedSeq = schedule.reconcilableStopSequence,
+              let targetSeq = UInt32(exactly: schedSeq),
               let schedStopID = schedule.reconcilableStopID,
               !schedStopID.isEmpty else { return nil }
 
         return tripUpdate.stopTimeUpdates.first {
-            $0.stopSequence == UInt32(schedSeq) && Self.stopIDsMatch(feedStopID: $0.stopID, restStopID: schedStopID, agencyID: agencyID)
+            $0.stopSequence == targetSeq && Self.stopIDsMatch(feedStopID: $0.stopID, restStopID: schedStopID, agencyID: agencyID)
         }
     }
 
@@ -373,10 +374,11 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         in tripUpdate: GTFSRTTripUpdate,
         agencyID: String?
     ) -> GTFSRTStopTimeUpdate? {
-        guard let schedSeq = schedule.reconcilableStopSequence else { return nil }
+        guard let schedSeq = schedule.reconcilableStopSequence,
+              let targetSeq = UInt32(exactly: schedSeq) else { return nil }
 
         return tripUpdate.stopTimeUpdates.first {
-            guard $0.stopSequence == UInt32(schedSeq) else { return false }
+            guard $0.stopSequence == targetSeq else { return false }
             if let updateStopID = $0.stopID, let schedStopID = schedule.reconcilableStopID, !updateStopID.isEmpty, !schedStopID.isEmpty {
                 return Self.stopIDsMatch(feedStopID: updateStopID, restStopID: schedStopID, agencyID: agencyID)
             }
@@ -393,8 +395,10 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
 
         let candidates = tripUpdate.stopTimeUpdates.filter { update in
             guard Self.stopIDsMatch(feedStopID: update.stopID, restStopID: schedStopID, agencyID: agencyID) else { return false }
-            if let schedSeq = schedule.reconcilableStopSequence, let updateSeq = update.stopSequence {
-                return UInt32(schedSeq) == updateSeq
+            if let schedSeq = schedule.reconcilableStopSequence,
+               let targetSeq = UInt32(exactly: schedSeq),
+               let updateSeq = update.stopSequence {
+                return targetSeq == updateSeq
             }
             return true
         }
@@ -433,12 +437,7 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         stopOrder: [String]? = nil,
         agencyID: String? = nil
     ) -> ReconciledArrivalDeparture {
-        let agency = agencyID ?? Self.agencyPrefix(from: arrivalDeparture.tripID) ?? Self.agencyPrefix(from: arrivalDeparture.stopID)
-        return reconcile(schedule: arrivalDeparture, with: tripUpdate, stopOrder: stopOrder, agencyID: agency)
-    }
-
-    private func agencyPrefix(from arrDep: ArrivalDeparture) -> String? {
-        Self.agencyPrefix(from: arrDep.tripID) ?? Self.agencyPrefix(from: arrDep.routeID) ?? Self.agencyPrefix(from: arrDep.stopID)
+        return reconcile(schedule: arrivalDeparture, with: tripUpdate, stopOrder: stopOrder, agencyID: agencyID)
     }
 
     private func updateMatches(update: GTFSRTTripUpdate, arrDep: ArrivalDeparture, agency: String?) -> Bool {
@@ -451,17 +450,32 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         return true
     }
 
-    private func selectBestTripUpdate(from matchingUpdates: [GTFSRTTripUpdate], for arrDep: ArrivalDeparture) -> GTFSRTTripUpdate? {
+    private func selectBestTripUpdate(
+        from matchingUpdates: [GTFSRTTripUpdate],
+        for arrDep: ArrivalDeparture,
+        timeZone: TimeZone? = nil
+    ) -> GTFSRTTripUpdate? {
         if matchingUpdates.isEmpty { return nil }
 
+        let tz = timeZone ?? arrDep.trip?.timeZone.flatMap(TimeZone.init(identifier:)) ?? .current
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        formatter.timeZone = tz
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+
+        let expectedDateString = formatter.string(from: arrDep.serviceDate)
+
+        if let exact = matchingUpdates.first(where: { $0.startDate == expectedDateString }) {
+            return exact
+        }
+
         let updatesWithDate = matchingUpdates.compactMap { update -> (GTFSRTTripUpdate, TimeInterval)? in
-            guard let s = update.startDate, let d = Self.parseServiceDate(s) else { return nil }
+            guard let s = update.startDate, let d = formatter.date(from: s) else { return nil }
             return (update, abs(d.timeIntervalSince(arrDep.serviceDate)))
         }.sorted { $0.1 < $1.1 }
 
         if let best = updatesWithDate.first {
-            // Must be within 16 hours (any timezone on Earth is within 14 hours of UTC)
-            return best.1 <= 16.0 * 3600.0 ? best.0 : nil
+            return best.1 <= 36.0 * 3600.0 ? best.0 : nil
         }
 
         return matchingUpdates.count == 1 ? matchingUpdates[0] : nil
@@ -470,13 +484,14 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
     /// Reconciles an array of `ArrivalDeparture` instances with an array of `GTFSRTTripUpdate` models.
     public func reconcile(
         arrivalDepartures: [ArrivalDeparture],
-        with tripUpdates: [GTFSRTTripUpdate]
+        with tripUpdates: [GTFSRTTripUpdate],
+        agencyID: String? = nil,
+        timeZone: TimeZone? = nil
     ) -> [ReconciledArrivalDeparture] {
-        arrivalDepartures.map { arrDep in
-            let agency = agencyPrefix(from: arrDep)
-            let matchingUpdates = tripUpdates.filter { updateMatches(update: $0, arrDep: arrDep, agency: agency) }
-            let selected = selectBestTripUpdate(from: matchingUpdates, for: arrDep)
-            return reconcile(arrivalDeparture: arrDep, with: selected, agencyID: agency)
+        return arrivalDepartures.map { arrDep in
+            let matchingUpdates = tripUpdates.filter { updateMatches(update: $0, arrDep: arrDep, agency: agencyID) }
+            let selected = selectBestTripUpdate(from: matchingUpdates, for: arrDep, timeZone: timeZone)
+            return reconcile(arrivalDeparture: arrDep, with: selected, agencyID: agencyID)
         }
     }
 }
@@ -488,7 +503,7 @@ public typealias ReconciledArrivalDeparture = GTFSRTReconciledSchedule<ArrivalDe
 extension ArrivalDeparture: GTFSRTReconcilableSchedule {
     public var reconcilableTripID: String { tripID }
     public var reconcilableStopID: String? { stopID }
-    public var reconcilableStopSequence: Int? { stopSequence }
+    public var reconcilableStopSequence: Int? { gtfsStopSequence }
     public var scheduledArrivalDate: Date? { scheduledArrival }
     public var scheduledDepartureDate: Date? { scheduledDeparture }
 
@@ -505,7 +520,7 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
     }
 
     private func resolvePredictions(reconciliation: ReconciledArrivalDeparture) -> ResolvedPredictions {
-        if reconciliation.isCanceled || reconciliation.isNoData {
+        if reconciliation.isCanceled || reconciliation.isNoData || reconciliation.isSkipped {
             return ResolvedPredictions(predicted: false, arrival: nil, departure: nil)
         } else if reconciliation.isLive {
             return ResolvedPredictions(
@@ -593,6 +608,7 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
             stopID: stopID,
             stop: stop,
             stopSequence: stopSequence,
+            gtfsStopSequence: gtfsStopSequence,
             totalStopsInTrip: totalStopsInTrip,
             tripHeadsign: _tripHeadsign,
             tripID: tripID,

@@ -84,6 +84,9 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
     /// The index of the stop into the sequence of stops that make up the trip for this arrival
     public let stopSequence: Int
 
+    /// The GTFS stop sequence for this stop if provided, matching GTFS stop_times.txt / stop_time_update.stop_sequence.
+    public let gtfsStopSequence: Int?
+
     /// The number of stops in this active trip
     public let totalStopsInTrip: Int?
 
@@ -127,6 +130,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         case status
         case stopID = "stopId"
         case stopSequence
+        case gtfsStopSequence
         case totalStopsInTrip
         case tripHeadsign
         case tripID = "tripId"
@@ -158,6 +162,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         stopID: StopID,
         stop: Stop? = nil,
         stopSequence: Int = 0,
+        gtfsStopSequence: Int? = nil,
         totalStopsInTrip: Int? = nil,
         tripHeadsign: String? = nil,
         tripID: TripIdentifier,
@@ -191,6 +196,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         self.stopID = stopID
         self.stop = stop
         self.stopSequence = stopSequence
+        self.gtfsStopSequence = gtfsStopSequence
         self.totalStopsInTrip = totalStopsInTrip
         self._tripHeadsign = tripHeadsign
         self.tripID = tripID
@@ -241,6 +247,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         stopID = try container.decode(String.self, forKey: .stopID)
 
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
+        gtfsStopSequence = try? container.decodeIfPresent(Int.self, forKey: .gtfsStopSequence)
         totalStopsInTrip = try? container.decodeIfPresent(Int.self, forKey: .totalStopsInTrip)
         _tripHeadsign = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .tripHeadsign))
 
@@ -527,6 +534,7 @@ public final class ArrivalDeparture: NSObject, Identifiable, Decodable, HasRefer
         builder.add(key: "status", value: status)
         builder.add(key: "stopID", value: stopID)
         builder.add(key: "stopSequence", value: stopSequence)
+        builder.add(key: "gtfsStopSequence", value: gtfsStopSequence)
         builder.add(key: "totalStopsInTrip", value: totalStopsInTrip)
         builder.add(key: "_tripHeadsign", value: _tripHeadsign)
         builder.add(key: "tripID", value: tripID)
