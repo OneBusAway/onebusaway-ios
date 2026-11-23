@@ -120,13 +120,13 @@ private struct NearbyStopsSheetContent: View {
 
     @ViewBuilder
     private var list: some View {
-        if let error = viewModel.operationError {
+        if let errorMessage = viewModel.operationErrorMessage {
             // Inline rather than `application.displayError`: an app-level alert
             // over a stacked sheet is the wrong affordance, and this view holds
             // no `Application` to raise one with.
             EmptyStateView(
                 title: Strings.error,
-                description: error.localizedDescription,
+                description: errorMessage,
                 systemImage: AppSymbol.error
             ) {
                 Button(Strings.retry) {

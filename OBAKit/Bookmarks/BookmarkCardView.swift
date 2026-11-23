@@ -182,6 +182,8 @@ struct BookmarkCardView: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Image(systemName: "arrow.turn.down.right")
                     .imageScale(.small)
+                    // Points into the text, so it follows reading direction.
+                    .flipsForRightToLeftLayoutDirection(true)
                 Text(text)
                     .lineLimit(isAccessibilitySize ? nil : 2)
             }

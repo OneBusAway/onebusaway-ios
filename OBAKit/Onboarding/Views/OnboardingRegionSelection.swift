@@ -34,6 +34,16 @@ struct OnboardingRegionSelection {
     let region: Region
     let source: Source
 
+    /// Whether confirming this selection should leave automatic region selection on.
+    ///
+    /// Only a detected region keeps it: the rider accepted what their location produced.
+    /// A tapped row, or a region the location doesn't corroborate, is a manual pick, and
+    /// leaving auto-select on would let `RegionsService` replace it on the next location
+    /// update — the same reason every other manual path turns it off first.
+    var keepsAutomaticRegionSelection: Bool {
+        source == .detected
+    }
+
     /// The region the rider's location resolves to: the one whose service area contains
     /// them, else the one with the closest center.
     ///

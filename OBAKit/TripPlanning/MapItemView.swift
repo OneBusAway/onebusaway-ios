@@ -142,7 +142,7 @@ public struct MapItemView: View {
             HStack(alignment: .top) {
                 // Share Button
                 if showsShareButton {
-                    Button("Share", systemImage: "square.and.arrow.up") {
+                    Button(Strings.share, systemImage: "square.and.arrow.up") {
                         viewModel.shareLocation()
                     }
                     .labelStyle(.iconOnly)
@@ -158,7 +158,7 @@ public struct MapItemView: View {
                 Spacer()
 
                 // Close Button
-                Button("Close", systemImage: "xmark") {
+                Button(Strings.close, systemImage: "xmark") {
                     viewModel.dismissView()
                 }
                 .labelStyle(.iconOnly)

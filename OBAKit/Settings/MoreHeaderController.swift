@@ -136,7 +136,9 @@ final class MoreHeaderView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        backgroundColor = ThemeColors.shared.brand
+        // Not `brand`: the footnote-size white labels are 2.76:1 on it in the
+        // OneBusAway app. `brandAccent` keeps them at AA in both appearances.
+        backgroundColor = ThemeColors.shared.brandAccent
 
         appNameLabel.text = Bundle.main.appName
         appVersionLabel.text = Bundle.main.appVersion

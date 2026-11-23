@@ -119,7 +119,7 @@ private struct OnDemandServicesListRow: View {
         HStack {
             Text(listing.title).foregroundStyle(.primary)
             Spacer()
-            Image(systemName: "chevron.right")
+            Image(systemName: "chevron.forward")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)

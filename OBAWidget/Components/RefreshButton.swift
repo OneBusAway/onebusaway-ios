@@ -26,7 +26,8 @@ struct RefreshButton: View {
         Group {
             if usesFullColor {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(uiColor: ThemeColors.shared.brand))
+                    // White caption text sits on this; `brand` gives it 2.76:1.
+                    .fill(Color(uiColor: ThemeColors.shared.brandAccent))
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(.primary.opacity(0.35), lineWidth: 1)

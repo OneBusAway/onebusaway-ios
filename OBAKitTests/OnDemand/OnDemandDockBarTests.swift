@@ -89,7 +89,7 @@ final class OnDemandDockBarTests: OBATestCase {
         let page = try model([match(beaverIsland)]).pages[0]
         #expect(page.trailing == .detail)
         #expect(page.trailingAccessibilityLabel == Strings.onDemandCardDetails)
-        #expect(page.trailingSystemImage == "chevron.right")
+        #expect(page.trailingSystemImage == "chevron.forward")
     }
 
     @Test func `Pages follow the sort and the badge shows only for more than one page`() throws {

@@ -50,15 +50,18 @@ struct SearchResultsSheetView: View {
         }
     }
 
+    /// Also titles the search sheet's alert when a search matches nothing.
+    static let noResultsTitle = OBALoc(
+        "search_results_sheet.empty.title",
+        value: "No results",
+        comment: "Title shown when a disambiguation sheet has no results to show."
+    )
+
     @ViewBuilder
     private var content: some View {
         if viewModel.results.isEmpty {
             EmptyStateView(
-                title: OBALoc(
-                    "search_results_sheet.empty.title",
-                    value: "No results",
-                    comment: "Title shown when a disambiguation sheet has no results to show."
-                ),
+                title: Self.noResultsTitle,
                 systemImage: AppSymbol.error
             )
         } else {

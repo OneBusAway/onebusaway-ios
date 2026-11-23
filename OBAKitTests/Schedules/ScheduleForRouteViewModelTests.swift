@@ -213,6 +213,9 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
+        // A 24-hour locale, so the expected shape doesn't depend on the host's settings.
+        viewModel.timeFormatter.locale = Locale(identifier: "en_GB")
+
         // Create a date at 8:30 AM UTC (since tests run in UTC)
         let date = Date(timeIntervalSince1970: 30600) // 8:30 AM on Jan 1, 1970
 
@@ -237,9 +240,8 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
         calendar.timeZone = TimeZone.current
         let date = calendar.startOfDay(for: Date())
 
-        let result = viewModel.formatTime(date)
-
-        #expect(result == "00:00")
+        viewModel.timeFormatter.locale = Locale(identifier: "en_GB")
+        #expect(viewModel.formatTime(date) == "00:00")
     }
 
     @Test @MainActor
@@ -254,9 +256,25 @@ final class ScheduleForRouteViewModelTests: OBATestCase {
         calendar.timeZone = TimeZone.current
         let date = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!
 
-        let result = viewModel.formatTime(date)
+        viewModel.timeFormatter.locale = Locale(identifier: "en_GB")
+        #expect(viewModel.formatTime(date) == "12:00")
+    }
 
-        #expect(result == "12:00")
+    @Test @MainActor
+    func `Format time follows a 12-hour locale`() {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForRoute(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
+
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current
+        let date = calendar.date(bySettingHour: 13, minute: 5, second: 0, of: Date())!
+
+        viewModel.timeFormatter.locale = Locale(identifier: "en_US")
+        // The formatter separates the day period with a narrow no-break space.
+        let result = viewModel.formatTime(date).replacingOccurrences(of: "\u{202F}", with: " ")
+        #expect(result == "1:05 PM")
     }
 
     @Test @MainActor

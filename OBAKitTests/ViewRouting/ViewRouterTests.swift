@@ -138,6 +138,36 @@ final class ViewRouterTests: OBATestCase {
         #expect(mapStops.firstIndex { $0.isBoardingStop } == 5)
     }
 
+    // MARK: - Popover anchoring
+
+    /// On iPadOS 18 the More sheet is a compact-width form sheet, so callers pass
+    /// `isPopover: false`, yet UIKit still shows an action sheet as a popover and
+    /// raises if it has no anchor. The passed source has to be applied regardless.
+    /// (An action-sheet alert has no popover controller on the iPhone simulator
+    /// the tests run on, so these stand in with controllers UIKit already treats
+    /// as popovers.)
+    @Test func `present anchors a popover to the passed source even when isPopover is false`() throws {
+        let application = buildApplication(queue: OperationQueue(), dataLoader: MockDataLoader(testName: "ViewRouterTests"))
+        let presenter = UIViewController()
+
+        // The presenter is off-window, so the presentation itself is abandoned and
+        // UIKit drops its popover controller; hold the one the router configures.
+        let barButtonSheet = UIViewController()
+        barButtonSheet.modalPresentationStyle = .popover
+        let barButtonPopover = try #require(barButtonSheet.popoverPresentationController)
+        let item = UIBarButtonItem(title: "Contact", style: .plain, target: nil, action: nil)
+        application.viewRouter.present(barButtonSheet, from: presenter, isPopover: false, popoverBarButtonItem: item)
+        #expect(barButtonPopover.barButtonItem === item)
+
+        let viewSheet = UIViewController()
+        viewSheet.modalPresentationStyle = .popover
+        let viewPopover = try #require(viewSheet.popoverPresentationController)
+        let frame = CGRect(x: 10, y: 20, width: 0, height: 0)
+        application.viewRouter.present(viewSheet, from: presenter, isPopover: false, popoverSourceView: presenter.view, popoverSourceFrame: frame)
+        #expect(viewPopover.sourceView === presenter.view)
+        #expect(viewPopover.sourceRect == frame)
+    }
+
     // MARK: - Trip entry points
 
     /// Searching the map for a vehicle number opens that vehicle's trip.

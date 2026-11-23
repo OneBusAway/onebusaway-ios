@@ -30,6 +30,7 @@ public class RecentStopsViewController: UIViewController, AppContext {
         title = Strings.recentTabTitle
         tabBarItem.image = Icons.recentTabIcon
         tabBarItem.selectedImage = Icons.recentSelectedTabIcon
+        tabBarItem.accessibilityIdentifier = "tab_recent"
     }
 
     required init?(coder aDecoder: NSCoder) {

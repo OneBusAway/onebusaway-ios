@@ -262,6 +262,21 @@
 /* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
 "donation_cell.title" = "🚨 Ứng dụng %@ cần sự giúp đỡ của bạn";
 
+/* Button at the bottom of the donation explanation screen that opens the donation page on the project's website. */
+"donation_learn_more.donate_button" = "Quyên góp trên trang web của chúng tôi";
+
+/* Full explanation on the donation explanation screen. %1$@ is the app name and appears four times. $27.50 is an amount in US dollars; keep it in dollars. 501(c)(3) is a US tax status; keep it unchanged. */
+"donation_learn_more.explanation_fmt" = "Chúng tôi có nhiều kế hoạch lớn để cải thiện %1$@, nhưng không thể thực hiện nếu thiếu sự giúp đỡ của bạn. Ứng dụng này hiện được xây dựng 100%% bằng công sức tình nguyện, và chúng tôi cần bạn giúp tài trợ cho việc phát triển trong tương lai.\n\nLà một dự án trọng điểm của Open Transit Software Foundation, một tổ chức phi lợi nhuận 501(c)(3), chúng tôi dựa vào thiện chí của những người dùng như bạn để tiếp tục vận hành và cải thiện phần mềm này.\n\nMỗi năm, chỉ một phần nhỏ người dùng của chúng tôi quyên góp, nhưng mọi đóng góp, dù lớn hay nhỏ, đều giúp %1$@ luôn miễn phí, được cập nhật và dễ tiếp cận với mọi người. Một khoản nhỏ, chỉ bằng chi phí đi lại một tuần, 27,50 USD, cũng có thể tạo nên khác biệt lớn.\n\nKhoản đóng góp được khấu trừ thuế của bạn giúp %1$@ luôn miễn phí và dễ tiếp cận với mọi người. Hãy cùng nhau định hình tương lai của giao thông công cộng!\n\nTrân trọng cảm ơn,\nĐội ngũ %1$@";
+
+/* Heading above the explanation on the donation explanation screen. */
+"donation_learn_more.header" = "Vì sao chúng tôi cần bạn giúp đỡ";
+
+/* Credit for the header photo on the donation explanation screen. Keep the photographer's name, the license name and the URL unchanged. */
+"donation_learn_more.photo_credit" = "Ảnh: Timothy Neesam / Giấy phép CC-BY-ND 2.0 (https://flickr.com/photos/neesam)";
+
+/* Button on the donation explanation screen that expands the truncated explanation to its full length. */
+"donation_learn_more.read_more" = "Đọc thêm...";
+
 /* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "Tôi không muốn giúp lúc này";
 
@@ -484,11 +499,11 @@
 /* Placeholder text for Bookmark Group. */
 "manage_groups_controller.text_field_placeholder" = "Tên nhóm";
 
-/* Manage Groups controller title */
-"manage_groups_controller.title" = "Sửa dấu trang";
-
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "Căn giữa bản đồ vào vị trí hiện tại";
+
+/* Subtitle of a pin the user dropped on the map when looking up its address failed. */
+"map_controller.dropped_pin_no_details" = "Không thể lấy thông tin chi tiết về vị trí";
 
 /* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
 "map_controller.dropped_pin_title" = "Ghim đã thả";
@@ -504,9 +519,6 @@
 
 /* Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes. */
 "map_controller.map_settings.accessibility_label" = "Cài đặt bản đồ";
-
-/* Voiceover text indicating that this button toggles the base map type. */
-"map_controller.map_type.accessibility_label" = "Loại bản đồ";
 
 /* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, %2$d lớp đang bật";
@@ -716,6 +728,9 @@
 /* Siri asks which stop to report departures for when the user didn't name one. */
 "next_departures_at_stop_intent.choose_stop" = "Điểm dừng nào?";
 
+/* Short button on the Next Departures card that starts a Live Activity for the bookmark */
+"next_departures_card.track_button" = "Theo dõi";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "Dấu trang đó không khả dụng ở khu vực hiện tại của bạn.";
 
@@ -852,10 +867,25 @@
 "onboarding.location.benefit_nearby_title" = "Xem các trạm gần đây";
 
 /* Footnote of the location onboarding screen; the argument is the app name */
-"onboarding.location.footnote_fmt" = "%@ chỉ sử dụng vị trí của bạn khi ứng dụng đang mở. Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.";
+"onboarding.location.footnote_fmt" = "%@ chỉ sử dụng vị trí của bạn khi ứng dụng đang mở, trừ khi bạn bật báo khi đến gần. Bạn có thể thay đổi điều này bất cứ lúc nào trong Cài đặt.";
 
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Xem giao thông quanh bạn";
+
+/* Body of the screen that introduces the app's new map layout, on iPhone. 'Home', 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body" = "Bản đồ giờ đây chiếm toàn màn hình, còn trạm dừng, dấu trang và tìm kiếm nằm trong bảng bạn vuốt lên. Cài đặt và Thêm nằm ở cuối danh sách Trang chủ.";
+
+/* Body of the screen that introduces the app's new map layout, on iPad and other wide screens. 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body_regular" = "Bản đồ giờ đây chiếm toàn màn hình, còn trạm dừng, dấu trang và tìm kiếm nằm trong một bảng. Cài đặt nằm ở cuối bảng, còn Thêm là một nút trên bản đồ.";
+
+/* Footnote of the screen that introduces the app's new map layout. 'Classic tab bar layout' is the name of the switch in Settings and must match its translation (settings_controller.layout_section.classic_tab_bar). */
+"onboarding.map_panel_intro.footnote" = "Thích thanh tab hơn? Bật Bố cục thanh tab cổ điển trong Cài đặt.";
+
+/* Badge on the screen that introduces the app's new map layout to people who used the previous one */
+"onboarding.map_panel_intro.new_badge" = "MỚI";
+
+/* Title of the screen that introduces the app's new map layout to people who used the previous tab bar layout */
+"onboarding.map_panel_intro.title" = "Giao diện mới";
 
 /* Body of the notifications onboarding screen */
 "onboarding.notifications.body" = "Nhận thông báo về các cảnh báo dịch vụ trên toàn khu vực — bão băng, lũ lụt và các sự kiện lớn làm thay đổi cách vận hành giao thông.";
@@ -889,6 +919,9 @@
 
 /* Body of the region onboarding screen prompting the rider to choose a transit network */
 "onboarding.region.body_choose" = "Chọn mạng lưới giao thông bạn sử dụng.";
+
+/* Header above the regions list when no region has been detected or selected yet */
+"onboarding.region.choose_header" = "Chọn khu vực của bạn";
 
 /* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
 "onboarding.region.current_label" = "Khu vực hiện tại";
@@ -973,6 +1006,9 @@
 
 /* Help text displayed on an inactive region. */
 "region_picker.inactive_region_help_text" = "Khu vực không hoạt động";
+
+/* Title of the menu on the region picker that holds the New Custom Region button and the Show Inactive and Show Experimental toggles. */
+"region_picker.more_options_button" = "Tùy chọn khác";
 
 /* Title of a button that shows a region creation view controller. */
 "region_picker.new_custom_region_button" = "Khu vực tùy chỉnh mới";
@@ -1109,9 +1145,6 @@
 /* Search scope tag filtering results to transit routes. */
 "search_scope.routes" = "Tuyến";
 
-/* Accessibility label for the button that clears the search query. */
-"search_sheet.clear_query" = "Xóa";
-
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Đơn vị vận tải bị ảnh hưởng";
 
@@ -1163,9 +1196,6 @@
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
 "settings_controller.arrival_display_section.region_time_zone" = "Hiển thị giờ theo múi giờ vùng";
 
-/* Title for the departure filter selection alert */
-"settings_controller.arrival_filter.selector_title" = "Hiển thị chuyến khởi hành";
-
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Hiển thị chuyến khởi hành";
 
@@ -1196,9 +1226,6 @@
 /* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
 "settings_controller.experimental_section.estimate_vehicle_positions" = "Ước tính vị trí hiện tại của xe";
 
-/* Settings > Experimental section > Map panel toggle */
-"settings_controller.experimental_section.map_panel" = "Dùng giao diện bảng bản đồ";
-
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Thử nghiệm";
 
@@ -1213,6 +1240,15 @@
 
 /* Settings > Feedback section title */
 "settings_controller.feedback_section.title" = "Phản hồi";
+
+/* Settings > Layout section > Toggle that replaces the full-screen map and sliding panel with the tab bar layout from earlier versions of the app */
+"settings_controller.layout_section.classic_tab_bar" = "Bố cục thanh tab cổ điển";
+
+/* Settings > Layout section footer explaining the Classic tab bar layout toggle */
+"settings_controller.layout_section.footer" = "Dùng thanh tab của các phiên bản trước thay cho bản đồ toàn màn hình với bảng trượt.";
+
+/* Settings > Layout section title. The section chooses how the app's main screen is arranged. */
+"settings_controller.layout_section.title" = "Bố cục";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Hiển thị hướng hiện tại của tôi";
@@ -1481,6 +1517,9 @@
 
 /* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.service_alerts.summary_fmt" = "%d cảnh báo dịch vụ";
+
+/* Title of the card shown above a stop's departures when refreshing them failed, so the times on screen are from the last successful update. */
+"stop_page.stale.title" = "Không thể cập nhật các chuyến khởi hành";
 
 /* VoiceOver status suffix for a live departure. %@ is the adherence label. */
 "stop_page.status.a11y_live_fmt" = "theo dõi trực tiếp, %@";
@@ -1857,14 +1896,8 @@
 "map_sheet.basemap_satellite" = "Vệ tinh";
 /* Basemap style: standard street map */
 "map_sheet.basemap_standard" = "Tiêu chuẩn";
-/* Map sheet section for display options like Points of Interest */
-"map_sheet.display_group" = "Hiển thị bản đồ";
-/* Map sheet row label for the rental minimum-range filter */
-"map_sheet.minimum_range" = "Quãng đường tối thiểu";
 /* Range filter menu option imposing no minimum range */
 "map_sheet.minimum_range_any" = "Bất kỳ";
-/* Map sheet group header for non-transit mobility layers */
-"map_sheet.other_modes_group" = "Cách di chuyển khác";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "Đặt lại";
 /* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
@@ -1881,8 +1914,6 @@
 "map_sheet.shows_points_of_interest" = "Địa điểm quan tâm";
 /* Title of the Map sheet */
 "map_sheet.title" = "Bản đồ";
-/* Map sheet group header for transit layers */
-"map_sheet.transit_group" = "Phương tiện công cộng";
 /* Header for More-tab rows that open tutorial, phone, or text links configured by the agency. */
 "more_controller.agency_contact.header" = "Liên hệ & trợ giúp";
 /* Opens a tel: link to call the transit agency from the More tab. */
@@ -2031,14 +2062,6 @@
 "trip_page.vehicle_label_fmt" = "Xe %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
 "trip_page.view_schedule" = "Xem lịch trình";
-/* Shown when the vehicle is arriving at the user's stop */
-"trip_progress.arriving_now" = "Đang đến";
-/* Estimated time of arrival to the user's stop. e.g. ~8 min to your stop */
-"trip_progress.eta_to_stop_fmt" = "~%d phút đến điểm dừng của bạn";
-/* Shown when the vehicle has already passed the user's destination stop */
-"trip_progress.passed_your_stop" = "Đã đi qua điểm dừng của bạn";
-/* Shows the current stop position. e.g. Stop 5 of 18 */
-"trip_progress.stop_count_fmt" = "Điểm dừng %1$d/%2$d";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "Tìm kiếm bằng giọng nói";

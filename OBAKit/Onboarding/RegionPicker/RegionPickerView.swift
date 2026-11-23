@@ -149,6 +149,7 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
                     }
                     .disabled(selectedRegion == nil || disableInteractions)
                     .buttonStyle(.borderedProminent)
+                    .tint(Color(uiColor: ThemeColors.shared.brandAccent))
 
                     regionOptions
                 }
@@ -235,7 +236,7 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
                 }
             }
         } label: {
-            Text("More Options")
+            Text(OBALoc("region_picker.more_options_button", value: "More Options", comment: "Title of the menu on the region picker that holds the New Custom Region button and the Show Inactive and Show Experimental toggles."))
         }
 
     }

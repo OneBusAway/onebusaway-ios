@@ -246,7 +246,7 @@ jobs:
     runs-on: xcode-27
     # Every step that can hang has its own timeout; this caps the whole job
     # well under GitHub's 6-hour default in case one is missed.
-    timeout-minutes: 120
+    timeout-minutes: 180
     permissions:
       actions: read
       checks: write
@@ -302,6 +302,7 @@ jobs:
     # beside the booting simulator's services, each poll and the download
     # and unpack were several times slower.
     - name: Wait for the test products
+      id: products
       timeout-minutes: 40
       env:
         GH_TOKEN: ${{ github.token }}
@@ -547,6 +548,114 @@ jobs:
           exit 1
         fi
         echo "All focused test slices (Core, App, Widget, Watch) passed with verified 100% test execution."
+
+    # Launch smoke tests of the built App.app on devices the slices never use:
+    # an iPad, and the iOS 18 deployment target (Apps/Shared/app_shared.yml).
+    # Last in the job, so their simulators' first boots cannot slow the tests.
+    # They reuse `build`'s products (--skip-build), laid out where
+    # scripts/app_smoke_test looks for them, rather than building again.
+    - name: Lay out the built app for the smoke tests
+      id: smoke_layout
+      if: (success() || failure()) && steps.products.outcome == 'success'
+      run: |
+        set -euo pipefail
+        mkdir -p "$RUNNER_TEMP/smoke/Build"
+        ln -sfn "$RUNNER_TEMP/products" "$RUNNER_TEMP/smoke/Build/Products"
+        test -d "$RUNNER_TEMP/smoke/Build/Products/Debug-iphonesimulator/App.app"
+        # The iPhone is done; its services would compete with the next boots.
+        xcrun simctl shutdown "$SIMULATOR_UDID" || true
+
+    # iPad: a multi-scene layout the iPhone slices cannot reach.
+    - name: iPad app launch smoke test
+      if: (success() || failure()) && steps.smoke_layout.outcome == 'success'
+      timeout-minutes: 15
+      run: |
+        set -euo pipefail
+        sudo renice -n -10 -p $$ >/dev/null
+        UDID=$(scripts/resolve_simulator_udid --ipad)
+        echo "iPad: $(xcrun simctl list devices | grep "$UDID")"
+        scripts/app_smoke_test "$RUNNER_TEMP/smoke" --skip-build --ipad \
+          --screenshot-dir "$GITHUB_WORKSPACE/smoke_screenshots"
+        xcrun simctl shutdown "$UDID" || true
+
+    # iOS 18: the oldest supported runtime, which routes `isolated deinit`
+    # through the back-deployment shim the slices deliberately avoid (see
+    # "Pick the iOS Simulator and start booting it"). The image carries no
+    # iOS 18 runtime, and Apple's download catalog serves a given Xcode only
+    # some iOS 18 releases — for Xcode 27.2, none. So an installed runtime is
+    # used as is; failing that, each of IOS_18_RUNTIMES is tried, newest
+    # first (edit the list as the catalog changes). If none downloads, the
+    # step warns and passes: a runtime the image cannot supply is not a
+    # regression, and a job that is always red is a job nobody reads. Once a
+    # runtime is present the step is strict again — a missing device or a
+    # failed launch fails it. A freshly installed runtime can report Ready
+    # before its simulators exist, as watchOS does; if none appears, one is
+    # created from the runtime's own iPad types. The timeout leaves room for
+    # one several-GB download; a refused candidate fails in seconds.
+    - name: iOS 18 runtime launch smoke test
+      if: (success() || failure()) && steps.smoke_layout.outcome == 'success'
+      timeout-minutes: 45
+      env:
+        IOS_18_RUNTIMES: '18.6 18.5 18.4'
+      run: |
+        set -euo pipefail
+        sudo renice -n -10 -p $$ >/dev/null
+        if ! xcrun simctl runtime list 2>/dev/null | grep -qE "^iOS 18\.[0-9.]* .*\(Ready\)"; then
+          downloaded=
+          for version in $IOS_18_RUNTIMES; do
+            echo "No iOS 18 simulator runtime found; trying to download iOS ${version}…"
+            if xcodebuild -downloadPlatform iOS -buildVersion "$version"; then
+              downloaded=$version
+              break
+            fi
+          done
+          if [ -z "$downloaded" ]; then
+            xcode=$(xcodebuild -version 2>/dev/null | sed -n 1p) || xcode="this Xcode"
+            message="the iOS 18 deployment target is unverified on this image: it has no iOS 18 simulator runtime, and Apple's download catalog offers none of iOS ${IOS_18_RUNTIMES} for ${xcode}"
+            echo "::warning title=iOS 18 smoke test skipped::${message}"
+            echo "⚠️ iOS 18 smoke test skipped: ${message}" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "Downloaded the iOS ${downloaded} simulator runtime."
+        fi
+        for _ in $(seq 1 18); do
+          scripts/resolve_simulator_udid --ipad --os 18 >/dev/null 2>&1 && break
+          echo "iOS 18 iPad simulators not available yet; waiting…"
+          sleep 10
+        done
+        if ! scripts/resolve_simulator_udid --ipad --os 18 >/dev/null 2>&1; then
+          read -r runtime devicetype < <(xcrun simctl list runtimes -j | python3 -c '
+        import json, sys
+        runtimes = [r for r in json.load(sys.stdin)["runtimes"]
+                    if r["platform"] == "iOS" and r["isAvailable"] and r["version"].split(".")[0] == "18"]
+        runtimes.sort(key=lambda r: [int(x) for x in r["version"].split(".")], reverse=True)
+        for r in runtimes:
+            ipads = [t["identifier"] for t in r.get("supportedDeviceTypes", []) if t.get("productFamily") == "iPad"]
+            if ipads:
+                print(r["identifier"], ([t for t in ipads if ".iPad-Pro-" in t] or ipads)[0])
+                break
+        ') || true
+          if [ -z "${devicetype:-}" ]; then
+            echo "::error::no available iOS 18 runtime with an iPad device type; the iOS 18 deployment target is untested"
+            exit 1
+          fi
+          xcrun simctl create "OBA iOS 18 Smoke" "$devicetype" "$runtime"
+        fi
+        UDID=$(scripts/resolve_simulator_udid --ipad --os 18)
+        echo "iOS 18 iPad: $(xcrun simctl list devices | grep "$UDID")"
+        if ! scripts/app_smoke_test "$RUNNER_TEMP/smoke" --skip-build --ipad --os 18 \
+          --screenshot-dir "$GITHUB_WORKSPACE/smoke_screenshots"; then
+          echo "::error::the app failed to launch on the iOS 18 runtime"
+          exit 1
+        fi
+
+    - name: Upload smoke test screenshots on failure
+      if: failure() && hashFiles('smoke_screenshots/**') != ''
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: smoke-test-screenshots-${{ github.run_attempt }}
+        path: smoke_screenshots/
+        retention-days: 7
 
   # The watch stack: a device-architecture compile and a launch on the
   # simulator, then the project-generation checks. Its own job, so it neither

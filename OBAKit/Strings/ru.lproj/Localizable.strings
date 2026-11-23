@@ -262,6 +262,21 @@
 /* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
 "donation_cell.title" = "🚨 Приложению %@ нужна ваша помощь";
 
+/* Button at the bottom of the donation explanation screen that opens the donation page on the project's website. */
+"donation_learn_more.donate_button" = "Пожертвовать на нашем сайте";
+
+/* Full explanation on the donation explanation screen. %1$@ is the app name and appears four times. $27.50 is an amount in US dollars; keep it in dollars. 501(c)(3) is a US tax status; keep it unchanged. */
+"donation_learn_more.explanation_fmt" = "У нас большие планы по улучшению %1$@, но без вашей помощи нам их не осуществить. Это приложение создаётся на 100%% силами волонтёров, и нам нужна ваша помощь для финансирования дальнейшей разработки.\n\nКак ключевой проект Open Transit Software Foundation, некоммерческой организации со статусом 501(c)(3), мы полагаемся на поддержку таких пользователей, как вы, чтобы это приложение продолжало работать и становилось лучше.\n\nКаждый год жертвует лишь небольшая часть наших пользователей, но каждый вклад, большой или маленький, помогает %1$@ оставаться бесплатным, актуальным и доступным для всех. Даже небольшое пожертвование, например стоимость недели поездок на работу — 27,50 долл. США, — может многое изменить.\n\nВаше пожертвование, которое в США вычитается из налогооблагаемой базы, помогает %1$@ оставаться бесплатным и доступным для всех. Давайте вместе создавать будущее общественного транспорта!\n\nСпасибо!\nКоманда %1$@";
+
+/* Heading above the explanation on the donation explanation screen. */
+"donation_learn_more.header" = "Почему нам нужна ваша помощь";
+
+/* Credit for the header photo on the donation explanation screen. Keep the photographer's name, the license name and the URL unchanged. */
+"donation_learn_more.photo_credit" = "Фото: Timothy Neesam / Лицензия CC-BY-ND 2.0 (https://flickr.com/photos/neesam)";
+
+/* Button on the donation explanation screen that expands the truncated explanation to its full length. */
+"donation_learn_more.read_more" = "Читать далее...";
+
 /* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "Я не хочу помогать сейчас";
 
@@ -484,11 +499,11 @@
 /* Placeholder text for Bookmark Group. */
 "manage_groups_controller.text_field_placeholder" = "Название группы";
 
-/* Manage Groups controller title */
-"manage_groups_controller.title" = "Изменить закладки";
-
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "Центрировать карту на текущей геопозиции";
+
+/* Subtitle of a pin the user dropped on the map when looking up its address failed. */
+"map_controller.dropped_pin_no_details" = "Не удалось получить сведения о месте";
 
 /* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
 "map_controller.dropped_pin_title" = "Установленная булавка";
@@ -504,9 +519,6 @@
 
 /* Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes. */
 "map_controller.map_settings.accessibility_label" = "Настройки карты";
-
-/* Voiceover text indicating that this button toggles the base map type. */
-"map_controller.map_type.accessibility_label" = "Тип карты";
 
 /* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, включённых слоёв: %2$d";
@@ -716,6 +728,9 @@
 /* Siri asks which stop to report departures for when the user didn't name one. */
 "next_departures_at_stop_intent.choose_stop" = "Какая остановка?";
 
+/* Short button on the Next Departures card that starts a Live Activity for the bookmark */
+"next_departures_card.track_button" = "Отслеживать";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "Эта закладка недоступна в вашем текущем регионе.";
 
@@ -852,10 +867,25 @@
 "onboarding.location.benefit_nearby_title" = "Смотреть ближайшие остановки";
 
 /* Footnote of the location onboarding screen; the argument is the app name */
-"onboarding.location.footnote_fmt" = "%@ использует вашу геолокацию только пока приложение открыто. Вы можете изменить это в любой момент в Настройках.";
+"onboarding.location.footnote_fmt" = "%@ использует вашу геолокацию только пока приложение открыто, если вы не включите оповещения о приближении. Вы можете изменить это в любой момент в Настройках.";
 
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Смотрите транспорт вокруг себя";
+
+/* Body of the screen that introduces the app's new map layout, on iPhone. 'Home', 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body" = "Теперь карта занимает весь экран, а остановки, закладки и поиск находятся на панели, которую можно выдвинуть вверх. Настройки и «Ещё» — внизу списка «Главная».";
+
+/* Body of the screen that introduces the app's new map layout, on iPad and other wide screens. 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body_regular" = "Теперь карта занимает весь экран, а остановки, закладки и поиск находятся на панели. Настройки — внизу панели, а «Ещё» — кнопка на карте.";
+
+/* Footnote of the screen that introduces the app's new map layout. 'Classic tab bar layout' is the name of the switch in Settings and must match its translation (settings_controller.layout_section.classic_tab_bar). */
+"onboarding.map_panel_intro.footnote" = "Предпочитаете панель вкладок? Включите «Классический макет с панелью вкладок» в настройках.";
+
+/* Badge on the screen that introduces the app's new map layout to people who used the previous one */
+"onboarding.map_panel_intro.new_badge" = "НОВОЕ";
+
+/* Title of the screen that introduces the app's new map layout to people who used the previous tab bar layout */
+"onboarding.map_panel_intro.title" = "Новый вид";
 
 /* Body of the notifications onboarding screen */
 "onboarding.notifications.body" = "Получайте уведомления о региональных предупреждениях о работе транспорта — ледяные бури, наводнения и крупные события, влияющие на движение.";
@@ -889,6 +919,9 @@
 
 /* Body of the region onboarding screen prompting the rider to choose a transit network */
 "onboarding.region.body_choose" = "Выберите транспортную сеть, которой вы пользуетесь.";
+
+/* Header above the regions list when no region has been detected or selected yet */
+"onboarding.region.choose_header" = "Выберите свой регион";
 
 /* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
 "onboarding.region.current_label" = "Текущий регион";
@@ -973,6 +1006,9 @@
 
 /* Help text displayed on an inactive region. */
 "region_picker.inactive_region_help_text" = "Неактивный регион";
+
+/* Title of the menu on the region picker that holds the New Custom Region button and the Show Inactive and Show Experimental toggles. */
+"region_picker.more_options_button" = "Другие параметры";
 
 /* Title of a button that shows a region creation view controller. */
 "region_picker.new_custom_region_button" = "Новый пользовательский регион";
@@ -1109,9 +1145,6 @@
 /* Search scope tag filtering results to transit routes. */
 "search_scope.routes" = "Маршруты";
 
-/* Accessibility label for the button that clears the search query. */
-"search_sheet.clear_query" = "Очистить";
-
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Затронутые агентства";
 
@@ -1163,9 +1196,6 @@
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
 "settings_controller.arrival_display_section.region_time_zone" = "Показывать время в часовом поясе региона";
 
-/* Title for the departure filter selection alert */
-"settings_controller.arrival_filter.selector_title" = "Показывать отправления";
-
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Показывать отправления";
 
@@ -1196,9 +1226,6 @@
 /* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
 "settings_controller.experimental_section.estimate_vehicle_positions" = "Оценивать текущее местоположение транспорта";
 
-/* Settings > Experimental section > Map panel toggle */
-"settings_controller.experimental_section.map_panel" = "Использовать панель карты";
-
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Экспериментальные функции";
 
@@ -1213,6 +1240,15 @@
 
 /* Settings > Feedback section title */
 "settings_controller.feedback_section.title" = "Отзывы";
+
+/* Settings > Layout section > Toggle that replaces the full-screen map and sliding panel with the tab bar layout from earlier versions of the app */
+"settings_controller.layout_section.classic_tab_bar" = "Классический макет с панелью вкладок";
+
+/* Settings > Layout section footer explaining the Classic tab bar layout toggle */
+"settings_controller.layout_section.footer" = "Использует панель вкладок из прежних версий вместо полноэкранной карты с выдвижной панелью.";
+
+/* Settings > Layout section title. The section chooses how the app's main screen is arranged. */
+"settings_controller.layout_section.title" = "Макет";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Показывать моё текущее направление";
@@ -1481,6 +1517,9 @@
 
 /* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.service_alerts.summary_fmt" = "Сервисных оповещений: %d";
+
+/* Title of the card shown above a stop's departures when refreshing them failed, so the times on screen are from the last successful update. */
+"stop_page.stale.title" = "Не удалось обновить отправления";
 
 /* VoiceOver status suffix for a live departure. %@ is the adherence label. */
 "stop_page.status.a11y_live_fmt" = "отслеживание в реальном времени, %@";
@@ -1857,14 +1896,8 @@
 "map_sheet.basemap_satellite" = "Спутник";
 /* Basemap style: standard street map */
 "map_sheet.basemap_standard" = "Стандартная";
-/* Map sheet section for display options like Points of Interest */
-"map_sheet.display_group" = "Отображение карты";
-/* Map sheet row label for the rental minimum-range filter */
-"map_sheet.minimum_range" = "Минимальный запас хода";
 /* Range filter menu option imposing no minimum range */
 "map_sheet.minimum_range_any" = "Любой";
-/* Map sheet group header for non-transit mobility layers */
-"map_sheet.other_modes_group" = "Другие способы передвижения";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "Сбросить";
 /* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
@@ -1881,8 +1914,6 @@
 "map_sheet.shows_points_of_interest" = "Объекты на карте";
 /* Title of the Map sheet */
 "map_sheet.title" = "Карта";
-/* Map sheet group header for transit layers */
-"map_sheet.transit_group" = "Общественный транспорт";
 /* Header for More-tab rows that open tutorial, phone, or text links configured by the agency. */
 "more_controller.agency_contact.header" = "Контакты и помощь";
 /* Opens a tel: link to call the transit agency from the More tab. */
@@ -2031,14 +2062,6 @@
 "trip_page.vehicle_label_fmt" = "Транспорт %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
 "trip_page.view_schedule" = "Показать расписание";
-/* Shown when the vehicle is arriving at the user's stop */
-"trip_progress.arriving_now" = "Прибывает сейчас";
-/* Estimated time of arrival to the user's stop. e.g. ~8 min to your stop */
-"trip_progress.eta_to_stop_fmt" = "~%d мин. до вашей остановки";
-/* Shown when the vehicle has already passed the user's destination stop */
-"trip_progress.passed_your_stop" = "Ваша остановка пройдена";
-/* Shows the current stop position. e.g. Stop 5 of 18 */
-"trip_progress.stop_count_fmt" = "Остановка %1$d из %2$d";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "Голосовой поиск";

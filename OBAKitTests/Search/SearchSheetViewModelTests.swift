@@ -229,6 +229,86 @@ final class SearchSheetViewModelTests: OBATestCase {
         #expect(coordinator.stackedRoutes.isEmpty)
     }
 
+    /// Search failures go through `ErrorClassifier`, the same as
+    /// `StopViewModel.operationErrorMessage`, rather than surfacing a raw
+    /// `localizedDescription`.
+    @Test @MainActor
+    func `A resolve failure is reported with classified copy`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes-for-location-10.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        dataLoader.mock(data: "not json".data(using: .utf8)!) { request in
+            request.url?.path.contains("/api/where/stops-for-route") ?? false
+        }
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let router = SearchResultRouter(
+            application: application,
+            coordinator: coordinator,
+            displayModel: MapSearchDisplayModel(),
+            onPresentVehicleTrip: { _ in }
+        )
+        let viewModel = SearchSheetViewModel(
+            application: application,
+            coordinator: coordinator,
+            router: router,
+            voiceSearch: MockVoiceSearchController()
+        )
+        coordinator.push(.search)
+
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "10", type: .route))
+
+        let rawError = try #require(router.lastError)
+        let expected = ErrorClassifier.classify(
+            rawError,
+            regionName: application.currentRegionName,
+            isCellularDataRestricted: application.isCellularDataRestricted
+        ).localizedDescription
+        #expect(viewModel.message?.text == expected)
+    }
+
+    // MARK: - Alert title
+
+    /// An empty result isn't a failure, so the alert must not be titled "Error".
+    @Test @MainActor
+    func `A no results message is titled no results rather than error`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader)
+
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route))
+
+        let message = try #require(viewModel.message)
+        #expect(message.title == SearchResultsSheetView.noResultsTitle)
+        #expect(message.title != Strings.error)
+        #expect(viewModel.messageTitle == message.title)
+    }
+
+    @Test @MainActor
+    func `An error message is titled error`() {
+        #expect(SearchSheetMessage(kind: .error, text: "x").title == Strings.error)
+    }
+
+    /// The alert reads `messageTitle`, which must not snap back to "Error" while a
+    /// no-results alert is animating away.
+    @Test @MainActor
+    func `Dismissing a message keeps its title`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: Fixtures.loadData(file: "routes_for_location_outofrange.json")) { request in
+            request.url?.path.contains("/api/where/routes-for-location.json") ?? false
+        }
+        let (viewModel, _, _, _) = makeViewModel(dataLoader: dataLoader)
+
+        await viewModel.performSearchAndWait(request: SearchRequest(query: "zzzz", type: .route))
+        viewModel.dismissMessage()
+
+        #expect(viewModel.message == nil)
+        #expect(viewModel.messageTitle == SearchResultsSheetView.noResultsTitle)
+    }
+
     // MARK: - Vehicle search
 
     /// The vehicle exists; its *details* request is what failed. `fetchVehicleID` used

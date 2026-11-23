@@ -51,6 +51,12 @@ struct StopPageContent {
     let isDepartureFilterEmpty: Bool
     let attributionText: String
 
+    /// A refresh failed while departures from an earlier fetch are still on
+    /// screen. Those rows keep counting down as if live, so the list shows
+    /// `StopStaleArrivalsNotice` above them. Never set alongside an empty list:
+    /// the empty-state row already carries the error there.
+    let showsStaleArrivalsNotice: Bool
+
     /// `true` only when this page has no stop header rendered above the content.
     ///
     /// When a stop is passed in at init (the ordinary path when a rider taps a
@@ -121,6 +127,8 @@ struct StopPageContent {
         self.isDepartureFilterEmpty = arrivalDepartureFilter != .all
             && departures.isEmpty
             && !routeVisible.isEmpty
+
+        self.showsStaleArrivalsNotice = hasError && hasLoadedArrivals && !listIsEmpty
 
         self.fillsPage = stop == nil
         self.attributionText = Self.attribution(for: stop)

@@ -38,6 +38,11 @@ struct StopDeparturesBuilder {
     @Binding var donationHidden: Bool
     @Binding var pastCollapsed: Bool
 
+    /// Whether the stale-arrivals notice repeats the "Updated: …" line. The
+    /// map sheet has no other freshness on screen; the pushed page shows it in
+    /// its header and toolbar already.
+    var showsFreshnessInStaleNotice = false
+
     /// - Parameter walkTime: passed in rather than re-read off the view model,
     ///   so the header chip, the chronological partition and the walk divider
     ///   all render one snapshot of a value that moves with the user's location.
@@ -59,6 +64,7 @@ struct StopDeparturesBuilder {
             minutesAfter: viewModel.minutesAfter,
             isBrokenBookmark: viewModel.isBrokenBookmark,
             errorText: viewModel.operationErrorMessage,
+            staleNoticeStatusText: showsFreshnessInStaleNotice && !viewModel.statusText.isEmpty ? viewModel.statusText : nil,
             showsDonation: content.hasLoadedArrivals && viewModel.shouldRequestDonations && !donationHidden,
             isLoadMoreExhausted: viewModel.isLoadMoreExhausted,
             isLoading: viewModel.isLoading,

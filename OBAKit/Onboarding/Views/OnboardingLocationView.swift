@@ -28,7 +28,7 @@ struct OnboardingLocationView<Provider: RegionProvider>: View {
         OnboardingScaffold(
             progress: progress,
             title: OBALoc("onboarding.location.title", value: "See transit around you", comment: "Title of the location onboarding screen"),
-            footnote: String(format: OBALoc("onboarding.location.footnote_fmt", value: "%@ only uses your location while the app is open. Change this anytime in Settings.", comment: "Footnote of the location onboarding screen; the argument is the app name"), Bundle.main.appName),
+            footnote: String(format: OBALoc("onboarding.location.footnote_fmt", value: "%@ only uses your location while the app is open, unless you turn on nearby alerts. Change this anytime in Settings.", comment: "Footnote of the location onboarding screen; the argument is the app name"), Bundle.main.appName),
             primaryTitle: Strings.continue,
             primaryAction: {
                 regionProvider.automaticallySelectRegion = true

@@ -19,6 +19,7 @@ struct SettingsView: View {
         Form {
             mapSection
             arrivalDisplaySection
+            layoutSection
             experimentalSection
             accessibilitySection
             walkingSpeedSection
@@ -95,11 +96,22 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Layout
+
+    private var layoutSection: some View {
+        Section {
+            Toggle(OBALoc("settings_controller.layout_section.classic_tab_bar", value: "Classic tab bar layout", comment: "Settings > Layout section > Toggle that replaces the full-screen map and sliding panel with the tab bar layout from earlier versions of the app"), isOn: $viewModel.usesClassicTabBarLayout)
+        } header: {
+            Text(OBALoc("settings_controller.layout_section.title", value: "Layout", comment: "Settings > Layout section title. The section chooses how the app's main screen is arranged."))
+        } footer: {
+            Text(OBALoc("settings_controller.layout_section.footer", value: "Uses the tab bar from earlier versions instead of the full-screen map with a sliding panel.", comment: "Settings > Layout section footer explaining the Classic tab bar layout toggle"))
+        }
+    }
+
     // MARK: - Experimental
 
     private var experimentalSection: some View {
         Section {
-            Toggle(OBALoc("settings_controller.experimental_section.map_panel", value: "Use map panel experience", comment: "Settings > Experimental section > Map panel toggle"), isOn: $viewModel.usesMapPanelExperience)
             Toggle(OBALoc("settings_controller.experimental_section.cluster_stops", value: "Group nearby stops on the map", comment: "Settings > Experimental section > Toggle that merges overlapping stop pins on the map into a single numbered pin"), isOn: $viewModel.clustersStops)
             Toggle(OBALoc("settings_controller.experimental_section.estimate_vehicle_positions", value: "Estimate where vehicles are now", comment: "Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported"), isOn: $viewModel.estimatesVehiclePositions)
         } header: {

@@ -107,6 +107,7 @@ class MapViewController: UIViewController,
         title = Strings.map
         tabBarItem.image = Icons.mapTabIcon
         tabBarItem.selectedImage = Icons.mapSelectedTabIcon
+        tabBarItem.accessibilityIdentifier = "tab_map"
 
         // Assign delegates
         self.application.mapRegionManager.addDelegate(self)

@@ -71,7 +71,6 @@
         "map_sheet.basemap_hybrid",
         "map_sheet.basemap_satellite",
         "map_sheet.basemap_standard",
-        "map_sheet.transit_group",
         "more_controller.debug_section.push_id.title",
         "problem_details.row.error",
         "rental_detail.dropoff",

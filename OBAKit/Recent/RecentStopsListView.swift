@@ -126,7 +126,8 @@ struct RecentStopsListView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .swipeActions(edge: .trailing) {
+        // No full swipe: deleting an alarm can't be undone.
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(Strings.delete, role: .destructive) {
                 navigation.deleteAlarm(alarmRow)
             }
@@ -186,6 +187,7 @@ struct RecentStopsListView: View {
                 )
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color(uiColor: ThemeColors.shared.brandAccent))
         }
     }
 }

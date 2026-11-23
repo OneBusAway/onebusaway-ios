@@ -99,6 +99,50 @@ import Testing
         #expect(light == UIColor(red: 0x48 / 255.0, green: 0x66 / 255.0, blue: 0x21 / 255.0, alpha: 1.0), "light mode keeps #486621")
     }
 
+    /// The More header sets footnote-size `lightText` on its background, which
+    /// is `brandAccent`: on `brand` it was 2.76:1 in the OneBusAway app.
+    @Test(arguments: [UIUserInterfaceStyle.light, .dark])
+    func `More header text clears AA on the brand accent`(style: UIUserInterfaceStyle) {
+        let colors = ThemeColors()
+        let traits = UITraitCollection(userInterfaceStyle: style)
+        let background = colors.brandAccent.resolvedColor(with: traits)
+        #expect(colors.lightText.resolvedColor(with: traits).wcagContrastRatio(against: background) >= 4.5)
+    }
+
+    /// The host app's `AccentColor` asset is the SwiftUI accent: tinted text
+    /// and links on the page background, in every appearance. (Prominent
+    /// buttons, which draw white on the fill, tint with `brandAccent` instead:
+    /// no single dark-mode green clears 4.5:1 both against white and as text
+    /// on the elevated dark backgrounds.) In light mode the accent is also the
+    /// fill of any prominent button left untinted, so white must read on it.
+    @Test(arguments: [UIAccessibilityContrast.normal, .high])
+    func `Accent color clears AA as text and under white in light mode`(contrast: UIAccessibilityContrast) throws {
+        let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: nil), "the host app names an AccentColor")
+        let traits = UITraitCollection { $0.userInterfaceStyle = .light; $0.accessibilityContrast = contrast }
+        let resolved = accent.resolvedColor(with: traits)
+        for background in [UIColor.systemBackground, .systemGroupedBackground] {
+            #expect(resolved.wcagContrastRatio(against: background.resolvedColor(with: traits)) >= 4.5)
+        }
+        #expect(UIColor.white.wcagContrastRatio(against: resolved) >= 4.5)
+    }
+
+    @Test(arguments: [UIAccessibilityContrast.normal, .high])
+    func `Accent color clears AA as text on dark backgrounds`(contrast: UIAccessibilityContrast) throws {
+        let accent = try #require(UIColor(named: "AccentColor", in: .main, compatibleWith: nil), "the host app names an AccentColor")
+        for level in [UIUserInterfaceLevel.base, .elevated] {
+            let traits = UITraitCollection {
+                $0.userInterfaceStyle = .dark
+                $0.accessibilityContrast = contrast
+                $0.userInterfaceLevel = level
+            }
+            let resolved = accent.resolvedColor(with: traits)
+            for background in [UIColor.systemBackground, .secondarySystemBackground] {
+                #expect(resolved.wcagContrastRatio(against: background.resolvedColor(with: traits)) >= 4.5,
+                        "accent on \(background) at level \(level.rawValue)")
+            }
+        }
+    }
+
     /// The watch face is always dark and its `UIColor` has no dynamic colors,
     /// so every watch value must be fixed: identical under both styles.
     @Test func `Watch palette colors are fixed, not dynamic`() {

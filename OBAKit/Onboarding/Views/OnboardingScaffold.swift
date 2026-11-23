@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import OBAKitCore
 
 /// The ringed hero circle used at the top of onboarding screens.
 struct OnboardingHeroCircle: View {
@@ -23,6 +24,36 @@ struct OnboardingHeroCircle: View {
                 .foregroundStyle(.white)
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// Layout shared by the onboarding screens.
+enum OnboardingLayout {
+    /// The widest an onboarding screen's column of copy and its button grow, so
+    /// on iPad they stay a readable, centred column instead of running edge to edge.
+    static let readableWidth: CGFloat = 560
+
+    /// The column's maximum width for `sizeClass`: `readableWidth` on regular
+    /// width, and unconstrained (`nil`) on compact width, which keeps iPhone's
+    /// layout as it was.
+    static func maxContentWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat? {
+        sizeClass == .regular ? readableWidth : nil
+    }
+}
+
+private struct OnboardingReadableWidth: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    func body(content: Content) -> some View {
+        content.frame(maxWidth: OnboardingLayout.maxContentWidth(for: horizontalSizeClass))
+    }
+}
+
+extension View {
+    /// Caps this view at `OnboardingLayout.readableWidth` on regular width. Put
+    /// it inside a full-width container, which centres it.
+    func onboardingReadableWidth() -> some View {
+        modifier(OnboardingReadableWidth())
     }
 }
 
@@ -76,6 +107,7 @@ struct OnboardingScaffold<Content: View>: View {
                     }
                 }
                 .padding(.horizontal, 28)
+                .onboardingReadableWidth()
                 .padding(.top, 12)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(OBALoc("onboarding.progress.accessibility_label", value: "Onboarding progress", comment: "Accessibility label for the onboarding progress bar")))
@@ -98,8 +130,9 @@ struct OnboardingScaffold<Content: View>: View {
                     }
 
                     Text(title)
-                        .font(.system(size: 32, weight: .heavy))
+                        .font(.largeTitle.weight(.heavy))
                         .multilineTextAlignment(.center)
+                        .accessibilityAddTraits(.isHeader)
 
                     if let bodyText {
                         Text(bodyText)
@@ -113,6 +146,9 @@ struct OnboardingScaffold<Content: View>: View {
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 40)
+                // The column is capped; the scroll view stays full width, so
+                // it scrolls from the margins too.
+                .onboardingReadableWidth()
                 .frame(maxWidth: .infinity)
             }
 
@@ -120,7 +156,9 @@ struct OnboardingScaffold<Content: View>: View {
                 if let footnote {
                     Text(footnote)
                         .font(.footnote)
-                        .foregroundStyle(.tertiary)
+                        // Real copy (privacy note, notification promise):
+                        // tertiary is well under 4.5:1.
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 10)
                 }
@@ -131,10 +169,14 @@ struct OnboardingScaffold<Content: View>: View {
                         .frame(maxWidth: .infinity, minHeight: 40)
                 }
                 .buttonStyle(.borderedProminent)
+                // White label on the fill: `brandAccent` keeps it at AA in
+                // both appearances, which the dark-mode accent does not.
+                .tint(Color(uiColor: ThemeColors.shared.brandAccent))
                 .controlSize(.large)
                 .disabled(primaryDisabled)
             }
             .padding(.horizontal, 24)
+            .onboardingReadableWidth()
             .padding(.bottom, 12)
         }
     }

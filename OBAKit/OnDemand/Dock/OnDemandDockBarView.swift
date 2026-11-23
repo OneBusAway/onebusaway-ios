@@ -52,7 +52,7 @@ struct OnDemandDockBarPage: Identifiable, Equatable {
         switch trailing {
         case .call: return "phone.fill"
         case .bookOnline: return "arrow.up.right.square"
-        case .detail, .panToEdge: return "chevron.right"
+        case .detail, .panToEdge: return "chevron.forward"
         case .none: return nil
         }
     }

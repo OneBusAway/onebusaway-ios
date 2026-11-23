@@ -125,4 +125,23 @@ final class OnboardingRegionSelectionTests {
     @Test func `Resolve returns nil without a tap a current region or a location`() {
         #expect(OnboardingRegionSelection.resolve(chosen: nil, current: nil, located: nil) == nil)
     }
+
+    // MARK: - keepsAutomaticRegionSelection
+
+    @Test func `Accepting a detected region keeps automatic region selection on`() throws {
+        let selection = try #require(OnboardingRegionSelection.resolve(chosen: nil, current: pugetSound, located: pugetSound))
+        #expect(selection.keepsAutomaticRegionSelection)
+    }
+
+    /// A rider inside Puget Sound who taps Tampa Bay would otherwise have their pick
+    /// overwritten by `RegionsService` on the next location update.
+    @Test func `Confirming a tapped region turns automatic region selection off`() throws {
+        let selection = try #require(OnboardingRegionSelection.resolve(chosen: tampaBay, current: pugetSound, located: pugetSound))
+        #expect(selection.keepsAutomaticRegionSelection == false)
+    }
+
+    @Test func `Confirming a preselected region turns automatic region selection off`() throws {
+        let selection = try #require(OnboardingRegionSelection.resolve(chosen: nil, current: tampaBay, located: pugetSound))
+        #expect(selection.keepsAutomaticRegionSelection == false)
+    }
 }

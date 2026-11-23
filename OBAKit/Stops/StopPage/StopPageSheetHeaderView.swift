@@ -41,7 +41,8 @@ nonisolated enum StopSheetHeaderMetrics {
 /// sheet's scarce vertical space showing the rider something they can see by looking up.
 ///
 /// Two other things move out of here relative to the dark card: there is no "Updated: …" status
-/// line (Refresh in the sheet's More menu carries freshness), and the walk pill is
+/// line (Refresh in the sheet's More menu carries freshness, and `StopStaleArrivalsNotice` says
+/// when the times stopped updating), and the walk pill is
 /// tinted rather than solid, since it no longer has to hold up against a photographic backdrop.
 ///
 /// A plain-value view except for `mapFocus` — it never touches `StopViewModel`.

@@ -1,4 +1,4 @@
-# App Store listing — OneBusAway 26.4
+# App Store listing — OneBusAway 26.5
 
 Text for the App Store Connect fields. Character counts are as App Store
 Connect counts them.
@@ -7,9 +7,9 @@ Connect counts them.
 
 Editable without a new submission, so it carries what's new.
 
-> OneBusAway is now on Apple Watch! Plus nearby bikes and scooters, on-demand transit, alerts as your stop approaches, and much better VoiceOver support. Free, with no ads.
+> A new map-first look, and OneBusAway on Apple Watch! Plus voice search, nearby bikes and scooters, on-demand transit, stop alerts, and better VoiceOver. Free, no ads.
 
-(170 characters)
+(166 characters)
 
 ## Keywords (100 characters max)
 
@@ -24,8 +24,12 @@ seattle,tampa,san diego,dc,adelaide,king county,metro,sound transit,hart,mts,wma
 
 ## What's New
 
-This is a big release. It adds an Apple Watch app, shows availability of bikes, scooters, and on-demand transit (in supporting regions), greatly improves accessibility support throughout the app, and much more.
+This is a big release. It has a new map-first design, adds an Apple Watch app, shows availability of bikes, scooters, and on-demand transit (in supporting regions), greatly improves accessibility support throughout the app, and much more.
 
+- A new look: The map now fills the screen, with Home, Recent, and Bookmarks in a panel you pull up over it. Settings and More are at the bottom of Home. Prefer the tab bar? Turn on Classic tab bar layout in Settings.
+- Voice search: Tap the microphone in search and say where you're going.
+- Trip suggestions: When you're riding a bus, the map can offer to track your trip. Requires Precise Location.
+- Siri: Ask for the next departures at a stop.
 - Apple Watch app: See bookmarks, nearby stops, and their arrivals on your wrist. Your bookmarks sync from your iPhone.
 - iPhone Duo support: if you're one of the lucky few sporting an iPhone Duo on launch day, rest assured that OBA will work great on it from day 1.
 - Micromobility support: In supporting regions, you'll be able to see nearby scooters and bikes from Lime, Bird, and other providers.

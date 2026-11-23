@@ -48,10 +48,16 @@ public class OnboardingFlowController: UIViewController {
     /// no seen-step record are marked as having seen the pre-registry steps, so the only
     /// seen-tracked steps they can match are ones added after the registry shipped
     /// (e.g. notifications). Migration ignores the seen store and re-prompts until it succeeds.
+    /// A new install (no region) instead has the existing-user-only steps marked seen, since
+    /// it never saw what they introduce.
     @objc public static func evaluate(application: Application, completion: @escaping (OnboardingFlowController?) -> Void) {
         Task { @MainActor in
             let store = OnboardingStepStore(userDefaults: application.userDefaults)
-            store.backfillIfNeeded(hasCurrentRegion: application.regionsService.currentRegion != nil)
+            let hasCurrentRegion = application.regionsService.currentRegion != nil
+            store.backfillIfNeeded(hasCurrentRegion: hasCurrentRegion)
+            if !hasCurrentRegion {
+                OnboardingRegistry.skipExistingUserOnlySteps(store: store)
+            }
 
             let environment = await OnboardingEnvironment.current(application: application)
             var flow = OnboardingRegistry.flow(environment: environment, store: store)

@@ -69,14 +69,9 @@ struct DepartureStatus {
 
     /// Shown beside a countdown chip when Differentiate Without Color is on, so
     /// the status doesn't rest on the chip's tint alone.
+    /// The mapping lives in OBAKitCore so the widget and watch draw the same glyphs.
     var glyphName: String {
-        guard isRealTime else { return "clock" }
-        switch scheduleStatus {
-        case .onTime: return "checkmark"
-        case .early: return "hare.fill"
-        case .delayed: return "tortoise.fill"
-        default: return "clock"
-        }
+        scheduleStatus.differentiateWithoutColorGlyphName(isRealTime: isRealTime)
     }
 
     var accessibilityStatusDescription: String {

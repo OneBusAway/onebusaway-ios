@@ -178,7 +178,9 @@ struct BookmarksListView: View {
         .accessibilityAction {
             navigation.selectBookmark(row.bookmark)
         }
-        .swipeActions(edge: .trailing) {
+        // No full swipe: deleting a bookmark can't be undone, so a stray
+        // swipe while scrolling shouldn't be enough to lose one.
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(Strings.delete, role: .destructive) {
                 navigation.deleteBookmark(row.bookmark)
             }

@@ -51,6 +51,7 @@ class BookmarksViewController: UIHostingController<BookmarksRootView>,
         title = Strings.bookmarksTabTitle
         tabBarItem.image = Icons.bookmarksTabIcon
         tabBarItem.selectedImage = Icons.bookmarksSelectedTabIcon
+        tabBarItem.accessibilityIdentifier = "tab_bookmarks"
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
     }

@@ -12,6 +12,8 @@
 #   -n, --name <NAME>   Select simulator matching name (case-insensitive substring/exact)
 #       --pro           Select newest iPhone Pro
 #       --duo           Select newest iPhone Duo
+#       --ipad          Select an iPad (an iPad Pro when the runtime has one)
+#       --os <MAJOR>    Only consider iOS <MAJOR>.x runtimes (newest minor first)
 #   -h, --help          Show this help message
 #
 # Environment variables:
@@ -22,6 +24,13 @@
 # newest runtime that has one: its screen is the 6.3" App Store size, which
 # scripts/app_store_screenshots captures at. With --duo it prints the newest
 # iPhone Duo, which `scripts/app_store_screenshots --duo` captures on.
+# With --ipad it prints an iPad instead, preferring an iPad Pro (Stage Manager
+# and multiple windows on every supported runtime).
+#
+# --os <MAJOR> combines with any of the above, and with --name: it restricts
+# the search to iOS <MAJOR>.x runtimes. `--os 18` reaches the deployment
+# target's runtime, which the newest-runtime default never lands on. Without
+# it the selection is unchanged.
 #
 # Address the device by `id=` rather than `name=`. A hardcoded name breaks two
 # ways, and the two report differently, which is why neither `OS=latest` nor a
@@ -47,6 +56,7 @@ set -euo pipefail
 
 kind=any
 label="iPhone"
+os_major=""
 explicit_udid="${SIMULATOR_OVERRIDE_UDID:-}"
 explicit_name="${SIMULATOR_OVERRIDE_NAME:-}"
 
@@ -62,6 +72,8 @@ while [[ $# -gt 0 ]]; do
             echo "  -n, --name <NAME>   Select simulator matching name (case-insensitive substring/exact)"
             echo "      --pro           Select newest iPhone Pro"
             echo "      --duo           Select newest iPhone Duo"
+            echo "      --ipad          Select an iPad (an iPad Pro when the runtime has one)"
+            echo "      --os <MAJOR>    Only consider iOS <MAJOR>.x runtimes (e.g. --os 18)"
             echo "  -h, --help          Show this help message"
             echo ""
             echo "Environment variables:"
@@ -77,6 +89,23 @@ while [[ $# -gt 0 ]]; do
         --duo)
             kind=duo
             label="iPhone Duo"
+            shift
+            ;;
+        --ipad)
+            kind=ipad
+            label="iPad"
+            shift
+            ;;
+        --os)
+            if [[ $# -lt 2 ]]; then
+                echo "error: missing argument for $1" >&2
+                exit 2
+            fi
+            os_major="$2"
+            shift 2
+            ;;
+        --os=*)
+            os_major="${1#*=}"
             shift
             ;;
         -u|--udid)
@@ -104,11 +133,16 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            echo "error: unknown argument: $1 (expected --udid, --name, --pro, --duo or --help)" >&2
+            echo "error: unknown argument: $1 (expected --udid, --name, --pro, --duo, --ipad, --os or --help)" >&2
             exit 2
             ;;
     esac
 done
+
+if [[ -n "$os_major" && ! "$os_major" =~ ^[0-9]+$ ]]; then
+    echo "error: --os expects a major iOS version such as 18, got \"$os_major\"" >&2
+    exit 2
+fi
 
 if ! devices_json=$(xcrun simctl list devices available -j 2>&1); then
     echo "error: \`xcrun simctl\` failed:" >&2
@@ -133,6 +167,7 @@ except (json.JSONDecodeError, KeyError, TypeError) as error:
 kind = sys.argv[1]
 udid_override = sys.argv[2] if len(sys.argv) > 2 else ""
 name_override = sys.argv[3] if len(sys.argv) > 3 else ""
+os_major = sys.argv[4] if len(sys.argv) > 4 else ""
 
 def ios_version(runtime):
     match = re.search(r"iOS-(\d+)-(\d+)", runtime)
@@ -147,6 +182,10 @@ if udid_override:
                 print(d["udid"])
                 sys.exit(0)
     sys.exit("error: iOS simulator with UDID \"" + udid_override + "\" not found among available devices.")
+
+# --os keeps only the runtimes of that major version; without it, none is dropped.
+if os_major:
+    devices = {r: v for r, v in devices.items() if ios_version(r)[0] == int(os_major)}
 
 if name_override:
     sorted_runtimes = sorted([r for r in devices.keys() if re.search(r"iOS-\d+-\d+", r)], key=ios_version, reverse=True)
@@ -172,6 +211,15 @@ for runtime in sorted(devices, key=ios_version, reverse=True):
             print(duos[0])
             break
         continue
+    if kind == "ipad":
+        ipads = [d["udid"] for d in devices[runtime]
+                 if ".iPad" in d.get("deviceTypeIdentifier", "")]
+        pros = [d["udid"] for d in devices[runtime]
+                if ".iPad-Pro-" in d.get("deviceTypeIdentifier", "")]
+        if pros or ipads:
+            print((pros or ipads)[0])
+            break
+        continue
     if kind == "pro":
         # Highest model number wins: "iPhone-18-Pro" over "iPhone-17-Pro".
         pros = [(int(match.group(1)), d["udid"]) for d in devices[runtime]
@@ -184,9 +232,15 @@ for runtime in sorted(devices, key=ios_version, reverse=True):
     if phones:
         print(phones[0]["udid"])
         break
-' "$kind" "$explicit_udid" "$explicit_name")
+' "$kind" "$explicit_udid" "$explicit_name" "$os_major")
 
 if [ -z "$udid" ]; then
+    if [ -n "$os_major" ]; then
+        echo "error: no available $label simulator on an installed iOS $os_major runtime." >&2
+        echo "Install one in Xcode > Settings > Components, or run: xcodebuild -downloadPlatform iOS -buildVersion $os_major.<minor>" >&2
+        echo "A runtime with no $label device needs one created: xcrun simctl create <name> <device type> <runtime>" >&2
+        exit 1
+    fi
     echo "error: no available $label simulator on any installed iOS runtime." >&2
     echo "Install one in Xcode > Settings > Components, or run: xcodebuild -downloadPlatform iOS" >&2
     exit 1

@@ -75,6 +75,8 @@ struct WatchBookmarkRow: View {
     let bookmarkArrival: WatchBookmarkArrival
     let formatters: Formatters
 
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+
     private var bookmark: WatchBookmark {
         bookmarkArrival.bookmark
     }
@@ -132,13 +134,51 @@ struct WatchBookmarkRow: View {
             }
             Spacer(minLength: 4)
             if let arrival {
-                CountdownView(
-                    departure: arrival.arrivalDepartureDate,
-                    isRealTime: arrival.predicted,
-                    color: countdownColor,
-                    emphasized: false
-                )
+                // A single-child stack lays out exactly as the bare countdown,
+                // so the row is unchanged unless the glyph is drawn.
+                HStack(spacing: 2) {
+                    // Schedule-only countdowns already carry a clock glyph.
+                    if differentiateWithoutColor, arrival.predicted {
+                        Image(systemName: arrival.scheduleStatus.differentiateWithoutColorGlyphName(isRealTime: true))
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(countdownColor)
+                            .accessibilityHidden(true)
+                    }
+                    CountdownView(
+                        departure: arrival.arrivalDepartureDate,
+                        isRealTime: arrival.predicted,
+                        color: countdownColor,
+                        emphasized: false
+                    )
+                }
             }
         }
+        // The route badge and countdown hide themselves from VoiceOver, so the
+        // row speaks for them, as `ArrivalRow` does. The enclosing
+        // NavigationLink keeps the button trait.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        // The countdown's color is its only adherence cue; say it. With no
+        // arrival there is no countdown, so no value either.
+        .accessibilityValue(arrival.map { formatters.deviationLabel(for: $0) } ?? "")
+        .accessibilityAddTraits(arrival == nil ? [] : .updatesFrequently)
+    }
+
+    /// Route and title, stop name, then time until the next arrival when there
+    /// is one — the same order the row draws them in.
+    private var accessibilityLabel: String {
+        var clauses: [String] = []
+        if !routeShortName.isEmpty, bookmark.isTripBookmark, let headsign = bookmark.tripHeadsign {
+            clauses.append(RouteDirectionBadge.accessibilityLabel(routeShortName: routeShortName, headsign: headsign))
+        } else {
+            clauses.append(contentsOf: [routeShortName, titleText].filter { !$0.isEmpty })
+        }
+        if !bookmark.stopName.isEmpty {
+            clauses.append(bookmark.stopName)
+        }
+        if let arrival {
+            clauses.append(formatters.formattedTime(until: arrival))
+        }
+        return clauses.joined(separator: ", ")
     }
 }

@@ -130,6 +130,7 @@ struct TripActionBar: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Color(uiColor: ThemeColors.shared.departureOnTimeFill))
+            .accessibilityIdentifier("trip_track_live_activity_button")
         }
     }
 
@@ -193,6 +194,7 @@ struct TripActionBar: View {
                 systemImage: hasAlarm ? "bell.fill" : "bell",
                 action: onAlarm
             )
+            .accessibilityIdentifier("trip_alarm_button")
         }
 
         if canReportGhostBus {

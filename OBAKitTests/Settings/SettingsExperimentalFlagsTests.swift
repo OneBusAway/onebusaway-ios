@@ -75,6 +75,46 @@ final class SettingsExperimentalFlagsTests: OBATestCase {
         #expect(FeatureFlags.isMapPanelExperienceEnabled(userDefaults: self.application.userDefaults))
     }
 
+    // MARK: - Classic tab bar layout
+
+    /// Settings > Layout's switch is the map panel flag inverted: ON is the tab bar.
+    @Test func `Classic tab bar layout seeds off while the map panel is the default`() throws {
+        application.userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+        #expect(!vm.usesClassicTabBarLayout)
+    }
+
+    @Test func `Classic tab bar layout seeds on for someone who opted out of the map panel`() throws {
+        application.userDefaults.set(false, forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+        #expect(vm.usesClassicTabBarLayout)
+    }
+
+    /// The stored key keeps its meaning: turning the classic layout on writes the
+    /// map panel flag as false, and rebuilds the root as the tab bar.
+    @Test func `Turning the classic tab bar layout on stores the map panel flag off and swaps the root`() throws {
+        application.userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+
+        vm.usesClassicTabBarLayout = true
+
+        #expect(self.application.userDefaults.object(forKey: FeatureFlags.useMapPanelExperienceKey) as? Bool == false)
+        #expect(!vm.usesMapPanelExperience)
+        #expect(appDelegate.reloads == 1)
+        #expect(appDelegate.root is ClassicApplicationRootController)
+    }
+
+    @Test func `Turning the classic tab bar layout off stores the map panel flag on and swaps the root`() throws {
+        application.userDefaults.set(false, forKey: FeatureFlags.useMapPanelExperienceKey)
+        let vm = makeViewModel()
+
+        vm.usesClassicTabBarLayout = false
+
+        #expect(FeatureFlags.isMapPanelExperienceEnabled(userDefaults: self.application.userDefaults))
+        #expect(appDelegate.reloads == 1)
+        #expect(appDelegate.root is MapPanelRootController)
+    }
+
     // MARK: - Map panel root swap
 
     @Test func `Turning the map panel off swaps in the classic root at once`() throws {

@@ -461,8 +461,9 @@ final class ApplicationTests: OBATestCase {
 
     /// The headline behavior of the onboarding registry: an existing user (region set,
     /// empty seen-store) gets backfilled and — with no push provider configured, as in
-    /// this test harness — matches no steps, so `evaluate` hands back nil and the app
-    /// goes straight to its root UI.
+    /// this test harness, and on the classic tab bar so the map panel intro doesn't
+    /// apply — matches no steps, so `evaluate` hands back nil and the app goes
+    /// straight to its root UI.
     @Test func `Onboarding evaluate existing user returns nil`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
@@ -472,6 +473,7 @@ final class ApplicationTests: OBATestCase {
         // `regionsService.currentRegion` after construction fires the region-change
         // cascade — agencies + per-agency alert fetches — which is out of scope here.)
         userDefaults.set(Fixtures.pugetSoundRegion.regionIdentifier, forKey: "OBACurrentRegionIdentifierUserDefaultsKey")
+        userDefaults.set(false, forKey: FeatureFlags.useMapPanelExperienceKey)
 
         let locManager = LocationManagerMock()
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
@@ -498,7 +500,30 @@ final class ApplicationTests: OBATestCase {
         }
     }
 
-    /// A new user (no region) gets a flow — evaluate returns a controller.
+    /// An existing user moved onto the map panel by default (the flag never set) is
+    /// shown the map panel intro; nothing else applies in this harness.
+    @Test func `Onboarding evaluate existing user on the map panel returns controller`() async {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        userDefaults.set(Fixtures.pugetSoundRegion.regionIdentifier, forKey: "OBACurrentRegionIdentifierUserDefaultsKey")
+        userDefaults.removeObject(forKey: FeatureFlags.useMapPanelExperienceKey)
+
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        let app = Application(config: config)
+
+        let controller = await withCheckedContinuation { continuation in
+            OnboardingFlowController.evaluate(application: app) { controller in
+                continuation.resume(returning: controller)
+            }
+        }
+
+        #expect(controller != nil)
+    }
+
+    /// A new user (no region) gets a flow — evaluate returns a controller — and never
+    /// the map panel intro, now or once onboarding gives them a region.
     @Test func `Onboarding evaluate new user returns controller`() async {
         let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
@@ -514,6 +539,7 @@ final class ApplicationTests: OBATestCase {
         }
 
         #expect(controller != nil)
+        await MainActor.run { #expect(OnboardingStepStore(userDefaults: app.userDefaults).seenVersion(of: .mapPanelIntro) == 1) }
     }
 
     @Test func `Application url scheme invalid url returns false`() async {

@@ -12,9 +12,10 @@ targets:
         name: App
         group: OneBusAway
         # gpx files are simulated-location fixtures for schemes, not app
-        # resources; keep them out of the bundle. project.yml and watch.yml are
-        # project wiring, not resources.
-        excludes: ["gpx_files", "project.yml", "watch.yml"]
+        # resources; keep them out of the bundle. project.yml, watch.yml,
+        # Package.resolved and local.yml.example are project wiring, not
+        # resources.
+        excludes: ["gpx_files", "project.yml", "watch.yml", "Package.resolved", "local.yml.example"]
       - path: Apps/Shared/CommonClient
         name: Common
         group: OneBusAway
@@ -27,8 +28,6 @@ targets:
           - applinks:onebusaway.co
           - applinks:www.onebusaway.co
           - applinks:sidecar.onebusaway.org
-        com.apple.developer.in-app-payments:
-          - merchant.org.onebusaway.iphone
     info:
       path: Apps/OneBusAway/Info.plist
       properties:

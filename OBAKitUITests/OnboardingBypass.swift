@@ -29,12 +29,13 @@ nonisolated enum OnboardingBypass {
 
     /// Keep in sync with `OnboardingStepID`. `.migration` is omitted on purpose: it
     /// does not track seen state and is only eligible when there is data to migrate.
-    private static let seenStepVersions = """
+    static let seenStepVersions = """
         <dict>\
         <key>welcome</key><integer>1</integer>\
         <key>location</key><integer>1</integer>\
         <key>region</key><integer>1</integer>\
         <key>notifications</key><integer>1</integer>\
+        <key>mapPanelIntro</key><integer>1</integer>\
         <key>done</key><integer>1</integer>\
         </dict>
         """

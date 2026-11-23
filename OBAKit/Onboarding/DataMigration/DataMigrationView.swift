@@ -63,6 +63,8 @@ public struct DataMigrationView: View, OnboardingView {
         }
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
+        .onboardingReadableWidth()
+        .frame(maxWidth: .infinity)
         .safeAreaInset(edge: .top) {
             OnboardingHeaderView(imageSystemName: "arrow.up.doc.on.clipboard", headerText: OBALoc("data_migration_bulletin.data_upgrade_title", value: "Data Upgrade", comment: "Title for the DataMigrationBulletinPage."))
         }
@@ -85,6 +87,7 @@ public struct DataMigrationView: View, OnboardingView {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color(uiColor: ThemeColors.shared.brandAccent))
 
                 Button {
                     dismiss()
@@ -92,6 +95,7 @@ public struct DataMigrationView: View, OnboardingView {
                     Text(OBALoc("data_migration_bulletin.dismiss_button", value: "Not Now", comment: "Dismissal button title for the DataMigrationBulletinPage."))
                 }
             }
+            .onboardingReadableWidth()
             .onDrop(of: [.propertyList, .xml, .xmlPropertyList], isTargeted: nil, perform: handleUserProvidedItem)
             .disabled(activeMigrationTask != nil)
             .background(.background)

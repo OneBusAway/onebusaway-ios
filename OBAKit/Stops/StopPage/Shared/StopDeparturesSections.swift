@@ -37,6 +37,10 @@ struct StopDeparturesSections: View {
     let minutesAfter: UInt
     let isBrokenBookmark: Bool
     let errorText: String?
+    /// Freshness line for the stale-arrivals notice. `nil` where the
+    /// presentation already shows freshness elsewhere (the pushed page's header
+    /// and toolbar), so it isn't said twice.
+    var staleNoticeStatusText: String?
     let showsDonation: Bool
     let isLoadMoreExhausted: Bool
     let isLoading: Bool
@@ -156,6 +160,17 @@ struct StopDeparturesSections: View {
         // The two states the row itself offers a "show everything" button for —
         // and the only ones where focus should jump to it.
         let isFilterCausedEmpty = content.isFilteredEmpty || content.isDepartureFilterEmpty
+
+        // Directly above the departures it is about, so a rider reading the
+        // countdowns sees first that they stopped updating.
+        if content.showsStaleArrivalsNotice {
+            StopStaleArrivalsNotice(
+                errorText: errorText,
+                statusText: staleNoticeStatusText,
+                isRetrying: isLoading,
+                onRetry: onRetry
+            )
+        }
 
         if content.hasLoadedArrivals {
             Section {

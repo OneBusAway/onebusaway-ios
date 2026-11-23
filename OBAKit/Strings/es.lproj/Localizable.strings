@@ -41,7 +41,7 @@
 "alarm_time_picker.description" = "Recordarme cuando este vehículo salga en:";
 
 /* Title of the Alarm Time Picker page. */
-"alarm_time_picker.title" = "Agregar recordatorio";
+"alarm_time_picker.title" = "Agregar Alarma";
 
 /* Toggle label that starts a Live Activity widget on the Lock Screen when an alarm is set. */
 "alarm_time_picker.track_on_lock_screen" = "Seguir en la pantalla bloqueada";
@@ -261,6 +261,21 @@
 
 /* Title of the donation widget that appears on the stop view controller. %@ is the app name. */
 "donation_cell.title" = "🚨 %@ necesita su ayuda";
+
+/* Button at the bottom of the donation explanation screen that opens the donation page on the project's website. */
+"donation_learn_more.donate_button" = "Donar en nuestro sitio web";
+
+/* Full explanation on the donation explanation screen. %1$@ is the app name and appears four times. $27.50 is an amount in US dollars; keep it in dollars. 501(c)(3) is a US tax status; keep it unchanged. */
+"donation_learn_more.explanation_fmt" = "Tenemos grandes planes para mejorar %1$@, pero no podemos hacerlo sin su ayuda. Esta aplicación se desarrolla actualmente con trabajo 100%% voluntario, y necesitamos su ayuda para financiar el desarrollo futuro.\n\nComo proyecto clave de la Open Transit Software Foundation, una organización sin fines de lucro 501(c)(3), dependemos de la buena voluntad de usuarios como usted para seguir funcionando y mejorando este software.\n\nCada año, solo una pequeña parte de nuestros usuarios hace una donación, pero cada aporte, grande o pequeño, ayuda a que %1$@ siga siendo gratuita, actualizada y accesible para todos. Una pequeña donación, aunque sea el costo de una semana de viajes al trabajo, 27,50 US$, puede marcar la diferencia.\n\nSu contribución deducible de impuestos garantiza que %1$@ siga siendo gratuita y accesible para todos. ¡Construyamos juntos el futuro del transporte público!\n\nGracias,\nEl equipo de %1$@";
+
+/* Heading above the explanation on the donation explanation screen. */
+"donation_learn_more.header" = "Por qué necesitamos su ayuda";
+
+/* Credit for the header photo on the donation explanation screen. Keep the photographer's name, the license name and the URL unchanged. */
+"donation_learn_more.photo_credit" = "Foto de Timothy Neesam / Licencia CC-BY-ND 2.0 (https://flickr.com/photos/neesam)";
+
+/* Button on the donation explanation screen that expands the truncated explanation to its full length. */
+"donation_learn_more.read_more" = "Leer más...";
 
 /* Button on the donation-dismiss alert that permanently stops donation requests. */
 "donations.donations_dismiss_alert.button_dismiss" = "No quiero ayudar en este momento";
@@ -484,11 +499,11 @@
 /* Placeholder text for Bookmark Group. */
 "manage_groups_controller.text_field_placeholder" = "Nombre del grupo";
 
-/* Manage Groups controller title */
-"manage_groups_controller.title" = "Editar Marcadores";
-
 /* Map controller for centering the map on the user's current location. */
 "map_controller.center_user_location" = "Centrar el mapa en la ubicación actual";
+
+/* Subtitle of a pin the user dropped on the map when looking up its address failed. */
+"map_controller.dropped_pin_no_details" = "No se pudieron obtener los detalles de la ubicación";
 
 /* Name given to a pin the user dropped on the map by long-pressing it, when the location has no better name. Also read by VoiceOver. */
 "map_controller.dropped_pin_title" = "Pin colocado";
@@ -504,9 +519,6 @@
 
 /* Voiceover text for the button that opens the Map settings sheet, which covers the base map, points of interest, transit layers and other travel modes. */
 "map_controller.map_settings.accessibility_label" = "Ajustes del mapa";
-
-/* Voiceover text indicating that this button toggles the base map type. */
-"map_controller.map_type.accessibility_label" = "Tipo de mapa";
 
 /* Voiceover value combining the base map type with the number of enabled map layers. %1$@ is the base map type, %2$d is the layer count. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "map_controller.map_type.accessibility_value_with_layers_fmt" = "%1$@, %2$d capas activadas";
@@ -716,6 +728,9 @@
 /* Siri asks which stop to report departures for when the user didn't name one. */
 "next_departures_at_stop_intent.choose_stop" = "¿Qué parada?";
 
+/* Short button on the Next Departures card that starts a Live Activity for the bookmark */
+"next_departures_card.track_button" = "Seguir";
+
 /* Siri response when the requested bookmark was deleted or belongs to a different region. */
 "next_departures_intent.bookmark_unavailable" = "Ese marcador no está disponible en tu región actual.";
 
@@ -852,10 +867,25 @@
 "onboarding.location.benefit_nearby_title" = "Ver paradas cercanas";
 
 /* Footnote of the location onboarding screen; the argument is the app name */
-"onboarding.location.footnote_fmt" = "%@ solo usa tu ubicación mientras la app está abierta. Puedes cambiar esto en cualquier momento en Ajustes.";
+"onboarding.location.footnote_fmt" = "%@ solo usa tu ubicación mientras la app está abierta, a menos que actives los avisos de proximidad. Puedes cambiar esto en cualquier momento en Ajustes.";
 
 /* Title of the location onboarding screen */
 "onboarding.location.title" = "Ve el transporte a tu alrededor";
+
+/* Body of the screen that introduces the app's new map layout, on iPhone. 'Home', 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body" = "El mapa ahora ocupa toda la pantalla, con paradas, marcadores y búsqueda en un panel que se desliza hacia arriba. Configuración y Más están al final de la lista de Inicio.";
+
+/* Body of the screen that introduces the app's new map layout, on iPad and other wide screens. 'Settings' and 'More' name items in the app. */
+"onboarding.map_panel_intro.body_regular" = "El mapa ahora ocupa toda la pantalla, con paradas, marcadores y búsqueda en un panel. Configuración está al final del panel y Más es un botón en el mapa.";
+
+/* Footnote of the screen that introduces the app's new map layout. 'Classic tab bar layout' is the name of the switch in Settings and must match its translation (settings_controller.layout_section.classic_tab_bar). */
+"onboarding.map_panel_intro.footnote" = "¿Prefieres la barra de pestañas? Activa Diseño clásico con barra de pestañas en Configuración.";
+
+/* Badge on the screen that introduces the app's new map layout to people who used the previous one */
+"onboarding.map_panel_intro.new_badge" = "NUEVO";
+
+/* Title of the screen that introduces the app's new map layout to people who used the previous tab bar layout */
+"onboarding.map_panel_intro.title" = "Un nuevo aspecto";
 
 /* Body of the notifications onboarding screen */
 "onboarding.notifications.body" = "Recibe notificaciones sobre alertas de servicio en toda la región: tormentas de hielo, inundaciones y eventos importantes que cambian el funcionamiento del transporte.";
@@ -889,6 +919,9 @@
 
 /* Body of the region onboarding screen prompting the rider to choose a transit network */
 "onboarding.region.body_choose" = "Elige la red de transporte que usas.";
+
+/* Header above the regions list when no region has been detected or selected yet */
+"onboarding.region.choose_header" = "Elige tu región";
 
 /* Label on the region card when the region was already selected by app configuration or an earlier launch rather than detected from the rider's location */
 "onboarding.region.current_label" = "Región actual";
@@ -973,6 +1006,9 @@
 
 /* Help text displayed on an inactive region. */
 "region_picker.inactive_region_help_text" = "Región inactiva";
+
+/* Title of the menu on the region picker that holds the New Custom Region button and the Show Inactive and Show Experimental toggles. */
+"region_picker.more_options_button" = "Más opciones";
 
 /* Title of a button that shows a region creation view controller. */
 "region_picker.new_custom_region_button" = "Nueva región personalizada";
@@ -1109,9 +1145,6 @@
 /* Search scope tag filtering results to transit routes. */
 "search_scope.routes" = "Rutas";
 
-/* Accessibility label for the button that clears the search query. */
-"search_sheet.clear_query" = "Borrar";
-
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Agencias Afectadas";
 
@@ -1163,9 +1196,6 @@
 /* Settings > Arrival & Departure Display > Opt-in toggle for displaying arrival clocks in the transit region's time zone */
 "settings_controller.arrival_display_section.region_time_zone" = "Mostrar horarios en la zona horaria de la región";
 
-/* Title for the departure filter selection alert */
-"settings_controller.arrival_filter.selector_title" = "Mostrar salidas";
-
 /* Title for the departure filter setting row */
 "settings_controller.arrival_filter.title" = "Mostrar salidas";
 
@@ -1196,9 +1226,6 @@
 /* Settings > Experimental section > Toggle that moves a followed trip's vehicle along its route between real-time updates, instead of showing it where it last reported */
 "settings_controller.experimental_section.estimate_vehicle_positions" = "Estimar dónde están ahora los vehículos";
 
-/* Settings > Experimental section > Map panel toggle */
-"settings_controller.experimental_section.map_panel" = "Usar la experiencia del panel del mapa";
-
 /* Settings > Experimental section title */
 "settings_controller.experimental_section.title" = "Experimental";
 
@@ -1213,6 +1240,15 @@
 
 /* Settings > Feedback section title */
 "settings_controller.feedback_section.title" = "Comentarios";
+
+/* Settings > Layout section > Toggle that replaces the full-screen map and sliding panel with the tab bar layout from earlier versions of the app */
+"settings_controller.layout_section.classic_tab_bar" = "Diseño clásico con barra de pestañas";
+
+/* Settings > Layout section footer explaining the Classic tab bar layout toggle */
+"settings_controller.layout_section.footer" = "Usa la barra de pestañas de versiones anteriores en lugar del mapa a pantalla completa con un panel deslizable.";
+
+/* Settings > Layout section title. The section chooses how the app's main screen is arranged. */
+"settings_controller.layout_section.title" = "Diseño";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Mostrar mi direccion actual";
@@ -1481,6 +1517,9 @@
 
 /* Collapsed summary row for the service alerts section. %d is the number of alerts. Plural forms live in Localizable.stringsdict; the value above is only the not-found fallback. */
 "stop_page.service_alerts.summary_fmt" = "%d alertas de servicio";
+
+/* Title of the card shown above a stop's departures when refreshing them failed, so the times on screen are from the last successful update. */
+"stop_page.stale.title" = "No se pudieron actualizar las salidas";
 
 /* VoiceOver status suffix for a live departure. %@ is the adherence label. */
 "stop_page.status.a11y_live_fmt" = "seguimiento en tiempo real, %@";
@@ -1857,14 +1896,8 @@
 "map_sheet.basemap_satellite" = "Satélite";
 /* Basemap style: standard street map */
 "map_sheet.basemap_standard" = "Estándar";
-/* Map sheet section for display options like Points of Interest */
-"map_sheet.display_group" = "Visualización del mapa";
-/* Map sheet row label for the rental minimum-range filter */
-"map_sheet.minimum_range" = "Autonomía mínima";
 /* Range filter menu option imposing no minimum range */
 "map_sheet.minimum_range_any" = "Cualquiera";
-/* Map sheet group header for non-transit mobility layers */
-"map_sheet.other_modes_group" = "Otras formas de moverse";
 /* Button restoring the default map layer configuration */
 "map_sheet.reset" = "Restablecer";
 /* Map sheet row, and the title of the screen it opens, listing the routes that serve the stops currently loaded on the map. */
@@ -1881,8 +1914,6 @@
 "map_sheet.shows_points_of_interest" = "Puntos de interés";
 /* Title of the Map sheet */
 "map_sheet.title" = "Mapa";
-/* Map sheet group header for transit layers */
-"map_sheet.transit_group" = "Transporte público";
 /* Header for More-tab rows that open tutorial, phone, or text links configured by the agency. */
 "more_controller.agency_contact.header" = "Contacto y ayuda";
 /* Opens a tel: link to call the transit agency from the More tab. */
@@ -2031,14 +2062,6 @@
 "trip_page.vehicle_label_fmt" = "Vehículo %@";
 /* VoiceOver label for the trip page button opening the route's schedule. */
 "trip_page.view_schedule" = "Ver horario";
-/* Shown when the vehicle is arriving at the user's stop */
-"trip_progress.arriving_now" = "Llegando ahora";
-/* Estimated time of arrival to the user's stop. e.g. ~8 min to your stop */
-"trip_progress.eta_to_stop_fmt" = "~%d min a su parada";
-/* Shown when the vehicle has already passed the user's destination stop */
-"trip_progress.passed_your_stop" = "Ya pasó su parada";
-/* Shows the current stop position. e.g. Stop 5 of 18 */
-"trip_progress.stop_count_fmt" = "Parada %1$d de %2$d";
 
 /* Accessibility label for the mic button that starts voice search. */
 "search_sheet.voice_search.start" = "Búsqueda por voz";

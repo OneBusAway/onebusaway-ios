@@ -92,8 +92,8 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
     /// The nearby list: rows carry the pin's label and a distance.
     @MainActor func test_nearbyRows_readDistance() throws {
         // The app reopens on the last tab used.
-        app.tabBars.buttons["Map"].tap()
-        let card = app.otherElements["Card controller"]
+        app.tabBars.buttons["tab_map"].tap()
+        let card = app.otherElements["sheet_grabber"]
         if card.waitForExistence(timeout: 10) {
             card.swipeUp()
         }
@@ -171,7 +171,7 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
     }
 
     @MainActor private func verifyBookmarksAccessibility(tabBar: XCUIElement) {
-        tabBar.buttons["Bookmarks"].tap()
+        tabBar.buttons["tab_bookmarks"].tap()
         let bookmarksNavBar = app.navigationBars["Bookmarks"]
         XCTAssertTrue(bookmarksNavBar.waitForExistence(timeout: 10), "Bookmarks navigation bar should exist")
 
@@ -212,7 +212,7 @@ nonisolated final class AccessibilityDeviceTests: XCTestCase {
     }
 
     @MainActor private func verifyMapAndSearchAccessibility(tabBar: XCUIElement) {
-        tabBar.buttons["Map"].tap()
+        tabBar.buttons["tab_map"].tap()
         let map = app.maps.firstMatch
         XCTAssertTrue(map.waitForExistence(timeout: 15), "Map element should exist on Map tab")
 
