@@ -194,9 +194,12 @@ final class AppSheetViewFactory {
                 stopsObserver: self.stopsObserver
             ),
             onSelectAlert: { [coordinator] alert in
-                coordinator.push(.transitAlert(alertID: alert.id))
+                let route = AppSheetRoute.transitAlert(alertID: alert.id)
+                guard coordinator.stackedRoutes.last != route else { return }
+                coordinator.push(route)
             },
             onOpenSettings: { [coordinator] in
+                guard coordinator.stackedRoutes.last != .settings else { return }
                 coordinator.push(.settings)
             }
         )

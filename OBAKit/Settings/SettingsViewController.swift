@@ -35,12 +35,21 @@ class SettingsViewController: UIHostingController<SettingsView> {
                 completion()
                 return
             }
-            if let onClose = self.onClose {
-                onClose()
-                completion()
-            } else if presentingViewController != nil {
-                dismiss(animated: true, completion: completion)
+            if presentingViewController != nil {
+                dismiss(animated: true) { [weak self] in
+                    self?.onClose?()
+                    completion()
+                }
+            } else if let navigationController = self.navigationController, navigationController.viewControllers.count > 1 {
+                CATransaction.begin()
+                CATransaction.setCompletionBlock { [weak self] in
+                    self?.onClose?()
+                    completion()
+                }
+                navigationController.popViewController(animated: true)
+                CATransaction.commit()
             } else {
+                self.onClose?()
                 completion()
             }
         }

@@ -819,6 +819,25 @@ final class AppSheetViewFactoryTests: OBATestCase {
     }
 
     @Test @MainActor
+    func `Settings view controller dismissSettings executes completion and onClose`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        var didClose = false
+        var completed = false
+
+        let vc = SettingsViewController(application: application, onClose: {
+            didClose = true
+        })
+
+        vc.rootView.viewModel.dismissSettings {
+            completed = true
+        }
+
+        #expect(didClose)
+        #expect(completed)
+    }
+
+    @Test @MainActor
     func `Home view onOpenSettings pushes settings route onto coordinator`() {
         let dataLoader = MockDataLoader(testName: name)
         let application = buildApplication(queue: queue, dataLoader: dataLoader)
@@ -826,6 +845,10 @@ final class AppSheetViewFactoryTests: OBATestCase {
         let factory = makeFactory(application: application, coordinator: coordinator)
         let homeView = factory.homeView()
 
+        homeView.onOpenSettings()
+        #expect(coordinator.stackedRoutes == [.settings])
+
+        // Verify pushing twice results in only one stacked route
         homeView.onOpenSettings()
         #expect(coordinator.stackedRoutes == [.settings])
     }
@@ -852,6 +875,10 @@ final class AppSheetViewFactoryTests: OBATestCase {
         feedEntity.alert = transitAlert
         let agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: nil)
 
+        homeView.onSelectAlert(agencyAlert)
+        #expect(coordinator.stackedRoutes == [.transitAlert(alertID: alertID)])
+
+        // Verify pushing twice results in only one stacked route
         homeView.onSelectAlert(agencyAlert)
         #expect(coordinator.stackedRoutes == [.transitAlert(alertID: alertID)])
     }
