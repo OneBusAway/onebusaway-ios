@@ -594,7 +594,7 @@ jobs:
         set -euo pipefail
         sudo renice -n -10 -p $$ >/dev/null
         if ! xcrun simctl runtime list 2>/dev/null | grep -qE "^iOS 18\.[0-9.]* .*\(Ready\)"; then
-          echo "No iOS 18 simulator runtime found; downloading iOS $IOS_18_RUNTIME…"
+          echo "No iOS 18 simulator runtime found; downloading iOS ${IOS_18_RUNTIME}…"
           if ! xcodebuild -downloadPlatform iOS -buildVersion "$IOS_18_RUNTIME"; then
             echo "::error::could not download the iOS $IOS_18_RUNTIME simulator runtime; the iOS 18 deployment target is untested"
             exit 1
