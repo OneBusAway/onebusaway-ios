@@ -22,6 +22,12 @@ extension NearbyRoutesModel {
             requestAuthorization: { [weak host] in host?.locationService.requestInUseAuthorization() },
             locationRequester: { [weak host] in
                 guard let host else { throw LocationServiceError.notAuthorized }
+                guard host.locationService.isLocationUseAuthorized else {
+                    throw LocationServiceError.notAuthorized
+                }
+                for await location in host.locationStream() {
+                    return location
+                }
                 return try await host.locationService.requestLocation(desiredAccuracy: kCLLocationAccuracyHundredMeters)
             },
             hasRegion: { [weak host] in host?.regionsService.physicallyLocatedRegion != nil },

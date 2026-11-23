@@ -441,26 +441,30 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     private var locationStreamContinuations: [UUID: AsyncStream<CLLocation>.Continuation] = [:]
 
     /// Count of active location stream subscriptions.
-    public var locationStreamSubscriberCount: Int {
+    var locationStreamSubscriberCount: Int {
         locationStreamContinuations.count
     }
 
     func addLocationStreamSubscriber(id: UUID, continuation: AsyncStream<CLLocation>.Continuation) {
-        if locationStreamContinuations.isEmpty {
+        let wasEmpty = locationStreamContinuations.isEmpty
+        locationStreamContinuations[id] = continuation
+        if wasEmpty {
             if !isUpdatingLocation {
                 streamStartedLocationUpdates = true
                 performStartUpdatingLocation()
             }
         }
-        locationStreamContinuations[id] = continuation
     }
 
     func removeLocationStreamSubscriber(id: UUID) {
         guard locationStreamContinuations.removeValue(forKey: id) != nil else { return }
         if locationStreamContinuations.isEmpty {
             if streamStartedLocationUpdates {
-                streamStartedLocationUpdates = false
-                stopUpdatingLocation()
+                if pendingOneShotRequests.isEmpty {
+                    streamStartedLocationUpdates = false
+                    isUpdatingLocation = false
+                    locationManager.stopUpdatingLocation()
+                }
             }
         }
     }
@@ -510,6 +514,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         for waiter in waiters {
             waiter.resume(returning: location)
         }
+        stopStreamUpdatesIfNoSubscribers()
     }
 
     private func failOneShotRequests(with error: Error) {
@@ -517,6 +522,15 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         pendingOneShotRequests.removeAll()
         for waiter in waiters {
             waiter.resume(throwing: error)
+        }
+        stopStreamUpdatesIfNoSubscribers()
+    }
+
+    private func stopStreamUpdatesIfNoSubscribers() {
+        if locationStreamContinuations.isEmpty && streamStartedLocationUpdates {
+            streamStartedLocationUpdates = false
+            isUpdatingLocation = false
+            locationManager.stopUpdatingLocation()
         }
     }
 
