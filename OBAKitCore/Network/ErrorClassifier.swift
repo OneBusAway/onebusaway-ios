@@ -55,13 +55,8 @@ public enum ErrorClassifier {
                 return inner.map { category(for: $0) } ?? .offline
             case .captivePortal, .cellularDataRestricted:
                 return .offline
-            case .tlsError(let reason, _):
-                switch reason {
-                case .untrustedCertificate, .expiredCertificate:
-                    return .server
-                case .handshakeFailed:
-                    return .offline
-                }
+            case .tlsError:
+                return .unknown
             default:
                 return .unknown
             }
@@ -79,15 +74,6 @@ public enum ErrorClassifier {
             case NSURLErrorCannotConnectToHost,
                  NSURLErrorCannotFindHost:
                 return .server
-            case NSURLErrorServerCertificateUntrusted,
-                 NSURLErrorServerCertificateHasUnknownRoot,
-                 NSURLErrorServerCertificateHasBadDate,
-                 NSURLErrorServerCertificateNotYetValid:
-                return .server
-            case NSURLErrorSecureConnectionFailed,
-                 NSURLErrorClientCertificateRejected,
-                 NSURLErrorClientCertificateRequired:
-                return .offline
             default:
                 return .unknown
             }
@@ -206,16 +192,16 @@ public enum ErrorClassifier {
             return APIError.serverUnavailable(regionName: regionName, statusCode: nil, underlyingError: nsError)
 
         case NSURLErrorServerCertificateUntrusted,
-             NSURLErrorServerCertificateHasUnknownRoot:
+             NSURLErrorServerCertificateHasUnknownRoot,
+             NSURLErrorClientCertificateRejected,
+             NSURLErrorClientCertificateRequired:
             return APIError.tlsError(reason: .untrustedCertificate, underlyingError: nsError)
 
         case NSURLErrorServerCertificateHasBadDate,
              NSURLErrorServerCertificateNotYetValid:
             return APIError.tlsError(reason: .expiredCertificate, underlyingError: nsError)
 
-        case NSURLErrorSecureConnectionFailed,
-             NSURLErrorClientCertificateRejected,
-             NSURLErrorClientCertificateRequired:
+        case NSURLErrorSecureConnectionFailed:
             return APIError.tlsError(reason: .handshakeFailed, underlyingError: nsError)
 
         default:

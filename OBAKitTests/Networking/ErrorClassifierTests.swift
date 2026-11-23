@@ -746,7 +746,19 @@ final class ErrorClassifierTests {
             return
         }
 
-        #expect(reason == .handshakeFailed)
+        #expect(reason == .untrustedCertificate)
+    }
+
+    @Test func `Classify url error client cert required becomes tlsError`() {
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRequired)
+        let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound")
+
+        guard case .tlsError(let reason, _) = result as? APIError else {
+            Issue.record("Expected APIError.tlsError, got \(result)")
+            return
+        }
+
+        #expect(reason == .untrustedCertificate)
     }
 
     @Test func `Classify network failure wrapping untrusted cert becomes tlsError`() {
@@ -774,22 +786,26 @@ final class ErrorClassifierTests {
         #expect(reason == .untrustedCertificate)
     }
 
-    @Test func `Category for TLS errors returns server or offline`() {
+    @Test func `Category for TLS errors returns unknown`() {
         let untrustedRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted)
         let expiredRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateHasBadDate)
         let handshakeRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorSecureConnectionFailed)
+        let clientCertRejectedRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRejected)
+        let clientCertRequiredRaw = NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRequired)
 
         let untrustedTyped = APIError.tlsError(reason: .untrustedCertificate)
         let expiredTyped = APIError.tlsError(reason: .expiredCertificate)
         let handshakeTyped = APIError.tlsError(reason: .handshakeFailed)
 
-        #expect(ErrorClassifier.category(for: untrustedRaw) == .server)
-        #expect(ErrorClassifier.category(for: expiredRaw) == .server)
-        #expect(ErrorClassifier.category(for: handshakeRaw) == .offline)
+        #expect(ErrorClassifier.category(for: untrustedRaw) == .unknown)
+        #expect(ErrorClassifier.category(for: expiredRaw) == .unknown)
+        #expect(ErrorClassifier.category(for: handshakeRaw) == .unknown)
+        #expect(ErrorClassifier.category(for: clientCertRejectedRaw) == .unknown)
+        #expect(ErrorClassifier.category(for: clientCertRequiredRaw) == .unknown)
 
-        #expect(ErrorClassifier.category(for: untrustedTyped) == .server)
-        #expect(ErrorClassifier.category(for: expiredTyped) == .server)
-        #expect(ErrorClassifier.category(for: handshakeTyped) == .offline)
+        #expect(ErrorClassifier.category(for: untrustedTyped) == .unknown)
+        #expect(ErrorClassifier.category(for: expiredTyped) == .unknown)
+        #expect(ErrorClassifier.category(for: handshakeTyped) == .unknown)
     }
 
     @Test func `TLS error descriptions contain user friendly recovery text`() {

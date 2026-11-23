@@ -351,7 +351,12 @@ public struct ErrorReport: Sendable {
         case .noRegionSelected: return .noRegionSelected
         case .surveyServiceNotConfigured: return .silent
         case .requestFailure: return .fallback
-        case .tlsError(let reason, _):
+        case .tlsError(let reason, let inner):
+            if let nsError = inner as NSError?,
+               nsError.domain == NSURLErrorDomain,
+               [NSURLErrorClientCertificateRejected, NSURLErrorClientCertificateRequired].contains(nsError.code) {
+                return .tlsUntrustedCertificate
+            }
             switch reason {
             case .untrustedCertificate:
                 return .tlsUntrustedCertificate

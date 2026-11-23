@@ -223,6 +223,20 @@ final class ErrorReportTests {
         #expect(handshake.explanation.contains("VPN"))
         #expect(handshake.action == .details)
 
+        let clientRejected = report(NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRejected))
+        #expect(clientRejected.cause == .tlsUntrustedCertificate)
+        #expect(clientRejected.cause.isRiderActionable)
+        #expect(clientRejected.summary == "The security certificate isn't trusted.")
+        #expect(clientRejected.explanation.contains("public Wi-Fi"))
+        #expect(clientRejected.action == .details)
+
+        let clientRequired = report(NSError(domain: NSURLErrorDomain, code: NSURLErrorClientCertificateRequired))
+        #expect(clientRequired.cause == .tlsUntrustedCertificate)
+        #expect(clientRequired.cause.isRiderActionable)
+        #expect(clientRequired.summary == "The security certificate isn't trusted.")
+        #expect(clientRequired.explanation.contains("public Wi-Fi"))
+        #expect(clientRequired.action == .details)
+
         let direct = report(APIError.tlsError(reason: .handshakeFailed))
         #expect(direct.cause == .tlsHandshakeFailed)
     }
