@@ -143,27 +143,37 @@ public class Application: CoreApplication, PushServiceDelegate {
     private func openTrip(_ deepLink: ArrivalDepartureDeepLink, apiService: RESTAPIService) {
         Task(priority: .userInitiated) { @MainActor in
             ProgressHUD.show()
+            defer { ProgressHUD.dismiss() }
 
             do {
-                let arrDep = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink).entry
-
-                // The rider may have switched regions while this loaded.
-                guard self.currentRegion?.regionIdentifier == deepLink.regionID else {
-                    Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
-                    ProgressHUD.dismiss()
-                    return
-                }
-
+                guard let trip = try await self.loadTrip(deepLink, apiService: apiService) else { return }
                 self.viewRouter.navigate(
-                    to: .tripDetails(TripConvertible(arrivalDeparture: arrDep), destinationStopID: deepLink.destinationStopID),
+                    to: .tripDetails(trip, destinationStopID: deepLink.destinationStopID),
                     popToRootFirst: false
                 )
             } catch {
                 await self.displayError(error)
             }
-
-            ProgressHUD.dismiss()
         }
+    }
+
+    /// The trip in `deepLink`, from the current region's server. `nil` without
+    /// an API service, or when the rider switched regions while it loaded: a
+    /// trip from the old server mustn't open.
+    @MainActor
+    func loadTrip(_ deepLink: ArrivalDepartureDeepLink) async throws -> TripConvertible? {
+        guard let apiService else { return nil }
+        return try await loadTrip(deepLink, apiService: apiService)
+    }
+
+    @MainActor
+    private func loadTrip(_ deepLink: ArrivalDepartureDeepLink, apiService: RESTAPIService) async throws -> TripConvertible? {
+        let arrival = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink).entry
+        guard currentRegion?.regionIdentifier == deepLink.regionID else {
+            Logger.warn("Dropping trip \(deepLink.tripID) because the selected region changed before it loaded.")
+            return nil
+        }
+        return TripConvertible(arrivalDeparture: arrival)
     }
 
     /// The application delegate object.

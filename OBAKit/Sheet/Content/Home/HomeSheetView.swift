@@ -171,7 +171,7 @@ struct HomeSheetView: View {
     private var header: some View {
         VStack(spacing: 0) {
             searchField
-                .padding(.horizontal, 12)
+                .padding(.horizontal, HomeTabs.horizontalMargin)
                 // Its own height, however short the sheet: a squeezed field would
                 // shrink the detent measured from it, which would squeeze it further.
                 .fixedSize(horizontal: false, vertical: true)
@@ -311,7 +311,8 @@ struct HomeSheetView: View {
         // Applied to the `List`, matching `BookmarksListView`, rather than
         // to the bookmarks `Section` alone.
         .environment(\.obaFormatters, application.formatters)
-        .searchListChrome()
+        // The cards' edges on the search field's and tab bar's.
+        .searchListChrome(horizontalMargin: HomeTabs.horizontalMargin)
     }
 
     // MARK: - Search Bar
@@ -356,6 +357,8 @@ struct HomeSheetView: View {
     @ViewBuilder
     private func sectionContent(for section: HomeSheetSection) -> some View {
         switch section {
+        case .alarms:
+            alarmsSection
         case .alerts:
             alertsSection
         case .bookmarks:
@@ -385,16 +388,17 @@ struct HomeSheetView: View {
                     }
                 }
             }
+            .homeRowInsets()
         } header: {
             HomeSectionHeader(title: Strings.nearbyStops) {
                 showAll(.nearbyAll)
             }
+            .homeHeaderInsets()
         }
         .textCase(nil)
     }
 
-    /// The last few stops viewed. Alarms, which the Recent tab also lists, have
-    /// their shortcut in Explore.
+    /// The last few stops viewed.
     private var recentSection: some View {
         Section {
             ForEach(viewModel.recent.stops.prefix(HomeSheetSection.recentPreviewLimit), id: \.id) { stop in
@@ -402,10 +406,12 @@ struct HomeSheetView: View {
                     coordinator.push(.stopDetails(stopID: stop.id))
                 }
             }
+            .homeRowInsets()
         } header: {
             HomeSectionHeader(title: Strings.recentStops) {
                 showAll(.recentStopsAll)
             }
+            .homeHeaderInsets()
         }
         .textCase(nil)
     }
@@ -414,8 +420,10 @@ struct HomeSheetView: View {
         Section {
             HomeExploreRow(items: viewModel.exploreItems, onSelect: open(_:))
                 .padding(.vertical, 4)
+                .homeRowInsets()
         } header: {
             HomeSectionTitle(title: Strings.explore)
+                .homeHeaderInsets()
         }
         .textCase(nil)
     }
@@ -431,8 +439,6 @@ struct HomeSheetView: View {
             if !isOn, coordinator.currentDetent == AppSheetRoute.largeDetent {
                 coordinator.currentDetent = .medium
             }
-        case .alarms:
-            showAll(.recentStopsAll)
         }
     }
 
@@ -446,8 +452,10 @@ struct HomeSheetView: View {
                     offersDonations: offersDonations ?? application.donationsManager.donationsEnabled
                 ) { open(item) }
             }
+            .homeRowInsets()
         } header: {
             HomeSectionTitle(title: Strings.settingsAndMore)
+                .homeHeaderInsets()
         }
         .textCase(nil)
     }
@@ -470,6 +478,37 @@ struct HomeSheetView: View {
         coordinator.push(route)
     }
 
+    /// The rider's alarms, each opening the trip it's set on. No index to
+    /// open: every due alarm is here.
+    private var alarmsSection: some View {
+        Section {
+            ForEach(viewModel.alarms.alarms) { item in
+                HomeAlarmRow(title: item.deepLink.title, isLoading: viewModel.alarms.openingAlarm == item.id) {
+                    open(item)
+                }
+                // No full swipe: deleting an alarm can't be undone.
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(Strings.delete, role: .destructive) {
+                        viewModel.alarms.delete(item.alarm)
+                    }
+                }
+            }
+            .homeRowInsets()
+        } header: {
+            HomeSectionTitle(title: HomeAlarmsSectionModel.title)
+                .homeHeaderInsets()
+        }
+        .textCase(nil)
+    }
+
+    /// Opens the alarm's trip over this sheet.
+    private func open(_ item: HomeAlarmsSectionModel.Item) {
+        Task {
+            guard let trip = await viewModel.alarms.loadTrip(for: item) else { return }
+            coordinator.push(.tripDetails(trip, destinationStopID: item.deepLink.destinationStopID))
+        }
+    }
+
     /// No index to open, so the header is a plain title rather than a
     /// `HomeSectionHeader` button.
     private var alertsSection: some View {
@@ -488,8 +527,10 @@ struct HomeSheetView: View {
                     }
                 }
             }
+            .homeRowInsets()
         } header: {
             HomeSectionTitle(title: Strings.serviceAlerts)
+                .homeHeaderInsets()
         }
         .textCase(nil)
     }
@@ -509,6 +550,7 @@ struct HomeSheetView: View {
             HomeSectionHeader(title: Strings.bookmarks) {
                 showAll(.bookmarksAll)
             }
+            .homeHeaderInsets()
         }
         .textCase(nil)
     }

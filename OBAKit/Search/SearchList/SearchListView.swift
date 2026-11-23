@@ -33,12 +33,14 @@ extension View {
     /// Pairs with `searchSheetBackground()` on the enclosing sheet — hiding the
     /// list's background only works if something behind it supplies the contrast the
     /// cards need.
-    func searchListChrome() -> some View {
+    ///
+    /// - Parameter horizontalMargin: The gap between the sheet's edges and the cards.
+    func searchListChrome(horizontalMargin: CGFloat = 8) -> some View {
         self
             .listStyle(.insetGrouped)
             .scrollDismissesKeyboard(.interactively)
             .scrollContentBackground(.hidden)
-            .contentMargins(.horizontal, 8, for: .scrollContent)
+            .contentMargins(.horizontal, horizontalMargin, for: .scrollContent)
             .background(.clear)
     }
 

@@ -66,11 +66,7 @@ struct RecentStopsListView: View {
                         alarmRowView(alarmRow)
                     }
                 } header: {
-                    Text(OBALoc(
-                        "recent_stops_controller.alarms_section.title",
-                        value: "Alarms",
-                        comment: "Title of the Alarms section of the Recents controller"
-                    ))
+                    Text(HomeAlarmsSectionModel.title)
                 }
                 .textCase(nil)
             }

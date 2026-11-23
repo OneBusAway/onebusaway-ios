@@ -21,6 +21,7 @@ import OBAKitCore
 @MainActor
 final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelegate {
 
+    let alarms: HomeAlarmsSectionModel
     let alerts: HomeAlertsSectionModel
     let nearby: HomeNearbyStopsSectionModel
     /// What leaves from the stops `nearby` holds; see `HomeNearbyDepartures`.
@@ -65,6 +66,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         self.application = application
         self.searchPlaceholder = SearchPlaceholder.text(for: application)
         self.offersTripPlanning = application.features.tripPlanning == .running
+        self.alarms = HomeAlarmsSectionModel(application: application)
         self.alerts = HomeAlertsSectionModel(alertsStore: application.alertsStore)
         self.nearby = HomeNearbyStopsSectionModel(observer: stopsObserver)
         self.recent = HomeRecentStopsSectionModel(application: application)
@@ -93,6 +95,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         // automatically. Delivery is synchronous on the child's `willSet`, which
         // is the timing SwiftUI wants.
         Publishers.MergeMany(
+            alarms.objectWillChange,
             alerts.objectWillChange,
             nearby.objectWillChange,
             nearbyDepartures.objectWillChange,
@@ -141,10 +144,11 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         // place the order and the omission rule live.
         nearby.$stops
             .combineLatest(recent.$stops, bookmarks.$rows)
-            .combineLatest(alerts.$alerts, $exploreItems)
-            .sink { [weak self] content, alerts, exploreItems in
+            .combineLatest(alerts.$alerts, $exploreItems, alarms.$alarms)
+            .sink { [weak self] content, alerts, exploreItems, alarms in
                 let (nearbyStops, recentStops, bookmarkRows) = content
                 self?.updateVisibleSections(
+                    hasAlarms: !alarms.isEmpty,
                     hasAlerts: !alerts.isEmpty,
                     hasBookmarks: !bookmarkRows.isEmpty,
                     hasNearby: !nearbyStops.isEmpty,
@@ -154,10 +158,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
             }
             .store(in: &cancellables)
 
-        recent.$alarmCount
-            .removeDuplicates()
-            .sink { [weak self] count in self?.updateExploreItems(alarmCount: count) }
-            .store(in: &cancellables)
+        updateExploreItems()
     }
 
     /// Called when the sheet's content appears. Idempotent: the sheet system
@@ -167,6 +168,8 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
     /// published when they differ, and the bookmark fetch is gated on staleness,
     /// region, and selection.
     func activate() {
+        // An alarm's trip passes on the clock, with no notification to say so.
+        alarms.reload()
         // The store's high-severity list is windowed on the clock (eight hours),
         // so an alert can age out between the store's own fetches.
         alerts.reload()
@@ -179,10 +182,10 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
 
     /// Explore's shortcuts to features don't make the sheet non-empty: alone,
     /// they would replace "Nothing Here Yet" with a row of buttons on a first
-    /// launch. So Explore shows beside another section, or when it has
-    /// something of the rider's own, their alarms. The Settings and More
-    /// section isn't one of these: the sheet draws it after them always.
+    /// launch. So Explore shows only beside another section. The Settings and
+    /// More section isn't one of these: the sheet draws it after them always.
     private func updateVisibleSections(
+        hasAlarms: Bool,
         hasAlerts: Bool,
         hasBookmarks: Bool,
         hasNearby: Bool,
@@ -190,11 +193,12 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         explore: [HomeExploreItem]
     ) {
         var sections: [HomeSheetSection] = []
+        if hasAlarms { sections.append(.alarms) }
         if hasAlerts { sections.append(.alerts) }
         if hasBookmarks { sections.append(.bookmarks) }
         if hasNearby { sections.append(.nearby) }
         if hasRecent { sections.append(.recent) }
-        if explore.contains(where: \.isAlarms) || (!explore.isEmpty && !sections.isEmpty) {
+        if !explore.isEmpty && !sections.isEmpty {
             sections.append(.explore)
         }
         guard sections != visibleSections else { return }
@@ -203,7 +207,7 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
 
     /// Whether the sheet says "Nothing Here Yet": no section, and not before
     /// the first settle (see `hasLoadedInitialContent`). Explore never shows
-    /// alone unless it holds alarms, which are the rider's own.
+    /// alone.
     var showsEmptyState: Bool {
         hasLoadedInitialContent && visibleSections.isEmpty
     }
@@ -223,13 +227,10 @@ final class HomeSheetViewModel: NSObject, ObservableObject, RegionsServiceDelega
         return layers.contains { application.mapRegionManager.isMapLayerEnabled(id: $0.id) }
     }
 
-    /// - Parameter alarmCount: The count being published, when called from its
-    ///   own `willSet`, where the model still holds the old one.
-    private func updateExploreItems(alarmCount: Int? = nil) {
+    private func updateExploreItems() {
         let items = HomeExploreItem.items(
             offersTripPlanning: offersTripPlanning,
-            rentalsEnabled: rentalsEnabled,
-            alarmCount: alarmCount ?? recent.alarmCount
+            rentalsEnabled: rentalsEnabled
         )
         guard items != exploreItems else { return }
         exploreItems = items

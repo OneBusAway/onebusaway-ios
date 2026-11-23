@@ -63,3 +63,50 @@ struct AlarmRemover {
         notificationCenter.post(name: .alarmRemoved, object: nil, userInfo: [Self.alarmURLKey: alarm.url])
     }
 }
+
+/// A list's alarm deletions in flight, for a list that shows alarms and lets the
+/// rider delete them: the Recent tab's and the home sheet's.
+///
+/// The list drops a row the moment its delete starts, so a swipe's animation
+/// matches the data, and keeps it off through `isPending(_:)` until the server
+/// answers: the store drops its copy only after that. If the server keeps the
+/// alarm, the list's reload brings it back in its place, where the rider can see
+/// it and try again.
+@MainActor
+final class PendingAlarmDeletions {
+    private var pending = Set<URL>()
+    private let application: Application
+
+    init(application: Application) {
+        self.application = application
+    }
+
+    /// Whether the alarm's delete is still on its way, which keeps it off the list.
+    func isPending(_ alarm: Alarm) -> Bool {
+        pending.contains(alarm.url)
+    }
+
+    /// Deletes through `AlarmRemover`, then calls `onFinish` either way, for the
+    /// list to reload. Returns `nil` when this alarm's delete is already on its
+    /// way: a second request would race the first.
+    ///
+    /// The remover is captured directly, so the DELETE still runs if the list
+    /// goes away mid-request.
+    func delete(_ alarm: Alarm, onFinish: @escaping @MainActor () -> Void) -> Task<Void, Never>? {
+        guard pending.insert(alarm.url).inserted else { return nil }
+        let remover = AlarmRemover(application: application)
+        let application = application
+        return Task { [weak self] in
+            do {
+                try await remover.remove(alarm)
+                self?.pending.remove(alarm.url)
+                onFinish()
+            } catch {
+                Logger.error("Failed to delete alarm: \(error.localizedDescription)")
+                self?.pending.remove(alarm.url)
+                onFinish()
+                await application.displayError(error)
+            }
+        }
+    }
+}

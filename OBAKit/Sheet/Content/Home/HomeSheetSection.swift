@@ -16,8 +16,11 @@ import Foundation
 /// so each section model can reference `itemLimit` without depending on the
 /// view model that composes them.
 enum HomeSheetSection: Hashable {
-    /// Recent high-severity agency alerts. First, as the UIKit map's nearby
-    /// list has them, and with no index of its own.
+    /// The rider's alarms, while any are due: first, since each is counting
+    /// down to a bus they mean to catch.
+    case alarms
+    /// Recent high-severity agency alerts. Above the stops, as the UIKit map's
+    /// nearby list has them, and with no index of its own.
     case alerts
     /// First of the rider's own: the section they chose, and the one that
     /// answers "when is my bus" without a tap.

@@ -1087,6 +1087,9 @@
 /* Title of the notification shown when the rider nears the stop they set a destination alert on. */
 "proximity_alert.notification.title" = "Approaching your stop";
 
+/* A button below the list of recent stops that deletes all of them, after asking. */
+"recent_stops.clear_all" = "Clear Recent Stops";
+
 /* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
 "recent_stops.confirmation_alert.title" = "Are you sure you want to delete all of your recent stops?";
 
