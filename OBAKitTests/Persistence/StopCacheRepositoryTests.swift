@@ -1217,7 +1217,7 @@ final class StopCacheRepositoryTests {
         #expect(results.first(where: { $0.id == "stop_d" })?.name == "New Main D")
     }
 
-    @Test func `Batch stop lookup with empty stopIDs returns empty array without database read`() {
+    @Test func `Batch stop lookup with empty stopIDs returns empty array`() {
         let results = repository.stops(stopIDs: [], regionId: 1)
         #expect(results.isEmpty)
     }
