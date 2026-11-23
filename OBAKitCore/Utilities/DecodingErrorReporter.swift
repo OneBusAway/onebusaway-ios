@@ -139,9 +139,10 @@ public enum DecodingErrorReporter {
         )
     }
 
+    /// If configured, `diagnosticHandler` is invoked first with a structured `DecodingErrorDiagnostic`
+    /// so diagnostic custom keys are set before `reportHandler` records the error to crash reporting.
     /// The legacy `reportHandler` gets `url` without its query, which holds the API key and
     /// sometimes the rider's coordinates (#1710).
-    /// If configured, `diagnosticHandler` is invoked with a structured `DecodingErrorDiagnostic`.
     public static func report(error: DecodingError, url: URL, httpMethod: String) {
         let errorMessage = message(from: error)
         let legacyURL = ErrorReport.stripQuery(url)
@@ -154,12 +155,12 @@ public enum DecodingErrorReporter {
             return
         }
 
-        legacyHandler?(error, legacyURL, httpMethod, errorMessage)
-
         if let diagHandler {
             let diag = diagnostic(for: error, url: url, httpMethod: httpMethod)
             diagHandler(diag)
         }
+
+        legacyHandler?(error, legacyURL, httpMethod, errorMessage)
     }
 
     private struct DeconstructedError {

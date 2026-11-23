@@ -92,17 +92,9 @@ nonisolated final class AnalyticsReportingState: Sendable {
             }
 
             let crashlytics = Crashlytics.crashlytics()
-            crashlytics.setCustomValue(diagnostic.url.absoluteString, forKey: "diagnostic_request_url")
-            crashlytics.setCustomValue(diagnostic.httpMethod, forKey: "diagnostic_http_method")
-            crashlytics.setCustomValue(diagnostic.errorType, forKey: "diagnostic_error_type")
             crashlytics.setCustomValue(diagnostic.schemaPath, forKey: "diagnostic_schema_path")
-            crashlytics.setCustomValue(diagnostic.message, forKey: "diagnostic_error_detail")
-            if let missingKey = diagnostic.missingKey {
-                crashlytics.setCustomValue(missingKey, forKey: "diagnostic_missing_key")
-            }
-            if let expectedType = diagnostic.expectedType {
-                crashlytics.setCustomValue(expectedType, forKey: "diagnostic_expected_type")
-            }
+            crashlytics.setCustomValue(diagnostic.missingKey ?? "", forKey: "diagnostic_missing_key")
+            crashlytics.setCustomValue(diagnostic.expectedType ?? "", forKey: "diagnostic_expected_type")
         }
     }
 

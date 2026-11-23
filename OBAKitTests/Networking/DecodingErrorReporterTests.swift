@@ -654,6 +654,32 @@ final class DecodingErrorReporterTests {
         #expect(query.contains("lat=[REDACTED]"))
     }
 
+    @Test func `Report invokes diagnosticHandler before reportHandler`() async {
+        let executionOrder = SendableBox<[String]>([])
+        let testURL = URL(string: "https://api.onebusaway.org/api/where/stops")!
+
+        await confirmation("Both handlers called", expectedCount: 2) { handlerCalled in
+            DecodingErrorReporter.diagnosticHandler = { _ in
+                var order = executionOrder.value
+                order.append("diagnosticHandler")
+                executionOrder.value = order
+                handlerCalled()
+            }
+
+            DecodingErrorReporter.reportHandler = { _, _, _, _ in
+                var order = executionOrder.value
+                order.append("reportHandler")
+                executionOrder.value = order
+                handlerCalled()
+            }
+
+            let error = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Corrupted data"))
+            DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
+        }
+
+        #expect(executionOrder.value == ["diagnosticHandler", "reportHandler"])
+    }
+
     @Test func `Report invokes both reportHandler and diagnosticHandler when both configured`() async {
         let capturedLegacyURL = SendableBox<URL?>(nil)
         let capturedDiagnostic = SendableBox<DecodingErrorDiagnostic?>(nil)
