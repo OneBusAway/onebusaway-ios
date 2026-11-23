@@ -19,8 +19,6 @@ struct HomeStopRow: View {
     let stop: Stop
     let onSelect: () -> Void
 
-    private let brandColor = Color(uiColor: ThemeColors.shared.brand)
-
     /// Name, direction, routes, and stop ID — the same label the map pins use.
     ///
     /// Not `stop.name` joined with `stop.subtitle`: `subtitle` comes from `Stop`'s
@@ -44,22 +42,15 @@ struct HomeStopRow: View {
                         .foregroundStyle(.primary)
                         .lineLimit(2)
 
-                    if let subtitle = stop.subtitle {
-                        Text(subtitle)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
+                    Text(stop.subtitle(separator: " · "))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
 
                 Spacer()
 
-                // Trailing chevron
-                Image(systemName: "chevron.forward")
-                    .font(.footnote)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(brandColor)
-                    .accessibilityHidden(true)
+                HomeRowChevron()
             }
             .contentShape(.rect)
         }
@@ -67,5 +58,56 @@ struct HomeStopRow: View {
         .accessibilityElement()
         .accessibilityLabel(accessibilityLabelText)
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// An alarm row for the home sheet's Alarms section: the trip the alarm is
+/// set on, styled like `HomeStopRow`.
+struct HomeAlarmRow: View {
+    let title: String
+    /// Whether the trip is loading, which replaces the chevron with a spinner.
+    let isLoading: Bool
+    let onSelect: () -> Void
+
+    /// The darker brand green, as Explore's tiles use it on a pale fill.
+    private let brand = Color(uiColor: ThemeColors.shared.brandAccent)
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: 12) {
+                Image(systemName: "alarm")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(brand)
+                    .frame(width: Icons.squircleIconSize, height: Icons.squircleIconSize)
+                    .background(brand.opacity(0.14), in: .rect(cornerRadius: Icons.squircleIconSize * Icons.squircleCornerRadiusRatio))
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(.stopRowTitle)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+
+                Spacer()
+
+                if isLoading {
+                    ProgressView()
+                } else {
+                    HomeRowChevron()
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// The brand-green chevron at the end of the home sheet's rows.
+struct HomeRowChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.forward")
+            .font(.footnote)
+            .fontWeight(.semibold)
+            .foregroundStyle(Color(uiColor: ThemeColors.shared.brand))
+            .accessibilityHidden(true)
     }
 }

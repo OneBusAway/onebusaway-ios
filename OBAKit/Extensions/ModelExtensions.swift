@@ -53,7 +53,13 @@ nonisolated extension Stop: MKAnnotation {
     /// The subtitle for a `Stop` as an `MKAnnotation` is a formatted list of `Route`s served by this `Stop`,
     /// plus the value of `Stop.code`, which is the transit rider-visible stop ID number.
     public var subtitle: String? {
-        ["#\(code)", Formatters.formattedRoutes(routes)].compactMap {$0}.joined(separator: "\n")
+        subtitle(separator: "\n")
+    }
+
+    /// The stop code and its routes, joined by `separator`: on two lines for
+    /// the map's callout, on one ("#19850 · Routes: 128") in the home sheet's rows.
+    public func subtitle(separator: String) -> String {
+        ["#\(code)", Formatters.formattedRoutes(routes)].compactMap { $0 }.joined(separator: separator)
     }
 
     public var mapTitle: String? {

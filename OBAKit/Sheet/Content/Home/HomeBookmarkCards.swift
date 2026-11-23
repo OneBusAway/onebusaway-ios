@@ -47,7 +47,6 @@ struct HomeBookmarkCards: View {
                 }
             }
             .scrollTargetLayout()
-            .padding(.horizontal, 20)
         }
         // The home sheet's pages carry a bottom content margin for the home
         // indicator, which every scroll view under them inherits: here it would

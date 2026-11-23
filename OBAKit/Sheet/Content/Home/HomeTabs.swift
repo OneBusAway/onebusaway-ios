@@ -105,6 +105,10 @@ enum HomeTabs {
     /// Under the tab bar, before the page's own top margin.
     static let tabBarBottomPadding: CGFloat = 4
 
+    /// Between the sheet's sides and everything on it: the search field, the tab
+    /// bar, and Home's content, which lines up with the two.
+    static let horizontalMargin: CGFloat = 12
+
     /// The header the collapsed detent is fitted to: the search field with its
     /// padding, the tab bar (`tabBarHeight`, its padding included; zero without
     /// tabs), and `accessoryHeight` for a row under the tabs. Nothing fills that
@@ -340,7 +344,7 @@ struct HomeTabBar: View {
         .background {
             SheetCornerTracker { sheetCorners = $0 }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, HomeTabs.horizontalMargin)
         .padding(.top, 4)
         .padding(.bottom, HomeTabs.tabBarBottomPadding)
         .animation(.smooth(duration: 0.2), value: selection)
@@ -569,6 +573,43 @@ private struct TabPageBackgroundClearer: UIViewRepresentable {
                 }
                 view = current.superview
             }
+        }
+    }
+}
+
+// MARK: - Insets
+
+/// Lines Home's content up with the search field and tab bar, which sit
+/// `HomeTabs.horizontalMargin` from the sheet's sides, as the list's cards do.
+/// The Recent tab's list uses them too, so its rows sit where Home's do.
+extension View {
+    /// A section header, on the cards' edges, with no inset of its own.
+    @ViewBuilder
+    func homeHeaderInsets() -> some View {
+        if #available(iOS 26.0, *) {
+            listRowInsets(.horizontal, 0)
+        } else {
+            self
+        }
+    }
+
+    /// A row: on the cards' edges where the cards don't show, on the sheet's
+    /// glass, where their usual inset would leave the text indented past the
+    /// search field. Where they show, the text keeps its inset inside them.
+    func homeRowInsets() -> some View {
+        modifier(HomeRowInsets())
+    }
+}
+
+private struct HomeRowInsets: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            // `nil` is the list's own inset.
+            content.listRowInsets(.horizontal, colorScheme.showsSheetGlass ? 0 : nil)
+        } else {
+            content
         }
     }
 }

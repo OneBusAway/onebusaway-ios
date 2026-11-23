@@ -107,7 +107,7 @@ private struct NearbyStopsSheetContent: View {
     var body: some View {
         list
             // iOS 26 puts a sheet's search field at the bottom; as a tab of the
-            // home sheet it stays at the top, as `RecentStopsSheetView`'s does.
+            // home sheet it stays at the top.
             .searchable(
                 text: $searchText,
                 placement: isHomeSheetTab ? .navigationBarDrawer(displayMode: .always) : .automatic

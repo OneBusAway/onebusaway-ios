@@ -41,6 +41,11 @@ enum AppSymbol {
     /// Search field icon / "no search results" placeholder.
     static let search = "magnifyingglass"
 
+    // MARK: - Recents
+
+    /// Recently viewed stops: the Recent tab's icon and empty state.
+    static let recent = "clock"
+
     // MARK: - Location
 
     /// "Location services unavailable" / permission-denied state.

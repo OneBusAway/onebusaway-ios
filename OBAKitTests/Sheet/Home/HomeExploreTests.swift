@@ -19,25 +19,24 @@ import UIKit
 struct HomeExploreTests {
 
     @Test func `Nothing to offer, no items`() {
-        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 0).isEmpty)
+        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil).isEmpty)
     }
 
     /// A shortcut to a feature the region doesn't have would lead nowhere.
     @Test func `Each item appears only where it leads somewhere`() {
-        #expect(HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: nil, alarmCount: 0) == [.planTrip])
-        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: false, alarmCount: 0) == [.rentals(isOn: false)])
-        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: nil, alarmCount: 2) == [.alarms(count: 2)])
+        #expect(HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: nil) == [.planTrip])
+        #expect(HomeExploreItem.items(offersTripPlanning: false, rentalsEnabled: false) == [.rentals(isOn: false)])
     }
 
-    @Test func `Items run Plan a Trip, Bikes and Scooters, Alarms`() {
+    @Test func `Items run Plan a Trip, then Bikes and Scooters`() {
         #expect(
-            HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: true, alarmCount: 1)
-                == [.planTrip, .rentals(isOn: true), .alarms(count: 1)]
+            HomeExploreItem.items(offersTripPlanning: true, rentalsEnabled: true)
+                == [.planTrip, .rentals(isOn: true)]
         )
     }
 
     @Test func `Every item has a title and a symbol that exists`() {
-        let items: [HomeExploreItem] = [.planTrip, .rentals(isOn: false), .rentals(isOn: true), .alarms(count: 3)]
+        let items: [HomeExploreItem] = [.planTrip, .rentals(isOn: false), .rentals(isOn: true)]
         for item in items {
             #expect(!item.title.isEmpty)
             #expect(UIImage(systemName: item.systemImage) != nil)
@@ -47,16 +46,13 @@ struct HomeExploreTests {
     /// The layer's state changes, the tile doesn't move: one identity either way.
     @Test func `An item keeps its identity as its state changes`() {
         #expect(HomeExploreItem.rentals(isOn: true).id == HomeExploreItem.rentals(isOn: false).id)
-        #expect(HomeExploreItem.alarms(count: 1).id == HomeExploreItem.alarms(count: 2).id)
-        let ids = [HomeExploreItem.planTrip, .rentals(isOn: true), .alarms(count: 1)].map(\.id)
-        #expect(Set(ids).count == ids.count)
+        #expect(HomeExploreItem.planTrip.id != HomeExploreItem.rentals(isOn: true).id)
     }
 
-    /// VoiceOver hears the count and the layer's state, which sighted riders
-    /// get from the badge and the tile's fill.
-    @Test func `Alarms and rentals speak their state`() {
+    /// VoiceOver hears the layer's state, which sighted riders get from the
+    /// tile's fill.
+    @Test func `Rentals speak their state`() {
         #expect(HomeExploreItem.planTrip.accessibilityValue == nil)
-        #expect(HomeExploreItem.alarms(count: 2).accessibilityValue == "2")
         #expect(HomeExploreItem.rentals(isOn: true).accessibilityValue == Strings.mapLayersStateOn)
         #expect(HomeExploreItem.rentals(isOn: false).accessibilityValue == Strings.mapLayersStateOff)
     }

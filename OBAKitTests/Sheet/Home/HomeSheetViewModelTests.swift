@@ -272,25 +272,38 @@ final class HomeSheetViewModelTests: OBATestCase {
         #expect(viewModel.bookmarks.loadIfNeeded(now: start.addingTimeInterval(2)) == false)
     }
 
-    /// The Recent index is where alarms are listed, and home's Recent header is
-    /// the way into it. A rider with an alarm and no recent stops still needs
-    /// that way in.
+    /// Alarms are on Home, first: each counts down to a bus the rider means to
+    /// catch. They show without anything else on the sheet.
     @Test @MainActor
-    func `An alarm puts an Alarms shortcut in Explore, without recent stops`() throws {
+    func `An alarm puts an Alarms section first on home, without recent stops`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        _ = try RecentStopsSheetViewTests.seedAlarm(id: "1", application: application)
+        let alarm = try seedAlarm(id: "1", application: application)
 
         let viewModel = makeViewModel(application: application)
 
-        #expect(viewModel.recent.alarmCount == 1)
-        #expect(viewModel.exploreItems.last == .alarms(count: 1))
-        #expect(viewModel.visibleSections == [.explore])
+        #expect(viewModel.alarms.alarms.map(\.id) == [alarm.url])
+        #expect(viewModel.visibleSections.first == .alarms)
+    }
+
+    /// Without a deep link there is no trip to open, and once its trip has
+    /// passed an alarm has nothing left to do.
+    @Test @MainActor
+    func `Home lists only the alarms still due that open a trip`() throws {
+        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
+        let alarm = try seedAlarm(id: "1", application: application)
+        application.userDataStore.add(alarm: try Fixtures.loadAlarm(id: "2"))
+
+        let model = HomeAlarmsSectionModel(application: application)
+        #expect(model.alarms.map(\.id) == [alarm.url])
+
+        model.reload(now: Date(timeIntervalSinceNow: 3600))
+        #expect(model.alarms.isEmpty)
     }
 
     /// The UIKit map lists recent high-severity agency alerts above nearby
     /// stops. The panel showed none anywhere.
     @Test @MainActor
-    func `A recent high-severity alert puts an alerts section first on home`() throws {
+    func `A recent high-severity alert puts an alerts section under alarms on home`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         let agencies = try Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
         let agency = try #require(agencies.first)
@@ -306,18 +319,19 @@ final class HomeSheetViewModelTests: OBATestCase {
         feedEntity.id = "test-recent-high-severity"
         feedEntity.alert = transitAlert
         application.alertsStore.insertAlerts([try AgencyAlert(feedEntity: feedEntity, agency: agency)])
-        _ = try RecentStopsSheetViewTests.seedAlarm(id: "1", application: application)
+        _ = try seedAlarm(id: "1", application: application)
 
         let viewModel = makeViewModel(application: application)
 
         #expect(viewModel.alerts.alerts.map(\.id) == ["test-recent-high-severity"])
-        #expect(viewModel.visibleSections == [.alerts, .explore])
+        #expect(viewModel.visibleSections.prefix(2) == [.alarms, .alerts])
     }
 
-    /// Bookmarks lead: they are the one section the rider chose, and the only
-    /// one that answers "when is my bus" without a tap.
+    /// Bookmarks lead the stops: they are the one section the rider chose, and
+    /// the only one that answers "when is my bus" without a tap. Only alarms,
+    /// counting down, come before them.
     @Test @MainActor
-    func `Bookmarks come before recent stops, and Explore last`() throws {
+    func `Alarms lead, bookmarks come before recent stops, and Explore last`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
         let stop = try #require(try Fixtures.loadSomeStops().first)
         stop.regionIdentifier = Fixtures.pugetSoundRegion.regionIdentifier
@@ -326,24 +340,44 @@ final class HomeSheetViewModelTests: OBATestCase {
             Bookmark(name: "Home stop", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop),
             to: nil
         )
-        _ = try RecentStopsSheetViewTests.seedAlarm(id: "1", application: application)
+        _ = try seedAlarm(id: "1", application: application)
 
         let viewModel = makeViewModel(application: application)
         viewModel.activate()
 
-        #expect(viewModel.visibleSections == [.bookmarks, .recent, .explore])
+        #expect(viewModel.visibleSections == [.alarms, .bookmarks, .recent, .explore])
     }
 
     /// Shortcuts to features aren't content: alone, they'd keep a first launch
     /// from ever saying "Nothing Here Yet".
     @Test @MainActor
-    func `Explore does not show on its own without alarms`() throws {
+    func `Explore does not show on its own`() throws {
         let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
 
         let viewModel = makeViewModel(application: application)
         viewModel.activate()
 
-        #expect(viewModel.recent.alarmCount == 0)
         #expect(!viewModel.visibleSections.contains(.explore))
+    }
+
+    // MARK: - Alarms
+
+    /// An alarm the rider set, as the stop page stores one: due in ten minutes,
+    /// with the deep link that reopens its trip.
+    @MainActor
+    private func seedAlarm(id: String, application: Application) throws -> Alarm {
+        let alarm = try Fixtures.loadAlarm(id: id)
+        alarm.set(tripDate: Date(timeIntervalSinceNow: 600), alarmOffset: 5)
+        alarm.deepLink = ArrivalDepartureDeepLink(
+            title: "Route 10 to Downtown",
+            regionID: Fixtures.pugetSoundRegion.regionIdentifier,
+            stopID: "1_75403",
+            tripID: "trip_\(id)",
+            serviceDate: Date(),
+            stopSequence: 7,
+            vehicleID: nil
+        )
+        application.userDataStore.add(alarm: alarm)
+        return alarm
     }
 }

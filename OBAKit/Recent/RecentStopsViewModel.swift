@@ -31,14 +31,12 @@ final class RecentStopsViewModel: ObservableObject {
     // `viewWillAppear` calls `loadData()` every time the Recent tab is shown; without
     // this flag a user with no current region would flood the log on every tab switch.
     private var didWarnNilRegion = false
-    /// Alarms being deleted on the server. Off the list at once, so a swipe's
-    /// delete animation matches the data, and kept off it by `loadData()` until
-    /// the server answers: the store drops its copy only after that.
-    private var pendingAlarmDeletions = Set<URL>()
+    private let pendingAlarmDeletions: PendingAlarmDeletions
     private var cancellables = Set<AnyCancellable>()
 
     init(application: Application) {
         self.application = application
+        self.pendingAlarmDeletions = PendingAlarmDeletions(application: application)
 
         NotificationCenter.default.publisher(for: .bookmarksDidChange, object: application.userDataStore)
             .receive(on: DispatchQueue.main)
@@ -50,9 +48,13 @@ final class RecentStopsViewModel: ObservableObject {
         refreshBookmarkedStopIDs()
     }
 
-    func loadData() {
-        application.userDataStore.deleteExpiredAlarms()
-        alarms = application.userDataStore.alarms.filter { !pendingAlarmDeletions.contains($0.url) }
+    /// - Parameter includesAlarms: Whether to load the alarms too. The map
+    ///   panel's Recent tab doesn't list them: Home does.
+    func loadData(includesAlarms: Bool = true) {
+        if includesAlarms {
+            application.userDataStore.deleteExpiredAlarms()
+            alarms = application.userDataStore.alarms.filter { !pendingAlarmDeletions.isPending($0) }
+        }
         refreshBookmarkedStopIDs()
         guard let currentRegion = application.currentRegion else {
             // No current region (mid-region-change, first launch race, denied location).
@@ -67,7 +69,12 @@ final class RecentStopsViewModel: ObservableObject {
         }
         // Region resolved — re-arm the warn so a *later* region loss is still observable.
         didWarnNilRegion = false
-        recentStops = application.userDataStore.recentStops(in: currentRegion)
+        let stops = application.userDataStore.recentStops(in: currentRegion)
+        // Unchanged, as it usually is when a stacked sheet closes, it would
+        // only redraw every row.
+        if stops != recentStops {
+            recentStops = stops
+        }
     }
 
     func isBookmarked(_ stop: Stop) -> Bool {
@@ -135,38 +142,14 @@ final class RecentStopsViewModel: ObservableObject {
         loadData()
     }
 
-    /// Deletes through `AlarmRemover`: on the server first. The row leaves the list
-    /// straight away; if the server keeps the alarm, it comes back in its place,
-    /// where the rider can see it and try again.
+    /// Deletes through `AlarmRemover`: on the server first; see
+    /// `PendingAlarmDeletions`. Tests await the returned task.
     @discardableResult
     func delete(alarm: Alarm) -> Task<Void, Never> {
-        // Already on its way: a second request would race the first.
-        guard pendingAlarmDeletions.insert(alarm.url).inserted else { return Task {} }
-        alarms.removeAll { $0.url == alarm.url }
-
-        // Capture the remover directly: if the VM is deallocated mid-delete (common when
-        // the user pops the view right after tapping delete), [weak self] would abort
-        // the DELETE before it ran, leaving the alarm live on the Obaco server.
-        // The returned Task is `@discardableResult` for the call site, but tests can
-        // await it to assert on remote-side behaviour.
-        let remover = AlarmRemover(application: application)
-        let application = application
-        return Task { [weak self] in
-            do {
-                try await remover.remove(alarm)
-                self?.finishDeleting(alarm)
-            } catch {
-                Logger.error("Failed to delete alarm: \(error.localizedDescription)")
-                self?.finishDeleting(alarm)
-                await application.displayError(error)
-            }
+        guard let task = pendingAlarmDeletions.delete(alarm, onFinish: { [weak self] in self?.loadData() }) else {
+            return Task {}
         }
-    }
-
-    /// Done either way: reloading lists the alarm again if the store still has it,
-    /// in the store's order, which is where it was.
-    private func finishDeleting(_ alarm: Alarm) {
-        pendingAlarmDeletions.remove(alarm.url)
-        loadData()
+        alarms.removeAll { $0.url == alarm.url }
+        return task
     }
 }

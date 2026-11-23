@@ -16,18 +16,15 @@ enum HomeExploreItem: Hashable, Identifiable {
     case planTrip
     /// The map's bike and scooter layers, which the tile switches on and off.
     case rentals(isOn: Bool)
-    /// The rider's alarms, which the Recent tab lists.
-    case alarms(count: Int)
 
     /// The items to show, in order. Each only where it leads somewhere.
     ///
     /// - Parameter rentalsEnabled: Whether the bike and scooter layers are on,
     ///   or `nil` in a region with none.
-    static func items(offersTripPlanning: Bool, rentalsEnabled: Bool?, alarmCount: Int) -> [HomeExploreItem] {
+    static func items(offersTripPlanning: Bool, rentalsEnabled: Bool?) -> [HomeExploreItem] {
         var items: [HomeExploreItem] = []
         if offersTripPlanning { items.append(.planTrip) }
         if let rentalsEnabled { items.append(.rentals(isOn: rentalsEnabled)) }
-        if alarmCount > 0 { items.append(.alarms(count: alarmCount)) }
         return items
     }
 
@@ -36,7 +33,6 @@ enum HomeExploreItem: Hashable, Identifiable {
         switch self {
         case .planTrip: "planTrip"
         case .rentals: "rentals"
-        case .alarms: "alarms"
         }
     }
 
@@ -46,8 +42,6 @@ enum HomeExploreItem: Hashable, Identifiable {
             OBALoc("home_sheet.explore.plan_trip", value: "Plan a Trip", comment: "Title of a shortcut on the map panel's home sheet that opens the trip planner. Short: it sits under a small round icon.")
         case .rentals:
             OBALoc("home_sheet.explore.rentals", value: "Bikes & Scooters", comment: "Title of a shortcut on the map panel's home sheet that shows or hides rental bikes and scooters on the map. Short: it sits under a small round icon.")
-        case .alarms:
-            RecentStopsSheetView.alarmsTitle
         }
     }
 
@@ -55,24 +49,16 @@ enum HomeExploreItem: Hashable, Identifiable {
         switch self {
         case .planTrip: "point.topleft.down.to.point.bottomright.curvepath"
         case .rentals: "bicycle"
-        case .alarms: "alarm"
         }
     }
 
     /// What VoiceOver adds to the title: the state a sighted rider reads off the
-    /// tile's fill or its badge.
+    /// tile's fill.
     var accessibilityValue: String? {
         switch self {
         case .planTrip: nil
         case .rentals(let isOn): isOn ? Strings.mapLayersStateOn : Strings.mapLayersStateOff
-        case .alarms(let count): count.formatted()
         }
-    }
-
-    /// Whether this is the rider's alarms: their own, unlike the other
-    /// shortcuts, so enough to make the sheet not empty.
-    var isAlarms: Bool {
-        if case .alarms = self { true } else { false }
     }
 
     /// Whether the tile draws filled, as a control that is on.
@@ -82,7 +68,7 @@ enum HomeExploreItem: Hashable, Identifiable {
 }
 
 /// The home sheet's Explore row: a line of round shortcuts, as Apple Maps has
-/// for its places, that wraps onto more lines at large text sizes.
+/// for its places, with wider tiles at accessibility text sizes.
 struct HomeExploreRow: View {
     let items: [HomeExploreItem]
     let onSelect: (HomeExploreItem) -> Void
@@ -90,8 +76,9 @@ struct HomeExploreRow: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        // Fixed columns rather than a scrolling row: there are at most three, and
-        // a shortcut hidden off the edge is one nobody finds.
+        // Fixed columns rather than a scrolling row: a shortcut hidden off the
+        // edge is one nobody finds. Three keeps the two tiles Apple Maps-sized;
+        // two gives them room at accessibility sizes.
         let columns = Array(
             repeating: GridItem(.flexible(), spacing: 8, alignment: .top),
             count: typeSize.isAccessibilitySize ? 2 : 3
@@ -125,7 +112,6 @@ private struct HomeExploreTile: View {
                         item.isOn ? AnyShapeStyle(brand) : AnyShapeStyle(Color(.tertiarySystemFill)),
                         in: Circle()
                     )
-                    .overlay(alignment: .topTrailing) { badge }
                 Text(item.title)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color(uiColor: .label))
@@ -147,25 +133,11 @@ private struct HomeExploreTile: View {
         if case .rentals = item { return [.isButton, .isToggle] }
         return .isButton
     }
-
-    @ViewBuilder
-    private var badge: some View {
-        if case .alarms(let count) = item {
-            Text(count, format: .number)
-                .font(.caption2.weight(.bold))
-                .monospacedDigit()
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(brand, in: Capsule())
-                .offset(x: 4, y: -2)
-        }
-    }
 }
 
 #if DEBUG
 #Preview {
-    HomeExploreRow(items: [.planTrip, .rentals(isOn: true), .alarms(count: 2)]) { _ in }
+    HomeExploreRow(items: [.planTrip, .rentals(isOn: true)]) { _ in }
         .padding()
 }
 #endif

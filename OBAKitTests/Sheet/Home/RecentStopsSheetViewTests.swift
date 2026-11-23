@@ -41,49 +41,20 @@ final class RecentStopsSheetViewTests: OBATestCase {
         return seeded
     }
 
-    // MARK: - Filtering
+    // MARK: - Rows
 
-    /// A blank query is what `.searchable` supplies the moment the field is
-    /// focused; it must not blank the list.
-    @Test func `Blank query returns every recent stop`() throws {
-        let stops = try Fixtures.loadSomeStops()
+    /// The stop code and routes share one line, where the map's callout
+    /// subtitle splits them over two.
+    @Test func `A stop row's subtitle is one line`() throws {
+        let stop = try #require(try Fixtures.loadSomeStops().first)
 
-        #expect(RecentStopsSheetView.filter(stops: stops, query: nil).count == stops.count)
-        #expect(RecentStopsSheetView.filter(stops: stops, query: "   ").count == stops.count)
-    }
+        let subtitle = stop.subtitle(separator: " · ")
 
-    /// Filtering preserves the store's most-recently-used ordering rather than
-    /// re-sorting by relevance.
-    @Test func `Filtering narrows results and preserves order`() throws {
-        let stops = try Fixtures.loadSomeStops()
-        let target = try #require(stops.first)
-
-        let filtered = RecentStopsSheetView.filter(stops: stops, query: target.name)
-
-        #expect(filtered.contains { $0.id == target.id })
-        #expect(filtered.count < stops.count)
-        let expectedOrder = stops.filter { stop in filtered.contains { $0.id == stop.id } }
-        #expect(filtered.map(\.id) == expectedOrder.map(\.id))
-    }
-
-    /// No match yields nothing, which is what drives the view's empty state.
-    @Test func `Query matching nothing returns no stops`() throws {
-        let stops = try Fixtures.loadSomeStops()
-
-        #expect(RecentStopsSheetView.filter(stops: stops, query: "zzzzz-no-such-stop").isEmpty)
-    }
-
-    // MARK: - Empty state vs. no search results
-
-    /// An empty result set means two different things depending on whether the
-    /// user typed anything, and the view picks its empty state on exactly this
-    /// distinction. Telling someone their viewed stops "will appear here" while
-    /// they stare at a query that matched nothing describes the wrong problem.
-    @Test func `Only a non-blank query counts as an active search`() {
-        #expect(String.normalizedSearchQuery(nil) == nil)
-        #expect(String.normalizedSearchQuery("") == nil)
-        #expect(String.normalizedSearchQuery("  \n ") == nil)
-        #expect(String.normalizedSearchQuery("pike") != nil)
+        #expect(!subtitle.contains("\n"))
+        #expect(subtitle.hasPrefix("#\(stop.code)"))
+        if let routes = Formatters.formattedRoutes(stop.routes) {
+            #expect(subtitle == "#\(stop.code) · \(routes)")
+        }
     }
 
     // MARK: - Returning from a stacked sheet
@@ -149,40 +120,5 @@ final class RecentStopsSheetViewTests: OBATestCase {
 
         #expect(viewModel.recentStops.isEmpty)
         #expect(application.userDataStore.recentStops(in: application.currentRegion).isEmpty)
-    }
-
-    // MARK: - Alarms
-
-    /// An alarm the rider set, as the stop page stores one: due in ten minutes,
-    /// with the deep link that reopens its trip.
-    @MainActor
-    static func seedAlarm(id: String, application: Application) throws -> Alarm {
-        let alarm = try Fixtures.loadAlarm(id: id)
-        alarm.set(tripDate: Date(timeIntervalSinceNow: 600), alarmOffset: 5)
-        alarm.deepLink = ArrivalDepartureDeepLink(
-            title: "Route 10 to Downtown",
-            regionID: Fixtures.pugetSoundRegion.regionIdentifier,
-            stopID: "1_75403",
-            tripID: "trip_\(id)",
-            serviceDate: Date(),
-            stopSequence: 7,
-            vehicleID: nil
-        )
-        application.userDataStore.add(alarm: alarm)
-        return alarm
-    }
-
-    /// Riders could set alarms from the panel's stop sheet but never see or
-    /// cancel them: the Recent tab's Alarms section had no panel counterpart.
-    @Test @MainActor func `The sheet lists the alarms it can open a trip for`() throws {
-        let application = buildApplication(queue: queue, dataLoader: MockDataLoader(testName: name))
-        let alarm = try Self.seedAlarm(id: "1", application: application)
-        // Without a deep link there is no trip to open, as the tab skips it too.
-        application.userDataStore.add(alarm: try Fixtures.loadAlarm(id: "2"))
-
-        let viewModel = RecentStopsViewModel(application: application)
-        viewModel.loadData()
-
-        #expect(RecentStopsSheetView.openableAlarms(viewModel.alarms).map(\.alarm.url) == [alarm.url])
     }
 }

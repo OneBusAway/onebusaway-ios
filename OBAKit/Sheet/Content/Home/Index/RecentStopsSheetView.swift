@@ -10,11 +10,15 @@
 import SwiftUI
 import OBAKitCore
 
-/// The Recent Stops index — `AppSheetRoute.recentStopsAll`. A native list over
-/// the same `RecentStopsViewModel` the Recent tab uses, alarms first as there.
+/// The Recent Stops index: the home sheet's Recent tab, and
+/// `AppSheetRoute.recentStopsAll` where the sheet has no tabs.
 ///
-/// The tab's "Find Stops on Maps" empty-state button is dropped: the map is
-/// already right behind this sheet.
+/// As a tab it is laid out like Home: a section title on the search field's
+/// edge, the rows under it, and Clear Recent Stops after the last. It has no
+/// search field of its own; the sheet's finds stops. Alarms are on Home.
+///
+/// The UIKit tab's "Find Stops on Maps" empty-state button is dropped: the map
+/// is already right behind this sheet.
 struct RecentStopsSheetView: View {
     let application: Application
 
@@ -23,207 +27,128 @@ struct RecentStopsSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.isHomeSheetTab) private var isHomeSheetTab
 
-    @State private var searchText = ""
     @State private var isConfirmingDeleteAll = false
-    /// The alarm whose trip is loading, so a second tap doesn't load it again.
-    @State private var openingAlarm: URL?
 
     init(application: Application) {
         self.application = application
         _viewModel = StateObject(wrappedValue: RecentStopsViewModel(application: application))
     }
 
-    /// Applies the search field's query, preserving the store's
-    /// most-recently-used ordering. A nil, blank, or whitespace-only query
-    /// matches everything — `.searchable` hands the view "" on focus.
-    ///
-    /// Static and pure so the rule is assertable without a view.
-    static func filter(stops: [Stop], query: String?) -> [Stop] {
-        let normalized = String.normalizedSearchQuery(query)
-        return stops.filter { $0.matchesQuery(normalized) }
-    }
-
-    private var stops: [Stop] {
-        Self.filter(stops: viewModel.recentStops, query: searchText)
-    }
-
-    /// The Recent tab's title for its Alarms section, shared with home's row.
-    static var alarmsTitle: String {
-        OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller")
-    }
-
-    /// The alarms a row can open the trip for, in the store's order. An alarm
-    /// stored without its deep link has nowhere to go, as the tab skips it too.
-    static func openableAlarms(_ alarms: [Alarm]) -> [(alarm: Alarm, deepLink: ArrivalDepartureDeepLink)] {
-        alarms.compactMap { alarm in alarm.deepLink.map { (alarm, $0) } }
-    }
-
-    /// Alarms are listed until the rider searches: the query filters stops.
-    private var alarms: [(alarm: Alarm, deepLink: ArrivalDepartureDeepLink)] {
-        hasActiveQuery ? [] : Self.openableAlarms(viewModel.alarms)
-    }
-
-    /// Whether the user has actually typed something to filter by, as opposed to
-    /// merely focusing the field. Drives the choice between the "no recents yet"
-    /// empty state and a no-search-results one.
-    private var hasActiveQuery: Bool {
-        String.normalizedSearchQuery(searchText) != nil
-    }
-
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle(Text(Strings.recentStops))
-                .navigationBarTitleDisplayMode(.inline)
-                // iOS 26 puts a sheet's search field at the bottom, under the
-                // home sheet's tab bar; as a tab it stays at the top.
-                .searchable(
-                    text: $searchText,
-                    placement: isHomeSheetTab ? .navigationBarDrawer(displayMode: .always) : .automatic
-                )
-                .toolbar {
-                    if !isHomeSheetTab {
+        content
+            .confirmationDialog(
+                OBALoc(
+                    "recent_stops.confirmation_alert.title",
+                    value: "Are you sure you want to delete all of your recent stops?",
+                    comment: "Title for a confirmation alert displayed before the user deletes all of their recent stops."
+                ),
+                isPresented: $isConfirmingDeleteAll,
+                titleVisibility: .visible
+            ) {
+                Button(Strings.delete, role: .destructive) {
+                    viewModel.deleteAllRecentStops()
+                }
+                Button(Strings.cancel, role: .cancel) { }
+            }
+            .recentStopBookmarkPrompts(viewModel: viewModel)
+            .task { viewModel.loadData(includesAlarms: false) }
+            .onChange(of: coordinator.stackedRoutes.count) { previousCount, count in
+                // Reload when a sheet stacked *above* this one goes away. Tapping a row
+                // pushes `.stopDetails`, which `prefersStacking` puts on the stacked
+                // layer — this view is never removed from the hierarchy, so `.task`
+                // never runs again. Meanwhile viewing a stop calls `addRecentStop`, so
+                // by the time the user drags that sheet away the store has reordered
+                // and this list has not.
+                guard StackedSheetReturn.wasUncovered(previousDepth: previousCount, depth: count) else { return }
+                viewModel.loadData(includesAlarms: false)
+            }
+    }
+
+    /// As a tab, the list under the home sheet's search field and tab bar. Over
+    /// the sheet, the same list with a title and a close button above it.
+    @ViewBuilder
+    private var content: some View {
+        if isHomeSheetTab {
+            list
+        } else {
+            NavigationStack {
+                list
+                    .navigationTitle(Text(Strings.recentStops))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             SheetDismissButton(.close) { dismiss() }
                         }
                     }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(OBALoc(
-                            "recent_stops.delete_all",
-                            value: "Delete All",
-                            comment: "A button that deletes all of the recent stops in the app."
-                        ), role: .destructive) {
-                            isConfirmingDeleteAll = true
-                        }
-                        .disabled(viewModel.recentStops.isEmpty)
-                    }
-                }
-                .confirmationDialog(
-                    OBALoc(
-                        "recent_stops.confirmation_alert.title",
-                        value: "Are you sure you want to delete all of your recent stops?",
-                        comment: "Title for a confirmation alert displayed before the user deletes all of their recent stops."
-                    ),
-                    isPresented: $isConfirmingDeleteAll,
-                    titleVisibility: .visible
-                ) {
-                    Button(Strings.delete, role: .destructive) {
-                        viewModel.deleteAllRecentStops()
-                    }
-                    Button(Strings.cancel, role: .cancel) { }
-                }
-                .recentStopBookmarkPrompts(viewModel: viewModel)
-        }
-        .task { viewModel.loadData() }
-        .onChange(of: coordinator.stackedRoutes.count) { previousCount, count in
-            // Reload when a sheet stacked *above* this one goes away. Tapping a row
-            // pushes `.stopDetails`, which `prefersStacking` puts on the stacked
-            // layer — this view is never removed from the hierarchy, so `.task`
-            // never runs again. Meanwhile viewing a stop calls `addRecentStop`, so
-            // by the time the user drags that sheet away the store has reordered
-            // and this list has not.
-            guard StackedSheetReturn.wasUncovered(previousDepth: previousCount, depth: count) else { return }
-            viewModel.loadData()
-        }
-        // A fired alarm is deleted from the store.
-        .onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { _ in
-            viewModel.loadData()
-        }
-    }
-
-    /// Loads the alarm's arrival and opens its trip over this sheet, as the
-    /// Recent tab pushes it.
-    private func open(_ deepLink: ArrivalDepartureDeepLink, of alarm: Alarm) {
-        guard openingAlarm == nil, let apiService = application.apiService else { return }
-        openingAlarm = alarm.url
-        let regionID = application.currentRegion?.regionIdentifier
-        Task {
-            defer { openingAlarm = nil }
-            do {
-                let arrival = try await apiService.getTripArrivalDepartureAtStop(deepLink: deepLink).entry
-                // The rider may have switched regions while this loaded, which
-                // closes the sheets: a trip from the old server mustn't reopen.
-                guard application.currentRegion?.regionIdentifier == regionID else { return }
-                coordinator.push(.tripDetails(
-                    TripConvertible(arrivalDeparture: arrival),
-                    destinationStopID: deepLink.destinationStopID
-                ))
-            } catch {
-                await application.displayError(error)
             }
         }
     }
 
-    @ViewBuilder
-    private var content: some View {
-        if stops.isEmpty && alarms.isEmpty {
-            if hasActiveQuery {
-                // A search that matched nothing is not an empty list: telling the
-                // user their viewed stops "will appear here" when they're staring
-                // at a query that didn't match describes the wrong problem.
-                // `ContentUnavailableView.search` is the system's own phrasing,
-                // localized by the OS and quoting the query back.
-                ContentUnavailableView.search(text: searchText)
-            } else {
-                EmptyStateView(
-                    title: OBALoc(
-                        "recent_stops.empty_set.title",
-                        value: "No Recent Stops",
-                        comment: "Title for the empty set indicator on the Recent Stops controller."
-                    ),
-                    description: OBALoc(
-                        "recent_stops.empty_set.body",
-                        value: "Transit stops that you view in the app will appear here.",
-                        comment: "Body for the empty set indicator on the Recent Stops controller."
-                    ),
-                    systemImage: AppSymbol.search
-                )
-            }
-        } else {
-            List {
-                if !alarms.isEmpty {
-                    Section(Self.alarmsTitle) {
-                        ForEach(alarms, id: \.alarm.url) { item in
-                            alarmRow(item.deepLink, of: item.alarm)
-                        }
-                    }
-                }
-                Section {
-                    ForEach(stops, id: \.id) { stop in
+    private var list: some View {
+        List {
+            Section {
+                if viewModel.recentStops.isEmpty {
+                    emptyState
+                        .frame(maxWidth: .infinity)
+                        .listRowBackground(Color.clear)
+                } else {
+                    ForEach(viewModel.recentStops, id: \.id) { stop in
                         HomeStopRow(stop: stop) {
                             coordinator.push(.stopDetails(stopID: stop.id))
                         }
                         .recentStopSwipeActions(for: stop, viewModel: viewModel)
                     }
-                } header: {
-                    // Only beside the Alarms section, which needs telling apart.
-                    if !alarms.isEmpty, !stops.isEmpty {
-                        Text(Strings.recentStops)
-                    }
+                    .homeRowInsets()
+                }
+            } header: {
+                // Over the sheet, the navigation bar has the title.
+                if isHomeSheetTab {
+                    HomeSectionTitle(title: Strings.recentStops)
+                        .homeHeaderInsets()
                 }
             }
-            .searchListChrome()
+            .textCase(nil)
+
+            if !viewModel.recentStops.isEmpty {
+                clearButton
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
         }
+        .searchListChrome(horizontalMargin: HomeTabs.horizontalMargin)
     }
 
-    private func alarmRow(_ deepLink: ArrivalDepartureDeepLink, of alarm: Alarm) -> some View {
-        Button {
-            open(deepLink, of: alarm)
-        } label: {
-            HStack {
-                Label(deepLink.title, systemImage: "alarm")
-                    .foregroundStyle(Color(uiColor: .label))
-                Spacer()
-                if openingAlarm == alarm.url {
-                    ProgressView()
-                }
-            }
+    /// After the last stop rather than in a toolbar: the tab has no navigation
+    /// bar, and clearing every recent stop is not something to keep in reach.
+    private var clearButton: some View {
+        Button(OBALoc(
+            "recent_stops.clear_all",
+            value: "Clear Recent Stops",
+            comment: "A button below the list of recent stops that deletes all of them, after asking."
+        )) {
+            isConfirmingDeleteAll = true
         }
-        // No full swipe: deleting an alarm can't be undone.
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(Strings.delete, role: .destructive) {
-                viewModel.delete(alarm: alarm)
-            }
-        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(Color(uiColor: ThemeColors.shared.brandAccent))
+        .fontWeight(.semibold)
+    }
+
+    private var emptyState: some View {
+        EmptyStateView(
+            title: OBALoc(
+                "recent_stops.empty_set.title",
+                value: "No Recent Stops",
+                comment: "Title for the empty set indicator on the Recent Stops controller."
+            ),
+            description: OBALoc(
+                "recent_stops.empty_set.body",
+                value: "Transit stops that you view in the app will appear here.",
+                comment: "Body for the empty set indicator on the Recent Stops controller."
+            ),
+            systemImage: AppSymbol.recent
+        )
+        .padding(.top, 40)
     }
 }
