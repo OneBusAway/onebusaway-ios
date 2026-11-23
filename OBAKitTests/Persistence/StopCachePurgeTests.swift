@@ -509,6 +509,37 @@ final class StopCachePurgeTests {
         }
     }
 
+    @Test func `Clear that fails after the first batch leaves no sync state to trust`() throws {
+        let database = try StopCacheDatabase(inMemory: true)
+        let repository = StopCacheRepository(database: database)
+        try database.dbQueue.write { db in
+            // More than two default batches, so the clear needs a second batch.
+            try db.execute(sql: """
+                WITH RECURSIVE rows(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM rows WHERE n < 1001)
+                INSERT INTO cachedStop (id, regionId, lastUpdated, latitude, longitude, stopData)
+                SELECT CAST(n AS TEXT), 1, 100, 47.6, -122.3, X'00' FROM rows
+                """)
+            // Lets the first batch of 500 through, then fails the second.
+            try db.execute(sql: """
+                CREATE TEMP TRIGGER fail_second_batch BEFORE DELETE ON cachedStop
+                WHEN (SELECT count(*) FROM cachedStop WHERE regionId = 1) <= 501
+                BEGIN SELECT RAISE(ABORT, 'injected failure'); END
+                """)
+        }
+        try repository.saveSyncState(RegionStopSyncState(
+            regionId: 1, outcome: .complete, lastAttemptAt: Date(timeIntervalSince1970: 300),
+            lastSuccessAt: Date(timeIntervalSince1970: 300), etag: nil, appVersion: "test", publishedSyncID: "published"
+        ))
+
+        repository.clearCache(regionId: 1)
+
+        let remaining = try database.dbQueue.read { db in
+            try Int.fetchOne(db, sql: "SELECT count(*) FROM cachedStop WHERE regionId = 1")
+        }
+        #expect(remaining == 501)
+        #expect(try repository.syncState(regionId: 1) == nil)
+    }
+
     @Test func `Failed auto_vacuum upgrade is not retried within the cooldown`() throws {
         let tempDir = FileManager.default.temporaryDirectory
         // An isolated suite, so this test neither reads nor writes the shared

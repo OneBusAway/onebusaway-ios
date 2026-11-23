@@ -655,25 +655,24 @@ public final class StopCacheRepository: Sendable {
 
     /// Deletes all cached stops and routes for a specific region, and forgets its
     /// sync, so the next sync starts over instead of trusting an emptied cache.
-    /// Rows are deleted in bounded batches so clearing a large retired region
-    /// doesn't hold the database queue for one long transaction; the sync
-    /// state is forgotten last, once its rows are gone.
-    /// This is deliberately not one transaction: if it fails partway, the region
-    /// keeps its sync state with some or all of its stops already deleted, and
-    /// the next sync may trust that partially emptied cache. That is accepted
-    /// because failing to clear a retired region at all is worse — but callers
-    /// should know the clear is best-effort, not atomic.
+    /// The sync state is forgotten first, then rows are deleted in bounded batches
+    /// so clearing a large retired region doesn't hold the database queue for one
+    /// long transaction.
+    /// This is deliberately not one transaction, so the clear is best-effort, not
+    /// atomic. Forgetting the sync state first keeps a partial clear safe: if it
+    /// fails partway, the region has no sync state, and the next sync for it does
+    /// a full refresh instead of trusting the partly emptied cache.
     public func clearCache(regionId: Int) {
         do {
+            try database.dbQueue.write { db in
+                _ = try RegionStopSyncState.deleteOne(db, key: regionId)
+            }
             for table in ["cachedStop", "cachedRoute", "cachedStopSync", "cachedRouteSync"] {
                 try deleteRowidsInBatches(
                     table: table,
                     where: "regionId = ?",
                     arguments: [regionId]
                 )
-            }
-            try database.dbQueue.write { db in
-                _ = try RegionStopSyncState.deleteOne(db, key: regionId)
             }
         } catch {
             Logger.error("Failed to clear cache for region \(regionId): \(error)")

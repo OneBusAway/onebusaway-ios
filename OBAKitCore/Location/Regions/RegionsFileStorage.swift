@@ -40,6 +40,14 @@ public protocol RegionsFileStorageProtocol: Sendable {
     func deleteCustomRegion(identifier: RegionIdentifier) throws
 }
 
+public extension RegionsFileStorageProtocol {
+    /// Default for conformers that predate completeness reporting: reports
+    /// `loadCustomRegions()` as a complete load.
+    func loadCustomRegionsWithCompleteness() throws -> (regions: [Region], complete: Bool) {
+        (try loadCustomRegions(), true)
+    }
+}
+
 // MARK: - Implementation
 
 /// File-based storage for region data.
