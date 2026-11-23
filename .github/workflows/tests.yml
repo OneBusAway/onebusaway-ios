@@ -580,25 +580,43 @@ jobs:
 
     # iOS 18: the oldest supported runtime, which routes `isolated deinit`
     # through the back-deployment shim the slices deliberately avoid (see
-    # "Pick the iOS Simulator and start booting it"). The image may not carry
-    # the runtime; it is downloaded if missing, and a missing runtime or
-    # device fails the step rather than skipping it. A freshly installed
-    # runtime can report Ready before its simulators exist, as watchOS does;
-    # if none appears, one is created from the runtime's own iPad types.
+    # "Pick the iOS Simulator and start booting it"). The image carries no
+    # iOS 18 runtime, and Apple's download catalog serves a given Xcode only
+    # some iOS 18 releases — for Xcode 27.2, none. So an installed runtime is
+    # used as is; failing that, each of IOS_18_RUNTIMES is tried, newest
+    # first (edit the list as the catalog changes). If none downloads, the
+    # step warns and passes: a runtime the image cannot supply is not a
+    # regression, and a job that is always red is a job nobody reads. Once a
+    # runtime is present the step is strict again — a missing device or a
+    # failed launch fails it. A freshly installed runtime can report Ready
+    # before its simulators exist, as watchOS does; if none appears, one is
+    # created from the runtime's own iPad types. The timeout leaves room for
+    # one several-GB download; a refused candidate fails in seconds.
     - name: iOS 18 runtime launch smoke test
       if: (success() || failure()) && steps.smoke_layout.outcome == 'success'
       timeout-minutes: 45
       env:
-        IOS_18_RUNTIME: '18.5'
+        IOS_18_RUNTIMES: '18.6 18.5 18.4'
       run: |
         set -euo pipefail
         sudo renice -n -10 -p $$ >/dev/null
         if ! xcrun simctl runtime list 2>/dev/null | grep -qE "^iOS 18\.[0-9.]* .*\(Ready\)"; then
-          echo "No iOS 18 simulator runtime found; downloading iOS ${IOS_18_RUNTIME}…"
-          if ! xcodebuild -downloadPlatform iOS -buildVersion "$IOS_18_RUNTIME"; then
-            echo "::error::could not download the iOS $IOS_18_RUNTIME simulator runtime; the iOS 18 deployment target is untested"
-            exit 1
+          downloaded=
+          for version in $IOS_18_RUNTIMES; do
+            echo "No iOS 18 simulator runtime found; trying to download iOS ${version}…"
+            if xcodebuild -downloadPlatform iOS -buildVersion "$version"; then
+              downloaded=$version
+              break
+            fi
+          done
+          if [ -z "$downloaded" ]; then
+            xcode=$(xcodebuild -version 2>/dev/null | sed -n 1p) || xcode="this Xcode"
+            message="the iOS 18 deployment target is unverified on this image: it has no iOS 18 simulator runtime, and Apple's download catalog offers none of iOS ${IOS_18_RUNTIMES} for ${xcode}"
+            echo "::warning title=iOS 18 smoke test skipped::${message}"
+            echo "⚠️ iOS 18 smoke test skipped: ${message}" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
+          echo "Downloaded the iOS ${downloaded} simulator runtime."
         fi
         for _ in $(seq 1 18); do
           scripts/resolve_simulator_udid --ipad --os 18 >/dev/null 2>&1 && break
@@ -625,8 +643,11 @@ jobs:
         fi
         UDID=$(scripts/resolve_simulator_udid --ipad --os 18)
         echo "iOS 18 iPad: $(xcrun simctl list devices | grep "$UDID")"
-        scripts/app_smoke_test "$RUNNER_TEMP/smoke" --skip-build --ipad --os 18 \
-          --screenshot-dir "$GITHUB_WORKSPACE/smoke_screenshots"
+        if ! scripts/app_smoke_test "$RUNNER_TEMP/smoke" --skip-build --ipad --os 18 \
+          --screenshot-dir "$GITHUB_WORKSPACE/smoke_screenshots"; then
+          echo "::error::the app failed to launch on the iOS 18 runtime"
+          exit 1
+        fi
 
     - name: Upload smoke test screenshots on failure
       if: failure() && hashFiles('smoke_screenshots/**') != ''
