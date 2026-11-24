@@ -223,10 +223,11 @@ struct StopPageView: View {
         // With `.plain`, rows whose `listRowInsets` leading/trailing are 0 sit
         // flush with the screen edges.
         .listStyle(.plain)
-        // Before the `safeAreaInset`s: `.refreshable` is an environment value, so applied
-        // after them it reaches the horizontal `ScrollView`s in the sheet header's chip row and
-        // the bottom toolbar too, which then get their own pull-to-refresh and vertical bounce.
-        .refreshable { await refreshAndAnnounce() }
+        // Pushed presentation only. In the sheet a downward pull resizes the sheet, and the
+        // bottom toolbar's Refresh button covers it, as in the map panel's stop sheet. On the
+        // List itself, not after the `safeAreaInset`s: `.refreshable` is an environment value,
+        // and placed there it would also reach the horizontal `ScrollView`s inside them.
+        .refreshable(isEnabled: !showToolbarOnBottom) { await refreshAndAnnounce() }
         // Mirror of the bottom toolbar pattern: pins the sheet header at the safe-area
         // boundary (just below the nav bar) so its position is identical at every detent.
         // A VStack wrapper respected the raw top safe area differently at `.tip` vs `.half`
@@ -651,6 +652,21 @@ struct StopPageEmptyStateRow: View {
             onShowAllRoutes()
         } else if isDepartureFilterEmpty {
             onShowAllDepartureTypes()
+        }
+    }
+}
+
+private extension View {
+    /// `.refreshable`, or nothing. A no-op action isn't enough: `.refreshable` shows its
+    /// spinner whatever the action does. Switching branches replaces the list, but
+    /// `showToolbarOnBottom` only flips when a map peek is committed into the sheet, as the
+    /// page appears, and the list swaps its header rows then anyway.
+    @ViewBuilder
+    func refreshable(isEnabled: Bool, action: @escaping @Sendable () async -> Void) -> some View {
+        if isEnabled {
+            refreshable(action: action)
+        } else {
+            self
         }
     }
 }
