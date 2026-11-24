@@ -31,7 +31,7 @@ extension RESTAPIService {
         do {
             let (data, _) = try await self.getData(for: url)
             let message = try GTFSRealtimeFeedParser.standard.parse(data: data)
-            return message.entity
+            let alerts = message.entity
                 .filter(isQualifiedAlert)
                 .compactMap { entity in
                     do {
@@ -41,9 +41,15 @@ extension RESTAPIService {
                         return nil
                     }
                 }
+            cachedAlertsByAgency.withLock { cache in
+                cache[agency.agencyID] = alerts
+            }
+            return alerts
         } catch {
             logger.error("getAlerts() failed for \(agency.agency.name, privacy: .public): \(Logger.redactingURLQueries(in: String(describing: error)), privacy: .public)")
-            return []
+            return cachedAlertsByAgency.withLock { cache in
+                cache[agency.agencyID] ?? []
+            }
         }
     }
 

@@ -45,20 +45,60 @@ public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
 
     // MARK: - Localized Content Accessors
 
+    public func title(preferredLanguages: [String] = Locale.preferredLanguages) -> String? {
+        resolveTitle(preferredLanguages: preferredLanguages, fallbackLocale: nil)
+    }
+
     public func title(forLocale locale: Locale) -> String? {
-        return title(language: selectLanguageCode(locale: locale)) ?? title(language: defaultLanguageCode)
+        resolveTitle(preferredLanguages: Locale.preferredLanguages, fallbackLocale: locale)
+    }
+
+    public func title(forLocale locale: Locale, preferredLanguages: [String]) -> String? {
+        resolveTitle(preferredLanguages: preferredLanguages, fallbackLocale: locale)
+    }
+
+    public func body(preferredLanguages: [String] = Locale.preferredLanguages) -> String? {
+        resolveBody(preferredLanguages: preferredLanguages, fallbackLocale: nil)
     }
 
     public func body(forLocale locale: Locale) -> String? {
-        return body(language: selectLanguageCode(locale: locale)) ?? body(language: defaultLanguageCode)
+        resolveBody(preferredLanguages: Locale.preferredLanguages, fallbackLocale: locale)
+    }
+
+    public func body(forLocale locale: Locale, preferredLanguages: [String]) -> String? {
+        resolveBody(preferredLanguages: preferredLanguages, fallbackLocale: locale)
+    }
+
+    public func url(preferredLanguages: [String] = Locale.preferredLanguages) -> URL? {
+        resolveURL(preferredLanguages: preferredLanguages, fallbackLocale: nil)
     }
 
     public func url(forLocale locale: Locale) -> URL? {
-        url(language: selectLanguageCode(locale: locale)) ?? url(language: defaultLanguageCode)
+        resolveURL(preferredLanguages: Locale.preferredLanguages, fallbackLocale: locale)
     }
 
-    private func selectLanguageCode(locale: Locale) -> String {
-        locale.language.languageCode?.identifier ?? defaultLanguageCode
+    public func url(forLocale locale: Locale, preferredLanguages: [String]) -> URL? {
+        resolveURL(preferredLanguages: preferredLanguages, fallbackLocale: locale)
+    }
+
+    private func candidateLanguages(preferredLanguages: [String], fallbackLocale: Locale?) -> [String] {
+        var languages: [String] = []
+        for lang in preferredLanguages {
+            let trimmed = lang.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty && !languages.contains(trimmed) {
+                languages.append(trimmed)
+            }
+        }
+        if let fallbackLocale {
+            let fullTag = fallbackLocale.identifier.replacingOccurrences(of: "_", with: "-")
+            if !fullTag.isEmpty && !languages.contains(fullTag) {
+                languages.append(fullTag)
+            }
+            if let code = fallbackLocale.language.languageCode?.identifier, !code.isEmpty && !languages.contains(code) {
+                languages.append(code)
+            }
+        }
+        return languages
     }
 
     private let defaultLanguageCode = "en"
@@ -165,51 +205,106 @@ extension AgencyAlert {
 // MARK: - Translated Text
 
 extension AgencyAlert {
-    fileprivate func url(language: String) -> URL? {
+    private func languageCode(from identifier: String) -> String {
+        Locale(identifier: identifier).language.languageCode?.identifier.lowercased() ?? identifier.lowercased()
+    }
+
+    private func resolveURL(preferredLanguages: [String], fallbackLocale: Locale?) -> URL? {
         guard
             alert.hasURL,
-            let urlString = translation(key: language, from: alert.url.translation)
-            else {
-                return nil
+            let urlString = translation(
+                preferredLanguages: candidateLanguages(preferredLanguages: preferredLanguages, fallbackLocale: fallbackLocale),
+                from: alert.url.translation
+            )
+        else {
+            return nil
         }
 
         return URL(string: urlString)
     }
 
-    fileprivate func title(language: String) -> String? {
+    private func resolveTitle(preferredLanguages: [String], fallbackLocale: Locale?) -> String? {
         guard alert.hasHeaderText else {
             return nil
         }
 
-        return translation(key: language, from: alert.headerText.translation)
+        return translation(
+            preferredLanguages: candidateLanguages(preferredLanguages: preferredLanguages, fallbackLocale: fallbackLocale),
+            from: alert.headerText.translation
+        )
     }
 
-    fileprivate func body(language: String) -> String? {
+    private func resolveBody(preferredLanguages: [String], fallbackLocale: Locale?) -> String? {
         guard alert.hasDescriptionText else {
             return nil
         }
 
-        return translation(key: language, from: alert.descriptionText.translation)
+        return translation(
+            preferredLanguages: candidateLanguages(preferredLanguages: preferredLanguages, fallbackLocale: fallbackLocale),
+            from: alert.descriptionText.translation
+        )
+    }
+
+    fileprivate func url(language: String) -> URL? {
+        resolveURL(preferredLanguages: [language], fallbackLocale: nil)
+    }
+
+    fileprivate func title(language: String) -> String? {
+        resolveTitle(preferredLanguages: [language], fallbackLocale: nil)
+    }
+
+    fileprivate func body(language: String) -> String? {
+        resolveBody(preferredLanguages: [language], fallbackLocale: nil)
     }
 
     // A linear scan over the stored protobuf (translation lists hold a handful
     // of entries at most): pure reads of immutable `let` state, so there is
     // nothing to cache or synchronize.
-    private func translation(key: String, from translations: [TransitRealtime_TranslatedString.Translation]) -> String? {
-        if let translation = translations.first(where: { $0.language == key }) {
-            return translation.text
+    private func translation(
+        preferredLanguages: [String],
+        from translations: [TransitRealtime_TranslatedString.Translation]
+    ) -> String? {
+        guard !translations.isEmpty else { return nil }
+
+        let normalizedLangs = preferredLanguages.map { $0.replacingOccurrences(of: "_", with: "-") }
+
+        // 1. Language matching using Bundle.preferredLocalizations.
+        // Evaluates preferred languages in priority order, matching exact tags as well as dialect
+        // and script fallbacks (e.g. "es-MX" -> "es", "zh-Hant-TW" -> "zh-Hant").
+        let availableLangs = translations.map { $0.language.replacingOccurrences(of: "_", with: "-") }
+        let matchedLangs = Bundle.preferredLocalizations(from: availableLangs, forPreferences: normalizedLangs)
+        for matched in matchedLangs {
+            if let match = translations.first(where: {
+                $0.language.replacingOccurrences(of: "_", with: "-").caseInsensitiveCompare(matched) == .orderedSame
+            }) {
+                return match.text
+            }
         }
 
-        // If we don't have the desired translation, first check
-        // to see if we have a default translation language value
-        // present. For now this is English.
-        if let translation = translations.first(where: { $0.language == defaultLanguageCode }) {
-            return translation.text
+        // Steps 2-4 run only when `Bundle.preferredLocalizations` returns an empty array
+        // (e.g. if `normalizedLangs` is empty, or on platforms/environments where localization resolution behaves strictly).
+
+        // 2. Base language identifier fallback (e.g. "es", "fr", "zh") across preferred languages in order
+        for pref in normalizedLangs {
+            let prefCode = languageCode(from: pref)
+            guard !prefCode.isEmpty else { continue }
+            if let match = translations.first(where: {
+                let transCode = languageCode(from: $0.language)
+                return !transCode.isEmpty && transCode == prefCode
+            }) {
+                return match.text
+            }
         }
 
-        // If that doesn't work out and we don't have our
-        // desired language or default language, then just
-        // return whatever we can get our hands on.
+        // 3. Fall back to English ("en")
+        if let exactEn = translations.first(where: {
+            $0.language.caseInsensitiveCompare(defaultLanguageCode) == .orderedSame ||
+            languageCode(from: $0.language) == defaultLanguageCode
+        }) {
+            return exactEn.text
+        }
+
+        // 4. Fall back to raw / first translation
         return translations.first?.text
     }
 }
