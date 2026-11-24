@@ -55,10 +55,12 @@ final class NextDeparturesSummaryTests {
     /// Trip-bookmark arrivals are not filtered for the past upstream, so the
     /// summary must drop a bus that already left rather than report it.
     @Test func `Departed vehicles are skipped and the one at the stop is now`() {
+        // `-0.5` minutes is 30 s in the past; the floor makes it past and it
+        // drops out, while a departure 30 s away reads "now".
         let sentence = NextDeparturesSummary.departuresSentence(
             routeShortName: "550",
             headsign: "Seattle",
-            dates: [minutesFromNow(-3), minutesFromNow(-0.5), minutesFromNow(9)],
+            dates: [minutesFromNow(-3), minutesFromNow(-0.5), minutesFromNow(0.5), minutesFromNow(9)],
             now: now
         )
 

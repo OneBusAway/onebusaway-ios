@@ -46,7 +46,9 @@ struct NextDeparturesCardModelTests {
 
     /// The card and the dialog must agree on which departures are "next".
     @Test func `Departed vehicles are skipped and one at the stop reads NOW`() {
-        let model = NextDeparturesCardModel(outcome: departures([departure(-3), departure(-0.5), departure(9)]), now: now)
+        // `-0.5` minutes is 30 s in the past; with the floor it is past and is
+        // skipped, while a departure 30 s away still reads "NOW".
+        let model = NextDeparturesCardModel(outcome: departures([departure(-3), departure(-0.5), departure(0.5), departure(9)]), now: now)
 
         #expect(model.rows.map(\.timeText) == ["NOW", "9m"])
     }

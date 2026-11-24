@@ -145,7 +145,7 @@ struct NextDeparturesCardModel: Equatable {
     private static func rows(for departures: [NextDeparturesSummary.Departure], now: Date) -> [Row] {
         departures
             .sorted { $0.date < $1.date }
-            .map { (departure: $0, minutes: Int($0.date.timeIntervalSince(now) / 60)) }
+            .map { (departure: $0, minutes: Int(floor($0.date.timeIntervalSince(now) / 60))) }
             .filter { $0.minutes >= 0 }
             .prefix(NextDeparturesSummary.maximumDepartures)
             .enumerated()

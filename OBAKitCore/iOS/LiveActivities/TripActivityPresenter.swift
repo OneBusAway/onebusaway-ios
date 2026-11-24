@@ -25,7 +25,7 @@ public struct TripActivityPresenter {
     }
 
     public func minuteText(for arrival: TripAttributes.ContentState.ArrivalInfo, now: Date = Date()) -> String {
-        let minutes = Int(arrival.departureDate.timeIntervalSince(now) / 60.0)
+        let minutes = Int(floor(arrival.departureDate.timeIntervalSince(now) / 60.0))
         return formatters.shortFormattedTime(untilMinutes: minutes, temporalState: temporalState(minutes: minutes))
     }
 
@@ -46,7 +46,7 @@ public struct TripActivityPresenter {
         if arrival.scheduleStatus == .unknown {
             deviationText = Strings.scheduledNotRealTime
         } else {
-            let minutes = Int(arrival.departureDate.timeIntervalSince(now) / 60.0)
+            let minutes = Int(floor(arrival.departureDate.timeIntervalSince(now) / 60.0))
             deviationText = formatters.formattedScheduleDeviation(
                 temporalState: temporalState(minutes: minutes),
                 arrivalDepartureStatus: arrival.isArrival ? .arriving : .departing,
@@ -63,7 +63,7 @@ public struct TripActivityPresenter {
         if arrival.scheduleStatus == .unknown {
             return Strings.scheduledNotRealTime
         }
-        let minutes = Int(arrival.departureDate.timeIntervalSince(now) / 60.0)
+        let minutes = Int(floor(arrival.departureDate.timeIntervalSince(now) / 60.0))
         return formatters.formattedScheduleDeviation(
             temporalState: temporalState(minutes: minutes),
             arrivalDepartureStatus: arrival.isArrival ? .arriving : .departing,
