@@ -405,6 +405,69 @@ final class ProximityAlertStoreTests: OBATestCase {
         }
     }
 
+    // MARK: - Notification Suppression on Persistence Failure
+
+    private let simulatedError = NSError(domain: "test.persistence", code: 500, userInfo: nil)
+
+    @Test func `Add does not post notification when persistence fails`() async {
+        userDefaultsStore.simulatedPersistenceError = simulatedError
+        let alert = ProximityAlert(stop: stop)
+
+        await expectProximityAlertsNotification(count: 0) {
+            userDefaultsStore.add(proximityAlert: alert)
+        }
+
+        // The alert should NOT have been persisted.
+        #expect(userDefaultsStore.proximityAlerts.isEmpty)
+        userDefaultsStore.simulatedPersistenceError = nil
+    }
+
+    @Test func `Delete does not post notification when persistence fails`() async {
+        let alert = ProximityAlert(stop: stop)
+        userDefaultsStore.add(proximityAlert: alert)
+
+        userDefaultsStore.simulatedPersistenceError = simulatedError
+
+        await expectProximityAlertsNotification(count: 0) {
+            userDefaultsStore.delete(proximityAlert: alert)
+        }
+
+        // The alert should still be there because the delete failed to persist.
+        #expect(userDefaultsStore.proximityAlerts.count == 1)
+        userDefaultsStore.simulatedPersistenceError = nil
+    }
+
+    @Test func `Delete all does not post notification when persistence fails`() async {
+        let alert = ProximityAlert(stop: stop)
+        userDefaultsStore.add(proximityAlert: alert)
+
+        userDefaultsStore.simulatedPersistenceError = simulatedError
+
+        await expectProximityAlertsNotification(count: 0) {
+            userDefaultsStore.deleteAllProximityAlerts()
+        }
+
+        // The alerts should still be there.
+        #expect(userDefaultsStore.proximityAlerts.count == 1)
+        userDefaultsStore.simulatedPersistenceError = nil
+    }
+
+    @Test func `Delete expired does not post notification when persistence fails`() async {
+        let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
+        let alert = ProximityAlert(stop: stop, createdAt: expiredDate)
+        userDefaultsStore.add(proximityAlert: alert)
+
+        userDefaultsStore.simulatedPersistenceError = simulatedError
+
+        await expectProximityAlertsNotification(count: 0) {
+            userDefaultsStore.deleteExpiredProximityAlerts()
+        }
+
+        // The expired alert should still be there because the save failed.
+        #expect(userDefaultsStore.proximityAlerts.count == 1)
+        userDefaultsStore.simulatedPersistenceError = nil
+    }
+
     /// Confirms `.proximityAlertsDidChange` is posted while `body` runs — or,
     /// with `count: 0`, that it isn't.
     ///

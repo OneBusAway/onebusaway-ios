@@ -1225,26 +1225,41 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [ProximityAlert].self, key: UserDefaultsKeys.proximityAlerts) ?? []
         }
         set {
-            do {
-                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.proximityAlerts)
-            } catch {
-                Logger.error("Failed to persist proximityAlerts: \(error)")
-            }
+            persistProximityAlerts(newValue)
+        }
+    }
+
+    /// Persists the given proximity-alert list to `UserDefaults`.
+    ///
+    /// - Returns: `true` when the write succeeds; `false` when encoding or
+    ///   storage fails (the error is logged and the stored value is unchanged).
+    @discardableResult
+    private func persistProximityAlerts(_ alerts: [ProximityAlert]) -> Bool {
+        do {
+            try encodeUserDefaultsObjects(alerts, key: UserDefaultsKeys.proximityAlerts)
+            return true
+        } catch {
+            Logger.error("Failed to persist proximityAlerts: \(error)")
+            return false
         }
     }
 
     public func add(proximityAlert: ProximityAlert) {
-        proximityAlerts.append(proximityAlert)
+        var alerts = proximityAlerts
+        alerts.append(proximityAlert)
+        guard persistProximityAlerts(alerts) else { return }
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
     }
 
     public func delete(proximityAlert: ProximityAlert) {
-        proximityAlerts.removeAll { $0 == proximityAlert }
+        var alerts = proximityAlerts
+        alerts.removeAll { $0 == proximityAlert }
+        guard persistProximityAlerts(alerts) else { return }
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
     }
 
     public func deleteAllProximityAlerts() {
-        proximityAlerts.removeAll()
+        guard persistProximityAlerts([]) else { return }
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
     }
 
@@ -1252,7 +1267,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         let current = proximityAlerts
         let filtered = current.filter { !$0.isExpired }
         guard filtered.count != current.count else { return }
-        proximityAlerts = filtered
+        guard persistProximityAlerts(filtered) else { return }
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
     }
 
