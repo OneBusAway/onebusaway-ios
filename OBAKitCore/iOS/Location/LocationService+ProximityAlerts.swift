@@ -213,7 +213,15 @@ extension LocationService {
             return
         }
 
-        Logger.error("Region monitoring failed for proximity region \(identifier) (\(kind)): \(error)")
+        if kind.isTransient {
+            // The OS deferred the request instead of refusing it, or response is delayed.
+            // Expected to resolve without intervention; leaving it armed.
+            Logger.info("Region monitoring transient failure for proximity region \(identifier) (\(kind)): \(error); leaving armed.")
+            notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
+            return
+        }
+
+        Logger.error("Region monitoring failed permanently for proximity region \(identifier) (\(kind)): \(error)")
         notifyDelegatesMonitoringDidFail(identifier, error: error, kind: kind)
     }
 }

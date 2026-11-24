@@ -721,6 +721,36 @@ final class ProximityAlertManagerTests: OBATestCase {
         #expect(self.store.proximityAlerts.count == 1)
     }
 
+    @Test func `Delayed response errors leave alert armed without disarming`() async {
+        let manager = makeManager()
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+
+        // Apple defines .regionMonitoringResponseDelayed as events still being delivered,
+        // possibly late. Multiple delayed response errors must never disarm a working alert.
+        for _ in 1...5 {
+            failMonitoring(for: alert, error: .regionMonitoringResponseDelayed)
+        }
+
+        #expect(self.locationService.monitoredProximityAlertIDs == [alert.id])
+        #expect(self.store.proximityAlerts.count == 1)
+    }
+
+    @Test func `Transient network errors leave alert armed without disarming`() async {
+        let manager = makeManager()
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+
+        failMonitoring(for: alert, error: .network)
+
+        #expect(self.locationService.monitoredProximityAlertIDs == [alert.id])
+        #expect(self.store.proximityAlerts.count == 1)
+    }
+
     @Test func `A permanently rejected region is disarmed but its alert kept`() async {
         let manager = makeManager()
         guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {

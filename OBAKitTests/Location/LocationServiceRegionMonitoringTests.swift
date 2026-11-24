@@ -531,4 +531,97 @@ final class LocationServiceRegionMonitoringTests: OBATestCase {
         #expect(service.responds(to: #selector(CLLocationManagerDelegate.locationManager(_:monitoringDidFailFor:withError:))))
         #expect((LocationManagerMock() as LocationManager) is RegionMonitoringLocationManager)
     }
+
+    // MARK: - Monitoring Failures: Transient and Permanent
+
+    @Test func `Monitoring did fail transient setup delayed logs and notifies delegate without disarming`() {
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+
+        // Transient setup delayed error arrives
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringSetupDelayed))
+
+        // Delegate is notified with transient kind, region remains armed in manager mock
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedKind == .transient)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+    }
+
+    @Test func `Transient network failure notifies delegate and leaves region armed`() {
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.network))
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedKind == .transient)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+    }
+
+    @Test func `Delayed response error notifies delegate and leaves alert armed`() {
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringResponseDelayed))
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedKind == .transient)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+        #expect(self.locationManagerMock.monitoredRegions.count == 1)
+    }
+
+    @Test func `Monitoring did fail permanent error surfaces immediately to delegate`() {
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.denied))
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedKind == .authorizationDenied)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+    }
+
+    @Test func `Monitoring did fail region limit rejection surfaces immediately to delegate`() {
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: LocationService.proximityRegionIdentifier(for: alert)
+        )
+
+        #expect(service.startMonitoringProximity(for: alert) == .started)
+
+        service.locationManager(CLLocationManager(), monitoringDidFailFor: region, withError: CLError(.regionMonitoringFailure))
+
+        #expect(self.delegate.monitoringFailedCallCount == 1)
+        #expect(self.delegate.monitoringFailedKind == .regionRejected)
+        #expect(self.delegate.monitoringFailedIdentifier == region.identifier)
+    }
 }

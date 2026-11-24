@@ -94,10 +94,9 @@ public enum RegionMonitoringFailureKind: Int, Sendable {
 
     /// Whether leaving the alert armed and waiting is the right response.
     ///
-    /// Nothing in OBAKitCore consumes this yet — it exists for the retry decision
-    /// `ProximityAlertManager` has to make, which is the whole reason failures are
-    /// classified at all. Keep it when wiring that up rather than re-deriving
-    /// `== .transient` at the call site.
+    /// Consumed by `LocationService` to log transient delays and notify delegates
+    /// without disarming, and by `ProximityAlertManager` to leave the alert armed
+    /// while Core Location resolves the delayed request on its own.
     public var isTransient: Bool {
         self == .transient
     }
