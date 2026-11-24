@@ -56,6 +56,7 @@ public class AppConfig: CoreAppConfig {
             fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
             defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter,
             launchRouteID: appBundle.launchRouteID,
+            savedArrivals: .appDefault,
             retryPolicy: retryPolicy
         )
     }
@@ -72,6 +73,7 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
     /// - Parameter stopCacheDatabase: The stop cache database, or `nil` for the shared file.
+    /// - Parameter savedArrivals: Where bookmarks' departures are saved for offline use, or `nil` for none.
     /// - Parameter retryPolicy: The retry policy for network requests.
     public init(
         regionsBaseURL: URL?,
@@ -90,6 +92,7 @@ public class AppConfig: CoreAppConfig {
         launchRouteID: String? = nil,
         onDemandSupport: OnDemandSupport = .shared,
         stopCacheDatabase: StopCacheDatabase? = nil,
+        savedArrivals: SavedArrivalsStore? = nil,
         retryPolicy: RetryPolicy = .standard
     ) {
         self.analytics = analytics
@@ -109,6 +112,7 @@ public class AppConfig: CoreAppConfig {
             defaultArrivalDepartureFilter: defaultArrivalDepartureFilter,
             onDemandSupport: onDemandSupport,
             stopCacheDatabase: stopCacheDatabase,
+            savedArrivals: savedArrivals,
             retryPolicy: retryPolicy
         )
     }

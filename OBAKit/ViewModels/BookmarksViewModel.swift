@@ -102,7 +102,7 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
             key: UserDefaultsKey.collapsedSections.rawValue)) ?? nil
         self.collapsedSectionIDs = decodedCollapsedSections ?? []
         super.init()
-        self.dataLoader = BookmarkDataLoader(application: application, delegate: self)
+        self.dataLoader = BookmarkDataLoader(application: application, delegate: self, savedArrivals: application.savedArrivals)
         // Distance sorting needs the user's location, which often arrives after
         // `start()` — especially on cold launch. Stop-only bookmark sets never
         // fire `dataLoaderDidUpdate`, so without this the group-sort fallback
@@ -271,6 +271,8 @@ class BookmarksViewModel: NSObject, ObservableObject, BookmarkDataDelegate {
             arrivalDepartures: arrDeps,
             highlightedTripIDs: highlighted,
             hasLoadedArrivalData: dataLoader.hasFetchedData(forStopID: bookmark.stopID),
+            savedArrivalsDate: dataLoader.savedArrivalsDate(forStopID: bookmark.stopID),
+            scheduledDepartures: TripBookmarkKey(bookmark: bookmark).map { dataLoader.scheduledDepartures(for: $0) } ?? [],
             destinationLookup: destinationLookup(for: bookmark)
         )
     }

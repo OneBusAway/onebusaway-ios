@@ -65,6 +65,32 @@ public class BookmarkDataLoader: NSObject {
         fetchedStopIDs.contains(stopID)
     }
 
+    /// When the departures shown for each stop that couldn't be reached on its
+    /// latest fetch were saved. A stop leaves this on its next successful fetch.
+    @MainActor private var savedArrivalDates = [StopID: Date]()
+
+    /// When `stopID`'s departures were saved, if the device couldn't reach the
+    /// server on the latest fetch and saved ones stand in; `nil` while the
+    /// departures are live.
+    @MainActor public func savedArrivalsDate(forStopID stopID: StopID) -> Date? {
+        savedArrivalDates[stopID]
+    }
+
+    /// Each offline stop's saved timetable, soonest first. A stop leaves this
+    /// with `savedArrivalDates`.
+    @MainActor private var scheduledDeparturesByStop = [StopID: [ScheduledDeparture]]()
+
+    /// The timetable departures for `key` that haven't left, while its stop
+    /// is offline and a timetable was saved; empty otherwise. For a bookmark
+    /// whose saved real-time departures have run out.
+    @MainActor public func scheduledDepartures(for key: TripBookmarkKey) -> [ScheduledDeparture] {
+        (scheduledDeparturesByStop[key.stopID] ?? []).filter { $0.matches(key) && $0.minutes >= 0 }
+    }
+
+    /// Where each stop's latest arrivals are saved for offline use; `nil` to
+    /// neither save them nor fall back to them.
+    private let savedArrivals: SavedArrivalsStore?
+
     /// When set, supplies the bookmarks a batch should fetch instead of every
     /// bookmark in the current region. Lets a caller that only displays a few
     /// bookmarks — the home sheet's preview section — reuse this loader without
@@ -80,12 +106,14 @@ public class BookmarkDataLoader: NSObject {
         application: CoreApplication,
         delegate: BookmarkDataDelegate,
         bookmarkProvider: (() -> [Bookmark])? = nil,
-        autoRefreshes: Bool = true
+        autoRefreshes: Bool = true,
+        savedArrivals: SavedArrivalsStore? = nil
     ) {
         self.application = application
         self.delegate = delegate
         self.bookmarkProvider = bookmarkProvider
         self.autoRefreshes = autoRefreshes
+        self.savedArrivals = savedArrivals
     }
 
     public func startRefreshTimer() {
@@ -201,8 +229,9 @@ public class BookmarkDataLoader: NSObject {
         let slots = slotsByStop
         let destinationsByStopSnapshot = destinationsByStop
         let requests = slots.keys.map { BookmarkArrivalsRequest(stopID: $0) }
+        let arrivalsLoader = BookmarkArrivalsLoader(savedArrivals: savedArrivals)
         Task(priority: .userInitiated) {
-            for await (stopID, result) in BookmarkArrivalsLoader().arrivals(for: requests, using: apiService) {
+            for await (stopID, result) in arrivalsLoader.arrivals(for: requests, using: apiService) {
                 // The loader only ever reports stops it was asked about, so a
                 // miss here means the invariant broke. Settling 0 slots would
                 // leave the batch short a release and hang `loadDataAndWait`
@@ -263,6 +292,8 @@ public class BookmarkDataLoader: NSObject {
             // no longer lists has left, and would otherwise stay on the card
             // counting down into negative minutes.
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
+            savedArrivalDates[stopID] = nil
+            scheduledDeparturesByStop[stopID] = nil
             for (key, deps) in arrivals.tripKeyGroupedElements {
                 tripBookmarkKeys[key] = deps
             }
@@ -283,8 +314,30 @@ public class BookmarkDataLoader: NSObject {
             // settle the card on "No upcoming departures" and drop any
             // previous countdown for this stop.
             fetchedStopIDs.insert(stopID)
+            savedArrivalDates[stopID] = nil
+            scheduledDeparturesByStop[stopID] = nil
             tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             delegate?.dataLoaderDidUpdate(self)
+
+        case .failure(let fallback as SavedArrivalsFallback):
+            // Offline, with this stop's last departures or timetable saved:
+            // show those, marked as saved, instead of leaving the card on
+            // "Loading…". It is still a failed fetch, so it still counts and
+            // still reports the error. Destination arrival times aren't
+            // looked up: their schedules would need the network too.
+            //
+            // The stop's departures are replaced, not merged: departures from
+            // an earlier fetch this session that aren't in the saved set have
+            // left, and would otherwise linger on the card.
+            lastBatchHadError = true
+            savedArrivalDates[stopID] = fallback.savedAt
+            scheduledDeparturesByStop[stopID] = fallback.scheduledDepartures
+            tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
+            for (key, deps) in fallback.arrivals.tripKeyGroupedElements {
+                tripBookmarkKeys[key] = deps
+            }
+            delegate?.dataLoaderDidUpdate(self)
+            await application.displayError(fallback.underlyingError)
 
         case .failure(let error):
             // Record the failure against the live batch so the batch-complete

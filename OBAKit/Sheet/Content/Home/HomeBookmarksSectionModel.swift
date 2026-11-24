@@ -57,7 +57,8 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
             application: application,
             delegate: self,
             bookmarkProvider: { [weak self] in self?.selection ?? [] },
-            autoRefreshes: false
+            autoRefreshes: false,
+            savedArrivals: application.savedArrivals
         )
 
         refreshSelection()
@@ -187,6 +188,8 @@ final class HomeBookmarksSectionModel: NSObject, ObservableObject, BookmarkDataD
                 arrivalDepartures: arrivalDepartures(for: bookmark),
                 highlightedTripIDs: [],
                 hasLoadedArrivalData: loader.hasFetchedData(forStopID: bookmark.stopID),
+                savedArrivalsDate: loader.savedArrivalsDate(forStopID: bookmark.stopID),
+                scheduledDepartures: TripBookmarkKey(bookmark: bookmark).map { loader.scheduledDepartures(for: $0) } ?? [],
                 destinationLookup: destinationLookup(for: bookmark)
             )
         }

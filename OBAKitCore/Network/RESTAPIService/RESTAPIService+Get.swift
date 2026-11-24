@@ -185,6 +185,30 @@ extension RESTAPIService {
         }
     }
 
+    /// `getArrivalsAndDeparturesForStop`, also returning the response body, so a
+    /// caller can save it and show it again with `decodeKeptBody(_:from:)`
+    /// while offline. The body is `nil`
+    /// when the server answered `null` and the reply was rebuilt as a
+    /// no-service day: there is nothing worth saving.
+    public nonisolated func getArrivalsAndDeparturesForStopKeepingBody(
+        id: StopID,
+        minutesBefore: UInt,
+        minutesAfter: UInt
+    ) async throws -> (RESTAPIResponse<StopArrivals>, Data?) {
+        let url = urlBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
+        do {
+            return try await getDataKeepingBody(for: url, decodeRESTAPIResponseAs: StopArrivals.self, using: decoder)
+        } catch let error as APIError where error.isNullResponseBody {
+            return (try await noServiceArrivals(stopID: id, nullBodyError: error, cachePolicy: .useProtocolCachePolicy), nil)
+        }
+    }
+
+    /// Decodes a body kept by one of the `KeepingBody` calls. The body must
+    /// come from this service's region: references resolve against it.
+    public nonisolated func decodeKeptBody<T: Decodable>(_ type: T.Type, from body: Data) throws -> RESTAPIResponse<T> {
+        try decoder.decode(RESTAPIResponse<T>.self, from: body)
+    }
+
     /// Recovers from an arrivals response whose body is the literal `null`.
     ///
     /// Java OBA servers older than 2.7.2 send that body (HTTP 200) for two
@@ -453,6 +477,17 @@ extension RESTAPIService {
         return try await getData(
             for: urlBuilder.getScheduleForStop(id: stopID, date: date),
             decodeRESTAPIResponseAs: ScheduleForStop.self
+        )
+    }
+
+    /// `getScheduleForStop` for the server's today, also returning the
+    /// response body, so a caller can save it and decode it again with
+    /// `decodeKeptBody(_:from:)` while offline.
+    public nonisolated func getScheduleForStopKeepingBody(stopID: StopID) async throws -> (RESTAPIResponse<ScheduleForStop>, Data) {
+        try await getDataKeepingBody(
+            for: urlBuilder.getScheduleForStop(id: stopID, date: nil),
+            decodeRESTAPIResponseAs: ScheduleForStop.self,
+            using: decoder
         )
     }
 
