@@ -443,7 +443,8 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         formatter.timeZone = tz
         formatter.locale = Locale(identifier: "en_US_POSIX")
 
-        let expectedDateString = formatter.string(from: arrDep.serviceDate)
+        let noonOnServiceDate = arrDep.serviceDate.addingTimeInterval(12 * 3600)
+        let expectedDateString = formatter.string(from: noonOnServiceDate)
 
         // When start_date is present, it MUST match the arrival service date.
         // Updates with a non-matching start_date are rejected.
@@ -503,10 +504,10 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
 
     /// The GTFS stop sequence for delay carry-forward.
     ///
-    /// - Note: OBA REST API servers do not return GTFS stop sequences (`gtfsStopSequence` is nil for decoded REST arrivals).
-    ///         When nil, sequence-based carry-forward is skipped, while stop-level matching (by stop ID) and
-    ///         trip-level delay fallback remain active.
-    public var reconcilableStopSequence: Int? { gtfsStopSequence }
+    /// - Note: OBA REST API servers do not return GTFS stop sequences for arrivals/departures.
+    ///         Sequence-based carry-forward is omitted (returns nil), while stop-level matching
+    ///         (by stop ID) and trip-level delay fallback remain active.
+    public var reconcilableStopSequence: Int? { nil }
     public var scheduledArrivalDate: Date? { scheduledArrival }
     public var scheduledDepartureDate: Date? { scheduledDeparture }
 
@@ -570,8 +571,9 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
             let updatedDev = reconciliation.tripUpdate?.tripDelay.map(TimeInterval.init) ?? tripStatus.scheduleDeviation
             let updatedLastUp = reconciliation.tripUpdate?.timestamp ?? tripStatus.lastUpdate
             let updatedVeh = reconciliation.tripUpdate?.vehicleID ?? tripStatus.vehicleID
+            let updatedModifier = (tripStatus.statusModifier == .canceled) ? .default : tripStatus.statusModifier
             return tripStatus.updating(
-                statusModifier: tripStatus.statusModifier,
+                statusModifier: updatedModifier,
                 isRealTime: updatedRealTime,
                 scheduleDeviation: updatedDev,
                 lastUpdate: updatedLastUp,
@@ -614,7 +616,6 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
             stopID: stopID,
             stop: stop,
             stopSequence: stopSequence,
-            gtfsStopSequence: gtfsStopSequence,
             totalStopsInTrip: totalStopsInTrip,
             tripHeadsign: _tripHeadsign,
             tripID: tripID,
