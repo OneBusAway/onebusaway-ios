@@ -14,7 +14,10 @@ import OBAKitCore
 /// Hosts `SettingsView`, and owns what it can't: the Done button, error toasts
 /// and the share sheet for exported data.
 class SettingsViewController: UIHostingController<SettingsView> {
-    init(application: Application) {
+    var onClose: (() -> Void)?
+
+    init(application: Application, onClose: (() -> Void)? = nil) {
+        self.onClose = onClose
         let viewModel = SettingsViewModel(application: application)
         super.init(rootView: SettingsView(viewModel: viewModel))
 
@@ -28,11 +31,27 @@ class SettingsViewController: UIHostingController<SettingsView> {
             self?.share(result)
         }
         viewModel.dismissSettings = { [weak self] completion in
-            guard let self, presentingViewController != nil else {
+            guard let self else {
                 completion()
                 return
             }
-            dismiss(animated: true, completion: completion)
+            if presentingViewController != nil {
+                dismiss(animated: true) { [weak self] in
+                    self?.onClose?()
+                    completion()
+                }
+            } else if let navigationController = self.navigationController, navigationController.viewControllers.count > 1 {
+                CATransaction.begin()
+                CATransaction.setCompletionBlock { [weak self] in
+                    self?.onClose?()
+                    completion()
+                }
+                navigationController.popViewController(animated: true)
+                CATransaction.commit()
+            } else {
+                self.onClose?()
+                completion()
+            }
         }
     }
 
@@ -56,6 +75,10 @@ class SettingsViewController: UIHostingController<SettingsView> {
     }
 
     @objc private func dismissModal() {
-        dismiss(animated: true, completion: nil)
+        if let onClose {
+            onClose()
+        } else {
+            dismiss(animated: true, completion: nil)
+        }
     }
 }

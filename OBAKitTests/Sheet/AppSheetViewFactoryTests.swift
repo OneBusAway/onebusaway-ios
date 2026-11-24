@@ -773,4 +773,193 @@ final class AppSheetViewFactoryTests: OBATestCase {
         #expect(request.transportMode == .bikeRental)
         #expect(request.origin?.placemark.coordinate.latitude == rental.coordinate.latitude)
     }
+
+    // MARK: - Settings View
+
+    @Test @MainActor
+    func `Settings view forwards the application and navigates through coordinator`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        coordinator.push(.settings)
+
+        let factory = makeFactory(application: application, coordinator: coordinator)
+        let host = factory.settingsView()
+
+        #expect(host.application === application)
+
+        host.onClose()
+        #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
+    @Test @MainActor
+    func `Settings route from factory view builds without assertions`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let factory = makeFactory(application: application)
+
+        _ = factory.view(for: .settings)
+
+        #expect(AppSheetRoute.settings.id == "settings")
+        #expect(AppSheetRoute.settings.prefersStacking == true)
+    }
+
+    @Test @MainActor
+    func `Settings view controller dismiss invokes onClose callback`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+
+        var didClose = false
+        let vc = SettingsViewController(application: application, onClose: {
+            didClose = true
+        })
+
+        vc.perform(Selector(("dismissModal")))
+        #expect(didClose)
+    }
+
+    @Test @MainActor
+    func `Settings view controller dismissSettings executes completion and onClose`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        var didClose = false
+        var completed = false
+
+        let vc = SettingsViewController(application: application, onClose: {
+            didClose = true
+        })
+
+        vc.rootView.viewModel.dismissSettings {
+            completed = true
+        }
+
+        #expect(didClose)
+        #expect(completed)
+    }
+
+    @Test @MainActor
+    func `Home view onOpenSettings pushes settings route onto coordinator`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let factory = makeFactory(application: application, coordinator: coordinator)
+        let homeView = factory.homeView()
+
+        homeView.onOpenSettings()
+        #expect(coordinator.stackedRoutes == [.settings])
+
+        // Verify pushing twice results in only one stacked route
+        homeView.onOpenSettings()
+        #expect(coordinator.stackedRoutes == [.settings])
+    }
+
+    @Test @MainActor
+    func `Home view onSelectAlert pushes transit alert route onto coordinator`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let factory = makeFactory(application: application, coordinator: coordinator)
+        let homeView = factory.homeView()
+
+        let alertID = "test-alert-456"
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = ""
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.activePeriod = [period]
+        transitAlert.informedEntity = [entitySelector]
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = alertID
+        feedEntity.alert = transitAlert
+        let agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: nil)
+
+        homeView.onSelectAlert(agencyAlert)
+        #expect(coordinator.stackedRoutes == [.transitAlert(alertID: alertID)])
+
+        // Verify pushing twice results in only one stacked route
+        homeView.onSelectAlert(agencyAlert)
+        #expect(coordinator.stackedRoutes == [.transitAlert(alertID: alertID)])
+    }
+
+    // MARK: - Transit Alert View
+
+    @Test @MainActor
+    func `Transit alert view with matching alert hosts detail view and navigates through coordinator`() throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let coordinator = SheetCoordinator<AppSheetRoute>(root: .home)
+        let alertID = "test-alert-123"
+
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = ""
+
+        var transitAlert = TransitRealtime_Alert()
+        transitAlert.severityLevel = .warning
+        transitAlert.activePeriod = [period]
+        transitAlert.informedEntity = [entitySelector]
+
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = alertID
+        feedEntity.alert = transitAlert
+
+        let agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: nil)
+        application.alertsStore.insertAlerts([agencyAlert])
+
+        coordinator.push(.transitAlert(alertID: alertID))
+
+        let factory = makeFactory(application: application, coordinator: coordinator)
+        _ = factory.view(for: .transitAlert(alertID: alertID))
+
+        let host = try #require(factory.transitAlertHost(alertID: alertID))
+        #expect((host.alert as? AgencyAlert)?.id == alertID)
+        #expect(host.alert.title(forLocale: .current) == agencyAlert.title(forLocale: .current))
+
+        let nav = TransitAlertSheetHost.makeNavigationController(alert: host.alert, onClose: host.onClose)
+        let detailVC = try #require(nav.viewControllers.first as? TransitAlertDetailViewController)
+
+        detailVC.close()
+        #expect(coordinator.stackedRoutes.isEmpty)
+    }
+
+    @Test @MainActor
+    func `Transit alert view with unknown alert ID renders fallback without assertions`() {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let factory = makeFactory(application: application)
+
+        _ = factory.view(for: .transitAlert(alertID: "nonexistent-alert"))
+
+        #expect(factory.transitAlertHost(alertID: "nonexistent-alert") == nil)
+        #expect(AppSheetRoute.transitAlert(alertID: "nonexistent-alert").id == "transitAlert-nonexistent-alert")
+        #expect(AppSheetRoute.transitAlert(alertID: "nonexistent-alert").prefersStacking == true)
+    }
+
+    @Test @MainActor
+    func `Transit alert detail view controller close invokes onClose callback`() throws {
+        var period = TransitRealtime_TimeRange()
+        period.start = UInt64(Date().timeIntervalSince1970)
+        var entitySelector = TransitRealtime_EntitySelector()
+        entitySelector.agencyID = ""
+        var alertProto = TransitRealtime_Alert()
+        alertProto.severityLevel = .warning
+        alertProto.activePeriod = [period]
+        alertProto.informedEntity = [entitySelector]
+        var feedEntity = TransitRealtime_FeedEntity()
+        feedEntity.id = "alert-close-test"
+        feedEntity.alert = alertProto
+        let agencyAlert = try AgencyAlert(feedEntity: feedEntity, agency: nil)
+
+        var didClose = false
+        let vc = TransitAlertDetailViewController(agencyAlert, onClose: {
+            didClose = true
+        })
+
+        vc.close()
+        #expect(didClose)
+    }
 }

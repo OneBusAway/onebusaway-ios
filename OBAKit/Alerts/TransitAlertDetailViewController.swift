@@ -15,10 +15,12 @@ import SafariServices
 /// This includes an optional "Learn More" button at the bottom of the page if the transit alert has a value for `url(forLocale:)`.
 class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate {
     private let locale: Locale
+    var onClose: (() -> Void)?
 
-    init(_ transitAlert: TransitAlertViewModel, locale: Locale = .current) {
+    init(_ transitAlert: TransitAlertViewModel, locale: Locale = .current, onClose: (() -> Void)? = nil) {
         self.transitAlert = transitAlert
         self.locale = locale
+        self.onClose = onClose
         super.init(nibName: nil, bundle: nil)
 
         self.title = Strings.serviceAlert
@@ -27,7 +29,9 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
     }
 
     override func viewDidLoad() {
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: closeButton)
+        if navigationItem.rightBarButtonItem == nil {
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: closeButton)
+        }
 
         view.addSubview(webView)
 
@@ -140,7 +144,9 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
     }()
 
     @objc func close() {
-        if let navController = self.navigationController, navController.topViewController != self {
+        if let onClose {
+            onClose()
+        } else if let navController = self.navigationController, navController.topViewController != self {
             navController.popViewController(animated: true)
         } else {
             self.dismiss(animated: true, completion: nil)

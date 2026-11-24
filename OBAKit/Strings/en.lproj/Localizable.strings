@@ -49,6 +49,9 @@
 /* VoiceOver announcement after the rider removes a departure alarm. */
 "alarms.a11y_removed" = "Alarm removed";
 
+/* Shown on transit alert sheet when the requested alert cannot be found */
+"app_sheet.transit_alert_not_found" = "Alert not found";
+
 /* Placeholder shown when a sheet route is pushed but its screen has not been built yet. */
 "app_sheet.unimplemented_route.placeholder" = "This screen is coming soon.";
 

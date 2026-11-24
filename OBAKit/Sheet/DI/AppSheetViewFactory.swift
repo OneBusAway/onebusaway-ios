@@ -143,8 +143,11 @@ final class AppSheetViewFactory {
         case .tripDetails(let tripConvertible, let destinationStopID):
             tripDetailsView(tripConvertible: tripConvertible, destinationStopID: destinationStopID)
 
-        case .transitAlert, .settings:
-            unimplementedView(for: route)
+        case .transitAlert(let alertID):
+            transitAlertView(alertID: alertID)
+
+        case .settings:
+            settingsView()
 
         case .searchResults(let response):
             searchResultsView(response: response)
@@ -190,23 +193,14 @@ final class AppSheetViewFactory {
                 application: self.application,
                 stopsObserver: self.stopsObserver
             ),
-            // Modally, as the UIKit map's nearby list opens one: the detail
-            // closes itself from UIKit, which a sheet in the stack can't take.
-            onSelectAlert: { [application, presentingController] alert in
-                guard let host = presentingController() else {
-                    Logger.error("AppSheetViewFactory: dropping an alert's detail — no presenting controller resolved.")
-                    return
-                }
-                application.viewRouter.navigateTo(alert: alert, from: host)
+            onSelectAlert: { [coordinator] alert in
+                let route = AppSheetRoute.transitAlert(alertID: alert.id)
+                guard coordinator.stackedRoutes.last != route else { return }
+                coordinator.push(route)
             },
-            // Modally, as the More screen opens it: the controller owns its
-            // Done button and dismisses itself.
-            onOpenSettings: { [application, presentingController] in
-                guard let host = presentingController() else {
-                    Logger.error("AppSheetViewFactory: dropping Settings — no presenting controller resolved.")
-                    return
-                }
-                application.viewRouter.presentSettings(from: host)
+            onOpenSettings: { [coordinator] in
+                guard coordinator.stackedRoutes.last != .settings else { return }
+                coordinator.push(.settings)
             }
         )
     }
@@ -218,6 +212,56 @@ final class AppSheetViewFactory {
         MoreSheetHost(application: application) { [coordinator] in
             coordinator.truncateStacked(toDepth: coordinator.stackedRoutes.lastIndex(of: .more) ?? coordinator.stackedRoutes.count)
         }
+    }
+
+    /// Hosts `SettingsViewController` as a stacked sheet over the panel,
+    /// wiring Done to popping the route from the coordinator.
+    func settingsView() -> SettingsSheetHost {
+        SettingsSheetHost(application: application) { [coordinator] in
+            coordinator.pop()
+        }
+    }
+
+    /// Builds the `TransitAlertSheetHost` for the given alert ID if found in
+    /// `application.alertsStore`.
+    func transitAlertHost(alertID: String) -> TransitAlertSheetHost? {
+        guard let alert = findTransitAlert(alertID: alertID) else { return nil }
+        return TransitAlertSheetHost(alert: alert) { [coordinator] in
+            coordinator.pop()
+        }
+    }
+
+    /// Renders transit alert details inside a stacked sheet if found in
+    /// `application.alertsStore`, or a fallback notice if absent.
+    @ViewBuilder
+    func transitAlertView(alertID: String) -> some View {
+        if let host = transitAlertHost(alertID: alertID) {
+            host
+        } else {
+            alertNotFoundView
+        }
+    }
+
+    func findTransitAlert(alertID: String) -> TransitAlertViewModel? {
+        if let alert = application.alertsStore.agencyAlerts.first(where: { $0.id == alertID }) {
+            return alert
+        }
+        if let alert = application.alertsStore.recentHighSeverityAlerts.first(where: { $0.id == alertID }) {
+            return alert
+        }
+        return nil
+    }
+
+    private var alertNotFoundView: some View {
+        Text(OBALoc(
+            "app_sheet.transit_alert_not_found",
+            value: "Alert not found",
+            comment: "Shown on transit alert sheet when the requested alert cannot be found"
+        ))
+        .font(.headline)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .padding()
     }
 
     /// The Stop page as a native SwiftUI sheet over the map panel.
@@ -304,7 +348,6 @@ final class AppSheetViewFactory {
         )
     }
 
-
     /// The SwiftUI trip page as a stacked sheet over the panel's map.
     ///
     /// The page hands its map focus over each time it appears, and the panel's map
@@ -388,7 +431,6 @@ final class AppSheetViewFactory {
             onPresentTrip(arrival)
         }
     }
-
 
     /// The Map sheet, shared verbatim with `MapViewController`. Its own doc
     /// comment calls it "the single canonical place riders turn layers on and
