@@ -39,7 +39,10 @@ public extension ThemeColors {
             // The lighter of the two grouped backgrounds is the harder one in dark
             // mode, and the darker one in light mode.
             let background: UIColor = key.style == .dark ? .secondarySystemGroupedBackground : .systemGroupedBackground
-            let color = brand.resolvedColor(with: traits).adjusted(toContrast: 4.5, against: background.resolvedColor(with: traits))
+            // High contrast (accessibilityContrast == .high) must meet WCAG AAA (≥7:1);
+            // normal contrast only needs WCAG AA (≥4.5:1) for text.
+            let targetRatio: CGFloat = key.contrast == .high ? 7.0 : 4.5
+            let color = brand.resolvedColor(with: traits).adjusted(toContrast: targetRatio, against: background.resolvedColor(with: traits))
             variants.withLock { $0[key] = color }
             return color
         }
