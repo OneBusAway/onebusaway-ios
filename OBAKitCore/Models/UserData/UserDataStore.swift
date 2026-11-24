@@ -1044,7 +1044,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [Stop].self, key: UserDefaultsKeys.recentStops) ?? []
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.recentStops) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.recentStops)
+            } catch {
+                Logger.error("Failed to persist recentStops: \(error)")
+            }
         }
     }
 
@@ -1190,7 +1194,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [Alarm].self, key: UserDefaultsKeys.alarms) ?? []
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.alarms) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.alarms)
+            } catch {
+                Logger.error("Failed to persist alarms: \(error)")
+            }
         }
     }
 
@@ -1217,7 +1225,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [ProximityAlert].self, key: UserDefaultsKeys.proximityAlerts) ?? []
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.proximityAlerts) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.proximityAlerts)
+            } catch {
+                Logger.error("Failed to persist proximityAlerts: \(error)")
+            }
         }
     }
 
@@ -1359,7 +1371,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [CompletedSurvey].self, key: UserDefaultsKeys.completedSurveys) ?? []
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.completedSurveys) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.completedSurveys)
+            } catch {
+                Logger.error("Failed to persist completedSurveys: \(error)")
+            }
         }
     }
 
@@ -1368,7 +1384,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [SurveyForLater].self, key: UserDefaultsKeys.surveysForLater) ?? []
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.surveysForLater) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.surveysForLater)
+            } catch {
+                Logger.error("Failed to persist surveysForLater: \(error)")
+            }
         }
     }
 
@@ -1398,7 +1418,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [String: StopPreferences].self, key: UserDefaultsKeys.stopPreferences) ?? [:]
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.stopPreferences) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.stopPreferences)
+            } catch {
+                Logger.error("Failed to persist stopPreferences: \(error)")
+            }
         }
     }
 
@@ -1436,7 +1460,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [String: Bool].self, key: UserDefaultsKeys.readServiceAlerts) ?? [:]
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.readServiceAlerts) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.readServiceAlerts)
+            } catch {
+                Logger.error("Failed to persist readServiceAlerts: \(error)")
+            }
         }
     }
 
@@ -1461,7 +1489,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return decodeUserDefaultsObjects(type: [String: Bool].self, key: UserDefaultsKeys.tripPlanningEnabled) ?? [:]
         }
         set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.tripPlanningEnabled) // swiftlint:disable:this force_try
+            do {
+                try encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.tripPlanningEnabled)
+            } catch {
+                Logger.error("Failed to persist tripPlanningEnabled: \(error)")
+            }
         }
     }
 
