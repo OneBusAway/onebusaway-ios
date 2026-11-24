@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "Ten kurs się zakończył.";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "Certyfikat bezpieczeństwa nie jest zaufany.";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "Sprawdź datę i godzinę urządzenia.";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "Nie można nawiązać bezpiecznego połączenia.";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "Nie udało się wczytać godzin przyjazdu";
@@ -753,3 +762,12 @@
 
 /* Error message when feed uses unsupported incrementality like differential. %@ is the mode name. */
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
+
+/* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
+"api_error.tls_untrusted_cert" = "Nie można nawiązać bezpiecznego połączenia, ponieważ certyfikat bezpieczeństwa serwera nie jest zaufany. Jeśli korzystasz z publicznej sieci Wi-Fi, spróbuj się zalogować lub przełącz się na dane komórkowe.";
+
+/* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
+"api_error.tls_expired_cert" = "Nie można nawiązać bezpiecznego połączenia, ponieważ certyfikat bezpieczeństwa serwera wygasł lub nie jest jeszcze ważny. Sprawdź w Ustawieniach, czy data i godzina urządzenia są prawidłowe, lub spróbuj ponownie później.";
+
+/* An error shown when an SSL/TLS handshake or secure connection fails. */
+"api_error.tls_handshake_failed" = "Nie udało się nawiązać bezpiecznego połączenia z serwerem. Sprawdź połączenie sieciowe, wyłącz aktywny VPN lub serwer proxy i spróbuj ponownie.";

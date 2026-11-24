@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "Tapos na ang biyaheng ito.";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "Hindi pinagkakatiwalaan ang sertipiko ng seguridad.";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "Suriin ang petsa at oras ng iyong device.";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "Hindi makapagtatag ng ligtas na koneksyon.";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "Hindi ma-load ang mga oras ng pagdating";
@@ -753,3 +762,12 @@
 
 /* Error message when feed uses unsupported incrementality like differential. %@ is the mode name. */
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
+
+/* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
+"api_error.tls_untrusted_cert" = "Hindi makapagtatag ng ligtas na koneksyon dahil hindi pinagkakatiwalaan ang sertipiko ng seguridad ng server. Kung nakakonekta ka sa isang pampublikong Wi-Fi network, subukang mag-log in o lumipat sa cellular data.";
+
+/* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
+"api_error.tls_expired_cert" = "Hindi makapagtatag ng ligtas na koneksyon dahil nag-expire na o hindi pa valid ang sertipiko ng seguridad ng server. Pakisuri kung tama ang petsa at oras ng iyong device sa Mga Setting, o subukang muli mamaya.";
+
+/* An error shown when an SSL/TLS handshake or secure connection fails. */
+"api_error.tls_handshake_failed" = "Hindi maitatag ang ligtas na koneksyon sa server. Pakisuri ang iyong koneksyon sa network, i-disable ang anumang aktibong VPN o proxy, at subukang muli.";

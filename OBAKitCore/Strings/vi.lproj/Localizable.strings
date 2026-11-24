@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "Chuyến này đã kết thúc.";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "Chứng chỉ bảo mật không đáng tin cậy.";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "Kiểm tra ngày và giờ trên thiết bị của bạn.";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "Không thể thiết lập kết nối an toàn.";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "Không thể tải giờ đến";
@@ -753,3 +762,12 @@
 
 /* Error message when feed uses unsupported incrementality like differential. %@ is the mode name. */
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
+
+/* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
+"api_error.tls_untrusted_cert" = "Không thể thiết lập kết nối an toàn vì chứng chỉ bảo mật của máy chủ không đáng tin cậy. Nếu bạn đang kết nối với mạng Wi-Fi công cộng, hãy thử đăng nhập hoặc chuyển sang dữ liệu di động.";
+
+/* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
+"api_error.tls_expired_cert" = "Không thể thiết lập kết nối an toàn vì chứng chỉ bảo mật của máy chủ đã hết hạn hoặc chưa có hiệu lực. Vui lòng kiểm tra ngày và giờ trên thiết bị trong Cài đặt, hoặc thử lại sau.";
+
+/* An error shown when an SSL/TLS handshake or secure connection fails. */
+"api_error.tls_handshake_failed" = "Không thể thiết lập kết nối an toàn với máy chủ. Vui lòng kiểm tra kết nối mạng, tắt mọi VPN hoặc proxy đang hoạt động và thử lại.";

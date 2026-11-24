@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "Esta viagem terminou.";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "O certificado de segurança não é confiável.";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "Verifique a data e a hora do seu dispositivo.";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "Não foi possível estabelecer uma conexão segura.";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "Não foi possível carregar os horários de chegada";
@@ -753,3 +762,12 @@
 
 /* Error message when feed uses unsupported incrementality like differential. %@ is the mode name. */
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
+
+/* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
+"api_error.tls_untrusted_cert" = "Não foi possível estabelecer uma conexão segura porque o certificado de segurança do servidor não é confiável. Se você estiver conectado a uma rede Wi-Fi pública, tente fazer login ou alternar para os dados celulares.";
+
+/* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
+"api_error.tls_expired_cert" = "Não foi possível estabelecer uma conexão segura porque o certificado de segurança do servidor expirou ou ainda não é válido. Verifique se a data e a hora do dispositivo estão corretas nos Ajustes ou tente novamente mais tarde.";
+
+/* An error shown when an SSL/TLS handshake or secure connection fails. */
+"api_error.tls_handshake_failed" = "Não foi possível estabelecer uma conexão segura com o servidor. Verifique sua conexão de rede, desative qualquer VPN ou proxy ativo e tente novamente.";

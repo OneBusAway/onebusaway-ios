@@ -690,6 +690,15 @@
 
 /* One-line toast text: the trip has finished or was removed from today's service. */
 "error_report.summary.trip_not_found" = "انتهت هذه الرحلة.";
+/* One-line toast text: server TLS certificate is untrusted. */
+"error_report.summary.tls_untrusted_cert" = "الشهادة الأمنية غير موثوقة.";
+
+/* One-line toast text: server TLS certificate is expired or device clock is wrong. */
+"error_report.summary.tls_expired_cert" = "تحقّق من التاريخ والوقت في جهازك.";
+
+/* One-line toast text: TLS handshake failed. */
+"error_report.summary.tls_handshake_failed" = "تعذّر إنشاء اتصال آمن.";
+
 
 /* Title of an error about a failed request for a stop's arrival times. */
 "error_report.title.arrival_times" = "تعذّر تحميل مواعيد الوصول";
@@ -753,3 +762,12 @@
 
 /* Error message when feed uses unsupported incrementality like differential. %@ is the mode name. */
 "gtfs_realtime.error.unsupported_incrementality_fmt" = "Unsupported GTFS-Realtime incrementality mode: %@.";
+
+/* An error shown when an SSL/TLS connection fails due to an untrusted certificate. */
+"api_error.tls_untrusted_cert" = "تعذّر إنشاء اتصال آمن لأن الشهادة الأمنية للخادم غير موثوقة. إذا كنت متصلاً بشبكة Wi-Fi عامة، فجرّب تسجيل الدخول أو التبديل إلى البيانات الخلوية.";
+
+/* An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate. */
+"api_error.tls_expired_cert" = "تعذّر إنشاء اتصال آمن لأن الشهادة الأمنية للخادم منتهية الصلاحية أو غير صالحة بعد. يرجى التحقق من ضبط التاريخ والوقت بشكل صحيح في الإعدادات، أو المحاولة مرة أخرى لاحقاً.";
+
+/* An error shown when an SSL/TLS handshake or secure connection fails. */
+"api_error.tls_handshake_failed" = "تعذّر إنشاء اتصال آمن بالخادم. يرجى التحقق من اتصال الشبكة، وتعطيل أي VPN أو بروكسي نشط، ثم المحاولة مرة أخرى.";

@@ -1,5 +1,5 @@
 //
-//  NetworkOperation.swift
+//  APIError.swift
 //  OBAKitCore
 //
 //  Copyright © Open Transit Software Foundation
@@ -10,11 +10,21 @@
 import Foundation
 
 public enum APIError: Error, LocalizedError {
+    /// Stable reasons for SSL/TLS connection and certificate failures.
+    public enum TLSReason: Sendable, Equatable {
+        case untrustedCertificate
+        case expiredCertificate
+        case handshakeFailed
+    }
+
     case captivePortal
     case invalidContentType(originalError: Error?, expectedContentType: String, actualContentType: String?)
     case networkFailure(Error?)
     case noResponseBody
     case requestFailure(HTTPURLResponse)
+
+    /// An SSL/TLS failure occurred during connection or certificate validation.
+    case tlsError(reason: TLSReason, underlyingError: Error? = nil)
 
     /// A `404` error.
     case requestNotFound(HTTPURLResponse)
@@ -139,6 +149,27 @@ public enum APIError: Error, LocalizedError {
             return OBALoc("api_error.survey_service_not_configured", value: "Survey service is not available in this region.", comment: "An error message that tells the user that surveys are not available.")
         case .noRegionSelected:
             return OBALoc("api_error.no_region_selected", value: "No region has been selected. Please select a region to continue.", comment: "An error message that tells the user that no region has been selected.")
+        case .tlsError(let reason, _):
+            switch reason {
+            case .untrustedCertificate:
+                return OBALoc(
+                    "api_error.tls_untrusted_cert",
+                    value: "Unable to establish a secure connection because the server's security certificate is not trusted. If you are connected to a public Wi-Fi network, try logging in or switching to cellular data.",
+                    comment: "An error shown when an SSL/TLS connection fails due to an untrusted certificate."
+                )
+            case .expiredCertificate:
+                return OBALoc(
+                    "api_error.tls_expired_cert",
+                    value: "Unable to establish a secure connection because the server's security certificate has expired or is not yet valid. Please check that your device's date and time are set correctly in Settings, or try again later.",
+                    comment: "An error shown when an SSL/TLS connection fails due to an expired or invalid-date certificate."
+                )
+            case .handshakeFailed:
+                return OBALoc(
+                    "api_error.tls_handshake_failed",
+                    value: "A secure connection could not be established with the server. Please check your network connection, disable any active VPN or proxy, and try again.",
+                    comment: "An error shown when an SSL/TLS handshake or secure connection fails."
+                )
+            }
         }
     }
 }

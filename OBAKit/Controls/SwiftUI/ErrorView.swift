@@ -53,7 +53,7 @@ struct ErrorView: View {
             return "server.rack"
         case .invalidResponseData:
             return "exclamationmark.triangle"
-        case .captivePortal:
+        case .captivePortal, .tlsError:
             return "lock.shield"
         default:
             return "exclamationmark.triangle"
