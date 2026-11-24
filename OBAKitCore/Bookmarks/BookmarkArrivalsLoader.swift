@@ -120,7 +120,11 @@ public struct BookmarkArrivalsLoader: Sendable {
     /// Saves the stop's timetable for today, unless one was already saved
     /// today: a day's timetable doesn't change, so one fetch per stop per day
     /// is enough. A failure is logged; the next good fetch tries again.
-    private func saveTodaysScheduleIfNeeded(stopID: StopID, using apiService: RESTAPIService) async {
+    ///
+    /// `arrivals(for:using:)` calls this for each stop it fetches.
+    /// `BookmarkDataLoader` also calls it for destination stops, whose
+    /// timetables say offline which trips reach them.
+    public func saveTodaysScheduleIfNeeded(stopID: StopID, using apiService: RESTAPIService) async {
         guard let savedArrivals, let regionID = apiService.regionIdentifier else { return }
         if let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
            Calendar.current.isDateInToday(saved.savedAt) {
@@ -173,6 +177,31 @@ public struct BookmarkArrivalsLoader: Sendable {
             scheduledDepartures: (schedule?.scheduledDepartures ?? []).filter { $0.minutes >= 0 && !savedTripIDs.contains($0.tripID) },
             underlyingError: error
         )
+    }
+
+    /// When each trip in `stopID`'s saved timetable reaches the stop (the last
+    /// time, for a trip that visits it twice), or `nil` when no timetable is
+    /// saved for it. Offline, this is how a destination bookmark tells the
+    /// trips that reach its destination from short turns.
+    public func savedArrivalTimes(stopID: StopID, using apiService: RESTAPIService) -> [TripIdentifier: Date]? {
+        guard
+            let savedArrivals,
+            let regionID = apiService.regionIdentifier,
+            let saved = savedArrivals.load(kind: .schedule, stopID: stopID, regionID: regionID),
+            let schedule = try? apiService.decodeKeptBody(ScheduleForStop.self, from: saved.body).entry
+        else {
+            return nil
+        }
+
+        var times = [TripIdentifier: Date]()
+        for routeSchedule in schedule.stopRouteSchedules {
+            for direction in routeSchedule.stopRouteDirectionSchedules {
+                for stopTime in direction.scheduleStopTimes {
+                    times[stopTime.tripID] = max(times[stopTime.tripID] ?? .distantPast, stopTime.arrivalDate)
+                }
+            }
+        }
+        return times
     }
 
     /// Collects the stream into per-bookmark departures. A bookmark whose stop

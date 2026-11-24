@@ -532,6 +532,91 @@ final class SavedArrivalsTests: OBATestCase {
         #expect(loader.scheduledDepartures(for: key).isEmpty)
     }
 
+    @MainActor
+    private func makeDestinationBookmark(application: Application) throws -> Bookmark {
+        let arrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: fixtureFile).arrivalsAndDepartures
+        let arrivalDeparture = try #require(arrivals.first)
+        let destinationStop = try #require(try Fixtures.loadSomeStops().first { $0.id != arrivalDeparture.stopID })
+        let bookmark = Bookmark(name: "Commute", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDeparture, destinationStop: destinationStop)
+        application.userDataStore.add(bookmark, to: nil)
+        return bookmark
+    }
+
+    /// Two trips share the route and headsign, but only one reaches the
+    /// destination; a third reaches it before the origin. Offline, the
+    /// destination bookmark's timetable keeps only the first.
+    @Test @MainActor
+    func `Offline, a destination bookmark's timetable leaves out short turns`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let bookmark = try makeDestinationBookmark(application: application)
+        let key = try #require(TripBookmarkKey(bookmark: bookmark))
+        let destinationStopID = try #require(bookmark.destinationStopID)
+        let regionID = try #require(application.apiService?.regionIdentifier)
+
+        store.save(try savedBody(departingInMinutes: [-10]), stopID: bookmark.stopID, regionID: regionID)
+        let origin = try scheduleBody(routeID: key.routeID, headsign: key.tripHeadsign, departingInMinutes: [6, 21, 36], tripIDs: ["full", "short", "loop"])
+        store.save(origin, kind: .schedule, stopID: bookmark.stopID, regionID: regionID)
+        let destination = try scheduleBody(routeID: key.routeID, headsign: key.tripHeadsign, departingInMinutes: [30, 20], tripIDs: ["full", "loop"])
+        store.save(destination, kind: .schedule, stopID: destinationStopID, regionID: regionID)
+        mockArrivalsError(dataLoader, URLError(.notConnectedToInternet))
+
+        let loader = BookmarkDataLoader(application: application, delegate: Delegate(), bookmarkProvider: { [bookmark] }, autoRefreshes: false, savedArrivals: store)
+        await loader.loadDataAndWait()
+
+        #expect(loader.scheduledDepartures(for: key, destinationStopID: destinationStopID).map(\.tripID) == ["full"])
+        #expect(loader.scheduledDepartures(for: key).map(\.tripID) == ["full", "short", "loop"])
+    }
+
+    /// With no timetable saved for the destination, there is nothing to tell
+    /// short turns apart by, so the route and headsign still decide.
+    @Test @MainActor
+    func `Offline, without the destination's timetable every matching trip stays`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let bookmark = try makeDestinationBookmark(application: application)
+        let key = try #require(TripBookmarkKey(bookmark: bookmark))
+        let destinationStopID = try #require(bookmark.destinationStopID)
+        let regionID = try #require(application.apiService?.regionIdentifier)
+
+        store.save(try savedBody(departingInMinutes: [-10]), stopID: bookmark.stopID, regionID: regionID)
+        let origin = try scheduleBody(routeID: key.routeID, headsign: key.tripHeadsign, departingInMinutes: [6, 21], tripIDs: ["full", "short"])
+        store.save(origin, kind: .schedule, stopID: bookmark.stopID, regionID: regionID)
+        mockArrivalsError(dataLoader, URLError(.notConnectedToInternet))
+
+        let loader = BookmarkDataLoader(application: application, delegate: Delegate(), bookmarkProvider: { [bookmark] }, autoRefreshes: false, savedArrivals: store)
+        await loader.loadDataAndWait()
+
+        #expect(loader.scheduledDepartures(for: key, destinationStopID: destinationStopID).map(\.tripID) == ["full", "short"])
+    }
+
+    /// Online, the destination's timetable is saved next to the origin's, so
+    /// it is there the next time the device goes offline.
+    @Test @MainActor
+    func `A good fetch for a destination bookmark saves the destination's timetable`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let bookmark = try makeDestinationBookmark(application: application)
+        let destinationStopID = try #require(bookmark.destinationStopID)
+        let regionID = try #require(application.apiService?.regionIdentifier)
+
+        mockArrivals(dataLoader)
+        mockSchedule(dataLoader)
+        // The trip schedule the live destination arrival needs: a failure is fine here.
+        dataLoader.mock(data: Data("{}".utf8), statusCode: 404) { request in
+            request.url?.path.contains("/api/where/trip-details") ?? false
+        }
+
+        let loader = BookmarkDataLoader(application: application, delegate: Delegate(), bookmarkProvider: { [bookmark] }, autoRefreshes: false, savedArrivals: store)
+        await loader.loadDataAndWait()
+
+        await poll(
+            until: { self.store.load(kind: .schedule, stopID: destinationStopID, regionID: regionID) != nil },
+            "the destination's timetable was never saved"
+        )
+        #expect(store.load(kind: .schedule, stopID: bookmark.stopID, regionID: regionID) != nil)
+    }
+
     /// Departures from an earlier fetch that aren't in the saved set have
     /// left, and must not linger on the card once the stop goes offline.
     @Test @MainActor
