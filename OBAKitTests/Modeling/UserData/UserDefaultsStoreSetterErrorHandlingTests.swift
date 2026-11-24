@@ -19,7 +19,7 @@ import Testing
 final class UserDefaultsStoreSetterErrorHandlingTests: OBATestCase {
 
     var userDefaultsStore: UserDefaultsStore!
-    private let stops: [Stop]
+    private var stops: [Stop]!
 
     override init() async throws {
         try await super.init()
