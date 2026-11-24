@@ -200,6 +200,109 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
         vehicleID = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .vehicleID))
     }
 
+    public init(
+        activeTripID: String,
+        blockTripSequence: Int = 0,
+        closestStopID: StopID = "",
+        closestStopTimeOffset: Int = 0,
+        distanceAlongTrip: Double = 0.0,
+        frequency: Frequency? = nil,
+        lastKnownDistanceAlongTrip: Double? = nil,
+        lastKnownLocation: CLLocation? = nil,
+        lastKnownOrientation: CLLocationDirection? = nil,
+        lastLocationUpdateTime: Int64 = 0,
+        lastUpdate: Date? = nil,
+        nextStopID: StopID? = nil,
+        nextStopTimeOffset: Int = 0,
+        orientation: CLLocationDirection = 0,
+        phase: String = "",
+        position: CLLocation? = nil,
+        isRealTime: Bool = false,
+        scheduleDeviation: TimeInterval = 0,
+        scheduledDistanceAlongTrip: Double = 0.0,
+        serviceDate: Date = Date(),
+        situationIDs: [String] = [],
+        statusModifier: StatusModifier = .default,
+        totalDistanceAlongTrip: Double = 0.0,
+        vehicleID: String? = nil,
+        regionIdentifier: Int? = nil,
+        activeTrip: Trip? = nil,
+        closestStop: Stop? = nil,
+        nextStop: Stop? = nil,
+        serviceAlerts: [ServiceAlert] = []
+    ) {
+        self.activeTripID = activeTripID
+        self.blockTripSequence = blockTripSequence
+        self.closestStopID = closestStopID
+        self.closestStopTimeOffset = closestStopTimeOffset
+        self.distanceAlongTrip = distanceAlongTrip
+        self.frequency = frequency
+        self.lastKnownDistanceAlongTrip = lastKnownDistanceAlongTrip
+        self.lastKnownLocation = lastKnownLocation
+        self.lastKnownOrientation = lastKnownOrientation
+        self.lastLocationUpdateTime = lastLocationUpdateTime
+        self.lastUpdate = lastUpdate
+        self.nextStopID = nextStopID
+        self.nextStopTimeOffset = nextStopTimeOffset
+        self.orientation = orientation
+        self.phase = phase
+        self.position = position
+        self.isRealTime = isRealTime
+        self.scheduleDeviation = scheduleDeviation
+        self.scheduledDistanceAlongTrip = scheduledDistanceAlongTrip
+        self.serviceDate = serviceDate
+        self.situationIDs = situationIDs
+        self.statusModifier = statusModifier
+        self.totalDistanceAlongTrip = totalDistanceAlongTrip
+        self.vehicleID = vehicleID
+        self.regionIdentifier = regionIdentifier
+        self.activeTrip = activeTrip
+        self.closestStop = closestStop
+        self.nextStop = nextStop
+        self.serviceAlerts = serviceAlerts
+    }
+
+    /// Returns a copy of this `TripStatus` with updated fields.
+    public func updating(
+        statusModifier: StatusModifier? = nil,
+        isRealTime: Bool? = nil,
+        scheduleDeviation: TimeInterval? = nil,
+        lastUpdate: Date? = nil,
+        vehicleID: String? = nil
+    ) -> TripStatus {
+        TripStatus(
+            activeTripID: activeTripID,
+            blockTripSequence: blockTripSequence,
+            closestStopID: closestStopID,
+            closestStopTimeOffset: closestStopTimeOffset,
+            distanceAlongTrip: distanceAlongTrip,
+            frequency: frequency,
+            lastKnownDistanceAlongTrip: lastKnownDistanceAlongTrip,
+            lastKnownLocation: lastKnownLocation,
+            lastKnownOrientation: lastKnownOrientation,
+            lastLocationUpdateTime: lastLocationUpdateTime,
+            lastUpdate: lastUpdate ?? self.lastUpdate,
+            nextStopID: nextStopID,
+            nextStopTimeOffset: nextStopTimeOffset,
+            orientation: orientation,
+            phase: phase,
+            position: position,
+            isRealTime: isRealTime ?? self.isRealTime,
+            scheduleDeviation: scheduleDeviation ?? self.scheduleDeviation,
+            scheduledDistanceAlongTrip: scheduledDistanceAlongTrip,
+            serviceDate: serviceDate,
+            situationIDs: situationIDs,
+            statusModifier: statusModifier ?? self.statusModifier,
+            totalDistanceAlongTrip: totalDistanceAlongTrip,
+            vehicleID: vehicleID ?? self.vehicleID,
+            regionIdentifier: regionIdentifier,
+            activeTrip: activeTrip,
+            closestStop: closestStop,
+            nextStop: nextStop,
+            serviceAlerts: serviceAlerts
+        )
+    }
+
     public func loadReferences(_ references: References, regionIdentifier: Int?) {
         activeTrip = references.tripWithID(activeTripID)!
         closestStop = references.stopWithID(closestStopID)!

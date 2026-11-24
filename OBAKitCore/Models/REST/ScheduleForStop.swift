@@ -58,6 +58,13 @@ public class ScheduleForStop: NSObject, Identifiable, Decodable, HasReferences {
     public func loadReferences(_ references: References, regionIdentifier: Int?) {
         stop = references.stopWithID(stopID)
         stopRouteSchedules.loadReferences(references, regionIdentifier: regionIdentifier)
+        for routeSchedule in stopRouteSchedules {
+            for directionSchedule in routeSchedule.stopRouteDirectionSchedules {
+                for stopTime in directionSchedule.scheduleStopTimes {
+                    stopTime.stopID = stopID
+                }
+            }
+        }
         self.regionIdentifier = regionIdentifier
     }
 
@@ -123,6 +130,9 @@ public class ScheduleForStop: NSObject, Identifiable, Decodable, HasReferences {
 
     /// A single stop time entry in the stop schedule
     public class StopScheduleStopTime: NSObject, Decodable {
+        /// Optional stop ID associated with this stop time entry.
+        public var stopID: String?
+
         /// The trip ID
         public let tripID: String
 
