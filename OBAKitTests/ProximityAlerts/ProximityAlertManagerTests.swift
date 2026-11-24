@@ -389,6 +389,59 @@ final class ProximityAlertManagerTests: OBATestCase {
         #expect(self.locationManagerMock.monitoredRegions.count == 3)
     }
 
+    // MARK: - Failed Saves
+
+    private let simulatedError = NSError(domain: "test.persistence", code: 500, userInfo: nil)
+
+    @Test func `Create whose save fails disarms the geofence and reports it`() async {
+        let manager = makeManager()
+        store.simulatedPersistenceError = simulatedError
+
+        let result = await manager.createProximityAlert(for: stop)
+
+        #expect(result == .saveFailed)
+        #expect(self.store.proximityAlerts.isEmpty)
+        #expect(self.locationService.monitoredProximityAlertIDs.isEmpty)
+    }
+
+    @Test func `Cancel whose delete fails keeps the alert armed and reports it`() async {
+        let manager = makeManager()
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+        store.simulatedPersistenceError = simulatedError
+
+        #expect(manager.cancelProximityAlert(alert) == false)
+
+        #expect(self.store.proximityAlerts.map(\.id) == [alert.id])
+        #expect(self.locationService.monitoredProximityAlertIDs == [alert.id])
+    }
+
+    @Test func `Cancel all whose delete fails keeps every alert armed and reports it`() async {
+        let manager = makeManager()
+        _ = await manager.createProximityAlert(for: stops[0])
+        _ = await manager.createProximityAlert(for: stops[1])
+        store.simulatedPersistenceError = simulatedError
+
+        #expect(manager.cancelAllProximityAlerts() == false)
+
+        #expect(self.store.proximityAlerts.count == 2)
+        #expect(Set(self.locationService.monitoredProximityAlertIDs) == Set(self.store.proximityAlerts.map(\.id)))
+    }
+
+    @Test func `Cancel and cancel all report a successful delete`() async {
+        let manager = makeManager()
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stops[0]) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+        _ = await manager.createProximityAlert(for: stops[1])
+
+        #expect(manager.cancelProximityAlert(alert))
+        #expect(manager.cancelAllProximityAlerts())
+    }
+
     // MARK: - Reading Alerts
 
     @Test func `Active alert finds the alert set on a stop`() async {

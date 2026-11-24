@@ -237,14 +237,20 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Store a new proximity alert.
     /// - Parameter proximityAlert: The proximity alert to store.
-    func add(proximityAlert: ProximityAlert)
+    /// - Returns: `false` when the change couldn't be saved; nothing changed.
+    @discardableResult
+    func add(proximityAlert: ProximityAlert) -> Bool
 
     /// Delete a proximity alert.
     /// - Parameter proximityAlert: The proximity alert to delete.
-    func delete(proximityAlert: ProximityAlert)
+    /// - Returns: `false` when the change couldn't be saved; nothing changed.
+    @discardableResult
+    func delete(proximityAlert: ProximityAlert) -> Bool
 
     /// Delete all proximity alerts.
-    func deleteAllProximityAlerts()
+    /// - Returns: `false` when the change couldn't be saved; nothing changed.
+    @discardableResult
+    func deleteAllProximityAlerts() -> Bool
 
     /// Deletes all proximity alerts that have expired (older than 24 hours).
     func deleteExpiredProximityAlerts()
@@ -1244,23 +1250,29 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
     }
 
-    public func add(proximityAlert: ProximityAlert) {
+    @discardableResult
+    public func add(proximityAlert: ProximityAlert) -> Bool {
         var alerts = proximityAlerts
         alerts.append(proximityAlert)
-        guard persistProximityAlerts(alerts) else { return }
+        guard persistProximityAlerts(alerts) else { return false }
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+        return true
     }
 
-    public func delete(proximityAlert: ProximityAlert) {
+    @discardableResult
+    public func delete(proximityAlert: ProximityAlert) -> Bool {
         var alerts = proximityAlerts
         alerts.removeAll { $0 == proximityAlert }
-        guard persistProximityAlerts(alerts) else { return }
+        guard persistProximityAlerts(alerts) else { return false }
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+        return true
     }
 
-    public func deleteAllProximityAlerts() {
-        guard persistProximityAlerts([]) else { return }
+    @discardableResult
+    public func deleteAllProximityAlerts() -> Bool {
+        guard persistProximityAlerts([]) else { return false }
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+        return true
     }
 
     public func deleteExpiredProximityAlerts() {

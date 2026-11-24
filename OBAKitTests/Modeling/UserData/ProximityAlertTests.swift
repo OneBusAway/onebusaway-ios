@@ -452,6 +452,20 @@ final class ProximityAlertStoreTests: OBATestCase {
         userDefaultsStore.simulatedPersistenceError = nil
     }
 
+    @Test func `Add, delete and delete all report whether they saved`() {
+        let alert = ProximityAlert(stop: stop)
+        #expect(userDefaultsStore.add(proximityAlert: alert))
+
+        userDefaultsStore.simulatedPersistenceError = simulatedError
+        #expect(userDefaultsStore.add(proximityAlert: ProximityAlert(stop: stop)) == false)
+        #expect(userDefaultsStore.delete(proximityAlert: alert) == false)
+        #expect(userDefaultsStore.deleteAllProximityAlerts() == false)
+        userDefaultsStore.simulatedPersistenceError = nil
+
+        #expect(userDefaultsStore.delete(proximityAlert: alert))
+        #expect(userDefaultsStore.deleteAllProximityAlerts())
+    }
+
     @Test func `Delete expired does not post notification when persistence fails`() async {
         let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
         let alert = ProximityAlert(stop: stop, createdAt: expiredDate)

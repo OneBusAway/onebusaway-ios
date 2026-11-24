@@ -92,10 +92,14 @@ extension StopPageActionPresenter {
     ) async {
         switch action {
         case .cancel(let alert):
-            application.proximityAlertManager.cancelProximityAlert(alert)
             // The store's change notification refreshes `viewModel.proximityAlert`
-            // on its own, which is what flips the menu item back.
-            viewModel.signalToast(Self.proximityAlertCancelledText)
+            // on its own, which is what flips the menu item back. A failed
+            // delete posts none, and the alert is still set, so the item stays.
+            if application.proximityAlertManager.cancelProximityAlert(alert) {
+                viewModel.signalToast(Self.proximityAlertCancelledText)
+            } else {
+                viewModel.signalToast(Self.proximityAlertCancelFailedText)
+            }
         case .arm:
             await armProximityAlert(for: stop, viewModel: viewModel, canResolveAgain: canResolveAgain)
         case .confirmActivated:
@@ -108,6 +112,8 @@ extension StopPageActionPresenter {
             showProximityAlertSettingsAlert(reason: reason)
         case .showLimit(let limit):
             showProximityAlertLimitAlert(limit: limit)
+        case .showSaveFailed:
+            viewModel.signalToast(Self.proximityAlertSetFailedText)
         case .refresh:
             // The menu offered "Alert Me" while one was already set. Correct the
             // page silently: the rider's tap changed nothing, and a confirmation
@@ -264,6 +270,22 @@ extension StopPageActionPresenter {
             "stop_page.proximity_alert.toast.cancelled",
             value: "Nearby alert cancelled",
             comment: "Toast confirming the rider's nearby alert for this stop was taken down."
+        )
+    }
+
+    private static var proximityAlertCancelFailedText: String {
+        OBALoc(
+            "stop_page.proximity_alert.toast.cancel_failed",
+            value: "Couldn't cancel the nearby alert",
+            comment: "Toast shown when the rider's nearby alert for this stop couldn't be taken down. The alert stays set."
+        )
+    }
+
+    private static var proximityAlertSetFailedText: String {
+        OBALoc(
+            "stop_page.proximity_alert.toast.set_failed",
+            value: "Couldn't set the nearby alert",
+            comment: "Toast shown when a nearby alert couldn't be saved, so none was set."
         )
     }
 }
