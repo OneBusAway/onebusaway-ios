@@ -94,70 +94,11 @@ public enum RegionMonitoringFailureKind: Int, Sendable {
 
     /// Whether leaving the alert armed and waiting is the right response.
     ///
-    /// Consumed by `LocationService` to schedule bounded retries with backoff
-    /// for transient errors rather than dropping geofences or burning battery,
-    /// and by `ProximityAlertManager` to leave the alert armed.
+    /// Consumed by `LocationService` to log transient delays and notify delegates
+    /// without disarming, and by `ProximityAlertManager` to leave the alert armed
+    /// while Core Location resolves the delayed request on its own.
     public var isTransient: Bool {
         self == .transient
-    }
-}
-
-/// Policy controlling bounded retry with backoff for transient region-monitoring failures.
-public struct RegionMonitoringRetryPolicy: Sendable, Equatable {
-    /// Maximum number of retry attempts after the initial failure.
-    public let maxAttempts: Int
-
-    /// Base delay for the first retry attempt in seconds.
-    public let initialDelay: TimeInterval
-
-    /// Maximum delay cap for backoff in seconds.
-    public let maxDelay: TimeInterval
-
-    /// Multiplier applied to the delay for each subsequent retry attempt.
-    public let backoffMultiplier: Double
-
-    public init(
-        maxAttempts: Int = 3,
-        initialDelay: TimeInterval = 1.0,
-        maxDelay: TimeInterval = 10.0,
-        backoffMultiplier: Double = 2.0
-    ) {
-        precondition(maxAttempts > 0, "maxAttempts must be greater than 0")
-        precondition(initialDelay >= 0, "initialDelay must be non-negative")
-        precondition(maxDelay >= initialDelay, "maxDelay must be at least initialDelay")
-        precondition(backoffMultiplier >= 1.0, "backoffMultiplier must be at least 1.0")
-        self.maxAttempts = maxAttempts
-        self.initialDelay = initialDelay
-        self.maxDelay = maxDelay
-        self.backoffMultiplier = backoffMultiplier
-    }
-
-    /// Standard retry schedule: 3 attempts with exponential backoff (1.0s, 2.0s, 4.0s).
-    public static let standard = RegionMonitoringRetryPolicy(
-        maxAttempts: 3,
-        initialDelay: 1.0,
-        maxDelay: 10.0,
-        backoffMultiplier: 2.0
-    )
-
-    /// Immediate retry schedule: 3 attempts with zero delay, useful for testing.
-    public static let immediate = RegionMonitoringRetryPolicy(
-        maxAttempts: 3,
-        initialDelay: 0,
-        maxDelay: 0,
-        backoffMultiplier: 1.0
-    )
-
-    /// Calculates the backoff delay for a 1-based attempt count.
-    public func delay(forAttempt attempt: Int) -> TimeInterval {
-        guard attempt > 0 else { return 0 }
-        let calculated = initialDelay * pow(backoffMultiplier, Double(attempt - 1))
-        return min(calculated, maxDelay)
-    }
-
-    /// Whether this failure kind is transient and another retry attempt is available.
-    public func shouldRetry(kind: RegionMonitoringFailureKind, currentAttempt: Int) -> Bool {
-        kind.isTransient && currentAttempt < maxAttempts
     }
 }
 

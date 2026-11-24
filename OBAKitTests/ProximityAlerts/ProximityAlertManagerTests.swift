@@ -738,6 +738,19 @@ final class ProximityAlertManagerTests: OBATestCase {
         #expect(self.store.proximityAlerts.count == 1)
     }
 
+    @Test func `Transient network errors leave alert armed without disarming`() async {
+        let manager = makeManager()
+        guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
+            Issue.record("Setup failed: alert did not activate")
+            return
+        }
+
+        failMonitoring(for: alert, error: .network)
+
+        #expect(self.locationService.monitoredProximityAlertIDs == [alert.id])
+        #expect(self.store.proximityAlerts.count == 1)
+    }
+
     @Test func `A permanently rejected region is disarmed but its alert kept`() async {
         let manager = makeManager()
         guard case .activated(let alert) = await manager.createProximityAlert(for: stop) else {
