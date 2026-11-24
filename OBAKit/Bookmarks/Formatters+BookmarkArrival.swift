@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 6/11/20.
 //
 
+import Foundation
 import OBAKitCore
 
 extension Formatters {
@@ -69,7 +70,23 @@ extension Formatters {
             return OBALoc("bookmark_card.offline_timetable", value: "Offline, scheduled times", comment: "Shown on a bookmark card when the device is offline, the departures the app saved have all left, and the times shown come from the stop's saved timetable instead.")
         }
         let format = OBALoc("bookmark_card.offline_saved_fmt", value: "Offline, saved %@", comment: "Shown on a bookmark card when the device is offline and the departures shown are the last ones the app saved. The placeholder is the time they were saved, e.g. 'Offline, saved 8:42 AM'.")
-        return String(format: format, timeFormatter.string(from: savedAt))
+        return String(format: format, savedAtString(savedAt))
+    }
+
+    /// The save time, with the date in front when it wasn't today, so
+    /// "8:42 AM" can't be mistaken for this morning.
+    private func savedAtString(_ savedAt: Date) -> String {
+        var calendar = Calendar.current
+        calendar.timeZone = timeFormatter.timeZone
+        if calendar.isDateInToday(savedAt) {
+            return timeFormatter.string(from: savedAt)
+        }
+        let formatter = DateFormatter()
+        formatter.locale = timeFormatter.locale
+        formatter.timeZone = timeFormatter.timeZone
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: savedAt)
     }
 
     /// The line a destination bookmark's card shows about arriving at its

@@ -643,7 +643,7 @@ final class SavedArrivalsTests: OBATestCase {
         let stop = try #require(try Fixtures.loadSomeStops().first)
         let bookmark = Bookmark(name: "Work", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDeparture, stop: stop)
         let formatters = Formatters(locale: Locale(identifier: "en_US"), calendar: Calendar(identifier: .gregorian), themeColors: ThemeColors.shared)
-        let savedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let savedAt = Date()
         let time = formatters.timeFormatter.string(from: savedAt)
         // Upcoming: the fixture's own departure is from 2018, and offline a
         // departure that has left isn't shown or spoken.
@@ -658,6 +658,15 @@ final class SavedArrivalsTests: OBATestCase {
         #expect(formatters.savedArrivalsText(for: offline) == "Offline, saved \(time)")
         #expect(formatters.accessibilityValue(for: offline)?.hasPrefix("Offline, saved \(time). ") == true)
         #expect(formatters.accessibilityValue(for: offlineEmpty) == "Offline, saved \(time).")
+
+        // Saved on an earlier day: the date comes first, so the time can't be
+        // mistaken for this morning.
+        let yesterday = savedAt.addingTimeInterval(-2 * 86_400)
+        let older = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [upcoming], highlightedTripIDs: [], savedArrivalsDate: yesterday)
+        let olderText = try #require(formatters.savedArrivalsText(for: older))
+        #expect(olderText != "Offline, saved \(formatters.timeFormatter.string(from: yesterday))")
+        #expect(olderText.hasPrefix("Offline, saved "))
+        #expect(olderText.count > "Offline, saved \(time)".count)
     }
 
     @Test @MainActor
