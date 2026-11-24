@@ -223,6 +223,10 @@ struct StopPageView: View {
         // With `.plain`, rows whose `listRowInsets` leading/trailing are 0 sit
         // flush with the screen edges.
         .listStyle(.plain)
+        // Before the `safeAreaInset`s: `.refreshable` is an environment value, so applied
+        // after them it reaches the horizontal `ScrollView`s in the sheet header's chip row and
+        // the bottom toolbar too, which then get their own pull-to-refresh and vertical bounce.
+        .refreshable { await refreshAndAnnounce() }
         // Mirror of the bottom toolbar pattern: pins the sheet header at the safe-area
         // boundary (just below the nav bar) so its position is identical at every detent.
         // A VStack wrapper respected the raw top safe area differently at `.tip` vs `.half`
@@ -255,7 +259,6 @@ struct StopPageView: View {
                 toolbar
             }
         }
-        .refreshable { await refreshAndAnnounce() }
         .stopPageLifecycle(
             viewModel: viewModel,
             userDefaults: userDefaults,
