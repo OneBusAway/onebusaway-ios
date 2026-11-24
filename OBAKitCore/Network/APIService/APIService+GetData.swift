@@ -90,6 +90,7 @@ extension APIService {
         timeoutPolicy: RequestTimeoutPolicy = .interactive
     ) async throws -> (Data, HTTPURLResponse) {
         var request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: timeoutPolicy.interval)
+        request.httpMethod = "GET"
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
         // Force en-US locale to prevent server-side locale-dependent number parsing issues.
         // Some OBA servers use Accept-Language to set their parsing locale, causing 400 errors
