@@ -50,7 +50,16 @@ final class StopClusterAnnotationView: MKMarkerAnnotationView {
         guard let cluster = annotation as? MKClusterAnnotation else { return }
         let stops = StopCluster.stops(in: cluster.memberAnnotations)
         glyphText = String(stops.count)
-        accessibilityLabel = StopCluster.accessibilityLabel(stopCount: stops.count)
+        if stops.count > MapViewController.stopClusterPickerThreshold {
+            let format = OBALoc(
+                "map_controller.stop_cluster.accessibility_label_picker_fmt",
+                value: "Stop cluster — %d stops, double-tap to pick",
+                comment: "VoiceOver label for a large cluster pin (>5 stops). %d is the number of stops."
+            )
+            accessibilityLabel = String.localizedStringWithFormat(format, stops.count)
+        } else {
+            accessibilityLabel = StopCluster.accessibilityLabel(stopCount: stops.count)
+        }
         accessibilityValue = StopCluster.accessibilityValue(for: stops)
         accessibilityTraits = .button
     }

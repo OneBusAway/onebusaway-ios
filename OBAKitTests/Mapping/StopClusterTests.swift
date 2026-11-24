@@ -10,6 +10,7 @@
 import Foundation
 import MapKit
 import Testing
+import UIKit
 @testable import OBAKit
 @testable import OBAKitCore
 
@@ -311,6 +312,172 @@ final class StopClusterTests {
         let mixed = StopCluster.stops(in: [pin1, stops[0], pin2])
         #expect(mixed.count == 1)
         #expect(mixed.first?.id == stops[0].id)
+    }
+
+    // MARK: - StopClusterPickerViewController
+
+    /// A cluster with 25 stops builds a picker with all 25 rows reachable and searchable.
+    @Test func `Picker displays all 25 stops and filters by name or route`() throws {
+        var largeStops: [Stop] = []
+        for i in 0 ..< 25 {
+            let s = try makeStop(
+                id: "1_cluster_\(i)",
+                code: "C\(i)",
+                name: "Cluster Stop \(i)",
+                direction: i.isMultiple(of: 2) ? "N" : "S"
+            )
+            largeStops.append(s)
+        }
+
+        let picker = StopClusterPickerViewController(stops: largeStops)
+        picker.loadViewIfNeeded()
+
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+        for row in 0 ..< 25 {
+            let cell = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: row, section: 0))
+            #expect(cell.accessibilityLabel?.contains("Cluster Stop \(row)") == true)
+        }
+
+        picker.applyFilter(query: "Cluster Stop 24")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+
+        picker.applyFilter(query: "")
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+    }
+
+    /// VoiceOver: `StopClusterAnnotationView.accessibilityLabel` for a 7-stop cluster
+    /// must contain "7 stops" and the picker prompt.
+    @Test func `Cluster annotation view label contains stop count for 7 stops`() throws {
+        var sevenStops: [Stop] = []
+        for i in 0 ..< 7 {
+            sevenStops.append(try makeStop(id: "1_seven_\(i)", code: "S\(i)", name: "Seven Stop \(i)"))
+        }
+        let clusterAnnotation = cluster(sevenStops)
+        let view = StopClusterAnnotationView(annotation: clusterAnnotation, reuseIdentifier: nil)
+        view.prepareForDisplay()
+
+        let label = try #require(view.accessibilityLabel)
+        #expect(label.contains("7 stops"))
+        #expect(label.contains("— 7 stops, double-tap to pick"))
+    }
+}
+
+@MainActor
+@Suite(.serialized)
+final class StopClusterPresentationTests: OBATestCase {
+
+    private var application: Application!
+
+    override init() async throws {
+        try await super.init()
+        let queue = OperationQueue()
+        let dataLoader = MockDataLoader(testName: name)
+        Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
+        application = buildApplication(queue: queue, dataLoader: dataLoader)
+    }
+
+    private func makeCoLocatedStop(index: Int) throws -> Stop {
+        let dict: [String: Any] = [
+            "id": "1_coloc_\(index)",
+            "code": "\(1000 + index)",
+            "name": "Co-located Stop \(index)",
+            "lat": 47.6062,
+            "lon": -122.3321,
+            "direction": index.isMultiple(of: 2) ? "N" : "S",
+            "locationType": 0,
+            "routeIds": ["1_100"]
+        ]
+        return try Fixtures.dictionaryToModel(type: Stop.self, dictionary: dict)
+    }
+
+    private func hostInWindow(_ controller: UIViewController, size: CGSize = CGSize(width: 402, height: 874)) throws -> UIWindow {
+        let window = UIWindow(windowScene: try testWindowScene())
+        window.frame = CGRect(origin: .zero, size: size)
+        window.rootViewController = controller
+        window.isHidden = false
+        controller.loadViewIfNeeded()
+        return window
+    }
+
+    @Test func `Cluster of 5 or fewer stops presents action sheet and not StopClusterPickerViewController`() throws {
+        let stops = try (0 ..< 5).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller)
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let presented = try #require(controller.presentedViewController)
+        #expect(presented is UIAlertController)
+        #expect(!(presented is StopClusterPickerViewController))
+        if let nav = presented as? UINavigationController {
+            #expect(!nav.viewControllers.contains { $0 is StopClusterPickerViewController })
+        }
+    }
+
+    @Test func `Cluster with 25 stops presents StopClusterPickerViewController with all 25 rows reachable`() throws {
+        let stops = try (0 ..< 25).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller)
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let nav = try #require(controller.presentedViewController as? UINavigationController)
+        let picker = try #require(nav.topViewController as? StopClusterPickerViewController)
+        picker.loadViewIfNeeded()
+
+        #expect(picker.navigationItem.accessibilityLabel == "Select stop — 25 stops nearby")
+        #expect(nav.modalPresentationStyle == StopClusterPickerViewController.modalPresentationStyle(for: UIDevice.current.userInterfaceIdiom))
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+        for row in 0 ..< 25 {
+            let cell = picker.tableView(picker.tableView, cellForRowAt: IndexPath(row: row, section: 0))
+            #expect(cell.accessibilityLabel?.contains("1_100") == true)
+        }
+    }
+
+    @Test func `Cluster with 25 stops presents cleanly on iPhone SE size and selects pageSheet or formSheet by idiom`() throws {
+        // Verify both compact (iPhone) and regular (iPad) presentation styles.
+        // Note: on an iPhone simulator `UIDevice.current.userInterfaceIdiom` is `.phone`,
+        // so the `.pad -> .formSheet` branch is covered via the idiom helper while the
+        // live controller presentation verifies `.pageSheet` on the iPhone SE frame (375x667).
+        #expect(StopClusterPickerViewController.modalPresentationStyle(for: .phone) == .pageSheet)
+        #expect(StopClusterPickerViewController.modalPresentationStyle(for: .pad) == .formSheet)
+
+        let stops = try (0 ..< 25).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller, size: CGSize(width: 375, height: 667))
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let nav = try #require(controller.presentedViewController as? UINavigationController)
+        #expect(nav.modalPresentationStyle == .pageSheet)
+        let picker = try #require(nav.topViewController as? StopClusterPickerViewController)
+        picker.loadViewIfNeeded()
+        picker.view.layoutIfNeeded()
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
     }
 }
 

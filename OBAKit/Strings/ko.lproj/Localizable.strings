@@ -2511,3 +2511,12 @@
 
 /* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
 "trip_suggestion.title_one_line_fmt" = "%@에 탑승 중이신가요?";
+
+/* VoiceOver label for a large cluster pin (>5 stops). %d is the number of stops. */
+"map_controller.stop_cluster.accessibility_label_picker_fmt" = "정류장 그룹 — 정류장 %d개, 두 번 탭하여 선택";
+
+/* Navigation title of the stop cluster picker sheet. %d is replaced by the number of stops. */
+"stop_cluster_picker.nav_title_fmt" = "정류장 선택 — 근처 정류장 %d개";
+
+/* Placeholder text in the stop cluster picker's search bar. */
+"stop_cluster_picker.search_placeholder" = "이름 또는 노선으로 필터링";

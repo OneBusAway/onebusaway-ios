@@ -2511,3 +2511,12 @@
 
 /* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
 "trip_suggestion.title_one_line_fmt" = "Sulla %@?";
+
+/* VoiceOver label for a large cluster pin (>5 stops). %d is the number of stops. */
+"map_controller.stop_cluster.accessibility_label_picker_fmt" = "Gruppo di fermate — %d fermate, tocca due volte per scegliere";
+
+/* Navigation title of the stop cluster picker sheet. %d is replaced by the number of stops. */
+"stop_cluster_picker.nav_title_fmt" = "Seleziona fermata — %d fermate vicine";
+
+/* Placeholder text in the stop cluster picker's search bar. */
+"stop_cluster_picker.search_placeholder" = "Filtra per nome o linea";
