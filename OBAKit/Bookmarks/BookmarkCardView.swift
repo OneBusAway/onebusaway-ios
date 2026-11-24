@@ -30,14 +30,35 @@ struct BookmarkCardView: View {
 
     private var isAccessibilitySize: Bool { typeSize.isAccessibilitySize }
 
-    private var primary: ArrivalDeparture? { row.arrivalDepartures.first }
-    private var chips: [ArrivalDeparture] { Array(row.arrivalDepartures.dropFirst().prefix(2)) }
+    private var primary: ArrivalDeparture? { row.upcomingArrivalDepartures.first }
+    private var chips: [ArrivalDeparture] { Array(row.upcomingArrivalDepartures.dropFirst().prefix(2)) }
+
+    /// Offline, once the saved real-time departures are gone: the timetable's
+    /// next departure and the two after it stand in for `primary` and `chips`.
+    private var scheduledPrimary: ScheduledDeparture? { row.upcomingScheduledDepartures.first }
+    private var scheduledChips: [ScheduledDeparture] { Array(row.upcomingScheduledDepartures.dropFirst().prefix(2)) }
+
+    /// A timetable time has no prediction, so it reads as schedule data.
+    private static let timetableStatus = DepartureStatus(isRealTime: false, scheduleStatus: .unknown, deviationMinutes: 0)
 
     private var routeColor: Color {
-        Color(uiColor: primary?.route.color ?? ThemeColors.shared.brand)
+        Color(uiColor: primary?.route.color ?? scheduledPrimary?.route?.color ?? ThemeColors.shared.brand)
     }
 
     var body: some View {
+        if row.savedArrivalsDate != nil {
+            // Offline, a refresh brings back the same saved or timetable
+            // departures, so nothing else redraws the card as their minutes
+            // count down.
+            TimelineView(.periodic(from: .now, by: 15)) { _ in
+                card
+            }
+        } else {
+            card
+        }
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 10) {
             if isAccessibilitySize {
                 accessibilityPrimaryRow
@@ -46,6 +67,10 @@ struct BookmarkCardView: View {
                 if !chips.isEmpty {
                     FlowLayout(hSpacing: 8, vSpacing: 8) {
                         chipViews
+                    }
+                } else if !scheduledChips.isEmpty {
+                    FlowLayout(hSpacing: 8, vSpacing: 8) {
+                        scheduledChipViews
                     }
                 }
             } else {
@@ -73,6 +98,7 @@ struct BookmarkCardView: View {
                 nameText
                 statusLine
                 destinationLine
+                savedArrivalsLine
             }
             Spacer(minLength: 8)
             if let primary {
@@ -81,6 +107,16 @@ struct BookmarkCardView: View {
                     if !chips.isEmpty {
                         HStack(spacing: 5) {
                             chipViews
+                        }
+                    }
+                }
+                .fixedSize()
+            } else if let scheduledPrimary {
+                VStack(alignment: .trailing, spacing: 6) {
+                    scheduledCountdown(for: scheduledPrimary)
+                    if !scheduledChips.isEmpty {
+                        HStack(spacing: 5) {
+                            scheduledChipViews
                         }
                     }
                 }
@@ -102,16 +138,22 @@ struct BookmarkCardView: View {
                 Spacer(minLength: 8)
                 if let primary {
                     countdownBadge(for: primary)
+                } else if let scheduledPrimary {
+                    scheduledCountdown(for: scheduledPrimary)
                 }
             }
             nameText
             if let primary {
                 timeText(DepartureTimeDisplay(arrivalDeparture: primary, formatters: formatters))
                 statusText(for: DepartureStatus(arrivalDeparture: primary))
+            } else if let scheduledPrimary {
+                scheduledTimeText(scheduledPrimary)
+                statusText(for: Self.timetableStatus)
             } else {
                 loadingText
             }
             destinationLine
+            savedArrivalsLine
         }
     }
 
@@ -149,9 +191,23 @@ struct BookmarkCardView: View {
                     statusText(for: status)
                 }
             }
+        } else if let scheduledPrimary {
+            HStack(spacing: 6) {
+                scheduledTimeText(scheduledPrimary)
+                Text("·")
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+                statusText(for: Self.timetableStatus)
+            }
         } else {
             loadingText
         }
+    }
+
+    private func scheduledTimeText(_ departure: ScheduledDeparture) -> some View {
+        Text(formatters.timeFormatter.string(from: departure.date))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 
     private func timeText(_ display: DepartureTimeDisplay) -> some View {
@@ -199,6 +255,22 @@ struct BookmarkCardView: View {
         return .secondary
     }
 
+    /// "Offline, saved 8:42 AM" while the departures shown are saved ones,
+    /// because the device couldn't reach the server.
+    @ViewBuilder
+    private var savedArrivalsLine: some View {
+        if let text = formatters.savedArrivalsText(for: row) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Image(systemName: "wifi.slash")
+                    .imageScale(.small)
+                Text(text)
+                    .lineLimit(isAccessibilitySize ? nil : 2)
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        }
+    }
+
     /// Placeholder for the status line while there's no primary departure:
     /// "Loading..." until the stop's fetch completes, then an explicit
     /// no-departures message — a fetched-but-empty result must not look like
@@ -209,7 +281,9 @@ struct BookmarkCardView: View {
             Text(text)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-        } else {
+        } else if row.savedArrivalsDate == nil {
+            // Offline with no saved departures left, `savedArrivalsLine` says
+            // it all: "No upcoming departures" would claim more than it knows.
             noDeparturesText
         }
     }
@@ -231,7 +305,9 @@ struct BookmarkCardView: View {
         let status = DepartureStatus(arrivalDeparture: departure)
         return CountdownView(
             minutes: departure.arrivalDepartureMinutes,
-            isRealTime: status.isRealTime,
+            // A saved prediction is no longer live, so it doesn't get the
+            // real-time treatment.
+            isRealTime: status.isRealTime && row.savedArrivalsDate == nil,
             color: Color(uiColor: status.color)
         )
         .padding(.horizontal, 6)
@@ -254,10 +330,24 @@ struct BookmarkCardView: View {
         }
     }
 
+    private var scheduledChipViews: some View {
+        ForEach(Array(scheduledChips.enumerated()), id: \.offset) { _, departure in
+            pill(minutes: max(0, departure.minutes), status: Self.timetableStatus, background: Color(uiColor: Self.timetableStatus.color).opacity(0.14))
+        }
+    }
+
     private func departurePill(for departure: ArrivalDeparture) -> some View {
         let status = DepartureStatus(arrivalDeparture: departure)
         let color = Color(uiColor: status.color)
-        let minutes = max(0, departure.arrivalDepartureMinutes)
+        return pill(
+            minutes: max(0, departure.arrivalDepartureMinutes),
+            status: status,
+            background: flashColor(for: departure, base: color.opacity(0.14))
+        )
+    }
+
+    private func pill(minutes: Int, status: DepartureStatus, background: Color) -> some View {
+        let color = Color(uiColor: status.color)
         return StatusGlyphLabel(
             text: minutes == 0
                 ? OBALoc("stop_page.countdown.now", value: "NOW", comment: "Shown in place of the minutes countdown when the vehicle is departing now")
@@ -269,10 +359,19 @@ struct BookmarkCardView: View {
             .foregroundStyle(color)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(
-                flashColor(for: departure, base: color.opacity(0.14)),
-                in: RoundedRectangle(cornerRadius: 8)
-            )
+            .background(background, in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    /// A timetable departure's countdown: never real-time, and never flashes,
+    /// since nothing about it changes between refreshes.
+    private func scheduledCountdown(for departure: ScheduledDeparture) -> some View {
+        CountdownView(
+            minutes: max(0, departure.minutes),
+            isRealTime: false,
+            color: Color(uiColor: Self.timetableStatus.color)
+        )
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
     }
 
     // MARK: - Highlight Flash

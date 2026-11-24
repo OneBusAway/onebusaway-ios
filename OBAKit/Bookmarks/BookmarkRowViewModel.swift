@@ -66,6 +66,37 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
     /// departures". Always `false` for whole-stop bookmarks (nothing fetches).
     let hasLoadedArrivalData: Bool
 
+    /// When the departures shown were saved, if the device couldn't reach the
+    /// server and saved ones stand in for live data; `nil` while they're live.
+    /// Always `nil` for whole-stop bookmarks.
+    let savedArrivalsDate: Date?
+
+    /// Departures from the stop's saved timetable, for once the saved
+    /// real-time departures run out; see `upcomingScheduledDepartures`.
+    /// Leaves out trips among the saved departures, which carry predictions
+    /// the timetable doesn't. Always empty while online.
+    let scheduledDepartures: [ScheduledDeparture]
+
+    /// The timetable departures to show now: none while a saved real-time
+    /// departure is still to come, and only those that haven't left. Worked
+    /// out when drawn, so the card moves to the timetable the moment its last
+    /// saved departure leaves, not at the next refresh.
+    var upcomingScheduledDepartures: [ScheduledDeparture] {
+        guard upcomingArrivalDepartures.isEmpty else { return [] }
+        return scheduledDepartures.filter { $0.minutes >= 0 }
+    }
+
+    /// Whether the card shows the timetable rather than real-time departures.
+    var isShowingTimetable: Bool { !upcomingScheduledDepartures.isEmpty }
+
+    /// The departures to show now. Offline, the card redraws between refreshes
+    /// as the minutes count down, so a saved departure can leave before the
+    /// next refresh drops it; it goes as soon as it has.
+    var upcomingArrivalDepartures: [ArrivalDeparture] {
+        guard savedArrivalsDate != nil else { return arrivalDepartures }
+        return arrivalDepartures.filter { $0.temporalState != .past }
+    }
+
     /// Trip IDs whose displayed minutes changed in the latest refresh; the card
     /// flashes those badges when displayed.
     let highlightedTripIDs: Set<TripIdentifier>
@@ -89,6 +120,8 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         arrivalDepartures: [ArrivalDeparture],
         highlightedTripIDs: Set<TripIdentifier>,
         hasLoadedArrivalData: Bool = false,
+        savedArrivalsDate: Date? = nil,
+        scheduledDepartures: [ScheduledDeparture] = [],
         destinationLookup: ((ArrivalDeparture) -> DestinationArrivalLookup)? = nil
     ) {
         self.bookmark = bookmark
@@ -110,6 +143,11 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
             self.destinationStopName = bookmark.destinationStopName
 
             switch reachable.first?.1 {
+            case _ where savedArrivalsDate != nil:
+                // Offline: the schedule can't load until the connection is
+                // back, so a spinner would never resolve, and a time cached
+                // from an earlier fetch was worked out from live data.
+                self.destinationStatus = nil
             case .arrives(let arrival):
                 self.destinationStatus = .arrives(arrival)
             case .pending:
@@ -128,6 +166,13 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
             self.destinationStatus = nil
         }
         self.hasLoadedArrivalData = bookmark.isTripBookmark && hasLoadedArrivalData
+        self.savedArrivalsDate = bookmark.isTripBookmark ? savedArrivalsDate : nil
+        if bookmark.isTripBookmark, savedArrivalsDate != nil {
+            let savedTripIDs = Set(self.arrivalDepartures.map(\.tripID))
+            self.scheduledDepartures = scheduledDepartures.filter { !savedTripIDs.contains($0.tripID) }
+        } else {
+            self.scheduledDepartures = []
+        }
         self.highlightedTripIDs = highlightedTripIDs
         self.routesSubtitle = bookmark.isTripBookmark ? nil : Formatters.formattedRoutes(bookmark.stop.routes)
     }
@@ -142,6 +187,8 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
         lhs.routeShortName == rhs.routeShortName &&
         lhs.arrivalDepartures == rhs.arrivalDepartures &&
         lhs.hasLoadedArrivalData == rhs.hasLoadedArrivalData &&
+        lhs.savedArrivalsDate == rhs.savedArrivalsDate &&
+        lhs.scheduledDepartures == rhs.scheduledDepartures &&
         lhs.highlightedTripIDs == rhs.highlightedTripIDs &&
         lhs.routesSubtitle == rhs.routesSubtitle &&
         lhs.destinationStopName == rhs.destinationStopName &&

@@ -24,25 +24,15 @@ struct HomeBookmarkCards: View {
         ScrollView(.horizontal) {
             HStack(alignment: .top, spacing: 10) {
                 ForEach(rows) { row in
-                    Button {
-                        onSelect(row)
-                    } label: {
-                        HomeBookmarkCard(row: row)
-                    }
-                    .buttonStyle(.plain)
-                    // On the button, one element per card, with the same words the
-                    // Bookmarks tab's rows speak, so a bookmark sounds the same
-                    // wherever it is.
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(row.accessibilityLabel(base: formatters.accessibilityLabel(for: row)))
-                    .accessibilityValue(formatters.accessibilityValue(for: row) ?? "")
-                    .accessibilityAddTraits(row.isTripBookmark ? [.isButton, .updatesFrequently] : .isButton)
-                    .contextMenu {
-                        // Pinning is reachable from the card it affects, not only
-                        // from the Bookmarks tab: this row is where the result shows.
-                        BookmarkPinButton(isPinned: row.isPinned) {
-                            onTogglePin(row)
+                    if row.savedArrivalsDate != nil {
+                        // Offline, a refresh brings back the same saved or
+                        // timetable departures, so nothing else redraws the
+                        // card, or its spoken value, as the minutes count down.
+                        TimelineView(.periodic(from: .now, by: 15)) { _ in
+                            cardButton(for: row)
                         }
+                    } else {
+                        cardButton(for: row)
                     }
                 }
             }
@@ -55,6 +45,29 @@ struct HomeBookmarkCards: View {
         .scrollTargetBehavior(.viewAligned)
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+    }
+
+    private func cardButton(for row: BookmarkRowViewModel) -> some View {
+        Button {
+            onSelect(row)
+        } label: {
+            HomeBookmarkCard(row: row)
+        }
+        .buttonStyle(.plain)
+        // On the button, one element per card, with the same words the
+        // Bookmarks tab's rows speak, so a bookmark sounds the same
+        // wherever it is.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(row.accessibilityLabel(base: formatters.accessibilityLabel(for: row)))
+        .accessibilityValue(formatters.accessibilityValue(for: row) ?? "")
+        .accessibilityAddTraits(row.isTripBookmark ? [.isButton, .updatesFrequently] : .isButton)
+        .contextMenu {
+            // Pinning is reachable from the card it affects, not only
+            // from the Bookmarks tab: this row is where the result shows.
+            BookmarkPinButton(isPinned: row.isPinned) {
+                onTogglePin(row)
+            }
+        }
     }
 }
 
@@ -77,11 +90,17 @@ struct HomeBookmarkCard: View {
         colorScheme.showsSheetGlass ? Color(.secondarySystemBackground) : Color(.secondarySystemGroupedBackground)
     }
 
-    private var primary: ArrivalDeparture? { row.arrivalDepartures.first }
+    private var primary: ArrivalDeparture? { row.upcomingArrivalDepartures.first }
+
+    /// Offline, once the saved real-time departures are gone, the timetable's
+    /// next departure stands in for `primary`.
+    private var scheduledPrimary: ScheduledDeparture? { row.upcomingScheduledDepartures.first }
 
     /// The departures after the next, as bare minutes: "23, 38".
     private var laterMinutes: String? {
-        let later = row.arrivalDepartures.dropFirst().prefix(2).map { max(0, $0.arrivalDepartureMinutes) }
+        let later = row.isShowingTimetable
+            ? row.upcomingScheduledDepartures.dropFirst().prefix(2).map { max(0, $0.minutes) }
+            : row.upcomingArrivalDepartures.dropFirst().prefix(2).map { max(0, $0.arrivalDepartureMinutes) }
         guard !later.isEmpty else { return nil }
         return later.map { $0.formatted() }.formatted(.list(type: .and, width: .narrow))
     }
@@ -101,6 +120,13 @@ struct HomeBookmarkCard: View {
                 .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
+            if let savedText = formatters.savedArrivalsText(for: row) {
+                Label(savedText, systemImage: "wifi.slash")
+                    .labelStyle(.titleAndIcon)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
             footer
         }
         .padding(12)
@@ -115,7 +141,7 @@ struct HomeBookmarkCard: View {
         if row.isTripBookmark {
             RouteBadgeView(
                 routeShortName: row.routeShortName ?? row.name,
-                routeColor: Color(uiColor: primary?.route.color ?? ThemeColors.shared.brand),
+                routeColor: Color(uiColor: primary?.route.color ?? scheduledPrimary?.route?.color ?? ThemeColors.shared.brand),
                 size: 32
             )
         } else {
@@ -137,7 +163,7 @@ struct HomeBookmarkCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 CountdownView(
                     minutes: max(0, primary.arrivalDepartureMinutes),
-                    isRealTime: status.isRealTime,
+                    isRealTime: status.isRealTime && row.savedArrivalsDate == nil,
                     color: Color(uiColor: status.color)
                 )
                 if let laterMinutes {
@@ -148,7 +174,23 @@ struct HomeBookmarkCard: View {
                         .lineLimit(1)
                 }
             }
-        } else if row.isTripBookmark {
+        } else if let scheduledPrimary {
+            // A timetable time has no prediction: grey, with the clock glyph.
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                CountdownView(
+                    minutes: max(0, scheduledPrimary.minutes),
+                    isRealTime: false,
+                    color: .secondary
+                )
+                if let laterMinutes {
+                    Text(laterMinutes)
+                        .font(.footnote)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        } else if row.isTripBookmark, row.savedArrivalsDate == nil {
             Text(BookmarkCardView.noDeparturesMessage(hasLoadedArrivalData: row.hasLoadedArrivalData))
                 .font(.footnote)
                 .foregroundStyle(.secondary)

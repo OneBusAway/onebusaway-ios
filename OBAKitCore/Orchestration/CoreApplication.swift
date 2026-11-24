@@ -143,6 +143,10 @@ open class CoreApplication: NSObject,
 
     public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults, regionsService: regionsService)
 
+    /// Where bookmarked stops' departures and timetables are saved for
+    /// offline use; `nil` when this app doesn't save them.
+    public var savedArrivals: SavedArrivalsStore? { config.savedArrivals }
+
     // MARK: - Stop Cache
 
     /// The SQLite database for caching transit stops.

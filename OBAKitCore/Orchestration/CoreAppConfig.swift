@@ -48,6 +48,11 @@ open class CoreAppConfig: NSObject {
     /// Application Support. Injectable so tests never share that file.
     public let stopCacheDatabase: StopCacheDatabase?
 
+    /// Where bookmarked stops' departures and timetables are saved for offline
+    /// use, or `nil` to neither save them nor fall back to them. Injectable so
+    /// tests never share the app's Caches folder.
+    public let savedArrivals: SavedArrivalsStore?
+
     /// The network retry policy for transient errors on idempotent REST requests.
     public let retryPolicy: RetryPolicy
 
@@ -75,6 +80,7 @@ open class CoreAppConfig: NSObject {
             fixedRegionName: appBundle.fixedRegionName,
             fixedRegionOBABaseURL: appBundle.fixedRegionOBABaseURL,
             defaultArrivalDepartureFilter: appBundle.defaultArrivalDepartureFilter,
+            savedArrivals: .appDefault,
             retryPolicy: retryPolicy
         )
     }
@@ -90,6 +96,7 @@ open class CoreAppConfig: NSObject {
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     /// - Parameter onDemandSupport: Where the REST service records servers that lack `/api/ondemand`.
     /// - Parameter stopCacheDatabase: The stop cache database, or `nil` for the shared file.
+    /// - Parameter savedArrivals: Where bookmarks' departures are saved for offline use, or `nil` for none.
     /// - Parameter retryPolicy: The retry policy for network requests.
     public init(
         regionsBaseURL: URL?,
@@ -106,6 +113,7 @@ open class CoreAppConfig: NSObject {
         defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all,
         onDemandSupport: OnDemandSupport = .shared,
         stopCacheDatabase: StopCacheDatabase? = nil,
+        savedArrivals: SavedArrivalsStore? = nil,
         retryPolicy: RetryPolicy = .standard
     ) {
         self.regionsBaseURL = regionsBaseURL
@@ -122,6 +130,7 @@ open class CoreAppConfig: NSObject {
         self.defaultArrivalDepartureFilter = defaultArrivalDepartureFilter
         self.onDemandSupport = onDemandSupport
         self.stopCacheDatabase = stopCacheDatabase
+        self.savedArrivals = savedArrivals
         self.retryPolicy = retryPolicy
     }
 }

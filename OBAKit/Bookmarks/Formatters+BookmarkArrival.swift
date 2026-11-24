@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 6/11/20.
 //
 
+import Foundation
 import OBAKitCore
 
 extension Formatters {
@@ -32,8 +33,23 @@ extension Formatters {
     func accessibilityValue(for bookmarkArrivalData: BookmarkRowViewModel) -> String? {
         guard bookmarkArrivalData.isTripBookmark else { return nil }
 
+        // Offline, the departures are saved ones, so say so before reading
+        // them out. With none left to read, that's all there is to say: "No
+        // upcoming departures" would claim more than saved data can.
+        let savedText = savedArrivalsText(for: bookmarkArrivalData)
+        if let savedText, let timetableText = scheduledDeparturesAccessibilityValue(for: bookmarkArrivalData) {
+            return savedText + ". " + timetableText
+        }
+        if let savedText, bookmarkArrivalData.upcomingArrivalDepartures.isEmpty {
+            return savedText + "."
+        }
+
         guard var value = departuresAccessibilityValue(for: bookmarkArrivalData) else {
             return nil
+        }
+
+        if let savedText {
+            value = savedText + ". " + value
         }
 
         // Spoken as its own sentence after the departures, matching the card,
@@ -43,6 +59,34 @@ extension Formatters {
         }
 
         return value
+    }
+
+    /// The line a trip bookmark's card shows while its departures are saved
+    /// ones because the device is offline, e.g. "Offline, saved 8:42 AM".
+    /// `nil` while the departures are live.
+    func savedArrivalsText(for row: BookmarkRowViewModel) -> String? {
+        guard let savedAt = row.savedArrivalsDate else { return nil }
+        if row.isShowingTimetable {
+            return OBALoc("bookmark_card.offline_timetable", value: "Offline, scheduled times", comment: "Shown on a bookmark card when the device is offline, the departures the app saved have all left, and the times shown come from the stop's saved timetable instead.")
+        }
+        let format = OBALoc("bookmark_card.offline_saved_fmt", value: "Offline, saved %@", comment: "Shown on a bookmark card when the device is offline and the departures shown are the last ones the app saved. The placeholder is the time they were saved, e.g. 'Offline, saved 8:42 AM'.")
+        return String(format: format, savedAtString(savedAt))
+    }
+
+    /// The save time, with the date in front when it wasn't today, so
+    /// "8:42 AM" can't be mistaken for this morning.
+    private func savedAtString(_ savedAt: Date) -> String {
+        var calendar = Calendar.current
+        calendar.timeZone = timeFormatter.timeZone
+        if calendar.isDateInToday(savedAt) {
+            return timeFormatter.string(from: savedAt)
+        }
+        let formatter = DateFormatter()
+        formatter.locale = timeFormatter.locale
+        formatter.timeZone = timeFormatter.timeZone
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: savedAt)
     }
 
     /// The line a destination bookmark's card shows about arriving at its
@@ -78,9 +122,36 @@ extension Formatters {
         }
     }
 
+    /// The timetable part of `accessibilityValue(for:)`, e.g. "scheduled to
+    /// depart in 6 minutes at 8:55 PM. Following two departures in 21 minutes
+    /// and 36 minutes."; `nil` when the card isn't showing the timetable.
+    private func scheduledDeparturesAccessibilityValue(for row: BookmarkRowViewModel) -> String? {
+        let timetable = row.upcomingScheduledDepartures
+        guard let first = timetable.first else { return nil }
+
+        let firstMinutes = max(0, first.minutes)
+        var value = accessibilityValueForArrivalDeparture(
+            arrivalDepartureDate: first.date,
+            arrivalDepartureMinutes: firstMinutes,
+            arrivalDepartureStatus: .departing,
+            temporalState: firstMinutes == 0 ? .present : .future,
+            scheduleStatus: .unknown
+        )
+
+        let following = timetable.dropFirst().prefix(2).map { max(0, $0.minutes) }
+        if following.count == 2 {
+            let format = OBALoc("voiceover.bookmarkarrivaldata.value.followingtwodepartures_fmt", value: "Following two departures in %d minutes and %d minutes.", comment: "Voiceover text describing the two additional departures in the near-future, regardless of realtime data availability.")
+            value += " " + String(format: format, following[0], following[1])
+        } else if let next = following.first {
+            let format = OBALoc("voiceover.bookmarkarrivaldata.value.followingonedeparture_fmt", value: "Following departure in %d minutes.", comment: "Voiceover text describing the one additional departure in the near-future, regardless of realtime data availability.")
+            value += " " + String(format: format, next)
+        }
+        return value
+    }
+
     /// The departures part of `accessibilityValue(for:)`.
     private func departuresAccessibilityValue(for bookmarkArrivalData: BookmarkRowViewModel) -> String? {
-        let arrivalDepartures = bookmarkArrivalData.arrivalDepartures
+        let arrivalDepartures = bookmarkArrivalData.upcomingArrivalDepartures
         guard let firstArrivalDeparture = arrivalDepartures.first else {
             return OBALoc("voiceover.bookmarkarrivaldata.value.noupcomingdepartures_fmt", value: "No upcoming departures", comment: "Voiceover text describing no departures in the near-future.")
         }

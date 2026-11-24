@@ -116,7 +116,16 @@ extension APIService {
         timeoutPolicy: RequestTimeoutPolicy = .interactive
     ) async throws -> (T, HTTPURLResponse) {
         let (data, response) = try await self.getData(for: url, cachePolicy: cachePolicy, timeoutPolicy: timeoutPolicy)
+        return (try decode(decodeAs, from: data, response: response, url: url, using: decoder), response)
+    }
 
+    private nonisolated func decode<T: Decodable>(
+        _ decodeAs: T.Type,
+        from data: Data,
+        response: HTTPURLResponse,
+        url: URL,
+        using decoder: DataDecoder
+    ) throws -> T {
         guard response.hasJSONContentType else {
             logger.error("Failed network request for \(ErrorReport.stripQuery(url), privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
             throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: response.contentType)
@@ -130,7 +139,7 @@ extension APIService {
         }
 
         do {
-            return (try decoder.decode(T.self, from: data), response)
+            return try decoder.decode(T.self, from: data)
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             logger.error("Decoder failed for \(ErrorReport.stripQuery(url), privacy: .public): \(message, privacy: .public)")
@@ -153,6 +162,20 @@ extension APIService {
         let (decoded, response) = try await getDataAndResponse(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder, cachePolicy: cachePolicy, timeoutPolicy: timeoutPolicy)
         stampServerClock(on: decoded, from: response)
         return decoded
+    }
+
+    /// `getData(for:decodeRESTAPIResponseAs:...)`, also returning the response
+    /// body as received, for a caller that keeps it to decode again later.
+    nonisolated func getDataKeepingBody<T: Decodable>(
+        for url: URL,
+        decodeRESTAPIResponseAs decodeType: T.Type,
+        using decoder: DataDecoder,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) async throws -> (RESTAPIResponse<T>, Data) {
+        let (data, response) = try await self.getData(for: url, cachePolicy: cachePolicy)
+        let decoded = try decode(RESTAPIResponse<T>.self, from: data, response: response, url: url, using: decoder)
+        stampServerClock(on: decoded, from: response)
+        return (decoded, data)
     }
 
     /// Records `response`'s `ServerClockSample`: its `currentTime` against the

@@ -82,6 +82,12 @@
 /* Shown on a trip bookmark card when none of the upcoming trips on the route stop at the bookmark's destination stop. The placeholder is the destination stop's name. */
 "bookmark_card.destination.not_served_fmt" = "Najbliższe kursy nie zatrzymują się na %@";
 
+/* Shown on a bookmark card when the device is offline and the departures shown are the last ones the app saved. The placeholder is the time they were saved, e.g. 'Offline, saved 8:42 AM'. */
+"bookmark_card.offline_saved_fmt" = "Offline, zapisano o %@";
+
+/* Shown on a bookmark card when the device is offline, the departures the app saved have all left, and the times shown come from the stop's saved timetable instead. */
+"bookmark_card.offline_timetable" = "Offline, godziny z rozkładu";
+
 /* Context menu action that pins a bookmark to the top of the home sheet's bookmarks section. */
 "bookmarks_controller.context_menu.pin" = "Przypnij";
 
