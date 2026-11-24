@@ -388,7 +388,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     // MARK: - State Management
 
     /// Whether continuous location updates are actively running on the underlying manager.
-    public private(set) var isUpdatingLocation: Bool = false
+    private(set) var isUpdatingLocation: Bool = false
 
     /// Whether continuous location updates were initiated by an active stream subscriber.
     private var streamStartedLocationUpdates: Bool = false
@@ -432,6 +432,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         isUpdatingLocation = false
         streamStartedLocationUpdates = false
         failOneShotRequests(with: LocationServiceError.notAuthorized)
+        finishLocationStreamSubscribers()
         locationManager.stopUpdatingLocation()
     }
 
@@ -472,6 +473,14 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     private func notifyStreamSubscribers(_ location: CLLocation) {
         for continuation in locationStreamContinuations.values {
             continuation.yield(location)
+        }
+    }
+
+    private func finishLocationStreamSubscribers() {
+        let continuations = Array(locationStreamContinuations.values)
+        locationStreamContinuations.removeAll()
+        for continuation in continuations {
+            continuation.finish()
         }
     }
 
@@ -718,6 +727,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         }
 
         failOneShotRequests(with: error)
+        finishLocationStreamSubscribers()
         notifyDelegatesErrorReceived(error)
     }
 }

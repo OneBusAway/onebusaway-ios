@@ -237,4 +237,57 @@ final class LocationServiceAsyncStreamTests {
         #expect(!service.isUpdatingLocation)
         #expect(!mock.locationUpdatesStarted)
     }
+
+    // MARK: - Stream Termination On Stop and Error
+
+    @Test func `Stream finishes and waiter returns when location service stops updating location`() async {
+        let (mock, service) = makeService(startsUpdatesOnAuthorization: false)
+        mock.requestWhenInUseAuthorization()
+
+        let stream = service.locationStream()
+        let waiterTask = Task { @MainActor in
+            var fixCount = 0
+            for await _ in stream {
+                fixCount += 1
+            }
+            return fixCount
+        }
+
+        await poll(until: { service.locationStreamSubscriberCount == 1 }, "subscriber did not register")
+        #expect(service.locationStreamSubscriberCount == 1)
+        #expect(service.isUpdatingLocation)
+
+        // Stopping location updates finishes the stream, unblocking the waiter
+        service.stopUpdatingLocation()
+
+        let fixCount = await waiterTask.value
+        #expect(fixCount == 0)
+        #expect(service.locationStreamSubscriberCount == 0)
+        #expect(!service.isUpdatingLocation)
+    }
+
+    @Test func `Stream finishes and waiter returns when location service receives error`() async {
+        let (mock, service) = makeService(startsUpdatesOnAuthorization: false)
+        mock.requestWhenInUseAuthorization()
+
+        let stream = service.locationStream()
+        let waiterTask = Task { @MainActor in
+            var fixCount = 0
+            for await _ in stream {
+                fixCount += 1
+            }
+            return fixCount
+        }
+
+        await poll(until: { service.locationStreamSubscriberCount == 1 }, "subscriber did not register")
+        #expect(service.locationStreamSubscriberCount == 1)
+        #expect(service.isUpdatingLocation)
+
+        // Delivering didFailWithError finishes the stream, unblocking the waiter
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.locationUnknown))
+
+        let fixCount = await waiterTask.value
+        #expect(fixCount == 0)
+        #expect(service.locationStreamSubscriberCount == 0)
+    }
 }
