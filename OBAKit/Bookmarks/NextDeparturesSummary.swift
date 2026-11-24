@@ -118,7 +118,7 @@ nonisolated enum NextDeparturesSummary {
     static func upcoming(_ departures: [StopDeparture], now: Date) -> [(departure: StopDeparture, minutes: Int)] {
         Array(departures
             .sorted { $0.departure.date < $1.departure.date }
-            .map { (departure: $0, minutes: Int($0.departure.date.timeIntervalSince(now) / 60)) }
+            .map { (departure: $0, minutes: Int(floor($0.departure.date.timeIntervalSince(now) / 60))) }
             .filter { $0.minutes >= 0 }
             .prefix(maximumDepartures))
     }
@@ -136,10 +136,11 @@ nonisolated enum NextDeparturesSummary {
     /// "550 to Seattle departs in 5 minutes. Then in 17 minutes and in 32 minutes."
     /// `nil` when nothing in `dates` is still to come.
     static func departuresSentence(routeShortName: String, headsign: String, dates: [Date], now: Date) -> String? {
-        // Truncating division matches `ArrivalDeparture.temporalState`: anything
-        // under a minute either side of `now` is "now", earlier is gone.
+        // Floor matches `ArrivalDeparture.temporalState`: anything under a minute
+        // to the past is gone; the minute still in progress, or in progress of
+        // starting, reads "now".
         let minutes = dates.sorted()
-            .map { Int($0.timeIntervalSince(now) / 60) }
+            .map { Int(floor($0.timeIntervalSince(now) / 60)) }
             .filter { $0 >= 0 }
             .prefix(maximumDepartures)
 
