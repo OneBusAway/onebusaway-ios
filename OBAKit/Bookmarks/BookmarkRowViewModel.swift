@@ -143,12 +143,13 @@ struct BookmarkRowViewModel: Identifiable, Equatable {
             self.destinationStopName = bookmark.destinationStopName
 
             switch reachable.first?.1 {
+            case _ where savedArrivalsDate != nil:
+                // Offline: the schedule can't load until the connection is
+                // back, so a spinner would never resolve, and a time cached
+                // from an earlier fetch was worked out from live data.
+                self.destinationStatus = nil
             case .arrives(let arrival):
                 self.destinationStatus = .arrives(arrival)
-            case .pending where savedArrivalsDate != nil:
-                // Offline: the schedule can't load until the connection is
-                // back, so a spinner would never resolve.
-                self.destinationStatus = nil
             case .pending:
                 self.destinationStatus = .loading
             case .unavailable:

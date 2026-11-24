@@ -63,7 +63,7 @@ final class SavedArrivalsTests: OBATestCase {
     /// `headsign` and running at each of `minutesFromNow`, and the second
     /// route's first trip `otherRouteMinutes` from now. Every other trip in the
     /// fixture is from 2025, so has left.
-    private func scheduleBody(routeID: String, headsign: String, departingInMinutes minutesFromNow: [Double], otherRouteMinutes: Double = 3) throws -> Data {
+    private func scheduleBody(routeID: String, headsign: String, departingInMinutes minutesFromNow: [Double], otherRouteMinutes: Double = 3, tripIDs: [String]? = nil) throws -> Data {
         var root = try #require(try JSONSerialization.jsonObject(with: Fixtures.loadData(file: scheduleFixture)) as? [String: Any])
         var data = try #require(root["data"] as? [String: Any])
         var entry = try #require(data["entry"] as? [String: Any])
@@ -84,7 +84,7 @@ final class SavedArrivalsTests: OBATestCase {
         firstDirections[0]["tripHeadsign"] = headsign
         firstDirections[0]["scheduleStopTimes"] = minutesFromNow.enumerated().map { index, minutes in
             var stopTime = retimed(template, minutes: minutes)
-            stopTime["tripId"] = "trip_\(index)"
+            stopTime["tripId"] = tripIDs?[index] ?? "trip_\(index)"
             return stopTime
         }
         first["stopRouteDirectionSchedules"] = firstDirections
@@ -419,6 +419,29 @@ final class SavedArrivalsTests: OBATestCase {
         #expect(fallback.scheduledDepartures.allSatisfy { $0.minutes >= 0 })
     }
 
+    /// A saved trip that has left is dropped from the departures, but its
+    /// prediction still counts: if it left ahead of its timetable time, that
+    /// time must not bring it back.
+    @Test func `The timetable skips saved trips that have already left`() async throws {
+        let leftTripID = "1_39683959"
+        store.save(try savedBody(departingInMinutes: [-1]), stopID: stopID, regionID: pugetSoundRegionIdentifier)
+        let schedule = try scheduleBody(routeID: "1_A", headsign: "Downtown", departingInMinutes: [2, 20], tripIDs: [leftTripID, "later"])
+        store.save(schedule, kind: .schedule, stopID: stopID, regionID: pugetSoundRegionIdentifier)
+        let dataLoader = MockDataLoader(testName: name)
+        mockArrivalsError(dataLoader, URLError(.notConnectedToInternet))
+
+        let result = await loadOnce(BookmarkArrivalsLoader(savedArrivals: store), service: buildRESTService(dataLoader: dataLoader))
+
+        guard case .failure(let error) = result else {
+            Issue.record("Expected a failure, got \(String(describing: result))")
+            return
+        }
+        let fallback = try #require(error as? SavedArrivalsFallback)
+        #expect(fallback.arrivals.isEmpty)
+        #expect(fallback.scheduledDepartures.contains { $0.tripID == leftTripID } == false)
+        #expect(fallback.scheduledDepartures.contains { $0.tripID == "later" })
+    }
+
     // MARK: - BookmarkDataLoader
 
     @MainActor
@@ -538,6 +561,33 @@ final class SavedArrivalsTests: OBATestCase {
         #expect(loader.dataForKey(key).isEmpty)
     }
 
+    /// A saved departure must not stay on the card, now looking live, when the
+    /// first fetch back online has nothing for the bookmark.
+    @Test @MainActor
+    func `Back online, an empty response clears the saved departures`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: OperationQueue(), dataLoader: dataLoader)
+        let bookmark = try makeTripBookmark(application: application)
+        let key = try #require(TripBookmarkKey(bookmark: bookmark))
+        let regionID = try #require(application.apiService?.regionIdentifier)
+
+        store.save(try savedBody(departingInMinutes: [8]), stopID: bookmark.stopID, regionID: regionID)
+        mockArrivalsError(dataLoader, URLError(.notConnectedToInternet))
+        let loader = BookmarkDataLoader(application: application, delegate: Delegate(), bookmarkProvider: { [bookmark] }, autoRefreshes: false, savedArrivals: store)
+        await loader.loadDataAndWait()
+        #expect(loader.dataForKey(key).isEmpty == false)
+
+        let empty = try savedBody(departingInMinutes: [])
+        dataLoader.replaceMappedResponses { [arrivalsPath] mock in
+            mock.mock(data: empty) { request in request.url?.path.contains(arrivalsPath) ?? false }
+            self.mockSchedule(mock)
+        }
+        await loader.loadDataAndWait()
+
+        #expect(loader.savedArrivalsDate(forStopID: bookmark.stopID) == nil)
+        #expect(loader.dataForKey(key).isEmpty)
+    }
+
     // MARK: - Row model and text
 
     @Test @MainActor
@@ -565,6 +615,25 @@ final class SavedArrivalsTests: OBATestCase {
 
         #expect(live.destinationStatus == .loading)
         #expect(offline.destinationStatus == nil)
+    }
+
+    /// A destination time cached from an earlier online fetch is an estimate
+    /// for live data, so it stays off the card offline like the spinner does.
+    @Test @MainActor
+    func `Offline, a cached destination arrival is hidden too`() throws {
+        let arrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: fixtureFile).arrivalsAndDepartures
+        let arrivalDeparture = try #require(arrivals.first)
+        let destinationStop = try #require(try Fixtures.loadSomeStops().first)
+        let bookmark = Bookmark(name: "Home", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDeparture, destinationStop: destinationStop)
+        try #require(bookmark.hasDestination)
+        let arrival = DestinationArrival(arrivalDate: Date(), scheduledArrivalDate: Date(), isRealTime: true)
+
+        let live = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [arrivalDeparture], highlightedTripIDs: [], destinationLookup: { _ in .arrives(arrival) })
+        let offline = BookmarkRowViewModel(bookmark: bookmark, arrivalDepartures: [arrivalDeparture], highlightedTripIDs: [], savedArrivalsDate: Date(), destinationLookup: { _ in .arrives(arrival) })
+
+        #expect(live.destinationStatus == .arrives(arrival))
+        #expect(offline.destinationStatus == nil)
+        #expect(offline.destinationStopName == bookmark.destinationStopName)
     }
 
     @Test @MainActor

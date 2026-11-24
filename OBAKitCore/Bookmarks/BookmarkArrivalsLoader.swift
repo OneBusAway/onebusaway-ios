@@ -164,10 +164,13 @@ public struct BookmarkArrivalsLoader: Sendable {
 
         // A live fetch asks for no minutes before now, so it never returns a
         // departure that has left. Saved ones age, so drop those that have.
+        // Their trips still count for the timetable: one that left ahead of
+        // its timetable time must not come back as scheduled.
+        let savedTripIDs = Set((liveArrivals ?? []).map(\.tripID))
         return SavedArrivalsFallback(
             arrivals: (liveArrivals ?? []).filter { $0.temporalState != .past },
             savedAt: savedAt,
-            scheduledDepartures: (schedule?.scheduledDepartures ?? []).filter { $0.minutes >= 0 },
+            scheduledDepartures: (schedule?.scheduledDepartures ?? []).filter { $0.minutes >= 0 && !savedTripIDs.contains($0.tripID) },
             underlyingError: error
         )
     }
