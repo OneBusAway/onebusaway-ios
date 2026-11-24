@@ -259,6 +259,10 @@ public class BookmarkDataLoader: NSObject {
         switch result {
         case .success(let arrivals):
             fetchedStopIDs.insert(stopID)
+            // Replace the stop's departures, don't merge: a trip the response
+            // no longer lists has left, and would otherwise stay on the card
+            // counting down into negative minutes.
+            tripBookmarkKeys = tripBookmarkKeys.filter { $0.key.stopID != stopID }
             for (key, deps) in arrivals.tripKeyGroupedElements {
                 tripBookmarkKeys[key] = deps
             }

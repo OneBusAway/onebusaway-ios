@@ -192,6 +192,46 @@ final class BookmarkDataLoaderTests: OBATestCase {
         #expect(delegate.updateCount == 1)
     }
 
+    /// A departure the server stops returning has left. It must drop off the
+    /// card, or the card keeps counting it down into negative minutes.
+    @Test @MainActor
+    func `Departures missing from a refresh are dropped`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        let application = buildApplication(queue: queue, dataLoader: dataLoader)
+        let isArrivalsRequest: @Sendable (URLRequest) -> Bool = { $0.url?.path.contains("/api/where/arrivals-and-departures-for-stop") ?? false }
+
+        let data = Fixtures.loadData(file: "arrivals-and-departures-for-stop-1_10914.json")
+        dataLoader.mock(data: data, matcher: isArrivalsRequest)
+
+        let stopArrivals = try Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures-for-stop-1_10914.json")
+        let arrivalDeparture = try #require(stopArrivals.arrivalsAndDepartures.first)
+        let bookmark = Bookmark(name: "Trip", regionIdentifier: pugetSoundRegionIdentifier, arrivalDeparture: arrivalDeparture)
+        let tripKey = try #require(TripBookmarkKey(bookmark: bookmark))
+
+        let loader = BookmarkDataLoader(application: application, delegate: RecordingDelegate(), bookmarkProvider: { [bookmark] }, autoRefreshes: false)
+
+        await loader.loadDataAndWait()
+        #expect(loader.dataForKey(tripKey).isEmpty == false)
+
+        // Same stop, but the bus has gone: the response no longer lists it.
+        var payload = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var payloadData = try #require(payload["data"] as? [String: Any])
+        var entry = try #require(payloadData["entry"] as? [String: Any])
+        entry["arrivalsAndDepartures"] = [[String: Any]]()
+        payloadData["entry"] = entry
+        payload["data"] = payloadData
+        let departedData = try JSONSerialization.data(withJSONObject: payload)
+
+        dataLoader.replaceMappedResponses { loader in
+            self.stubRegions(dataLoader: loader)
+            loader.mock(data: departedData, matcher: isArrivalsRequest)
+        }
+        await loader.loadDataAndWait()
+
+        #expect(loader.hasFetchedData(forStopID: arrivalDeparture.stopID))
+        #expect(loader.dataForKey(tripKey).isEmpty)
+    }
+
     /// A stop bookmark reserves a slot and never fetches; it must release it.
     @Test @MainActor
     func `A batch of only stop bookmarks completes without a request`() async throws {
