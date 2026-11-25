@@ -161,13 +161,19 @@ extension StopPageContent {
     /// Convenience for the view layer, which holds the view model.
     @MainActor
     init(viewModel: StopViewModel) {
+        // A saved departure saved with a prediction renders as schedule data
+        // like the rest, and the timetable already skips trips the saved
+        // departures cover. The "Scheduled only" filter would remove it from
+        // the list too, so offline the rider would see neither: bypass it
+        // while saved data stands in for live.
+        let departureFilter: ArrivalDepartureFilter = viewModel.savedArrivals != nil && viewModel.arrivalDepartureFilter == .scheduledOnly ? .all : viewModel.arrivalDepartureFilter
         self.init(
             stop: viewModel.stop,
             allDepartures: viewModel.stopArrivals?.arrivalsAndDepartures ?? viewModel.savedArrivals?.arrivals ?? [],
             hasLoadedArrivals: viewModel.stopArrivals != nil || viewModel.savedArrivals != nil,
             preferences: viewModel.stopPreferences,
             isListFiltered: viewModel.isListFiltered,
-            arrivalDepartureFilter: viewModel.arrivalDepartureFilter,
+            arrivalDepartureFilter: departureFilter,
             isLoading: viewModel.isLoading,
             hasError: viewModel.operationError != nil,
             isBrokenBookmark: viewModel.isBrokenBookmark,

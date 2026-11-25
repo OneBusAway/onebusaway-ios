@@ -441,9 +441,11 @@ class StopViewModel: ObservableObject {
     /// Shows what was saved for the stop when `error` means the device
     /// couldn't reach the server, as the bookmark cards do. Only while nothing
     /// live has loaded: departures this page already fetched are at least as
-    /// fresh, and stay under the stale-arrivals notice.
+    /// fresh, and stay under the stale-arrivals notice. Nor while the server
+    /// has said the stop is gone: saved departures for a stop that no longer
+    /// exists would come back the moment the phone drops offline.
     private func showSavedArrivalsIfOffline(after error: Error, apiService: RESTAPIService) {
-        guard stopArrivals == nil, let store = environment.savedArrivals else { return }
+        guard !stopIsMissing, stopArrivals == nil, let store = environment.savedArrivals else { return }
         savedArrivals = BookmarkArrivalsLoader(savedArrivals: store)
             .savedArrivalsFallback(stopID: stopID, error: error, using: apiService)
         updateStatus()

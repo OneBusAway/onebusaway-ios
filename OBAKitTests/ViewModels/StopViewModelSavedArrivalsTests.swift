@@ -243,6 +243,49 @@ final class StopViewModelSavedArrivalsTests: OBATestCase {
         #expect(StopPageContent(viewModel: viewModel).scheduledDepartures.isEmpty)
     }
 
+    /// Saved rows all render as schedule data, so the "Scheduled only" filter
+    /// must not remove the ones that were saved with a prediction: the
+    /// timetable already skips their trips, and offline the rider would see
+    /// neither departure nor timetable entry.
+    @Test @MainActor
+    func `The scheduled only filter keeps the saved departures`() async throws {
+        save(arrivals: try arrivalsBody(departingInMinutes: [6, 20]))
+        let dataLoader = MockDataLoader(testName: name)
+        mockArrivalsError(dataLoader, URLError(.notConnectedToInternet))
+        let viewModel = makeViewModel(dataLoader: dataLoader, savedArrivals: store)
+        viewModel.updateArrivalDepartureFilter(.scheduledOnly)
+
+        await viewModel.refresh()
+
+        let saved = try #require(viewModel.savedArrivals)
+        let allPredicted = saved.arrivals.allSatisfy(\.predicted)
+        #expect(allPredicted, "fixture premise: the saved departures were predicted")
+        #expect(StopPageContent(viewModel: viewModel).departures.count == 2)
+    }
+
+    /// A stop the server said is gone stays gone: saved departures for it
+    /// must not come back once the phone drops offline.
+    @Test @MainActor
+    func `A missing stop doesn't come back from the saved departures`() async throws {
+        save(arrivals: try arrivalsBody(departingInMinutes: [5]))
+        let dataLoader = MockDataLoader(testName: name)
+        mockArrivalsStatus(dataLoader, statusCode: 404)
+        let viewModel = makeViewModel(dataLoader: dataLoader, savedArrivals: store)
+
+        await viewModel.refresh()
+        #expect(viewModel.stopIsMissing)
+        #expect(viewModel.savedArrivals == nil)
+
+        dataLoader.replaceMappedResponses { loader in
+            mockSupportingCalls(loader)
+            mockArrivalsError(loader, URLError(.notConnectedToInternet))
+        }
+        await viewModel.refresh()
+
+        #expect(viewModel.stopIsMissing)
+        #expect(viewModel.savedArrivals == nil)
+    }
+
     @Test @MainActor
     func `Offline with nothing saved still shows the error`() async {
         let dataLoader = MockDataLoader(testName: name)

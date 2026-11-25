@@ -27,9 +27,13 @@ struct StopSavedTimetableSection: View {
         Section {
             // Offline, every refresh brings back the same timetable, so nothing
             // else redraws these rows as their minutes count down.
-            TimelineView(.periodic(from: .now, by: 15)) { _ in
-                ForEach(departures.filter { $0.minutes >= 0 }, id: \.self) { departure in
-                    StopSavedTimetableRow(departure: departure, status: Self.status)
+            TimelineView(.periodic(from: .now, by: 15)) { context in
+                ForEach(departures.filter { $0.minutes(from: context.date) >= 0 }, id: \.self) { departure in
+                    StopSavedTimetableRow(
+                        departure: departure,
+                        minutes: departure.minutes(from: context.date),
+                        status: Self.status
+                    )
                 }
             }
         } header: {
@@ -42,6 +46,7 @@ struct StopSavedTimetableSection: View {
 
 private struct StopSavedTimetableRow: View {
     let departure: ScheduledDeparture
+    let minutes: Int
     let status: DepartureStatus
 
     @Environment(\.obaFormatters) private var formatters
@@ -53,7 +58,6 @@ private struct StopSavedTimetableRow: View {
     }
 
     var body: some View {
-        let minutes = max(0, departure.minutes)
         HStack(alignment: .center, spacing: StopTripSpacing.hStack(compactMode)) {
             RouteBadgeView(
                 routeShortName: routeName,
