@@ -12,6 +12,9 @@ struct WidgetContent {
     let bookmarks: [Bookmark]
     let departures: [UUID: [ArrivalDeparture]]
     let fetchedAt: Date?
+    /// Offline only: see `SavedBookmarkDepartures`.
+    var scheduledDepartures: [UUID: [ScheduledDeparture]] = [:]
+    var savedAt: Date?
 
     static let empty = WidgetContent(bookmarks: [], departures: [:], fetchedAt: nil)
 }
@@ -74,7 +77,18 @@ final class WidgetDataProvider {
         // 90, not the default 60: entries run up to 30 minutes past the fetch,
         // so every one of them still knows a full hour ahead — which is what a
         // row's "no departures in the next 60 minutes" fallback claims.
-        let departures = await BookmarkArrivalsLoader(minutesAfter: 90).departuresByBookmark(for: bookmarks, using: service)
-        return WidgetContent(bookmarks: bookmarks, departures: departures, fetchedAt: departures.isEmpty ? nil : Date())
+        //
+        // `.appDefault` resolves to the extension's own Caches, not the app's,
+        // which an extension can't read. So the widget keeps its own copy,
+        // saved on its own fetches, and shows it when it can't reach the server.
+        let loaded = await BookmarkArrivalsLoader(minutesAfter: 90, savedArrivals: .appDefault)
+            .departuresByBookmarkKeepingSaved(for: bookmarks, using: service)
+        return WidgetContent(
+            bookmarks: bookmarks,
+            departures: loaded.departures,
+            fetchedAt: loaded.departures.isEmpty ? nil : Date(),
+            scheduledDepartures: loaded.scheduledDepartures,
+            savedAt: loaded.savedAt
+        )
     }
 }

@@ -28,7 +28,14 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
         }
 
         let content = await dataProvider.load(maximumBookmarks: BookmarkEntry.maximumBookmarks(for: context.family))
-        return BookmarkEntry(date: .now, bookmarks: content.bookmarks, departures: content.departures, fetchedAt: content.fetchedAt)
+        return BookmarkEntry(
+            date: .now,
+            bookmarks: content.bookmarks,
+            departures: content.departures,
+            fetchedAt: content.fetchedAt,
+            scheduledDepartures: content.scheduledDepartures,
+            savedAt: content.savedAt
+        )
     }
 
     // MARK: Actual Timelines
@@ -43,7 +50,10 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
         let now = Date()
 
         let plan = WidgetTimelinePlanner().plan(
-            departureDates: content.departures.values.flatMap { $0.map(\.arrivalDepartureDate) },
+            // Offline, timetable departures count too, so each one drops off
+            // the widget as it leaves.
+            departureDates: content.departures.values.flatMap { $0.map(\.arrivalDepartureDate) }
+                + content.scheduledDepartures.values.flatMap { $0.map(\.date) },
             now: now
         )
 
@@ -56,7 +66,9 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
                 departures: content.departures.mapValues { departures in
                     WidgetTimelinePlanner.departures(departures, visibleAt: date)
                 },
-                fetchedAt: content.fetchedAt
+                fetchedAt: content.fetchedAt,
+                scheduledDepartures: content.scheduledDepartures,
+                savedAt: content.savedAt
             )
         }
 
