@@ -459,15 +459,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     func removeLocationStreamSubscriber(id: UUID) {
         guard locationStreamContinuations.removeValue(forKey: id) != nil else { return }
-        if locationStreamContinuations.isEmpty {
-            if streamStartedLocationUpdates {
-                if pendingOneShotRequests.isEmpty {
-                    streamStartedLocationUpdates = false
-                    isUpdatingLocation = false
-                    locationManager.stopUpdatingLocation()
-                }
-            }
-        }
+        stopStreamUpdatesIfNoSubscribers()
     }
 
     private func notifyStreamSubscribers(_ location: CLLocation) {
@@ -482,6 +474,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         for continuation in continuations {
             continuation.finish()
         }
+        stopStreamUpdatesIfNoSubscribers()
     }
 
     // MARK: - One-shot location
@@ -536,7 +529,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     }
 
     private func stopStreamUpdatesIfNoSubscribers() {
-        if locationStreamContinuations.isEmpty && streamStartedLocationUpdates {
+        if locationStreamContinuations.isEmpty && streamStartedLocationUpdates && pendingOneShotRequests.isEmpty {
             streamStartedLocationUpdates = false
             isUpdatingLocation = false
             locationManager.stopUpdatingLocation()
@@ -727,7 +720,14 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         }
 
         failOneShotRequests(with: error)
-        finishLocationStreamSubscribers()
+
+        let isTransientError = (error as? CLError).map {
+            $0.code == .locationUnknown || $0.code == .headingFailure
+        } ?? false
+        if !isTransientError {
+            finishLocationStreamSubscribers()
+        }
+
         notifyDelegatesErrorReceived(error)
     }
 }

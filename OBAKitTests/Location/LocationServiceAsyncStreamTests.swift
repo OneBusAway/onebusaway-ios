@@ -266,7 +266,7 @@ final class LocationServiceAsyncStreamTests {
         #expect(!service.isUpdatingLocation)
     }
 
-    @Test func `Stream finishes and waiter returns when location service receives error`() async {
+    @Test func `Stream finishes and stops updates when location service receives terminal error`() async {
         let (mock, service) = makeService(startsUpdatesOnAuthorization: false)
         mock.requestWhenInUseAuthorization()
 
@@ -283,11 +283,77 @@ final class LocationServiceAsyncStreamTests {
         #expect(service.locationStreamSubscriberCount == 1)
         #expect(service.isUpdatingLocation)
 
-        // Delivering didFailWithError finishes the stream, unblocking the waiter
-        service.locationManager(CLLocationManager(), didFailWithError: CLError(.locationUnknown))
+        // Delivering a terminal error finishes the stream and stops stream-owned updates
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.denied))
 
         let fixCount = await waiterTask.value
         #expect(fixCount == 0)
         #expect(service.locationStreamSubscriberCount == 0)
+        #expect(!service.isUpdatingLocation)
+        #expect(!mock.locationUpdatesStarted)
+    }
+
+    @Test func `Stream finishes and stops updates on non-denied terminal error`() async {
+        let (mock, service) = makeService(startsUpdatesOnAuthorization: false)
+        mock.requestWhenInUseAuthorization()
+
+        let stream = service.locationStream()
+        let waiterTask = Task { @MainActor in
+            var fixCount = 0
+            for await _ in stream {
+                fixCount += 1
+            }
+            return fixCount
+        }
+
+        await poll(until: { service.locationStreamSubscriberCount == 1 }, "subscriber did not register")
+        #expect(service.locationStreamSubscriberCount == 1)
+        #expect(service.isUpdatingLocation)
+
+        // Non-denied terminal error bypasses servicesDenied latch; finishLocationStreamSubscribers must stop updates
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.network))
+
+        let fixCount = await waiterTask.value
+        #expect(fixCount == 0)
+        #expect(service.locationStreamSubscriberCount == 0)
+        #expect(!service.isUpdatingLocation)
+        #expect(!mock.locationUpdatesStarted)
+    }
+
+    @Test func `Stream stays alive when location service receives locationUnknown error`() async {
+        let (mock, service) = makeService(startsUpdatesOnAuthorization: false)
+        mock.requestWhenInUseAuthorization()
+
+        let waiterTask = Task { @MainActor in
+            var received: [CLLocation] = []
+            for await location in service.locationStream() {
+                received.append(location)
+                if received.count == 1 {
+                    break
+                }
+            }
+            return received
+        }
+
+        await poll(until: { service.locationStreamSubscriberCount == 1 }, "subscriber did not register")
+        #expect(service.isUpdatingLocation)
+
+        // Transient locationUnknown error should keep stream and updates alive
+        service.locationManager(CLLocationManager(), didFailWithError: CLError(.locationUnknown))
+        #expect(service.locationStreamSubscriberCount == 1)
+        #expect(service.isUpdatingLocation)
+        #expect(mock.locationUpdatesStarted)
+
+        let expected = TestData.mockSeattleLocation
+        service.locationManager(CLLocationManager(), didUpdateLocations: [expected])
+
+        let received = await waiterTask.value
+        #expect(received.count == 1)
+        #expect(received.first?.coordinate.latitude == expected.coordinate.latitude)
+        #expect(received.first?.coordinate.longitude == expected.coordinate.longitude)
+
+        await poll(until: { service.locationStreamSubscriberCount == 0 }, "subscriber did not clean up")
+        #expect(!service.isUpdatingLocation)
+        #expect(!mock.locationUpdatesStarted)
     }
 }
