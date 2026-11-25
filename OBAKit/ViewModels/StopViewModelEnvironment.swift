@@ -25,6 +25,8 @@ protocol StopViewModelEnvironment: AnyObject {
     var pushService: PushService? { get }
     /// Needed to construct `SurveyOrchestrator` and `ExternalSurveyLauncher`.
     var surveyService: SurveyService { get }
+    /// Where bookmarked stops' departures are saved for offline use, or `nil` for none.
+    var savedArrivals: SavedArrivalsStore? { get }
 
     // MARK: - Alarm data (individual operations, not the full UserDataStore)
 
@@ -159,6 +161,7 @@ final class PreviewStopViewModelEnvironment: StopViewModelEnvironment {
     let apiService: RESTAPIService? = nil
     let obacoService: ObacoAPIService? = nil
     let pushService: PushService? = nil
+    let savedArrivals: SavedArrivalsStore? = nil
 
     lazy var surveyService = SurveyService(
         apiService: nil,

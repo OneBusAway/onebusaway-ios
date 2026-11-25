@@ -74,6 +74,11 @@ class StopViewModel: ObservableObject {
     /// The arrivals/departures fetched from the server.
     @Published private(set) var stopArrivals: StopArrivals?
 
+    /// What was saved for this stop, shown in place of `stopArrivals` while the
+    /// device can't reach the server and nothing live has loaded yet; `nil`
+    /// otherwise. Only bookmarked stops are saved (see `SavedArrivalsStore`).
+    @Published private(set) var savedArrivals: SavedArrivalsFallback?
+
     /// On-demand services this stop references, for the on-demand card; see `StopOnDemandServicesLoader`.
     @Published private(set) var onDemandServices: [OnDemandService] = []
     private(set) lazy var onDemandLoader = StopOnDemandServicesLoader { [weak self] in self?.onDemandServices = $0 }
@@ -396,6 +401,7 @@ class StopViewModel: ObservableObject {
             // bus that isn't coming — the same thing `BookmarkDataLoader` does for the
             // card — and so the freshness label stops claiming a successful update.
             stopArrivals = nil
+            savedArrivals = nil
             lastUpdated = nil
             updateStatus()
             onDemandLoader.clear()
@@ -421,6 +427,7 @@ class StopViewModel: ObservableObject {
             if !error.isCancellation {
                 operationError = error
                 environment.noteStopLoadFailed()
+                showSavedArrivalsIfOffline(after: error, apiService: apiService)
             }
         }
 
@@ -431,10 +438,24 @@ class StopViewModel: ObservableObject {
         }
     }
 
+    /// Shows what was saved for the stop when `error` means the device
+    /// couldn't reach the server, as the bookmark cards do. Only while nothing
+    /// live has loaded: departures this page already fetched are at least as
+    /// fresh, and stay under the stale-arrivals notice. Nor while the server
+    /// has said the stop is gone: saved departures for a stop that no longer
+    /// exists would come back the moment the phone drops offline.
+    private func showSavedArrivalsIfOffline(after error: Error, apiService: RESTAPIService) {
+        guard !stopIsMissing, stopArrivals == nil, let store = environment.savedArrivals else { return }
+        savedArrivals = BookmarkArrivalsLoader(savedArrivals: store)
+            .savedArrivalsFallback(stopID: stopID, error: error, using: apiService)
+        updateStatus()
+    }
+
     private func applySuccessfulFetch(stop: Stop, arrivals: StopArrivals) {
         operationError = nil
         isBrokenBookmark = false
         stopIsMissing = false
+        savedArrivals = nil
         lastUpdated = Date()
         updateStatus()
         // Guard the @Published re-emit. The same VM is bound to a single stopID for
@@ -811,6 +832,16 @@ class StopViewModel: ObservableObject {
     }
 
     private func updateStatus() {
+        if let savedArrivals {
+            // "Offline, scheduled times" once the saved departures have all
+            // left and only the timetable has any to show.
+            statusText = environment.formatters.savedArrivalsText(
+                savedAt: savedArrivals.savedAt,
+                isShowingTimetable: savedArrivals.arrivals.allSatisfy { $0.temporalState == .past }
+                    && savedArrivals.scheduledDepartures.contains { $0.minutes >= 0 }
+            )
+            return
+        }
         guard let lastUpdated else {
             statusText = ""
             return

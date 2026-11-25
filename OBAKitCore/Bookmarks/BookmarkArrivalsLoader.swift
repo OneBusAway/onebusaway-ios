@@ -144,7 +144,7 @@ public struct BookmarkArrivalsLoader: Sendable {
     /// reach the server and something was. Any other failure (the server
     /// erred, the stop is gone) is not about the connection, so saved data
     /// would only hide it.
-    private func savedArrivalsFallback(stopID: StopID, error: Error, using apiService: RESTAPIService) -> SavedArrivalsFallback? {
+    public func savedArrivalsFallback(stopID: StopID, error: Error, using apiService: RESTAPIService) -> SavedArrivalsFallback? {
         guard
             let savedArrivals,
             let regionID = apiService.regionIdentifier,

@@ -33,10 +33,15 @@ public struct ScheduledDeparture: Hashable, @unchecked Sendable {
         self.date = date
     }
 
-    /// Minutes from now, counted the way `ArrivalDeparture.arrivalDepartureMinutes`
+    /// Minutes from `date`, counted the way `ArrivalDeparture.arrivalDepartureMinutes`
     /// counts them, so a timetable row and a live row read the same.
+    public func minutes(from date: Date) -> Int {
+        Int(self.date.timeIntervalSince(date) / 60.0)
+    }
+
+    /// Minutes from now.
     public var minutes: Int {
-        Int(date.timeIntervalSinceNow / 60.0)
+        minutes(from: .now)
     }
 
     /// Whether this departure is for the trips `key` bookmarks. The
