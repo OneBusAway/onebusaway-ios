@@ -18,6 +18,11 @@ public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
     private let alert: TransitRealtime_Alert
     public let id: String
 
+    /// Alert IDs that have already logged a corrupt active-period warning.
+    /// Guards the once-per-alert log in `normalizedBounds(for:logCorrupt:)`.
+    private static let corruptWarningLock = NSLock()
+    private static var warnedCorruptAlertIDs = Set<String>()
+
     public var isHighSeverity: Bool {
         guard alert.hasSeverityLevel else {
             return false
@@ -279,14 +284,29 @@ extension AgencyAlert {
 
         if let end, start > end {
             if logCorrupt {
-                Logger.warn(
-                    "AgencyAlert \(id): corrupt active period (start \(period.start) > end \(period.end)); treating as inactive."
-                )
+                warnCorruptPeriod(period: period)
             }
             return nil
         }
 
         return (start, end)
+    }
+
+    /// Logs the corrupt-period warning for this alert only the first time an
+    /// alert ID is seen, so repeated calls don't spam the log on every map
+    /// refresh.
+    private func warnCorruptPeriod(period: TransitRealtime_TimeRange) {
+        Self.corruptWarningLock.lock()
+        let isNewWarning = Self.warnedCorruptAlertIDs.insert(id).inserted
+        Self.corruptWarningLock.unlock()
+
+        guard isNewWarning else {
+            return
+        }
+
+        Logger.warn(
+            "AgencyAlert \(id): corrupt active period (start \(period.start) > end \(period.end)); treating as inactive."
+        )
     }
 
     private static func isDate(_ date: Date, within bounds: (start: Date, end: Date?)) -> Bool {
