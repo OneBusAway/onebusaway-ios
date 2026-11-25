@@ -254,32 +254,6 @@ public struct BookmarkArrivalsLoader: Sendable {
         }
         return result
     }
-
-    /// Collects the stream into per-bookmark departures for watch bookmarks.
-    public func departuresByWatchBookmark(
-        for bookmarks: [WatchBookmark],
-        using apiService: RESTAPIService
-    ) async -> [UUID: [ArrivalDeparture]] {
-        let requests = bookmarks.map { ($0.id, BookmarkArrivalsRequest(watchBookmark: $0)) }
-
-        var arrivalsByStop = [StopID: [ArrivalDeparture]]()
-        for await (stopID, result) in arrivals(for: requests.map(\.1), using: apiService) {
-            switch result {
-            case .success(let arrivals):
-                arrivalsByStop[stopID] = arrivals
-            case .failure(let error):
-                Logger.error("BookmarkArrivalsLoader: arrivals failed for stop \(stopID): \(error.localizedDescription)")
-            }
-        }
-
-        var result = [UUID: [ArrivalDeparture]]()
-        for (bookmarkID, request) in requests {
-            if let arrivals = arrivalsByStop[request.stopID] {
-                result[bookmarkID] = request.matching(arrivals)
-            }
-        }
-        return result
-    }
 }
 
 extension RESTAPIService {

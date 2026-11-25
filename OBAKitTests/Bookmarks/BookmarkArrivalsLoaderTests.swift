@@ -145,40 +145,6 @@ final class BookmarkArrivalsLoaderTests: OBATestCase {
         #expect(result[bad.id] == nil)
     }
 
-    @Test func `Departures by watch bookmark returns arrivals for watch bookmarks`() async throws {
-        let dataLoader = MockDataLoader(testName: name)
-        let stops = try Fixtures.loadSomeStops()
-        let good = WatchBookmark(
-            id: UUID(),
-            name: "Good Watch",
-            regionIdentifier: Int32(pugetSoundRegionIdentifier),
-            stopID: stops[0].id,
-            stopName: stops[0].name,
-            latitude: stops[0].coordinate.latitude,
-            longitude: stops[0].coordinate.longitude,
-            isFavorite: false
-        )
-        let bad = WatchBookmark(
-            id: UUID(),
-            name: "Bad Watch",
-            regionIdentifier: Int32(pugetSoundRegionIdentifier),
-            stopID: stops[1].id,
-            stopName: stops[1].name,
-            latitude: stops[1].coordinate.latitude,
-            longitude: stops[1].coordinate.longitude,
-            isFavorite: false
-        )
-        mockArrivals(dataLoader, log: RequestLog(), failingStopID: stops[1].id)
-
-        let result = await BookmarkArrivalsLoader().departuresByWatchBookmark(
-            for: [good, bad],
-            using: buildRESTService(dataLoader: dataLoader)
-        )
-
-        #expect(result[good.id] != nil)
-        #expect(result[bad.id] == nil)
-    }
-
     @Test func `TripBookmarkKey initialization from watch bookmark`() {
         let tripBookmark = WatchBookmark(
             id: UUID(),
