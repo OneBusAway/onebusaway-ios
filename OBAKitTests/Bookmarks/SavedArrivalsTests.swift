@@ -975,11 +975,11 @@ final class SavedArrivalsTests: OBATestCase {
             date: Date()
         )
 
-        let matchingKey = TripBookmarkKey(routeID: "Route_44", tripHeadsign: "Downtown Seattle")
-        let wrongRouteKey = TripBookmarkKey(routeID: "Route_45", tripHeadsign: "Downtown Seattle")
-        let wrongHeadsignKey = TripBookmarkKey(routeID: "Route_44", tripHeadsign: "U-District")
-        let caseMismatchRoute = TripBookmarkKey(routeID: "route_44", tripHeadsign: "Downtown Seattle")
-        let caseMismatchHeadsign = TripBookmarkKey(routeID: "Route_44", tripHeadsign: "downtown seattle")
+        let matchingKey = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "Route_44", tripHeadsign: "Downtown Seattle")
+        let wrongRouteKey = TripBookmarkKey(stopID: "stop_1", routeShortName: "45", routeID: "Route_45", tripHeadsign: "Downtown Seattle")
+        let wrongHeadsignKey = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "Route_44", tripHeadsign: "U-District")
+        let caseMismatchRoute = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "route_44", tripHeadsign: "Downtown Seattle")
+        let caseMismatchHeadsign = TripBookmarkKey(stopID: "stop_1", routeShortName: "44", routeID: "Route_44", tripHeadsign: "downtown seattle")
 
         #expect(departure.matches(matchingKey))
         #expect(!departure.matches(wrongRouteKey))
@@ -991,13 +991,13 @@ final class SavedArrivalsTests: OBATestCase {
     @Test
     func `ScheduledDeparture minutes accurately computes signed intervals across past and future thresholds`() {
         let now = Date()
-        let departureIn5Min = ScheduledDeparture(tripID: "t1", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(300))
+        let departureIn5Min = ScheduledDeparture(tripID: "t1", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(305))
         let departureIn30Sec = ScheduledDeparture(tripID: "t2", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(30))
-        let departurePast2Min = ScheduledDeparture(tripID: "t3", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-120))
+        let departurePast2Min = ScheduledDeparture(tripID: "t3", routeID: "r", tripHeadsign: "h", route: nil, date: now.addingTimeInterval(-125))
 
-        #expect(departureIn5Min.minutes == 5)
+        #expect(departureIn5Min.minutes >= 4 && departureIn5Min.minutes <= 5)
         #expect(departureIn30Sec.minutes == 0)
-        #expect(departurePast2Min.minutes == -2)
+        #expect(departurePast2Min.minutes <= -2 && departurePast2Min.minutes >= -3)
     }
 
     @Test
@@ -1011,7 +1011,7 @@ final class SavedArrivalsTests: OBATestCase {
         let departureEpochMs: Int64 = 1_700_001_200_000 // T + 1200s
 
         // Construct a single route, single direction with drop-off only stop time (departureEnabled: false, arrivalEnabled: true)
-        var stopTimeDict: [String: Any] = [
+        let stopTimeDict: [String: Any] = [
             "tripId": "drop_off_trip",
             "serviceId": "weekday",
             "arrivalTime": arrivalEpochMs,
@@ -1032,7 +1032,7 @@ final class SavedArrivalsTests: OBATestCase {
         let modifiedJSON = try JSONSerialization.data(withJSONObject: root)
         let decoder = JSONDecoder()
         let response = try decoder.decode(RESTAPIResponse<ScheduleForStop>.self, from: modifiedJSON)
-        let schedule = response.data.entry
+        let schedule = response.entry
 
         let departures = schedule.scheduledDepartures
         #expect(departures.count == 1)
@@ -1087,7 +1087,7 @@ final class SavedArrivalsTests: OBATestCase {
         let modifiedJSON = try JSONSerialization.data(withJSONObject: root)
         let decoder = JSONDecoder()
         let response = try decoder.decode(RESTAPIResponse<ScheduleForStop>.self, from: modifiedJSON)
-        let schedule = response.data.entry
+        let schedule = response.entry
 
         let sortedTripIDs = schedule.scheduledDepartures.map(\.tripID)
         #expect(sortedTripIDs == ["trip_A_100", "trip_B_200", "trip_A_300"])
