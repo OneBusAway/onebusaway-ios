@@ -458,7 +458,7 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
             return startDate == expectedDateString
         }
 
-        if let exact = validUpdates.first(where: { $0.startDate == expectedDateString }) {
+        if let expectedDateString, let exact = validUpdates.first(where: { $0.startDate == expectedDateString }) {
             return exact
         }
 
@@ -486,8 +486,8 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
     /// otherwise its agency's, otherwise its trip's. `nil` when none is known.
     private static func agencyTimeZone(for arrDep: ArrivalDeparture, override: TimeZone?) -> TimeZone? {
         if let override { return override }
-        let identifier = arrDep.route?.agency?.timeZone ?? arrDep.trip?.timeZone
-        return identifier.flatMap(TimeZone.init(identifier:))
+        if let agencyZone = arrDep.route?.agency?.resolvedTimeZone { return agencyZone }
+        return arrDep.trip?.timeZone.flatMap(TimeZone.init(identifier:))
     }
 
     /// Reconciles an array of `ArrivalDeparture` instances with an array of `GTFSRTTripUpdate` models.

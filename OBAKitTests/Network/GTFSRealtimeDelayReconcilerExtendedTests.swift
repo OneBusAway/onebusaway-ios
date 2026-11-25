@@ -513,4 +513,66 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
             #expect(applied.tripStatus?.statusModifier == .canceled)
         }
     }
+
+    /// With no known zone there is no start_date to match exactly, so undated
+    /// updates still go through the 36-hour timestamp check.
+    @Test func `With no known zone, a stale undated update is rejected`() {
+        let serviceDate = Date(timeIntervalSince1970: 1_795_305_600)
+        let arrDep = makeArrivalDeparture(tripID: "trip_no_zone", serviceDate: serviceDate)
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDep],
+            with: [GTFSRTTripUpdate(tripID: "trip_no_zone", timestamp: serviceDate.addingTimeInterval(37 * 3600), tripDelay: 60)]
+        )
+
+        #expect(results[0].tripUpdate == nil)
+    }
+
+    @Test func `With no known zone, the nearest undated update wins`() {
+        let serviceDate = Date(timeIntervalSince1970: 1_795_305_600)
+        let arrDep = makeArrivalDeparture(tripID: "trip_no_zone", serviceDate: serviceDate)
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDep],
+            with: [
+                GTFSRTTripUpdate(tripID: "trip_no_zone", timestamp: serviceDate.addingTimeInterval(30 * 3600), tripDelay: 60),
+                GTFSRTTripUpdate(tripID: "trip_no_zone", timestamp: serviceDate.addingTimeInterval(3600), tripDelay: 120)
+            ]
+        )
+
+        #expect(results[0].arrivalDelay == 120)
+    }
+
+    /// An empty or unknown agency zone falls through to the trip's zone.
+    @Test func `An unusable agency zone falls back to the trip's zone`() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = try #require(TimeZone(identifier: "Pacific/Kiritimati"))
+        let serviceDate = try #require(cal.date(from: DateComponents(year: 2026, month: 11, day: 22)))
+        let tripJSON = """
+        {"blockId": "1_block", "id": "1_trip_kiritimati", "routeId": "1_10", "routeShortName": "10",
+         "serviceId": "1_weekday", "tripShortName": "", "timeZone": "Pacific/Kiritimati"}
+        """
+        let trip = try JSONDecoder().decode(Trip.self, from: Data(tripJSON.utf8))
+
+        for agencyZone in ["", "Not/AZone"] {
+            let arrDep = ArrivalDeparture(
+                arrivalEnabled: true,
+                routeID: "1_10",
+                route: try makeRoute(agencyTimeZone: agencyZone),
+                scheduledArrival: serviceDate.addingTimeInterval(13 * 3600),
+                scheduledDeparture: serviceDate.addingTimeInterval(13 * 3600 + 60),
+                serviceDate: serviceDate,
+                stopID: "1_stop",
+                tripID: "1_trip_kiritimati",
+                trip: trip
+            )
+
+            let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+                arrivalDepartures: [arrDep],
+                with: [GTFSRTTripUpdate(tripID: "trip_kiritimati", startDate: "20261122", tripDelay: 240)]
+            )
+
+            #expect(results[0].arrivalDelay == 240, "agency zone \"\(agencyZone)\"")
+        }
+    }
 }
