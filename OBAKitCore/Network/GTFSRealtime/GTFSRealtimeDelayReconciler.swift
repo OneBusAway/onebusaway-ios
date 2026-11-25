@@ -437,17 +437,20 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
     ) -> GTFSRTTripUpdate? {
         if matchingUpdates.isEmpty { return nil }
 
-        let tz = timeZone ?? arrDep.trip?.timeZone.flatMap(TimeZone.init(identifier:)) ?? .current
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd"
-        formatter.timeZone = tz
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-
-        let noonOnServiceDate = arrDep.serviceDate.addingTimeInterval(12 * 3600)
-        let expectedDateString = formatter.string(from: noonOnServiceDate)
+        // The service date is a day in the agency's zone, so start_date is
+        // checked there. The device's zone can be a day off: 12 or more hours
+        // east of the agency, the noon anchor still lands on the next day.
+        let expectedDateString = Self.agencyTimeZone(for: arrDep, override: timeZone).map { tz in
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyyMMdd"
+            formatter.timeZone = tz
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            return formatter.string(from: arrDep.serviceDate.addingTimeInterval(12 * 3600))
+        }
 
         // When start_date is present, it MUST match the arrival service date.
-        // Updates with a non-matching start_date are rejected.
+        // Updates with a non-matching start_date are rejected, and so are all
+        // updates with one when the agency's zone isn't known to check it.
         let validUpdates = matchingUpdates.filter { update in
             guard let startDate = update.startDate, !startDate.isEmpty else {
                 return true
@@ -479,7 +482,18 @@ public struct GTFSRealtimeDelayReconciler: Sendable {
         return candidatesWithoutStartDate.count == 1 ? candidatesWithoutStartDate[0] : nil
     }
 
+    /// The zone `arrDep`'s service date is a day in: `override` when given,
+    /// otherwise its agency's, otherwise its trip's. `nil` when none is known.
+    private static func agencyTimeZone(for arrDep: ArrivalDeparture, override: TimeZone?) -> TimeZone? {
+        if let override { return override }
+        let identifier = arrDep.route?.agency?.timeZone ?? arrDep.trip?.timeZone
+        return identifier.flatMap(TimeZone.init(identifier:))
+    }
+
     /// Reconciles an array of `ArrivalDeparture` instances with an array of `GTFSRTTripUpdate` models.
+    ///
+    /// - Parameter timeZone: The agency's time zone, for matching `start_date`.
+    ///   When `nil`, each arrival's agency (from its route) supplies it.
     public func reconcile(
         arrivalDepartures: [ArrivalDeparture],
         with tripUpdates: [GTFSRTTripUpdate],
@@ -550,6 +564,13 @@ extension ArrivalDeparture: GTFSRTReconcilableSchedule {
     }
 
     private func buildUpdatedTripStatus(reconciliation: ReconciledArrivalDeparture) -> TripStatus? {
+        // `tripStatus` is the vehicle's, and describes its active trip. That
+        // can be another trip in the block, such as the one the vehicle is
+        // still finishing; this trip's update must not rewrite it.
+        if let tripStatus, !GTFSRealtimeDelayReconciler.tripIDsMatch(feedTripID: tripID, restTripID: tripStatus.activeTripID) {
+            return tripStatus
+        }
+
         if reconciliation.isCanceled {
             if let tripStatus {
                 return tripStatus.updating(statusModifier: .canceled, isRealTime: false)

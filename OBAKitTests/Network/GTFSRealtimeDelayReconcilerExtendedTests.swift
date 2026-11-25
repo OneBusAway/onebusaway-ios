@@ -46,7 +46,7 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
         )
     }
 
-    @Test func `Service date disambiguates multiple candidate trip updates`() {
+    @Test func `Service date disambiguates multiple candidate trip updates`() throws {
         let serviceDate22 = Date(timeIntervalSince1970: 1_795_305_600)
         let arrDep = ArrivalDeparture(
             arrivalEnabled: true,
@@ -71,7 +71,8 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
 
         let results = GTFSRealtimeDelayReconciler.standard.reconcile(
             arrivalDepartures: [arrDep],
-            with: [updateYesterday, updateToday]
+            with: [updateYesterday, updateToday],
+            timeZone: try #require(TimeZone(identifier: "UTC"))
         )
 
         #expect(results.count == 1)
@@ -114,13 +115,13 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
         #expect(results[0].tripUpdate?.startDate == "20261122")
     }
 
-    @Test func `Service date matching in UTC+13 agency timezone picks today over yesterday`() {
-        guard let aucklandTZ = TimeZone(identifier: "Pacific/Auckland") else { return }
+    @Test func `Service date matching in UTC+13 agency timezone picks today over yesterday`() throws {
+        let aucklandTZ = try #require(TimeZone(identifier: "Pacific/Auckland"))
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = aucklandTZ
 
         let components = DateComponents(year: 2026, month: 11, day: 22, hour: 0, minute: 0, second: 0)
-        guard let aucklandMidnight = cal.date(from: components) else { return }
+        let aucklandMidnight = try #require(cal.date(from: components))
 
         let arrDep = ArrivalDeparture(
             arrivalEnabled: true,
@@ -198,9 +199,9 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
         #expect(applied.predictedArrival == nil)
     }
 
-    @Test func `selectBestTripUpdate matches startDate on spring-forward DST transition day in agency timezone`() {
+    @Test func `selectBestTripUpdate matches startDate on spring-forward DST transition day in agency timezone`() throws {
         // In the US, spring-forward Sunday skips from 2:00 to 3:00 AM (e.g. March 10, 2024 in America/New_York).
-        guard let easternTZ = TimeZone(identifier: "America/New_York") else { return }
+        let easternTZ = try #require(TimeZone(identifier: "America/New_York"))
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = easternTZ
 
@@ -208,7 +209,7 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
         // ServiceDate.moveCalendarToServiceDate sets calendar to 12:00:00 and subtracts 12 hours.
         // On spring-forward Sunday, that lands at 23:00 the previous evening (March 9, 2024 at 23:00:00 EST).
         let noonComponents = DateComponents(year: 2024, month: 3, day: 10, hour: 12, minute: 0, second: 0)
-        guard let noon = cal.date(from: noonComponents) else { return }
+        let noon = try #require(cal.date(from: noonComponents))
         let springForwardServiceDate = noon.addingTimeInterval(-12 * 3600)
 
         // Verify that springForwardServiceDate is indeed 23:00 the previous evening in Eastern time
@@ -245,16 +246,16 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
         #expect(results[0].tripUpdate?.tripID == "trip_spring_forward")
     }
 
-    @Test func `selectBestTripUpdate matches startDate when device timezone is west of agency timezone`() {
+    @Test func `selectBestTripUpdate matches startDate when device timezone is west of agency timezone`() throws {
         // Agency operates in America/New_York (UTC-4 / EDT), service date is March 15, 2024.
-        guard let easternTZ = TimeZone(identifier: "America/New_York"),
-              let pacificTZ = TimeZone(identifier: "America/Los_Angeles") else { return }
+        let easternTZ = try #require(TimeZone(identifier: "America/New_York"))
+        let pacificTZ = try #require(TimeZone(identifier: "America/Los_Angeles"))
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = easternTZ
 
         // Standard midnight in agency timezone
         let midnightComponents = DateComponents(year: 2024, month: 3, day: 15, hour: 0, minute: 0, second: 0)
-        guard let agencyMidnight = cal.date(from: midnightComponents) else { return }
+        let agencyMidnight = try #require(cal.date(from: midnightComponents))
 
         // In Pacific timezone (3 hours behind Eastern), agency midnight (00:00 EDT) is 21:00 PDT on March 14.
         // Anchoring at noon (adding 12 hours) ensures formatting in Pacific gives 20240315.
@@ -412,5 +413,104 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
         #expect(applied.predictedArrival == arrDep.scheduledArrival.addingTimeInterval(60))
         // But trip-level scheduleDeviation reflects trip-level tripDelay (500)
         #expect(applied.tripStatus?.scheduleDeviation == 500)
+    }
+
+    /// A route whose agency runs in `timeZone`, as the REST references load it.
+    private func makeRoute(agencyTimeZone timeZone: String) throws -> Route {
+        let json = """
+        {"agencyId": "1", "id": "1_10", "shortName": "10", "type": 3,
+         "agency": {"id": "1", "lang": "en", "name": "Metro", "phone": "", "privateService": false,
+                    "timezone": "\(timeZone)", "url": "https://example.com"}}
+        """
+        return try JSONDecoder().decode(Route.self, from: Data(json.utf8))
+    }
+
+    /// An arrival on `serviceDay` (yyyyMMdd) at an agency in `timeZone`, with
+    /// its service date at that day's start there.
+    private func makeArrivalDeparture(serviceDay: DateComponents, agencyTimeZone timeZone: String, tripID: String) throws -> ArrivalDeparture {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = try #require(TimeZone(identifier: timeZone))
+        let serviceDate = try #require(cal.date(from: serviceDay))
+        return ArrivalDeparture(
+            arrivalEnabled: true,
+            routeID: "1_10",
+            route: try makeRoute(agencyTimeZone: timeZone),
+            scheduledArrival: serviceDate.addingTimeInterval(13 * 3600),
+            scheduledDeparture: serviceDate.addingTimeInterval(13 * 3600 + 60),
+            serviceDate: serviceDate,
+            stopID: "1_stop",
+            tripID: tripID
+        )
+    }
+
+    /// Samoa (UTC-11) and Kiritimati (UTC+14) are 25 hours apart, so no single
+    /// device zone formats both service dates as the right day. Each arrival's
+    /// update only matches when its own agency's zone is used.
+    @Test func `start_date is checked in each arrival's agency zone, not the device's`() throws {
+        let day = DateComponents(year: 2026, month: 11, day: 22)
+        let samoa = try makeArrivalDeparture(serviceDay: day, agencyTimeZone: "Pacific/Pago_Pago", tripID: "1_trip_samoa")
+        let kiritimati = try makeArrivalDeparture(serviceDay: day, agencyTimeZone: "Pacific/Kiritimati", tripID: "1_trip_kiritimati")
+
+        let results = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [samoa, kiritimati],
+            with: [
+                GTFSRTTripUpdate(tripID: "trip_samoa", startDate: "20261122", tripDelay: 120),
+                GTFSRTTripUpdate(tripID: "trip_kiritimati", startDate: "20261122", tripDelay: 240)
+            ]
+        )
+
+        #expect(results.map(\.arrivalDelay) == [120, 240])
+    }
+
+    /// Without the agency's zone a start_date can't be checked, so an update
+    /// carrying one isn't trusted; one without a start_date still applies.
+    @Test func `With no known zone, only updates without a start_date apply`() {
+        let serviceDate = Date(timeIntervalSince1970: 1_795_305_600)
+        let arrDep = ArrivalDeparture(
+            arrivalEnabled: true,
+            routeID: "route_1",
+            scheduledArrival: serviceDate.addingTimeInterval(3600),
+            scheduledDeparture: serviceDate.addingTimeInterval(3700),
+            serviceDate: serviceDate,
+            stopID: "stop_1",
+            tripID: "trip_no_zone"
+        )
+
+        let dated = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDep],
+            with: [GTFSRTTripUpdate(tripID: "trip_no_zone", startDate: "20261122", tripDelay: 60)]
+        )
+        #expect(dated[0].tripUpdate == nil)
+
+        let undated = GTFSRealtimeDelayReconciler.standard.reconcile(
+            arrivalDepartures: [arrDep],
+            with: [GTFSRTTripUpdate(tripID: "trip_no_zone", timestamp: serviceDate.addingTimeInterval(3000), tripDelay: 60)]
+        )
+        #expect(undated[0].arrivalDelay == 60)
+    }
+
+    /// The vehicle is still finishing the block's previous trip, so the
+    /// arrival's `tripStatus` is that trip's. This trip's update, delayed or
+    /// canceled, must leave it alone.
+    @Test func `An update leaves a trip status that belongs to another active trip unchanged`() {
+        let previousTripStatus = TripStatus(
+            activeTripID: "trip_previous",
+            closestStopID: "stop_1",
+            scheduleDeviation: 30,
+            statusModifier: .canceled
+        )
+        let arrDep = makeArrivalDeparture(tripID: "trip_next", stopID: "stop_1", tripStatus: previousTripStatus)
+
+        for update in [
+            GTFSRTTripUpdate(tripID: "trip_next", tripDelay: 600),
+            GTFSRTTripUpdate(tripID: "trip_next", scheduleRelationship: .canceled)
+        ] {
+            let result = GTFSRealtimeDelayReconciler.standard.reconcile(arrivalDeparture: arrDep, with: update)
+            let applied = arrDep.applying(reconciliation: result)
+
+            #expect(applied.tripStatus === previousTripStatus)
+            #expect(applied.tripStatus?.scheduleDeviation == 30)
+            #expect(applied.tripStatus?.statusModifier == .canceled)
+        }
     }
 }
