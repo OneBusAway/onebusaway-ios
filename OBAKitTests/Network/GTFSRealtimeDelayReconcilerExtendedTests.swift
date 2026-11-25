@@ -624,7 +624,7 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
     @Test func `PropagateUpstream with custom stopOrder propagates delay to stop without direct update`() {
         let reconciler = GTFSRealtimeDelayReconciler.standard
 
-        // Feed has updates for stop_A (delay: 100) and stop_B (delay: 250).
+        // Feed has updates for stop_A (delay: 100), stop_B (delay: 250), and stop_X (delay: 500).
         // Neither update specifies a stop sequence.
         let updateStopA = GTFSRTStopTimeUpdate(
             stopID: "stop_A",
@@ -634,10 +634,14 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
             stopID: "stop_B",
             departure: GTFSRTStopTimeEvent(delay: 250)
         )
+        let updateStopX = GTFSRTStopTimeUpdate(
+            stopID: "stop_X",
+            departure: GTFSRTStopTimeEvent(delay: 500)
+        )
 
         let tripUpdate = GTFSRTTripUpdate(
             tripID: "trip_ordered",
-            stopTimeUpdates: [updateStopB, updateStopA] // feed order has B before A
+            stopTimeUpdates: [updateStopA, updateStopB, updateStopX]
         )
 
         // Target stop is stop_C, which has no direct update in the feed.
@@ -649,23 +653,24 @@ struct GTFSRealtimeDelayReconcilerExtendedTests {
             scheduledDeparture: Date(timeIntervalSince1970: 1_700_003_060)
         )
 
-        // Custom order 1: [stop_A, stop_B, stop_C] -> latest upstream is stop_B (delay: 250)
-        let result1 = reconciler.reconcile(
+        // stop_C comes after stop_B and stop_A, but before stop_X in stopOrder.
+        // Propagation filters out downstream stop_X and takes the last upstream update (stop_B, delay: 250).
+        let resultWithStopOrder = reconciler.reconcile(
             schedule: itemC,
             with: tripUpdate,
-            stopOrder: ["stop_A", "stop_B", "stop_C"]
+            stopOrder: ["stop_A", "stop_B", "stop_C", "stop_X"]
         )
-        #expect(result1.departureDelay == 250)
-        #expect(result1.matchedStopTimeUpdate == nil)
+        #expect(resultWithStopOrder.departureDelay == 250)
+        #expect(resultWithStopOrder.matchedStopTimeUpdate == nil)
 
-        // Custom order 2: [stop_B, stop_A, stop_C] -> latest upstream is stop_A (delay: 100)
-        let result2 = reconciler.reconcile(
+        // Without stopOrder or sequence, target stop_C cannot match upstream updates, falling back to tripDelay (nil).
+        let resultWithoutStopOrder = reconciler.reconcile(
             schedule: itemC,
             with: tripUpdate,
-            stopOrder: ["stop_B", "stop_A", "stop_C"]
+            stopOrder: nil
         )
-        #expect(result2.departureDelay == 100)
-        #expect(result2.matchedStopTimeUpdate == nil)
+        #expect(resultWithoutStopOrder.departureDelay == nil)
+        #expect(resultWithoutStopOrder.matchedStopTimeUpdate == nil)
     }
 
     @Test func `Agency prefix extraction and stripping handles nested and edge string formats`() {
