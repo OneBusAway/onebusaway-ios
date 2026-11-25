@@ -237,15 +237,18 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
         recentHighSeverityAlerts.filter { isAlertUnread($0) }
     }
 
-    /// This property returns all `AgencyAlert`s from the last eight hours that have a
-    /// GTFS-RT `SeverityLevel` of `WARNING` or `SEVERE`.
+    /// This property returns all currently active `AgencyAlert`s whose active
+    /// period began within the last eight hours and that have a GTFS-RT
+    /// `SeverityLevel` of `WARNING` or `SEVERE`.
     public var recentHighSeverityAlerts: [AgencyAlert] {
+        let now = Date()
         return agencyAlerts.filter { alert in
             guard
                 alert.isHighSeverity,
-                let startDate = alert.startDate,
-                // Did this start less than 8 hours ago?
-                abs(startDate.timeIntervalSinceNow) < 60 * 60 * 8
+                alert.isActive(at: now),
+                let startDate = alert.activeStartDate(at: now),
+                // Did this active period start less than 8 hours ago?
+                now.timeIntervalSince(startDate) < 60 * 60 * 8
             else {
                 return false
             }
@@ -274,8 +277,12 @@ public class AgencyAlertsStore: NSObject, @unchecked Sendable {
     // MARK: - Data Storage
 
     public var agencyAlerts: [AgencyAlert] {
+        let now = Date()
         let snapshot = stateLock.withLock { alerts.allObjects }
-        return snapshot.sorted { ($0.startDate ?? Date.distantPast) > ($1.startDate ?? Date.distantPast) }
+        return snapshot
+            .map { (alert: $0, sortDate: $0.sortStartDate(asOf: now) ?? .distantPast) }
+            .sorted { $0.sortDate > $1.sortDate }
+            .map(\.alert)
     }
 
     private var alerts: Set<AgencyAlert> = []

@@ -53,7 +53,7 @@ final class AgencyAlertActivePeriodTests: OBATestCase {
         return p
     }
 
-    private let now = Date()
+    private let now = Date(timeIntervalSince1970: 1_700_000_000)
 
     private var pastTimestamp: UInt64 {
         UInt64(now.addingTimeInterval(-3600).timeIntervalSince1970)  // 1 hour ago
@@ -126,6 +126,14 @@ final class AgencyAlertActivePeriodTests: OBATestCase {
         #expect(alert.isActive(at: Date.distantFuture))
     }
 
+    @Test func `Period with end set to 0 is treated as open ended`() throws {
+        let openEnded = period(start: pastTimestamp, end: 0)
+        let alert = try makeAlert(activePeriods: [openEnded])
+
+        #expect(alert.isActive(at: now))
+        #expect(alert.isActive(at: Date.distantFuture))
+    }
+
     @Test func `Alert with neither start nor end is always active`() throws {
         let p = TransitRealtime_TimeRange() // no start, no end
         let alert = try makeAlert(activePeriods: [p])
@@ -156,22 +164,14 @@ final class AgencyAlertActivePeriodTests: OBATestCase {
     // MARK: - Corrupt active periods (start > end)
 
     @Test func `Corrupt period with start after end does not crash`() throws {
-        // This is the key test: in Swift, forming a ClosedRange (start...end) where
-        // start > end triggers a fatal runtime trap. Our implementation avoids this.
+        // In Swift, forming a ClosedRange (start...end) where start > end triggers
+        // a fatal runtime trap. Direct date comparison avoids trapping and treats
+        // the inverted period as inactive.
         let corrupt = period(start: futureTimestamp, end: pastTimestamp) // start > end
         let alert = try makeAlert(activePeriods: [corrupt])
 
-        // Should NOT crash, and should treat the corrupt period as inactive.
         #expect(!alert.isActive(at: now))
-    }
-
-    @Test func `Corrupt period with end set to 0 does not crash`() throws {
-        // A dispatcher typo: end is 0 (epoch) while start is a real timestamp.
-        let corrupt = period(start: pastTimestamp, end: 0)
-        let alert = try makeAlert(activePeriods: [corrupt])
-
-        // start (recent) > end (epoch 0) → corrupt → treated as inactive.
-        #expect(!alert.isActive(at: now))
+        #expect(alert.sortStartDate(asOf: now) == nil)
     }
 
     @Test func `Corrupt period among valid periods — valid ones still work`() throws {
@@ -181,35 +181,55 @@ final class AgencyAlertActivePeriodTests: OBATestCase {
 
         // The corrupt period is skipped; the valid one makes the alert active.
         #expect(alert.isActive(at: now))
+        #expect(alert.activeStartDate(at: now) == Date(timeIntervalSince1970: TimeInterval(pastTimestamp)))
     }
 
-    // MARK: - Boundary conditions
+    // MARK: - Boundary conditions (GTFS-RT [start, end))
 
     @Test func `Alert active at exact start time`() throws {
-        let startDate = now
-        let startTS = UInt64(startDate.timeIntervalSince1970)
+        let startTS = UInt64(now.timeIntervalSince1970)
         let p = period(start: startTS, end: futureTimestamp)
         let alert = try makeAlert(activePeriods: [p])
 
-        #expect(alert.isActive(at: startDate))
+        #expect(alert.isActive(at: now))
     }
 
-    @Test func `Alert active at exact end time`() throws {
-        let endDate = now
-        let endTS = UInt64(endDate.timeIntervalSince1970)
+    @Test func `Alert active one second before end time`() throws {
+        let endTS = UInt64(now.addingTimeInterval(1).timeIntervalSince1970)
         let p = period(start: pastTimestamp, end: endTS)
         let alert = try makeAlert(activePeriods: [p])
 
-        #expect(alert.isActive(at: endDate))
+        #expect(alert.isActive(at: now))
     }
 
-    @Test func `Alert where start equals end is active only at that instant`() throws {
+    @Test func `Alert inactive at exact end time`() throws {
+        let endTS = UInt64(now.timeIntervalSince1970)
+        let p = period(start: pastTimestamp, end: endTS)
+        let alert = try makeAlert(activePeriods: [p])
+
+        #expect(!alert.isActive(at: now))
+    }
+
+    @Test func `Alert where start equals end is inactive`() throws {
         let ts = UInt64(now.timeIntervalSince1970)
         let p = period(start: ts, end: ts)
         let alert = try makeAlert(activePeriods: [p])
 
-        #expect(alert.isActive(at: now))
+        #expect(!alert.isActive(at: now))
         #expect(!alert.isActive(at: now.addingTimeInterval(1)))
+    }
+
+    // MARK: - Multi-period start resolution
+
+    @Test func `activeStartDate and sortStartDate pick active period over older expired period`() throws {
+        let expired = period(start: farPastTimestamp, end: pastTimestamp)
+        let currentStart = UInt64(now.addingTimeInterval(-600).timeIntervalSince1970)
+        let current = period(start: currentStart, end: futureTimestamp)
+        let alert = try makeAlert(activePeriods: [expired, current])
+
+        let expected = Date(timeIntervalSince1970: TimeInterval(currentStart))
+        #expect(alert.activeStartDate(at: now) == expected)
+        #expect(alert.sortStartDate(asOf: now) == expected)
     }
 
     // MARK: - hasActivePeriod
