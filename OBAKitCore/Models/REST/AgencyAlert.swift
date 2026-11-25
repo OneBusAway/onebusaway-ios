@@ -21,7 +21,7 @@ public final class AgencyAlert: NSObject, Identifiable, @unchecked Sendable {
     /// Alert IDs that have already logged a corrupt active-period warning.
     /// Guards the once-per-alert log in `normalizedBounds(for:logCorrupt:)`.
     private static let corruptWarningLock = NSLock()
-    private static var warnedCorruptAlertIDs = Set<String>()
+    private static nonisolated(unsafe) var warnedCorruptAlertIDs = Set<String>()
 
     public var isHighSeverity: Bool {
         guard alert.hasSeverityLevel else {
