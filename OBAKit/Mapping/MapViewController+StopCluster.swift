@@ -16,6 +16,10 @@ import UIKit
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/515
 extension MapViewController {
 
+    /// The threshold above which a stop cluster uses the scrollable picker instead of
+    /// the action sheet. Clusters of this many stops or fewer stay on the action-sheet path.
+    static let stopClusterPickerThreshold = 5
+
     /// Zooms in on a cluster that zooming can separate. Stops at the same spot
     /// stay clustered at any zoom, so for those it lists the stops instead — as it
     /// does for every cluster under VoiceOver; see `StopCluster.listsStopsOnSelection`.
@@ -36,13 +40,47 @@ extension MapViewController {
             return
         }
 
+        let stops = StopCluster.stops(in: members)
+
+        if stops.count > MapViewController.stopClusterPickerThreshold {
+            presentClusterPicker(stops: stops, cluster: cluster, mapView: mapView)
+        } else {
+            presentClusterActionSheet(stops: stops, cluster: cluster, sourceView: view, mapView: mapView)
+        }
+    }
+
+    // MARK: - Private helpers
+
+    /// Presents the scrollable `StopClusterPickerViewController` for large clusters (> 5 stops).
+    private func presentClusterPicker(stops: [Stop], cluster: MKClusterAnnotation, mapView: MKMapView) {
+        let picker = StopClusterPickerViewController(stops: stops)
+        picker.onStopSelected = { [weak self] stop in
+            guard let self else { return }
+            self.application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+            self.show(stop: stop, deselecting: cluster)
+        }
+        picker.onCancel = { [weak mapView] in
+            mapView?.deselectAnnotation(cluster, animated: true)
+        }
+
+        let nav = UINavigationController(rootViewController: picker)
+        nav.modalPresentationStyle = StopClusterPickerViewController.modalPresentationStyle(for: UIDevice.current.userInterfaceIdiom)
+        nav.presentationController?.delegate = picker
+
+        // From the top of the presentation stack: `self` already presenting a
+        // sheet or alert makes `present` a silent no-op, and the tap does nothing.
+        topmostPresentedController.present(nav, animated: true)
+    }
+
+    /// Presents the existing `UIAlertController` action sheet for small clusters (≤ 5 stops).
+    private func presentClusterActionSheet(stops: [Stop], cluster: MKClusterAnnotation, sourceView: MKAnnotationView, mapView: MKMapView) {
         let picker = UIAlertController(
             title: OBALoc("map_controller.stop_cluster_picker.title", value: "Choose a Stop", comment: "Title of the list shown when tapping a map pin that groups several stops at the same location."),
             message: nil,
             preferredStyle: .actionSheet
         )
 
-        for stop in StopCluster.stops(in: members) {
+        for stop in stops {
             picker.addAction(UIAlertAction(title: StopCluster.pickerTitle(for: stop), style: .default) { [weak self] _ in
                 guard let self else { return }
                 self.application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
@@ -54,8 +92,8 @@ extension MapViewController {
             mapView.deselectAnnotation(cluster, animated: true)
         })
 
-        picker.popoverPresentationController?.sourceView = view
-        picker.popoverPresentationController?.sourceRect = view.bounds
+        picker.popoverPresentationController?.sourceView = sourceView
+        picker.popoverPresentationController?.sourceRect = sourceView.bounds
 
         // From the top of the presentation stack: `self` already presenting a
         // sheet or alert makes `present` a silent no-op, and the tap does nothing.

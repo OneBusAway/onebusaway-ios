@@ -2520,3 +2520,6 @@
 
 /* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
 "trip_suggestion.title_one_line_fmt" = "Sur la %@ ?";
+
+/* Placeholder text in the stop cluster picker's search bar. */
+"stop_cluster_picker.search_placeholder" = "Filtrer par nom ou ligne";
