@@ -86,7 +86,21 @@
 			<string>sau %d phút</string>
 		</dict>
 	</dict>
-	<key>rental_cluster.title_fmt</key>
+	<key>on_demand.address.inside_more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Trong %1$@ và %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d dịch vụ khác</string>
+		</dict>
+	</dict>
+	<key>on_demand.card.more_services</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -97,7 +111,63 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d phương tiện ở đây</string>
+			<string>%d dịch vụ khác tại đây</string>
+		</dict>
+	</dict>
+	<key>on_demand.detail.zone_count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d vùng</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d dịch vụ tại đây</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title_nearby</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d dịch vụ gần đây</string>
+		</dict>
+	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d dịch vụ khác phục vụ cả hai địa điểm</string>
 		</dict>
 	</dict>
 	<key>rental_annotation.vehicles_available_fmt</key>
@@ -112,6 +182,20 @@
 			<string>d</string>
 			<key>other</key>
 			<string>Còn %d xe</string>
+		</dict>
+	</dict>
+	<key>rental_cluster.title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d phương tiện ở đây</string>
 		</dict>
 	</dict>
 	<key>rental_detail.walk_time_fmt</key>
@@ -140,6 +224,20 @@
 			<string>d</string>
 			<key>other</key>
 			<string>%d kết quả</string>
+		</dict>
+	</dict>
+	<key>stop_cluster_picker.nav_title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>Chọn trạm dừng — %d trạm gần đây</string>
 		</dict>
 	</dict>
 	<key>stop_page.a11y.past_shown_fmt</key>
@@ -214,6 +312,20 @@
 			<string>d</string>
 			<key>other</key>
 			<string>%5$d chuyến khởi hành</string>
+		</dict>
+	</dict>
+	<key>stop_page.past_toggle_earlier_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d chuyến trước</string>
 		</dict>
 	</dict>
 	<key>stop_page.past_toggle_show_a11y_fmt</key>
@@ -356,7 +468,7 @@
 			<string>%2$d điểm dừng</string>
 		</dict>
 	</dict>
-	<key>on_demand.card.more_services</key>
+	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -367,91 +479,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d dịch vụ khác tại đây</string>
-		</dict>
-	</dict>
-	<key>on_demand.planner.more_serving_both</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>%d dịch vụ khác phục vụ cả hai địa điểm</string>
-		</dict>
-	</dict>
-	<key>on_demand.picker.title</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>%d dịch vụ tại đây</string>
-		</dict>
-	</dict>
-	<key>on_demand.picker.title_nearby</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>%d dịch vụ gần đây</string>
-		</dict>
-	</dict>
-	<key>on_demand.detail.zone_count</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>%d vùng</string>
-		</dict>
-	</dict>
-	<key>on_demand.address.inside_more</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>Trong %1$@ và %2$#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>%d dịch vụ khác</string>
-		</dict>
-	</dict>
-	<key>trip_page.stop_list.run_count_fmt</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>%d điểm dừng</string>
+			<string>%d điểm dừng trước điểm dừng của bạn</string>
 		</dict>
 	</dict>
 	<key>trip_page.stop_list.a11y_run_passed_fmt</key>
@@ -468,7 +496,7 @@
 			<string>%d điểm dừng đã qua</string>
 		</dict>
 	</dict>
-	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
+	<key>trip_page.stop_list.run_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -479,21 +507,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d điểm dừng trước điểm dừng của bạn</string>
-		</dict>
-	</dict>
-	<key>stop_page.past_toggle_earlier_fmt</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>other</key>
-			<string>%d chuyến trước</string>
+			<string>%d điểm dừng</string>
 		</dict>
 	</dict>
 </dict>

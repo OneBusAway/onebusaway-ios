@@ -122,7 +122,27 @@
 			<string>через %d минуты</string>
 		</dict>
 	</dict>
-	<key>rental_cluster.title_fmt</key>
+	<key>on_demand.address.inside_more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Внутри %1$@ и %2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>ещё %d</string>
+			<key>few</key>
+			<string>ещё %d</string>
+			<key>many</key>
+			<string>ещё %d</string>
+			<key>other</key>
+			<string>ещё %d</string>
+		</dict>
+	</dict>
+	<key>on_demand.card.more_services</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -132,14 +152,94 @@
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>few</key>
-			<string>Здесь %d транспортных средства</string>
-			<key>many</key>
-			<string>Здесь %d транспортных средств</string>
 			<key>one</key>
-			<string>Здесь %d транспортное средство</string>
+			<string>Ещё %d услуга здесь</string>
+			<key>few</key>
+			<string>Ещё %d услуги здесь</string>
+			<key>many</key>
+			<string>Ещё %d услуг здесь</string>
 			<key>other</key>
-			<string>Здесь %d транспортного средства</string>
+			<string>Ещё %d услуги здесь</string>
+		</dict>
+	</dict>
+	<key>on_demand.detail.zone_count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d зона</string>
+			<key>few</key>
+			<string>%d зоны</string>
+			<key>many</key>
+			<string>%d зон</string>
+			<key>other</key>
+			<string>%d зоны</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d услуга здесь</string>
+			<key>few</key>
+			<string>%d услуги здесь</string>
+			<key>many</key>
+			<string>%d услуг здесь</string>
+			<key>other</key>
+			<string>%d услуги здесь</string>
+		</dict>
+	</dict>
+	<key>on_demand.picker.title_nearby</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d услуга поблизости</string>
+			<key>few</key>
+			<string>%d услуги поблизости</string>
+			<key>many</key>
+			<string>%d услуг поблизости</string>
+			<key>other</key>
+			<string>%d услуги поблизости</string>
+		</dict>
+	</dict>
+	<key>on_demand.planner.more_serving_both</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ещё %d услуга обслуживает оба места</string>
+			<key>few</key>
+			<string>Ещё %d услуги обслуживают оба места</string>
+			<key>many</key>
+			<string>Ещё %d услуг обслуживают оба места</string>
+			<key>other</key>
+			<string>Ещё %d услуги обслуживают оба места</string>
 		</dict>
 	</dict>
 	<key>rental_annotation.vehicles_available_fmt</key>
@@ -160,6 +260,26 @@
 			<string>Доступно: %d</string>
 			<key>other</key>
 			<string>Доступно: %d</string>
+		</dict>
+	</dict>
+	<key>rental_cluster.title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Здесь %d транспортных средства</string>
+			<key>many</key>
+			<string>Здесь %d транспортных средств</string>
+			<key>one</key>
+			<string>Здесь %d транспортное средство</string>
+			<key>other</key>
+			<string>Здесь %d транспортного средства</string>
 		</dict>
 	</dict>
 	<key>rental_detail.walk_time_fmt</key>
@@ -200,6 +320,26 @@
 			<string>%d результат</string>
 			<key>other</key>
 			<string>%d результата</string>
+		</dict>
+	</dict>
+	<key>stop_cluster_picker.nav_title_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Выберите остановку — %d остановка рядом</string>
+			<key>few</key>
+			<string>Выберите остановку — %d остановки рядом</string>
+			<key>many</key>
+			<string>Выберите остановку — %d остановок рядом</string>
+			<key>other</key>
+			<string>Выберите остановку — %d остановок рядом</string>
 		</dict>
 	</dict>
 	<key>stop_page.a11y.past_shown_fmt</key>
@@ -310,6 +450,26 @@
 			<string>%5$d отправление</string>
 			<key>other</key>
 			<string>%5$d отправления</string>
+		</dict>
+	</dict>
+	<key>stop_page.past_toggle_earlier_fmt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ранее: %d</string>
+			<key>few</key>
+			<string>Ранее: %d</string>
+			<key>many</key>
+			<string>Ранее: %d</string>
+			<key>other</key>
+			<string>Ранее: %d</string>
 		</dict>
 	</dict>
 	<key>stop_page.past_toggle_show_a11y_fmt</key>
@@ -512,127 +672,7 @@
 			<string>%2$d остановки</string>
 		</dict>
 	</dict>
-	<key>on_demand.card.more_services</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Ещё %d услуга здесь</string>
-			<key>few</key>
-			<string>Ещё %d услуги здесь</string>
-			<key>many</key>
-			<string>Ещё %d услуг здесь</string>
-			<key>other</key>
-			<string>Ещё %d услуги здесь</string>
-		</dict>
-	</dict>
-	<key>on_demand.planner.more_serving_both</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Ещё %d услуга обслуживает оба места</string>
-			<key>few</key>
-			<string>Ещё %d услуги обслуживают оба места</string>
-			<key>many</key>
-			<string>Ещё %d услуг обслуживают оба места</string>
-			<key>other</key>
-			<string>Ещё %d услуги обслуживают оба места</string>
-		</dict>
-	</dict>
-	<key>on_demand.picker.title</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d услуга здесь</string>
-			<key>few</key>
-			<string>%d услуги здесь</string>
-			<key>many</key>
-			<string>%d услуг здесь</string>
-			<key>other</key>
-			<string>%d услуги здесь</string>
-		</dict>
-	</dict>
-	<key>on_demand.picker.title_nearby</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d услуга поблизости</string>
-			<key>few</key>
-			<string>%d услуги поблизости</string>
-			<key>many</key>
-			<string>%d услуг поблизости</string>
-			<key>other</key>
-			<string>%d услуги поблизости</string>
-		</dict>
-	</dict>
-	<key>on_demand.detail.zone_count</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d зона</string>
-			<key>few</key>
-			<string>%d зоны</string>
-			<key>many</key>
-			<string>%d зон</string>
-			<key>other</key>
-			<string>%d зоны</string>
-		</dict>
-	</dict>
-	<key>on_demand.address.inside_more</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>Внутри %1$@ и %2$#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>ещё %d</string>
-			<key>few</key>
-			<string>ещё %d</string>
-			<key>many</key>
-			<string>ещё %d</string>
-			<key>other</key>
-			<string>ещё %d</string>
-		</dict>
-	</dict>
-	<key>trip_page.stop_list.run_count_fmt</key>
+	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -643,13 +683,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>few</key>
-			<string>%d остановки</string>
+			<string>%d остановки до вашей</string>
 			<key>many</key>
-			<string>%d остановок</string>
+			<string>%d остановок до вашей</string>
 			<key>one</key>
-			<string>%d остановка</string>
+			<string>%d остановка до вашей</string>
 			<key>other</key>
-			<string>%d остановки</string>
+			<string>%d остановки до вашей</string>
 		</dict>
 	</dict>
 	<key>trip_page.stop_list.a11y_run_passed_fmt</key>
@@ -672,7 +712,7 @@
 			<string>%d пройденной остановки</string>
 		</dict>
 	</dict>
-	<key>trip_page.stop_list.a11y_run_approaching_fmt</key>
+	<key>trip_page.stop_list.run_count_fmt</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>%#@count@</string>
@@ -683,33 +723,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>few</key>
-			<string>%d остановки до вашей</string>
+			<string>%d остановки</string>
 			<key>many</key>
-			<string>%d остановок до вашей</string>
+			<string>%d остановок</string>
 			<key>one</key>
-			<string>%d остановка до вашей</string>
+			<string>%d остановка</string>
 			<key>other</key>
-			<string>%d остановки до вашей</string>
-		</dict>
-	</dict>
-	<key>stop_page.past_toggle_earlier_fmt</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Ранее: %d</string>
-			<key>few</key>
-			<string>Ранее: %d</string>
-			<key>many</key>
-			<string>Ранее: %d</string>
-			<key>other</key>
-			<string>Ранее: %d</string>
+			<string>%d остановки</string>
 		</dict>
 	</dict>
 </dict>

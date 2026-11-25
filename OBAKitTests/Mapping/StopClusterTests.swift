@@ -345,8 +345,8 @@ final class StopClusterTests {
         #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
     }
 
-    /// VoiceOver: `StopClusterAnnotationView.accessibilityLabel` for a 7-stop cluster
-    /// must contain "7 stops" and the picker prompt.
+    /// VoiceOver: `StopClusterAnnotationView.accessibilityLabel` uses the pluralized
+    /// stop count and delegates action guidance to `StopCluster.accessibilityHint`.
     @Test func `Cluster annotation view label contains stop count for 7 stops`() throws {
         var sevenStops: [Stop] = []
         for i in 0 ..< 7 {
@@ -357,8 +357,9 @@ final class StopClusterTests {
         view.prepareForDisplay()
 
         let label = try #require(view.accessibilityLabel)
+        #expect(label == StopCluster.accessibilityLabel(stopCount: 7))
         #expect(label.contains("7 stops"))
-        #expect(label.contains("— 7 stops, double-tap to pick"))
+        #expect(view.accessibilityHint == StopCluster.accessibilityHint)
     }
 }
 
@@ -373,6 +374,9 @@ final class StopClusterPresentationTests: OBATestCase {
         let queue = OperationQueue()
         let dataLoader = MockDataLoader(testName: name)
         Fixtures.stubOnDemandViewportProbe(dataLoader: dataLoader)
+        dataLoader.mock(data: Fixtures.loadData(file: "pugetsound-weather.json")) { request in
+            request.url?.path.contains("/weather.json") ?? false
+        }
         application = buildApplication(queue: queue, dataLoader: dataLoader)
     }
 
@@ -478,6 +482,51 @@ final class StopClusterPresentationTests: OBATestCase {
         picker.loadViewIfNeeded()
         picker.view.layoutIfNeeded()
         #expect(picker.tableView.numberOfRows(inSection: 0) == 25)
+    }
+
+    @Test func `Selecting a filtered row with active search dismisses the picker before calling onStopSelected`() async throws {
+        let stops = try (0 ..< 8).map { try makeCoLocatedStop(index: $0) }
+        let cluster = MKClusterAnnotation(memberAnnotations: stops)
+        let annotationView = StopClusterAnnotationView(annotation: cluster, reuseIdentifier: nil)
+
+        let controller = MapViewController(application: application)
+        let window = try hostInWindow(controller)
+        defer {
+            controller.dismiss(animated: false)
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+
+        controller.selectStopCluster(cluster, view: annotationView, in: application.mapRegionManager.mapView)
+
+        let nav = try #require(controller.presentedViewController as? UINavigationController)
+        let picker = try #require(nav.topViewController as? StopClusterPickerViewController)
+        picker.loadViewIfNeeded()
+        picker.view.layoutIfNeeded()
+
+        var selectedStop: Stop?
+        var presenterAtCallback: UIViewController?
+        picker.onStopSelected = { stop in
+            selectedStop = stop
+            presenterAtCallback = controller.presentedViewController
+        }
+
+        let searchController = try #require(picker.navigationItem.searchController)
+        searchController.isActive = true
+        searchController.searchBar.text = "Co-located Stop 7"
+        picker.updateSearchResults(for: searchController)
+        #expect(picker.tableView.numberOfRows(inSection: 0) == 1)
+
+        picker.tableView(picker.tableView, didSelectRowAt: IndexPath(row: 0, section: 0))
+
+        let deadline = ContinuousClock.now + .seconds(3)
+        while selectedStop == nil && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(25))
+        }
+
+        #expect(selectedStop?.id == "1_coloc_7")
+        #expect(presenterAtCallback == nil)
+        #expect(controller.presentedViewController == nil)
     }
 }
 

@@ -94,8 +94,18 @@ final class StopClusterPickerViewController: UITableViewController {
     // MARK: - Actions
 
     @objc private func close() {
-        dismiss(animated: true) { [weak self] in
+        dismissPicker { [weak self] in
             self?.onCancel?()
+        }
+    }
+
+    /// Dismisses the picker sheet from its presenting view controller so that an
+    /// active `UISearchController` (`definesPresentationContext = true`) does not
+    /// intercept `dismiss(animated:)` and leave the sheet open.
+    private func dismissPicker(completion: (() -> Void)?) {
+        let presenter = navigationController?.presentingViewController ?? presentingViewController ?? self
+        presenter.dismiss(animated: true) {
+            completion?()
         }
     }
 
@@ -228,7 +238,7 @@ final class StopClusterPickerViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let stop = filteredStops[indexPath.row]
-        dismiss(animated: true) { [weak self] in
+        dismissPicker { [weak self] in
             self?.onStopSelected?(stop)
         }
     }

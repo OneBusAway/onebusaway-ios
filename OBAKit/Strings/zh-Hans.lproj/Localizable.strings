@@ -2512,11 +2512,5 @@
 /* Title of the map card that asks whether the rider is on a particular non-bus line, such as light rail. %@ is the line's short name, e.g. 'On the 1 Line?' */
 "trip_suggestion.title_one_line_fmt" = "在 %@ 上吗？";
 
-/* VoiceOver label for a large cluster pin (>5 stops). %d is the number of stops. */
-"map_controller.stop_cluster.accessibility_label_picker_fmt" = "站点群组 — %d 个站点，轻点两下以选择";
-
-/* Navigation title of the stop cluster picker sheet. %d is replaced by the number of stops. */
-"stop_cluster_picker.nav_title_fmt" = "选择站点 — 附近有 %d 个站点";
-
 /* Placeholder text in the stop cluster picker's search bar. */
 "stop_cluster_picker.search_placeholder" = "按名称或线路筛选";
