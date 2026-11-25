@@ -145,6 +145,16 @@ final class WatchBookmarkDepartureTests: OBATestCase {
         return try JSONSerialization.data(withJSONObject: root)
     }
 
+    /// The departures the stream yields once every stop has reported.
+    private func collectDepartures(for bookmarks: [WatchBookmark], using dataLoader: MockDataLoader) async -> [UUID: WatchBookmarkDeparture] {
+        var result = [UUID: WatchBookmarkDeparture]()
+        for await departures in BookmarkArrivalsLoader(savedArrivals: store)
+            .nextDeparturesByWatchBookmark(for: bookmarks, using: buildRESTService(dataLoader: dataLoader)) {
+            result = departures
+        }
+        return result
+    }
+
     // MARK: - Tests
 
     @Test func `Online, the next departure is live and saved for later`() async throws {
@@ -152,8 +162,7 @@ final class WatchBookmarkDepartureTests: OBATestCase {
         mockArrivals(dataLoader, body: try arrivalsBody(departingInMinutes: [-2, 4, 12]))
         let bookmark = stopBookmark()
 
-        let result = await BookmarkArrivalsLoader(savedArrivals: store)
-            .nextDeparturesByWatchBookmark(for: [bookmark], using: buildRESTService(dataLoader: dataLoader))
+        let result = await collectDepartures(for: [bookmark], using: dataLoader)
 
         let departure = try #require(result[bookmark.id])
         #expect((3...4).contains(try #require(departure.arrival).arrivalDepartureMinutes))
@@ -169,8 +178,7 @@ final class WatchBookmarkDepartureTests: OBATestCase {
         mockOffline(dataLoader)
         let bookmark = tripBookmark()
 
-        let result = await BookmarkArrivalsLoader(savedArrivals: store)
-            .nextDeparturesByWatchBookmark(for: [bookmark], using: buildRESTService(dataLoader: dataLoader))
+        let result = await collectDepartures(for: [bookmark], using: dataLoader)
 
         let departure = try #require(result[bookmark.id])
         // The one that left a minute ago is dropped.
@@ -188,8 +196,7 @@ final class WatchBookmarkDepartureTests: OBATestCase {
         let trip = tripBookmark()
         let stop = stopBookmark()
 
-        let result = await BookmarkArrivalsLoader(savedArrivals: store)
-            .nextDeparturesByWatchBookmark(for: [trip, stop], using: buildRESTService(dataLoader: dataLoader))
+        let result = await collectDepartures(for: [trip, stop], using: dataLoader)
 
         // The trip bookmark skips the other route's sooner trip.
         let tripDeparture = try #require(result[trip.id])
@@ -207,9 +214,35 @@ final class WatchBookmarkDepartureTests: OBATestCase {
         mockOffline(dataLoader)
         let bookmark = stopBookmark()
 
-        let result = await BookmarkArrivalsLoader(savedArrivals: store)
-            .nextDeparturesByWatchBookmark(for: [bookmark], using: buildRESTService(dataLoader: dataLoader))
+        let result = await collectDepartures(for: [bookmark], using: dataLoader)
 
         #expect(result[bookmark.id] == nil)
+    }
+
+    @Test func `A hung timetable download does not hold back the live departure`() async throws {
+        let dataLoader = MockDataLoader(testName: name)
+        dataLoader.mock(data: try arrivalsBody(departingInMinutes: [4])) { [arrivalsPath] request in
+            request.url?.path.contains(arrivalsPath) ?? false
+        }
+        dataLoader.mock(hangs: { [schedulePath] request in
+            request.url?.path.contains(schedulePath) ?? false
+        })
+        let bookmark = stopBookmark()
+
+        let stream = BookmarkArrivalsLoader(savedArrivals: store)
+            .nextDeparturesByWatchBookmark(for: [bookmark], using: buildRESTService(dataLoader: dataLoader))
+
+        // The arrivals have landed, but the day's timetable download never
+        // finishes, so the stream never ends: this first snapshot must already
+        // carry the live departure. Letting `iterator` go out of scope ends
+        // the iteration, which cancels the hung download.
+        var iterator = stream.makeAsyncIterator()
+        let snapshot = await iterator.next()
+        let departures = try #require(snapshot)
+
+        let departure = try #require(departures[bookmark.id])
+        #expect((3...4).contains(try #require(departure.arrival).arrivalDepartureMinutes))
+        #expect(departure.scheduledDeparture == nil)
+        #expect(departure.savedAt == nil)
     }
 }

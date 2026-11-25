@@ -36,43 +36,69 @@ public struct WatchBookmarkDeparture: Equatable, Sendable {
 }
 
 extension BookmarkArrivalsLoader {
-    /// Each watch bookmark's next departure after `now`. When the watch can't
-    /// reach the server, saved departures stand in for live ones, if this
-    /// loader has a store. A bookmark whose stop failed with nothing saved has
-    /// no entry.
+    /// Each watch bookmark's next departure after `now`, yielded once every
+    /// bookmarked stop has reported. A bookmark whose stop failed with nothing
+    /// saved has no entry. When the watch can't reach the server, saved
+    /// departures stand in for live ones, if this loader has a store.
+    ///
+    /// Yields as soon as the last stop reports rather than when the loader's
+    /// stream ends: the loader saves the day's timetable for each stop after
+    /// reporting it, and the rows must not wait for those downloads. The
+    /// stream keeps draining after the yield so those saves can finish.
     public func nextDeparturesByWatchBookmark(
         for bookmarks: [WatchBookmark],
         using apiService: RESTAPIService,
         now: Date = Date()
-    ) async -> [UUID: WatchBookmarkDeparture] {
+    ) -> AsyncStream<[UUID: WatchBookmarkDeparture]> {
         let requests = bookmarks.map { ($0.id, BookmarkArrivalsRequest(watchBookmark: $0)) }
+        let (stream, continuation) = AsyncStream<[UUID: WatchBookmarkDeparture]>.makeStream()
 
-        var resultsByStop = [StopID: Result<[ArrivalDeparture], Error>]()
-        for await (stopID, result) in arrivals(for: requests.map(\.1), using: apiService) {
-            resultsByStop[stopID] = result
-        }
-
-        var departures = [UUID: WatchBookmarkDeparture]()
-        for (bookmarkID, request) in requests {
-            switch resultsByStop[request.stopID] {
-            case .success(let arrivals):
-                departures[bookmarkID] = WatchBookmarkDeparture(arrival: request.nextArrival(in: arrivals, after: now))
-            case .failure(let fallback as SavedArrivalsFallback):
-                if let arrival = request.nextArrival(in: fallback.arrivals, after: now) {
-                    departures[bookmarkID] = WatchBookmarkDeparture(arrival: arrival, savedAt: fallback.savedAt)
-                } else {
-                    let scheduled = fallback.scheduledDepartures.first { departure in
-                        departure.date > now && request.tripKey.map { departure.matches($0) } ?? true
+        let task = Task {
+            var departures = [UUID: WatchBookmarkDeparture]()
+            var pendingStops = Set(requests.map(\.1.stopID))
+            for await (stopID, result) in arrivals(for: requests.map(\.1), using: apiService) {
+                for (bookmarkID, request) in requests where request.stopID == stopID {
+                    if let departure = Self.departure(for: request, result: result, now: now) {
+                        departures[bookmarkID] = departure
                     }
-                    departures[bookmarkID] = WatchBookmarkDeparture(scheduledDeparture: scheduled, savedAt: fallback.savedAt)
                 }
-            case .failure(let error):
-                Logger.error("BookmarkArrivalsLoader: arrivals failed for stop \(request.stopID): \(error.localizedDescription)")
-            case nil:
-                break
+                pendingStops.remove(stopID)
+                if pendingStops.isEmpty {
+                    continuation.yield(departures)
+                }
             }
+            continuation.finish()
         }
-        return departures
+
+        continuation.onTermination = { _ in task.cancel() }
+
+        return stream
+    }
+
+    /// What one stop's result means for a bookmark at it: the next live
+    /// departure, or offline, the next saved one, then the next timetable trip
+    /// for the bookmark's route and headsign. `nil` when the stop failed with
+    /// nothing saved.
+    private static func departure(
+        for request: BookmarkArrivalsRequest,
+        result: Result<[ArrivalDeparture], Error>,
+        now: Date
+    ) -> WatchBookmarkDeparture? {
+        switch result {
+        case .success(let arrivals):
+            return WatchBookmarkDeparture(arrival: request.nextArrival(in: arrivals, after: now))
+        case .failure(let fallback as SavedArrivalsFallback):
+            if let arrival = request.nextArrival(in: fallback.arrivals, after: now) {
+                return WatchBookmarkDeparture(arrival: arrival, savedAt: fallback.savedAt)
+            }
+            let scheduled = fallback.scheduledDepartures.first { departure in
+                departure.date > now && request.tripKey.map { departure.matches($0) } ?? true
+            }
+            return WatchBookmarkDeparture(scheduledDeparture: scheduled, savedAt: fallback.savedAt)
+        case .failure(let error):
+            Logger.error("BookmarkArrivalsLoader: arrivals failed for stop \(request.stopID): \(error.localizedDescription)")
+            return nil
+        }
     }
 }
 

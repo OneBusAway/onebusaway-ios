@@ -127,12 +127,19 @@ public final class WatchBookmarksModel {
             self.phase = .loading
         }
 
-        let departures = await loader.nextDeparturesByWatchBookmark(for: bookmarks, using: apiService)
-        guard !Task.isCancelled else { return }
+        let groups = host.bookmarkStore.groups
+        for await departures in loader.nextDeparturesByWatchBookmark(for: bookmarks, using: apiService) {
+            guard !Task.isCancelled else { return }
+            self.publishSections(bookmarks: bookmarks, groups: groups, departures: departures)
+        }
+    }
 
+    /// Rebuilds the tab's sections from the departures and schedules the next
+    /// refresh from them. Runs once every stop has reported, while the day's
+    /// timetables may still be downloading.
+    private func publishSections(bookmarks: [WatchBookmark], groups: [WatchBookmarkGroup], departures: [UUID: WatchBookmarkDeparture]) {
         var sections: [WatchBookmarkSection] = []
         let now = Date()
-        let groups = host.bookmarkStore.groups
 
         for group in groups {
             let groupBookmarks = bookmarks.filter { $0.groupID == group.id }
