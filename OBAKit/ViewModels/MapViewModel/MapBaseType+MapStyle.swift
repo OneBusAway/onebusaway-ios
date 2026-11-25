@@ -15,11 +15,37 @@ import SwiftUI
 /// `MapStyle` is opaque and not `Equatable`, so asserting on it directly is
 /// impossible. Splitting the decision from its construction keeps the branch —
 /// which previously collapsed satellite into hybrid — under test.
-enum MapBaseStyleDescriptor: Equatable {
+enum MapBaseStyleDescriptor: Equatable, Hashable {
     case standard(pointsOfInterest: Bool)
     /// Imagery carries no labels, so it takes no points-of-interest argument.
     case imagery
     case hybrid(pointsOfInterest: Bool)
+
+    /// Stable identifier for renderer and tile-cache invalidation across basemap switches.
+    var cacheIdentifier: String {
+        switch self {
+        case .standard(let pointsOfInterest):
+            return "standard.poi-\(pointsOfInterest)"
+        case .imagery:
+            return "imagery"
+        case .hybrid(let pointsOfInterest):
+            return "hybrid.poi-\(pointsOfInterest)"
+        }
+    }
+
+    /// Whether the basemap renders raster satellite imagery tiles.
+    var usesRasterImagery: Bool {
+        switch self {
+        case .standard:
+            return false
+        case .imagery, .hybrid:
+            return true
+        }
+    }
+
+    func requiresCacheInvalidation(transitioningTo next: MapBaseStyleDescriptor) -> Bool {
+        self != next
+    }
 }
 
 extension MapBaseType {
@@ -29,6 +55,12 @@ extension MapBaseType {
         case .satellite: return .imagery
         case .hybrid: return .hybrid(pointsOfInterest: showingPointsOfInterest)
         }
+    }
+
+    /// Whether transitioning between two basemap styles requires tearing down
+    /// obsolete tile overlays, invalidating renderer caches, and reconciling margins.
+    func requiresOverlayAndRendererCleanup(transitioningTo next: MapBaseType) -> Bool {
+        self != next
     }
 }
 

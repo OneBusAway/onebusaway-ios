@@ -224,14 +224,39 @@ public class MapRegionManager: NSObject,
 
     private let mapViewMapTypeKey = "mapRegionManager.selectedMapType"
 
-    /// Changing this value will also update `mapView`.
+    /// Baseline directional layout margins restored when switching basemaps so
+    /// camera margins do not drift or leak across basemap transitions.
+    var preferredCameraLayoutMargins: NSDirectionalEdgeInsets = .zero
+
+    /// Weak-keyed cache of non-layer overlay renderers (`MKTileOverlayRenderer`,
+    /// generic `MKPolylineRenderer`, fallback `MKOverlayRenderer`). Keys are
+    /// dropped automatically when overlays deallocate, and explicitly cleared
+    /// on basemap changes or wholesale overlay removal.
+    private let overlayRendererCache = NSMapTable<AnyObject, MKOverlayRenderer>.weakToStrongObjects()
+
+    /// Weak references to layer-provided renderers so basemap transitions can
+    /// mark them dirty without retaining them or interfering with layer restyling.
+    private let trackedLayerRenderers = NSHashTable<MKOverlayRenderer>.weakObjects()
+
+    /// Incremented each time cached overlay renderers are invalidated.
+    private(set) var rendererCacheInvalidationCount: Int = 0
+
+    /// Number of currently cached non-layer overlay renderers.
+    var cachedOverlayRendererCount: Int {
+        overlayRendererCache.count
+    }
+
+    /// Changing this value persists the selection, updates `mapView`, and cleans
+    /// up obsolete tile overlays, renderer caches, and camera margins when the
+    /// basemap changes.
     var userSelectedMapType: MKMapType {
         get {
             let rawMapType: Int = application.userDefaults.integer(forKey: mapViewMapTypeKey)
             return MKMapType(rawValue: UInt(rawMapType)) ?? .mutedStandard
         } set {
+            let previousMapType = mapView.mapType
             application.userDefaults.set(newValue.rawValue, forKey: mapViewMapTypeKey)
-            mapView.mapType = newValue
+            applyMapTypeTransition(from: previousMapType, to: newValue)
         }
     }
 
@@ -282,6 +307,8 @@ public class MapRegionManager: NSObject,
     isolated deinit {
         mapView.delegate = nil
         mapView.removeAllAnnotations()
+        mapView.removeOverlays(mapView.overlays)
+        invalidateOverlayRendererCache()
         delegates.removeAllObjects()
         application.locationService.removeDelegate(self)
         application.regionsService.removeDelegate(self)
@@ -860,6 +887,7 @@ public class MapRegionManager: NSObject,
         searchResponse = nil
         mapView.removeAllAnnotations()
         mapView.removeOverlays(mapView.overlays)
+        invalidateOverlayRendererCache()
         reloadStopAnnotations()
         notifyMapLayersAnnotationsCleared()
         notifyMapLayersOverlaysCleared()
@@ -1293,23 +1321,33 @@ public class MapRegionManager: NSObject,
         // generic branch instead of its own renderer.
         for layer in mapLayers {
             if let layerRenderer = layer.renderer(for: overlay, in: mapView) {
+                trackedLayerRenderers.add(layerRenderer)
                 return layerRenderer
             }
         }
 
-        if let overlay = overlay as? MKPolyline {
-            let renderer = MKPolylineRenderer(polyline: overlay)
-            renderer.strokeColor = ThemeColors.shared.brand.withAlphaComponent(0.75)
-            renderer.lineWidth = 3.0
-            renderer.lineCap = .round
-
-            return renderer
+        if let cachedRenderer = overlayRendererCache.object(forKey: overlay) {
+            return cachedRenderer
         }
 
-        // Previously `fatalError()`. An unexpected overlay type is not worth
-        // aborting a transit app over — log it and draw nothing.
-        Logger.error("No renderer for overlay of type \(type(of: overlay)); drawing nothing.")
-        return MKOverlayRenderer(overlay: overlay)
+        let renderer: MKOverlayRenderer
+        if let tileOverlay = overlay as? MKTileOverlay {
+            renderer = MKTileOverlayRenderer(tileOverlay: tileOverlay)
+        } else if let polyline = overlay as? MKPolyline {
+            let polylineRenderer = MKPolylineRenderer(polyline: polyline)
+            polylineRenderer.strokeColor = ThemeColors.shared.brand.withAlphaComponent(0.75)
+            polylineRenderer.lineWidth = 3.0
+            polylineRenderer.lineCap = .round
+            renderer = polylineRenderer
+        } else {
+            // Previously `fatalError()`. An unexpected overlay type is not worth
+            // aborting a transit app over — log it and draw nothing.
+            Logger.error("No renderer for overlay of type \(type(of: overlay)); drawing nothing.")
+            renderer = MKOverlayRenderer(overlay: overlay)
+        }
+
+        overlayRendererCache.setObject(renderer, forKey: overlay)
+        return renderer
     }
 
     // MARK: - Regions
@@ -1359,6 +1397,86 @@ public class MapRegionManager: NSObject,
 
         // Limit stored pins to prevent unbounded growth
         limitStoredPins(maxPins: 10)
+    }
+}
+
+// MARK: - Basemap Transition & Cache Cleanup
+
+extension MapRegionManager {
+    /// Switches the active basemap via `MapBaseType`, ensuring obsolete tile
+    /// overlays, renderer caches, and camera margins are reconciled cleanly.
+    func setBaseMapType(_ baseType: MapBaseType) {
+        userSelectedMapType = baseType.mkMapType
+    }
+
+    private func applyMapTypeTransition(from previousMapType: MKMapType, to newMapType: MKMapType) {
+        let previousBaseType = MapBaseType(previousMapType)
+        let nextBaseType = MapBaseType(newMapType)
+        let requiresCleanup = previousMapType != newMapType
+            || previousBaseType.requiresOverlayAndRendererCleanup(transitioningTo: nextBaseType)
+
+        guard requiresCleanup else {
+            mapView.mapType = newMapType
+            return
+        }
+
+        cleanupObsoleteBasemapOverlaysAndCaches()
+        mapView.mapType = newMapType
+        applyPointsOfInterestVisibility()
+        reconcileCameraMarginsForBasemapChange()
+    }
+
+    private func cleanupObsoleteBasemapOverlaysAndCaches() {
+        autoreleasepool {
+            let obsoleteTileOverlays = mapView.overlays.compactMap { $0 as? MKTileOverlay }
+            for tileOverlay in obsoleteTileOverlays {
+                if let tileRenderer = (mapView.renderer(for: tileOverlay) as? MKTileOverlayRenderer)
+                    ?? (overlayRendererCache.object(forKey: tileOverlay) as? MKTileOverlayRenderer) {
+                    tileRenderer.reloadData()
+                }
+            }
+
+            if !obsoleteTileOverlays.isEmpty {
+                mapView.removeOverlays(obsoleteTileOverlays)
+            }
+
+            invalidateOverlayRendererCache()
+
+            for overlay in mapView.overlays where !(overlay is MKTileOverlay) {
+                mapView.renderer(for: overlay)?.setNeedsDisplay()
+            }
+        }
+    }
+
+    func invalidateOverlayRendererCache() {
+        autoreleasepool {
+            if let enumerator = overlayRendererCache.objectEnumerator() {
+                for case let renderer as MKOverlayRenderer in enumerator {
+                    Self.invalidateRenderer(renderer)
+                }
+            }
+            overlayRendererCache.removeAllObjects()
+
+            for renderer in trackedLayerRenderers.allObjects {
+                Self.invalidateRenderer(renderer)
+            }
+            trackedLayerRenderers.removeAllObjects()
+        }
+        rendererCacheInvalidationCount += 1
+    }
+
+    private static func invalidateRenderer(_ renderer: MKOverlayRenderer) {
+        if let tileRenderer = renderer as? MKTileOverlayRenderer {
+            tileRenderer.reloadData()
+        } else {
+            renderer.setNeedsDisplay()
+        }
+    }
+
+    private func reconcileCameraMarginsForBasemapChange() {
+        mapView.directionalLayoutMargins = preferredCameraLayoutMargins
+        mapView.layoutMarginsDidChange()
+        mapView.setNeedsLayout()
     }
 }
 

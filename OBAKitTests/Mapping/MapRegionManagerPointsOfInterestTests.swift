@@ -95,4 +95,133 @@ final class MapRegionManagerPointsOfInterestTests: OBATestCase {
         #expect(manager.mapViewShowsPointsOfInterest == true)
         #expect(!manager.mapLayersDifferFromDefaults)
     }
+
+    // MARK: - Basemap switching cleanup & lifecycle
+
+    private func attachTileOverlayAndCacheRenderer() -> (overlay: MKTileOverlay, renderer: MKOverlayRenderer) {
+        let tileOverlay = MKTileOverlay(urlTemplate: "https://example.com/tiles/{z}/{x}/{y}.png")
+        manager.mapView.addOverlay(tileOverlay)
+        let renderer = manager.mapView(manager.mapView, rendererFor: tileOverlay)
+        return (tileOverlay, renderer)
+    }
+
+    @Test func `Cycling basemaps removes obsolete tile overlays and leaves zero orphaned overlays`() {
+        let cycle: [(MapBaseType, MKMapType)] = [
+            (.satellite, .satellite),
+            (.hybrid, .hybrid),
+            (.standard, .mutedStandard)
+        ]
+
+        for (baseType, expectedMKMapType) in cycle {
+            _ = attachTileOverlayAndCacheRenderer()
+            #expect(manager.mapView.overlays.contains { $0 is MKTileOverlay })
+
+            manager.setBaseMapType(baseType)
+
+            #expect(manager.mapView.mapType == expectedMKMapType)
+            #expect(!manager.mapView.overlays.contains { $0 is MKTileOverlay })
+            #expect(manager.mapView.overlays.isEmpty)
+        }
+    }
+
+    @Test func `Cycling basemaps preserves non-tile polyline overlays while removing tile overlays`() {
+        var coords = [
+            CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321),
+            CLLocationCoordinate2D(latitude: 47.6205, longitude: -122.3493)
+        ]
+        let routePolyline = MKPolyline(coordinates: &coords, count: coords.count)
+        manager.mapView.addOverlay(routePolyline)
+        _ = attachTileOverlayAndCacheRenderer()
+
+        manager.setBaseMapType(.satellite)
+        #expect(!manager.mapView.overlays.contains { $0 is MKTileOverlay })
+        #expect(manager.mapView.overlays.contains { $0 === routePolyline })
+
+        manager.setBaseMapType(.hybrid)
+        #expect(!manager.mapView.overlays.contains { $0 is MKTileOverlay })
+        #expect(manager.mapView.overlays.contains { $0 === routePolyline })
+
+        manager.setBaseMapType(.standard)
+        #expect(!manager.mapView.overlays.contains { $0 is MKTileOverlay })
+        #expect(manager.mapView.overlays.contains { $0 === routePolyline })
+    }
+
+    @Test func `Cycling basemaps invalidates renderer caches and releases tile overlays and renderers`() {
+        weak var weakOverlay: MKTileOverlay?
+        weak var weakRenderer: MKOverlayRenderer?
+
+        autoreleasepool {
+            let pair = attachTileOverlayAndCacheRenderer()
+            weakOverlay = pair.overlay
+            weakRenderer = pair.renderer
+            #expect(manager.cachedOverlayRendererCount == 1)
+        }
+
+        let initialInvalidations = manager.rendererCacheInvalidationCount
+
+        autoreleasepool {
+            manager.setBaseMapType(.satellite)
+        }
+
+        #expect(manager.cachedOverlayRendererCount == 0)
+        #expect(manager.rendererCacheInvalidationCount == initialInvalidations + 1)
+        #expect(weakOverlay == nil)
+        #expect(weakRenderer == nil)
+
+        // Switching to hybrid and back to standard continues invalidating cleanly.
+        autoreleasepool {
+            _ = attachTileOverlayAndCacheRenderer()
+            #expect(manager.cachedOverlayRendererCount == 1)
+            manager.setBaseMapType(.hybrid)
+        }
+        #expect(manager.cachedOverlayRendererCount == 0)
+        #expect(manager.rendererCacheInvalidationCount == initialInvalidations + 2)
+
+        autoreleasepool {
+            _ = attachTileOverlayAndCacheRenderer()
+            #expect(manager.cachedOverlayRendererCount == 1)
+            manager.setBaseMapType(.standard)
+        }
+        #expect(manager.cachedOverlayRendererCount == 0)
+        #expect(manager.rendererCacheInvalidationCount == initialInvalidations + 3)
+
+        // Redundant write of the active basemap does not churn caches.
+        manager.setBaseMapType(.standard)
+        #expect(manager.rendererCacheInvalidationCount == initialInvalidations + 3)
+    }
+
+    @Test func `Switching basemaps resets and reconciles camera margins`() {
+        manager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 24, leading: 16, bottom: 120, trailing: 16)
+        manager.setBaseMapType(.satellite)
+
+        #expect(manager.mapView.directionalLayoutMargins == .zero)
+        #expect(manager.mapView.layoutMargins == .zero)
+
+        let customBaseline = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 64, trailing: 0)
+        manager.preferredCameraLayoutMargins = customBaseline
+        manager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 40, leading: 32, bottom: 200, trailing: 32)
+
+        manager.setBaseMapType(.hybrid)
+        #expect(manager.mapView.directionalLayoutMargins == customBaseline)
+
+        manager.preferredCameraLayoutMargins = .zero
+        manager.setBaseMapType(.standard)
+        #expect(manager.mapView.directionalLayoutMargins == .zero)
+    }
+
+    @Test func `MapBaseStyleDescriptor tracks cache keys and transition invalidation`() {
+        let standard = MapBaseType.standard.styleDescriptor(showingPointsOfInterest: true)
+        let satellite = MapBaseType.satellite.styleDescriptor(showingPointsOfInterest: true)
+        let hybrid = MapBaseType.hybrid.styleDescriptor(showingPointsOfInterest: true)
+
+        #expect(Set([standard.cacheIdentifier, satellite.cacheIdentifier, hybrid.cacheIdentifier]).count == 3)
+        #expect(!standard.usesRasterImagery)
+        #expect(satellite.usesRasterImagery)
+        #expect(hybrid.usesRasterImagery)
+
+        #expect(standard.requiresCacheInvalidation(transitioningTo: satellite))
+        #expect(satellite.requiresCacheInvalidation(transitioningTo: hybrid))
+        #expect(hybrid.requiresCacheInvalidation(transitioningTo: standard))
+        #expect(!standard.requiresCacheInvalidation(transitioningTo: standard))
+    }
 }
