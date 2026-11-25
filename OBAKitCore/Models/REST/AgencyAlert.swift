@@ -200,6 +200,105 @@ extension AgencyAlert {
 
         return Date(timeIntervalSince1970: TimeInterval(period.end))
     }
+
+    /// Whether this alert has at least one `active_period` entry.
+    public var hasActivePeriod: Bool {
+        !alert.activePeriod.isEmpty
+    }
+
+    /// Whether this alert is active at the given date.
+    ///
+    /// An alert with **no** active periods is treated as always active, per the
+    /// GTFS-RT spec: "If this field is not provided, the alert will be shown as
+    /// long as it appears in the feed."
+    ///
+    /// Each active period follows GTFS-RT `TimeRange` half-open semantics
+    /// (`[start, end)`): inclusive of `start` and exclusive of an explicitly
+    /// present positive `end`. An omitted `end` or `end == 0` is treated as
+    /// unbounded, matching feeds that encode "no end" as `0`. Any period with
+    /// inverted bounds (`start > end` when `end > 0`) logs a warning and is
+    /// treated as inactive without forming a `ClosedRange`.
+    ///
+    /// - Parameter date: The point in time to test against. Defaults to `now`.
+    /// - Returns: `true` when at least one active period covers `date`, or when
+    ///   the alert has no active periods at all.
+    public func isActive(at date: Date = Date()) -> Bool {
+        // No active periods ⇒ always active (GTFS-RT spec).
+        guard !alert.activePeriod.isEmpty else { return true }
+
+        return alert.activePeriod.contains { period in
+            guard let bounds = normalizedBounds(for: period, logCorrupt: true) else {
+                return false
+            }
+            return Self.isDate(date, within: bounds)
+        }
+    }
+
+    /// Returns the most recent explicit start date among active periods
+    /// covering `date`.
+    func activeStartDate(at date: Date = Date()) -> Date? {
+        latestStartDate { Self.isDate(date, within: $0) }
+    }
+
+    /// Returns the start date used to order this alert chronologically.
+    ///
+    /// Prefers the latest start date among periods currently active at `date`,
+    /// falling back to the latest valid (non-inverted) explicit start date
+    /// across all active periods.
+    func sortStartDate(asOf date: Date = Date()) -> Date? {
+        activeStartDate(at: date) ?? latestStartDate { _ in true }
+    }
+
+    private func latestStartDate(where predicate: ((start: Date, end: Date?)) -> Bool) -> Date? {
+        alert.activePeriod.compactMap { period -> Date? in
+            guard
+                period.hasStart,
+                let bounds = normalizedBounds(for: period, logCorrupt: false),
+                predicate(bounds)
+            else {
+                return nil
+            }
+            return bounds.start
+        }.max()
+    }
+
+    private func normalizedBounds(
+        for period: TransitRealtime_TimeRange,
+        logCorrupt: Bool
+    ) -> (start: Date, end: Date?)? {
+        let start = period.hasStart
+            ? Date(timeIntervalSince1970: TimeInterval(period.start))
+            : Date.distantPast
+
+        // Some GTFS-RT producers serialize `end = 0` to mean "no end" rather
+        // than omitting the field; treat `0` as unbounded so live alerts are
+        // not hidden as having ended at the Unix epoch.
+        let end: Date? = (period.hasEnd && period.end > 0)
+            ? Date(timeIntervalSince1970: TimeInterval(period.end))
+            : nil
+
+        if let end, start > end {
+            if logCorrupt {
+                Logger.warn(
+                    "AgencyAlert \(id): corrupt active period (start \(period.start) > end \(period.end)); treating as inactive."
+                )
+            }
+            return nil
+        }
+
+        return (start, end)
+    }
+
+    private static func isDate(_ date: Date, within bounds: (start: Date, end: Date?)) -> Bool {
+        guard date >= bounds.start else {
+            return false
+        }
+        if let end = bounds.end {
+            // GTFS-RT TimeRange is active when start <= t < end.
+            return date < end
+        }
+        return true
+    }
 }
 
 // MARK: - Translated Text
